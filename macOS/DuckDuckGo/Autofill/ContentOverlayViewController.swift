@@ -21,7 +21,7 @@ import WebKit
 import Combine
 import BrowserServicesKit
 import SecureStorage
-import Autofill
+import AutofillResources
 import PixelKit
 
 @MainActor
@@ -106,7 +106,7 @@ public final class ContentOverlayViewController: NSViewController, EmailManagerR
 
         webView.appearance = NSApp.effectiveAppearance
 
-        let url = Autofill.bundle.url(forResource: "assets/TopAutofill", withExtension: "html")
+        let url = AutofillResources.bundle.url(forResource: "TopAutofill", withExtension: "html")
         if let url = url {
             webView.loadFileURL(url, allowingReadAccessTo: url.deletingLastPathComponent())
             return

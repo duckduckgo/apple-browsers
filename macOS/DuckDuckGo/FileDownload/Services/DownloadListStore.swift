@@ -53,7 +53,7 @@ final class DownloadListStore: DownloadListStoring {
     private var context: NSManagedObjectContext? {
         if case .none = _context {
 #if DEBUG
-            if [.unitTests, .xcPreviews].contains(NSApp.runType) {
+            if [.unitTests, .xcPreviews].contains(AppVersion.runType) {
                 _context = .some(.none)
                 return .none
             }

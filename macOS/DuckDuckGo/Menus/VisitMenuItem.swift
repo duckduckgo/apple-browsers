@@ -21,6 +21,7 @@ import History
 
 final class VisitMenuItem: NSMenuItem {
 
+    @MainActor
     convenience init(visitViewModel: VisitViewModel) {
         self.init(title: visitViewModel.titleTruncated,
                   action: #selector(AppDelegate.openVisit(_:)),

@@ -23,7 +23,6 @@ public protocol ScanOrPasteCodeViewModelDelegate: AnyObject {
 
     var pasteboardString: String? { get }
 
-    func startConnectMode() async -> String?
     func endConnectMode()
 
     /// Returns true if we were able to use the code. Either way, stop validating.
@@ -64,15 +63,12 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
     public weak var delegate: ScanOrPasteCodeViewModelDelegate?
 
     var showQRCodeModel: ShowQRCodeViewModel
+    let code: String
 
-    let showConnectMode: Bool
-    let recoveryCode: String?
-
-    public init(showConnectMode: Bool, recoveryCode: String?) {
-        self.showConnectMode = showConnectMode
-        self.recoveryCode = recoveryCode
+    public init(code: String) {
+        self.code = code
         showQRCodeModel = ShowQRCodeViewModel()
-        showQRCodeModel.code = recoveryCode
+        showQRCodeModel.code = code
     }
 
     func codeScanned(_ code: String) async -> Bool {
@@ -83,6 +79,7 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
         showCamera = false
     }
 
+    @MainActor
     func pasteCode() {
         guard let string = delegate?
             .pasteboardString?
@@ -101,18 +98,10 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
                 invalidCode = true
             }
         }
-
     }
 
     func cancel() {
         delegate?.codeCollectionCancelled()
-    }
-
-    func startConnectMode() -> ShowQRCodeViewModel {
-        Task { @MainActor in
-            showQRCodeModel.code = await delegate?.startConnectMode()
-        }
-        return showQRCodeModel
     }
 
     func showShareCodeSheet() {

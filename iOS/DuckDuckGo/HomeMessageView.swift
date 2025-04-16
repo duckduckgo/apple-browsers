@@ -233,12 +233,12 @@ struct ActivityViewPresentationModifier: ViewModifier {
 }
 
 private extension Color {
-    static let button = Color(designSystemColor: .accent)
-    static let primaryButtonText = Color("RemoteMessagePrimaryActionTextColor")
-    static let cancelButtonBackground = Color("CancelButtonBackgroundColor")
-    static let cancelButtonForeground = Color("CancelButtonForegroundColor")
-    static let background = Color("HomeMessageBackgroundColor")
-    static let shadow = Color("HomeMessageShadowColor")
+    static let button = Color(designSystemColor: .buttonsPrimaryDefault)
+    static let primaryButtonText = Color(designSystemColor: .buttonsPrimaryText)
+    static let cancelButtonBackground = Color(designSystemColor: .buttonsSecondaryFillDefault)
+    static let cancelButtonForeground = Color(designSystemColor: .buttonsSecondaryFillText)
+    static let background = Color(designSystemColor: .surface)
+    static let shadow = Color.shade(0.1)
 }
 
 private extension Image {

@@ -21,16 +21,19 @@ import Foundation
 import Combine
 import BrowserServicesKit
 import Core
+import ContentScopeScripts
 
 class FeatureFlagsSettingViewModel: ObservableObject {
     private let featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger
 
     @Published var featureFlags: [FeatureFlag] = []
     @Published var experiments: [FeatureFlag] = []
+    @Published var cssExperiments: [ContentScopeExperimentsFeatureFlag] = []
 
     init() {
         self.featureFlags = FeatureFlag.allCases.filter { $0.supportsLocalOverriding && $0.cohortType == nil }
         self.experiments = FeatureFlag.allCases.filter { $0.supportsLocalOverriding && $0.cohortType != nil }
+        self.cssExperiments = ContentScopeExperimentsFeatureFlag.allCases.filter { $0.supportsLocalOverriding && $0.cohortType != nil }
     }
 
     var isInternalUser: Bool {
@@ -46,20 +49,20 @@ class FeatureFlagsSettingViewModel: ObservableObject {
         objectWillChange.send()
     }
 
-    func getCohorts(for experiment: FeatureFlag) -> [String] {
+    func getCohorts(for experiment: any FeatureFlagDescribing) -> [String] {
         return experiment.cohortType?.cohorts.map { $0.rawValue } ?? []
     }
 
-    func setExperimentCohort(for experiment: FeatureFlag, cohort: String) {
+    func setExperimentCohort(for experiment: any FeatureFlagDescribing, cohort: String) {
         featureFlagger.localOverrides?.setExperimentCohortOverride(for: experiment, cohort: cohort)
         objectWillChange.send()
     }
 
-    func getCurrentCohort(for experiment: FeatureFlag) -> String? {
+    func getCurrentCohort(for experiment: any FeatureFlagDescribing) -> String? {
         return featureFlagger.localOverrides?.experimentOverride(for: experiment) ?? defaultExperimentCohort(for: experiment)
     }
 
-    func resetOverride(for flag: FeatureFlag) {
+    func resetOverride(for flag: any FeatureFlagDescribing) {
         featureFlagger.localOverrides?.clearOverride(for: flag)
         objectWillChange.send()
     }
@@ -69,11 +72,11 @@ class FeatureFlagsSettingViewModel: ObservableObject {
         objectWillChange.send()
     }
 
-    func defaultValue(for flag: FeatureFlag) -> Bool {
+    func defaultValue(for flag: any FeatureFlagDescribing) -> Bool {
         return featureFlagger.isFeatureOn(for: flag, allowOverride: false)
     }
 
-    func defaultExperimentCohort(for flag: FeatureFlag) -> CohortID? {
+    func defaultExperimentCohort(for flag: any FeatureFlagDescribing) -> CohortID? {
         return featureFlagger.localOverrides?.currentExperimentCohort(for: flag)?.rawValue
     }
 }

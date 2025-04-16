@@ -37,7 +37,7 @@ final class MockPrivacyStats: PrivacyStatsCollecting {
 final class NewTabPageCoordinatorTests: XCTestCase {
     var coordinator: NewTabPageCoordinator!
     var appearancePreferences: AppearancePreferences!
-    var settingsModel: HomePage.Models.SettingsModel!
+    var customizationModel: NewTabPageCustomizationModel!
     var notificationCenter: NotificationCenter!
     var keyValueStore: MockKeyValueStore!
     var firePixelCalls: [PixelKitEvent] = []
@@ -56,19 +56,17 @@ final class NewTabPageCoordinatorTests: XCTestCase {
             newTabPageSectionsAvailabilityProvider: NewTabPageModeDecider(keyValueStore: keyValueStore)
         )
 
-        settingsModel = HomePage.Models.SettingsModel(
+        customizationModel = NewTabPageCustomizationModel(
             appearancePreferences: appearancePreferences,
             userBackgroundImagesManager: nil,
             sendPixel: { _ in },
             openFilePanel: { nil },
-            userColorProvider: MockUserColorProvider(),
-            showAddImageFailedAlert: {},
-            navigator: MockHomePageSettingsModelNavigator()
+            showAddImageFailedAlert: {}
         )
 
         coordinator = NewTabPageCoordinator(
             appearancePreferences: appearancePreferences,
-            settingsModel: settingsModel,
+            customizationModel: customizationModel,
             bookmarkManager: MockBookmarkManager(),
             activeRemoteMessageModel: ActiveRemoteMessageModel(
                 remoteMessagingStore: MockRemoteMessagingStore(),
@@ -188,7 +186,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
     }
 
     func testWhenBackgroundIsCustomThenPixelSetsTrueForCustomBackground() throws {
-        settingsModel.customBackground = .gradient(.gradient02)
+        customizationModel.customBackground = .gradient(.gradient02)
 
         notificationCenter.post(name: .newTabPageWebViewDidAppear, object: nil)
         let pixel = try XCTUnwrap(firePixelCalls.first as? NewTabPagePixel)
@@ -202,7 +200,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
     }
 
     func testWhenBackgroundIsDefaultThenPixelSetsFalseForCustomBackground() throws {
-        settingsModel.customBackground = nil
+        customizationModel.customBackground = nil
 
         notificationCenter.post(name: .newTabPageWebViewDidAppear, object: nil)
         let pixel = try XCTUnwrap(firePixelCalls.first as? NewTabPagePixel)

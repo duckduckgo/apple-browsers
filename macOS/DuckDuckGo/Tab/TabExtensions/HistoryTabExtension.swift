@@ -223,7 +223,6 @@ extension HistoryTabExtension: NavigationResponder {
         default: break
         }
     }
-
 }
 
 protocol HistoryExtensionProtocol: AnyObject, NavigationResponder {

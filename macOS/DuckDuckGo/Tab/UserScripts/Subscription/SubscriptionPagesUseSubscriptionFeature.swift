@@ -25,17 +25,24 @@ import Subscription
 import PixelKit
 import os.log
 import Freemium
-import DataBrokerProtection
+import DataBrokerProtection_macOS
+import DataBrokerProtectionCore
 import Networking
 
 /// Use Subscription sub-feature
 final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
+
+    private enum OriginDomains {
+        static let duckduckgo = "duckduckgo.com"
+    }
+
     weak var broker: UserScriptMessageBroker?
-    var featureName = "useSubscription"
-    var messageOriginPolicy: MessageOriginPolicy = .only(rules: [
-        .exact(hostname: "duckduckgo.com"),
-        .exact(hostname: "abrown.duckduckgo.com")
+
+    let featureName = "useSubscription"
+    lazy var messageOriginPolicy: MessageOriginPolicy = .only(rules: [
+        HostnameMatchingRule.makeExactRule(for: subscriptionManager.url(for: .baseURL)) ?? .exact(hostname: OriginDomains.duckduckgo)
     ])
+
     let subscriptionManager: SubscriptionManager
     var accountManager: AccountManager { subscriptionManager.accountManager }
     var subscriptionPlatform: SubscriptionEnvironment.PurchasePlatform { subscriptionManager.currentEnvironment.purchasePlatform }
@@ -116,6 +123,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         case Handlers.subscriptionsWelcomeFaqClicked: return subscriptionsWelcomeFaqClicked
         case Handlers.getAccessToken: return getAccessToken
         default:
+            Logger.subscription.error("Unknown web message: \(methodName, privacy: .public)")
             return nil
         }
     }

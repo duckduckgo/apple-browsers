@@ -25,6 +25,7 @@ import BrowserServicesKit
 import Persistence
 import PixelKit
 import RemoteMessaging
+import Subscription
 
 protocol RemoteMessagingStoreProviding {
     func makeRemoteMessagingStore(database: CoreDataDatabase, availabilityProvider: RemoteMessagingAvailabilityProviding) -> RemoteMessagingStoring
@@ -65,17 +66,19 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         database: CoreDataDatabase,
         bookmarksDatabase: CoreDataDatabase,
         appearancePreferences: AppearancePreferences,
-        pinnedTabsManager: PinnedTabsManager,
+        pinnedTabsManagerProvider: PinnedTabsManagerProviding,
         internalUserDecider: InternalUserDecider,
         configurationStore: ConfigurationStoring,
         remoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding,
-        remoteMessagingStoreProvider: RemoteMessagingStoreProviding = DefaultRemoteMessagingStoreProvider()
+        remoteMessagingStoreProvider: RemoteMessagingStoreProviding = DefaultRemoteMessagingStoreProvider(),
+        subscriptionManager: any SubscriptionAuthV1toV2Bridge
     ) {
         let provider = RemoteMessagingConfigMatcherProvider(
             bookmarksDatabase: bookmarksDatabase,
             appearancePreferences: appearancePreferences,
-            pinnedTabsManager: pinnedTabsManager,
-            internalUserDecider: internalUserDecider
+            pinnedTabsManagerProvider: pinnedTabsManagerProvider,
+            internalUserDecider: internalUserDecider,
+            subscriptionManager: subscriptionManager
         )
         self.init(
             database: database,
@@ -161,7 +164,7 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
 
     /// It's public in order to allow refreshing on demand via Debug menu. Otherwise it shouldn't be called from outside.
     func refreshRemoteMessages() {
-        guard NSApp.runType.requiresEnvironment else {
+        guard AppVersion.runType.requiresEnvironment else {
             return
         }
         Task {
@@ -193,7 +196,7 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
             return
         }
 
-        if NSApplication.runType.requiresEnvironment {
+        if AppVersion.runType.requiresEnvironment {
             database.loadStore { context, error in
                 guard context != nil else {
                     if let error = error {

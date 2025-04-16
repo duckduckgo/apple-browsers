@@ -20,6 +20,7 @@ import Foundation
 import UserScript
 import WebKit
 import Combine
+import Common
 
 #if SPARKLE
 
@@ -69,7 +70,7 @@ final class ReleaseNotesUserScript: NSObject, Subfeature {
     }
 
     public func onUpdate() {
-        guard NSApp.runType != .uiTests, isInitialized, let webView = webView else {
+        guard AppVersion.runType != .uiTests, isInitialized, let webView = webView else {
             return
         }
 

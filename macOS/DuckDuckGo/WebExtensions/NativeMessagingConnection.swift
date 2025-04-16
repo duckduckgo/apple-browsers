@@ -16,24 +16,26 @@
 //  limitations under the License.
 //
 
+#if WEB_EXTENSIONS_ENABLED
+
 import Foundation
 import os.log
 
-@available(macOS 14.4, *)
+@available(macOS 15.4, *)
 protocol NativeMessagingConnectionDelegate: AnyObject {
 
     func nativeMessagingConnectionProcessDidFail(_ nativeMessagingConnection: NativeMessagingConnection)
 
 }
 
-@available(macOS 14.4, *)
+@available(macOS 15.4, *)
 final class NativeMessagingConnection {
-    let port: _WKWebExtension.MessagePort
+    let port: WKWebExtension.MessagePort
     let communicator: NativeMessagingCommunicator
 
     weak var delegate: NativeMessagingConnectionDelegate?
 
-    internal init(port: _WKWebExtension.MessagePort, communicator: NativeMessagingCommunicator) {
+    internal init(port: WKWebExtension.MessagePort, communicator: NativeMessagingCommunicator) {
         self.port = port
         self.communicator = communicator
 
@@ -47,3 +49,5 @@ final class NativeMessagingConnection {
 //        }
     }
 }
+
+#endif

@@ -19,7 +19,7 @@
 
 import UIKit
 
-enum ThemeName: String, CaseIterable, Identifiable, CustomStringConvertible {
+enum ThemeStyle: String, CaseIterable, Identifiable, CustomStringConvertible {
     case systemDefault
     case light
     case dark
@@ -33,18 +33,16 @@ enum ThemeName: String, CaseIterable, Identifiable, CustomStringConvertible {
     var descriptionText: String {
         switch self {
         case .systemDefault:
-            return UserText.themeNameDefault
+            return UserText.themeStyleNameDefault
         case .light:
-            return UserText.themeNameLight
+            return UserText.themeStyleNameLight
         case .dark:
-            return UserText.themeNameDark
+            return UserText.themeStyleNameDark
         }
     }
 }
 
 protocol Theme {
-    var name: ThemeName { get }
-    
     var statusBarStyle: UIStatusBarStyle { get }
     var keyboardAppearance: UIKeyboardAppearance { get }
 
@@ -81,19 +79,15 @@ protocol Theme {
     var autocompleteCellPlusButtonColor: UIColor { get }
 
     var tableCellBackgroundColor: UIColor { get }
-    var tableCellSelectedColor: UIColor { get }
     var tableCellSeparatorColor: UIColor { get }
     var tableCellTextColor: UIColor { get }
     var tableCellSecondaryTextColor: UIColor { get }
     var tableCellAccessoryTextColor: UIColor { get }
-    var tableCellAccessoryColor: UIColor { get }
     var tableCellHighlightedBackgroundColor: UIColor { get }
     var tableHeaderTextColor: UIColor { get }
     
     var tabSwitcherCellBackgroundColor: UIColor { get }
-    var tabSwitcherCellBorderColor: UIColor { get }
     var tabSwitcherCellTextColor: UIColor { get }
-    var tabSwitcherCellSecondaryTextColor: UIColor { get }
     
     var iconCellBorderColor: UIColor { get }
     
@@ -102,13 +96,6 @@ protocol Theme {
     
     var textFieldBackgroundColor: UIColor { get }
     var textFieldFontColor: UIColor { get }
-    
-    var homeRowPrimaryTextColor: UIColor { get }
-    var homeRowSecondaryTextColor: UIColor { get }
-    var homeRowBackgroundColor: UIColor { get }
-    
-    var homePrivacyCellTextColor: UIColor { get }
-    var homePrivacyCellSecondaryTextColor: UIColor { get }
     
     var aboutScreenTextColor: UIColor { get }
     var aboutScreenButtonColor: UIColor { get }
@@ -131,8 +118,6 @@ protocol Theme {
  
     var autofillEmptySearchViewTextColor: UIColor { get }
     var autofillLockedViewTextColor: UIColor { get }
-
-    var privacyDashboardWebviewBackgroundColor: UIColor { get }
 
     var onboardingBackgroundColor: UIColor { get }
     var onboardingHeaderColor: UIColor { get }

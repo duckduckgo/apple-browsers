@@ -27,7 +27,7 @@ final class PageRefreshMonitorExtensionTests: XCTestCase {
     var captureMetric: String?
 
     override func setUpWithError() throws {
-        TDSOverrideExperimentMetrics.configureTDSOverrideExperimentMetrics { _, metric, _, _ in
+        SiteBreakageExperimentMetrics.configureSiteBreakageExperimentMetrics { _, metric, _, _ in
             self.captureMetric = metric
         }
     }

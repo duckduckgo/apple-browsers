@@ -31,7 +31,7 @@ class LargeOmniBarStateTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        mockFeatureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatNewTabPage])
+        mockFeatureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
     }
 
     override func tearDown() {

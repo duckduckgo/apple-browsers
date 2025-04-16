@@ -107,8 +107,8 @@ private enum Constants {
     }
     
     enum Colors {
-        static let text = Color("OmniBarNotificationTextColor")
-        static let background = Color("OmniBarNotificationBackgroundColor")
+        static let text = Color(designSystemColor: .textPrimary)
+        static let background = Color(designSystemColor: .panel)
     }
 
     enum Spacing {

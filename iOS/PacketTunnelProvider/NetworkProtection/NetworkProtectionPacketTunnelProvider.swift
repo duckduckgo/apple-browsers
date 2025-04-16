@@ -31,13 +31,14 @@ import WidgetKit
 import WireGuard
 import BrowserServicesKit
 
-// Initial implementation for initial Network Protection tests. Will be fleshed out with https://app.asana.com/0/1203137811378537/1204630829332227/f
 final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
     private static var vpnLogger = VPNLogger()
     private static let persistentPixel: PersistentPixelFiring = PersistentPixel()
     private var cancellables = Set<AnyCancellable>()
-    private let accountManager: AccountManager
+    
+    private var accountManager: AccountManager?
+    private let subscriptionManager: (any SubscriptionManagerV2)?
 
     private let configurationStore = ConfigurationStore()
     private let configurationManager: ConfigurationManager
@@ -237,15 +238,11 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             vpnLogger.log(step, named: "Tunnel Wake")
 
             switch step {
-            case .begin:
-                Pixel.fire(pixel: .networkProtectionTunnelWakeAttempt)
+            case .begin, .success: break
             case .failure(let error):
                 DailyPixel.fireDailyAndCount(pixel: .networkProtectionTunnelWakeFailure,
                                              pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
                                              error: error)
-            case .success:
-                DailyPixel.fireDailyAndCount(pixel: .networkProtectionTunnelWakeSuccess,
-                                             pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
             }
         case .failureRecoveryAttempt(let step):
             vpnLogger.log(step)
@@ -437,28 +434,83 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             subscriptionEnvironment.serviceEnvironment = .staging
         }
 
-        // MARK: - Configure Subscription
-        let entitlementsCache = UserDefaultsCache<[Entitlement]>(userDefaults: UserDefaults.standard,
-                                                                 key: UserDefaultsCacheKey.subscriptionEntitlements,
-                                                                 settings: UserDefaultsCacheSettings(defaultExpirationInterval: .minutes(20)))
+        // Configure Subscription
 
-        let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
-        let accessTokenStorage = SubscriptionTokenKeychainStorage(keychainType: .dataProtection(.named(subscriptionAppGroup)))
-        let subscriptionService = DefaultSubscriptionEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment)
-        let authService = DefaultAuthEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment)
-        let accountManager = DefaultAccountManager(accessTokenStorage: accessTokenStorage,
-                                                   entitlementsCache: entitlementsCache,
-                                                   subscriptionEndpointService: subscriptionService,
-                                                   authEndpointService: authService)
-        self.accountManager = accountManager
-        let featureVisibility = NetworkProtectionVisibilityForTunnelProvider(accountManager: accountManager)
-        let accessTokenProvider: () -> String? = {
-            if featureVisibility.shouldMonitorEntitlement() {
-                return { accountManager.accessToken }
+        var tokenHandler: any SubscriptionTokenHandling
+        var entitlementsCheck: (() async -> Result<Bool, Error>)
+        Self.isAuthV2Enabled = settings.isAuthV2Enabled
+        if !Self.isAuthV2Enabled {
+            // MARK: Subscription V1
+            Logger.networkProtection.log("Configure Subscription V1")
+            let entitlementsCache = UserDefaultsCache<[Entitlement]>(userDefaults: UserDefaults.standard,
+                                                                     key: UserDefaultsCacheKey.subscriptionEntitlements,
+                                                                     settings: UserDefaultsCacheSettings(defaultExpirationInterval: .minutes(20)))
+
+            let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
+            let accessTokenStorage = SubscriptionTokenKeychainStorage(keychainType: .dataProtection(.named(subscriptionAppGroup)))
+            let subscriptionEndpointService = DefaultSubscriptionEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment)
+            let authService = DefaultAuthEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment)
+            let accountManager = DefaultAccountManager(accessTokenStorage: accessTokenStorage,
+                                                       entitlementsCache: entitlementsCache,
+                                                       subscriptionEndpointService: subscriptionEndpointService,
+                                                       authEndpointService: authService)
+            self.accountManager = accountManager
+            let featureVisibility = NetworkProtectionVisibilityForTunnelProvider(accountManager: accountManager)
+            let accessTokenProvider: () -> String? = {
+                if featureVisibility.shouldMonitorEntitlement() {
+                    return { accountManager.accessToken }
+                }
+                return { nil }
+            }()
+            tokenHandler = NetworkProtectionKeychainTokenStore(accessTokenProvider: accessTokenProvider)
+            entitlementsCheck = { return await Self.entitlementCheck(accountManager: accountManager) }
+            self.subscriptionManager = nil
+        } else {
+            // MARK: Subscription V2
+            Logger.networkProtection.log("Configure Subscription V2")
+            let authEnvironment: OAuthEnvironment = subscriptionEnvironment.serviceEnvironment == .production ? .production : .staging
+            let authService = DefaultOAuthService(baseURL: authEnvironment.url, apiService: APIServiceFactory.makeAPIServiceForAuthV2())
+
+            // keychain storage
+            let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
+            let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainType: .dataProtection(.named(subscriptionAppGroup))) { keychainType, error in
+                Pixel.fire(.privacyProKeychainAccessError, withAdditionalParameters: ["type": keychainType.rawValue, "error": error.errorDescription])
             }
-            return { nil }
-        }()
-        let tokenStore = NetworkProtectionKeychainTokenStore(accessTokenProvider: accessTokenProvider)
+            let legacyAccountStorage = SubscriptionTokenKeychainStorage(keychainType: .dataProtection(.named(subscriptionAppGroup)))
+            let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
+                                                legacyTokenStorage: legacyAccountStorage,
+                                                authService: authService)
+            let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: APIServiceFactory.makeAPIServiceForSubscription(),
+                                                                                   baseURL: subscriptionEnvironment.serviceEnvironment.url)
+            let storePurchaseManager = DefaultStorePurchaseManagerV2(subscriptionFeatureMappingCache: subscriptionEndpointService)
+            let pixelHandler = AuthV2PixelHandler(source: .systemExtension)
+            let subscriptionManager = DefaultSubscriptionManagerV2(storePurchaseManager: storePurchaseManager,
+                                                                   oAuthClient: authClient,
+                                                                   subscriptionEndpointService: subscriptionEndpointService,
+                                                                   subscriptionEnvironment: subscriptionEnvironment,
+                                                                   pixelHandler: pixelHandler,
+                                                                   tokenRecoveryHandler: {
+                Logger.networkProtection.error("Expired refresh token detected")
+            },
+                                                                   initForPurchase: false)
+            self.subscriptionManager = subscriptionManager
+            
+            entitlementsCheck = {
+                Logger.networkProtection.log("Subscription Entitlements check...")
+                do {
+                    let isNetworkProtectionEnabled = try await subscriptionManager.isFeatureAvailableForUser(.networkProtection)
+                    Logger.networkProtection.log("NetworkProtectionEnabled if: \( isNetworkProtectionEnabled ? "Enabled" : "Disabled", privacy: .public)")
+                    return .success(isNetworkProtectionEnabled)
+                } catch {
+                    Logger.networkProtection.error("Subscription Entitlements check failed: \(error.localizedDescription)")
+                    return .failure(error)
+                }
+            }
+            tokenHandler = subscriptionManager
+            self.accountManager = nil
+        }
+
+        // MARK: -
 
         let errorStore = NetworkProtectionTunnelErrorStore()
         let notificationsPresenter = NetworkProtectionUNNotificationPresenter()
@@ -475,14 +527,14 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
                    snoozeTimingStore: NetworkProtectionSnoozeTimingStore(userDefaults: .networkProtectionGroupDefaults),
                    wireGuardInterface: DefaultWireGuardInterface(),
                    keychainType: .dataProtection(.unspecified),
-                   tokenHandler: tokenStore,
+                   tokenHandlerProvider: { tokenHandler },
                    debugEvents: Self.networkProtectionDebugEvents(controllerErrorStore: errorStore),
                    providerEvents: Self.packetTunnelProviderEvents,
                    settings: settings,
                    defaults: .networkProtectionGroupDefaults,
-                   entitlementCheck: { return await Self.entitlementCheck(accountManager: accountManager) })
+                   entitlementCheck: entitlementsCheck)
 
-        accountManager.delegate = self
+        accountManager?.delegate = self
         startMonitoringMemoryPressureEvents()
         observeServerChanges()
         APIRequest.Headers.setUserAgent(DefaultUserAgentManager.duckDuckGoUserAgent)
@@ -584,10 +636,10 @@ final class DefaultWireGuardInterface: WireGuardInterface {
 
 extension NetworkProtectionPacketTunnelProvider: AccountManagerKeychainAccessDelegate {
 
-    public func accountManagerKeychainAccessFailed(accessType: AccountKeychainAccessType, error: AccountKeychainAccessError) {
+    public func accountManagerKeychainAccessFailed(accessType: AccountKeychainAccessType, error: any Error) {
         let parameters = [
             PixelParameters.privacyProKeychainAccessType: accessType.rawValue,
-            PixelParameters.privacyProKeychainError: error.errorDescription,
+            PixelParameters.privacyProKeychainError: error.localizedDescription,
             PixelParameters.source: "vpn"
         ]
 

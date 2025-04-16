@@ -19,6 +19,7 @@
 import XCTest
 import BrowserServicesKit
 import Subscription
+import SubscriptionTestingUtilities
 
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -27,7 +28,7 @@ final class DataBrokerProtectionFeatureGatekeeperTests: XCTestCase {
     private var sut: DefaultDataBrokerProtectionFeatureGatekeeper!
     private var mockFeatureDisabler: MockFeatureDisabler!
     private var mockFeatureAvailability: MockFeatureAvailability!
-    private var mockAccountManager: MockAccountManager!
+    private var mockSubscriptionBridge: SubscriptionAuthV1toV2BridgeMock!
     private var mockFreemiumDBPUserStateManager: MockFreemiumDBPUserStateManager!
 
     private func userDefaults() -> UserDefaults {
@@ -37,19 +38,18 @@ final class DataBrokerProtectionFeatureGatekeeperTests: XCTestCase {
     override func setUpWithError() throws {
         mockFeatureDisabler = MockFeatureDisabler()
         mockFeatureAvailability = MockFeatureAvailability()
-        mockAccountManager = MockAccountManager()
+        mockSubscriptionBridge = SubscriptionAuthV1toV2BridgeMock()
         mockFreemiumDBPUserStateManager = MockFreemiumDBPUserStateManager()
         mockFreemiumDBPUserStateManager.didActivate = false
     }
 
     func testWhenNoAccessTokenIsFound_butEntitlementIs_andIsNotActiveFreemiumUser_thenFeatureIsDisabled() async {
         // Given
-        mockAccountManager.accessToken = nil
-        mockAccountManager.hasEntitlementResult = .success(true)
+        mockSubscriptionBridge.enabledFeatures = [.dataBrokerProtection]
         sut = DefaultDataBrokerProtectionFeatureGatekeeper(featureDisabler: mockFeatureDisabler,
                                                            userDefaults: userDefaults(),
                                                            subscriptionAvailability: mockFeatureAvailability,
-                                                           accountManager: mockAccountManager,
+                                                           subscriptionManager: mockSubscriptionBridge,
                                                            freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
 
         // When
@@ -61,13 +61,13 @@ final class DataBrokerProtectionFeatureGatekeeperTests: XCTestCase {
 
     func testWhenAccessTokenIsFound_butNoEntitlementIs_andIsNotActiveFreemiumUser_thenFeatureIsDisabled() async {
         // Given
-        mockAccountManager.accessToken = "token"
-        mockAccountManager.hasEntitlementResult = .failure(MockError.someError)
+
+        mockSubscriptionBridge.accessTokenResult = .success("token")
         mockFreemiumDBPUserStateManager.didActivate = false
         sut = DefaultDataBrokerProtectionFeatureGatekeeper(featureDisabler: mockFeatureDisabler,
                                                            userDefaults: userDefaults(),
                                                            subscriptionAvailability: mockFeatureAvailability,
-                                                           accountManager: mockAccountManager,
+                                                           subscriptionManager: mockSubscriptionBridge,
                                                            freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
 
         // When
@@ -79,13 +79,12 @@ final class DataBrokerProtectionFeatureGatekeeperTests: XCTestCase {
 
     func testWhenAccessTokenIsFound_butNoEntitlementIs_andIsActiveFreemiumUser_thenFeatureIsDisabled() async {
         // Given
-        mockAccountManager.accessToken = "token"
-        mockAccountManager.hasEntitlementResult = .failure(MockError.someError)
+        mockSubscriptionBridge.accessTokenResult = .success("token")
         mockFreemiumDBPUserStateManager.didActivate = true
         sut = DefaultDataBrokerProtectionFeatureGatekeeper(featureDisabler: mockFeatureDisabler,
                                                            userDefaults: userDefaults(),
                                                            subscriptionAvailability: mockFeatureAvailability,
-                                                           accountManager: mockAccountManager,
+                                                           subscriptionManager: mockSubscriptionBridge,
                                                            freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
 
         // When
@@ -97,13 +96,11 @@ final class DataBrokerProtectionFeatureGatekeeperTests: XCTestCase {
 
     func testWhenAccessTokenAndEntitlementAreNotFound_andIsNotActiveFreemiumUser_thenFeatureIsDisabled() async {
         // Given
-        mockAccountManager.accessToken = nil
-        mockAccountManager.hasEntitlementResult = .failure(MockError.someError)
         mockFreemiumDBPUserStateManager.didActivate = false
         sut = DefaultDataBrokerProtectionFeatureGatekeeper(featureDisabler: mockFeatureDisabler,
                                                            userDefaults: userDefaults(),
                                                            subscriptionAvailability: mockFeatureAvailability,
-                                                           accountManager: mockAccountManager,
+                                                           subscriptionManager: mockSubscriptionBridge,
                                                            freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
 
         // When
@@ -115,13 +112,13 @@ final class DataBrokerProtectionFeatureGatekeeperTests: XCTestCase {
 
     func testWhenAccessTokenAndEntitlementAreFound_andIsNotActiveFreemiumUser_thenFeatureIsEnabled() async {
         // Given
-        mockAccountManager.accessToken = "token"
-        mockAccountManager.hasEntitlementResult = .success(true)
+        mockSubscriptionBridge.accessTokenResult = .success("token")
+        mockSubscriptionBridge.enabledFeatures = [.dataBrokerProtection]
         mockFreemiumDBPUserStateManager.didActivate = false
         sut = DefaultDataBrokerProtectionFeatureGatekeeper(featureDisabler: mockFeatureDisabler,
                                                            userDefaults: userDefaults(),
                                                            subscriptionAvailability: mockFeatureAvailability,
-                                                           accountManager: mockAccountManager,
+                                                           subscriptionManager: mockSubscriptionBridge,
                                                            freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
 
         // When
@@ -133,13 +130,11 @@ final class DataBrokerProtectionFeatureGatekeeperTests: XCTestCase {
 
     func testWhenAccessTokenAndEntitlementAreNotFound_andIsActiveFreemiumUser_thenFeatureIsEnabled() async {
         // Given
-        mockAccountManager.accessToken = nil
-        mockAccountManager.hasEntitlementResult = .failure(MockError.someError)
         mockFreemiumDBPUserStateManager.didActivate = true
         sut = DefaultDataBrokerProtectionFeatureGatekeeper(featureDisabler: mockFeatureDisabler,
                                                            userDefaults: userDefaults(),
                                                            subscriptionAvailability: mockFeatureAvailability,
-                                                           accountManager: mockAccountManager,
+                                                           subscriptionManager: mockSubscriptionBridge,
                                                            freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
 
         // When
@@ -157,14 +152,11 @@ private enum MockError: Error {
 private class MockFeatureAvailability: SubscriptionFeatureAvailability {
     var mockFeatureAvailable: Bool = false
     var mockSubscriptionPurchaseAllowed: Bool = false
-    var mockUsesUnifiedFeedbackForm: Bool = false
 
     var isSubscriptionPurchaseAllowed: Bool { mockSubscriptionPurchaseAllowed }
-    var usesUnifiedFeedbackForm: Bool { mockUsesUnifiedFeedbackForm }
 
     func reset() {
         mockFeatureAvailable = false
         mockSubscriptionPurchaseAllowed = false
-        mockUsesUnifiedFeedbackForm = false
     }
 }

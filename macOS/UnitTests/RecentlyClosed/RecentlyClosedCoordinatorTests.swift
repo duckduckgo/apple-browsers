@@ -91,7 +91,7 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol {
 
     var mainWindowControllers: [DuckDuckGo_Privacy_Browser.MainWindowController] = []
 
-    var pinnedTabsManager = PinnedTabsManager(tabCollection: .init())
+    var pinnedTabsManagerProvider: PinnedTabsManagerProviding = PinnedTabsManagerProvidingMock()
 
     var didRegisterWindowController = PassthroughSubject<(MainWindowController), Never>()
     var didUnregisterWindowController = PassthroughSubject<(MainWindowController), Never>()
@@ -105,7 +105,7 @@ final class WindowControllersManagerMock: WindowControllersManagerProtocol {
         let url: URL?, source: Tab.TabContent.URLSource, newTab: Bool
     }
     var showCalled: ShowArgs?
-    func show(url: URL?, source: Tab.TabContent.URLSource, newTab: Bool) {
+    func show(url: URL?, tabId: String?, source: Tab.TabContent.URLSource, newTab: Bool) {
         showCalled = .init(url: url, source: source, newTab: newTab)
     }
     var showBookmarksTabCalled = false

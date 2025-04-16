@@ -24,6 +24,8 @@ import OHHTTPStubs
 import OHHTTPStubsSwift
 import Suggestions
 import XCTest
+import SpecialErrorPages
+import PrivacyDashboard
 
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -91,7 +93,8 @@ class AddressBarTests: XCTestCase {
         StartupPreferences.shared.customHomePageURL = URL.duckDuckGo.absoluteString
         StartupPreferences.shared.launchToCustomHomePage = false
 
-        WindowControllersManager.shared.pinnedTabsManager.setUp(with: .init())
+        TabsPreferences.shared.pinnedTabsMode = .shared
+
         NSApp.activate(ignoringOtherApps: true)
     }
 
@@ -106,6 +109,8 @@ class AddressBarTests: XCTestCase {
 
         NSError.disableSwizzledDescription = false
         StartupPreferences.shared.launchToCustomHomePage = false
+
+        TabsPreferences.shared.pinnedTabsMode = .separate
 
         HTTPStubs.removeAllStubs()
     }
@@ -808,7 +813,7 @@ class AddressBarTests: XCTestCase {
     @MainActor
     func testWhenActivatingWindowWithPinnedTabOpen_webViewBecomesFirstResponder() async throws {
         let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .userEntered("")), webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock)
-        WindowControllersManager.shared.pinnedTabsManager.setUp(with: TabCollection(tabs: [tab]))
+        Application.appDelegate.pinnedTabsManager.setUp(with: TabCollection(tabs: [tab]))
 
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [Tab(content: .newtab, privacyFeatures: privacyFeaturesMock)]))
         let tabLoadedPromise = tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise()
@@ -840,8 +845,7 @@ class AddressBarTests: XCTestCase {
     @MainActor
     func testWhenActivatingWindowWithPinnedTabWhenAddressBarIsActive_addressBarIsKeptActive() async throws {
         let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .userEntered("")), webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock)
-        WindowControllersManager.shared.pinnedTabsManager.setUp(with: TabCollection(tabs: [tab]))
-
+        Application.appDelegate.pinnedTabsManager.setUp(with: TabCollection(tabs: [tab]))
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [Tab(content: .newtab, privacyFeatures: privacyFeaturesMock)]))
         let tabLoadedPromise = tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise()
         window = WindowsManager.openNewWindow(with: viewModel)!
@@ -919,7 +923,7 @@ class AddressBarTests: XCTestCase {
 
         // WHEN
         window = WindowsManager.openNewWindow(with: viewModel)!
-        _=try await tabLoadedPromise.value
+        _ = try await tabLoadedPromise.value
 
         // THEN
         let shieldImage = mainViewController.navigationBarViewController.addressBarViewController!.addressBarButtonsViewController!.privacyEntryPointButton.image!
@@ -962,7 +966,7 @@ class AddressBarTests: XCTestCase {
     }
 
     @MainActor
-    func test_WhenControlTextDidChange_ThenreporterTrackAddressBarTypedInCalled() async throws {
+    func test_WhenControlTextDidChange_ThenreportermeasureAddressBarTypedInCalled() async throws {
         // GIVEN
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [Tab(content: .newtab)]))
         window = WindowsManager.openNewWindow(with: viewModel)!
@@ -975,7 +979,7 @@ class AddressBarTests: XCTestCase {
         textField?.controlTextDidChange(.init(name: .PasswordManagerChanged))
 
         // THEN
-        XCTAssertTrue(reporter.trackAddressBarTypedInCalled)
+        XCTAssertTrue(reporter.measureAddressBarTypedInCalled)
     }
 }
 
@@ -1012,7 +1016,7 @@ extension NSImage {
 }
 
 class MockCertificateEvaluator: CertificateTrustEvaluating {
-    var isValidCertificate: Bool?
+    var isValidCertificate: Bool? = true
 
     func evaluateCertificateTrust(trust: SecTrust?) -> Bool? {
         return isValidCertificate
@@ -1020,15 +1024,15 @@ class MockCertificateEvaluator: CertificateTrustEvaluating {
 }
 
 class CapturingOnboardingAddressBarReporting: OnboardingAddressBarReporting {
-    var trackAddressBarTypedInCalled = false
+    var measureAddressBarTypedInCalled = false
 
-    func trackAddressBarTypedIn() {
-        trackAddressBarTypedInCalled = true
+    func measureAddressBarTypedIn() {
+        measureAddressBarTypedInCalled = true
     }
 
-    func trackPrivacyDashboardOpened() {
+    func measurePrivacyDashboardOpened() {
     }
 
-    func trackSiteVisited() {
+    func measureSiteVisited() {
     }
 }

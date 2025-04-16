@@ -46,7 +46,7 @@ final class PreferencesViewController: NSViewController {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.privacyConfigurationManager = privacyConfigurationManager
         model = PreferencesSidebarModel(syncService: syncService,
-                                        vpnGatekeeper: DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionManager),
+                                        vpnGatekeeper: DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge),
                                         includeDuckPlayer: duckPlayer.shouldDisplayPreferencesSideBar,
                                         includeAIChat: aiChatRemoteSettings.isAIChatEnabled)
         super.init(nibName: nil, bundle: nil)
@@ -63,17 +63,19 @@ final class PreferencesViewController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        let addressBarModel = HomePage.Models.AddressBarModel(
-            tabCollectionViewModel: tabCollectionViewModel,
-            privacyConfigurationManager: privacyConfigurationManager
-        )
-
-        let prefRootView = Preferences.RootView(model: model,
-                                                addressBarModel: addressBarModel,
-                                                subscriptionManager: Application.appDelegate.subscriptionManager,
-                                                subscriptionUIHandler: Application.appDelegate.subscriptionUIHandler)
-        let host = NSHostingView(rootView: prefRootView)
-        view.addAndLayout(host)
+        if !Application.appDelegate.isAuthV2Enabled {
+            let prefRootView = Preferences.RootView(model: model,
+                                                    subscriptionManager: Application.appDelegate.subscriptionManagerV1!,
+                                                    subscriptionUIHandler: Application.appDelegate.subscriptionUIHandler)
+            let host = NSHostingView(rootView: prefRootView)
+            view.addAndLayout(host)
+        } else {
+            let prefRootView = Preferences.RootViewV2(model: model,
+                                                      subscriptionManager: Application.appDelegate.subscriptionManagerV2!,
+                                                      subscriptionUIHandler: Application.appDelegate.subscriptionUIHandler)
+            let host = NSHostingView(rootView: prefRootView)
+            view.addAndLayout(host)
+        }
     }
 
     override func viewWillAppear() {

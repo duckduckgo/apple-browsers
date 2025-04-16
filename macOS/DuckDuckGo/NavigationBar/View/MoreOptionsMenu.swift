@@ -25,7 +25,8 @@ import NetworkProtection
 import Subscription
 import os.log
 import Freemium
-import DataBrokerProtection
+import DataBrokerProtection_macOS
+import DataBrokerProtectionCore
 import SwiftUI
 
 protocol OptionsButtonMenuDelegate: AnyObject {
@@ -56,18 +57,19 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     private let tabCollectionViewModel: TabCollectionViewModel
     private let emailManager: EmailManager
+    private let fireproofDomains: FireproofDomains
     private let passwordManagerCoordinator: PasswordManagerCoordinating
     private let internalUserDecider: InternalUserDecider
     @MainActor
     private lazy var sharingMenu: NSMenu = SharingMenu(title: UserText.shareMenuItem)
-    private var accountManager: AccountManager { subscriptionManager.accountManager }
-    private let subscriptionManager: SubscriptionManager
+    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let freemiumDBPUserStateManager: FreemiumDBPUserStateManager
     private let freemiumDBPFeature: FreemiumDBPFeature
     private let freemiumDBPPresenter: FreemiumDBPPresenter
     private let appearancePreferences: AppearancePreferences
     private var dockCustomizer: DockCustomization?
     private let defaultBrowserPreferences: DefaultBrowserPreferences
+    private let featureFlagger: FeatureFlagger
 
     private let notificationCenter: NotificationCenter
 
@@ -85,12 +87,13 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     @MainActor
     init(tabCollectionViewModel: TabCollectionViewModel,
          emailManager: EmailManager = EmailManager(),
+         fireproofDomains: FireproofDomains = FireproofDomains.shared,
          passwordManagerCoordinator: PasswordManagerCoordinator,
          vpnFeatureGatekeeper: VPNFeatureGatekeeper,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(),
          sharingMenu: NSMenu? = nil,
          internalUserDecider: InternalUserDecider,
-         subscriptionManager: SubscriptionManager,
+         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
          freemiumDBPUserStateManager: FreemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp),
          freemiumDBPFeature: FreemiumDBPFeature,
          freemiumDBPPresenter: FreemiumDBPPresenter = DefaultFreemiumDBPPresenter(),
@@ -98,11 +101,13 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
          dockCustomizer: DockCustomization? = nil,
          defaultBrowserPreferences: DefaultBrowserPreferences = .shared,
          notificationCenter: NotificationCenter = .default,
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          freemiumDBPExperimentPixelHandler: EventMapping<FreemiumDBPExperimentPixel> = FreemiumDBPExperimentPixelHandler(),
          aiChatMenuConfiguration: AIChatMenuVisibilityConfigurable = AIChatMenuConfiguration()) {
 
         self.tabCollectionViewModel = tabCollectionViewModel
         self.emailManager = emailManager
+        self.fireproofDomains = fireproofDomains
         self.passwordManagerCoordinator = passwordManagerCoordinator
         self.vpnFeatureGatekeeper = vpnFeatureGatekeeper
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
@@ -117,6 +122,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         self.notificationCenter = notificationCenter
         self.freemiumDBPExperimentPixelHandler = freemiumDBPExperimentPixelHandler
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
+        self.featureFlagger = featureFlagger
 
         super.init(title: "")
 
@@ -149,7 +155,8 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         feedbackMenuItem.submenu = FeedbackSubMenu(targetting: self,
                                                    tabCollectionViewModel: tabCollectionViewModel,
                                                    subscriptionFeatureAvailability: subscriptionFeatureAvailability,
-                                                   accountManager: accountManager)
+                                                   authenticationStateProvider: subscriptionManager,
+                                                   internalUserDecider: internalUserDecider)
         addItem(feedbackMenuItem)
 
 #endif // FEEDBACK
@@ -263,7 +270,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     @MainActor
     @objc func newAiChat(_ sender: NSMenuItem) {
-        AIChatTabOpener.openAIChatTab()
+        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab()
         PixelKit.fire(GeneralPixel.aichatApplicationMenuAppClicked, includeAppVersionParameter: true)
     }
 
@@ -373,7 +380,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     private func addUpdateItem() {
 #if SPARKLE
-        guard NSApp.runType != .uiTests,
+        guard AppVersion.runType != .uiTests,
               let updateController = Application.appDelegate.updateController,
               let update = updateController.latestUpdate else {
             return
@@ -441,6 +448,12 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             .targetting(self)
             .withImage(.downloads)
 
+        if featureFlagger.isFeatureOn(.historyView) {
+            addItem(withTitle: UserText.mainMenuHistory, action: nil, keyEquivalent: "")
+                .withImage(.history)
+                .withSubmenu(HistoryMenu(location: .moreOptionsMenu))
+        }
+
         let loginsSubMenu = LoginsSubMenu(targetting: self,
                                           passwordManagerCoordinator: passwordManagerCoordinator)
 
@@ -470,7 +483,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
         let privacyProItem = NSMenuItem(title: UserText.subscriptionOptionsMenuItem).withImage(.subscriptionIcon)
 
-        if !accountManager.isUserAuthenticated {
+        if !subscriptionManager.isUserAuthenticated {
             privacyProItem.target = self
             privacyProItem.action = #selector(openSubscriptionPurchasePage(_:))
 
@@ -505,34 +518,32 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         let oldItemsCount = items.count
 
         if url.canFireproof, let host = url.host {
-            let isFireproof = FireproofDomains.shared.isFireproof(fireproofDomain: host)
+            let isFireproof = fireproofDomains.isFireproof(fireproofDomain: host)
             let title = isFireproof ? UserText.removeFireproofing : UserText.fireproofSite
             let image: NSImage = isFireproof ? .burn : .fireproof
 
             addItem(withTitle: title, action: #selector(toggleFireproofing(_:)), keyEquivalent: "")
                 .targetting(self)
                 .withImage(image)
+        } else {
+            addItem(withTitle: UserText.fireproofSite, action: nil, keyEquivalent: "")
+                .withImage(.fireproof)
         }
 
-        if tabViewModel.canFindInPage {
-            addItem(withTitle: UserText.findInPageMenuItem, action: #selector(findInPage(_:)), keyEquivalent: "f")
-                .targetting(self)
-                .withImage(.findSearch)
-                .withAccessibilityIdentifier("MoreOptionsMenu.findInPage")
-        }
+        addItem(withTitle: UserText.findInPageMenuItem, action: tabViewModel.canFindInPage ? #selector(findInPage(_:)) : nil, keyEquivalent: "f")
+            .targetting(self)
+            .withImage(.findSearch)
+            .withAccessibilityIdentifier("MoreOptionsMenu.findInPage")
 
-        if tabViewModel.canReload {
-            addItem(withTitle: UserText.shareMenuItem, action: nil, keyEquivalent: "")
-                .targetting(self)
-                .withImage(.share)
-                .withSubmenu(sharingMenu)
-        }
+        let shareItem = addItem(withTitle: UserText.shareMenuItem, action: nil, keyEquivalent: "")
+            .targetting(self)
+            .withImage(.share)
+            .withSubmenu(sharingMenu)
+        shareItem.isEnabled = tabViewModel.canShare
 
-        if tabViewModel.canPrint {
-            addItem(withTitle: UserText.printMenuItem, action: #selector(doPrint(_:)), keyEquivalent: "")
-                .targetting(self)
-                .withImage(.print)
-        }
+        addItem(withTitle: UserText.printMenuItem, action: tabViewModel.canPrint ? #selector(doPrint(_:)) : nil, keyEquivalent: "")
+            .targetting(self)
+            .withImage(.print)
 
         if items.count > oldItemsCount {
             addItem(NSMenuItem.separator())
@@ -659,14 +670,17 @@ final class EmailOptionsButtonSubMenu: NSMenu {
 
 final class FeedbackSubMenu: NSMenu {
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
-    private let accountManager: AccountManager
+    private let authenticationStateProvider: any SubscriptionAuthenticationStateProvider
+    private let internalUserDecider: InternalUserDecider
 
     init(targetting target: AnyObject,
          tabCollectionViewModel: TabCollectionViewModel,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
-         accountManager: AccountManager) {
+         authenticationStateProvider: any SubscriptionAuthenticationStateProvider,
+         internalUserDecider: InternalUserDecider) {
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
-        self.accountManager = accountManager
+        self.authenticationStateProvider = authenticationStateProvider
+        self.internalUserDecider = internalUserDecider
         super.init(title: UserText.sendFeedback)
         updateMenuItems(with: tabCollectionViewModel, targetting: target)
     }
@@ -690,7 +704,7 @@ final class FeedbackSubMenu: NSMenu {
             .withImage(.siteBreakage)
         addItem(reportBrokenSiteItem)
 
-        if subscriptionFeatureAvailability.usesUnifiedFeedbackForm, accountManager.isUserAuthenticated {
+        if authenticationStateProvider.isUserAuthenticated {
             addItem(.separator())
 
             let sendPProFeedbackItem = NSMenuItem(title: UserText.sendPProFeedback,
@@ -698,6 +712,11 @@ final class FeedbackSubMenu: NSMenu {
                                                   keyEquivalent: "")
                 .withImage(.pProFeedback)
             addItem(sendPProFeedbackItem)
+        }
+
+        if internalUserDecider.isInternalUser {
+            addItem(.separator())
+            addItem(withTitle: "Copy Version", action: #selector(AppDelegate.copyVersion(_:)), keyEquivalent: "")
         }
     }
 }
@@ -822,6 +841,7 @@ final class BookmarksSubMenu: NSMenu {
 
     }
 
+    @MainActor
     private func bookmarkMenuItems(from bookmarkViewModels: [BookmarkViewModel], topLevel: Bool = true) -> [NSMenuItem] {
         var menuItems = [NSMenuItem]()
 
@@ -938,7 +958,7 @@ final class HelpSubMenu: NSMenu {
 final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
 
     var subscriptionFeatureAvailability: SubscriptionFeatureAvailability
-    var subscriptionManager: SubscriptionManager
+    var subscriptionManager: any SubscriptionAuthV1toV2Bridge
 
     var networkProtectionItem: NSMenuItem!
     var dataBrokerProtectionItem: NSMenuItem!
@@ -947,7 +967,7 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
 
     init(targeting target: AnyObject,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
-         subscriptionManager: SubscriptionManager) {
+         subscriptionManager: any SubscriptionAuthV1toV2Bridge) {
 
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.subscriptionManager = subscriptionManager
@@ -1018,15 +1038,10 @@ final class SubscriptionSubMenu: NSMenu, NSMenuDelegate {
     }
 
     private func refreshAvailabilityBasedOnEntitlements() {
-        guard subscriptionManager.accountManager.isUserAuthenticated else { return }
+        guard subscriptionManager.isUserAuthenticated else { return }
 
         @Sendable func hasEntitlement(for productName: Entitlement.ProductName) async -> Bool {
-            switch await self.subscriptionManager.accountManager.hasEntitlement(forProductName: productName) {
-            case let .success(result):
-                return result
-            case .failure:
-                return false
-            }
+            (try? await subscriptionManager.isEnabled(feature: productName)) ?? false
         }
 
         Task.detached(priority: .background) { [weak self] in

@@ -62,9 +62,17 @@ final class TabBarCollectionView: NSCollectionView {
 
     func scroll(to indexPath: IndexPath) {
         let rect = frameForItem(at: indexPath.item)
-        animator().performBatchUpdates({
+        animator().performBatchUpdates {
             animator().scrollToVisible(rect)
-        }, completionHandler: nil)
+        } completionHandler: { [weak self] didFinish in
+            guard let self, didFinish else { return }
+            let newRect = frameForItem(at: indexPath.item)
+            // make extra pass to make sure the cell is really visible after the animation finishes:
+            // in overflown mode the cells are expanded when selected and may get partly hidden
+            if rect != newRect, !visibleRect.contains(newRect) {
+                self.scroll(to: indexPath)
+            }
+        }
     }
 
     func scrollToEnd(completionHandler: ((Bool) -> Void)? = nil) {

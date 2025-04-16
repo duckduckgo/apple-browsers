@@ -40,6 +40,13 @@ final class TabBarViewItemTests: XCTestCase {
     }
 
     @MainActor
+    func testThatMenuNeedsUpdateCallsContextMenuDelegateCallback() {
+        XCTAssertFalse(delegate.tabBarViewItemWillOpenContextMenuCalled)
+        tabBarViewItem.menuNeedsUpdate(menu)
+        XCTAssertTrue(delegate.tabBarViewItemWillOpenContextMenuCalled)
+    }
+
+    @MainActor
     func testThatAllExpectedItemsAreShown() {
         let tabBarViewModel = TabBarViewModelMock(audioState: .unmuted(isPlayingAudio: true))
         tabBarViewItem.subscribe(to: tabBarViewModel)

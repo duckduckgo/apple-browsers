@@ -22,8 +22,11 @@ import UIKit
 class OnboardingWidgetsDetailsViewController: UIViewController {
     
     var navigationHandler: (() -> Void)?
-    
+
+    @IBOutlet weak var gotItButton: UIButton!
     @IBOutlet weak var secondInstructionsLabel: UILabel!
+
+    @IBOutlet var numberLabels: [UILabel]!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -38,7 +41,9 @@ class OnboardingWidgetsDetailsViewController: UIViewController {
             secondInstructionsLabel.attributedText = string
         }
 
-        navigationController?.navigationBar.tintColor = .cornflowerBlue
+        navigationController?.navigationBar.tintColor = UIColor(designSystemColor: .accent)
+        gotItButton.tintColor = UIColor(designSystemColor: .accent)
+        numberLabels.forEach { $0.textColor = UIColor(designSystemColor: .accent) }
     }
     
     override func viewWillAppear(_ animated: Bool) {

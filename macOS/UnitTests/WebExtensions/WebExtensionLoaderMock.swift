@@ -16,18 +16,22 @@
 //  limitations under the License.
 //
 
+#if WEB_EXTENSIONS_ENABLED
+
 @testable import DuckDuckGo_Privacy_Browser
 
-@available(macOS 14.4, *)
+@available(macOS 15.4, *)
 final class WebExtensionLoadingMock: WebExtensionLoading {
 
     var loadWebExtensionsCalled = false
     var loadedPaths: [String] = []
-    var mockWebExtensions: [_WKWebExtension] = []
+    var mockWebExtensions: [WKWebExtension] = []
 
-    func loadWebExtensions(from paths: [String]) -> [_WKWebExtension] {
+    func loadWebExtensions(from paths: [String]) -> [WKWebExtension] {
         loadWebExtensionsCalled = true
         loadedPaths = paths
         return mockWebExtensions
     }
 }
+
+#endif

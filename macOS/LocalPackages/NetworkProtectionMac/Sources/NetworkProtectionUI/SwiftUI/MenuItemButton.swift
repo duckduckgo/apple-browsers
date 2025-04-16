@@ -20,11 +20,18 @@ import Foundation
 import SwiftUI
 
 struct MenuItemButton: View {
+
+    private struct Detail {
+        let text: String
+        let color: Color
+    }
+
     @Environment(\.colorScheme) private var colorScheme
     private let icon: Image?
     private let title: String
-    private let detail: String?
-    private let textColor: Color
+    private let titleColor: Color
+    private let detail: Detail?
+    private let highlightColor: Color
     private let action: () async -> Void
 
     private let highlightAnimationStepSpeed = AnimationConstants.highlightAnimationStepSpeed
@@ -32,11 +39,22 @@ struct MenuItemButton: View {
     @State private var isHovered = false
     @State private var animatingTap = false
 
-    init(icon: Image? = nil, title: String, detail: String? = nil, textColor: Color, action: @escaping () async -> Void) {
+    init(icon: Image? = nil, title: String, titleColor: Color, highlightColor: Color, action: @escaping () async -> Void) {
+
         self.icon = icon
         self.title = title
-        self.detail = detail
-        self.textColor = textColor
+        self.titleColor = titleColor
+        self.detail = nil
+        self.highlightColor = highlightColor
+        self.action = action
+    }
+
+    init(icon: Image? = nil, title: String, titleColor: Color, detail: String, detailColor: Color, highlightColor: Color, action: @escaping () async -> Void) {
+        self.icon = icon
+        self.title = title
+        self.titleColor = titleColor
+        self.detail = Detail(text: detail, color: detailColor)
+        self.highlightColor = highlightColor
         self.action = action
     }
 
@@ -47,14 +65,14 @@ struct MenuItemButton: View {
             HStack(spacing: 4) {
                 if let icon {
                     icon
-                        .foregroundColor(isHovered ? .white : textColor)
+                        .foregroundColor(isHovered ? highlightColor : titleColor)
                 }
                 Text(title)
-                    .foregroundColor(isHovered ? .white : textColor)
+                    .foregroundColor(isHovered ? highlightColor : titleColor)
 
                 if let detail {
-                    Text(detail)
-                        .foregroundColor(.secondary)
+                    Text(detail.text)
+                        .foregroundColor(isHovered ? highlightColor : detail.color)
                 }
 
                 Spacer()

@@ -59,14 +59,14 @@ protocol OmniBarDelegate: AnyObject {
     
     func onForwardPressed()
     
-    func onAccessoryPressed(accessoryType: OmniBar.AccessoryType)
+    func onAccessoryPressed(accessoryType: OmniBarAccessoryType)
 
-    func onAccessoryLongPressed(accessoryType: OmniBar.AccessoryType)
+    func onAccessoryLongPressed(accessoryType: OmniBarAccessoryType)
 
-    func onTextFieldWillBeginEditing(_ omniBar: OmniBar, tapped: Bool)
-    
+    func onTextFieldWillBeginEditing(_ omniBar: OmniBarView, tapped: Bool)
+
     // Returns whether field should select the text or not
-    func onTextFieldDidBeginEditing(_ omniBar: OmniBar) -> Bool
+    func onTextFieldDidBeginEditing(_ omniBar: OmniBarView) -> Bool
 
     func selectedSuggestion() -> Suggestion?
     
@@ -96,7 +96,7 @@ extension OmniBarDelegate {
         
     }
 
-    func onAccessoryLongPressed(accessoryType: OmniBar.AccessoryType) {
+    func onAccessoryLongPressed(accessoryType: OmniBarAccessoryType) {
 
     }
 
@@ -116,11 +116,11 @@ extension OmniBarDelegate {
         
     }
     
-    func onTextFieldWillBeginEditing(_ omniBar: OmniBar) {
+    func onTextFieldWillBeginEditing(_ omniBar: DefaultOmniBarView) {
         
     }
 
-    func onTextFieldDidBeginEditing(_ omniBar: OmniBar) {
+    func onTextFieldDidBeginEditing(_ omniBar: DefaultOmniBarView) {
         
     }
     
@@ -128,7 +128,7 @@ extension OmniBarDelegate {
     
     }
 
-    func onAccessoryPressed(accessoryType: OmniBar.AccessoryType) {
+    func onAccessoryPressed(accessoryType: OmniBarAccessoryType) {
     }
 
     func onBackPressed() {

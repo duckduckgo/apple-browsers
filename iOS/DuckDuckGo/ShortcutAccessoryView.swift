@@ -46,7 +46,7 @@ struct ShortcutAccessoryView: View {
         case .add:
             // One-off exception for this particular case.
             // See https://app.asana.com/0/72649045549333/1207988345460434/f
-            return colorScheme == .dark ? .gray85 : Color(designSystemColor: .surface)
+            return Color(singleUseColor: .newTabPageItemAccessoryAddBackground)
         }
     }
 

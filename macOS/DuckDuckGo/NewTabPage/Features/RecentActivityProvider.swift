@@ -42,7 +42,11 @@ struct ContentBlockingPrevalenceComparator: TrackerEntityPrevalenceComparing {
     let contentBlocking: ContentBlockingProtocol
 
     func isPrevalence(for lhsEntityName: String, greaterThan rhsEntityName: String) -> Bool {
-        contentBlocking.prevalenceForEntity(named: lhsEntityName) > contentBlocking.prevalenceForEntity(named: rhsEntityName)
+        prevalenceForEntity(named: lhsEntityName) > prevalenceForEntity(named: rhsEntityName)
+    }
+
+    private func prevalenceForEntity(named entityName: String) -> Double {
+        return contentBlocking.trackerDataManager.trackerData.entities[entityName]?.prevalence ?? 0.0
     }
 }
 

@@ -83,7 +83,6 @@ public struct ScanOrSeeCode: View {
         return instructions
     }
 
-
     @ViewBuilder
     func qrCodeView(width: CGFloat) -> some View {
         var maxWidth: CGFloat {
@@ -121,7 +120,7 @@ public struct ScanOrSeeCode: View {
             .padding(20)
             .background(
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(Color(designSystemColor: .panel))
+                    .fill(.black)
                     .frame(width: width - 20)
             )
             .padding(20)
@@ -129,11 +128,7 @@ public struct ScanOrSeeCode: View {
         }
         .padding(.bottom, 40)
         .onAppear {
-            if let recoveryCode = model.recoveryCode {
-                self.qrCodeModel.code = recoveryCode
-            } else {
-                self.qrCodeModel = model.startConnectMode()
-            }
+            self.qrCodeModel.code = model.code
         }
         .frame(width: width)
     }

@@ -288,7 +288,7 @@ final class PasswordManagementViewController: NSViewController {
     }
 
     private func promptForAuthenticationIfNecessary() {
-        guard NSApp.runType != .uiTests else {
+        guard AppVersion.runType != .uiTests else {
             toggleLockScreen(hidden: true)
             return
         }

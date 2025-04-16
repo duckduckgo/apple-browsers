@@ -17,7 +17,8 @@
 //
 
 import Foundation
-import DataBrokerProtection
+import DataBrokerProtection_macOS
+import DataBrokerProtectionCore
 import Subscription
 
 public extension DataBrokerProtectionSettings {

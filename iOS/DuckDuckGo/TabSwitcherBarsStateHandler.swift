@@ -31,33 +31,50 @@ class TabSwitcherBarsStateHandler {
     let editButton = UIBarButtonItem()
     let selectAllButton = UIBarButtonItem()
     let deselectAllButton = UIBarButtonItem()
+    let duckChatButton = UIBarButtonItem()
 
-    var bottomBarItems = [UIBarButtonItem]()
-    var isBottomBarHidden = false
-    var topBarLeftButtonItems = [UIBarButtonItem]()
-    var topBarRightButtonItems = [UIBarButtonItem]()
+    private(set) var bottomBarItems = [UIBarButtonItem]()
+    private(set) var isBottomBarHidden = false
+    private(set) var topBarLeftButtonItems = [UIBarButtonItem]()
+    private(set) var topBarRightButtonItems = [UIBarButtonItem]()
 
-    var interfaceMode: TabSwitcherViewController.InterfaceMode = .singleSelectNormal
-    var selectedTabsCount: Int = 0
-    var totalTabsCount: Int = 0
+    private(set) var interfaceMode: TabSwitcherViewController.InterfaceMode = .singleSelectNormal
+    private(set) var selectedTabsCount: Int = 0
+    private(set) var totalTabsCount: Int = 0
+    private(set) var containsWebPages = false
+    private(set) var showAIChatButton = false
+    private(set) var canShowEditButton = false
+
+    private(set) var isFirstUpdate = true
 
     func update(_ interfaceMode: TabSwitcherViewController.InterfaceMode,
                 selectedTabsCount: Int,
-                totalTabsCount: Int) {
+                totalTabsCount: Int,
+                containsWebPages: Bool,
+                showAIChatButton: Bool) {
 
-        guard interfaceMode != self.interfaceMode
+        guard isFirstUpdate
+                || interfaceMode != self.interfaceMode
                 || selectedTabsCount != self.selectedTabsCount
-                || totalTabsCount != self.totalTabsCount else {
+                || totalTabsCount != self.totalTabsCount
+                || containsWebPages != self.containsWebPages
+                || showAIChatButton != self.showAIChatButton
+        else {
             // If nothing has changed, don't update
             return
         }
 
+        self.isFirstUpdate = false
         self.interfaceMode = interfaceMode
         self.selectedTabsCount = selectedTabsCount
         self.totalTabsCount = totalTabsCount
+        self.containsWebPages = containsWebPages
+        self.showAIChatButton = showAIChatButton
 
         self.fireButton.accessibilityLabel = "Close all tabs and clear data"
         self.tabSwitcherStyleButton.accessibilityLabel = "Toggle between grid and list view"
+
+        self.canShowEditButton = self.totalTabsCount > 1 || containsWebPages
 
         updateBottomBar()
         updateTopLeftButtons()
@@ -73,8 +90,10 @@ class TabSwitcherBarsStateHandler {
                 UIBarButtonItem.flexibleSpace(),
                 fireButton,
                 UIBarButtonItem.flexibleSpace(),
+                showAIChatButton ? duckChatButton : nil,
+                showAIChatButton ? UIBarButtonItem.fixedSpace(24) : nil,
                 plusButton,
-            ]
+            ].compactMap { $0 }
             isBottomBarHidden = false
 
         case .multiSelectEditingNormal:
@@ -114,9 +133,9 @@ class TabSwitcherBarsStateHandler {
 
         case .multiSelectAvailableLarge:
             topBarLeftButtonItems = [
-                editButton,
+                canShowEditButton ? editButton : nil,
                 tabSwitcherStyleButton,
-            ]
+            ].compactMap { $0 }
 
         case .multiSelectEditingNormal:
             topBarLeftButtonItems = [
@@ -137,19 +156,20 @@ class TabSwitcherBarsStateHandler {
         case .singleSelectNormal:
             topBarRightButtonItems = [
                 tabSwitcherStyleButton,
-            ]
+            ].compactMap { $0 }
 
         case .singleSelectLarge, .multiSelectAvailableLarge:
             topBarRightButtonItems = [
                 doneButton,
                 fireButton,
                 plusButton,
-            ]
+                showAIChatButton ? duckChatButton : nil,
+            ].compactMap { $0 }
 
         case .multiSelectAvailableNormal:
             topBarRightButtonItems = [
-                editButton,
-            ]
+                canShowEditButton ? editButton : nil,
+            ].compactMap { $0 }
 
         case .multiSelectEditingNormal:
             topBarRightButtonItems = [
@@ -163,5 +183,4 @@ class TabSwitcherBarsStateHandler {
 
         }
     }
-
 }

@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="32700.99.1234" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="Z3L-XQ-lW0">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="23504" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="Z3L-XQ-lW0">
     <device id="retina6_5" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22684"/>
-        <capability name="Named colors" minToolsVersion="9.0"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23506"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -201,7 +200,7 @@
                         <subviews>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="wordWrap" translatesAutoresizingMaskIntoConstraints="NO" id="HOt-9c-gP5">
                                 <rect key="frame" x="30" y="764" width="354" height="50"/>
-                                <color key="backgroundColor" name="AccentColor"/>
+                                <color key="backgroundColor" systemColor="systemPurpleColor"/>
                                 <accessibility key="accessibilityConfiguration" identifier="Continue"/>
                                 <constraints>
                                     <constraint firstAttribute="height" relation="greaterThanOrEqual" constant="50" id="NOL-R6-6KB"/>
@@ -232,7 +231,7 @@
                                             <constraint firstAttribute="width" constant="24" id="H6D-si-DSm"/>
                                         </constraints>
                                         <fontDescription key="fontDescription" type="boldSystem" pointSize="16"/>
-                                        <color key="textColor" name="AccentColor"/>
+                                        <color key="textColor" systemColor="systemPurpleColor"/>
                                         <nil key="highlightedColor"/>
                                         <userDefinedRuntimeAttributes>
                                             <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
@@ -248,7 +247,7 @@
                                             <constraint firstAttribute="width" constant="24" id="Mq3-CG-vHf"/>
                                         </constraints>
                                         <fontDescription key="fontDescription" type="boldSystem" pointSize="16"/>
-                                        <color key="textColor" name="AccentColor"/>
+                                        <color key="textColor" systemColor="systemPurpleColor"/>
                                         <nil key="highlightedColor"/>
                                         <userDefinedRuntimeAttributes>
                                             <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
@@ -316,7 +315,7 @@
                                             <constraint firstAttribute="height" constant="24" id="RdC-4t-R5D"/>
                                         </constraints>
                                         <fontDescription key="fontDescription" type="boldSystem" pointSize="16"/>
-                                        <color key="textColor" name="AccentColor"/>
+                                        <color key="textColor" systemColor="systemPurpleColor"/>
                                         <nil key="highlightedColor"/>
                                         <userDefinedRuntimeAttributes>
                                             <userDefinedRuntimeAttribute type="number" keyPath="layer.cornerRadius">
@@ -383,7 +382,11 @@
                         </constraints>
                     </view>
                     <connections>
+                        <outlet property="gotItButton" destination="HOt-9c-gP5" id="JUP-4c-t0M"/>
                         <outlet property="secondInstructionsLabel" destination="FVP-in-A0R" id="5HZ-rN-DmR"/>
+                        <outletCollection property="numberLabels" destination="8Yp-jL-Y1J" collectionClass="NSMutableArray" id="QSL-zh-X71"/>
+                        <outletCollection property="numberLabels" destination="kYm-7s-KFg" collectionClass="NSMutableArray" id="auX-iC-equ"/>
+                        <outletCollection property="numberLabels" destination="XBd-OG-vC0" collectionClass="NSMutableArray" id="UkS-RK-XtE"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="J03-88-0xl" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
@@ -395,11 +398,11 @@
         <image name="OnboardingDefaultBrowserImage" width="259" height="267"/>
         <image name="OnboardingWidgetImage" width="875" height="685"/>
         <image name="OnboardingWidgetInstructionsImage" width="1084" height="608"/>
-        <namedColor name="AccentColor">
-            <color red="0.40400001406669617" green="0.56099998950958252" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-        </namedColor>
         <systemColor name="systemBackgroundColor">
             <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        </systemColor>
+        <systemColor name="systemPurpleColor">
+            <color red="0.68627450980392157" green="0.32156862745098042" blue="0.87058823529411766" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
     </resources>
 </document>

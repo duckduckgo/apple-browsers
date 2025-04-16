@@ -18,6 +18,7 @@
 
 import Foundation
 import CoreData
+import Common
 
 protocol ValueRepresentableManagedObject: NSManagedObject {
     associatedtype ValueType
@@ -60,7 +61,7 @@ internal class CoreDataStore<ManagedObject: ValueRepresentableManagedObject> {
     private var readContext: NSManagedObjectContext? {
         if case .none = _readContext {
 #if DEBUG
-            guard NSApp.runType.requiresEnvironment else {
+            guard AppVersion.runType.requiresEnvironment else {
                 _readContext = .some(.none)
                 return .none
             }

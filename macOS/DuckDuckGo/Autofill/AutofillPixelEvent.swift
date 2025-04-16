@@ -24,6 +24,7 @@ enum AutofillPixelKitEvent: PixelKitEventV2 {
     case importCredentialsFlowCancelled
     case importCredentialsFlowHadCredentials
     case importCredentialsFlowEnded
+    case autofillSettingsOpened
 
     case importCredentialsPromptNeverAgainClicked
 
@@ -34,6 +35,7 @@ enum AutofillPixelKitEvent: PixelKitEventV2 {
         case .importCredentialsFlowHadCredentials: "autofill_import_credentials_flow_had_credentials"
         case .importCredentialsFlowEnded: "autofill_import_credentials_flow_ended"
         case .importCredentialsPromptNeverAgainClicked: "autofill_import_credentials_prompt_never_again_clicked"
+        case .autofillSettingsOpened: "autofill_settings_opened"
         }
     }
 

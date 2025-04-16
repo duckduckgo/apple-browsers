@@ -61,6 +61,17 @@ jobs:
     timeout-minutes: 15
 
     steps:
+
+      - name: Check out the code
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            .github
+            macOS/Gemfile
+            macOS/Gemfile.lock
+            macOS/fastlane
+            macOS/scripts
+
       - name: Download release app
         run: |
           curl -fLSs "${{ vars.RELEASE_DMG_URL }}" --output duckduckgo.dmg

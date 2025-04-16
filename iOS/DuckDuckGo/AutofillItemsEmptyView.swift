@@ -20,10 +20,12 @@
 import SwiftUI
 import DesignResourcesKit
 import DuckUI
+import Core
 
 struct AutofillItemsEmptyView: View {
 
     var importButtonAction: (() -> Void)?
+    var importViaSyncButtonAction: (() -> Void)?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -46,17 +48,46 @@ struct AutofillItemsEmptyView: View {
                 .padding(.top, 8)
                 .lineLimit(nil)
 
-            Button {
-                importButtonAction?()
-            } label: {
-                Text(UserText.autofillEmptyViewButtonTitle)
+            if #available(iOS 18.2, *) {
+                Button {
+                    importButtonAction?()
+                } label: {
+                    Text(UserText.autofillEmptyViewImportButtonTitle)
+                        .frame(width: maxButtonWidth())
+                }
+                .buttonStyle(PrimaryButtonStyle(fullWidth: false))
+                .padding(.top, 24)
+                .onFirstAppear {
+                    Pixel.fire(pixel: .autofillImportPasswordsImportButtonShown)
+                }
+
+                Button {
+                    importViaSyncButtonAction?()
+                } label: {
+                    Text(UserText.autofillEmptyViewImportViaSyncButtonTitle)
+                        .frame(width: maxButtonWidth())
+                }
+                .buttonStyle(SecondaryFillButtonStyle(fullWidth: false))
+                .padding(.top, 8)
+            } else {
+                Button {
+                    importViaSyncButtonAction?()
+                } label: {
+                    Text(UserText.autofillEmptyViewImportButtonTitle)
+                }
+                .buttonStyle(PrimaryButtonStyle(fullWidth: false))
+                .padding(.top, 24)
             }
-            .buttonStyle(PrimaryButtonStyle(fullWidth: false))
-            .padding(.top, 24)
         }
         .frame(maxWidth: 300.0)
         .padding(.top, 16)
     }
+
+    private func maxButtonWidth() -> CGFloat {
+        let maxWidth = AutofillViews.maxWidthFor(title1: UserText.autofillEmptyViewImportButtonTitle, title2: UserText.autofillEmptyViewImportViaSyncButtonTitle, font: UIFont.boldAppFont(ofSize: 15))
+        return min(maxWidth, 300)
+    }
+
 }
 
 #Preview {

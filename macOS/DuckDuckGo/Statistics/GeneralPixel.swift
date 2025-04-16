@@ -136,6 +136,14 @@ enum GeneralPixel: PixelKitEventV2 {
     case duckPlayerNewTabSettingsOff
     case duckPlayerContingencySettingsDisplayed
     case duckPlayerContingencyLearnMoreClicked
+    case duckPlayerYouTubeSignInErrorImpression
+    case duckPlayerYouTubeAgeRestrictedErrorImpression
+    case duckPlayerYouTubeNoEmbedErrorImpression
+    case duckPlayerYouTubeUnknownErrorImpression
+    case duckPlayerYouTubeSignInErrorDaily
+    case duckPlayerYouTubeAgeRestrictedErrorDaily
+    case duckPlayerYouTubeNoEmbedErrorDaily
+    case duckPlayerYouTubeUnknownErrorDaily
 
     // Temporary Overlay Pixels
     case duckPlayerYouTubeOverlayNavigationBack
@@ -247,12 +255,12 @@ enum GeneralPixel: PixelKitEventV2 {
     case passwordImportKeychainPromptDenied
 
     // Autocomplete
-    case autocompleteClickPhrase(from: NewTabPageSearchBoxExperiment.SearchSource?, cohort: NewTabPageSearchBoxExperiment.Cohort?, onboardingCohort: PixelExperiment?)
-    case autocompleteClickWebsite(from: NewTabPageSearchBoxExperiment.SearchSource?, cohort: NewTabPageSearchBoxExperiment.Cohort?, onboardingCohort: PixelExperiment?)
-    case autocompleteClickBookmark(from: NewTabPageSearchBoxExperiment.SearchSource?, cohort: NewTabPageSearchBoxExperiment.Cohort?, onboardingCohort: PixelExperiment?)
-    case autocompleteClickFavorite(from: NewTabPageSearchBoxExperiment.SearchSource?, cohort: NewTabPageSearchBoxExperiment.Cohort?, onboardingCohort: PixelExperiment?)
-    case autocompleteClickHistory(from: NewTabPageSearchBoxExperiment.SearchSource?, cohort: NewTabPageSearchBoxExperiment.Cohort?, onboardingCohort: PixelExperiment?)
-    case autocompleteClickOpenTab(from: NewTabPageSearchBoxExperiment.SearchSource?, cohort: NewTabPageSearchBoxExperiment.Cohort?, onboardingCohort: PixelExperiment?)
+    case autocompleteClickPhrase
+    case autocompleteClickWebsite
+    case autocompleteClickBookmark
+    case autocompleteClickFavorite
+    case autocompleteClickHistory
+    case autocompleteClickOpenTab
     case autocompleteToggledOff
     case autocompleteToggledOn
 
@@ -385,6 +393,9 @@ enum GeneralPixel: PixelKitEventV2 {
     case updaterDidNotFindUpdate
     case updaterDidDownloadUpdate
     case updaterDidRunUpdate
+    case updaterDidCheckForUpdateRespectingRollout
+    case updaterDidCheckForUpdateSkippingRollout
+    case updaterDidForceUpdateRecheck
 
     case faviconDecryptionFailedUnique
     case downloadListItemDecryptionFailedUnique
@@ -685,6 +696,22 @@ enum GeneralPixel: PixelKitEventV2 {
             return "duckplayer_mac_contingency_settings-displayed"
         case .duckPlayerContingencyLearnMoreClicked:
             return "duckplayer_mac_contingency_learn-more-clicked"
+        case .duckPlayerYouTubeSignInErrorImpression:
+            return "duckplayer_mac_youtube-signin-error_impression"
+        case .duckPlayerYouTubeAgeRestrictedErrorImpression:
+            return "duckplayer_mac_youtube-age-restricted-error_impression"
+        case .duckPlayerYouTubeNoEmbedErrorImpression:
+            return "duckplayer_mac_youtube-no-embed-error_impression"
+        case .duckPlayerYouTubeUnknownErrorImpression:
+            return "duckplayer_mac_youtube-unknown-error_impression"
+        case .duckPlayerYouTubeSignInErrorDaily:
+            return "duckplayer_mac_youtube-signin-error_daily-unique"
+        case .duckPlayerYouTubeAgeRestrictedErrorDaily:
+            return "duckplayer_mac_youtube-age-restricted-error_daily-unique"
+        case .duckPlayerYouTubeNoEmbedErrorDaily:
+            return "duckplayer_mac_youtube-no-embed-error_daily-unique"
+        case .duckPlayerYouTubeUnknownErrorDaily:
+            return "duckplayer_mac_youtube-unknown-error_daily-unique"
 
             // Duck Player Temporary Overlay Pixels
         case .duckPlayerYouTubeOverlayNavigationBack:
@@ -895,7 +922,7 @@ enum GeneralPixel: PixelKitEventV2 {
             return "cfgfetch"
 
         case .trackerDataParseFailed:
-            return "trackerata_parse_failed"
+            return "tracker_data_parse_failed"
         case .trackerDataReloadFailed:
             return "tds_r"
         case .trackerDataCouldNotBeLoaded:
@@ -1073,6 +1100,12 @@ enum GeneralPixel: PixelKitEventV2 {
             return "updater_did_download_update"
         case .updaterDidRunUpdate:
             return "updater_did_run_update"
+        case .updaterDidCheckForUpdateRespectingRollout:
+            return "updater_did_check_for_update_respecting_rollout"
+        case .updaterDidCheckForUpdateSkippingRollout:
+            return "updater_did_check_for_update_skipping_rollout"
+        case .updaterDidForceUpdateRecheck:
+            return "updater_did_force_update_recheck"
 
         case .faviconDecryptionFailedUnique:
             return "favicon_decryption_failed_unique"
@@ -1162,6 +1195,7 @@ enum GeneralPixel: PixelKitEventV2 {
 
             // Enhanced statistics
         case .usageSegments: return "retention_segments"
+
         }
     }
 
@@ -1341,7 +1375,15 @@ enum GeneralPixel: PixelKitEventV2 {
                 .duckPlayerNewTabSettingsOff,
                 .duckPlayerContingencySettingsDisplayed,
                 .duckPlayerWeeklyUniqueView,
-                .duckPlayerContingencyLearnMoreClicked:
+                .duckPlayerContingencyLearnMoreClicked,
+                .duckPlayerYouTubeSignInErrorImpression,
+                .duckPlayerYouTubeAgeRestrictedErrorImpression,
+                .duckPlayerYouTubeNoEmbedErrorImpression,
+                .duckPlayerYouTubeUnknownErrorImpression,
+                .duckPlayerYouTubeSignInErrorDaily,
+                .duckPlayerYouTubeAgeRestrictedErrorDaily,
+                .duckPlayerYouTubeNoEmbedErrorDaily,
+                .duckPlayerYouTubeUnknownErrorDaily:
             return nil
 
         case .bookmarksSortButtonClicked(let origin),
@@ -1351,23 +1393,6 @@ enum GeneralPixel: PixelKitEventV2 {
                 .bookmarksSearchResultClicked(let origin):
             return ["origin": origin]
 
-        case .autocompleteClickPhrase(let from, let cohort, let onboardingCohort),
-                .autocompleteClickWebsite(let from, let cohort, let onboardingCohort),
-                .autocompleteClickBookmark(let from, let cohort, let onboardingCohort),
-                .autocompleteClickFavorite(let from, let cohort, let onboardingCohort),
-                .autocompleteClickHistory(let from, let cohort, let onboardingCohort),
-                .autocompleteClickOpenTab(let from, let cohort, let onboardingCohort):
-            var parameters: [String: String] = [:]
-            if let from {
-                parameters[NewTabSearchBoxExperimentPixel.Parameters.from] = from.rawValue
-            }
-            if let cohort {
-                parameters[NewTabSearchBoxExperimentPixel.Parameters.cohort] = cohort.rawValue
-            }
-            if let onboardingCohort {
-                parameters[NewTabSearchBoxExperimentPixel.Parameters.onboardingCohort] = onboardingCohort.rawValue
-            }
-            return parameters
         case .fileDownloadCreatePresentersFailed(let osVersion):
             return ["osVersion": osVersion]
         default: return nil

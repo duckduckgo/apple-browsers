@@ -68,10 +68,9 @@ extension View {
     func applyListStyle() -> some View {
         self
             .listStyle(.insetGrouped)
-            .listStyle(.insetGrouped)
             .hideScrollContentBackground()
             .background(
-                Rectangle().ignoresSafeArea().foregroundColor(Color.syncBackground))
+                Rectangle().ignoresSafeArea().foregroundColor(Color(designSystemColor: .background)))
     }
 
     @ViewBuilder
@@ -83,8 +82,4 @@ extension View {
         }
     }
 
-}
-
-private extension Color {
-    static let syncBackground = Color("SyncBackgroundColor")
 }

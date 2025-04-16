@@ -43,7 +43,7 @@ final class AutocompleteSuggestionsDataSource: SuggestionLoadingDataSource {
                   tabsModel.currentTab?.link?.url != $0.link?.url
             else { return nil }
 
-            return OpenTab(title: $0.link?.displayTitle ?? "", url: url)
+            return OpenTab(tabId: $0.uid, title: $0.link?.displayTitle ?? "", url: url)
         }
     }()
 
@@ -80,7 +80,7 @@ final class AutocompleteSuggestionsDataSource: SuggestionLoadingDataSource {
     }
 
     func openTabs(for suggestionLoading: any SuggestionLoading) -> [BrowserTab] {
-        if featureFlagger.isFeatureOn(.autcompleteTabs) {
+        if featureFlagger.isFeatureOn(.autocompleteTabs) {
             return candidateOpenTabs
         }
         return []

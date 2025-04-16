@@ -99,8 +99,10 @@ class AppConfigurationFetch {
     
     func start(isBackgroundFetch: Bool = false,
                isDebug: Bool = false,
+               // Enables refreshing debug config
+               forceRefresh: Bool = false,
                completion: AppConfigurationFetchCompletion?) {
-        guard Self.shouldRefresh else {
+        guard forceRefresh || Self.shouldRefresh else {
             // Statistics are not sent after a successful background refresh in order to reduce the time spent in the background, so they are checked
             // here in case a background refresh has happened recently.
             Self.fetchQueue.async {

@@ -14,6 +14,8 @@
         <string>match AppStore com.duckduckgo.mobile.ios.vpn.agent macos</string>
         <key>com.duckduckgo.mobile.ios.vpn.agent.network-protection-extension</key>
         <string>match AppStore com.duckduckgo.mobile.ios.vpn.agent.network-protection-extension macos</string>
+        <key>com.duckduckgo.mobile.ios.vpn.agent.network-extension</key>
+        <string>match AppStore com.duckduckgo.mobile.ios.vpn.agent.network-extension macos</string>
         <key>com.duckduckgo.mobile.ios.vpn.agent.proxy</key>
         <string>match AppStore com.duckduckgo.mobile.ios.vpn.agent.proxy macos</string>
         <key>com.duckduckgo.mobile.ios.review</key>
@@ -22,6 +24,8 @@
         <string>match AppStore com.duckduckgo.mobile.ios.vpn.agent.review macos</string>
         <key>com.duckduckgo.mobile.ios.vpn.agent.review.network-protection-extension</key>
         <string>match AppStore com.duckduckgo.mobile.ios.vpn.agent.review.network-protection-extension macos</string>
+        <key>com.duckduckgo.mobile.ios.vpn.agent.network-extension.review</key>
+        <string>match AppStore com.duckduckgo.mobile.ios.vpn.agent.network-extension.review macos</string>
         <key>com.duckduckgo.mobile.ios.vpn.agent.review.proxy</key>
         <string>match AppStore com.duckduckgo.mobile.ios.vpn.agent.review.proxy macos</string>
         <key>com.duckduckgo.mobile.ios.DBP.backgroundAgent</key>

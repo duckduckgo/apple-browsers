@@ -11,13 +11,8 @@ tags:
     clearState: true
     clearKeychain: true
     arguments:
-        isUITesting: true
         isOnboardingCompleted: ${ONBOARDING_COMPLETED}
         "autoclear-ui-test": true
-
-# Get past onboarding screens
-- runFlow:
-    file: ../shared/onboarding.yaml
 
 # Enable autoclear
 
@@ -69,6 +64,8 @@ tags:
     id: "searchEntry"
 - inputText: "https://example.com"
 - pressKey: Enter
+
+- assertVisible: ".*Example Domain.*"
 
 # Go home and hover there a bit
 - pressKey: Home

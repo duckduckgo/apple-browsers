@@ -162,7 +162,7 @@ extension Preferences {
                 Text(UserText.versionLabel(version: model.appVersion.versionNumber, build: model.appVersion.buildNumber))
                     .contextMenu(ContextMenu(menuItems: {
                         Button(UserText.copy, action: {
-                            model.copy(UserText .versionLabel(version: model.appVersion.versionNumber, build: model.appVersion.buildNumber))
+                            model.copy(UserText.versionLabel(version: model.appVersion.versionNumber, build: model.appVersion.buildNumber))
                         })
                     }))
 #if SPARKLE
@@ -230,8 +230,12 @@ extension Preferences {
                     Image(nsImage: .criticalUpdateNotificationInfo)
                         .foregroundColor(.red)
                 } else {
-                    ProgressView()
-                        .scaleEffect(0.6)
+                    if #available(macOS 13.0, *) {
+                        ProgressView()
+                            .scaleEffect(0.6)
+                    } else {
+                        ProgressView()
+                    }
                 }
             }
         }

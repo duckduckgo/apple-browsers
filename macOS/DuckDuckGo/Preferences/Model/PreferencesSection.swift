@@ -65,11 +65,11 @@ struct PreferencesSection: Hashable, Identifiable {
             .init(id: .about, panes: otherPanes)
         ]
 
-        let subscriptionManager = Application.appDelegate.subscriptionManager
+        let subscriptionManager = Application.appDelegate.subscriptionAuthV1toV2Bridge
         let platform = subscriptionManager.currentEnvironment.purchasePlatform
         var shouldHidePrivacyProDueToNoProducts = platform == .appStore && subscriptionManager.canPurchase == false
 
-        if subscriptionManager.accountManager.isUserAuthenticated {
+        if subscriptionManager.isUserAuthenticated {
             shouldHidePrivacyProDueToNoProducts = false
         }
 
@@ -124,7 +124,7 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
     case autofill
     case accessibility
     case duckPlayer = "duckplayer"
-    case otherPlatforms = "https://duckduckgo.com/app?origin=funnel_app_macos"
+    case otherPlatforms = "https://duckduckgo.com/app/devices?origin=funnel_app_macos"
     case aiChat = "aichat"
     case about
 

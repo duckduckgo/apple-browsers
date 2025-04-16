@@ -29,6 +29,15 @@ enum BookmarkStoreFetchPredicateType {
 enum ParentFolderType: Equatable {
     case root
     case parent(uuid: String)
+
+    var folderID: String? {
+        switch self {
+        case .root:
+            return nil
+        case let .parent(uuid):
+            return uuid
+        }
+    }
 }
 
 protocol BookmarkStore {
@@ -37,7 +46,7 @@ protocol BookmarkStore {
 
     func loadAll(type: BookmarkStoreFetchPredicateType, completion: @escaping ([BaseBookmarkEntity]?, Error?) -> Void)
     func save(entitiesAtIndices: [(entity: BaseBookmarkEntity, index: Int?, indexInFavoritesArray: Int?)], completion: @escaping (Error?) -> Void)
-    func saveBookmarks(for websitesInfo: [WebsiteInfo], inNewFolderNamed folderName: String, withinParentFolder parent: ParentFolderType)
+    func saveBookmarks(for websitesInfo: [WebsiteInfo], inNewFolderNamed folderName: String?, withinParentFolder parent: ParentFolderType)
     func remove(objectsWithUUIDs: [String], completion: @escaping (Error?) -> Void)
     func update(bookmark: Bookmark)
     func bookmarkEntities(withIds ids: [String]) -> [BaseBookmarkEntity]?

@@ -21,17 +21,7 @@ import Foundation
 /// Namespace declaration
 struct HomePage {
 
-    struct Views {
-    }
-
     struct Models {
     }
-
-    // MARK: Constants
-
-    static let favoritesPerRow = 6
-    static let favoritesRowCountWhenCollapsed = 1
-    static let featuresPerRow = 2
-    static let featureRowCountWhenCollapsed = 1
 
 }

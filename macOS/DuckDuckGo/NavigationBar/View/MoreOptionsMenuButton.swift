@@ -18,6 +18,7 @@
 
 import Cocoa
 import Combine
+import Common
 
 final class MoreOptionsMenuButton: MouseOverButton {
 
@@ -51,7 +52,7 @@ final class MoreOptionsMenuButton: MouseOverButton {
         super.awakeFromNib()
 
 #if SPARKLE
-        if NSApp.runType != .uiTests {
+        if AppVersion.runType != .uiTests {
             updateController = Application.appDelegate.updateController
             dockCustomization = Application.appDelegate.dockCustomization
         }

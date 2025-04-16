@@ -275,9 +275,16 @@ struct NetworkProtectionStatusView: View {
     @ViewBuilder
     private func settings() -> some View {
         Section {
-            NavigationLink(UserText.netPVPNSettingsTitle, destination: NetworkProtectionVPNSettingsView())
+            NavigationLink(destination: NetworkProtectionVPNSettingsView()) {
+                HStack {
+                    Image("Settings-24")
+                        .resizable()
+                        .frame(width: 24, height: 24)
+                    Text(UserText.netPVPNSettingsTitle)
+                }
                 .daxBodyRegular()
                 .foregroundColor(.init(designSystemColor: .textPrimary))
+            }
         } header: {
             Text(UserText.netPStatusViewSettingsSectionTitle).foregroundColor(.init(designSystemColor: .textSecondary))
         }
@@ -287,21 +294,24 @@ struct NetworkProtectionStatusView: View {
     @ViewBuilder
     private func about() -> some View {
         Section {
-            NavigationLink(UserText.netPVPNSettingsFAQ, destination: LazyView(NetworkProtectionFAQView()))
+            NavigationLink(destination: LazyView(NetworkProtectionFAQView())) {
+                HStack {
+                    Image("Help-24")
+                    Text(UserText.netPVPNSettingsFAQ)
+                }
                 .daxBodyRegular()
                 .foregroundColor(.init(designSystemColor: .textPrimary))
+            }
 
-            if statusModel.usesUnifiedFeedbackForm {
-                NavigationLink(
-                    UserText.subscriptionFeedback,
-                    destination: LazyView(UnifiedFeedbackRootView(viewModel: feedbackFormModel))
-                )
+            if statusModel.enablesUnifiedFeedbackForm {
+                NavigationLink(destination: LazyView(UnifiedFeedbackRootView(viewModel: feedbackFormModel))) {
+                    HStack {
+                        Image("Support-24")
+                        Text(UserText.subscriptionFeedback)
+                    }
                     .daxBodyRegular()
                     .foregroundColor(.init(designSystemColor: .textPrimary))
-            } else {
-                NavigationLink(UserText.netPVPNSettingsShareFeedback, destination: LazyView(VPNFeedbackFormCategoryView()))
-                    .daxBodyRegular()
-                    .foregroundColor(.init(designSystemColor: .textPrimary))
+                }
             }
         } header: {
             Text(UserText.vpnAbout).foregroundColor(.init(designSystemColor: .textSecondary))
@@ -332,35 +342,32 @@ struct NetworkProtectionStatusView: View {
     @available(iOS 18.0, *)
     @ViewBuilder
     private func geoswitchingTipView() -> some View {
-        if statusModel.canShowTips {
-            TipView(tipsModel.geoswitchingTip)
-                .removeGroupedListStyleInsets()
-                .tipCornerRadius(0)
-                .tipBackground(Color(designSystemColor: .surface))
-                .onAppear {
-                    tipsModel.handleGeoswitchingTipShown()
-                }
-                .task {
-                    var previousStatus = tipsModel.geoswitchingTip.status
+        TipView(tipsModel.geoswitchingTip)
+            .removeGroupedListStyleInsets()
+            .tipCornerRadius(0)
+            .tipBackground(Color(designSystemColor: .surface))
+            .onAppear {
+                tipsModel.handleGeoswitchingTipShown()
+            }
+            .task {
+                var previousStatus = tipsModel.geoswitchingTip.status
 
-                    for await status in tipsModel.geoswitchingTip.statusUpdates {
-                        if case .invalidated(let reason) = status {
-                            if case .available = previousStatus {
-                                tipsModel.handleGeoswitchingTipInvalidated(reason)
-                            }
+                for await status in tipsModel.geoswitchingTip.statusUpdates {
+                    if case .invalidated(let reason) = status {
+                        if case .available = previousStatus {
+                            tipsModel.handleGeoswitchingTipInvalidated(reason)
                         }
-
-                        previousStatus = status
                     }
+
+                    previousStatus = status
                 }
-        }
+            }
     }
 
     @available(iOS 18.0, *)
     @ViewBuilder
     private func snoozeTipView() -> some View {
-        if statusModel.canShowTips,
-           statusModel.hasServerInfo {
+        if statusModel.hasServerInfo {
 
             TipView(tipsModel.snoozeTip, action: statusModel.snoozeActionHandler(action:))
                 .removeGroupedListStyleInsets()
@@ -388,8 +395,7 @@ struct NetworkProtectionStatusView: View {
     @available(iOS 18.0, *)
     @ViewBuilder
     private func widgetTipView() -> some View {
-        if statusModel.canShowTips,
-           !statusModel.isNetPEnabled && !statusModel.isSnoozing {
+        if !statusModel.isNetPEnabled && !statusModel.isSnoozing {
 
             TipView(tipsModel.widgetTip, action: statusModel.widgetActionHandler(action:))
                 .removeGroupedListStyleInsets()

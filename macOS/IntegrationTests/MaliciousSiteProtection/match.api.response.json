@@ -69,6 +69,13 @@
       "regex": "https?:\\/\\/privacy-test-pages.site\\/security\\/badware\\/local-check\\.html",
       "hostname": "privacy-test-pages.site",
       "url": "https://privacy-test-pages.site/security/badware/local-check.html"
+    },
+    {
+      "category": "scam",
+      "hash": "e4753ddad954dafd4ff4ef67f82b3c1a2db6ef4a51bda43513260170e558bd13",
+      "regex": "https?:\\/\\/privacy-test-pages.site\\/security\\/badware\\/scam\\.html",
+      "hostname": "privacy-test-pages.site",
+      "url": "https://privacy-test-pages.site/security/badware/scam.html"
     }
   ]
 }

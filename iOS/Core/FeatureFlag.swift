@@ -37,26 +37,26 @@ public enum FeatureFlag: String {
     case autoconsentOnByDefault
     case history
     case newTabPageSections
+        
+    // Duckplayer 'Web based' UI
     case duckPlayer
+    // Open Duckplayer in a new tab for 'Web based' UI
     case duckPlayerOpenInNewTab
+    
+    // Duckplayer 'Native' UI
+    // https://app.asana.com/0/1204099484721401/1209255140870410/f
+    case duckPlayerNativeUI
+
     case sslCertificatesBypass
     case syncPromotionBookmarks
     case syncPromotionPasswords
     case onboardingHighlights
     case onboardingAddToDock
     case autofillSurveys
-    case autcompleteTabs
+    case autocompleteTabs
     case textZoom
     case adAttributionReporting
-    case aiChat
-    case aiChatDeepLink
     case tabManagerMultiSelection
-
-    /// https://app.asana.com/0/72649045549333/1208231259093710/f
-    case networkProtectionUserTips
-
-    /// https://app.asana.com/0/72649045549333/1208617860225199/f
-    case networkProtectionEnforceRoutes
     
     /// https://app.asana.com/0/1208592102886666/1208613627589762/f
     case crashReportOptInStatusResetting
@@ -70,14 +70,31 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/0/72649045549333/1208944782348823/f
     case syncSeamlessAccountSwitching
 
-    /// https://app.asana.com/0/1204167627774280/1209205869217377
-    case aiChatNewTabPage
-
-    case testExperiment
-
     /// Feature flag to enable / disable phishing and malware protection
     /// https://app.asana.com/0/1206329551987282/1207149365636877/f
     case maliciousSiteProtection
+
+    /// https://app.asana.com/0/1204186595873227/1209164066387913
+    case scamSiteProtection
+
+    /// https://app.asana.com/0/1204186595873227/1206489252288889
+    case networkProtectionRiskyDomainsProtection
+
+    /// Umbrella flag for experimental browser theming and appearance
+    /// https://app.asana.com/0/1206226850447395/1209291055975934
+    case experimentalBrowserTheming
+
+    /// https://app.asana.com/0/1206488453854252/1208706841336530
+    case privacyProOnboardingCTAMarch25
+
+    /// https://app.asana.com/0/72649045549333/1207991044706236/f
+    case privacyProAuthV2
+
+    /// https://app.asana.com/0/1206329551987282/1209130794450271
+    case onboardingSetAsDefaultBrowser
+
+    /// https://app.asana.com/0/72649045549333/1209633877674689/f
+    case exchangeKeysToSyncWithAnotherDevice
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -85,8 +102,10 @@ extension FeatureFlag: FeatureFlagDescribing {
         switch self {
         case .privacyProFreeTrialJan25:
             PrivacyProFreeTrialExperimentCohort.self
-        case .testExperiment:
-            TestExperimentCohort.self
+        case .privacyProOnboardingCTAMarch25:
+            PrivacyProOnboardingCTAMarch25Cohort.self
+        case .onboardingSetAsDefaultBrowser:
+            OnboardingSetAsDefaultBrowserCohort.self
         default:
             nil
         }
@@ -96,10 +115,21 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     public var supportsLocalOverriding: Bool {
         switch self {
-        case .textZoom:
+        case .textZoom,
+                .experimentalBrowserTheming,
+                .privacyProOnboardingCTAMarch25,
+                .networkProtectionRiskyDomainsProtection,
+                .privacyProAuthV2,
+                .scamSiteProtection,
+                .maliciousSiteProtection,
+                .exchangeKeysToSyncWithAnotherDevice:
             return true
-        case .testExperiment:
-            return true
+        case .onboardingSetAsDefaultBrowser:
+            if #available(iOS 18.3, *) {
+                return true
+            } else {
+                return false
+            }
         default:
             return false
         }
@@ -143,6 +173,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(DuckPlayerSubfeature.enableDuckPlayer))
         case .duckPlayerOpenInNewTab:
             return .remoteReleasable(.subfeature(DuckPlayerSubfeature.openInNewTab))
+        case .duckPlayerNativeUI:
+            return .remoteReleasable(.subfeature(DuckPlayerSubfeature.nativeUI))
         case .sslCertificatesBypass:
             return .remoteReleasable(.subfeature(SslCertificatesSubfeature.allowBypass))
         case .syncPromotionBookmarks:
@@ -155,36 +187,40 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .autofillSurveys:
             return .remoteReleasable(.feature(.autofillSurveys))
-        case .autcompleteTabs:
+        case .autocompleteTabs:
             return .remoteReleasable(.feature(.autocompleteTabs))
-        case .networkProtectionUserTips:
-            return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.userTips))
         case .textZoom:
             return .remoteReleasable(.feature(.textZoom))
-        case .networkProtectionEnforceRoutes:
-            return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.enforceRoutes))
         case .adAttributionReporting:
             return .remoteReleasable(.feature(.adAttributionReporting))
         case .crashReportOptInStatusResetting:
             return .internalOnly()
         case .privacyProFreeTrialJan25:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProFreeTrialJan25))
-        case .aiChat:
-            return .remoteReleasable(.feature(.aiChat))
-        case .aiChatDeepLink:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.deepLink))
         case .tabManagerMultiSelection:
-            return .internalOnly()
+            return .remoteReleasable(.subfeature(TabManagerSubfeature.multiSelection))
         case .webViewStateRestoration:
             return .remoteReleasable(.feature(.webViewStateRestoration))
         case .syncSeamlessAccountSwitching:
             return .remoteReleasable(.subfeature(SyncSubfeature.seamlessAccountSwitching))
-        case .aiChatNewTabPage:
-            return .enabled
-        case .testExperiment:
-            return .remoteReleasable(.subfeature(ExperimentTestSubfeatures.experimentTestAA))
         case .maliciousSiteProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.onByDefault))
+        case .scamSiteProtection:
+            return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.scamProtection))
+        case .networkProtectionRiskyDomainsProtection:
+            return  .remoteReleasable(.subfeature(NetworkProtectionSubfeature.riskyDomainsProtection))
+        case .experimentalBrowserTheming:
+            return .remoteDevelopment(.feature(.experimentalBrowserTheming))
+        case .privacyProOnboardingCTAMarch25:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProOnboardingCTAMarch25))
+
+        case .privacyProAuthV2:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
+
+        case .onboardingSetAsDefaultBrowser:
+            return .remoteReleasable(.subfeature(OnboardingSubfeature.setAsDefaultBrowserExperiment))
+        case .exchangeKeysToSyncWithAnotherDevice:
+            return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
         }
     }
 }
@@ -193,7 +229,6 @@ extension FeatureFlagger {
     public func isFeatureOn(_ featureFlag: FeatureFlag) -> Bool {
         return isFeatureOn(for: featureFlag)
     }
-
 }
 
 public enum PrivacyProFreeTrialExperimentCohort: String, FeatureFlagCohortDescribing {
@@ -203,7 +238,16 @@ public enum PrivacyProFreeTrialExperimentCohort: String, FeatureFlagCohortDescri
     case treatment
 }
 
-public enum TestExperimentCohort: String, FeatureFlagCohortDescribing {
+public enum PrivacyProOnboardingCTAMarch25Cohort: String, FeatureFlagCohortDescribing {
+    /// Control cohort with no changes applied.
     case control
+    /// Treatment cohort where the experiment modifications are applied.
+    case treatment
+}
+
+public enum OnboardingSetAsDefaultBrowserCohort: String, FeatureFlagCohortDescribing {
+    /// Control cohort with no changes applied.
+    case control
+    /// Treatment cohort where the experiment modifications are applied.
     case treatment
 }

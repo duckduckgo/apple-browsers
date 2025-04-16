@@ -20,6 +20,8 @@ import Cocoa
 
 final class MainWindow: NSWindow {
 
+    static let minWindowWidth: CGFloat = 600
+
     override var canBecomeKey: Bool {
         return true
     }
@@ -67,7 +69,7 @@ final class MainWindow: NSWindow {
         collectionBehavior = .fullScreenPrimary
 
         // Setting minimum width to fit the wide NTP search bar
-        minSize = .init(width: HomePage.Views.RootView.minWindowWidth, height: 0)
+        minSize = .init(width: Self.minWindowWidth, height: 0)
     }
 
     // MARK: - First Responder Notification

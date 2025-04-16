@@ -101,7 +101,8 @@ class MainMenuTests: XCTestCase {
             bookmarkManager: MockBookmarkManager(),
             faviconManager: FaviconManagerMock(),
             dockCustomizer: dockCustomizer,
-            aiChatMenuConfig: DummyAIChatConfig()
+            aiChatMenuConfig: DummyAIChatConfig(),
+            internalUserDecider: DefaultInternalUserDecider()
         )
 
         sut.update()
@@ -167,7 +168,8 @@ class MainMenuTests: XCTestCase {
             bookmarkManager: MockBookmarkManager(),
             faviconManager: FaviconManagerMock(),
             defaultBrowserPreferences: .init(defaultBrowserProvider: defaultBrowserProvider),
-            aiChatMenuConfig: DummyAIChatConfig()
+            aiChatMenuConfig: DummyAIChatConfig(),
+            internalUserDecider: DefaultInternalUserDecider()
         )
 
         sut.update()
@@ -188,7 +190,8 @@ class MainMenuTests: XCTestCase {
             bookmarkManager: MockBookmarkManager(),
             faviconManager: FaviconManagerMock(),
             defaultBrowserPreferences: .init(defaultBrowserProvider: defaultBrowserProvider),
-            aiChatMenuConfig: DummyAIChatConfig()
+            aiChatMenuConfig: DummyAIChatConfig(),
+            internalUserDecider: DefaultInternalUserDecider()
         )
 
         sut.update()
@@ -204,7 +207,7 @@ class MainMenuTests: XCTestCase {
     @MainActor
     func testWhenBookmarksMenuIsInitialized_ThenSecondItemIsBookmarkAllTabs() throws {
         // GIVEN
-        let sut = MainMenu(featureFlagger: DummyFeatureFlagger(), bookmarkManager: MockBookmarkManager(), faviconManager: FaviconManagerMock(), aiChatMenuConfig: DummyAIChatConfig())
+        let sut = MainMenu(featureFlagger: DummyFeatureFlagger(), bookmarkManager: MockBookmarkManager(), faviconManager: FaviconManagerMock(), aiChatMenuConfig: DummyAIChatConfig(), internalUserDecider: DefaultInternalUserDecider())
         let bookmarksMenu = try XCTUnwrap(sut.item(withTitle: UserText.bookmarks))
 
         // WHEN
@@ -224,7 +227,8 @@ class MainMenuTests: XCTestCase {
         let sut = MainMenu(featureFlagger: DummyFeatureFlagger(),
                            bookmarkManager: MockBookmarkManager(),
                            faviconManager: FaviconManagerMock(),
-                           aiChatMenuConfig: aiChatConfig)
+                           aiChatMenuConfig: aiChatConfig,
+                           internalUserDecider: DefaultInternalUserDecider())
 
         let fileMenu = try XCTUnwrap(sut.item(withTitle: UserText.mainMenuFile))
 
@@ -241,12 +245,13 @@ class MainMenuTests: XCTestCase {
         // GIVEN
         let aiChatConfig = DummyAIChatConfig()
         aiChatConfig.shouldDisplayApplicationMenuShortcut = true
-        aiChatConfig.isFeatureEnabledForApplicationMenuShortcut = true
+        aiChatConfig.shouldDisplayAddressBarShortcut = true
 
         let sut = MainMenu(featureFlagger: DummyFeatureFlagger(),
                            bookmarkManager: MockBookmarkManager(),
                            faviconManager: FaviconManagerMock(),
-                           aiChatMenuConfig: aiChatConfig)
+                           aiChatMenuConfig: aiChatConfig,
+                           internalUserDecider: DefaultInternalUserDecider())
 
         let fileMenu = try XCTUnwrap(sut.item(withTitle: UserText.mainMenuFile))
 
@@ -280,15 +285,9 @@ private class DummyFeatureFlagger: FeatureFlagger {
 
 private class DummyAIChatConfig: AIChatMenuVisibilityConfigurable {
     var shouldDisplayApplicationMenuShortcut = false
-    var shouldDisplayToolbarShortcut = false
-    var isFeatureEnabledForApplicationMenuShortcut = false
-    var isFeatureEnabledForToolbarShortcut = false
+    var shouldDisplayAddressBarShortcut = false
 
     var valuesChangedPublisher: PassthroughSubject<Void, Never> {
-        return PassthroughSubject<Void, Never>()
-    }
-
-    var shouldDisplayToolbarOnboardingPopover: PassthroughSubject<Void, Never> {
         return PassthroughSubject<Void, Never>()
     }
 

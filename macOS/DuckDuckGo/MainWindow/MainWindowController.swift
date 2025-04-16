@@ -28,6 +28,7 @@ final class MainWindowController: NSWindowController {
     private static var knownFullScreenMouseDetectionWindows = Set<NSValue>()
     let fireWindowSession: FireWindowSession?
     private let appearancePreferences: AppearancePreferences = .shared
+    let fullscreenController = FullscreenController()
 
     var mainViewController: MainViewController {
         // swiftlint:disable force_cast
@@ -63,8 +64,8 @@ final class MainWindowController: NSWindowController {
         subscribeToResolutionChange()
         subscribeToFullScreenToolbarChanges()
 
-#if !APPSTORE
-        if #available(macOS 14.4, *) {
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+        if #available(macOS 15.4, *) {
             WebExtensionManager.shared.eventsListener.didOpenWindow(self)
         }
 #endif
@@ -82,11 +83,11 @@ final class MainWindowController: NSWindowController {
 #if DEBUG
         return false
 #elseif REVIEW
-        if Application.runType == .uiTests {
+        if AppVersion.runType == .uiTests {
             Application.appDelegate.onboardingStateMachine.state = .onboardingCompleted
             return false
         } else {
-            if Application.runType == .uiTestsOnboarding {
+            if AppVersion.runType == .uiTestsOnboarding {
                 Application.appDelegate.onboardingStateMachine.state = .onboardingCompleted
             }
             let onboardingIsComplete = OnboardingViewModel.isOnboardingFinished || LocalStatisticsStore().waitlistUnlocked
@@ -218,6 +219,18 @@ final class MainWindowController: NSWindowController {
         register()
     }
 
+    override func cancelOperation(_ sender: Any?) {
+        guard let window, !fullscreenController.shouldPreventFullscreenExit else {
+            // Just consume the ESC key to prevent exiting from full screen
+            fullscreenController.resetFullscreenExitFlag()
+            return
+        }
+
+        if window.styleMask.contains(.fullScreen) {
+            fullscreenController.manuallyExitFullscreen(window: window)
+        }
+    }
+
     func orderWindowBack(_ sender: Any?) {
         if let lastKeyWindow = WindowControllersManager.shared.lastKeyMainWindowController?.window {
             window?.order(.below, relativeTo: lastKeyWindow.windowNumber)
@@ -243,8 +256,8 @@ extension MainWindowController: NSWindowDelegate {
             WindowControllersManager.shared.lastKeyMainWindowController = self
         }
 
-#if !APPSTORE
-        if #available(macOS 14.4, *) {
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+        if #available(macOS 15.4, *) {
             WebExtensionManager.shared.eventsListener.didFocusWindow(self)
         }
 #endif
@@ -269,6 +282,8 @@ extension MainWindowController: NSWindowDelegate {
         if !appearancePreferences.showTabsAndBookmarksBarOnFullScreen {
             showTabBarAndBookmarksBar()
         }
+
+        fullscreenController.resetFullscreenExitFlag()
     }
 
     private func hideTabBarAndBookmarksBar() {
@@ -355,8 +370,8 @@ extension MainWindowController: NSWindowDelegate {
         _=Unmanaged.passRetained(self).autorelease()
         WindowControllersManager.shared.unregister(self)
 
-#if !APPSTORE
-        if #available(macOS 14.4, *) {
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+        if #available(macOS 15.4, *) {
             WebExtensionManager.shared.eventsListener.didCloseWindow(self)
         }
 #endif

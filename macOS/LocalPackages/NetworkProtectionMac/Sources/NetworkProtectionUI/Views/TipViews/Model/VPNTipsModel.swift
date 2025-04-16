@@ -24,6 +24,7 @@ import NetworkProtectionProxy
 import os.log
 import TipKit
 import PixelKit
+import VPNAppState
 import VPNPixels
 
 @MainActor
@@ -53,28 +54,26 @@ public final class VPNTipsModel: ObservableObject {
         }
     }
 
-    @Published
-    private var featureFlag: Bool
-
     private let isMenuApp: Bool
+    private let vpnAppState: VPNAppState
     private let vpnSettings: VPNSettings
     private let proxySettings: TransparentProxySettings
     private let logger: Logger
     private var cancellables = Set<AnyCancellable>()
 
-    public init(featureFlagPublisher: CurrentValuePublisher<Bool, Never>,
-                statusObserver: ConnectionStatusObserver,
+    public init(statusObserver: ConnectionStatusObserver,
                 activeSitePublisher: CurrentValuePublisher<ActiveSiteInfo?, Never>,
                 forMenuApp isMenuApp: Bool,
+                vpnAppState: VPNAppState,
                 vpnSettings: VPNSettings,
                 proxySettings: TransparentProxySettings,
                 logger: Logger) {
 
         self.activeSiteInfo = activeSitePublisher.value
         self.connectionStatus = statusObserver.recentValue
-        self.featureFlag = featureFlagPublisher.value
         self.isMenuApp = isMenuApp
         self.logger = logger
+        self.vpnAppState = vpnAppState
         self.vpnSettings = vpnSettings
         self.proxySettings = proxySettings
 
@@ -87,7 +86,6 @@ public final class VPNTipsModel: ObservableObject {
             handleConnectionStatusChanged(oldValue: connectionStatus, newValue: connectionStatus)
 
             subscribeToConnectionStatusChanges(statusObserver)
-            subscribeToFeatureFlagChanges(featureFlagPublisher)
             subscribeToActiveSiteChanges(activeSitePublisher)
         }
     }
@@ -98,19 +96,10 @@ public final class VPNTipsModel: ObservableObject {
     }
 
     var canShowTips: Bool {
-        !isMenuApp && featureFlag
+        !isMenuApp
     }
 
     // MARK: - Subscriptions
-
-    @available(macOS 14.0, *)
-    private func subscribeToFeatureFlagChanges(_ publisher: CurrentValuePublisher<Bool, Never>) {
-        publisher
-            .removeDuplicates()
-            .receive(on: DispatchQueue.main)
-            .assign(to: \.featureFlag, onWeaklyHeld: self)
-            .store(in: &cancellables)
-    }
 
     @available(macOS 14.0, *)
     private func subscribeToConnectionStatusChanges(_ statusObserver: ConnectionStatusObserver) {
@@ -147,7 +136,7 @@ public final class VPNTipsModel: ObservableObject {
 
         // If the proxy is available, we can show this tip after the geoswitchin tip
         // Otherwise we can't show this tip
-        if proxySettings.proxyAvailable,
+        if vpnAppState.isUsingSystemExtension,
            case .invalidated = geoswitchingTip.status {
 
             return true
@@ -164,11 +153,11 @@ public final class VPNTipsModel: ObservableObject {
 
         // If the proxy is available, we need to wait until the domain exclusions tip was shown.
         // If the proxy is not available, we can show this tip after the geoswitchin tip
-        if proxySettings.proxyAvailable,
+        if vpnAppState.isUsingSystemExtension,
            case .invalidated = domainExclusionsTip.status {
 
             return true
-        } else if !proxySettings.proxyAvailable,
+        } else if !vpnAppState.isUsingSystemExtension,
            case .invalidated = geoswitchingTip.status {
 
             return true

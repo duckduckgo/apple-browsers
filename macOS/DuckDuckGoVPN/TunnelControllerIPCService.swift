@@ -110,8 +110,8 @@ final class TunnelControllerIPCService {
                 let command = try JSONDecoder().decode(VPNIPCClientCommand.self, from: message)
 
                 switch command {
-                case .uninstall(let component):
-                    try await uninstall(component)
+                case .uninstall(let component, let showNotification):
+                    try await uninstall(component, showNotification: showNotification)
                     return nil
                 case .quit:
                     quitAgent()
@@ -234,7 +234,7 @@ extension TunnelControllerIPCService: XPCServerInterface {
 
         switch command {
         case .removeSystemExtension:
-            try await uninstall(.systemExtension)
+            try await uninstall(.systemExtension, showNotification: false)
         case .expireRegistrationKey:
             // Intentional no-op: handled by the extension
             break
@@ -242,12 +242,12 @@ extension TunnelControllerIPCService: XPCServerInterface {
             // Intentional no-op: handled by the extension
             break
         case .removeVPNConfiguration:
-            try await uninstall(.configuration)
+            try await uninstall(.configuration, showNotification: false)
         case .restartAdapter:
             // Intentional no-op: handled by the extension
             break
-        case .uninstallVPN:
-            try await uninstall(.all)
+        case .uninstallVPN(let showNotification):
+            try await uninstall(.all, showNotification: showNotification)
         case .disableConnectOnDemandAndShutDown:
             // Not implemented on macOS yet
             break
@@ -256,10 +256,10 @@ extension TunnelControllerIPCService: XPCServerInterface {
         }
     }
 
-    private func uninstall(_ component: VPNUninstallComponent) async throws {
+    private func uninstall(_ component: VPNUninstallComponent, showNotification: Bool) async throws {
         switch component {
         case .all:
-            try await uninstaller.uninstall(includingSystemExtension: true)
+            try await uninstaller.uninstall(showNotification: showNotification)
         case .configuration:
             try await uninstaller.removeVPNConfiguration()
         case .systemExtension:

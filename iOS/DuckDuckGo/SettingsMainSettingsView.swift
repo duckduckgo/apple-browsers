@@ -78,11 +78,9 @@ struct SettingsMainSettingsView: View {
             }
 
             // AI Chat
-            if viewModel.state.aiChat.enabled {
-                NavigationLink(destination: SettingsAIChatView().environmentObject(viewModel)) {
-                    SettingsCellView(label: UserText.aiChatFeatureName,
-                                     image: Image("SettingsAIChat"))
-                }
+            NavigationLink(destination: SettingsAIChatView().environmentObject(viewModel)) {
+                SettingsCellView(label: UserText.aiChatFeatureName,
+                                 image: Image("SettingsAIChat"))
             }
         }
 

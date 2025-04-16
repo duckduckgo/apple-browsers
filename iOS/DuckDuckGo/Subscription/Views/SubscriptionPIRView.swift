@@ -33,9 +33,9 @@ struct SubscriptionPIRView: View {
     enum Constants {
         static let empty = ""
         static let navButtonPadding: CGFloat = 20.0
-        static let lightMask: [Color] = [Color.init(0xFFFFFF, alpha: 0), Color.init(0xFFFFFF, alpha: 0)]
+        static let lightMask: [Color] = [Color.tint(0.0), Color.tint(0.0)]
         static let lightColors = [Color.init(0xF9F1F4), Color.init(0xF1F0FF)]
-        static let darkMask = [Color.init(0x2F2F2F, alpha: 0), Color.init(0x2F2F2F, alpha: 1)]
+        static let darkMask = [Color.init(0x2F2F2F, opacity: 0), Color.init(0x2F2F2F, opacity: 1)]
         static let darkColors = [Color.init(0x3C184E), Color.init(0x3F1844), Color.init(0x3B1A36)]
         static let titleMaxWidth = 200.0
         static let headerPadding = 5.0

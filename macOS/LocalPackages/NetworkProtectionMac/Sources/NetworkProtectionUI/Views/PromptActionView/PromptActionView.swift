@@ -47,6 +47,9 @@ struct PromptActionView: View {
         VStack(spacing: 0) {
             HStack(alignment: .top, spacing: 12) {
                 Image(model.icon)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 40)
 
                 HStack {
                     VStack(alignment: .leading, spacing: 5) {

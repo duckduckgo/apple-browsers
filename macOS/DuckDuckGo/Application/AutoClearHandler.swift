@@ -115,7 +115,7 @@ final class AutoClearHandler {
         let restoreTabsOnStartup = restoreTabsOnStartup
         self.restoreTabsOnStartup = false
         if isAutoClearEnabled && restoreTabsOnStartup {
-            stateRestorationManager.restoreLastSessionState(interactive: false)
+            stateRestorationManager.restoreLastSessionState(interactive: false, includeRegularTabs: true)
             return true
         }
 

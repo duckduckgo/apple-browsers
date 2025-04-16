@@ -32,11 +32,7 @@ final class FirePopoverCollectionViewItem: NSCollectionViewItem {
 
     @IBOutlet weak var domainTextField: NSTextField!
     @IBOutlet weak var checkButton: NSButton!
-    @IBOutlet weak var faviconImageView: NSImageView! {
-       didSet {
-           faviconImageView.applyFaviconStyle()
-       }
-   }
+    @IBOutlet weak var faviconImageView: NSImageView!
 
     func setItem(_ item: FirePopoverViewModel.Item, isFireproofed: Bool) {
         domainTextField.stringValue = item.domain

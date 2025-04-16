@@ -61,12 +61,15 @@ protocol TabDelegate: AnyObject {
 
     func tabDidRequestAIChat(tab: TabViewController)
 
-    func tabDidRequestAutofillLogins(tab: TabViewController)
+    func tab(_ tab: TabViewController,
+             didRequestAutofillLogins account: SecureVaultModels.WebsiteAccount?,
+             source: AutofillSettingsSource)
 
     func tabDidRequestSettings(tab: TabViewController)
 
     func tab(_ tab: TabViewController,
-             didRequestSettingsToLogins account: SecureVaultModels.WebsiteAccount)
+             didRequestSettingsToLogins account: SecureVaultModels.WebsiteAccount,
+             source: AutofillSettingsSource)
     
     func tabDidRequestFindInPage(tab: TabViewController)
     func closeFindInPage(tab: TabViewController)

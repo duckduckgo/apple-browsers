@@ -26,9 +26,7 @@ import Subscription
 final class SubscriptionRestoreViewModel: ObservableObject {
     
     let userScript: SubscriptionPagesUserScript
-    let subFeature: SubscriptionPagesUseSubscriptionFeature
-    let subscriptionManager: SubscriptionManager
-    var accountManager: AccountManager { subscriptionManager.accountManager }
+    let subFeature: any SubscriptionPagesUseSubscriptionFeature
 
     private var cancellables = Set<AnyCancellable>()
     
@@ -55,12 +53,10 @@ final class SubscriptionRestoreViewModel: ObservableObject {
     @Published private(set) var state = State()
         
     init(userScript: SubscriptionPagesUserScript,
-         subFeature: SubscriptionPagesUseSubscriptionFeature,
-         subscriptionManager: SubscriptionManager,
+         subFeature: any SubscriptionPagesUseSubscriptionFeature,
          isAddingDevice: Bool = false) {
         self.userScript = userScript
         self.subFeature = subFeature
-        self.subscriptionManager = subscriptionManager
     }
     
     func onAppear() {
@@ -87,7 +83,7 @@ final class SubscriptionRestoreViewModel: ObservableObject {
     
     private func setupTransactionObserver() async {
         
-        subFeature.$transactionStatus
+        subFeature.transactionStatusPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] status in
                 guard let strongSelf = self else { return }
@@ -100,7 +96,7 @@ final class SubscriptionRestoreViewModel: ObservableObject {
     }
     
     @MainActor
-    private func handleRestoreError(error: SubscriptionPagesUseSubscriptionFeature.UseSubscriptionError) {
+    private func handleRestoreError(error: UseSubscriptionError) {
         switch error {
         case .failedToRestorePastPurchase:
             state.activationResult = .error
@@ -140,7 +136,7 @@ final class SubscriptionRestoreViewModel: ObservableObject {
                 state.activationResult = .activated
                 state.transactionStatus = .idle
             } catch let error {
-                if let specificError = error as? SubscriptionPagesUseSubscriptionFeature.UseSubscriptionError {
+                if let specificError = error as? UseSubscriptionError {
                     handleRestoreError(error: specificError)
                 }
                 state.transactionStatus = .idle

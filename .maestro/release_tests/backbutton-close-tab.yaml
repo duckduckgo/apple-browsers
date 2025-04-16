@@ -1,0 +1,54 @@
+# tabs.yaml
+appId: com.duckduckgo.mobile.ios
+tags:
+    - release
+
+---
+
+# Set up 
+- runFlow: 
+    file: ../shared/setup.yaml
+
+# Load Site
+- assertVisible:
+    id: "searchEntry"
+- tapOn: 
+    id: "searchEntry"
+- inputText: "https://privacy-test-pages.site"
+- pressKey: Enter
+    
+- assertVisible: ".*Privacy Test Pages.*"
+
+# Add tab
+- assertVisible: Tab Switcher
+- tapOn: Tab Switcher
+- assertVisible: ".*Privacy Test Pages.*"
+- assertVisible: "New Tab"
+- tapOn: "New Tab"
+- assertVisible:
+    id: "searchEntry"
+- tapOn: 
+    id: "searchEntry"
+- inputText: "https://www.search-company.site"
+- pressKey: Enter
+- assertVisible: "Search engine"
+
+# Switch Tab
+- assertVisible: Tab Switcher
+- tapOn: Tab Switcher
+- assertVisible: ".*Privacy Test Pages.*"
+- assertVisible: ".*Ad Click Flow.*"
+- assertVisible: "2 Private Tabs"
+- tapOn: "Open \"Privacy Test Pages - Home\" at privacy-test-pages.site"
+- assertNotVisible: ".*Ad Click Flow.*"
+- assertVisible: ".*Privacy Test Pages.*"
+- tapOn: "Refresh Page"
+
+# Long press an item and open in new tab
+- longPressOn: "• 1 major tracker loaded via script"
+- tapOn: "Open In New Tab"
+
+# Back button should return to privacy page
+- tapOn: "Browse Back"
+- assertVisible: ".*Privacy Test Pages.*"
+

@@ -3718,6 +3718,42 @@
           }
         }
       }
+    },
+    "vpn.appstore.sysex.update.prompt.action.button.title" : {
+      "comment" : "Action button title for the prompt that asks users to update the VPN to our System Extension.  Pressing this button reinstalls the VPN.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Get the Update"
+          }
+        }
+      }
+    },
+    "vpn.appstore.sysex.update.prompt.message" : {
+      "comment" : "Message shown to users to ask them to update the VPN to our System Extension, which requires reinstalling the VPN",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This update includes the option to exclude sites and apps that aren't compatible with VPNs so you can keep using them while connected."
+          }
+        }
+      }
+    },
+    "vpn.appstore.sysex.update.prompt.title" : {
+      "comment" : "Title shown to users to ask them to update the VPN to our System Extension, which requires reinstalling the VPN",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "New VPN version available!"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

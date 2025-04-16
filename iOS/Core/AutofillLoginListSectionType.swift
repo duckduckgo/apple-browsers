@@ -21,7 +21,6 @@ import Foundation
 
 public enum AutofillLoginListSectionType: Comparable {
 
-    case enableAutofill
     case suggestions(title: String, items: [AutofillLoginItem])
     case credentials(title: String, items: [AutofillLoginItem])
 

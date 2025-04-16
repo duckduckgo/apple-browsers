@@ -18,6 +18,7 @@
 
 import Foundation
 import BrowserServicesKit
+import HistoryView
 import UserScript
 import WebKit
 import Subscription
@@ -27,7 +28,6 @@ import SpecialErrorPages
 final class UserScripts: UserScriptsProvider {
 
     let pageObserverScript = PageObserverUserScript()
-    let faviconScript = FaviconUserScript()
     let contextMenuScript = ContextMenuUserScript()
     let printingUserScript = PrintingUserScript()
     let hoverUserScript = HoverUserScript()
@@ -51,7 +51,10 @@ final class UserScripts: UserScriptsProvider {
     let releaseNotesUserScript: ReleaseNotesUserScript?
 #endif
     let aiChatUserScript: AIChatUserScript?
+    let historyViewUserScript: HistoryViewUserScript?
+    let faviconScript = FaviconUserScript()
 
+    // swiftlint:disable:next cyclomatic_complexity
     init(with sourceProvider: ScriptSourceProviding) {
         clickToLoadScript = ClickToLoadUserScript()
         contentBlockerRulesScript = ContentBlockerRulesUserScript(configuration: sourceProvider.contentBlockerRulesConfig!)
@@ -64,11 +67,11 @@ final class UserScripts: UserScriptsProvider {
         let sessionKey = sourceProvider.sessionKey ?? ""
         let messageSecret = sourceProvider.messageSecret ?? ""
         let prefs = ContentScopeProperties(gpcEnabled: isGPCEnabled,
-                                                sessionKey: sessionKey,
-                                                messageSecret: messageSecret,
-                                                featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfig))
-        contentScopeUserScript = ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs)
-        contentScopeUserScriptIsolated = ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, isIsolated: true)
+                                           sessionKey: sessionKey,
+                                           messageSecret: messageSecret,
+                                           featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfig))
+        contentScopeUserScript = ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: Application.appDelegate.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
+        contentScopeUserScriptIsolated = ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, isIsolated: true, privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: Application.appDelegate.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
 
         autofillScript = WebsiteAutofillUserScript(scriptSourceProvider: sourceProvider.autofillSourceProvider!)
 
@@ -76,9 +79,17 @@ final class UserScripts: UserScriptsProvider {
 
         let lenguageCode = Locale.current.languageCode ?? "en"
         specialErrorPageUserScript = SpecialErrorPageUserScript(localeStrings: SpecialErrorPageUserScript.localeStrings(for: lenguageCode),
-                                                                    languageCode: lenguageCode)
+                                                                languageCode: lenguageCode)
 
         onboardingUserScript = OnboardingUserScript(onboardingActionsManager: sourceProvider.onboardingActionsManager!)
+
+        if NSApp.delegateTyped.featureFlagger.isFeatureOn(.historyView) {
+            let historyViewUserScript = HistoryViewUserScript()
+            sourceProvider.historyViewActionsManager?.registerUserScript(historyViewUserScript)
+            self.historyViewUserScript = historyViewUserScript
+        } else {
+            historyViewUserScript = nil
+        }
 
         specialPages = SpecialPagesUserScript()
 
@@ -96,6 +107,7 @@ final class UserScripts: UserScriptsProvider {
 
         userScripts.append(autoconsentUserScript)
 
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: faviconScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: clickToLoadScript)
 
         if let aiChatUserScript {
@@ -122,28 +134,51 @@ final class UserScripts: UserScriptsProvider {
             if let onboardingUserScript {
                 specialPages.registerSubfeature(delegate: onboardingUserScript)
             }
+
+            if let historyViewUserScript {
+                specialPages.registerSubfeature(delegate: historyViewUserScript)
+            }
             userScripts.append(specialPages)
         }
 
-        let subscriptionManager = Application.appDelegate.subscriptionManager
-        let stripePurchaseFlow = DefaultStripePurchaseFlow(subscriptionEndpointService: subscriptionManager.subscriptionEndpointService,
-                                                           authEndpointService: subscriptionManager.authEndpointService,
-                                                           accountManager: subscriptionManager.accountManager)
-        let freemiumDBPPixelExperimentManager = FreemiumDBPPixelExperimentManager(subscriptionManager: subscriptionManager)
-        let delegate = SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
+        var delegate: Subfeature
+        let freemiumDBPPixelExperimentManager = FreemiumDBPPixelExperimentManager(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge)
+        if !Application.appDelegate.isAuthV2Enabled {
+            guard let subscriptionManager = Application.appDelegate.subscriptionManagerV1 else {
+                assertionFailure("SubscriptionManager is not available")
+                return
+            }
+
+            let stripePurchaseFlow = DefaultStripePurchaseFlow(subscriptionEndpointService: subscriptionManager.subscriptionEndpointService,
+                                                               authEndpointService: subscriptionManager.authEndpointService,
+                                                               accountManager: subscriptionManager.accountManager)
+            delegate = SubscriptionPagesUseSubscriptionFeature(subscriptionManager: subscriptionManager,
                                                                stripePurchaseFlow: stripePurchaseFlow,
                                                                uiHandler: Application.appDelegate.subscriptionUIHandler,
                                                                freemiumDBPPixelExperimentManager: freemiumDBPPixelExperimentManager)
+        } else {
+            guard let subscriptionManager = Application.appDelegate.subscriptionManagerV2 else {
+                assertionFailure("subscriptionManager is not available")
+                return
+            }
+            let stripePurchaseFlow = DefaultStripePurchaseFlowV2(subscriptionManager: subscriptionManager)
+            delegate = SubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManager,
+                                                                 stripePurchaseFlow: stripePurchaseFlow,
+                                                                 uiHandler: Application.appDelegate.subscriptionUIHandler,
+                                                                 freemiumDBPPixelExperimentManager: freemiumDBPPixelExperimentManager)
+        }
+
         subscriptionPagesUserScript.registerSubfeature(delegate: delegate)
         userScripts.append(subscriptionPagesUserScript)
 
-        identityTheftRestorationPagesUserScript.registerSubfeature(delegate: IdentityTheftRestorationPagesFeature())
+        let identityTheftRestorationPagesFeature = IdentityTheftRestorationPagesFeature(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge,
+                                                                                        isAuthV2Enabled: Application.appDelegate.isAuthV2Enabled)
+        identityTheftRestorationPagesUserScript.registerSubfeature(delegate: identityTheftRestorationPagesFeature)
         userScripts.append(identityTheftRestorationPagesUserScript)
     }
 
     lazy var userScripts: [UserScript] = [
         debugScript,
-        faviconScript,
         contextMenuScript,
         surrogatesScript,
         contentBlockerRulesScript,

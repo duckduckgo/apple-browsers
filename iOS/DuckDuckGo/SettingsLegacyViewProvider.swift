@@ -81,6 +81,13 @@ class SettingsLegacyViewProvider: ObservableObject {
         return storyboard.instantiateViewController(withIdentifier: identifier)
     }
 
+    private func instantiateAppIconController(onChange: @escaping (AppIcon) -> Void) -> UIViewController {
+        let storyboard = UIStoryboard(name: StoryboardName.settings, bundle: nil)
+        return storyboard.instantiateViewController(identifier: "AppIcon") { coder in
+            return AppIconSettingsViewController(onChange: onChange, coder: coder)
+        }
+    }
+
     private func instantiateFireproofingController() -> UIViewController {
         let storyboard = UIStoryboard(name: StoryboardName.settings, bundle: nil)
         return storyboard.instantiateViewController(identifier: "FireProofSites") { coder in
@@ -96,20 +103,17 @@ class SettingsLegacyViewProvider: ObservableObject {
     }
 
     private func instantiateDebugController() -> UIViewController {
-        let storyboard = UIStoryboard(name: "Debug", bundle: nil)
-        return storyboard.instantiateViewController(identifier: "DebugMenu") { coder in
-            RootDebugViewController(coder: coder,
-                                    sync: self.syncService,
-                                    bookmarksDatabase: self.bookmarksDatabase,
-                                    internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
-                                    tabManager: self.tabManager,
-                                    fireproofing: self.fireproofing)
-        }
+        return DebugScreensViewController(dependencies: .init(
+            syncService: self.syncService,
+            bookmarksDatabase: self.bookmarksDatabase,
+            internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+            tabManager: self.tabManager,
+            tipKitUIActionHandler: TipKitDebugOptionsUIActionHandler(),
+            fireproofing: self.fireproofing))
     }
 
     // Legacy UIKit Views (Pushed unmodified)
     var addToDock: UIViewController { instantiate( "instructions", fromStoryboard: StoryboardName.homeRow) }
-    var appIcon: UIViewController { instantiate("AppIcon", fromStoryboard: StoryboardName.settings) }
     var gpc: UIViewController { instantiate("DoNotSell", fromStoryboard: StoryboardName.settings) }
     var autoConsent: UIViewController { instantiate("AutoconsentSettingsViewController", fromStoryboard: StoryboardName.settings) }
     var unprotectedSites: UIViewController { instantiate("UnprotectedSites", fromStoryboard: StoryboardName.settings) }
@@ -119,6 +123,9 @@ class SettingsLegacyViewProvider: ObservableObject {
     var autoclearData: UIViewController { instantiateAutoClearController() }
     var debug: UIViewController { instantiateDebugController() }
 
+    func appIconSettings(onChange: @escaping (AppIcon) -> Void) -> UIViewController {
+        instantiateAppIconController(onChange: onChange)
+    }
 
     @MainActor
     func syncSettings(source: String? = nil) -> SyncSettingsViewController {
@@ -129,14 +136,17 @@ class SettingsLegacyViewProvider: ObservableObject {
                                           syncPausedStateManager: self.syncPausedStateManager,
                                           source: source)
     }
-    
-    func loginSettings(delegate: AutofillLoginSettingsListViewControllerDelegate,
-                       selectedAccount: SecureVaultModels.WebsiteAccount?) -> AutofillLoginSettingsListViewController {
-        return AutofillLoginSettingsListViewController(appSettings: self.appSettings,
+
+    func loginSettings(delegate: AutofillSettingsViewControllerDelegate,
+                       selectedAccount: SecureVaultModels.WebsiteAccount?,
+                       source: AutofillSettingsSource?) -> AutofillSettingsViewController {
+        return AutofillSettingsViewController(appSettings: self.appSettings,
                                                        syncService: self.syncService,
                                                        syncDataProviders: self.syncDataProviders,
                                                        selectedAccount: selectedAccount,
-                                                       source: .settings)
+                                                       source: source ?? .settings,
+                                                       bookmarksDatabase: self.bookmarksDatabase,
+                                                       favoritesDisplayMode: self.appSettings.favoritesDisplayMode)
     }
 
 }

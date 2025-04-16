@@ -18,32 +18,7 @@
 //
 
 import SwiftUI
-
-public struct Label3AltStyle: ViewModifier {
-    @Environment(\.colorScheme) private var colorScheme
-    public init() {}
-    
-    public func body(content: Content) -> some View {
-        content
-            .font(Font(uiFont: UIFont.semiBoldAppFont(ofSize: 16)))
-            .foregroundColor(colorScheme == .light ? .black : .white)
-    }
-}
-
-public struct Label3Style: ViewModifier {
-    @Environment(\.colorScheme) private var colorScheme
-    private let design: Font.Design
-    
-    public init(design: Font.Design = .default) {
-        self.design = design
-    }
-    
-    public func body(content: Content) -> some View {
-        content
-            .font(.system(size: 17, design: design))
-            .foregroundColor(colorScheme == .light ? .gray50 : .gray20)
-    }
-}
+import DesignResourcesKit
 
 public struct Label4Style: ViewModifier {
     @Environment(\.colorScheme) private var colorScheme
@@ -51,7 +26,7 @@ public struct Label4Style: ViewModifier {
     private let foregroundColorLight: Color
     private let foregroundColorDark: Color
 
-    public init(design: Font.Design = .default, foregroundColorLight: Color = .gray90, foregroundColorDark: Color = .white) {
+    public init(design: Font.Design = .default, foregroundColorLight: Color = Color(baseColor: .gray90), foregroundColorDark: Color = .white) {
         self.design = design
         self.foregroundColorLight = foregroundColorLight
         self.foregroundColorDark = foregroundColorDark
@@ -75,34 +50,13 @@ public struct Label4SubtitleStyle: ViewModifier {
     public func body(content: Content) -> some View {
         content
             .font(.system(.callout, design: design))
-            .foregroundColor(colorScheme == .light ? .gray50 : .gray30)
-    }
-}
-
-public struct SecondaryTextStyle: ViewModifier {
-    @Environment(\.colorScheme) private var colorScheme
-    
-    public init() {}
-    public func body(content: Content) -> some View {
-        content
-            .foregroundColor(colorScheme == .light ? .gray70 : .gray20)
+            .foregroundColor(colorScheme == .light ? Color(baseColor: .gray50) : Color(baseColor: .gray30))
     }
 }
 
 public extension View {
-    func secondaryTextStyle() -> some View {
-        modifier(SecondaryTextStyle())
-    }
-    
-    func label3AltStyle() -> some View {
-        modifier(Label3AltStyle())
-    }
-    
-    func label3Style(design: Font.Design = .default) -> some View {
-        modifier(Label3Style(design: design))
-    }
 
-    func label4Style(design: Font.Design = .default, foregroundColorLight: Color = .gray90, foregroundColorDark: Color = .white) -> some View {
+    func label4Style(design: Font.Design = .default, foregroundColorLight: Color = Color(baseColor: .gray90), foregroundColorDark: Color = .white) -> some View {
         modifier(Label4Style(design: design, foregroundColorLight: foregroundColorLight, foregroundColorDark: foregroundColorDark))
     }
 }

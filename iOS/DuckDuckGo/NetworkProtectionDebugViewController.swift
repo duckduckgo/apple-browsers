@@ -107,7 +107,6 @@ final class NetworkProtectionDebugViewController: UITableViewController {
     // MARK: Properties
 
     private let debugFeatures: NetworkProtectionDebugFeatures
-    private let tokenStore: NetworkProtectionTokenStore
     private let pathMonitor = NWPathMonitor()
 
     private var currentNetworkPath: String?
@@ -125,25 +124,19 @@ final class NetworkProtectionDebugViewController: UITableViewController {
     private var connectionTestResults: [ConnectionTestResult] = []
     private var connectionTestResultError: String?
     private let connectionTestQueue = DispatchQueue(label: "com.duckduckgo.ios.vpnDebugConnectionTestQueue")
-    private let accountManager: AccountManager
 
     // MARK: Lifecycle
 
     required init?(coder: NSCoder,
-                   tokenStore: NetworkProtectionTokenStore,
-                   debugFeatures: NetworkProtectionDebugFeatures = NetworkProtectionDebugFeatures(),
-                   accountManager: AccountManager) {
-        
+                   debugFeatures: NetworkProtectionDebugFeatures = NetworkProtectionDebugFeatures()) {
+
         self.debugFeatures = debugFeatures
-        self.tokenStore = tokenStore
-        self.accountManager = accountManager
 
         super.init(coder: coder)
     }
 
     required convenience init?(coder: NSCoder) {
-        self.init(coder: coder, tokenStore: AppDependencyProvider.shared.networkProtectionKeychainTokenStore,
-                  accountManager: AppDependencyProvider.shared.subscriptionManager.accountManager)
+        self.init(coder: coder, debugFeatures: NetworkProtectionDebugFeatures())
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -643,11 +636,13 @@ final class NetworkProtectionDebugViewController: UITableViewController {
             let vpnVisibility = AppDependencyProvider.shared.vpnFeatureVisibility
 
             cell.textLabel?.font = .monospacedSystemFont(ofSize: 13.0, weight: .regular)
-            cell.textLabel?.text = """
+            Task { @MainActor in
+                cell.textLabel?.text = """
 Endpoint: \(AppDependencyProvider.shared.vpnSettings.selectedEnvironment.endpointURL.absoluteString)
 
-shouldShowVPNShortcut: \(vpnVisibility.shouldShowVPNShortcut() ? "YES" : "NO")
+shouldShowVPNShortcut: \(await vpnVisibility.shouldShowVPNShortcut() ? "YES" : "NO")
 """
+            }
         case .none:
             break
         }
@@ -686,9 +681,11 @@ shouldShowVPNShortcut: \(vpnVisibility.shouldShowVPNShortcut() ? "YES" : "NO")
             if let subscriptionOverrideEnabled = defaults.subscriptionOverrideEnabled {
                 if subscriptionOverrideEnabled {
                     defaults.subscriptionOverrideEnabled = false
-                    accountManager.signOut()
+                    Task {
+                        await AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.signOut(notifyUI: true)
+                    }
                 } else {
-                    defaults.resetsubscriptionOverrideEnabled()
+                    defaults.resetSubscriptionOverrideEnabled()
                 }
             } else {
                 defaults.subscriptionOverrideEnabled = true

@@ -68,7 +68,7 @@ final class PrivacyIconAndTrackersAnimator {
         }
     }
     
-    func startAnimating(in omniBar: OmniBar, with privacyInfo: PrivacyInfo) {
+    func startAnimating(in omniBar: DefaultOmniBarView, with privacyInfo: PrivacyInfo) {
         guard let container = omniBar.privacyInfoContainer else { return }
         
         state = .started
@@ -102,7 +102,7 @@ final class PrivacyIconAndTrackersAnimator {
         }
     }
     
-    func startAnimationForDaxDialog(in omniBar: OmniBar, with privacyInfo: PrivacyInfo) {
+    func startAnimationForDaxDialog(in omniBar: DefaultOmniBarView, with privacyInfo: PrivacyInfo) {
         guard let container = omniBar.privacyInfoContainer else { return }
         
         state = .started
@@ -120,7 +120,7 @@ final class PrivacyIconAndTrackersAnimator {
         currentTrackerAnimation?.play(toFrame: Constants.allTrackersRevealedAnimationFrame)
     }
     
-    func completeAnimationForDaxDialog(in omniBar: OmniBar) {
+    func completeAnimationForDaxDialog(in omniBar: DefaultOmniBarView) {
         guard let container = omniBar.privacyInfoContainer else { return }
         
         let currentTrackerAnimation = container.trackerAnimationView(for: trackerAnimationImageProvider.trackerImagesCount)
@@ -147,7 +147,7 @@ final class PrivacyIconAndTrackersAnimator {
         animationCompletionObservers = []
     }
     
-    func cancelAnimations(in omniBar: OmniBar) {
+    func cancelAnimations(in omniBar: DefaultOmniBarView) {
         guard let container = omniBar.privacyInfoContainer else { return }
         
         state = .notStarted

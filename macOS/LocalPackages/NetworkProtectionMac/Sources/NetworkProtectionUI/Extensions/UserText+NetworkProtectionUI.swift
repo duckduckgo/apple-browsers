@@ -114,4 +114,10 @@ final class UserText {
 
     static let networkProtectionSiteTroubleShootingViewTitle = NSLocalizedString("network.protection.site.troubleshooting.title", bundle: Bundle.module, value: "Website Preferences", comment: "Title for VPN website preferences view")
     static let networkProtectionSiteTroubleShootingViewExcludeWebsite = NSLocalizedString("network.protection.site.troubleshooting.exclude", bundle: Bundle.module, value: "Exclude %@ from VPN", comment: "Option to exclude a “%@” website from the VPN")
+
+    // MARK: Updating Appex to Sysex for App Store builds
+
+    static let vpnAppStoreSysexUpdatePromptTitle = NSLocalizedString("vpn.appstore.sysex.update.prompt.title", bundle: Bundle.module, value: "New VPN version available!", comment: "Title shown to users to ask them to update the VPN to our System Extension, which requires reinstalling the VPN")
+    static let vpnAppStoreSysexUpdatePromptMessage = NSLocalizedString("vpn.appstore.sysex.update.prompt.message", bundle: Bundle.module, value: "This update includes the option to exclude sites and apps that aren't compatible with VPNs so you can keep using them while connected.", comment: "Message shown to users to ask them to update the VPN to our System Extension, which requires reinstalling the VPN")
+    static let vpnAppStoreSysexUpdatePromptActionButtonTitle = NSLocalizedString("vpn.appstore.sysex.update.prompt.action.button.title", bundle: Bundle.module, value: "Get the Update", comment: "Action button title for the prompt that asks users to update the VPN to our System Extension.  Pressing this button reinstalls the VPN.")
 }

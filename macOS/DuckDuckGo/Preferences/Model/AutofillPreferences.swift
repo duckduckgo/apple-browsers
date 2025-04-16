@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import Common
 
 protocol AutofillPreferencesPersistor {
     var isAutoLockEnabled: Bool { get set }
@@ -165,7 +166,7 @@ final class AutofillPreferences: AutofillPreferencesPersistor {
     private lazy var defaultDependencyStore: StatisticsStore = {
 #if DEBUG
         // To prevent an assertion failure deep within dependencies in Database.makeDatabase
-        if [.unitTests, .xcPreviews].contains(NSApp.runType) {
+        if [.unitTests, .xcPreviews].contains(AppVersion.runType) {
             return StubStatisticsStore()
         }
 #endif

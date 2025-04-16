@@ -33,7 +33,9 @@ class BlankSnapshotViewController: UIViewController {
     override var preferredStatusBarStyle: UIStatusBarStyle {
         return ThemeManager.shared.currentTheme.statusBarStyle
     }
-    
+
+    private var tapInterceptView: UIView?
+
     let menuButton = MenuButton()
 
     var tabSwitcherButton: TabSwitcherButton!
@@ -67,7 +69,7 @@ class BlankSnapshotViewController: UIViewController {
 
         tabSwitcherButton = TabSwitcherButton()
 
-        viewCoordinator = MainViewFactory.createViewHierarchy(view,
+        viewCoordinator = MainViewFactory.createViewHierarchy(self,
                                                               aiChatSettings: aiChatSettings,
                                                               voiceSearchHelper: voiceSearchHelper,
                                                               featureFlagger: featureFlagger)
@@ -77,33 +79,47 @@ class BlankSnapshotViewController: UIViewController {
         }
 
         configureOmniBar()
-        configureToolbarButtons()
 
         if AppWidthObserver.shared.isLargeWidth {
             viewCoordinator.toolbar.isHidden = true
             viewCoordinator.constraints.navigationBarContainerTop.constant = 40
             configureTabBar()
         } else {
-            viewCoordinator.toolbarTabSwitcherButton.customView = tabSwitcherButton
-            tabSwitcherButton.delegate = self
-            
-            viewCoordinator.menuToolbarButton.customView = menuButton
-            menuButton.setState(.menuImage, animated: false)
-            viewCoordinator.menuToolbarButton.customView = menuButton
+            if !ExperimentalThemingManager().isExperimentalThemingEnabled {
+                viewCoordinator.toolbarTabSwitcherButton.customView = tabSwitcherButton
+                viewCoordinator.menuToolbarButton.customView = menuButton
+                menuButton.setState(.menuImage, animated: false)
+                viewCoordinator.menuToolbarButton.customView = menuButton
+            }
         }
 
+        addTapInterceptor()
         decorate()
+    }
+
+
+    private func addTapInterceptor() {
+        let interceptView = UIView(frame: view.bounds)
+        interceptView.backgroundColor = .clear
+        interceptView.isUserInteractionEnabled = true
+
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(userInteractionDetected))
+        interceptView.addGestureRecognizer(tapGesture)
+
+        view.addSubview(interceptView)
+        tapInterceptView = interceptView
+    }
+
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        tapInterceptView?.removeFromSuperview()
+        tapInterceptView = nil
     }
 
     // Need to do this at this phase to support split screen on iPad
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         viewCoordinator.toolbar.isHidden = AppWidthObserver.shared.isLargeWidth
-    }
-
-    private func configureToolbarButtons() {
-        viewCoordinator.toolbarFireButton.action = #selector(buttonPressed(sender:))
-        viewCoordinator.menuToolbarButton.action = #selector(buttonPressed(sender:))
     }
 
     private func configureTabBar() {
@@ -119,10 +135,6 @@ class BlankSnapshotViewController: UIViewController {
         controller.view.heightAnchor.constraint(equalToConstant: 40).isActive = true
         controller.view.topAnchor.constraint(equalTo: view.topAnchor, constant: 24.0).isActive = true
         controller.view.leftAnchor.constraint(equalTo: view.leftAnchor).isActive = true
-        
-        controller.fireButton.addTarget(self, action: #selector(buttonPressed(sender:)), for: .touchUpInside)
-        controller.addTabButton.addTarget(self, action: #selector(buttonPressed(sender:)), for: .touchUpInside)
-        controller.tabSwitcherButton.delegate = self
     }
     
     private func configureOmniBar() {
@@ -131,7 +143,7 @@ class BlankSnapshotViewController: UIViewController {
 
         let layout = viewCoordinator.navigationBarCollectionView.collectionViewLayout as? UICollectionViewFlowLayout
         layout?.scrollDirection = .horizontal
-        layout?.itemSize = CGSize(width: viewCoordinator.superview.frame.size.width, height: viewCoordinator.omniBar.frame.height)
+        layout?.itemSize = CGSize(width: viewCoordinator.superview.frame.size.width, height: viewCoordinator.omniBar.barView.frame.height)
         layout?.minimumLineSpacing = 0
         layout?.minimumInteritemSpacing = 0
         layout?.scrollDirection = .horizontal
@@ -140,11 +152,6 @@ class BlankSnapshotViewController: UIViewController {
         if AppWidthObserver.shared.isLargeWidth {
             viewCoordinator.omniBar.enterPadState()
         }
-        viewCoordinator.omniBar.omniDelegate = self
-    }
-    
-    @objc func buttonPressed(sender: Any) {
-        userInteractionDetected()
     }
     
     @IBAction func userInteractionDetected() {
@@ -169,73 +176,6 @@ extension BlankSnapshotViewController: UICollectionViewDataSource {
     func numberOfSections(in collectionView: UICollectionView) -> Int {
         return 1
     }
-
-}
-
-extension BlankSnapshotViewController: OmniBarDelegate {
-    func onDidBeginEditing() {
-        // No-op
-    }
-    
-    func onDidEndEditing() {
-        // No-op
-    }
-
-    func onVoiceSearchPressed() {
-       // No-op
-    }
-
-    func onEditingEnd() -> OmniBarEditingEndResult {
-        .dismissed
-    }
-
-    func selectedSuggestion() -> Suggestion? {
-        return nil
-    }
-
-    func onOmniSuggestionSelected(_ suggestion: Suggestion) {
-        // No-op
-    }
-
-    func onSettingsPressed() {
-        userInteractionDetected()
-    }
-
-    func onTextFieldWillBeginEditing(_ omniBar: OmniBar, tapped: Bool) {
-        // No-op
-    }
-
-    func onTextFieldDidBeginEditing(_ omniBar: OmniBar) -> Bool {
-        DispatchQueue.main.async {
-            self.viewCoordinator.omniBar.resignFirstResponder()
-            self.userInteractionDetected()
-        }
-        return false
-    }
-    
-    func onEnterPressed() {
-        userInteractionDetected()
-    }
-
-    func onClearPressed() {
-        // No-op
-    }
-
-    func onAbortPressed() {
-        // no-op
-    }
-}
-
-extension BlankSnapshotViewController: TabSwitcherButtonDelegate {
-    
-    func showTabSwitcher(_ button: TabSwitcherButton) {
-        userInteractionDetected()
-    }
-    
-    func launchNewTab(_ button: TabSwitcherButton) {
-        userInteractionDetected()
-    }
-    
 }
 
 extension BlankSnapshotViewController {

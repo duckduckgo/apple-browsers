@@ -316,5 +316,385 @@ Užblokavau juos!
 			<string>%1$d slaptažodžių ištrinti</string>
 		</dict>
 	</dict>
+	<key>tab.close</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Uždaryti skirtuką</string>
+			<key>few</key>
+			<string>Uždaryti skirtukus</string>
+			<key>many</key>
+			<string>Uždaryti skirtukus</string>
+			<key>other</key>
+			<string>Uždaryti skirtukus</string>
+		</dict>
+	</dict>
+	<key>closeAllTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Uždaryti skirtuką</string>
+			<key>few</key>
+			<string>Uždaryti visus %1$d skirtukus</string>
+			<key>many</key>
+			<string>Uždaryti visus %1$d skirtukus</string>
+			<key>other</key>
+			<string>Uždaryti visus %1$d skirtukų</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Uždaryti skirtuką?</string>
+			<key>few</key>
+			<string>Uždaryti %1$d skirtukus?</string>
+			<key>many</key>
+			<string>Uždaryti %1$d skirtukus?</string>
+			<key>other</key>
+			<string>Uždaryti %1$d skirtukų?</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseOtherTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Uždaryti kitą skirtuką?</string>
+			<key>few</key>
+			<string>Uždaryti %1$d kitus skirtukus?</string>
+			<key>many</key>
+			<string>Uždaryti %1$d kitus skirtukus?</string>
+			<key>other</key>
+			<string>Uždaryti %1$d kitų skirtukų?</string>
+		</dict>
+	</dict>
+	<key>alertMessageCloseOtherTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Ar tikrai norite uždaryti šį skirtuką?</string>
+			<key>few</key>
+			<string>Ar tikrai norite uždaryti šiuos skirtukus?</string>
+			<key>many</key>
+			<string>Ar tikrai norite uždaryti šiuos skirtukus?</string>
+			<key>other</key>
+			<string>Ar tikrai norite uždaryti šiuos skirtukus?</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Uždaryti skirtuką?</string>
+			<key>few</key>
+			<string>Uždaryti %1$d skirtukus?</string>
+			<key>many</key>
+			<string>Uždaryti %1$d skirtukus?</string>
+			<key>other</key>
+			<string>Uždaryti %1$d skirtukų?</string>
+		</dict>
+	</dict>
+	<key>alertMessageCloseTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Ar tikrai norite uždaryti šį skirtuką?</string>
+			<key>few</key>
+			<string>Ar tikrai norite uždaryti šiuos skirtukus?</string>
+			<key>many</key>
+			<string>Ar tikrai norite uždaryti šiuos skirtukus?</string>
+			<key>other</key>
+			<string>Ar tikrai norite uždaryti šiuos skirtukus?</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseAllTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Uždaryti skirtuką?</string>
+			<key>few</key>
+			<string>Uždaryti visus %1$d skirtukus?</string>
+			<key>many</key>
+			<string>Uždaryti visus %1$d skirtukus?</string>
+			<key>other</key>
+			<string>Uždaryti visus %1$d skirtukų?</string>
+		</dict>
+	</dict>
+	<key>alertMessageCloseAllTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Ar tikrai norite uždaryti šį skirtuką?</string>
+			<key>few</key>
+			<string>Ar tikrai norite uždaryti visus skirtukus?</string>
+			<key>many</key>
+			<string>Ar tikrai norite uždaryti visus skirtukus?</string>
+			<key>other</key>
+			<string>Ar tikrai norite uždaryti visus skirtukus?</string>
+		</dict>
+	</dict>
+	<key>tab.switcher.select-tabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Pasirinkti skirtuką</string>
+			<key>few</key>
+			<string>Pasirinkti skirtukus</string>
+			<key>many</key>
+			<string>Pasirinkti skirtukus</string>
+			<key>other</key>
+			<string>Pasirinkti skirtukus</string>
+		</dict>
+	</dict>
+	<key>tab.switcher.close-others.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Uždaryti kitą skirtuką</string>
+			<key>few</key>
+			<string>Uždaryti kitus skirtukus</string>
+			<key>many</key>
+			<string>Uždaryti kitus skirtukus</string>
+			<key>other</key>
+			<string>Uždaryti kitus skirtukus</string>
+		</dict>
+	</dict>
+	<key>shareLinks.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Bendrinti nuorodą</string>
+			<key>few</key>
+			<string>Bendrinti %1$d nuorodas</string>
+			<key>many</key>
+			<string>Bendrinti %1$d nuorodas</string>
+			<key>other</key>
+			<string>Bendrinti %1$d nuorodų</string>
+		</dict>
+	</dict>
+	<key>shareSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Bendrinti pasirinktą skirtuką</string>
+			<key>few</key>
+			<string>Bendrinti pasirinktus skirtukus</string>
+			<key>many</key>
+			<string>Bendrinti pasirinktus skirtukus</string>
+			<key>other</key>
+			<string>Bendrinti pasirinktus skirtukus</string>
+		</dict>
+	</dict>
+	<key>bookmark.selected.tabs.with.count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Pažymėti skirtuką</string>
+			<key>few</key>
+			<string>Pažymėti %1$d skirtukus</string>
+			<key>many</key>
+			<string>Pažymėti %1$d skirtukus</string>
+			<key>other</key>
+			<string>Pažymėti %1$d skirtukų</string>
+		</dict>
+	</dict>
+	<key>tabsBookmarked.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Žymė pridėtos</string>
+			<key>few</key>
+			<string>%1$d žymės pridėtos</string>
+			<key>many</key>
+			<string>%1$d žymės pridėtos</string>
+			<key>other</key>
+			<string>%1$d žymių pridėta</string>
+		</dict>
+	</dict>
+	<key>alertTitleBookmarkSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Pažymėti pasirinktą skirtuką?</string>
+			<key>few</key>
+			<string>Pažymėti %1$d skirtukus?</string>
+			<key>many</key>
+			<string>Pažymėti %1$d skirtukus?</string>
+			<key>other</key>
+			<string>Pažymėti %1$d skirtukus?</string>
+		</dict>
+	</dict>
+	<key>alertTitleBookmarkAll.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Pažymėti pasirinktą skirtuką?</string>
+			<key>few</key>
+			<string>Pažymėti %1$d skirtukus?</string>
+			<key>many</key>
+			<string>Pažymėti %1$d skirtukus?</string>
+			<key>other</key>
+			<string>Pažymėti %1$d skirtukų?</string>
+		</dict>
+	</dict>
+	<key>numberOfSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d pasirinkta</string>
+			<key>few</key>
+			<string>%1$d pasirinkta</string>
+			<key>many</key>
+			<string>%1$d pasirinkta</string>
+			<key>other</key>
+			<string>%1$d pasirinkta</string>
+		</dict>
+	</dict>
+	<key>numberOfSelectedTabsForMenuTitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d pasirinkti skirtukai</string>
+			<key>few</key>
+			<string>%1$d pasirinkti skirtukai</string>
+			<key>many</key>
+			<string>%1$d pasirinkti skirtukai</string>
+			<key>other</key>
+			<string>%1$d pasirinkti skirtukai</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

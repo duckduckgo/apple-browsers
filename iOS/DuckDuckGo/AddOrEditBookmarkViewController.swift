@@ -25,6 +25,7 @@ import Persistence
 import Combine
 import DDGSync
 import WidgetKit
+import DesignResourcesKit
 
 protocol AddOrEditBookmarkViewControllerDelegate: AnyObject {
 
@@ -94,6 +95,7 @@ class AddOrEditBookmarkViewController: UIViewController {
 
         decorateNavigationBar()
         decorateToolbar()
+        self.view.backgroundColor = UIColor(designSystemColor: .background)
 
         viewModelCancellable = viewModel.externalUpdates.sink { [weak self] _ in
             self?.foldersViewController?.refresh()

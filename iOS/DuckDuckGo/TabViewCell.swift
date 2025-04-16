@@ -35,7 +35,7 @@ final class TabViewCell: UICollectionViewCell {
         static let swipeToDeleteAlpha: CGFloat = 0.5
 
         static let cellCornerRadius: CGFloat = 8.0
-        static let cellHeaderHeight: CGFloat = 38.0
+        static let cellHeaderHeight: CGFloat = 36.0
         static let cellLogoSize: CGFloat = 68.0
 
         static let selectedBorderWidth: CGFloat = 4.0
@@ -103,7 +103,7 @@ final class TabViewCell: UICollectionViewCell {
         backgroundColor = .clear
         backgroundView?.backgroundColor = .clear
 
-        border.layer.cornerRadius = 12
+        border.layer.cornerRadius = 16
 
         layer.cornerRadius = 12
         layer.shadowColor = UIColor.black.cgColor
@@ -114,7 +114,8 @@ final class TabViewCell: UICollectionViewCell {
         layer.shouldRasterize = true
         layer.rasterizationScale = UIScreen.main.scale
 
-        unread.tintColor = .cornflowerBlue
+        unread.tintColor = UIColor(designSystemColor: .accent)
+
     }
 
     private func updatePreviewToDisplay(image: UIImage) {
@@ -154,7 +155,7 @@ final class TabViewCell: UICollectionViewCell {
             let color = ThemeManager.shared.currentTheme.tabSwitcherCellBackgroundColor.resolvedColor(with: .init(userInterfaceStyle: style))
             let image = UIImage.stackedIconImage(withIconImage: UIImage(resource: .tabUnread),
                                                  borderWidth: 6.0,
-                                                 foregroundColor: .cornflowerBlue,
+                                                 foregroundColor: UIColor(designSystemColor: .accent),
                                                  borderColor: color)
             return image
         }
@@ -383,8 +384,9 @@ final class TabViewCell: UICollectionViewCell {
 
     private func decorate() {
         let theme = ThemeManager.shared.currentTheme
-        border.layer.borderColor = theme.tabSwitcherCellBorderColor.cgColor
+        border.layer.borderColor = UIColor(designSystemColor: .textPrimary).cgColor
         unread.image = Self.unreadImageAsset.image(with: .current)
+        removeButton.tintColor = UIColor(designSystemColor: .icons)
 
         background.backgroundColor = theme.tabSwitcherCellBackgroundColor
         title.textColor = theme.tabSwitcherCellTextColor

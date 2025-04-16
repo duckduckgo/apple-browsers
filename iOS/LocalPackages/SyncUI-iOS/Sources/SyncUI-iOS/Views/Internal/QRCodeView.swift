@@ -35,6 +35,7 @@ struct QRCodeView: View {
     var body: some View {
         Image(uiImage: generateQRCode(from: string, size: size))
             .resizable()
+            .interpolation(.none)
             .aspectRatio(contentMode: .fit)
             .frame(height: size)
     }
@@ -44,7 +45,7 @@ struct QRCodeView: View {
         let data = Data(text.utf8)
         let qrCodeFilter: CIFilter = CIFilter.init(name: "CIQRCodeGenerator")!
         qrCodeFilter.setValue(data, forKey: "inputMessage")
-        qrCodeFilter.setValue("H", forKey: "inputCorrectionLevel")
+        qrCodeFilter.setValue("L", forKey: "inputCorrectionLevel")
 
         guard let naturalSize = qrCodeFilter.outputImage?.extent.width else {
             assertionFailure("Failed to generate qr code")

@@ -32,7 +32,7 @@ enum NewTabBackgroundPixel: PixelKitEventV2 {
      * Event Trigger: User selects gradient as custom NTP background.
      *
      * Anomaly Investigation:
-     * - `customBackground` is updated with this value from `HomePage.Models.SettingsModel` and `HomePage.Views.BackgroundPickerView`.
+     * - `customBackground` is updated with this value from `NewTabPageCustomizationModel` and `HomePage.Views.BackgroundPickerView`.
      * - Check the above places in code and make sure nothing got broken to cause the update to be fired repeatedly.
      */
     case newTabBackgroundSelectedGradient
@@ -41,7 +41,7 @@ enum NewTabBackgroundPixel: PixelKitEventV2 {
      * Event Trigger: User selects solid color as custom NTP background.
      *
      * Anomaly Investigation:
-     * - `customBackground` is updated with this value from `HomePage.Models.SettingsModel` and `HomePage.Views.BackgroundPickerView`.
+     * - `customBackground` is updated with this value from `NewTabPageCustomizationModel` and `HomePage.Views.BackgroundPickerView`.
      * - Check the above places in code and make sure nothing got broken to cause the update to be fired repeatedly.
      */
     case newTabBackgroundSelectedSolidColor
@@ -50,7 +50,7 @@ enum NewTabBackgroundPixel: PixelKitEventV2 {
      * Event Trigger: User selects a user-uploaded image as custom NTP background.
      *
      * Anomaly Investigation:
-     * - `customBackground` is updated with this value from `HomePage.Models.SettingsModel` and `HomePage.Views.BackgroundPickerView`.
+     * - `customBackground` is updated with this value from `NewTabPageCustomizationModel` and `HomePage.Views.BackgroundPickerView`.
      * - Check the above places in code and make sure nothing got broken to cause the update to be fired repeatedly.
      */
     case newTabBackgroundSelectedUserImage
@@ -59,7 +59,7 @@ enum NewTabBackgroundPixel: PixelKitEventV2 {
      * Event Trigger: User removes custom NTP background.
      *
      * Anomaly Investigation:
-     * - `customBackground` is updated with this value from `HomePage.Models.SettingsModel` and `HomePage.Views.SettingsView`.
+     * - `customBackground` is updated with this value from `NewTabPageCustomizationModel` and `HomePage.Views.SettingsView`.
      * - Check the above places in code and make sure nothing got broken to cause the update to be fired repeatedly.
      */
     case newTabBackgroundReset
@@ -69,7 +69,7 @@ enum NewTabBackgroundPixel: PixelKitEventV2 {
      *
      * Anomaly Investigation:
      * - Check `UserBackgroundImagesManager.addImage(with:)` where this pixel is fired.
-     * - Check `HomePage.Models.SettingsModel.addNewImage()` where images manager's `addImage(with:)` is called.
+     * - Check `NewTabPageCustomizationModel.addNewImage()` where images manager's `addImage(with:)` is called.
      */
     case newTabBackgroundAddedUserImage
 

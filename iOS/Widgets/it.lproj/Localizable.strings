@@ -61,17 +61,35 @@
 /* Title for the control widget when enabled */
 "vpn.control.widget.on" = "La VPN è attiva";
 
+/* Description of quickActions widget in widget gallery */
+"widget.gallery.customshortcuts.description" = "Scegli scorciatoie per le azioni preferite.";
+
+/* Display name for quick actions widget in widget gallery */
+"widget.gallery.customshortcuts.display.name" = "Scorciatoie personalizzate";
+
+/* Description for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.description" = "Scegli le tue scorciatoie";
+
+/* Left label for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.left" = "Scorciatoia sinistra";
+
+/* Right label for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.right" = "Scorciatoia destra";
+
+/* Title for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.title" = "Configura le scorciatoie";
+
 /* Description of search passwords widget in widget gallery */
 "widget.gallery.passwords.description" = "Cerca rapidamente le password DuckDuckGo salvate.";
 
 /* Display name for search passwords widget in widget gallery */
 "widget.gallery.passwords.display.name" = "Cerca password";
 
-/* Description of quickActions widget in widget gallery */
-"widget.gallery.quickactions.description" = "Cerca, chatta su Duck.ai o visualizza le tue password.";
+/* Description of medium quickActions widget in widget gallery */
+"widget.gallery.quickactions.medium.display.description" = "Scorciatoie per le azioni preferite.";
 
-/* Display name for quick actions widget in widget gallery */
-"widget.gallery.quickactions.display.name" = "Scorciatoie";
+/* Display name for medium quick actions widget in widget gallery */
+"widget.gallery.quickactions.medium.display.name" = "Scorciatoie";
 
 /* Description of search and favorites widget in widget gallery */
 "widget.gallery.search.and.favorites.description" = "Effettua ricerche o visita i tuoi siti preferiti in incognito con un solo tocco.";

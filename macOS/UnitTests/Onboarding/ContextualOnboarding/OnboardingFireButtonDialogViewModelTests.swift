@@ -52,8 +52,8 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
     func testWhenSkipThenOnGotItPressedAndPixelsSent() throws {
         viewModel.skip()
 
-        XCTAssertTrue(reporter.trackFireButtonSkippedCalled)
-        XCTAssertTrue(reporter.trackLastDialogShownCalled)
+        XCTAssertTrue(reporter.measureFireButtonSkippedCalled)
+        XCTAssertTrue(reporter.measureLastDialogShownCalled)
         XCTAssertTrue(onGotItPressedCalled)
     }
 
@@ -69,7 +69,7 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
         viewModel.tryFireButton()
 
         XCTAssertTrue(onFireButtonPressedCalled)
-        XCTAssertTrue(reporter.trackFireButtonTryItCalled)
+        XCTAssertTrue(reporter.measureFireButtonTryItCalled)
     }
 
 }

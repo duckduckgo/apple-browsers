@@ -61,17 +61,35 @@
 /* Title for the control widget when enabled */
 "vpn.control.widget.on" = "VPN er slået til";
 
+/* Description of quickActions widget in widget gallery */
+"widget.gallery.customshortcuts.description" = "Vælg genveje til dine favorithandlinger.";
+
+/* Display name for quick actions widget in widget gallery */
+"widget.gallery.customshortcuts.display.name" = "Brugerdefinerede genveje";
+
+/* Description for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.description" = "Vælg dine genveje";
+
+/* Left label for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.left" = "Venstre genvej";
+
+/* Right label for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.right" = "Højre genvej";
+
+/* Title for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.title" = "Konfigurer genveje";
+
 /* Description of search passwords widget in widget gallery */
 "widget.gallery.passwords.description" = "Søg hurtigt i dine gemte DuckDuckGo-adgangskoder.";
 
 /* Display name for search passwords widget in widget gallery */
 "widget.gallery.passwords.display.name" = "Søg adgangskoder";
 
-/* Description of quickActions widget in widget gallery */
-"widget.gallery.quickactions.description" = "Søg, chat på Duck.ai, eller se dine adgangskoder.";
+/* Description of medium quickActions widget in widget gallery */
+"widget.gallery.quickactions.medium.display.description" = "Genveje til dine favorithandlinger.";
 
-/* Display name for quick actions widget in widget gallery */
-"widget.gallery.quickactions.display.name" = "Genveje";
+/* Display name for medium quick actions widget in widget gallery */
+"widget.gallery.quickactions.medium.display.name" = "Genveje";
 
 /* Description of search and favorites widget in widget gallery */
 "widget.gallery.search.and.favorites.description" = "Søg eller besøg dine yndlingssider privat med kun ét tryk.";

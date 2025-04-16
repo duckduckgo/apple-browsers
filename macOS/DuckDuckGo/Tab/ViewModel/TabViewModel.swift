@@ -87,8 +87,8 @@ final class TabViewModel {
                 zoomLevelSubject.send(zoomLevel)
             }
 
-#if !APPSTORE
-            if #available(macOS 14.4, *) {
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+            if #available(macOS 15.4, *) {
                 WebExtensionManager.shared.eventsListener.didChangeTabProperties([.zoomFactor], for: tab)
             }
 #endif
@@ -96,7 +96,26 @@ final class TabViewModel {
     }
 
     var canPrint: Bool {
-        !isShowingErrorPage && canReload && tab.webView.canPrint
+        guard !isShowingErrorPage else { return false }
+        switch tab.content {
+        case .url(let url, _, _):
+            return !(url.isDuckPlayer || url.isDuckURLScheme) && canReload && tab.webView.canPrint
+        case .history:
+            return false
+        default:
+            return canReload && tab.webView.canPrint
+        }
+    }
+
+    var canShare: Bool {
+        switch tab.content {
+        case .url(let url, _, _):
+            return !(url.isDuckPlayer || url.isDuckURLScheme)
+        case .history:
+            return false
+        default:
+            return canReload
+        }
     }
 
     var canSaveContent: Bool {
@@ -370,6 +389,8 @@ final class TabViewModel {
                 .bookmarksTrustedIndicator
         case .history:
             NSApp.delegateTyped.featureFlagger.isFeatureOn(.historyView) ? .historyTrustedIndicator : .init()
+        case .url(let url, _, _) where url.isHistory:
+            NSApp.delegateTyped.featureFlagger.isFeatureOn(.historyView) ? .historyTrustedIndicator : .init()
         case .dataBrokerProtection:
                 .dbpTrustedIndicator
         case .subscription:
@@ -413,13 +434,8 @@ final class TabViewModel {
             switch tab.error as NSError? {
             case is URLError where tab.error?.isServerCertificateUntrusted == true:
                 title = UserText.sslErrorPageTabTitle
-            case .some(let error as MaliciousSiteError):
-                switch error.code {
-                case .phishing:
-                    title = UserText.phishingErrorPageTabTitle
-                case .malware:
-                    title = UserText.malwareErrorPageTabTitle
-                }
+            case .some( _ as MaliciousSiteError):
+                title = UserText.maliciousSiteErrorPageTabTitle
             default:
                 title = UserText.tabErrorTitle
             }
@@ -479,6 +495,8 @@ final class TabViewModel {
             Favicon.bookmarks
         case .history:
             NSApp.delegateTyped.featureFlagger.isFeatureOn(.historyView) ? Favicon.history : nil
+        case .url(let url, _, _) where url.isHistory:
+            NSApp.delegateTyped.featureFlagger.isFeatureOn(.historyView) ? Favicon.history : nil
         case .subscription:
             Favicon.subscription
         case .identityTheftRestoration:
@@ -506,7 +524,7 @@ final class TabViewModel {
             return .redAlertCircle16
         case .some(let error as MaliciousSiteError):
             switch error.code {
-            case .phishing, .malware:
+            case .phishing, .malware, .scam:
                 return .redAlertCircle16
             }
         default:

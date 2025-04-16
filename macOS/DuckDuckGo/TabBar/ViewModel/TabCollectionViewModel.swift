@@ -68,7 +68,12 @@ final class TabCollectionViewModel: NSObject {
 
     var changesEnabled = true
 
-    private(set) var pinnedTabsManager: PinnedTabsManager?
+    private(set) var pinnedTabsManager: PinnedTabsManager? {
+        didSet {
+            subscribeToPinnedTabsManager()
+        }
+    }
+    private(set) var pinnedTabsManagerProvider: PinnedTabsManagerProviding?
 
     /**
      * Contains view models for local tabs
@@ -90,8 +95,8 @@ final class TabCollectionViewModel: NSObject {
             previouslySelectedTabViewModel = oldValue
             oldValue?.tab.renderTabSnapshot()
 
-#if !APPSTORE
-            if #available(macOS 14.4, *) {
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+            if #available(macOS 15.4, *) {
                 if let oldValue {
                     WebExtensionManager.shared.eventsListener.didDeselectTabs([oldValue.tab])
                 }
@@ -106,14 +111,13 @@ final class TabCollectionViewModel: NSObject {
     }
     private weak var previouslySelectedTabViewModel: TabViewModel?
 
-    // In a special occasion, we want to select the "parent" tab after closing the currently selected tab
-    private var selectParentOnRemoval = false
     private var tabLazyLoader: TabLazyLoader<TabCollectionViewModel>?
     private var isTabLazyLoadingRequested: Bool = false
 
     private var shouldBlockPinnedTabsManagerUpdates: Bool = false
 
     private var cancellables = Set<AnyCancellable>()
+    private var pinnedTabsManagerCancellable: Cancellable?
 
     private var tabsPreferences: TabsPreferences
     private var startupPreferences: StartupPreferences
@@ -126,44 +130,50 @@ final class TabCollectionViewModel: NSObject {
         return homePage
     }
 
+    /// This property logic will be true when the user appends a new tab
+    /// it will be set to false when the user selects an existing tab
+    private var shouldReturnToPreviousActiveTab: Bool = false
+
     init(
         tabCollection: TabCollection,
-        selectionIndex: Int = 0,
-        pinnedTabsManager: PinnedTabsManager?,
+        selectionIndex: TabIndex = .unpinned(0),
+        pinnedTabsManagerProvider: PinnedTabsManagerProviding?,
         burnerMode: BurnerMode = .regular,
         startupPreferences: StartupPreferences = StartupPreferences.shared,
         tabsPreferences: TabsPreferences = TabsPreferences.shared
     ) {
         self.tabCollection = tabCollection
-        self.pinnedTabsManager = pinnedTabsManager
+        self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
         self.burnerMode = burnerMode
         self.startupPreferences = startupPreferences
         self.tabsPreferences = tabsPreferences
         super.init()
 
+        self.pinnedTabsManager = pinnedTabsManagerProvider?.getNewPinnedTabsManager(shouldMigrate: false, tabCollectionViewModel: self)
         subscribeToTabs()
         subscribeToPinnedTabsManager()
+        subscribeToPinnedTabsSettingChanged()
         subscribeToSelectedTab()
 
         if tabCollection.tabs.isEmpty {
             appendNewTab(with: homePage)
         }
-        self.selectionIndex = .unpinned(selectionIndex)
+        self.selectionIndex = selectionIndex
     }
 
     convenience init(tabCollection: TabCollection,
-                     selectionIndex: Int = 0,
+                     selectionIndex: TabIndex = .unpinned(0),
                      burnerMode: BurnerMode = .regular) {
         self.init(tabCollection: tabCollection,
                   selectionIndex: selectionIndex,
-                  pinnedTabsManager: WindowControllersManager.shared.pinnedTabsManager,
+                  pinnedTabsManagerProvider: Application.appDelegate.pinnedTabsManagerProvider,
                   burnerMode: burnerMode)
     }
 
     convenience init(burnerMode: BurnerMode = .regular) {
         let tabCollection = TabCollection()
         self.init(tabCollection: tabCollection,
-                  pinnedTabsManager: WindowControllersManager.shared.pinnedTabsManager,
+                  pinnedTabsManagerProvider: Application.appDelegate.pinnedTabsManagerProvider,
                   burnerMode: burnerMode)
     }
 
@@ -228,6 +238,7 @@ final class TabCollectionViewModel: NSObject {
     // MARK: - Selection
 
     @discardableResult func select(at index: TabIndex, forceChange: Bool = false) -> Bool {
+        shouldReturnToPreviousActiveTab = false
         switch index {
         case .unpinned(let i):
             return selectUnpinnedTab(at: i, forceChange: forceChange)
@@ -304,7 +315,6 @@ final class TabCollectionViewModel: NSObject {
         }
 
         selectionIndex = .unpinned(index)
-        selectParentOnRemoval = selectedTabViewModel === previouslySelectedTabViewModel && selectParentOnRemoval
         return true
     }
 
@@ -319,7 +329,6 @@ final class TabCollectionViewModel: NSObject {
         }
 
         selectionIndex = .pinned(index)
-        selectParentOnRemoval = selectedTabViewModel === previouslySelectedTabViewModel && selectParentOnRemoval
         return true
     }
 
@@ -335,6 +344,7 @@ final class TabCollectionViewModel: NSObject {
     func append(tab: Tab, selected: Bool = true, forceChange: Bool = false) {
         guard changesEnabled || forceChange else { return }
 
+        shouldReturnToPreviousActiveTab = true
         tabCollection.append(tab: tab)
         if tab.content == .newtab {
             NotificationCenter.default.post(name: HomePage.Models.newHomePageTabOpen, object: nil)
@@ -345,10 +355,6 @@ final class TabCollectionViewModel: NSObject {
             delegate?.tabCollectionViewModelDidAppend(self, selected: true)
         } else {
             delegate?.tabCollectionViewModelDidAppend(self, selected: false)
-        }
-
-        if selected {
-            self.selectParentOnRemoval = true
         }
     }
 
@@ -381,10 +387,6 @@ final class TabCollectionViewModel: NSObject {
         }
         if index.isUnpinnedTab {
             delegate?.tabCollectionViewModelDidInsert(self, at: index.item, selected: selected)
-        }
-
-        if selected {
-            self.selectParentOnRemoval = true
         }
     }
 
@@ -459,10 +461,12 @@ final class TabCollectionViewModel: NSObject {
     private func removeUnpinnedTab(at index: Int, published: Bool = true, forceChange: Bool = false) {
         guard changesEnabled || forceChange else { return }
 
-        let parentTab = tabCollection.tabs[safe: index]?.parentTab
+        let removedTab = tabCollection.tabs[safe: index]
+        let parentTab = removedTab?.parentTab
         guard tabCollection.removeTab(at: index, published: published, forced: forceChange) else { return }
 
-        didRemoveTab(at: .unpinned(index),
+        didRemoveTab(tab: removedTab!,
+                     at: .unpinned(index),
                      withParent: parentTab,
                      forced: forceChange)
     }
@@ -473,12 +477,12 @@ final class TabCollectionViewModel: NSObject {
         defer {
             shouldBlockPinnedTabsManagerUpdates = false
         }
-        guard pinnedTabsManager?.unpinTab(at: index, published: published) != nil else { return }
+        guard let removedTab = pinnedTabsManager?.unpinTab(at: index, published: published) else { return }
 
-        didRemoveTab(at: .pinned(index), withParent: nil)
+        didRemoveTab(tab: removedTab, at: .pinned(index), withParent: nil)
     }
 
-    private func didRemoveTab(at index: TabIndex, withParent parentTab: Tab?, forced: Bool = false) {
+    private func didRemoveTab(tab: Tab, at index: TabIndex, withParent parentTab: Tab?, forced: Bool = false) {
 
         func notifyDelegate() {
             if index.isUnpinnedTab {
@@ -500,19 +504,11 @@ final class TabCollectionViewModel: NSObject {
         }
 
         let newSelectionIndex: TabIndex
-        if selectionIndex == index,
-           selectParentOnRemoval,
-           let parentTab = parentTab,
-           let parentTabIndex = indexInAllTabs(of: parentTab) {
-            // Select parent tab
-            newSelectionIndex = parentTabIndex
-        } else if selectionIndex == index,
-                  let parentTab = parentTab,
-                  let leftTab = tab(at: index.previous(in: self)),
-                  let rightTab = tab(at: index),
-                  rightTab.parentTab !== parentTab && (leftTab.parentTab === parentTab || leftTab === parentTab) {
-            // Select parent tab on left or another child tab on left instead of the tab on right
-            newSelectionIndex = .unpinned(max(0, selectionIndex.item - 1))
+
+        /// 1. We first check if the current active tab is going to be closed. If the active tab is being closed we calculate the new index using` calculateSelectedTabIndexAfterClosing`
+        /// 2. If we are closing a tab that is not the active we need to stay in the current tab, given that the current tab index will change we need to calculate it.
+        if index == selectionIndex, let calculatedIndex = selectionIndex.calculateSelectedTabIndexAfterClosing(for: self, removedTab: tab) {
+            newSelectionIndex = calculatedIndex
         } else if selectionIndex > index, selectionIndex.isInSameSection(as: index) {
             newSelectionIndex = selectionIndex.previous(in: self)
         } else {
@@ -523,19 +519,42 @@ final class TabCollectionViewModel: NSObject {
         select(at: newSelectionIndex, forceChange: forced)
     }
 
+    func getPreviouslyActiveTab() -> TabIndex? {
+        guard shouldReturnToPreviousActiveTab else {
+            return nil
+        }
+
+        let recentlyOpenedPinnedTab = pinnedTabs.max(by: { $0.lastSelectedAt ?? Date.distantPast < $1.lastSelectedAt ?? Date.distantPast })
+        let recentlyOpenedNormalTab = tabs.max(by: { $0.lastSelectedAt ?? Date.distantPast < $1.lastSelectedAt ?? Date.distantPast })
+
+        if let pinnedTab = recentlyOpenedPinnedTab, let normalTab = recentlyOpenedNormalTab {
+            if pinnedTab.lastSelectedAt ?? Date.distantPast > normalTab.lastSelectedAt ?? Date.distantPast {
+                return indexInAllTabs(of: pinnedTab)
+            } else {
+                return indexInAllTabs(of: normalTab)
+            }
+        } else if let pinnedTab = recentlyOpenedPinnedTab {
+            return indexInAllTabs(of: pinnedTab)
+        } else if let normalTab = recentlyOpenedNormalTab {
+            return indexInAllTabs(of: normalTab)
+        } else {
+            return nil
+        }
+    }
+
     func moveTab(at fromIndex: Int, to otherViewModel: TabCollectionViewModel, at toIndex: Int) {
         assert(self !== otherViewModel)
         guard changesEnabled else { return }
 
-        let parentTab = tabCollection.tabs[safe: fromIndex]?.parentTab
+        let movedTab = tabCollection.tabs[safe: fromIndex]
+        let parentTab = movedTab?.parentTab
 
         guard tabCollection.moveTab(at: fromIndex, to: otherViewModel.tabCollection, at: toIndex) else { return }
 
-        didRemoveTab(at: .unpinned(fromIndex), withParent: parentTab)
+        didRemoveTab(tab: movedTab!, at: .unpinned(fromIndex), withParent: parentTab)
 
         otherViewModel.selectUnpinnedTab(at: toIndex)
         otherViewModel.delegate?.tabCollectionViewModelDidInsert(otherViewModel, at: toIndex, selected: true)
-        otherViewModel.selectParentOnRemoval = true
     }
 
     func removeAllTabs(except exceptionIndex: Int? = nil, forceChange: Bool = false) {
@@ -685,8 +704,8 @@ final class TabCollectionViewModel: NSObject {
     }
 
     private func handleTabUnpinnedInAnotherTabCollectionViewModel(at index: Int) {
-        if selectionIndex == .pinned(index) {
-            didRemoveTab(at: .pinned(index), withParent: nil)
+        if selectionIndex == .pinned(index), let tab = tab(at: .pinned(index)) {
+            didRemoveTab(tab: tab, at: .pinned(index), withParent: nil)
         }
     }
 
@@ -715,13 +734,20 @@ final class TabCollectionViewModel: NSObject {
         select(at: selectionIndex, forceChange: forceChange)
     }
 
+    private func subscribeToPinnedTabsSettingChanged() {
+        pinnedTabsManagerProvider?.settingChangedPublisher
+            .sink { [weak self] _ in
+                guard let self = self else { return }
+                self.pinnedTabsManager = self.pinnedTabsManagerProvider?.getNewPinnedTabsManager(shouldMigrate: true, tabCollectionViewModel: self)
+            }.store(in: &cancellables)
+    }
+
     private func subscribeToPinnedTabsManager() {
-        pinnedTabsManager?.didUnpinTabPublisher
+        pinnedTabsManagerCancellable = pinnedTabsManager?.didUnpinTabPublisher
             .filter { [weak self] _ in self?.shouldBlockPinnedTabsManagerUpdates == false }
             .sink { [weak self] index in
                 self?.handleTabUnpinnedInAnotherTabCollectionViewModel(at: index)
             }
-            .store(in: &cancellables)
     }
 
     private func subscribeToTabs() {

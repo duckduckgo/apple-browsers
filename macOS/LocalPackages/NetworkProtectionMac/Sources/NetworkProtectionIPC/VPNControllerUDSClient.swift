@@ -31,8 +31,8 @@ public final class VPNControllerUDSClient {
 
 extension VPNControllerUDSClient: VPNControllerIPCClient {
 
-    public func uninstall(_ component: VPNUninstallComponent) async throws {
-        let payload = try encoder.encode(VPNIPCClientCommand.uninstall(component))
+    public func uninstall(_ component: VPNUninstallComponent, showNotification: Bool) async throws {
+        let payload = try encoder.encode(VPNIPCClientCommand.uninstall(component, showNotification: showNotification))
         try await udsClient.send(payload)
     }
 

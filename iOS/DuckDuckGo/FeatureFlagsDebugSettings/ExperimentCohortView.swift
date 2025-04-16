@@ -20,10 +20,11 @@
 import Foundation
 import SwiftUI
 import Core
+import BrowserServicesKit
 
 struct ExperimentCohortView: View {
     @ObservedObject var viewModel: FeatureFlagsSettingViewModel
-    let experiment: FeatureFlag
+    let experiment: any FeatureFlagDescribing
 
     var body: some View {
         List {

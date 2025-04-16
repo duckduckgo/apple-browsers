@@ -89,7 +89,7 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: duckduckgo-dmg
-        path: ${{ github.workspace }}
+        path: ${{ github.workspace }}/macOS
 
     - name: Download release app
       # Download the release app only if download-dmg-artifact fails

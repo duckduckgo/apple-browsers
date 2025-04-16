@@ -410,7 +410,7 @@ private func dataImporter(for source: DataImport.Source, fileDataType: DataImpor
 
     case .onePassword8, .onePassword7, .bitwarden, .lastPass, .csv,
          /* any */_ where fileDataType == .passwords:
-        CSVImporter(fileURL: url, loginImporter: SecureVaultLoginImporter(loginImportState: AutofillLoginImportState()), defaultColumnPositions: .init(source: source), reporter: SecureVaultReporter.shared)
+        CSVImporter(fileURL: url, loginImporter: SecureVaultLoginImporter(loginImportState: AutofillLoginImportState()), defaultColumnPositions: .init(source: source), reporter: SecureVaultReporter.shared, tld: ContentBlocking.shared.tld)
 
     case .brave, .chrome, .chromium, .coccoc, .edge, .opera, .operaGX, .vivaldi:
         ChromiumDataImporter(profile: profile,
@@ -424,7 +424,7 @@ private func dataImporter(for source: DataImport.Source, fileDataType: DataImpor
                             primaryPassword: primaryPassword,
                             loginImporter: SecureVaultLoginImporter(loginImportState: AutofillLoginImportState()),
                             bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: LocalBookmarkManager.shared),
-                            faviconManager: FaviconManager.shared)
+                            faviconManager: NSApp.delegateTyped.faviconManager)
     case .safari, .safariTechnologyPreview:
         SafariDataImporter(profile: profile,
                            bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: LocalBookmarkManager.shared))
@@ -736,7 +736,7 @@ extension DataImportViewModel {
 
         Logger.dataImportExport.debug("dismiss")
         dismiss()
-        if case .xcPreviews = NSApp.runType {
+        if case .xcPreviews = AppVersion.runType {
             self.update(with: importSource) // reset
         }
     }

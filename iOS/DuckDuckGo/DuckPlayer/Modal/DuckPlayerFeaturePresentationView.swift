@@ -34,7 +34,7 @@ struct DuckPlayerFeaturePresentationView: View {
 
             VStack(alignment: .center, spacing: stackVerticalSpacing) {
                 animation
-                
+
                 Text(context == .SERP
                      ? UserText.duckPlayerPresentationModalTitle
                      : UserText.duckPlayerPresentationModalTitleYouTube)
@@ -42,7 +42,7 @@ struct DuckPlayerFeaturePresentationView: View {
                     .multilineTextAlignment(.center)
                     .foregroundColor(Color(designSystemColor: .textPrimary))
                     .minimumScaleFactor(Constants.textMinimumScaleFactor)
-                
+
                 Text(UserText.duckPlayerPresentationModalBody)
                     .daxBodyRegular()
                     .multilineTextAlignment(.center)

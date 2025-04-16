@@ -63,7 +63,7 @@ struct NewTabPageView: View {
     var body: some View {
         if !viewModel.isOnboarding {
             mainView
-                .background(Color(designSystemColor: .background))
+                .background(Color(ThemeManager.shared.currentTheme.backgroundColor))
                 .sheet(isPresented: $viewModel.isShowingSettings, onDismiss: {
                     shortcutsSettingsModel.save()
                     sectionsSettingsModel.save()

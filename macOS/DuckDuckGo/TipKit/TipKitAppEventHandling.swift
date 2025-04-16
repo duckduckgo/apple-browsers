@@ -41,11 +41,6 @@ struct TipKitAppEventHandler: TipKitAppEventHandling {
     }
 
     func appDidFinishLaunching() {
-        guard featureFlagger.isFeatureOn(.networkProtectionUserTips) else {
-            logger.log("TipKit disabled by remote feature flag.")
-            return
-        }
-
         if #available(macOS 14.0, *) {
             controller.configureTipKit([
                 .displayFrequency(.immediate),

@@ -21,5 +21,5 @@ import Foundation
 
 final class BookmarkFolderStoreMock: BookmarkFoldersStore {
     var lastBookmarkAllTabsFolderIdUsed: String?
-
+    var lastBookmarkSingleTabFolderIdUsed: String?
 }

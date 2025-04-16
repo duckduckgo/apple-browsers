@@ -113,6 +113,10 @@ class MockHistoryManager: HistoryManaging {
     var isEnabledByUser: Bool
     var historyFeatureEnabled: Bool
 
+    convenience init() {
+        self.init(historyCoordinator: MockHistoryCoordinator(), isEnabledByUser: false, historyFeatureEnabled: false)
+    }
+
     init(historyCoordinator: HistoryCoordinating, isEnabledByUser: Bool, historyFeatureEnabled: Bool) {
         self.historyCoordinator = historyCoordinator
         self.historyFeatureEnabled = historyFeatureEnabled

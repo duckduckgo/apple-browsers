@@ -156,10 +156,10 @@ class MockFavoritesListInteracting: FavoritesListInteracting {
 
 class CapturingNewTabDaxDialogProvider: NewTabDaxDialogProvider {
     var homeDialog: DaxDialogs.HomeScreenSpec?
-    var onDismiss: (() -> Void)?
-    func createDaxDialog(for homeDialog: DaxDialogs.HomeScreenSpec, onDismiss: @escaping () -> Void) -> some View {
+    var onDismiss: ((_ activateSearch: Bool) -> Void)?
+    func createDaxDialog(for homeDialog: DaxDialogs.HomeScreenSpec, onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
         self.homeDialog = homeDialog
-        self.onDismiss = onDismiss
+        self.onDismiss = onCompletion
         return EmptyView()
     }
 }

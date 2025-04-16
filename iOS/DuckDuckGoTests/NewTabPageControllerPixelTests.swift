@@ -87,7 +87,7 @@ final class NewTabPageControllerPixelTests: XCTestCase {
 }
 
 private class MockDaxDialogFactory: NewTabDaxDialogProvider {
-    func createDaxDialog(for homeDialog: DaxDialogs.HomeScreenSpec, onDismiss: @escaping () -> Void) -> EmptyView {
+    func createDaxDialog(for homeDialog: DaxDialogs.HomeScreenSpec, onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> EmptyView {
         EmptyView()
     }
 }

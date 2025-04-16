@@ -61,17 +61,35 @@
 /* Title for the control widget when enabled */
 "vpn.control.widget.on" = "Το VPN είναι ενεργοποιημένο";
 
+/* Description of quickActions widget in widget gallery */
+"widget.gallery.customshortcuts.description" = "Επιλέξτε συντομεύσεις για τις αγαπημένες σας ενέργειες.";
+
+/* Display name for quick actions widget in widget gallery */
+"widget.gallery.customshortcuts.display.name" = "Προσαρμοσμένες συντομεύσεις";
+
+/* Description for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.description" = "Επιλέξτε τις συντομεύσεις σας";
+
+/* Left label for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.left" = "Αριστερή συντόμευση";
+
+/* Right label for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.right" = "Δεξιά συντόμευση";
+
+/* Title for editing custom shortcuts */
+"widget.gallery.customshortcuts.edit.title" = "Διαμόρφωση συντομεύσεων";
+
 /* Description of search passwords widget in widget gallery */
 "widget.gallery.passwords.description" = "Αναζητήστε γρήγορα τους αποθηκευμένους κωδικούς πρόσβασής σας στο DuckDuckGo.";
 
 /* Display name for search passwords widget in widget gallery */
 "widget.gallery.passwords.display.name" = "Αναζήτηση κωδικών πρόσβασης";
 
-/* Description of quickActions widget in widget gallery */
-"widget.gallery.quickactions.description" = "Αναζητήστε, συνομιλήστε στο Duck.ai ή δείτε τους κωδικούς πρόσβασής σας.";
+/* Description of medium quickActions widget in widget gallery */
+"widget.gallery.quickactions.medium.display.description" = "Συντομεύσεις για τις αγαπημένες σας ενέργειες.";
 
-/* Display name for quick actions widget in widget gallery */
-"widget.gallery.quickactions.display.name" = "Συντομευσεις";
+/* Display name for medium quick actions widget in widget gallery */
+"widget.gallery.quickactions.medium.display.name" = "Συντομευσεις";
 
 /* Description of search and favorites widget in widget gallery */
 "widget.gallery.search.and.favorites.description" = "Κάντε αναζήτηση ή επισκεφτείτε τους αγαπημένους ιστότοπούς σας ιδιωτικά, με μόνο ένα πάτημα.";

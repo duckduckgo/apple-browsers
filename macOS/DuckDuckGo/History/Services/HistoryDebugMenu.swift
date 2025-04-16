@@ -17,17 +17,27 @@
 //
 
 import AppKit
+import BrowserServicesKit
 import History
 
 final class HistoryDebugMenu: NSMenu {
 
     let historyCoordinator: HistoryCoordinating
+    let featureFlagger: FeatureFlagger
+    let resetMenuItem: NSMenuItem
+    let showMenuItem: NSMenuItem
 
     private let environmentMenu = NSMenu()
 
-    init(historyCoordinator: HistoryCoordinating = HistoryCoordinator.shared) {
+    init(historyCoordinator: HistoryCoordinating = HistoryCoordinator.shared, featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
         self.historyCoordinator = historyCoordinator
+        self.featureFlagger = featureFlagger
+        resetMenuItem = NSMenuItem(title: "Reset History View Onboarding", action: #selector(resetHistoryViewOnboarding))
+        showMenuItem = NSMenuItem(title: "Show History View Onboarding", action: #selector(showHistoryViewOnboarding))
+
         super.init(title: "")
+        resetMenuItem.target = self
+        showMenuItem.target = self
 
         buildItems {
             NSMenuItem(
@@ -48,11 +58,23 @@ final class HistoryDebugMenu: NSMenu {
                 target: self,
                 representedObject: (100, FakeURLsPool.random200Domains)
             )
+
+            NSMenuItem.separator()
+            resetMenuItem
+            showMenuItem
         }
     }
 
     required init(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    override func update() {
+        super.update()
+
+        let isHistoryViewEnabled = featureFlagger.isFeatureOn(.historyView)
+        resetMenuItem.isHidden = !isHistoryViewEnabled
+        showMenuItem.isHidden = !isHistoryViewEnabled
     }
 
     @objc func populateFakeHistory(_ sender: NSMenuItem) {
@@ -75,15 +97,28 @@ final class HistoryDebugMenu: NSMenu {
                 continue
             }
             let visitDate = Date(timeIntervalSince1970: TimeInterval.random(in: date.startOfDay.timeIntervalSince1970..<date.timeIntervalSince1970))
-            let title = url.host?.split(separator: ".").first.flatMap(String.init) ?? "Test"
             historyCoordinator.addVisit(of: url, at: visitDate)
-            historyCoordinator.updateTitleIfNeeded(title: title, url: url)
+            historyCoordinator.updateTitleIfNeeded(title: url.path.dropping(prefix: "/"), url: url)
             visitsPerDay += 1
             if visitsPerDay >= maxVisitsPerDay {
                 date = date.daysAgo(1)
                 visitsPerDay = 0
             }
         }
+    }
+
+    @objc func resetHistoryViewOnboarding() {
+        let persistor = UserDefaultsHistoryViewOnboardingViewSettingsPersistor()
+        persistor.didShowOnboardingView = false
+    }
+
+    @MainActor
+    @objc func showHistoryViewOnboarding() {
+        resetHistoryViewOnboarding()
+        WindowControllersManager.shared.lastKeyMainWindowController?
+            .mainViewController
+            .navigationBarViewController
+            .presentHistoryViewOnboardingIfNeeded(force: true)
     }
 
     enum FakeURLsPool {

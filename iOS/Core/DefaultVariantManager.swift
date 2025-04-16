@@ -26,9 +26,6 @@ import os.log
 extension FeatureName {
     // Define your feature e.g.:
     // public static let experimentalFeature = FeatureName(rawValue: "experimentalFeature")
-
-    public static let addToDockIntro = FeatureName(rawValue: "addToDockIntro")
-    public static let addToDockContextual = FeatureName(rawValue: "addToDockContextual")
 }
 
 public struct VariantIOS: Variant {
@@ -56,10 +53,6 @@ public struct VariantIOS: Variant {
         VariantIOS(name: "sc", weight: doNotAllocate, isIncluded: When.always, features: []),
         VariantIOS(name: "sd", weight: doNotAllocate, isIncluded: When.always, features: []),
         VariantIOS(name: "se", weight: doNotAllocate, isIncluded: When.always, features: []),
-
-        VariantIOS(name: "mh", weight: 1, isIncluded: When.notPadDevice, features: []),
-        VariantIOS(name: "mk", weight: 1, isIncluded: When.notPadDevice, features: [.addToDockIntro]),
-        VariantIOS(name: "mo", weight: 1, isIncluded: When.notPadDevice, features: [.addToDockContextual]),
 
         returningUser
     ]

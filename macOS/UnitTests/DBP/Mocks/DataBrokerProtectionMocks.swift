@@ -20,12 +20,15 @@ import Foundation
 import Subscription
 @testable import DuckDuckGo_Privacy_Browser
 
-final class MockAccountManager: AccountManager {
+final class MockAccountManager: AccountManager, SubscriptionAuthenticationStateProvider {
+
     var hasEntitlementResult: Result<Bool, any Error> = .success(true)
 
     var delegate: AccountManagerKeychainAccessDelegate?
 
-    var isUserAuthenticated = false
+    var isUserAuthenticated: Bool {
+        accessToken != nil
+    }
 
     var accessToken: String? = ""
 
@@ -75,5 +78,9 @@ final class MockAccountManager: AccountManager {
 
     func checkForEntitlements(wait waitTime: Double, retry retryCount: Int) async -> Bool {
         true
+    }
+
+    func removeAccessToken() throws {
+        accessToken = nil
     }
 }

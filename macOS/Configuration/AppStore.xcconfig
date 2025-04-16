@@ -23,6 +23,18 @@ MAIN_BUNDLE_IDENTIFIER[config=Debug][sdk=*] = $(MAIN_BUNDLE_IDENTIFIER_PREFIX).d
 MAIN_BUNDLE_IDENTIFIER[config=CI][sdk=*] = $(MAIN_BUNDLE_IDENTIFIER_PREFIX).debug
 MAIN_BUNDLE_IDENTIFIER[config=Review][sdk=*] = $(MAIN_BUNDLE_IDENTIFIER_PREFIX).review
 
+SYSEX_BUNDLE_ID_BASE[sdk=*] = $(AGENT_BUNDLE_ID_BASE).network-extension
+SYSEX_BUNDLE_ID_BASE[config=Debug][sdk=*] = $(AGENT_BUNDLE_ID_BASE).network-extension
+SYSEX_BUNDLE_ID_BASE[config=CI][sdk=*] = $(AGENT_BUNDLE_ID_BASE).network-extension
+SYSEX_BUNDLE_ID_BASE[config=Review][sdk=*] = $(AGENT_BUNDLE_ID_BASE).network-extension
+SYSEX_BUNDLE_ID_BASE[config=Release][sdk=*] = $(AGENT_BUNDLE_ID_BASE).network-extension
+
+SYSEX_BUNDLE_ID[sdk=*] = $(SYSEX_BUNDLE_ID_BASE)
+SYSEX_BUNDLE_ID[config=Debug][sdk=*] = $(SYSEX_BUNDLE_ID_BASE).debug
+SYSEX_BUNDLE_ID[config=CI][sdk=*] = $(SYSEX_BUNDLE_ID_BASE).debug
+SYSEX_BUNDLE_ID[config=Review][sdk=*] = $(SYSEX_BUNDLE_ID_BASE).review
+SYSEX_BUNDLE_ID[config=Release][sdk=*] = $(SYSEX_BUNDLE_ID_BASE)
+
 GCC_PREPROCESSOR_DEFINITIONS[arch=*][sdk=*] = APPSTORE=1 SWIFT_OBJC_INTERFACE_HEADER_NAME=$(SWIFT_OBJC_INTERFACE_HEADER_NAME)
 GCC_PREPROCESSOR_DEFINITIONS[config=CI][arch=*][sdk=*] = APPSTORE=1 DEBUG=1 CI=1 SWIFT_OBJC_INTERFACE_HEADER_NAME=$(SWIFT_OBJC_INTERFACE_HEADER_NAME) $(inherited)
 GCC_PREPROCESSOR_DEFINITIONS[config=Debug][arch=*][sdk=*] = APPSTORE=1 DEBUG=1 SWIFT_OBJC_INTERFACE_HEADER_NAME=$(SWIFT_OBJC_INTERFACE_HEADER_NAME) $(inherited)
@@ -36,10 +48,10 @@ SWIFT_ACTIVE_COMPILATION_CONDITIONS[config=Debug][arch=*][sdk=*] = APPSTORE DEBU
 SWIFT_ACTIVE_COMPILATION_CONDITIONS[config=Review][arch=*][sdk=*] = APPSTORE REVIEW $(FEATURE_FLAGS)
 
 NETP_BASE_APP_GROUP = $(DEVELOPMENT_TEAM).com.duckduckgo.macos.browser.network-protection
-NETP_APP_GROUP[config=CI][sdk=macos*] = $(NETP_BASE_APP_GROUP).debug
-NETP_APP_GROUP[config=Review][sdk=macos*] = $(NETP_BASE_APP_GROUP).review
-NETP_APP_GROUP[config=Debug][sdk=macos*] = $(NETP_BASE_APP_GROUP).debug
-NETP_APP_GROUP[config=Release][sdk=macos*] = $(NETP_BASE_APP_GROUP)
+NETP_APP_GROUP[config=CI][sdk=*] = $(NETP_BASE_APP_GROUP).debug
+NETP_APP_GROUP[config=Review][sdk=*] = $(NETP_BASE_APP_GROUP).review
+NETP_APP_GROUP[config=Debug][sdk=*] = $(NETP_BASE_APP_GROUP).debug
+NETP_APP_GROUP[config=Release][sdk=*] = $(NETP_BASE_APP_GROUP)
 
 SUBSCRIPTION_BASE_APP_GROUP = $(DEVELOPMENT_TEAM).$(MAIN_BUNDLE_IDENTIFIER_PREFIX).subscription
 SUBSCRIPTION_APP_GROUP[config=CI][sdk=*] = $(SUBSCRIPTION_BASE_APP_GROUP).debug
@@ -53,6 +65,12 @@ APP_CONFIGURATION_APP_GROUP[config=Review][sdk=*] = $(APP_CONFIGURATION_BASE_APP
 APP_CONFIGURATION_APP_GROUP[config=Debug][sdk=*] = $(APP_CONFIGURATION_BASE_APP_GROUP).debug
 APP_CONFIGURATION_APP_GROUP[config=Release][sdk=*] = $(APP_CONFIGURATION_BASE_APP_GROUP)
 
+SYSEX_MACH_SERVICE_NAME[sdk=*] = $(NETP_APP_GROUP).ipc
+SYSEX_MACH_SERVICE_NAME[config=CI][sdk=*] = $(NETP_APP_GROUP).ipc
+SYSEX_MACH_SERVICE_NAME[config=Review][sdk=*] = $(NETP_APP_GROUP).ipc
+SYSEX_MACH_SERVICE_NAME[config=Debug][sdk=*] = $(NETP_APP_GROUP).ipc
+SYSEX_MACH_SERVICE_NAME[config=Release][sdk=*] = $(NETP_APP_GROUP).ipc
+
 AGENT_BUNDLE_ID_BASE[sdk=*] = com.duckduckgo.mobile.ios.vpn.agent
 AGENT_BUNDLE_ID[sdk=*] = $(AGENT_BUNDLE_ID_BASE)
 AGENT_BUNDLE_ID[config=Debug][sdk=*] = $(AGENT_BUNDLE_ID_BASE).debug
@@ -64,17 +82,29 @@ AGENT_PRODUCT_NAME[config=Release][sdk=*] = DuckDuckGo VPN
 
 // Extensions
 
-PROXY_EXTENSION_BUNDLE_ID[sdk=*] = $(AGENT_BUNDLE_ID).proxy
-PROXY_EXTENSION_BUNDLE_ID[config=Debug][sdk=*] = $(AGENT_BUNDLE_ID).proxy
-PROXY_EXTENSION_BUNDLE_ID[config=CI][sdk=*] = $(AGENT_BUNDLE_ID).proxy
-PROXY_EXTENSION_BUNDLE_ID[config=Review][sdk=*] = $(AGENT_BUNDLE_ID).proxy
-PROXY_EXTENSION_BUNDLE_ID[config=Release][sdk=*] = $(AGENT_BUNDLE_ID).proxy
+PROXY_SYSEX_BUNDLE_ID[sdk=*] = $(SYSEX_BUNDLE_ID)
+PROXY_SYSEX_BUNDLE_ID[config=Debug][sdk=*] = $(SYSEX_BUNDLE_ID)
+PROXY_SYSEX_BUNDLE_ID[config=CI][sdk=*] = $(SYSEX_BUNDLE_ID)
+PROXY_SYSEX_BUNDLE_ID[config=Review][sdk=*] = $(SYSEX_BUNDLE_ID)
+PROXY_SYSEX_BUNDLE_ID[config=Release][sdk=*] = $(SYSEX_BUNDLE_ID)
 
-TUNNEL_EXTENSION_BUNDLE_ID[sdk=*] = $(AGENT_BUNDLE_ID).network-protection-extension
-TUNNEL_EXTENSION_BUNDLE_ID[config=Debug][sdk=*] = $(AGENT_BUNDLE_ID).network-protection-extension
-TUNNEL_EXTENSION_BUNDLE_ID[config=CI][sdk=*] = $(AGENT_BUNDLE_ID).network-protection-extension
-TUNNEL_EXTENSION_BUNDLE_ID[config=Review][sdk=*] = $(AGENT_BUNDLE_ID).network-protection-extension
-TUNNEL_EXTENSION_BUNDLE_ID[config=Release][sdk=*] = $(AGENT_BUNDLE_ID).network-protection-extension
+PROXY_APPEX_BUNDLE_ID[sdk=*] = $(AGENT_BUNDLE_ID).proxy
+PROXY_APPEX_BUNDLE_ID[config=Debug][sdk=*] = $(AGENT_BUNDLE_ID).proxy
+PROXY_APPEX_BUNDLE_ID[config=CI][sdk=*] = $(AGENT_BUNDLE_ID).proxy
+PROXY_APPEX_BUNDLE_ID[config=Review][sdk=*] = $(AGENT_BUNDLE_ID).proxy
+PROXY_APPEX_BUNDLE_ID[config=Release][sdk=*] = $(AGENT_BUNDLE_ID).proxy
+
+TUNNEL_SYSEX_BUNDLE_ID[sdk=*] = $(SYSEX_BUNDLE_ID)
+TUNNEL_SYSEX_BUNDLE_ID[config=Debug][sdk=*] = $(SYSEX_BUNDLE_ID)
+TUNNEL_SYSEX_BUNDLE_ID[config=CI][sdk=*] = $(SYSEX_BUNDLE_ID)
+TUNNEL_SYSEX_BUNDLE_ID[config=Review][sdk=*] = $(SYSEX_BUNDLE_ID)
+TUNNEL_SYSEX_BUNDLE_ID[config=Release][sdk=*] = $(SYSEX_BUNDLE_ID)
+
+TUNNEL_APPEX_BUNDLE_ID[sdk=*] = $(AGENT_BUNDLE_ID).network-protection-extension
+TUNNEL_APPEX_BUNDLE_ID[config=Debug][sdk=*] = $(AGENT_BUNDLE_ID).network-protection-extension
+TUNNEL_APPEX_BUNDLE_ID[config=CI][sdk=*] = $(AGENT_BUNDLE_ID).network-protection-extension
+TUNNEL_APPEX_BUNDLE_ID[config=Review][sdk=*] = $(AGENT_BUNDLE_ID).network-protection-extension
+TUNNEL_APPEX_BUNDLE_ID[config=Release][sdk=*] = $(AGENT_BUNDLE_ID).network-protection-extension
 
 // Distributed Notifications Prefix
 

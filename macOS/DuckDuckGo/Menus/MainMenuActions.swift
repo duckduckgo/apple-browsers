@@ -68,7 +68,7 @@ extension AppDelegate {
 
     @objc func newAIChat(_ sender: Any?) {
         DispatchQueue.main.async {
-            AIChatTabOpener.openAIChatTab()
+            NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(nil, target: .newTabSelected)
             PixelKit.fire(GeneralPixel.aichatApplicationMenuFileClicked, includeAppVersionParameter: true)
         }
     }
@@ -102,9 +102,9 @@ extension AppDelegate {
     @objc func recentlyClosedAction(_ sender: Any?) {
         guard let menuItem = sender as? NSMenuItem,
               let cacheItem = menuItem.representedObject as? RecentlyClosedCacheItem else {
-                  assertionFailure("Wrong represented object for recentlyClosedAction()")
-                  return
-              }
+            assertionFailure("Wrong represented object for recentlyClosedAction()")
+            return
+        }
         DispatchQueue.main.async {
             RecentlyClosedCoordinator.shared.reopenItem(cacheItem)
         }
@@ -149,7 +149,7 @@ extension AppDelegate {
 
     @objc func reopenAllWindowsFromLastSession(_ sender: Any?) {
         DispatchQueue.main.async {
-            self.stateRestorationManager.restoreLastSessionState(interactive: true)
+            self.stateRestorationManager.restoreLastSessionState(interactive: true, includeRegularTabs: true)
         }
     }
 
@@ -182,11 +182,15 @@ extension AppDelegate {
         WindowControllersManager.shared.showTab(with: .url(.updates, source: .ui))
     }
 
-    #if FEEDBACK
+#if FEEDBACK
 
     @objc func openFeedback(_ sender: Any?) {
         DispatchQueue.main.async {
-            FeedbackPresenter.presentFeedbackForm()
+            if self.internalUserDecider.isInternalUser {
+                WindowControllersManager.shared.showTab(with: .url(.internalFeedbackForm, source: .ui))
+            } else {
+                FeedbackPresenter.presentFeedbackForm()
+            }
         }
     }
 
@@ -217,6 +221,11 @@ extension AppDelegate {
         WindowControllersManager.shared.showShareFeedbackModal(source: .settings)
     }
 
+    @MainActor
+    @objc func copyVersion(_ sender: Any?) {
+        NSPasteboard.general.copy(AppVersion().versionAndBuildNumber)
+    }
+
     #endif
 
     @objc func navigateToBookmark(_ sender: Any?) {
@@ -226,7 +235,7 @@ extension AppDelegate {
         }
 
         guard let bookmark = menuItem.representedObject as? Bookmark,
-        let url = bookmark.urlObject else {
+              let url = bookmark.urlObject else {
             assertionFailure("Unexpected type of menuItem.representedObject: \(type(of: menuItem.representedObject))")
             return
         }
@@ -335,7 +344,7 @@ extension AppDelegate {
         DispatchQueue.main.async {
             FireCoordinator.fireButtonAction()
             let pixelReporter = OnboardingPixelReporter()
-            pixelReporter.trackFireButtonPressed()
+            pixelReporter.measureFireButtonPressed()
         }
     }
 
@@ -357,8 +366,9 @@ extension AppDelegate {
     }
 
     @objc func resetNewTabPageCustomization(_ sender: Any?) {
-        homePageSettingsModel.resetAllCustomizations()
+        newTabPageCustomizationModel.resetAllCustomizations()
     }
+
 }
 
 extension MainViewController {
@@ -524,10 +534,6 @@ extension MainViewController {
         LocalPinningManager.shared.togglePinning(for: .networkProtection)
     }
 
-    @objc func toggleAIChatShortcut(_ sender: Any) {
-        LocalPinningManager.shared.togglePinning(for: .aiChat)
-    }
-
     // MARK: - History
 
     @objc func back(_ sender: Any?) {
@@ -564,38 +570,79 @@ extension MainViewController {
     }
 
     @objc func clearAllHistory(_ sender: NSMenuItem) {
-        guard let window = view.window else {
-            assertionFailure("No window")
-            return
-        }
+        if featureFlagger.isFeatureOn(.historyView) {
+            Task {
+                let historyViewDataProvider = HistoryViewDataProvider(historyDataSource: HistoryCoordinator.shared)
+                await historyViewDataProvider.refreshData()
+                let visitsCount = await historyViewDataProvider.countVisibleVisits(matching: .rangeFilter(.all))
 
-        let alert = NSAlert.clearAllHistoryAndDataAlert()
-        alert.beginSheetModal(for: window, completionHandler: { response in
-            guard case .alertFirstButtonReturn = response else {
+                let presenter = DefaultHistoryViewDialogPresenter()
+                switch await presenter.showDeleteDialog(for: visitsCount, deleteMode: .all) {
+                case .burn:
+                    FireCoordinator.fireViewModel.fire.burnAll()
+                case .delete:
+                    HistoryCoordinator.shared.burnAll {}
+                default:
+                    break
+                }
+            }
+        } else {
+            guard let window = view.window else {
+                assertionFailure("No window")
                 return
             }
-            FireCoordinator.fireViewModel.fire.burnAll()
-        })
+            let alert = NSAlert.clearAllHistoryAndDataAlert()
+            alert.beginSheetModal(for: window, completionHandler: { response in
+                guard case .alertFirstButtonReturn = response else {
+                    return
+                }
+                FireCoordinator.fireViewModel.fire.burnAll()
+            })
+        }
     }
 
     @objc func clearThisHistory(_ sender: ClearThisHistoryMenuItem) {
-        guard let window = view.window else {
-            assertionFailure("No window")
-            return
-        }
-
-        let dateString = sender.dateString
         let isToday = sender.isToday
         let visits = sender.getVisits(featureFlagger: featureFlagger)
-        let alert = NSAlert.clearHistoryAndDataAlert(dateString: dateString)
-        alert.beginSheetModal(for: window, completionHandler: { response in
-            guard case .alertFirstButtonReturn = response else {
+
+        if featureFlagger.isFeatureOn(.historyView) {
+            let deleteMode: HistoryViewDeleteDialogModel.DeleteMode = {
+                guard let dateString = sender.dateString else {
+                    return sender.isToday ? .today : .unspecified
+                }
+                return .formattedDate(dateString)
+            }()
+
+            Task {
+                let presenter = DefaultHistoryViewDialogPresenter()
+                switch await presenter.showDeleteDialog(for: visits.count, deleteMode: deleteMode) {
+                case .burn:
+                    FireCoordinator.fireViewModel.fire.burnVisits(visits,
+                                                                  except: FireproofDomains.shared,
+                                                                  isToday: isToday)
+                case .delete:
+                    HistoryCoordinator.shared.burnVisits(visits) {}
+                default:
+                    break
+                }
+            }
+        } else {
+            guard let window = view.window else {
+                assertionFailure("No window")
                 return
             }
-            FireCoordinator.fireViewModel.fire.burnVisits(of: visits,
-                                                          except: FireproofDomains.shared,
-                                                          isToday: isToday)
-        })
+
+            let dateString = sender.dateString
+            let alert = NSAlert.clearHistoryAndDataAlert(dateString: dateString)
+            alert.beginSheetModal(for: window, completionHandler: { response in
+                guard case .alertFirstButtonReturn = response else {
+                    return
+                }
+                FireCoordinator.fireViewModel.fire.burnVisits(visits,
+                                                              except: FireproofDomains.shared,
+                                                              isToday: isToday)
+            })
+        }
     }
 
     // MARK: - Bookmarks
@@ -670,6 +717,13 @@ extension MainViewController {
     @objc func showHistory(_ sender: Any?) {
         makeKeyIfNeeded()
         browserTabViewController.openNewTab(with: .history)
+        if let menuItem = sender as? NSMenuItem {
+            if menuItem.representedObject as? HistoryMenu.Location == .moreOptionsMenu {
+                PixelKit.fire(HistoryViewPixel.historyPageShown(.sideMenu), frequency: .dailyAndStandard)
+            } else {
+                PixelKit.fire(HistoryViewPixel.historyPageShown(.topMenu), frequency: .dailyAndStandard)
+            }
+        }
     }
 
     // MARK: - Window
@@ -732,6 +786,8 @@ extension MainViewController {
             tabCollectionViewModel.unpinTab(at: index)
         case .unpinned(let index):
             tabCollectionViewModel.pinTab(at: index)
+
+            tabBarViewController.presentPinnedTabsDiscoveryPopoverIfNecessary()
         }
     }
 
@@ -822,7 +878,7 @@ extension MainViewController {
     }
 
     @objc func crashOnCxxException(_ sender: Any?) {
-        throwTestCppExteption()
+        throwTestCppException()
     }
 
     @objc func resetSecureVaultData(_ sender: Any?) {
@@ -872,7 +928,9 @@ extension MainViewController {
         if tabCollectionViewModel.selectedTabIndex?.isPinnedTab == true, tabCollectionViewModel.tabCollection.tabs.count > 0 {
             tabCollectionViewModel.select(at: .unpinned(0))
         }
-        tabCollectionViewModel.pinnedTabsManager?.tabCollection.removeAll()
+        for pinnedTabsManager in Application.appDelegate.pinnedTabsManagerProvider.currentPinnedTabManagers {
+            pinnedTabsManager.tabCollection.removeAll()
+        }
     }
 
     @objc func resetDuckPlayerOverlayInteractions(_ sender: Any?) {
@@ -1177,7 +1235,7 @@ extension MainViewController: NSMenuItemValidation {
              #selector(MainViewController.showPageSource(_:)),
              #selector(MainViewController.showPageResources(_:)):
             let canReload = activeTabViewModel?.canReload == true
-            let isHTMLNewTabPage = featureFlagger.isFeatureOn(.htmlNewTabPage) && activeTabViewModel?.tab.content == .newtab
+            let isHTMLNewTabPage = activeTabViewModel?.tab.content == .newtab
             let isHistoryView = featureFlagger.isFeatureOn(.historyView) && activeTabViewModel?.tab.content == .history
             return canReload || isHTMLNewTabPage || isHistoryView
 
@@ -1204,7 +1262,7 @@ extension AppDelegate: NSMenuItemValidation {
         case #selector(AppDelegate.reopenLastClosedTab(_:)):
             return RecentlyClosedCoordinator.shared.canReopenRecentlyClosedTab == true
 
-        // Reopen All Windows from Last Session
+        // Reopen All Windows From Last Session
         case #selector(AppDelegate.reopenAllWindowsFromLastSession(_:)):
             return stateRestorationManager.canRestoreLastSessionState
 

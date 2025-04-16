@@ -246,10 +246,10 @@ extension VPNControllerXPCClient: XPCServerInterface {
 
 extension VPNControllerXPCClient: VPNControllerIPCClient {
 
-    public func uninstall(_ component: VPNUninstallComponent) async throws {
+    public func uninstall(_ component: VPNUninstallComponent, showNotification: Bool) async throws {
         switch component {
         case .all:
-            try await self.command(.uninstallVPN)
+            try await self.command(.uninstallVPN(showNotification: showNotification))
         case .configuration:
             try await self.command(.removeVPNConfiguration)
         case .systemExtension:

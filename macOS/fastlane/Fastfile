@@ -84,7 +84,14 @@ platform :mac do
   lane :release_testflight do |options|
     build_release(options)
 
-    upload_to_testflight(options.merge({api_key: get_api_key}))
+    upload_to_testflight(
+      options.merge(
+        {
+          api_key: get_api_key,
+          skip_waiting_for_build_processing: true
+        }
+      )
+    )
   end
 
   # Makes App Store Review build and uploads it to TestFlight without managing App Store listing.
@@ -100,7 +107,8 @@ platform :mac do
       options.merge(
         {
           api_key: get_api_key,
-          app_identifier: "com.duckduckgo.mobile.ios.review"
+          app_identifier: "com.duckduckgo.mobile.ios.review",
+          skip_waiting_for_build_processing: true
         }
       )
     )
@@ -396,7 +404,7 @@ platform :mac do
     sync_code_signing(
       api_key: get_api_key,
       username: get_username(options),
-      readonly: is_ci
+      readonly: !is_ci
     )
   end
 

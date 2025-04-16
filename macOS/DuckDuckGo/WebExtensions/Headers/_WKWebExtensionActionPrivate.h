@@ -1,3 +1,0 @@
-@interface _WKWebExtensionAction ()
-
-@end

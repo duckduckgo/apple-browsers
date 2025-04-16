@@ -58,6 +58,13 @@ struct SecureTextFieldButton: View {
     }
 }
 
+extension View {
+
+    @ViewBuilder func tooltip(_ message: String) -> some View {
+        self.help(message)
+    }
+
+}
 /// View which uses the provided `isVisible` property to display either the provided `text` or a string of `•`
 struct HiddenText: View {
 

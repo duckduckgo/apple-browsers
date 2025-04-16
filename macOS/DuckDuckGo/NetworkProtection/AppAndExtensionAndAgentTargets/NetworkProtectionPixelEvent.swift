@@ -45,8 +45,6 @@ enum NetworkProtectionPixelEvent: PixelKitEventV2 {
     case networkProtectionTunnelUpdateSuccess
     case networkProtectionTunnelUpdateFailure(_ error: Error)
 
-    case networkProtectionTunnelWakeAttempt
-    case networkProtectionTunnelWakeSuccess
     case networkProtectionTunnelWakeFailure(_ error: Error)
 
     case networkProtectionServerMigrationAttempt
@@ -107,6 +105,8 @@ enum NetworkProtectionPixelEvent: PixelKitEventV2 {
     case networkProtectionDNSUpdateCustom
     case networkProtectionDNSUpdateDefault
 
+    case networkProtectionSystemExtensionActivationAttempt
+    case networkProtectionSystemExtensionActivationSuccess
     case networkProtectionSystemExtensionActivationFailure(_ error: Error)
 
     case networkProtectionConfigurationInvalidPayload(configuration: Configuration)
@@ -168,12 +168,6 @@ enum NetworkProtectionPixelEvent: PixelKitEventV2 {
 
         case .networkProtectionTunnelUpdateFailure:
             return "netp_tunnel_update_failure"
-
-        case .networkProtectionTunnelWakeAttempt:
-            return "netp_tunnel_wake_attempt"
-
-        case .networkProtectionTunnelWakeSuccess:
-            return "netp_tunnel_wake_success"
 
         case .networkProtectionTunnelWakeFailure:
             return "netp_tunnel_wake_failure"
@@ -295,6 +289,12 @@ enum NetworkProtectionPixelEvent: PixelKitEventV2 {
         case .networkProtectionRekeyFailure:
             return "netp_rekey_failure"
 
+        case .networkProtectionSystemExtensionActivationAttempt:
+            return "netp_system_extension_activation_attempt"
+
+        case .networkProtectionSystemExtensionActivationSuccess:
+            return "netp_system_extension_activation_success"
+
         case .networkProtectionSystemExtensionActivationFailure:
             return "netp_system_extension_activation_failure"
 
@@ -410,8 +410,6 @@ enum NetworkProtectionPixelEvent: PixelKitEventV2 {
                 .networkProtectionTunnelUpdateAttempt,
                 .networkProtectionTunnelUpdateSuccess,
                 .networkProtectionTunnelUpdateFailure,
-                .networkProtectionTunnelWakeAttempt,
-                .networkProtectionTunnelWakeSuccess,
                 .networkProtectionTunnelWakeFailure,
                 .networkProtectionEnableAttemptConnecting,
                 .networkProtectionEnableAttemptSuccess,
@@ -435,6 +433,8 @@ enum NetworkProtectionPixelEvent: PixelKitEventV2 {
                 .networkProtectionRekeyAttempt,
                 .networkProtectionRekeyCompleted,
                 .networkProtectionRekeyFailure,
+                .networkProtectionSystemExtensionActivationAttempt,
+                .networkProtectionSystemExtensionActivationSuccess,
                 .networkProtectionSystemExtensionActivationFailure,
                 .networkProtectionServerMigrationAttempt,
                 .networkProtectionServerMigrationSuccess,
@@ -481,8 +481,6 @@ enum NetworkProtectionPixelEvent: PixelKitEventV2 {
                 .networkProtectionTunnelStopSuccess,
                 .networkProtectionTunnelUpdateAttempt,
                 .networkProtectionTunnelUpdateSuccess,
-                .networkProtectionTunnelWakeAttempt,
-                .networkProtectionTunnelWakeSuccess,
                 .networkProtectionEnableAttemptConnecting,
                 .networkProtectionEnableAttemptSuccess,
                 .networkProtectionEnableAttemptFailure,
@@ -518,6 +516,8 @@ enum NetworkProtectionPixelEvent: PixelKitEventV2 {
                 .networkProtectionServerMigrationSuccess,
                 .networkProtectionDNSUpdateCustom,
                 .networkProtectionDNSUpdateDefault,
+                .networkProtectionSystemExtensionActivationAttempt,
+                .networkProtectionSystemExtensionActivationSuccess,
                 .networkProtectionConfigurationInvalidPayload:
             return nil
         }

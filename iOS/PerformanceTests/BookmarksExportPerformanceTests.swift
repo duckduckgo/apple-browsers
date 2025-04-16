@@ -42,7 +42,7 @@ class BookmarksExportPerformanceTests: XCTestCase {
         
         let html = loadHtmlFile("bookmarks_3k.html")
         
-        let importer = await BookmarksImporter(coreDataStore: db)
+        let importer = await BookmarksImporter(coreDataStore: db, favoritesDisplayMode: .displayNative(.mobile))
         _ = await importer.parseAndSave(html: html)
     }
     
@@ -67,7 +67,7 @@ class BookmarksExportPerformanceTests: XCTestCase {
             let time = CACurrentMediaTime()
             let expectation = expectation(description: "Exported")
             Task {
-                let exporter = await BookmarksExporter(coreDataStore: db)
+                let exporter = await BookmarksExporter(coreDataStore: db, favoritesDisplayMode: .displayNative(.mobile))
                 _ = try? await exporter.exportBookmarksToContent()
                 expectation.fulfill()
             }

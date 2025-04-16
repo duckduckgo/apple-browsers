@@ -59,17 +59,8 @@ struct UserText {
 
 
     static let passwordsWidgetGalleryDescription = NSLocalizedString("widget.gallery.passwords.description",
-                                                                  value: "Quickly search your saved DuckDuckGo passwords.",
-                                                                  comment: "Description of search passwords widget in widget gallery")
-
-    static let quickActionsWidgetGalleryDisplayName = NSLocalizedString("widget.gallery.quickactions.display.name",
-                                                                  value: "Shortcuts",
-                                                                  comment: "Display name for quick actions widget in widget gallery")
-
-    static let quickActionsWidgetGalleryDescription = NSLocalizedString("widget.gallery.quickactions.description",
-                                                                  value: "Search, chat on Duck.ai, or view your passwords.",
-                                                                  comment: "Description of quickActions widget in widget gallery")
-
+                                                                     value: "Quickly search your saved DuckDuckGo passwords.",
+                                                                     comment: "Description of search passwords widget in widget gallery")
     static let passwords = NSLocalizedString("widget.passwords",
                                              value: "Search Passwords",
                                              comment: "Text in passwords widget")
@@ -231,4 +222,38 @@ struct UserText {
         value: "Quickly start a new AI chat in Duck.ai",
         comment: "Description shown to the user when adding the Duck.ai lock screen widget")
 
+    // MARK: - Quick Actions
+    static let quickActionsWidgetGalleryDisplayName = NSLocalizedString("widget.gallery.customshortcuts.display.name",
+                                                                  value: "Custom Shortcuts",
+                                                                  comment: "Display name for quick actions widget in widget gallery")
+
+    static let quickActionsWidgetGalleryDescription = NSLocalizedString("widget.gallery.customshortcuts.description",
+                                                                  value: "Pick shortcuts to your favorite actions.",
+                                                                  comment: "Description of quickActions widget in widget gallery")
+
+    static let quickActionsWidgetEditLeftShortcutLabel = NSLocalizedString("widget.gallery.customshortcuts.edit.left",
+                                                                  value: "Left Shortcut",
+                                                                  comment: "Left label for editing custom shortcuts")
+
+    static let quickActionsWidgetEditRightShortcutLabel = NSLocalizedString("widget.gallery.customshortcuts.edit.right",
+                                                                  value: "Right Shortcut",
+                                                                  comment: "Right label for editing custom shortcuts")
+
+    static let quickActionsWidgetEditShortcutsTitle = NSLocalizedString("widget.gallery.customshortcuts.edit.title",
+                                                                  value: "Configure Shortcuts",
+                                                                  comment: "Title for editing custom shortcuts")
+
+    static let quickActionsWidgetEditShortcutsDescription = NSLocalizedString("widget.gallery.customshortcuts.edit.description",
+                                                                  value: "Choose your shortcuts",
+                                                                  comment: "Description for editing custom shortcuts")
+
+    // MARK: - Quick Actions Medium
+
+    static let quickActionsMediumWidgetGalleryDisplayName = NSLocalizedString("widget.gallery.quickactions.medium.display.name",
+                                                                  value: "Shortcuts",
+                                                                  comment: "Display name for medium quick actions widget in widget gallery")
+
+    static let quickActionsMediumWidgetGalleryDescription = NSLocalizedString("widget.gallery.quickactions.medium.display.description",
+                                                                  value: "Shortcuts to your favorite actions.",
+                                                                  comment: "Description of medium quickActions widget in widget gallery")
 }

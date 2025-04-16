@@ -38,11 +38,23 @@ extension Preferences {
         @State private var isAddedToDock = false
         var dockCustomizer: DockCustomizer
         let featureFlagger = NSApp.delegateTyped.featureFlagger
+        let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
+
+        @State private var showWarningAlert = false
+        @State private var pendingSelection: PinnedTabsMode?
+
+        private func firePinnedTabsPixel(_ newMode: PinnedTabsMode) {
+            if newMode == .shared {
+                PixelKit.fire(PinnedTabsPixel.userSwitchedToSharedPinnedTabs, frequency: .dailyAndStandard)
+            } else {
+                PixelKit.fire(PinnedTabsPixel.userSwitchedToPerWindowPinnedTabs, frequency: .dailyAndStandard)
+            }
+        }
 
         var body: some View {
             PreferencePane(UserText.general) {
 
-                // SECTION 1: Shortcuts
+                // SECTION: Shortcuts
 #if !APPSTORE
                 PreferencePaneSection(UserText.shortcuts, spacing: 4) {
                     PreferencePaneSubSection {
@@ -77,7 +89,7 @@ extension Preferences {
                     }
                 }
 #endif
-                // SECTION 2: On Startup
+                // SECTION: On Startup
                 PreferencePaneSection(UserText.onStartup) {
 
                     PreferencePaneSubSection {
@@ -103,7 +115,7 @@ extension Preferences {
                     }
                 }
 
-                // SECTION 3: Tabs
+                // SECTION: Tabs
                 PreferencePaneSection(UserText.tabs) {
                     PreferencePaneSubSection {
                         ToggleMenuItem(UserText.preferNewTabsToWindows, isOn: $tabsModel.preferNewTabsToWindows)
@@ -119,10 +131,53 @@ extension Preferences {
                             }
                             .fixedSize()
                         }
+                        HStack {
+                            Picker(UserText.pinnedTabs, selection: Binding(
+                                get: { tabsModel.pinnedTabsMode },
+                                set: { newValue in
+                                    if newValue == .shared {
+                                        // Attempting to switch to the shared mode that requires warning in case
+                                        // the app is going to combine existing pinned tabs
+                                        if pinnedTabsManagerProvider.areDifferentPinnedTabsPresent {
+                                            pendingSelection = newValue
+                                            showWarningAlert = true
+                                        } else {
+                                            tabsModel.pinnedTabsMode = newValue
+                                            firePinnedTabsPixel(newValue)
+                                        }
+                                    } else {
+                                        tabsModel.pinnedTabsMode = newValue
+                                        firePinnedTabsPixel(newValue)
+                                    }
+                                }
+                            )) {
+                                ForEach(PinnedTabsMode.allCases, id: \.self) { mode in
+                                    Text(UserText.pinnedTabsMode(for: mode)).tag(mode)
+                                }
+                            }
+                            .fixedSize()
+                        }
+                        .alert(isPresented: $showWarningAlert) {
+                            Alert(
+                                title: Text(UserText.pinnedTabsWarningTitle),
+                                message: Text(UserText.pinnedTabsWarningMessage),
+                                primaryButton: .default(Text(UserText.ok)) {
+                                    // Apply the change only if confirmed
+                                    if let selection = pendingSelection {
+                                        tabsModel.pinnedTabsMode = selection
+
+                                        firePinnedTabsPixel(selection)
+                                    }
+                                },
+                                secondaryButton: .cancel {
+                                    pendingSelection = nil
+                                }
+                            )
+                        }
                     }
                 }
 
-                // SECTION 4: Home Page
+                // SECTION: Home Page
                 PreferencePaneSection(UserText.homePage) {
 
                     PreferencePaneSubSection {
@@ -166,12 +221,12 @@ extension Preferences {
                     CustomHomePageSheet(startupModel: startupModel, isSheetPresented: $showingCustomHomePageSheet)
                 }
 
-                // SECTION 5: Search Settings
+                // SECTION: Search Settings
                 PreferencePaneSection(UserText.privateSearch) {
                     ToggleMenuItem(UserText.showAutocompleteSuggestions, isOn: $searchModel.showAutocompleteSuggestions).accessibilityIdentifier("PreferencesGeneralView.showAutocompleteSuggestions")
                 }
 
-                // SECTION 6: Downloads
+                // SECTION: Downloads
                 PreferencePaneSection(UserText.downloads) {
                     PreferencePaneSubSection {
                         ToggleMenuItem(UserText.downloadsOpenPopupOnCompletion,
@@ -195,11 +250,12 @@ extension Preferences {
                     }
                 }
 
-                // SECTION 7: Phishing Detection
+                // SECTION: Phishing Detection
                 if featureFlagger.maliciousSiteProtectionFeatureFlags().isMaliciousSiteProtectionEnabled {
+                    let toggleText = featureFlagger.isFeatureOn(.scamSiteProtection) ? UserText.maliciousSiteDetectionIsEnabled : UserText.maliciousSiteDetectionIsEnabledDeprecated
                     PreferencePaneSection(UserText.maliciousSiteDetectionHeader, spacing: 0) {
                         PreferencePaneSubSection {
-                            ToggleMenuItem(UserText.maliciousSiteDetectionIsEnabled,
+                            ToggleMenuItem(toggleText,
                                            isOn: $maliciousSiteDetectionModel.isEnabled)
                             .onChange(of: maliciousSiteDetectionModel.isEnabled) { newValue in
                                 PixelKit.fire(MaliciousSiteProtection.Event.settingToggled(to: newValue))

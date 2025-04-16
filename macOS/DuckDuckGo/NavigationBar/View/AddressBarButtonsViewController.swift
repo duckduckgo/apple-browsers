@@ -28,7 +28,7 @@ import PrivacyDashboard
 protocol AddressBarButtonsViewControllerDelegate: AnyObject {
 
     func addressBarButtonsViewControllerClearButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
-
+    func addressBarButtonsViewController(_ controller: AddressBarButtonsViewController, didUpdateAIChatButtonVisibility isVisible: Bool)
 }
 
 final class AddressBarButtonsViewController: NSViewController {
@@ -66,6 +66,7 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBOutlet weak var imageButton: NSButton!
     @IBOutlet weak var clearButton: NSButton!
     @IBOutlet private weak var buttonsContainer: NSStackView!
+    @IBOutlet weak var aiChatButton: AddressBarButton!
 
     @IBOutlet weak var animationWrapperView: NSView!
     var trackerAnimationView1: LottieAnimationView!
@@ -73,6 +74,8 @@ final class AddressBarButtonsViewController: NSViewController {
     var trackerAnimationView3: LottieAnimationView!
     var shieldAnimationView: LottieAnimationView!
     var shieldDotAnimationView: LottieAnimationView!
+
+    @IBOutlet weak var aiChatDivider: NSImageView!
 
     @IBOutlet weak var notificationAnimationView: NavigationBarBadgeAnimationView!
 
@@ -171,15 +174,22 @@ final class AddressBarButtonsViewController: NSViewController {
         fatalError("AddressBarButtonsViewController: Bad initializer")
     }
 
+    private let aiChatTabOpener: AIChatTabOpening
+    private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
+
     init?(coder: NSCoder,
           tabCollectionViewModel: TabCollectionViewModel,
           accessibilityPreferences: AccessibilityPreferences = AccessibilityPreferences.shared,
           popovers: NavigationBarPopovers?,
-          onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter()) {
+          onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
+          aiChatTabOpener: AIChatTabOpening,
+          aiChatMenuConfig: AIChatMenuVisibilityConfigurable) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.accessibilityPreferences = accessibilityPreferences
         self.popovers = popovers
         self.onboardingPixelReporter = onboardingPixelReporter
+        self.aiChatTabOpener = aiChatTabOpener
+        self.aiChatMenuConfig = aiChatMenuConfig
         super.init(coder: coder)
     }
 
@@ -195,6 +205,7 @@ final class AddressBarButtonsViewController: NSViewController {
         updateBookmarkButtonVisibility()
         subscribeToPrivacyEntryPointIsMouseOver()
         subscribeToButtonsVisibility()
+        subscribeToAIChatPreferences()
 
         bookmarkButton.sendAction(on: .leftMouseDown)
 
@@ -203,6 +214,17 @@ final class AddressBarButtonsViewController: NSViewController {
 
     override func viewWillAppear() {
         setupButtons()
+    }
+
+    override func viewWillDisappear() {
+        super.viewWillDisappear()
+
+        // The permission popover leaks when its parent window is closed while it's still visible, so this workaround
+        // forces it to deallocate when the window is closing. This workaround can be removed if the true source of
+        // the leak is found.
+        if let permissionAuthorizationPopover, permissionAuthorizationPopover.isShown {
+            permissionAuthorizationPopover.close()
+        }
     }
 
     func showBadgeNotification(_ type: NavigationBarBadgeAnimationView.AnimationType) {
@@ -270,6 +292,24 @@ final class AddressBarButtonsViewController: NSViewController {
         openPrivacyDashboardPopover()
     }
 
+    @IBAction func aiChatButtonAction(_ sender: Any) {
+        let isCommandPressed = NSEvent.modifierFlags.contains(.command)
+        let isShiftPressed = NSApplication.shared.isShiftPressed
+
+        let target: AIChatTabOpenerTarget
+        if isCommandPressed {
+            target = isShiftPressed ? .newTabSelected : .newTabUnselected
+        } else {
+            target = .sameTab
+        }
+
+        if let value = textFieldValue {
+            aiChatTabOpener.openAIChatTab(value, target: target)
+        } else {
+            aiChatTabOpener.openAIChatTab(nil, target: target)
+        }
+    }
+
     func openPrivacyDashboardPopover(entryPoint: PrivacyDashboardEntryPoint = .dashboard) {
         if let permissionAuthorizationPopover, permissionAuthorizationPopover.isShown {
             permissionAuthorizationPopover.close()
@@ -277,7 +317,7 @@ final class AddressBarButtonsViewController: NSViewController {
         popupBlockedPopover?.close()
 
         popovers?.togglePrivacyDashboardPopover(for: tabViewModel, from: privacyEntryPointButton, entryPoint: entryPoint)
-        onboardingPixelReporter.trackPrivacyDashboardOpened()
+        onboardingPixelReporter.measurePrivacyDashboardOpened()
     }
 
     private func updateBookmarkButtonVisibility() {
@@ -301,6 +341,7 @@ final class AddressBarButtonsViewController: NSViewController {
         }
 
         bookmarkButton.isShown = shouldShowBookmarkButton
+        updateAIChatDividerVisibility()
     }
 
     private func updateZoomButtonVisibility(animation: Bool = false) {
@@ -328,6 +369,23 @@ final class AddressBarButtonsViewController: NSViewController {
         zoomButton.isHidden = !shouldShowZoom
     }
 
+    private func updateAIChatButtonVisibility() {
+        aiChatButton.toolTip = isTextFieldEditorFirstResponder ? UserText.aiChatAddressBarShortcutTooltip : UserText.aiChatAddressBarTooltip
+        aiChatButton.isHidden = !aiChatMenuConfig.shouldDisplayAddressBarShortcut
+        updateAIChatDividerVisibility()
+        delegate?.addressBarButtonsViewController(self, didUpdateAIChatButtonVisibility: aiChatButton.isShown)
+    }
+
+    private func updateAIChatDividerVisibility() {
+        let shouldShowDivider = clearButton.isShown || bookmarkButton.isShown
+        aiChatDivider.isHidden = aiChatButton.isHidden || !shouldShowDivider
+    }
+
+    private func updateButtonsPosition() {
+        aiChatButton.position = .right
+        bookmarkButton.position = aiChatButton.isShown ? .center : .right
+    }
+
     func openBookmarkPopover(setFavorite: Bool, accessPoint: GeneralPixel.AccessPoint) {
         guard let popovers else {
             return
@@ -338,11 +396,11 @@ final class AddressBarButtonsViewController: NSViewController {
             return
         }
 
-        if !popovers.isEditBookmarkPopoverShown {
-            popovers.showEditBookmarkPopover(with: bookmark, isNew: result.isNew, from: bookmarkButton, withDelegate: self)
-        } else {
+        if popovers.isEditBookmarkPopoverShown {
             updateBookmarkButtonVisibility()
             popovers.closeEditBookmarkPopover()
+        } else {
+            popovers.showEditBookmarkPopover(with: bookmark, isNew: result.isNew, from: bookmarkButton, withDelegate: self)
         }
     }
 
@@ -422,6 +480,8 @@ final class AddressBarButtonsViewController: NSViewController {
         updatePermissionButtons()
         updateBookmarkButtonVisibility()
         updateZoomButtonVisibility()
+        updateAIChatButtonVisibility()
+        updateButtonsPosition()
     }
 
     @IBAction func zoomButtonAction(_ sender: Any) {
@@ -558,7 +618,6 @@ final class AddressBarButtonsViewController: NSViewController {
 
         privacyEntryPointButton.sendAction(on: .leftMouseUp)
 
-        imageButton.applyFaviconStyle()
         (imageButton.cell as? NSButtonCell)?.highlightsBy = NSCell.StyleMask(rawValue: 0)
 
         cameraButton.sendAction(on: .leftMouseDown)
@@ -604,7 +663,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
             let newAnimationView: LottieAnimationView
             // For unknown reason, this caused infinite execution of various unit tests.
-            if NSApp.runType.requiresEnvironment {
+            if AppVersion.runType.requiresEnvironment {
                 newAnimationView = getAnimationView(for: animationName) ?? LottieAnimationView()
             } else {
                 newAnimationView = LottieAnimationView()
@@ -709,6 +768,14 @@ final class AddressBarButtonsViewController: NSViewController {
                 self?.updateSeparator()
             }
             .store(in: &cancellables)
+    }
+
+    private func subscribeToAIChatPreferences() {
+        aiChatMenuConfig.valuesChangedPublisher
+            .receive(on: DispatchQueue.main)
+            .sink(receiveValue: { [weak self] in
+                self?.updateAIChatButtonVisibility()
+            }).store(in: &cancellables)
     }
 
     private func updatePermissionButtons() {
@@ -822,7 +889,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func updatePrivacyEntryPointIcon() {
-        guard NSApp.runType.requiresEnvironment else { return }
+        guard AppVersion.runType.requiresEnvironment else { return }
         privacyEntryPointButton.image = nil
 
         guard let tabViewModel else { return }
@@ -833,12 +900,12 @@ final class AddressBarButtonsViewController: NSViewController {
             guard let host = url.host else { break }
 
             let isNotSecure = url.scheme == URL.NavigationalScheme.http.rawValue
-            let isCertificateValid = tabViewModel.tab.isCertificateValid ?? true
+            let isCertificateInvalid = tabViewModel.tab.isCertificateInvalid
             let isFlaggedAsMalicious = (tabViewModel.tab.privacyInfo?.malicousSiteThreatKind != .none)
             let configuration = ContentBlocking.shared.privacyConfigurationManager.privacyConfig
             let isUnprotected = configuration.isUserUnprotected(domain: host)
 
-            let isShieldDotVisible = isNotSecure || isUnprotected || !isCertificateValid
+            let isShieldDotVisible = isNotSecure || isUnprotected || isCertificateInvalid
 
             if isFlaggedAsMalicious {
                 privacyEntryPointButton.isAnimationEnabled = false
@@ -992,9 +1059,12 @@ final class AddressBarButtonsViewController: NSViewController {
             return (bookmark, false)
         }
 
+        let lastUsedFolder = UserDefaultsBookmarkFoldersStore().lastBookmarkSingleTabFolderIdUsed.flatMap(bookmarkManager.getBookmarkFolder)
         let bookmark = bookmarkManager.makeBookmark(for: url,
                                                     title: tabViewModel.title,
-                                                    isFavorite: setFavorite)
+                                                    isFavorite: setFavorite,
+                                                    index: nil,
+                                                    parent: lastUsedFolder)
         updateBookmarkButtonImage(isUrlBookmarked: bookmark != nil)
 
         return (bookmark, true)

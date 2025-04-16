@@ -136,7 +136,7 @@ jobs:
         run: bundle install
 
       - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_$(<.xcode-version).app/Contents/Developer
+        uses: ./.github/actions/select-xcode-version
 
       - name: Extract Asana Task ID
         id: task-id
@@ -250,6 +250,14 @@ jobs:
             echo "FILES_UPLOADED='No files uploaded.'" >> $GITHUB_ENV
           fi
 
+      - name: Send release annotation pixel
+        if: github.event.inputs.release-type != null && github.event.inputs.release-type != 'internal'
+        continue-on-error: true
+        uses: ./.github/actions/send-release-annotation-pixel
+        with:
+          version: ${{ steps.verify-tag.outputs.release-version }}
+          platform: "macos"
+
       - name: Update Asana for the release
         id: update-asana
         if: ${{ env.RELEASE_TYPE != 'internal' }}
@@ -275,7 +283,7 @@ jobs:
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
           GH_TOKEN: ${{ github.token }}
         run: |
-          tasks="$(./scripts/update_asana_for_release.sh list-tasks-in-last-internal-release)"
+          tasks="$(./scripts/get_tasks_in_last_internal_release.sh)"
           echo "tasks=$tasks" >> $GITHUB_OUTPUT
 
       - name: Set common environment variables

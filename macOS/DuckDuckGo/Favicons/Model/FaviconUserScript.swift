@@ -16,94 +16,73 @@
 //  limitations under the License.
 //
 
-import WebKit
+import Common
 import UserScript
+import WebKit
 
 protocol FaviconUserScriptDelegate: AnyObject {
-
+    @MainActor
     func faviconUserScript(_ faviconUserScript: FaviconUserScript,
                            didFindFaviconLinks faviconLinks: [FaviconUserScript.FaviconLink],
-                           for documentUrl: URL)
-
+                           for documentUrl: URL) async
 }
 
-final class FaviconUserScript: NSObject, StaticUserScript {
+final class FaviconUserScript: NSObject, Subfeature {
 
-    struct FaviconLink {
-        let href: String
-        let rel: String
+    struct FaviconsFoundPayload: Codable, Equatable {
+        let documentUrl: URL
+        let favicons: [FaviconLink]
     }
 
-    static var injectionTime: WKUserScriptInjectionTime { .atDocumentEnd }
-    static var forMainFrameOnly: Bool { true }
-    static var script: WKUserScript = FaviconUserScript.makeWKUserScript()
-    var messageNames: [String] { ["faviconFound"] }
+    struct FaviconLink: Codable, Equatable {
+        let href: URL
+        let rel: String
 
-    weak var delegate: FaviconUserScriptDelegate?
-
-    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        guard let body = message.body as? [String: Any],
-              let favicons = body["favicons"] as? [[String: Any]],
-              let documentUrlString = body["documentUrl"] as? String else {
-                  assertionFailure("FaviconUserScript: Bad message body")
-                  return
-              }
-
-        let faviconLinks = favicons.compactMap { favicon -> FaviconLink? in
-            if let href = favicon["href"] as? String,
-               let rel = favicon["rel"] as? String {
-                return FaviconLink(href: href, rel: rel)
-            } else {
-                assertionFailure("FaviconUserScript: Failed to get favicon link data")
+        /**
+         * Returns a new `FaviconLink` with `href` upgraded to HTTPS, or nil if upgrading failed.
+         *
+         * Given that we use `URLSession` for fetching favicons, we can't fetch HTTP URLs, hence
+         * upgrading to HTTPS.
+         *
+         * > `toHttps()` is safe for `data:` URLs.
+         */
+        func upgradedToHTTPS() -> Self? {
+            guard let httpsHref = href.toHttps() else {
                 return nil
             }
+            return .init(href: httpsHref, rel: rel)
         }
-
-        guard let documentUrl = URL(string: documentUrlString) else {
-            assertionFailure("FaviconUserScript: Failed to make URL from string")
-            return
-        }
-
-        delegate?.faviconUserScript(self, didFindFaviconLinks: faviconLinks, for: documentUrl)
     }
 
-    static let source = """
-(function() {
-    function getFavicon() {
-        return findFavicons()[0];
-    };
+    let messageOriginPolicy: MessageOriginPolicy = .all
+    let featureName: String = "favicon"
 
-    function findFavicons() {
-         var selectors = [
-            "link[rel='favicon']",
-            "link[rel*='icon']",
-            "link[rel='apple-touch-icon']",
-            "link[rel='apple-touch-icon-precomposed']"
-        ];
-        var favicons = [];
-        while (selectors.length > 0) {
-            var selector = selectors.pop()
-            var icons = document.head.querySelectorAll(selector);
-            for (var i = 0; i < icons.length; i++) {
-                var href = icons[i].href;
-                var rel = icons[i].rel;
+    weak var broker: UserScriptMessageBroker?
+    weak var delegate: FaviconUserScriptDelegate?
 
-                // Exclude SVGs since we can't handle them
-                if (href.indexOf("svg") >= 0 || (icons[i].type && icons[i].type.indexOf("svg") >= 0)) {
-                    continue;
-                }
-                favicons.push({ href: href, rel: rel });
-            }
-        }
-        return favicons;
-    };
-    try {
-        var favicons = findFavicons();
-        webkit.messageHandlers.faviconFound.postMessage({ favicons: favicons, documentUrl: document.URL });
-    } catch(error) {
-        // webkit might not be defined
+    enum MessageNames: String, CaseIterable {
+        case faviconFound
     }
-}) ();
-"""
 
+    func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
+        switch MessageNames(rawValue: methodName) {
+        case .faviconFound:
+            return { [weak self] in try await self?.faviconFound(params: $0, original: $1) }
+        default:
+            return nil
+        }
+    }
+
+    @MainActor
+    private func faviconFound(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        guard let faviconsPayload: FaviconsFoundPayload = DecodableHelper.decode(from: params)
+        else {
+            return nil
+        }
+
+        let faviconLinks = faviconsPayload.favicons.compactMap { $0.upgradedToHTTPS() }
+
+        await delegate?.faviconUserScript(self, didFindFaviconLinks: faviconLinks, for: faviconsPayload.documentUrl)
+        return nil
+    }
 }

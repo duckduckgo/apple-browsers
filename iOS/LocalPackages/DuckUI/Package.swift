@@ -31,11 +31,12 @@ let package = Package(
             targets: ["DuckUI"])
     ],
     dependencies: [
+        .package(url: "https://github.com/duckduckgo/DesignResourcesKit.git", exact: "4.2.0")
     ],
     targets: [
         .target(
             name: "DuckUI",
-            dependencies: [],
+            dependencies: ["DesignResourcesKit"],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
             ]

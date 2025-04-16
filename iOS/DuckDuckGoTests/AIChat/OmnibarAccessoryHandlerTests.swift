@@ -27,66 +27,40 @@ class OmnibarAccessoryHandlerTests: XCTestCase {
     static let DDGHomeURL = URL(string: "https://duckduckgo.com")!
     static let randomURL = URL(string: "https://potato.com")!
 
-    var mockFeatureFlagger: MockFeatureFlagger!
-
-    override func setUp() {
-        super.setUp()
-        mockFeatureFlagger = MockFeatureFlagger()
-    }
-
-    override func tearDown() {
-        mockFeatureFlagger = nil
-        super.tearDown()
-    }
-
-    func testOmnibarAccessoryWhenAIChatFeatureDisabled() {
-        let settings = MockAIChatSettingsProvider()
-        settings.isAIChatFeatureEnabled = false
-        let handler = OmnibarAccessoryHandler(settings: settings, featureFlagger: mockFeatureFlagger)
-
-        let accessoryType = handler.omnibarAccessory(for: OmnibarAccessoryHandlerTests.DDGSearchURL)
-
-        XCTAssertEqual(accessoryType, OmniBar.AccessoryType.share)
-    }
-
     func testOmnibarAccessoryWhenAIChatFeatureEnabledAndUserSettingsDisabled() {
         let settings = MockAIChatSettingsProvider()
-        settings.isAIChatFeatureEnabled = true
         settings.isAIChatAddressBarUserSettingsEnabled = false
-        let handler = OmnibarAccessoryHandler(settings: settings, featureFlagger: mockFeatureFlagger)
+        let handler = OmnibarAccessoryHandler(settings: settings)
 
         let accessoryType = handler.omnibarAccessory(for: OmnibarAccessoryHandlerTests.DDGSearchURL)
 
-        XCTAssertEqual(accessoryType, OmniBar.AccessoryType.share)
+        XCTAssertEqual(accessoryType, OmniBarAccessoryType.share)
     }
 
     func testOmnibarAccessoryWhenAIChatFeatureAndUserSettingsEnabledWithDuckDuckGoURL() {
         let settings = MockAIChatSettingsProvider()
-        settings.isAIChatFeatureEnabled = true
         settings.isAIChatAddressBarUserSettingsEnabled = true
-        let handler = OmnibarAccessoryHandler(settings: settings, featureFlagger: mockFeatureFlagger)
+        let handler = OmnibarAccessoryHandler(settings: settings)
         let accessoryType = handler.omnibarAccessory(for: OmnibarAccessoryHandlerTests.DDGSearchURL)
 
-        XCTAssertEqual(accessoryType, OmniBar.AccessoryType.chat)
+        XCTAssertEqual(accessoryType, OmniBarAccessoryType.chat)
     }
 
     func testOmnibarAccessoryWhenAIChatFeatureAndUserSettingsEnabledWithNonDuckDuckGoURL() {
         let settings = MockAIChatSettingsProvider()
-        settings.isAIChatFeatureEnabled = true
         settings.isAIChatAddressBarUserSettingsEnabled = true
-        let handler = OmnibarAccessoryHandler(settings: settings, featureFlagger: mockFeatureFlagger)
+        let handler = OmnibarAccessoryHandler(settings: settings)
         let accessoryType = handler.omnibarAccessory(for: OmnibarAccessoryHandlerTests.randomURL)
 
-        XCTAssertEqual(accessoryType, OmniBar.AccessoryType.share)
+        XCTAssertEqual(accessoryType, OmniBarAccessoryType.share)
     }
 
     func testOmnibarAccessoryWhenAIChatFeatureAndUserSettingsEnabledWithDuckDuckGoHomeURL() {
         let settings = MockAIChatSettingsProvider()
-        settings.isAIChatFeatureEnabled = true
         settings.isAIChatAddressBarUserSettingsEnabled = true
-        let handler = OmnibarAccessoryHandler(settings: settings, featureFlagger: mockFeatureFlagger)
+        let handler = OmnibarAccessoryHandler(settings: settings)
         let accessoryType = handler.omnibarAccessory(for: OmnibarAccessoryHandlerTests.DDGHomeURL)
 
-        XCTAssertEqual(accessoryType, OmniBar.AccessoryType.share)
+        XCTAssertEqual(accessoryType, OmniBarAccessoryType.share)
     }
 }

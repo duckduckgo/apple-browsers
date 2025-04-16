@@ -39,6 +39,22 @@ struct AsyncHeadlessWebViewSettings {
         self.allowedDomains = allowedDomains
         self.contentBlocking = contentBlocking
     }
+
+    internal static func makeAllowedDomains(baseURL: URL, isInternalUser: Bool) -> [String] {
+        let duoAuthenticationDomains = ["duckduckgo.com", "duosecurity.com", "login.microsoftonline.com"]
+        var allowedDomains = Set<String>()
+
+        // Allow navigation to baseURLs domain
+        allowedDomains.insert(baseURL.host ?? "duckduckgo.com")
+
+        // For internal user allow these domains as required for DUO based authentication flow
+        if isInternalUser {
+            allowedDomains.formUnion(duoAuthenticationDomains)
+        }
+
+        assert(!allowedDomains.isEmpty, "Allowed domains should not be empty.")
+        return Array(allowedDomains)
+    }
 }
 
 struct AsyncHeadlessWebView: View {

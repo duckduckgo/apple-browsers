@@ -30,24 +30,27 @@ extension OnboardingView {
         private var showContent: Binding<Bool>
         private let setAsDefaultBrowserAction: () -> Void
         private let cancelAction: () -> Void
+        private var isSkipped: Binding<Bool>
 
         init(
             title: String,
             animateText: Binding<Bool> = .constant(true),
             showContent: Binding<Bool> = .constant(false),
+            isSkipped: Binding<Bool>,
             setAsDefaultBrowserAction: @escaping () -> Void,
             cancelAction: @escaping () -> Void
         ) {
             self.title = title
             self.animateText = animateText
             self.showContent = showContent
+            self.isSkipped = isSkipped
             self.setAsDefaultBrowserAction = setAsDefaultBrowserAction
             self.cancelAction = cancelAction
         }
 
         var body: some View {
             VStack(spacing: 16.0) {
-                AnimatableTypingText(title, startAnimating: animateText) {
+                AnimatableTypingText(title, startAnimating: animateText, skipAnimation: isSkipped) {
                     withAnimation {
                         showContent.wrappedValue = true
                     }

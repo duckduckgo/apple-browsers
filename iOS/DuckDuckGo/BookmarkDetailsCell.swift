@@ -29,8 +29,15 @@ class BookmarkDetailsCell: UITableViewCell {
 
     static let reuseIdentifier = "BookmarkDetailsCell"
     
+    @IBOutlet weak var separatorView: UIView!
     weak var delegate: BookmarkDetailsCellDelegate?
-    
+
+    override func awakeFromNib() {
+        super.awakeFromNib()
+        backgroundColor = UIColor(designSystemColor: .surface)
+        separatorView.backgroundColor = UIColor(designSystemColor: .lines)
+    }
+
     var title: String? {
         get {
             titleTextField.text

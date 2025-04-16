@@ -67,8 +67,10 @@ final class OnboardingViewModel: ObservableObject {
         }
     }
 
+    // swiftlint:disable identifier_name
     @UserDefaultsWrapper(key: .onboardingFinished, defaultValue: false)
-    private static var _isOnboardingFinished: Bool
+    private(set) static var _isOnboardingFinished: Bool
+    // swiftlint:enable identifier_name
 
     @MainActor
     private(set) static var isOnboardingFinished: Bool {

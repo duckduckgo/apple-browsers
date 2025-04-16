@@ -9,7 +9,6 @@
 set -e -o pipefail
 
 asana_api_url="https://app.asana.com/api/1.0"
-task_url_regex='^https://app.asana.com/[0-9]/[0-9]*/([0-9]*)(:?/f)?$'
 
 find_task_urls_in_git_log() {
 	local last_release_tag="$1"
@@ -21,7 +20,7 @@ find_task_urls_in_git_log() {
 	#    (Use -A 1 to handle cases where URL is on the next line after "Task/Issue URL:")
 	# 3. Filter only lines containing Asana URLs
 	# 4. Remove duplicates
-	git log "${last_release_tag}"..HEAD -- ./ ../BrowserServicesKit/ \
+	git log "${last_release_tag}"..HEAD -- ./ ../SharedPackages/BrowserServicesKit/ \
 		| grep -A 1 'Task.*URL' \
 		| sed -nE 's|.*(https://app\.asana\.com.*)|\1|p' \
 		| uniq
@@ -29,8 +28,11 @@ find_task_urls_in_git_log() {
 
 get_task_id() {
 	local url="$1"
-	if [[ "$url" =~ ${task_url_regex} ]]; then
-		local task_id="${BASH_REMATCH[1]}"
+	local task_id
+	task_id="$(perl -pe 's|.*https://app.asana.com/0/[0-9]+/([0-9]+)(?:/f)?|\1|; \
+                s|.*https://app.asana.com/1/[0-9]+(?:/[0-9a-z/]*)?/task/([0-9]+)(:?/[0-9a-z/]*)?(?:\?focus=true)?|\1|; \
+                s|.*https://app.asana.com/1/[0-9]+/inbox/[0-9]+/item/([0-9]+)/story/([0-9]+)|\1|' <<< "$url")"
+	if [[ -n "$task_id" ]]; then
 		local http_code
 		http_code="$(curl -fLSs "${asana_api_url}/tasks/${task_id}?opt_fields=gid" \
 			-H "Authorization: Bearer ${ASANA_ACCESS_TOKEN}" \

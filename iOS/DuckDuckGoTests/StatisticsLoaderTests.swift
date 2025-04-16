@@ -111,7 +111,7 @@ class StatisticsLoaderTests: XCTestCase {
         loadSuccessfulExiStub()
 
         let testExpectation = expectation(description: "install complete")
-        testee.load {
+        testee.load(shouldRefreshAtb: false) {
             testExpectation.fulfill()
         }
         wait(for: [testExpectation], timeout: 5.0)
@@ -186,7 +186,7 @@ class StatisticsLoaderTests: XCTestCase {
         loadSuccessfulExiStub()
 
         let expect = expectation(description: "Successfult atb and exti updates store")
-        testee.load {
+        testee.load(shouldRefreshAtb: false) {
             XCTAssertTrue(self.mockStatisticsStore.hasInstallStatistics)
             XCTAssertEqual(self.mockStatisticsStore.atb, "v77-5")
             expect.fulfill()
@@ -201,7 +201,7 @@ class StatisticsLoaderTests: XCTestCase {
         loadSuccessfulExiStub()
 
         let expect = expectation(description: "Unsuccessfult atb does not update store")
-        testee.load {
+        testee.load(shouldRefreshAtb: false) {
             XCTAssertFalse(self.mockStatisticsStore.hasInstallStatistics)
             XCTAssertNil(self.mockStatisticsStore.atb)
             expect.fulfill()
@@ -216,7 +216,7 @@ class StatisticsLoaderTests: XCTestCase {
         loadUnsuccessfulExiStub()
 
         let expect = expectation(description: "Unsuccessful exti does not update store")
-        testee.load {
+        testee.load(shouldRefreshAtb: false) {
             XCTAssertFalse(self.mockStatisticsStore.hasInstallStatistics)
             XCTAssertNil(self.mockStatisticsStore.atb)
             expect.fulfill()

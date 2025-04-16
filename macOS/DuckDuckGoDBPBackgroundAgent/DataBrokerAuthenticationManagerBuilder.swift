@@ -17,20 +17,17 @@
 //
 
 import Foundation
-import DataBrokerProtection
+import DataBrokerProtection_macOS
+import DataBrokerProtectionCore
 import Subscription
 
 final public class DataBrokerAuthenticationManagerBuilder {
 
-    static func buildAuthenticationManager(subscriptionManager: SubscriptionManager) -> DataBrokerProtectionAuthenticationManager {
-        let subscriptionManager = DataBrokerProtectionSubscriptionManager(subscriptionManager: subscriptionManager)
+    static func buildAuthenticationManager(subscriptionManager: any SubscriptionAuthV1toV2Bridge) -> DataBrokerProtectionAuthenticationManager {
+        let settings = DataBrokerProtectionSettings(defaults: .dbp)
+        let subscriptionManager = DataBrokerProtectionSubscriptionManager(subscriptionManager: subscriptionManager,
+                                                                          runTypeProvider: settings,
+                                                                          isAuthV2Enabled: settings.isAuthV2Enabled)
         return DataBrokerProtectionAuthenticationManager(subscriptionManager: subscriptionManager)
-
-    }
-}
-
-extension DefaultAccountManager: DataBrokerProtectionAccountManaging {
-    public func hasEntitlement(for cachePolicy: APICachePolicy) async -> Result<Bool, any Error> {
-        await hasEntitlement(forProductName: .dataBrokerProtection, cachePolicy: .reloadIgnoringLocalCacheData)
     }
 }

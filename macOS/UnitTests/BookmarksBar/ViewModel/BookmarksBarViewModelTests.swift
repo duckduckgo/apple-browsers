@@ -124,8 +124,8 @@ fileprivate extension TabCollectionViewModel {
 
     static func mock() -> TabCollectionViewModel {
         let tabCollection = TabCollection()
-        let pinnedTabsManager = PinnedTabsManager()
-        return TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManager: pinnedTabsManager)
+        let pinnedTabsManagerProvider = PinnedTabsManagerProvidingMock()
+        return TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: pinnedTabsManagerProvider)
     }
 
 }

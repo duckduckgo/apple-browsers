@@ -19,6 +19,7 @@
 
 import SwiftUI
 import GRDB
+import DesignResourcesKit
 
 private struct ShareButtonFramePreferenceKey: PreferenceKey {
     static var defaultValue: CGRect = .zero
@@ -112,8 +113,8 @@ private extension EdgeInsets {
 }
 
 private extension Color {
-    static let filename = Color("DownloadsListFilenameColor")
-    static let fileSize = Color("DownloadsListFileSizeColor")
+    static let filename = Color(designSystemColor: .textPrimary)
+    static let fileSize = Color(designSystemColor: .textSecondary)
 }
 
 private extension Image {

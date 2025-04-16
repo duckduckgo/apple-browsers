@@ -45,7 +45,21 @@ class TabsModelTests: XCTestCase {
         ], desktop: false)
         return model
     }
-    
+
+    func testWhenBulkRemovingAllThenAllTabsAreRemoved() {
+        let model = filledModel
+        model.remove(model.tabs.indices.map { IndexPath(row: $0, section: 0) })
+        XCTAssertEqual(model.tabs, [])
+    }
+
+    func testWhenBulkRemovingSubsetThenSetTabsAreRemovedAndIndexUpdated() {
+        let model = filledModel
+        model.select(tabAt: 1)
+        model.remove([IndexPath(row: 0, section: 0)])
+        XCTAssertEqual(model.tabs.count, 2)
+        XCTAssertEqual(model.currentIndex, 0)
+    }
+
     func testWhenAtLeastOneTabIsNotViewedThenHasUnreadIsTrue() {
         let tab = Tab(link: exampleLink, viewed: false)
         

@@ -25,7 +25,6 @@ enum PinnableView: String {
     case downloads
     case homeButton
     case networkProtection
-    case aiChat
 }
 
 protocol PinningManager {
@@ -40,7 +39,7 @@ protocol PinningManager {
 
 final class LocalPinningManager: PinningManager {
 
-    static let shared = LocalPinningManager(networkProtectionFeatureActivation: NetworkProtectionKeychainTokenStore())
+    static let shared = LocalPinningManager()
 
     static let pinnedViewChangedNotificationViewTypeKey = "pinning.pinnedViewChanged.viewType"
 
@@ -50,11 +49,7 @@ final class LocalPinningManager: PinningManager {
     @UserDefaultsWrapper(key: .manuallyToggledPinnedViews, defaultValue: [])
     private var manuallyToggledPinnedViewsStrings: [String]
 
-    private let networkProtectionFeatureActivation: NetworkProtectionFeatureActivation
-
-    init(networkProtectionFeatureActivation: NetworkProtectionFeatureActivation) {
-        self.networkProtectionFeatureActivation = networkProtectionFeatureActivation
-    }
+    init() {}
 
     func togglePinning(for view: PinnableView) {
         flagAsManuallyToggled(view)
@@ -113,9 +108,6 @@ final class LocalPinningManager: PinningManager {
         case .homeButton: return ""
         case .networkProtection:
             return isPinned(.networkProtection) ? UserText.hideNetworkProtectionShortcut : UserText.showNetworkProtectionShortcut
-        case .aiChat:
-            return isPinned(.aiChat) ? UserText.hideAIChatShortcut : UserText.showAIChatShortcut
-
         }
     }
 

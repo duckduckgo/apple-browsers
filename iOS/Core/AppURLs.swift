@@ -35,7 +35,7 @@ public extension URL {
     static let emailProtectionSupportLink = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)/email/settings/support"))!
     static let emailProtectionHelpPageLink = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)/duckduckgo-help-pages/email-protection/what-is-duckduckgo-email-protection/"))!
     static let aboutLink = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)/about"))!
-    static let apps = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)/apps?origin=funnel_app_ios"))!
+    static let otherDevices = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)/app/devices?origin=funnel_app_ios"))!
     static let searchSettings = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)/settings"))!
     static let autofillHelpPageLink = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)/duckduckgo-help-pages/sync-and-backup/password-manager-security/"))!
     static let maliciousSiteProtectionLearnMore = URL(string: AppDeepLinkSchemes.quickLink.appending("\(ddg.host!)/duckduckgo-help-pages/privacy/phishing-and-malware-protection/"))!
@@ -134,8 +134,8 @@ public extension URL {
 
     static func makeSearchURL(text: String) -> URL? { defaultStatisticsDependentURLFactory.makeSearchURL(text: text) }
 
-    static func makeSearchURL(query: String, queryContext: URL? = nil) -> URL? {
-        defaultStatisticsDependentURLFactory.makeSearchURL(query: query, queryContext: queryContext)
+    static func makeSearchURL(query: String, forceSearchQuery: Bool = false, queryContext: URL? = nil) -> URL? {
+        defaultStatisticsDependentURLFactory.makeSearchURL(query: query, forceSearchQuery: forceSearchQuery, queryContext: queryContext)
     }
 
     func applyingStatsParams() -> URL { URL.defaultStatisticsDependentURLFactory.applyingStatsParams(to: self) }
@@ -166,8 +166,8 @@ public final class StatisticsDependentURLFactory {
         makeSearchURL(text: text, additionalParameters: [])
     }
 
-    func makeSearchURL(query: String, queryContext: URL? = nil) -> URL? {
-        if let url = URL.webUrl(from: query) {
+    func makeSearchURL(query: String, forceSearchQuery: Bool = false, queryContext: URL? = nil) -> URL? {
+        if !forceSearchQuery, let url = URL.webUrl(from: query) {
             return url
         }
 
@@ -190,8 +190,12 @@ public final class StatisticsDependentURLFactory {
      */
     private func makeSearchURL<C: Collection>(text: String, additionalParameters: C) -> URL
     where C.Element == (key: String, value: String) {
-        let searchURL = URL.ddg
-            .appendingParameter(name: URL.Param.search, value: text)
+        // encode spaces as "+"
+        var queryItem = URLQueryItem(percentEncodingName: URL.Param.search, value: text, withAllowedCharacters: .init(charactersIn: " "))
+        queryItem.value = queryItem.value?.replacingOccurrences(of: " ", with: "+")
+
+        let searchURL = URL(string: URL.ddg.absoluteString.dropping(suffix: "/") + "/")!
+            .appending(percentEncodedQueryItem: queryItem)
             .appendingParameters(additionalParameters)
         return applyingStatsParams(to: searchURL)
     }

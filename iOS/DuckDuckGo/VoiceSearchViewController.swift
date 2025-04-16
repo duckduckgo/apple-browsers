@@ -21,7 +21,7 @@ import UIKit
 import SwiftUI
 
 protocol VoiceSearchViewControllerDelegate: AnyObject {
-    func voiceSearchViewController(_ controller: VoiceSearchViewController, didFinishQuery query: String?)
+    func voiceSearchViewController(_ controller: VoiceSearchViewController, didFinishQuery query: String?, target: VoiceSearchTarget)
 }
 
 class VoiceSearchViewController: UIViewController {
@@ -52,7 +52,7 @@ class VoiceSearchViewController: UIViewController {
     }
     
     private func installSpeechView() {
-        let model = VoiceSearchFeedbackViewModel(speechRecognizer: speechRecognizer)
+        let model = VoiceSearchFeedbackViewModel(speechRecognizer: speechRecognizer, aiChatSettings: AIChatSettings())
         model.delegate = self
         let speechView = VoiceSearchFeedbackView(speechModel: model)
         let controller = UIHostingController(rootView: speechView)
@@ -62,7 +62,7 @@ class VoiceSearchViewController: UIViewController {
 }
 
 extension VoiceSearchViewController: VoiceSearchFeedbackViewModelDelegate {
-    func voiceSearchFeedbackViewModel(_ model: VoiceSearchFeedbackViewModel, didFinishQuery query: String?) {
-        delegate?.voiceSearchViewController(self, didFinishQuery: query)
+    func voiceSearchFeedbackViewModel(_ model: VoiceSearchFeedbackViewModel, didFinishQuery query: String?, target: VoiceSearchTarget) {
+        delegate?.voiceSearchViewController(self, didFinishQuery: query, target: target)
     }
 }

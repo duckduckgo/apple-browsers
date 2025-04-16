@@ -18,6 +18,7 @@
 //
 
 import UIKit
+import DesignResourcesKit
 
 class AutofillNoAuthAvailableView: UIView {
 
@@ -50,7 +51,7 @@ class AutofillNoAuthAvailableView: UIView {
         label.numberOfLines = 0
         label.textAlignment = .center
         label.lineBreakMode = .byWordWrapping
-        label.textColor = .gray90
+        label.textColor = UIColor(baseColor: .gray90)
         label.text = UserText.autofillNoAuthViewTitle
 
         return label
@@ -62,7 +63,7 @@ class AutofillNoAuthAvailableView: UIView {
         label.lineBreakMode = .byWordWrapping
         label.textAlignment = .center
         label.font = .preferredFont(forTextStyle: .footnote)
-        label.textColor = .gray70
+        label.textColor = UIColor(baseColor: .gray70)
         label.text = UserText.autofillNoAuthViewSubtitle
 
         return label

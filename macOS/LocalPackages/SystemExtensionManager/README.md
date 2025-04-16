@@ -1,5 +1,5 @@
-# SystemExtensionManager
+# NetworkExtensionManager
 
-SystemExtensionManager library.
+System & App Extension Manager.
 
 - Offers convenience code for interacting and managing System Extensions

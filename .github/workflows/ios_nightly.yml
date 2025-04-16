@@ -43,13 +43,13 @@ jobs:
       run: brew install xcbeautify
 
     - name: Select Xcode
-      run: sudo xcode-select -s /Applications/Xcode_$(<.xcode-version).app/Contents/Developer
+      uses: ./.github/actions/select-xcode-version
 
     - name: Build and test
       run: |
         set -o pipefail && xcodebuild test \
           -scheme "iOS ATB UI Tests" \
-          -destination "platform=iOS Simulator,name=iPhone 16,OS=18.1" \
+          -destination "platform=iOS Simulator,name=iPhone 16,OS=18.2" \
           -derivedDataPath "DerivedData" \
           -skipPackagePluginValidation \
           -skipMacroValidation \
@@ -86,13 +86,13 @@ jobs:
       run: brew install xcbeautify
 
     - name: Select Xcode
-      run: sudo xcode-select -s /Applications/Xcode_$(<.xcode-version).app/Contents/Developer
+      uses: ./.github/actions/select-xcode-version
 
     - name: Build and test
       run: |
         set -o pipefail && xcodebuild test \
           -scheme "iOS Fingerprinting UI Tests" \
-          -destination "platform=iOS Simulator,name=iPhone 16,OS=18.1" \
+          -destination "platform=iOS Simulator,name=iPhone 16,OS=18.2" \
           -derivedDataPath "DerivedData" \
           -skipPackagePluginValidation \
           -skipMacroValidation \

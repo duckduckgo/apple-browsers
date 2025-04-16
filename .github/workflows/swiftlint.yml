@@ -1,0 +1,15 @@
+name: Shared - SwiftLint
+on:
+  pull_request:
+    types: [labeled, unlabeled, opened, reopened, edited, synchronize]
+
+jobs:
+  swiftlint:
+    name: SwiftLint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: SwiftLint
+        uses: docker://norionomura/swiftlint:0.54.0_swift-5.9.0
+        with:
+          args: swiftlint --reporter github-actions-logging --strict --quiet

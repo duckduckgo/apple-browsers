@@ -19,6 +19,7 @@
 
 import SwiftUI
 import Combine
+import DesignResourcesKit
 
 struct OngoingDownloadRow: View {
     @ObservedObject var rowModel: OngoingDownloadRowViewModel
@@ -145,9 +146,8 @@ private extension EdgeInsets {
 }
 
 private extension Color {
-    static let filename = Color("DownloadsListFilenameColor")
-    static let fileSize = Color("DownloadsListFileSizeColor")
-    static let cancel = Color("DownloadsListCancelButtonColor")
-    static let progressBackground = Color("DownloadsListProgressBackgroundColor")
-    static let progressFill = Color("DownloadsListProgressFillColor")
+    static let filename = Color(designSystemColor: .textPrimary)
+    static let fileSize = Color(designSystemColor: .textSecondary)
+    static let progressBackground = Color(singleUseColor: .downloadProgressBarBackground)
+    static let progressFill = Color(designSystemColor: .accent)
 }

@@ -38,8 +38,8 @@ struct SettingsAppearanceView: View {
 
                 // Theme
                 SettingsPickerCellView(label: UserText.settingsTheme,
-                                       options: ThemeName.allCases,
-                                       selectedOption: viewModel.themeBinding)
+                                       options: ThemeStyle.allCases,
+                                       selectedOption: viewModel.themeStyleBinding)
             }
 
             Section(header: Text(UserText.addressBar)) {
@@ -53,6 +53,17 @@ struct SettingsAppearanceView: View {
                 // Show Full Site Address
                 SettingsCellView(label: UserText.settingsFullURL,
                                  accessory: .toggle(isOn: viewModel.addressBarShowsFullURL))
+            }
+
+            if viewModel.isInternalUser {
+                Section {
+                    SettingsCellView(label: UserText.settingsExperimentalMainSwitch,
+                                     accessory: .toggle(isOn: viewModel.experimentalThemingBinding))
+                } header: {
+                    Text(UserText.settingsExperimentalSection)
+                } footer: {
+                    Text(UserText.settingsExperimentalSectionFooter)
+                }
             }
         }
         .applySettingsListModifiers(title: UserText.settingsAppearanceSection,

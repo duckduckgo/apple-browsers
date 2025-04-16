@@ -56,7 +56,7 @@ final class NetworkProtectionIPCTunnelController {
     private let errorRecorder: VPNOperationErrorRecorder
     private let knownFailureStore: NetworkProtectionKnownFailureStore
 
-    init(featureGatekeeper: VPNFeatureGatekeeper = DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionManager),
+    init(featureGatekeeper: VPNFeatureGatekeeper = DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge),
          loginItemsManager: LoginItemsManaging = LoginItemsManager(),
          ipcClient: NetworkProtectionIPCClient,
          fileManager: FileManager = .default,

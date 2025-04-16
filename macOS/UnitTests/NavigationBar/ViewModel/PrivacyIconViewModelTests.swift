@@ -37,23 +37,13 @@ class PrivacyIconViewModelTests: XCTestCase {
             XCTAssertNil(PrivacyIconViewModel.logo(for: "")) // shouldn‘t assert
             for tracker in TrackerNetwork.allCases {
                 let logo = PrivacyIconViewModel.logo(for: tracker.rawValue)
-                let feedLogo = HomePage.Models.RecentlyVisitedSiteModel.feedImage(for: tracker)?
-                    .cgImage(forProposedRect: nil, context: .current, hints: nil)
 
                 XCTAssertNotNil(logo)
-                if case .windows = tracker {
-                    XCTAssertNil(feedLogo, "\(tracker) – \(appearanceName.rawValue)")
-                } else {
-                    XCTAssertNotNil(feedLogo, "\(tracker) – \(appearanceName.rawValue)")
-                }
 
                 logos[appearanceName, default: [:]][tracker] = logo
 
                 // shouldn‘t be regenerated
                 XCTAssertEqual(PrivacyIconViewModel.logo(for: tracker.rawValue), logo,
-                               "\(tracker) – \(appearanceName.rawValue)")
-                XCTAssertEqual(HomePage.Models.RecentlyVisitedSiteModel.feedImage(for: tracker)?.cgImage(forProposedRect: nil, context: .current, hints: nil),
-                               feedLogo,
                                "\(tracker) – \(appearanceName.rawValue)")
 
                 // dark image should be different from aqua

@@ -74,7 +74,7 @@ class TabPreviewsSourceTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: fromUrl.path))
         XCTAssertFalse(FileManager.default.fileExists(atPath: toUrl.path))
         
-        let source = TabPreviewsSource(storeDir: toUrl, legacyDir: fromUrl)
+        let source = DefaultTabPreviewsSource(storeDir: toUrl, legacyDir: fromUrl)
         source.prepare()
         
         XCTAssertFalse(FileManager.default.fileExists(atPath: fromUrl.path))
@@ -108,7 +108,7 @@ class TabPreviewsSourceTests: XCTestCase {
         
         XCTAssertFalse(FileManager.default.fileExists(atPath: toUrl.path))
         
-        let source = TabPreviewsSource(storeDir: toUrl, legacyDir: fromUrl)
+        let source = DefaultTabPreviewsSource(storeDir: toUrl, legacyDir: fromUrl)
         source.prepare()
         
         XCTAssertFalse(FileManager.default.fileExists(atPath: fromUrl.path))
@@ -149,7 +149,7 @@ class TabPreviewsSourceTests: XCTestCase {
         
         XCTAssertFalse(FileManager.default.fileExists(atPath: toUrl.path))
         
-        let source = TabPreviewsSource(storeDir: toUrl, legacyDir: fromUrl)
+        let source = DefaultTabPreviewsSource(storeDir: toUrl, legacyDir: fromUrl)
         source.prepare()
         
         XCTAssertFalse(FileManager.default.fileExists(atPath: fromUrl.path))
@@ -174,7 +174,7 @@ class TabPreviewsSourceTests: XCTestCase {
         
         XCTAssertFalse(FileManager.default.fileExists(atPath: toUrl.path))
         
-        let source = TabPreviewsSource(storeDir: toUrl, legacyDir: fromUrl)
+        let source = DefaultTabPreviewsSource(storeDir: toUrl, legacyDir: fromUrl)
         source.prepare()
         
         var isDir: ObjCBool = false
@@ -192,7 +192,7 @@ class TabPreviewsSourceTests: XCTestCase {
         }
     }
     
-    func testWhenExcessPreviewsExistThenTheseAreRemoved() {
+    func testWhenExcessPreviewsExistThenTheseAreRemoved() async {
         guard let containerUrl = containerUrl else {
             XCTFail("Could not determine containerUrl")
             return
@@ -201,7 +201,7 @@ class TabPreviewsSourceTests: XCTestCase {
         let storeURL = containerUrl.appendingPathComponent("src", isDirectory: true)
         let legacyURL = containerUrl.appendingPathComponent("oldsrc", isDirectory: true)
         
-        let source = TabPreviewsSource(storeDir: storeURL, legacyDir: legacyURL)
+        let source = DefaultTabPreviewsSource(storeDir: storeURL, legacyDir: legacyURL)
         source.prepare()
         source.removeAllPreviews()
         
@@ -230,19 +230,12 @@ class TabPreviewsSourceTests: XCTestCase {
         
         let contents = try? FileManager.default.contentsOfDirectory(atPath: storeURL.path)
         XCTAssertEqual(contents?.count, 4)
-        
-        let model = TabsModel(tabs: [Tab(uid: "v1", link: nil, viewed: true, desktop: false),
-                                     Tab(uid: "v2", link: nil, viewed: true, desktop: false)], currentIndex: 0, desktop: false)
-        
-        let cleanup = expectation(description: "Cleanup completed")
-        
-        TabPreviewsCleanup.shared.startCleanup(with: model, source: source) {
-            cleanup.fulfill()
-            
-            let contents = try? FileManager.default.contentsOfDirectory(atPath: storeURL.path)
-            XCTAssert(contents?.count == 2)
-        }
-        
-        waitForExpectations(timeout: 3.0)
+
+        await source.removePreviewsWithIdNotIn([ "v1", "v2" ])
+
+        let newContents = try? FileManager.default.contentsOfDirectory(atPath: storeURL.path)
+        XCTAssertEqual(newContents?.count, 2)
+        XCTAssertEqual(newContents?.contains("v1.png"), true)
+        XCTAssertEqual(newContents?.contains("v2.png"), true)
     }
 }

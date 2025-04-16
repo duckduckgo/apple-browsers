@@ -150,6 +150,10 @@ public struct PixelParameters {
     public static let backfilled = "backfilled"
     public static let isExtension = "is_extension"
 
+    // Data Import
+    public static let savedCredentials = "saved_credentials"
+    public static let skippedCredentials = "skipped_credentials"
+
     // Privacy Dashboard
     public static let daysSinceInstall = "daysSinceInstall"
     public static let fromOnboarding = "from_onboarding"
@@ -255,7 +259,7 @@ public class Pixel {
         }
 
         guard !isDryRun else {
-            Logger.general.debug("Pixel fired \(pixelName.replacingOccurrences(of: "_", with: "."), privacy: .public) \(params.count > 0 ? "\(params)" : "", privacy: .public)")
+            Logger.pixels.debug("Pixel fired \(pixelName.replacingOccurrences(of: "_", with: "."), privacy: .public) \(params.count > 0 ? "\(params)" : "", privacy: .public)")
             // simulate server response time for Dry Run mode
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 onComplete(nil)
@@ -286,7 +290,7 @@ public class Pixel {
                                                      headers: headers)
         let request = APIRequest(configuration: configuration, urlSession: .session(useMainThreadCallbackQueue: true))
         request.fetch { _, error in
-            Logger.general.debug("Pixel fired \(pixelName, privacy: .public) \(params, privacy: .public)")
+            Logger.pixels.debug("Pixel fired \(pixelName, privacy: .public) \(params, privacy: .public)")
             onComplete(error)
         }
     }

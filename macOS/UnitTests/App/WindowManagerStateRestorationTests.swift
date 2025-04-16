@@ -79,9 +79,8 @@ final class WindowManagerStateRestorationTests: XCTestCase {
                 shouldLoadInBackground: false)
         ]
 
-        WindowControllersManager.shared.pinnedTabsManager.setUp(with: .init(tabs: pinnedTabs))
-        let model1 = TabCollectionViewModel(tabCollection: TabCollection(tabs: tabs1), selectionIndex: 0)
-        let model2 = TabCollectionViewModel(tabCollection: TabCollection(tabs: tabs2), selectionIndex: 2)
+        let model1 = TabCollectionViewModel(tabCollection: TabCollection(tabs: tabs1), selectionIndex: .unpinned(0))
+        let model2 = TabCollectionViewModel(tabCollection: TabCollection(tabs: tabs2), selectionIndex: .unpinned(2))
         WindowsManager.openNewWindow(with: model1)
         WindowsManager.openNewWindow(with: model2)
         WindowControllersManager.shared.lastKeyMainWindowController = WindowControllersManager.shared.mainWindowControllers[1]
@@ -96,7 +95,7 @@ final class WindowManagerStateRestorationTests: XCTestCase {
             return XCTFail("Could not unarchive WindowManagerStateRestoration")
         }
 
-        XCTAssertTrue(areTabsEqual(restored.pinnedTabs!.tabs, pinnedTabs))
+        XCTAssertTrue(areTabsEqual(restored.applicationPinnedTabs!.tabs, pinnedTabs))
         XCTAssertEqual(restored.windows.count, 2)
         XCTAssertEqual(restored.keyWindowIndex, 1)
         for (idx, window) in state.windows.enumerated() {

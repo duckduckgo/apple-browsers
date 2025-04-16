@@ -35,7 +35,7 @@ struct TabExtensionsBuilder: TabExtensionsBuilderProtocol {
 
     static var `default`: TabExtensionsBuilderProtocol {
 #if DEBUG
-        return NSApp.runType.requiresEnvironment ? TabExtensionsBuilder() : TestTabExtensionsBuilder.shared
+        return AppVersion.runType.requiresEnvironment ? TabExtensionsBuilder() : TestTabExtensionsBuilder.shared
 #else
         return TabExtensionsBuilder()
 #endif
@@ -69,6 +69,10 @@ struct TabExtensionsBuilder: TabExtensionsBuilderProtocol {
 /// provide overriding extensions initializers in `overrideExtensions` method using `override { .. }` calls
 final class TestTabExtensionsBuilder: TabExtensionsBuilderProtocol {
 
+    /// When set to `true`, calls to `build(with:dependencies:)` are recorded in `buildCalls`.
+    var shouldCaptureBuildCalls: Bool = false
+    var buildCalls: [(TabExtensionsBuilderArguments, TabExtensionDependencies)] = []
+
     private var components = [(protocolType: Any.Type, buildingBlock: (any TabExtensionBuildingBlockProtocol))]()
 
     var extensionsToLoad: [any TabExtension.Type]?
@@ -91,6 +95,10 @@ final class TestTabExtensionsBuilder: TabExtensionsBuilderProtocol {
     }
 
     func build(with args: TabExtensionsBuilderArguments, dependencies: TabExtensionDependencies) -> TabExtensions {
+        if shouldCaptureBuildCalls {
+            buildCalls.append((args, dependencies))
+        }
+
         var builder = TabExtensionsBuilder()
         builder.registerExtensions(with: args, dependencies: dependencies)
 
@@ -160,7 +168,7 @@ struct TabExtensionBuildingBlock<T> {
     }
 
     init<Extension: TabExtension>(_ makeTabExtension: @escaping () -> Extension) where Extension.PublicProtocol == T {
-        if NSApp.runType.requiresEnvironment {
+        if AppVersion.runType.requiresEnvironment {
             state = .loaded(makeTabExtension().getPublicProtocol())
         } else {
             state = .lazy(.init(makeTabExtension))
@@ -236,7 +244,7 @@ struct TabExtensions {
         let tabExtension = extensions[ObjectIdentifier(T.PublicProtocol.self)]?.getPublicProtocol() as? T.PublicProtocol
         guard isNullable != .nullable else { return tabExtension}
 #if DEBUG
-        assert(!NSApp.runType.requiresEnvironment || tabExtension != nil)
+        assert(!AppVersion.runType.requiresEnvironment || tabExtension != nil)
 #else
         Logger.autoconsent.debug("Tab Extension not initialised for Unit Tests, activate it in TabExtensions.swift")
 #endif

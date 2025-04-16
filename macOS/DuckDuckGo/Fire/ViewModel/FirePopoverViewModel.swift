@@ -224,7 +224,8 @@ final class FirePopoverViewModel {
         case (.allData, false):
             PixelKit.fire(GeneralPixel.fireButton(option: .allSites))
             fireViewModel.fire.burnEntity(entity: .allWindows(mainWindowControllers: WindowControllersManager.shared.mainWindowControllers,
-                                                              selectedDomains: selectedDomains))
+                                                              selectedDomains: selectedDomains,
+                                                              customURLToOpen: nil))
         }
     }
 

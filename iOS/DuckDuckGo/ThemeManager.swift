@@ -16,8 +16,10 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
+
 import UIKit
 import Core
+import DesignResourcesKit
 
 class ThemeManager {
     enum ImageSet {
@@ -38,19 +40,29 @@ class ThemeManager {
 
     private var appSettings: AppSettings
 
-    let currentTheme: Theme = DefaultTheme()
+    private(set) var currentTheme: Theme = DefaultTheme()
 
     init(settings: AppSettings = AppUserDefaults()) {
         appSettings = settings
+
+        updateColorScheme()
     }
-    
-    public func enableTheme(with name: ThemeName) {
-        appSettings.currentThemeName = name
+
+    public func updateColorScheme() {
+        if !ExperimentalThemingManager().isExperimentalThemingEnabled {
+            DesignSystemPalette.current = .default
+        } else {
+            DesignSystemPalette.current = .experimental
+        }
+    }
+
+    public func setThemeStyle(_ style: ThemeStyle) {
+        appSettings.currentThemeStyle = style
         updateUserInterfaceStyle()
     }
 
     func updateUserInterfaceStyle(window: UIWindow? = UIApplication.shared.firstKeyWindow) {
-        switch appSettings.currentThemeName {
+        switch appSettings.currentThemeStyle {
 
         case .dark:
             window?.overrideUserInterfaceStyle = .dark

@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "CEDD46E5-DAEC-407E-B790-8A23D5B18D80",
+      "name" : "Configuration 1",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:..\/SharedPackages\/DataBrokerProtectionShared",
+        "identifier" : "DataBrokerProtectionSharedTests",
+        "name" : "DataBrokerProtectionSharedTests"
+      }
+    }
+  ],
+  "version" : 1
+}

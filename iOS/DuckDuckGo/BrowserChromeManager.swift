@@ -32,7 +32,7 @@ protocol BrowserChromeDelegate: AnyObject {
     var toolbarHeight: CGFloat { get }
     var barsMaxHeight: CGFloat { get }
 
-    var omniBar: OmniBar { get }
+    var omniBar: any OmniBar { get }
     var tabBarContainer: UIView { get }
 }
 
@@ -156,4 +156,8 @@ private extension UIScrollView {
     var fullyZoomedOut: Bool {
         return zoomScale <= minimumZoomScale
     }
+}
+
+extension Notification.Name {
+    static let browserChromeVisibilityChanged = Notification.Name("com.duckduckgo.browserChrome.visibilityChanged")
 }

@@ -28,6 +28,7 @@ enum SyncErrorMessage {
     case unableToDeleteData
     case unableToRemoveDevice
     case unableToCreateRecoveryPdf
+    case unableToRecognizeCode
 
     var title: String {
         return UserText.syncErrorAlertTitle
@@ -51,6 +52,8 @@ enum SyncErrorMessage {
             return UserText.unableToRemoveDeviceDescription
         case .unableToCreateRecoveryPdf:
             return UserText.unableToCreateRecoveryPDF
+        case .unableToRecognizeCode:
+            return UserText.unableToRecognizeCode
         }
     }
 }

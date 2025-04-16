@@ -23,11 +23,11 @@ import BrowserServicesKit
 struct SmallOmniBarState {
 
     struct HomeEmptyEditingState: OmniBarState, OmniBarLoadingBearerStateCreating {
-        let hasLargeWidth: Bool = false
-        let showBackButton: Bool = false
-        let showForwardButton: Bool = false
-        let showBookmarksButton: Bool = false
-        var showAccessoryButton: Bool { dependencies.isAIChatEnabledOnSettingsAndFeatureFlagOn }
+        let hasLargeWidth = false
+        let showBackButton = false
+        let showForwardButton = false
+        let showBookmarksButton = false
+        var showAccessoryButton: Bool { dependencies.isAIChatEnabledInSettings }
         let clearTextOnStart = true
         let allowsTrackersAnimation = false
         let showPrivacyIcon = false
@@ -37,8 +37,8 @@ struct SmallOmniBarState {
         let showRefresh = false
         let showMenu = false
         let showSettings = false
-        var showCancel: Bool { dependencies.featureFlagger.isFeatureOn(.aiChatNewTabPage) ? false : true }
-        var showDismiss: Bool { dependencies.featureFlagger.isFeatureOn(.aiChatNewTabPage) ? true : false }
+        let showCancel = false
+        let showDismiss = true
         var name: String { return "Phone" + Type.name(self) }
         var onEditingStoppedState: OmniBarState { return HomeNonEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onEditingStartedState: OmniBarState { return self }
@@ -57,11 +57,11 @@ struct SmallOmniBarState {
     }
 
     struct HomeTextEditingState: OmniBarState, OmniBarLoadingBearerStateCreating {
-        let hasLargeWidth: Bool = false
-        let showBackButton: Bool = false
-        let showForwardButton: Bool = false
-        let showBookmarksButton: Bool = false
-        var showAccessoryButton: Bool { dependencies.isAIChatEnabledOnSettingsAndFeatureFlagOn }
+        let hasLargeWidth = false
+        let showBackButton = false
+        let showForwardButton = false
+        let showBookmarksButton = false
+        var showAccessoryButton: Bool { dependencies.isAIChatEnabledInSettings }
         let clearTextOnStart = false
         let allowsTrackersAnimation = false
         let showPrivacyIcon = false
@@ -71,8 +71,8 @@ struct SmallOmniBarState {
         let showRefresh = false
         let showMenu = false
         let showSettings = false
-        var showCancel: Bool { dependencies.featureFlagger.isFeatureOn(.aiChatNewTabPage) ? false : true }
-        var showDismiss: Bool { dependencies.featureFlagger.isFeatureOn(.aiChatNewTabPage) ? true : false }
+        let showCancel = false
+        let showDismiss = true
         let showVoiceSearch = false
         var name: String { return "Phone" + Type.name(self) }
         var onEditingStoppedState: OmniBarState { return HomeNonEditingState(dependencies: dependencies, isLoading: isLoading) }
@@ -90,11 +90,11 @@ struct SmallOmniBarState {
     }
 
     struct HomeNonEditingState: OmniBarState, OmniBarLoadingBearerStateCreating {
-        let hasLargeWidth: Bool = false
-        let showBackButton: Bool = false
-        let showForwardButton: Bool = false
-        let showBookmarksButton: Bool = false
-        var showAccessoryButton: Bool { dependencies.isAIChatEnabledOnSettingsAndFeatureFlagOn }
+        let hasLargeWidth = false
+        let showBackButton = false
+        let showForwardButton = false
+        let showBookmarksButton = false
+        var showAccessoryButton: Bool { dependencies.isAIChatEnabledInSettings }
         let clearTextOnStart = true
         let allowsTrackersAnimation = false
         let showSearchLoupe = true
@@ -104,9 +104,9 @@ struct SmallOmniBarState {
         let showAbort = false
         let showRefresh = false
         let showMenu = false
-        var showSettings: Bool { dependencies.featureFlagger.isFeatureOn(.aiChatNewTabPage) ? false : true }
+        let showSettings = false
         let showDismiss = false
-        let showCancel: Bool = false
+        let showCancel = false
         var name: String { return "Phone" + Type.name(self) }
         var onEditingStoppedState: OmniBarState { return self }
         var onEditingStartedState: OmniBarState { return HomeEmptyEditingState(dependencies: dependencies, isLoading: isLoading) }
@@ -125,11 +125,11 @@ struct SmallOmniBarState {
     }
 
     struct BrowsingEmptyEditingState: OmniBarState, OmniBarLoadingBearerStateCreating {
-        let hasLargeWidth: Bool = false
-        let showBackButton: Bool = false
-        let showForwardButton: Bool = false
-        let showBookmarksButton: Bool = false
-        var showAccessoryButton: Bool { dependencies.isAIChatEnabledOnSettingsAndFeatureFlagOn }
+        let hasLargeWidth = false
+        let showBackButton = false
+        let showForwardButton = false
+        let showBookmarksButton = false
+        var showAccessoryButton: Bool { dependencies.isAIChatEnabledInSettings }
         let clearTextOnStart = true
         let allowsTrackersAnimation = false
         let showPrivacyIcon = false
@@ -139,8 +139,8 @@ struct SmallOmniBarState {
         let showRefresh = false
         let showMenu = false
         let showSettings = false
-        var showCancel: Bool { dependencies.featureFlagger.isFeatureOn(.aiChatNewTabPage) ? false : true }
-        var showDismiss: Bool { dependencies.featureFlagger.isFeatureOn(.aiChatNewTabPage) ? true : false }
+        let showCancel = false
+        let showDismiss = true
         var name: String { return "Phone" + Type.name(self) }
         var onEditingStoppedState: OmniBarState { return BrowsingNonEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onEditingStartedState: OmniBarState { return self }
@@ -160,11 +160,11 @@ struct SmallOmniBarState {
 
 
     struct BrowsingTextEditingState: OmniBarState, OmniBarLoadingBearerStateCreating {
-        let hasLargeWidth: Bool = false
-        let showBackButton: Bool = false
-        let showForwardButton: Bool = false
-        let showBookmarksButton: Bool = false
-        var showAccessoryButton: Bool { dependencies.isAIChatEnabledOnSettingsAndFeatureFlagOn }
+        let hasLargeWidth = false
+        let showBackButton = false
+        let showForwardButton = false
+        let showBookmarksButton = false
+        var showAccessoryButton: Bool { dependencies.isAIChatEnabledInSettings }
         let clearTextOnStart = false
         let allowsTrackersAnimation = false
         let showPrivacyIcon = false
@@ -174,8 +174,8 @@ struct SmallOmniBarState {
         let showRefresh = false
         let showMenu = false
         let showSettings = false
-        var showCancel: Bool { dependencies.featureFlagger.isFeatureOn(.aiChatNewTabPage) ? false : true }
-        var showDismiss: Bool { dependencies.featureFlagger.isFeatureOn(.aiChatNewTabPage) ? true : false }
+        let showCancel = false
+        let showDismiss = true
         let showVoiceSearch = false
         var name: String { return "Phone" + Type.name(self) }
         var onEditingStoppedState: OmniBarState { return BrowsingNonEditingState(dependencies: dependencies, isLoading: isLoading) }
@@ -195,11 +195,11 @@ struct SmallOmniBarState {
 
 
     struct BrowsingNonEditingState: OmniBarState, OmniBarLoadingBearerStateCreating {
-        let hasLargeWidth: Bool = false
-        let showBackButton: Bool = false
-        let showForwardButton: Bool = false
-        let showBookmarksButton: Bool = false
-        let showAccessoryButton: Bool = true
+        let hasLargeWidth = false
+        let showBackButton = false
+        let showForwardButton = false
+        let showBookmarksButton = false
+        let showAccessoryButton = true
         let clearTextOnStart = false
         let allowsTrackersAnimation = true
         let showSearchLoupe = false
@@ -210,9 +210,9 @@ struct SmallOmniBarState {
         var showRefresh: Bool { !isLoading }
         let showMenu = false
         let showSettings = false
-        let showCancel: Bool = false
+        let showCancel = false
         let showVoiceSearch = false
-        let showDismiss: Bool = false
+        let showDismiss = false
         var name: String { return "Phone" + Type.name(self) }
         var onEditingStoppedState: OmniBarState { return self }
         var onEditingStartedState: OmniBarState { return BrowsingTextEditingStartedState(dependencies: dependencies, isLoading: isLoading) }
@@ -229,11 +229,11 @@ struct SmallOmniBarState {
     }
 
     struct BrowsingTextEditingStartedState: OmniBarState, OmniBarLoadingBearerStateCreating {
-        let hasLargeWidth: Bool = false
-        let showBackButton: Bool = false
-        let showForwardButton: Bool = false
-        let showBookmarksButton: Bool = false
-        var showAccessoryButton: Bool { dependencies.isAIChatEnabledOnSettingsAndFeatureFlagOn }
+        let hasLargeWidth = false
+        let showBackButton = false
+        let showForwardButton = false
+        let showBookmarksButton = false
+        var showAccessoryButton: Bool { dependencies.isAIChatEnabledInSettings }
         let clearTextOnStart = false
         let allowsTrackersAnimation = false
         let showPrivacyIcon = false
@@ -243,8 +243,8 @@ struct SmallOmniBarState {
         let showRefresh = false
         let showMenu = false
         let showSettings = false
-        var showDismiss: Bool { dependencies.featureFlagger.isFeatureOn(.aiChatNewTabPage) ? true : false }
-        var showCancel: Bool { dependencies.featureFlagger.isFeatureOn(.aiChatNewTabPage) ? false : true }
+        let showDismiss = true
+        let showCancel = false
         var name: String { return "Phone" + Type.name(self) }
         var onEditingStoppedState: OmniBarState { return BrowsingNonEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onEditingStartedState: OmniBarState { return self }
@@ -264,15 +264,11 @@ struct SmallOmniBarState {
 }
 
 extension OmnibarDependencyProvider {
-    var isAIChatEnabledOnSettingsAndFeatureFlagOn: Bool {
-        aiChatSettings.isAIChatAddressBarUserSettingsEnabled && featureFlagger.isFeatureOn(.aiChatNewTabPage)
+    var isAIChatEnabledInSettings: Bool {
+        aiChatSettings.isAIChatAddressBarUserSettingsEnabled
     }
 
     var shouldShowSearchLoupeIfPossible: Bool {
-        if featureFlagger.isFeatureOn(.aiChatNewTabPage) {
-            return false
-        } else {
-            return !voiceSearchHelper.isVoiceSearchEnabled
-        }
+        return false
     }
 }

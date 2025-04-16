@@ -22,14 +22,17 @@ import SwiftUI
 import Onboarding
 import DuckUI
 
+// MARK: - Try Anonymous Search
+
 struct OnboardingTrySearchDialog: View {
     let title = UserText.Onboarding.ContextualOnboarding.onboardingTryASearchTitle
     let message: String
     let viewModel: OnboardingSearchSuggestionsViewModel
+    let onManualDismiss: () -> Void
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            DaxDialogView(logoPosition: .top) {
+            DaxDialogView(logoPosition: .top, onManualDismiss: onManualDismiss) {
                 ContextualDaxDialogContent(
                     title: title,
                     titleFont: Font(UIFont.daxTitle3()),
@@ -44,13 +47,16 @@ struct OnboardingTrySearchDialog: View {
     }
 }
 
+// MARK: - Try Visiting Site
+
 struct OnboardingTryVisitingSiteDialog: View {
     let logoPosition: DaxDialogLogoPosition
     let viewModel: OnboardingSiteSuggestionsViewModel
+    let onManualDismiss: () -> Void
 
     var body: some View {
-        ScrollView(.vertical) {
-            DaxDialogView(logoPosition: logoPosition) {
+        ScrollView(.vertical, showsIndicators: false) {
+            DaxDialogView(logoPosition: logoPosition, onManualDismiss: onManualDismiss) {
                 OnboardingTryVisitingSiteDialogContent(viewModel: viewModel)
             }
             .padding()
@@ -74,20 +80,29 @@ struct OnboardingTryVisitingSiteDialogContent: View {
     }
 }
 
+// MARK: - Fire Dialog
+
+struct OnboardingFireDialog: View {
+    let onManualDismiss: () -> Void
+
+    var body: some View {
+        ScrollView(.vertical, showsIndicators: false) {
+            DaxDialogView(logoPosition: .left, onManualDismiss: onManualDismiss) {
+                VStack {
+                    OnboardingFireButtonDialogContent()
+                }
+            }
+            .padding()
+        }
+    }
+}
+
 struct OnboardingFireButtonDialogContent: View {
     private let attributedMessage: NSAttributedString = {
-        let firstString = UserText.Onboarding.ContextualOnboarding.onboardingTryFireButtonMessage
         let boldString = "Fire Button."
-        let attributedString = NSMutableAttributedString(string: firstString)
-        let boldFontAttribute: [NSAttributedString.Key: Any] = [
-            .font: UIFont.daxBodyBold()
-        ]
-        if let boldRange = firstString.range(of: boldString) {
-            let nsBoldRange = NSRange(boldRange, in: firstString)
-            attributedString.addAttributes(boldFontAttribute, range: nsBoldRange)
-        }
-
-        return attributedString
+        return UserText.Onboarding.ContextualOnboarding.onboardingTryFireButtonMessage
+            .attributed
+            .withFont(.daxBodyBold(), forText: boldString)
     }()
 
     var body: some View {
@@ -98,6 +113,8 @@ struct OnboardingFireButtonDialogContent: View {
     }
 }
 
+// MARK: - SERP
+
 struct OnboardingFirstSearchDoneDialog: View {
     let cta = UserText.Onboarding.ContextualOnboarding.onboardingGotItButton
     let message: NSAttributedString
@@ -107,10 +124,13 @@ struct OnboardingFirstSearchDoneDialog: View {
     let shouldFollowUp: Bool
     let viewModel: OnboardingSiteSuggestionsViewModel
     let gotItAction: () -> Void
+    let onManualDismiss: (_ isShowingNextScreen: Bool) -> Void
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            DaxDialogView(logoPosition: .left) {
+            DaxDialogView(logoPosition: .left, onManualDismiss: {
+                onManualDismiss(showNextScreen)
+            }) {
                 VStack {
                     if showNextScreen {
                         OnboardingTryVisitingSiteDialogContent(viewModel: viewModel)
@@ -137,19 +157,7 @@ struct OnboardingFirstSearchDoneDialog: View {
     }
 }
 
-struct OnboardingFireDialog: View {
-   
-    var body: some View {
-        ScrollView(.vertical, showsIndicators: false) {
-            DaxDialogView(logoPosition: .left) {
-                VStack {
-                    OnboardingFireButtonDialogContent()
-                }
-            }
-            .padding()
-        }
-    }
-}
+// MARK: - Trackers
 
 struct OnboardingTrackersDoneDialog: View {
     let cta = UserText.Onboarding.ContextualOnboarding.onboardingGotItButton
@@ -159,10 +167,13 @@ struct OnboardingTrackersDoneDialog: View {
     let shouldFollowUp: Bool
     let message: NSAttributedString
     let blockedTrackersCTAAction: () -> Void
+    let onManualDismiss: (_ isShowingNextScreen: Bool) -> Void
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            DaxDialogView(logoPosition: .left) {
+            DaxDialogView(logoPosition: .left, onManualDismiss: {
+                onManualDismiss(showNextScreen)
+            }) {
                 VStack {
                     if showNextScreen {
                         OnboardingFireButtonDialogContent()
@@ -189,66 +200,80 @@ struct OnboardingTrackersDoneDialog: View {
     }
 }
 
+// MARK: - End of Journey Dialog
+
 struct OnboardingFinalDialog: View {
     let logoPosition: DaxDialogLogoPosition
     let message: String
     let cta: String
-    let canShowAddToDockTutorial: Bool
-    let showAddToDockTutorialAction: () -> Void
-    let dismissAction: (_ fromAddToDock: Bool) -> Void
-
-    @State private var showAddToDockTutorial = false
+    let dismissAction: () -> Void
+    let onManualDismiss: () -> Void
 
     var body: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            DaxDialogView(logoPosition: logoPosition) {
-                if showAddToDockTutorial {
-                    OnboardingAddToDockTutorialContent(cta: UserText.AddToDockOnboarding.Buttons.startBrowsing) {
-                        dismissAction(true)
-                    }
-                } else {
-                    ContextualDaxDialogContent(
-                        title: canShowAddToDockTutorial ? UserText.AddToDockOnboarding.Promo.title : UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenTitle,
-                        titleFont: Font(UIFont.daxTitle3()),
-                        message: NSAttributedString(string: message),
-                        messageFont: Font.system(size: 16),
-                        customView: AnyView(customView),
-                        customActionView: AnyView(customActionView)
-                    )
-                }
+            DaxDialogView(logoPosition: logoPosition, onManualDismiss: onManualDismiss) {
+                ContextualDaxDialogContent(
+                    title: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenTitle,
+                    titleFont: Font(UIFont.daxTitle3()),
+                    message: NSAttributedString(string: message),
+                    messageFont: Font.system(size: 16),
+                    customActionView: AnyView(customActionView)
+                )
             }
             .padding()
         }
     }
 
     @ViewBuilder
-    private var customView: some View {
-        if canShowAddToDockTutorial {
-            AddToDockPromoView()
-                .aspectRatio(contentMode: .fill)
-                .padding(.vertical)
-        } else {
-            EmptyView()
+    private var customActionView: some View {
+        OnboardingCTAButton(
+            title: cta,
+            buttonStyle: .primary(),
+            action: {
+                dismissAction()
+            }
+        )
+    }
+
+}
+
+// MARK: - Privacy Pro Promo
+
+struct PrivacyProPromotionView: View {
+
+    let title: String
+    let message: NSAttributedString
+    let proceedText: String
+    let dismissText: String
+    let proceedAction: () -> Void
+    let onManualDismiss: () -> Void
+
+    var body: some View {
+        ScrollView(.vertical, showsIndicators: false) {
+            DaxDialogView(logoPosition: .top, onManualDismiss: onManualDismiss) {
+                ContextualDaxDialogContent(
+                    title: title,
+                    titleFont: Font(UIFont.daxTitle3()),
+                    message: message,
+                    messageFont: Font.system(size: 16),
+                    customView: nil,
+                    customActionView: AnyView(customActionView)
+                )
+            }
+            .padding()
         }
     }
 
     @ViewBuilder
     private var customActionView: some View {
         VStack {
-            if canShowAddToDockTutorial {
-                OnboardingCTAButton(
-                    title: UserText.AddToDockOnboarding.Buttons.tutorial,
-                    action: {
-                        showAddToDockTutorialAction()
-                        showAddToDockTutorial = true
-                    }
-                )
-            }
+            Image(.onboardingPrivacyProPromo)
+                .padding([.top, .bottom], 16)
             OnboardingCTAButton(
-                title: cta,
-                buttonStyle: canShowAddToDockTutorial ? .ghost : .primary,
+                title: proceedText,
+                buttonStyle: .primary(),
                 action: {
-                    dismissAction(false)
+                    proceedAction()
                 }
             )
         }
@@ -257,12 +282,12 @@ struct OnboardingFinalDialog: View {
 
 struct OnboardingCTAButton: View {
     enum ButtonStyle {
-        case primary
+        case primary(compact: Bool = false)
         case ghost
     }
 
     let title: String
-    var buttonStyle: ButtonStyle = .primary
+    var buttonStyle: ButtonStyle = .primary(compact: true)
     let action: () -> Void
 
 
@@ -272,8 +297,8 @@ struct OnboardingCTAButton: View {
         }
 
         switch buttonStyle {
-        case .primary:
-            button.buttonStyle(PrimaryButtonStyle(compact: true))
+        case .primary(let isCompact):
+            button.buttonStyle(PrimaryButtonStyle(compact: isCompact))
         case .ghost:
             button.buttonStyle(GhostButtonStyle())
         }
@@ -281,11 +306,14 @@ struct OnboardingCTAButton: View {
 
 }
 
+// MARK: - Add To Dock
+
 struct OnboardingAddToDockTutorialContent: View {
     let title = UserText.AddToDockOnboarding.Tutorial.title
     let message = UserText.AddToDockOnboarding.Tutorial.message
 
     let cta: String
+    let isSkipped: Binding<Bool>
     let dismissAction: () -> Void
 
     var body: some View {
@@ -293,6 +321,7 @@ struct OnboardingAddToDockTutorialContent: View {
             title: title,
             message: message,
             cta: cta,
+            isSkipped: isSkipped,
             action: dismissAction
         )
     }
@@ -301,24 +330,48 @@ struct OnboardingAddToDockTutorialContent: View {
 // MARK: - Preview
 
 #Preview("Try Search") {
-    OnboardingTrySearchDialog(message: UserText.Onboarding.ContextualOnboarding.onboardingTryASearchMessage, viewModel: OnboardingSearchSuggestionsViewModel(suggestedSearchesProvider: OnboardingSuggestedSearchesProvider(), pixelReporter: OnboardingPixelReporter()))
+    OnboardingTrySearchDialog(
+        message: UserText.Onboarding.ContextualOnboarding.onboardingTryASearchMessage,
+        viewModel: OnboardingSearchSuggestionsViewModel(
+            suggestedSearchesProvider: OnboardingSuggestedSearchesProvider(),
+            pixelReporter: OnboardingPixelReporter()
+        ),
+        onManualDismiss: {})
         .padding()
 }
 
 #Preview("Try Site Top") {
-    OnboardingTryVisitingSiteDialog(logoPosition: .top, viewModel: OnboardingSiteSuggestionsViewModel(title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteTitle, suggestedSitesProvider: OnboardingSuggestedSitesProvider(surpriseItemTitle: UserText.Onboarding.ContextualOnboarding.tryASearchOptionSurpriseMeTitle), pixelReporter: OnboardingPixelReporter()))
-        .padding()
+    OnboardingTryVisitingSiteDialog(
+        logoPosition: .top,
+        viewModel: OnboardingSiteSuggestionsViewModel(
+            title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteTitle,
+            suggestedSitesProvider: OnboardingSuggestedSitesProvider(
+                surpriseItemTitle: UserText.Onboarding.ContextualOnboarding.tryASearchOptionSurpriseMeTitle
+            ),
+            pixelReporter: OnboardingPixelReporter()
+        ),
+        onManualDismiss: {}
+    )
+    .padding()
 }
 
 #Preview("Try Site Left") {
-    OnboardingTryVisitingSiteDialog(logoPosition: .left, viewModel: OnboardingSiteSuggestionsViewModel(title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteTitle, suggestedSitesProvider: OnboardingSuggestedSitesProvider(surpriseItemTitle: UserText.Onboarding.ContextualOnboarding.tryASearchOptionSurpriseMeTitle), pixelReporter: OnboardingPixelReporter()))
-        .padding()
+    OnboardingTryVisitingSiteDialog(
+        logoPosition: .left,
+        viewModel: OnboardingSiteSuggestionsViewModel(
+            title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteTitle,
+            suggestedSitesProvider: OnboardingSuggestedSitesProvider(
+                surpriseItemTitle: UserText.Onboarding.ContextualOnboarding.tryASearchOptionSurpriseMeTitle
+            ),
+            pixelReporter: OnboardingPixelReporter()
+        ),
+        onManualDismiss: {}
+    )
+    .padding()
 }
 
 #Preview("Try Fire Button") {
-    DaxDialogView(logoPosition: .left) {
-        OnboardingFireButtonDialogContent()
-    }
+    OnboardingFireDialog(onManualDismiss: {})
         .padding()
 }
 
@@ -329,30 +382,27 @@ struct OnboardingAddToDockTutorialContent: View {
         return message.attributed.with(attribute: .font, value: UIFont.daxBodyBold(), in: boldRange)
     }()
 
-    return OnboardingFirstSearchDoneDialog(message: attributedMessage, shouldFollowUp: true, viewModel: OnboardingSiteSuggestionsViewModel(title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteTitle, suggestedSitesProvider: OnboardingSuggestedSitesProvider(surpriseItemTitle: UserText.Onboarding.ContextualOnboarding.tryASearchOptionSurpriseMeTitle), pixelReporter: OnboardingPixelReporter()), gotItAction: {})
-        .padding()
-}
-
-#Preview("Final Dialog - No Add to Dock Tutorial") {
-    OnboardingFinalDialog(
-        logoPosition: .top,
-        message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage,
-        cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
-        canShowAddToDockTutorial: false,
-        showAddToDockTutorialAction: {},
-        dismissAction: { _ in }
+    return OnboardingFirstSearchDoneDialog(
+        message: attributedMessage,
+        shouldFollowUp: true,
+        viewModel: OnboardingSiteSuggestionsViewModel(
+            title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteTitle,
+            suggestedSitesProvider: OnboardingSuggestedSitesProvider(surpriseItemTitle: UserText.Onboarding.ContextualOnboarding.tryASearchOptionSurpriseMeTitle),
+            pixelReporter: OnboardingPixelReporter()
+        ),
+        gotItAction: {},
+        onManualDismiss: { _ in }
     )
     .padding()
 }
 
-#Preview("Final Dialog - Add to Dock Tutorial") {
+#Preview("Final Dialog") {
     OnboardingFinalDialog(
-        logoPosition: .left,
-        message: UserText.AddToDockOnboarding.Promo.contextualMessage,
-        cta: UserText.AddToDockOnboarding.Buttons.startBrowsing,
-        canShowAddToDockTutorial: true,
-        showAddToDockTutorialAction: {},
-        dismissAction: { _ in }
+        logoPosition: .top,
+        message: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenMessage,
+        cta: UserText.Onboarding.ContextualOnboarding.onboardingFinalScreenButton,
+        dismissAction: { },
+        onManualDismiss: {}
     )
     .padding()
 }
@@ -366,17 +416,18 @@ struct OnboardingAddToDockTutorialContent: View {
             I’ll block Facebook from seeing your activity on those sites.
             """
         ),
-        blockedTrackersCTAAction: { }
+        blockedTrackersCTAAction: { },
+        onManualDismiss: { _ in }
     )
     .padding()
 }
 
 #Preview("Add To Dock Tutorial - Light") {
-    OnboardingAddToDockTutorialContent(cta: UserText.AddToDockOnboarding.Buttons.startBrowsing, dismissAction: {})
+    OnboardingAddToDockTutorialContent(cta: UserText.AddToDockOnboarding.Buttons.startBrowsing, isSkipped: .constant(false), dismissAction: {})
         .preferredColorScheme(.light)
 }
 
 #Preview("Add To Dock Tutorial - Dark") {
-    OnboardingAddToDockTutorialContent(cta: UserText.AddToDockOnboarding.Buttons.startBrowsing, dismissAction: {})
+    OnboardingAddToDockTutorialContent(cta: UserText.AddToDockOnboarding.Buttons.startBrowsing, isSkipped: .constant(false), dismissAction: {})
         .preferredColorScheme(.dark)
 }

@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import DataBrokerProtection
+import DataBrokerProtection_macOS
 import Common
 
 protocol DataBrokerProtectionLoginItemInterface: DataBrokerProtectionAppToAgentInterface {
@@ -29,11 +29,11 @@ protocol DataBrokerProtectionLoginItemInterface: DataBrokerProtectionAppToAgentI
 final class DefaultDataBrokerProtectionLoginItemInterface {
     private let ipcClient: DataBrokerProtectionIPCClient
     private let loginItemsManager: LoginItemsManager
-    private let pixelHandler: EventMapping<DataBrokerProtectionPixels>
+    private let pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>
 
     init(ipcClient: DataBrokerProtectionIPCClient,
          loginItemsManager: LoginItemsManager = .init(),
-         pixelHandler: EventMapping<DataBrokerProtectionPixels>) {
+         pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>) {
         self.ipcClient = ipcClient
         self.loginItemsManager = loginItemsManager
         self.pixelHandler = pixelHandler
@@ -109,7 +109,7 @@ extension DefaultDataBrokerProtectionLoginItemInterface: DataBrokerProtectionLog
         ipcClient.runAllOptOuts(showWebView: showWebView)
     }
 
-    func getDebugMetadata() async -> DataBrokerProtection.DBPBackgroundAgentMetadata? {
+    func getDebugMetadata() async -> DBPBackgroundAgentMetadata? {
         return await ipcClient.getDebugMetadata()
     }
 }

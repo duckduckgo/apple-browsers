@@ -90,7 +90,7 @@ public final class ContentBlocking {
         switch event {
         case .trackerDataParseFailed:
             domainEvent = .trackerDataParseFailed
-            if let experimentName = TDSOverrideExperimentMetrics.activeTDSExperimentNameWithCohort {
+            if let experimentName = SiteBreakageExperimentMetrics.activeTDSExperimentNameWithCohort {
                 finalParameters[PixelParameterName.experimentName] = experimentName
                 finalParameters[PixelParameterName.etag] = UserDefaultsETagStorage().loadEtag(for: .trackerDataSet)
             }
@@ -142,7 +142,7 @@ public final class ContentBlocking {
         case .contentBlockingCompilationTaskPerformance(let retryCount, let timeBucketAggregation):
             domainEvent = .contentBlockingCompilationTaskPerformance(iterationCount: retryCount,
                                                                      timeBucketAggregation: Pixel.Event.CompileTimeBucketAggregation(number: timeBucketAggregation))
-            if let experimentName = TDSOverrideExperimentMetrics.activeTDSExperimentNameWithCohort {
+            if let experimentName = SiteBreakageExperimentMetrics.activeTDSExperimentNameWithCohort {
                 finalParameters[PixelParameterName.experimentName] = experimentName
                 finalParameters[PixelParameterName.etag] = UserDefaultsETagStorage().loadEtag(for: .trackerDataSet)
             }

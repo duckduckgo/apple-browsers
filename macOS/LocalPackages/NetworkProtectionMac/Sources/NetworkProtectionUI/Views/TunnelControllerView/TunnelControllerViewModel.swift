@@ -22,6 +22,7 @@ import NetworkProtection
 import NetworkProtectionProxy
 import SwiftUI
 import TipKit
+import VPNAppState
 
 @MainActor
 public final class TunnelControllerViewModel: ObservableObject {
@@ -49,7 +50,7 @@ public final class TunnelControllerViewModel: ObservableObject {
     }
 
     public var exclusionsFeatureEnabled: Bool {
-        proxySettings.proxyAvailable
+        vpnAppState.isUsingSystemExtension
     }
 
     /// The type of extension that's being used for NetP
@@ -71,6 +72,7 @@ public final class TunnelControllerViewModel: ObservableObject {
     ///
     private let statusReporter: NetworkProtectionStatusReporter
 
+    private let vpnAppState: VPNAppState
     private let vpnSettings: VPNSettings
     private let proxySettings: TransparentProxySettings
     private let locationFormatter: VPNLocationFormatting
@@ -97,6 +99,7 @@ public final class TunnelControllerViewModel: ObservableObject {
                 onboardingStatusPublisher: OnboardingStatusPublisher,
                 statusReporter: NetworkProtectionStatusReporter,
                 runLoopMode: RunLoop.Mode? = nil,
+                vpnAppState: VPNAppState,
                 vpnSettings: VPNSettings,
                 proxySettings: TransparentProxySettings,
                 locationFormatter: VPNLocationFormatting,
@@ -106,6 +109,7 @@ public final class TunnelControllerViewModel: ObservableObject {
         self.onboardingStatusPublisher = onboardingStatusPublisher
         self.statusReporter = statusReporter
         self.runLoopMode = runLoopMode
+        self.vpnAppState = vpnAppState
         self.vpnSettings = vpnSettings
         self.proxySettings = proxySettings
         self.locationFormatter = locationFormatter

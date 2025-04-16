@@ -30,7 +30,7 @@ class AIChatUserScriptHandlerTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        mockFeatureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatDeepLink])
+        mockFeatureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
         mockPayloadHandler = MockAIChatPayloadHandling()
         aiChatUserScriptHandler = AIChatUserScriptHandler(featureFlagger: mockFeatureFlagger)
         aiChatUserScriptHandler.setPayloadHandler(mockPayloadHandler)

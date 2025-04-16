@@ -50,24 +50,19 @@ struct SettingsState {
         var isActiveTrialOffer: Bool
     }
 
-    struct AIChat: Codable {
-        var enabled: Bool
-        var isAIChatBrowsingMenuFeatureFlagEnabled: Bool
-        var isAIChatAddressBarFeatureFlagEnabled: Bool
-    }
-
     struct SyncSettings {
         var enabled: Bool
         var title: String
     }
     
     // Appearance properties
-    var appTheme: ThemeName
+    var appThemeStyle: ThemeStyle
     var appIcon: AppIcon
     var fireButtonAnimation: FireButtonAnimationType
     var textZoom: TextZoom
     var addressBar: AddressBar
     var showsFullURL: Bool
+    var isExperimentalThemingEnabled: Bool
 
     // Privacy properties
     var sendDoNotSell: Bool
@@ -83,6 +78,7 @@ struct SettingsState {
 
     // Logins properties
     var activeWebsiteAccount: SecureVaultModels.WebsiteAccount?
+    var autofillSource: AutofillSettingsSource?
 
     // About properties
     var version: String
@@ -109,20 +105,22 @@ struct SettingsState {
     var duckPlayerMode: DuckPlayerMode?
     var duckPlayerOpenInNewTab: Bool
     var duckPlayerOpenInNewTabEnabled: Bool
+    
+    // Duck Player Native UI
     var duckPlayerNativeUI: Bool
     var duckPlayerAutoplay: Bool
-
-    // AI Chat
-    var aiChat: AIChat
+    var duckPlayerNativeUISERPEnabled: Bool
+    var duckPlayerNativeYoutubeMode: NativeDuckPlayerYoutubeMode
 
     static var defaults: SettingsState {
         return SettingsState(
-            appTheme: .systemDefault,
+            appThemeStyle: .systemDefault,
             appIcon: AppIconManager.shared.appIcon,
             fireButtonAnimation: .fireRising,
             textZoom: TextZoom(enabled: false, level: .percent100),
             addressBar: AddressBar(enabled: false, position: .top),
             showsFullURL: false,
+            isExperimentalThemingEnabled: false,
             sendDoNotSell: true,
             autoconsentEnabled: false,
             autoclearDataEnabled: false,
@@ -132,6 +130,7 @@ struct SettingsState {
             longPressPreviews: true,
             allowUniversalLinks: true,
             activeWebsiteAccount: nil,
+            autofillSource: nil,
             version: "0.0.0.0",
             crashCollectionOptInStatus: .undetermined,
             debugModeEnabled: false,
@@ -158,9 +157,8 @@ struct SettingsState {
             duckPlayerOpenInNewTabEnabled: false,
             duckPlayerNativeUI: false,
             duckPlayerAutoplay: true,
-            aiChat: AIChat(enabled: false,
-                                  isAIChatBrowsingMenuFeatureFlagEnabled: false,
-                                  isAIChatAddressBarFeatureFlagEnabled: false)
+            duckPlayerNativeUISERPEnabled: true,
+            duckPlayerNativeYoutubeMode: .ask
         )
     }
 }

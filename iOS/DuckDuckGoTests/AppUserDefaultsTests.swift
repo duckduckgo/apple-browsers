@@ -94,8 +94,8 @@ class AppUserDefaultsTests: XCTestCase {
     func testWhenCurrentThemeIsSetThenItIsPersisted() {
         
         let appUserDefaults = AppUserDefaults(groupName: testGroupName)
-        appUserDefaults.currentThemeName = .light
-        XCTAssertEqual(appUserDefaults.currentThemeName, .light)
+        appUserDefaults.currentThemeStyle = .light
+        XCTAssertEqual(appUserDefaults.currentThemeStyle, .light)
         
     }
     
@@ -103,7 +103,7 @@ class AppUserDefaultsTests: XCTestCase {
         
         let appUserDefaults = AppUserDefaults(groupName: testGroupName)
         
-        XCTAssertEqual(appUserDefaults.currentThemeName, .systemDefault)
+        XCTAssertEqual(appUserDefaults.currentThemeStyle, .systemDefault)
     }
 
     func testDefaultAutofillStateIsFalse() {

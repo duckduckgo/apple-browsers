@@ -48,7 +48,7 @@ class PinnedTabsTests: UITestCase {
         assertsPageOneIsPinned()
         dragsPageTwoPinnedTabToTheFirstPosition()
         assertsCommandWFunctionality()
-        assertWindowTwoHasTheTwoPinnedTabFromWindowsOne()
+        assertWindowTwoHasNoPinnedTabsFromWindowsOne()
         app.terminate()
         assertPinnedTabsRestoredState()
     }
@@ -135,7 +135,7 @@ class PinnedTabsTests: UITestCase {
         XCTAssertTrue(app.staticTexts["Sample text for Page #3"].exists)
     }
 
-    private func assertWindowTwoHasTheTwoPinnedTabFromWindowsOne() {
+    private func assertWindowTwoHasNoPinnedTabsFromWindowsOne() {
         let items = app.menuItems.matching(identifier: "Page #4")
         let pageFourMenuItem = items.element(boundBy: 1)
         XCTAssertTrue(
@@ -150,16 +150,17 @@ class PinnedTabsTests: UITestCase {
         /// Goes to Page #2 to check the state
         app.typeKey("[", modifierFlags: [.command, .shift])
         app.typeKey("[", modifierFlags: [.command, .shift])
-        XCTAssertTrue(app.staticTexts["Sample text for Page #2"].exists)
+        XCTAssertFalse(app.staticTexts["Sample text for Page #2"].exists)
         /// Goes to Page #1 to check the state
         app.typeKey("]", modifierFlags: [.command, .shift])
-        XCTAssertTrue(app.staticTexts["Sample text for Page #1"].exists)
+        XCTAssertFalse(app.staticTexts["Sample text for Page #1"].exists)
+
+        app.typeKey("w", modifierFlags: [.command, .shift]) // Close window
     }
 
     private func assertPinnedTabsRestoredState() {
         let newApp = XCUIApplication()
         newApp.launch()
-        newApp.typeKey("n", modifierFlags: .command)
         sleep(10) // This was increased from two to ten, because slower VMs needed more time to re-launch the app.
 
         /// Goes to Page #2 to check the state

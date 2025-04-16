@@ -30,7 +30,7 @@ final class PageRefreshMonitorExtensionTests: XCTestCase {
 
     override func setUpWithError() throws {
         PixelKit.configureExperimentKit(featureFlagger: MockFeatureFlagger(), eventTracker: ExperimentEventTracker(), fire: { _, _, _ in })
-        TDSOverrideExperimentMetrics.configureTDSOverrideExperimentMetrics { _, metric, _, _ in
+        SiteBreakageExperimentMetrics.configureSiteBreakageExperimentMetrics { _, metric, _, _ in
             self.captureMetric = metric
         }
     }

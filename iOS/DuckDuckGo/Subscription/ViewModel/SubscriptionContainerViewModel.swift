@@ -24,27 +24,32 @@ import Combine
 final class SubscriptionContainerViewModel: ObservableObject {
 
     let userScript: SubscriptionPagesUserScript
-    let subFeature: SubscriptionPagesUseSubscriptionFeature
+    let subFeature: any SubscriptionPagesUseSubscriptionFeature
 
     let flow: SubscriptionFlowViewModel
     let restore: SubscriptionRestoreViewModel
     let email: SubscriptionEmailViewModel
 
-    init(subscriptionManager: SubscriptionManager,
-         origin: String?,
+    init(subscriptionManager: SubscriptionAuthV1toV2Bridge,
+         redirectPurchaseURL: URL? = nil,
+         isInternalUser: Bool = false,
          userScript: SubscriptionPagesUserScript,
-         subFeature: SubscriptionPagesUseSubscriptionFeature) {
+         subFeature: any SubscriptionPagesUseSubscriptionFeature) {
+
         self.userScript = userScript
+
         subFeature.cleanup()
         self.subFeature = subFeature
-        self.flow = SubscriptionFlowViewModel(origin: origin,
+
+        self.flow = SubscriptionFlowViewModel(purchaseURL: redirectPurchaseURL ?? subscriptionManager.url(for: .purchase),
+                                              isInternalUser: isInternalUser,
                                               userScript: userScript,
                                               subFeature: subFeature,
                                               subscriptionManager: subscriptionManager)
         self.restore = SubscriptionRestoreViewModel(userScript: userScript,
-                                                    subFeature: subFeature,
-                                                    subscriptionManager: subscriptionManager)
-        self.email = SubscriptionEmailViewModel(userScript: userScript,
+                                                    subFeature: subFeature)
+        self.email = SubscriptionEmailViewModel(isInternalUser: isInternalUser,
+                                                userScript: userScript,
                                                 subFeature: subFeature,
                                                 subscriptionManager: subscriptionManager)
     }

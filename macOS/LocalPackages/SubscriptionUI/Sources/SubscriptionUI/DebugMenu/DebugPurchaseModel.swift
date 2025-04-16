@@ -47,6 +47,32 @@ public final class DebugPurchaseModel: ObservableObject {
 }
 
 @available(macOS 12.0, *)
+public final class DebugPurchaseModelV2: ObservableObject {
+
+    private var purchaseManager: any StorePurchaseManagerV2
+    let appStorePurchaseFlow: DefaultAppStorePurchaseFlowV2
+
+    @Published var subscriptions: [SubscriptionRowModel]
+
+    init(manager: any StorePurchaseManagerV2,
+         subscriptions: [SubscriptionRowModel] = [],
+         appStorePurchaseFlow: DefaultAppStorePurchaseFlowV2) {
+        self.purchaseManager = manager
+        self.subscriptions = subscriptions
+        self.appStorePurchaseFlow = appStorePurchaseFlow
+    }
+
+    @MainActor
+    func purchase(_ product: Product) {
+        print("Attempting purchase: \(product.displayName)")
+
+        Task {
+            await appStorePurchaseFlow.purchaseSubscription(with: product.id)
+        }
+    }
+}
+
+@available(macOS 12.0, *)
 public struct SubscriptionRowModel: Identifiable {
     public var id: String { product.id + String(isPurchased) + String(isBeingPurchased) }
 

@@ -44,7 +44,7 @@ final class AuthConfirmationPromptViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        view.backgroundColor = UIColor(named: "AutofillPromptLargeBackground")
+        view.backgroundColor = UIColor(designSystemColor: .surface)
         
         setupAuthConfirmationPromptView()
     }

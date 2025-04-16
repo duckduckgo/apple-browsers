@@ -173,7 +173,9 @@ extension MainViewController {
             TabSwitcherViewController(coder: coder,
                                       bookmarksDatabase: self.bookmarksDatabase,
                                       syncService: self.syncService,
-                                      featureFlagger: self.featureFlagger)
+                                      featureFlagger: self.featureFlagger,
+                                      tabManager: self.tabManager,
+                                      aiChatSettings: self.aiChatSettings)
         }) else {
             assertionFailure()
             return
@@ -181,7 +183,6 @@ extension MainViewController {
 
         controller.transitioningDelegate = tabSwitcherTransition
         controller.delegate = self
-        controller.tabsModel = tabManager.model
         controller.previewsSource = previewsSource
         controller.modalPresentationStyle = .overCurrentContext
 
@@ -234,11 +235,19 @@ extension MainViewController {
         }
     }
 
-    func segueToSettingsLoginsWithAccount(_ account: SecureVaultModels.WebsiteAccount) {
+    func segueToSettingsLoginsWithAccount(_ account: SecureVaultModels.WebsiteAccount?, source: AutofillSettingsSource?) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
         launchSettings {
-            $0.shouldPresentLoginsViewWithAccount(accountDetails: account)
+            $0.shouldPresentLoginsViewWithAccount(accountDetails: account, source: source)
+        }
+    }
+
+    func segueToSettingsAIChat() {
+        Logger.lifecycle.debug(#function)
+        hideAllHighlightsIfNeeded()
+        launchSettings {
+            $0.triggerDeepLinkNavigation(to: .aiChat)
         }
     }
 
@@ -268,7 +277,10 @@ extension MainViewController {
         let aiChatSettings = AIChatSettings(privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager)
 
         let settingsViewModel = SettingsViewModel(legacyViewProvider: legacyViewProvider,
-                                                  subscriptionManager: AppDependencyProvider.shared.subscriptionManager,
+                                                  isAuthV2Enabled: isAuthV2Enabled,
+                                                  subscriptionManagerV1: AppDependencyProvider.shared.subscriptionManager,
+                                                  subscriptionManagerV2: AppDependencyProvider.shared.subscriptionManagerV2,
+                                                  subscriptionAuthV1toV2Bridge: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
                                                   subscriptionFeatureAvailability: subscriptionFeatureAvailability,
                                                   voiceSearchHelper: voiceSearchHelper,
                                                   deepLink: deepLinkTarget,
@@ -277,7 +289,8 @@ extension MainViewController {
                                                   privacyProDataReporter: privacyProDataReporter,
                                                   textZoomCoordinator: textZoomCoordinator,
                                                   aiChatSettings: aiChatSettings,
-                                                  maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager)
+                                                  maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager,
+                                                  experimentalThemingManager: ExperimentalThemingManager(featureFlagger: featureFlagger))
         Pixel.fire(pixel: .settingsPresented)
 
         if let navigationController = self.presentedViewController as? UINavigationController,
@@ -297,23 +310,21 @@ extension MainViewController {
         }
     }
 
-    private func launchDebugSettings(completion: ((RootDebugViewController) -> Void)? = nil) {
+    private func launchDebugSettings(completion: ((DebugScreensViewController) -> Void)? = nil) {
         Logger.lifecycle.debug(#function)
 
-        let storyboard = UIStoryboard(name: "Debug", bundle: nil)
-        let settings = storyboard.instantiateViewController(identifier: "DebugMenu") { coder in
-            RootDebugViewController(coder: coder,
-                                    sync: self.syncService,
-                                    bookmarksDatabase: self.bookmarksDatabase,
-                                    internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
-                                    tabManager: self.tabManager,
-                                    fireproofing: self.fireproofing)
-        }
+        let debug = DebugScreensViewController(dependencies: .init(
+            syncService: self.syncService,
+            bookmarksDatabase: self.bookmarksDatabase,
+            internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+            tabManager: self.tabManager,
+            tipKitUIActionHandler: TipKitDebugOptionsUIActionHandler(),
+            fireproofing: self.fireproofing))
 
-        let controller = UINavigationController(rootViewController: settings)
+        let controller = UINavigationController(rootViewController: debug)
         controller.modalPresentationStyle = .automatic
         present(controller, animated: true) {
-            completion?(settings)
+            completion?(debug)
         }
     }
 

@@ -33,7 +33,6 @@ class FavoritesOverlay: UIViewController {
     struct Constants {
         static let margin: CGFloat = 28
         static let footerPadding: CGFloat = 50
-        static let toolbarHeight: CGFloat = 52
     }
     
     private let layout = UICollectionViewFlowLayout()
@@ -109,11 +108,14 @@ class FavoritesOverlay: UIViewController {
     }
     
     @objc private func keyboardDidShow(notification: NSNotification) {
-        guard !AppWidthObserver.shared.isLargeWidth else { return }
         guard let keyboardFrame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
-        let keyboardSize = keyboardFrame.size
-        let bottomInset = appSettings.currentAddressBarPosition == .bottom ? 0 : keyboardSize.height - Constants.toolbarHeight
-        collectionView.contentInset = UIEdgeInsets(top: 0.0, left: 0.0, bottom: bottomInset, right: 0.0)
+
+        let keyboardFrameInView = self.view.convert(keyboardFrame, from: nil)
+        let intersection = keyboardFrameInView.intersection(view.bounds)
+
+        let inset = UIEdgeInsets(top: 0.0, left: 0.0, bottom: intersection.height, right: 0.0)
+        collectionView.contentInset = inset
+        collectionView.scrollIndicatorInsets = inset
     }
     
     @objc private func keyboardWillHide(notification: NSNotification) {

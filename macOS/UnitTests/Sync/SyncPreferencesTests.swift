@@ -25,6 +25,7 @@ import PersistenceTestingUtils
 @testable import BrowserServicesKit
 @testable import DDGSync
 @testable import DuckDuckGo_Privacy_Browser
+import FeatureFlags
 
 private final class MockUserAuthenticator: UserAuthenticating {
     func authenticateUser(reason: DuckDuckGo_Privacy_Browser.DeviceAuthenticator.AuthenticationReason) async -> DeviceAuthenticationResult {
@@ -33,6 +34,33 @@ private final class MockUserAuthenticator: UserAuthenticating {
     func authenticateUser(reason: DeviceAuthenticator.AuthenticationReason, result: @escaping (DeviceAuthenticationResult) -> Void) {
         result(.success)
     }
+}
+
+class MockSyncFeatureFlagger: FeatureFlagger {
+    var internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: MockInternalUserStoring())
+    var localOverrides: FeatureFlagLocalOverriding?
+    var cohort: (any FeatureFlagCohortDescribing)?
+
+    public init() { }
+
+    public init(internalUserDecider: InternalUserDecider) {
+        self.internalUserDecider = internalUserDecider
+    }
+
+    var isFeatureOn: [String: Bool] = [:]
+    func isFeatureOn<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> Bool {
+        return isFeatureOn[featureFlag.rawValue] ?? false
+    }
+
+    func getCohortIfEnabled(_ subfeature: any PrivacySubfeature) -> CohortID? {
+        return nil
+    }
+
+    func resolveCohort<Flag>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? where Flag: FeatureFlagDescribing {
+        return cohort
+    }
+
+    var allActiveExperiments: Experiments = [:]
 }
 
 final class SyncPreferencesTests: XCTestCase {
@@ -61,8 +89,9 @@ final class SyncPreferencesTests: XCTestCase {
 
         syncBookmarksAdapter = SyncBookmarksAdapter(database: bookmarksDatabase, appearancePreferences: appearancePreferences, syncErrorHandler: SyncErrorHandler())
         syncCredentialsAdapter = SyncCredentialsAdapter(secureVaultFactory: AutofillSecureVaultFactory, syncErrorHandler: SyncErrorHandler())
-        let featureFlagger = MockFeatureFlagger()
-        featureFlagger.isFeatureOn = true
+        let featureFlagger = MockSyncFeatureFlagger()
+        featureFlagger.isFeatureOn[FeatureFlag.syncSeamlessAccountSwitching.rawValue] = true
+        featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = false
 
         syncPreferences = SyncPreferences(
             syncService: ddgSyncing,

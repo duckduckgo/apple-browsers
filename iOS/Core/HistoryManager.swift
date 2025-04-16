@@ -257,23 +257,3 @@ extension HistoryManager {
     }
 
 }
-
-// Available in case `make` fails so that we don't have to pass optional around.
-public struct NullHistoryManager: HistoryManaging {
-
-    public var isEnabledByUser = false
-
-    public let historyCoordinator: HistoryCoordinating = NullHistoryCoordinator()
-    
-    public func removeAllHistory() async {
-        // No-op
-    }
-
-    public func isHistoryFeatureEnabled() -> Bool {
-        return false
-    }
-
-    public init() { }
-    
-    public func deleteHistoryForURL(_ url: URL) async { }
-}

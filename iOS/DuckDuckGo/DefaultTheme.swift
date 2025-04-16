@@ -18,49 +18,17 @@
 //
 
 import UIKit
+import DesignResourcesKit
 
 // If you add a new colour here:
 //  * and it uses the design system, please put it in Theme+DesignSystem instead
 //  * and it doesn't use the design, please only do so with designer approval
 struct DefaultTheme: Theme {
-    let name = ThemeName.systemDefault
-
     let statusBarStyle: UIStatusBarStyle = .default
-
     let keyboardAppearance: UIKeyboardAppearance = .default
-
-    let tabsBarBackgroundColor = UIColor(lightColor: .gray20, darkColor: .black)
-    let tabsBarSeparatorColor = UIColor(lightColor: .greyish, darkColor: .darkGreyish)
-
-    let navigationBarTintColor = UIColor(lightColor: .darkGreyish, darkColor: .lightMercury)
-
-    let searchBarTextDeemphasisColor = UIColor(lightColor: .greyish3, darkColor: .lightMercury)
-
-    let browsingMenuHighlightColor = UIColor(lightColor: .lightGreyish, darkColor: .darkGreyish)
-
-    let tableCellSelectedColor = UIColor(lightColor: .mercury, darkColor: .charcoalGrey)
-    let tableCellAccessoryColor = UIColor(lightColor: .greyish, darkColor: .greyish3)
-    let tableCellHighlightedBackgroundColor = UIColor(lightColor: .mercury, darkColor: .greyishBrown)
-
-    let tabSwitcherCellBorderColor = UIColor(lightColor: .nearlyBlackLight, darkColor: .white)
-    let tabSwitcherCellTextColor = UIColor(lightColor: .black, darkColor: .white)
-    let tabSwitcherCellSecondaryTextColor = UIColor(lightColor: .greyishBrown2, darkColor: .lightMercury)
-
-    let homeRowPrimaryTextColor = UIColor(lightColor: .nearlyBlackLight, darkColor: .white)
-    let homeRowSecondaryTextColor = UIColor(lightColor: .greyishBrown2, darkColor: .white)
-    let homeRowBackgroundColor = UIColor(lightColor: .nearlyWhiteLight, darkColor: .nearlyBlackLight)
-
-    let homePrivacyCellTextColor = UIColor(lightColor: .charcoalGrey, darkColor: .white)
-    let homePrivacyCellSecondaryTextColor = UIColor.greyish3
-
-    let favoritesPlusTintColor = UIColor.greyish3
-    let favoritesPlusBackgroundColor = UIColor(lightColor: .lightMercury, darkColor: .greyishBrown2)
-
     let activityStyle: UIActivityIndicatorView.Style = .medium
 
-    let destructiveColor = UIColor.destructive
-
-    let searchBarBackgroundColor = UIColor(lightColor: .lightGreyish, darkColor: .charcoalGrey)
+    let destructiveColor = UIColor.red
 }
 
 extension UIColor {

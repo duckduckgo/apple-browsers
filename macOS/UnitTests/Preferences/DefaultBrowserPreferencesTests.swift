@@ -28,10 +28,12 @@ final class DefaultBrowserProviderMock: DefaultBrowserProvider {
     var bundleIdentifier: String = "com.duckduckgo.DefaultBrowserPreferencesTests"
     var defaultBrowserURL: URL?
     var isDefault: Bool = false
+    var wasPresentDefaultBrowserPromptCalled = false
     var _presentDefaultBrowserPrompt: () throws -> Void = {}
     var _openSystemPreferences: () -> Void = {}
 
     func presentDefaultBrowserPrompt() throws {
+        wasPresentDefaultBrowserPromptCalled = true
         try _presentDefaultBrowserPrompt()
     }
 

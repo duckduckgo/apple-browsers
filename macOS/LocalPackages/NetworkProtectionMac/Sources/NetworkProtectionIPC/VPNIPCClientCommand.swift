@@ -25,6 +25,6 @@ public enum VPNUninstallComponent: Codable {
 }
 
 public enum VPNIPCClientCommand: Codable {
-    case uninstall(_ component: VPNUninstallComponent)
+    case uninstall(_ component: VPNUninstallComponent, showNotification: Bool)
     case quit
 }

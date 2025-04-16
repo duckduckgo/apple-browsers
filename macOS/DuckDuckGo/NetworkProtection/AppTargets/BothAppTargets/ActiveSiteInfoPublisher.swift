@@ -88,7 +88,7 @@ final class ActiveSiteInfoPublisher {
         let icon: NSImage?
         let currentSite: NetworkProtectionUI.ActiveSiteInfo?
 
-        icon = FaviconManager.shared.getCachedFavicon(forDomainOrAnySubdomain: domain, sizeCategory: .small)?.image
+        icon = NSApp.delegateTyped.faviconManager.getCachedFavicon(forDomainOrAnySubdomain: domain, sizeCategory: .small)?.image
         let proxySettings = TransparentProxySettings(defaults: .netP)
         currentSite = NetworkProtectionUI.ActiveSiteInfo(
             icon: icon,

@@ -22,6 +22,13 @@ import Subscription
 
 extension UIApplication {
 
+    enum TerminationError: Error {
+
+        case insufficientDiskSpace
+        case unrecoverableState
+
+    }
+
     // MARK: notification settings
 
     private static let notificationSettingsURL: URL? = {
@@ -47,7 +54,7 @@ extension UIApplication {
 
     var foregroundSceneWindows: [UIWindow] {
         guard let scene = UIApplication.shared.connectedScenes.first(where: {
-            $0.activationState == .foregroundActive
+            $0.activationState != .background
         }) as? UIWindowScene else {
             return []
         }
@@ -60,13 +67,6 @@ extension UIApplication {
     }
 
     // MARK: app delegate helpers
-
-    enum TerminationReason {
-
-        case insufficientDiskSpace
-        case unrecoverableState
-
-    }
 
     func setWindow(_ window: UIWindow?) {
         (delegate as? AppDelegate)?.window = window

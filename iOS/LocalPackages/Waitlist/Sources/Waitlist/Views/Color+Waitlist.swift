@@ -18,27 +18,28 @@
 //
 
 import SwiftUI
+import DesignResourcesKit
 
 public extension Color {
 
     static var waitlistTextPrimary: Color {
-        Color("WaitlistTextPrimary")
+        Color(designSystemColor: .textPrimary)
     }
 
     static var waitlistTextSecondary: Color {
-        Color("WaitlistTextSecondary")
+        Color(designSystemColor: .textSecondary)
     }
 
     static var waitlistButtonText: Color {
-        Color("WaitlistButtonText")
+        Color(designSystemColor: .buttonsPrimaryText)
     }
 
     static var waitlistGreen: Color {
-        Color("WaitlistGreen")
+        Color(baseColor: .green50)
     }
 
     static var waitlistBlue: Color {
-        Color("WaitlistBlue")
+        Color(designSystemColor: .accent)
     }
 
     static var waitlistNotificationBackground: Color {

@@ -49,7 +49,7 @@ final class SecureVaultReporter: SecureVaultReporting {
     }
 
     func secureVaultError(_ error: SecureStorageError) {
-        guard NSApp.runType.requiresEnvironment else { return }
+        guard AppVersion.runType.requiresEnvironment else { return }
 
         switch error {
         case .initFailed, .failedToOpenDatabase:

@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import DesignResourcesKit
 
 struct OnboardingProgressIndicator: View {
     
@@ -87,10 +88,10 @@ struct ProgressBarView: View {
 }
 
 private enum ProgressBarMetrics {
-    static let backgroundLight: Color = .black.opacity(0.06)
-    static let borderLight: Color = .black.opacity(0.18)
-    static let backgroundDark: Color = .white.opacity(0.09)
-    static let borderDark: Color = .white.opacity(0.18)
+    static let backgroundLight: Color = .shade(0.06)
+    static let borderLight: Color = .shade(0.18)
+    static let backgroundDark: Color = .tint(0.09)
+    static let borderDark: Color = .tint(0.18)
     static let strokeWidth: CGFloat = 1
 }
 
@@ -117,17 +118,17 @@ struct ProgressBarGradient: View {
 
     private var lightGradientColors: [Color] {
         [
-            .init(0x3969EF, alpha: 1.0),
-            .init(0x6B4EBA, alpha: 1.0),
-            .init(0xDE5833, alpha: 1.0),
+            Color(baseColor: .blue50),
+            Color(baseColor: .purple40),
+            Color(baseColor: .red50)
         ]
     }
 
     private var darkGradientColors: [Color] {
         [
-            .init(0x3969EF, alpha: 1.0),
-            .init(0x6B4EBA, alpha: 1.0),
-            .init(0xDE5833, alpha: 1.0),
+            Color(baseColor: .blue50),
+            Color(baseColor: .purple40),
+            Color(baseColor: .red50)
         ]
     }
 }

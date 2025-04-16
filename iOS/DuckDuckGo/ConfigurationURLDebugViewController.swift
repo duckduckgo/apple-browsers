@@ -52,8 +52,6 @@ final class ConfigurationURLDebugViewController: UITableViewController {
 
     private var customURLProvider = CustomConfigurationURLProvider()
 
-    @UserDefaultsWrapper(key: .lastConfigurationRefreshDate, defaultValue: .distantPast)
-    private var lastConfigurationRefreshDate: Date
 
     @UserDefaultsWrapper(key: .lastConfigurationUpdateDate, defaultValue: nil)
     private var lastConfigurationUpdateDate: Date?
@@ -63,7 +61,6 @@ final class ConfigurationURLDebugViewController: UITableViewController {
         didSet {
             customURLProvider.customPrivacyConfigurationURL = privacyConfigCustomURL.flatMap { URL(string: $0) }
             Configuration.setURLProvider(customURLProvider)
-            lastConfigurationRefreshDate = Date.distantPast
             fetchAssets()
         }
     }
@@ -87,7 +84,7 @@ final class ConfigurationURLDebugViewController: UITableViewController {
     }
 
     private func fetchAssets() {
-        AppConfigurationFetch().start(isDebug: true) { [weak tableView] result in
+        AppConfigurationFetch().start(isDebug: true, forceRefresh: true) { [weak tableView] result in
             switch result {
             case .assetsUpdated(let protectionsUpdated):
                 if protectionsUpdated {
@@ -137,7 +134,7 @@ final class ConfigurationURLDebugViewController: UITableViewController {
     }
 
     private lazy var refreshAction = UIAction { [weak self] _ in
-        self?.lastConfigurationRefreshDate = Date.distantPast
+        // Enables refreshing debug config
         self?.fetchAssets()
         self?.tableView.reloadData()
     }
@@ -208,5 +205,11 @@ final class ConfigurationURLTableViewCell: UITableViewCell {
     @IBOutlet weak var subtitle: UILabel!
     @IBOutlet weak var refresh: UIButton!
     @IBOutlet weak var ternary: UILabel!
+
+    override func awakeFromNib() {
+        super.awakeFromNib()
+
+        subtitle.textColor = UIColor(designSystemColor: .accent)
+    }
 
 }

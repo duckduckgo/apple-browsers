@@ -53,7 +53,7 @@ extension TabViewController {
 
         let shareEntry = BrowsingMenuEntry.regular(name: UserText.actionShare, image: UIImage(named: "Share-24")!, action: { [weak self] in
             guard let self = self else { return }
-            guard let menu = self.chromeDelegate?.omniBar.menuButton else { return }
+            guard let menu = self.chromeDelegate?.omniBar.barView.menuButtonView else { return }
             Pixel.fire(pixel: .browsingMenuShare)
             self.onShareAction(forLink: self.link!, fromView: menu)
         })
@@ -62,7 +62,7 @@ extension TabViewController {
             guard let strongSelf = self else { return }
             if !strongSelf.isError, let url = strongSelf.webView.url {
                 strongSelf.onCopyAction(forUrl: url)
-            } else if let text = self?.chromeDelegate?.omniBar.textField.text {
+            } else if let text = self?.chromeDelegate?.omniBar.text {
                 strongSelf.onCopyAction(for: text)
             }
 
@@ -148,29 +148,24 @@ extension TabViewController {
         var entries = [BrowsingMenuEntry]()
 
         if state == .newTab {
-            if featureFlagger.isFeatureOn(.aiChatNewTabPage) {
-                entries.append(BrowsingMenuEntry.regular(name: UserText.actionTabNew,
-                                                         image: UIImage(named: "Add-16")!,
+            entries.append(BrowsingMenuEntry.regular(name: UserText.actionTabNew,
+                                                     image: UIImage(named: "Add-16")!,
+                                                     action: { [weak self] in
+                self?.onNewTabAction()
+            }))
+
+            if shouldShowAIChatInMenu {
+                entries.append(BrowsingMenuEntry.regular(name: UserText.actionAIChatNew,
+                                                         image: UIImage(named: "AIChat-16")!,
                                                          action: { [weak self] in
-                    self?.onNewTabAction()
+                    self?.openAIChat()
                 }))
-
-                if featureFlagger.isFeatureOn(.aiChat) && shouldShowAIChatInMenu {
-                    entries.append(BrowsingMenuEntry.regular(name: UserText.actionAIChatNew,
-                                                             image: UIImage(named: "AIChat-16")!,
-                                                             action: { [weak self] in
-                        self?.openAIChat()
-                    }))
-                }
-
-
             }
+
             entries.append(.separator)
         }
 
-        if featureFlagger.isFeatureOn(.aiChatNewTabPage) {
-            entries.append(buildOpenBookmarksEntry())
-        }
+        entries.append(buildOpenBookmarksEntry())
 
         if featureFlagger.isFeatureOn(.autofillAccessCredentialManagement) {
             entries.append(BrowsingMenuEntry.regular(name: UserText.actionAutofillLogins,
@@ -205,10 +200,6 @@ extension TabViewController {
         entries.append(bookmarkEntries.bookmark)
         assert(self.favoriteEntryIndex == entries.count, "Entry index should be in sync with entry placement")
         entries.append(bookmarkEntries.favorite)
-
-        if !featureFlagger.isFeatureOn(.aiChatNewTabPage) {
-            entries.append(buildOpenBookmarksEntry())
-        }
 
         entries.append(.separator)
 
@@ -493,7 +484,7 @@ extension TabViewController {
     
     private func onOpenAutofillLoginsAction() {
         Pixel.fire(pixel: .browsingMenuAutofill)
-        delegate?.tabDidRequestAutofillLogins(tab: self)
+        delegate?.tab(self, didRequestAutofillLogins: nil, source: .overflow)
     }
     
     private func onBrowsingSettingsAction() {
@@ -532,10 +523,10 @@ extension TabViewController {
         }
         Pixel.fire(pixel: isProtected ? .browsingMenuDisableProtection : .browsingMenuEnableProtection)
         let tdsEtag = AppDependencyProvider.shared.configurationStore.loadEtag(for: .trackerDataSet) ?? ""
-        TDSOverrideExperimentMetrics.fireTDSExperimentMetric(metricType: .privacyToggleUsed, etag: tdsEtag) { parameters in
+        SiteBreakageExperimentMetrics.fireTDSExperimentMetric(metricType: .privacyToggleUsed, etag: tdsEtag) { parameters in
             UniquePixel.fire(pixel: .debugBreakageExperiment, withAdditionalParameters: parameters)
         }
-        TDSOverrideExperimentMetrics.fireTDSExperimentMetricUpdated(metricType: .privacyToggleUsed)
+        SiteBreakageExperimentMetrics.fireContentScopeExperimentMetric(metricType: .privacyToggleUsed)
     }
 
     private func togglePrivacyProtection(domain: String, didSendReport: Bool = false) {

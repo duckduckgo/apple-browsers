@@ -38,6 +38,7 @@ final class PrivacyDashboardViewController: UIViewController {
     private let contentBlockingManager: ContentBlockerRulesManager
     private var privacyDashboardDidTriggerDismiss: Bool = false
     private let entryPoint: PrivacyDashboardEntryPoint
+    private let featureFlagger: FeatureFlagger
 
     private let brokenSiteReporter: BrokenSiteReporter = {
         BrokenSiteReporter(pixelHandler: { parameters in
@@ -74,7 +75,8 @@ final class PrivacyDashboardViewController: UIViewController {
           entryPoint: PrivacyDashboardEntryPoint,
           privacyConfigurationManager: PrivacyConfigurationManaging,
           contentBlockingManager: ContentBlockerRulesManager,
-          breakageAdditionalInfo: BreakageAdditionalInfo?) {
+          breakageAdditionalInfo: BreakageAdditionalInfo?,
+          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
 
         let toggleReportingConfiguration = ToggleReportingConfiguration(privacyConfigurationManager: privacyConfigurationManager)
         let toggleReportingFeature = ToggleReportingFeature(toggleReportingConfiguration: toggleReportingConfiguration)
@@ -87,6 +89,7 @@ final class PrivacyDashboardViewController: UIViewController {
         self.contentBlockingManager = contentBlockingManager
         self.breakageAdditionalInfo = breakageAdditionalInfo
         self.entryPoint = entryPoint
+        self.featureFlagger = featureFlagger
         super.init(coder: coder)
         
         privacyDashboardController.delegate = self
@@ -138,10 +141,10 @@ final class PrivacyDashboardViewController: UIViewController {
             }
             Pixel.fire(pixel: .dashboardProtectionAllowlistAdd, withAdditionalParameters: pixelParam)
             let tdsEtag = AppDependencyProvider.shared.configurationStore.loadEtag(for: .trackerDataSet) ?? ""
-            TDSOverrideExperimentMetrics.fireTDSExperimentMetric(metricType: .privacyToggleUsed, etag: tdsEtag) { parameters in
+            SiteBreakageExperimentMetrics.fireTDSExperimentMetric(metricType: .privacyToggleUsed, etag: tdsEtag) { parameters in
                 UniquePixel.fire(pixel: .debugBreakageExperiment, withAdditionalParameters: parameters)
             }
-            TDSOverrideExperimentMetrics.fireTDSExperimentMetricUpdated(metricType: .privacyToggleUsed)
+            SiteBreakageExperimentMetrics.fireContentScopeExperimentMetric(metricType: .privacyToggleUsed)
         }
         
         contentBlockingManager.scheduleCompilation()
@@ -156,8 +159,8 @@ final class PrivacyDashboardViewController: UIViewController {
 extension PrivacyDashboardViewController {
     
     private func decorate() {
-        let theme = ThemeManager.shared.currentTheme
-        view.backgroundColor = theme.privacyDashboardWebviewBackgroundColor
+        // Enforce default color palette here until PrivacyDashboard can support different color sets
+        view.backgroundColor = UIColor(singleUseColor: .privacyDashboardBackground, palette: .default)
         privacyDashboardController.theme = .init(traitCollection)
     }
 
@@ -332,6 +335,16 @@ extension PrivacyDashboardViewController {
             statusCodes = [httpStatusCode]
         }
 
+        var privacyExperimentCohorts: [String: String] {
+            var experiments: [String: String] = [:]
+            for feature in ContentScopeExperimentsFeatureFlag.allCases {
+                let cohort = featureFlagger.resolveCohort(for: feature)
+                experiments[feature.rawValue] = cohort?.rawValue
+            }
+            return experiments
+        }
+
+
         return BrokenSiteReport(siteUrl: breakageAdditionalInfo.currentURL,
                                 category: category,
                                 description: description,
@@ -356,7 +369,10 @@ extension PrivacyDashboardViewController {
                                 vpnOn: breakageAdditionalInfo.vpnOn,
                                 jsPerformance: webVitalsResult,
                                 userRefreshCount: breakageAdditionalInfo.userRefreshCount,
-                                variant: PixelExperiment.cohort?.rawValue ?? "")
+                                variant: PixelExperiment.cohort?.rawValue ?? "",
+                                cookieConsentInfo: privacyInfo.cookieConsentManaged,
+                                debugFlags: privacyInfo.debugFlags,
+                                privacyExperiments: privacyExperimentCohorts)
     }
 
 }

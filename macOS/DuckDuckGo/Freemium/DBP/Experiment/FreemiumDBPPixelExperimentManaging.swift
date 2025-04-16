@@ -20,6 +20,9 @@ import Foundation
 import Subscription
 import OSLog
 import PixelKit
+import Common
+import DataBrokerProtection_macOS
+import DataBrokerProtectionCore
 
 /// Protocol defining the interface for managing Freemium DBP pixel experiments.
 protocol FreemiumDBPPixelExperimentManaging {
@@ -49,7 +52,7 @@ final class FreemiumDBPPixelExperimentManager: FreemiumDBPPixelExperimentManagin
 
     // MARK: - Dependencies
 
-    private let subscriptionManager: SubscriptionManager
+    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let userDefaults: UserDefaults
     private let locale: Locale
 
@@ -61,7 +64,7 @@ final class FreemiumDBPPixelExperimentManager: FreemiumDBPPixelExperimentManagin
     ///   - subscriptionManager: Manages user subscriptions.
     ///   - userDefaults: Storage for experiment data. Defaults to `.dbp`.
     ///   - locale: Determines user eligibility based on region. Defaults to `Locale.current`.
-    init(subscriptionManager: SubscriptionManager,
+    init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
          userDefaults: UserDefaults = .dbp,
          locale: Locale = Locale.current) {
         self.subscriptionManager = subscriptionManager

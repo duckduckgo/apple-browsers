@@ -3,12 +3,13 @@
 appId: com.duckduckgo.mobile.ios
 ---
 
-- scroll
-- scroll
-- scroll
-- assertVisible: All debug options
-- tapOn: All debug options
-- tapOn: Sync Info
+#Open Debug Menu
+- runFlow:
+    file: ./open_debug_menu.yaml
+
+- scrollUntilVisible:
+    element: Sync
+- tapOn: Sync
 - tapOn: Paste and Copy Recovery Code
 - inputText: ${CODE}
 - tapOn: Copy

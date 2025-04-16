@@ -316,5 +316,385 @@ Blokiral sem jih!
 			<string>%1$d gesel je bilo izbrisanih</string>
 		</dict>
 	</dict>
+	<key>tab.close</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zapri zavihek</string>
+			<key>two</key>
+			<string>Zapri zavihka</string>
+			<key>few</key>
+			<string>Zapri zavihke</string>
+			<key>other</key>
+			<string>Zapri zavihke</string>
+		</dict>
+	</dict>
+	<key>closeAllTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zapri zavihek</string>
+			<key>two</key>
+			<string>Zapri %1$d zavihka</string>
+			<key>few</key>
+			<string>Zapri vse %1$d zavihke</string>
+			<key>other</key>
+			<string>Zapri vseh %1$d zavihkov</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Želite zapreti zavihek?</string>
+			<key>two</key>
+			<string>Želite zapreti %1$d zavihka?</string>
+			<key>few</key>
+			<string>Želite zapreti %1$d zavihke?</string>
+			<key>other</key>
+			<string>Želite zapreti %1$d zavihkov?</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseOtherTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Želite zapreti drug zavihek?</string>
+			<key>two</key>
+			<string>Želite zapreti %1$d druga zavihka?</string>
+			<key>few</key>
+			<string>Želite zapreti %1$d druge zavihke?</string>
+			<key>other</key>
+			<string>Želite zapreti %1$d drugih zavihkov?</string>
+		</dict>
+	</dict>
+	<key>alertMessageCloseOtherTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Ali ste prepričani, da želite zapreti zavihek?</string>
+			<key>two</key>
+			<string>Ali ste prepričani, da želite zapreti ta zavihka?</string>
+			<key>few</key>
+			<string>Ali ste prepričani, da želite zapreti te zavihke?</string>
+			<key>other</key>
+			<string>Ali ste prepričani, da želite zapreti te zavihke?</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Želite zapreti zavihek?</string>
+			<key>two</key>
+			<string>Želite zapreti %1$d zavihka?</string>
+			<key>few</key>
+			<string>Želite zapreti %1$d zavihke?</string>
+			<key>other</key>
+			<string>Želite zapreti %1$d zavihkov?</string>
+		</dict>
+	</dict>
+	<key>alertMessageCloseTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Ali ste prepričani, da želite zapreti ta zavihek?</string>
+			<key>two</key>
+			<string>Ali ste prepričani, da želite zapreti ta zavihka?</string>
+			<key>few</key>
+			<string>Ali ste prepričani, da želite zapreti te zavihke?</string>
+			<key>other</key>
+			<string>Ali ste prepričani, da želite zapreti te zavihke?</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseAllTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Želite zapreti zavihek?</string>
+			<key>two</key>
+			<string>Želite zapreti %1$d zavihka?</string>
+			<key>few</key>
+			<string>Želite zapreti vse %1$d zavihke?</string>
+			<key>other</key>
+			<string>Želite zapreti vseh %1$d zavihkov?</string>
+		</dict>
+	</dict>
+	<key>alertMessageCloseAllTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Ali ste prepričani, da želite zapreti ta zavihek?</string>
+			<key>two</key>
+			<string>Ali ste prepričani, da želite zapreti oba zavihka?</string>
+			<key>few</key>
+			<string>Ali ste prepričani, da želite zapreti vse zavihke?</string>
+			<key>other</key>
+			<string>Ali ste prepričani, da želite zapreti vse zavihke?</string>
+		</dict>
+	</dict>
+	<key>tab.switcher.select-tabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Izberi zavihek</string>
+			<key>two</key>
+			<string>Izberi zavihka</string>
+			<key>few</key>
+			<string>Izberi zavihke</string>
+			<key>other</key>
+			<string>Izberi zavihke</string>
+		</dict>
+	</dict>
+	<key>tab.switcher.close-others.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zapri drug zavihek</string>
+			<key>two</key>
+			<string>Zapri druga zavihka</string>
+			<key>few</key>
+			<string>Zapri druge zavihke</string>
+			<key>other</key>
+			<string>Zapri druge zavihke</string>
+		</dict>
+	</dict>
+	<key>shareLinks.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Deli povezavo</string>
+			<key>two</key>
+			<string>Deli %1$d povezavi</string>
+			<key>few</key>
+			<string>Deli %1$d povezave</string>
+			<key>other</key>
+			<string>Deli %1$d povezav</string>
+		</dict>
+	</dict>
+	<key>shareSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Deli izbran zavihek</string>
+			<key>two</key>
+			<string>Deli izbrana zavihka</string>
+			<key>few</key>
+			<string>Deli izbrane zavihke</string>
+			<key>other</key>
+			<string>Deli izbrane zavihke</string>
+		</dict>
+	</dict>
+	<key>bookmark.selected.tabs.with.count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Dodaj zavihek med zaznamke</string>
+			<key>two</key>
+			<string>Dodaj %1$d zavihka med zaznamke</string>
+			<key>few</key>
+			<string>Dodaj %1$d zavihke med zaznamke</string>
+			<key>other</key>
+			<string>Dodaj %1$d zavihkov med zaznamke</string>
+		</dict>
+	</dict>
+	<key>tabsBookmarked.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Zaznamek je dodan</string>
+			<key>two</key>
+			<string>%1$d zaznamka sta dodana</string>
+			<key>few</key>
+			<string>%1$d zaznamki so dodani</string>
+			<key>other</key>
+			<string>%1$d zaznamkov je dodanih</string>
+		</dict>
+	</dict>
+	<key>alertTitleBookmarkSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Želite izbrani zavihek dodati med zaznamke?</string>
+			<key>two</key>
+			<string>Želite %1$d zavihka dodati med zaznamke?</string>
+			<key>few</key>
+			<string>Želite %1$d zavihke dodati med zaznamke?</string>
+			<key>other</key>
+			<string>Želite %1$d zavihkov dodati med zaznamke?</string>
+		</dict>
+	</dict>
+	<key>alertTitleBookmarkAll.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>Želite izbran zavihek dodati med zaznamke?</string>
+			<key>two</key>
+			<string>Želite %1$d zavihka dodati med zaznamke?</string>
+			<key>few</key>
+			<string>Želite %1$d zavihke dodati med zaznamke?</string>
+			<key>other</key>
+			<string>Želite %1$d zavihkov dodati med zaznamke?</string>
+		</dict>
+	</dict>
+	<key>numberOfSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d izbran</string>
+			<key>two</key>
+			<string>%1$d izbrana</string>
+			<key>few</key>
+			<string>%1$d izbrani</string>
+			<key>other</key>
+			<string>%1$d izbranih</string>
+		</dict>
+	</dict>
+	<key>numberOfSelectedTabsForMenuTitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>one</key>
+			<string>%1$d izbran zavihek</string>
+			<key>two</key>
+			<string>%1$d izbrana zavihka</string>
+			<key>few</key>
+			<string>%1$d izbrani zavihki</string>
+			<key>other</key>
+			<string>%1$d izbranih zavihkov</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

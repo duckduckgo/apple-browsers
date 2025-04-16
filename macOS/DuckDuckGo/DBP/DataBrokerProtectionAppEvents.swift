@@ -19,13 +19,13 @@
 import Foundation
 import LoginItems
 import Common
-import DataBrokerProtection
+import DataBrokerProtection_macOS
 import os.log
 
 struct DataBrokerProtectionAppEvents {
 
     private let featureGatekeeper: DataBrokerProtectionFeatureGatekeeper
-    private let pixelHandler: EventMapping<DataBrokerProtectionPixels>
+    private let pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>
     private let loginItemsManager: LoginItemsManaging
     private let loginItemInterface: DataBrokerProtectionLoginItemInterface
 
@@ -35,7 +35,7 @@ struct DataBrokerProtectionAppEvents {
     }
 
     init(featureGatekeeper: DataBrokerProtectionFeatureGatekeeper,
-         pixelHandler: EventMapping<DataBrokerProtectionPixels> = DataBrokerProtectionPixelsHandler(),
+         pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels> = DataBrokerProtectionMacOSPixelsHandler(),
          loginItemsManager: LoginItemsManaging = LoginItemsManager(),
          loginItemInterface: DataBrokerProtectionLoginItemInterface = DataBrokerProtectionManager.shared.loginItemInterface) {
         self.featureGatekeeper = featureGatekeeper
@@ -51,7 +51,8 @@ struct DataBrokerProtectionAppEvents {
         Task {
             // If we don't have profileQueries it means there's no user profile saved in our DB
             // In this case, let's disable the agent and delete any left-over data because there's nothing for it to do
-            if let profileQueriesCount = try? DataBrokerProtectionManager.shared.dataManager.profileQueriesCount(),
+            if let dataManager = DataBrokerProtectionManager.shared.dataManager,
+               let profileQueriesCount = try? dataManager.profileQueriesCount(),
                profileQueriesCount > 0 {
                 Logger.dataBrokerProtection.log("Found \(profileQueriesCount) profile queries in DB. Restarting agent.")
                 restartBackgroundAgent(loginItemsManager: loginItemsManager)

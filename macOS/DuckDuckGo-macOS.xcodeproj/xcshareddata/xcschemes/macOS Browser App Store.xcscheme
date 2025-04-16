@@ -48,6 +48,20 @@
                ReferencedContainer = "container:DuckDuckGo-macOS.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "DataBrokerProtection-macOSTests"
+               BuildableName = "DataBrokerProtection-macOSTests"
+               BlueprintName = "DataBrokerProtection-macOSTests"
+               ReferencedContainer = "container:LocalPackages/DataBrokerProtection-macOS">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -107,6 +121,9 @@
                   Identifier = "FireproofingReferenceTests/testFireproofing()">
                </Test>
                <Test
+                  Identifier = "PixelExperimentTests/testWhenNoCohort_NoEnrollmentPixelFired()">
+               </Test>
+               <Test
                   Identifier = "PixelStoreTests/testWhenValuesAreAddedThenCallbacksAreCalled()">
                </Test>
                <Test
@@ -143,6 +160,9 @@
             </BuildableReference>
             <SkippedTests>
                <Test
+                  Identifier = "AutoconsentIntegrationTests/testFilterlistRule_whenFakeCookieBannerIsDisplayed_bannerIsHidden()">
+               </Test>
+               <Test
                   Identifier = "AutoconsentIntegrationTests/testWhenAutoconsentDisabled_promptIsDisplayed()">
                </Test>
                <Test
@@ -156,6 +176,12 @@
                </Test>
                <Test
                   Identifier = "HTTPSUpgradeIntegrationTests">
+               </Test>
+               <Test
+                  Identifier = "MaliciousSiteProtectionIntegrationTests/testFeatureDisabledAndMalwareDetection_tabIsNotMarkedMalware()">
+               </Test>
+               <Test
+                  Identifier = "MaliciousSiteProtectionIntegrationTests/testFeatureDisabledAndScamDetection_tabIsNotMarkedScam()">
                </Test>
                <Test
                   Identifier = "NavigationProtectionIntegrationTests/testAMPLinks()">
@@ -240,6 +266,16 @@
                BuildableName = "SyncUITests"
                BlueprintName = "SyncUITests"
                ReferencedContainer = "container:LocalPackages/SyncUI-macOS">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "DataBrokerProtection-macOSTests"
+               BuildableName = "DataBrokerProtection-macOSTests"
+               BlueprintName = "DataBrokerProtection-macOSTests"
+               ReferencedContainer = "container:LocalPackages/DataBrokerProtection-macOS">
             </BuildableReference>
          </TestableReference>
       </Testables>

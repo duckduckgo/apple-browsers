@@ -88,12 +88,20 @@ public struct NetworkProtectionStatusView: View {
                     Divider()
                         .padding(EdgeInsets(top: 5, leading: 9, bottom: 5, trailing: 9))
                 case .text(_, let icon, let title, let action):
-                    MenuItemButton(icon: icon, title: title, textColor: Color(.defaultText)) {
+                    MenuItemButton(icon: icon,
+                                   title: title,
+                                   titleColor: Color(.defaultText),
+                                   highlightColor: .white) {
                         await action()
                         dismiss()
                     }.applyMenuAttributes()
                 case .textWithDetail(_, let icon, let title, let detail, let action):
-                    MenuItemButton(icon: icon, title: title, detail: detail, textColor: Color(.defaultText)) {
+                    MenuItemButton(icon: icon,
+                                   title: title,
+                                   titleColor: Color(.defaultText),
+                                   detail: detail,
+                                   detailColor: .secondary,
+                                   highlightColor: .white) {
                         await action()
                         dismiss()
                     }.applyMenuAttributes()

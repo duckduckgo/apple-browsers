@@ -66,4 +66,6 @@ public struct AIChatNativeHandoffData: Codable {
 public struct AIChatNativeConfigValues: Codable {
     let isAIChatHandoffEnabled: Bool
     let platform: String
+    let supportsClosingAIChat: Bool
+    let supportsOpeningSettings: Bool
 }

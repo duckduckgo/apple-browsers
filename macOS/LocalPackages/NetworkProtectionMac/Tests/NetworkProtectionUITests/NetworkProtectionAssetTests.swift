@@ -34,6 +34,7 @@ final class NetworkProtectionAssetTests: XCTestCase {
             .nearestAvailable: "VPNLocation",
             .dataReceived: "VPNDownload",
             .dataSent: "VPNUpload",
+            .giftNew96: "Gift-New-96",
             .appleVaultIcon: "apple-vault-icon",
             .appleVPNIcon: "apple-vpn-icon",
             .appleSystemSettingsIcon: "apple-system-settings-icon",

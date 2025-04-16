@@ -54,10 +54,11 @@ final class AddBookmarkPopover: NSPopover {
 
     private func setupBookmarkAddController() {
         guard let bookmark else { return }
-        contentViewController = NSHostingController(rootView: AddBookmarkPopoverView(model: AddBookmarkPopoverViewModel(bookmark: bookmark))
-            .legacyOnDismiss { [weak self] in
-                self?.performClose(nil)
-            })
+        let viewModel = AddBookmarkPopoverViewModel(bookmark: bookmark)
+        contentViewController = NSHostingController(rootView: AddBookmarkPopoverView(model: viewModel))
+        viewModel.buttonClicked = { [weak self] in
+            self?.performClose(nil)
+        }
     }
 
     override func show(relativeTo positioningRect: NSRect, of positioningView: NSView, preferredEdge: NSRectEdge) {

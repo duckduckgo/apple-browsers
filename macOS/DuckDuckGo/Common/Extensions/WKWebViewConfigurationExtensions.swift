@@ -60,15 +60,15 @@ extension WKWebViewConfiguration {
         if SupportedOSChecker.isCurrentOSReceivingUpdates {
             if urlSchemeHandler(forURLScheme: URL.NavigationalScheme.duck.rawValue) == nil {
                 setURLSchemeHandler(
-                    DuckURLSchemeHandler(featureFlagger: NSApp.delegateTyped.featureFlagger),
+                    DuckURLSchemeHandler(featureFlagger: NSApp.delegateTyped.featureFlagger, isHistorySpecialPageSupported: true),
                     forURLScheme: URL.NavigationalScheme.duck.rawValue
                 )
             }
         }
 
-#if !APPSTORE
-        if #available(macOS 14.4, *), WebExtensionManager.shared.areExtenstionsEnabled {
-            self._webExtensionController = WebExtensionManager.shared.controller
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+        if #available(macOS 15.4, *), WebExtensionManager.shared.areExtenstionsEnabled {
+            self.webExtensionController = WebExtensionManager.shared.controller
         }
 #endif
 

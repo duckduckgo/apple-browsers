@@ -19,6 +19,7 @@
 import AppKit
 import SwiftUI
 import BrowserServicesKit
+import Common
 
 @MainActor
 struct DataImportView: ModalView {
@@ -275,7 +276,7 @@ struct DataImportView: ModalView {
                     .padding(.top, 10)
                     .padding(.leading, 20)
                 Spacer()
-                if case .normal = NSApp.runType {
+                if case .normal = AppVersion.runType {
                     Button {
                         debugViewDisabled.toggle()
                     } label: {

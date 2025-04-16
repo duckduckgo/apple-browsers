@@ -26,8 +26,6 @@ protocol AIChatRemoteSettingsProvider {
     var aiChatURLIdentifiableQueryValue: String { get }
     var aiChatURL: URL { get }
     var isAIChatEnabled: Bool { get }
-    var isToolbarShortcutEnabled: Bool { get }
-    var isApplicationMenuShortcutEnabled: Bool { get }
 }
 
 /// This struct serves as a wrapper for PrivacyConfigurationManaging, enabling the retrieval of data relevant to AIChat.
@@ -76,14 +74,6 @@ struct AIChatRemoteSettings: AIChatRemoteSettingsProvider {
 
     var isAIChatEnabled: Bool {
         privacyConfigurationManager.privacyConfig.isEnabled(featureKey: .aiChat)
-    }
-
-    var isToolbarShortcutEnabled: Bool {
-        privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(AIChatSubfeature.toolbarShortcut)
-    }
-
-    var isApplicationMenuShortcutEnabled: Bool {
-        privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(AIChatSubfeature.applicationMenuShortcut)
     }
 
     // MARK: - Private

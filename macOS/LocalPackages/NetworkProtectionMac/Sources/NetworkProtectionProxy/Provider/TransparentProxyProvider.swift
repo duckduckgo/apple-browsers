@@ -134,9 +134,6 @@ open class TransparentProxyProvider: NETransparentProxyProvider {
                 Task {
                     try await self.updateNetworkSettings()
                 }
-            case .proxyAvailable:
-                // no-op, handled by app
-                break
             }
         }.store(in: &cancellables)
     }
@@ -197,6 +194,14 @@ open class TransparentProxyProvider: NETransparentProxyProvider {
             networkSettings.includedNetworkRules?.append(
                 NENetworkRule(destinationHost: NWHostEndpoint(hostname: "duckduckgo.com", port: "443"), protocol: .any))
         }
+
+        // Please note that excluding traffic from the proxy does not mean it will be excluded from the VPN.
+        // Traffic captured by the proxy can be excluded from the VPN, so excluding traffic from the proxy actually
+        // means this traffic will always be routed through the VPN.
+        networkSettings.excludedNetworkRules = [
+            // Ref: https://app.asana.com/0/1207603085593419/1209681033289804/f
+            NENetworkRule(destinationHost: NWHostEndpoint(hostname: "push.apple.com", port: ""), protocol: .UDP)
+        ]
 
         return networkSettings
     }

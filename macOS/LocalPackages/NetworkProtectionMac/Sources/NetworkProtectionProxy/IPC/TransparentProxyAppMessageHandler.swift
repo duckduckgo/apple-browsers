@@ -83,8 +83,6 @@ final class TransparentProxyAppMessageHandler {
             settings.appRoutingRules = routingRules
         case .excludedDomains(let excludedDomains):
             settings.excludedDomains = excludedDomains
-        case .proxyAvailable(let available):
-            settings.proxyAvailable = available
         }
     }
 }

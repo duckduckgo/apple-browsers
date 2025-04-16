@@ -39,10 +39,10 @@ PROVISIONING_PROFILE_SPECIFIER[config=CI][sdk=macosx*] = match Direct HKE973VLUW
 PROVISIONING_PROFILE_SPECIFIER[config=Review][sdk=macosx*] = match Direct HKE973VLUW.com.duckduckgo.macos.browser.network-protection.notifications.review macos
 PROVISIONING_PROFILE_SPECIFIER[config=Release][sdk=macosx*] = match Direct HKE973VLUW.com.duckduckgo.macos.browser.network-protection.notifications macos
 
-FEATURE_FLAGS[arch=*][sdk=*] = NETP_SYSTEM_EXTENSION
-FEATURE_FLAGS[config=CI][arch=*][sdk=*] = NETP_SYSTEM_EXTENSION
-FEATURE_FLAGS[config=Debug][arch=*][sdk=*] = NETP_SYSTEM_EXTENSION
-FEATURE_FLAGS[config=Review][arch=*][sdk=*] = NETP_SYSTEM_EXTENSION
+FEATURE_FLAGS[arch=*][sdk=*] =
+FEATURE_FLAGS[config=CI][arch=*][sdk=*] =
+FEATURE_FLAGS[config=Debug][arch=*][sdk=*] =
+FEATURE_FLAGS[config=Review][arch=*][sdk=*] =
 
 SWIFT_OBJC_BRIDGING_HEADER =
 SKIP_INSTALL = YES

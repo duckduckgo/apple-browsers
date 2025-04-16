@@ -42,10 +42,10 @@ enum AddressBarPosition: String, CaseIterable, CustomStringConvertible {
     }
 }
 
-protocol AppSettings: AnyObject, AppDebugSettings {
+protocol AppSettings: AnyObject, OnboardingDebugAppSettings {
     var autocomplete: Bool { get set }
     var recentlyVisitedSites: Bool { get set }
-    var currentThemeName: ThemeName { get set }
+    var currentThemeStyle: ThemeStyle { get set }
     
     var autoClearAction: AutoClearSettingsModel.Action { get set }
     var autoClearTiming: AutoClearSettingsModel.Timing { get set }
@@ -81,14 +81,23 @@ protocol AppSettings: AnyObject, AppDebugSettings {
     var crashCollectionOptInStatus: CrashCollectionOptInStatus { get set }
     var crashCollectionShouldRevertOptedInStatusTrigger: Int { get set }
     
+    // Legacy DuckPlayer
     var duckPlayerMode: DuckPlayerMode { get set }
     var duckPlayerAskModeOverlayHidden: Bool { get set }
     var duckPlayerOpenInNewTab: Bool { get set }
+    
+    // DuckPlayer Native UI
     var duckPlayerNativeUI: Bool { get set }
     var duckPlayerAutoplay: Bool { get set }
+    var duckPlayerNativeUISERPEnabled: Bool { get set }
+    var duckPlayerNativeYoutubeMode: NativeDuckPlayerYoutubeMode { get set }
+    var duckPlayerNativeUIPrimingModalPresentationEventCount: Int { get set }
+    var duckPlayerNativeUIPrimingModalLastPresentationTime: Int { get set }
+    var duckPlayerPillDismissCount: Int { get set }
 }
 
-protocol AppDebugSettings {
-    var onboardingHighlightsEnabled: Bool { get set }
-    var onboardingAddToDockState: OnboardingAddToDockState { get set }
+// MARK: - AppSettings + OnboardingDebugSettings
+
+protocol OnboardingDebugAppSettings {
+    var onboardingUserType: OnboardingUserType { get set }
 }

@@ -280,5 +280,347 @@ Es tos nobloķēju!
 			<string>%1$d paroles izdzēstas</string>
 		</dict>
 	</dict>
+	<key>tab.close</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>Aizvērt cilnes</string>
+			<key>one</key>
+			<string>Aizvērt cilni</string>
+			<key>other</key>
+			<string>Aizvērt cilnes</string>
+		</dict>
+	</dict>
+	<key>closeAllTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>Aizvērt visas %1$d cilnes</string>
+			<key>one</key>
+			<string>Aizvērt cilni</string>
+			<key>other</key>
+			<string>Aizvērt visas %1$d cilnes</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>Aizvērt %1$d cilnes?</string>
+			<key>one</key>
+			<string>Aizvērt cilni?</string>
+			<key>other</key>
+			<string>Aizvērt %1$d cilnes?</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseOtherTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>Aizvērt vēl %1$d citas cilnes?</string>
+			<key>one</key>
+			<string>Aizvērt vēl citu cilni?</string>
+			<key>other</key>
+			<string>Aizvērt vēl %1$d citas cilnes?</string>
+		</dict>
+	</dict>
+	<key>alertMessageCloseOtherTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>Vai tiešām vēlies aizvērt šīs cilnes?</string>
+			<key>one</key>
+			<string>Vai tiešām vēlies aizvērt šo cilni?</string>
+			<key>other</key>
+			<string>Vai tiešām vēlies aizvērt šīs cilnes?</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>Aizvērt %1$d cilnes?</string>
+			<key>one</key>
+			<string>Aizvērt cilni?</string>
+			<key>other</key>
+			<string>Aizvērt %1$d cilnes?</string>
+		</dict>
+	</dict>
+	<key>alertMessageCloseTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>Vai tiešām vēlies aizvērt šīs cilnes?</string>
+			<key>one</key>
+			<string>Vai tiešām vēlies aizvērt šo cilni?</string>
+			<key>other</key>
+			<string>Vai tiešām vēlies aizvērt šīs cilnes?</string>
+		</dict>
+	</dict>
+	<key>alertTitleCloseAllTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>Aizvērt visas %1$d cilnes?</string>
+			<key>one</key>
+			<string>Aizvērt cilni?</string>
+			<key>other</key>
+			<string>Aizvērt visas %1$d cilnes?</string>
+		</dict>
+	</dict>
+	<key>alertMessageCloseAllTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>Vai tiešām vēlies aizvērt visas cilnes?</string>
+			<key>one</key>
+			<string>Vai tiešām vēlies aizvērt šo cilni?</string>
+			<key>other</key>
+			<string>Vai tiešām vēlies aizvērt visas cilnes?</string>
+		</dict>
+	</dict>
+	<key>tab.switcher.select-tabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>Atlasīt cilnes</string>
+			<key>one</key>
+			<string>Atlasīt cilni</string>
+			<key>other</key>
+			<string>Atlasīt cilnes</string>
+		</dict>
+	</dict>
+	<key>tab.switcher.close-others.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>Aizvērt citas cilnes</string>
+			<key>one</key>
+			<string>Aizvērt citu cilni</string>
+			<key>other</key>
+			<string>Aizvērt citas cilnes</string>
+		</dict>
+	</dict>
+	<key>shareLinks.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>Kopīgot %1$d saites</string>
+			<key>one</key>
+			<string>Kopīgot saiti</string>
+			<key>other</key>
+			<string>Kopīgot %1$d saites</string>
+		</dict>
+	</dict>
+	<key>shareSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>Kopīgot atlasītās cilnes</string>
+			<key>one</key>
+			<string>Kopīgot atlasīto cilni</string>
+			<key>other</key>
+			<string>Kopīgot atlasītās cilnes</string>
+		</dict>
+	</dict>
+	<key>bookmark.selected.tabs.with.count</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>Pievienot grāmatzīmi %1$d cilnēm</string>
+			<key>one</key>
+			<string>Pievienot grāmatzīmi cilnei</string>
+			<key>other</key>
+			<string>Pievienot grāmatzīmi %1$d cilnēm</string>
+		</dict>
+	</dict>
+	<key>tabsBookmarked.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>Pievienotas %1$d grāmatzīmes</string>
+			<key>one</key>
+			<string>Pievienota grāmatzīme</string>
+			<key>other</key>
+			<string>Pievienotas %1$d grāmatzīmes</string>
+		</dict>
+	</dict>
+	<key>alertTitleBookmarkSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>Vai pievienot grāmatzīmi %1$d cilnēm?</string>
+			<key>one</key>
+			<string>Vai pievienot grāmatzīmi atlasītajai cilnei?</string>
+			<key>other</key>
+			<string>Vai pievienot grāmatzīmi %1$d cilnēm?</string>
+		</dict>
+	</dict>
+	<key>alertTitleBookmarkAll.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>Vai pievienot grāmatzīmi %1$d cilnēm?</string>
+			<key>one</key>
+			<string>Vai pievienot grāmatzīmi atlasītajai cilnei?</string>
+			<key>other</key>
+			<string>Vai pievienot grāmatzīmi %1$d cilnēm?</string>
+		</dict>
+	</dict>
+	<key>numberOfSelectedTabs.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>%1$d atlasītas</string>
+			<key>one</key>
+			<string>%1$d atlasīta</string>
+			<key>other</key>
+			<string>%1$d atlasītas</string>
+		</dict>
+	</dict>
+	<key>numberOfSelectedTabsForMenuTitle.withCount</key>
+	<dict>
+		<key>NSStringLocalizedFormatKey</key>
+		<string>%#@tabs@</string>
+		<key>tabs</key>
+		<dict>
+			<key>NSStringFormatSpecTypeKey</key>
+			<string>NSStringPluralRuleType</string>
+			<key>NSStringFormatValueTypeKey</key>
+			<string>d</string>
+			<key>zero</key>
+			<string>%1$d atlasītās cilnes</string>
+			<key>one</key>
+			<string>%1$d atlasītā cilne</string>
+			<key>other</key>
+			<string>%1$d atlasītās cilnes</string>
+		</dict>
+	</dict>
 </dict>
 </plist>

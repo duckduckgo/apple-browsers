@@ -17,6 +17,8 @@ tags:
 - inputText: "https://privacy-test-pages.site"
 - pressKey: Enter
 
+- assertVisible: ".*Privacy Test Pages.*"
+
 # Add site to favorites from menu
 - assertVisible: "Browsing menu"
 - tapOn: "Browsing menu"

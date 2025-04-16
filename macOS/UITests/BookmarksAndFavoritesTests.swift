@@ -53,6 +53,8 @@ class BookmarksAndFavoritesTests: UITestCase {
     private var showBookmarksBarAlways: XCUIElement!
     private var showBookmarksBarPopup: XCUIElement!
     private var showFavoritesPreferenceToggle: XCUIElement!
+    private var addNewFolderButton: XCUIElement!
+    private var folderNameTextField: XCUIElement!
 
     override class func setUp() {
         super.setUp()
@@ -94,6 +96,8 @@ class BookmarksAndFavoritesTests: UITestCase {
         showBookmarksBarPopup = app.popUpButtons["Preferences.AppearanceView.showBookmarksBarPopUp"]
         showBookmarksBarPreferenceToggle = app.checkBoxes["Preferences.AppearanceView.showBookmarksBarPreferenceToggle"]
         showFavoritesPreferenceToggle = app.checkBoxes["Preferences.AppearanceView.showFavoritesToggle"]
+        addNewFolderButton = app.buttons["bookmark.add.new.folder.button"]
+        folderNameTextField = app.textFields["bookmark.add.name.textfield"]
 
         app.launch()
         resetBookmarks()
@@ -643,6 +647,45 @@ class BookmarksAndFavoritesTests: UITestCase {
         XCTAssertTrue(
             app.staticTexts[pageTitle].waitForNonExistence(timeout: UITests.Timeouts.elementExistence),
             "Since there is no bookmark of the page, and we show bookmarks in the bookmark bar, the title of the page should not appear in a new browser window anywhere. In this specific test, it is highly probable that the reason for a failure (when this area of the app appears to be working correctly) is the contextual menu being rearranged, since it has to address the menu elements by coordinate."
+        )
+    }
+
+    func test_bookmarks_whenBookmarkingCurrentWebsite_lastUsedFolderIsRemembered() throws {
+        let folderName = UITests.randomPageTitle(length: 8)
+
+        // bookmark a website and add it to a newly created folder
+        openSiteToBookmark(bookmarkingViaDialog: true, escapingDialog: false)
+        addNewFolderButton.clickAfterExistenceTestSucceeds()
+        XCTAssertTrue(
+            folderNameTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "The folder name text field didn't appear with the expected title in a reasonable timeframe."
+        )
+        folderNameTextField.typeText(folderName)
+        // Confirm creating new folder
+        defaultBookmarkDialogButton.click()
+        // Confirm adding bookmark
+        defaultBookmarkDialogButton.click()
+
+        // bookmark another website
+        pageTitle = UITests.randomPageTitle(length: titleStringLength)
+        urlForBookmarksBar = UITests.simpleServedPage(titled: pageTitle)
+        app.openNewTab()
+        openSiteToBookmark(bookmarkingViaDialog: true, escapingDialog: false)
+        XCTAssertTrue(
+            folderNameTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "The folder name text field didn't appear with the expected title in a reasonable timeframe."
+        )
+
+        // Verify that the new bookmark is added to the last used folder
+        XCTAssertTrue(
+            bookmarkDialogBookmarkFolderDropdown.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "The \"Add bookmark\" dialog's bookmark folder dropdown didn't appear with the expected title in a reasonable timeframe."
+        )
+        let bookmarkDialogBookmarkFolderDropdownValue = try? XCTUnwrap(bookmarkDialogBookmarkFolderDropdown.value as? String)
+        XCTAssertEqual(
+            bookmarkDialogBookmarkFolderDropdownValue,
+            folderName,
+            "The accessibility value of the \"Add bookmark\" dialog's bookmark folder dropdown must be \"\(folderName)\"."
         )
     }
 }

@@ -23,6 +23,8 @@ enum ShortcutKey {
 
     static let clipboard = "com.duckduckgo.mobile.ios.clipboard"
     static let passwords = "com.duckduckgo.mobile.ios.passwords"
+    static let aiChat = "com.duckduckgo.mobile.ios.aichat"
     static let openVPNSettings = "com.duckduckgo.mobile.ios.vpn.open-settings"
+    static let voiceSearch = "com.duckduckgo.mobile.ios.voice-search"
 
 }

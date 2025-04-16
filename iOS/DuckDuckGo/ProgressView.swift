@@ -198,7 +198,7 @@ class ProgressView: UIView, CAAnimationDelegate {
     // MARK: IB
     override func prepareForInterfaceBuilder() {
         super.prepareForInterfaceBuilder()
-        backgroundColor = .cornflowerBlue
+        backgroundColor = UIColor(designSystemColor: .accent)
     }
 }
 

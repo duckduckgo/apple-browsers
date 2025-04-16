@@ -18,8 +18,9 @@
 
 import BrowserServicesKit
 import Combine
-import XCTest
 import Common
+import NewTabPage
+import XCTest
 
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -76,18 +77,29 @@ final class DuckPlayerTests: XCTestCase {
         XCTAssertNil(duckPlayer.sharingData(for: "Wikipedia", url: "https://wikipedia.org".url!))
     }
 
-    func testThatTitleForRecentlyVisitedPageIsGeneratedForDuckPlayerFeedItems() {
-        let feedItem = HomePage.Models.RecentlyVisitedPageModel(
-            actualTitle: "\(UserText.duckPlayer) - A sample video title",
-            url: duckPlayerURL(),
-            visited: Date()
+    func testThatTitleForHistoryEntryIsGeneratedForDuckPlayerFeedItems() {
+        let historyEntry = NewTabPageDataModel.HistoryEntry(
+            relativeTime: "1 minute ago",
+            title: "\(UserText.duckPlayer) - A sample video title",
+            url: duckPlayerURL().absoluteString
         )
 
         duckPlayer.mode = .enabled
-        XCTAssertEqual(duckPlayer.title(for: feedItem), "A sample video title")
+        XCTAssertEqual(duckPlayer.title(for: historyEntry), "A sample video title")
 
         duckPlayer.mode = .disabled
-        XCTAssertNil(duckPlayer.title(for: feedItem))
+        XCTAssertNil(duckPlayer.title(for: historyEntry))
+    }
+
+    func testThatTitleForHistoryEntryIsNotAdjustedForNonDuckPlayerFeedItems() {
+        let historyEntry = NewTabPageDataModel.HistoryEntry(
+            relativeTime: "1 minute ago",
+            title: "Duck Player - A sample video title",
+            url: "https://example.com"
+        )
+
+        duckPlayer.mode = .enabled
+        XCTAssertNil(duckPlayer.title(for: historyEntry))
     }
 
     @MainActor
@@ -101,17 +113,6 @@ final class DuckPlayerTests: XCTestCase {
 #else
         XCTAssertTrue(configuration.allowsPictureInPictureMediaPlayback)
 #endif
-    }
-
-    func testThatTitleForRecentlyVisitedPageIsNotAdjustedForNonDuckPlayerFeedItems() {
-        let feedItem = HomePage.Models.RecentlyVisitedPageModel(
-            actualTitle: "Duck Player - A sample video title",
-            url: "https://duck.com".url!,
-            visited: Date()
-        )
-
-        duckPlayer.mode = .enabled
-        XCTAssertNil(duckPlayer.title(for: feedItem))
     }
 
     private func duckPlayerURL() -> URL {

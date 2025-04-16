@@ -19,6 +19,7 @@
 import AppKit
 import Foundation
 import AppKitExtensions
+import Common
 
 extension UserDefaults {
     /// The app group's shared UserDefaults
@@ -98,6 +99,7 @@ public struct UserDefaultsWrapper<T> {
         case defaultPageZoom = "preferences.appearance.default-page-zoom"
         case websitePageZoom = "preferences.appearance.website-page-zoom"
         case bookmarksBarAppearance = "preferences.appearance.bookmarks-bar"
+        case sharedPinnedTabs = "preferences.tabs.shared-pinned-tabs"
 
         case homeButtonPosition = "preferences.appeareance.home-button-position"
 
@@ -160,6 +162,8 @@ public struct UserDefaultsWrapper<T> {
 
         case pinnedViews = "pinning.pinned-views"
         case manuallyToggledPinnedViews = "pinning.manually-toggled-pinned-views"
+        case pinnedTabsDiscoveryPopoverPresented = "pinned.tabs.discovery.popover.presented"
+        case pinnedTabsMigrated = "pinned.tabs.migrated"
 
         case lastDatabaseFactoryFailurePixelDate = "last.database.factory.failure.pixel.date"
 
@@ -190,6 +194,7 @@ public struct UserDefaultsWrapper<T> {
         // Updates
         case automaticUpdates = "updates.automatic"
         case pendingUpdateShown = "pending.update.shown"
+        case pendingUpdateSince = "pending.update.since"
 
         // Experiments
         case pixelExperimentInstalled = "pixel.experiment.installed"
@@ -255,6 +260,7 @@ public struct UserDefaultsWrapper<T> {
         case networkProtectionShouldExcludeLocalNetworks = "netp.exclude-local-routes"
         case networkProtectionRegistrationKeyValidity = "com.duckduckgo.network-protection.NetworkProtectionTunnelController.registrationKeyValidityKey"
         case shouldShowNetworkProtectionSystemExtensionUpgradePrompt = "network-protection.show-system-extension-upgrade-prompt"
+        case vpnRedditWorkaroundInstalled = "com.duckduckgo.ios.vpn.workaroundInstalled"
     }
 
     private let key: DefaultsKey
@@ -269,10 +275,10 @@ public struct UserDefaultsWrapper<T> {
 
     static var sharedDefaults: UserDefaults {
 #if DEBUG && !(NETP_SYSTEM_EXTENSION && NETWORK_EXTENSION) // Avoid looking up special user defaults when running inside the system extension
-        if case .normal = NSApplication.runType {
+        if case .normal = AppVersion.runType {
             return .standard
         } else {
-            return UserDefaults(suiteName: "\(Bundle.main.bundleIdentifier!).\(NSApplication.runType)")!
+            return UserDefaults(suiteName: "\(Bundle.main.bundleIdentifier!).\(AppVersion.runType)")!
         }
 #else
         return .standard

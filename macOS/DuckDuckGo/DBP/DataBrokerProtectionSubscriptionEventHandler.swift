@@ -19,20 +19,22 @@
 import Combine
 import Foundation
 import Subscription
-import DataBrokerProtection
+import DataBrokerProtection_macOS
+import DataBrokerProtectionCore
 import PixelKit
 import Common
+import Networking
 
 final class DataBrokerProtectionSubscriptionEventHandler {
 
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let featureDisabler: DataBrokerProtectionFeatureDisabling
-    private let pixelHandler: EventMapping<DataBrokerProtectionPixels>
+    private let pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>
     private var cancellables = Set<AnyCancellable>()
 
     init(featureDisabler: DataBrokerProtectionFeatureDisabling,
          authenticationManager: DataBrokerProtectionAuthenticationManaging,
-         pixelHandler: EventMapping<DataBrokerProtectionPixels>) {
+         pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>) {
         self.featureDisabler = featureDisabler
         self.authenticationManager = authenticationManager
         self.pixelHandler = pixelHandler
@@ -59,7 +61,6 @@ final class DataBrokerProtectionSubscriptionEventHandler {
 
     private func entitlementsDidChange(_ notification: Notification) {
         guard let entitlements = notification.userInfo?[UserDefaultsCacheKey.subscriptionEntitlements] as? [Entitlement] else {
-
             assertionFailure("Missing entitlements are truly unexpected")
             return
         }

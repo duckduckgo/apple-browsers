@@ -69,8 +69,7 @@ final class DefaultFreemiumDBPFeature: FreemiumDBPFeature {
     // MARK: - Private Properties
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let experimentManager: FreemiumDBPPixelExperimentManaging
-    private let subscriptionManager: SubscriptionManager
-    private let accountManager: AccountManager
+    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private var freemiumDBPUserStateManager: FreemiumDBPUserStateManager
     private let notificationCenter: NotificationCenter
     private lazy var featureDisabler: DataBrokerProtectionFeatureDisabling = DataBrokerProtectionFeatureDisabler()
@@ -85,14 +84,12 @@ final class DefaultFreemiumDBPFeature: FreemiumDBPFeature {
     /// - Parameters:
     ///   - privacyConfigurationManager: Manages privacy configurations for the app.
     ///   - subscriptionManager: Manages subscriptions for the user.
-    ///   - accountManager: Manages user account details.
     ///   - freemiumDBPUserStateManager: Manages the user state for Freemium DBP.
     ///   - notificationCenter: Observes notifications, defaulting to `.default`.
     ///   - featureDisabler: Optional feature disabler. If not provided, the default `DataBrokerProtectionFeatureDisabler` is used.
     init(privacyConfigurationManager: PrivacyConfigurationManaging,
          experimentManager: FreemiumDBPPixelExperimentManaging,
-         subscriptionManager: SubscriptionManager,
-         accountManager: AccountManager,
+         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
          freemiumDBPUserStateManager: FreemiumDBPUserStateManager,
          notificationCenter: NotificationCenter = .default,
          featureDisabler: DataBrokerProtectionFeatureDisabling? = nil) {
@@ -100,7 +97,6 @@ final class DefaultFreemiumDBPFeature: FreemiumDBPFeature {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.experimentManager = experimentManager
         self.subscriptionManager = subscriptionManager
-        self.accountManager = accountManager
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
         self.notificationCenter = notificationCenter
 
@@ -175,7 +171,7 @@ private extension DefaultFreemiumDBPFeature {
     }
 }
 
-extension SubscriptionManager {
+extension SubscriptionAuthV1toV2Bridge {
 
     /// Returns true if a user is a "potential" Privacy Pro subscriber. This means:
     ///
@@ -183,7 +179,7 @@ extension SubscriptionManager {
     /// 2. Is not a current subscriber
     var isPotentialPrivacyProSubscriber: Bool {
         isPrivacyProPurchaseAvailable
-        && !accountManager.isUserAuthenticated
+        && !isUserAuthenticated
     }
 
     private var isPrivacyProPurchaseAvailable: Bool {

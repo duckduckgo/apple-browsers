@@ -157,7 +157,7 @@ final class DeviceAuthenticator: UserAuthenticating {
     }
 
     func authenticateUser(reason: AuthenticationReason, result: @escaping (DeviceAuthenticationResult) -> Void) {
-        guard NSApp.runType != .uiTests else {
+        guard AppVersion.runType != .uiTests else {
             result(.success)
             return
         }

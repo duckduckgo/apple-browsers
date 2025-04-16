@@ -19,7 +19,7 @@
 import Foundation
 import BrowserServicesKit
 import Common
-import DataBrokerProtection
+import DataBrokerProtection_macOS
 import Subscription
 import os.log
 import Freemium
@@ -32,25 +32,25 @@ protocol DataBrokerProtectionFeatureGatekeeper {
 struct DefaultDataBrokerProtectionFeatureGatekeeper: DataBrokerProtectionFeatureGatekeeper {
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let featureDisabler: DataBrokerProtectionFeatureDisabling
-    private let pixelHandler: EventMapping<DataBrokerProtectionPixels>
+    private let pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>
     private let userDefaults: UserDefaults
     private let subscriptionAvailability: SubscriptionFeatureAvailability
-    private let accountManager: AccountManager
+    private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let freemiumDBPUserStateManager: FreemiumDBPUserStateManager
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
          featureDisabler: DataBrokerProtectionFeatureDisabling = DataBrokerProtectionFeatureDisabler(),
-         pixelHandler: EventMapping<DataBrokerProtectionPixels> = DataBrokerProtectionPixelsHandler(),
+         pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels> = DataBrokerProtectionMacOSPixelsHandler(),
          userDefaults: UserDefaults = .standard,
          subscriptionAvailability: SubscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(),
-         accountManager: AccountManager,
+         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
          freemiumDBPUserStateManager: FreemiumDBPUserStateManager) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.featureDisabler = featureDisabler
         self.pixelHandler = pixelHandler
         self.userDefaults = userDefaults
         self.subscriptionAvailability = subscriptionAvailability
-        self.accountManager = accountManager
+        self.subscriptionManager = subscriptionManager
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
     }
 
@@ -80,25 +80,19 @@ struct DefaultDataBrokerProtectionFeatureGatekeeper: DataBrokerProtectionFeature
 
     /// Checks DBP prerequisites
     ///
-    /// Prerequisites are satisified if either:
+    /// Prerequisites are satisfied if either:
     /// 1. The user is an active freemium user (e.g has activated freemium and is not authenticated)
     /// 2. The user has a subscription with valid entitlements
     ///
     /// - Returns: Bool indicating prerequisites are satisfied
     func arePrerequisitesSatisfied() async -> Bool {
 
-        let isAuthenticated = accountManager.isUserAuthenticated
+        let isAuthenticated = subscriptionManager.isUserAuthenticated
         if !isAuthenticated && freemiumDBPUserStateManager.didActivate { return true }
 
-        let entitlements = await accountManager.hasEntitlement(forProductName: .dataBrokerProtection,
-                                                               cachePolicy: .reloadIgnoringLocalCacheData)
-        var hasEntitlements: Bool
-        switch entitlements {
-        case .success(let value):
-            hasEntitlements = value
-        case .failure:
-            hasEntitlements = false
-        }
+        // NOTE: This check In AuthV1 this can fail in case of bad network, in AuthV2 works as expected in any network condition
+        let hasEntitlements = (try? await subscriptionManager.isEnabled(feature: .dataBrokerProtection,
+                                                                        cachePolicy: .reloadIgnoringLocalCacheData)) ?? false
 
         firePrerequisitePixelsAndLogIfNecessary(hasEntitlements: hasEntitlements, isAuthenticatedResult: isAuthenticated)
 

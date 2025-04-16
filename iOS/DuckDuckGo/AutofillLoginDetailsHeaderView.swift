@@ -36,13 +36,13 @@ struct AutofillLoginDetailsHeaderView: View {
             VStack(alignment: .leading, spacing: Constants.verticalStackSpacing) {
                 Text(viewModel.title)
                     .font(.callout)
-                    .foregroundColor(colorScheme == .light ? .gray90 : .white)
+                    .foregroundColor(colorScheme == .light ? Color(baseColor: .gray90) : .white)
                     .truncationMode(.middle)
                     .lineLimit(1)
 
                 Text(viewModel.subtitle)
                     .font(.footnote)
-                    .foregroundColor(colorScheme == .light ? .gray50 : .gray20)
+                    .foregroundColor(colorScheme == .light ? Color(baseColor: .gray50) : Color(baseColor: .gray20))
             }
             
             Spacer()

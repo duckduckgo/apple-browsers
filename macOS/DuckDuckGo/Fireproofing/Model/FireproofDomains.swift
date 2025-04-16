@@ -21,7 +21,11 @@ import Foundation
 import CoreData
 import os.log
 
-internal class FireproofDomains {
+protocol DomainFireproofStatusProviding {
+    func isFireproof(fireproofDomain domain: String) -> Bool
+}
+
+internal class FireproofDomains: DomainFireproofStatusProviding {
 
     enum Constants {
         static let allowedDomainsChangedNotification = Notification.Name("allowedDomainsChangedNotification")

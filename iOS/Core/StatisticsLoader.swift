@@ -53,9 +53,11 @@ public class StatisticsLoader {
         self.pixelFiring = pixelFiring
     }
 
-    public func load(completion: @escaping Completion = {}) {
+    public func load(shouldRefreshAtb: Bool = true, completion: @escaping Completion = {}) {
         let completion = {
-            self.refreshAppRetentionAtb()
+            if shouldRefreshAtb {
+                self.refreshAppRetentionAtb()
+            }
             completion()
         }
         if statisticsStore.hasInstallStatistics {

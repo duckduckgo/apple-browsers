@@ -26,6 +26,10 @@ protocol DaxDialogsSettings: AnyObject {
     // Used to understand if users completed the old onboarding flow and should not be prompted in-context dax dialogs.
     var homeScreenMessagesSeen: Int { get }
 
+    var tryAnonymousSearchShown: Bool { get set }
+
+    var tryVisitASiteShown: Bool { get set }
+
     var browsingAfterSearchShown: Bool { get set }
     
     var browsingWithTrackersShown: Bool { get set }
@@ -44,10 +48,7 @@ protocol DaxDialogsSettings: AnyObject {
 
     var browsingFinalDialogShown: Bool { get set }
 
-    var lastVisitedOnboardingWebsiteURLPath: String? { get set }
-
-    var lastShownContextualOnboardingDialogType: String? { get set }
-
+    var privacyProPromotionDialogShown: Bool { get set }
 }
 
 class DefaultDaxDialogsSettings: DaxDialogsSettings {
@@ -57,7 +58,13 @@ class DefaultDaxDialogsSettings: DaxDialogsSettings {
     
     @UserDefaultsWrapper(key: .daxHomeScreenMessagesSeen, defaultValue: 0)
     var homeScreenMessagesSeen: Int
-    
+
+    @UserDefaultsWrapper(key: .daxTryAnonymousSearchShown, defaultValue: false)
+    var tryAnonymousSearchShown: Bool
+
+    @UserDefaultsWrapper(key: .daxTryVisitSiteShown, defaultValue: false)
+    var tryVisitASiteShown: Bool
+
     @UserDefaultsWrapper(key: .daxBrowsingAfterSearchShown, defaultValue: false)
     var browsingAfterSearchShown: Bool
     
@@ -85,10 +92,6 @@ class DefaultDaxDialogsSettings: DaxDialogsSettings {
     @UserDefaultsWrapper(key: .daxBrowsingFinalDialogShown, defaultValue: false)
     var browsingFinalDialogShown: Bool
 
-    @UserDefaultsWrapper(key: .daxLastVisitedOnboardingWebsite, defaultValue: nil)
-    var lastVisitedOnboardingWebsiteURLPath: String?
-
-    @UserDefaultsWrapper(key: .daxLastShownContextualOnboardingDialogType, defaultValue: nil)
-    var lastShownContextualOnboardingDialogType: String?
-
+    @UserDefaultsWrapper(key: .daxPrivacyProPromotionDialogShown, defaultValue: false)
+    var privacyProPromotionDialogShown: Bool
 }

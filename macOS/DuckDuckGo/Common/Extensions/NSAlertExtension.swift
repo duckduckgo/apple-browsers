@@ -121,15 +121,11 @@ extension NSAlert {
         return alert
     }
 
-    static func removeSystemExtensionAndAgentsAlert() -> NSAlert {
+    static func removeVPNNetworkExtensionAndAgentsAlert() -> NSAlert {
         let alert = NSAlert()
-#if NETP_SYSTEM_EXTENSION
-        let sysExText = "System Extension and "
-#else
-        let sysExText = ""
-#endif
-        alert.messageText = "Uninstall \(sysExText)Login Items?"
-        alert.informativeText = "This will remove the VPN \(sysExText)Status Menu icon and disable the VPN."
+
+        alert.messageText = "Uninstall Network Extension and Login Items?"
+        alert.informativeText = "This will remove the VPN Network Extension and Status Menu icon and disable the VPN."
         alert.alertStyle = .warning
         alert.addButton(withTitle: "Uninstall")
         alert.addButton(withTitle: UserText.cancel)

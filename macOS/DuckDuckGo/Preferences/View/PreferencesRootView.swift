@@ -156,7 +156,9 @@ enum Preferences {
                         WindowControllersManager.shared.showTab(with: .identityTheftRestoration(url))
                     case .iHaveASubscriptionClick:
                         PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseClick)
-                    case .manageEmailClick:
+                    case .activateAddEmailClick:
+                        PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)                    
+		    case .manageEmailClick:
                         PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementEmail, frequency: .uniqueByName)
                     case .restorePurchaseStoreClick:
                         PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreStart, frequency: .legacyDailyAndCount)
@@ -316,7 +318,9 @@ enum Preferences {
                         WindowControllersManager.shared.showTab(with: .identityTheftRestoration(url))
                     case .iHaveASubscriptionClick:
                         PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseClick)
-                    case .manageEmailClick:
+                    case .activateAddEmailClick:
+                        PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)                    
+		    case .manageEmailClick:
                         PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementEmail, frequency: .uniqueByName)
                     case .restorePurchaseStoreClick:
                         PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreStart, frequency: .legacyDailyAndCount)

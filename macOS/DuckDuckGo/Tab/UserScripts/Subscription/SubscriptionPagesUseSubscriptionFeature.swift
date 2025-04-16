@@ -535,7 +535,13 @@ extension SubscriptionPagesUseSubscriptionFeature: SubscriptionAccessActionHandl
         }
     }
 
-    func subscriptionAccessActionHandleAction(event: SubscriptionAccessActionHandlingEvent) { }
+    func subscriptionAccessActionHandleAction(event: SubscriptionAccessActionHandlingEvent) {
+        switch event {
+        case .activateAddEmailClick:
+            PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
+        default: break
+        }
+    }
 }
 
 private extension SubscriptionPagesUseSubscriptionFeature {

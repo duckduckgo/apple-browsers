@@ -16,7 +16,9 @@
 //  limitations under the License.
 //
 
-@available(macOS 15.3, *)
+#if WEB_EXTENSIONS_ENABLED
+
+@available(macOS 15.4, *)
 @MainActor
 extension MainWindowController: WKWebExtensionWindow {
 
@@ -24,51 +26,53 @@ extension MainWindowController: WKWebExtensionWindow {
         case notSupported
     }
 
-    func tabs(for context: WKWebExtensionContext!) -> [any WKWebExtensionTab]! {
+    func tabs(for context: WKWebExtensionContext) -> [any WKWebExtensionTab] {
         return mainViewController.tabCollectionViewModel.tabs
     }
 
-    func activeTab(for context: WKWebExtensionContext!) -> (any WKWebExtensionTab)? {
+    func activeTab(for context: WKWebExtensionContext) -> (any WKWebExtensionTab)? {
         return mainViewController.tabCollectionViewModel.selectedTab
     }
 
-    func windowType(for context: WKWebExtensionContext!) -> WKWebExtension.WindowType {
+    func windowType(for context: WKWebExtensionContext) -> WKWebExtension.WindowType {
         return .normal
     }
 
-    func windowState(for context: WKWebExtensionContext!) -> WKWebExtension.WindowState {
+    func windowState(for context: WKWebExtensionContext) -> WKWebExtension.WindowState {
         return .normal
     }
 
-    func setWindowState(_ state: WKWebExtension.WindowState, for context: WKWebExtensionContext!) async throws {
+    func setWindowState(_ state: WKWebExtension.WindowState, for context: WKWebExtensionContext) async throws {
         assertionFailure("not supported yet")
         throw WebExtensionWindowError.notSupported
     }
 
-    func isPrivate(for context: WKWebExtensionContext!) -> Bool {
+    func isPrivate(for context: WKWebExtensionContext) -> Bool {
         return mainViewController.isBurner
     }
 
-    func screenFrame(for context: WKWebExtensionContext!) -> CGRect {
+    func screenFrame(for context: WKWebExtensionContext) -> CGRect {
         return window?.screen?.frame ?? CGRect.zero
     }
 
-    func frame(for context: WKWebExtensionContext!) -> CGRect {
+    func frame(for context: WKWebExtensionContext) -> CGRect {
         return window?.frame ?? CGRect.zero
     }
 
-    func setFrame(_ frame: CGRect, for context: WKWebExtensionContext!) async throws {
+    func setFrame(_ frame: CGRect, for context: WKWebExtensionContext) async throws {
         assertionFailure("not supported yet")
         throw WebExtensionWindowError.notSupported
     }
 
-    func focus(for context: WKWebExtensionContext!) async throws {
+    func focus(for context: WKWebExtensionContext) async throws {
         assertionFailure("not supported yet")
         throw WebExtensionWindowError.notSupported
     }
 
-    func close(for context: WKWebExtensionContext!) async throws {
+    func close(for context: WKWebExtensionContext) async throws {
         close()
     }
 
 }
+
+#endif

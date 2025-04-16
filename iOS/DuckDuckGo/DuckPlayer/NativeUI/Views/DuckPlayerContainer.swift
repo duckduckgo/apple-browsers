@@ -21,14 +21,13 @@ import Combine
 import SwiftUI
 
 public enum DuckPlayerContainer {
-
     public struct Constants {
         static let easeInOutDuration: Double = 0.3
         static let shortDuration: Double = 0.2
         static let springDuration: Double = 0.5
         static let springBounce: Double = 0.2
         static let initialOffsetValue: Double = 500.0
-        static let dragThreshold: CGFloat = 10
+        static let dragThreshold: CGFloat = 50
         static let dragAreaHeight: CGFloat = 44
         static let contentTopPadding: CGFloat = 24
     }
@@ -41,9 +40,37 @@ public enum DuckPlayerContainer {
         @Published public private(set) var sheetVisible = false
         @Published var sheetAnimationCompleted = false
         @Published var isDragging = false
+        @Published private(set) var isKeyboardVisible = false
 
+        private var originalSheetState = false // Add this to store the original state
         private var subscriptions = Set<AnyCancellable>()
         private var shouldAnimate = true
+
+        public init() {
+            observeKeyboard()
+        }
+
+        private func observeKeyboard() {
+            NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)
+                .merge(with: NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification))
+                .receive(on: DispatchQueue.main)
+                .sink { [weak self] notification in
+                    guard let self = self else { return }
+                    let isVisible = notification.name == UIResponder.keyboardWillShowNotification
+
+                    if isVisible {
+                        self.originalSheetState = self.sheetVisible
+                        self.isKeyboardVisible = true
+                        self.dismiss()
+                    } else {
+                        self.isKeyboardVisible = false
+                        if self.originalSheetState {
+                            self.show()
+                        }
+                    }
+                }
+                .store(in: &subscriptions)
+        }
 
         public var springAnimation: Animation? {
             shouldAnimate ? .spring(duration: 0.4, bounce: 0.5, blendDuration: 1.0) : nil
@@ -69,11 +96,11 @@ public enum DuckPlayerContainer {
         @State private var sheetHeight = 0.0
         let hasBackground: Bool
         let content: (PresentationMetrics) -> Content
-        let onDismiss: () -> Void
+        let onDismiss: (Bool) -> Void
         let onPresentDuckPlayer: () -> Void
 
         public init(
-            viewModel: ViewModel, hasBackground: Bool = true, onDismiss: @escaping () -> Void, onPresentDuckPlayer: @escaping () -> Void,
+            viewModel: ViewModel, hasBackground: Bool = true, onDismiss: @escaping (Bool) -> Void, onPresentDuckPlayer: @escaping () -> Void,
             @ViewBuilder content: @escaping (PresentationMetrics) -> Content
         ) {
             self.viewModel = viewModel
@@ -99,13 +126,13 @@ public enum DuckPlayerContainer {
                 if hasBackground {
                     Color.black
                         .ignoresSafeArea()
-                        .opacity(viewModel.sheetVisible ? 1 : 0)
                         .animation(viewModel.springAnimation, value: viewModel.sheetVisible)
                 }
 
                 // Use a fixed container height for offset calculations
                 sheet(containerHeight: Constants.initialOffsetValue)
                     .frame(alignment: .bottom)
+                    .opacity(viewModel.isKeyboardVisible ? 0 : 1)
             }
         }
     }
@@ -114,7 +141,7 @@ public enum DuckPlayerContainer {
 // MARK: - Private
 
 private func calculateSheetOffset(for visible: Bool, containerHeight: Double) -> Double {
-    visible ? 25 : containerHeight
+    visible ? 10 : containerHeight
 }
 
 @MainActor
@@ -138,12 +165,10 @@ private struct GrabHandle: View {
 @MainActor
 private struct SheetView<Content: View>: View {
     @ObservedObject var viewModel: DuckPlayerContainer.ViewModel
-    @Environment(\.colorScheme) private var colorScheme
-
     let containerHeight: Double
     let content: (DuckPlayerContainer.PresentationMetrics) -> Content
     let onHeightChange: (Double) -> Void
-    let onDismiss: () -> Void
+    let onDismiss: (Bool) -> Void
     let onPresentDuckPlayer: () -> Void
 
     @State private var sheetHeight: Double = 0
@@ -152,7 +177,6 @@ private struct SheetView<Content: View>: View {
     @State private var sheetOffset = DuckPlayerContainer.Constants.initialOffsetValue
     @GestureState private var dragStartOffset: Double?
     @State private var isDragging = false
-    @State private var isAnimatingToTop = false
 
     // Animate the sheet offset with a spring animation
     private func animateOffset(to visible: Bool) {
@@ -174,45 +198,6 @@ private struct SheetView<Content: View>: View {
                 sheetOffset = offset
             }
             viewModel.sheetAnimationCompleted = true
-        }
-    }
-
-    private func handleDragGesture(value: DragGesture.Value, dragStartOffset: Double?) {
-        guard let dragStartOffset else { return }
-        let offsetY = value.translation.height
-        if offsetY > 0 {
-            withAnimation(.spring(duration: 0.3, bounce: 0.2)) {
-                sheetOffset = dragStartOffset + offsetY
-            }
-        } else if offsetY < 0 {
-            let y = 1.0 / (1.0 + exp(-1 * (abs(offsetY) / 50.0))) - 0.5
-            withAnimation(.spring(duration: 0.3, bounce: 0.2)) {
-                sheetOffset = dragStartOffset + y * max(offsetY, -50)
-            }
-        }
-    }
-
-    private func handleEndedGesture(value: DragGesture.Value, dragStartOffset: Double?) {
-        viewModel.setDragging(false)
-        let offsetY = value.translation.height
-
-        if offsetY > DuckPlayerContainer.Constants.dragThreshold || value.velocity.height > 50 {
-            onDismiss()
-        } else if offsetY < -DuckPlayerContainer.Constants.dragThreshold || value.velocity.height < -50 {
-            isAnimatingToTop = true
-
-            // Start presenting DuckPlayer immediately
-            onPresentDuckPlayer()
-
-            // Animate the pill to top and fade out
-            withAnimation(.spring(duration: 0.5, bounce: 0.2)) {
-                sheetOffset = -containerHeight
-                opacity = 0
-            }
-        } else {
-            withAnimation(.spring(duration: 0.2, bounce: 0.4)) {
-                sheetOffset = calculateSheetOffset(for: viewModel.sheetVisible, containerHeight: containerHeight)
-            }
         }
     }
 
@@ -239,40 +224,70 @@ private struct SheetView<Content: View>: View {
                                         }
                                     }
                                     .onChanged { value in
-                                        handleDragGesture(value: value, dragStartOffset: dragStartOffset)
+                                        guard let dragStartOffset else { return }
+
+                                        let offsetY = value.translation.height
+                                        if offsetY > 0 {
+                                            withAnimation(.spring(duration: 0.3, bounce: 0.2)) {
+                                                sheetOffset = dragStartOffset + offsetY
+                                            }
+                                        } else if offsetY < 0 {
+                                            // Add some resistance for upward drag
+                                            let y = 1.0 / (1.0 + exp(-1 * (abs(offsetY) / 50.0))) - 0.5
+                                            withAnimation(.spring(duration: 0.3, bounce: 0.2)) {
+                                                sheetOffset = dragStartOffset + y * max(offsetY, -20)
+                                            }
+                                        }
                                     }
                                     .onEnded { value in
-                                        handleEndedGesture(value: value, dragStartOffset: dragStartOffset)
+                                        viewModel.setDragging(false)
+                                        let offsetY = value.translation.height
+
+                                        if offsetY > DuckPlayerContainer.Constants.dragThreshold || value.velocity.height > 50 {
+                                            onDismiss(false) // User dismissed the pill
+                                        } else if offsetY < -DuckPlayerContainer.Constants.dragThreshold || value.velocity.height < -50 {
+                                            // Start presenting DuckPlayer immediately
+                                            onPresentDuckPlayer()
+
+                                        } else {
+                                            withAnimation(.spring(duration: 0.2, bounce: 0.4)) {
+                                                sheetOffset = calculateSheetOffset(for: viewModel.sheetVisible, containerHeight: containerHeight)
+                                            }
+                                        }
                                     }
                             )
                     }
                 }
-                .padding(.horizontal, 16)
+                .padding(.horizontal, 10)
             }
         }
         .onWidthChange { newWidth in
             sheetWidth = newWidth
         }
-        .padding(.bottom, 44)
+        .padding(.bottom, 20)
         .background(Color(designSystemColor: .panel))
         .overlay(
             Rectangle()
+                .fill(Color(uiColor: UIColor { traitCollection in
+                    switch traitCollection.userInterfaceStyle {
+                    case .dark:
+                        return .black
+                    default:
+                        return UIColor(designSystemColor: .border)
+                    }
+                }))
                 .frame(height: 0.5)
-                .foregroundColor(Color(designSystemColor: .border).opacity(0.7))
-                .position(x: UIScreen.main.bounds.width/2, y: 0)
-                .environment(\.colorScheme, .light)
-                .opacity(colorScheme == .light ? 1 : 0)
+                .frame(maxWidth: .infinity)
+                .alignmentGuide(.top) { _ in 0 },
+            alignment: .top
         )
         .frame(maxWidth: .infinity)
         .offset(y: sheetOffset)
-        .opacity(opacity)
-        .animation(.easeInOut(duration: DuckPlayerContainer.Constants.easeInOutDuration), value: opacity)
 
         .onAppear {
 
             // Always start with the initial large offset value
             sheetOffset = DuckPlayerContainer.Constants.initialOffsetValue
-            opacity = viewModel.sheetVisible ? 1 : 0
 
             // If the sheet should be visible, animate it into view after a tiny delay
             if viewModel.sheetVisible {
@@ -284,18 +299,10 @@ private struct SheetView<Content: View>: View {
 
         .onChange(of: viewModel.sheetVisible) { sheetVisible in
             animateOffset(to: sheetVisible)
-
-            withAnimation(viewModel.springAnimation) {
-                opacity = sheetVisible ? 1 : 0
-            }
         }
 
         .onChange(of: containerHeight) { _ in
             animateOffset(to: viewModel.sheetVisible)
-
-            withAnimation(viewModel.springAnimation) {
-                opacity = viewModel.sheetVisible ? 1 : 0
-            }
         }
 
         .onHeightChange { newHeight in

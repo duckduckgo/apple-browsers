@@ -121,7 +121,7 @@ final class BookmarksBarCollectionViewItem: NSCollectionViewItem {
         switch entityType {
         case .bookmark(_, let url, let storedFavicon, _):
             let host = URL(string: url)?.host ?? ""
-            let favicon = storedFavicon ?? FaviconManager.shared.getCachedFavicon(for: host, sizeCategory: .small)?.image
+            let favicon = storedFavicon ?? NSApp.delegateTyped.faviconManager.getCachedFavicon(for: host, sizeCategory: .small)?.image
             faviconView.image = favicon ?? .bookmark
         case .folder:
             faviconView.image = .folder16

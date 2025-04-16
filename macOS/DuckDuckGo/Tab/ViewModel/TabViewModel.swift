@@ -87,8 +87,8 @@ final class TabViewModel {
                 zoomLevelSubject.send(zoomLevel)
             }
 
-#if !APPSTORE
-            if #available(macOS 15.3, *) {
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+            if #available(macOS 15.4, *) {
                 WebExtensionManager.shared.eventsListener.didChangeTabProperties([.zoomFactor], for: tab)
             }
 #endif
@@ -96,7 +96,26 @@ final class TabViewModel {
     }
 
     var canPrint: Bool {
-        !isShowingErrorPage && canReload && tab.webView.canPrint
+        guard !isShowingErrorPage else { return false }
+        switch tab.content {
+        case .url(let url, _, _):
+            return !(url.isDuckPlayer || url.isDuckURLScheme) && canReload && tab.webView.canPrint
+        case .history:
+            return false
+        default:
+            return canReload && tab.webView.canPrint
+        }
+    }
+
+    var canShare: Bool {
+        switch tab.content {
+        case .url(let url, _, _):
+            return !(url.isDuckPlayer || url.isDuckURLScheme)
+        case .history:
+            return false
+        default:
+            return canReload
+        }
     }
 
     var canSaveContent: Bool {

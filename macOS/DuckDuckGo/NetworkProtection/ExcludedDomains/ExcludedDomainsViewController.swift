@@ -45,7 +45,7 @@ final class ExcludedDomainsViewController: NSViewController {
     @IBOutlet var doneButton: NSButton!
     @IBOutlet var excludedDomainsLabel: NSTextField!
 
-    private let faviconManagement: FaviconManagement = FaviconManager.shared
+    private let faviconManagement: FaviconManagement = NSApp.delegateTyped.faviconManager
 
     private var allDomains = [String]()
     private var filteredDomains: [String]?

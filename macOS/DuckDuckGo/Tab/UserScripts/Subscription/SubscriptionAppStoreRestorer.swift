@@ -86,9 +86,12 @@ struct DefaultSubscriptionAppStoreRestorer: SubscriptionAppStoreRestorer {
             case .subscriptionExpired:
                 subscriptionErrorReporter.report(subscriptionActivationError: .subscriptionExpired)
                 await showSubscriptionInactiveAlert()
-            case .pastTransactionAuthenticationError, .failedToObtainAccessToken, .failedToFetchAccountDetails, .failedToFetchSubscriptionDetails:
+            case .failedToObtainAccessToken, .failedToFetchAccountDetails, .failedToFetchSubscriptionDetails:
                 subscriptionErrorReporter.report(subscriptionActivationError: .generalError)
                 await showSomethingWentWrongAlert()
+            case .pastTransactionAuthenticationError:
+                subscriptionErrorReporter.report(subscriptionActivationError: .generalError)
+                await showSubscriptionNotFoundAlert()
             }
         }
     }

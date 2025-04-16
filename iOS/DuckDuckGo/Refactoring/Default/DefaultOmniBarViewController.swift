@@ -19,165 +19,54 @@
 
 import UIKit
 import PrivacyDashboard
+import Core
 
-final class DefaultOmniBarViewController: UIViewController, OmniBar {
-    private(set) lazy var omniBarView: DefaultOmniBarView = {
-        DefaultOmniBarView.loadFromXib(dependencies: dependencies)
-    }()
+final class DefaultOmniBarViewController: OmniBarViewController {
+    private lazy var omniBarView: DefaultOmniBarView = DefaultOmniBarView.create()
 
-    private let dependencies: OmnibarDependencyProvider
-
-    // MARK: - OmniBar conformance
-
-    var barView: OmniBarView {
-        omniBarView
-    }
-
-    var omniDelegate: OmniBarDelegate? {
-        get { omniBarView.omniDelegate }
-        set { omniBarView.omniDelegate = newValue }
-    }
-    var isTextFieldEditing: Bool { omniBarView.textField.isFirstResponder }
-
-    var isBackButtonEnabled: Bool {
-        get { omniBarView.backButton.isEnabled }
-        set { omniBarView.backButton.isEnabled = newValue }
-    }
-
-    var isForwardButtonEnabled: Bool {
-        get { omniBarView.forwardButton.isEnabled }
-        set { omniBarView.forwardButton.isEnabled = newValue }
-    }
-
-    var text: String? {
-        get { omniBarView.textField.text }
-        set { omniBarView.textField.text = newValue }
-    }
-
-    // MARK: -
-
-    init(dependencies: OmnibarDependencyProvider) {
-        self.dependencies = dependencies
-        super.init(nibName: nil, bundle: nil)
-    }
-
-    @available(*, unavailable)
-    required init?(coder: NSCoder) {
-        fatalError("init(coder:) has not been implemented")
-    }
-    
     override func loadView() {
         view = omniBarView
     }
 
-    // MARK: - OmniBar conformance
-
-    func showSeparator() {
-        omniBarView.showSeparator()
+    override func updateAccessoryType(_ type: OmniBarAccessoryType) {
+        super.updateAccessoryType(type)
+        self.updatePadding()
     }
 
-    func hideSeparator() {
-        omniBarView.hideSeparator()
+    override func updateInterface(from oldState: any OmniBarState, to state: any OmniBarState) {
+        omniBarView.searchFieldContainer.adjustTextFieldOffset(for: state)
+
+        super.updateInterface(from: oldState, to: state)
+
+        omniBarView.searchContainerCenterConstraint.isActive = state.hasLargeWidth
+        omniBarView.searchContainerMaxWidthConstraint.isActive = state.hasLargeWidth
+        omniBarView.leftButtonsSpacingConstraint.constant = state.hasLargeWidth ? 24 : 0
+        omniBarView.rightButtonsSpacingConstraint.constant = state.hasLargeWidth ? 24 : trailingConstraintValueForSmallWidth
+
+        if state.showVoiceSearch && state.showClear {
+            omniBarView.searchStackContainer.setCustomSpacing(13, after: omniBarView.voiceSearchButton)
+        }
+
+        if oldState.showAccessoryButton != state.showAccessoryButton ||
+            oldState.hasLargeWidth != state.hasLargeWidth {
+            updatePadding()
+        }
     }
 
-    func moveSeparatorToTop() {
-        omniBarView.moveSeparatorToTop()
+    // MARK: - Private
+
+    private var trailingConstraintValueForSmallWidth: CGFloat {
+        if state.showAccessoryButton || state.showSettings {
+            return 14
+        } else {
+            return 4
+        }
     }
 
-    func moveSeparatorToBottom() {
-        omniBarView.moveSeparatorToBottom()
-    }
-
-    func startBrowsing() {
-        omniBarView.startBrowsing()
-    }
-
-    func stopBrowsing() {
-        omniBarView.stopBrowsing()
-    }
-
-    func startLoading() {
-        omniBarView.startLoading()
-    }
-
-    func stopLoading() {
-        omniBarView.stopLoading()
-    }
-
-    func cancel() {
-        omniBarView.cancel()
-    }
-
-    func updateQuery(_ query: String?) {
-        text = query
-        omniBarView.textDidChange()
-    }
-
-    func beginEditing() {
-        omniBarView.textField.becomeFirstResponder()
-    }
-
-    func endEditing() {
-        omniBarView.textField.resignFirstResponder()
-    }
-
-    func refreshText(forUrl url: URL?, forceFullURL: Bool) {
-        omniBarView.refreshText(forUrl: url, forceFullURL: forceFullURL)
-    }
-
-    func enterPhoneState() {
-        omniBarView.enterPhoneState()
-    }
-
-    func enterPadState() {
-        omniBarView.enterPadState()
-    }
-
-    func removeTextSelection() {
-        omniBarView.removeTextSelection()
-    }
-
-    func selectTextToEnd(_ offset: Int) {
-        omniBarView.selectTextToEnd(offset)
-    }
-
-    func updateAccessoryType(_ type: OmniBarAccessoryType) {
-        omniBarView.updateAccessoryType(type)
-    }
-
-    func showOrScheduleCookiesManagedNotification(isCosmetic: Bool) {
-        omniBarView.showOrScheduleCookiesManagedNotification(isCosmetic: isCosmetic)
-    }
-
-    func showOrScheduleOnboardingPrivacyIconAnimation() {
-        omniBarView.showOrScheduleOnboardingPrivacyIconAnimation()
-    }
-
-    func dismissOnboardingPrivacyIconAnimation() {
-        omniBarView.dismissOnboardingPrivacyIconAnimation()
-    }
-
-    func startTrackersAnimation(_ privacyInfo: PrivacyDashboard.PrivacyInfo, forDaxDialog: Bool) {
-        omniBarView.startTrackersAnimation(privacyInfo, forDaxDialog: forDaxDialog)
-    }
-
-    func updatePrivacyIcon(for privacyInfo: PrivacyDashboard.PrivacyInfo?) {
-        omniBarView.updatePrivacyIcon(for: privacyInfo)
-    }
-
-    func hidePrivacyIcon() {
-        omniBarView.hidePrivacyIcon()
-    }
-
-    func resetPrivacyIcon(for url: URL?) {
-        omniBarView.resetPrivacyIcon(for: url)
-    }
-
-    func cancelAllAnimations() {
-        omniBarView.cancelAllAnimations()
-    }
-
-    func completeAnimationForDaxDialog() {
-        omniBarView.completeAnimationForDaxDialog()
+    /// When a setting that affects the accessory button is modified, `refreshState` is called.
+    /// This requires updating the padding to ensure consistent layout.
+    private func updatePadding() {
+        omniBarView.omniBarLeadingConstraint.constant = (state.hasLargeWidth ? 24 : 8)
+        omniBarView.omniBarTrailingConstraint.constant = (state.hasLargeWidth ? 24 : trailingConstraintValueForSmallWidth)
     }
 }

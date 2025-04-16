@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="32700.99.1234" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="GVY-7c-Fnx">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="23504" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="GVY-7c-Fnx">
     <device id="retina6_12" orientation="portrait" appearance="light"/>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="22684"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23506"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -26,7 +26,6 @@
                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <constraints>
                                     <constraint firstAttribute="height" priority="999" constant="908" id="1GN-2u-5xs"/>
-                                    <constraint firstAttribute="width" priority="999" constant="1366" id="ywM-Lu-N4B"/>
                                 </constraints>
                             </view>
                         </subviews>
@@ -41,7 +40,7 @@
                             <constraint firstItem="ki7-21-ggp" firstAttribute="bottom" secondItem="64L-Y0-7ie" secondAttribute="bottom" id="ac9-7J-RDs"/>
                             <constraint firstItem="vmf-xs-TwY" firstAttribute="height" secondItem="64L-Y0-7ie" secondAttribute="height" id="ebY-43-deK"/>
                             <constraint firstItem="ki7-21-ggp" firstAttribute="bottom" relation="greaterThanOrEqual" secondItem="64L-Y0-7ie" secondAttribute="bottom" id="mSE-jr-Q7R"/>
-                            <constraint firstItem="64L-Y0-7ie" firstAttribute="centerX" secondItem="j0c-gb-rpc" secondAttribute="centerX" id="rtq-3b-s1Z"/>
+                            <constraint firstItem="64L-Y0-7ie" firstAttribute="centerX" secondItem="j0c-gb-rpc" secondAttribute="centerX" priority="250" id="rtq-3b-s1Z"/>
                         </constraints>
                     </view>
                     <connections>
@@ -51,7 +50,6 @@
                         <outlet property="fullWidthConstraint" destination="OLF-Z3-QnI" id="r8w-cl-frK"/>
                         <outlet property="topConstraint" destination="FqW-UB-Q8G" id="QxI-zE-Vdh"/>
                         <outlet property="variableHeightConstraint" destination="1GN-2u-5xs" id="Y0N-ld-Gc3"/>
-                        <outlet property="variableWidthConstraint" destination="ywM-Lu-N4B" id="cfE-Wh-pAR"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="zkh-30-c2N" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>

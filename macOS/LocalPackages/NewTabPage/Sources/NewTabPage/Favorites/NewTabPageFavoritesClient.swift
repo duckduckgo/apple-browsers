@@ -130,10 +130,10 @@ public final class NewTabPageFavoritesClient<FavoriteType, ActionHandler>: NewTa
 
     @MainActor
     private func open(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        guard let action: NewTabPageDataModel.FavoritesOpenAction = DecodableHelper.decode(from: params) else {
+        guard let action: NewTabPageDataModel.ActivityOpenAction = DecodableHelper.decode(from: params) else {
             return nil
         }
-        favoritesModel.openFavorite(withURL: action.url)
+        favoritesModel.openFavorite(withURL: action.url, target: action.target)
         return nil
     }
 

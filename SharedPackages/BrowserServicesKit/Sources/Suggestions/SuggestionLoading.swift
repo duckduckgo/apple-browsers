@@ -39,9 +39,11 @@ public class SuggestionLoader: SuggestionLoading {
     }
 
     private let urlFactory: (String) -> URL?
+    private let isUrlIgnored: (URL) -> Bool
 
-    public init(urlFactory: @escaping (String) -> URL?) {
+    public init(urlFactory: @escaping (String) -> URL?, isUrlIgnored: @escaping (URL) -> Bool) {
         self.urlFactory = urlFactory
+        self.isUrlIgnored = isUrlIgnored
     }
 
     public func getSuggestions(query: String,
@@ -89,7 +91,7 @@ public class SuggestionLoader: SuggestionLoading {
         // 2) Processing it
         group.notify(queue: .global(qos: .userInitiated)) { [weak self] in
             guard let self else { return }
-            let processor = SuggestionProcessing(platform: dataSource.platform)
+            let processor = SuggestionProcessing(platform: dataSource.platform, isUrlIgnored: isUrlIgnored)
             let result = processor.result(for: query,
                                           from: history,
                                           bookmarks: bookmarks,

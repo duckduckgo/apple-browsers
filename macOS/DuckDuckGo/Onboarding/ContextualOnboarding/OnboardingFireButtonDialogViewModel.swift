@@ -41,16 +41,11 @@ public class OnboardingFireButtonDialogViewModel: ObservableObject {
         onDismiss()
     }
 
-    func skip() {
-        onGotItPressed()
-        onboardingPixelReporter.measureFireButtonSkipped()
-        onboardingPixelReporter.measureLastDialogShown()
-    }
-
     @MainActor
     func tryFireButton() {
         onFireButtonPressed()
         onboardingPixelReporter.measureFireButtonTryIt()
         FireCoordinator.fireButtonAction()
+        onDismiss()
     }
 }

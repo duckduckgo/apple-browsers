@@ -26,22 +26,11 @@ final class SuggestionTests: XCTestCase {
         let url = URL.aURL
         let title = "DuckDuckGo"
         let isFavorite = true
-        let bookmarkMock = BookmarkMock(url: url.absoluteString, title: title, isFavorite: isFavorite)
-        let suggestion = Suggestion(bookmark: bookmarkMock)
+        let suggestion = Suggestion.bookmark(title: title, url: url, isFavorite: isFavorite, score: 0)
 
-        XCTAssertEqual(suggestion, Suggestion.bookmark(title: title, url: url, isFavorite: isFavorite, allowedInTopHits: isFavorite))
-    }
-
-    func testWhenIsNav_ThenSuggestionIsURL() {
-        let suggestion = Suggestion(phrase: "example.com", isNav: true)
-        let expected = Suggestion.website(url: URL(string: "http://example.com")!)
-        XCTAssertEqual(suggestion, expected)
-    }
-
-    func testWhenIsNotNav_ThenSuggestionIsPhrase() {
-        let suggestion = Suggestion(phrase: "example.com", isNav: false)
-        let expected = Suggestion.phrase(phrase: "example.com")
-        XCTAssertEqual(suggestion, expected)
+        XCTAssertEqual(suggestion.title, title)
+        XCTAssertEqual(suggestion.url, url)
+        XCTAssertFalse(suggestion.isHistoryEntry)
     }
 
     func testWhenUrlIsAccessed_ThenOnlySuggestionsThatContainUrlReturnsIt() {
@@ -49,10 +38,8 @@ final class SuggestionTests: XCTestCase {
 
         let phraseSuggestion = Suggestion.phrase(phrase: "phrase")
         let websiteSuggestion = Suggestion.website(url: url)
-        let bookmarkSuggestion = Suggestion.bookmark(title: "Title", url: url, isFavorite: true, allowedInTopHits: true)
-        let historyEntrySuggestion = Suggestion.historyEntry(title: "Title",
-                                                             url: url,
-                                                             allowedInTopHits: true)
+        let bookmarkSuggestion = Suggestion.bookmark(title: "Title", url: url, isFavorite: true, score: 0)
+        let historyEntrySuggestion = Suggestion.historyEntry(title: "Title", url: url, score: 0)
         _ = Suggestion.unknown(value: "phrase")
 
         XCTAssertNil(phraseSuggestion.url)
@@ -68,8 +55,8 @@ final class SuggestionTests: XCTestCase {
 
         let phraseSuggestion = Suggestion.phrase(phrase: "phrase")
         let websiteSuggestion = Suggestion.website(url: url)
-        let bookmarkSuggestion = Suggestion.bookmark(title: title, url: url, isFavorite: true, allowedInTopHits: true)
-        let historyEntrySuggestion = Suggestion.historyEntry(title: title, url: url, allowedInTopHits: true)
+        let bookmarkSuggestion = Suggestion.bookmark(title: title, url: url, isFavorite: true, score: 0)
+        let historyEntrySuggestion = Suggestion.historyEntry(title: title, url: url, score: 0)
         _ = Suggestion.unknown(value: "phrase")
 
         XCTAssertNil(phraseSuggestion.title)
@@ -83,8 +70,7 @@ final class SuggestionTests: XCTestCase {
         let url = URL.aURL
         let title = "Title"
 
-        let historyEntry = HistoryEntryMock(identifier: UUID(), url: url, title: title, numberOfVisits: 1, lastVisit: Date(), failedToLoad: false, isDownload: false)
-        let suggestion = Suggestion(historyEntry: historyEntry)
+        let suggestion = Suggestion.historyEntry(title: title, url: url, score: 1)
 
         guard case .historyEntry = suggestion else {
             XCTFail("Wrong type of suggestion")
@@ -93,85 +79,94 @@ final class SuggestionTests: XCTestCase {
 
         XCTAssertEqual(suggestion.url, url)
         XCTAssertEqual(suggestion.title, title)
+        XCTAssertTrue(suggestion.isHistoryEntry)
     }
 
-    func testWhenInitFromBookmark_ThenBookmarkSuggestionIsInitialized() {
+    func testHistoryEntryWithNilTitle() {
         let url = URL.aURL
-        let title = "Title"
+        let score = 7
 
-        let bookmark = BookmarkMock(url: url.absoluteString, title: title, isFavorite: true)
-        let suggestion = Suggestion(bookmark: bookmark)
+        let suggestion = Suggestion.historyEntry(title: nil, url: url, score: score)
 
-        guard let suggestion = suggestion,
-              case .bookmark = suggestion else {
+        guard case let .historyEntry(title, _, storedScore) = suggestion else {
+            XCTFail("Wrong type of suggestion")
+            return
+        }
+
+        XCTAssertNil(title)
+        XCTAssertEqual(storedScore, score)
+        XCTAssertTrue(suggestion.isHistoryEntry)
+    }
+
+    func testSuggestionInitializedFromInternalPage() {
+        let url = URL.aURL
+        let title = "Settings"
+        let score = 5
+        let suggestion = Suggestion.internalPage(title: title, url: url, score: score)
+
+        guard case .internalPage = suggestion else {
             XCTFail("Wrong type of suggestion")
             return
         }
 
         XCTAssertEqual(suggestion.url, url)
         XCTAssertEqual(suggestion.title, title)
+        XCTAssertFalse(suggestion.isHistoryEntry)
     }
 
-    func testWhenInitFromURL_ThenWebsiteSuggestionIsInitialized() {
+    func testSuggestionInitializedFromOpenTab() {
         let url = URL.aURL
-        let suggestion = Suggestion(url: url)
+        let title = "DuckDuckGo Tab"
+        let tabId = "tab123"
+        let score = 10
+        let suggestion = Suggestion.openTab(title: title, url: url, tabId: tabId, score: score)
 
-        guard case .website(let websiteUrl) = suggestion else {
+        guard case let .openTab(_, _, storedTabId, storedScore) = suggestion else {
             XCTFail("Wrong type of suggestion")
             return
         }
 
         XCTAssertEqual(suggestion.url, url)
-        XCTAssertEqual(websiteUrl, url)
+        XCTAssertEqual(suggestion.title, title)
+        XCTAssertEqual(storedTabId, tabId)
+        XCTAssertEqual(storedScore, score)
+        XCTAssertFalse(suggestion.isHistoryEntry)
     }
 
-    func testWhenSuggestionIsWebsite_ThenCanBeInTopHits() {
-        let suggestion = Suggestion.website(url: .aURL)
-        XCTAssert(suggestion.allowedInTopHits)
+    func testSuggestionInitializedFromUnknown() {
+        let value = "unknown value"
+        let suggestion = Suggestion.unknown(value: value)
+
+        guard case let .unknown(storedValue) = suggestion else {
+            XCTFail("Wrong type of suggestion")
+            return
+        }
+
+        XCTAssertEqual(storedValue, value)
+        XCTAssertNil(suggestion.url)
+        XCTAssertNil(suggestion.title)
+        XCTAssertFalse(suggestion.isHistoryEntry)
     }
 
-    func testWhenSuggestionIsLowVisitNonRootHistoryEntry_ThenCantBeInTopHits() {
-        let historyEntry = HistoryEntryMock(identifier: UUID(),
-                                            url: .aNonRootUrl,
-                                            title: "Title",
-                                            numberOfVisits: 1,
-                                            lastVisit: Date(),
-                                            failedToLoad: false,
-                                            isDownload: false)
-        let suggestion = Suggestion(historyEntry: historyEntry)
-        XCTAssertFalse(suggestion.allowedInTopHits)
-    }
+    func testBookmarkSuggestionIsFavoriteFlag() {
+        let url = URL.aURL
+        let title = "Favorite Bookmark"
+        let score = 15
 
-    func testWhenSuggestionIsLowVisitRootHistoryEntry_ThenCanBeInTopHits() {
-        let historyEntry = HistoryEntryMock(identifier: UUID(),
-                                            url: .aRootUrl,
-                                            title: "Title",
-                                            numberOfVisits: 1,
-                                            lastVisit: Date(),
-                                            failedToLoad: false,
-                                            isDownload: false)
-        let suggestion = Suggestion(historyEntry: historyEntry)
-        XCTAssert(suggestion.allowedInTopHits)
-    }
+        let favoriteSuggestion = Suggestion.bookmark(title: title, url: url, isFavorite: true, score: score)
+        let regularSuggestion = Suggestion.bookmark(title: title, url: url, isFavorite: false, score: score)
 
-    func testWhenSuggestionIsFailingLink_ThenCantBeInTopHits() {
-        let historyEntry = HistoryEntryMock(identifier: UUID(),
-                                            url: .aURL,
-                                            title: "Title",
-                                            numberOfVisits: 100,
-                                            lastVisit: Date(),
-                                            failedToLoad: true,
-                                            isDownload: false)
-        let suggestion = Suggestion(historyEntry: historyEntry)
-        XCTAssertFalse(suggestion.allowedInTopHits)
-    }
+        guard case let .bookmark(_, _, isFavorite1, storedScore1) = favoriteSuggestion,
+              case let .bookmark(_, _, isFavorite2, storedScore2) = regularSuggestion else {
+            XCTFail("Wrong type of suggestion")
+            return
+        }
 
-    func testWhenSuggestionIsBookmark_ThenCanOrCantBeInTopHits() {
-        let suggestion = Suggestion.bookmark(title: "Title", url: .aURL, isFavorite: false, allowedInTopHits: false)
-        XCTAssertFalse(suggestion.allowedInTopHits)
-
-        let suggestion2 = Suggestion.bookmark(title: "Title", url: .aURL, isFavorite: false, allowedInTopHits: true)
-        XCTAssert(suggestion2.allowedInTopHits)
+        XCTAssertTrue(isFavorite1)
+        XCTAssertFalse(isFavorite2)
+        XCTAssertEqual(storedScore1, score)
+        XCTAssertEqual(storedScore2, score)
+        XCTAssertNotEqual(favoriteSuggestion, regularSuggestion)
     }
 
 }

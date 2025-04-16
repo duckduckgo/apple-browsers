@@ -129,7 +129,6 @@ final class MainViewController: NSViewController {
                                                                          networkProtectionPopoverManager: networkProtectionPopoverManager,
                                                                          networkProtectionStatusReporter: networkProtectionStatusReporter,
                                                                          autofillPopoverPresenter: autofillPopoverPresenter,
-                                                                         aiChatMenuConfig: aiChatMenuConfig,
                                                                          brokenSitePromptLimiter: brokenSitePromptLimiter)
 
         browserTabViewController = BrowserTabViewController(tabCollectionViewModel: tabCollectionViewModel, bookmarkManager: bookmarkManager)
@@ -256,7 +255,6 @@ final class MainViewController: NSViewController {
 
     func windowWillClose() {
         eventMonitorCancellables.removeAll()
-        tabBarViewController.hideTabPreview()
     }
 
     func windowWillMiniaturize() {
@@ -268,11 +266,11 @@ final class MainViewController: NSViewController {
     }
 
     func disableTabPreviews() {
-        tabBarViewController.shouldDisplayTabPreviews = false
+        tabBarViewController.tabPreviewsEnabled = false
     }
 
     func enableTabPreviews() {
-        tabBarViewController.shouldDisplayTabPreviews = true
+        tabBarViewController.tabPreviewsEnabled = true
     }
 
     func toggleBookmarksBarVisibility() {
@@ -611,7 +609,11 @@ extension MainViewController {
         case kVK_Return  where navigationBarViewController.addressBarViewController?
                 .addressBarTextField.isFirstResponder == true:
 
-            navigationBarViewController.addressBarViewController?.addressBarTextField.addressBarEnterPressed()
+            if flags.contains(.shift) && aiChatMenuConfig.shouldDisplayAddressBarShortcut {
+                navigationBarViewController.addressBarViewController?.addressBarTextField.aiChatQueryEnterPressed()
+            } else {
+                navigationBarViewController.addressBarViewController?.addressBarTextField.addressBarEnterPressed()
+            }
 
             return true
 

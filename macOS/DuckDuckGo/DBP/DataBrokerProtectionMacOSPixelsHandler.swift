@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import DataBrokerProtection
+import DataBrokerProtection_macOS
 import PixelKit
 import Common
 
@@ -26,7 +26,9 @@ public class DataBrokerProtectionMacOSPixelsHandler: EventMapping<DataBrokerProt
     public init() {
         super.init { event, _, _, _ in
             switch event {
-            case .ipcServerProfileSavedXPCError(error: let error),
+            case .mainAppSetUpFailedSecureVaultInitFailed(error: let error),
+                    .backgroundAgentSetUpFailedSecureVaultInitFailed(error: let error),
+                    .ipcServerProfileSavedXPCError(error: let error),
                     .ipcServerImmediateScansFinishedWithError(error: let error),
                     .ipcServerAppLaunchedXPCError(error: let error),
                     .ipcServerAppLaunchedScheduledScansFinishedWithError(error: let error):

@@ -44,7 +44,7 @@ final class ContextualMenuTests: XCTestCase {
         assertMenuItem(items[3], withTitle: UserText.addToFavorites, selector: #selector(BookmarkMenuItemSelectors.toggleBookmarkAsFavorite(_:)), representedObject: bookmark)
         XCTAssertTrue(items[4].isSeparatorItem) // Separator
         assertMenuItem(items[5], withTitle: UserText.editBookmark, selector: #selector(BookmarkMenuItemSelectors.editBookmark(_:)), representedObject: bookmark)
-        assertMenuItem(items[6], withTitle: UserText.bookmarksBarContextMenuCopy, selector: #selector(BookmarkMenuItemSelectors.copyBookmark(_:)), representedObject: bookmark)
+        assertMenuItem(items[6], withTitle: UserText.copyLink, selector: #selector(BookmarkMenuItemSelectors.copyBookmark(_:)), representedObject: bookmark)
         assertMenuItem(items[7], withTitle: UserText.bookmarksBarContextMenuDelete, selector: #selector(BookmarkMenuItemSelectors.deleteBookmark(_:)), representedObject: bookmark)
         assertMenuItem(items[8], withTitle: UserText.bookmarksBarContextMenuMoveToEnd, selector: #selector(BookmarkMenuItemSelectors.moveToEnd(_:)), representedObject: bookmark)
         XCTAssertTrue(items[9].isSeparatorItem) // Separator
@@ -68,7 +68,7 @@ final class ContextualMenuTests: XCTestCase {
         assertMenuItem(items[3], withTitle: UserText.removeFromFavorites, selector: #selector(BookmarkMenuItemSelectors.toggleBookmarkAsFavorite(_:)), representedObject: bookmark)
         XCTAssertTrue(items[4].isSeparatorItem) // Separator
         assertMenuItem(items[5], withTitle: UserText.editBookmark, selector: #selector(BookmarkMenuItemSelectors.editBookmark(_:)), representedObject: bookmark)
-        assertMenuItem(items[6], withTitle: UserText.bookmarksBarContextMenuCopy, selector: #selector(BookmarkMenuItemSelectors.copyBookmark(_:)), representedObject: bookmark)
+        assertMenuItem(items[6], withTitle: UserText.copyLink, selector: #selector(BookmarkMenuItemSelectors.copyBookmark(_:)), representedObject: bookmark)
         assertMenuItem(items[7], withTitle: UserText.bookmarksBarContextMenuDelete, selector: #selector(BookmarkMenuItemSelectors.deleteBookmark(_:)), representedObject: bookmark)
         assertMenuItem(items[8], withTitle: UserText.bookmarksBarContextMenuMoveToEnd, selector: #selector(BookmarkMenuItemSelectors.moveToEnd(_:)), representedObject: bookmark)
         XCTAssertTrue(items[9].isSeparatorItem) // Separator
@@ -92,7 +92,7 @@ final class ContextualMenuTests: XCTestCase {
         assertMenuItem(items[3], withTitle: UserText.removeFromFavorites, selector: #selector(BookmarkMenuItemSelectors.toggleBookmarkAsFavorite(_:)), representedObject: bookmark)
         XCTAssertTrue(items[4].isSeparatorItem) // Separator
         assertMenuItem(items[5], withTitle: UserText.editBookmark, selector: #selector(BookmarkMenuItemSelectors.editBookmark(_:)), representedObject: bookmark)
-        assertMenuItem(items[6], withTitle: UserText.bookmarksBarContextMenuCopy, selector: #selector(BookmarkMenuItemSelectors.copyBookmark(_:)), representedObject: bookmark)
+        assertMenuItem(items[6], withTitle: UserText.copyLink, selector: #selector(BookmarkMenuItemSelectors.copyBookmark(_:)), representedObject: bookmark)
         assertMenuItem(items[7], withTitle: UserText.bookmarksBarContextMenuDelete, selector: #selector(BookmarkMenuItemSelectors.deleteBookmark(_:)), representedObject: bookmark)
         assertMenuItem(items[8], withTitle: UserText.bookmarksBarContextMenuMoveToEnd, selector: #selector(BookmarkMenuItemSelectors.moveToEnd(_:)), representedObject: bookmark)
         XCTAssertTrue(items[9].isSeparatorItem) // Separator
@@ -166,7 +166,7 @@ final class ContextualMenuTests: XCTestCase {
         assertMenuItem(items[3], withTitle: UserText.addToFavorites, selector: #selector(BookmarkMenuItemSelectors.toggleBookmarkAsFavorite(_:)), representedObject: bookmark)
         XCTAssertTrue(items[4].isSeparatorItem) // Separator
         assertMenuItem(items[5], withTitle: UserText.editBookmark, selector: #selector(BookmarkMenuItemSelectors.editBookmark(_:)), representedObject: bookmark)
-        assertMenuItem(items[6], withTitle: UserText.bookmarksBarContextMenuCopy, selector: #selector(BookmarkMenuItemSelectors.copyBookmark(_:)), representedObject: bookmark)
+        assertMenuItem(items[6], withTitle: UserText.copyLink, selector: #selector(BookmarkMenuItemSelectors.copyBookmark(_:)), representedObject: bookmark)
         assertMenuItem(items[7], withTitle: UserText.bookmarksBarContextMenuDelete, selector: #selector(BookmarkMenuItemSelectors.deleteBookmark(_:)), representedObject: bookmark)
         assertMenuItem(items[8], withTitle: UserText.bookmarksBarContextMenuMoveToEnd, selector: #selector(BookmarkMenuItemSelectors.moveToEnd(_:)), representedObject: bookmark)
         XCTAssertTrue(items[9].isSeparatorItem) // Separator
@@ -194,7 +194,7 @@ final class ContextualMenuTests: XCTestCase {
         assertMenuItem(items[3], withTitle: UserText.addToFavorites, selector: #selector(BookmarkMenuItemSelectors.toggleBookmarkAsFavorite(_:)), representedObject: bookmark)
         XCTAssertTrue(items[4].isSeparatorItem) // Separator
         assertMenuItem(items[5], withTitle: UserText.editBookmark, selector: #selector(BookmarkMenuItemSelectors.editBookmark(_:)), representedObject: bookmark)
-        assertMenuItem(items[6], withTitle: UserText.bookmarksBarContextMenuCopy, selector: #selector(BookmarkMenuItemSelectors.copyBookmark(_:)), representedObject: bookmark)
+        assertMenuItem(items[6], withTitle: UserText.copyLink, selector: #selector(BookmarkMenuItemSelectors.copyBookmark(_:)), representedObject: bookmark)
         assertMenuItem(items[7], withTitle: UserText.bookmarksBarContextMenuDelete, selector: #selector(BookmarkMenuItemSelectors.deleteBookmark(_:)), representedObject: bookmark)
         assertMenuItem(items[8], withTitle: UserText.bookmarksBarContextMenuMoveToEnd, selector: #selector(BookmarkMenuItemSelectors.moveToEnd(_:)), representedObject: bookmark)
         XCTAssertTrue(items[9].isSeparatorItem) // Separator
@@ -520,7 +520,7 @@ final class ContextualMenuTests: XCTestCase {
         // GIVEN
         let bookmark = Bookmark(id: "n", url: URL.duckDuckGo.absoluteString, title: "DuckDuckGo", isFavorite: true, parentFolderUUID: "1")
         let menu = BookmarksContextMenu.bookmarkMenu(with: bookmark)
-        guard let menuItem = menu.items.first(where: { $0.title == UserText.copy }) else {
+        guard let menuItem = menu.items.first(where: { $0.title == UserText.copyLink }) else {
             XCTFail("No item")
             return
         }

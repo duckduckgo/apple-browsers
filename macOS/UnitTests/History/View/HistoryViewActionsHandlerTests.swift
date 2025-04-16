@@ -307,7 +307,7 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         XCTAssertTrue(menu.items[3].isSeparatorItem)
         XCTAssertEqual(menu.items[4].title, UserText.showAllHistoryFromThisSite)
         XCTAssertTrue(menu.items[5].isSeparatorItem)
-        XCTAssertEqual(menu.items[6].title, UserText.copy)
+        XCTAssertEqual(menu.items[6].title, UserText.copyLink)
         XCTAssertEqual(menu.items[7].title, UserText.addToBookmarks)
         XCTAssertEqual(menu.items[8].title, UserText.addToFavorites)
         XCTAssertTrue(menu.items[9].isSeparatorItem)

@@ -92,7 +92,7 @@ struct DuckPlayerView: View {
                         RoundedRectangle(cornerRadius: 8)
                             .fill(Color.gray.opacity(0.2))
                         HStack(spacing: 8) {
-                            Text(UserText.duckPlayerNativeAutoOpenLabel)
+                            Text(verbatim: "Auto-open Duck Player on Youtube")
                                 .daxBodyRegular()
                                 .foregroundColor(.white)
                             Spacer()
@@ -118,7 +118,7 @@ struct DuckPlayerView: View {
                             viewModel.openInYouTube()
                         } label: {
                             HStack(spacing: 8) {
-                                Text(UserText.duckPlayerNativeWatchOnYouTube)
+                                Text(verbatim: "Watch in Youtube")
                                     .daxBodyRegular()
                                     .foregroundColor(.white)
                                 Spacer()
@@ -191,7 +191,10 @@ struct DuckPlayerView: View {
             } label: {
                 ZStack {
                     Image(Constants.duckPlayerSettingsImage)
+                        .resizable()
                         .foregroundColor(.white)
+                        .scaledToFit()
+                        .frame(width: 20, height: 20)
                 }
             }
 
@@ -216,7 +219,7 @@ struct DuckPlayerView: View {
                 label: {
                     Image(systemName: "xmark")
                         .foregroundColor(.white)
-                        .font(.system(size: 20, weight: .black))
+                        .font(.system(size: 20, weight: .semibold))
                         .frame(width: 44, height: 44)  // Larger touch target
                 })
         }

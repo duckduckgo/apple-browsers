@@ -33,7 +33,7 @@ final class DuckURLSchemeHandler: NSObject, WKURLSchemeHandler {
 
     init(
         featureFlagger: FeatureFlagger,
-        faviconManager: FaviconManagement = FaviconManager.shared,
+        faviconManager: FaviconManagement = NSApp.delegateTyped.faviconManager,
         isNTPSpecialPageSupported: Bool = false,
         isHistorySpecialPageSupported: Bool = false,
         userBackgroundImagesManager: UserBackgroundImagesManaging? = NSApp.delegateTyped.newTabPageCustomizationModel.customImagesManager
@@ -188,7 +188,7 @@ private extension DuckURLSchemeHandler {
     }
 
     func response(for requestURL: URL, withFaviconURL faviconURL: URL) -> (URLResponse, Data)? {
-        guard faviconManager.areFaviconsLoaded,
+        guard faviconManager.isCacheLoaded,
               let favicon = faviconManager.getCachedFavicon(for: faviconURL, sizeCategory: .medium, fallBackToSmaller: true),
               let imagePNGData = favicon.image?.pngData
         else {

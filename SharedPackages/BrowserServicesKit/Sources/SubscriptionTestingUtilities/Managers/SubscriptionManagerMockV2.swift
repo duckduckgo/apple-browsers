@@ -218,11 +218,17 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
         }
     }
 
-    public func isSubscriptionPresent() -> Bool {
-        resultSubscription != nil
+    public var adoptResult: Result<Networking.TokenContainer, Error>?
+    public func adopt(accessToken: String, refreshToken: String) async throws {
+        switch adoptResult! {
+        case .success(let result):
+            self.resultTokenContainer = result
+        case .failure(let error):
+            throw error
+        }
     }
 
-    public func adopt(accessToken: String, refreshToken: String) async throws {
-        resultTokenContainer = OAuthTokensFactory.makeValidTokenContainer() // NOTE: It isn't possible to create a valid token made with the input values, we would need to hit the API to get a valid token
+    public func isSubscriptionPresent() -> Bool {
+        resultSubscription != nil
     }
 }

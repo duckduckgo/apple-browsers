@@ -24,11 +24,11 @@ public protocol OnboardingNavigationDelegate: AnyObject {
 }
 
 public protocol OnboardingSearchSuggestionsPixelReporting {
-    func measureSearchSuggetionOptionTapped()
+    func measureSearchSuggestionOptionTapped()
 }
 
 public protocol OnboardingSiteSuggestionsPixelReporting {
-    func measureSiteSuggetionOptionTapped()
+    func measureSiteSuggestionOptionTapped()
 }
 
 public struct OnboardingSearchSuggestionsViewModel {
@@ -51,7 +51,7 @@ public struct OnboardingSearchSuggestionsViewModel {
     }
 
     public func listItemPressed(_ item: ContextualOnboardingListItem) {
-        pixelReporter.measureSearchSuggetionOptionTapped()
+        pixelReporter.measureSearchSuggestionOptionTapped()
         delegate?.searchFromOnboarding(for: item.title)
     }
 }
@@ -81,7 +81,7 @@ public struct OnboardingSiteSuggestionsViewModel {
 
     public func listItemPressed(_ item: ContextualOnboardingListItem) {
         guard let url = URL(string: item.title) else { return }
-        pixelReporter.measureSiteSuggetionOptionTapped()
+        pixelReporter.measureSiteSuggestionOptionTapped()
         delegate?.navigateFromOnboarding(to: url)
     }
 }

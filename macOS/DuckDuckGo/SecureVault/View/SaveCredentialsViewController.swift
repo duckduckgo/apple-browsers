@@ -119,7 +119,7 @@ final class SaveCredentialsViewController: NSViewController {
 
     private var backfilled = false
 
-    private var faviconManagement: FaviconManagement = FaviconManager.shared
+    private var faviconManagement: FaviconManagement = NSApp.delegateTyped.faviconManager
 
     private var passwordManagerCoordinator = PasswordManagerCoordinator.shared
 

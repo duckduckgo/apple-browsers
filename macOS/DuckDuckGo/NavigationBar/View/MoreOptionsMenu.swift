@@ -25,8 +25,8 @@ import NetworkProtection
 import Subscription
 import os.log
 import Freemium
-import DataBrokerProtection
-import DataBrokerProtectionShared
+import DataBrokerProtection_macOS
+import DataBrokerProtectionCore
 import SwiftUI
 
 protocol OptionsButtonMenuDelegate: AnyObject {
@@ -57,6 +57,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     private let tabCollectionViewModel: TabCollectionViewModel
     private let emailManager: EmailManager
+    private let fireproofDomains: FireproofDomains
     private let passwordManagerCoordinator: PasswordManagerCoordinating
     private let internalUserDecider: InternalUserDecider
     @MainActor
@@ -86,6 +87,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     @MainActor
     init(tabCollectionViewModel: TabCollectionViewModel,
          emailManager: EmailManager = EmailManager(),
+         fireproofDomains: FireproofDomains = FireproofDomains.shared,
          passwordManagerCoordinator: PasswordManagerCoordinator,
          vpnFeatureGatekeeper: VPNFeatureGatekeeper,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(),
@@ -105,6 +107,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
         self.tabCollectionViewModel = tabCollectionViewModel
         self.emailManager = emailManager
+        self.fireproofDomains = fireproofDomains
         self.passwordManagerCoordinator = passwordManagerCoordinator
         self.vpnFeatureGatekeeper = vpnFeatureGatekeeper
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
@@ -152,7 +155,8 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         feedbackMenuItem.submenu = FeedbackSubMenu(targetting: self,
                                                    tabCollectionViewModel: tabCollectionViewModel,
                                                    subscriptionFeatureAvailability: subscriptionFeatureAvailability,
-                                                   authenticationStateProvider: subscriptionManager)
+                                                   authenticationStateProvider: subscriptionManager,
+                                                   internalUserDecider: internalUserDecider)
         addItem(feedbackMenuItem)
 
 #endif // FEEDBACK
@@ -266,8 +270,8 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     @MainActor
     @objc func newAiChat(_ sender: NSMenuItem) {
-        AIChatTabOpener.openAIChatTab()
-        PixelKit.fire(GeneralPixel.aichatApplicationMenuAppClicked, includeAppVersionParameter: true)
+        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab()
+        PixelKit.fire(AIChatPixel.aichatApplicationMenuAppClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
     }
 
     @MainActor
@@ -514,34 +518,32 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         let oldItemsCount = items.count
 
         if url.canFireproof, let host = url.host {
-            let isFireproof = FireproofDomains.shared.isFireproof(fireproofDomain: host)
+            let isFireproof = fireproofDomains.isFireproof(fireproofDomain: host)
             let title = isFireproof ? UserText.removeFireproofing : UserText.fireproofSite
             let image: NSImage = isFireproof ? .burn : .fireproof
 
             addItem(withTitle: title, action: #selector(toggleFireproofing(_:)), keyEquivalent: "")
                 .targetting(self)
                 .withImage(image)
+        } else {
+            addItem(withTitle: UserText.fireproofSite, action: nil, keyEquivalent: "")
+                .withImage(.fireproof)
         }
 
-        if tabViewModel.canFindInPage {
-            addItem(withTitle: UserText.findInPageMenuItem, action: #selector(findInPage(_:)), keyEquivalent: "f")
-                .targetting(self)
-                .withImage(.findSearch)
-                .withAccessibilityIdentifier("MoreOptionsMenu.findInPage")
-        }
+        addItem(withTitle: UserText.findInPageMenuItem, action: tabViewModel.canFindInPage ? #selector(findInPage(_:)) : nil, keyEquivalent: "f")
+            .targetting(self)
+            .withImage(.findSearch)
+            .withAccessibilityIdentifier("MoreOptionsMenu.findInPage")
 
-        if tabViewModel.canReload {
-            addItem(withTitle: UserText.shareMenuItem, action: nil, keyEquivalent: "")
-                .targetting(self)
-                .withImage(.share)
-                .withSubmenu(sharingMenu)
-        }
+        let shareItem = addItem(withTitle: UserText.shareMenuItem, action: nil, keyEquivalent: "")
+            .targetting(self)
+            .withImage(.share)
+            .withSubmenu(sharingMenu)
+        shareItem.isEnabled = tabViewModel.canShare
 
-        if tabViewModel.canPrint {
-            addItem(withTitle: UserText.printMenuItem, action: #selector(doPrint(_:)), keyEquivalent: "")
-                .targetting(self)
-                .withImage(.print)
-        }
+        addItem(withTitle: UserText.printMenuItem, action: tabViewModel.canPrint ? #selector(doPrint(_:)) : nil, keyEquivalent: "")
+            .targetting(self)
+            .withImage(.print)
 
         if items.count > oldItemsCount {
             addItem(NSMenuItem.separator())
@@ -669,13 +671,16 @@ final class EmailOptionsButtonSubMenu: NSMenu {
 final class FeedbackSubMenu: NSMenu {
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private let authenticationStateProvider: any SubscriptionAuthenticationStateProvider
+    private let internalUserDecider: InternalUserDecider
 
     init(targetting target: AnyObject,
          tabCollectionViewModel: TabCollectionViewModel,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
-         authenticationStateProvider: any SubscriptionAuthenticationStateProvider) {
+         authenticationStateProvider: any SubscriptionAuthenticationStateProvider,
+         internalUserDecider: InternalUserDecider) {
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.authenticationStateProvider = authenticationStateProvider
+        self.internalUserDecider = internalUserDecider
         super.init(title: UserText.sendFeedback)
         updateMenuItems(with: tabCollectionViewModel, targetting: target)
     }
@@ -707,6 +712,11 @@ final class FeedbackSubMenu: NSMenu {
                                                   keyEquivalent: "")
                 .withImage(.pProFeedback)
             addItem(sendPProFeedbackItem)
+        }
+
+        if internalUserDecider.isInternalUser {
+            addItem(.separator())
+            addItem(withTitle: "Copy Version", action: #selector(AppDelegate.copyVersion(_:)), keyEquivalent: "")
         }
     }
 }
@@ -801,10 +811,13 @@ final class BookmarksSubMenu: NSMenu {
             let favoriteViewModels = favorites.compactMap(BookmarkViewModel.init(entity:))
             let potentialItems = bookmarkMenuItems(from: favoriteViewModels)
 
-            let favoriteMenuItems = potentialItems.isEmpty ? [NSMenuItem.empty] : potentialItems
-
             let favoritesItem = addItem(withTitle: UserText.favorites, action: nil, keyEquivalent: "")
-            favoritesItem.submenu = NSMenu(items: favoriteMenuItems)
+            favoritesItem.submenu = NSMenu().buildItems {
+                NSMenuItem(title: UserText.mainMenuHistoryFavoriteThisPage, action: #selector(MainViewController.favoriteThisPage), keyEquivalent: "")
+                    .withImage(.favorite)
+                NSMenuItem.separator()
+                potentialItems
+            }
             favoritesItem.image = .favorite
 
             addItem(NSMenuItem.separator())
@@ -831,6 +844,7 @@ final class BookmarksSubMenu: NSMenu {
 
     }
 
+    @MainActor
     private func bookmarkMenuItems(from bookmarkViewModels: [BookmarkViewModel], topLevel: Bool = true) -> [NSMenuItem] {
         var menuItems = [NSMenuItem]()
 

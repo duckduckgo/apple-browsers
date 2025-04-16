@@ -163,9 +163,9 @@ jobs:
           ${{ runner.os }}-macos-
 
     - name: Select Xcode
-      run: |
-        echo "${{ matrix.xcode-version }}" > .xcode-version
-        sudo xcode-select -s /Applications/Xcode_$(<.xcode-version).app/Contents/Developer
+      uses: ./.github/actions/select-xcode-version
+      with:
+        xcode-version: ${{ matrix.xcode-version }}
 
     - name: Build for testing
       run: |

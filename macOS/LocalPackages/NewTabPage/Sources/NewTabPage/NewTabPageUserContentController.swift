@@ -41,6 +41,12 @@ public final class NewTabPageUserContentController: WKUserContentController {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+
+    public func removeUserScripts() {
+        removeAllUserScripts()
+        removeAllScriptMessageHandlers()
+    }
+
 }
 
 @MainActor

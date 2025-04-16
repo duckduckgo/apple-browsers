@@ -16,7 +16,9 @@
 //  limitations under the License.
 //
 
-@available(macOS 15.3, *)
+#if WEB_EXTENSIONS_ENABLED
+
+@available(macOS 15.4, *)
 @MainActor
 extension Tab: WKWebExtensionTab {
 
@@ -35,37 +37,37 @@ extension Tab: WKWebExtensionTab {
         return mainViewController?.tabCollectionViewModel
     }
 
-    func window(for context: WKWebExtensionContext!) -> (any WKWebExtensionWindow)? {
+    func window(for context: WKWebExtensionContext) -> (any WKWebExtensionWindow)? {
         return webView.window?.windowController as? MainWindowController
     }
 
-    func indexInWindow(for context: WKWebExtensionContext!) -> UInt {
+    private func indexInWindow(for context: WKWebExtensionContext!) -> UInt {
         let tabCollection = tabCollectionViewModel?.tabCollection
         return UInt(tabCollection?.tabs.firstIndex(of: self) ?? 0)
     }
 
-    func parentTab(for context: WKWebExtensionContext!) -> (any WKWebExtensionTab)? {
+    func parentTab(for context: WKWebExtensionContext) -> (any WKWebExtensionTab)? {
         return parentTab
     }
 
-    func setParentTab(_ parentTab: (any WKWebExtensionTab)?, for context: WKWebExtensionContext!) async throws {
+    func setParentTab(_ parentTab: (any WKWebExtensionTab)?, for context: WKWebExtensionContext) async throws {
         assertionFailure("not supported yet")
         throw WebExtensionTabError.notSupported
     }
 
-    func webView(for context: WKWebExtensionContext!) -> WKWebView? {
+    func webView(for context: WKWebExtensionContext) -> WKWebView? {
         return webView
     }
 
-    func title(for context: WKWebExtensionContext!) -> String? {
+    func title(for context: WKWebExtensionContext) -> String? {
         return title
     }
 
-    func isPinned(for context: WKWebExtensionContext!) -> Bool {
+    func isPinned(for context: WKWebExtensionContext) -> Bool {
         return isPinned
     }
 
-    func setPinned(_ pinned: Bool, for context: WKWebExtensionContext!) async throws {
+    func setPinned(_ pinned: Bool, for context: WKWebExtensionContext) async throws {
         guard let tabIndex = tabCollectionViewModel?.indexInAllTabs(of: self) else {
             assertionFailure("Tab not found")
             throw WebExtensionTabError.tabNotFound
@@ -90,28 +92,28 @@ extension Tab: WKWebExtensionTab {
         }
     }
 
-    func isReaderModeAvailable(for context: WKWebExtensionContext!) -> Bool {
+    func isReaderModeAvailable(for context: WKWebExtensionContext) -> Bool {
         return false
     }
 
-    func isReaderModeActive(for context: WKWebExtensionContext!) -> Bool {
+    func isReaderModeActive(for context: WKWebExtensionContext) -> Bool {
         return false
     }
 
-    func setReaderModeActive(_ active: Bool, for context: WKWebExtensionContext!) async throws {
+    func setReaderModeActive(_ active: Bool, for context: WKWebExtensionContext) async throws {
         assertionFailure("not supported yet")
         throw WebExtensionTabError.notSupported
     }
 
-    func isPlayingAudio(for context: WKWebExtensionContext!) -> Bool {
+    func isPlayingAudio(for context: WKWebExtensionContext) -> Bool {
         return false
     }
 
-    func isMuted(for context: WKWebExtensionContext!) -> Bool {
+    func isMuted(for context: WKWebExtensionContext) -> Bool {
         return audioState.isMuted
     }
 
-    func setMuted(_ muted: Bool, for context: WKWebExtensionContext!) async throws {
+    func setMuted(_ muted: Bool, for context: WKWebExtensionContext) async throws {
         if muted {
             guard !audioState.isMuted else {
                 assertionFailure("Tab is not muted")
@@ -126,65 +128,65 @@ extension Tab: WKWebExtensionTab {
         muteUnmuteTab()
     }
 
-    func size(for context: WKWebExtensionContext!) -> CGSize {
+    func size(for context: WKWebExtensionContext) -> CGSize {
         webView.frame.size
     }
 
-    func zoomFactor(for context: WKWebExtensionContext!) -> Double {
+    func zoomFactor(for context: WKWebExtensionContext) -> Double {
         return webView.pageZoom
     }
 
-    func setZoomFactor(_ zoomFactor: Double, for context: WKWebExtensionContext!) async throws {
+    func setZoomFactor(_ zoomFactor: Double, for context: WKWebExtensionContext) async throws {
         assertionFailure("not supported yet")
         throw WebExtensionTabError.notSupported
     }
 
-    func url(for context: WKWebExtensionContext!) -> URL? {
+    func url(for context: WKWebExtensionContext) -> URL? {
         return content.urlForWebView
     }
 
-    func pendingURL(for context: WKWebExtensionContext!) -> URL? {
+    func pendingURL(for context: WKWebExtensionContext) -> URL? {
         return isLoading ? content.urlForWebView : nil
     }
 
-    func isLoadingComplete(for context: WKWebExtensionContext!) -> Bool {
+    func isLoadingComplete(for context: WKWebExtensionContext) -> Bool {
         return !isLoading
     }
 
-    func detectWebpageLocale(for context: WKWebExtensionContext!) async throws -> Locale {
+    func detectWebpageLocale(for context: WKWebExtensionContext) async throws -> Locale? {
         return Locale.current
     }
 
-    func snapshot(using configuration: WKSnapshotConfiguration!, for context: WKWebExtensionContext!) async throws -> NSImage {
+    func snapshot(using configuration: WKSnapshotConfiguration, for context: WKWebExtensionContext) async throws -> NSImage? {
         assertionFailure("not supported yet")
         throw WebExtensionTabError.notSupported
     }
 
-    func loadURL(_ url: URL!, for context: WKWebExtensionContext!) async throws {
+    func loadURL(_ url: URL, for context: WKWebExtensionContext) async throws {
         setContent(.url(url, credential: nil, source: .ui))
     }
 
-    func reload(fromOrigin: Bool, for context: WKWebExtensionContext!) async throws {
+    func reload(fromOrigin: Bool, for context: WKWebExtensionContext) async throws {
         reload()
     }
 
-    func goBack(for context: WKWebExtensionContext!) async throws {
+    func goBack(for context: WKWebExtensionContext) async throws {
         goBack()
     }
 
-    func goForward(for context: WKWebExtensionContext!) async throws {
+    func goForward(for context: WKWebExtensionContext) async throws {
         goForward()
     }
 
-    func activate(for context: WKWebExtensionContext!) async throws {
+    func activate(for context: WKWebExtensionContext) async throws {
         tabCollectionViewModel?.select(tab: self)
     }
 
-    func isSelected(for context: WKWebExtensionContext!) -> Bool {
+    func isSelected(for context: WKWebExtensionContext) -> Bool {
         return tabCollectionViewModel?.selectedTab == self
     }
 
-    func setSelected(_ selected: Bool, for context: WKWebExtensionContext!) async throws {
+    func setSelected(_ selected: Bool, for context: WKWebExtensionContext) async throws {
         if selected {
             tabCollectionViewModel?.select(tab: self)
         } else {
@@ -193,12 +195,12 @@ extension Tab: WKWebExtensionTab {
         }
     }
 
-    func duplicate(using configuration: WKWebExtension.TabConfiguration!, for context: WKWebExtensionContext!) async throws -> any WKWebExtensionTab {
+    func duplicate(using configuration: WKWebExtension.TabConfiguration, for context: WKWebExtensionContext) async throws -> (any WKWebExtensionTab)? {
         assertionFailure("not supported yet")
         throw WebExtensionTabError.notSupported
     }
 
-    func close(for context: WKWebExtensionContext!) async throws {
+    func close(for context: WKWebExtensionContext) async throws {
         if let index = tabCollectionViewModel?.indexInAllTabs(of: self) {
             tabCollectionViewModel?.remove(at: index)
         } else {
@@ -206,8 +208,10 @@ extension Tab: WKWebExtensionTab {
         }
     }
 
-    func shouldGrantPermissionsOnUserGesture(for context: WKWebExtensionContext!) -> Bool {
+    func shouldGrantPermissionsOnUserGesture(for context: WKWebExtensionContext) -> Bool {
         return true
     }
 
 }
+
+#endif

@@ -16,15 +16,17 @@
 //  limitations under the License.
 //
 
+#if WEB_EXTENSIONS_ENABLED
+
 import Foundation
 import os.log
 
-@available(macOS 15.3, *)
+@available(macOS 15.4, *)
 final class NativeMessagingHandler {
 
     var nativeMessagingConnections = [NativeMessagingConnection]()
 
-    private func connection(for port: WKWebExtensionMessagePort) -> NativeMessagingConnection? {
+    private func connection(for port: WKWebExtension.MessagePort) -> NativeMessagingConnection? {
         return nativeMessagingConnections.first(where: { $0.port === port })
     }
 
@@ -36,7 +38,7 @@ final class NativeMessagingHandler {
         nativeMessagingConnections.removeAll {$0 === connection}
     }
 
-    private func cancelConnection(with port: WKWebExtensionMessagePort) {
+    private func cancelConnection(with port: WKWebExtension.MessagePort) {
         nativeMessagingConnections.removeAll { $0.port === port }
     }
 
@@ -49,7 +51,7 @@ final class NativeMessagingHandler {
         return nil
     }
 
-    func webExtensionController(_ controller: WKWebExtensionController, connectUsingMessagePort port: WKWebExtensionMessagePort, for extensionContext: WKWebExtensionContext) async throws {
+    func webExtensionController(_ controller: WKWebExtensionController, connectUsingMessagePort port: WKWebExtension.MessagePort, for extensionContext: WKWebExtensionContext) async throws {
         port.disconnectHandler = { [weak self] error in
             if let error {
                 Logger.webExtensions.log(("Message port disconnected: \(error)"))
@@ -96,7 +98,7 @@ final class NativeMessagingHandler {
     }
 }
 
-@available(macOS 15.3, *)
+@available(macOS 15.4, *)
 @MainActor
 extension NativeMessagingHandler: @preconcurrency NativeMessagingCommunicatorDelegate {
     func nativeMessagingCommunicator(_ nativeMessagingCommunicator: any NativeMessagingCommunication, didReceiveMessageData messageData: Data) {
@@ -138,7 +140,7 @@ extension NativeMessagingHandler: @preconcurrency NativeMessagingCommunicatorDel
 
 }
 
-@available(macOS 15.3, *)
+@available(macOS 15.4, *)
 @MainActor
 extension NativeMessagingHandler: @preconcurrency NativeMessagingConnectionDelegate {
 
@@ -147,3 +149,5 @@ extension NativeMessagingHandler: @preconcurrency NativeMessagingConnectionDeleg
     }
 
 }
+
+#endif

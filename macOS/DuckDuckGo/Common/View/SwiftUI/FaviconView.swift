@@ -21,7 +21,7 @@ import SwiftUIExtensions
 
 struct FaviconView: View {
 
-    let faviconManagement: FaviconManagement = FaviconManager.shared
+    let faviconManagement: FaviconManagement = NSApp.delegateTyped.faviconManager
 
     let url: URL?
     let size: CGFloat
@@ -44,14 +44,13 @@ struct FaviconView: View {
         self.onFaviconMissing = onFaviconMissing
     }
 
-    @MainActor(unsafe)
     func refreshImage() {
         if let duckPlayerImage = DuckPlayer.shared.image(for: self) {
             image = duckPlayerImage
             return
         }
 
-        if faviconManagement.areFaviconsLoaded, let url = url {
+        if faviconManagement.isCacheLoaded, let url = url {
             let image = faviconManagement.getCachedFavicon(for: url, sizeCategory: .medium)?.image
             if image?.size.isSmaller(than: CGSize(width: 16, height: 16)) == false {
                 self.image = image
@@ -82,7 +81,7 @@ struct FaviconView: View {
         }.onAppear {
             refreshImage()
         }.onReceive(timer) { _ in
-            guard faviconManagement.areFaviconsLoaded else { return }
+            guard faviconManagement.isCacheLoaded else { return }
             timer.upstream.connect().cancel()
             refreshImage()
         }

@@ -85,14 +85,15 @@ public class AppUserDefaults: AppSettings {
 
         static let duckPlayerNativeYoutubeMode = "com.duckduckgo.ios.duckPlayerNativeYoutubeMode"
         static let duckPlayerNativeUISERPEnabled = "com.duckduckgo.ios.duckPlayerNativeUISERPEnabled"
-        static let duckPlayerNativeUIPrimingModalPresentedCount = "com.duckduckgo.ios.duckPlayerNativeUIPrimingModalPresentedCount"
-        static let nativeUIPrimingModalTimeSinceLastPresented = "com.duckduckgo.ios.duckPlayerNativeUIPrimingModalTimeSinceLastPresented"
+        static let duckPlayerNativeUIPrimingModalPresentationEventCount = "com.duckduckgo.ios.duckPlayerNativeUIPrimingModalPresentationEventCount"
+        static let duckPlayerNativeUIPrimingModalTimeSinceLastPresented = "com.duckduckgo.ios.duckPlayerNativeUIPrimingModalTimeSinceLastPresented"
+        static let duckPlayerPillDismissCount = "com.duckduckgo.ios.duckPlayerPillDismissCount"
     }
 
     private struct DebugKeys {
         static let inspectableWebViewsEnabledKey = "com.duckduckgo.ios.debug.inspectableWebViewsEnabled"
         static let autofillDebugScriptEnabledKey = "com.duckduckgo.ios.debug.autofillDebugScriptEnabled"
-        static let onboardingAddToDockStateKey = "com.duckduckgo.ios.debug.onboardingAddToDockState"
+        static let onboardingIsNewUserKey = "com.duckduckgo.ios.debug.onboardingIsNewUser"
     }
 
     private var userDefaults: UserDefaults? {
@@ -227,7 +228,11 @@ public class AppUserDefaults: AppSettings {
 
     var currentAddressBarPosition: AddressBarPosition {
         get {
-            return AddressBarPosition(rawValue: addressBarPositionStorage?.lowercased()  ?? "") ?? .top
+            guard UIDevice.current.userInterfaceIdiom != .pad else {
+                return .top
+            }
+
+            return AddressBarPosition(rawValue: addressBarPositionStorage?.lowercased() ?? "") ?? .top
         }
 
         set {
@@ -492,22 +497,46 @@ public class AppUserDefaults: AppSettings {
         }
     }
 
-    @UserDefaultsWrapper(key: .duckPlayerNativeUIPrimingModalPresentedCount, defaultValue: 0)
-    var duckPlayerNativeUIPrimingModalPresentedCount: Int
-    
-    @UserDefaultsWrapper(key: .duckPlayerNativeUIPrimingModalTimeSinceLastPresented, defaultValue: 0)
-    var duckPlayerNativeUIPrimingModalTimeSinceLastPresented: Int
-
-    @UserDefaultsWrapper(key: .debugOnboardingHighlightsEnabledKey, defaultValue: false)
-    var onboardingHighlightsEnabled: Bool
-
-    var onboardingAddToDockState: OnboardingAddToDockState {
+    var duckPlayerNativeUIPrimingModalPresentationEventCount: Int {
         get {
-            guard let rawValue = userDefaults?.string(forKey: DebugKeys.onboardingAddToDockStateKey) else { return .disabled }
-            return OnboardingAddToDockState(rawValue: rawValue) ?? .disabled
+            return userDefaults?.integer(forKey: Keys.duckPlayerNativeUIPrimingModalPresentationEventCount) ?? 0
         }
         set {
-            userDefaults?.set(newValue.rawValue, forKey: DebugKeys.onboardingAddToDockStateKey)
+            userDefaults?.setValue(newValue, forKey: Keys.duckPlayerNativeUIPrimingModalPresentationEventCount)
+            NotificationCenter.default.post(name: AppUserDefaults.Notifications.duckPlayerSettingsUpdated,
+                                          object: nil)
+        }
+    }
+    
+    var duckPlayerNativeUIPrimingModalLastPresentationTime: Int {
+        get {
+            return userDefaults?.integer(forKey: Keys.duckPlayerNativeUIPrimingModalTimeSinceLastPresented) ?? 0
+        }
+        set {
+            userDefaults?.setValue(newValue, forKey: Keys.duckPlayerNativeUIPrimingModalTimeSinceLastPresented)
+            NotificationCenter.default.post(name: AppUserDefaults.Notifications.duckPlayerSettingsUpdated,
+                                          object: nil)
+        }
+    }
+
+    var duckPlayerPillDismissCount: Int {
+        get {
+            return userDefaults?.integer(forKey: Keys.duckPlayerPillDismissCount) ?? 0
+        }
+        set {
+            userDefaults?.setValue(newValue, forKey: Keys.duckPlayerPillDismissCount)
+            NotificationCenter.default.post(name: AppUserDefaults.Notifications.duckPlayerSettingsUpdated,
+                                          object: nil)
+        }
+    }
+
+    var onboardingUserType: OnboardingUserType {
+        get {
+            guard let rawValue = userDefaults?.string(forKey: DebugKeys.onboardingIsNewUserKey) else { return .notSet }
+            return OnboardingUserType(rawValue: rawValue) ?? .notSet
+        }
+        set {
+            userDefaults?.set(newValue.rawValue, forKey: DebugKeys.onboardingIsNewUserKey)
         }
     }
 }

@@ -18,8 +18,8 @@
 
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
-@testable import DataBrokerProtection
-@testable import DataBrokerProtectionShared
+@testable import DataBrokerProtection_macOS
+@testable import DataBrokerProtectionCore
 import Common
 import Freemium
 
@@ -279,7 +279,7 @@ private final class MockDataBrokerProtectionDataManager: DataBrokerProtectionDat
     var matchesFoundCountValue = (0, 0)
 
     var cache = InMemoryDataCache()
-    var delegate: DataBrokerProtection.DataBrokerProtectionDataManagerDelegate?
+    var delegate: DataBrokerProtectionDataManagerDelegate?
 
     init(database: DataBrokerProtectionRepository,
          profileSavedNotifier: DBPProfileSavedNotifier? = nil) {

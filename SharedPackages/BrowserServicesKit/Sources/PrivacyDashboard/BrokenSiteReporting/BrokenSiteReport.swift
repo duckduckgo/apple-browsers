@@ -57,8 +57,6 @@ public struct BrokenSiteReport {
 
     }
 
-    let cookieConsentInfo: CookieConsentInfo?
-
 #if os(iOS)
     public enum SiteType: String {
 
@@ -99,6 +97,9 @@ public struct BrokenSiteReport {
     let jsPerformance: [Double]?
     let userRefreshCount: Int
     let locale: Locale
+    let cookieConsentInfo: CookieConsentInfo?
+    let debugFlags: String
+    let privacyExperiments: [String: String]
 #if os(iOS)
     let siteType: SiteType
     let atb: String
@@ -130,7 +131,9 @@ public struct BrokenSiteReport {
         jsPerformance: [Double]?,
         userRefreshCount: Int,
         locale: Locale = Locale.current,
-        cookieConsentInfo: CookieConsentInfo?
+        cookieConsentInfo: CookieConsentInfo?,
+        debugFlags: String,
+        privacyExperiments: [String: String]
     ) {
         self.siteUrl = siteUrl
         self.category = category
@@ -155,6 +158,8 @@ public struct BrokenSiteReport {
         self.userRefreshCount = userRefreshCount
         self.locale = locale
         self.cookieConsentInfo = cookieConsentInfo
+        self.debugFlags = debugFlags
+        self.privacyExperiments = privacyExperiments
     }
 #endif
 
@@ -186,7 +191,9 @@ public struct BrokenSiteReport {
         userRefreshCount: Int,
         variant: String,
         locale: Locale = Locale.current,
-        cookieConsentInfo: CookieConsentInfo?
+        cookieConsentInfo: CookieConsentInfo?,
+        debugFlags: String,
+        privacyExperiments: [String: String]
     ) {
         self.siteUrl = siteUrl
         self.category = category
@@ -215,6 +222,8 @@ public struct BrokenSiteReport {
         self.variant = variant
         self.locale = locale
         self.cookieConsentInfo = cookieConsentInfo
+        self.debugFlags = debugFlags
+        self.privacyExperiments = privacyExperiments
     }
 #endif
 
@@ -241,7 +250,8 @@ public struct BrokenSiteReport {
             "locale": locale.localeIdentifierAsJsonFormat,
             "consentManaged": boolToStringValue(cookieConsentInfo?.consentManaged),
             "consentOptoutFailed": boolToStringValue(cookieConsentInfo?.optoutFailed),
-            "consentSelftestFailed": boolToStringValue(cookieConsentInfo?.selftestFailed)
+            "consentSelftestFailed": boolToStringValue(cookieConsentInfo?.selftestFailed),
+            "debugFlags": debugFlags
         ]
 
         if mode == .regular {
@@ -266,6 +276,10 @@ public struct BrokenSiteReport {
         if let jsPerformance {
             let perf = jsPerformance.map { String($0) }.joined(separator: ",")
             result["jsPerformance"] = perf
+        }
+
+        for (key, value) in privacyExperiments {
+            result[key] = value
         }
 
 #if os(iOS)

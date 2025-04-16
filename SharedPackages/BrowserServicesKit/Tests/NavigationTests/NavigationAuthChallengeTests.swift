@@ -59,7 +59,7 @@ class NavigationAuthChallengeTests: DistributedNavigationDelegateTestsBase {
                 try! writer.write(data.html)
             }
         }, { [data] request in
-            return .ok(.html(data.html.string()!))
+            return .ok(.html(data.html.utf8String()!))
         }]
         try server.start(8084)
         withWebView { webView in

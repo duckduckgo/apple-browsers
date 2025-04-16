@@ -71,4 +71,20 @@ public final class VPNAppState {
     public func resetIsMigratedToAuthV2() {
         defaults.resetIsVPNMigratedToAuthV2()
     }
+
+    // MARK: - isAuthV2Enabled
+
+    public var isAuthV2Enabled: Bool {
+        get {
+            defaults.isAuthV2Enabled
+        }
+
+        set {
+            defaults.isAuthV2Enabled = newValue
+        }
+    }
+
+    public func resetIsAuthV2Enabled() {
+        defaults.resetIsAuthV2Enabled()
+    }
 }

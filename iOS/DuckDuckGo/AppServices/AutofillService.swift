@@ -52,12 +52,18 @@ final class AutofillService {
                 case .autofillOnboardedUser:
                     Pixel.fire(pixel: .autofillOnboardedUser)
                 case .autofillToggledOn:
+                    guard AutofillSettingStatus.isDeviceAuthenticationEnabled else {
+                        return
+                    }
                     Pixel.fire(pixel: .autofillToggledOn, withAdditionalParameters: params ?? [:])
                     if let autofillExtensionToggled = self?.autofillUsageMonitor.autofillExtensionEnabled {
                         Pixel.fire(pixel: autofillExtensionToggled ? .autofillExtensionToggledOn : .autofillExtensionToggledOff,
                                    withAdditionalParameters: params ?? [:])
                     }
                 case .autofillToggledOff:
+                    guard AutofillSettingStatus.isDeviceAuthenticationEnabled else {
+                        return
+                    }
                     Pixel.fire(pixel: .autofillToggledOff, withAdditionalParameters: params ?? [:])
                     if let autofillExtensionToggled = self?.autofillUsageMonitor.autofillExtensionEnabled {
                         Pixel.fire(pixel: autofillExtensionToggled ? .autofillExtensionToggledOn : .autofillExtensionToggledOff,

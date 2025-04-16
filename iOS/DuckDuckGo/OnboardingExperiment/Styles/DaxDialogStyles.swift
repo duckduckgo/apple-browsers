@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import Onboarding
 
 extension OnboardingStyles {
 

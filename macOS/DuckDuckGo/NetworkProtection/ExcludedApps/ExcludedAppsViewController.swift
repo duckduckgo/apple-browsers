@@ -47,7 +47,7 @@ final class ExcludedAppsViewController: NSViewController {
     @IBOutlet var titleLabel: NSTextField!
     @IBOutlet var descriptionLabel: NSTextField!
 
-    private let faviconManagement: FaviconManagement = FaviconManager.shared
+    private let faviconManagement: FaviconManagement = NSApp.delegateTyped.faviconManager
 
     private var allApps = [AppInfo]()
     private var filteredApps: [AppInfo]?

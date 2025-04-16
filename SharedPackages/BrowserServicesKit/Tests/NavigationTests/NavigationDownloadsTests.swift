@@ -32,7 +32,7 @@ class NavigationDownloadsTests: DistributedNavigationDelegateTestsBase {
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
 
         server.middleware = [{ [data] request in
-            return .ok(.html(data.html.string()!))
+            return .ok(.html(data.html.utf8String()!))
         }]
         try server.start(8084)
 
@@ -62,10 +62,10 @@ class NavigationDownloadsTests: DistributedNavigationDelegateTestsBase {
         navigationDelegateProxy.finishEventsDispatchTime = .afterDidStartNavigationAction
         server.middleware = [{ [data] request in
             guard request.path == "/" else { return nil }
-            return .ok(.html(data.htmlWithIframe3.string()!))
+            return .ok(.html(data.htmlWithIframe3.utf8String()!))
         }, { [data, urls] request in
             guard request.path == urls.local3.path else { return nil }
-            return .ok(.html(data.html.string()!))
+            return .ok(.html(data.html.utf8String()!))
         }]
         try server.start(8084)
 
@@ -157,9 +157,9 @@ class NavigationDownloadsTests: DistributedNavigationDelegateTestsBase {
 
         server.middleware = [{ [data] request in
             guard request.path == "/" else { return nil }
-            return .ok(.html(data.htmlWithIframe3.string()!))
+            return .ok(.html(data.htmlWithIframe3.utf8String()!))
         }, { [data] request in
-            return .ok(.html(data.html.string()!))
+            return .ok(.html(data.html.utf8String()!))
         }]
         try server.start(8084)
 
@@ -208,9 +208,9 @@ class NavigationDownloadsTests: DistributedNavigationDelegateTestsBase {
 
         server.middleware = [{ [data] request in
             guard request.path == "/" else { return nil }
-            return .ok(.html(data.htmlWith3iFrames.string()!))
+            return .ok(.html(data.htmlWith3iFrames.utf8String()!))
         }, { [data] request in
-            return .ok(.html(data.html.string()!))
+            return .ok(.html(data.html.utf8String()!))
         }]
         try server.start(8084)
 
@@ -264,9 +264,9 @@ class NavigationDownloadsTests: DistributedNavigationDelegateTestsBase {
 
         server.middleware = [{ [data] request in
             guard request.path == "/" else { return nil }
-            return .ok(.html(data.htmlWith3iFrames.string()!))
+            return .ok(.html(data.htmlWith3iFrames.utf8String()!))
         }, { [data] request in
-            return .ok(.html(data.html.string()!))
+            return .ok(.html(data.html.utf8String()!))
         }]
         try server.start(8084)
 
@@ -328,7 +328,7 @@ class NavigationDownloadsTests: DistributedNavigationDelegateTestsBase {
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
 
         server.middleware = [{ [data] request in
-            return .ok(.html(data.html.string()!))
+            return .ok(.html(data.html.utf8String()!))
         }]
         try server.start(8084)
 

@@ -101,6 +101,9 @@ public protocol OAuthClient {
     /// Use the TokenContainer provided
     func adopt(tokenContainer: TokenContainer)
 
+    // Creates a TokenContainer with the provided access token and refresh token, decodes them and returns the container
+    func decode(accessToken: String, refreshToken: String) async throws -> TokenContainer
+
     /// Activate the account with a platform signature
     /// - Parameter signature: The platform signature
     /// - Returns: A container of tokens
@@ -128,12 +131,8 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         static let redirectURI = "com.duckduckgo:/authcb"
         static let availableScopes = [ "privacypro" ]
 
-#if DEBUG
         /// The seconds before the expiry date when we consider a token effectively expired
-        static let tokenExpiryBufferInterval: TimeInterval = .seconds(30)
-#else
-        static let tokenExpiryBufferInterval: TimeInterval = .minutes(10)
-#endif
+        static let tokenExpiryBufferInterval: TimeInterval = .seconds(45)
     }
 
     private let authService: any OAuthService
@@ -177,7 +176,8 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
 
     private var testingDecodedTokenContainer: TokenContainer?
 #endif
-    func decode(accessToken: String, refreshToken: String) async throws -> TokenContainer {
+
+    public func decode(accessToken: String, refreshToken: String) async throws -> TokenContainer {
         Logger.OAuthClient.log("Decoding tokens")
 
 #if DEBUG
@@ -296,7 +296,8 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
             return nil
         }
 
-        guard let legacyToken = legacyTokenStorage.token else {
+        guard let legacyToken = legacyTokenStorage.token,
+              !legacyToken.isEmpty else {
             Logger.OAuthClient.log("No V1 token available, migration not needed")
             return nil
         }

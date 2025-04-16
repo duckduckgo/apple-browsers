@@ -133,13 +133,23 @@ final class NewTabPageFavoritesClientTests: XCTestCase {
     // MARK: - open
 
     func testThatOpenActionIsForwardedToTheModel() async throws {
-        let action = NewTabPageDataModel.FavoritesOpenAction(id: "abcd", url: "https://example.com")
-        try await messageHelper.handleMessageExpectingNilResponse(named: .open, parameters: action)
-        XCTAssertEqual(actionsHandler.openCalls, [.init(URL(string: "https://example.com")!, .current)])
+        let actions = [
+            NewTabPageDataModel.ActivityOpenAction(id: "abcd", url: "https://example.com", target: .sameTab),
+            NewTabPageDataModel.ActivityOpenAction(id: "abcd", url: "https://example.com", target: .newTab),
+            NewTabPageDataModel.ActivityOpenAction(id: "abcd", url: "https://example.com", target: .newWindow)
+        ]
+        for action in actions {
+            try await messageHelper.handleMessageExpectingNilResponse(named: .open, parameters: action)
+        }
+        XCTAssertEqual(actionsHandler.openCalls, [
+            .init(URL(string: "https://example.com")!, .current),
+            .init(URL(string: "https://example.com")!, .newTab),
+            .init(URL(string: "https://example.com")!, .newWindow)
+        ])
     }
 
     func testWhenURLIsInvalidThenOpenActionIsNotForwardedToTheModel() async throws {
-        let action = NewTabPageDataModel.FavoritesOpenAction(id: "abcd", url: "abcd")
+        let action = NewTabPageDataModel.ActivityOpenAction(id: "abcd", url: "abcd", target: .sameTab)
         try await messageHelper.handleMessageExpectingNilResponse(named: .open, parameters: action)
         XCTAssertEqual(actionsHandler.openCalls, [])
     }

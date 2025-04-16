@@ -19,8 +19,8 @@
 import Foundation
 import NetworkProtection
 import NetworkProtectionIPC
-import DataBrokerProtection
-import DataBrokerProtectionShared
+import DataBrokerProtection_macOS
+import DataBrokerProtectionCore
 
 struct DBPFeedbackMetadata: UnifiedFeedbackMetadata {
     let vpnConnectionState: String

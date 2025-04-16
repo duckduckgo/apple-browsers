@@ -297,6 +297,12 @@ final class AddressBarTextField: NSTextField {
         hideSuggestionWindow()
     }
 
+    func aiChatQueryEnterPressed() {
+        suggestionContainerViewModel?.clearUserStringValue()
+        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(value, target: .sameTab)
+        hideSuggestionWindow()
+    }
+
     private func navigate(suggestion: Suggestion?) {
         let autocompletePixel: GeneralPixel? = {
             switch suggestion {
@@ -323,11 +329,11 @@ final class AddressBarTextField: NSTextField {
             PixelKit.fire(autocompletePixel)
         }
 
-        if case .internalPage(title: let title, url: let url) = suggestion,
+        if case .internalPage(title: let title, url: let url, _) = suggestion,
            url == .bookmarks || url.isSettingsURL {
             // when choosing an internal page suggestion prefer already open tab
             switchTo(OpenTab(tabId: nil, title: title, url: url))
-        } else if case .openTab(let title, url: let url, tabId: let tabId) = suggestion {
+        } else if case .openTab(let title, url: let url, tabId: let tabId, _) = suggestion {
             switchTo(OpenTab(tabId: tabId, title: title, url: url))
         } else if NSApp.isCommandPressed {
             openNew(NSApp.isOptionPressed ? .window : .tab, selected: NSApp.isShiftPressed, suggestion: suggestion)
@@ -454,11 +460,11 @@ final class AddressBarTextField: NSTextField {
         let finalUrl: URL?
         let userEnteredValue: String
         switch suggestion {
-        case .bookmark(title: _, url: let url, isFavorite: _, allowedInTopHits: _),
-             .historyEntry(title: _, url: let url, allowedInTopHits: _),
+        case .bookmark(title: _, url: let url, isFavorite: _, _),
+             .historyEntry(title: _, url: let url, _),
              .website(url: let url),
-             .internalPage(title: _, url: let url),
-             .openTab(title: _, url: let url, _):
+             .internalPage(title: _, url: let url, _),
+             .openTab(title: _, url: let url, _, _):
             finalUrl = url
             userEnteredValue = url.absoluteString
         case .phrase(phrase: let phrase),
@@ -571,7 +577,7 @@ final class AddressBarTextField: NSTextField {
     private func suggestionsContainLocalItems() -> SuggestionListChacteristics {
         var characteristics = SuggestionListChacteristics(hasBookmark: false, hasFavorite: false, hasHistoryEntry: false)
         for suggestion in self.suggestionContainerViewModel?.suggestionContainer.result?.all ?? [] {
-            if case .bookmark(title: _, url: _, isFavorite: let isFavorite, allowedInTopHits: _) = suggestion {
+            if case .bookmark(title: _, url: _, isFavorite: let isFavorite, _) = suggestion {
                 if isFavorite {
                     characteristics.hasFavorite = true
                 } else {
@@ -600,11 +606,6 @@ final class AddressBarTextField: NSTextField {
 
         window.addChildWindow(suggestionWindow, ordered: .above)
         layoutSuggestionWindow()
-        postSuggestionWindowOpenNotification()
-    }
-
-    private func postSuggestionWindowOpenNotification() {
-        NotificationCenter.default.post(name: .suggestionWindowOpen, object: nil)
     }
 
     func hideSuggestionWindow() {
@@ -681,6 +682,14 @@ final class AddressBarTextField: NSTextField {
         AppearancePreferences.shared.showFullURL.toggle()
 
         let shouldShowFullURL = AppearancePreferences.shared.showFullURL
+        menuItem.state = shouldShowFullURL ? .on : .off
+    }
+
+    @objc func toggleAIChatAddress(_ menuItem: NSMenuItem) {
+        let preferences = AIChatPreferences()
+        preferences.showShortcutInAddressBar.toggle()
+
+        let shouldShowFullURL = preferences.showShortcutInAddressBar
         menuItem.state = shouldShowFullURL ? .on : .off
     }
 
@@ -838,9 +847,9 @@ extension AddressBarTextField {
                 }
                 self = Suffix.visit(host: host)
 
-            case .bookmark(title: _, url: let url, isFavorite: _, allowedInTopHits: _),
-                 .historyEntry(title: _, url: let url, allowedInTopHits: _),
-                 .internalPage(title: _, url: let url):
+            case .bookmark(title: _, url: let url, isFavorite: _, _),
+                 .historyEntry(title: _, url: let url, _),
+                 .internalPage(title: _, url: let url, _):
                 if let title = suggestionViewModel.title,
                    !title.isEmpty,
                    suggestionViewModel.autocompletionString != title {
@@ -850,7 +859,7 @@ extension AddressBarTextField {
                 } else {
                     self = .url(url)
                 }
-            case .openTab(title: _, url: let url, _):
+            case .openTab(title: _, url: let url, _, _):
                 self = .openTab(url)
             case .unknown:
                 self = Suffix.search
@@ -1065,6 +1074,7 @@ extension AddressBarTextField: NSTextViewDelegate {
         let additionalMenuItems: [NSMenuItem] = [
             .toggleAutocompleteSuggestionsMenuItem,
             .toggleFullWebsiteAddressMenuItem,
+            .toggleAIChatAddressMenuItem,
             .separator()
         ]
         let insertionPoint = menuItemInsertionPoint(within: menu)
@@ -1140,6 +1150,18 @@ private extension NSMenuItem {
         return menuItem
     }
 
+    static var toggleAIChatAddressMenuItem: NSMenuItem {
+        let menuItem = NSMenuItem(
+            title: UserText.showAIChatInAddress,
+            action: #selector(AddressBarTextField.toggleAIChatAddress(_:)),
+            keyEquivalent: ""
+        )
+
+        menuItem.state = AIChatPreferences().showShortcutInAddressBar ? .on : .off
+
+        return menuItem
+    }
+
     private static var pasteAndGoMenuItem: NSMenuItem {
         NSMenuItem(
             title: UserText.pasteAndGo,
@@ -1178,10 +1200,6 @@ extension AddressBarTextField: SuggestionViewControllerDelegate {
         navigate(suggestion: suggestion)
     }
 
-}
-
-extension Notification.Name {
-    static let suggestionWindowOpen = Notification.Name("suggestionWindowOpen")
 }
 
 fileprivate extension NSStoryboard {

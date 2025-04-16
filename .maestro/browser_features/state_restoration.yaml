@@ -42,6 +42,8 @@ tags:
 - inputText: "https://example.com"
 - pressKey: Enter
 
+- assertVisible: ".*Example Domain.*"
+
 - stopApp
 - launchApp
 

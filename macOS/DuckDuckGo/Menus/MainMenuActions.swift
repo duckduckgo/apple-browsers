@@ -68,8 +68,8 @@ extension AppDelegate {
 
     @objc func newAIChat(_ sender: Any?) {
         DispatchQueue.main.async {
-            AIChatTabOpener.openAIChatTab()
-            PixelKit.fire(GeneralPixel.aichatApplicationMenuFileClicked, includeAppVersionParameter: true)
+            NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(nil, target: .newTabSelected)
+            PixelKit.fire(AIChatPixel.aichatApplicationMenuFileClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
         }
     }
 
@@ -102,9 +102,9 @@ extension AppDelegate {
     @objc func recentlyClosedAction(_ sender: Any?) {
         guard let menuItem = sender as? NSMenuItem,
               let cacheItem = menuItem.representedObject as? RecentlyClosedCacheItem else {
-                  assertionFailure("Wrong represented object for recentlyClosedAction()")
-                  return
-              }
+            assertionFailure("Wrong represented object for recentlyClosedAction()")
+            return
+        }
         DispatchQueue.main.async {
             RecentlyClosedCoordinator.shared.reopenItem(cacheItem)
         }
@@ -182,7 +182,7 @@ extension AppDelegate {
         WindowControllersManager.shared.showTab(with: .url(.updates, source: .ui))
     }
 
-    #if FEEDBACK
+#if FEEDBACK
 
     @objc func openFeedback(_ sender: Any?) {
         DispatchQueue.main.async {
@@ -221,6 +221,11 @@ extension AppDelegate {
         WindowControllersManager.shared.showShareFeedbackModal(source: .settings)
     }
 
+    @MainActor
+    @objc func copyVersion(_ sender: Any?) {
+        NSPasteboard.general.copy(AppVersion().versionAndBuildNumber)
+    }
+
     #endif
 
     @objc func navigateToBookmark(_ sender: Any?) {
@@ -230,7 +235,7 @@ extension AppDelegate {
         }
 
         guard let bookmark = menuItem.representedObject as? Bookmark,
-        let url = bookmark.urlObject else {
+              let url = bookmark.urlObject else {
             assertionFailure("Unexpected type of menuItem.representedObject: \(type(of: menuItem.representedObject))")
             return
         }
@@ -363,6 +368,7 @@ extension AppDelegate {
     @objc func resetNewTabPageCustomization(_ sender: Any?) {
         newTabPageCustomizationModel.resetAllCustomizations()
     }
+
 }
 
 extension MainViewController {
@@ -526,10 +532,6 @@ extension MainViewController {
 
     @objc func toggleNetworkProtectionShortcut(_ sender: Any) {
         LocalPinningManager.shared.togglePinning(for: .networkProtection)
-    }
-
-    @objc func toggleAIChatShortcut(_ sender: Any) {
-        LocalPinningManager.shared.togglePinning(for: .aiChat)
     }
 
     // MARK: - History
@@ -946,7 +948,7 @@ extension MainViewController {
 
     @objc func skipOnboarding(_ sender: Any?) {
         UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.onboardingFinished.rawValue)
-        Application.appDelegate.onboardingStateMachine.state = .onboardingCompleted
+        Application.appDelegate.onboardingContextualDialogsManager.state = .onboardingCompleted
         WindowControllersManager.shared.updatePreventUserInteraction(prevent: false)
         WindowControllersManager.shared.replaceTabWith(Tab(content: .newtab))
     }
@@ -960,7 +962,7 @@ extension MainViewController {
     }
 
     @objc func resetContextualOnboarding(_ sender: Any?) {
-        Application.appDelegate.onboardingStateMachine.state = .notStarted
+        Application.appDelegate.onboardingContextualDialogsManager.state = .notStarted
     }
 
     @objc func resetDuckPlayerPreferences(_ sender: Any?) {

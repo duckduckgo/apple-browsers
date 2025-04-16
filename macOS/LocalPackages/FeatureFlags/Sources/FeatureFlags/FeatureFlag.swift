@@ -57,7 +57,7 @@ public enum FeatureFlag: String, CaseIterable {
     case autoUpdateInDEBUG
 
     case autofillPartialFormSaves
-    case autcompleteTabs
+    case autocompleteTabs
     case webExtensions
     case syncSeamlessAccountSwitching
     /// SAD & ATT Prompts experiiment: https://app.asana.com/0/1204006570077678/1209185383520514
@@ -68,6 +68,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/0/72649045549333/1209633877674689/f
     case exchangeKeysToSyncWithAnotherDevice
+
+    /// https://app.asana.com/0/72649045549333/1209793701087222/f
+    case visualRefresh
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -89,7 +92,7 @@ extension FeatureFlag: FeatureFlagDescribing {
     public var supportsLocalOverriding: Bool {
         switch self {
         case .autofillPartialFormSaves,
-                .autcompleteTabs,
+                .autocompleteTabs,
                 .networkProtectionAppExclusions,
                 .networkProtectionAppStoreSysex,
                 .networkProtectionAppStoreSysexMessage,
@@ -101,7 +104,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .popoverVsBannerExperiment,
                 .privacyProAuthV2,
                 .scamSiteProtection,
-                .exchangeKeysToSyncWithAnotherDevice:
+                .exchangeKeysToSyncWithAnotherDevice,
+                .visualRefresh:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -145,7 +149,7 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .autofillPartialFormSaves:
             return .remoteReleasable(.subfeature(AutofillSubfeature.partialFormSaves))
-        case .autcompleteTabs:
+        case .autocompleteTabs:
             return .remoteReleasable(.feature(.autocompleteTabs))
         case .webExtensions:
             return .internalOnly()
@@ -158,9 +162,11 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .popoverVsBannerExperiment:
             return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.popoverVsBannerExperiment))
         case .privacyProAuthV2:
-            return .disabled // .remoteDevelopment(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
         case .exchangeKeysToSyncWithAnotherDevice:
             return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
+        case .visualRefresh:
+            return .remoteDevelopment(.feature(.experimentalBrowserTheming))
         }
     }
 }

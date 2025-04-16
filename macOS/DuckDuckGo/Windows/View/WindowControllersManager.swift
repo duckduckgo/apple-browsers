@@ -155,6 +155,34 @@ extension WindowControllersManager {
         showTab(with: .bookmarks)
     }
 
+    /// Opens an AI chat URL in the application, either in a new or existing tab.
+    ///
+    /// - Parameters:
+    ///   - url: The AI chat URL to open.
+    ///   - target: Specifies where to open the URL. Can be `.newTabSelected`, `.newTabUnselected`, or `.sameTab`.
+    ///             Defaults to `.sameTab`.
+    ///   - hasPrompt: If `true` and the current tab is an AI chat, reloads the tab. Ignored if `target` is `.newTabSelected`
+    ///                or `.newTabUnselected`. Defaults to `false`.
+    func openAIChat(_ url: AIChatURL, target: AIChatTabOpenerTarget = .sameTab, hasPrompt: Bool = false) {
+
+        let tabCollectionViewModel = mainWindowController?.mainViewController.tabCollectionViewModel
+
+        switch target {
+        case .newTabSelected:
+            tabCollectionViewModel?.insertOrAppendNewTab(.contentFromURL(url.wrappedValue, source: .ui), selected: true)
+        case .newTabUnselected:
+            tabCollectionViewModel?.insertOrAppendNewTab(.contentFromURL(url.wrappedValue, source: .ui), selected: false)
+        case .sameTab:
+            if let currentURL = tabCollectionViewModel?.selectedTab?.url, currentURL.isAIChatURL {
+                if hasPrompt {
+                    tabCollectionViewModel?.selectedTab?.reload()
+                }
+            } else {
+                show(url: url.wrappedValue, source: .ui, newTab: false)
+            }
+        }
+    }
+
     func showPreferencesTab(withSelectedPane pane: PreferencePaneIdentifier? = nil) {
         showTab(with: .settings(pane: pane))
     }
@@ -401,18 +429,18 @@ extension WindowControllersManagerProtocol {
     }
 
     func allTabViewModels(for burnerMode: BurnerMode, includingPinnedTabs: Bool = false) -> [TabViewModel] {
-        var result = allTabCollectionViewModels
+        let currentBurnerModeTabCollectionViewModels = allTabCollectionViewModels
             .filter { tabCollectionViewModel in
                 tabCollectionViewModel.burnerMode == burnerMode
             }
-            .flatMap {
-                $0.tabViewModels.values
-            }
-        if includingPinnedTabs {
-            result += pinnedTabsManagerProvider.currentPinnedTabManagers.flatMap({
-                $0.tabViewModels.values
-            })
+        let tabViewModelsWithOriginalOrder = currentBurnerModeTabCollectionViewModels.flatMap {
+            (0..<$0.tabViewModels.count).compactMap($0.tabViewModel(at:)) // TabViewModels ordered by Index
         }
+        let pinnedTabSuggestions = includingPinnedTabs ? pinnedTabsManagerProvider.currentPinnedTabManagers.flatMap({
+            (0..<$0.tabViewModels.count).compactMap($0.tabViewModel(at:)) // TabViewModels ordered by Index
+        }) : []
+        let result = pinnedTabSuggestions + tabViewModelsWithOriginalOrder
+
         return result
     }
 

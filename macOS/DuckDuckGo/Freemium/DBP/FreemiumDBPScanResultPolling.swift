@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import DataBrokerProtection
+import DataBrokerProtection_macOS
 import Freemium
 import OSLog
 
@@ -37,7 +37,7 @@ final class DefaultFreemiumDBPScanResultPolling: FreemiumDBPScanResultPolling {
 
     private var observer: Any?
 
-    private let dataManager: DataBrokerProtectionDataManaging
+    private let dataManager: DataBrokerProtectionDataManaging?
     private var freemiumDBPUserStateManager: FreemiumDBPUserStateManager
     private let notificationCenter: NotificationCenter
     private let timerInterval: TimeInterval
@@ -52,7 +52,7 @@ final class DefaultFreemiumDBPScanResultPolling: FreemiumDBPScanResultPolling {
     ///   - timerInterval: The interval in seconds between polling checks. Defaults to 30 mins.
     ///   - maxCheckDuration: The maximum time allowed before stopping polling without results. Defaults to 24 hours.
     init(
-        dataManager: DataBrokerProtectionDataManaging,
+        dataManager: DataBrokerProtectionDataManaging?,
         freemiumDBPUserStateManager: FreemiumDBPUserStateManager,
         notificationCenter: NotificationCenter = .default,
         timerInterval: TimeInterval = 1800,  // 30 mins in seconds
@@ -159,7 +159,7 @@ private extension DefaultFreemiumDBPScanResultPolling {
         let currentDate = Date()
         let elapsedTime = currentDate.timeIntervalSince(firstProfileSavedTimestamp)
 
-        let (matchesCount, brokerCount) = (try? dataManager.matchesFoundAndBrokersCount()) ?? (0, 0)
+        let (matchesCount, brokerCount) = (try? dataManager?.matchesFoundAndBrokersCount()) ?? (0, 0)
 
         if matchesCount > 0 || elapsedTime >= maxCheckDuration{
             notifyOfResultsAndStopTimer(matchesCount, brokerCount)

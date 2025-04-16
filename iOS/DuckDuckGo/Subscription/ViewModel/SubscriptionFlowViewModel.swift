@@ -229,7 +229,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
                 guard let strongSelf = self else { return }
                 strongSelf.state.canNavigateBack = false
                 guard let currentURL = self?.webViewModel.url else { return }
-                if strongSelf.backButtonForURL(currentURL: currentURL) {
+                if strongSelf.shouldAllowWebViewBackNavigationForURL(currentURL: currentURL) {
                     DispatchQueue.main.async {
                         strongSelf.state.canNavigateBack = value
                     }
@@ -241,27 +241,42 @@ final class SubscriptionFlowViewModel: ObservableObject {
             .sink { [weak self] _ in
                 guard let strongSelf = self else { return }
                 strongSelf.state.canNavigateBack = false
-                guard let currentURL = self?.webViewModel.url else { return }
                 Task { await strongSelf.setTransactionStatus(.idle) }
 
-                let addEmailURL = strongSelf.subscriptionManager.url(for: .addEmail)
-                let addEmailSuccessURL = strongSelf.subscriptionManager.url(for: .addEmailToSubscriptionSuccess)
-                if currentURL.forComparison() == addEmailURL.forComparison() ||
-                    currentURL.forComparison() == addEmailSuccessURL.forComparison() {
+                if strongSelf.isCurrentURLMatchingPostPurchaseAddEmailFlow() {
                     strongSelf.state.viewTitle = UserText.subscriptionRestoreAddEmailTitle
                 } else {
                     strongSelf.state.viewTitle = UserText.subscriptionTitle
                 }
             }
-        
     }
 
-    private func backButtonForURL(currentURL: URL) -> Bool {
-        return currentURL.forComparison() != subscriptionManager.url(for: .baseURL).forComparison() &&
-        currentURL.forComparison() != subscriptionManager.url(for: .activateSuccess).forComparison() &&
-        currentURL.forComparison() != subscriptionManager.url(for: .purchase).forComparison()
+    private func shouldAllowWebViewBackNavigationForURL(currentURL: URL) -> Bool {
+        !isCurrentURL(matching: .purchase) &&
+        !isCurrentURL(matching: .welcome) &&
+        !isCurrentURL(matching: .activationFlowSuccess) &&
+        !isCurrentURL(matching: subscriptionManager.url(for: .baseURL).appendingPathComponent("add-email/success"))
     }
-    
+
+    private func isCurrentURLMatchingPostPurchaseAddEmailFlow() -> Bool {
+        // Not defined in SubscriptionURL as this flow is only triggered by FE as a part of post purchase flow. Only need for comparison.
+        let baseURL = subscriptionManager.url(for: .baseURL)
+        let addEmailURL = baseURL.appendingPathComponent("add-email")
+        let addEmailSuccessURL = baseURL.appendingPathComponent("add-email/success")
+
+        return isCurrentURL(matching: addEmailURL) || isCurrentURL(matching: addEmailSuccessURL)
+    }
+
+    private func isCurrentURL(matching subscriptionURL: SubscriptionURL) -> Bool {
+        let urlToCheck = subscriptionManager.url(for: subscriptionURL)
+        return isCurrentURL(matching: urlToCheck)
+    }
+
+    private func isCurrentURL(matching url: URL) -> Bool {
+        guard let currentURL = webViewModel.url else { return false }
+        return currentURL.forComparison() == url.forComparison()
+    }
+
     private func cleanUp() {
         transactionStatusTimer?.invalidate()
         canGoBackCancellable?.cancel()

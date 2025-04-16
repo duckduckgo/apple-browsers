@@ -24,11 +24,55 @@ import class UIKit.UIApplication
 
 @MainActor
 final class OnboardingIntroViewModel: ObservableObject {
+
+    struct IntroState {
+        var showDaxDialogBox = false
+        var showIntroViewContent = true
+        var showIntroButton = false
+        var animateIntroText = false
+    }
+
+    struct SkipOnboardingState {
+        var animateTitle = true
+        var animateMessage = false
+        var showContent = false
+    }
+
+    struct BrowserComparisonState {
+        var showComparisonButton = false
+        var animateComparisonText = false
+    }
+
+    struct AppIconPickerContentState {
+        var animateTitle = true
+        var animateMessage = false
+        var showContent = false
+    }
+
+    struct AddressBarPositionContentState {
+        var animateTitle = true
+        var showContent = false
+    }
+
+    struct AddToDockState {
+        var isAnimating = true
+    }
+
     @Published private(set) var state: OnboardingView.ViewState = .landing {
         didSet {
             measureScreenImpression()
         }
     }
+
+    @Published var skipOnboardingState = SkipOnboardingState()
+    @Published var appIconPickerContentState = AppIconPickerContentState()
+    @Published var addressBarPositionContentState = AddressBarPositionContentState()
+    @Published var addToDockState = AddToDockState()
+    @Published var browserComparisonState = BrowserComparisonState()
+    @Published var introState = IntroState()
+
+    /// Set to true when the view controller is tapped
+    @Published var isSkipped = false
 
     let copy: Copy
     var onCompletingOnboardingIntro: (() -> Void)?
@@ -36,6 +80,7 @@ final class OnboardingIntroViewModel: ObservableObject {
     private var currentIntroStep: OnboardingIntroStep
 
     private let defaultBrowserManager: DefaultBrowserManaging
+    private let contextualDaxDialogs: ContextualDaxDialogDisabling
     private let pixelReporter: LinearOnboardingPixelReporting
     private let onboardingManager: OnboardingManaging
     private let urlOpener: URLOpener
@@ -46,10 +91,11 @@ final class OnboardingIntroViewModel: ObservableObject {
         let onboardingManager = OnboardingManager()
         self.init(
             defaultBrowserManager: DefaultBrowserManager(),
+            contextualDaxDialogs: DaxDialogs.shared,
             pixelReporter: pixelReporter,
             onboardingManager: onboardingManager,
             urlOpener: UIApplication.shared,
-            currentOnboardingStep: onboardingManager.onboardingSteps.first ?? .introDialog,
+            currentOnboardingStep: onboardingManager.onboardingSteps.first ?? .introDialog(isReturningUser: false),
             appIconProvider: { AppIconManager.shared.appIcon },
             addressBarPositionProvider: { AppUserDefaults().currentAddressBarPosition }
         )
@@ -57,6 +103,7 @@ final class OnboardingIntroViewModel: ObservableObject {
 
     init(
         defaultBrowserManager: DefaultBrowserManaging,
+        contextualDaxDialogs: ContextualDaxDialogDisabling,
         pixelReporter: LinearOnboardingPixelReporting,
         onboardingManager: OnboardingManaging,
         urlOpener: URLOpener,
@@ -65,6 +112,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         addressBarPositionProvider: @escaping () -> AddressBarPosition
     ) {
         self.defaultBrowserManager = defaultBrowserManager
+        self.contextualDaxDialogs = contextualDaxDialogs
         self.pixelReporter = pixelReporter
         self.onboardingManager = onboardingManager
         self.urlOpener = urlOpener
@@ -80,8 +128,21 @@ final class OnboardingIntroViewModel: ObservableObject {
         makeInitialViewState()
     }
 
-    func startOnboardingAction() {
+    func startOnboardingAction(isResumingOnboarding: Bool = false) {
+        if isResumingOnboarding {
+            pixelReporter.measureResumeOnboardingCTAAction()
+        }
         makeNextViewState()
+    }
+
+    func skipOnboardingAction() {
+        pixelReporter.measureSkipOnboardingCTAAction()
+    }
+
+    func confirmSkipOnboardingAction() {
+        pixelReporter.measureConfirmSkipOnboardingCTAAction()
+        contextualDaxDialogs.disableContextualDaxDialogs()
+        onCompletingOnboardingIntro?()
     }
 
     func setDefaultBrowserAction() {
@@ -109,7 +170,7 @@ final class OnboardingIntroViewModel: ObservableObject {
         }
     }
 
-    func addtoDockShowTutorialAction() {
+    func addToDockShowTutorialAction() {
         pixelReporter.measureAddToDockPromoShowTutorialCTAAction()
     }
 
@@ -129,6 +190,10 @@ final class OnboardingIntroViewModel: ObservableObject {
             pixelReporter.measureChooseBottomAddressBarPosition()
         }
         makeNextViewState()
+    }
+
+    func tapped() {
+        isSkipped = true
     }
 
 #if DEBUG || ALPHA
@@ -156,8 +221,8 @@ private extension OnboardingIntroViewModel {
         }
 
         let viewState = switch introStep {
-        case .introDialog:
-            OnboardingView.ViewState.onboarding(.init(type: .startOnboardingDialog, step: .hidden))
+        case .introDialog(let isReturningUser):
+            OnboardingView.ViewState.onboarding(.init(type: .startOnboardingDialog(canSkipTutorial: isReturningUser), step: .hidden))
         case .browserComparison:
             OnboardingView.ViewState.onboarding(.init(type: .browsersComparisonDialog, step: stepInfo()))
         case .addToDockPromo:
@@ -186,34 +251,11 @@ private extension OnboardingIntroViewModel {
             onCompletingOnboardingIntro?()
             return
         }
+
         // Otherwise advance to the next onboarding step
+        isSkipped = false
         currentIntroStep = nextIntroStep
         setViewState(introStep: currentIntroStep)
-    }
-
-    func makeViewState(for introStep: OnboardingIntroStep) -> OnboardingView.ViewState {
-        
-        func stepInfo() -> OnboardingView.ViewState.Intro.StepInfo {
-            guard let currentStepIndex = introSteps.firstIndex(of: introStep) else { return .hidden }
-
-            // Remove startOnboardingDialog from the count of total steps since we don't show the progress for that step.
-            return OnboardingView.ViewState.Intro.StepInfo(currentStep: currentStepIndex, totalSteps: introSteps.count - 1)
-        }
-
-        let viewState = switch introStep {
-        case .introDialog:
-            OnboardingView.ViewState.onboarding(.init(type: .startOnboardingDialog, step: .hidden))
-        case .browserComparison:
-            OnboardingView.ViewState.onboarding(.init(type: .browsersComparisonDialog, step: stepInfo()))
-        case .addToDockPromo:
-            OnboardingView.ViewState.onboarding(.init(type: .addToDockPromoDialog, step: stepInfo()))
-        case .appIconSelection:
-            OnboardingView.ViewState.onboarding(.init(type: .chooseAppIconDialog, step: stepInfo()))
-        case .addressBarPositionSelection:
-            OnboardingView.ViewState.onboarding(.init(type: .chooseAddressBarPositionDialog, step: stepInfo()))
-        }
-
-        return viewState
     }
 
     func measureDDGDefaultBrowserIfNeeded() {

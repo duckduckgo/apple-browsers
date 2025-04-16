@@ -124,10 +124,6 @@ final class DaxDialogsNewTabTests: XCTestCase {
 
 class MockDaxDialogsSettings: DaxDialogsSettings {
     
-    var lastVisitedOnboardingWebsiteURLPath: String?
-    
-    var lastShownContextualOnboardingDialogType: String?
-    
     var isDismissed: Bool = false
 
     var homeScreenMessagesSeen: Int = 0

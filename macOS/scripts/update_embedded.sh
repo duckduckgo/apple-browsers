@@ -2,6 +2,10 @@
 
 set -eo pipefail
 
+# Get the directory where the script is stored
+script_dir=$(dirname "$(readlink -f "$0")")
+base_dir="${script_dir}/.."
+
 # The following URLs shall match the ones in AppConfigurationURLprovider.swift.
 # Danger checks that the URLs match on every PR. If the code changes, the regex that Danger uses may need an update.
 TDS_URL="https://staticcdn.duckduckgo.com/trackerblocking/v6/current/macos-tds.json"
@@ -9,7 +13,7 @@ CONFIG_URL="https://staticcdn.duckduckgo.com/trackerblocking/config/v4/macos-con
 
 # If -c is passed, then check the URLs in the Configuration files are correct.
 if [ "$1" == "-c" ]; then
-	grep http DuckDuckGo/Application/AppConfigurationURLProvider.swift | while read -r line
+	grep http "$base_dir/DuckDuckGo/Application/AppConfigurationURLProvider.swift" | while read -r line
 	do
 		# if trimmed line begins with "case" then check the url in the line and ensure
 		# it matches the expected url.
@@ -60,7 +64,7 @@ performUpdate() {
 
 	curl -s -o "$temp_filename" -H "If-None-Match: \"${old_etag}\"" --etag-save "$temp_etag_filename" "${file_url}"
 
-	if test -f $temp_filename; then
+	if test -f "$temp_filename"; then
 		new_etag=$(< "$temp_etag_filename" awk -F '"' '{print $2}')
 		new_sha=$(shasum -a 256 "$temp_filename" | awk -F ' ' '{print $1}')
 
@@ -82,8 +86,8 @@ performUpdate() {
 }
 
 performUpdate $TDS_URL \
-		"${PWD}/DuckDuckGo/ContentBlocker/AppTrackerDataSetProvider.swift" \
-		"${PWD}/DuckDuckGo/ContentBlocker/trackerData.json"
+		"$base_dir/DuckDuckGo/ContentBlocker/AppTrackerDataSetProvider.swift" \
+		"$base_dir/DuckDuckGo/ContentBlocker/trackerData.json"
 performUpdate $CONFIG_URL \
-		"${PWD}/DuckDuckGo/ContentBlocker/AppPrivacyConfigurationDataProvider.swift" \
-		"${PWD}/DuckDuckGo/ContentBlocker/macos-config.json"
+		"$base_dir/DuckDuckGo/ContentBlocker/AppPrivacyConfigurationDataProvider.swift" \
+		"$base_dir/DuckDuckGo/ContentBlocker/macos-config.json"

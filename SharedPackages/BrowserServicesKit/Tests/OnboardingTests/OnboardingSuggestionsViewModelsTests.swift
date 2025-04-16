@@ -24,20 +24,17 @@ final class OnboardingSuggestionsViewModelsTests: XCTestCase {
     var navigationDelegate: CapturingOnboardingNavigationDelegate!
     var searchSuggestionsVM: OnboardingSearchSuggestionsViewModel!
     var siteSuggestionsVM: OnboardingSiteSuggestionsViewModel!
-    var pixelReporterMock: MockOnboaringSuggestionsPixelReporting!
 
     override func setUp() {
         suggestionsProvider = MockOnboardingSuggestionsProvider()
         navigationDelegate = CapturingOnboardingNavigationDelegate()
-        pixelReporterMock = MockOnboaringSuggestionsPixelReporting()
-        searchSuggestionsVM = OnboardingSearchSuggestionsViewModel(suggestedSearchesProvider: suggestionsProvider, delegate: navigationDelegate, pixelReporter: pixelReporterMock)
-        siteSuggestionsVM = OnboardingSiteSuggestionsViewModel(title: "", suggestedSitesProvider: suggestionsProvider, delegate: navigationDelegate, pixelReporter: pixelReporterMock)
+        searchSuggestionsVM = OnboardingSearchSuggestionsViewModel(suggestedSearchesProvider: suggestionsProvider, delegate: navigationDelegate)
+        siteSuggestionsVM = OnboardingSiteSuggestionsViewModel(title: "", suggestedSitesProvider: suggestionsProvider, delegate: navigationDelegate)
     }
 
     override func tearDown() {
         suggestionsProvider = nil
         navigationDelegate = nil
-        pixelReporterMock = nil
         searchSuggestionsVM = nil
         siteSuggestionsVM = nil
     }
@@ -94,49 +91,6 @@ final class OnboardingSuggestionsViewModelsTests: XCTestCase {
         XCTAssertNotNil(navigationDelegate.urlToNavigateTo)
         XCTAssertEqual(navigationDelegate.urlToNavigateTo, URL(string: randomItem.title))
     }
-
-    // MARK: - Pixels
-
-    func testWhenSearchSuggestionsTapped_ThenPixelReporterIsCalled() {
-        // GIVEN
-        let searches: [ContextualOnboardingListItem] = [
-            ContextualOnboardingListItem.search(title: "First"),
-            ContextualOnboardingListItem.search(title: "Second"),
-            ContextualOnboardingListItem.search(title: "Third"),
-            ContextualOnboardingListItem.surprise(title: "Surprise", visibleTitle: "Surprise Me!"),
-        ]
-        suggestionsProvider.list = searches
-        XCTAssertFalse(pixelReporterMock.didCallTrackSearchOptionTapped)
-
-        // WHEN
-        searches.forEach { searchItem in
-            searchSuggestionsVM.listItemPressed(searchItem)
-        }
-
-        // THEN
-        XCTAssertTrue(pixelReporterMock.didCallTrackSearchOptionTapped)
-    }
-
-    func testWhenSiteSuggestionsTapped_ThenPixelReporterIsCalled() {
-        // GIVEN
-        let searches: [ContextualOnboardingListItem] = [
-            ContextualOnboardingListItem.site(title: "First"),
-            ContextualOnboardingListItem.site(title: "Second"),
-            ContextualOnboardingListItem.site(title: "Third"),
-            ContextualOnboardingListItem.surprise(title: "Surprise", visibleTitle: "Surprise Me!"),
-        ]
-        suggestionsProvider.list = searches
-        XCTAssertFalse(pixelReporterMock.didCallTrackSiteOptionTapped)
-
-        // WHEN
-        searches.forEach { searchItem in
-            siteSuggestionsVM.listItemPressed(searchItem)
-        }
-
-        // THEN
-        XCTAssertTrue(pixelReporterMock.didCallTrackSiteOptionTapped)
-    }
-
 }
 
 class MockOnboardingSuggestionsProvider: OnboardingSuggestionsItemsProviding {
@@ -154,18 +108,4 @@ class CapturingOnboardingNavigationDelegate: OnboardingNavigationDelegate {
     func navigateFromOnboarding(to url: URL) {
         urlToNavigateTo = url
     }
-}
-
-final class MockOnboaringSuggestionsPixelReporting: OnboardingSearchSuggestionsPixelReporting, OnboardingSiteSuggestionsPixelReporting {
-    private(set) var didCallTrackSearchOptionTapped = false
-    private(set) var didCallTrackSiteOptionTapped = false
-
-    func measureSearchSuggestionOptionTapped() {
-        didCallTrackSearchOptionTapped = true
-    }
-
-    func measureSiteSuggestionOptionTapped() {
-        didCallTrackSiteOptionTapped = true
-    }
-
 }

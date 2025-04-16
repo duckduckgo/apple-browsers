@@ -47,7 +47,6 @@ final class OnboardingPixelReporterTests: XCTestCase {
         userDefaults?.removePersistentDomain(forName: "OnboardingPixelReporterTests")
     }
 
-
     func test_WhenMeasureAddressBarTypedIn_ThenDependingOnTheState_CorrectPixelsAreSent() throws {
         onboardingState.lastDialog = .tryASearch
         reporter.measureAddressBarTypedIn()

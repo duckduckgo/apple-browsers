@@ -59,6 +59,7 @@ private struct Handlers {
     static let subscriptionsYearlyPriceClicked = "subscriptionsYearlyPriceClicked"
     static let subscriptionsUnknownPriceClicked = "subscriptionsUnknownPriceClicked"
     static let subscriptionsAddEmailSuccess = "subscriptionsAddEmailSuccess"
+    static let subscriptionsWelcomeAddEmailClicked = "subscriptionsWelcomeAddEmailClicked"
     static let subscriptionsWelcomeFaqClicked = "subscriptionsWelcomeFaqClicked"
     static let getAccessToken = "getAccessToken"
 }
@@ -126,6 +127,7 @@ protocol SubscriptionPagesUseSubscriptionFeature: Subfeature, ObservableObject {
     func subscriptionsYearlyPriceClicked(params: Any, original: WKScriptMessage) async -> Encodable?
     func subscriptionsUnknownPriceClicked(params: Any, original: WKScriptMessage) async -> Encodable?
     func subscriptionsAddEmailSuccess(params: Any, original: WKScriptMessage) async -> Encodable?
+    func subscriptionsWelcomeAddEmailClicked(params: Any, original: WKScriptMessage) async -> Encodable?
     func subscriptionsWelcomeFaqClicked(params: Any, original: WKScriptMessage) async -> Encodable?
 
     func pushPurchaseUpdate(originalMessage: WKScriptMessage, purchaseUpdate: PurchaseUpdate) async
@@ -211,6 +213,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         case Handlers.subscriptionsYearlyPriceClicked: return subscriptionsYearlyPriceClicked
         case Handlers.subscriptionsUnknownPriceClicked: return subscriptionsUnknownPriceClicked
         case Handlers.subscriptionsAddEmailSuccess: return subscriptionsAddEmailSuccess
+        case Handlers.subscriptionsWelcomeAddEmailClicked: return subscriptionsWelcomeAddEmailClicked
         case Handlers.subscriptionsWelcomeFaqClicked: return subscriptionsWelcomeFaqClicked
         case Handlers.getAccessToken: return getAccessToken
         default:
@@ -506,6 +509,12 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         return nil
     }
 
+    func subscriptionsWelcomeAddEmailClicked(params: Any, original: WKScriptMessage) async -> Encodable? {
+        Logger.subscription.debug("Web function called: \(#function)")
+        UniquePixel.fire(pixel: .privacyProWelcomeAddDevice)
+        return nil
+    }
+
     func subscriptionsWelcomeFaqClicked(params: Any, original: WKScriptMessage) async -> Encodable? {
         Logger.subscription.debug("Web function called: \(#function)")
         UniquePixel.fire(pixel: .privacyProWelcomeFAQClick)
@@ -740,6 +749,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         case Handlers.subscriptionsYearlyPriceClicked: return subscriptionsYearlyPriceClicked
         case Handlers.subscriptionsUnknownPriceClicked: return subscriptionsUnknownPriceClicked
         case Handlers.subscriptionsAddEmailSuccess: return subscriptionsAddEmailSuccess
+        case Handlers.subscriptionsWelcomeAddEmailClicked: return subscriptionsWelcomeAddEmailClicked
         case Handlers.subscriptionsWelcomeFaqClicked: return subscriptionsWelcomeFaqClicked
         case Handlers.getAccessToken: return getAccessToken
         default:
@@ -1043,6 +1053,12 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
     func subscriptionsAddEmailSuccess(params: Any, original: WKScriptMessage) async -> Encodable? {
         Logger.subscription.log("Web function called: \(#function)")
         UniquePixel.fire(pixel: .privacyProAddEmailSuccess)
+        return nil
+    }
+
+    func subscriptionsWelcomeAddEmailClicked(params: Any, original: WKScriptMessage) async -> Encodable? {
+        Logger.subscription.debug("Web function called: \(#function)")
+        UniquePixel.fire(pixel: .privacyProWelcomeAddDevice)
         return nil
     }
 

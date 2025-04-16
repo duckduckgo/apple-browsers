@@ -32,7 +32,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
     var dialogProvider: MockDialogsProvider!
     var factory: CapturingDialogFactory!
     var featureFlagger: MockFeatureFlagger!
-    var webViewConfiguration: WKWebViewConfiguration!
+    var schemeHandler: TestSchemeHandler!
     var tab: Tab!
     var cancellables: Set<AnyCancellable> = []
     var expectation: XCTestExpectation!
@@ -45,11 +45,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         dialogProvider = MockDialogsProvider()
         expectation = .init()
         factory = CapturingDialogFactory(expectation: expectation)
-        let schemeHandler = TestSchemeHandler()
-        WKWebView.customHandlerSchemes = [.http, .https]
-        webViewConfiguration = WKWebViewConfiguration()
-        webViewConfiguration.setURLSchemeHandler(schemeHandler, forURLScheme: URL.NavigationalScheme.http.rawValue)
-        webViewConfiguration.setURLSchemeHandler(schemeHandler, forURLScheme: URL.NavigationalScheme.https.rawValue)
+        schemeHandler = TestSchemeHandler()
 
         // ! uncomment this to view navigation logs
         // OSLog.loggingCategories.insert(OSLog.AppCategories.navigation.rawValue)
@@ -57,7 +53,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         // tests return debugDescription instead of localizedDescription
         NSError.disableSwizzledDescription = true
 
-        tab = Tab(content: .url(URL.duckDuckGo, credential: nil, source: .appOpenUrl), webViewConfiguration: webViewConfiguration)
+        tab = Tab(content: .url(URL.duckDuckGo, credential: nil, source: .appOpenUrl), webViewConfiguration: schemeHandler.webViewConfiguration())
         let tabViewModel = TabViewModel(tab: tab)
         viewController = BrowserTabViewController(tabCollectionViewModel: tabCollectionViewModel, onboardingDialogTypeProvider: dialogProvider, onboardingDialogFactory: factory, featureFlagger: featureFlagger)
         viewController.tabViewModel = tabViewModel
@@ -79,7 +75,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         dialogTypeForTabExpectation = nil
         featureFlagger = nil
         window = nil
-        webViewConfiguration = nil
+        schemeHandler = nil
     }
 
     func testWhenNavigationCompletedAndFeatureIsOffThenTurnOffFeature() throws {

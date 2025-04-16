@@ -27,7 +27,6 @@ import XCTest
 @available(macOS 12.0, *)
 class HistoryIntegrationTests: XCTestCase {
 
-    var webViewConfiguration: WKWebViewConfiguration!
     var schemeHandler: TestSchemeHandler!
     var window: NSWindow!
     static let testHtml = "<html><head><title>Title 1</title></head><body>test</body></html>"
@@ -54,18 +53,9 @@ class HistoryIntegrationTests: XCTestCase {
         privacyConfiguration.isFeatureKeyEnabled = { _, _ in
             return false
         }
-        schemeHandler = TestSchemeHandler()
-        WKWebView.customHandlerSchemes = [.http, .https]
-
-        webViewConfiguration = WKWebViewConfiguration()
-
-        // mock WebView https protocol handling
-        webViewConfiguration.setURLSchemeHandler(schemeHandler, forURLScheme: URL.NavigationalScheme.http.rawValue)
-        webViewConfiguration.setURLSchemeHandler(schemeHandler, forURLScheme: URL.NavigationalScheme.https.rawValue)
-
-        schemeHandler.middleware = [{ _ in
+        schemeHandler = TestSchemeHandler { _ in
             return .ok(.html(Self.testHtml))
-        }]
+        }
 
         await withCheckedContinuation { continuation in
             HistoryCoordinator.shared.burnAll {
@@ -79,16 +69,14 @@ class HistoryIntegrationTests: XCTestCase {
         window?.close()
         window = nil
         WebTrackingProtectionPreferences.shared.isGPCEnabled = true
-        webViewConfiguration = nil
         schemeHandler = nil
-        WKWebView.customHandlerSchemes = []
     }
 
     // MARK: - Tests
 
     @MainActor
     func testWhenPageTitleIsUpdated_historyEntryTitleUpdated() async throws {
-        let tab = Tab(content: .newtab, webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock)
+        let tab = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
         window = WindowsManager.openNewWindow(with: tab)!
 
         let url = URL.duckDuckGo
@@ -125,7 +113,7 @@ class HistoryIntegrationTests: XCTestCase {
 
     @MainActor
     func testWhenSameDocumentNavigation_historyEntryTitleUpdated() async throws {
-        let tab = Tab(content: .newtab, webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock)
+        let tab = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
         window = WindowsManager.openNewWindow(with: tab)!
 
         let html = """
@@ -172,7 +160,7 @@ class HistoryIntegrationTests: XCTestCase {
 
     @MainActor
     func testWhenNavigatingToSamePage_visitIsAdded() async throws {
-        let tab = Tab(content: .newtab, webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock)
+        let tab = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
         window = WindowsManager.openNewWindow(with: tab)!
 
         let urls = [
@@ -193,7 +181,7 @@ class HistoryIntegrationTests: XCTestCase {
 
     @MainActor
     func testWhenNavigatingBack_visitIsNotAdded() async throws {
-        let tab = Tab(content: .newtab, webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock)
+        let tab = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
         window = WindowsManager.openNewWindow(with: tab)!
 
         let urls = [
@@ -216,7 +204,7 @@ class HistoryIntegrationTests: XCTestCase {
     func testWhenScriptTrackerLoaded_trackerAddedToHistory() async throws {
         WebTrackingProtectionPreferences.shared.isGPCEnabled = false
 
-        let tab = Tab(content: .newtab, webViewConfiguration: webViewConfiguration)
+        let tab = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration())
         window = WindowsManager.openNewWindow(with: tab)!
 
         let url = URL(string: "http://privacy-test-pages.site/tracker-reporting/1major-via-script.html")!
@@ -262,7 +250,7 @@ class HistoryIntegrationTests: XCTestCase {
     func testWhenSurrogateTrackerLoaded_trackerAddedToHistory() async throws {
         WebTrackingProtectionPreferences.shared.isGPCEnabled = false
 
-        let tab = Tab(content: .newtab, webViewConfiguration: webViewConfiguration)
+        let tab = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration())
         window = WindowsManager.openNewWindow(with: tab)!
 
         let html = """

@@ -48,21 +48,14 @@ class MaliciousSiteProtectionIntegrationTests: XCTestCase {
         MaliciousSiteProtectionPreferences.shared.isEnabled = true
         featureFlagger = MockFeatureFlagger()
         detector = MaliciousSiteProtectionManager(featureFlagger: featureFlagger, updateIntervalProvider: { _ in nil })
-        schemeHandler = TestSchemeHandler()
-        schemeHandler.middleware = [{
-            if $0.url!.lastPathComponent == "phishing.html" {
+        schemeHandler = TestSchemeHandler { request in
+            if request.url!.lastPathComponent == "phishing.html" {
                 XCTFail("Phishing request loaded")
-            } else if $0.url!.lastPathComponent == "malware.html" {
+            } else if request.url!.lastPathComponent == "malware.html" {
                 XCTFail("Malware request loaded")
             }
             return .ok(.html(""))
-        }]
-
-        WKWebView.customHandlerSchemes = [.http, .https]
-
-        let webViewConfiguration = WKWebViewConfiguration()
-        webViewConfiguration.setURLSchemeHandler(schemeHandler, forURLScheme: URL.NavigationalScheme.http.rawValue)
-        webViewConfiguration.setURLSchemeHandler(schemeHandler, forURLScheme: URL.NavigationalScheme.https.rawValue)
+        }
 
         let matchesUrlPrefix = MaliciousSiteDetector.APIEnvironment.production.url(for: .matches(.init(hashPrefix: "")), platform: .macOS)
             .absoluteString.prefix(while: { $0 != "?" })
@@ -80,7 +73,7 @@ class MaliciousSiteProtectionIntegrationTests: XCTestCase {
             if case .maliciousSiteProtection = feature { true } else { false }
         }
 
-        tab = Tab(content: .none, webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: detector)
+        tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: detector)
         tabViewModel = TabViewModel(tab: tab)
         window = WindowsManager.openNewWindow(with: tab)!
         cancellables = Set<AnyCancellable>()
@@ -96,7 +89,6 @@ class MaliciousSiteProtectionIntegrationTests: XCTestCase {
         tabViewModel = nil
         schemeHandler = nil
         HTTPStubs.removeAllStubs()
-        WKWebView.customHandlerSchemes = []
         WebTrackingProtectionPreferences.shared.isGPCEnabled = true
         featureFlagger = nil
     }

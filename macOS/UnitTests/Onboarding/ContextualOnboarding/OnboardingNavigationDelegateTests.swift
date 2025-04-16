@@ -24,8 +24,6 @@ import Onboarding
 final class OnboardingNavigationDelegateTests: XCTestCase {
 
     var tab: Tab!
-
-    var webViewConfiguration: WKWebViewConfiguration!
     var schemeHandler: TestSchemeHandler!
     static let testHtml = "<html><head><title>Title</title></head><body>test</body></html>"
 
@@ -33,26 +31,16 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
     override func setUpWithError() throws {
         try super.setUpWithError()
 
-        schemeHandler = TestSchemeHandler()
-        WKWebView.customHandlerSchemes = [.http, .https]
-
-        webViewConfiguration = WKWebViewConfiguration()
-
-        // mock WebView https protocol handling
-        webViewConfiguration.setURLSchemeHandler(schemeHandler, forURLScheme: URL.NavigationalScheme.https.rawValue)
-
-        schemeHandler.middleware = [{ _ in
+        schemeHandler = TestSchemeHandler { _ in
             return .ok(.html(Self.testHtml))
-        }]
+        }
 
-        tab = Tab(content: .none, webViewConfiguration: webViewConfiguration)
+        tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration())
     }
 
     override func tearDownWithError() throws {
         tab = nil
-        webViewConfiguration = nil
         schemeHandler = nil
-        WKWebView.customHandlerSchemes = []
         try super.tearDownWithError()
     }
 

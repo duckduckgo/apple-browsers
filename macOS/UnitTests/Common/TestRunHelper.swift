@@ -87,6 +87,9 @@ extension TestRunHelper: XCTestObservation {
             FileManager.default.cleanupTemporaryDirectory()
         }
         NSApp.swizzled_currentEvent = nil
+        if #available(macOS 12.0, *) {
+            WKWebView.customHandlerSchemes = []
+        }
     }
 
 }

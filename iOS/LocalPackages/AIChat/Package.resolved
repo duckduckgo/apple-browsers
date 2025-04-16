@@ -1,13 +1,13 @@
 {
-  "originHash" : "52c5ad9c2309fcc6bc2fb990515551005b23071719bd3e2147e08ddbb718c232",
+  "originHash" : "b5abdc4cce0d00fb7daf2bc0b16d32f2f63609b2099d3ac626acf143c14c39dc",
   "pins" : [
     {
       "identity" : "designresourceskit",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/DesignResourcesKit",
       "state" : {
-        "revision" : "493a824c8abaf54064d8551d67c72e5ec59d2bf9",
-        "version" : "4.0.1"
+        "revision" : "7083d28778f86a0d6620c08ab0eb98270749f14e",
+        "version" : "4.1.0"
       }
     }
   ],

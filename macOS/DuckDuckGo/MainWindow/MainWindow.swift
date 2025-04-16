@@ -20,7 +20,7 @@ import Cocoa
 
 final class MainWindow: NSWindow {
 
-    static let minWindowWidth: CGFloat = 600
+    static let minWindowWidth: CGFloat = 544
 
     override var canBecomeKey: Bool {
         return true

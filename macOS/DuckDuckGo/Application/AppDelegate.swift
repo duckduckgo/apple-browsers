@@ -449,7 +449,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Freemium DBP
         freemiumDBPFeature.subscribeToDependencyUpdates()
 
+        // ignore popovers shown from a view not in view hierarchy
+        // https://app.asana.com/0/1201037661562251/1206407295280737/f
         _ = NSPopover.swizzleShowRelativeToRectOnce
+        // disable macOS system-wide window tabbing
+        NSWindow.allowsAutomaticWindowTabbing = false
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {

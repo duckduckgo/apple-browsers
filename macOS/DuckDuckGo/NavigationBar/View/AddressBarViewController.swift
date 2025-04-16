@@ -39,7 +39,7 @@ final class AddressBarViewController: NSViewController, ObservableObject {
     @IBOutlet var switchToTabBoxMinXConstraint: NSLayoutConstraint!
     private static let defaultActiveTextFieldMinX: CGFloat = 40
 
-    @IBOutlet weak var addressBarPassiveTextTrailingConstraint: NSLayoutConstraint!
+    @IBOutlet weak var addressBarPassiveTextCenterXConstraint: NSLayoutConstraint!
     @IBOutlet weak var addressBarTextTrailingConstraint: NSLayoutConstraint!
     private let popovers: NavigationBarPopovers?
     var addressBarButtonsViewController: AddressBarButtonsViewController?
@@ -603,9 +603,8 @@ extension AddressBarViewController {
 
 extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
     func addressBarButtonsViewController(_ controller: AddressBarButtonsViewController, didUpdateAIChatButtonVisibility isVisible: Bool) {
-        let padding: CGFloat = isVisible ? 80 : 45
-        addressBarTextTrailingConstraint.constant = padding
-        addressBarPassiveTextTrailingConstraint.constant = padding
+        addressBarTextTrailingConstraint.constant = isVisible ? 80 : 45
+        addressBarPassiveTextCenterXConstraint.constant = isVisible ? -20 : 0
     }
 
     func addressBarButtonsViewControllerClearButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {

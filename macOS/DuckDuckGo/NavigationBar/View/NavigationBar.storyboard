@@ -587,7 +587,6 @@
                             <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="zaX-wZ-E3D" secondAttribute="trailing" constant="45" id="3qw-n4-evE"/>
                             <constraint firstItem="Zjk-bE-Xft" firstAttribute="top" secondItem="wj6-L2-5rJ" secondAttribute="top" constant="-3" id="7Hj-tq-lmj"/>
                             <constraint firstItem="JKb-5c-xaF" firstAttribute="leading" secondItem="wj6-L2-5rJ" secondAttribute="leading" priority="300" constant="550" id="9CH-r6-Spp"/>
-                            <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="le0-Hn-ZAC" secondAttribute="trailing" constant="45" id="BQS-RT-fLY"/>
                             <constraint firstAttribute="trailing" secondItem="ENV-0H-Fcc" secondAttribute="trailing" constant="2" id="Cig-ek-031"/>
                             <constraint firstItem="zaX-wZ-E3D" firstAttribute="height" relation="lessThanOrEqual" secondItem="wj6-L2-5rJ" secondAttribute="height" multiplier="0.55" id="E0Q-AU-qRQ"/>
                             <constraint firstItem="e0p-7S-Gan" firstAttribute="leading" secondItem="wj6-L2-5rJ" secondAttribute="leading" id="E5D-iA-uu3"/>
@@ -622,7 +621,7 @@
                         <outlet property="activeBackgroundViewWithSuggestions" destination="Ij9-fc-CLI" id="JWC-g2-hrM"/>
                         <outlet property="activeOuterBorderView" destination="Zjk-bE-Xft" id="u6o-fc-V76"/>
                         <outlet property="activeTextFieldMinXConstraint" destination="bY3-LA-cuF" id="Sln-8O-mrq"/>
-                        <outlet property="addressBarPassiveTextTrailingConstraint" destination="BQS-RT-fLY" id="0d8-Wr-Fpa"/>
+                        <outlet property="addressBarPassiveTextCenterXConstraint" destination="GIk-xf-3Bn" id="R7K-GQ-6Nm"/>
                         <outlet property="addressBarTextField" destination="zaX-wZ-E3D" id="pfO-d4-i46"/>
                         <outlet property="addressBarTextTrailingConstraint" destination="3qw-n4-evE" id="Hgt-4m-g06"/>
                         <outlet property="buttonsContainerView" destination="bOl-8Z-hTh" id="UHc-27-JaK"/>

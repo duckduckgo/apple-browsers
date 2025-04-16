@@ -68,6 +68,12 @@ public final class FileResources: ResourcesRepository {
             }
 
             return try brokerJSONFiles.map(DataBroker.initFromResource(_:))
+        } catch let error as DecodingError {
+            assertionFailure("Failed to decode bundled JSON: \(error.localizedDescription)")
+            return nil
+        } catch let error as Step.DecodingError {
+            assertionFailure("Bundled JSON containing unsupported data: \(error.localizedDescription)")
+            return nil
         } catch {
             Logger.dataBrokerProtection.error("LocalBrokerJSONService: error FileResources error: fetchBrokerFromResourceFiles, error: \(error.localizedDescription, privacy: .public)")
             throw error

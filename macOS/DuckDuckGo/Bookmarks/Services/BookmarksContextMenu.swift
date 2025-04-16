@@ -290,7 +290,7 @@ extension BookmarksContextMenu: BookmarkMenuItemSelectors {
             return
         }
 
-        windowControllersManager.show(url: bookmark.urlObject, source: .bookmark, newTab: true)
+        windowControllersManager.show(url: bookmark.urlObject, source: .bookmark, newTab: true, selected: nil /* depending on the setting */)
     }
 
     @MainActor

@@ -36,6 +36,8 @@ extension BookmarksOutlineViewDataSource {
 
 final class BookmarksOutlineView: NSOutlineView {
 
+    private var insertionIndicatorView: BookmarkListInsertionIndicatorView?
+
     private var highlightedRowView: RoundedSelectionRowView?
     private var highlightedCellView: BookmarkOutlineCellView?
 

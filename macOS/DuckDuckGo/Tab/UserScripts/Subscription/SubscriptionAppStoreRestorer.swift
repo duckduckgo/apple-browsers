@@ -99,7 +99,7 @@ struct DefaultSubscriptionAppStoreRestorer: SubscriptionAppStoreRestorer {
     // MARK: - UI interactions
 
     private func showSomethingWentWrongAlert() async {
-        PixelKit.fire(PrivacyProPixel.privacyProPurchaseFailure, frequency: .legacyDailyAndCount)
+        PixelKit.fire(PrivacyProPixel.privacyProPurchaseFailureOther, frequency: .legacyDailyAndCount)
         await uiHandler.show(alertType: .somethingWentWrong)
     }
 
@@ -192,7 +192,7 @@ struct DefaultSubscriptionAppStoreRestorerV2: SubscriptionAppStoreRestorer {
     // MARK: - UI interactions
 
     private func showSomethingWentWrongAlert() async {
-        PixelKit.fire(PrivacyProPixel.privacyProPurchaseFailure, frequency: .legacyDailyAndCount)
+        PixelKit.fire(PrivacyProPixel.privacyProPurchaseFailureOther, frequency: .legacyDailyAndCount)
         await uiHandler.show(alertType: .somethingWentWrong)
     }
 

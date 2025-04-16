@@ -33,6 +33,6 @@ struct OmnibarAccessoryHandler: OmnibarAccessoryHandling {
             return .share
         }
 
-        return (url?.isDuckDuckGoSearch == true) ? .chat : .share
+        return (url?.isDuckDuckGoSearch == true || url == nil) ? .chat : .share
     }
 }

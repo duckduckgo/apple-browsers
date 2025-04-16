@@ -139,7 +139,13 @@ final class AppDependencyProvider: DependencyProvider {
                                                        subscriptionEndpointService: subscriptionEndpointService,
                                                        authEndpointService: authService)
 
-            let storePurchaseManager = DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionFeatureMappingCache)
+            let internalUserDecider = featureFlagger.internalUserDecider
+            let subscriptionFeatureFlagger = SubscriptionFeatureFlagMapping(internalUserDecider: internalUserDecider,
+                                                                            subscriptionEnvironment: subscriptionEnvironment,
+                                                                            subscriptionUserDefaults: subscriptionUserDefaults)
+
+            let storePurchaseManager = DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionFeatureMappingCache,
+                                                                   subscriptionFeatureFlagger: subscriptionFeatureFlagger)
 
             let subscriptionManager = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
                                                                  accountManager: accountManager,
@@ -194,7 +200,15 @@ final class AppDependencyProvider: DependencyProvider {
                     return tokenContainer.accessToken
                 }
             }
-            let storePurchaseManager = DefaultStorePurchaseManagerV2(subscriptionFeatureMappingCache: subscriptionEndpointService)
+
+
+            let internalUserDecider = featureFlagger.internalUserDecider
+            let subscriptionFeatureFlagger = SubscriptionFeatureFlagMapping(internalUserDecider: internalUserDecider,
+                                                                            subscriptionEnvironment: subscriptionEnvironment,
+                                                                            subscriptionUserDefaults: subscriptionUserDefaults)
+
+            let storePurchaseManager = DefaultStorePurchaseManagerV2(subscriptionFeatureMappingCache: subscriptionEndpointService,
+                                                                     subscriptionFeatureFlagger: subscriptionFeatureFlagger)
             let pixelHandler = AuthV2PixelHandler(source: .mainApp)
             let subscriptionManager = DefaultSubscriptionManagerV2(storePurchaseManager: storePurchaseManager,
                                                                    oAuthClient: authClient,

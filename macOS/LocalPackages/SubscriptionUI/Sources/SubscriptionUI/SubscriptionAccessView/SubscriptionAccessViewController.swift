@@ -54,5 +54,7 @@ public final class SubscriptionAccessViewController: NSViewController {
         hostingView.translatesAutoresizingMaskIntoConstraints = true
 
         view.addSubview(hostingView)
+
+        self.preferredContentSize = size
     }
 }

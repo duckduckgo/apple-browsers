@@ -815,7 +815,9 @@ extension SyncPreferences: ManagementDialogModelDelegate {
         if isSyncEnabled && !featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) {
             code = recoveryCode
         } else {
-            code = codeToDisplay
+            // Fall back to recovery code if no other codeToDisplay is set as, if available,
+            // a recovery code will always work for connection
+            code = codeToDisplay ?? recoveryCode
         }
         guard let code else { return }
         let pasteboard = NSPasteboard.general

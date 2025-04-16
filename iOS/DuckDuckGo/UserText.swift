@@ -1413,9 +1413,9 @@ Take back control of your personal information with the browser designed for dat
         return String(format: localized, expiryDate)
     }
 
-    public static let subscriptionDevicesSectionHeader = NSLocalizedString("subscription.devices.header", value: "Activate on Other Devices", comment: "Header for section for activating subscription on other devices")
-    public static let subscriptionDevicesSectionNoEmailFooter = NSLocalizedString("subscription.devices.no.email.footer", value: "Add an optional email to your subscription to access Privacy Pro on other devices. **[Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**", comment: "Footer for section for activating subscription on other devices when email was not yet added")
-    public static let subscriptionDevicesSectionWithEmailFooter = NSLocalizedString("subscription.devices.with.email.footer", value: "Use this email to activate your subscription in Settings > Privacy Pro in the DuckDuckGo app on your other devices. **[Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**", comment: "Footer for section for activating subscription on other devices when email is added")
+    public static let subscriptionDevicesSectionHeader = NSLocalizedString("subscription.add.to.devices.header", value: "Add Privacy Pro to Other Devices", comment: "Header for section for activating subscription on other devices")
+    public static let subscriptionDevicesSectionNoEmailFooter = NSLocalizedString("subscription.add.to.devices.no.email.footer", value: "Add Privacy Pro to your other devices via Apple ID or by linking an email address. **[Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**", comment: "Footer for section for activating subscription on other devices when email was not yet added")
+    public static let subscriptionDevicesSectionWithEmailFooter = NSLocalizedString("subscription.add.to.devices.with.email.footer", value: "Use this email to add your subscription on your other devices in the DuckDuckGo app. Go to Settings > Privacy Pro > I Have a Subscription. **[Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**", comment: "Footer for section for activating subscription on other devices when email is added")
     public static let subscriptionRemoveFromDevice = NSLocalizedString("subscription.remove.from.device.button", value: "Remove From This Device", comment: "Remove from this device button")
     public static let subscriptionManageTitle = NSLocalizedString("subscription.manage.title", value: "Subscription", comment: "Header for the subscription section")
     public static let subscriptionManagePlan = NSLocalizedString("subscription.manage.plan", value: "Manage Plan", comment: "Manage Plan header")
@@ -1433,20 +1433,21 @@ Take back control of your personal information with the browser designed for dat
     public static let subscriptionRemovalConfirmation = NSLocalizedString("subscription.cancel.message", value: "Your subscription has been removed from this device.", comment: "Subscription Removal confirmation message")
     
     // Subscription Restore
-    public static let subscriptionActivateTitle = NSLocalizedString("subscription.activate.title", value: "Activate your subscription on this device", comment: "Subscription Activation Title")
-    public static let subscriptionActivateDescription = NSLocalizedString("subscription.activate.description", value: "Your subscription is automatically available in DuckDuckGo on any device signed in to your Apple Account.", comment: "Subscription Activation Info")
-    public static let subscriptionActivateHeaderDescription = NSLocalizedString("subscription.activate..header.description", value: "Access your Privacy Pro subscription on this device via Apple Account or an email address.", comment: "Subscription Activation Info")
-    public static let subscriptionActivateAppleID = NSLocalizedString("subscription.activate.appleid", value: "Apple Account", comment: "Apple Account option for activation")
-    public static let subscriptionActivateAppleIDButton = NSLocalizedString("subscription.activate.appleid.button", value: "Restore Purchase", comment: "Button text for restoring purchase via Apple Account")
-    public static let subscriptionActivateAppleIDDescription = NSLocalizedString("subscription.activate.appleid.description", value: "Restore your purchase to activate your subscription on this device.", comment: "Description for Apple Account activation")
-    public static let subscriptionRestoreAppleID = NSLocalizedString("subscription.activate.restore.apple", value: "Restore Purchase", comment: "Restore button title for AppleID")
-    public static let subscriptionActivateEmail = NSLocalizedString("subscription.activate.email", value: "Email", comment: "Email option for activation")
-    public static let subscriptionActivateEmailTitle = NSLocalizedString("subscription.activate.email.title", value: "Activate Subscription", comment: "Activate subscription title")
-    public static let subscriptionActivateEmailDescription = NSLocalizedString("subscription.activate.email.description", value: "Use your email to activate your subscription on this device.", comment: "Description for Email activation")
-    public static let subscriptionAddEmailButton = NSLocalizedString("subscription.activate.add.email.button", value: "Add Email", comment: "Button for adding email address to subscription")
+    public static let subscriptionActivateViewTitle = NSLocalizedString("subscription.activate.view.title", value: "I Have a Subscription", comment: "View title for activating subscription")
+    public static let subscriptionActivateHeaderTitle = NSLocalizedString("subscription.activate.header.title", value: "Add your Privacy Pro subscription to this device", comment: "Header title for the subscription activation view")
+
+    public static let subscriptionActivateViaEmailTitle = NSLocalizedString("subscription.activate.via.email.title", value: "Add via email address", comment: "Title for adding subscription via email address")
+    public static let subscriptionActivateViaEmailDescription = NSLocalizedString("subscription.activate.via.email.description", value: "Use an email address to add Privacy Pro to this device.", comment: "Description for adding subscription via email address")
+    public static let subscriptionActivateViaEmailButton = NSLocalizedString("subscription.activate.via.email.button", value: "Get Started", comment: "Button title for starting the process of adding subscription via email address")
+
+    public static let subscriptionActivateViaAppleAccountTitle = NSLocalizedString("subscription.activate.via.apple.account.title", value: "Add via Apple Account", comment: "Title for adding subscription via Apple Account")
+    public static let subscriptionActivateViaAppleAccountDescription = NSLocalizedString("subscription.activate.via.apple.account.description", value:  "Restore your subscription on Apple devices using your Apple Account.", comment: "Description for adding subscription via Apple Account")
+    public static let subscriptionActivateViaAppleAccountButton = NSLocalizedString("subscription.activate.via.apple.account.button", value: "Restore Purchase", comment: "Button title for starting the process of adding subscription via Apple Account")
+
+
     public static let subscriptionEditEmailButton = NSLocalizedString("subscription.activate.edit.email.button", value: "Edit Email", comment: "Button for editing email address added to subscription")
-    public static let subscriptionActivateEmailButton = NSLocalizedString("subscription.activate.email.button", value: "Enter Email", comment: "Restore button title for Email")
-            
+    public static let subscriptionAddToDeviceButton = NSLocalizedString("subscription.activate.add.to.device.button", value: "Add to Device", comment: "Button for adding this subscription to another device")
+
     // Add to other devices (AppleID / Email)
     public static let subscriptionAvailableInApple = NSLocalizedString("subscription.available.apple", value: "Privacy Pro is available on any device signed in to the same Apple Account.", comment: "Subscription availability message on Apple devices")
     public static let subscriptionManageEmailResendInstructions = NSLocalizedString("subscription.add.device.resend.instructions", value: "Resend Instructions", comment: "Resend activation instructions button")

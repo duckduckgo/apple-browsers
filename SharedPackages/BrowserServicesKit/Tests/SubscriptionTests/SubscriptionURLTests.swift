@@ -47,12 +47,12 @@ final class SubscriptionURLTests: XCTestCase {
     func testProductionURLs() throws {
         let allURLTypes: [SubscriptionURL] = [.baseURL,
                                               .purchase,
-                                              .activateViaEmail,
-                                              .addEmail,
+                                              .welcome,
+                                              .activationFlow,
+                                              .activationFlowAddEmailStep,
+                                              .activationFlowLinkViaEmailStep,
+                                              .activationFlowSuccess,
                                               .manageEmail,
-                                              .activateSuccess,
-                                              .addEmailToSubscriptionSuccess,
-                                              .addEmailToSubscriptionOTP,
                                               .identityTheftRestoration]
 
         for urlType in allURLTypes {
@@ -68,12 +68,12 @@ final class SubscriptionURLTests: XCTestCase {
     func testStagingURLs() throws {
         let allURLTypes: [SubscriptionURL] = [.baseURL,
                                               .purchase,
-                                              .activateViaEmail,
-                                              .addEmail,
+                                              .welcome,
+                                              .activationFlow,
+                                              .activationFlowAddEmailStep,
+                                              .activationFlowLinkViaEmailStep,
+                                              .activationFlowSuccess,
                                               .manageEmail,
-                                              .activateSuccess,
-                                              .addEmailToSubscriptionSuccess,
-                                              .addEmailToSubscriptionOTP,
                                               .identityTheftRestoration]
 
         for urlType in allURLTypes {
@@ -150,13 +150,13 @@ final class SubscriptionURLTests: XCTestCase {
         XCTAssertEqual(url, customBaseURL)
     }
 
-    func testCustomBaseSubscriptionURLForAddEmailURL() throws {
+    func testCustomBaseSubscriptionURLForActivationFlowURL() throws {
         // Given
         let customBaseURL = URL(string: "https://dax.duck.co/subscriptions")!
-        let expectedURL = customBaseURL.appendingPathComponent("add-email")
+        let expectedURL = customBaseURL.appendingPathComponent("activation-flow")
 
         // When
-        let url = SubscriptionURL.addEmail.subscriptionURL(withCustomBaseURL: customBaseURL, environment: .production)
+        let url = SubscriptionURL.activationFlow.subscriptionURL(withCustomBaseURL: customBaseURL, environment: .production)
 
         // Then
         XCTAssertEqual(url, expectedURL)
@@ -172,5 +172,44 @@ final class SubscriptionURLTests: XCTestCase {
 
         // Then
         XCTAssertEqual(url, expectedURL)
+    }
+
+    func testPurchaseURLComponentsWithOriginForProduction() throws {
+        // Given
+        let origin = "funnel_appsettings_ios"
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions?origin=funnel_appsettings_ios")!
+
+        // When
+        let components = SubscriptionURL.purchaseURLComponentsWithOrigin(origin, environment: .production)
+
+        // Then
+        XCTAssertNotNil(components)
+        XCTAssertEqual(components?.url, expectedURL)
+    }
+
+    func testPurchaseURLComponentsWithOriginForStaging() throws {
+        // Given
+        let origin = "funnel_appsettings_ios"
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions?environment=staging&origin=funnel_appsettings_ios")!
+
+        // When
+        let components = SubscriptionURL.purchaseURLComponentsWithOrigin(origin, environment: .staging)
+
+        // Then
+        XCTAssertNotNil(components)
+        XCTAssertEqual(components?.url, expectedURL)
+    }
+
+    func testPurchaseURLComponentsWithOriginWithEmptyOrigin() throws {
+        // Given
+        let origin = ""
+        let expectedURL = URL(string: "https://duckduckgo.com/subscriptions?origin=")!
+
+        // When
+        let components = SubscriptionURL.purchaseURLComponentsWithOrigin(origin, environment: .production)
+
+        // Then
+        XCTAssertNotNil(components)
+        XCTAssertEqual(components?.url, expectedURL)
     }
 }

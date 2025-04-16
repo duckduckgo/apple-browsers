@@ -339,8 +339,8 @@ final class SubscriptionPagesUseSubscriptionFeatureForStripeTests: XCTestCase {
                                      PrivacyProPixel.privacyProPurchaseAttempt.name + "_c",
                                      PrivacyProPixel.privacyProPurchaseFailureAccountNotCreated.name + "_d",
                                      PrivacyProPixel.privacyProPurchaseFailureAccountNotCreated.name + "_c",
-                                     PrivacyProPixel.privacyProPurchaseFailure.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailure.name + "_c",
+                                     PrivacyProPixel.privacyProPurchaseFailureOther.name + "_d",
+                                     PrivacyProPixel.privacyProPurchaseFailureOther.name + "_c",
                                      PrivacyProPixel.privacyProOfferScreenImpression.name])
     }
 

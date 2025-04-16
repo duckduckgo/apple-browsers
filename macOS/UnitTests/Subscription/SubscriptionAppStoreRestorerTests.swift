@@ -192,8 +192,6 @@ final class SubscriptionAppStoreRestorerTests: XCTestCase {
 
         let expectedPixels = Set([PrivacyProPixel.privacyProRestorePurchaseStoreFailureNotFound.name + "_d",
                                   PrivacyProPixel.privacyProRestorePurchaseStoreFailureNotFound.name + "_c",
-                                  PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_d",
-                                  PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_c",
                                   PrivacyProPixel.privacyProOfferScreenImpression.name])
 
         XCTAssertTrue(expectedPixels.isSubset(of: pixelsFired))
@@ -237,8 +235,8 @@ final class SubscriptionAppStoreRestorerTests: XCTestCase {
 
         let expectedPixels = Set([PrivacyProPixel.privacyProRestorePurchaseStoreFailureOther.name + "_d",
                                   PrivacyProPixel.privacyProRestorePurchaseStoreFailureOther.name + "_c",
-                                  PrivacyProPixel.privacyProPurchaseFailure.name + "_d",
-                                  PrivacyProPixel.privacyProPurchaseFailure.name + "_c"])
+                                  PrivacyProPixel.privacyProPurchaseFailureOther.name + "_d",
+                                  PrivacyProPixel.privacyProPurchaseFailureOther.name + "_c"])
 
         XCTAssertTrue(expectedPixels.isSubset(of: pixelsFired))
         XCTAssertTrue(assertNoOtherPrivacyProPixelsExcept(expectedPixels), "Unexpected Privacy Pro pixels fired")
@@ -259,8 +257,8 @@ final class SubscriptionAppStoreRestorerTests: XCTestCase {
 
         let expectedPixels = Set([PrivacyProPixel.privacyProRestorePurchaseStoreFailureOther.name + "_d",
                                   PrivacyProPixel.privacyProRestorePurchaseStoreFailureOther.name + "_c",
-                                  PrivacyProPixel.privacyProPurchaseFailure.name + "_d",
-                                  PrivacyProPixel.privacyProPurchaseFailure.name + "_c"])
+                                  PrivacyProPixel.privacyProPurchaseFailureOther.name + "_d",
+                                  PrivacyProPixel.privacyProPurchaseFailureOther.name + "_c"])
 
         XCTAssertTrue(expectedPixels.isSubset(of: pixelsFired))
         XCTAssertTrue(assertNoOtherPrivacyProPixelsExcept(expectedPixels), "Unexpected Privacy Pro pixels fired")
@@ -281,8 +279,8 @@ final class SubscriptionAppStoreRestorerTests: XCTestCase {
 
         let expectedPixels = Set([PrivacyProPixel.privacyProRestorePurchaseStoreFailureOther.name + "_d",
                                   PrivacyProPixel.privacyProRestorePurchaseStoreFailureOther.name + "_c",
-                                  PrivacyProPixel.privacyProPurchaseFailure.name + "_d",
-                                  PrivacyProPixel.privacyProPurchaseFailure.name + "_c"])
+                                  PrivacyProPixel.privacyProPurchaseFailureOther.name + "_d",
+                                  PrivacyProPixel.privacyProPurchaseFailureOther.name + "_c"])
 
         XCTAssertTrue(expectedPixels.isSubset(of: pixelsFired))
         XCTAssertTrue(assertNoOtherPrivacyProPixelsExcept(expectedPixels), "Unexpected Privacy Pro pixels fired")
@@ -307,8 +305,6 @@ final class SubscriptionAppStoreRestorerTests: XCTestCase {
 
         let expectedPixels = Set([PrivacyProPixel.privacyProRestorePurchaseStoreFailureOther.name + "_d",
                                   PrivacyProPixel.privacyProRestorePurchaseStoreFailureOther.name + "_c",
-                                  PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_d",
-                                  PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_c",
                                   PrivacyProPixel.privacyProOfferScreenImpression.name])
 
         XCTAssertTrue(expectedPixels.isSubset(of: pixelsFired))

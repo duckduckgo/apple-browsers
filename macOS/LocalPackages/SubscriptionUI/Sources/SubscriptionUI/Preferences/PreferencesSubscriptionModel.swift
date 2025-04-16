@@ -76,7 +76,7 @@ public final class PreferencesSubscriptionModel: ObservableObject {
              openITR,
              openFeedback,
              iHaveASubscriptionClick,
-	     activateAddEmailClick,
+             activateAddEmailClick,
              manageEmailClick,
              enterActivationFlow,
              restorePurchaseStoreClick,

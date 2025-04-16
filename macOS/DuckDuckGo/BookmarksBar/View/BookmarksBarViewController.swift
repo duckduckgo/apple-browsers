@@ -305,7 +305,6 @@ extension BookmarksBarViewController: BookmarksBarViewModelDelegate {
         switch entity {
         case let bookmark as Bookmark:
             WindowControllersManager.shared.open(bookmark: bookmark)
-            PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
         case let folder as BookmarkFolder:
             showSubmenu(for: folder, from: item.view)
         default:

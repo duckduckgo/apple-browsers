@@ -34,7 +34,6 @@ final class DefaultFavoritesActionsHandler: FavoritesActionsHandling {
             return
         }
 
-        PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
         NewTabPageLinkOpener.open(url, target: target, using: tabCollectionViewModel)
     }
 

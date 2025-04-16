@@ -436,11 +436,9 @@ extension BookmarksContextMenu: FolderMenuItemSelectors {
         if let folder = sender.representedObject as? BookmarkFolder {
             let tabs = Tab.withContentOfBookmark(folder: folder, burnerMode: tabCollection.burnerMode)
             tabCollection.append(tabs: tabs)
-            PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
         } else if let bookmarks = sender.representedObject as? [Bookmark] {
             let tabs = Tab.with(contentsOf: bookmarks, burnerMode: tabCollection.burnerMode)
             tabCollection.append(tabs: tabs)
-            PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
         }
     }
 
@@ -456,7 +454,6 @@ extension BookmarksContextMenu: FolderMenuItemSelectors {
         let newTabCollection = TabCollection.withContentOfBookmark(folder: folder, burnerMode: tabCollection.burnerMode)
         let tabCollectionViewModel = TabCollectionViewModel(tabCollection: newTabCollection, burnerMode: tabCollection.burnerMode)
         windowControllersManager.openNewWindow(with: tabCollectionViewModel, burnerMode: tabCollection.burnerMode)
-        PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
     }
 
 }

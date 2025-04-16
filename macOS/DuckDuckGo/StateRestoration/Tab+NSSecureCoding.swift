@@ -89,15 +89,14 @@ private extension Tab.TabContent {
         case preferences = 1
         case bookmarks = 2
         case newtab = 3
-        case onboardingDeprecated = 4
-        case duckPlayer = 5
-        case dataBrokerProtection = 6
-        case subscription = 7
-        case identityTheftRestoration = 8
-        case onboarding = 9
-        case releaseNotes = 10
-        case history = 11
-        case webExtensionUrl = 12
+        case duckPlayer = 4
+        case dataBrokerProtection = 5
+        case subscription = 6
+        case identityTheftRestoration = 7
+        case onboarding = 8
+        case releaseNotes = 9
+        case history = 10
+        case webExtensionUrl = 11
     }
 
     init?(type: ContentType, url: URL?, videoID: String?, timestamp: String?, preferencePane: PreferencePaneIdentifier?) {
@@ -113,8 +112,6 @@ private extension Tab.TabContent {
             self = .history
         case .preferences:
             self = .settings(pane: preferencePane)
-        case .onboardingDeprecated:
-            self = .onboardingDeprecated
         case .duckPlayer:
             guard let videoID = videoID else { return nil }
             self = .url(.duckPlayer(videoID, timestamp: timestamp), source: .pendingStateRestoration)
@@ -143,7 +140,6 @@ private extension Tab.TabContent {
         case .history: return .history
         case .bookmarks: return .bookmarks
         case .settings: return .preferences
-        case .onboardingDeprecated: return .onboardingDeprecated
         case .onboarding: return .onboarding
         case .none: return .newtab
         case .dataBrokerProtection: return .dataBrokerProtection

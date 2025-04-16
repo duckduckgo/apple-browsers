@@ -845,14 +845,10 @@ protocol NewWindowPolicyDecisionMaker {
             return
         }
 #endif
-        if PixelExperiment.cohort == .newOnboarding {
-            if #available(macOS 12.0, *) {
-                Application.appDelegate.onboardingContextualDialogsManager.state = .notStarted
-            }
-            setContent(.onboarding)
-        } else {
-            setContent(.onboardingDeprecated)
+        if #available(macOS 12.0, *) {
+            Application.appDelegate.onboardingContextualDialogsManager.state = .notStarted
         }
+        setContent(.onboarding)
     }
 
     @MainActor(unsafe)

@@ -713,7 +713,6 @@ final class BookmarksBarMenuViewController: NSViewController {
 
         let tabs = Tab.withContentOfBookmark(folder: folder, burnerMode: tabCollection.burnerMode)
         tabCollection.append(tabs: tabs)
-        PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
     }
 
     // MARK: NSOutlineView Configuration

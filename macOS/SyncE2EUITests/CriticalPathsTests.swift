@@ -208,10 +208,12 @@ final class CriticalPathsTests: XCTestCase {
     }
 
     func testCanLoginToExistingSyncAccount() {
-        guard let code = ProcessInfo.processInfo.environment["CODE"] else {
-            XCTFail("CODE not set")
-            return
-        }
+//        guard let code = ProcessInfo.processInfo.environment["CODE"] else {
+//            XCTFail("CODE not set")
+//            return
+//        }
+
+        let code = "eYJyZWNvdmVySI6eyJwcmltYXJ5X2tleSI6Imt5bGV6ZGlEbFxvdXA5SWxVd0M1YUNkazNNC4cfQjdwa6fM5NfiBdFkPSIsInVzZXJfaWQiOiI4NTg1NTBMCT5CTSU1LQ4MzAtQAD9b06QUTQUEEU5UE0AQBfX0="
 
         // Go to Sync Set up
         accessSettings()

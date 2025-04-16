@@ -29,7 +29,7 @@ final class DataBrokerTests: XCTestCase {
 
         XCTAssertEqual(broker.name, "DDG Fake Broker")
         XCTAssertEqual(broker.url, "fakebroker.com")
-        XCTAssertEqual(broker.version, "0.0.1")
+        XCTAssertEqual(broker.version, "0.5.0")
         XCTAssertEqual(broker.optOutUrl, "")
 
         XCTAssertEqual(broker.steps.count, 2)

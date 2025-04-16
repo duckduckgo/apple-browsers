@@ -188,7 +188,7 @@ extension WindowControllersManager {
         open(historyEntry.url, source: .historyEntry, target: nil, event: event)
     }
 
-    /// Helper method for opening with an event
+    /// Helper method for opening URL with an event respecting its Key Modifiers
     func open(_ url: URL, source: Tab.TabContent.URLSource, target window: NSWindow?, event: NSEvent?) {
         // get clicked window or last key window if menu item selected
         let windowController = mainWindowController(for: window ?? event?.window) ?? lastKeyMainWindowController

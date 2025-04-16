@@ -27,16 +27,16 @@ public struct APIRequestV2: Hashable, CustomDebugStringConvertible {
     public struct RetryPolicy: Hashable, CustomDebugStringConvertible {
 
         public enum Delay: Equatable, Hashable {
-            case fixed(TimeInterval = 0)
-            case exponentialBackoff(baseDelay: TimeInterval)
-            case jitter(backoff: TimeInterval = 6)
+            case fixed(TimeInterval)
+            case exponential(baseDelay: TimeInterval)
+            case jitter(backoff: TimeInterval)
 
             var debugDescription: String {
                 switch self {
                 case .fixed(let value):
                     return "fixed(\(value))"
-                case .exponentialBackoff(baseDelay: let value):
-                    return "exponentialBackoff(baseDelay: \(value))"
+                case .exponential(baseDelay: let value):
+                    return "exponential(baseDelay: \(value))"
                 case .jitter(backoff: let value):
                     return "jitter(backoff: \(value))"
                 }
@@ -46,7 +46,7 @@ public struct APIRequestV2: Hashable, CustomDebugStringConvertible {
                 switch self {
                 case .fixed(let interval):
                     return interval
-                case .exponentialBackoff(let baseDelay):
+                case .exponential(let baseDelay):
                     if failureRetryCount == 0 {
                         return baseDelay
                     } else {

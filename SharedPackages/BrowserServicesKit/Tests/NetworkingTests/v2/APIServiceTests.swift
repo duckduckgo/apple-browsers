@@ -262,8 +262,8 @@ final class APIServiceTests: XCTestCase {
         XCTAssertEqual(retryPolicy.delay.delayTimeInterval(failureRetryCount: retries), 2)
     }
 
-    func testRetryExponentialBackoffDelay() async throws {
-        let retryPolicy = APIRequestV2.RetryPolicy(maxRetries: 3, delay: .exponentialBackoff(baseDelay: 2))
+    func testRetryExponentialDelay() async throws {
+        let retryPolicy = APIRequestV2.RetryPolicy(maxRetries: 3, delay: .exponential(baseDelay: 2))
         var retries = 0
         XCTAssertEqual(retryPolicy.delay.delayTimeInterval(failureRetryCount: retries), 2)
         retries = 1

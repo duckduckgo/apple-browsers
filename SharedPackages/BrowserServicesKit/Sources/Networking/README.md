@@ -35,7 +35,7 @@ let request = APIRequestV2(url: url,
                           ),
                           body: jsonData,
                           timeoutInterval: 20.0,
-                          retryPolicy: APIRequestV2.RetryPolicy(maxRetries: 3, delay: .exponentialBackoff(baseDelay: 2.0)),
+                          retryPolicy: APIRequestV2.RetryPolicy(maxRetries: 3, delay: .exponential(baseDelay: 2.0)),
                           responseConstraints: [.requireETagHeader, .allowHTTPNotModified])
 ```
 
@@ -57,13 +57,13 @@ let headers = APIRequestV2.HeadersV2(
 The library supports three types of retry policies for network errors (not API errors like 4xx or 5xx).
 
 ```swift
-// Fixed delay between retries
+// Fixed
 let fixedPolicy = APIRequestV2.RetryPolicy(maxRetries: 3, delay: .fixed(2.0))
 
-// Exponential backoff
-let exponentialPolicy = APIRequestV2.RetryPolicy(maxRetries: 3, delay: .exponentialBackoff(baseDelay: 2.0))
+// Exponential
+let exponentialPolicy = APIRequestV2.RetryPolicy(maxRetries: 3, delay: .exponential(baseDelay: 2.0))
 
-// Random jitter
+// Jitter
 let jitterPolicy = APIRequestV2.RetryPolicy(maxRetries: 3, delay: .jitter(backoff: 8.0))
 ```
 

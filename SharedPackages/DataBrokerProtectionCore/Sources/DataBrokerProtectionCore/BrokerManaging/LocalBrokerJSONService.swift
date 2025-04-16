@@ -49,7 +49,7 @@ public final class FileResources: ResourcesRepository {
         }
 
         guard let resourceURL = Bundle.module.resourceURL else {
-            Logger.dataBrokerProtection.fault("FallbackBrokerJSONService: error FileResources fetchBrokerFromResourceFiles, error: Bundle.module.resourceURL is nil")
+            Logger.dataBrokerProtection.fault("LocalBrokerJSONService: error FileResources fetchBrokerFromResourceFiles, error: Bundle.module.resourceURL is nil")
             assertionFailure()
             throw FileResourcesError.bundleResourceURLNil
         }
@@ -71,7 +71,7 @@ public final class FileResources: ResourcesRepository {
 
             return try brokerJSONFiles.map(DataBroker.initFromResource(_:))
         } catch {
-            Logger.dataBrokerProtection.error("FallbackBrokerJSONService: error FileResources error: fetchBrokerFromResourceFiles, error: \(error.localizedDescription, privacy: .public)")
+            Logger.dataBrokerProtection.error("LocalBrokerJSONService: error FileResources error: fetchBrokerFromResourceFiles, error: \(error.localizedDescription, privacy: .public)")
             throw error
         }
     }

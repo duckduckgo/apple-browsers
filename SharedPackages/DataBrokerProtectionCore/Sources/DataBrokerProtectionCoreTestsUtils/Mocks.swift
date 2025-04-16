@@ -1251,7 +1251,7 @@ public final class MockDataBrokerProtectionOperationQueueManager: DataBrokerProt
     public var startScheduledAllOperationsIfPermittedCalledCompletion: (() -> Void)?
     public var startScheduledScanOperationsIfPermittedCalledCompletion: (() -> Void)?
 
-    public init(operationQueue: DataBrokerProtectionOperationQueue, operationsCreator: DataBrokerOperationsCreator, mismatchCalculator: MismatchCalculator, brokerUpdater: DataBrokerProtectionBrokerUpdater?, pixelHandler: Common.EventMapping<DataBrokerProtectionSharedPixels>) {
+    public init(operationQueue: DataBrokerProtectionOperationQueue, operationsCreator: DataBrokerOperationsCreator, mismatchCalculator: MismatchCalculator, brokerUpdater: BrokerJSONServiceProvider?, pixelHandler: Common.EventMapping<DataBrokerProtectionSharedPixels>) {
 
     }
 
@@ -1487,23 +1487,45 @@ public final class MockMismatchCalculator: MismatchCalculator {
     }
 }
 
-public final class MockDataBrokerProtectionBrokerUpdater: DataBrokerProtectionBrokerUpdater {
-
+public final class MockBrokerJSONService: BrokerJSONServiceProvider {
+    public var vault: any DataBrokerProtectionCore.DataBrokerProtectionSecureVault
+    
     public private(set) var didCallUpdateBrokers = false
     public private(set) var didCallCheckForUpdates = false
 
-    public static func provideForDebug() -> DefaultDataBrokerProtectionBrokerUpdater? {
-        nil
+    public init() {
+        self.vault = try! DataBrokerProtectionSecureVaultMock(providers:
+                                                                SecureStorageProviders(
+                                                                    crypto: EmptySecureStorageCryptoProviderMock(),
+                                                                    database: SecureStorageDatabaseProviderMock(),
+                                                                    keystore: EmptySecureStorageKeyStoreProviderMock()))
     }
 
-    public init() { }
+    public func checkForUpdates(skipsLimiter: Bool) async throws {
+        didCallCheckForUpdates = true
+    }
+
+    public func checkForUpdates() async throws {
+        didCallCheckForUpdates = true
+    }
+
+    public func bundledBrokers() throws -> [DataBroker]? {
+        nil
+    }
 
     public func updateBrokers() {
         didCallUpdateBrokers = true
     }
+}
 
-    public func checkForUpdatesInBrokerJSONFiles() {
-        didCallCheckForUpdates = true
+public struct MockLocalBrokerJSONService: LocalBrokerJSONServiceProvider {
+    public init() {}
+
+    public func bundledBrokers() throws -> [DataBroker]? {
+        []
+    }
+
+    public func checkForUpdates() async throws {
     }
 }
 

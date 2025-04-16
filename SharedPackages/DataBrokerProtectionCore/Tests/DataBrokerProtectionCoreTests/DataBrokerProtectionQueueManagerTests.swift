@@ -29,7 +29,7 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
     private var mockDatabase: MockDatabase!
     private var mockPixelHandler: MockPixelHandler!
     private var mockMismatchCalculator: MockMismatchCalculator!
-    private var mockUpdater: MockDataBrokerProtectionBrokerUpdater!
+    private var mockUpdater: MockBrokerJSONService!
     private var mockSchedulerConfig = DataBrokerExecutionConfig()
     private var mockRunnerProvider: MockRunnerProvider!
     private var mockEventsHandler: MockOperationEventsHandler!
@@ -42,7 +42,7 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
         mockDatabase = MockDatabase()
         mockPixelHandler = MockPixelHandler()
         mockMismatchCalculator = MockMismatchCalculator(database: mockDatabase, pixelHandler: mockPixelHandler)
-        mockUpdater = MockDataBrokerProtectionBrokerUpdater()
+        mockUpdater = MockBrokerJSONService()
         mockRunnerProvider = MockRunnerProvider()
         mockEventsHandler = MockOperationEventsHandler()
 

@@ -147,7 +147,6 @@ final class SubscriptionFlowViewModel: ObservableObject {
     @MainActor
     private func handleTransactionError(error: UseSubscriptionError) {
 
-        var isStoreError = false
         var isBackendError = false
 
         // Reset the transaction Status
@@ -155,13 +154,13 @@ final class SubscriptionFlowViewModel: ObservableObject {
         
         switch error {
         case .purchaseFailed:
-            isStoreError = true
+            DailyPixel.fireDailyAndCount(pixel: .privacyProPurchaseFailureStoreError,
+                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
             state.transactionError = .purchaseFailed
         case .missingEntitlements:
             isBackendError = true
             state.transactionError = .missingEntitlements
         case .failedToGetSubscriptionOptions:
-            isStoreError = true
             state.transactionError = .failedToGetSubscriptionOptions
         case .failedToSetSubscription:
             isBackendError = true
@@ -170,16 +169,12 @@ final class SubscriptionFlowViewModel: ObservableObject {
             isBackendError = true
             state.transactionError = .generalError
         case .failedToRestorePastPurchase:
-            isStoreError = true
             state.transactionError = .failedToRestorePastPurchase
         case .subscriptionNotFound:
-            isStoreError = true
             state.transactionError = .generalError
         case .subscriptionExpired:
-            isStoreError = true
             state.transactionError = .subscriptionExpired
         case .hasActiveSubscription:
-            isStoreError = true
             isBackendError = true
             state.transactionError = .hasActiveSubscription
         case .cancelledByUser:
@@ -190,11 +185,6 @@ final class SubscriptionFlowViewModel: ObservableObject {
             state.transactionError = .generalError
         default:
             state.transactionError = .generalError
-        }
-
-        if isStoreError {
-            DailyPixel.fireDailyAndCount(pixel: .privacyProPurchaseFailureStoreError,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
         }
 
         if isBackendError {

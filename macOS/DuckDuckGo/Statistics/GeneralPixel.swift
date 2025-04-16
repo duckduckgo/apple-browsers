@@ -708,7 +708,7 @@ enum GeneralPixel: PixelKitEventV2 {
         case .launchInitial:
             return "m_mac_first-launch"
         case .serpInitial:
-            return "m_mac_navigation_first-search"
+            return "m_mac_navigation_first-search_u"
 
         case .vpnBreakageReport:
             return "m_mac_vpn_breakage_report"

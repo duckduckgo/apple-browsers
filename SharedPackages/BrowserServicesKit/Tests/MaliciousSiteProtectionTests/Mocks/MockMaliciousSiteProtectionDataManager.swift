@@ -40,7 +40,7 @@ actor MockMaliciousSiteProtectionDataManager: MaliciousSiteProtection.DataManagi
         return store[key.dataType] as? DataKey.DataSet ?? .init(revision: 0, items: [])
     }
 
-    public func updateDataSet<DataKey>(with key: DataKey, changeSet: APIClient.ChangeSetResponse<DataKey.DataSet.Element>) async throws where DataKey : MaliciousSiteDataKey {
+    public func updateDataSet<DataKey>(with key: DataKey, changeSet: APIClient.ChangeSetResponse<DataKey.DataSet.Element>) async throws where DataKey: MaliciousSiteDataKey {
         var dataSet = self.dataSet(for: key)
         dataSet.apply(changeSet)
         try await store(dataSet, for: key)

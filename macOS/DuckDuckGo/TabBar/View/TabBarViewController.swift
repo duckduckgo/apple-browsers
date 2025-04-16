@@ -761,7 +761,11 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     private func showTabPreview(for tabViewModel: TabViewModel, from xPosition: CGFloat) {
-        guard shouldDisplayTabPreviews else { return }
+        guard shouldDisplayTabPreviews else {
+            Logger.tabPreview.error("Not showing tab preview: shouldDisplayTabPreviews == false")
+            hideTabPreview(allowQuickRedisplay: true)
+            return
+        }
 
         let isSelected = tabCollectionViewModel.selectedTabViewModel === tabViewModel
         tabPreviewWindowController.tabPreviewViewController.display(tabViewModel: tabViewModel,

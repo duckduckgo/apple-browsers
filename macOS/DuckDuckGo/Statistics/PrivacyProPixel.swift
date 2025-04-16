@@ -42,7 +42,6 @@ enum PrivacyProPixel: PixelKitEventV2 {
     case privacyProRestorePurchaseOfferPageEntry
     case privacyProRestorePurchaseClick
     case privacyProRestorePurchaseSettingsMenuEntry
-    case privacyProRestorePurchaseEmailStart
     case privacyProRestorePurchaseStoreStart
     case privacyProRestorePurchaseEmailSuccess
     case privacyProRestorePurchaseStoreSuccess
@@ -91,7 +90,6 @@ enum PrivacyProPixel: PixelKitEventV2 {
         case .privacyProRestorePurchaseOfferPageEntry: return "m_mac_\(appDistribution)_privacy-pro_offer_restore-purchase_click"
         case .privacyProRestorePurchaseClick: return "m_mac_\(appDistribution)_privacy-pro_settings_restore-purchase_click"
         case .privacyProRestorePurchaseSettingsMenuEntry: return "m_mac_\(appDistribution)_privacy-pro_settings_restore-purchase_click"
-        case .privacyProRestorePurchaseEmailStart: return "m_mac_\(appDistribution)_privacy-pro_activate-subscription_enter-email_click"
         case .privacyProRestorePurchaseStoreStart: return "m_mac_\(appDistribution)_privacy-pro_activate-subscription_restore-purchase_click"
         case .privacyProRestorePurchaseEmailSuccess: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-restore-using-email_success"
         case .privacyProRestorePurchaseStoreSuccess: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-restore-using-store_success"

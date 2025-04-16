@@ -689,11 +689,10 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
         options[NetworkProtectionOptionKey.excludeLocalNetworks] = NSNumber(value: settings.excludeLocalNetworks)
 
-#if NETP_SYSTEM_EXTENSION
         if let data = try? JSONEncoder().encode(settings.selectedLocation) {
             options[NetworkProtectionOptionKey.selectedLocation] = NSData(data: data)
         }
-#endif
+
         ensureRiskyDomainsEnabledIfNeeded()
         var dnsSettings = settings.dnsSettings
         if settings.dnsSettings == .ddg(blockRiskyDomains: true) && !featureFlagger.isFeatureOn(.networkProtectionRiskyDomainsProtection) {

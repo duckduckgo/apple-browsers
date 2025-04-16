@@ -121,6 +121,36 @@ enum ContextualOnboardingPixel: PixelKitEventV2 {
      */
     case secondSiteVisited
 
+    /**
+     * Event Trigger: The try search dialog in the contextual onboarding is dismissed
+     */
+    case trySearchDismissed
+
+    /**
+     * Event Trigger: The search result dialog in the contextual onboarding is dismissed
+     */
+    case searchResultDismissed
+
+    /**
+     * Event Trigger: The try visit site dialog in the contextual onboarding is dismissed
+     */
+    case tryVisitSiteDismissed
+
+    /**
+     * Event Trigger: The trackers blocked dialog in the contextual onboarding is dismissed
+     */
+    case trackersBlockedDismissed
+
+    /**
+     * Event Trigger: The try fire button dialog in the contextual onboarding is dismissed
+     */
+    case tryFireButtonDismissed
+
+    /**
+     * Event Trigger: The final dialog in the contextual onboarding is dismissed
+     */
+    case finalDialogDismissed
+
     var name: String {
         switch self {
         case .onboardingSearchCustom:
@@ -143,6 +173,18 @@ enum ContextualOnboardingPixel: PixelKitEventV2 {
             return "m_mac_onboarding_visit_site_option_tapped_u"
         case .onboardingFireButtonTryItPressed:
             return "m_mac_onboarding_fire_button_try_it_pressed_u"
+        case .trySearchDismissed:
+            return "m_mac_onboarding_try_search_dialog_dismiss_button_tapped_u"
+        case .searchResultDismissed:
+            return "m_mac_onboarding_search-result-dialog_dismiss-button-tapped_u"
+        case .tryVisitSiteDismissed:
+            return "m_mac_onboarding_try_visit_site_dialog_dismiss_button_tapped_u"
+        case .trackersBlockedDismissed:
+            return "m_mac_onboarding_trackers_dialog_dismiss_button_tapped_u"
+        case .tryFireButtonDismissed:
+            return "m_mac_onboarding_fire_dialog_dismiss_button_tapped_u"
+        case .finalDialogDismissed:
+            return "m_mac_onboarding_end_dialog_dismiss_button_tapped_u"
         }
     }
 

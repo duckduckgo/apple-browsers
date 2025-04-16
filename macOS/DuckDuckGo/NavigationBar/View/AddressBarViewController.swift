@@ -39,6 +39,7 @@ final class AddressBarViewController: NSViewController, ObservableObject {
     @IBOutlet var switchToTabBoxMinXConstraint: NSLayoutConstraint!
     private static let defaultActiveTextFieldMinX: CGFloat = 40
 
+    @IBOutlet weak var addressBarTextTrailingConstraint: NSLayoutConstraint!
     private let popovers: NavigationBarPopovers?
     var addressBarButtonsViewController: AddressBarButtonsViewController?
 
@@ -210,7 +211,11 @@ final class AddressBarViewController: NSViewController, ObservableObject {
     }
 
     @IBSegueAction func createAddressBarButtonsViewController(_ coder: NSCoder) -> AddressBarButtonsViewController? {
-        let controller = AddressBarButtonsViewController(coder: coder, tabCollectionViewModel: tabCollectionViewModel, popovers: popovers)
+        let controller = AddressBarButtonsViewController(coder: coder,
+                                                         tabCollectionViewModel: tabCollectionViewModel,
+                                                         popovers: popovers,
+                                                         aiChatTabOpener: NSApp.delegateTyped.aiChatTabOpener,
+                                                         aiChatMenuConfig: AIChatMenuConfiguration())
 
         self.addressBarButtonsViewController = controller
         controller?.delegate = self
@@ -370,7 +375,7 @@ final class AddressBarViewController: NSViewController, ObservableObject {
 
     private func updateSwitchToTabBoxAppearance() {
         guard case .editing(.openTabSuggestion) = mode,
-            addressBarTextField.isVisible, let editor = addressBarTextField.editor else {
+              addressBarTextField.isVisible, let editor = addressBarTextField.editor else {
             switchToTabBox.isHidden = true
             switchToTabBox.alphaValue = 0
             return
@@ -462,7 +467,7 @@ final class AddressBarViewController: NSViewController, ObservableObject {
         self.passiveTextFieldMinXConstraint.constant = minX
         // adjust min-x to passive text field when “Search or enter” placeholder is displayed (to prevent placeholder overlapping buttons)
         self.activeTextFieldMinXConstraint.constant = (!self.isFirstResponder || self.mode.isEditing)
-            ? minX : Self.defaultActiveTextFieldMinX
+        ? minX : Self.defaultActiveTextFieldMinX
     }
 
 }
@@ -596,6 +601,9 @@ extension AddressBarViewController {
 }
 
 extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
+    func addressBarButtonsViewController(_ controller: AddressBarButtonsViewController, didUpdateAIChatButtonVisibility isVisible: Bool) {
+        addressBarTextTrailingConstraint.constant = isVisible ? 80 : 45
+    }
 
     func addressBarButtonsViewControllerClearButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
         addressBarTextField.clearValue()

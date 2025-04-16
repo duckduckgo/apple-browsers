@@ -297,6 +297,12 @@ final class AddressBarTextField: NSTextField {
         hideSuggestionWindow()
     }
 
+    func aiChatQueryEnterPressed() {
+        suggestionContainerViewModel?.clearUserStringValue()
+        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(value, target: .sameTab)
+        hideSuggestionWindow()
+    }
+
     private func navigate(suggestion: Suggestion?) {
         let autocompletePixel: GeneralPixel? = {
             switch suggestion {
@@ -676,6 +682,14 @@ final class AddressBarTextField: NSTextField {
         AppearancePreferences.shared.showFullURL.toggle()
 
         let shouldShowFullURL = AppearancePreferences.shared.showFullURL
+        menuItem.state = shouldShowFullURL ? .on : .off
+    }
+
+    @objc func toggleAIChatAddress(_ menuItem: NSMenuItem) {
+        let preferences = AIChatPreferences()
+        preferences.showShortcutInAddressBar.toggle()
+
+        let shouldShowFullURL = preferences.showShortcutInAddressBar
         menuItem.state = shouldShowFullURL ? .on : .off
     }
 
@@ -1060,6 +1074,7 @@ extension AddressBarTextField: NSTextViewDelegate {
         let additionalMenuItems: [NSMenuItem] = [
             .toggleAutocompleteSuggestionsMenuItem,
             .toggleFullWebsiteAddressMenuItem,
+            .toggleAIChatAddressMenuItem,
             .separator()
         ]
         let insertionPoint = menuItemInsertionPoint(within: menu)
@@ -1131,6 +1146,18 @@ private extension NSMenuItem {
             keyEquivalent: ""
         )
         menuItem.state = AppearancePreferences.shared.showFullURL ? .on : .off
+
+        return menuItem
+    }
+
+    static var toggleAIChatAddressMenuItem: NSMenuItem {
+        let menuItem = NSMenuItem(
+            title: UserText.showAIChatInAddress,
+            action: #selector(AddressBarTextField.toggleAIChatAddress(_:)),
+            keyEquivalent: ""
+        )
+
+        menuItem.state = AIChatPreferences().showShortcutInAddressBar ? .on : .off
 
         return menuItem
     }

@@ -230,7 +230,7 @@ public final class SubscriptionDebugMenu: NSMenuItem {
 
     @objc
     func activateSubscription() {
-        let url = subscriptionAuthV1toV2Bridge.url(for: .activateViaEmail)
+        let url = subscriptionAuthV1toV2Bridge.url(for: .activationFlow)
         openSubscriptionTab(url)
     }
 

@@ -76,7 +76,7 @@ public final class PreferencesSubscriptionModel: ObservableObject {
              openITR,
              openFeedback,
              iHaveASubscriptionClick,
-             postSubscriptionAddEmailClick,
+             manageEmailClick,
              addDeviceEnterEmail,
              restorePurchaseStoreClick,
              activeSubscriptionSettingsClick,
@@ -314,7 +314,7 @@ public final class PreferencesSubscriptionModel: ObservableObject {
             eventType = .addDeviceEnterEmail
             url = subscriptionManager.url(for: .activationFlowLinkViaEmailStep)
         case .editEmail:
-            eventType = .postSubscriptionAddEmailClick
+            eventType = .manageEmailClick
             url = subscriptionManager.url(for: .manageEmail)
         }
 
@@ -556,7 +556,7 @@ public final class PreferencesSubscriptionModelV2: ObservableObject {
 //             openITR,
 //             openFeedback,
 //             iHaveASubscriptionClick,
-//             postSubscriptionAddEmailClick,
+//             manageEmailClick,
 //             addDeviceEnterEmail,
 //             restorePurchaseStoreClick,
 //             activeSubscriptionSettingsClick,
@@ -798,7 +798,7 @@ hasAnyEntitlement: \(hasAnyEntitlement)
             eventType = .addDeviceEnterEmail
             url = subscriptionManager.url(for: .activationFlowLinkViaEmailStep)
         case .editEmail:
-            eventType = .postSubscriptionAddEmailClick
+            eventType = .manageEmailClick
             url = subscriptionManager.url(for: .manageEmail)
         }
 

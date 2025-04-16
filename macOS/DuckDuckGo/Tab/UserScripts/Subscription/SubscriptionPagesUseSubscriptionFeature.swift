@@ -99,6 +99,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         static let subscriptionsYearlyPriceClicked = "subscriptionsYearlyPriceClicked"
         static let subscriptionsUnknownPriceClicked = "subscriptionsUnknownPriceClicked"
         static let subscriptionsAddEmailSuccess = "subscriptionsAddEmailSuccess"
+        static let subscriptionsWelcomeAddEmailClicked = "subscriptionsWelcomeAddEmailClicked"
         static let subscriptionsWelcomeFaqClicked = "subscriptionsWelcomeFaqClicked"
         static let getAccessToken = "getAccessToken"
     }
@@ -120,6 +121,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         case Handlers.subscriptionsYearlyPriceClicked: return subscriptionsYearlyPriceClicked
         case Handlers.subscriptionsUnknownPriceClicked: return subscriptionsUnknownPriceClicked
         case Handlers.subscriptionsAddEmailSuccess: return subscriptionsAddEmailSuccess
+        case Handlers.subscriptionsWelcomeAddEmailClicked: return subscriptionsWelcomeAddEmailClicked
         case Handlers.subscriptionsWelcomeFaqClicked: return subscriptionsWelcomeFaqClicked
         case Handlers.getAccessToken: return getAccessToken
         default:
@@ -414,6 +416,11 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
 
     func subscriptionsAddEmailSuccess(params: Any, original: WKScriptMessage) async -> Encodable? {
         PixelKit.fire(PrivacyProPixel.privacyProAddEmailSuccess, frequency: .uniqueByName)
+        return nil
+    }
+
+    func subscriptionsWelcomeAddEmailClicked(params: Any, original: WKScriptMessage) async -> Encodable? {
+        PixelKit.fire(PrivacyProPixel.privacyProWelcomeAddDevice, frequency: .uniqueByName)
         return nil
     }
 

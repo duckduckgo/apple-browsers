@@ -197,6 +197,27 @@ final class BookmarksOutlineView: NSOutlineView {
         }
     }
 
+    private static let NSDraggingDestinationView = "NSDraggingDestinationView"
+    override func addSubview(_ view: NSView) {
+        // hide the default dragging destination view and replace it with custom drag insertion indicator view
+        if view.className == Self.NSDraggingDestinationView {
+            let v = BookmarkListInsertionIndicatorView(frame: view.frame)
+            insertionIndicatorView = v
+            super.addSubview(v)
+            view.alphaValue = 0
+        }
+        super.addSubview(view)
+    }
+    
+    override func willRemoveSubview(_ subview: NSView) {
+        // when the dragging destination view is removed, remove the custom drag insertion indicator view
+        if subview.className == Self.NSDraggingDestinationView, let insertionIndicatorView {
+            insertionIndicatorView.removeFromSuperview()
+            self.insertionIndicatorView = nil
+        }
+        super.willRemoveSubview(subview)
+    }
+
     override func mouseMoved(with event: NSEvent) {
         updateHighlightedRowUnderCursor()
     }

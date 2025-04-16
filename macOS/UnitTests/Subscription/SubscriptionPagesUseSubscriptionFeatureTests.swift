@@ -1098,7 +1098,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         subscriptionService.getSubscriptionResult = .success(SubscriptionMockFactory.expiredSubscription)
         mockFreemiumDBPUserStateManager.didPostFirstProfileSavedNotification = true
         feature.with(broker: broker)
-        let freeiumOrigin = PrivacyProSubscriptionAttributionPixelHandler.Consts.freemiumOrigin
+        let freeiumOrigin = SubscriptionFunnelOrigin.freeScan.rawValue
 
         // When
         let subscriptionSelectedParams = ["id": "some-subscription-id"]
@@ -1136,7 +1136,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
 
         mockFreemiumDBPUserStateManager.didPostFirstProfileSavedNotification = false
         feature.with(broker: broker)
-        let freeiumOrigin = PrivacyProSubscriptionAttributionPixelHandler.Consts.freemiumOrigin
+        let freeiumOrigin = SubscriptionFunnelOrigin.freeScan.rawValue
 
         // When
         let subscriptionSelectedParams = ["id": "some-subscription-id"]

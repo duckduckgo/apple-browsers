@@ -98,8 +98,7 @@ struct OnboardingPrivacyProPromoExperiment: OnboardingPrivacyProPromoExperimenti
 
     /// Returns the URL components for the experiment.
     func redirectURLComponents() -> URLComponents? {
-        let url = SubscriptionURL.purchase.subscriptionURL(environment: .production).appendingParameter(name: AttributionParameter.origin, value: Constants.origin)
-        return URLComponents(url: url, resolvingAgainstBaseURL: true)
+        SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.onboarding.rawValue)
     }
 
     /// Fires a pixel when the onboarding promotion is shown.

@@ -105,7 +105,7 @@ public struct UpdateManager: InternalUpdateManaging {
         // apply and save changes
         do {
             try await dataManager.updateDataSet(with: key, changeSet: changeSet)
-            Logger.updateManager.debug("\(type(of: key)).\(key.threatKind) updated from rev.\(oldRevision) to rev.\(oldRevision)")
+            Logger.updateManager.debug("\(type(of: key)).\(key.threatKind) updated from rev.\(oldRevision) to rev.\(changeSet.revision)")
         } catch {
             Logger.updateManager.error("\(type(of: key)).\(key.threatKind) failed to be saved")
             throw error

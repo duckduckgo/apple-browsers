@@ -162,7 +162,8 @@ enum Preferences {
                         PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreStart, frequency: .legacyDailyAndCount)
                     case .manageEmailClick:
                         PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementEmail, frequency: .uniqueByName)
-                    case .enterActivationFlow:
+                    case .addToDeviceActivationFlow:
+                        // Handled on web
                         break
                     case .activeSubscriptionSettingsClick:
                         PixelKit.fire(PrivacyProPixel.privacyProSubscriptionSettings)
@@ -324,7 +325,8 @@ enum Preferences {
                         PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreStart, frequency: .legacyDailyAndCount)
                     case .manageEmailClick:
                         PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementEmail, frequency: .uniqueByName)
-                    case .enterActivationFlow:
+                    case .addToDeviceActivationFlow:
+                        // Handled on web
                         break
                     case .activeSubscriptionSettingsClick:
                         PixelKit.fire(PrivacyProPixel.privacyProSubscriptionSettings)

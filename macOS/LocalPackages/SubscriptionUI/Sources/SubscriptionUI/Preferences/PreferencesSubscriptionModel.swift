@@ -79,7 +79,7 @@ public final class PreferencesSubscriptionModel: ObservableObject {
              activateSubscriptionViaEmailClick,
              activateSubscriptionViaRestoreAppStorePurchaseClick,
              manageEmailClick,
-             enterActivationFlow,
+             addToDeviceActivationFlow,
              activeSubscriptionSettingsClick,
              changePlanOrBillingClick,
              removeSubscriptionClick
@@ -306,13 +306,13 @@ public final class PreferencesSubscriptionModel: ObservableObject {
 
         switch type {
         case .activationFlow:
-            eventType = .enterActivationFlow
+            eventType = .addToDeviceActivationFlow
             url = subscriptionManager.url(for: .activationFlow)
         case .activationFlowAddEmailStep:
-            eventType = .enterActivationFlow
+            eventType = .addToDeviceActivationFlow
             url = subscriptionManager.url(for: .activationFlowAddEmailStep)
         case .activationFlowLinkViaEmailStep:
-            eventType = .enterActivationFlow
+            eventType = .addToDeviceActivationFlow
             url = subscriptionManager.url(for: .activationFlowLinkViaEmailStep)
         case .editEmail:
             eventType = .manageEmailClick
@@ -560,7 +560,7 @@ public final class PreferencesSubscriptionModelV2: ObservableObject {
 //             activateSubscriptionViaEmailClick,
 //             activateSubscriptionViaRestoreAppStorePurchaseClick,
 //             manageEmailClick,
-//             enterActivationFlow,
+//             addToDeviceActivationFlow,
 //             activeSubscriptionSettingsClick,
 //             changePlanOrBillingClick,
 //             removeSubscriptionClick
@@ -791,13 +791,13 @@ hasAnyEntitlement: \(hasAnyEntitlement)
 
         switch type {
         case .activationFlow:
-            eventType = .enterActivationFlow
+            eventType = .addToDeviceActivationFlow
             url = subscriptionManager.url(for: .activationFlow)
         case .activationFlowAddEmailStep:
-            eventType = .enterActivationFlow
+            eventType = .addToDeviceActivationFlow
             url = subscriptionManager.url(for: .activationFlowAddEmailStep)
         case .activationFlowLinkViaEmailStep:
-            eventType = .enterActivationFlow
+            eventType = .addToDeviceActivationFlow
             url = subscriptionManager.url(for: .activationFlowLinkViaEmailStep)
         case .editEmail:
             eventType = .manageEmailClick

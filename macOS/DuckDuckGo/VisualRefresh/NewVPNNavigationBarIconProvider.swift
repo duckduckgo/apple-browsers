@@ -33,4 +33,3 @@ final class NewVPNNavigationBarIconProvider: IconProvider {
         .appVPNIssueIcon
     }
 }
-

@@ -44,11 +44,39 @@ final class PopUpButton: NSPopUpButton {
         fatalError("init(coder:) has not been implemented")
     }
 
+    init(cell: NSPopUpButtonCell) {
+        super.init(frame: .zero, pullsDown: true)
+        self.cell = cell
+    }
+
     func add(_ item: NSMenuItem, withForegroundColor foregroundColor: NSColor?, backgroundColor: NSColor) {
         self.menu?.addItem(item)
 
         let itemColor = NSMenuItemColor(foregroundColor: foregroundColor, backgroundColor: backgroundColor)
         backgroundColorCell?.colors[item.title] = itemColor
+    }
+
+}
+
+final class CustomTitleColorPopUpButtonCell: NSPopUpButtonCell {
+
+    var textColor: NSColor = .labelColor
+
+    convenience init(textColor: NSColor) {
+        self.init()
+        self.textColor = textColor
+    }
+
+    override func drawTitle(withFrame cellFrame: NSRect, in controlView: NSView) {
+        let font = self.font ?? NSFont.systemFont(ofSize: NSFont.systemFontSize)
+
+        let string = NSAttributedString(string: title, attributes: [
+            NSAttributedString.Key.font: font,
+            NSAttributedString.Key.foregroundColor: textColor
+        ])
+
+        let titleRect = titleRect(forBounds: cellFrame)
+        string.draw(in: titleRect)
     }
 
 }

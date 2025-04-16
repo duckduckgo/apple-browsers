@@ -699,6 +699,7 @@ private extension BookmarkManagementDetailViewController {
         button.font = .systemFont(ofSize: 13)
         button.image = image
         button.imagePosition = .imageLeading
+        button.imageScaling = .scaleNone
         button.isHidden = isHidden
         button.lineBreakMode = .byTruncatingTail
         button.cell?.wraps = false

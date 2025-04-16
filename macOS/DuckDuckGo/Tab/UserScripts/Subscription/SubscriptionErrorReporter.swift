@@ -81,34 +81,24 @@ struct DefaultSubscriptionErrorReporter: SubscriptionErrorReporter {
 
         Logger.subscription.error("Subscription purchase error: \(subscriptionActivationError.localizedDescription, privacy: .public)")
 
-        var isBackendError = false
-
         switch subscriptionActivationError {
         case .purchaseFailed:
             PixelKit.fire(PrivacyProPixel.privacyProPurchaseFailureStoreError, frequency: .legacyDailyAndCount)
         case .missingEntitlements:
-            isBackendError = true
-        case .failedToGetSubscriptionOptions:
-        case .failedToSetSubscription:
-            isBackendError = true
-        case .failedToRestoreFromEmail, .failedToRestoreFromEmailSubscriptionInactive:
-            isBackendError = true
+            PixelKit.fire(PrivacyProPixel.privacyProPurchaseFailureBackendError, frequency: .legacyDailyAndCount)
+        case .failedToGetSubscriptionOptions: break
+        case .failedToSetSubscription: break
+        case .failedToRestoreFromEmail, .failedToRestoreFromEmailSubscriptionInactive: break
         case .failedToRestorePastPurchase:
         case .subscriptionNotFound:
             PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreFailureNotFound, frequency: .legacyDailyAndCount)
-        case .subscriptionExpired:
-            break
-        case .hasActiveSubscription:
-            isBackendError = true
+        case .subscriptionExpired: break
+        case .hasActiveSubscription: break
         case .cancelledByUser: break
         case .accountCreationFailed:
             PixelKit.fire(PrivacyProPixel.privacyProPurchaseFailureAccountNotCreated, frequency: .legacyDailyAndCount)
         case .activeSubscriptionAlreadyPresent: break
         case .generalError: break
-        }
-
-        if isBackendError {
-            PixelKit.fire(PrivacyProPixel.privacyProPurchaseFailureBackendError, frequency: .legacyDailyAndCount)
         }
     }
 }

@@ -146,9 +146,6 @@ final class SubscriptionFlowViewModel: ObservableObject {
 
     @MainActor
     private func handleTransactionError(error: UseSubscriptionError) {
-
-        var isBackendError = false
-
         // Reset the transaction Status
         self.setTransactionStatus(.idle)
         
@@ -158,15 +155,14 @@ final class SubscriptionFlowViewModel: ObservableObject {
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
             state.transactionError = .purchaseFailed
         case .missingEntitlements:
-            isBackendError = true
+            DailyPixel.fireDailyAndCount(pixel: .privacyProPurchaseFailureBackendError,
+                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
             state.transactionError = .missingEntitlements
         case .failedToGetSubscriptionOptions:
             state.transactionError = .failedToGetSubscriptionOptions
         case .failedToSetSubscription:
-            isBackendError = true
             state.transactionError = .failedToSetSubscription
         case .failedToRestoreFromEmail, .failedToRestoreFromEmailSubscriptionInactive:
-            isBackendError = true
             state.transactionError = .generalError
         case .failedToRestorePastPurchase:
             state.transactionError = .failedToRestorePastPurchase
@@ -175,7 +171,6 @@ final class SubscriptionFlowViewModel: ObservableObject {
         case .subscriptionExpired:
             state.transactionError = .subscriptionExpired
         case .hasActiveSubscription:
-            isBackendError = true
             state.transactionError = .hasActiveSubscription
         case .cancelledByUser:
             state.transactionError = .cancelledByUser
@@ -185,11 +180,6 @@ final class SubscriptionFlowViewModel: ObservableObject {
             state.transactionError = .generalError
         default:
             state.transactionError = .generalError
-        }
-
-        if isBackendError {
-            DailyPixel.fireDailyAndCount(pixel: .privacyProPurchaseFailureBackendError,
-                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
         }
 
         if state.transactionError != .hasActiveSubscription &&

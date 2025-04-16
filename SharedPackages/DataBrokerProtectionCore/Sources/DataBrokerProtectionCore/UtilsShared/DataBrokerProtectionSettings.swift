@@ -93,12 +93,12 @@ public final class DataBrokerProtectionSettings {
             defaults.double(forKey: Keys.lastBrokerJSONUpdateCheckTimestampKey)
         }
         set {
-            defaults.set(Date().timeIntervalSince1970, forKey: Keys.lastBrokerJSONUpdateCheckTimestampKey)
+            defaults.set(newValue, forKey: Keys.lastBrokerJSONUpdateCheckTimestampKey)
         }
     }
 
-    public func updateLastSuccessfulBrokerJSONUpdateCheckTimestamp() {
-        lastBrokerJSONUpdateCheckTimestamp = Date().timeIntervalSince1970
+    public func updateLastSuccessfulBrokerJSONUpdateCheckTimestamp(_ timestamp: TimeInterval? = nil) {
+        lastBrokerJSONUpdateCheckTimestamp = timestamp ?? Date().timeIntervalSince1970
     }
 }
 

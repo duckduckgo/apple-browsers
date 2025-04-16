@@ -36,14 +36,18 @@ private struct EditedBookmarkMetadata {
 
 final class BookmarkManagementDetailViewController: NSViewController, NSMenuItemValidation {
 
+    // adjust spacing between image and title in toolbar
+    // buttons to ~5px
+    private static let thinSpace = "\u{2009}"
+
     private let toolbarButtonsStackView = NSStackView()
-    private lazy var newBookmarkButton = MouseOverButton(title: "  " + UserText.newBookmark, target: self, action: #selector(presentAddBookmarkModal))
+    private lazy var newBookmarkButton = MouseOverButton(title: Self.thinSpace + UserText.newBookmark, target: self, action: #selector(presentAddBookmarkModal))
         .withAccessibilityIdentifier("BookmarkManagementDetailViewController.newBookmarkButton")
-    private lazy var newFolderButton = MouseOverButton(title: "  " + UserText.newFolder, target: tableView.menu, action: #selector(FolderMenuItemSelectors.newFolder))
+    private lazy var newFolderButton = MouseOverButton(title: Self.thinSpace + UserText.newFolder, target: tableView.menu, action: #selector(FolderMenuItemSelectors.newFolder))
         .withAccessibilityIdentifier("BookmarkManagementDetailViewController.newFolderButton")
-    private lazy var deleteItemsButton = MouseOverButton(title: "  " + UserText.bookmarksBarContextMenuDelete, target: self, action: #selector(delete))
+    private lazy var deleteItemsButton = MouseOverButton(title: Self.thinSpace + UserText.bookmarksBarContextMenuDelete, target: self, action: #selector(delete))
         .withAccessibilityIdentifier("BookmarkManagementDetailViewController.deleteItemsButton")
-    private lazy var sortItemsButton = MouseOverButton(title: "  " + UserText.bookmarksSort.capitalized, target: self, action: #selector(sortBookmarks))
+    private lazy var sortItemsButton = MouseOverButton(title: Self.thinSpace + UserText.bookmarksSort.capitalized, target: self, action: #selector(sortBookmarks))
         .withAccessibilityIdentifier("BookmarkManagementDetailViewController.sortItemsButton")
 
     lazy var searchBar = NSSearchField()
@@ -329,13 +333,13 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
 
             switch newSortMode {
             case .nameDescending:
-                self.sortItemsButton.title = UserText.bookmarksSortByNameTitle
+                self.sortItemsButton.title = Self.thinSpace + UserText.bookmarksSortByNameTitle
                 self.sortItemsButton.image = .bookmarkSortDesc
             case .nameAscending:
-                self.sortItemsButton.title = UserText.bookmarksSortByNameTitle
+                self.sortItemsButton.title = Self.thinSpace + UserText.bookmarksSortByNameTitle
                 self.sortItemsButton.image = .bookmarkSortAsc
             case .manual:
-                self.sortItemsButton.title = UserText.bookmarksSort
+                self.sortItemsButton.title = Self.thinSpace + UserText.bookmarksSort
                 self.sortItemsButton.image = .bookmarkSortAsc
             }
 

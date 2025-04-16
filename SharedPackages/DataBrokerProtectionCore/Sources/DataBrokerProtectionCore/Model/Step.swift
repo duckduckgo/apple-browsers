@@ -18,23 +18,18 @@
 
 import Foundation
 
-public enum ScanType: String, Codable, Sendable {
-    case templatedUrl
-}
-
-public enum StepType: String, Codable, Sendable {
+public enum StepType: String, Codable, Equatable, Sendable {
     case scan
     case optOut
 }
 
-public enum OptOutType: String, Codable, Sendable {
+public enum OptOutType: String, Codable, Equatable, Sendable {
     case formOptOut
     case parentSiteOptOut
 }
 
 public struct Step: Codable, Sendable {
     let type: StepType
-    let scanType: ScanType
     let optOutType: OptOutType?
     let actions: [Action]
 
@@ -43,14 +38,12 @@ public struct Step: Codable, Sendable {
     }
 
     enum DecodingError: Error {
-        case unsupportedScanType
         case unsupportedStepType
         case unsupportedActionType
     }
 
-    init(type: StepType, scanType: ScanType = .templatedUrl, actions: [Action], optOutType: OptOutType? = nil) {
+    init(type: StepType, actions: [Action], optOutType: OptOutType? = nil) {
         self.type = type
-        self.scanType = scanType
         self.actions = actions
         self.optOutType = optOutType
     }
@@ -62,11 +55,7 @@ public struct Step: Codable, Sendable {
         } catch {
             throw DecodingError.unsupportedStepType
         }
-        do {
-            scanType = try container.decode(ScanType.self, forKey: .scanType)
-        } catch {
-            throw DecodingError.unsupportedScanType
-        }
+
         optOutType = try? container.decode(OptOutType.self, forKey: .optOutType)
 
         let actionsList = try container.decode([[String: Any]].self, forKey: .actions)
@@ -76,7 +65,6 @@ public struct Step: Codable, Sendable {
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(type, forKey: .stepType)
-        try container.encode(scanType, forKey: .scanType)
         try container.encode(optOutType, forKey: .optOutType)
 
         var actionsContainer = container.nestedUnkeyedContainer(forKey: .actions)

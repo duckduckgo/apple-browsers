@@ -273,6 +273,8 @@
 		3158B1592B0BF76400AF130C /* DataBrokerProtectionFeatureDisabler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3199C6F82AF94F5B002A7BA1 /* DataBrokerProtectionFeatureDisabler.swift */; };
 		3158B15C2B0BF76D00AF130C /* DataBrokerProtectionAppEvents.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3199C6FC2AF97367002A7BA1 /* DataBrokerProtectionAppEvents.swift */; };
 		315AA07028CA5CC800200030 /* YoutubePlayerNavigationHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 315AA06F28CA5CC800200030 /* YoutubePlayerNavigationHandler.swift */; };
+		3161D15D2DA02380008F59B5 /* AIChatPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3161D15C2DA02380008F59B5 /* AIChatPixel.swift */; };
+		3161D15E2DA02380008F59B5 /* AIChatPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3161D15C2DA02380008F59B5 /* AIChatPixel.swift */; };
 		3168506D2AF3AD1D009A2828 /* WaitlistViewControllerPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3168506C2AF3AD1C009A2828 /* WaitlistViewControllerPresenter.swift */; };
 		3168506E2AF3AD1D009A2828 /* WaitlistViewControllerPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3168506C2AF3AD1C009A2828 /* WaitlistViewControllerPresenter.swift */; };
 		316913232BD2B6250051B46D /* DataBrokerProtectionMacOSPixelsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 316913222BD2B6250051B46D /* DataBrokerProtectionMacOSPixelsHandler.swift */; };
@@ -3808,6 +3810,7 @@
 		31521AC22CC01BC300248E6F /* AIChatTabOpener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTabOpener.swift; sourceTree = "<group>"; };
 		3154FD1328E6011A00909769 /* TabShadowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabShadowView.swift; sourceTree = "<group>"; };
 		315AA06F28CA5CC800200030 /* YoutubePlayerNavigationHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YoutubePlayerNavigationHandler.swift; sourceTree = "<group>"; };
+		3161D15C2DA02380008F59B5 /* AIChatPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatPixel.swift; sourceTree = "<group>"; };
 		3168506C2AF3AD1C009A2828 /* WaitlistViewControllerPresenter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WaitlistViewControllerPresenter.swift; sourceTree = "<group>"; };
 		316850712AF3AD58009A2828 /* DataBrokerProtectionDebugMenu.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DataBrokerProtectionDebugMenu.swift; sourceTree = "<group>"; };
 		316913222BD2B6250051B46D /* DataBrokerProtectionMacOSPixelsHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataBrokerProtectionMacOSPixelsHandler.swift; sourceTree = "<group>"; };
@@ -5955,6 +5958,7 @@
 				31E3FD712CE39C4600A392C8 /* Debug */,
 				31CF74542CDC1771004ACCE5 /* UserScript */,
 				319FCFF42CC83003004F9288 /* AIChatDebugMenu.swift */,
+				3161D15C2DA02380008F59B5 /* AIChatPixel.swift */,
 				312E63962D9D821500806E2A /* AIChatURL.swift */,
 				319FCFF12CC81D54004F9288 /* AIChatRemoteSettings.swift */,
 				316C48EE2CC2B231000B08C1 /* AIChatPreferencesStorage.swift */,
@@ -12284,6 +12288,7 @@
 				3706FB5C293F65D500E42796 /* AVCaptureDevice+SwizzledAuthState.swift in Sources */,
 				3706FB5D293F65D500E42796 /* VisitMenuItem.swift in Sources */,
 				3706FB5E293F65D500E42796 /* EncryptionKeyStore.swift in Sources */,
+				3161D15E2DA02380008F59B5 /* AIChatPixel.swift in Sources */,
 				F1DA51872BF607D200CF29FA /* SubscriptionAttributionPixelHandler.swift in Sources */,
 				BDBA85A02C5D25B700BC54F5 /* VPNMetadataCollector.swift in Sources */,
 				3706FB60293F65D500E42796 /* PasswordManagementIdentityItemView.swift in Sources */,
@@ -14597,6 +14602,7 @@
 				4BB99D0226FE191E001E4761 /* ImportedBookmarks.swift in Sources */,
 				7B934C412A866DD400FC8F9C /* UserDefaults+NetworkProtectionShared.swift in Sources */,
 				B626A75A29921FAA00053070 /* NavigationActionPolicyExtension.swift in Sources */,
+				3161D15D2DA02380008F59B5 /* AIChatPixel.swift in Sources */,
 				1DDD3EBC2B84DCB9004CBF2B /* WebTrackingProtectionPreferences.swift in Sources */,
 				B603FD9E2A02712E00F3FCA9 /* CIImageExtension.swift in Sources */,
 				AA7412B524D1536B00D22FE0 /* MainWindowController.swift in Sources */,

@@ -48,4 +48,6 @@ actor MockMaliciousSiteProtectionDataManager: MaliciousSiteProtection.DataManagi
         }
     }
 
+    func preloadData(for threatKinds: [MaliciousSiteProtection.ThreatKind]) async {}
+
 }

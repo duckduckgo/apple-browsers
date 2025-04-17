@@ -369,7 +369,7 @@ private extension DataBrokerProtectionStatsPixels {
 
     func calculateNumberOfHiddenProfiles(_ optOuts: [OptOutJobData]) -> Int {
         optOuts.reduce(0) { count, optOut in
-            count + (optOut.historyEvents.belongToUserRemovedRecord ? 1 : 0)
+            count + (optOut.historyEvents.doesBelongToUserRemovedRecord ? 1 : 0)
         }
     }
 

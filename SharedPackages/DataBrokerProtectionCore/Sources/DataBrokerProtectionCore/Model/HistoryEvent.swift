@@ -113,7 +113,7 @@ public extension Array where Element == HistoryEvent {
     /// - However, if an opt-out operation is in progress, newer events might be added after the event
     ///
     /// - Returns: `true` if the record was removed by the user, `false` otherwise
-    var belongToUserRemovedRecord: Bool {
+    var doesBelongToUserRemovedRecord: Bool {
         closestHistoryEvent?.type == .matchRemovedByUser || contains(where: { $0.type == .matchRemovedByUser })
     }
 }

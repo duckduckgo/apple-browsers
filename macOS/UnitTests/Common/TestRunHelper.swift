@@ -51,7 +51,7 @@ extension TestRunHelper: XCTestObservation {
     func testBundleWillStart(_ testBundle: Bundle) {
         if AppVersion.runType == .unitTests {
             windowObserver = NotificationCenter.default.addObserver(forName: .init("NSWindowDidOrderOnScreenAndFinishAnimatingNotification"), object: nil, queue: .main) {_ in
-                fatalError("Unit Tests should not present UI")
+                fatalError("Unit Tests should not present UI. Use MockWindow if needed.")
             }
         }
     }

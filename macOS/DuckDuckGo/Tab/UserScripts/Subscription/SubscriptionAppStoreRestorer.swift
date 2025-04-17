@@ -76,10 +76,10 @@ struct DefaultSubscriptionAppStoreRestorer: SubscriptionAppStoreRestorer {
         case .failure(let error):
             switch error {
             case .missingAccountOrTransactions:
-                subscriptionErrorReporter.report(subscriptionActivationError: .subscriptionNotFound)
+                subscriptionErrorReporter.report(subscriptionActivationError: .restoreFailedDueToNoSubscription)
                 await showSubscriptionNotFoundAlert()
             case .subscriptionExpired:
-                subscriptionErrorReporter.report(subscriptionActivationError: .subscriptionExpired)
+                subscriptionErrorReporter.report(subscriptionActivationError: .restoreFailedDueToExpiredSubscription)
                 await showSubscriptionInactiveAlert()
             case .failedToObtainAccessToken, .failedToFetchAccountDetails, .failedToFetchSubscriptionDetails:
                 subscriptionErrorReporter.report(subscriptionActivationError: .otherRestoreError)
@@ -166,10 +166,10 @@ struct DefaultSubscriptionAppStoreRestorerV2: SubscriptionAppStoreRestorer {
         case .failure(let error):
             switch error {
             case .missingAccountOrTransactions:
-                subscriptionErrorReporter.report(subscriptionActivationError: .subscriptionNotFound)
+                subscriptionErrorReporter.report(subscriptionActivationError: .restoreFailedDueToNoSubscription)
                 await showSubscriptionNotFoundAlert()
             case .subscriptionExpired:
-                subscriptionErrorReporter.report(subscriptionActivationError: .subscriptionExpired)
+                subscriptionErrorReporter.report(subscriptionActivationError: .restoreFailedDueToExpiredSubscription)
                 await showSubscriptionInactiveAlert()
             case .failedToObtainAccessToken, .failedToFetchAccountDetails, .failedToFetchSubscriptionDetails:
                 subscriptionErrorReporter.report(subscriptionActivationError: .otherRestoreError)

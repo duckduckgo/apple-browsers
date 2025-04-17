@@ -26,13 +26,13 @@ enum SubscriptionError: LocalizedError {
          missingEntitlements,
          failedToGetSubscriptionOptions,
          failedToSetSubscription,
-         subscriptionNotFound,
-         subscriptionExpired,
          hasActiveSubscription,
          cancelledByUser,
          accountCreationFailed,
          activeSubscriptionAlreadyPresent,
          otherPurchaseError,
+         restoreFailedDueToNoSubscription,
+         restoreFailedDueToExpiredSubscription,
          otherRestoreError
 
     var localizedDescription: String {
@@ -45,10 +45,6 @@ enum SubscriptionError: LocalizedError {
             return "Unable to retrieve subscription options."
         case .failedToSetSubscription:
             return "Failed to set the subscription."
-        case .subscriptionNotFound:
-            return "No subscription could be found."
-        case .subscriptionExpired:
-            return "Your subscription has expired."
         case .hasActiveSubscription:
             return "You already have an active subscription."
         case .cancelledByUser:
@@ -59,6 +55,10 @@ enum SubscriptionError: LocalizedError {
             return "There is already an active subscription present."
         case .otherPurchaseError:
             return "A general purchase error has occurred."
+        case .restoreFailedDueToNoSubscription:
+            return "No subscription could be found."
+        case .restoreFailedDueToExpiredSubscription:
+            return "Your subscription has expired."
         case .otherRestoreError:
             return "A general restore error has occurred."
         }
@@ -84,8 +84,8 @@ struct DefaultSubscriptionErrorReporter: SubscriptionErrorReporter {
             break
         case .failedToSetSubscription:
             break
-        case .subscriptionNotFound,
-             .subscriptionExpired:
+        case .restoreFailedDueToNoSubscription,
+             .restoreFailedDueToExpiredSubscription:
             PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreFailureNotFound, frequency: .legacyDailyAndCount)
         case .hasActiveSubscription:
             break

@@ -81,9 +81,6 @@ struct DefaultSubscriptionErrorReporter: SubscriptionErrorReporter {
             break
         case .failedToSetSubscription:
             break
-        case .restoreFailedDueToNoSubscription,
-             .restoreFailedDueToExpiredSubscription:
-            PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreFailureNotFound, frequency: .legacyDailyAndCount)
         case .cancelledByUser:
             break
         case .accountCreationFailed:
@@ -92,6 +89,9 @@ struct DefaultSubscriptionErrorReporter: SubscriptionErrorReporter {
             break
         case .otherPurchaseError:
             PixelKit.fire(PrivacyProPixel.privacyProPurchaseFailureOther, frequency: .legacyDailyAndCount)
+        case .restoreFailedDueToNoSubscription,
+             .restoreFailedDueToExpiredSubscription:
+            PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreFailureNotFound, frequency: .legacyDailyAndCount)
         case .otherRestoreError:
             PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreFailureOther, frequency: .legacyDailyAndCount)
         }

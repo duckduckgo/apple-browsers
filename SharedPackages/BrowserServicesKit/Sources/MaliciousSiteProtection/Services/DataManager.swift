@@ -98,7 +98,7 @@ public actor DataManager: DataManaging {
         return storedDataSet
     }
 
-    func updateDataSet<DataKey: MaliciousSiteDataKey>(with key: DataKey, changeSet: APIClient.ChangeSetResponse<DataKey.DataSet.Element>) async throws {
+    func updateDataSet<DataKey: MaliciousSiteDataKey>(with key: DataKey, changeSet: APIClient.ChangeSetResponse<DataKey.DataSet.Element>) throws {
         var dataSet = self.dataSet(for: key)
         dataSet.apply(changeSet)
 

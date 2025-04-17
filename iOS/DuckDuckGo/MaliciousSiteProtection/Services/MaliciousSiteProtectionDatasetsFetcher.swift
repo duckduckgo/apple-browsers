@@ -102,19 +102,18 @@ extension MaliciousSiteProtectionDatasetsFetcher: MaliciousSiteProtectionDataset
         Logger.MaliciousSiteProtection.datasetsFetcher.debug("Start Updating Datasets...")
 
         return Task {
+            defer { isDatasetsFetchInProgress = false }
+
             // If hashPrefix Sets need to be updated fetch them
             if shouldUpdateHashPrefixSets {
                 Logger.MaliciousSiteProtection.datasetsFetcher.debug("Downloading HashPrefixSets")
                 await updateManager.updateData(datasetType: .hashPrefixSet).value
-                // Reset the flag to false only if FilterSets don't have to be fetched.
-                isDatasetsFetchInProgress = shouldUpdateFilterSets
             }
 
             // If hashPrefix Sets need to be updated fetch them
             if shouldUpdateFilterSets {
                 Logger.MaliciousSiteProtection.datasetsFetcher.debug("Downloading FilterSets")
                 await updateManager.updateData(datasetType: .filterSet).value
-                isDatasetsFetchInProgress = false
             }
         }
     }

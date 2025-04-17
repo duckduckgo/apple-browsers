@@ -79,20 +79,21 @@ final class GeolocationProviderTests: XCTestCase {
         webView = makeWebView()
     }
 
-    var w: NSWindow!
     func makeWebView() -> WKWebView {
         let window = MockWindow()
         windows.append(window)
         let view = NSView(frame: NSRect(x: 0, y: 0, width: 50, height: 50))
-        let webView = WKWebView(frame: view.bounds)
-        view.addSubview(webView)
-        webViews.append(webView)
-
-        let geolocationProvider = GeolocationProvider(processPool: webView.configuration.processPool,
+        let configuration = WKWebViewConfiguration(processPool: WKProcessPool())
+        let geolocationProvider = GeolocationProvider(processPool: configuration.processPool,
                                                       geolocationService: geolocationServiceMock,
                                                       appIsActivePublisher: appIsActive)
-        webView.configuration.processPool.geolocationProvider = geolocationProvider
-        webView.configuration.userContentController.add(self, name: "testHandler")
+        configuration.processPool.geolocationProvider = geolocationProvider
+        // register as a script message handler
+        configuration.userContentController.add(self, name: "testHandler")
+
+        let webView = WKWebView(frame: view.bounds, configuration: configuration)
+        view.addSubview(webView)
+        webViews.append(webView)
 
         webView.uiDelegate = self
 
@@ -107,6 +108,7 @@ final class GeolocationProviderTests: XCTestCase {
         geolocationHandler = nil
         windows = []
         webView = nil
+        webViews = []
     }
 
     func testWhenGeolocationRequestedThenGeolocationIsProvidedOnce() {

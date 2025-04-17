@@ -28,12 +28,17 @@ final class TestRunHelper: NSObject {
     @objc(sharedInstance) static let shared = TestRunHelper()
     private var windowObserver: Any?
 
+    fileprivate let processPool = WKProcessPool()
+
     override init() {
         super.init()
         XCTestObservationCenter.shared.addTestObserver(self)
 
         // allow mocking NSApp.currentEvent
         _=NSApplication.swizzleCurrentEventOnce
+
+        // swizzle WKWebViewConfiguration.init to use a shared process pool
+        _=WKWebViewConfiguration.swizzleInitOnce
 
         // dedicate temporary directory for tests
         _=FileManager.swizzleTemporaryDirectoryOnce
@@ -56,6 +61,7 @@ extension TestRunHelper: XCTestObservation {
                 fatalError("Unit Tests should not present UI. Use MockWindow if needed.")
             }
         }
+
         if #available(macOS 13.0, *) {
             WKProcessPool._setWebProcessCountLimit(20)
         }
@@ -119,6 +125,37 @@ extension NSApplication {
         set {
             objc_setAssociatedObject(self, Self.currentEventKey, newValue, .OBJC_ASSOCIATION_RETAIN)
         }
+    }
+
+}
+
+extension WKWebViewConfiguration {
+
+    static var swizzleInitOnce: Void = {
+        let initMethod = class_getInstanceMethod(WKWebViewConfiguration.self, #selector(NSObject.init))!
+        let swizzledInitMethod = class_getInstanceMethod(WKWebViewConfiguration.self, #selector(WKWebViewConfiguration.swizzled_init))!
+
+        method_exchangeImplementations(initMethod, swizzledInitMethod)
+    }()
+
+    private static var processPoolInitArg: WKProcessPool?
+
+    @objc dynamic func swizzled_init() -> WKWebViewConfiguration {
+        let configuration = swizzled_init()
+        if let processPool = Self.processPoolInitArg {
+            configuration.processPool = processPool
+        } else if case .unitTests = AppVersion.runType {
+            configuration.processPool = TestRunHelper.shared.processPool
+        }
+        return configuration
+    }
+
+    convenience init(processPool: WKProcessPool) {
+        Self.processPoolInitArg = processPool
+        defer {
+            Self.processPoolInitArg = nil
+        }
+        self.init()
     }
 
 }

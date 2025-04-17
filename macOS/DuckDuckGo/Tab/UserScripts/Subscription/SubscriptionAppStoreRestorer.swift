@@ -87,10 +87,10 @@ struct DefaultSubscriptionAppStoreRestorer: SubscriptionAppStoreRestorer {
                 subscriptionErrorReporter.report(subscriptionActivationError: .subscriptionExpired)
                 await showSubscriptionInactiveAlert()
             case .failedToObtainAccessToken, .failedToFetchAccountDetails, .failedToFetchSubscriptionDetails:
-                subscriptionErrorReporter.report(subscriptionActivationError: .generalError)
+                subscriptionErrorReporter.report(subscriptionActivationError: .otherPurchaseError)
                 await showSomethingWentWrongAlert()
             case .pastTransactionAuthenticationError:
-                subscriptionErrorReporter.report(subscriptionActivationError: .generalError)
+                subscriptionErrorReporter.report(subscriptionActivationError: .otherPurchaseError)
                 await showSubscriptionNotFoundAlert()
             }
         }
@@ -182,10 +182,10 @@ struct DefaultSubscriptionAppStoreRestorerV2: SubscriptionAppStoreRestorer {
                 subscriptionErrorReporter.report(subscriptionActivationError: .subscriptionExpired)
                 await showSubscriptionInactiveAlert()
             case .failedToObtainAccessToken, .failedToFetchAccountDetails, .failedToFetchSubscriptionDetails:
-                subscriptionErrorReporter.report(subscriptionActivationError: .generalError)
+                subscriptionErrorReporter.report(subscriptionActivationError: .otherPurchaseError)
                 await showSomethingWentWrongAlert()
             case .pastTransactionAuthenticationError:
-                subscriptionErrorReporter.report(subscriptionActivationError: .generalError)
+                subscriptionErrorReporter.report(subscriptionActivationError: .otherPurchaseError)
                 await showSubscriptionNotFoundAlert()
             }
         }

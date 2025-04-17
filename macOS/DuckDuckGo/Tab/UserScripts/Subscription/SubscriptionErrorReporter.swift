@@ -33,7 +33,7 @@ enum SubscriptionError: LocalizedError {
          cancelledByUser,
          accountCreationFailed,
          activeSubscriptionAlreadyPresent,
-         generalError
+         otherPurchaseError
 
     var localizedDescription: String {
         switch self {
@@ -59,8 +59,8 @@ enum SubscriptionError: LocalizedError {
             return "Account creation failed. Please try again."
         case .activeSubscriptionAlreadyPresent:
             return "There is already an active subscription present."
-        case .generalError:
-            return "A general error has occurred."
+        case .otherPurchaseError:
+            return "A general purchase error has occurred."
         }
     }
 }
@@ -98,7 +98,7 @@ struct DefaultSubscriptionErrorReporter: SubscriptionErrorReporter {
             PixelKit.fire(PrivacyProPixel.privacyProPurchaseFailureAccountNotCreated, frequency: .legacyDailyAndCount)
         case .activeSubscriptionAlreadyPresent:
             break
-        case .generalError:
+        case .otherPurchaseError:
             PixelKit.fire(PrivacyProPixel.privacyProPurchaseFailureOther, frequency: .legacyDailyAndCount)
         }
     }

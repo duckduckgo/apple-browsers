@@ -217,7 +217,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
             if #available(macOS 12.0, *) {
                 guard let subscriptionSelection: SubscriptionSelection = DecodableHelper.decode(from: params) else {
                     assertionFailure("SubscriptionPagesUserScript: expected JSON representation of SubscriptionSelection")
-                    subscriptionErrorReporter.report(subscriptionActivationError: .generalError)
+                    subscriptionErrorReporter.report(subscriptionActivationError: .otherPurchaseError)
                     await uiHandler.dismissProgressViewController()
                     return nil
                 }
@@ -259,7 +259,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                     case .activeSubscriptionAlreadyPresent:
                         subscriptionErrorReporter.report(subscriptionActivationError: .activeSubscriptionAlreadyPresent)
                     case .authenticatingWithTransactionFailed:
-                        subscriptionErrorReporter.report(subscriptionActivationError: .generalError)
+                        subscriptionErrorReporter.report(subscriptionActivationError: .otherPurchaseError)
                     case .accountCreationFailed:
                         subscriptionErrorReporter.report(subscriptionActivationError: .accountCreationFailed)
                     case .purchaseFailed:
@@ -302,7 +302,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                     case .activeSubscriptionAlreadyPresent:
                         subscriptionErrorReporter.report(subscriptionActivationError: .activeSubscriptionAlreadyPresent)
                     case .authenticatingWithTransactionFailed:
-                        subscriptionErrorReporter.report(subscriptionActivationError: .generalError)
+                        subscriptionErrorReporter.report(subscriptionActivationError: .otherPurchaseError)
                     case .accountCreationFailed:
                         subscriptionErrorReporter.report(subscriptionActivationError: .accountCreationFailed)
                     case .purchaseFailed:

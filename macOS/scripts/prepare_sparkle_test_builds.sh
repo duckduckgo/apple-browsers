@@ -1,7 +1,13 @@
-#!/bin/bash
+#!/bin/bash -x
 
-# shellcheck source=./helpers/common.sh
-source "$(dirname "${BASH_SOURCE[0]}")/helpers/common.sh"
+if ! [[ $common_sh ]]; then
+	cwd="$(dirname "${BASH_SOURCE[0]}")"
+	source "${cwd}/helpers/common.sh"
+fi
+
+# Define paths relative to script location
+info_plist="${cwd}/../DuckDuckGo/Info.plist"
+build_number_xcconfig="${cwd}/../Configuration/BuildNumber.xcconfig"
 
 #
 # Creates or restacks branches for Sparkle update testing:
@@ -20,7 +26,7 @@ check_command gh
 VERSION_RELEASE=1000
 VERSION_PHASED=2000
 
-default_prefix="$(git config user.name | tr '[:upper:]' '[:lower:]' | tr ' ' '-')/"
+default_prefix="$(whoami)/"
 
 # Parse command line arguments
 action="new"
@@ -49,6 +55,9 @@ create_branches() {
     local branch_prefix="$1"
     local feed_url="$2"
 
+    # Store current branch to return to later
+    current_branch=$(git rev-parse --abbrev-ref HEAD)
+
     echo "Creating branches with prefix: ${branch_prefix}"
 
     # Branch for outdated URL changes
@@ -57,22 +66,28 @@ create_branches() {
     git checkout -b "${branch_outdated}"
 
     # Update Info.plist with the custom feed URL
-    plutil -replace SUFeedURL -string "${feed_url}" macOS/Info.plist
+    plutil -replace SUFeedURL -string "${feed_url}" "${info_plist}"
+    git add "${info_plist}"
     git commit -m "Update SUFeedURL for testing"
 
     # Branch for regular release
     branch_release="${branch_prefix}release"
     echo "Creating branch: ${branch_release}"
     git checkout -b "${branch_release}"
-    sed -i '' "s/CURRENT_PROJECT_VERSION = .*/CURRENT_PROJECT_VERSION = ${VERSION_RELEASE}/" macOS/BuildNumber.xconfig
+    sed -i '' "s/CURRENT_PROJECT_VERSION = .*/CURRENT_PROJECT_VERSION = ${VERSION_RELEASE}/" "${build_number_xcconfig}"
+    git add "${build_number_xcconfig}"
     git commit -m "Update version to ${VERSION_RELEASE}"
 
     # Branch for phased rollout
     branch_phased="${branch_prefix}phased"
     echo "Creating branch: ${branch_phased}"
     git checkout -b "${branch_phased}"
-    sed -i '' "s/CURRENT_PROJECT_VERSION = .*/CURRENT_PROJECT_VERSION = ${VERSION_PHASED}/" macOS/BuildNumber.xconfig
+    sed -i '' "s/CURRENT_PROJECT_VERSION = .*/CURRENT_PROJECT_VERSION = ${VERSION_PHASED}/" "${build_number_xcconfig}"
+    git add "${build_number_xcconfig}"
     git commit -m "Update version to ${VERSION_PHASED}"
+
+    # Return to original branch
+    git checkout "${current_branch}"
 }
 
 restack_branches() {
@@ -202,11 +217,3 @@ else
         exit 1
     fi
 fi
-
-# Return to original branch
-git checkout -
-
-echo "Operation completed successfully:"
-echo "- ${branch_outdated}"
-echo "- ${branch_release}"
-echo "- ${branch_phased}"

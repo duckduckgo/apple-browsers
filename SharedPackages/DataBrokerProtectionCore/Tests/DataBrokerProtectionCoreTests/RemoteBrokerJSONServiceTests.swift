@@ -69,7 +69,7 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
         vault.reset()
     }
 
-    func testCheckForUpdatesShouldFollowRateLimit() async {
+    func testCheckForUpdatesFollowsRateLimit() async {
         /// First attempt
         MockURLProtocol.requestHandlerQueue.append { _ in (HTTPURLResponse.notModified, nil) }
 
@@ -101,6 +101,60 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
             try await remoteBrokerJSONService.checkForUpdates()
             /// Successful attempt, lastBrokerJSONUpdateCheckTimestamp should've been updated
             XCTAssert(settings.lastBrokerJSONUpdateCheckTimestamp > lastCheckTimestamp)
+        } catch {
+            XCTFail()
+        }
+    }
+
+    func testCheckForUpdatesThrowsMissingAccessToken() async {
+        let expectation = XCTestExpectation(description: "Missing access token")
+
+        authenticationManager.accessTokenValue = nil
+        do {
+            try await remoteBrokerJSONService.checkForUpdates()
+            XCTFail()
+        } catch RemoteBrokerJSONService.Error.missingAccessToken {
+            expectation.fulfill()
+        } catch {
+            XCTFail()
+        }
+    }
+
+    func testCheckForUpdatesReturnsEarlyWhen304() async {
+        MockURLProtocol.requestHandlerQueue.append { _ in (HTTPURLResponse.notModified, nil) }
+        MockURLProtocol.requestHandlerQueue.append { _ in (HTTPURLResponse.noAuth, nil) }
+        do {
+            try await remoteBrokerJSONService.checkForUpdates()
+            /// checkForUpdates() returns only so 2nd request is never invoked
+            XCTAssertFalse(MockURLProtocol.requestHandlerQueue.isEmpty)
+        } catch {
+            XCTFail()
+        }
+    }
+
+    func testCheckForUpdatesThrowsServerErrorWhenResponseCodeIsNotExpected() async {
+        let expectation = XCTestExpectation(description: "Server error")
+
+        MockURLProtocol.requestHandlerQueue.append { _ in (HTTPURLResponse.noAuth, nil) }
+        do {
+            try await remoteBrokerJSONService.checkForUpdates()
+            XCTFail()
+        } catch RemoteBrokerJSONService.Error.serverError {
+            expectation.fulfill()
+        } catch {
+            XCTFail()
+        }
+    }
+
+    func testCheckForUpdatesThrowsServerErrorWhenResponseContainsNoETag() async {
+        let expectation = XCTestExpectation(description: "Server error")
+
+        MockURLProtocol.requestHandlerQueue.append { _ in (HTTPURLResponse.ok, nil) }
+        do {
+            try await remoteBrokerJSONService.checkForUpdates()
+            XCTFail()
+        } catch RemoteBrokerJSONService.Error.serverError {
+            expectation.fulfill()
         } catch {
             XCTFail()
         }

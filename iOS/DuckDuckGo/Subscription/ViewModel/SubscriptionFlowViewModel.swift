@@ -163,10 +163,13 @@ final class SubscriptionFlowViewModel: ObservableObject {
         case .failedToSetSubscription:
             state.transactionError = .failedToSetSubscription
         case .failedToRestorePastPurchase:
+            // Pixel handled in SubscriptionRestoreViewModel.handleRestoreError(error:)
             state.transactionError = .failedToRestorePastPurchase
         case .subscriptionNotFound:
+            // Pixel handled in SubscriptionRestoreViewModel.handleRestoreError(error:)
             state.transactionError = .generalError
         case .subscriptionExpired:
+            // Pixel handled in SubscriptionRestoreViewModel.handleRestoreError(error:)
             state.transactionError = .subscriptionExpired
         case .hasActiveSubscription:
             state.transactionError = .hasActiveSubscription

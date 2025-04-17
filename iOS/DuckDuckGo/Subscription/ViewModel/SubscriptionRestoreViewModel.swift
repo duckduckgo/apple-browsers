@@ -108,12 +108,16 @@ final class SubscriptionRestoreViewModel: ObservableObject {
             state.activationResult = .error
         }
 
-        if state.activationResult == .notFound {
+        switch state.activationResult {
+        case .expired,
+             .notFound:
             DailyPixel.fireDailyAndCount(pixel: .privacyProRestorePurchaseStoreFailureNotFound,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
-        } else {
+        case .error:
             DailyPixel.fireDailyAndCount(pixel: .privacyProRestorePurchaseStoreFailureOther,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+        default:
+            break
         }
     }
     

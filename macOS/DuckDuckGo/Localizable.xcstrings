@@ -16177,9 +16177,6 @@
         }
       }
     },
-    "Crash Tab" : {
-
-    },
     "crash-report.description" : {
       "comment" : "Description of the dialog where the user can send a crash report",
       "extractionState" : "extracted_with_value",

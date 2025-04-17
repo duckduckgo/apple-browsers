@@ -121,14 +121,15 @@ final class TabTests: XCTestCase {
         XCTAssertFalse(tab.canKillWebContentProcess)
     }
 
-    @MainActor func testWhenTabCrashDebugToolsFeatureFlagIsEnabledThenTabCanBeCrashed() {
+    @MainActor func testWhenTabCrashDebugToolsFeatureFlagIsEnabledAndAppIsNotSandboxedThenTabCanBeCrashed() {
         let internalUserDecider = InternalUserDeciderMock()
         internalUserDecider.isInternalUser = true
 
         let featureFlagger = FeatureFlaggerMock(internalUserDecider: internalUserDecider, enabledFeatureFlags: [.tabCrashDebugTools])
+        let canCallKillCommand = !NSApp.isSandboxed
 
         let tab = Tab(content: .newtab, featureFlagger: featureFlagger)
-        XCTAssertTrue(tab.canKillWebContentProcess)
+        XCTAssertEqual(tab.canKillWebContentProcess, canCallKillCommand)
     }
 
     // MARK: - Dialogs

@@ -1130,7 +1130,7 @@ extension Tab {
     static let crashTabMenuOptionTitle = "Crash Tab"
 
     var canKillWebContentProcess: Bool {
-        featureFlagger.isFeatureOn(.tabCrashDebugTools)
+        !NSApp.isSandboxed && featureFlagger.isFeatureOn(.tabCrashDebugTools)
     }
 
     func killWebContentProcess() {

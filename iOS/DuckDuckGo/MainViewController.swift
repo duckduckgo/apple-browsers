@@ -778,7 +778,7 @@ class MainViewController: UIViewController {
 
     private func initTabButton() {
         if ExperimentalThemingManager().isExperimentalThemingEnabled {
-            let button = OmniBarButton()
+            let button = ToolbarButton()
             button.frame = CGRect(x: 0, y: 0, width: 34, height: 44)
 
             button.setImage(UIImage(resource: .tabNew24))

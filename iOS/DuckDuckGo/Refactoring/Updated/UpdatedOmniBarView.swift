@@ -193,11 +193,11 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         set { forwardButton.menu = newValue }
     }
 
-    let settingsButtonView = OmniBarButton()
-    let bookmarksButtonView = OmniBarButton()
-    let menuButtonView = OmniBarButton()
-    let forwardButtonView = OmniBarButton()
-    let backButtonView = OmniBarButton()
+    let settingsButtonView = ToolbarButton()
+    let bookmarksButtonView = ToolbarButton()
+    let menuButtonView = ToolbarButton()
+    let forwardButtonView = ToolbarButton()
+    let backButtonView = ToolbarButton()
 
     var menuButtonContent: MenuButton = MenuButton()
 

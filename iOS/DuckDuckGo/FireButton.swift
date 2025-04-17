@@ -20,7 +20,7 @@
 import UIKit
 import DesignResourcesKit
 
-class FireButton: OmniBarButton {
+class FireButton: ToolbarButton {
     convenience init() {
         self.init(.fire)
 

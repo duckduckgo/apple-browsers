@@ -75,11 +75,6 @@ struct DefaultSubscriptionAppStoreRestorer: SubscriptionAppStoreRestorer {
             PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreSuccess, frequency: .legacyDailyAndCount)
         case .failure(let error):
             switch error {
-            case .missingAccountOrTransactions: break
-            default:
-                PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreFailureOther, frequency: .legacyDailyAndCount)
-            }
-            switch error {
             case .missingAccountOrTransactions:
                 subscriptionErrorReporter.report(subscriptionActivationError: .subscriptionNotFound)
                 await showSubscriptionNotFoundAlert()
@@ -87,10 +82,10 @@ struct DefaultSubscriptionAppStoreRestorer: SubscriptionAppStoreRestorer {
                 subscriptionErrorReporter.report(subscriptionActivationError: .subscriptionExpired)
                 await showSubscriptionInactiveAlert()
             case .failedToObtainAccessToken, .failedToFetchAccountDetails, .failedToFetchSubscriptionDetails:
-                subscriptionErrorReporter.report(subscriptionActivationError: .otherPurchaseError)
+                subscriptionErrorReporter.report(subscriptionActivationError: .otherRestoreError)
                 await showSomethingWentWrongAlert()
             case .pastTransactionAuthenticationError:
-                subscriptionErrorReporter.report(subscriptionActivationError: .otherPurchaseError)
+                subscriptionErrorReporter.report(subscriptionActivationError: .otherRestoreError)
                 await showSubscriptionNotFoundAlert()
             }
         }
@@ -170,11 +165,6 @@ struct DefaultSubscriptionAppStoreRestorerV2: SubscriptionAppStoreRestorer {
             PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreSuccess, frequency: .legacyDailyAndCount)
         case .failure(let error):
             switch error {
-            case .missingAccountOrTransactions: break
-            default:
-                PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreFailureOther, frequency: .legacyDailyAndCount)
-            }
-            switch error {
             case .missingAccountOrTransactions:
                 subscriptionErrorReporter.report(subscriptionActivationError: .subscriptionNotFound)
                 await showSubscriptionNotFoundAlert()
@@ -182,10 +172,10 @@ struct DefaultSubscriptionAppStoreRestorerV2: SubscriptionAppStoreRestorer {
                 subscriptionErrorReporter.report(subscriptionActivationError: .subscriptionExpired)
                 await showSubscriptionInactiveAlert()
             case .failedToObtainAccessToken, .failedToFetchAccountDetails, .failedToFetchSubscriptionDetails:
-                subscriptionErrorReporter.report(subscriptionActivationError: .otherPurchaseError)
+                subscriptionErrorReporter.report(subscriptionActivationError: .otherRestoreError)
                 await showSomethingWentWrongAlert()
             case .pastTransactionAuthenticationError:
-                subscriptionErrorReporter.report(subscriptionActivationError: .otherPurchaseError)
+                subscriptionErrorReporter.report(subscriptionActivationError: .otherRestoreError)
                 await showSubscriptionNotFoundAlert()
             }
         }

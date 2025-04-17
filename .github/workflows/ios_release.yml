@@ -110,6 +110,7 @@ jobs:
         original_dsyms_path="${{ github.workspace }}/iOS/DuckDuckGo.app.dSYM.zip"
         echo "dsyms_path=${{ github.workspace }}/iOS/DuckDuckGo-${app_version}.${build_number}-dSYM.zip" >> $GITHUB_ENV
         echo "app_version=${app_version}" >> $GITHUB_ENV
+        echo "build_number=${build_number}" >> $GITHUB_ENV
         bundle exec fastlane release_${{ steps.destination.outputs.destination }}
         mv -f “$original_dsyms_path" "$dsyms_path" 
 
@@ -117,7 +118,7 @@ jobs:
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: DuckDuckGo-${{ steps.destination.outputs.destination }}-dSYM-${{ env.app_version }}
+        name: DuckDuckGo-${{ steps.destination.outputs.destination }}-dSYM-${{ env.app_version }}.${{ env.build_number }}
         path: ${{ env.dsyms_path }}
 
     - name: Extract Asana Task ID

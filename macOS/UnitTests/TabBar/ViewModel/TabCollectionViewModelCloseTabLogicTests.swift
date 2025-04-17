@@ -1,5 +1,5 @@
 //
-//  TabCollectionViewModelTests+CloseTabLogic.swift
+//  TabCollectionViewModelCloseTabLogicTests.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -21,7 +21,7 @@ import XCTest
 
 // MARK: - Tests for TabCollectionViewModel selected tab after closing logic
 
-extension TabCollectionViewModelTests {
+final class TabCollectionViewModelCloseTabLogicTests: XCTestCase {
 
     @MainActor
     func testFindNextTabWithSameParent() {
@@ -234,5 +234,12 @@ fileprivate extension TabCollectionViewModel {
     static func aTabCollectionViewModel() -> TabCollectionViewModel {
         let tabCollection = TabCollection()
         return TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: nil)
+    }
+}
+
+private extension Tab {
+    @MainActor
+    convenience init(parentTab: Tab? = nil) {
+        self.init(content: .none, parentTab: parentTab)
     }
 }

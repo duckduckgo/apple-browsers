@@ -386,9 +386,6 @@ enum GeneralPixel: PixelKitEventV2 {
     case updaterDidNotFindUpdate
     case updaterDidDownloadUpdate
     case updaterDidRunUpdate
-    case updaterDidCheckForUpdateRespectingRollout
-    case updaterDidCheckForUpdateSkippingRollout
-    case updaterDidForceUpdateRecheck
 
     case faviconDecryptionFailedUnique
     case downloadListItemDecryptionFailedUnique
@@ -1079,12 +1076,6 @@ enum GeneralPixel: PixelKitEventV2 {
             return "updater_did_download_update"
         case .updaterDidRunUpdate:
             return "updater_did_run_update"
-        case .updaterDidCheckForUpdateRespectingRollout:
-            return "updater_did_check_for_update_respecting_rollout"
-        case .updaterDidCheckForUpdateSkippingRollout:
-            return "updater_did_check_for_update_skipping_rollout"
-        case .updaterDidForceUpdateRecheck:
-            return "updater_did_force_update_recheck"
 
         case .faviconDecryptionFailedUnique:
             return "favicon_decryption_failed_unique"

@@ -22,6 +22,7 @@ import os
 protocol DataManaging {
     func dataSet<DataKey: MaliciousSiteDataKey>(for key: DataKey) async -> DataKey.DataSet
     func store<DataKey: MaliciousSiteDataKey>(_ dataSet: DataKey.DataSet, for key: DataKey) async throws
+    func preloadData(for threatKinds: [ThreatKind]) async
 }
 
 public actor DataManager: DataManaging {
@@ -40,10 +41,17 @@ public actor DataManager: DataManaging {
         self.fileNameProvider = fileNameProvider
     }
 
+    public func preloadData(for threatKinds: [ThreatKind]) {
+        for threatKind in threatKinds {
+            _=dataSet(for: .filterSet(threatKind: threatKind))
+            _=dataSet(for: .hashPrefixes(threatKind: threatKind))
+        }
+    }
+
     func dataSet<DataKey: MaliciousSiteDataKey>(for key: DataKey) -> DataKey.DataSet {
         let dataType = key.dataType
         // return cached dataSet if available
-        if let data = store[key.dataType] as? DataKey.DataSet {
+        if let data = store[dataType] as? DataKey.DataSet {
             return data
         }
 

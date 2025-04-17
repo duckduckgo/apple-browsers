@@ -104,6 +104,19 @@ final class MainWindow: NSWindow {
         NotificationCenter.default.post(name: .firstResponder, object: firstResponder)
     }
 
+    // used to observe childWindows property
+    override func addChildWindow(_ childWin: NSWindow, ordered place: NSWindow.OrderingMode) {
+        willChangeValue(forKey: "childWindows")
+        super.addChildWindow(childWin, ordered: place)
+        didChangeValue(forKey: "childWindows")
+    }
+
+    override func removeChildWindow(_ childWin: NSWindow) {
+        willChangeValue(forKey: "childWindows")
+        super.removeChildWindow(childWin)
+        didChangeValue(forKey: "childWindows")
+    }
+
 }
 
 extension Notification.Name {

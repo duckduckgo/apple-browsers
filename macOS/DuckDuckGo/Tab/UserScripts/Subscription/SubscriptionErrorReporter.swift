@@ -26,8 +26,6 @@ enum SubscriptionError: LocalizedError {
          missingEntitlements,
          failedToGetSubscriptionOptions,
          failedToSetSubscription,
-         failedToRestoreFromEmail,
-         failedToRestoreFromEmailSubscriptionInactive,
          failedToRestorePastPurchase,
          subscriptionNotFound,
          subscriptionExpired,
@@ -47,10 +45,6 @@ enum SubscriptionError: LocalizedError {
             return "Unable to retrieve subscription options."
         case .failedToSetSubscription:
             return "Failed to set the subscription."
-        case .failedToRestoreFromEmail:
-            return "Email restore process failed."
-        case .failedToRestoreFromEmailSubscriptionInactive:
-            return "Cannot restore; email subscription is inactive."
         case .failedToRestorePastPurchase:
             return "Failed to restore your past purchase."
         case .subscriptionNotFound:
@@ -88,7 +82,6 @@ struct DefaultSubscriptionErrorReporter: SubscriptionErrorReporter {
             PixelKit.fire(PrivacyProPixel.privacyProPurchaseFailureBackendError, frequency: .legacyDailyAndCount)
         case .failedToGetSubscriptionOptions: break
         case .failedToSetSubscription: break
-        case .failedToRestoreFromEmail, .failedToRestoreFromEmailSubscriptionInactive: break
         case .failedToRestorePastPurchase: break
         case .subscriptionNotFound:
             PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreFailureNotFound, frequency: .legacyDailyAndCount)

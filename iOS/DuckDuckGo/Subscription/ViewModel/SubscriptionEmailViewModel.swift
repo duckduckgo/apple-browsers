@@ -63,8 +63,7 @@ final class SubscriptionEmailViewModel: ObservableObject {
     @Published private(set) var state = State()
 
     enum SubscriptionRestoreError: Error {
-        case failedToRestoreFromEmail,
-             subscriptionExpired,
+        case subscriptionExpired,
              generalError
     }
 

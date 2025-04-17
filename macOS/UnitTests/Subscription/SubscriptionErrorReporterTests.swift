@@ -110,28 +110,6 @@ final class SubscriptionErrorReporterTests: XCTestCase {
         XCTAssertPrivacyPixelsFired([])
     }
 
-    func testReporterForFailedToRestoreFromEmailError() async throws {
-        // Given
-        let errorToBeHandled: SubscriptionError = .failedToRestoreFromEmail
-
-        // When
-        reporter.report(subscriptionActivationError: errorToBeHandled)
-
-        // Then
-        XCTAssertPrivacyPixelsFired([])
-    }
-
-    func testReporterForFailedToRestoreFromEmailSubscriptionInactiveError() async throws {
-        // Given
-        let errorToBeHandled: SubscriptionError = .failedToRestoreFromEmailSubscriptionInactive
-
-        // When
-        reporter.report(subscriptionActivationError: errorToBeHandled)
-
-        // Then
-        XCTAssertPrivacyPixelsFired([])
-    }
-
     func testReporterForFailedToRestorePastPurchaseError() async throws {
         // Given
         let errorToBeHandled: SubscriptionError = .failedToRestorePastPurchase

@@ -69,8 +69,6 @@ enum UseSubscriptionError: Error {
          missingEntitlements,
          failedToGetSubscriptionOptions,
          failedToSetSubscription,
-         failedToRestoreFromEmail,
-         failedToRestoreFromEmailSubscriptionInactive,
          failedToRestorePastPurchase,
          subscriptionNotFound,
          subscriptionExpired,
@@ -398,9 +396,8 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
             accountManager.storeAuthToken(token: authToken)
             accountManager.storeAccount(token: accessToken, email: accountDetails.email, externalID: accountDetails.externalID)
             onSetSubscription?()
-
         } else {
-            Logger.subscription.error("Failed to obtain subscription options")
+            Logger.subscription.error("Failed to set subscription")
             setTransactionError(.failedToSetSubscription)
         }
 

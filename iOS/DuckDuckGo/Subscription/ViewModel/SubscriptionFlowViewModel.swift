@@ -162,8 +162,6 @@ final class SubscriptionFlowViewModel: ObservableObject {
             state.transactionError = .failedToGetSubscriptionOptions
         case .failedToSetSubscription:
             state.transactionError = .failedToSetSubscription
-        case .failedToRestoreFromEmail, .failedToRestoreFromEmailSubscriptionInactive:
-            state.transactionError = .generalError
         case .failedToRestorePastPurchase:
             state.transactionError = .failedToRestorePastPurchase
         case .subscriptionNotFound:
@@ -178,7 +176,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
             DailyPixel.fireDailyAndCount(pixel: .privacyProPurchaseFailureAccountNotCreated,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
             state.transactionError = .generalError
-        default:
+        case .generalError:
             state.transactionError = .generalError
         }
 

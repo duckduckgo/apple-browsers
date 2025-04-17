@@ -99,6 +99,8 @@ restack_branches() {
 
     current_branch=$(git rev-parse --abbrev-ref HEAD)
     git rebase --onto "${current_branch}" "${current_branch}" "${branch_outdated}"
+    git rebase --onto "${branch_outdated}" "${branch_outdated}" "${branch_release}"
+    git rebase --onto "${branch_release}" "${branch_release}" "${branch_phased}"
 }
 
 clean_branches() {

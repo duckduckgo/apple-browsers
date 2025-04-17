@@ -1,5 +1,5 @@
 //
-//  ButtonConfiguration.swift
+//  OmniBarButton.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -24,6 +24,7 @@ class OmniBarButton: UIButton {
 
     enum ButtonType {
         case primary
+        case fire
         case secondary
     }
 
@@ -40,7 +41,7 @@ class OmniBarButton: UIButton {
         fatalError("init(coder:) has not been implemented")
     }
 
-    func setImage(_ image: UIImage) {
+    func setImage(_ image: UIImage?) {
         configuration?.image = image
     }
 
@@ -71,8 +72,13 @@ class OmniBarButton: UIButton {
 private extension OmniBarButton.ButtonType {
 
     func backgroundColor(for state: UIButton.State) -> UIColor {
-        switch state {
-        case .highlighted, .selected:
+
+        switch (self, state) {
+        case (.fire, .highlighted):
+            return UIColor(designSystemColor: .controlsFillTertiary)
+        case (.fire, _):
+            return UIColor(designSystemColor: .controlsFillPrimary)
+        case (_, .highlighted):
             return UIColor(designSystemColor: .controlsFillPrimary)
         default:
             return .clear
@@ -80,8 +86,9 @@ private extension OmniBarButton.ButtonType {
     }
 
     func foregroundColor(for state: UIButton.State) -> UIColor {
+
         switch self {
-        case .primary:
+        case .primary, .fire:
             switch state {
             case .disabled:
                 return UIColor(designSystemColor: .icons).withAlphaComponent(0.5)
@@ -89,14 +96,19 @@ private extension OmniBarButton.ButtonType {
                 return UIColor(designSystemColor: .icons)
             }
         case .secondary:
-            return UIColor(designSystemColor: .iconsSecondary)
+            switch state {
+            case .disabled:
+                return UIColor(designSystemColor: .iconsSecondary).withAlphaComponent(0.5)
+            default:
+                return UIColor(designSystemColor: .iconsSecondary)
+            }
         }
     }
 }
 
 private extension UIButton.Configuration {
     static func omniBarDefault() -> UIButton.Configuration {
-        var config = UIButton.Configuration.filled()
+        var config = UIButton.Configuration.gray()
         config.cornerStyle = .dynamic
         config.buttonSize = .medium
         config.titleAlignment = .center
@@ -104,7 +116,7 @@ private extension UIButton.Configuration {
 
         config.background.cornerRadius = 14
 
-        config.contentInsets = .init(top: 8, leading: 16, bottom: 8, trailing: 16)
+//        config.contentInsets = .init(top: 8, leading: 16, bottom: 8, trailing: 16)
 
         return config
     }

@@ -778,11 +778,10 @@ class MainViewController: UIViewController {
 
     private func initTabButton() {
         if ExperimentalThemingManager().isExperimentalThemingEnabled {
-            let button = UIButton(type: .system)
+            let button = OmniBarButton()
             button.frame = CGRect(x: 0, y: 0, width: 34, height: 44)
-            button.setImage(UIImage(named: "Tab-New-24"), for: .normal)
-            button.contentMode = .center
-            button.imageView?.contentMode = .scaleAspectFit
+
+            button.setImage(UIImage(resource: .tabNew24))
             button.addAction(UIAction(handler: { _ in self.showTabSwitcher() }), for: .touchUpInside)
 
             let longPressRecognizer = UILongPressGestureRecognizer(target: self, action: #selector(launchNewTab))

@@ -987,7 +987,6 @@
 		9FCFCD812C6B020D006EB7A0 /* LaunchOptionsHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FCFCD7D2C6AF52A006EB7A0 /* LaunchOptionsHandler.swift */; };
 		9FCFCD852C75C91A006EB7A0 /* ProgressBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FCFCD842C75C91A006EB7A0 /* ProgressBarView.swift */; };
 		9FD1BDEC2D8C183C002F4EFE /* OnboardingManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD1BDEB2D8C183C002F4EFE /* OnboardingManagerTests.swift */; };
-		9FD1BDED2D8C183C002F4EFE /* OnboardingManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FD1BDEB2D8C183C002F4EFE /* OnboardingManagerTests.swift */; };
 		9FDEC7B42C8FD62F00C7A692 /* OnboardingAddressBarPositionPickerViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDEC7B32C8FD62F00C7A692 /* OnboardingAddressBarPositionPickerViewModelTests.swift */; };
 		9FDEC7B62C8FDFD600C7A692 /* OnboardingManagerMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDEC7B52C8FDFD600C7A692 /* OnboardingManagerMock.swift */; };
 		9FDEC7B82C9004D600C7A692 /* OnboardingIntroViewModel+Copy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDEC7B72C9004D600C7A692 /* OnboardingIntroViewModel+Copy.swift */; };
@@ -9863,7 +9862,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				85F21DB0210F5E32002631A6 /* AtbIntegrationTests.swift in Sources */,
-				9FD1BDED2D8C183C002F4EFE /* OnboardingManagerTests.swift in Sources */,
 				8551912724746EDC0010FDD0 /* SnapshotHelper.swift in Sources */,
 				1E3C99DA2D9D6C6E009447E2 /* SubscriptionFeatureFlagMappingTests.swift in Sources */,
 			);

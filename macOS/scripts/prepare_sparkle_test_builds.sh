@@ -97,22 +97,8 @@ restack_branches() {
     branch_release="${branch_prefix}release"
     branch_phased="${branch_prefix}phased"
 
-    echo "Restacking branches:"
-    echo "- ${branch_outdated}"
-    echo "- ${branch_release}"
-    echo "- ${branch_phased}"
-
-    # Get the current branch to return to later
     current_branch=$(git rev-parse --abbrev-ref HEAD)
-
-    # Make outdated include all commits from current_branch
     git rebase --onto "${current_branch}" "${current_branch}" "${branch_outdated}"
-
-    # Make release include all commits from outdated
-    git rebase --onto "${branch_outdated}" "${branch_outdated}" "${branch_release}"
-
-    # Make phased include all commits from release
-    git rebase --onto "${branch_release}" "${branch_release}" "${branch_phased}"
 }
 
 clean_branches() {

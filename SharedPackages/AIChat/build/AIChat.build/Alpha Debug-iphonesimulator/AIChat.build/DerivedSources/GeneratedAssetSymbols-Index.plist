@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>colors</key>
+	<array>
+		<dict>
+			<key>catalogPath</key>
+			<string>/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/Sources/AIChat/Resources/Assets.xcassets</string>
+			<key>objcSymbol</key>
+			<string>ACColorNameWebViewBackgroundColor</string>
+			<key>relativePath</key>
+			<string>./webViewBackgroundColor.colorset</string>
+			<key>swiftSymbol</key>
+			<string>webViewBackground</string>
+		</dict>
+	</array>
+	<key>images</key>
+	<array/>
+	<key>symbols</key>
+	<array/>
+</dict>
+</plist>

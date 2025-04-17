@@ -1,0 +1,138 @@
+{
+  "" : {
+    "diagnostics" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChat-master.dia",
+    "emit-module-dependencies" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChat-master-emit-module.d",
+    "emit-module-diagnostics" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChat-master-emit-module.dia",
+    "swift-dependencies" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChat-master.swiftdeps"
+  },
+  "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/Sources/AIChat/AIChatViewModel.swift" : {
+    "const-values" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatViewModel.swiftconstvalues",
+    "dependencies" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatViewModel.d",
+    "diagnostics" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatViewModel.dia",
+    "index-unit-output-path" : "/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatViewModel.o",
+    "llvm-bc" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatViewModel.bc",
+    "object" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatViewModel.o",
+    "swift-dependencies" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatViewModel.swiftdeps",
+    "swiftmodule" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatViewModel~partial.swiftmodule"
+  },
+  "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/Sources/AIChat/AIChatWebViewController.swift" : {
+    "const-values" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatWebViewController.swiftconstvalues",
+    "dependencies" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatWebViewController.d",
+    "diagnostics" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatWebViewController.dia",
+    "index-unit-output-path" : "/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatWebViewController.o",
+    "llvm-bc" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatWebViewController.bc",
+    "object" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatWebViewController.o",
+    "swift-dependencies" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatWebViewController.swiftdeps",
+    "swiftmodule" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatWebViewController~partial.swiftmodule"
+  },
+  "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/Sources/AIChat/Public API/AIChatDebugSettingsHandling.swift" : {
+    "const-values" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatDebugSettingsHandling.swiftconstvalues",
+    "dependencies" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatDebugSettingsHandling.d",
+    "diagnostics" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatDebugSettingsHandling.dia",
+    "index-unit-output-path" : "/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatDebugSettingsHandling.o",
+    "llvm-bc" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatDebugSettingsHandling.bc",
+    "object" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatDebugSettingsHandling.o",
+    "swift-dependencies" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatDebugSettingsHandling.swiftdeps",
+    "swiftmodule" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatDebugSettingsHandling~partial.swiftmodule"
+  },
+  "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/Sources/AIChat/Public API/AIChatRequestAuthorizationHandling.swift" : {
+    "const-values" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatRequestAuthorizationHandling.swiftconstvalues",
+    "dependencies" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatRequestAuthorizationHandling.d",
+    "diagnostics" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatRequestAuthorizationHandling.dia",
+    "index-unit-output-path" : "/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatRequestAuthorizationHandling.o",
+    "llvm-bc" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatRequestAuthorizationHandling.bc",
+    "object" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatRequestAuthorizationHandling.o",
+    "swift-dependencies" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatRequestAuthorizationHandling.swiftdeps",
+    "swiftmodule" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatRequestAuthorizationHandling~partial.swiftmodule"
+  },
+  "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/Sources/AIChat/Public API/AIChatSettingsProvider.swift" : {
+    "const-values" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatSettingsProvider.swiftconstvalues",
+    "dependencies" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatSettingsProvider.d",
+    "diagnostics" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatSettingsProvider.dia",
+    "index-unit-output-path" : "/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatSettingsProvider.o",
+    "llvm-bc" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatSettingsProvider.bc",
+    "object" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatSettingsProvider.o",
+    "swift-dependencies" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatSettingsProvider.swiftdeps",
+    "swiftmodule" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatSettingsProvider~partial.swiftmodule"
+  },
+  "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/Sources/AIChat/Public API/AIChatViewController.swift" : {
+    "const-values" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatViewController.swiftconstvalues",
+    "dependencies" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatViewController.d",
+    "diagnostics" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatViewController.dia",
+    "index-unit-output-path" : "/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatViewController.o",
+    "llvm-bc" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatViewController.bc",
+    "object" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatViewController.o",
+    "swift-dependencies" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatViewController.swiftdeps",
+    "swiftmodule" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/AIChatViewController~partial.swiftmodule"
+  },
+  "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/Sources/AIChat/Public API/Logger+AIChat.swift" : {
+    "const-values" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/Logger+AIChat.swiftconstvalues",
+    "dependencies" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/Logger+AIChat.d",
+    "diagnostics" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/Logger+AIChat.dia",
+    "index-unit-output-path" : "/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/Logger+AIChat.o",
+    "llvm-bc" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/Logger+AIChat.bc",
+    "object" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/Logger+AIChat.o",
+    "swift-dependencies" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/Logger+AIChat.swiftdeps",
+    "swiftmodule" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/Logger+AIChat~partial.swiftmodule"
+  },
+  "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/Sources/AIChat/TitleBarView.swift" : {
+    "const-values" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/TitleBarView.swiftconstvalues",
+    "dependencies" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/TitleBarView.d",
+    "diagnostics" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/TitleBarView.dia",
+    "index-unit-output-path" : "/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/TitleBarView.o",
+    "llvm-bc" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/TitleBarView.bc",
+    "object" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/TitleBarView.o",
+    "swift-dependencies" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/TitleBarView.swiftdeps",
+    "swiftmodule" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/TitleBarView~partial.swiftmodule"
+  },
+  "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/Sources/AIChat/UIColor+Extension.swift" : {
+    "const-values" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/UIColor+Extension.swiftconstvalues",
+    "dependencies" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/UIColor+Extension.d",
+    "diagnostics" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/UIColor+Extension.dia",
+    "index-unit-output-path" : "/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/UIColor+Extension.o",
+    "llvm-bc" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/UIColor+Extension.bc",
+    "object" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/UIColor+Extension.o",
+    "swift-dependencies" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/UIColor+Extension.swiftdeps",
+    "swiftmodule" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/UIColor+Extension~partial.swiftmodule"
+  },
+  "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/Sources/AIChat/URL+Extension.swift" : {
+    "const-values" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/URL+Extension.swiftconstvalues",
+    "dependencies" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/URL+Extension.d",
+    "diagnostics" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/URL+Extension.dia",
+    "index-unit-output-path" : "/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/URL+Extension.o",
+    "llvm-bc" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/URL+Extension.bc",
+    "object" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/URL+Extension.o",
+    "swift-dependencies" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/URL+Extension.swiftdeps",
+    "swiftmodule" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/URL+Extension~partial.swiftmodule"
+  },
+  "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/Sources/AIChat/UserText.swift" : {
+    "const-values" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/UserText.swiftconstvalues",
+    "dependencies" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/UserText.d",
+    "diagnostics" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/UserText.dia",
+    "index-unit-output-path" : "/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/UserText.o",
+    "llvm-bc" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/UserText.bc",
+    "object" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/UserText.o",
+    "swift-dependencies" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/UserText.swiftdeps",
+    "swiftmodule" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/UserText~partial.swiftmodule"
+  },
+  "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "const-values" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftconstvalues",
+    "dependencies" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/GeneratedAssetSymbols.d",
+    "diagnostics" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/GeneratedAssetSymbols.dia",
+    "index-unit-output-path" : "/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "swift-dependencies" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftdeps",
+    "swiftmodule" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/GeneratedAssetSymbols~partial.swiftmodule"
+  },
+  "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/DerivedSources/resource_bundle_accessor.swift" : {
+    "const-values" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/resource_bundle_accessor.swiftconstvalues",
+    "dependencies" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/resource_bundle_accessor.d",
+    "diagnostics" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/resource_bundle_accessor.dia",
+    "index-unit-output-path" : "/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/resource_bundle_accessor.o",
+    "llvm-bc" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/resource_bundle_accessor.bc",
+    "object" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/resource_bundle_accessor.o",
+    "swift-dependencies" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/resource_bundle_accessor.swiftdeps",
+    "swiftmodule" : "/Users/bunn/DuckDuckGo/apple-browsers/iOS/LocalPackages/AIChat/build/AIChat.build/Alpha Debug-iphonesimulator/AIChat.build/Objects-normal/arm64/resource_bundle_accessor~partial.swiftmodule"
+  }
+}

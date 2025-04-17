@@ -1,0 +1,4 @@
+module AIChat {
+header "AIChat-Swift.h"
+export *
+}

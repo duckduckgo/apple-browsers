@@ -1754,6 +1754,7 @@
 		311BD1AC2836BB3900AEF6C1 /* AutofillItemsEmptyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillItemsEmptyView.swift; sourceTree = "<group>"; };
 		311BD1AE2836BB4200AEF6C1 /* AutofillItemsLockedView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillItemsLockedView.swift; sourceTree = "<group>"; };
 		311BD1B02836C0CA00AEF6C1 /* AutofillLoginListAuthenticator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillLoginListAuthenticator.swift; sourceTree = "<group>"; };
+		311F87622DB1556B0011DFB3 /* AIChat */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = AIChat; path = ../../SharedPackages/AIChat; sourceTree = "<group>"; };
 		31206F6F2D3804E800A95D76 /* AIChatDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatDebugView.swift; sourceTree = "<group>"; };
 		312E5745283BB04A00C18FA0 /* AutofillEmptySearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillEmptySearchView.swift; sourceTree = "<group>"; };
 		3132FA2527A0784600DD7A12 /* FilePreviewHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilePreviewHelper.swift; sourceTree = "<group>"; };
@@ -1771,7 +1772,6 @@
 		3157B43727F4C8490042D3D7 /* FaviconsHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaviconsHelper.swift; sourceTree = "<group>"; };
 		31584615281AFB46004ADB8B /* AutofillLoginDetailsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillLoginDetailsViewController.swift; sourceTree = "<group>"; };
 		31584619281B08F5004ADB8B /* AutofillLoginListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillLoginListViewModel.swift; sourceTree = "<group>"; };
-		315C77802CFA414400699683 /* AIChat */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = AIChat; sourceTree = "<group>"; };
 		3161D13127AC161B00285CF6 /* DownloadMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadMetadata.swift; sourceTree = "<group>"; };
 		31669B9928020A460071CC18 /* SaveLoginViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveLoginViewModel.swift; sourceTree = "<group>"; };
 		316790E42C9352190090B0A2 /* MarketplaceAdPostbackManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketplaceAdPostbackManagerTests.swift; sourceTree = "<group>"; };
@@ -4358,7 +4358,7 @@
 				4B94B79C2D4831700014AAB8 /* SyncUI-iOS */,
 				7B10FF282D11AA0D00F36BF2 /* VPNiOS */,
 				37FCAACB2993149A000E420A /* Waitlist */,
-				315C77802CFA414400699683 /* AIChat */,
+				311F87622DB1556B0011DFB3 /* AIChat */,
 			);
 			path = LocalPackages;
 			sourceTree = "<group>";

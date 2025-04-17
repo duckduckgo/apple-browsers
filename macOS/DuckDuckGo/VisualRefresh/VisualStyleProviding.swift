@@ -39,6 +39,7 @@ protocol VisualStyleProviding {
     var vpnNavigationIconsProvider: IconProvider { get }
     var fireButtonStyleProvider: FireButtonIconStyleProviding { get }
     var moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding { get }
+    var privacyShieldStyleProvider: PrivacyShieldAddressBarStyleProviding { get }
 }
 
 protocol VisualStyleManagerProviding {
@@ -89,6 +90,7 @@ struct VisualStyle: VisualStyleProviding {
     let vpnNavigationIconsProvider: IconProvider
     let fireButtonStyleProvider: FireButtonIconStyleProviding
     let moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding
+    let privacyShieldStyleProvider: PrivacyShieldAddressBarStyleProviding
 
     func addressBarHeight(for type: AddressBarSizeClass) -> CGFloat {
         switch type {
@@ -135,7 +137,8 @@ struct VisualStyle: VisualStyleProviding {
                            moreOptionsbuttonImage: .settings,
                            vpnNavigationIconsProvider: NavigationBarIconProvider(),
                            fireButtonStyleProvider: LegacyFireButtonIconStyleProvider(),
-                           moreOptionsMenuIconsProvider: LegacyMoreOptionsMenuIcons())
+                           moreOptionsMenuIconsProvider: LegacyMoreOptionsMenuIcons(),
+                           privacyShieldStyleProvider: LegacyPrivacyShieldAddressBarStyleProvider())
     }
 
     static var current: VisualStyleProviding {
@@ -159,7 +162,8 @@ struct VisualStyle: VisualStyleProviding {
                            moreOptionsbuttonImage: .optionsNew,
                            vpnNavigationIconsProvider: NewVPNNavigationBarIconProvider(),
                            fireButtonStyleProvider: NewFireButtonIconStyleProvider(),
-                           moreOptionsMenuIconsProvider: NewMoreOptionsMenuIcons())
+                           moreOptionsMenuIconsProvider: NewMoreOptionsMenuIcons(),
+                           privacyShieldStyleProvider: NewPrivacyShieldAddressBarStyleProvider())
     }
 }
 

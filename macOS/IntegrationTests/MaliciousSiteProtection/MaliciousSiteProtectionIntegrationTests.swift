@@ -31,6 +31,25 @@ class MaliciousSiteProtectionIntegrationTests: XCTestCase {
 
     var window: NSWindow!
     var cancellables: Set<AnyCancellable>!
+
+    // dataSets loading takes long time, so we preload them in a separate task once per the test class
+    static func dataManager() async -> MaliciousSiteProtection.DataManager {
+        let configurationUrl = FileManager.default.configurationDirectory()
+        let fileStore = MaliciousSiteProtection.FileStore(dataStoreURL: configurationUrl)
+        let dataManager = MaliciousSiteProtection.DataManager(fileStore: fileStore,
+                                                              embeddedDataProvider: MaliciousSiteProtectionManager.EmbeddedDataProvider(),
+                                                              fileNameProvider: MaliciousSiteProtectionManager.fileName(for:))
+        let preloadDataTask = Task.detached {
+            await dataManager.preloadData(for: ThreatKind.allCases)
+        }
+        await preloadDataTask.value
+        return dataManager
+    }
+    static var initDetectorTask: Task<MaliciousSiteProtectionManager, Never>! = Task {
+        let dataManager = await MaliciousSiteProtectionIntegrationTests.dataManager()
+        return MaliciousSiteProtectionManager(dataManager: dataManager, featureFlagger: MockFeatureFlagger(), updateIntervalProvider: { _ in nil })
+    }
+
     var detector: MaliciousSiteDetecting!
     var contentBlockingMock: ContentBlockingMock!
     var privacyFeaturesMock: AnyPrivacyFeatures!
@@ -40,14 +59,14 @@ class MaliciousSiteProtectionIntegrationTests: XCTestCase {
     var tab: Tab!
     var tabViewModel: TabViewModel!
     var schemeHandler: TestSchemeHandler!
-    var featureFlagger: MockFeatureFlagger!
 
     @MainActor
     override func setUp() async throws {
+        detector = await Self.initDetectorTask.value
+
         WebTrackingProtectionPreferences.shared.isGPCEnabled = false
         MaliciousSiteProtectionPreferences.shared.isEnabled = true
-        featureFlagger = MockFeatureFlagger()
-        detector = MaliciousSiteProtectionManager(featureFlagger: featureFlagger, updateIntervalProvider: { _ in nil })
+
         schemeHandler = TestSchemeHandler { request in
             if request.url!.lastPathComponent == "phishing.html" {
                 XCTFail("Phishing request loaded")
@@ -60,7 +79,9 @@ class MaliciousSiteProtectionIntegrationTests: XCTestCase {
         let matchesUrlPrefix = MaliciousSiteDetector.APIEnvironment.production.url(for: .matches(.init(hashPrefix: "")), platform: .macOS)
             .absoluteString.prefix(while: { $0 != "?" })
         stub { request in
-            request.url?.absoluteString.hasPrefix(matchesUrlPrefix) == true
+            let matches = request.url?.absoluteString.hasPrefix(matchesUrlPrefix) == true
+            assert(matches || request.url?.absoluteString.hasPrefix(URL(string: String(matchesUrlPrefix))!.deletingLastPathComponent().deletingLastPathComponent().absoluteString) == false)
+            return matches
         } response: { _ in
             let path = OHPathForFile("match.api.response.json", type(of: self))!
             return fixture(filePath: path, status: 200, headers: nil)
@@ -90,7 +111,10 @@ class MaliciousSiteProtectionIntegrationTests: XCTestCase {
         schemeHandler = nil
         HTTPStubs.removeAllStubs()
         WebTrackingProtectionPreferences.shared.isGPCEnabled = true
-        featureFlagger = nil
+    }
+
+    override class func tearDown() {
+        initDetectorTask = nil
     }
 
     // MARK: - Phishing Detection Tests
@@ -361,7 +385,7 @@ class MaliciousSiteProtectionIntegrationTests: XCTestCase {
 
         switch result {
         case .completed: break
-        case .timedOut: throw XCTSkip("Test timed out")
+        case .timedOut: XCTFail("Test timed out")
         case .incorrectOrder, .invertedFulfillment, .interrupted: XCTFail("Test waiting failed")
         @unknown default: XCTFail("Unknown result")
         }

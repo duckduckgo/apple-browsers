@@ -536,7 +536,7 @@ public struct UserText {
     public static let autofillOnboardingKeyFeaturesSignInsDescription = NSLocalizedString("autofill.onboarding.key-features.sign-ins.description", value: "No need to remember login info.", comment: "Description of autofill onboarding prompt's sign-in feature")
     public static let autofillOnboardingKeyFeaturesSecureStorageTitle = NSLocalizedString("autofill.onboarding.key-features.secure-storage.title", value: "Secure storage", comment: "Title of autofill onboarding prompt's secure storage feature")
     static func autofillOnboardingKeyFeaturesSecureStorageDescription(biometryString: String) -> String {
-        let localized = NSLocalizedString("autofill.onboarding.key-features.secure-storage.description", value: "Passwords are encrypted, stored on device, and locked with %@.", comment: "Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter")
+        let localized = NSLocalizedString("autofill.onboarding.key-features.secure-storage.biometric.description", value: "Passwords are encrypted, stored on device, and locked with %@.", comment: "Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter")
         return String(format: localized, biometryString)
     }
     public static let autofillOnboardingKeyFeaturesSecureStorageDescriptionParameterFaceID = NSLocalizedString("autofill.onboarding.key-features.secure-storage.description.parameter.face-id", value: "Face ID or passcode", comment: "Parameter for the description of autofill onboarding prompt's secure storage feature describing Face ID biometry + passcode")
@@ -836,9 +836,9 @@ public struct UserText {
     public static let vpnSettingDNSServerIPv4Title = NSLocalizedString("vpn.settings.dns.server.ipv4.title", value: "IPv4 Address", comment: "Title for the IPv4 Address setting")
     public static let vpnSettingDNSServerScreenTitle = NSLocalizedString("vpn.settings.dns.server.screen.title", value: "DNS Server", comment: "Title for the DNS Server setting screen")
     public static let vpnSettingDNSServerApplyButtonTitle = NSLocalizedString("vpn.settings.dns.server.apply.button.title", value: "Apply", comment: "Title for the Apply button on the DNS Server setting screen")
-    public static let vpnContentBlockingFilteringTitle = NSLocalizedString("settings.web.tracking.protection.title", value: "Block risky domains", comment: "Title of the vpn blocks risky sites feature settings")
-    public static let vpnContentBlockingFilteringHeader = NSLocalizedString("settings.web.tracking.protection.header", value: "Content Blocking and Filtering", comment: "Header of the vpn blocks risky sites feature settings")
-    public static let vpnContentBlockingFilteringFooter = NSLocalizedString("settings.web.tracking.protection.explanation", value: "Block 150,000+ domains flagged for hosting malware, phishing attacks, and online scams with a DNS-level blocklist. [Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)", comment: "Explanation in Settings how the vpn blocks risky sites (do not remove the link)")
+    public static let vpnContentBlockingFilteringTitle = NSLocalizedString("vpn.settings.dns.server.content.blocking.title", value: "Block risky domains", comment: "Title of the vpn blocks risky sites feature settings")
+    public static let vpnContentBlockingFilteringHeader = NSLocalizedString("vpn.settings.dns.server.content.blocking.header", value: "Content Blocking and Filtering", comment: "Header of the vpn blocks risky sites feature settings")
+    public static let vpnContentBlockingFilteringFooter = NSLocalizedString("vpn.settings.dns.server.content.blocking.explanation", value: "Block 150,000+ domains flagged for hosting malware, phishing attacks, and online scams with a DNS-level blocklist. [Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)", comment: "Explanation in Settings how the vpn blocks risky sites (do not remove the link)")
 
     // MARK: Notifications
     
@@ -1094,8 +1094,8 @@ Take back control of your personal information with the browser designed for dat
     static let bookmarksLimitExceededDescription = NSLocalizedString("prefrences.sync.bookmarks-limit-exceeded-description", value: "You've reached the maximum number of bookmarks. Please delete some to resume sync.", comment: "Description for sync bookmarks limits exceeded warning")
     static let credentialsLimitExceededDescription = NSLocalizedString("prefrences.sync.credentials-limit-exceeded-description", value: "You've reached the maximum number of passwords. Please delete some to resume sync.", comment: "Description for sync credentials limits exceeded warning")
     public static let invalidLoginCredentialErrorDescription = NSLocalizedString("prefrences.sync.invalid-login-description", value: "Sync encountered an error. Try disabling sync on this device and then reconnect using another device or your recovery code.", comment: "Description invalid credentials error when syncing.")
-    static let tooManyRequestsErrorDescription = NSLocalizedString("prefrences.sync.invalid-login-description", value: "Sync & Backup is temporarily unavailable.", comment: "Description of too many requests error when syncing.")
-    static let badRequestErrorDescription = NSLocalizedString("prefrences.sync.invalid-login-description", value: "Some bookmarks or passwords are formatted incorrectly or too long and were not synced.", comment: "Description of incorrectly formatted data error when syncing.")
+    static let tooManyRequestsErrorDescription = NSLocalizedString("prefrences.sync.too-many-requests.description", value: "Sync & Backup is temporarily unavailable.", comment: "Description of too many requests error when syncing.")
+    static let badRequestErrorDescription = NSLocalizedString("prefrences.sync.bad-request.description", value: "Some bookmarks or passwords are formatted incorrectly or too long and were not synced.", comment: "Description of incorrectly formatted data error when syncing.")
     static let bookmarksLimitExceededAction = NSLocalizedString("prefrences.sync.bookmarks-limit-exceeded-action", value: "Manage Bookmarks", comment: "Button title for sync bookmarks limits exceeded warning to go to manage bookmarks")
     static let credentialsLimitExceededAction = NSLocalizedString("prefrences.sync.credentials-limit-exceeded-action", value: "Manage passwords…", comment: "Button title for sync credentials limits exceeded warning to go to manage passwords")
     static let syncPausedAlertTitle = NSLocalizedString("alert.sync-paused-title", value: "Sync is Paused", comment: "Title for alert shown when sync paused for an error")
@@ -1233,7 +1233,7 @@ Take back control of your personal information with the browser designed for dat
     public static let duckduckgoOnOtherPlatforms = NSLocalizedString("settings.duckduckgo.on.other.platforms", value: "DuckDuckGo on Other Platforms", comment: "Settings cell to link users to other products by DuckDuckGo")
 
     // General Section
-    public static let settingsSetDefault = NSLocalizedString("settings.default.browser", value: "Set as Default Browser", comment: "Settings screen cell text for setting the app as default browser")
+    public static let settingsSetDefault = NSLocalizedString("settings.general.default.browser", value: "Set as Default Browser", comment: "Settings screen cell text for setting the app as default browser")
     public static let settingsSync = NSLocalizedString("settings.sync", value: "Sync & Backup", comment: "Settings screen cell text for sync and backup")
     public static let settingsLogins = NSLocalizedString("settings.logins", value: "Passwords & Autofill", comment: "Settings screen cell text for passwords")
     
@@ -1242,7 +1242,7 @@ Take back control of your personal information with the browser designed for dat
     public static let settingsIcon = NSLocalizedString("settings.icon", value: "App Icon", comment: "Settings screen cell text for app icon selection")
     public static let settingsFirebutton = NSLocalizedString("settings.firebutton", value: "Fire Button Animation", comment: "Settings screen cell text for fire button animation")
     public static let settingsText = NSLocalizedString("settings.text.size", value: "Default Text Zoom", comment: "Settings screen cell text for text size")
-    public static let settingsAddressBar = NSLocalizedString("settings.address.bar", value: "Address Bar Position", comment: "Settings screen cell text for addess bar position")
+    public static let settingsAddressBar = NSLocalizedString("settings.appearance.address.bar", value: "Address Bar Position", comment: "Settings screen cell text for addess bar position")
     public static let settingsFullURL = NSLocalizedString("settings.address.full.url", value: "Show Full Site Address", comment: "Settings screen cell title for toggling full URL visibility in address bar")
     public static let settingsExperimentalSection = NotLocalizedString("settings.experimental.section.title", value: "Experimental theming (internal only) ", comment: "Settings screen section title for experimental features")
     public static let settingsExperimentalSectionFooter = NotLocalizedString(

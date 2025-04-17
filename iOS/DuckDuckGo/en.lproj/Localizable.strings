@@ -550,9 +550,11 @@
 /* Do not translate - stringsdict entry */
 "autofill.number.of.passwords" = "autofill.number.of.passwords";
 
-/* Description of autofill onboarding prompt's secure storage feature
-   Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
-"autofill.onboarding.key-features.secure-storage.description" = "Passwords are encrypted, stored on device, and locked with %@.";
+/* Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
+"autofill.onboarding.key-features.secure-storage.biometric.description" = "Passwords are encrypted, stored on device, and locked with %@.";
+
+/* Description of autofill onboarding prompt's secure storage feature */
+"autofill.onboarding.key-features.secure-storage.description" = "Passwords are encrypted, stored on device, and locked with Face ID or passcode.";
 
 /* Parameter for the description of autofill onboarding prompt's secure storage feature describing Face ID biometry + passcode */
 "autofill.onboarding.key-features.secure-storage.description.parameter.face-id" = "Face ID or passcode";
@@ -2262,6 +2264,9 @@ https://duckduckgo.com/mac";
 /* Title for the Privacy Pro feedback form */
 "ppro.feedback-form.title" = "Send Feedback";
 
+/* Description of incorrectly formatted data error when syncing. */
+"prefrences.sync.bad-request.description" = "Some bookmarks or passwords are formatted incorrectly or too long and were not synced.";
+
 /* Button title for sync bookmarks limits exceeded warning to go to manage bookmarks */
 "prefrences.sync.bookmarks-limit-exceeded-action" = "Manage Bookmarks";
 
@@ -2274,13 +2279,14 @@ https://duckduckgo.com/mac";
 /* Description for sync credentials limits exceeded warning */
 "prefrences.sync.credentials-limit-exceeded-description" = "You've reached the maximum number of passwords. Please delete some to resume sync.";
 
-/* Description invalid credentials error when syncing.
-   Description of incorrectly formatted data error when syncing.
-   Description of too many requests error when syncing. */
+/* Description invalid credentials error when syncing. */
 "prefrences.sync.invalid-login-description" = "Sync encountered an error. Try disabling sync on this device and then reconnect using another device or your recovery code.";
 
 /* Title for sync limits exceeded warning */
 "prefrences.sync.limit-exceeded-title" = "Sync Paused";
+
+/* Description of too many requests error when syncing. */
+"prefrences.sync.too-many-requests.description" = "Sync & Backup is temporarily unavailable.";
 
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "Websites rely on cookies to keep you signed in. When you Fireproof a site, cookies won’t be erased and you’ll stay signed in, even after using the Fire Button. We still block third-party trackers found on Fireproof websites.";
@@ -2390,8 +2396,7 @@ Take back control of your personal information with the browser designed for dat
 /* Title for the settings VPN subsection where the user can learn how to add the VPN to their home screen */
 "settings.add.widget.vpn" = "Add DuckDuckGo VPN Widget to Your Home Screen";
 
-/* Name of the settings subsection related to the address bar
-   Settings screen cell text for addess bar position */
+/* Name of the settings subsection related to the address bar */
 "settings.address.bar" = "Address Bar";
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
@@ -2402,6 +2407,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* Settings screen appearance section title */
 "settings.appearance" = "Appearance";
+
+/* Settings screen cell text for addess bar position */
+"settings.appearance.address.bar" = "Address Bar Position";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Open Links in Associated Apps";
@@ -2448,8 +2456,7 @@ Take back control of your personal information with the browser designed for dat
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Data Clearing";
 
-/* Settings screen cell text for setting the app as default browser
-   The name of Settings category in Privacy Features related to configuration of the default browser */
+/* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Default Browser";
 
 /* Label of a button disabling email protection */
@@ -2484,6 +2491,9 @@ Take back control of your personal information with the browser designed for dat
 
 /* The name of the settings subsection containing general settings */
 "settings.general" = "General";
+
+/* Settings screen cell text for setting the app as default browser */
+"settings.general.default.browser" = "Set as Default Browser";
 
 /* Settings screen cell text for GPC */
 "settings.gpc" = "Global Privacy Control (GPC)";
@@ -2626,15 +2636,8 @@ Take back control of your personal information with the browser designed for dat
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Web Tracking Protection";
 
-/* Explanation in Settings how the vpn blocks risky sites (do not remove the link)
-   Explanation in Settings how the web tracking protection feature works */
-"settings.web.tracking.protection.explanation" = "Block 150,000+ domains flagged for hosting malware, phishing attacks, and online scams with a DNS-level blocklist. [Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
-
-/* Header of the vpn blocks risky sites feature settings */
-"settings.web.tracking.protection.header" = "Content Blocking and Filtering";
-
-/* Title of the vpn blocks risky sites feature settings */
-"settings.web.tracking.protection.title" = "Block risky domains";
+/* Explanation in Settings how the web tracking protection feature works */
+"settings.web.tracking.protection.explanation" = "DuckDuckGo automatically blocks hidden trackers as you browse the web.\n[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Select the option that best describes the problem you experienced.";
@@ -3172,6 +3175,15 @@ Take back control of your personal information with the browser designed for dat
 
 /* Title for the Apply button on the DNS Server setting screen */
 "vpn.settings.dns.server.apply.button.title" = "Apply";
+
+/* Explanation in Settings how the vpn blocks risky sites (do not remove the link) */
+"vpn.settings.dns.server.content.blocking.explanation" = "Block 150,000+ domains flagged for hosting malware, phishing attacks, and online scams with a DNS-level blocklist. [Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
+
+/* Header of the vpn blocks risky sites feature settings */
+"vpn.settings.dns.server.content.blocking.header" = "Content Blocking and Filtering";
+
+/* Title of the vpn blocks risky sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Block risky domains";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";

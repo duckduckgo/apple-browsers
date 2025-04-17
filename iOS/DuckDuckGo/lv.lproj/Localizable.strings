@@ -244,6 +244,9 @@
 /* Description for unable to remove device error */
 "alert.unable-to-remove-device-description" = "Nevar noņemt šo ierīci no sinhronizācijas un dublēšanas.";
 
+/* Description for unable to scan qr code error */
+"alert.unable-to-scan-qr-code-description" = "Atvaino, šis kods nav derīgs. Lūdzu, pārliecinies, ka ir ievadīts vai skenēts pareizais kods.";
+
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Nevar izveidot savienojumu ar serveri.";
 
@@ -559,9 +562,11 @@
 /* Do not translate - stringsdict entry */
 "autofill.number.of.passwords" = "autofill.number.of.passwords";
 
-/* Description of autofill onboarding prompt's secure storage feature
-   Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
-"autofill.onboarding.key-features.secure-storage.description" = "Paroles tiek šifrētas, saglabātas ierīcē un bloķētas ar %@.";
+/* Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
+"autofill.onboarding.key-features.secure-storage.biometric.description" = "Paroles tiek šifrētas, saglabātas ierīcē un bloķētas ar %@.";
+
+/* Description of autofill onboarding prompt's secure storage feature */
+"autofill.onboarding.key-features.secure-storage.description" = "Passwords are encrypted, stored on device, and locked with Face ID or passcode.";
 
 /* Parameter for the description of autofill onboarding prompt's secure storage feature describing Face ID biometry + passcode */
 "autofill.onboarding.key-features.secure-storage.description.parameter.face-id" = "Face ID vai piekļuves kods";
@@ -935,6 +940,9 @@
 /* Crash Report dialog title */
 "crash.report.dialog.title" = "Vai automātiski nosūtīt avārijas ziņojumus?";
 
+/* No comment provided by engineer. */
+"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importēt grāmatzīmes failu...";
 
@@ -1205,8 +1213,14 @@
 /* Text for the toggle to autoplay videos */
 "duck-player.native-autoplay-videos" = "Autoplay Videos";
 
+/* Text for the description about autoplay videos */
+"duck-player.native-autoplay-videos.description" = "Videos opened in Duck Player will automatically begin playback. Turn this off if you would like to manually start playback of videos opened in Duck Player.";
+
 /* Text for the button to watch a video on DuckPlayer */
-"duck-player.native-open-in-duckplayer" = "Duck Player";
+"duck-player.native-open-in-duckplayer" = "Play this video in Duck Player";
+
+/* Text for the button to resume watching a video on DuckPlayer */
+"duck-player.native-resume-in-duckplayer" = "Resume in Duck Player";
 
 /* Text for the button to watch a video on YouTube */
 "duck-player.native-watch-on-youtube" = "Watch in Youtube";
@@ -1247,8 +1261,14 @@
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Nekad";
 
+/* Toast message for the Duck Player entry pill dismiss count */
+"duckPlayer.pill.dismiss.count.toast.message" = "Want to turn off Duck Player appearing on Youtube?";
+
+/* Button on Toast message for the Duck Player entry pill dismiss count */
+"duckPlayer.pill.dismiss.count.toast.message.button" = "Atvērt iestatījumus";
+
 /* Caption for Duck Player entry point */
-"duckplayer.pill.watch.without.ads" = "Tap to watch without targeted ads";
+"duckplayer.pill.watch.without.ads" = "No targeted ads, always private";
 
 /* Body text for the modal feature explanation */
 "duckplayer.presentation.modal.body" = "Duck Player ļauj skatīties YouTube bez mērķētām reklāmām DuckDuckGo vidē, un skatītais saturs neietekmē tev sniegtos ieteikumus.";
@@ -1279,6 +1299,39 @@
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.title" = "Duck Player";
+
+/* Text displayed when DuckPlayer is in 'Ask' mode for Youtube. */
+"duckPlayerNative.ask.label" = "Ļaujiet man izvēlēties";
+
+/* Text displayed when DuckPlayer is automatically enabled for Youtube */
+"duckPlayerNative.auto.label" = "Automātiski";
+
+/* Label for the automatic youtube video opening */
+"duckPlayerNative.auto.open.label" = "Automātiski atvērt Duck Player vietnē YouTube";
+
+/* CTA for DuckPlayer priming modal */
+"duckPlayerNative.modal.cta" = "Watch Now Privately";
+
+/* Description for DuckPlayer priming modal */
+"duckPlayerNative.modal.description" = "Plus, what you watch in Duck Player won’t influence your YouTube recommendations.";
+
+/* Title for DuckPlayer priming modal */
+"duckPlayerNative.modal.title" = "Play this video in Duck Player to watch without targeted ads!";
+
+/* Text displayed when DuckPlayer is in off for youtube. */
+"duckPlayerNative.never.label" = "Nerādīt";
+
+/* Label for the use DuckPlayer on Youtube toggle footer */
+"duckPlayerNative.use.on.serp.footer" = "Clicking on YouTube videos in DuckDuckGo search results will open in Duck Player.";
+
+/* Label for the use DuckPlayer on SERP toggle */
+"duckPlayerNative.use.on.serp.label" = "DuckDuckGo Search Results";
+
+/* Label for the use DuckPlayer on Youtube toggle footer */
+"duckPlayerNative.use.on.youtube.footer" = "Choose how you would like Duck Player to handle YouTube videos when navigating from the YouTube website.";
+
+/* Label for the use DuckPlayer on Youtube toggle */
+"duckPlayerNative.use.on.youtube.label" = "Izmantot vietnē Youtube.com";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "E-pasta aizsardzība";
@@ -1354,6 +1407,9 @@
 
 /* Empty search placeholder on bookmarks search */
 "empty.search" = "Sakritības nav atrastas";
+
+/* No comment provided by engineer. */
+"Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
 "error.email-protection-sign-in.action" = "Pierakstīties";
@@ -2237,6 +2293,9 @@
 /* No comment provided by engineer. */
 "onboardingWelcomeHeader" = "Laipni lūdzam DuckDuckGo!";
 
+/* No comment provided by engineer. */
+"Open tabs remain unaffected by this change.  Please close all tabs for this setting to take effect." = "Šīs izmaiņas neietekmē atvērtās cilnes.  Lūdzu, aizver visas cilnes, lai šis iestatījums stātos spēkā.";
+
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Nevar atrast lietotni, kas nepieciešama šīs saites atvēršanai";
 
@@ -2309,6 +2368,9 @@
 /* Title for the Privacy Pro feedback form */
 "ppro.feedback-form.title" = "Sūtīt atsauksmi";
 
+/* Description of incorrectly formatted data error when syncing. */
+"prefrences.sync.bad-request.description" = "Dažas grāmatzīmes vai paroles ir formatētas nepareizi vai pārāk garas un netika sinhronizētas.";
+
 /* Button title for sync bookmarks limits exceeded warning to go to manage bookmarks */
 "prefrences.sync.bookmarks-limit-exceeded-action" = "Pārvaldīt grāmatzīmes";
 
@@ -2321,13 +2383,14 @@
 /* Description for sync credentials limits exceeded warning */
 "prefrences.sync.credentials-limit-exceeded-description" = "Tu esi sasniedzis maksimālo paroļu skaitu. Lūdzu, izdzēs dažas, lai atsāktu sinhronizāciju.";
 
-/* Description invalid credentials error when syncing.
-   Description of incorrectly formatted data error when syncing.
-   Description of too many requests error when syncing. */
+/* Description invalid credentials error when syncing. */
 "prefrences.sync.invalid-login-description" = "Sinhronizācijā radās kļūda. Mēģini atspējot sinhronizāciju šajā ierīcē un pēc tam atkārtoti izveido savienojumu, izmantojot citu ierīci vai atgūšanas kodu.";
 
 /* Title for sync limits exceeded warning */
 "prefrences.sync.limit-exceeded-title" = "Sinhronizācija pārtraukta";
+
+/* Description of too many requests error when syncing. */
+"prefrences.sync.too-many-requests.description" = "Sync & Backup uz laiku nav pieejams.";
 
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "Vietnes lieto sīkfailus, lai tu varētu turpināt būt pierakstījies(-usies). Padarot vietni ugunsdrošu, sīkfaili netiek dzēsti, bet tu vari turpināt būt pierakstījies(-usies) arī pēc Uguns pogas lietošanas. Mēs joprojām bloķēsim trešo pušu izsekotājus, kas atrodami ugunsdrošās vietnēs.";
@@ -2369,6 +2432,9 @@
 "Primary / First Action" = "Primārā/pirmā darbība";
 
 /* No comment provided by engineer. */
+"Priming Modal" = "Priming Modal";
+
+/* No comment provided by engineer. */
 "Privacy Protections" = "Privātuma aizsardzība";
 
 /* Privacy Icon accessibility title */
@@ -2394,6 +2460,12 @@
 
 /* No comment provided by engineer. */
 "Reset" = "Atiestatīt";
+
+/* No comment provided by engineer. */
+"Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
+
+/* No comment provided by engineer. */
+"Reset Priming Modal State" = "Reset Priming Modal State";
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Meklē vai ievadi adresi";
@@ -2443,8 +2515,7 @@
 /* Title for the settings VPN subsection where the user can learn how to add the VPN to their home screen */
 "settings.add.widget.vpn" = "Pievieno DuckDuckGo VPN logrīku savam sākuma ekrānam";
 
-/* Name of the settings subsection related to the address bar
-   Settings screen cell text for addess bar position */
+/* Name of the settings subsection related to the address bar */
 "settings.address.bar" = "Adreses josla";
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
@@ -2455,6 +2526,9 @@
 
 /* Settings screen appearance section title */
 "settings.appearance" = "Parādas";
+
+/* Settings screen cell text for addess bar position */
+"settings.appearance.address.bar" = "Adreses joslas pozīcija";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Atvērt saites saistītajās lietotnēs";
@@ -2501,8 +2575,7 @@
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Datu notīrīšana";
 
-/* Settings screen cell text for setting the app as default browser
-   The name of Settings category in Privacy Features related to configuration of the default browser */
+/* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Noklusējuma pārlūks";
 
 /* Label of a button disabling email protection */
@@ -2537,6 +2610,9 @@
 
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Vispārīgi";
+
+/* Settings screen cell text for setting the app as default browser */
+"settings.general.default.browser" = "Iestatīt kā noklusējuma pārlūku";
 
 /* Settings screen cell text for GPC */
 "settings.gpc" = "Globālā privātuma kontrole (GPC)";
@@ -2679,15 +2755,8 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Tīmekļa izsekošanas aizsardzība";
 
-/* Explanation in Settings how the vpn blocks risky sites (do not remove the link)
-   Explanation in Settings how the web tracking protection feature works */
-"settings.web.tracking.protection.explanation" = "Bloķē vairāk nekā 150 000 domēnu, kas atzīmēti kā ļaunprātīgas programmatūras, pikšķerēšanas uzbrukumu un tiešsaistes krāpšanas vietnes, izmantojot DNS līmeņa bloķēšanas sarakstu. [Uzzini vairāk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
-
-/* Header of the vpn blocks risky sites feature settings */
-"settings.web.tracking.protection.header" = "Satura bloķēšana un filtrēšana";
-
-/* Title of the vpn blocks risky sites feature settings */
-"settings.web.tracking.protection.title" = "Bloķēt riskantos domēnus";
+/* Explanation in Settings how the web tracking protection feature works */
+"settings.web.tracking.protection.explanation" = "DuckDuckGo automātiski bloķē slēptos izsekotājus, kad tu pārlūko tīmekli.\n[Uzzini vairāk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Izvēlies atbilstošāko problēmas raksturojumu.";
@@ -3243,6 +3312,15 @@
 
 /* Title for the Apply button on the DNS Server setting screen */
 "vpn.settings.dns.server.apply.button.title" = "Lietot";
+
+/* Explanation in Settings how the vpn blocks risky sites (do not remove the link) */
+"vpn.settings.dns.server.content.blocking.explanation" = "Bloķē vairāk nekā 150 000 domēnu, kas atzīmēti kā ļaunprātīgas programmatūras, pikšķerēšanas uzbrukumu un tiešsaistes krāpšanas vietnes, izmantojot DNS līmeņa bloķēšanas sarakstu. [Uzzini vairāk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
+
+/* Header of the vpn blocks risky sites feature settings */
+"vpn.settings.dns.server.content.blocking.header" = "Satura bloķēšana un filtrēšana";
+
+/* Title of the vpn blocks risky sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Bloķēt riskantos domēnus";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";

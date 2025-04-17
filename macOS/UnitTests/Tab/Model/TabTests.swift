@@ -99,6 +99,38 @@ final class TabTests: XCTestCase {
         XCTAssert(tab != tab2)
     }
 
+    // MARK: - "Crash Tab" functionality
+
+    @MainActor func testWhenUserIsNotInternalThenTabCannotBeCrashed() {
+        let internalUserDecider = InternalUserDeciderMock()
+        internalUserDecider.isInternalUser = false
+
+        let featureFlagger = FeatureFlaggerMock(internalUserDecider: internalUserDecider)
+
+        let tab = Tab(content: .newtab, featureFlagger: featureFlagger)
+        XCTAssertFalse(tab.canKillWebContentProcess)
+    }
+
+    @MainActor func testWhenTabCrashDebugToolsFeatureFlagIsDisabledThenTabCannotBeCrashed() {
+        let internalUserDecider = InternalUserDeciderMock()
+        internalUserDecider.isInternalUser = true
+
+        let featureFlagger = FeatureFlaggerMock(internalUserDecider: internalUserDecider)
+
+        let tab = Tab(content: .newtab, featureFlagger: featureFlagger)
+        XCTAssertFalse(tab.canKillWebContentProcess)
+    }
+
+    @MainActor func testWhenTabCrashDebugToolsFeatureFlagIsEnabledThenTabCanBeCrashed() {
+        let internalUserDecider = InternalUserDeciderMock()
+        internalUserDecider.isInternalUser = true
+
+        let featureFlagger = FeatureFlaggerMock(internalUserDecider: internalUserDecider, enabledFeatureFlags: [.tabCrashDebugTools])
+
+        let tab = Tab(content: .newtab, featureFlagger: featureFlagger)
+        XCTAssertTrue(tab.canKillWebContentProcess)
+    }
+
     // MARK: - Dialogs
 
     @MainActor func testWhenAlertDialogIsShowingChangingURLClearsDialog() {

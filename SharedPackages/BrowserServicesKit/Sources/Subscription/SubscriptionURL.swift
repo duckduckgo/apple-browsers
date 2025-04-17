@@ -85,6 +85,30 @@ public enum SubscriptionURL {
     }
 }
 
+extension SubscriptionURL {
+
+    /**
+     * Creates URL components for a subscription purchase URL with the specified origin parameter.
+     *
+     * This method constructs a subscription purchase URL by:
+     * 1. Using the base purchase URL
+     * 2. Appending the origin parameter to track where the subscription request originated from
+     * 3. Converting the resulting URL into URLComponents
+     *
+     * - Parameters:
+     *   - origin: A string identifying where the subscription request originated from (e.g., "funnel_appsettings_ios")
+     *   - environment: The subscription environment to use (defaults to production)
+     *
+     * - Returns: URLComponents containing the subscription URL with the origin parameter, or nil if the URL could not be parsed
+     */
+    public static func purchaseURLComponentsWithOrigin(_ origin: String, environment: SubscriptionEnvironment.ServiceEnvironment = .production) -> URLComponents? {
+        let url = SubscriptionURL.purchase
+            .subscriptionURL(environment: environment)
+            .appendingParameter(name: AttributionParameter.origin, value: origin)
+        return URLComponents(url: url, resolvingAgainstBaseURL: false)
+    }
+}
+
 fileprivate extension URL {
 
     enum EnvironmentParameter {

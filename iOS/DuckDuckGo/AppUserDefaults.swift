@@ -228,7 +228,11 @@ public class AppUserDefaults: AppSettings {
 
     var currentAddressBarPosition: AddressBarPosition {
         get {
-            return AddressBarPosition(rawValue: addressBarPositionStorage?.lowercased()  ?? "") ?? .top
+            guard UIDevice.current.userInterfaceIdiom != .pad else {
+                return .top
+            }
+
+            return AddressBarPosition(rawValue: addressBarPositionStorage?.lowercased() ?? "") ?? .top
         }
 
         set {

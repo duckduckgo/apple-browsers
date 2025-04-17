@@ -123,8 +123,8 @@ final class UserText {
 
     // MARK: Suggest not turning the VPN OFF
 
-    static let vpnExclusionSuggestionAlertTitle = NSLocalizedString("vpn.exclusion.suggestion.alert.title", bundle: Bundle.module, value: "Is the VPN causing problems with a Website or App?", comment: "Title shown in an alert to suggest using exclusions instead of disabling the VPN")
-    static let vpnExclusionSuggestionAlertDescription = NSLocalizedString("vpn.exclusion.suggestion.alert.description", bundle: Bundle.module, value: "You can exclude websites and apps from the VPN without turning it off.", comment: "Description shown in an alert to suggest using exclusions instead of disabling the VPN")
+    static let vpnExclusionSuggestionAlertTitle = NSLocalizedString("vpn.exclusion.suggestion.alert.title", bundle: Bundle.module, value: "Is the VPN causing problems with a website or app?", comment: "Title shown in an alert to suggest using exclusions instead of disabling the VPN")
+    static let vpnExclusionSuggestionAlertDescription = NSLocalizedString("vpn.exclusion.suggestion.alert.description", bundle: Bundle.module, value: "You can exclude websites and apps from the VPN without turning the VPN off.", comment: "Description shown in an alert to suggest using exclusions instead of disabling the VPN")
     static let vpnExclusionSuggestionAlertDontAskAgainTitle = NSLocalizedString("vpn.exclusion.suggestion.alert.dont.ask.again.title", bundle: Bundle.module, value: "Don't Ask Again", comment: "Title of the checkbox shown in an alert to suggest using exclusions instead of disabling the VPN")
     static let vpnExclusiveSuggestionAlertActionExcludeAWebsite = NSLocalizedString("vpn.exclusion.suggestion.alert.action.exclude.a.website", bundle: Bundle.module, value: "Exclude a Website", comment: "Action button title for an alert to suggest using exclusions instead of disabling the VPN")
     static let vpnExclusiveSuggestionAlertActionExcludeAnApp = NSLocalizedString("vpn.exclusion.suggestion.alert.action.exclude.an.app", bundle: Bundle.module, value: "Exclude an App", comment: "Action button title for an alert to suggest using exclusions instead of disabling the VPN")

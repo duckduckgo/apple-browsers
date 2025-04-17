@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-import BrowserServicesKit
 import Cocoa
 import Combine
 import Common
@@ -25,7 +24,6 @@ import SwiftUI
 import WebKit
 import os.log
 import RemoteMessaging
-import WebKitExtensions
 
 final class TabBarViewController: NSViewController, TabBarRemoteMessagePresenting {
 

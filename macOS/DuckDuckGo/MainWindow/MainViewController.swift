@@ -159,15 +159,37 @@ final class MainViewController: NSViewController {
         subscribeToMouseTrackingArea()
         subscribeToSelectedTabViewModel()
         subscribeToBookmarkBarVisibility()
-        subscribeToFirstResponder()
         subscribeToSetAsDefaultAndAddToDockPromptsNotifications()
         mainView.findInPageContainerView.applyDropShadow()
 
         view.registerForDraggedTypes([.URL, .fileURL])
     }
 
+    override func viewWillAppear() {
+        subscribeToFirstResponder()
+
+        if isInPopUpWindow {
+            tabBarViewController.view.isHidden = true
+            mainView.tabBarContainerView.isHidden = true
+            mainView.navigationBarTopConstraint.constant = 0.0
+            resizeNavigationBar(isHomePage: false, animated: false)
+
+            updateBookmarksBarViewVisibility(visible: false)
+        } else {
+            mainView.navigationBarContainerView.wantsLayer = true
+            mainView.navigationBarContainerView.layer?.masksToBounds = false
+
+            if tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab {
+                resizeNavigationBar(isHomePage: true, animated: lastTabContent != .newtab)
+            } else {
+                resizeNavigationBar(isHomePage: false, animated: false)
+            }
+        }
+
+        updateDividerColor(isShowingHomePage: tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab)
+    }
+
     override func viewDidAppear() {
-        super.viewDidAppear()
         mainView.setMouseAboveWebViewTrackingAreaEnabled(true)
         registerForBookmarkBarPromptNotifications()
 
@@ -192,29 +214,6 @@ final class MainViewController: NSViewController {
         if let bookmarkBarPromptObserver {
             NotificationCenter.default.removeObserver(bookmarkBarPromptObserver)
         }
-    }
-
-    override func viewWillAppear() {
-        if isInPopUpWindow {
-            tabBarViewController.view.isHidden = true
-            mainView.tabBarContainerView.isHidden = true
-            mainView.navigationBarTopConstraint.constant = 0.0
-            resizeNavigationBar(isHomePage: false, animated: false)
-
-            updateBookmarksBarViewVisibility(visible: false)
-        } else {
-            mainView.navigationBarContainerView.wantsLayer = true
-            mainView.navigationBarContainerView.layer?.masksToBounds = false
-
-            if tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab {
-                resizeNavigationBar(isHomePage: true, animated: lastTabContent != .newtab)
-            } else {
-                resizeNavigationBar(isHomePage: false, animated: false)
-            }
-        }
-
-        updateDividerColor(isShowingHomePage: tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab)
-
     }
 
     override func viewDidLayout() {
@@ -396,15 +395,21 @@ final class MainViewController: NSViewController {
     }
 
     private func subscribeToFirstResponder() {
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(firstReponderDidChange(_:)),
-                                               name: .firstResponder,
-                                               object: nil)
-
+        guard let window = view.window else {
+            assertionFailure("MainViewController.subscribeToFirstResponder: view.window is nil")
+            return
+        }
+        window.publisher(for: \.firstResponder)
+            .combineLatest(NSApp.publisher(for: \.mainWindow))
+            .sink { [weak self] firstResponder, _ in
+                self?.firstResponderDidChange(to: firstResponder)
+            }
+            .store(in: &eventMonitorCancellables)
     }
-    @objc private func firstReponderDidChange(_ notification: Notification) {
+
+    private func firstResponderDidChange(to firstResponder: NSResponder?) {
         // when window first responder is reset (to the window): activate Tab Content View
-        if view.window?.firstResponder === view.window {
+        if firstResponder === view.window {
             browserTabViewController.adjustFirstResponder()
         }
     }

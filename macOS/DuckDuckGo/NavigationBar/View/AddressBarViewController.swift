@@ -139,7 +139,11 @@ final class AddressBarViewController: NSViewController, ObservableObject {
     }
 
     override func viewWillAppear() {
-        if view.window?.isPopUpWindow == true {
+        guard let window = view.window else {
+            assertionFailure("AddressBarViewController.viewWillAppear: view.window is nil")
+            return
+        }
+        if window.isPopUpWindow == true {
             addressBarTextField.isHidden = true
             inactiveBackgroundView.isHidden = true
             activeBackgroundViewWithSuggestions.isHidden = true
@@ -166,10 +170,12 @@ final class AddressBarViewController: NSViewController, ObservableObject {
                                                    selector: #selector(refreshAddressBarAppearance(_:)),
                                                    name: NSWindow.didResignKeyNotification,
                                                    object: nil)
-            NotificationCenter.default.addObserver(self,
-                                                   selector: #selector(textFieldFirstReponderNotification(_:)),
-                                                   name: .firstResponder,
-                                                   object: nil)
+            window.publisher(for: \.firstResponder)
+                .combineLatest(NSApp.publisher(for: \.mainWindow))
+                .sink { [weak self] firstResponder, _ in
+                    self?.firstResponderDidChange(to: firstResponder)
+                }
+                .store(in: &cancellables)
             NSApp.publisher(for: \.effectiveAppearance)
                 .dropFirst()
                 .sink { [weak self] _ in
@@ -471,15 +477,13 @@ final class AddressBarViewController: NSViewController, ObservableObject {
         ? minX : Self.defaultActiveTextFieldMinX
     }
 
-}
-
-extension AddressBarViewController {
-
-    @objc func textFieldFirstReponderNotification(_ notification: Notification) {
-        if view.window?.firstResponder == addressBarTextField.currentEditor() {
-            isFirstResponder = true
+    private func firstResponderDidChange(to firstResponder: NSResponder?) {
+        if firstResponder === addressBarTextField.currentEditor() {
+            if !isFirstResponder {
+                isFirstResponder = true
+            }
             activeTextFieldMinXConstraint.isActive = true
-        } else {
+        } else if isFirstResponder {
             isFirstResponder = false
         }
     }

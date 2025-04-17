@@ -72,24 +72,6 @@ final class MainWindow: NSWindow {
         minSize = .init(width: Self.minWindowWidth, height: 0)
     }
 
-    // MARK: - First Responder Notification
-
-    override func makeFirstResponder(_ responder: NSResponder?) -> Bool {
-        // The only reliable way to detect NSTextField is the first responder
-        defer {
-            // Send it after the first responder has been set on the super class so that window.firstResponder matches correctly
-            postFirstResponderNotification(with: responder)
-        }
-
-        return super.makeFirstResponder(responder)
-    }
-
-    override func becomeMain() {
-        super.becomeMain()
-
-        postFirstResponderNotification(with: firstResponder)
-    }
-
     override func endEditing(for object: Any?) {
         if case .leftMouseUp = NSApp.currentEvent?.type,
            object is AddressBarTextEditor {
@@ -98,10 +80,6 @@ final class MainWindow: NSWindow {
         }
 
         super.endEditing(for: object)
-    }
-
-    private func postFirstResponderNotification(with firstResponder: NSResponder?) {
-        NotificationCenter.default.post(name: .firstResponder, object: firstResponder)
     }
 
     // used to observe childWindows property
@@ -117,8 +95,4 @@ final class MainWindow: NSWindow {
         didChangeValue(forKey: "childWindows")
     }
 
-}
-
-extension Notification.Name {
-    static let firstResponder = Notification.Name("firstResponder")
 }

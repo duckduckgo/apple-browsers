@@ -765,8 +765,10 @@ class MainViewController: UIViewController {
             self.viewCoordinator.constraints.navigationBarContainerHeight.constant = max(omniBarHeight, containerHeight)
 
             // Temporary fix, see https://app.asana.com/0/392891325557410/1207990702991361/f
-            let keyboardHeightInWebView = self.currentTab?.webView.convert(keyboardFrame, from: nil).height ?? 0
-            self.currentTab?.webView.scrollView.contentInset = .init(top: 0, left: 0, bottom: keyboardHeightInWebView > 0 ? omniBarHeight : 0, right: 0)
+            if let currentTab {
+                let inset = intersection.height > 0 ? omniBarHeight : 0
+                currentTab.webView.scrollView.contentInset = .init(top: 0, left: 0, bottom: inset, right: 0)
+            }
 
             UIView.animate(withDuration: duration, delay: 0, options: animationCurve) {
                 self.viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
@@ -1956,12 +1958,20 @@ extension MainViewController: BrowserChromeDelegate {
         }
            
         if animated {
+            self.view.layoutIfNeeded()
             UIView.animate(withDuration: animationDuration ?? ChromeAnimationConstants.duration) {
                 updateBlock()
                 self.view.layoutIfNeeded()
             }
         } else {
             updateBlock()
+
+            // Calling this here is important as it causes the layout to run immediately inside current run loop,
+            // instead of deferring it until next update block.
+            // Late layout after change here could potentially cause a scroll offset update right before the next one,
+            // which may cause an infitie loop layout loop in certain scenarios.
+            // See https://app.asana.com/1/137249556945/project/414709148257752/task/1208671955053442 for details.
+            self.view.layoutIfNeeded()
         }
     }
 
@@ -1992,7 +2002,7 @@ extension MainViewController: BrowserChromeDelegate {
     }
     
     var barsMaxHeight: CGFloat {
-        return max(toolbarHeight, viewCoordinator.omniBar.barView.frame.size.height)
+        max(toolbarHeight, viewCoordinator.omniBar.barView.expectedHeight)
     }
 
     // 1.0 - full size, 0.0 - hidden
@@ -2017,7 +2027,8 @@ extension MainViewController: BrowserChromeDelegate {
             let topBarsConstant = -browserTabsOffset * (1.0 - ratio)
             viewCoordinator.constraints.tabBarContainerTop.constant = topBarsConstant
         }
-        viewCoordinator.constraints.navigationBarContainerTop.constant = browserTabsOffset + -navBarTopOffset * (1.0 - ratio)
+        viewCoordinator.constraints.navigationBarContainerTop.constant = -navBarTopOffset * (1.0 - ratio)
+        
     }
 
 }

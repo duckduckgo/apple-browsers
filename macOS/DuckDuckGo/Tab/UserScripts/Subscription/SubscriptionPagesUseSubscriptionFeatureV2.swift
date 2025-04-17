@@ -265,7 +265,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                 case .failure(let error):
                     switch error {
                     case .noProductsFound:
-                        subscriptionErrorReporter.report(subscriptionActivationError: .subscriptionNotFound)
+                        subscriptionErrorReporter.report(subscriptionActivationError: .failedToGetSubscriptionOptions)
                     case .activeSubscriptionAlreadyPresent:
                         subscriptionErrorReporter.report(subscriptionActivationError: .activeSubscriptionAlreadyPresent)
                     case .authenticatingWithTransactionFailed:
@@ -307,7 +307,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                 case .failure(let error):
                     switch error {
                     case .noProductsFound:
-                        subscriptionErrorReporter.report(subscriptionActivationError: .subscriptionNotFound)
+                        subscriptionErrorReporter.report(subscriptionActivationError: .failedToGetSubscriptionOptions)
                     case .activeSubscriptionAlreadyPresent:
                         subscriptionErrorReporter.report(subscriptionActivationError: .activeSubscriptionAlreadyPresent)
                     case .authenticatingWithTransactionFailed:
@@ -342,7 +342,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                 await showSomethingWentWrongAlert()
                 switch error {
                 case .noProductsFound:
-                    subscriptionErrorReporter.report(subscriptionActivationError: .subscriptionNotFound)
+                    subscriptionErrorReporter.report(subscriptionActivationError: .failedToGetSubscriptionOptions)
                 case .accountCreationFailed:
                     subscriptionErrorReporter.report(subscriptionActivationError: .accountCreationFailed)
                 }

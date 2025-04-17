@@ -80,17 +80,24 @@ struct DefaultSubscriptionErrorReporter: SubscriptionErrorReporter {
             PixelKit.fire(PrivacyProPixel.privacyProPurchaseFailureStoreError, frequency: .legacyDailyAndCount)
         case .missingEntitlements:
             PixelKit.fire(PrivacyProPixel.privacyProPurchaseFailureBackendError, frequency: .legacyDailyAndCount)
-        case .failedToGetSubscriptionOptions: break
-        case .failedToSetSubscription: break
-        case .failedToRestorePastPurchase: break
-        case .subscriptionNotFound: // also for stripe products not found
+        case .failedToGetSubscriptionOptions:
+            break
+        case .failedToSetSubscription:
+            break
+        case .failedToRestorePastPurchase:
+            break
+        case .subscriptionNotFound:
             PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreFailureNotFound, frequency: .legacyDailyAndCount)
-        case .subscriptionExpired: break
-        case .hasActiveSubscription: break
-        case .cancelledByUser: break
+        case .subscriptionExpired:
+            break
+        case .hasActiveSubscription:
+            break
+        case .cancelledByUser:
+            break
         case .accountCreationFailed:
             PixelKit.fire(PrivacyProPixel.privacyProPurchaseFailureAccountNotCreated, frequency: .legacyDailyAndCount)
-        case .activeSubscriptionAlreadyPresent: break
+        case .activeSubscriptionAlreadyPresent:
+            break
         case .generalError:
             PixelKit.fire(PrivacyProPixel.privacyProPurchaseFailureOther, frequency: .legacyDailyAndCount)
         }

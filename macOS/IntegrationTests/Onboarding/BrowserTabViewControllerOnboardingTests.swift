@@ -45,9 +45,11 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         featureFlagger = MockFeatureFlagger()
         pixelReporter = CapturingOnboardingPixelReporter()
         dialogProvider = MockDialogsProvider()
-        expectation = .init()
+        expectation = expectation(description: "CapturingDialogFactory.makeView called")
         factory = CapturingDialogFactory(expectation: expectation)
-        schemeHandler = TestSchemeHandler()
+        schemeHandler = TestSchemeHandler { _ in
+            return .ok(.html("hello"))
+        }
 
         // ! uncomment this to view navigation logs
         // OSLog.loggingCategories.insert(OSLog.AppCategories.navigation.rawValue)
@@ -160,24 +162,31 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 
     func testWhenNavigationCompletedAndIsAReloadThenNoDialogCapturedInFactory() throws {
         dialogProvider.dialog = .tryFireButton
+
+        let expectation1 = expectation(description: "webViewDidFinishNavigation 1")
+        var cancellable: AnyCancellable! = tab.webViewDidFinishNavigationPublisher
+            .sink {
+                expectation1.fulfill()
+            }
         tab.navigateFromOnboarding(to: .duckDuckGo)
 
-        wait(for: [expectation], timeout: 3.0)
+        wait(for: [expectation, expectation1], timeout: 3.0)
         XCTAssertEqual(factory.capturedType, .tryFireButton)
         XCTAssertIdentical(factory.capturedDelegate, viewController.tabViewModel?.tab)
+        cancellable = nil
 
         factory.capturedType = nil
-        let expectation2 = XCTestExpectation()
-        factory.expectation = expectation2
-        tab.navigateFromOnboarding(to: .duckDuckGo)
-
-        tab.webViewDidFinishNavigationPublisher
+        let expectation2 = expectation(description: "webViewDidFinishNavigation 2")
+        cancellable = tab.webViewDidFinishNavigationPublisher
             .sink {
                 expectation2.fulfill()
             }
-            .store(in: &cancellables)
-        wait(for: [expectation2], timeout: 3.0)
+
+        tab.reload()
+
+        wait(for: [expectation2], timeout: 5.0)
         XCTAssertNil(factory.capturedType)
+        withExtendedLifetime(cancellable) {}
     }
 
     func testWhenNavigationCompletedAndWindowDidBecomeActiveCorrectDialogCapturedInFactory() throws {

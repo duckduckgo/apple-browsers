@@ -744,7 +744,6 @@ extension TabBarViewItem: NSMenuDelegate {
         }
     }
 
-
     private func addCrashMenuItem(to menu: NSMenu) {
         let crashMenuItem = NSMenuItem(title: Tab.crashTabMenuOptionTitle, action: #selector(crashButtonAction(_:)), keyEquivalent: "")
         crashMenuItem.target = self

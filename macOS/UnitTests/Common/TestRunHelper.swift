@@ -16,9 +16,11 @@
 //  limitations under the License.
 //
 
-import Foundation
-import XCTest
 import Common
+import Foundation
+import WebKit
+import XCTest
+
 @testable import DuckDuckGo_Privacy_Browser
 
 @objc(TestRunHelper)
@@ -53,6 +55,9 @@ extension TestRunHelper: XCTestObservation {
             windowObserver = NotificationCenter.default.addObserver(forName: .init("NSWindowDidOrderOnScreenAndFinishAnimatingNotification"), object: nil, queue: .main) {_ in
                 fatalError("Unit Tests should not present UI. Use MockWindow if needed.")
             }
+        }
+        if #available(macOS 13.0, *) {
+            WKProcessPool._setWebProcessCountLimit(20)
         }
     }
 

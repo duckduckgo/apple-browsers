@@ -73,7 +73,11 @@ public enum FeatureFlag: String, CaseIterable {
     case visualRefresh
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1209227311680179?focus=true
+    case tabCrashDebugTools
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1209227311680179?focus=true
     case tabCrashRecovery
+
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -109,6 +113,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .scamSiteProtection,
                 .exchangeKeysToSyncWithAnotherDevice,
                 .visualRefresh,
+                .tabCrashDebugTools,
                 .tabCrashRecovery:
             return true
         case .debugMenu,
@@ -171,6 +176,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
         case .visualRefresh:
             return .remoteDevelopment(.feature(.experimentalBrowserTheming))
+        case .tabCrashDebugTools:
+            return .disabled
         case .tabCrashRecovery:
             return .disabled
         }

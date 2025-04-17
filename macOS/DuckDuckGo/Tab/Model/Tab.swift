@@ -19,6 +19,7 @@
 import BrowserServicesKit
 import Combine
 import Common
+import FeatureFlags
 import Foundation
 import History
 import MaliciousSiteProtection
@@ -1122,6 +1123,28 @@ protocol NewWindowPolicyDecisionMaker {
 
     @Published var favicon: NSImage?
 }
+
+// MARK: - Forcing Tab Crash
+
+extension Tab {
+    static let crashTabMenuOptionTitle = "Crash Tab"
+
+    private enum Selector {
+        static let killWebContentProcess = NSSelectorFromString("_killWebContentProcess")
+    }
+
+    var canKillWebContentProcess: Bool {
+        featureFlagger.isFeatureOn(.tabCrashDebugTools)
+    }
+
+    func killWebContentProcess() {
+        if webView.responds(to: Selector.killWebContentProcess) {
+            webView.perform(Selector.killWebContentProcess)
+        }
+    }
+}
+
+// MARK: -
 
 extension Tab: UserContentControllerDelegate {
 

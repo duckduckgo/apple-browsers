@@ -78,13 +78,23 @@ class MaliciousSiteProtectionIntegrationTests: XCTestCase {
 
         let matchesUrlPrefix = MaliciousSiteDetector.APIEnvironment.production.url(for: .matches(.init(hashPrefix: "")), platform: .macOS)
             .absoluteString.prefix(while: { $0 != "?" })
+        let hashPrefixUrlPrefix = MaliciousSiteDetector.APIEnvironment.production.url(for: .hashPrefixSet(.init(threatKind: .phishing, revision: nil)), platform: .macOS)
+            .absoluteString.prefix(while: { $0 != "?" })
+        let filterSetUrlPrefix = MaliciousSiteDetector.APIEnvironment.production.url(for: .filterSet(.init(threatKind: .phishing, revision: nil)), platform: .macOS)
+            .absoluteString.prefix(while: { $0 != "?" })
         stub { request in
             let matches = request.url?.absoluteString.hasPrefix(matchesUrlPrefix) == true
-            assert(matches || request.url?.absoluteString.hasPrefix(URL(string: String(matchesUrlPrefix))!.deletingLastPathComponent().deletingLastPathComponent().absoluteString) == false)
             return matches
         } response: { _ in
             let path = OHPathForFile("match.api.response.json", type(of: self))!
             return fixture(filePath: path, status: 200, headers: nil)
+        }
+        stub { request in
+            let matches = request.url?.absoluteString.hasPrefix(hashPrefixUrlPrefix) == true
+            || request.url?.absoluteString.hasPrefix(filterSetUrlPrefix) == true
+            return matches
+        } response: { _ in
+            return .init(data: Data(), statusCode: 200, headers: nil)
         }
 
         contentBlockingMock = ContentBlockingMock()

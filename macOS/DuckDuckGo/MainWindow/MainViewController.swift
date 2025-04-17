@@ -255,7 +255,6 @@ final class MainViewController: NSViewController {
 
     func windowWillClose() {
         eventMonitorCancellables.removeAll()
-        tabBarViewController.hideTabPreview()
     }
 
     func windowWillMiniaturize() {
@@ -267,11 +266,11 @@ final class MainViewController: NSViewController {
     }
 
     func disableTabPreviews() {
-        tabBarViewController.shouldDisplayTabPreviews = false
+        tabBarViewController.tabPreviewsEnabled = false
     }
 
     func enableTabPreviews() {
-        tabBarViewController.shouldDisplayTabPreviews = true
+        tabBarViewController.tabPreviewsEnabled = true
     }
 
     func toggleBookmarksBarVisibility() {

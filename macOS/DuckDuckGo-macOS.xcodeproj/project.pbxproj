@@ -1301,6 +1301,8 @@
 		37E307AF2D07483400599500 /* NewTabPagePixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37E307AD2D07482F00599500 /* NewTabPagePixel.swift */; };
 		37E307B22D075B6500599500 /* NewTabPagePrivacyStatsEventHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37E307B12D075B5E00599500 /* NewTabPagePrivacyStatsEventHandler.swift */; };
 		37E307B32D075B6500599500 /* NewTabPagePrivacyStatsEventHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37E307B12D075B5E00599500 /* NewTabPagePrivacyStatsEventHandler.swift */; };
+		37E3E8022DAE58660056DEED /* TabCrashRecoveryExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37E3E8012DAE58620056DEED /* TabCrashRecoveryExtension.swift */; };
+		37E3E8032DAE58660056DEED /* TabCrashRecoveryExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37E3E8012DAE58620056DEED /* TabCrashRecoveryExtension.swift */; };
 		37EC314C2D8C02C00026C348 /* FaviconTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37EC314B2D8C02BC0026C348 /* FaviconTests.swift */; };
 		37EC314D2D8C02C00026C348 /* FaviconTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37EC314B2D8C02BC0026C348 /* FaviconTests.swift */; };
 		37EC31502D8C19270026C348 /* CapturingFaviconImageCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37EC314F2D8C19190026C348 /* CapturingFaviconImageCache.swift */; };
@@ -4060,6 +4062,7 @@
 		37E307AA2D0745D500599500 /* PrivacyStatsErrorHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyStatsErrorHandler.swift; sourceTree = "<group>"; };
 		37E307AD2D07482F00599500 /* NewTabPagePixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPagePixel.swift; sourceTree = "<group>"; };
 		37E307B12D075B5E00599500 /* NewTabPagePrivacyStatsEventHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPagePrivacyStatsEventHandler.swift; sourceTree = "<group>"; };
+		37E3E8012DAE58620056DEED /* TabCrashRecoveryExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabCrashRecoveryExtension.swift; sourceTree = "<group>"; };
 		37E75733296F4F0500E1C162 /* UnitTestsAppStore.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = UnitTestsAppStore.xcconfig; sourceTree = "<group>"; };
 		37E75734296F4F0500E1C162 /* IntegrationTestsAppStore.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = IntegrationTestsAppStore.xcconfig; sourceTree = "<group>"; };
 		37EC314B2D8C02BC0026C348 /* FaviconTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaviconTests.swift; sourceTree = "<group>"; };
@@ -9674,6 +9677,7 @@
 				B6BF5D842946FFDA006742B1 /* PrivacyDashboardTabExtension.swift */,
 				37C9F78B2CF1C770004D73A1 /* PrivacyStatsTabExtension.swift */,
 				56BA1E742BAAF70F001CF69F /* SpecialErrorPageTabExtension.swift */,
+				37E3E8012DAE58620056DEED /* TabCrashRecoveryExtension.swift */,
 				B6BDDA002942389000F68088 /* TabExtensions.swift */,
 				1D9A4E592B43213B00F449E2 /* TabSnapshotExtension.swift */,
 				B626A76C29928B1600053070 /* TestsClosureNavigationResponder.swift */,
@@ -12262,6 +12266,7 @@
 				319FCFF62CC83007004F9288 /* AIChatDebugMenu.swift in Sources */,
 				3706FB4C293F65D500E42796 /* SharingMenu.swift in Sources */,
 				3706FB4D293F65D500E42796 /* GrammarFeaturesManager.swift in Sources */,
+				37E3E8022DAE58660056DEED /* TabCrashRecoveryExtension.swift in Sources */,
 				3706FB50293F65D500E42796 /* SafariFaviconsReader.swift in Sources */,
 				31267C692B640C4200FEF811 /* DataBrokerProtectionFeatureGatekeeper.swift in Sources */,
 				3706FB51293F65D500E42796 /* NSScreenExtension.swift in Sources */,
@@ -14190,6 +14195,7 @@
 				B6CC266C2BAD9CD800F53F8D /* FileProgressPresenter.swift in Sources */,
 				3158B14D2B0BF74D00AF130C /* DataBrokerProtectionManager.swift in Sources */,
 				BBFB727F2C48047C0088884C /* SortBookmarksViewModel.swift in Sources */,
+				37E3E8032DAE58660056DEED /* TabCrashRecoveryExtension.swift in Sources */,
 				4BA1A6A5258B07DF00F6F690 /* EncryptedValueTransformer.swift in Sources */,
 				8400DC4B2C6E26AE006509D2 /* ItemCachingCollectionView.swift in Sources */,
 				B634DBE1293C8FD500C3C99E /* Tab+Dialogs.swift in Sources */,

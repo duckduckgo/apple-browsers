@@ -242,7 +242,7 @@ final class SubscriptionEmailViewModel: ObservableObject {
     private func handleTransactionError(error: UseSubscriptionError) {
         switch error {
         
-        case .subscriptionExpired:
+        case .restoreFailedDueToExpiredSubscription:
             state.transactionError = .subscriptionExpired
         default:
             state.transactionError = .generalError

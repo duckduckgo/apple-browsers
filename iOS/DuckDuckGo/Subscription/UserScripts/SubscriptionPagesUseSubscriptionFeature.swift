@@ -69,12 +69,12 @@ enum UseSubscriptionError: Error {
          missingEntitlements,
          failedToGetSubscriptionOptions,
          failedToSetSubscription,
-         failedToRestorePastPurchase,
-         subscriptionNotFound,
-         subscriptionExpired,
-         hasActiveSubscription,
          cancelledByUser,
          accountCreationFailed,
+         activeSubscriptionAlreadyPresent,
+         restoreFailedDueToNoSubscription,
+         restoreFailedDueToExpiredSubscription,
+         otherRestoreError,
          generalError
 }
 
@@ -308,7 +308,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         // Check for active subscriptions
         if await subscriptionManager.storePurchaseManager().hasActiveSubscription() {
             Logger.subscription.debug("Subscription already active")
-            setTransactionError(.hasActiveSubscription)
+            setTransactionError(.activeSubscriptionAlreadyPresent)
             Pixel.fire(pixel: .privacyProRestoreAfterPurchaseAttempt)
             setTransactionStatus(.idle)
             return nil
@@ -341,7 +341,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
             case .accountCreationFailed:
                 setTransactionError(.accountCreationFailed)
             case .activeSubscriptionAlreadyPresent:
-                setTransactionError(.hasActiveSubscription)
+                setTransactionError(.activeSubscriptionAlreadyPresent)
             default:
                 setTransactionError(.purchaseFailed)
             }
@@ -557,11 +557,11 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         Logger.subscription.error("\(#function): \(error.localizedDescription)")
         switch error {
         case .subscriptionExpired:
-            return .subscriptionExpired
+            return .restoreFailedDueToExpiredSubscription
         case .missingAccountOrTransactions:
-            return .subscriptionNotFound
+            return .restoreFailedDueToNoSubscription
         default:
-            return .failedToRestorePastPurchase
+            return .otherRestoreError
         }
     }
 
@@ -890,7 +890,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         // Check for active subscriptions
         if await subscriptionManager.storePurchaseManager().hasActiveSubscription() {
             Logger.subscription.log("Subscription already active")
-            setTransactionError(.hasActiveSubscription)
+            setTransactionError(.activeSubscriptionAlreadyPresent)
             Pixel.fire(pixel: .privacyProRestoreAfterPurchaseAttempt)
             setTransactionStatus(.idle)
             return nil
@@ -921,7 +921,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             case .accountCreationFailed:
                 setTransactionError(.accountCreationFailed)
             case .activeSubscriptionAlreadyPresent:
-                setTransactionError(.hasActiveSubscription)
+                setTransactionError(.activeSubscriptionAlreadyPresent)
             default:
                 setTransactionError(.purchaseFailed)
             }
@@ -1106,11 +1106,11 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         Logger.subscription.error("\(#function): \(error.localizedDescription)")
         switch error {
         case .subscriptionExpired:
-            return .subscriptionExpired
+            return .restoreFailedDueToExpiredSubscription
         case .missingAccountOrTransactions:
-            return .subscriptionNotFound
+            return .restoreFailedDueToNoSubscription
         default:
-            return .failedToRestorePastPurchase
+            return .otherRestoreError
         }
     }
 

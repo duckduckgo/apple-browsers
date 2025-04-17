@@ -162,23 +162,23 @@ final class SubscriptionFlowViewModel: ObservableObject {
             state.transactionError = .failedToGetSubscriptionOptions
         case .failedToSetSubscription:
             state.transactionError = .failedToSetSubscription
-        case .failedToRestorePastPurchase:
-            // Pixel handled in SubscriptionRestoreViewModel.handleRestoreError(error:)
-            state.transactionError = .failedToRestorePastPurchase
-        case .subscriptionNotFound:
-            // Pixel handled in SubscriptionRestoreViewModel.handleRestoreError(error:)
-            state.transactionError = .generalError
-        case .subscriptionExpired:
-            // Pixel handled in SubscriptionRestoreViewModel.handleRestoreError(error:)
-            state.transactionError = .subscriptionExpired
-        case .hasActiveSubscription:
-            state.transactionError = .hasActiveSubscription
         case .cancelledByUser:
             state.transactionError = .cancelledByUser
         case .accountCreationFailed:
             DailyPixel.fireDailyAndCount(pixel: .privacyProPurchaseFailureAccountNotCreated,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
             state.transactionError = .generalError
+        case .activeSubscriptionAlreadyPresent:
+            state.transactionError = .hasActiveSubscription
+        case .restoreFailedDueToNoSubscription:
+            // Pixel handled in SubscriptionRestoreViewModel.handleRestoreError(error:)
+            state.transactionError = .generalError
+        case .restoreFailedDueToExpiredSubscription:
+            // Pixel handled in SubscriptionRestoreViewModel.handleRestoreError(error:)
+            state.transactionError = .subscriptionExpired
+        case .otherRestoreError:
+            // Pixel handled in SubscriptionRestoreViewModel.handleRestoreError(error:)
+            state.transactionError = .failedToRestorePastPurchase
         case .generalError:
             DailyPixel.fireDailyAndCount(pixel: .privacyProPurchaseFailureOther,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)

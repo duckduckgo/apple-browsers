@@ -89,14 +89,15 @@ private extension Tab.TabContent {
         case preferences = 1
         case bookmarks = 2
         case newtab = 3
-        case duckPlayer = 4
-        case dataBrokerProtection = 5
-        case subscription = 6
-        case identityTheftRestoration = 7
-        case onboarding = 8
-        case releaseNotes = 9
-        case history = 10
-        case webExtensionUrl = 11
+        case onboardingDeprecated = 4 // Not in use anymore
+        case duckPlayer = 5
+        case dataBrokerProtection = 6
+        case subscription = 7
+        case identityTheftRestoration = 8
+        case onboarding = 9
+        case releaseNotes = 10
+        case history = 11
+        case webExtensionUrl = 12
     }
 
     init?(type: ContentType, url: URL?, videoID: String?, timestamp: String?, preferencePane: PreferencePaneIdentifier?) {
@@ -130,6 +131,8 @@ private extension Tab.TabContent {
         case .webExtensionUrl:
             guard let url = url else { return nil }
             self = .webExtensionUrl(url)
+        case .onboardingDeprecated:
+            self = .onboarding
         }
     }
 

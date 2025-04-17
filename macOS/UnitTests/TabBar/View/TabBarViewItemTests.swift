@@ -76,6 +76,16 @@ final class TabBarViewItemTests: XCTestCase {
     }
 
     @MainActor
+    func testThatCrashTabItemIsNotShownIfUserCannotKillWebContentProcess() {
+        let tabBarViewModel = TabBarViewModelMock(audioState: .unmuted(isPlayingAudio: true))
+        tabBarViewModel.canKillWebContentProcess = false
+        tabBarViewItem.subscribe(to: tabBarViewModel)
+        tabBarViewItem.menuNeedsUpdate(menu)
+
+        XCTAssertFalse(menu.items.contains { $0.title == Tab.crashTabMenuOptionTitle })
+    }
+
+    @MainActor
     func testThatMuteIsShownWhenCurrentAudioStateIsUnmuted() {
         let tabBarViewModel = TabBarViewModelMock()
         tabBarViewItem.subscribe(to: tabBarViewModel)
@@ -318,6 +328,7 @@ private class TabBarViewModelMock: TabBarViewModel {
     var audioStatePublisher: AnyPublisher<WKWebView.AudioState, Never> {
         $audioState.eraseToAnyPublisher()
     }
+    var canKillWebContentProcess: Bool = false
     init(width: CGFloat = 0, title: String = "Test Title", favicon: NSImage? = .aDark, tabContent: Tab.TabContent = .none, usedPermissions: Permissions = Permissions(), audioState: WKWebView.AudioState? = nil, selected: Bool = false) {
         self.width = width
         self.title = title

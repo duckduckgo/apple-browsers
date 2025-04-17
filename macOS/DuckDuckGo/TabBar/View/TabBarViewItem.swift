@@ -35,6 +35,7 @@ protocol TabBarViewModel {
     var usedPermissionsPublisher: Published<Permissions>.Publisher { get }
     var audioState: WKWebView.AudioState { get }
     var audioStatePublisher: AnyPublisher<WKWebView.AudioState, Never> { get }
+    var canKillWebContentProcess: Bool { get }
 }
 extension TabViewModel: TabBarViewModel {
     var titlePublisher: Published<String>.Publisher { $title }
@@ -43,6 +44,7 @@ extension TabViewModel: TabBarViewModel {
     var usedPermissionsPublisher: Published<Permissions>.Publisher { $usedPermissions }
     var audioState: WKWebView.AudioState { tab.audioState }
     var audioStatePublisher: AnyPublisher<WKWebView.AudioState, Never> { tab.audioStatePublisher }
+    var canKillWebContentProcess: Bool { tab.canKillWebContentProcess }
 }
 
 protocol TabBarViewItemDelegate: AnyObject {
@@ -736,7 +738,7 @@ extension TabBarViewItem: NSMenuDelegate {
             addMoveToNewWindowMenuItem(to: menu, areThereOtherTabs: areThereOtherTabs)
         }
 
-        if NSApp.delegateTyped.featureFlagger.isFeatureOn(.tabCrashDebugTools) {
+        if tabViewModel?.canKillWebContentProcess == true {
             menu.addItem(.separator())
             addCrashMenuItem(to: menu)
         }
@@ -744,7 +746,7 @@ extension TabBarViewItem: NSMenuDelegate {
 
 
     private func addCrashMenuItem(to menu: NSMenu) {
-        let crashMenuItem = NSMenuItem(title: "Crash This Tab", action: #selector(crashButtonAction(_:)), keyEquivalent: "")
+        let crashMenuItem = NSMenuItem(title: Tab.crashTabMenuOptionTitle, action: #selector(crashButtonAction(_:)), keyEquivalent: "")
         crashMenuItem.target = self
         menu.addItem(crashMenuItem)
     }
@@ -1037,6 +1039,7 @@ extension TabBarViewItem {
             var audioStatePublisher: AnyPublisher<WKWebView.AudioState, Never> {
                 $audioState.eraseToAnyPublisher()
             }
+            var canKillWebContentProcess: Bool = false
             init(width: CGFloat, title: String = "Test Title", favicon: NSImage? = .aDark, tabContent: Tab.TabContent = .none, usedPermissions: Permissions = Permissions(), audioState: WKWebView.AudioState? = nil, selected: Bool = false) {
                 self.width = width
                 self.title = title

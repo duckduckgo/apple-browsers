@@ -1216,16 +1216,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
             return
         }
 
-        guard let pid = tabCollectionViewModel.tabViewModel(at: indexPath.item)?.tab.webView.value(forKey: "_webProcessIdentifier") as? Int else {
-            return
-        }
-
-        Task.detached {
-            let task = Process()
-            task.launchPath = "/bin/kill"
-            task.arguments = ["-9", String(pid)]
-            try? task.run()
-        }
+        tabCollectionViewModel.tabViewModel(at: indexPath.item)?.tab.killWebContentProcess()
     }
 
     func tabBarViewItem(_ tabBarViewItem: TabBarViewItem, isMouseOver: Bool) {

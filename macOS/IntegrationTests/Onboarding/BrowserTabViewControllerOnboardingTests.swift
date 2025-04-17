@@ -36,7 +36,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
     var schemeHandler: TestSchemeHandler!
     var tab: Tab!
     var cancellables: Set<AnyCancellable> = []
-    var expectation: XCTestExpectation!
+    lazy var expectation: XCTestExpectation! = XCTestExpectation(description: "CapturingDialogFactory.makeView called")
     var dialogTypeForTabExpectation: XCTestExpectation!
 
     @MainActor override func setUpWithError() throws {
@@ -45,7 +45,6 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         featureFlagger = MockFeatureFlagger()
         pixelReporter = CapturingOnboardingPixelReporter()
         dialogProvider = MockDialogsProvider()
-        expectation = expectation(description: "CapturingDialogFactory.makeView called")
         factory = CapturingDialogFactory(expectation: expectation)
         schemeHandler = TestSchemeHandler { _ in
             return .ok(.html("hello"))

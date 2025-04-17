@@ -96,7 +96,7 @@ public class ContextualDialogsManager: ContextualOnboardingDialogTypeProviding, 
     var lastDialog: ContextualDialogType?
 
     // The last tab for which a dialog was provided.
-    private var lastTab: Tab?
+    private weak var lastTab: Tab?
 
     // Computed property for managing state.
     var state: ContextualOnboardingState {

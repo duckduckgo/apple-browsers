@@ -74,7 +74,33 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
     private var pinnedTabsDiscoveryPopover: NSPopover?
 
-    var shouldDisplayTabPreviews: Bool = true
+    var tabPreviewsEnabled: Bool = true
+
+    /// Are tab previews enabled, is window key, is mouse over a tab
+    private var shouldDisplayTabPreviews: Bool {
+        guard tabPreviewsEnabled,
+              let mouseLocation = mouseLocationInKeyWindow() else { return false }
+
+        let isMouseOverTab = pinnedTabsContainerView.isMouseLocationInsideBounds(mouseLocation)
+        || collectionView.withMouseLocationInViewCoordinates(mouseLocation, convert: collectionView.indexPathForItem(at:)) != nil
+
+        return isMouseOverTab
+    }
+
+    /// Returns mouse location in window if window is key
+    private func mouseLocationInKeyWindow() -> NSPoint? {
+        guard let window = view.window, window.isKeyWindow else { return nil }
+        let mouseLocation = window.mouseLocationOutsideOfEventStream
+        return mouseLocation
+    }
+
+    /// If mouse is inside view and window is key
+    private var isMouseLocationInsideBounds: Bool {
+        guard let mouseLocation = mouseLocationInKeyWindow() else { return false }
+        let isMouseLocationInsideBounds = view.isMouseLocationInsideBounds(mouseLocation)
+        return isMouseLocationInsideBounds
+    }
+
     private var selectionIndexCancellable: AnyCancellable?
     private var mouseDownCancellable: AnyCancellable?
     private var cancellables = Set<AnyCancellable>()
@@ -149,6 +175,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         // https://app.asana.com/0/1177771139624306/1202033879471339
         addMouseMonitors()
         addTabBarRemoteMessageListener()
+        subscribeToChildWindows()
     }
 
     override func viewDidAppear() {
@@ -161,7 +188,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     override func viewDidLayout() {
-        frozenLayout = view.isMouseLocationInsideBounds()
+        frozenLayout = isMouseLocationInsideBounds
         updateTabMode()
         updateEmptyTabArea()
         collectionView.invalidateLayout()
@@ -189,7 +216,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         pinnedTabsManagerProvider.settingChangedPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
-                guard let self = self else { return }
+                guard let self else { return }
 
                 if tabCollectionViewModel.allTabsCount == 0 {
                     view.window?.performClose(self)
@@ -345,14 +372,10 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     private func pinnedTabsViewDidUpdateHoveredItem(to index: Int?) {
-        if let index = index {
+        if let index {
             showPinnedTabPreview(at: index)
-        } else {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                if self.view.isMouseLocationInsideBounds() == false {
-                    self.hideTabPreview(allowQuickRedisplay: true)
-                }
-            }
+        } else if !shouldDisplayTabPreviews {
+            hideTabPreview(allowQuickRedisplay: true)
         }
     }
 
@@ -539,7 +562,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
               // skip updating number of items when closing not last Tab
               actualNumber > 0 && numberOfItems > actualNumber,
               tabMode == .divided,
-              self.view.isMouseLocationInsideBounds()
+              isMouseLocationInsideBounds
         else {
             self.cachedLayoutNumberOfItems = actualNumber
             return actualNumber
@@ -569,22 +592,40 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         }
     }
 
-    override func mouseExited(with event: NSEvent) {
-        guard !view.isMouseLocationInsideBounds(event.locationInWindow) else { return }
+    override func mouseMoved(with event: NSEvent) {
+        super.mouseMoved(with: event)
 
-        if cachedLayoutNumberOfItems != collectionView.numberOfItems(inSection: 0) || frozenLayout {
-            cachedLayoutNumberOfItems = nil
-            let shouldScroll = collectionView.isAtEndScrollPosition
-            collectionView.animator().performBatchUpdates({
-                if shouldScroll {
-                    collectionView.animator().scroll(CGPoint(x: scrollView.contentView.bounds.origin.x, y: 0))
-                }
-            }, completionHandler: { [weak self] _ in
-                guard let self = self else { return }
-                self.updateLayout()
-                self.enableScrollButtons()
-                self.hideTabPreview(allowQuickRedisplay: true)
-            })
+        // show Tab Preview when mouse was moved over a tab when the Tab Preview was hidden before
+        guard !tabPreviewWindowController.isPresented else { return }
+
+        if let indexPath = collectionView.withMouseLocationInViewCoordinates(convert: { self.collectionView.indexPathForItem(at: $0) }),
+           let tabBarViewItem = collectionView.item(at: indexPath) as? TabBarViewItem {
+            showTabPreview(for: tabBarViewItem)
+        } else if let pinnedTabIndex = pinnedTabsViewModel?.hoveredItemIndex {
+            showPinnedTabPreview(at: pinnedTabIndex)
+        }
+    }
+
+    override func mouseExited(with event: NSEvent) {
+        // did mouse really exit or is it an event generated by a subview and called via the responder chain?
+        guard !isMouseLocationInsideBounds else { return }
+
+        self.hideTabPreview(allowQuickRedisplay: true)
+
+        // unfreeze "frozen layout" on mouse exit
+        // we‘re keeping tab width unchanged when closing the tabs when the cursor is inside the tab bar
+        guard cachedLayoutNumberOfItems != collectionView.numberOfItems(inSection: 0) || frozenLayout else { return }
+
+        cachedLayoutNumberOfItems = nil
+        let shouldScroll = collectionView.isAtEndScrollPosition
+        collectionView.animator().performBatchUpdates {
+            if shouldScroll {
+                collectionView.animator().scroll(CGPoint(x: scrollView.contentView.bounds.origin.x, y: 0))
+            }
+        } completionHandler: { [weak self] _ in
+            guard let self else { return }
+            self.updateLayout()
+            self.enableScrollButtons()
         }
     }
 
@@ -678,8 +719,26 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     private lazy var tabPreviewWindowController = TabPreviewWindowController()
 
+    private func subscribeToChildWindows() {
+        guard let window = view.window else {
+            assertionFailure("No window set at the moment of subscription")
+            return
+        }
+        // hide Tab Preview when a non-Tab Preview child window is shown (Suggestions, Bookmarks etc…)
+        window.publisher(for: \.childWindows)
+            .debounce(for: 0.05, scheduler: DispatchQueue.main)
+            .sink { [weak self] childWindows in
+                guard let self, let childWindows, childWindows.contains(where: { !($0.windowController is TabPreviewWindowController) }) else { return }
+
+                hideTabPreview()
+            }
+            .store(in: &cancellables)
+    }
+
     private func showTabPreview(for tabBarViewItem: TabBarViewItem) {
-        guard let indexPath = collectionView.indexPath(for: tabBarViewItem),
+        // don‘t show tab previews when a child window is shown (Suggestions, Bookmarks etc…)
+        guard view.window?.childWindows?.contains(where: { !($0.windowController is TabPreviewWindowController) }) != true,
+              let indexPath = collectionView.indexPath(for: tabBarViewItem),
               let tabViewModel = tabCollectionViewModel.tabViewModel(at: indexPath.item),
               let clipView = collectionView.clipView
         else {
@@ -701,29 +760,33 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         showTabPreview(for: tabViewModel, from: position)
     }
 
-    private func showTabPreview(
-        for tabViewModel: TabViewModel,
-        from xPosition: CGFloat) {
-            if !shouldDisplayTabPreviews { return }
-
-            let isSelected = tabCollectionViewModel.selectedTabViewModel === tabViewModel
-            tabPreviewWindowController.tabPreviewViewController.display(tabViewModel: tabViewModel,
-                                                                        isSelected: isSelected)
-
-            guard let window = view.window else {
-                Logger.general.error("TabBarViewController: Showing tab preview window failed")
-                return
-            }
-
-            var point = view.bounds.origin
-            point.y -= TabPreviewWindowController.padding
-            point.x += xPosition
-            let pointInWindow = view.convert(point, to: nil)
-            tabPreviewWindowController.show(parentWindow: window, topLeftPointInWindow: pointInWindow)
+    private func showTabPreview(for tabViewModel: TabViewModel, from xPosition: CGFloat) {
+        guard shouldDisplayTabPreviews else {
+            Logger.tabPreview.error("Not showing tab preview: shouldDisplayTabPreviews == false")
+            hideTabPreview(allowQuickRedisplay: true)
+            return
         }
 
-    func hideTabPreview(allowQuickRedisplay: Bool = false) {
-        tabPreviewWindowController.hide(allowQuickRedisplay: allowQuickRedisplay)
+        let isSelected = tabCollectionViewModel.selectedTabViewModel === tabViewModel
+        tabPreviewWindowController.tabPreviewViewController.display(tabViewModel: tabViewModel,
+                                                                    isSelected: isSelected)
+
+        guard let window = view.window else {
+            Logger.general.error("TabBarViewController: Showing tab preview window failed")
+            return
+        }
+
+        var point = view.bounds.origin
+        point.y -= TabPreviewWindowController.padding
+        point.x += xPosition
+        let pointInWindow = view.convert(point, to: nil)
+        tabPreviewWindowController.show(parentWindow: window, topLeftPointInWindow: pointInWindow, shouldDisplayPreviewAfterDelay: { [weak self] in
+            self?.shouldDisplayTabPreviews ?? false
+        })
+    }
+
+    func hideTabPreview(withDelay: Bool = false, allowQuickRedisplay: Bool = false) {
+        tabPreviewWindowController.hide(withDelay: withDelay, allowQuickRedisplay: allowQuickRedisplay)
     }
 
 }
@@ -797,7 +860,7 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
 
         // don't scroll when mouse over and removing non-last Tab
         let shouldScroll = collectionView.isAtEndScrollPosition
-            && (!self.view.isMouseLocationInsideBounds() || removedIndex == self.collectionView.numberOfItems(inSection: 0) - 1)
+            && (!isMouseLocationInsideBounds || removedIndex == self.collectionView.numberOfItems(inSection: 0) - 1)
         let visiRect = collectionView.enclosingScrollView!.contentView.documentVisibleRect
         NSAnimationContext.runAnimationGroup { context in
             context.duration = 0.15
@@ -814,9 +877,9 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
                 }
                 collectionView.animator().deleteItems(at: removedIndexPathSet)
             } completionHandler: { [weak self] _ in
-                guard let self = self else { return }
+                guard let self else { return }
 
-                self.frozenLayout = self.view.isMouseLocationInsideBounds()
+                self.frozenLayout = isMouseLocationInsideBounds
                 if !self.frozenLayout {
                     self.updateLayout()
                 }
@@ -1145,14 +1208,13 @@ extension TabBarViewController: NSCollectionViewDelegate {
 extension TabBarViewController: TabBarViewItemDelegate {
 
     func tabBarViewItem(_ tabBarViewItem: TabBarViewItem, isMouseOver: Bool) {
-
         if isMouseOver {
             // Show tab preview for visible tab bar items
             if collectionView.visibleRect.intersects(tabBarViewItem.view.frame) {
                 showTabPreview(for: tabBarViewItem)
             }
-        } else {
-            tabPreviewWindowController.hide(allowQuickRedisplay: true, withDelay: true)
+        } else if !shouldDisplayTabPreviews {
+            hideTabPreview(withDelay: true, allowQuickRedisplay: true)
         }
     }
 
@@ -1204,7 +1266,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
 
         // Wait until pinned tab change is applied to pinned tabs view
         DispatchQueue.main.asyncAfter(deadline: .now() + 1/3) { [weak self] in
-            guard let self = self else { return }
+            guard let self else { return }
 
             let popover = self.pinnedTabsDiscoveryPopover ?? PinnedTabsDiscoveryPopover(callback: { [weak self ] _ in
                 self?.pinnedTabsDiscoveryPopover?.close()

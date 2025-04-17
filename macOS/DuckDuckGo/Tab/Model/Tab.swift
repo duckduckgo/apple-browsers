@@ -57,6 +57,7 @@ protocol NewWindowPolicyDecisionMaker {
         var tunnelController: NetworkProtectionIPCTunnelController?
         var maliciousSiteDetector: MaliciousSiteDetecting
         var faviconManagement: FaviconManagement?
+        var featureFlagger: FeatureFlagger
     }
 
     fileprivate weak var delegate: TabDelegate?
@@ -271,6 +272,7 @@ protocol NewWindowPolicyDecisionMaker {
                 tab.delegate?.closeTab(tab)
             },
                           titlePublisher: _title.projectedValue.eraseToAnyPublisher(),
+                          errorPublisher: _error.projectedValue.eraseToAnyPublisher(),
                           userScriptsPublisher: userScriptsPublisher,
                           inheritedAttribution: parentTab?.adClickAttribution?.currentAttributionState,
                           userContentControllerFuture: userContentControllerPromise.future,
@@ -286,7 +288,8 @@ protocol NewWindowPolicyDecisionMaker {
                                                        certificateTrustEvaluator: certificateTrustEvaluator,
                                                        tunnelController: tunnelController,
                                                        maliciousSiteDetector: maliciousSiteDetector,
-                                                       faviconManagement: faviconManagement))
+                                                       faviconManagement: faviconManagement,
+                                                       featureFlagger: featureFlagger))
 
         super.init()
         tabGetter = { [weak self] in self }
@@ -301,6 +304,14 @@ protocol NewWindowPolicyDecisionMaker {
         if favicon == nil {
             extensions.favicons?.handleFavicon(oldValue: nil, error: error)
         }
+
+        tabCrashRecoveryCancellable = extensions.tabCrashRecovery?.tabCrashErrorPublisher
+            .sink { [weak self] errorPayload in
+                guard let self else {
+                    return
+                }
+                loadErrorHTML(errorPayload.error, header: UserText.webProcessCrashPageHeader, forUnreachableURL: errorPayload.url, alternate: true)
+            }
 
         emailDidSignOutCancellable = NotificationCenter.default.publisher(for: .emailDidSignOut)
             .receive(on: DispatchQueue.main)
@@ -1036,6 +1047,7 @@ protocol NewWindowPolicyDecisionMaker {
     private var webViewCancellables = Set<AnyCancellable>()
     private var emailDidSignOutCancellable: AnyCancellable?
     private var faviconCancellable: AnyCancellable?
+    private var tabCrashRecoveryCancellable: AnyCancellable?
 
     private func setupWebView(shouldLoadInBackground: Bool) {
         webView.navigationDelegate = navigationDelegate
@@ -1289,41 +1301,6 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
         // when already displaying the error page and reload navigation fails again: don‘t navigate, just update page HTML
         let shouldPerformAlternateNavigation = navigation.url != webView.url || navigation.navigationAction.targetFrame?.url != .error
         loadErrorHTML(error, header: UserText.errorPageHeader, forUnreachableURL: url, alternate: shouldPerformAlternateNavigation)
-    }
-
-    @MainActor
-    func webContentProcessDidTerminate(with reason: WKProcessTerminationReason?) {
-        guard (error?.code.rawValue ?? WKError.Code.unknown.rawValue) != WKError.Code.webContentProcessTerminated.rawValue else { return }
-
-        let terminationReason = reason?.rawValue ?? -1
-
-        let error = WKError(.webContentProcessTerminated, userInfo: [
-            WKProcessTerminationReason.userInfoKey: terminationReason,
-            NSLocalizedDescriptionKey: UserText.webProcessCrashPageMessage,
-            NSUnderlyingErrorKey: NSError(domain: WKErrorDomain, code: terminationReason)
-        ])
-
-        let isInternalUser = internalUserDecider?.isInternalUser == true
-
-        if isInternalUser {
-            self.webView.reload()
-        } else {
-            if case.url(let url, _, _) = content {
-                self.error = error
-
-                loadErrorHTML(error, header: UserText.webProcessCrashPageHeader, forUnreachableURL: url, alternate: true)
-            }
-        }
-
-        Task {
-#if APPSTORE
-            let additionalParameters = [String: String]()
-#else
-            let additionalParameters = await SystemInfo.pixelParameters()
-#endif
-
-            PixelKit.fire(DebugEvent(GeneralPixel.webKitDidTerminate, error: error), frequency: .dailyAndStandard, withAdditionalParameters: additionalParameters)
-        }
     }
 
     @MainActor

@@ -1202,7 +1202,7 @@ extension NavigationBarViewController: OptionsButtonMenuDelegate {
 
     func optionsButtonMenuRequestedSubscriptionPurchasePage(_ menu: NSMenu) {
         let url = subscriptionManager.url(for: .purchase)
-        WindowControllersManager.shared.showTab(with: .subscription(url))
+        WindowControllersManager.shared.showTab(with: .subscription(url.appendingParameter(name: AttributionParameter.origin, value: SubscriptionFunnelOrigin.appMenu.rawValue)))
         PixelKit.fire(PrivacyProPixel.privacyProOfferScreenImpression)
     }
 

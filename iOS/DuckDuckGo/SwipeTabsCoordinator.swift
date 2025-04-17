@@ -114,11 +114,13 @@ class SwipeTabsCoordinator: NSObject {
         scrollToCurrent()
 
         collectionView.reloadData()
+        collectionView.layoutIfNeeded()
     }
 
     private func updateLayout() {
+        let omniBarHeight: CGFloat = ExperimentalThemingManager().isExperimentalThemingEnabled ? 68 : 52
         let layout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout
-        layout?.itemSize = CGSize(width: coordinator.superview.frame.size.width, height: coordinator.omniBar.barView.frame.height)
+        layout?.itemSize = CGSize(width: coordinator.superview.frame.size.width, height: omniBarHeight)
         layout?.minimumLineSpacing = 0
         layout?.minimumInteritemSpacing = 0
         layout?.scrollDirection = .horizontal
@@ -385,7 +387,6 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
                 cell.omniBar?.refreshText(forUrl: url, forceFullURL: appSettings.showFullSiteAddress)
                 cell.omniBar?.resetPrivacyIcon(for: url)
                 cell.omniBar?.updateAccessoryType(omnibarAccessoryHandler.omnibarAccessory(for: url))
-
             }
 
             controller.didMove(toParent: coordinator.parentController)
@@ -413,10 +414,10 @@ class OmniBarCell: UICollectionViewCell {
             addSubview(omniBarView)
 
             NSLayoutConstraint.activate([
-                constrainView(omniBarView, by: .leadingMargin),
-                constrainView(omniBarView, by: .trailingMargin),
-                constrainView(omniBarView, by: .top),
-                constrainView(omniBarView, by: .bottom),
+                omniBarView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor),
+                omniBarView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor),
+                omniBarView.topAnchor.constraint(equalTo: topAnchor),
+                omniBarView.bottomAnchor.constraint(equalTo: bottomAnchor),
             ])
 
             addMaskViewIfNeeded()
@@ -443,15 +444,8 @@ class OmniBarCell: UICollectionViewCell {
                 maskView.heightAnchor.constraint(equalToConstant: 25)
             ])
             bringSubviewToFront(maskView)
+                
         }
-    }
-
-    override func updateConstraints() {
-        let left = superview?.safeAreaInsets.left ?? 0
-        let right = superview?.safeAreaInsets.right ?? 0
-        omniBar?.barView.updateOmniBarPadding(left: left, right: right)
-
-        super.updateConstraints()
     }
 }
 

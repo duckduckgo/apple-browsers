@@ -3723,10 +3723,58 @@
       "comment" : "Action button title for the prompt that asks users to update the VPN to our System Extension.  Pressing this button reinstalls the VPN.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hol dir das Update"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Get the Update"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Obtén la actualización"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Obtenir la mise à jour"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Installa l'aggiornamento"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Download de update"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pobierz aktualizację"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Obtém a atualização"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Установить обновление"
           }
         }
       }
@@ -3735,10 +3783,58 @@
       "comment" : "Message shown to users to ask them to update the VPN to our System Extension, which requires reinstalling the VPN",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieses Update enthält die Option, Websites und Apps auszuschließen, die nicht mit VPNs kompatibel sind, sodass du sie weiterhin nutzen kannst, während du verbunden bist."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "This update includes the option to exclude sites and apps that aren't compatible with VPNs so you can keep using them while connected."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta actualización incluye la opción de excluir sitios y aplicaciones que no sean compatibles con VPN, para que puedas seguir usándolos cuando estés conectado."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cette mise à jour inclut la possibilité d’exclure les sites et les applications qui ne sont pas compatibles avec les VPN afin que vous puissiez continuer à les utiliser lorsque vous êtes connecté(e)."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questo aggiornamento comprende l'opzione di escludere i siti e le app non compatibili con le VPN, in modo che tu possa continuare a utilizzarli durante la connessione."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Met deze update kun je sites en apps die niet compatibel zijn met VPN's uitsluiten, zodat je ze kunt blijven gebruiken terwijl je verbonden bent."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ta aktualizacja zawiera opcję wykluczania witryn i aplikacji, które nie są zgodne z sieciami VPN, dzięki czemu możesz nadal z nich korzystać podczas połączenia."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta atualização inclui a opção de excluir sites e aplicações que não são compatíveis com VPNs, para que possas continuar a utilizá-los enquanto a VPN estiver ativa."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Это обновление дает вам возможность исключить сайты и приложения, несовместимые с VPN, чтобы пользоваться ими при активном VPN-соединении."
           }
         }
       }
@@ -3747,10 +3843,58 @@
       "comment" : "Title shown to users to ask them to update the VPN to our System Extension, which requires reinstalling the VPN",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neue VPN-Version verfügbar!"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "New VPN version available!"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¡Nueva versión de VPN disponible!"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nouvelle version du VPN disponible !"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "È disponibile una nuova versione della VPN!"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nieuwe VPN-versie beschikbaar!"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dostępna nowa wersja VPN!"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nova versão da VPN disponível!"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Доступна новая версия VPN!"
           }
         }
       }

@@ -27,16 +27,23 @@ final class OmniBarNotificationViewModel: ObservableObject {
         static let notificationCloseDelay: TimeInterval = 2.5
         static let notificationFadeOutDelay: TimeInterval = notificationCloseDelay + 2 * notificationSlide
     }
-    
+
+    enum Style {
+        case `default`
+        case experimental
+    }
+
     let text: String
     let animationName: String
-    
+    let style: Style
+
     @Published var isOpen: Bool = false
     @Published var animateCookie: Bool = false
-    
-    init(text: String, animationName: String) {
+
+    init(text: String, animationName: String, style: Style) {
         self.text = text
         self.animationName = animationName
+        self.style = style
     }
     
     func showNotification(completion: @escaping () -> Void) {

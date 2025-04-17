@@ -19,6 +19,7 @@
 import Combine
 import Foundation
 import BrowserServicesKit
+import PixelKit
 
 final class AIChatPreferences: ObservableObject {
     static let shared = AIChatPreferences()
@@ -53,15 +54,11 @@ final class AIChatPreferences: ObservableObject {
     }
 
     @Published var showShortcutInApplicationMenu: Bool {
-        didSet {
-            storage.showShortcutInApplicationMenu = showShortcutInApplicationMenu
-        }
+        didSet { storage.showShortcutInApplicationMenu = showShortcutInApplicationMenu }
     }
 
     @Published var showShortcutInAddressBar: Bool {
-        didSet {
-            storage.showShortcutInAddressBar = showShortcutInAddressBar
-        }
+        didSet { storage.showShortcutInAddressBar = showShortcutInAddressBar }
     }
 
     @MainActor func openLearnMoreLink() {

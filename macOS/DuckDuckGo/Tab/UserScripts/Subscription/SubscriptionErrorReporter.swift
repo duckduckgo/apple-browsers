@@ -26,7 +26,6 @@ enum SubscriptionError: LocalizedError {
          missingEntitlements,
          failedToGetSubscriptionOptions,
          failedToSetSubscription,
-         failedToRestorePastPurchase,
          subscriptionNotFound,
          subscriptionExpired,
          hasActiveSubscription,
@@ -46,8 +45,6 @@ enum SubscriptionError: LocalizedError {
             return "Unable to retrieve subscription options."
         case .failedToSetSubscription:
             return "Failed to set the subscription."
-        case .failedToRestorePastPurchase:
-            return "Failed to restore your past purchase."
         case .subscriptionNotFound:
             return "No subscription could be found."
         case .subscriptionExpired:
@@ -86,8 +83,6 @@ struct DefaultSubscriptionErrorReporter: SubscriptionErrorReporter {
         case .failedToGetSubscriptionOptions:
             break
         case .failedToSetSubscription:
-            break
-        case .failedToRestorePastPurchase: // privacyProRestorePurchaseStoreFailureOther
             break
         case .subscriptionNotFound,
              .subscriptionExpired:

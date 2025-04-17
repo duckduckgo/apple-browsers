@@ -230,7 +230,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                 if await subscriptionManager.storePurchaseManager().hasActiveSubscription() {
                     PixelKit.fire(PrivacyProPixel.privacyProRestoreAfterPurchaseAttempt)
                     Logger.subscription.info("[Purchase] Found active subscription during purchase")
-                    subscriptionErrorReporter.report(subscriptionActivationError: .hasActiveSubscription)
+                    subscriptionErrorReporter.report(subscriptionActivationError: .activeSubscriptionAlreadyPresent)
                     await showSubscriptionFoundAlert(originalMessage: message)
                     await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate(type: "canceled"))
                     return nil

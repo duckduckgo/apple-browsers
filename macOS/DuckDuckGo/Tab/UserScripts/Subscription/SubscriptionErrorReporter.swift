@@ -26,7 +26,6 @@ enum SubscriptionError: LocalizedError {
          missingEntitlements,
          failedToGetSubscriptionOptions,
          failedToSetSubscription,
-         hasActiveSubscription,
          cancelledByUser,
          accountCreationFailed,
          activeSubscriptionAlreadyPresent,
@@ -45,8 +44,6 @@ enum SubscriptionError: LocalizedError {
             return "Unable to retrieve subscription options."
         case .failedToSetSubscription:
             return "Failed to set the subscription."
-        case .hasActiveSubscription:
-            return "You already have an active subscription."
         case .cancelledByUser:
             return "Action was cancelled by the user."
         case .accountCreationFailed:
@@ -87,8 +84,6 @@ struct DefaultSubscriptionErrorReporter: SubscriptionErrorReporter {
         case .restoreFailedDueToNoSubscription,
              .restoreFailedDueToExpiredSubscription:
             PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreFailureNotFound, frequency: .legacyDailyAndCount)
-        case .hasActiveSubscription:
-            break
         case .cancelledByUser:
             break
         case .accountCreationFailed:

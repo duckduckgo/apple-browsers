@@ -534,7 +534,7 @@ final class TabCollectionViewModelTests: XCTestCase {
     func testWhenTabIsDuplicatedThenItsCopyHasTheSameUrl() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
         let firstTabViewModel = tabCollectionViewModel.tabViewModel(at: 0)
-        firstTabViewModel?.tab.url = URL.duckDuckGo
+        firstTabViewModel?.tab.setContent(.url(.duckDuckGo, source: .link))
 
         tabCollectionViewModel.duplicateTab(at: .unpinned(0))
 
@@ -547,7 +547,7 @@ final class TabCollectionViewModelTests: XCTestCase {
     func testWhenSelectionIndexIsUpdatedWithTheSameValueThenSelectedTabViewModelIsOnlyPublishedOnce() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
         let firstTabViewModel = tabCollectionViewModel.tabViewModel(at: 0)
-        firstTabViewModel?.tab.url = URL.duckDuckGo
+        firstTabViewModel?.tab.setContent(.url(.duckDuckGo, source: .link))
 
         var events: [TabViewModel?] = []
         let cancellable = tabCollectionViewModel.$selectedTabViewModel
@@ -653,9 +653,9 @@ fileprivate extension TabCollectionViewModel {
     }
 }
 
-extension Tab {
+private extension Tab {
     @MainActor
-    convenience init(parentTab: Tab) {
-        self.init(content: .url(.blankPage, source: .link), parentTab: parentTab)
+    convenience init(parentTab: Tab? = nil) {
+        self.init(content: .none, parentTab: parentTab)
     }
 }

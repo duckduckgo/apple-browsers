@@ -24,16 +24,19 @@ import struct SwiftUI.AnyView
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
+@available(macOS 12.0, *)
 final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 
+    var window: MockWindow!
     var viewController: BrowserTabViewController!
     var dialogProvider: MockDialogsProvider!
     var pixelReporter: CapturingOnboardingPixelReporter!
     var factory: CapturingDialogFactory!
     var featureFlagger: MockFeatureFlagger!
+    var schemeHandler: TestSchemeHandler!
     var tab: Tab!
     var cancellables: Set<AnyCancellable> = []
-    var expectation: XCTestExpectation!
+    lazy var expectation: XCTestExpectation! = XCTestExpectation(description: "CapturingDialogFactory.makeView called")
     var dialogTypeForTabExpectation: XCTestExpectation!
 
     @MainActor override func setUpWithError() throws {
@@ -42,16 +45,27 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         featureFlagger = MockFeatureFlagger()
         pixelReporter = CapturingOnboardingPixelReporter()
         dialogProvider = MockDialogsProvider()
-        expectation = .init()
         factory = CapturingDialogFactory(expectation: expectation)
-        tab = Tab()
-        tab.setContent(.url(URL.duckDuckGo, credential: nil, source: .appOpenUrl))
+        schemeHandler = TestSchemeHandler { _ in
+            return .ok(.html("hello"))
+        }
+
+        // ! uncomment this to view navigation logs
+        // OSLog.loggingCategories.insert(OSLog.AppCategories.navigation.rawValue)
+
+        // tests return debugDescription instead of localizedDescription
+        NSError.disableSwizzledDescription = true
+
+        tab = Tab(content: .url(URL.duckDuckGo, credential: nil, source: .appOpenUrl), webViewConfiguration: schemeHandler.webViewConfiguration())
         let tabViewModel = TabViewModel(tab: tab)
         viewController = BrowserTabViewController(tabCollectionViewModel: tabCollectionViewModel, onboardingPixelReporter: pixelReporter, onboardingDialogTypeProvider: dialogProvider, onboardingDialogFactory: factory, featureFlagger: featureFlagger)
         viewController.tabViewModel = tabViewModel
-        let window = NSWindow()
+        _=viewController.view
+        window = MockWindow()
         window.contentViewController = viewController
-        window.makeKeyAndOrderFront(nil)
+
+        viewController.viewWillAppear()
+        viewController.viewDidAppear()
     }
 
     override func tearDownWithError() throws {
@@ -61,8 +75,10 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         viewController = nil
         cancellables = []
         expectation = nil
+        dialogTypeForTabExpectation = nil
         featureFlagger = nil
-        try super.tearDownWithError()
+        window = nil
+        schemeHandler = nil
     }
 
     func testWhenNavigationCompletedAndFeatureIsOffThenTurnOffFeature() throws {
@@ -70,14 +86,14 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         let expectation = self.expectation(description: "Wait for turnOffFeatureCalled to be called")
         dialogProvider.turnOffFeatureCalledExpectation = expectation
 
-        tab.navigateFromOnboarding(to: URL(string: "some.url")!)
+        tab.navigateFromOnboarding(to: .duckDuckGo)
 
         wait(for: [expectation], timeout: 3.0)
     }
 
     func testWhenNavigationCompletedAndNoDialogTypeThenOnlyWebViewVisible() throws {
         let expectation = self.expectation(description: "Wait for webViewDidFinishNavigationPublisher to emit")
-        tab.navigateFromOnboarding(to: URL(string: "some.url")!)
+        tab.navigateFromOnboarding(to: .duckDuckGo)
 
         tab.webViewDidFinishNavigationPublisher
             .sink {
@@ -91,7 +107,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 
     func testWhenNavigationCompletedAndHighFiveDialogTypeThenCorrectDialogCapturedInFactory() throws {
         dialogProvider.dialog = .highFive
-        tab.navigateFromOnboarding(to: URL(string: "some.url")!)
+        tab.navigateFromOnboarding(to: .duckDuckGo)
 
         wait(for: [expectation], timeout: 3.0)
         XCTAssertEqual(factory.capturedType, .highFive)
@@ -100,7 +116,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 
     func testWhenNavigationCompletedAndSearchDoneDialogTypeThenCorrectDialogCapturedInFactory() throws {
         dialogProvider.dialog = .searchDone(shouldFollowUp: true)
-        tab.navigateFromOnboarding(to: URL(string: "some.url")!)
+        tab.navigateFromOnboarding(to: .duckDuckGo)
 
         wait(for: [expectation], timeout: 3.0)
         XCTAssertEqual(factory.capturedType, .searchDone(shouldFollowUp: true))
@@ -109,7 +125,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 
     func testWhenNavigationCompletedAndTrackersDialogTypeThenCorrectDialogCapturedInFactory() throws {
         dialogProvider.dialog = .trackers(message: NSMutableAttributedString(string: ""), shouldFollowUp: true)
-        tab.navigateFromOnboarding(to: URL(string: "some.url")!)
+        tab.navigateFromOnboarding(to: .duckDuckGo)
 
         wait(for: [expectation], timeout: 3.0)
         XCTAssertEqual(factory.capturedType, .trackers(message: NSMutableAttributedString(string: ""), shouldFollowUp: true))
@@ -118,7 +134,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 
     func testWhenNavigationCompletedAndTryASearchDialogTypeThenCorrectDialogCapturedInFactory() throws {
         dialogProvider.dialog = .tryASearch
-        tab.navigateFromOnboarding(to: URL(string: "some.url")!)
+        tab.navigateFromOnboarding(to: .duckDuckGo)
 
         wait(for: [expectation], timeout: 3.0)
         XCTAssertEqual(factory.capturedType, .tryASearch)
@@ -127,7 +143,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 
     func testWhenNavigationCompletedAndTryASiteDialogTypeThenCorrectDialogCapturedInFactory() throws {
         dialogProvider.dialog = .tryASite
-        tab.navigateFromOnboarding(to: URL(string: "some.url")!)
+        tab.navigateFromOnboarding(to: .duckDuckGo)
 
         wait(for: [expectation], timeout: 3.0)
         XCTAssertEqual(factory.capturedType, .tryASite)
@@ -136,7 +152,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 
     func testWhenNavigationCompletedAndTryFireButtonDialogTypeThenCorrectDialogCapturedInFactory() throws {
         dialogProvider.dialog = .tryFireButton
-        tab.navigateFromOnboarding(to: URL(string: "some.url")!)
+        tab.navigateFromOnboarding(to: .duckDuckGo)
 
         wait(for: [expectation], timeout: 3.0)
         XCTAssertEqual(factory.capturedType, .tryFireButton)
@@ -145,29 +161,36 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 
     func testWhenNavigationCompletedAndIsAReloadThenNoDialogCapturedInFactory() throws {
         dialogProvider.dialog = .tryFireButton
-        tab.navigateFromOnboarding(to: URL(string: "some.url")!)
 
-        wait(for: [expectation], timeout: 3.0)
+        let expectation1 = expectation(description: "webViewDidFinishNavigation 1")
+        var cancellable: AnyCancellable! = tab.webViewDidFinishNavigationPublisher
+            .sink {
+                expectation1.fulfill()
+            }
+        tab.navigateFromOnboarding(to: .duckDuckGo)
+
+        wait(for: [expectation, expectation1], timeout: 3.0)
         XCTAssertEqual(factory.capturedType, .tryFireButton)
         XCTAssertIdentical(factory.capturedDelegate, viewController.tabViewModel?.tab)
+        cancellable = nil
 
         factory.capturedType = nil
-        let expectation2 = XCTestExpectation()
-        factory.expectation = expectation2
-        tab.navigateFromOnboarding(to: URL(string: "some.url")!)
-
-        tab.webViewDidFinishNavigationPublisher
+        let expectation2 = expectation(description: "webViewDidFinishNavigation 2")
+        cancellable = tab.webViewDidFinishNavigationPublisher
             .sink {
                 expectation2.fulfill()
             }
-            .store(in: &cancellables)
-        wait(for: [expectation2], timeout: 3.0)
+
+        tab.reload()
+
+        wait(for: [expectation2], timeout: 5.0)
         XCTAssertNil(factory.capturedType)
+        withExtendedLifetime(cancellable) {}
     }
 
     func testWhenNavigationCompletedAndWindowDidBecomeActiveCorrectDialogCapturedInFactory() throws {
         dialogProvider.dialog = .tryFireButton
-        tab.navigateFromOnboarding(to: URL(string: "some.url")!)
+        tab.navigateFromOnboarding(to: .duckDuckGo)
 
         wait(for: [expectation], timeout: 3.0)
         XCTAssertEqual(factory.capturedType, .tryFireButton)
@@ -181,7 +204,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 
     func testWhenDialogIsDismissedViewHighlightsAreDismissed() throws {
         dialogProvider.dialog = .tryFireButton
-        tab.navigateFromOnboarding(to: URL(string: "some.url")!)
+        tab.navigateFromOnboarding(to: .duckDuckGo)
         let delegate = BrowserTabViewControllerDelegateSpy()
         viewController.delegate = delegate
 
@@ -200,7 +223,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         // GIVEN
         let expectation = self.expectation(description: "Wait for webViewDidFinishNavigationPublisher to emit")
         let delegate = BrowserTabViewControllerDelegateSpy()
-        let url = try XCTUnwrap(URL(string: "some.url"))
+        let url = URL.duckDuckGo
         dialogProvider.dialogTypeForTabExpectation = expectation
         dialogProvider.dialog = nil
         viewController.delegate = delegate
@@ -216,7 +239,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
     func testWhenNavigationCompletedAndStateIsShowFireButtonThenAskDelegateToHighlightFireButton() throws {
         // GIVEN
         dialogProvider.dialog = .tryFireButton
-        let url = try XCTUnwrap(URL(string: "some.url"))
+        let url = URL.duckDuckGo
         let delegate = BrowserTabViewControllerDelegateSpy()
         viewController.delegate = delegate
         XCTAssertFalse(delegate.didCallHighlightFireButton)
@@ -232,7 +255,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
     func testWhenNavigationCompletedAndStateIsShowBlockedTrackersThenAskDelegateToHighlightPrivacyShield() throws {
         // GIVEN
         dialogProvider.dialog = .trackers(message: .init(string: ""), shouldFollowUp: true)
-        let url = try XCTUnwrap(URL(string: "some.url"))
+        let url = URL.duckDuckGo
         let delegate = BrowserTabViewControllerDelegateSpy()
         viewController.delegate = delegate
         XCTAssertFalse(delegate.didCallHighlightPrivacyShield)
@@ -248,7 +271,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
     func testWhenNavigationCompletedViewHighlightsAreRemoved() throws {
         // GIVEN
         dialogProvider.dialog = .searchDone(shouldFollowUp: false)
-        let url = try XCTUnwrap(URL(string: "some.url"))
+        let url = URL.duckDuckGo
         let delegate = BrowserTabViewControllerDelegateSpy()
         viewController.delegate = delegate
         XCTAssertFalse(delegate.didCallDismissViewHighlight)
@@ -265,7 +288,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         // GIVEN
         let expectation = self.expectation(description: "Wait for webViewDidFinishNavigationPublisher to emit")
         let delegate = BrowserTabViewControllerDelegateSpy()
-        let url = try XCTUnwrap(URL(string: "some.url"))
+        let url = URL.duckDuckGo
         dialogProvider.dialogTypeForTabExpectation = expectation
         dialogProvider.dialog = nil
         viewController.delegate = delegate
@@ -283,7 +306,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
     func testWhenGotItButtonPressedAndStateIsShowFireButtonThenAskDelegateToHighlightFireButton() throws {
         // GIVEN
         dialogProvider.dialog = .tryFireButton
-        let url = try XCTUnwrap(URL(string: "some.url"))
+        let url = URL.duckDuckGo
         let delegate = BrowserTabViewControllerDelegateSpy()
         viewController.delegate = delegate
         XCTAssertFalse(delegate.didCallHighlightFireButton)
@@ -297,15 +320,21 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         XCTAssertTrue(delegate.didCallHighlightFireButton)
     }
 
+    @MainActor
     func testWhenFireButtonPressedThenAskDelegateToRemoveViewHighlights() throws {
         // GIVEN
         dialogProvider.dialog = .tryFireButton
-        let url = try XCTUnwrap(URL(string: "some.url"))
+        let url = URL.duckDuckGo
         let delegate = BrowserTabViewControllerDelegateSpy()
         viewController.delegate = delegate
         XCTAssertFalse(delegate.didCallDismissViewHighlight)
         tab.navigateFromOnboarding(to: url)
         wait(for: [expectation], timeout: 3.0)
+
+        let mainViewController = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])), autofillPopoverPresenter: DefaultAutofillPopoverPresenter())
+        let mainWindowController = MainWindowController(mainViewController: mainViewController, popUp: false)
+        mainWindowController.window = window
+        WindowControllersManager.shared.lastKeyMainWindowController = mainWindowController
 
         // WHEN
         factory.performOnFireButtonPressed()

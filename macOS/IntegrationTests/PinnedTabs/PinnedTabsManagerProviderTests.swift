@@ -20,6 +20,13 @@ import XCTest
 import Combine
 @testable import DuckDuckGo_Privacy_Browser
 
+class MockTabsPreferencesPersistor: TabsPreferencesPersistor {
+    var preferNewTabsToWindows: Bool = false
+    var switchToNewTabWhenOpened: Bool = false
+    var newTabPosition: NewTabPosition = .atEnd
+    var sharedPinnedTabs: Bool = false
+}
+
 final class PinnedTabsManagerProviderTests: XCTestCase {
 
     private var provider: PinnedTabsManagerProvider!
@@ -32,10 +39,13 @@ final class PinnedTabsManagerProviderTests: XCTestCase {
         provider = PinnedTabsManagerProvider(tabsPreferences: tabsPreferences)
     }
 
+    @MainActor
     override func tearDown() {
         provider = nil
         tabsPreferences = nil
         cancellables.removeAll()
+
+        WindowControllersManager.shared.mainWindowControllers.forEach { $0.close() }
         super.tearDown()
     }
 
@@ -72,7 +82,7 @@ final class PinnedTabsManagerProviderTests: XCTestCase {
         tabsPreferences.pinnedTabsMode = .separate
         let tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: provider)
         _ = WindowsManager.openNewWindow(with: tabCollectionViewModel)
-        tabCollectionViewModel.pinnedTabsManager!.pin(Tab())
+        tabCollectionViewModel.pinnedTabsManager!.pin(Tab(content: .none))
 
         XCTAssertFalse(provider.arePinnedTabsEmpty)
     }
@@ -82,7 +92,7 @@ final class PinnedTabsManagerProviderTests: XCTestCase {
         tabsPreferences.pinnedTabsMode = .shared
         let tabCollectionViewModel = TabCollectionViewModel(tabCollection: TabCollection(), pinnedTabsManagerProvider: provider)
         _ = WindowsManager.openNewWindow(with: tabCollectionViewModel)
-        tabCollectionViewModel.pinnedTabsManager!.pin(Tab())
+        tabCollectionViewModel.pinnedTabsManager!.pin(Tab(content: .none))
 
         XCTAssertFalse(provider.arePinnedTabsEmpty)
     }

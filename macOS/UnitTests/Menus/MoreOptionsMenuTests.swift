@@ -381,7 +381,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     @MainActor
     func testWhenTabIsNotFireproofThenFireproofSiteItemIsPresentAndEnabled() throws {
         let url = try XCTUnwrap("https://example.com".url)
-        let tab = Tab(url: url)
+        let tab = Tab(content: .url(url, source: .link))
         tabCollectionViewModel = TabCollectionViewModel(tabCollection: .init(tabs: [tab]))
         fireproofDomains = MockFireproofDomains(domains: [])
         tabCollectionViewModel.select(at: .unpinned(0), forceChange: true)
@@ -396,7 +396,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     @MainActor
     func testWhenTabIsFireproofThenRemoveFireproofingItemIsPresentAndEnabled() throws {
         let url = try XCTUnwrap("https://example.com".url)
-        let tab = Tab(url: url)
+        let tab = Tab(content: .url(url, source: .link))
         tabCollectionViewModel = TabCollectionViewModel(tabCollection: .init(tabs: [tab]))
         fireproofDomains = MockFireproofDomains(domains: ["example.com"])
         tabCollectionViewModel.select(at: .unpinned(0), forceChange: true)
@@ -411,7 +411,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     @MainActor
     func testWhenTabIsDuckDuckGoThenFireproofSiteItemIsPresentAndDisabled() throws {
         let url = try XCTUnwrap("https://duckduckgo.com".url)
-        let tab = Tab(url: url)
+        let tab = Tab(content: .url(url, source: .link))
         tabCollectionViewModel = TabCollectionViewModel(tabCollection: .init(tabs: [tab]))
         tabCollectionViewModel.select(at: .unpinned(0), forceChange: true)
 

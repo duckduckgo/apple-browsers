@@ -46,8 +46,6 @@
 		1D1C36E429FAE8DA001FA40C /* FaviconManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1C36E229FAE8DA001FA40C /* FaviconManagerTests.swift */; };
 		1D1C36E629FB019C001FA40C /* HistoryTabExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1C36E529FB019C001FA40C /* HistoryTabExtensionTests.swift */; };
 		1D1C36E729FB019C001FA40C /* HistoryTabExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1C36E529FB019C001FA40C /* HistoryTabExtensionTests.swift */; };
-		1D1D36222D8B7B95005ED60C /* PinnedTabsManagerProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1D36212D8B7B8C005ED60C /* PinnedTabsManagerProviderTests.swift */; };
-		1D1D36232D8B7B95005ED60C /* PinnedTabsManagerProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1D36212D8B7B8C005ED60C /* PinnedTabsManagerProviderTests.swift */; };
 		1D220BF82B86192200F8BBC6 /* PreferencesEmailProtectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D220BF72B86192200F8BBC6 /* PreferencesEmailProtectionView.swift */; };
 		1D220BF92B86192200F8BBC6 /* PreferencesEmailProtectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D220BF72B86192200F8BBC6 /* PreferencesEmailProtectionView.swift */; };
 		1D220BFC2B87AACF00F8BBC6 /* PrivacyProtectionStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D220BFB2B87AACF00F8BBC6 /* PrivacyProtectionStatus.swift */; };
@@ -848,7 +846,6 @@
 		3706FDFF293F661700E42796 /* AutoconsentMessageProtocolTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD23FD2A28816606007F6985 /* AutoconsentMessageProtocolTests.swift */; };
 		3706FE00293F661700E42796 /* FaviconStoringMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D77921928FDC79800BE0210 /* FaviconStoringMock.swift */; };
 		3706FE01293F661700E42796 /* PixelStoreMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6DA441D2616C84600DD1EC2 /* PixelStoreMock.swift */; };
-		3706FE02293F661700E42796 /* BookmarksBarViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B43468F285ED7A100177407 /* BookmarksBarViewModelTests.swift */; };
 		3706FE03293F661700E42796 /* CoreDataStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6BBF16F2744CDE1004F850E /* CoreDataStoreTests.swift */; };
 		3706FE04293F661700E42796 /* TreeControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B9292B52667103000AD2C21 /* TreeControllerTests.swift */; };
 		3706FE05293F661700E42796 /* DownloadsWebViewMock.m in Sources */ = {isa = PBXBuildFile; fileRef = B693956826F352DB0015B914 /* DownloadsWebViewMock.m */; };
@@ -871,7 +868,6 @@
 		3706FE1B293F661700E42796 /* PermissionManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6106B9F26A7BE0B0013B453 /* PermissionManagerTests.swift */; };
 		3706FE1C293F661700E42796 /* ConnectBitwardenViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B59CC8B290083240058F2F6 /* ConnectBitwardenViewModelTests.swift */; };
 		3706FE1E293F661700E42796 /* GeolocationProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6106BB426A809E60013B453 /* GeolocationProviderTests.swift */; };
-		3706FE1F293F661700E42796 /* AppStateChangePublisherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A5A29F25B96E8300AA7ADA /* AppStateChangePublisherTests.swift */; };
 		3706FE20293F661700E42796 /* CLLocationManagerMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63ED0E226B3E7FA00A9DAD1 /* CLLocationManagerMock.swift */; };
 		3706FE21293F661700E42796 /* DownloadsPreferencesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 37CD54BA27F25A4000F1F7B9 /* DownloadsPreferencesTests.swift */; };
 		3706FE22293F661700E42796 /* FireproofDomainsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B02199925E063DE00ED7DEA /* FireproofDomainsTests.swift */; };
@@ -890,7 +886,6 @@
 		3706FE30293F661700E42796 /* CollectionExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B4F72EB266B2ED300814C60 /* CollectionExtension.swift */; };
 		3706FE31293F661700E42796 /* TabCollectionViewModelDelegateMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAE39D1A24F44885008EF28B /* TabCollectionViewModelDelegateMock.swift */; };
 		3706FE32293F661700E42796 /* BookmarksHTMLReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 373A1AA9283ED86C00586521 /* BookmarksHTMLReaderTests.swift */; };
-		3706FE33293F661700E42796 /* FireTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9C362F25518CA9004B1BA3 /* FireTests.swift */; };
 		3706FE34293F661700E42796 /* PermissionStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6106BB026A7D8720013B453 /* PermissionStoreTests.swift */; };
 		3706FE35293F661700E42796 /* ThirdPartyBrowserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BF4951726C08395000547B8 /* ThirdPartyBrowserTests.swift */; };
 		3706FE36293F661700E42796 /* FirefoxFaviconsReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B98D27B28D960DD003C2B6F /* FirefoxFaviconsReaderTests.swift */; };
@@ -915,7 +910,6 @@
 		3706FE4D293F661700E42796 /* OnboardingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85F487B4276A8F2E003CE668 /* OnboardingTests.swift */; };
 		3706FE4E293F661700E42796 /* BookmarkListTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA652CCD25DD9071009059CC /* BookmarkListTests.swift */; };
 		3706FE4F293F661700E42796 /* BookmarksExporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 859E7D6C274548F2009C2B69 /* BookmarksExporterTests.swift */; };
-		3706FE50293F661700E42796 /* WindowManagerStateRestorationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A5A2A725BAA35500AA7ADA /* WindowManagerStateRestorationTests.swift */; };
 		3706FE51293F661700E42796 /* SafariBookmarksReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB99D0E26FE1A84001E4761 /* SafariBookmarksReaderTests.swift */; };
 		3706FE52293F661700E42796 /* FileSystemDSLTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BBF0924283083EC00EE1418 /* FileSystemDSLTests.swift */; };
 		3706FE53293F661700E42796 /* CoreDataEncryptionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B11060925903EAC0039B979 /* CoreDataEncryptionTests.swift */; };
@@ -938,7 +932,6 @@
 		3706FE65293F661700E42796 /* ContentBlockingUpdatingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B610F2E527AA388100FCEBE9 /* ContentBlockingUpdatingTests.swift */; };
 		3706FE67293F661700E42796 /* EncryptionMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BA1A6F5258C4F9600F6F690 /* EncryptionMocks.swift */; };
 		3706FE6A293F661700E42796 /* FirefoxKeyReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B2975982828285900187C4E /* FirefoxKeyReaderTests.swift */; };
-		3706FE6B293F661700E42796 /* AppKitPrivateMethodsAvailabilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B698E5032908011E00A746A8 /* AppKitPrivateMethodsAvailabilityTests.swift */; };
 		3706FE6D293F661700E42796 /* ChromiumBookmarksReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB99D0C26FE1A83001E4761 /* ChromiumBookmarksReaderTests.swift */; };
 		3706FE6E293F661700E42796 /* FirefoxBookmarksReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BB99D0D26FE1A83001E4761 /* FirefoxBookmarksReaderTests.swift */; };
 		3706FE6F293F661700E42796 /* LocalStatisticsStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B117F7C276C0CB5002F3D8C /* LocalStatisticsStoreTests.swift */; };
@@ -1483,7 +1476,6 @@
 		4B41EDAF2B168AFF001EEDF4 /* UnifiedFeedbackFormViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B41EDAD2B168AFF001EEDF4 /* UnifiedFeedbackFormViewController.swift */; };
 		4B41EDB42B168C55001EEDF4 /* UnifiedFeedbackFormViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B41EDB32B168C55001EEDF4 /* UnifiedFeedbackFormViewModel.swift */; };
 		4B41EDB52B168C55001EEDF4 /* UnifiedFeedbackFormViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B41EDB32B168C55001EEDF4 /* UnifiedFeedbackFormViewModel.swift */; };
-		4B434690285ED7A100177407 /* BookmarksBarViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B43468F285ED7A100177407 /* BookmarksBarViewModelTests.swift */; };
 		4B43469528655D1400177407 /* FirefoxDataImporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B43469428655D1400177407 /* FirefoxDataImporterTests.swift */; };
 		4B44FEF32B1FEF5A000619D8 /* FocusableTextEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B44FEF22B1FEF5A000619D8 /* FocusableTextEditor.swift */; };
 		4B44FEF42B1FEF5A000619D8 /* FocusableTextEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B44FEF22B1FEF5A000619D8 /* FocusableTextEditor.swift */; };
@@ -1816,8 +1808,6 @@
 		5603D90729B7B746007F9F01 /* MockTabViewItemDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5603D90529B7B746007F9F01 /* MockTabViewItemDelegate.swift */; };
 		560C6EC92CCA381A00D411E2 /* OnboardingPixelReporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 560C6EC82CCA381A00D411E2 /* OnboardingPixelReporterTests.swift */; };
 		560C6ECA2CCA381A00D411E2 /* OnboardingPixelReporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 560C6EC82CCA381A00D411E2 /* OnboardingPixelReporterTests.swift */; };
-		560C6ECD2CCA5BCB00D411E2 /* ContextualDaxDialogFactoryIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 560C6ECC2CCA5BCB00D411E2 /* ContextualDaxDialogFactoryIntegrationTests.swift */; };
-		560C6ECE2CCA5BCB00D411E2 /* ContextualDaxDialogFactoryIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 560C6ECC2CCA5BCB00D411E2 /* ContextualDaxDialogFactoryIntegrationTests.swift */; };
 		560C6ED02CCA5C6000D411E2 /* CapturingOnboardingNavigationDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 560C6ECF2CCA5C6000D411E2 /* CapturingOnboardingNavigationDelegate.swift */; };
 		560C6ED12CCA5C6000D411E2 /* CapturingOnboardingNavigationDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 560C6ECF2CCA5C6000D411E2 /* CapturingOnboardingNavigationDelegate.swift */; };
 		560C6ED22CCA5C8500D411E2 /* CapturingOnboardingNavigationDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 560C6ECF2CCA5C6000D411E2 /* CapturingOnboardingNavigationDelegate.swift */; };
@@ -1886,8 +1876,6 @@
 		567A23DC2C88980B0010F66C /* ContextualDaxDialogsFactoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567A23DA2C8894CD0010F66C /* ContextualDaxDialogsFactoryTests.swift */; };
 		567A23DE2C89980A0010F66C /* OnboardingNavigationDelegateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567A23DD2C89980A0010F66C /* OnboardingNavigationDelegateTests.swift */; };
 		567A23DF2C89980A0010F66C /* OnboardingNavigationDelegateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567A23DD2C89980A0010F66C /* OnboardingNavigationDelegateTests.swift */; };
-		567A23E12C89B1EE0010F66C /* BrowserTabViewControllerOnboardingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567A23E02C89B1EE0010F66C /* BrowserTabViewControllerOnboardingTests.swift */; };
-		567A23E22C89B1EE0010F66C /* BrowserTabViewControllerOnboardingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567A23E02C89B1EE0010F66C /* BrowserTabViewControllerOnboardingTests.swift */; };
 		567DA93F29E8045D008AC5EE /* MockEmailStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567DA93E29E8045D008AC5EE /* MockEmailStorage.swift */; };
 		567DA94029E8045D008AC5EE /* MockEmailStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567DA93E29E8045D008AC5EE /* MockEmailStorage.swift */; };
 		567DA94529E95C3F008AC5EE /* YoutubeOverlayUserScriptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567DA94429E95C3F008AC5EE /* YoutubeOverlayUserScriptTests.swift */; };
@@ -1934,8 +1922,6 @@
 		56A054532C2592CE007D8FAB /* OnboardingUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56A054522C2592CE007D8FAB /* OnboardingUITests.swift */; };
 		56A214AF2CB583BF00E5BC0E /* TrackerMessageProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56A214AE2CB583BF00E5BC0E /* TrackerMessageProviderTests.swift */; };
 		56A214B02CB583BF00E5BC0E /* TrackerMessageProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56A214AE2CB583BF00E5BC0E /* TrackerMessageProviderTests.swift */; };
-		56AC09C72C2D7DD6002D70E0 /* BookmarksBarViewControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56AC09C62C2D7DD6002D70E0 /* BookmarksBarViewControllerTests.swift */; };
-		56AC09C82C2D7DD6002D70E0 /* BookmarksBarViewControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56AC09C62C2D7DD6002D70E0 /* BookmarksBarViewControllerTests.swift */; };
 		56B234BF2A84EFD200F2A1CC /* NavigationBarUrlExtensionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56B234BE2A84EFD200F2A1CC /* NavigationBarUrlExtensionsTests.swift */; };
 		56B234C02A84EFD800F2A1CC /* NavigationBarUrlExtensionsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56B234BE2A84EFD200F2A1CC /* NavigationBarUrlExtensionsTests.swift */; };
 		56B33CE12D5F58D20062DBC2 /* VPNPreferencesModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56B33CE02D5F58D20062DBC2 /* VPNPreferencesModelTests.swift */; };
@@ -2161,12 +2147,36 @@
 		8400DC4C2C6E26AE006509D2 /* ItemCachingCollectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8400DC4A2C6E26AE006509D2 /* ItemCachingCollectionView.swift */; };
 		8400DC4E2C6E2770006509D2 /* SteppedScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8400DC4D2C6E2770006509D2 /* SteppedScrollView.swift */; };
 		8400DC4F2C6E2770006509D2 /* SteppedScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8400DC4D2C6E2770006509D2 /* SteppedScrollView.swift */; };
+		8417B7D02D958E1400C0A379 /* WindowManagerStateRestorationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A5A2A725BAA35500AA7ADA /* WindowManagerStateRestorationTests.swift */; };
+		8417B7D12D958E1400C0A379 /* WindowManagerStateRestorationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A5A2A725BAA35500AA7ADA /* WindowManagerStateRestorationTests.swift */; };
 		841BE93B2C6F1CB200E9C2B5 /* MenuItemNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 841BE93A2C6F1CB200E9C2B5 /* MenuItemNode.swift */; };
 		841BE93C2C6F1CB200E9C2B5 /* MenuItemNode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 841BE93A2C6F1CB200E9C2B5 /* MenuItemNode.swift */; };
 		841BE93E2C6F236000E9C2B5 /* BookmarkDragDropManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 841BE93D2C6F235F00E9C2B5 /* BookmarkDragDropManager.swift */; };
 		841BE93F2C6F236000E9C2B5 /* BookmarkDragDropManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 841BE93D2C6F235F00E9C2B5 /* BookmarkDragDropManager.swift */; };
 		8426108D2C9811F30070D5F9 /* KeyEquivalentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8426108C2C9811EC0070D5F9 /* KeyEquivalentView.swift */; };
 		8426108E2C9811F30070D5F9 /* KeyEquivalentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8426108C2C9811EC0070D5F9 /* KeyEquivalentView.swift */; };
+		8434E6AC2DB01448008FFA3D /* PinnedTabsManagerProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1D36212D8B7B8C005ED60C /* PinnedTabsManagerProviderTests.swift */; };
+		8434E6AD2DB01448008FFA3D /* PinnedTabsManagerProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1D36212D8B7B8C005ED60C /* PinnedTabsManagerProviderTests.swift */; };
+		8434E6AE2DB01476008FFA3D /* BookmarksBarViewControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56AC09C62C2D7DD6002D70E0 /* BookmarksBarViewControllerTests.swift */; };
+		8434E6AF2DB01476008FFA3D /* BookmarksBarViewControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56AC09C62C2D7DD6002D70E0 /* BookmarksBarViewControllerTests.swift */; };
+		8434E6B02DB01483008FFA3D /* BookmarksBarVisibilityManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3344612BBFBDA40040CBEB /* BookmarksBarVisibilityManagerTests.swift */; };
+		8434E6B12DB01483008FFA3D /* BookmarksBarVisibilityManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3344612BBFBDA40040CBEB /* BookmarksBarVisibilityManagerTests.swift */; };
+		8434E6B22DB0148C008FFA3D /* BookmarksBarViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B43468F285ED7A100177407 /* BookmarksBarViewModelTests.swift */; };
+		8434E6B32DB0148C008FFA3D /* BookmarksBarViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B43468F285ED7A100177407 /* BookmarksBarViewModelTests.swift */; };
+		8434E6B42DB014AD008FFA3D /* AppKitPrivateMethodsAvailabilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B698E5032908011E00A746A8 /* AppKitPrivateMethodsAvailabilityTests.swift */; };
+		8434E6B52DB014AD008FFA3D /* AppKitPrivateMethodsAvailabilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B698E5032908011E00A746A8 /* AppKitPrivateMethodsAvailabilityTests.swift */; };
+		8434E6B72DB014F0008FFA3D /* BrowserTabViewControllerOnboardingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8434E6B62DB014F0008FFA3D /* BrowserTabViewControllerOnboardingTests.swift */; };
+		8434E6B82DB014F0008FFA3D /* BrowserTabViewControllerOnboardingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8434E6B62DB014F0008FFA3D /* BrowserTabViewControllerOnboardingTests.swift */; };
+		8434E6BC2DB01633008FFA3D /* MockBookmarkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56D145F029E6F06D00E3488A /* MockBookmarkManager.swift */; };
+		8434E6BD2DB01633008FFA3D /* MockBookmarkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56D145F029E6F06D00E3488A /* MockBookmarkManager.swift */; };
+		8434E6BE2DB01640008FFA3D /* MockWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56A054072C1C3730007D8FAB /* MockWindow.swift */; };
+		8434E6BF2DB01640008FFA3D /* MockWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56A054072C1C3730007D8FAB /* MockWindow.swift */; };
+		8434E6C02DB01683008FFA3D /* ContextualDaxDialogsFactoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567A23DA2C8894CD0010F66C /* ContextualDaxDialogsFactoryTests.swift */; };
+		8434E6C12DB01683008FFA3D /* ContextualDaxDialogsFactoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567A23DA2C8894CD0010F66C /* ContextualDaxDialogsFactoryTests.swift */; };
+		8434E6C32DB0175D008FFA3D /* AppearancePreferencesPersistorMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8434E6C22DB0175C008FFA3D /* AppearancePreferencesPersistorMock.swift */; };
+		8434E6C42DB0175D008FFA3D /* AppearancePreferencesPersistorMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8434E6C22DB0175C008FFA3D /* AppearancePreferencesPersistorMock.swift */; };
+		8434E6C52DB01761008FFA3D /* AppearancePreferencesPersistorMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8434E6C22DB0175C008FFA3D /* AppearancePreferencesPersistorMock.swift */; };
+		8434E6C62DB01761008FFA3D /* AppearancePreferencesPersistorMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8434E6C22DB0175C008FFA3D /* AppearancePreferencesPersistorMock.swift */; };
 		843965122C6F2FFE004C8899 /* NSDragOperationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 843965112C6F2FFE004C8899 /* NSDragOperationExtension.swift */; };
 		843965132C6F2FFE004C8899 /* NSDragOperationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 843965112C6F2FFE004C8899 /* NSDragOperationExtension.swift */; };
 		843965152C737022004C8899 /* NSPasteboardExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 843965142C737022004C8899 /* NSPasteboardExtension.swift */; };
@@ -2179,12 +2189,32 @@
 		8443DC6E2CF0C777000B8829 /* Tab+OnboardingNavigationDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8443DC6C2CF0C777000B8829 /* Tab+OnboardingNavigationDelegate.swift */; };
 		844D7DA42C9443EA00BE61D4 /* NSPrintInfoExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 844D7DA32C9443E500BE61D4 /* NSPrintInfoExtension.swift */; };
 		844D7DA52C9443EA00BE61D4 /* NSPrintInfoExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 844D7DA32C9443E500BE61D4 /* NSPrintInfoExtension.swift */; };
+		84524C032D79E3F800F723D6 /* AppStateChangePublisherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A5A29F25B96E8300AA7ADA /* AppStateChangePublisherTests.swift */; };
+		84524C042D79E3F800F723D6 /* AppStateChangePublisherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A5A29F25B96E8300AA7ADA /* AppStateChangePublisherTests.swift */; };
+		84524C062D79E6BB00F723D6 /* FireTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9C362F25518CA9004B1BA3 /* FireTests.swift */; };
+		84524C072D79E6BB00F723D6 /* FireTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9C362F25518CA9004B1BA3 /* FireTests.swift */; };
+		84524C082D79E6EF00F723D6 /* WebsiteDataStoreMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9C362725518C44004B1BA3 /* WebsiteDataStoreMock.swift */; };
+		84524C092D79E6EF00F723D6 /* WebsiteDataStoreMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9C362725518C44004B1BA3 /* WebsiteDataStoreMock.swift */; };
+		84524C0A2D79E95C00F723D6 /* HistoryCoordinatingMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAEC74B12642C57200C2EFBC /* HistoryCoordinatingMock.swift */; };
+		84524C0B2D79E95C00F723D6 /* HistoryCoordinatingMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAEC74B12642C57200C2EFBC /* HistoryCoordinatingMock.swift */; };
+		84524C0C2D79E96300F723D6 /* PermissionManagerMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63ED0D926AE7AF400A9DAD1 /* PermissionManagerMock.swift */; };
+		84524C0D2D79E96300F723D6 /* PermissionManagerMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63ED0D926AE7AF400A9DAD1 /* PermissionManagerMock.swift */; };
+		84524C0E2D79E96B00F723D6 /* FaviconManagerMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABAF59B260A7D130085060C /* FaviconManagerMock.swift */; };
+		84524C0F2D79E96B00F723D6 /* FaviconManagerMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AABAF59B260A7D130085060C /* FaviconManagerMock.swift */; };
+		84524C102D79E9AA00F723D6 /* RecentlyClosedCoordinatorMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA7E9175286DB05D00AB6B62 /* RecentlyClosedCoordinatorMock.swift */; };
+		84524C112D79E9AA00F723D6 /* RecentlyClosedCoordinatorMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA7E9175286DB05D00AB6B62 /* RecentlyClosedCoordinatorMock.swift */; };
+		84524C122D79E9B800F723D6 /* FileStoreMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A5A27D25B9403E00AA7ADA /* FileStoreMock.swift */; };
+		84524C132D79E9B800F723D6 /* FileStoreMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A5A27D25B9403E00AA7ADA /* FileStoreMock.swift */; };
+		84524C142D79E9BF00F723D6 /* SavedStateMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 378205F52837CBA800D1D4AA /* SavedStateMock.swift */; };
+		84524C152D79E9BF00F723D6 /* SavedStateMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 378205F52837CBA800D1D4AA /* SavedStateMock.swift */; };
 		84537A032C998C28008723BC /* FireWindowSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84537A022C998C24008723BC /* FireWindowSession.swift */; };
 		84537A042C998C28008723BC /* FireWindowSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84537A022C998C24008723BC /* FireWindowSession.swift */; };
 		84537A082C99C203008723BC /* DeallocationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6C2C9EE276081AB005B7F0A /* DeallocationTests.swift */; };
 		84537A092C99C203008723BC /* DeallocationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6C2C9EE276081AB005B7F0A /* DeallocationTests.swift */; };
 		848648A12C76F4B20082282D /* BookmarksBarMenuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 848648A02C76F4B20082282D /* BookmarksBarMenuViewController.swift */; };
 		848648A22C76F4B20082282D /* BookmarksBarMenuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 848648A02C76F4B20082282D /* BookmarksBarMenuViewController.swift */; };
+		84AE5B332D95A019002C3B47 /* ContextualDaxDialogFactoryIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84AE5B322D95A019002C3B47 /* ContextualDaxDialogFactoryIntegrationTests.swift */; };
+		84AE5B342D95A019002C3B47 /* ContextualDaxDialogFactoryIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84AE5B322D95A019002C3B47 /* ContextualDaxDialogFactoryIntegrationTests.swift */; };
 		84B479082CCA7A3E00F40329 /* Logger+UnitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84B479072CCA7A3900F40329 /* Logger+UnitTests.swift */; };
 		84B479092CCA7A3E00F40329 /* Logger+UnitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84B479072CCA7A3900F40329 /* Logger+UnitTests.swift */; };
 		84B49F0D2CB10F0900FF08BB /* OHHTTPStubs in Frameworks */ = {isa = PBXBuildFile; productRef = 84B49F0C2CB10F0900FF08BB /* OHHTTPStubs */; };
@@ -2384,8 +2414,6 @@
 		9F26060F2B85E17D00819292 /* AddEditBookmarkDialogCoordinatorViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F26060D2B85E17D00819292 /* AddEditBookmarkDialogCoordinatorViewModelTests.swift */; };
 		9F33445E2BBFA77F0040CBEB /* BookmarksBarVisibilityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F33445D2BBFA77F0040CBEB /* BookmarksBarVisibilityManager.swift */; };
 		9F33445F2BBFA77F0040CBEB /* BookmarksBarVisibilityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F33445D2BBFA77F0040CBEB /* BookmarksBarVisibilityManager.swift */; };
-		9F3344622BBFBDA40040CBEB /* BookmarksBarVisibilityManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3344612BBFBDA40040CBEB /* BookmarksBarVisibilityManagerTests.swift */; };
-		9F3344632BBFBDA40040CBEB /* BookmarksBarVisibilityManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3344612BBFBDA40040CBEB /* BookmarksBarVisibilityManagerTests.swift */; };
 		9F3910622B68C35600CB5112 /* DownloadsTabExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3910612B68C35600CB5112 /* DownloadsTabExtensionTests.swift */; };
 		9F3910632B68C35600CB5112 /* DownloadsTabExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3910612B68C35600CB5112 /* DownloadsTabExtensionTests.swift */; };
 		9F3910692B68D87B00CB5112 /* ProgressExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F3910682B68D87B00CB5112 /* ProgressExtensionTests.swift */; };
@@ -2546,7 +2574,6 @@
 		AA92127725ADA07900600CD4 /* WKWebViewExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA92127625ADA07900600CD4 /* WKWebViewExtension.swift */; };
 		AA97BF4625135DD30014931A /* ApplicationDockMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA97BF4525135DD30014931A /* ApplicationDockMenu.swift */; };
 		AA9C362825518C44004B1BA3 /* WebsiteDataStoreMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9C362725518C44004B1BA3 /* WebsiteDataStoreMock.swift */; };
-		AA9C363025518CA9004B1BA3 /* FireTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9C362F25518CA9004B1BA3 /* FireTests.swift */; };
 		AA9E9A5625A3AE8400D1959D /* NSWindowExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9E9A5525A3AE8400D1959D /* NSWindowExtension.swift */; };
 		AA9E9A5E25A4867200D1959D /* TabDragAndDropManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9E9A5D25A4867200D1959D /* TabDragAndDropManager.swift */; };
 		AA9FF95924A1ECF20039E328 /* Tab.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA9FF95824A1ECF20039E328 /* Tab.swift */; };
@@ -2861,7 +2888,6 @@
 		B693956926F352DB0015B914 /* DownloadsWebViewMock.m in Sources */ = {isa = PBXBuildFile; fileRef = B693956826F352DB0015B914 /* DownloadsWebViewMock.m */; };
 		B696AFFB2AC5924800C93203 /* FileLineError.swift in Sources */ = {isa = PBXBuildFile; fileRef = B696AFFA2AC5924800C93203 /* FileLineError.swift */; };
 		B696AFFC2AC5924800C93203 /* FileLineError.swift in Sources */ = {isa = PBXBuildFile; fileRef = B696AFFA2AC5924800C93203 /* FileLineError.swift */; };
-		B698E5042908011E00A746A8 /* AppKitPrivateMethodsAvailabilityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B698E5032908011E00A746A8 /* AppKitPrivateMethodsAvailabilityTests.swift */; };
 		B69A14F22B4D6FE800B9417D /* AddBookmarkFolderPopoverViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B69A14F12B4D6FE800B9417D /* AddBookmarkFolderPopoverViewModel.swift */; };
 		B69A14F32B4D6FE800B9417D /* AddBookmarkFolderPopoverViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B69A14F12B4D6FE800B9417D /* AddBookmarkFolderPopoverViewModel.swift */; };
 		B69A14F62B4D701F00B9417D /* AddBookmarkPopoverViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B69A14F52B4D701F00B9417D /* AddBookmarkPopoverViewModel.swift */; };
@@ -2889,8 +2915,6 @@
 		B6A5A27125B9377300AA7ADA /* StatePersistenceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A5A27025B9377300AA7ADA /* StatePersistenceService.swift */; };
 		B6A5A27925B93FFF00AA7ADA /* StateRestorationManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A5A27825B93FFE00AA7ADA /* StateRestorationManagerTests.swift */; };
 		B6A5A27E25B9403E00AA7ADA /* FileStoreMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A5A27D25B9403E00AA7ADA /* FileStoreMock.swift */; };
-		B6A5A2A025B96E8300AA7ADA /* AppStateChangePublisherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A5A29F25B96E8300AA7ADA /* AppStateChangePublisherTests.swift */; };
-		B6A5A2A825BAA35500AA7ADA /* WindowManagerStateRestorationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A5A2A725BAA35500AA7ADA /* WindowManagerStateRestorationTests.swift */; };
 		B6A924D92664C72E001A28CA /* WebKitDownloadTask.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A924D82664C72D001A28CA /* WebKitDownloadTask.swift */; };
 		B6A9E46B2614618A0067D1B9 /* OperatingSystemVersionExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6A9E46A2614618A0067D1B9 /* OperatingSystemVersionExtension.swift */; };
 		B6AA64732994B43300D99CD6 /* FutureExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6AA64722994B43300D99CD6 /* FutureExtensionTests.swift */; };
@@ -3095,8 +3119,8 @@
 		BBBEE1C02C4FF63600035ABA /* SortBookmarksViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBBEE1BE2C4FF63600035ABA /* SortBookmarksViewModelTests.swift */; };
 		BBC063E82C5A9E4B007BDC18 /* BookmarkManagementDetailViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC063E72C5A9E4B007BDC18 /* BookmarkManagementDetailViewModelTests.swift */; };
 		BBC063E92C5A9E4B007BDC18 /* BookmarkManagementDetailViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC063E72C5A9E4B007BDC18 /* BookmarkManagementDetailViewModelTests.swift */; };
-		BBC114652D89E859007A82D8 /* TabCollectionViewModelTests+CloseTabLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC114642D89E859007A82D8 /* TabCollectionViewModelTests+CloseTabLogic.swift */; };
-		BBC114662D89E859007A82D8 /* TabCollectionViewModelTests+CloseTabLogic.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC114642D89E859007A82D8 /* TabCollectionViewModelTests+CloseTabLogic.swift */; };
+		BBC114652D89E859007A82D8 /* TabCollectionViewModelCloseTabLogicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC114642D89E859007A82D8 /* TabCollectionViewModelCloseTabLogicTests.swift */; };
+		BBC114662D89E859007A82D8 /* TabCollectionViewModelCloseTabLogicTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC114642D89E859007A82D8 /* TabCollectionViewModelCloseTabLogicTests.swift */; };
 		BBC7BDA92D5B82BD0037A4AE /* DefaultBrowserAndDockPromptCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC7BDA82D5B82A20037A4AE /* DefaultBrowserAndDockPromptCoordinator.swift */; };
 		BBC7BDAA2D5B82BD0037A4AE /* DefaultBrowserAndDockPromptCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC7BDA82D5B82A20037A4AE /* DefaultBrowserAndDockPromptCoordinator.swift */; };
 		BBC7BDAC2D5BB0890037A4AE /* BannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBC7BDAB2D5BB0720037A4AE /* BannerView.swift */; };
@@ -4362,7 +4386,6 @@
 		5601FECC29B7973D00068905 /* TabBarViewItemTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarViewItemTests.swift; sourceTree = "<group>"; };
 		5603D90529B7B746007F9F01 /* MockTabViewItemDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockTabViewItemDelegate.swift; sourceTree = "<group>"; };
 		560C6EC82CCA381A00D411E2 /* OnboardingPixelReporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingPixelReporterTests.swift; sourceTree = "<group>"; };
-		560C6ECC2CCA5BCB00D411E2 /* ContextualDaxDialogFactoryIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextualDaxDialogFactoryIntegrationTests.swift; sourceTree = "<group>"; };
 		560C6ECF2CCA5C6000D411E2 /* CapturingOnboardingNavigationDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapturingOnboardingNavigationDelegate.swift; sourceTree = "<group>"; };
 		560C6ED52CCA5CE100D411E2 /* FindInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FindInView.swift; sourceTree = "<group>"; };
 		560C6EDA2CCA6D5200D411E2 /* OnboardingFireButtonDialogViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFireButtonDialogViewModelTests.swift; sourceTree = "<group>"; };
@@ -4395,7 +4418,6 @@
 		567A23D62C8871290010F66C /* OnboardingFireButtonDialogViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingFireButtonDialogViewModel.swift; sourceTree = "<group>"; };
 		567A23DA2C8894CD0010F66C /* ContextualDaxDialogsFactoryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextualDaxDialogsFactoryTests.swift; sourceTree = "<group>"; };
 		567A23DD2C89980A0010F66C /* OnboardingNavigationDelegateTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingNavigationDelegateTests.swift; sourceTree = "<group>"; };
-		567A23E02C89B1EE0010F66C /* BrowserTabViewControllerOnboardingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserTabViewControllerOnboardingTests.swift; sourceTree = "<group>"; };
 		567DA93E29E8045D008AC5EE /* MockEmailStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockEmailStorage.swift; sourceTree = "<group>"; };
 		567DA94429E95C3F008AC5EE /* YoutubeOverlayUserScriptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YoutubeOverlayUserScriptTests.swift; sourceTree = "<group>"; };
 		5681ED3F2BDB955100F59729 /* SyncCredentialsAdapterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncCredentialsAdapterTests.swift; sourceTree = "<group>"; };
@@ -4524,6 +4546,8 @@
 		841BE93A2C6F1CB200E9C2B5 /* MenuItemNode.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MenuItemNode.swift; sourceTree = "<group>"; };
 		841BE93D2C6F235F00E9C2B5 /* BookmarkDragDropManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarkDragDropManager.swift; sourceTree = "<group>"; };
 		8426108C2C9811EC0070D5F9 /* KeyEquivalentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyEquivalentView.swift; sourceTree = "<group>"; };
+		8434E6B62DB014F0008FFA3D /* BrowserTabViewControllerOnboardingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserTabViewControllerOnboardingTests.swift; sourceTree = "<group>"; };
+		8434E6C22DB0175C008FFA3D /* AppearancePreferencesPersistorMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearancePreferencesPersistorMock.swift; sourceTree = "<group>"; };
 		843965112C6F2FFE004C8899 /* NSDragOperationExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NSDragOperationExtension.swift; sourceTree = "<group>"; };
 		843965142C737022004C8899 /* NSPasteboardExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSPasteboardExtension.swift; sourceTree = "<group>"; };
 		843AD3DB2CD389C500163067 /* XMLNodeExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XMLNodeExtension.swift; sourceTree = "<group>"; };
@@ -4531,6 +4555,7 @@
 		844D7DA32C9443E500BE61D4 /* NSPrintInfoExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSPrintInfoExtension.swift; sourceTree = "<group>"; };
 		84537A022C998C24008723BC /* FireWindowSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireWindowSession.swift; sourceTree = "<group>"; };
 		848648A02C76F4B20082282D /* BookmarksBarMenuViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksBarMenuViewController.swift; sourceTree = "<group>"; };
+		84AE5B322D95A019002C3B47 /* ContextualDaxDialogFactoryIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextualDaxDialogFactoryIntegrationTests.swift; sourceTree = "<group>"; };
 		84B479072CCA7A3900F40329 /* Logger+UnitTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+UnitTests.swift"; sourceTree = "<group>"; };
 		84C96E442CF9BB6400A80A01 /* malwareFilterSet.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = malwareFilterSet.json; sourceTree = "<group>"; };
 		84C96E452CF9BB6400A80A01 /* malwareHashPrefixes.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = malwareHashPrefixes.json; sourceTree = "<group>"; };
@@ -5165,7 +5190,7 @@
 		BBBB653F2C77BB9400E69AC6 /* BookmarkSearchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkSearchTests.swift; sourceTree = "<group>"; };
 		BBBEE1BE2C4FF63600035ABA /* SortBookmarksViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SortBookmarksViewModelTests.swift; sourceTree = "<group>"; };
 		BBC063E72C5A9E4B007BDC18 /* BookmarkManagementDetailViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkManagementDetailViewModelTests.swift; sourceTree = "<group>"; };
-		BBC114642D89E859007A82D8 /* TabCollectionViewModelTests+CloseTabLogic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TabCollectionViewModelTests+CloseTabLogic.swift"; sourceTree = "<group>"; };
+		BBC114642D89E859007A82D8 /* TabCollectionViewModelCloseTabLogicTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabCollectionViewModelCloseTabLogicTests.swift; sourceTree = "<group>"; };
 		BBC7BDA82D5B82A20037A4AE /* DefaultBrowserAndDockPromptCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptCoordinator.swift; sourceTree = "<group>"; };
 		BBC7BDAB2D5BB0720037A4AE /* BannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BannerView.swift; sourceTree = "<group>"; };
 		BBCD46792C8643EC004DB483 /* XCUIApplicationExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XCUIApplicationExtension.swift; sourceTree = "<group>"; };
@@ -6526,7 +6551,6 @@
 			children = (
 				37D2377F287EFEE200BCE03B /* PinnedTabsManagerTests.swift */,
 				1DA7FEE42D883423004882E9 /* PinnedTabsManagerProvidingMock.swift */,
-				1D1D36212D8B7B8C005ED60C /* PinnedTabsManagerProviderTests.swift */,
 				37D23786287F5C2900BCE03B /* PinnedTabsViewModelTests.swift */,
 			);
 			path = PinnedTabs;
@@ -6716,22 +6740,23 @@
 		4B0511EE262CAEB300F6079C /* Preferences */ = {
 			isa = PBXGroup;
 			children = (
-				37CD54B427F1AC1300F1F7B9 /* PreferencesSidebarModelTests.swift */,
-				37CD54B627F1B28A00F1F7B9 /* DefaultBrowserPreferencesTests.swift */,
-				378205F7283BC6A600D1D4AA /* StartupPreferencesTests.swift */,
-				1D9FDEB62B9B5D150040B78C /* SearchPreferencesTests.swift */,
-				1D9FDEB92B9B5E090040B78C /* WebTrackingProtectionPreferencesTests.swift */,
-				1D9FDEBC2B9B5F0F0040B78C /* CookiePopupProtectionPreferencesTests.swift */,
-				37CD54BA27F25A4000F1F7B9 /* DownloadsPreferencesTests.swift */,
-				37CD54B827F1F8AC00F1F7B9 /* AppearancePreferencesTests.swift */,
-				3776583027F8325B009A6B35 /* AutofillPreferencesTests.swift */,
-				37CD54BC27F2ECAE00F1F7B9 /* AutofillPreferencesModelTests.swift */,
 				1D9FDEBF2B9B5FEA0040B78C /* AccessibilityPreferencesTests.swift */,
+				8434E6C22DB0175C008FFA3D /* AppearancePreferencesPersistorMock.swift */,
+				37CD54B827F1F8AC00F1F7B9 /* AppearancePreferencesTests.swift */,
+				37CD54BC27F2ECAE00F1F7B9 /* AutofillPreferencesModelTests.swift */,
+				3776583027F8325B009A6B35 /* AutofillPreferencesTests.swift */,
+				1D9FDEBC2B9B5F0F0040B78C /* CookiePopupProtectionPreferencesTests.swift */,
 				1D9FDEC22B9B63C90040B78C /* DataClearingPreferencesTests.swift */,
+				37CD54B627F1B28A00F1F7B9 /* DefaultBrowserPreferencesTests.swift */,
+				37CD54BA27F25A4000F1F7B9 /* DownloadsPreferencesTests.swift */,
 				3714B1E628EDB7FA0056C57A /* DuckPlayerPreferencesTests.swift */,
+				37CD54B427F1AC1300F1F7B9 /* PreferencesSidebarModelTests.swift */,
 				1D9FDEC52B9B64DB0040B78C /* PrivacyProtectionStatusTests.swift */,
+				1D9FDEB62B9B5D150040B78C /* SearchPreferencesTests.swift */,
+				378205F7283BC6A600D1D4AA /* StartupPreferencesTests.swift */,
 				021EA0822BD6DF1B00772C9A /* TabsPreferencesTests.swift */,
 				56B33CE02D5F58D20062DBC2 /* VPNPreferencesModelTests.swift */,
+				1D9FDEB92B9B5E090040B78C /* WebTrackingProtectionPreferencesTests.swift */,
 			);
 			path = Preferences;
 			sourceTree = "<group>";
@@ -6760,19 +6785,23 @@
 		4B1AD89E25FC27E200261379 /* IntegrationTests */ = {
 			isa = PBXGroup;
 			children = (
-				563A3CF82D37ADFA001966FD /* Configurations */,
-				560C6ECB2CCA5B9D00D411E2 /* Onboarding */,
 				84537A072C99C1EF008723BC /* App */,
-				EEE0E1CB2C32F53C0058E148 /* DataImport */,
-				B603972A29BEDF0F00902A34 /* Common */,
 				B31055CC27A1BA39001AC618 /* Autoconsent */,
+				4B43468D285ED6BD00177407 /* BookmarksBar */,
+				B603972A29BEDF0F00902A34 /* Common */,
+				563A3CF82D37ADFA001966FD /* Configurations */,
+				EEE0E1CB2C32F53C0058E148 /* DataImport */,
 				B6EC37DC29B5D05A001ACE79 /* Downloads */,
+				84524C052D79E6A100F723D6 /* Fire */,
 				B62A233E29C41D2D00D22475 /* History */,
 				B603973229BEF84900902A34 /* HTTPSUpgrade */,
-				B62A233A29C322A000D22475 /* NavigationProtection */,
 				CD89DD642C89E0BB0080F9AF /* MaliciousSiteProtection */,
+				B62A233A29C322A000D22475 /* NavigationProtection */,
+				560C6ECB2CCA5B9D00D411E2 /* Onboarding */,
+				84E405CA2D956C8300F6396F /* PinnedTabs */,
 				B603973629BF0E9400902A34 /* PrivacyDashboard */,
 				B644B43C29D56811003FA9AB /* Tab */,
+				B698E5032908011E00A746A8 /* AppKitPrivateMethodsAvailabilityTests.swift */,
 				4B1AD91625FC46FB00261379 /* CoreDataEncryptionTests.swift */,
 				4BA1A6EA258C288C00F6F690 /* EncryptionKeyStoreTests.swift */,
 				4B1AD8A125FC27E200261379 /* Info.plist */,
@@ -7525,7 +7554,8 @@
 		560C6ECB2CCA5B9D00D411E2 /* Onboarding */ = {
 			isa = PBXGroup;
 			children = (
-				560C6ECC2CCA5BCB00D411E2 /* ContextualDaxDialogFactoryIntegrationTests.swift */,
+				8434E6B62DB014F0008FFA3D /* BrowserTabViewControllerOnboardingTests.swift */,
+				84AE5B322D95A019002C3B47 /* ContextualDaxDialogFactoryIntegrationTests.swift */,
 			);
 			path = Onboarding;
 			sourceTree = "<group>";
@@ -7632,15 +7662,14 @@
 		567A23D92C8894840010F66C /* ContextualOnboarding */ = {
 			isa = PBXGroup;
 			children = (
-				56CE77602C7DFCF800AC1ED2 /* OnboardingSuggestedSearchesProviderTests.swift */,
 				567A23DA2C8894CD0010F66C /* ContextualDaxDialogsFactoryTests.swift */,
-				567A23DD2C89980A0010F66C /* OnboardingNavigationDelegateTests.swift */,
-				567A23E02C89B1EE0010F66C /* BrowserTabViewControllerOnboardingTests.swift */,
 				5677A9392C983FF100DA7B0A /* ContextualDialogsManagerTests.swift */,
+				560C6EDA2CCA6D5200D411E2 /* OnboardingFireButtonDialogViewModelTests.swift */,
+				567A23DD2C89980A0010F66C /* OnboardingNavigationDelegateTests.swift */,
+				560C6EC82CCA381A00D411E2 /* OnboardingPixelReporterTests.swift */,
+				56CE77602C7DFCF800AC1ED2 /* OnboardingSuggestedSearchesProviderTests.swift */,
 				56A214AE2CB583BF00E5BC0E /* TrackerMessageProviderTests.swift */,
 				9FBB0C082CBD39B70006B6A6 /* ViewHighlighterTests.swift */,
-				560C6EC82CCA381A00D411E2 /* OnboardingPixelReporterTests.swift */,
-				560C6EDA2CCA6D5200D411E2 /* OnboardingFireButtonDialogViewModelTests.swift */,
 			);
 			path = ContextualOnboarding;
 			sourceTree = "<group>";
@@ -7815,12 +7844,29 @@
 			path = TipKit;
 			sourceTree = "<group>";
 		};
+		84524C052D79E6A100F723D6 /* Fire */ = {
+			isa = PBXGroup;
+			children = (
+				AA9C362F25518CA9004B1BA3 /* FireTests.swift */,
+			);
+			path = Fire;
+			sourceTree = "<group>";
+		};
 		84537A072C99C1EF008723BC /* App */ = {
 			isa = PBXGroup;
 			children = (
+				B6A5A29F25B96E8300AA7ADA /* AppStateChangePublisherTests.swift */,
 				B6C2C9EE276081AB005B7F0A /* DeallocationTests.swift */,
 			);
 			path = App;
+			sourceTree = "<group>";
+		};
+		84E405CA2D956C8300F6396F /* PinnedTabs */ = {
+			isa = PBXGroup;
+			children = (
+				1D1D36212D8B7B8C005ED60C /* PinnedTabsManagerProviderTests.swift */,
+			);
+			path = PinnedTabs;
 			sourceTree = "<group>";
 		};
 		853014D425E6709500FB8205 /* Support */ = {
@@ -8178,7 +8224,6 @@
 				4BA1A6CE258BF58C00F6F690 /* FileSystem */,
 				9F0660752BECC7E700B8EEF1 /* Pixel */,
 				B6AE74322609AFBB005B9B1A /* Progress */,
-				B698E5032908011E00A746A8 /* AppKitPrivateMethodsAvailabilityTests.swift */,
 				B6F56566299A414300A04298 /* WKWebViewMockingExtension.swift */,
 				B603972B29BEDF2100902A34 /* ExpectedNavigationExtension.swift */,
 				B603970F29B9D67E00902A34 /* PublishersExtensions.swift */,
@@ -8603,7 +8648,6 @@
 				4BF6962128C242E500D402D4 /* Autoconsent */,
 				4B59CC8A290083040058F2F6 /* Bitwarden */,
 				AA652CAB25DD820D009059CC /* Bookmarks */,
-				4B43468D285ED6BD00177407 /* BookmarksBar */,
 				85F69B3A25EDE7F800978E59 /* Common */,
 				85AC3B1525D9BBFA00C7D2AA /* Configuration */,
 				4B82E9B725B6A04B00656FE7 /* ContentBlocker */,
@@ -9063,18 +9107,9 @@
 		AA9C361D25518AAB004B1BA3 /* Fire */ = {
 			isa = PBXGroup;
 			children = (
-				AA9C362125518B34004B1BA3 /* Model */,
-			);
-			path = Fire;
-			sourceTree = "<group>";
-		};
-		AA9C362125518B34004B1BA3 /* Model */ = {
-			isa = PBXGroup;
-			children = (
-				AA9C362F25518CA9004B1BA3 /* FireTests.swift */,
 				376C4DB828A1A48A00CC0F5B /* FirePopoverViewModelTests.swift */,
 			);
-			path = Model;
+			path = Fire;
 			sourceTree = "<group>";
 		};
 		AA9C362625518B61004B1BA3 /* Services */ = {
@@ -9294,7 +9329,7 @@
 		AAC9C01A24CB592E00AD1325 /* ViewModel */ = {
 			isa = PBXGroup;
 			children = (
-				BBC114642D89E859007A82D8 /* TabCollectionViewModelTests+CloseTabLogic.swift */,
+				BBC114642D89E859007A82D8 /* TabCollectionViewModelCloseTabLogicTests.swift */,
 				BB9BA21F2D10BC6B009229F3 /* TabBarRemoteMessageViewModelTests.swift */,
 				AAC9C01D24CB6BEB00AD1325 /* TabCollectionViewModelTests.swift */,
 				37D23788288009CF00BCE03B /* TabCollectionViewModelTests+PinnedTabs.swift */,
@@ -9644,12 +9679,12 @@
 		B644B43C29D56811003FA9AB /* Tab */ = {
 			isa = PBXGroup;
 			children = (
-				B64E42AA2B909DC9006C1346 /* test.pdf */,
-				B644B43929D565DB003FA9AB /* SearchNonexistentDomainTests.swift */,
-				B693766D2B6B5F26005BD9D4 /* ErrorPageTests.swift */,
-				B6EEDD7C2B8C69E900637EBC /* TabContentTests.swift */,
 				B64CE01D2B8622D700126CA5 /* AddressBarTests.swift */,
+				B693766D2B6B5F26005BD9D4 /* ErrorPageTests.swift */,
 				56A054322C205814007D8FAB /* OnboardingPageTests.swift */,
+				B644B43929D565DB003FA9AB /* SearchNonexistentDomainTests.swift */,
+				B6EEDD7C2B8C69E900637EBC /* TabContentTests.swift */,
+				B64E42AA2B909DC9006C1346 /* test.pdf */,
 			);
 			path = Tab;
 			sourceTree = "<group>";
@@ -9840,10 +9875,9 @@
 		B6A5A28C25B962CB00AA7ADA /* App */ = {
 			isa = PBXGroup;
 			children = (
-				B6A5A2A725BAA35500AA7ADA /* WindowManagerStateRestorationTests.swift */,
-				B6A5A29F25B96E8300AA7ADA /* AppStateChangePublisherTests.swift */,
 				1D7693FE2BE3A1AA0016A22B /* DockCustomizerMock.swift */,
 				1DA860712BE3AE950027B813 /* DockPositionProviderTests.swift */,
+				B6A5A2A725BAA35500AA7ADA /* WindowManagerStateRestorationTests.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -10998,9 +11032,9 @@
 			buildRules = (
 			);
 			dependencies = (
+				8417B7CF2D958D5E00C0A379 /* PBXTargetDependency */,
 				7BC3E4312D6DF235009787CD /* PBXTargetDependency */,
 				7BC3E42F2D6DF1F6009787CD /* PBXTargetDependency */,
-				4B5F14FC2A15291D0060320F /* PBXTargetDependency */,
 				31C6E9AD2B0C07BA0086DC30 /* PBXTargetDependency */,
 			);
 			name = "DuckDuckGo Privacy Browser";
@@ -12905,7 +12939,6 @@
 				560C6ED12CCA5C6000D411E2 /* CapturingOnboardingNavigationDelegate.swift in Sources */,
 				3706FDDD293F661700E42796 /* StatisticsLoaderTests.swift in Sources */,
 				3706FDDE293F661700E42796 /* SuggestionViewModelTests.swift in Sources */,
-				1D1D36222D8B7B95005ED60C /* PinnedTabsManagerProviderTests.swift in Sources */,
 				3706FDDF293F661700E42796 /* BookmarkSidebarTreeControllerTests.swift in Sources */,
 				3706FDE0293F661700E42796 /* TabIndexTests.swift in Sources */,
 				9F26060F2B85E17D00819292 /* AddEditBookmarkDialogCoordinatorViewModelTests.swift in Sources */,
@@ -12971,7 +13004,6 @@
 				3706FDFF293F661700E42796 /* AutoconsentMessageProtocolTests.swift in Sources */,
 				3706FE00293F661700E42796 /* FaviconStoringMock.swift in Sources */,
 				3706FE01293F661700E42796 /* PixelStoreMock.swift in Sources */,
-				3706FE02293F661700E42796 /* BookmarksBarViewModelTests.swift in Sources */,
 				3706FE03293F661700E42796 /* CoreDataStoreTests.swift in Sources */,
 				843965162C737022004C8899 /* NSPasteboardExtension.swift in Sources */,
 				1D9FDEC42B9B63C90040B78C /* DataClearingPreferencesTests.swift in Sources */,
@@ -13005,6 +13037,7 @@
 				370E70A32D4691560077D4F3 /* RecentActivityProviderTests.swift in Sources */,
 				3706FE15293F661700E42796 /* PrivacyIconViewModelTests.swift in Sources */,
 				56A0543C2C20878E007D8FAB /* DuckSchemeHandlerTests.swift in Sources */,
+				8417B7D12D958E1400C0A379 /* WindowManagerStateRestorationTests.swift in Sources */,
 				EEEFA3442D142AB1006A3F8A /* CombineTestHelpers.swift in Sources */,
 				370270C12C78EB13002E44E4 /* HomePageSettingsModelTests.swift in Sources */,
 				B68412212B6A30680092F66A /* StringExtensionTests.swift in Sources */,
@@ -13032,7 +13065,6 @@
 				9F39106A2B68D87B00CB5112 /* ProgressExtensionTests.swift in Sources */,
 				9FAD623B2BCFDB32007F3A65 /* WebsiteInfoHelpers.swift in Sources */,
 				56A0542E2C201DAA007D8FAB /* MockContentBlocking.swift in Sources */,
-				3706FE1F293F661700E42796 /* AppStateChangePublisherTests.swift in Sources */,
 				9FA5A0B12BC9039300153786 /* BookmarkFolderStoreMock.swift in Sources */,
 				BBBEE1C02C4FF63600035ABA /* SortBookmarksViewModelTests.swift in Sources */,
 				9F0660792BECC81C00B8EEF1 /* PixelCapturedParameters.swift in Sources */,
@@ -13065,7 +13097,6 @@
 				567A23CF2C80CF4B0010F66C /* ErrorPageTabExtensionTest.swift in Sources */,
 				37D046A22C7DA9A200AEAA50 /* UserBackgroundImagesManagerTests.swift in Sources */,
 				37DB56F02C3B31CD0093D4DC /* MockRemoteMessagingAvailabilityProvider.swift in Sources */,
-				567A23E22C89B1EE0010F66C /* BrowserTabViewControllerOnboardingTests.swift in Sources */,
 				1D8C2FEB2B70F5A7005E4BBD /* MockWebViewSnapshotRenderer.swift in Sources */,
 				56A0540E2C1C375E007D8FAB /* MockWindow.swift in Sources */,
 				37A0BA2E2D747C5C00130447 /* CapturingHistoryViewBookmarksHandler.swift in Sources */,
@@ -13084,7 +13115,6 @@
 				3706FE31293F661700E42796 /* TabCollectionViewModelDelegateMock.swift in Sources */,
 				3706FE32293F661700E42796 /* BookmarksHTMLReaderTests.swift in Sources */,
 				9F0FFFBC2BCCAEC2007C87DD /* AddEditBookmarkFolderDialogViewModelMock.swift in Sources */,
-				3706FE33293F661700E42796 /* FireTests.swift in Sources */,
 				B60C6F8229B1B4AD007BFAA8 /* TestRunHelper.swift in Sources */,
 				567DA94029E8045D008AC5EE /* MockEmailStorage.swift in Sources */,
 				9FBB0C0A2CBD3B800006B6A6 /* ViewHighlighterTests.swift in Sources */,
@@ -13148,7 +13178,6 @@
 				3706FE4E293F661700E42796 /* BookmarkListTests.swift in Sources */,
 				3706FE4F293F661700E42796 /* BookmarksExporterTests.swift in Sources */,
 				566B196629CDB829007E38F4 /* CapturingOptionsButtonMenuDelegate.swift in Sources */,
-				3706FE50293F661700E42796 /* WindowManagerStateRestorationTests.swift in Sources */,
 				3706FE51293F661700E42796 /* SafariBookmarksReaderTests.swift in Sources */,
 				3706FE52293F661700E42796 /* FileSystemDSLTests.swift in Sources */,
 				3706FE53293F661700E42796 /* CoreDataEncryptionTests.swift in Sources */,
@@ -13161,13 +13190,12 @@
 				379857F82D7230CA008773F6 /* UserDefaultsHistoryViewOnboardingViewSettingsPersistorTests.swift in Sources */,
 				379857F62D722E55008773F6 /* HistoryViewOnboardingDeciderTests.swift in Sources */,
 				3706FE56293F661700E42796 /* FaviconManagerMock.swift in Sources */,
-				BBC114662D89E859007A82D8 /* TabCollectionViewModelTests+CloseTabLogic.swift in Sources */,
+				BBC114662D89E859007A82D8 /* TabCollectionViewModelCloseTabLogicTests.swift in Sources */,
 				9F9C49F72BC786790099738D /* MoreOptionsMenu+BookmarksTests.swift in Sources */,
 				3706FE57293F661700E42796 /* LocalPinningManagerTests.swift in Sources */,
 				3706FE58293F661700E42796 /* HistoryStoreTests.swift in Sources */,
 				3706FE59293F661700E42796 /* EncryptionKeyGeneratorTests.swift in Sources */,
 				3706FE5A293F661700E42796 /* GeolocationServiceMock.swift in Sources */,
-				56AC09C82C2D7DD6002D70E0 /* BookmarksBarViewControllerTests.swift in Sources */,
 				3706FE5B293F661700E42796 /* FirefoxLoginReaderTests.swift in Sources */,
 				1D1C36E429FAE8DA001FA40C /* FaviconManagerTests.swift in Sources */,
 				31F25EFF2CC3CA02002F9084 /* AIChatMenuConfigurationTests.swift in Sources */,
@@ -13201,7 +13229,6 @@
 				9F872D9E2B9058D000138637 /* Bookmarks+TabTests.swift in Sources */,
 				3706FE6A293F661700E42796 /* FirefoxKeyReaderTests.swift in Sources */,
 				1DA860732BE3AE950027B813 /* DockPositionProviderTests.swift in Sources */,
-				3706FE6B293F661700E42796 /* AppKitPrivateMethodsAvailabilityTests.swift in Sources */,
 				37CDFC2C2D79CCF400CBB429 /* HistoryViewDataProviderPixelHandlerTests.swift in Sources */,
 				3706FE6D293F661700E42796 /* ChromiumBookmarksReaderTests.swift in Sources */,
 				C1E961F42B87B276001760E1 /* MockAutofillActionPresenter.swift in Sources */,
@@ -13213,10 +13240,10 @@
 				1D9FDEBE2B9B5F0F0040B78C /* CookiePopupProtectionPreferencesTests.swift in Sources */,
 				EEBBEF372CC145BA000CAAF1 /* AutofillCredentialsImportManagerTests.swift in Sources */,
 				028904212A7B25770028369C /* AppConfigurationURLProviderTests.swift in Sources */,
+				8434E6C32DB0175D008FFA3D /* AppearancePreferencesPersistorMock.swift in Sources */,
 				3706FE6F293F661700E42796 /* LocalStatisticsStoreTests.swift in Sources */,
 				31DC2F232BD6E028001354EF /* DataBrokerPrerequisitesStatusVerifierTests.swift in Sources */,
 				37EC31502D8C19270026C348 /* CapturingFaviconImageCache.swift in Sources */,
-				9F3344632BBFBDA40040CBEB /* BookmarksBarVisibilityManagerTests.swift in Sources */,
 				3706FE71293F661700E42796 /* SavedStateMock.swift in Sources */,
 				3706FE72293F661700E42796 /* ClickToLoadTDSTests.swift in Sources */,
 				3706FE73293F661700E42796 /* PermissionManagerMock.swift in Sources */,
@@ -13282,15 +13309,23 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8434E6AF2DB01476008FFA3D /* BookmarksBarViewControllerTests.swift in Sources */,
 				B603971329B9D67E00902A34 /* PublishersExtensions.swift in Sources */,
+				84524C132D79E9B800F723D6 /* FileStoreMock.swift in Sources */,
+				84524C0D2D79E96300F723D6 /* PermissionManagerMock.swift in Sources */,
 				3706FE9F293F662100E42796 /* EncryptionKeyStoreMock.swift in Sources */,
 				84537A092C99C203008723BC /* DeallocationTests.swift in Sources */,
+				84524C072D79E6BB00F723D6 /* FireTests.swift in Sources */,
 				3706FEA0293F662100E42796 /* EncryptionMocks.swift in Sources */,
 				B62A233D29C322BC00D22475 /* NavigationProtectionIntegrationTests.swift in Sources */,
+				8434E6C12DB01683008FFA3D /* ContextualDaxDialogsFactoryTests.swift in Sources */,
 				3706FEA1293F662100E42796 /* TestNavigationDelegate.swift in Sources */,
 				B6EC37DF29B5D05A001ACE79 /* DownloadsIntegrationTests.swift in Sources */,
 				560C6ED32CCA5C8500D411E2 /* CapturingOnboardingNavigationDelegate.swift in Sources */,
+				84524C112D79E9AA00F723D6 /* RecentlyClosedCoordinatorMock.swift in Sources */,
 				B6EC37FD29B83E99001ACE79 /* TestsURLExtension.swift in Sources */,
+				8434E6B12DB01483008FFA3D /* BookmarksBarVisibilityManagerTests.swift in Sources */,
+				8434E6B52DB014AD008FFA3D /* AppKitPrivateMethodsAvailabilityTests.swift in Sources */,
 				B603973529BEF86200902A34 /* HTTPSUpgradeIntegrationTests.swift in Sources */,
 				B644B44029D57299003FA9AB /* SuggestionLoadingMock.swift in Sources */,
 				1D8B7D6B2A38BF060045C6F6 /* FireproofDomainsStoreMock.swift in Sources */,
@@ -13298,18 +13333,25 @@
 				3706FEA3293F662100E42796 /* CoreDataEncryptionTests.swift in Sources */,
 				B60C6F8929B1CAB7007BFAA8 /* TestRunHelperInitializer.m in Sources */,
 				EEEFA3422D142AB1006A3F8A /* CombineTestHelpers.swift in Sources */,
-				560C6ECE2CCA5BCB00D411E2 /* ContextualDaxDialogFactoryIntegrationTests.swift in Sources */,
+				8434E6BF2DB01640008FFA3D /* MockWindow.swift in Sources */,
 				1DA7FEE82D88389D004882E9 /* PinnedTabsManagerProvidingMock.swift in Sources */,
 				560C6ED92CCA5CE700D411E2 /* FindInView.swift in Sources */,
 				B60C6F8B29B1CAC0007BFAA8 /* FileManagerTempDirReplacement.swift in Sources */,
 				3706FEA4293F662100E42796 /* CoreDataTestUtilities.swift in Sources */,
+				8434E6BD2DB01633008FFA3D /* MockBookmarkManager.swift in Sources */,
+				84524C092D79E6EF00F723D6 /* WebsiteDataStoreMock.swift in Sources */,
 				B62A234129C41D4400D22475 /* HistoryIntegrationTests.swift in Sources */,
+				8434E6B32DB0148C008FFA3D /* BookmarksBarViewModelTests.swift in Sources */,
+				84524C152D79E9BF00F723D6 /* SavedStateMock.swift in Sources */,
 				B603973929BF0EBE00902A34 /* PrivacyDashboardIntegrationTests.swift in Sources */,
 				B644B43E29D5682B003FA9AB /* SearchNonexistentDomainTests.swift in Sources */,
 				B6EEDD7E2B8C69E900637EBC /* TabContentTests.swift in Sources */,
 				3706FEA5293F662100E42796 /* CoreDataEncryptionTesting.xcdatamodeld in Sources */,
 				B603973D29BF1D7D00902A34 /* AutoconsentIntegrationTests.swift in Sources */,
+				84AE5B342D95A019002C3B47 /* ContextualDaxDialogFactoryIntegrationTests.swift in Sources */,
 				B60C6F8729B1CAB2007BFAA8 /* TestRunHelper.swift in Sources */,
+				84524C0F2D79E96B00F723D6 /* FaviconManagerMock.swift in Sources */,
+				84524C0B2D79E95C00F723D6 /* HistoryCoordinatingMock.swift in Sources */,
 				CD89DD662C89E0BB0080F9AF /* MaliciousSiteProtectionIntegrationTests.swift in Sources */,
 				B64CE01F2B8622D700126CA5 /* AddressBarTests.swift in Sources */,
 				B603972D29BEDF2100902A34 /* ExpectedNavigationExtension.swift in Sources */,
@@ -13317,8 +13359,12 @@
 				B6F5656A299A414300A04298 /* WKWebViewMockingExtension.swift in Sources */,
 				EEE0E1CD2C32F5690058E148 /* CSVImporterIntegrationTests.swift in Sources */,
 				563A3CFB2D37AE2A001966FD /* ConfigurationManagerIntegrationTests.swift in Sources */,
+				8434E6C62DB01761008FFA3D /* AppearancePreferencesPersistorMock.swift in Sources */,
 				B693766F2B6B5F27005BD9D4 /* ErrorPageTests.swift in Sources */,
+				8434E6B82DB014F0008FFA3D /* BrowserTabViewControllerOnboardingTests.swift in Sources */,
 				56A054362C205820007D8FAB /* OnboardingPageTests.swift in Sources */,
+				8434E6AD2DB01448008FFA3D /* PinnedTabsManagerProviderTests.swift in Sources */,
+				84524C042D79E3F800F723D6 /* AppStateChangePublisherTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -13334,15 +13380,23 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8434E6AE2DB01476008FFA3D /* BookmarksBarViewControllerTests.swift in Sources */,
 				B603971129B9D67E00902A34 /* PublishersExtensions.swift in Sources */,
+				84524C122D79E9B800F723D6 /* FileStoreMock.swift in Sources */,
+				84524C0C2D79E96300F723D6 /* PermissionManagerMock.swift in Sources */,
 				B662D3DF275616FF0035D4D6 /* EncryptionKeyStoreMock.swift in Sources */,
 				84537A082C99C203008723BC /* DeallocationTests.swift in Sources */,
+				84524C062D79E6BB00F723D6 /* FireTests.swift in Sources */,
 				B62A233C29C322BC00D22475 /* NavigationProtectionIntegrationTests.swift in Sources */,
 				B6EC37DE29B5D05A001ACE79 /* DownloadsIntegrationTests.swift in Sources */,
+				8434E6C02DB01683008FFA3D /* ContextualDaxDialogsFactoryTests.swift in Sources */,
 				4B1AD8E225FC390B00261379 /* EncryptionMocks.swift in Sources */,
 				B6EC37FC29B83E99001ACE79 /* TestsURLExtension.swift in Sources */,
 				560C6ED22CCA5C8500D411E2 /* CapturingOnboardingNavigationDelegate.swift in Sources */,
+				84524C102D79E9AA00F723D6 /* RecentlyClosedCoordinatorMock.swift in Sources */,
 				B6DA06E22913AEDC00225DE2 /* TestNavigationDelegate.swift in Sources */,
+				8434E6B02DB01483008FFA3D /* BookmarksBarVisibilityManagerTests.swift in Sources */,
+				8434E6B42DB014AD008FFA3D /* AppKitPrivateMethodsAvailabilityTests.swift in Sources */,
 				B603973429BEF86200902A34 /* HTTPSUpgradeIntegrationTests.swift in Sources */,
 				4B1AD91725FC46FB00261379 /* CoreDataEncryptionTests.swift in Sources */,
 				B644B43F29D57298003FA9AB /* SuggestionLoadingMock.swift in Sources */,
@@ -13350,18 +13404,25 @@
 				B630E7FF29C887ED00363609 /* NSErrorAdditionalInfo.swift in Sources */,
 				7BA4727D26F01BC400EAA165 /* CoreDataTestUtilities.swift in Sources */,
 				EEEFA3432D142AB1006A3F8A /* CombineTestHelpers.swift in Sources */,
-				560C6ECD2CCA5BCB00D411E2 /* ContextualDaxDialogFactoryIntegrationTests.swift in Sources */,
+				8434E6BE2DB01640008FFA3D /* MockWindow.swift in Sources */,
 				1DA7FEE72D88389D004882E9 /* PinnedTabsManagerProvidingMock.swift in Sources */,
 				560C6ED82CCA5CE700D411E2 /* FindInView.swift in Sources */,
 				B60C6F8829B1CAB6007BFAA8 /* TestRunHelperInitializer.m in Sources */,
 				B60C6F8A29B1CABF007BFAA8 /* FileManagerTempDirReplacement.swift in Sources */,
+				8434E6BC2DB01633008FFA3D /* MockBookmarkManager.swift in Sources */,
+				84524C082D79E6EF00F723D6 /* WebsiteDataStoreMock.swift in Sources */,
 				4B1AD92125FC474E00261379 /* CoreDataEncryptionTesting.xcdatamodeld in Sources */,
+				8434E6B22DB0148C008FFA3D /* BookmarksBarViewModelTests.swift in Sources */,
+				84524C142D79E9BF00F723D6 /* SavedStateMock.swift in Sources */,
 				B62A234029C41D4400D22475 /* HistoryIntegrationTests.swift in Sources */,
 				B603973829BF0EBE00902A34 /* PrivacyDashboardIntegrationTests.swift in Sources */,
 				B6EEDD7D2B8C69E900637EBC /* TabContentTests.swift in Sources */,
 				B644B43D29D56829003FA9AB /* SearchNonexistentDomainTests.swift in Sources */,
 				B603973C29BF1D7D00902A34 /* AutoconsentIntegrationTests.swift in Sources */,
+				84AE5B332D95A019002C3B47 /* ContextualDaxDialogFactoryIntegrationTests.swift in Sources */,
 				B60C6F8629B1CAB0007BFAA8 /* TestRunHelper.swift in Sources */,
+				84524C0E2D79E96B00F723D6 /* FaviconManagerMock.swift in Sources */,
+				84524C0A2D79E95C00F723D6 /* HistoryCoordinatingMock.swift in Sources */,
 				CD89DD652C89E0BB0080F9AF /* MaliciousSiteProtectionIntegrationTests.swift in Sources */,
 				B64CE01E2B8622D700126CA5 /* AddressBarTests.swift in Sources */,
 				B603972C29BEDF2100902A34 /* ExpectedNavigationExtension.swift in Sources */,
@@ -13369,8 +13430,12 @@
 				B6F56568299A414300A04298 /* WKWebViewMockingExtension.swift in Sources */,
 				EEE0E1D12C32F8620058E148 /* CSVImporterIntegrationTests.swift in Sources */,
 				563A3CFA2D37AE2A001966FD /* ConfigurationManagerIntegrationTests.swift in Sources */,
+				8434E6C52DB01761008FFA3D /* AppearancePreferencesPersistorMock.swift in Sources */,
 				B693766E2B6B5F27005BD9D4 /* ErrorPageTests.swift in Sources */,
+				8434E6B72DB014F0008FFA3D /* BrowserTabViewControllerOnboardingTests.swift in Sources */,
 				56A054352C20581F007D8FAB /* OnboardingPageTests.swift in Sources */,
+				8434E6AC2DB01448008FFA3D /* PinnedTabsManagerProviderTests.swift in Sources */,
+				84524C032D79E3F800F723D6 /* AppStateChangePublisherTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -14689,6 +14754,7 @@
 			files = (
 				1DB9617A29F1D06D00CF5568 /* InternalUserDeciderMock.swift in Sources */,
 				84B479082CCA7A3E00F40329 /* Logger+UnitTests.swift in Sources */,
+				8434E6C42DB0175D008FFA3D /* AppearancePreferencesPersistorMock.swift in Sources */,
 				9833913327AAAEEE00DAF119 /* EmbeddedTrackerDataTests.swift in Sources */,
 				3776583127F8325B009A6B35 /* AutofillPreferencesTests.swift in Sources */,
 				373B2F852C387B830013A94B /* ActiveRemoteMessageModelTests.swift in Sources */,
@@ -14723,7 +14789,7 @@
 				3730F2102D2E725D00239F96 /* NewTabPageCustomizationProviderTests.swift in Sources */,
 				C17CA7B22B9B5317008EC3C1 /* MockAutofillPopoverPresenter.swift in Sources */,
 				560C6ED62CCA5CE100D411E2 /* FindInView.swift in Sources */,
-				BBC114652D89E859007A82D8 /* TabCollectionViewModelTests+CloseTabLogic.swift in Sources */,
+				BBC114652D89E859007A82D8 /* TabCollectionViewModelCloseTabLogicTests.swift in Sources */,
 				9FA5A0A92BC900FC00153786 /* BookmarkAllTabsDialogViewModelTests.swift in Sources */,
 				B6619F062B17138D00CD9186 /* DataImportSourceViewModelTests.swift in Sources */,
 				4BBF0917282DD6EF00EE1418 /* TemporaryFileHandlerTests.swift in Sources */,
@@ -14766,12 +14832,10 @@
 				56A0540D2C1C375D007D8FAB /* MockWindow.swift in Sources */,
 				567DA93F29E8045D008AC5EE /* MockEmailStorage.swift in Sources */,
 				37CD54B727F1B28A00F1F7B9 /* DefaultBrowserPreferencesTests.swift in Sources */,
-				9F3344622BBFBDA40040CBEB /* BookmarksBarVisibilityManagerTests.swift in Sources */,
 				028904202A7B25380028369C /* AppConfigurationURLProviderTests.swift in Sources */,
 				B65349AA265CF45000DCC645 /* DispatchQueueExtensionsTests.swift in Sources */,
 				858A798A26A9B35E00A75A42 /* PasswordManagementItemModelTests.swift in Sources */,
 				37598F002D5A383A00720EAF /* HistoryViewDataProviderTests.swift in Sources */,
-				56AC09C72C2D7DD6002D70E0 /* BookmarksBarViewControllerTests.swift in Sources */,
 				1D3B1AB92934062B006F4388 /* PasswordManagerCoordinatingMock.swift in Sources */,
 				1D77921828FDC54C00BE0210 /* FaviconReferenceCacheTests.swift in Sources */,
 				FD23FD2B28816606007F6985 /* AutoconsentMessageProtocolTests.swift in Sources */,
@@ -14783,7 +14847,6 @@
 				377D7BC22D0AC7E000ADFD06 /* NewTabPageNextStepsCardsProviderTests.swift in Sources */,
 				7B09CBA92BA4BE8100CF245B /* NetworkProtectionPixelEventTests.swift in Sources */,
 				B6DA441E2616C84600DD1EC2 /* PixelStoreMock.swift in Sources */,
-				4B434690285ED7A100177407 /* BookmarksBarViewModelTests.swift in Sources */,
 				B6BBF1702744CDE1004F850E /* CoreDataStoreTests.swift in Sources */,
 				4B9292BF2667103100AD2C21 /* TreeControllerTests.swift in Sources */,
 				B693956926F352DB0015B914 /* DownloadsWebViewMock.m in Sources */,
@@ -14831,13 +14894,11 @@
 				B6106BB526A809E60013B453 /* GeolocationProviderTests.swift in Sources */,
 				BDA764912BC4E57200D0400C /* MockVPNLocationFormatter.swift in Sources */,
 				B6E6BA232BA2EDDE008AA7E1 /* FileReadResult.swift in Sources */,
-				B6A5A2A025B96E8300AA7ADA /* AppStateChangePublisherTests.swift in Sources */,
 				B63ED0E326B3E7FA00A9DAD1 /* CLLocationManagerMock.swift in Sources */,
 				37CD54BB27F25A4000F1F7B9 /* DownloadsPreferencesTests.swift in Sources */,
 				4BE344EE2B2376DF003FC223 /* UnifiedFeedbackFormViewModelTests.swift in Sources */,
 				37CDFC282D79B96B00CBB429 /* HistoryViewOnboardingViewModelTests.swift in Sources */,
 				373E477D2D809EF5006F3FEC /* AddBookmarkPopoverViewModelTests.swift in Sources */,
-				1D1D36232D8B7B95005ED60C /* PinnedTabsManagerProviderTests.swift in Sources */,
 				9F5E481A2D5D867600D2396D /* NSPasteboardExtensionTests.swift in Sources */,
 				9F872D9D2B9058D000138637 /* Bookmarks+TabTests.swift in Sources */,
 				BBFF355D2C4AF26200DA3289 /* BookmarksSortModeTests.swift in Sources */,
@@ -14870,7 +14931,6 @@
 				4B98D27A28D95F1A003C2B6F /* ChromiumFaviconsReaderTests.swift in Sources */,
 				9F0660732BECC71200B8EEF1 /* SubscriptionAttributionPixelHandlerTests.swift in Sources */,
 				1D9EB3172D43C2CF004B7270 /* WebExtensionPathsCacheMock.swift in Sources */,
-				567A23E12C89B1EE0010F66C /* BrowserTabViewControllerOnboardingTests.swift in Sources */,
 				986189E62A7CFB3E001B4519 /* LocalBookmarkStoreSavingTests.swift in Sources */,
 				AA652CD325DDA6E9009059CC /* LocalBookmarkManagerTests.swift in Sources */,
 				CBDD5DE329A67F2700832877 /* MockConfigurationStore.swift in Sources */,
@@ -14889,7 +14949,6 @@
 				379857F52D722E55008773F6 /* HistoryViewOnboardingDeciderTests.swift in Sources */,
 				5681ED462BDBAF6E00F59729 /* SyncErrorHandlerTests.swift in Sources */,
 				9FBD84772BB3E54200220859 /* InstallationAttributionPixelHandlerTests.swift in Sources */,
-				AA9C363025518CA9004B1BA3 /* FireTests.swift in Sources */,
 				B6106BB126A7D8720013B453 /* PermissionStoreTests.swift in Sources */,
 				4BF4951826C08395000547B8 /* ThirdPartyBrowserTests.swift in Sources */,
 				4B98D27C28D960DD003C2B6F /* FirefoxFaviconsReaderTests.swift in Sources */,
@@ -14947,7 +15006,6 @@
 				859E7D6D274548F2009C2B69 /* BookmarksExporterTests.swift in Sources */,
 				379857F92D7230CA008773F6 /* UserDefaultsHistoryViewOnboardingViewSettingsPersistorTests.swift in Sources */,
 				3745DE082D536EF900024FC8 /* HistoryGroupingProviderTests.swift in Sources */,
-				B6A5A2A825BAA35500AA7ADA /* WindowManagerStateRestorationTests.swift in Sources */,
 				B6AE39F129373AF200C37AA4 /* EmptyAttributionRulesProver.swift in Sources */,
 				4BB99D1126FE1A84001E4761 /* SafariBookmarksReaderTests.swift in Sources */,
 				BBC063E82C5A9E4B007BDC18 /* BookmarkManagementDetailViewModelTests.swift in Sources */,
@@ -15005,10 +15063,10 @@
 				4BA1A6F6258C4F9600F6F690 /* EncryptionMocks.swift in Sources */,
 				56A054162C1C37B0007D8FAB /* CapturingOnboardingNavigation.swift in Sources */,
 				3718FF932D47D9610018F652 /* NewTabPageModeDeciderTests.swift in Sources */,
+				8417B7D02D958E1400C0A379 /* WindowManagerStateRestorationTests.swift in Sources */,
 				9FBD847A2BB3EC3300220859 /* MockAttributionOriginProvider.swift in Sources */,
 				CD3301302C89B602009AA127 /* ErrorPageHTMLFactoryTests.swift in Sources */,
 				4B2975992828285900187C4E /* FirefoxKeyReaderTests.swift in Sources */,
-				B698E5042908011E00A746A8 /* AppKitPrivateMethodsAvailabilityTests.swift in Sources */,
 				56B33CE12D5F58D20062DBC2 /* VPNPreferencesModelTests.swift in Sources */,
 				56D145EE29E6DAD900E3488A /* DataImportProviderTests.swift in Sources */,
 				C11198342C89AEFA00F0272C /* FreemiumDBPFirstProfileSavedNotifierTests.swift in Sources */,
@@ -15129,10 +15187,6 @@
 			isa = PBXTargetDependency;
 			productRef = 4B4D60522A0B29CB00BCD287 /* NetworkProtection */;
 		};
-		4B5F14FC2A15291D0060320F /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			productRef = 4B5F14FB2A15291D0060320F /* InputFilesChecker */;
-		};
 		4B5F14FE2A1529230060320F /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			productRef = 4B5F14FD2A1529230060320F /* InputFilesChecker */;
@@ -15176,6 +15230,10 @@
 			isa = PBXTargetDependency;
 			target = 4B2537592A11BE7300610219 /* NetworkProtectionSystemExtension */;
 			targetProxy = 7BEC18302AD5DA3300D30536 /* PBXContainerItemProxy */;
+		};
+		8417B7CF2D958D5E00C0A379 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = 8417B7CE2D958D5E00C0A379 /* InputFilesChecker */;
 		};
 		9D84E3FB2CD4E66F0046CD8B /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -16377,10 +16435,6 @@
 			package = 4B5235432C7BB14D00AFAF64 /* XCRemoteSwiftPackageReference "wireguard-apple" */;
 			productName = WireGuard;
 		};
-		4B5F14FB2A15291D0060320F /* InputFilesChecker */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = "plugin:InputFilesChecker";
-		};
 		4B5F14FD2A1529230060320F /* InputFilesChecker */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = "plugin:InputFilesChecker";
@@ -16974,6 +17028,10 @@
 		7BEEA5152AD1236E00A9E72B /* NetworkProtectionUI */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = NetworkProtectionUI;
+		};
+		8417B7CE2D958D5E00C0A379 /* InputFilesChecker */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = "plugin:InputFilesChecker";
 		};
 		84B49F0C2CB10F0900FF08BB /* OHHTTPStubs */ = {
 			isa = XCSwiftPackageProductDependency;

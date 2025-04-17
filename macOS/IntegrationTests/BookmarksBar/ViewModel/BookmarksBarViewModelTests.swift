@@ -152,3 +152,12 @@ final class BookmarksBarViewModelDelegateMock: BookmarksBarViewModelDelegate {
     func showDialog(_ dialog: any DuckDuckGo_Privacy_Browser.ModalView) {}
 
 }
+
+private extension Bookmark {
+
+    static var mock: Bookmark = Bookmark(id: UUID().uuidString,
+                                         url: URL.duckDuckGo.absoluteString,
+                                         title: "Title",
+                                         isFavorite: false)
+
+}

@@ -90,7 +90,9 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
             self?.syncPromoManager.dismissPromoFor(.bookmarks)
         })
 
-        let headerView = SyncPromoView(viewModel: model, layout: .auto(verticalLayoutTopPadding: 0))
+        let headerView = SyncPromoView(viewModel: model,
+                                       layout: .auto(verticalLayoutTopPadding: 0),
+                                       autoLayoutWidthThreshold: 525)
 
         let hostingView = NSHostingView(rootView: headerView)
         hostingView.translatesAutoresizingMaskIntoConstraints = false
@@ -146,13 +148,9 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         view.addSubview(searchBar)
 
         toolbarButtonsStackView.addArrangedSubview(newBookmarkButton)
-        newBookmarkButton.setContentHuggingPriority(.init(100), for: .horizontal)
         toolbarButtonsStackView.addArrangedSubview(newFolderButton)
-        newFolderButton.setContentHuggingPriority(.init(200), for: .horizontal)
         toolbarButtonsStackView.addArrangedSubview(deleteItemsButton)
-        deleteItemsButton.setContentHuggingPriority(.init(300), for: .horizontal)
         toolbarButtonsStackView.addArrangedSubview(sortItemsButton)
-        sortItemsButton.setContentHuggingPriority(.init(400), for: .horizontal)
         toolbarButtonsStackView.translatesAutoresizingMaskIntoConstraints = false
         toolbarButtonsStackView.distribution = .fill
         toolbarButtonsStackView.setClippingResistancePriority(.defaultHigh, for: .horizontal)
@@ -292,11 +290,12 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
             newBookmarkButton.heightAnchor.constraint(equalToConstant: 24),
             newBookmarkButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 24),
             newFolderButton.heightAnchor.constraint(equalToConstant: 24),
-            newFolderButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 24),
             deleteItemsButton.heightAnchor.constraint(equalToConstant: 24),
-            deleteItemsButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 24),
             sortItemsButton.heightAnchor.constraint(equalToConstant: 24),
-            sortItemsButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 24),
+
+            newBookmarkButton.widthAnchor.constraint(equalTo: newFolderButton.widthAnchor).priority(.defaultLow),
+            newFolderButton.widthAnchor.constraint(equalTo: deleteItemsButton.widthAnchor).priority(.defaultLow),
+            deleteItemsButton.widthAnchor.constraint(equalTo: sortItemsButton.widthAnchor).priority(.defaultLow),
 
             emptyStateMessage.centerXAnchor.constraint(equalTo: emptyState.centerXAnchor),
 

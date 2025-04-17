@@ -1129,20 +1129,17 @@ protocol NewWindowPolicyDecisionMaker {
 extension Tab {
     static let crashTabMenuOptionTitle = "Crash Tab"
 
+    private enum Selector {
+        static let killWebContentProcess = NSSelectorFromString("_killWebContentProcess")
+    }
+
     var canKillWebContentProcess: Bool {
-        !NSApp.isSandboxed && featureFlagger.isFeatureOn(.tabCrashDebugTools)
+        featureFlagger.isFeatureOn(.tabCrashDebugTools)
     }
 
     func killWebContentProcess() {
-        guard let pid = webView.value(forKey: "_webProcessIdentifier") as? Int32 else {
-            return
-        }
-
-        Task.detached {
-            let task = Process()
-            task.launchPath = "/bin/kill"
-            task.arguments = [String(pid)]
-            try? task.run()
+        if webView.responds(to: Selector.killWebContentProcess) {
+            webView.perform(Selector.killWebContentProcess)
         }
     }
 }

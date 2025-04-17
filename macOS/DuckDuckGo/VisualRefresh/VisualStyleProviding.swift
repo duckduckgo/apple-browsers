@@ -40,6 +40,7 @@ protocol VisualStyleProviding {
     var fireButtonStyleProvider: FireButtonIconStyleProviding { get }
     var moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding { get }
     var privacyShieldStyleProvider: PrivacyShieldAddressBarStyleProviding { get }
+    var addressBarIconsProvider: AddressBarIconsProviding { get }
 }
 
 protocol VisualStyleManagerProviding {
@@ -91,6 +92,7 @@ struct VisualStyle: VisualStyleProviding {
     let fireButtonStyleProvider: FireButtonIconStyleProviding
     let moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding
     let privacyShieldStyleProvider: PrivacyShieldAddressBarStyleProviding
+    let addressBarIconsProvider: AddressBarIconsProviding
 
     func addressBarHeight(for type: AddressBarSizeClass) -> CGFloat {
         switch type {
@@ -138,7 +140,8 @@ struct VisualStyle: VisualStyleProviding {
                            vpnNavigationIconsProvider: NavigationBarIconProvider(),
                            fireButtonStyleProvider: LegacyFireButtonIconStyleProvider(),
                            moreOptionsMenuIconsProvider: LegacyMoreOptionsMenuIcons(),
-                           privacyShieldStyleProvider: LegacyPrivacyShieldAddressBarStyleProvider())
+                           privacyShieldStyleProvider: LegacyPrivacyShieldAddressBarStyleProvider(),
+                           addressBarIconsProvider: LegacyAddressBarIconsProvider())
     }
 
     static var current: VisualStyleProviding {
@@ -163,7 +166,8 @@ struct VisualStyle: VisualStyleProviding {
                            vpnNavigationIconsProvider: NewVPNNavigationBarIconProvider(),
                            fireButtonStyleProvider: NewFireButtonIconStyleProvider(),
                            moreOptionsMenuIconsProvider: NewMoreOptionsMenuIcons(),
-                           privacyShieldStyleProvider: NewPrivacyShieldAddressBarStyleProvider())
+                           privacyShieldStyleProvider: NewPrivacyShieldAddressBarStyleProvider(),
+                           addressBarIconsProvider: NewAddressBarIconsProvider())
     }
 }
 

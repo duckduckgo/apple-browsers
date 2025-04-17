@@ -832,13 +832,13 @@ final class AddressBarButtonsViewController: NSViewController {
         if let url = tabViewModel?.tab.content.userEditableUrl,
            isUrlBookmarked || bookmarkManager.isAnyUrlVariantBookmarked(url: url)
         {
-            bookmarkButton.image = .bookmarkFilled
+            bookmarkButton.image = visualStyleManager.style.addressBarIconsProvider.bookmarkFilledIcon
             bookmarkButton.mouseOverTintColor = NSColor.bookmarkFilledTint
             bookmarkButton.toolTip = UserText.editBookmarkTooltip
             bookmarkButton.setAccessibilityValue("Bookmarked")
         } else {
             bookmarkButton.mouseOverTintColor = nil
-            bookmarkButton.image = .bookmark
+            bookmarkButton.image = visualStyleManager.style.addressBarIconsProvider.addBookmarkIcon
             bookmarkButton.contentTintColor = nil
             bookmarkButton.toolTip = UserText.addBookmarkTooltip
             bookmarkButton.setAccessibilityValue("Unbookmarked")

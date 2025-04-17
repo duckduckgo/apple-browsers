@@ -41,12 +41,12 @@ struct CookieAnimationView: View {
         Group {
             ZStack(alignment: .center) {
                 Group {
-                    Image(.cookie)
+                    Image(nsImage: animationModel.addressBarIconsProvider.cookiesIcon)
                         .resizable()
                         .foregroundColor(.primary)
                         .opacity(cookieAlpha)
 
-                      Image(.cookieBite)
+                    Image(nsImage: animationModel.addressBarIconsProvider.cookiesBiteIcon)
                         .resizable()
                         .foregroundColor(.primary)
                         .opacity(bittenCookieAlpha)

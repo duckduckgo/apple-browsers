@@ -17,7 +17,6 @@
 //
 
 enum BookmarksEmptyStateContent {
-    case loading
     case noBookmarks
     case noSearchResults
 
@@ -37,7 +36,6 @@ enum BookmarksEmptyStateContent {
         switch self {
         case .noBookmarks: UserText.bookmarksEmptyStateTitle
         case .noSearchResults: UserText.bookmarksEmptySearchResultStateTitle
-        case .loading: ""
         }
     }
 
@@ -45,7 +43,6 @@ enum BookmarksEmptyStateContent {
         switch self {
         case .noBookmarks: UserText.bookmarksEmptyStateMessage
         case .noSearchResults: UserText.bookmarksEmptySearchResultStateMessage
-        case .loading: ""
         }
     }
 
@@ -53,7 +50,6 @@ enum BookmarksEmptyStateContent {
         switch self {
         case .noBookmarks: .bookmarksEmpty
         case .noSearchResults: .bookmarkEmptySearch
-        case .loading: nil
         }
     }
 
@@ -61,7 +57,6 @@ enum BookmarksEmptyStateContent {
         switch self {
         case .noBookmarks: false
         case .noSearchResults: true
-        case .loading: true
         }
     }
 }

@@ -19,6 +19,7 @@
 import Foundation
 
 enum BookmarksContentState: Equatable {
+    case loading
     case empty(emptyState: BookmarksEmptyStateContent)
     case nonEmpty
 }
@@ -44,8 +45,10 @@ final class BookmarkManagementDetailViewModel {
     }
 
     var contentState: BookmarksContentState {
-        if bookmarkManager.list?.topLevelEntities.isEmpty ?? true {
-            return .empty(emptyState: bookmarkManager.isLoading ? .loading : .noBookmarks)
+        if bookmarkManager.isLoading {
+            return .loading
+        } else if bookmarkManager.list?.topLevelEntities.isEmpty ?? true {
+            return .empty(emptyState: .noBookmarks)
         } else if !searchQuery.isEmpty && visibleBookmarks.isEmpty {
             return .empty(emptyState: .noSearchResults)
         }

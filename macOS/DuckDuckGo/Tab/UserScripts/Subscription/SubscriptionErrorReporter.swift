@@ -83,7 +83,7 @@ struct DefaultSubscriptionErrorReporter: SubscriptionErrorReporter {
         case .failedToGetSubscriptionOptions: break
         case .failedToSetSubscription: break
         case .failedToRestorePastPurchase: break
-        case .subscriptionNotFound:
+        case .subscriptionNotFound: // also for stripe products not found
             PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreFailureNotFound, frequency: .legacyDailyAndCount)
         case .subscriptionExpired: break
         case .hasActiveSubscription: break
@@ -91,7 +91,8 @@ struct DefaultSubscriptionErrorReporter: SubscriptionErrorReporter {
         case .accountCreationFailed:
             PixelKit.fire(PrivacyProPixel.privacyProPurchaseFailureAccountNotCreated, frequency: .legacyDailyAndCount)
         case .activeSubscriptionAlreadyPresent: break
-        case .generalError: break
+        case .generalError:
+            PixelKit.fire(PrivacyProPixel.privacyProPurchaseFailureOther, frequency: .legacyDailyAndCount)
         }
     }
 }

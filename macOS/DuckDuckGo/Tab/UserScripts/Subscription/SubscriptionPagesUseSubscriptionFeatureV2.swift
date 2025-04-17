@@ -480,7 +480,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
     // MARK: - UI interactions
 
     func showSomethingWentWrongAlert() async {
-        PixelKit.fire(PrivacyProPixel.privacyProPurchaseFailureOther, frequency: .legacyDailyAndCount)
         switch await uiHandler.dismissProgressViewAndShow(alertType: .somethingWentWrong, text: nil) {
         case .alertFirstButtonReturn:
             let url = subscriptionManager.url(for: .purchase)

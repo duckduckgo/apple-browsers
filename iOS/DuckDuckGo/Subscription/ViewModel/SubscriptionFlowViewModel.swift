@@ -177,14 +177,9 @@ final class SubscriptionFlowViewModel: ObservableObject {
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
             state.transactionError = .generalError
         case .generalError:
-            state.transactionError = .generalError
-        }
-
-        if state.transactionError != .hasActiveSubscription &&
-           state.transactionError != .cancelledByUser {
-            // The observer of `transactionError` does the same calculation, if the error is anything else than .hasActiveSubscription then shows a "Something went wrong" alert
             DailyPixel.fireDailyAndCount(pixel: .privacyProPurchaseFailureOther,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+            state.transactionError = .generalError
         }
     }
     

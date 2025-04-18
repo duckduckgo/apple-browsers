@@ -24,6 +24,7 @@ import XCTest
 
 @testable import MaliciousSiteProtection
 
+@available(iOS 16, macOS 13, *)
 class MaliciousSiteProtectionUpdateManagerTests: XCTestCase {
 
     var updateManager: MaliciousSiteProtection.UpdateManager!
@@ -525,7 +526,7 @@ class MaliciousSiteProtectionUpdateManagerTests: XCTestCase {
         XCTAssertEqual(updateManagerInfoStore.lastHashPrefixSetsUpdateDate, .distantPast)
 
         // WHEN
-        try await updateManager.updateData(datasetType: .hashPrefixSet).value
+        await updateManager.updateData(datasetType: .hashPrefixSet).value
 
         // THEN
         XCTAssertNotEqual(updateManagerInfoStore.lastHashPrefixSetsUpdateDate, .distantPast)
@@ -536,7 +537,7 @@ class MaliciousSiteProtectionUpdateManagerTests: XCTestCase {
         XCTAssertEqual(updateManagerInfoStore.lastFilterSetsUpdateDate, .distantPast)
 
         // WHEN
-        try await updateManager.updateData(datasetType: .filterSet).value
+        await updateManager.updateData(datasetType: .filterSet).value
 
         // THEN
         XCTAssertNotEqual(updateManagerInfoStore.lastFilterSetsUpdateDate, .distantPast)
@@ -545,11 +546,11 @@ class MaliciousSiteProtectionUpdateManagerTests: XCTestCase {
     func testWhenUpdateDataForDatasetTypeIsCalled_AndTypeIsHashPrefix_AndDatasetIsNotUpdated_ThenDoNotSaveUpdateDate() async throws {
         // GIVEN
         dataManager = MockMaliciousSiteProtectionDataManager(storeDatasetSuccess: false)
-        updateManager = MaliciousSiteProtection.UpdateManager(apiClient: apiClient, dataManager: dataManager, updateInfoStorage: updateManagerInfoStore, updateIntervalProvider: { self.updateIntervalProvider($0) })
+        updateManager = MaliciousSiteProtection.UpdateManager(apiClient: apiClient, dataManager: dataManager, eventMapping: mockEventMapping, updateInfoStorage: updateManagerInfoStore, updateIntervalProvider: { self.updateIntervalProvider($0) }, supportedThreatsProvider: { return self.isScamProtectionSupported ? ThreatKind.allCases : ThreatKind.allCases.filter { $0 != .scam } })
         XCTAssertEqual(updateManagerInfoStore.lastHashPrefixSetsUpdateDate, .distantPast)
 
         // WHEN
-        try await updateManager.updateData(datasetType: .hashPrefixSet).value
+        await updateManager.updateData(datasetType: .hashPrefixSet).value
 
         // THEN
         XCTAssertEqual(updateManagerInfoStore.lastHashPrefixSetsUpdateDate, .distantPast)
@@ -558,11 +559,11 @@ class MaliciousSiteProtectionUpdateManagerTests: XCTestCase {
     func testWhenUpdateDataForDatasetTypeIsCalled_AndTypeIsFilterSet_AndDatasetIsNotUpdated_ThenDoNotSaveUpdateDate() async throws {
         // GIVEN
         dataManager = MockMaliciousSiteProtectionDataManager(storeDatasetSuccess: false)
-        updateManager = MaliciousSiteProtection.UpdateManager(apiClient: apiClient, dataManager: dataManager, updateInfoStorage: updateManagerInfoStore, updateIntervalProvider: { self.updateIntervalProvider($0) })
+        updateManager = MaliciousSiteProtection.UpdateManager(apiClient: apiClient, dataManager: dataManager, eventMapping: mockEventMapping, updateInfoStorage: updateManagerInfoStore, updateIntervalProvider: { self.updateIntervalProvider($0) }, supportedThreatsProvider: { return self.isScamProtectionSupported ? ThreatKind.allCases : ThreatKind.allCases.filter{ $0 != .scam } })
         XCTAssertEqual(updateManagerInfoStore.lastFilterSetsUpdateDate, .distantPast)
 
         // WHEN
-        try await updateManager.updateData(datasetType: .hashPrefixSet).value
+        await updateManager.updateData(datasetType: .hashPrefixSet).value
 
         // THEN
         XCTAssertEqual(updateManagerInfoStore.lastFilterSetsUpdateDate, .distantPast)

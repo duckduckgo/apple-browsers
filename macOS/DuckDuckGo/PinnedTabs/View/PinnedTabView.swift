@@ -127,6 +127,15 @@ struct PinnedTabView: View, DropDelegate {
             guard let model = model else { return }
             collectionModel?.close(model)
         }
+
+        if model.canKillWebContentProcess {
+            Divider()
+            Button { [weak model] in
+                model?.killWebContentProcess()
+            } label: {
+                Text(verbatim: Tab.crashTabMenuOptionTitle)
+            }
+        }
     }
 
     @ViewBuilder

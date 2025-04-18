@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
+import Common
 import ObjectiveC
-import WebKit
+
 @testable import DuckDuckGo_Privacy_Browser
 
 @available(macOS 12.0, *)
@@ -46,9 +47,26 @@ extension WKWebView {
 
 }
 
+@available(macOS 12.0, *)
 class TestSchemeHandler: NSObject, WKURLSchemeHandler {
 
-    var middleware = [(URLRequest) -> WKURLSchemeTaskHandler?]()
+    var middleware: [(URLRequest) -> WKURLSchemeTaskHandler?]
+
+    init(middleware: ((URLRequest) -> WKURLSchemeTaskHandler?)? = nil) {
+        self.middleware = middleware.map { [$0] } ?? []
+    }
+
+    func webViewConfiguration(withCustomSchemeHandlersFor navigationalSchemes: [URL.NavigationalScheme] = [.http, .https]) -> WKWebViewConfiguration {
+        WKWebView.customHandlerSchemes = WKWebView.customHandlerSchemes.union(navigationalSchemes)
+
+        let webViewConfiguration = WKWebViewConfiguration()
+
+        // mock WebView https protocol handling
+        webViewConfiguration.setURLSchemeHandler(self, forURLScheme: URL.NavigationalScheme.http.rawValue)
+        webViewConfiguration.setURLSchemeHandler(self, forURLScheme: URL.NavigationalScheme.https.rawValue)
+
+        return webViewConfiguration
+    }
 
     func webView(_ webView: WKWebView, start urlSchemeTask: WKURLSchemeTask) {
         for middleware in middleware {
@@ -61,6 +79,10 @@ class TestSchemeHandler: NSObject, WKURLSchemeHandler {
     }
 
     func webView(_ webView: WKWebView, stop urlSchemeTask: WKURLSchemeTask) {}
+
+    deinit {
+        WKWebView.customHandlerSchemes = []
+    }
 }
 
 struct WKURLSchemeTaskHandler {

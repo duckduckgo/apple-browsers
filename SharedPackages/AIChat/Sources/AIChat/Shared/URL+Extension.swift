@@ -17,7 +17,6 @@
 //  limitations under the License.
 //
 
-#if os(iOS)
 import Foundation
 
 extension URL {
@@ -92,4 +91,3 @@ extension URL {
         return bangValues.contains { value.hasPrefix($0) }
     }
 }
-#endif

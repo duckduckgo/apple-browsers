@@ -21,6 +21,7 @@ import Combine
 import Common
 import os.log
 import BrowserServicesKit
+import AIChat
 
 @MainActor
 protocol WindowControllersManagerProtocol {
@@ -173,7 +174,7 @@ extension WindowControllersManager {
         case .newTabUnselected:
             tabCollectionViewModel?.insertOrAppendNewTab(.contentFromURL(url.wrappedValue, source: .ui), selected: false)
         case .sameTab:
-            if let currentURL = tabCollectionViewModel?.selectedTab?.url, currentURL.isAIChatURL {
+            if let currentURL = tabCollectionViewModel?.selectedTab?.url, currentURL.isDuckAIURL {
                 if hasPrompt {
                     tabCollectionViewModel?.selectedTab?.reload()
                 }

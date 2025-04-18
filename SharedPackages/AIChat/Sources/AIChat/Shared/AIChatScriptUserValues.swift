@@ -78,19 +78,19 @@ public struct AIChatNativeConfigValues: Codable {
 
     public static var defaultValues: AIChatNativeConfigValues {
 #if os(iOS)
-        AIChatNativeConfigValues(isAIChatHandoffEnabled: true,
-                                 platform: Platform.name,
-                                 supportsClosingAIChat: true,
-                                 supportsOpeningSettings: true,
-                                 supportsNativePrompt: false)
+        return AIChatNativeConfigValues(isAIChatHandoffEnabled: true,
+                                        platform: Platform.name,
+                                        supportsClosingAIChat: true,
+                                        supportsOpeningSettings: true,
+                                        supportsNativePrompt: false)
 #endif
 
 #if os(macOS)
-        AIChatNativeConfigValues(isAIChatHandoffEnabled: false,
-                                 platform: Platform.name,
-                                 supportsClosingAIChat: true,
-                                 supportsOpeningSettings: true,
-                                 supportsNativePrompt: true)
+        return AIChatNativeConfigValues(isAIChatHandoffEnabled: false,
+                                        platform: Platform.name,
+                                        supportsClosingAIChat: true,
+                                        supportsOpeningSettings: true,
+                                        supportsNativePrompt: true)
 #endif
     }
 }

@@ -1,5 +1,6 @@
 //
-//  AIChatURL.swift
+//  AIChatRemoteSettingsProvider.swift
+//  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,16 +17,15 @@
 //  limitations under the License.
 //
 
-import AIChat
+#if os(macOS)
+import Foundation
 
-/// A type-safe wrapper for AIChat URLs, allowing them to be used as parameters without directly handling raw URL strings.
-/// This struct ensures that the URL is always retrieved from a consistent and reliable source, defined by the `AIChatRemoteSettingsProvider`.
-struct AIChatURL {
-    private let settings: AIChatRemoteSettingsProvider
-
-    init(settings: AIChatRemoteSettingsProvider = AIChatRemoteSettings()) {
-        self.settings = settings
-    }
-
-    var wrappedValue: URL { settings.aiChatURL }
+public protocol AIChatRemoteSettingsProvider {
+    var onboardingCookieName: String { get }
+    var onboardingCookieDomain: String { get }
+    var aiChatURLIdentifiableQuery: String { get }
+    var aiChatURLIdentifiableQueryValue: String { get }
+    var aiChatURL: URL { get }
+    var isAIChatEnabled: Bool { get }
 }
+#endif

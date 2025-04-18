@@ -164,22 +164,22 @@ extension WindowControllersManager {
     ///             Defaults to `.sameTab`.
     ///   - hasPrompt: If `true` and the current tab is an AI chat, reloads the tab. Ignored if `target` is `.newTabSelected`
     ///                or `.newTabUnselected`. Defaults to `false`.
-    func openAIChat(_ url: AIChatURL, target: AIChatTabOpenerTarget = .sameTab, hasPrompt: Bool = false) {
+    func openAIChat(_ url: URL, target: AIChatTabOpenerTarget = .sameTab, hasPrompt: Bool = false) {
 
         let tabCollectionViewModel = mainWindowController?.mainViewController.tabCollectionViewModel
 
         switch target {
         case .newTabSelected:
-            tabCollectionViewModel?.insertOrAppendNewTab(.contentFromURL(url.wrappedValue, source: .ui), selected: true)
+            tabCollectionViewModel?.insertOrAppendNewTab(.contentFromURL(url, source: .ui), selected: true)
         case .newTabUnselected:
-            tabCollectionViewModel?.insertOrAppendNewTab(.contentFromURL(url.wrappedValue, source: .ui), selected: false)
+            tabCollectionViewModel?.insertOrAppendNewTab(.contentFromURL(url, source: .ui), selected: false)
         case .sameTab:
             if let currentURL = tabCollectionViewModel?.selectedTab?.url, currentURL.isDuckAIURL {
                 if hasPrompt {
                     tabCollectionViewModel?.selectedTab?.reload()
                 }
             } else {
-                show(url: url.wrappedValue, source: .ui, newTab: false)
+                show(url: url, source: .ui, newTab: false)
             }
         }
     }

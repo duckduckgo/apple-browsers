@@ -16,9 +16,11 @@
 //  limitations under the License.
 //
 
+#if os(macOS)
 import Combine
+import Foundation
 
-protocol AIChatPreferencesStorage {
+public protocol AIChatPreferencesStorage {
     var showShortcutInApplicationMenu: Bool { get set }
     var showShortcutInApplicationMenuPublisher: AnyPublisher<Bool, Never> { get }
 
@@ -28,38 +30,35 @@ protocol AIChatPreferencesStorage {
     func reset()
 }
 
-struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
+public struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
     private let userDefaults: UserDefaults
-    private let pinningManager: PinningManager
     private let notificationCenter: NotificationCenter
 
-    var showShortcutInApplicationMenuPublisher: AnyPublisher<Bool, Never> {
+    public var showShortcutInApplicationMenuPublisher: AnyPublisher<Bool, Never> {
         userDefaults.showAIChatShortcutInApplicationMenuPublisher
     }
 
-    var showShortcutInAddressBarPublisher: AnyPublisher<Bool, Never> {
+    public var showShortcutInAddressBarPublisher: AnyPublisher<Bool, Never> {
         userDefaults.showAIChatShortcutInAddressBarPublisher
     }
 
-    init(userDefaults: UserDefaults = .standard,
-         pinningManager: PinningManager = LocalPinningManager.shared,
+    public init(userDefaults: UserDefaults = .standard,
          notificationCenter: NotificationCenter = .default) {
         self.userDefaults = userDefaults
-        self.pinningManager = pinningManager
         self.notificationCenter = notificationCenter
     }
 
-    var showShortcutInApplicationMenu: Bool {
+    public var showShortcutInApplicationMenu: Bool {
         get { userDefaults.showAIChatShortcutInApplicationMenu }
         set { userDefaults.showAIChatShortcutInApplicationMenu = newValue }
     }
 
-    var showShortcutInAddressBar: Bool {
+    public var showShortcutInAddressBar: Bool {
         get { userDefaults.showAIChatShortcutInAddressBar }
         set { userDefaults.showAIChatShortcutInAddressBar = newValue }
     }
 
-    func reset() {
+    public func reset() {
         userDefaults.showAIChatShortcutInApplicationMenu = UserDefaults.showAIChatShortcutInApplicationMenuDefaultValue
         userDefaults.showAIChatShortcutInAddressBar = UserDefaults.showAIChatShortcutInAddressBarDefaultValue
     }
@@ -104,3 +103,4 @@ private extension UserDefaults {
         publisher(for: \.showAIChatShortcutInAddressBar).eraseToAnyPublisher()
     }
 }
+#endif

@@ -1,5 +1,6 @@
 //
 //  AIChatPromptHandlerTests.swift
+//  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,7 +18,7 @@
 //
 
 import XCTest
-@testable import DuckDuckGo_Privacy_Browser
+@testable import AIChat
 
 final class AIChatPromptHandlerTests: XCTestCase {
 

@@ -199,7 +199,6 @@
 		31C138A827A3E9C900FFD4B2 /* URLDownloadSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C138A727A3E9C900FFD4B2 /* URLDownloadSession.swift */; };
 		31C138AC27A403CB00FFD4B2 /* DownloadManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C138AB27A403CB00FFD4B2 /* DownloadManagerTests.swift */; };
 		31C138B227A4097800FFD4B2 /* DownloadTestsHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C138B127A4097800FFD4B2 /* DownloadTestsHelper.swift */; };
-		31C3149E2D2EEB44009A412A /* AIChatScriptUserValues.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C3149B2D2EEB44009A412A /* AIChatScriptUserValues.swift */; };
 		31C3149F2D2EEB44009A412A /* AIChatUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C3149C2D2EEB44009A412A /* AIChatUserScript.swift */; };
 		31C314A02D2EEB44009A412A /* AIChatUserScriptHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C3149D2D2EEB44009A412A /* AIChatUserScriptHandling.swift */; };
 		31C314A22D2EF614009A412A /* AIChatViewControllerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C314A12D2EF60A009A412A /* AIChatViewControllerManager.swift */; };
@@ -1807,7 +1806,6 @@
 		31C138A727A3E9C900FFD4B2 /* URLDownloadSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLDownloadSession.swift; sourceTree = "<group>"; };
 		31C138AB27A403CB00FFD4B2 /* DownloadManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadManagerTests.swift; sourceTree = "<group>"; };
 		31C138B127A4097800FFD4B2 /* DownloadTestsHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadTestsHelper.swift; sourceTree = "<group>"; };
-		31C3149B2D2EEB44009A412A /* AIChatScriptUserValues.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatScriptUserValues.swift; sourceTree = "<group>"; };
 		31C3149C2D2EEB44009A412A /* AIChatUserScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatUserScript.swift; sourceTree = "<group>"; };
 		31C3149D2D2EEB44009A412A /* AIChatUserScriptHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatUserScriptHandling.swift; sourceTree = "<group>"; };
 		31C314A12D2EF60A009A412A /* AIChatViewControllerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatViewControllerManager.swift; sourceTree = "<group>"; };
@@ -4312,7 +4310,6 @@
 		31C314A32D2EF9DF009A412A /* UserScript */ = {
 			isa = PBXGroup;
 			children = (
-				31C3149B2D2EEB44009A412A /* AIChatScriptUserValues.swift */,
 				31C3149C2D2EEB44009A412A /* AIChatUserScript.swift */,
 				31C3149D2D2EEB44009A412A /* AIChatUserScriptHandling.swift */,
 			);
@@ -9477,7 +9474,6 @@
 				85E58C2C28FDA94F006A801A /* FavoritesViewController.swift in Sources */,
 				1E8AD1CF27C000A000ABA377 /* CompleteDownloadRow.swift in Sources */,
 				98D98A8F25ED952F00D8E3DF /* BrowsingMenuButton.swift in Sources */,
-				31C3149E2D2EEB44009A412A /* AIChatScriptUserValues.swift in Sources */,
 				31C3149F2D2EEB44009A412A /* AIChatUserScript.swift in Sources */,
 				31C314A02D2EEB44009A412A /* AIChatUserScriptHandling.swift in Sources */,
 				6FB1FEA22C256ACD0075B68B /* NewTabPageManager.swift in Sources */,

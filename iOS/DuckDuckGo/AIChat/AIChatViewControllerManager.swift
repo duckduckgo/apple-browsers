@@ -147,7 +147,7 @@ extension AIChatViewControllerManager: RoundedPageSheetContainerViewControllerDe
 
 extension AIChatViewControllerManager: AIChatUserScriptDelegate {
 
-    func aiChatUserScript(_ userScript: AIChatUserScript, didReceiveMessage message: AIChatUserScript.MessageName) {
+    func aiChatUserScript(_ userScript: AIChatUserScript, didReceiveMessage message: AIChatUserScriptMessages) {
         switch message {
         case .openAIChatSettings:
             chatViewController?.dismiss(animated: true) { [weak self] in

@@ -18,12 +18,11 @@
 //
 
 import Foundation
-import AIChat
 
 public struct AIChatNativeHandoffData: Codable {
-    let isAIChatHandoffEnabled: Bool
-    let platform: String
-    let aiChatPayload: AIChatPayload?
+    public let isAIChatHandoffEnabled: Bool
+    public let platform: String
+    public let aiChatPayload: AIChatPayload?
 
     enum CodingKeys: String, CodingKey {
         case isAIChatHandoffEnabled
@@ -35,6 +34,12 @@ public struct AIChatNativeHandoffData: Codable {
         self.isAIChatHandoffEnabled = isAIChatHandoffEnabled
         self.platform = platform
         self.aiChatPayload = aiChatPayload
+    }
+
+    public static func defaultValuesWithPayload(_ payload: AIChatPayload?) -> AIChatNativeHandoffData {
+        AIChatNativeHandoffData(isAIChatHandoffEnabled: true,
+                                platform: Platform.name,
+                                aiChatPayload: payload)
     }
 
     public init(from decoder: Decoder) throws {
@@ -65,8 +70,52 @@ public struct AIChatNativeHandoffData: Codable {
 }
 
 public struct AIChatNativeConfigValues: Codable {
-    let isAIChatHandoffEnabled: Bool
-    let platform: String
-    let supportsClosingAIChat: Bool
-    let supportsOpeningSettings: Bool
+    public let isAIChatHandoffEnabled: Bool
+    public let platform: String
+    public let supportsClosingAIChat: Bool
+    public let supportsOpeningSettings: Bool
+    public let supportsNativePrompt: Bool
+
+    public static var defaultValues: AIChatNativeConfigValues {
+#if os(iOS)
+        AIChatNativeConfigValues(isAIChatHandoffEnabled: true,
+                                 platform: Platform.name,
+                                 supportsClosingAIChat: true,
+                                 supportsOpeningSettings: true,
+                                 supportsNativePrompt: false)
+#endif
+
+#if os(macOS)
+        AIChatNativeConfigValues(isAIChatHandoffEnabled: false,
+                                 platform: Platform.name,
+                                 supportsClosingAIChat: true,
+                                 supportsOpeningSettings: true,
+                                 supportsNativePrompt: true)
+#endif
+    }
+}
+
+public struct AIChatNativePrompt: Codable {
+    public struct Query: Codable {
+        public let prompt: String
+        public let autoSubmit: Bool
+    }
+
+    public let platform: String
+    public let query: Query?
+
+    public static func defaultValuesWithPrompt(_ prompt: String) -> AIChatNativePrompt {
+        AIChatNativePrompt(platform: Platform.name, query: .init(prompt: prompt,
+                                                                 autoSubmit: true))
+    }
+}
+
+enum Platform {
+#if os(iOS)
+    static let name: String = "ios"
+#endif
+
+#if os(macOS)
+    static let name: String = "macOS"
+#endif
 }

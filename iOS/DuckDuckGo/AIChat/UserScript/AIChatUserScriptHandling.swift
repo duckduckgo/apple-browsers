@@ -37,10 +37,6 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         self.featureFlagger = featureFlagger
     }
 
-    private var platform: String {
-        "ios"
-    }
-
     enum AIChatKeys {
         static let aiChatPayload = "aiChatPayload"
     }
@@ -65,16 +61,11 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     public func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable? {
-        AIChatNativeConfigValues(isAIChatHandoffEnabled: true,
-                                 platform: platform,
-                                 supportsClosingAIChat: true,
-                                 supportsOpeningSettings: true)
+        AIChatNativeConfigValues.defaultValues
     }
 
     public func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable? {
-        AIChatNativeHandoffData(isAIChatHandoffEnabled: true,
-                               platform: platform,
-                               aiChatPayload: payloadHandler?.consumeData() as? AIChatPayload)
+        AIChatNativeHandoffData.defaultValuesWithPayload(payloadHandler?.consumeData() as? AIChatPayload)
     }
 
     func setPayloadHandler(_ payloadHandler: (any AIChatConsumableDataHandling)?) {

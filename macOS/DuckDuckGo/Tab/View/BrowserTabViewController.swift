@@ -744,7 +744,6 @@ final class BrowserTabViewController: NSViewController {
     private func adjustFirstResponderAfterAddingContentViewIfNeeded() {
         guard let window = view.window,
               let contentView = viewToMakeFirstResponderAfterAdding?() else {
-            Logger.firstResponder.info("adjustFirstResponderAfterAddingContentViewIfNeeded: no view to make first responder")
             return
         }
 

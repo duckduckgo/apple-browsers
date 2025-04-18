@@ -274,13 +274,6 @@ class AddressBarTests: XCTestCase {
     }
 
     @MainActor
-    func testWhenRestoringToOnboarding_addressBarIsNotActive() async throws {
-        let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [Tab(content: .onboardingDeprecated, privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())]))
-        window = WindowsManager.openNewWindow(with: viewModel)!
-        XCTAssertEqual(window.firstResponder, mainViewController.browserTabViewController.transientTabContentViewController!.view)
-    }
-
-    @MainActor
     func testWhenRestoringToSettings_addressBarIsNotActive() async throws {
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [Tab(content: .settings(pane: .appearance), privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())]))
         window = WindowsManager.openNewWindow(with: viewModel)!

@@ -17,50 +17,49 @@
 //  limitations under the License.
 //
 
-
 import XCTest
-@testable import DuckDuckGo
+@testable import AIChat
 
 final class AIChatPayloadHandlerTests: XCTestCase {
 
     var payloadHandler: AIChatPayloadHandler!
-    
+
     override func setUp() {
         super.setUp()
         payloadHandler = AIChatPayloadHandler()
     }
-    
+
     override func tearDown() {
         payloadHandler = nil
         super.tearDown()
     }
-    
+
     func testSetPayload() {
         let testPayload: AIChatPayload = ["key": "value"]
-        payloadHandler.setPayload(testPayload)
-        
-        let consumedPayload = payloadHandler.consumePayload()
+        payloadHandler.setData(testPayload)
+
+        let consumedPayload = payloadHandler.consumeData()
         XCTAssertEqual(consumedPayload?["key"] as? String, "value", "The payload should be set correctly.")
     }
-    
+
     func testConsumePayload() {
         let testPayload: AIChatPayload = ["key": "value"]
-        payloadHandler.setPayload(testPayload)
-        
-        let consumedPayload = payloadHandler.consumePayload()
+        payloadHandler.setData(testPayload)
+
+        let consumedPayload = payloadHandler.consumeData()
         XCTAssertEqual(consumedPayload?["key"] as? String, "value", "The payload should be consumed correctly.")
-        
-        let secondConsume = payloadHandler.consumePayload()
+
+        let secondConsume = payloadHandler.consumeData()
         XCTAssertNil(secondConsume, "The payload should be nil after being consumed.")
     }
-    
+
     func testReset() {
         let testPayload: AIChatPayload = ["key": "value"]
-        payloadHandler.setPayload(testPayload)
-        
+        payloadHandler.setData(testPayload)
+
         payloadHandler.reset()
-        
-        let consumedPayload = payloadHandler.consumePayload()
+
+        let consumedPayload = payloadHandler.consumeData()
         XCTAssertNil(consumedPayload, "The payload should be nil after reset.")
     }
 }

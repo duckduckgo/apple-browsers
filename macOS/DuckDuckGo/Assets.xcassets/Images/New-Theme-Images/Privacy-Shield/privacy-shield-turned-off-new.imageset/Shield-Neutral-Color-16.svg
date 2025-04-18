@@ -1,0 +1,29 @@
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <g clip-path="url(#Shield-Neutral-Color-16_svg__a)">
+    <path fill="url(#Shield-Neutral-Color-16_svg__b)" fill-rule="evenodd" d="M5.932.862a2.864 2.864 0 0 1 4.134.04l.88.935a1.12 1.12 0 0 0 1.128.31l.516-.15c1.646-.474 3.296.737 3.346 2.457l.06 2.087a9.04 9.04 0 0 1-5.138 8.426l-1.561.743a2.985 2.985 0 0 1-2.567 0l-1.588-.756a9.04 9.04 0 0 1-5.14-8.382l.05-2.086c.042-1.731 1.706-2.952 3.36-2.465l.43.126a1.12 1.12 0 0 0 1.117-.292l.973-.993Z" clip-rule="evenodd"/>
+    <path fill="url(#Shield-Neutral-Color-16_svg__c)" fill-rule="evenodd" d="M8 16c.439 0 .877-.097 1.284-.29l1.56-.743a9.04 9.04 0 0 0 5.14-8.426l-.061-2.087c-.05-1.72-1.7-2.931-3.346-2.456l-.517.149a1.12 1.12 0 0 1-1.127-.31l-.88-.934A2.857 2.857 0 0 0 8 0v16Z" clip-rule="evenodd"/>
+    <path fill="url(#Shield-Neutral-Color-16_svg__d)" fill-rule="evenodd" d="M9.338 1.588a1.864 1.864 0 0 0-2.692-.026l-.973.993a2.12 2.12 0 0 1-2.114.551L3.13 2.98a1.625 1.625 0 0 0-2.078 1.53l-.05 2.086a8.04 8.04 0 0 0 4.57 7.455l1.587.756c.54.257 1.167.257 1.708 0l1.561-.743a8.04 8.04 0 0 0 4.569-7.495l-.06-2.086a1.625 1.625 0 0 0-2.07-1.524l-.516.149a2.12 2.12 0 0 1-2.133-.585l-.88-.935Zm.729-.685A2.864 2.864 0 0 0 5.931.862l-.973.993a1.12 1.12 0 0 1-1.118.292l-.428-.126C1.758 1.534.094 2.755.053 4.486l-.05 2.086a9.04 9.04 0 0 0 5.14 8.382l1.587.756a2.985 2.985 0 0 0 2.567 0l1.56-.743a9.04 9.04 0 0 0 5.14-8.426l-.06-2.087c-.05-1.72-1.7-2.931-3.347-2.456l-.516.149a1.12 1.12 0 0 1-1.127-.31l-.88-.934Z" clip-rule="evenodd"/>
+    <path fill="url(#Shield-Neutral-Color-16_svg__e)" d="M8 16a3 3 0 0 0 1.286-.29l1.563-.743a9.038 9.038 0 0 0 5.147-8.426l-.06-2.087a2.629 2.629 0 0 0-3.352-2.456l-.517.149a1.124 1.124 0 0 1-1.129-.31l-.881-.934A2.863 2.863 0 0 0 8 0v1.004c.486.009.968.205 1.33.589l.881.934c.546.58 1.369.805 2.133.585l.517-.15a1.627 1.627 0 0 1 2.074 1.521l.06 2.087a8.034 8.034 0 0 1-4.574 7.49l-1.564.743a1.997 1.997 0 0 1-.857.193V16Z"/>
+  </g>
+  <defs>
+    <linearGradient id="Shield-Neutral-Color-16_svg__b" x1="1.595" x2="7.371" y1="1.942" y2="16.254" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fff"/>
+      <stop offset="1" stop-color="#DDD"/>
+    </linearGradient>
+    <linearGradient id="Shield-Neutral-Color-16_svg__c" x1="9.187" x2="12.006" y1="0" y2="15.998" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E5E5E5"/>
+      <stop offset="1" stop-color="#AAA"/>
+    </linearGradient>
+    <linearGradient id="Shield-Neutral-Color-16_svg__d" x1="8" x2="8" y1="0" y2="16" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#AAA"/>
+      <stop offset="1" stop-color="#888"/>
+    </linearGradient>
+    <linearGradient id="Shield-Neutral-Color-16_svg__e" x1="12" x2="12" y1="0" y2="16" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#949494"/>
+      <stop offset="1" stop-color="#696969"/>
+    </linearGradient>
+    <clipPath id="Shield-Neutral-Color-16_svg__a">
+      <path fill="#fff" d="M0 0h16v16H0z"/>
+    </clipPath>
+  </defs>
+</svg>

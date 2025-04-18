@@ -3054,6 +3054,22 @@
 		B6FA893F269C424500588ECD /* PrivacyDashboardViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6FA893E269C424500588ECD /* PrivacyDashboardViewController.swift */; };
 		B6FA8941269C425400588ECD /* PrivacyDashboardPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6FA8940269C425400588ECD /* PrivacyDashboardPopover.swift */; };
 		BB0346F52CEB80B400D23E05 /* DownloadsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0346F42CEB80B400D23E05 /* DownloadsTests.swift */; };
+		BB0DA4BF2DB12F8600AB9C29 /* PrivacyShieldAddressBarStyleProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0DA4BE2DB12F7600AB9C29 /* PrivacyShieldAddressBarStyleProviding.swift */; };
+		BB0DA4C02DB12F8600AB9C29 /* PrivacyShieldAddressBarStyleProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0DA4BE2DB12F7600AB9C29 /* PrivacyShieldAddressBarStyleProviding.swift */; };
+		BB0DA4D12DB1629A00AB9C29 /* shield-green-hover.json in Resources */ = {isa = PBXBuildFile; fileRef = BB0DA4D02DB1629A00AB9C29 /* shield-green-hover.json */; };
+		BB0DA4D22DB1629A00AB9C29 /* shield-green-hover.json in Resources */ = {isa = PBXBuildFile; fileRef = BB0DA4D02DB1629A00AB9C29 /* shield-green-hover.json */; };
+		BB0DA4D42DB1630000AB9C29 /* shield-gray-dot-hover.json in Resources */ = {isa = PBXBuildFile; fileRef = BB0DA4D32DB1630000AB9C29 /* shield-gray-dot-hover.json */; };
+		BB0DA4D52DB1630000AB9C29 /* shield-gray-dot-hover.json in Resources */ = {isa = PBXBuildFile; fileRef = BB0DA4D32DB1630000AB9C29 /* shield-gray-dot-hover.json */; };
+		BB0DA4D82DB17F2100AB9C29 /* shield-new.json in Resources */ = {isa = PBXBuildFile; fileRef = BB0DA4D62DB17F2100AB9C29 /* shield-new.json */; };
+		BB0DA4D92DB17F2100AB9C29 /* shield-dot-new.json in Resources */ = {isa = PBXBuildFile; fileRef = BB0DA4D72DB17F2100AB9C29 /* shield-dot-new.json */; };
+		BB0DA4DA2DB17F2100AB9C29 /* shield-new.json in Resources */ = {isa = PBXBuildFile; fileRef = BB0DA4D62DB17F2100AB9C29 /* shield-new.json */; };
+		BB0DA4DB2DB17F2100AB9C29 /* shield-dot-new.json in Resources */ = {isa = PBXBuildFile; fileRef = BB0DA4D72DB17F2100AB9C29 /* shield-dot-new.json */; };
+		BB0DA4DE2DB1806000AB9C29 /* dark-shield-new.json in Resources */ = {isa = PBXBuildFile; fileRef = BB0DA4DC2DB1806000AB9C29 /* dark-shield-new.json */; };
+		BB0DA4DF2DB1806000AB9C29 /* dark-shield-dot-new.json in Resources */ = {isa = PBXBuildFile; fileRef = BB0DA4DD2DB1806000AB9C29 /* dark-shield-dot-new.json */; };
+		BB0DA4E02DB1806000AB9C29 /* dark-shield-new.json in Resources */ = {isa = PBXBuildFile; fileRef = BB0DA4DC2DB1806000AB9C29 /* dark-shield-new.json */; };
+		BB0DA4E12DB1806000AB9C29 /* dark-shield-dot-new.json in Resources */ = {isa = PBXBuildFile; fileRef = BB0DA4DD2DB1806000AB9C29 /* dark-shield-dot-new.json */; };
+		BB0DA4E32DB1C4A000AB9C29 /* AddressBarIconsProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0DA4E22DB1C48D00AB9C29 /* AddressBarIconsProviding.swift */; };
+		BB0DA4E42DB1C4A000AB9C29 /* AddressBarIconsProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB0DA4E22DB1C48D00AB9C29 /* AddressBarIconsProviding.swift */; };
 		BB3229052D08644400DA92E9 /* TabBarRemoteMessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB3229042D08643700DA92E9 /* TabBarRemoteMessageView.swift */; };
 		BB3229062D08644400DA92E9 /* TabBarRemoteMessageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB3229042D08643700DA92E9 /* TabBarRemoteMessageView.swift */; };
 		BB4339DB2C7F9606005D7ED7 /* PinnedTabsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB4339DA2C7F9606005D7ED7 /* PinnedTabsTests.swift */; };
@@ -5139,6 +5155,14 @@
 		B6FA893E269C424500588ECD /* PrivacyDashboardViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyDashboardViewController.swift; sourceTree = "<group>"; };
 		B6FA8940269C425400588ECD /* PrivacyDashboardPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyDashboardPopover.swift; sourceTree = "<group>"; };
 		BB0346F42CEB80B400D23E05 /* DownloadsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadsTests.swift; sourceTree = "<group>"; };
+		BB0DA4BE2DB12F7600AB9C29 /* PrivacyShieldAddressBarStyleProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyShieldAddressBarStyleProviding.swift; sourceTree = "<group>"; };
+		BB0DA4D02DB1629A00AB9C29 /* shield-green-hover.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "shield-green-hover.json"; sourceTree = "<group>"; };
+		BB0DA4D32DB1630000AB9C29 /* shield-gray-dot-hover.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "shield-gray-dot-hover.json"; sourceTree = "<group>"; };
+		BB0DA4D62DB17F2100AB9C29 /* shield-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "shield-new.json"; sourceTree = "<group>"; };
+		BB0DA4D72DB17F2100AB9C29 /* shield-dot-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "shield-dot-new.json"; sourceTree = "<group>"; };
+		BB0DA4DC2DB1806000AB9C29 /* dark-shield-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "dark-shield-new.json"; sourceTree = "<group>"; };
+		BB0DA4DD2DB1806000AB9C29 /* dark-shield-dot-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "dark-shield-dot-new.json"; sourceTree = "<group>"; };
+		BB0DA4E22DB1C48D00AB9C29 /* AddressBarIconsProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarIconsProviding.swift; sourceTree = "<group>"; };
 		BB3229042D08643700DA92E9 /* TabBarRemoteMessageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarRemoteMessageView.swift; sourceTree = "<group>"; };
 		BB4339DA2C7F9606005D7ED7 /* PinnedTabsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedTabsTests.swift; sourceTree = "<group>"; };
 		BB470EBA2C5A66D6002EE91D /* BookmarkManagementDetailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkManagementDetailViewModel.swift; sourceTree = "<group>"; };
@@ -6574,6 +6598,12 @@
 		37EE55C42D5F197300D53C7C /* Animations */ = {
 			isa = PBXGroup;
 			children = (
+				BB0DA4DC2DB1806000AB9C29 /* dark-shield-new.json */,
+				BB0DA4DD2DB1806000AB9C29 /* dark-shield-dot-new.json */,
+				BB0DA4D62DB17F2100AB9C29 /* shield-new.json */,
+				BB0DA4D72DB17F2100AB9C29 /* shield-dot-new.json */,
+				BB0DA4D32DB1630000AB9C29 /* shield-gray-dot-hover.json */,
+				BB0DA4D02DB1629A00AB9C29 /* shield-green-hover.json */,
 				BBDAA91C2DAD6DAD00555E1E /* fire-icon.json */,
 				37EE55B32D5F197300D53C7C /* BadgeAnimations */,
 				37EE55B42D5F197300D53C7C /* dark-flame-mouse-over.json */,
@@ -10003,6 +10033,8 @@
 		BB4EC6902D9B5C6400660600 /* VisualRefresh */ = {
 			isa = PBXGroup;
 			children = (
+				BB0DA4E22DB1C48D00AB9C29 /* AddressBarIconsProviding.swift */,
+				BB0DA4BE2DB12F7600AB9C29 /* PrivacyShieldAddressBarStyleProviding.swift */,
 				BBB891E52DAEC1B6001A42DF /* MoreOptionsMenuIconsProviding.swift */,
 				BBDAA91F2DAD6F4B00555E1E /* FireButtonIconStyleProviding.swift */,
 				BBDAA9192DAD4E5C00555E1E /* NewVPNNavigationBarIconProvider.swift */,
@@ -11249,9 +11281,12 @@
 				CD2AB5C82C8223040019EB49 /* phishingHashPrefixes.json in Resources */,
 				3706FCB4293F65D500E42796 /* CrashReports.storyboard in Resources */,
 				3706FCB5293F65D500E42796 /* trackerData.json in Resources */,
+				BB0DA4D12DB1629A00AB9C29 /* shield-green-hover.json in Resources */,
 				3706FCB7293F65D500E42796 /* 01_Fire_really_small.json in Resources */,
 				56CEE90F2B7A725C00CF10AA /* InfoPlist.xcstrings in Resources */,
 				3706FCB9293F65D500E42796 /* FireproofDomains.storyboard in Resources */,
+				BB0DA4DA2DB17F2100AB9C29 /* shield-new.json in Resources */,
+				BB0DA4DB2DB17F2100AB9C29 /* shield-dot-new.json in Resources */,
 				854DAAAE2A72B613001E2E24 /* BookmarksBarPromptAssets.xcassets in Resources */,
 				3706FCBE293F65D500E42796 /* autoconsent-bundle.js in Resources */,
 				3706FCBF293F65D500E42796 /* ContentOverlay.storyboard in Resources */,
@@ -11262,6 +11297,7 @@
 				567311292D71DDDB002DAF62 /* scamFilterSet.json in Resources */,
 				5673112A2D71DDDB002DAF62 /* scamHashPrefixes.json in Resources */,
 				37EE56042D5F197300D53C7C /* dark-shield-dot-mouse-over.json in Resources */,
+				BB0DA4D52DB1630000AB9C29 /* shield-gray-dot-hover.json in Resources */,
 				37EE56052D5F197300D53C7C /* dark-shield-mouse-over.json in Resources */,
 				37EE56062D5F197300D53C7C /* dark-trackers-1.json in Resources */,
 				37EE56072D5F197300D53C7C /* dark-trackers-2.json in Resources */,
@@ -11294,6 +11330,8 @@
 				CD2AB5C62C8222FE0019EB49 /* phishingFilterSet.json in Resources */,
 				3706FCE6293F65D500E42796 /* social_images in Resources */,
 				BD384ACB2BBC821B00EF3735 /* vpn-dark-mode.json in Resources */,
+				BB0DA4DE2DB1806000AB9C29 /* dark-shield-new.json in Resources */,
+				BB0DA4DF2DB1806000AB9C29 /* dark-shield-dot-new.json in Resources */,
 				3706FCEA293F65D500E42796 /* PasswordManager.storyboard in Resources */,
 				7B0A6DFB2D47CCDF00FDFDC2 /* ExcludedApps.storyboard in Resources */,
 				BD384ACC2BBC821B00EF3735 /* vpn-light-mode.json in Resources */,
@@ -11464,9 +11502,12 @@
 				CD2AB5C72C8223030019EB49 /* phishingHashPrefixes.json in Resources */,
 				AA693E5E2696E5B90007BB78 /* CrashReports.storyboard in Resources */,
 				9833913127AAA4B500DAF119 /* trackerData.json in Resources */,
+				BB0DA4D22DB1629A00AB9C29 /* shield-green-hover.json in Resources */,
 				8511E18425F82B34002F516B /* 01_Fire_really_small.json in Resources */,
 				56CEE90E2B7A725B00CF10AA /* InfoPlist.xcstrings in Resources */,
 				4B0511C3262CAA5A00F6079C /* FireproofDomains.storyboard in Resources */,
+				BB0DA4D82DB17F2100AB9C29 /* shield-new.json in Resources */,
+				BB0DA4D92DB17F2100AB9C29 /* shield-dot-new.json in Resources */,
 				859F30672A72B38500C20372 /* BookmarksBarPromptAssets.xcassets in Resources */,
 				B31055CB27A1BA1D001AC618 /* autoconsent-bundle.js in Resources */,
 				7B1E819F27C8874900FF0E60 /* ContentOverlay.storyboard in Resources */,
@@ -11477,6 +11518,7 @@
 				567311272D71DDDB002DAF62 /* scamFilterSet.json in Resources */,
 				567311282D71DDDB002DAF62 /* scamHashPrefixes.json in Resources */,
 				37EE55DB2D5F197300D53C7C /* dark-shield-dot-mouse-over.json in Resources */,
+				BB0DA4D42DB1630000AB9C29 /* shield-gray-dot-hover.json in Resources */,
 				37EE55DC2D5F197300D53C7C /* dark-shield-mouse-over.json in Resources */,
 				37EE55DD2D5F197300D53C7C /* dark-trackers-1.json in Resources */,
 				37EE55DE2D5F197300D53C7C /* dark-trackers-2.json in Resources */,
@@ -11509,6 +11551,8 @@
 				CD2AB5C52C8222FE0019EB49 /* phishingFilterSet.json in Resources */,
 				EA18D1CA272F0DC8006DC101 /* social_images in Resources */,
 				BD384AC92BBC821A00EF3735 /* vpn-dark-mode.json in Resources */,
+				BB0DA4E02DB1806000AB9C29 /* dark-shield-new.json in Resources */,
+				BB0DA4E12DB1806000AB9C29 /* dark-shield-dot-new.json in Resources */,
 				85625994269C8F9600EE44BC /* PasswordManager.storyboard in Resources */,
 				7B0A6DFD2D47CCDF00FDFDC2 /* ExcludedApps.storyboard in Resources */,
 				BD384ACA2BBC821A00EF3735 /* vpn-light-mode.json in Resources */,
@@ -12032,6 +12076,7 @@
 				4B9DB0392A983B24000927DB /* JoinedWaitlistView.swift in Sources */,
 				3706FEBF293F6EFF00E42796 /* BWError.swift in Sources */,
 				3706FAC6293F65D500E42796 /* ConnectBitwardenViewController.swift in Sources */,
+				BB0DA4E32DB1C4A000AB9C29 /* AddressBarIconsProviding.swift in Sources */,
 				1DDC84FC2B8356CE00670238 /* PreferencesDefaultBrowserView.swift in Sources */,
 				3706FAC8293F65D500E42796 /* AppTrackerDataSetProvider.swift in Sources */,
 				3706FAC9293F65D500E42796 /* EncryptionKeyGeneration.swift in Sources */,
@@ -12754,6 +12799,7 @@
 				3706FC67293F65D500E42796 /* OperatingSystemVersionExtension.swift in Sources */,
 				7B6545EE2C0779D500115BEA /* VPNControllerUDSClient+ConvenienceInitializers.swift in Sources */,
 				B6F9BDE52B45CD1900677B33 /* ModalView.swift in Sources */,
+				BB0DA4BF2DB12F8600AB9C29 /* PrivacyShieldAddressBarStyleProviding.swift in Sources */,
 				CD33012D2C89B588009AA127 /* ErrorPageHTMLFactory.swift in Sources */,
 				7B60AFFE2C514269008E32A3 /* VPNURLEventHandler.swift in Sources */,
 				376E8C1E2D41920A00D5D2EC /* RecentActivityProvider.swift in Sources */,
@@ -13871,6 +13917,7 @@
 				EEE11C5E2C7F54AD000ABD7E /* AutofillLoginImportState.swift in Sources */,
 				315AA07028CA5CC800200030 /* YoutubePlayerNavigationHandler.swift in Sources */,
 				56DB9FE92CD24B47001BEC23 /* ContextualOnboardingPixel.swift in Sources */,
+				BB0DA4C02DB12F8600AB9C29 /* PrivacyShieldAddressBarStyleProviding.swift in Sources */,
 				37AFCE9227DB8CAD00471A10 /* PreferencesAboutView.swift in Sources */,
 				BB7BA64D2D11FC170020B47E /* TabBarRemoteMessagePresenting.swift in Sources */,
 				F1D042A12BFBB4DD00A31506 /* DataBrokerProtectionSettings+Environment.swift in Sources */,
@@ -14063,6 +14110,7 @@
 				3199AF7B2C80734A003AEBDC /* DuckPlayerOnboardingLocationValidator.swift in Sources */,
 				B6B1E87B26D381710062C350 /* DownloadListCoordinator.swift in Sources */,
 				B68D21C82ACBC96D002DA3C2 /* MockPrivacyConfiguration.swift in Sources */,
+				BB0DA4E42DB1C4A000AB9C29 /* AddressBarIconsProviding.swift in Sources */,
 				B647EFBB2922584B00BA628D /* AdClickAttributionTabExtension.swift in Sources */,
 				B677FC542B064A9C0099EB04 /* DataImportViewModel.swift in Sources */,
 				4B980E212817604000282EE1 /* NSNotificationName+Debug.swift in Sources */,

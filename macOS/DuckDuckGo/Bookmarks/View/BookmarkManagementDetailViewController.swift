@@ -655,7 +655,6 @@ extension BookmarkManagementDetailViewController: NSTableViewDelegate, NSTableVi
                 burnerMode: tabCollection.burnerMode)
         }
         tabCollection.append(tabs: tabs)
-        PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
     }
 }
 

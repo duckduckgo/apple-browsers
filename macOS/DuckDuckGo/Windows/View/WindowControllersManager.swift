@@ -141,6 +141,24 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
         }
     }
 
+    // MARK: - Active Domain
+
+    var activeDomain: String? {
+        if let tabContent = lastKeyMainWindowController?.activeTab?.content {
+            return Self.domain(from: tabContent)
+        }
+
+        return nil
+    }
+
+    static func domain(from tabContent: Tab.TabContent) -> String? {
+        if case .url(let url, _, _) = tabContent {
+
+            return url.host
+        } else {
+            return nil
+        }
+    }
 }
 
 // MARK: - Opening a url from the external event
@@ -202,14 +220,10 @@ extension WindowControllersManager {
         } else {
             show(url: url, source: .bookmark)
         }
-        PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
     }
 
     func show(url: URL?, tabId: String? = nil, source: Tab.TabContent.URLSource, newTab: Bool = false) {
         let nonPopupMainWindowControllers = mainWindowControllers.filter { $0.window?.isPopUpWindow == false }
-        if source == .bookmark {
-            PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
-        }
         // If there is a main window, open the URL in it
         if let windowController = nonPopupMainWindowControllers.first(where: { $0.window?.isMainWindow == true })
             // If a last key window is available, open the URL in it

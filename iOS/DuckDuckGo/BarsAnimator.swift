@@ -33,7 +33,7 @@ class BarsAnimator {
     private var bottomRevealGestureState: BottomBounceRevealing = .possible
     private var combinedBarsHeight: CGFloat {
         guard let delegate = delegate else { return 0 }
-        return delegate.toolbarHeight + delegate.omniBar.barView.frame.height
+        return delegate.toolbarHeight + delegate.omniBar.barView.expectedHeight
     }
 
     enum State: String {
@@ -89,45 +89,23 @@ class BarsAnimator {
     private func transitioningAndScrolling(in scrollView: UIScrollView) {
         let ratio = calculateTransitionRatio(for: scrollView.contentOffset.y)
 
+        // Check if we need to perform additional changes
+        let ratioMatchesCurrentState =
+        ((barsState == .hidden && ratio == 1.0) || (barsState == .revealed && ratio == 0)) &&
+        transitionProgress == ratio
+
+        guard !ratioMatchesCurrentState else {
+            return
+        }
+
         if ratio == 1.0 {
             barsState = .hidden
-            delegate?.setBarsVisibility(0, animated: false, animationDuration: nil)
         } else if ratio == 0 {
             barsState = .revealed
-            delegate?.setBarsVisibility(1, animated: false, animationDuration: nil)
         }
 
-        // On iOS 18 we end up in a loop after setBarsVisibility.
-        // It seems to trigger a new didScrollEvent when rendering some PDF files
-        // That causes an infinite loop.
-        // Are viewDidScroll calls happening more often for PDF's on iOS 18?
-        // Adding a debouncer while we investigate further
-        // https://app.asana.com/0/1204099484721401/1208671955053442/f
-        let debounceDelay: TimeInterval = 0.01
-        struct Debounce {
-            static var workItem: DispatchWorkItem?
-        }
-        Debounce.workItem?.cancel()
-
-        Debounce.workItem = DispatchWorkItem { [weak self] in
-            guard let self = self else { return }
-
-            let ratio = self.calculateTransitionRatio(for: scrollView.contentOffset.y)
-
-            if ratio == 1.0 {
-                self.barsState = .hidden
-            } else if ratio == 0 {
-                self.barsState = .revealed
-            } else if self.transitionProgress == ratio {
-                return
-            }
-
-            self.delegate?.setBarsVisibility(1.0 - ratio, animated: false, animationDuration: nil)
-            self.transitionProgress = ratio
-        }
-
-        // Schedule the work item
-        DispatchQueue.main.asyncAfter(deadline: .now() + debounceDelay, execute: Debounce.workItem!)
+        transitionProgress = ratio
+        delegate?.setBarsVisibility(1.0 - ratio, animated: false, animationDuration: nil)
     }
 
     private func hiddenAndScrolling(in scrollView: UIScrollView) {
@@ -155,7 +133,7 @@ class BarsAnimator {
 
     private func calculateTransitionRatio(for contentOffset: CGFloat) -> CGFloat {
         let distance = contentOffset - transitionStartPosY
-        let barsHeight = delegate?.barsMaxHeight ?? CGFloat.infinity
+        let barsHeight = combinedBarsHeight
 
         let cumulativeDistance = (barsHeight * transitionProgress) + distance
         let normalizedDistance = max(cumulativeDistance, 0)

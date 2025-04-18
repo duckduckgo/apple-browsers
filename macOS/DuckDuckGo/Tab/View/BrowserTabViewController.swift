@@ -692,7 +692,7 @@ final class BrowserTabViewController: NSViewController {
              .url(_, _, source: .reload):
             return true
 
-        case .settings, .bookmarks, .history, .dataBrokerProtection, .subscription, .onboardingDeprecated, .onboarding, .releaseNotes, .identityTheftRestoration, .webExtensionUrl:
+        case .settings, .bookmarks, .history, .dataBrokerProtection, .subscription, .onboarding, .releaseNotes, .identityTheftRestoration, .webExtensionUrl:
             return true
 
         case .none:
@@ -712,8 +712,6 @@ final class BrowserTabViewController: NSViewController {
         case .newtab:
             // don‘t steal focus from the address bar at .newtab page
             return
-        case .onboardingDeprecated:
-            getView = { [weak self] in self?.transientTabContentViewController?.view }
         case .url, .subscription, .identityTheftRestoration, .onboarding, .releaseNotes, .history:
             getView = { [weak self, weak tabViewModel] in
                 guard let self, let tabViewModel else { return nil }
@@ -831,13 +829,6 @@ final class BrowserTabViewController: NSViewController {
 
         case let .settings(pane):
             showTabContentForSettings(pane: pane)
-
-        case .onboardingDeprecated:
-            removeAllTabContent()
-            if !OnboardingViewModel.isOnboardingFinished {
-                requestDisableUI()
-            }
-            showTransientTabContentController(OnboardingViewController.create(withDelegate: self))
 
         case .onboarding, .releaseNotes:
             removeAllTabContent()
@@ -1406,39 +1397,6 @@ extension BrowserTabViewController: BrowserTabSelectionDelegate {
         if case .settings = selectedTab.content {
             selectedTab.setContent(.settings(pane: identifier))
         }
-    }
-
-}
-
-extension BrowserTabViewController: OnboardingDelegate {
-
-    func onboardingDidRequestImportData(completion: @escaping () -> Void) {
-        DataImportView().show(completion: completion)
-    }
-
-    func onboardingDidRequestSetDefault(completion: @escaping () -> Void) {
-        let defaultBrowserPreferences = DefaultBrowserPreferences.shared
-        if defaultBrowserPreferences.isDefault {
-            completion()
-            return
-        }
-
-        PixelKit.fire(GeneralPixel.defaultRequestedFromOnboarding)
-        defaultBrowserPreferences.becomeDefault { _ in
-            _ = defaultBrowserPreferences
-            withAnimation {
-                completion()
-            }
-        }
-    }
-
-    func onboardingDidRequestAddToDock(completion: @escaping () -> Void) {
-        dockCustomizer.addToDock()
-        completion()
-    }
-
-    func onboardingHasFinished() {
-        (view.window?.windowController as? MainWindowController)?.userInteraction(prevented: false)
     }
 
 }

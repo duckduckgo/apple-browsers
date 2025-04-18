@@ -136,7 +136,7 @@ final class SubscriptionErrorReporterTests: XCTestCase {
 
     func testReporterForHasActiveSubscriptionError() async throws {
         // Given
-        let errorToBeHandled: SubscriptionError = .hasActiveSubscription
+        let errorToBeHandled: SubscriptionError = .activeSubscriptionAlreadyPresent
 
         // When
         reporter.report(subscriptionActivationError: errorToBeHandled)

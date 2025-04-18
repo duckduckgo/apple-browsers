@@ -854,6 +854,7 @@ final class AddressBarButtonsViewController: NSViewController {
             imageButton.image = .web
         case .editing(.text) where tabViewModel.isShowingHomePage:
             imageButton.image = .homePageLogo
+            imageButton.setAccessibilityIdentifier("AddressBarButtonsViewController.homePageLogo")
         case .editing(.text):
             imageButton.image = .search
         case .editing(.openTabSuggestion):

@@ -65,6 +65,7 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBOutlet weak var bookmarkButton: AddressBarButton!
     @IBOutlet weak var imageButtonWrapper: NSView!
     @IBOutlet weak var imageButton: NSButton!
+    @IBOutlet weak var imageButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var clearButton: NSButton!
     @IBOutlet private weak var buttonsContainer: NSStackView!
     @IBOutlet weak var aiChatButton: AddressBarButton!
@@ -851,6 +852,8 @@ final class AddressBarButtonsViewController: NSViewController {
             imageButton.image = tabViewModel.favicon
         case .editing(.url):
             imageButton.image = .web
+        case .editing(.text) where tabViewModel.isShowingHomePage:
+            imageButton.image = .homePageLogo
         case .editing(.text):
             imageButton.image = .search
         case .editing(.openTabSuggestion):
@@ -858,6 +861,7 @@ final class AddressBarButtonsViewController: NSViewController {
         default:
             imageButton.image = nil
         }
+        imageButtonHeightConstraint.constant = tabViewModel.isShowingHomePage ? 24 : 16
     }
 
     private func updatePrivacyEntryPointButton() {

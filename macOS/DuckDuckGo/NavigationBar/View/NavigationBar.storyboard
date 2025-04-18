@@ -159,15 +159,8 @@
                             <stackView distribution="fill" orientation="horizontal" alignment="centerY" spacing="16" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="gIy-el-24l" userLabel="Address Bar">
                                 <rect key="frame" x="422" y="6" width="832" height="56"/>
                                 <subviews>
-                                    <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="8Ha-or-PB2">
-                                        <rect key="frame" x="0.0" y="0.0" width="44" height="56"/>
-                                        <constraints>
-                                            <constraint firstAttribute="width" constant="44" id="jSz-y8-vaJ"/>
-                                        </constraints>
-                                        <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="HomePageLogo" id="O0O-qm-kNp"/>
-                                    </imageView>
                                     <containerView translatesAutoresizingMaskIntoConstraints="NO" id="Wba-nA-FYj">
-                                        <rect key="frame" x="60" y="3" width="772" height="50"/>
+                                        <rect key="frame" x="0.0" y="3" width="832" height="50"/>
                                         <connections>
                                             <segue destination="H4f-bE-T92" kind="embed" destinationCreationSelector="createAddressBarViewController:" id="5BM-Q3-tYH"/>
                                         </connections>
@@ -179,10 +172,8 @@
                                 </constraints>
                                 <visibilityPriorities>
                                     <integer value="1000"/>
-                                    <integer value="1000"/>
                                 </visibilityPriorities>
                                 <customSpacing>
-                                    <real value="3.4028234663852886e+38"/>
                                     <real value="3.4028234663852886e+38"/>
                                 </customSpacing>
                             </stackView>
@@ -368,13 +359,11 @@
                         <outlet property="addressBarStack" destination="gIy-el-24l" id="vlT-AD-nDv"/>
                         <outlet property="addressBarTopConstraint" destination="km5-nE-hfK" id="dR8-qN-sMa"/>
                         <outlet property="bookmarkListButton" destination="4sj-qN-UUY" id="Fjs-KE-Lfp"/>
-                        <outlet property="daxLogo" destination="8Ha-or-PB2" id="Id4-3e-U4K"/>
                         <outlet property="downloadsButton" destination="l0L-Gq-8p3" id="ujH-qR-rUH"/>
                         <outlet property="goBackButton" destination="kky-0N-Cfd" id="RA9-yE-URS"/>
                         <outlet property="goForwardButton" destination="mdE-u0-Ei5" id="7wT-nX-Avr"/>
                         <outlet property="homeButton" destination="s7D-YB-p00" id="sjk-Af-Zl4"/>
                         <outlet property="homeButtonSeparator" destination="3o5-MS-AWl" id="mcV-id-0zR"/>
-                        <outlet property="logoWidthConstraint" destination="jSz-y8-vaJ" id="BbD-cr-Hyv"/>
                         <outlet property="menuButtons" destination="aWu-Jm-Oaz" id="gb7-KP-Q3h"/>
                         <outlet property="navigationBarButtonsLeadingConstraint" destination="eSb-tj-UdD" id="Jnt-Xd-aUU"/>
                         <outlet property="navigationButtons" destination="eEh-kf-smR" id="XC4-bo-89V"/>
@@ -1037,6 +1026,7 @@
                         <outlet property="externalSchemeButton" destination="gGA-Yv-pnz" id="Eyj-ms-jcc"/>
                         <outlet property="geolocationButton" destination="CN6-fJ-o2J" id="FP7-Od-wu8"/>
                         <outlet property="imageButton" destination="psi-hX-Kh9" id="gEt-yl-q9m"/>
+                        <outlet property="imageButtonHeightConstraint" destination="OCF-kY-RT8" id="MpA-nO-9D4"/>
                         <outlet property="imageButtonWrapper" destination="3Iv-YW-zn2" id="rzK-lJ-auZ"/>
                         <outlet property="microphoneButton" destination="uao-nC-0co" id="UHu-oA-rTl"/>
                         <outlet property="notificationAnimationView" destination="1qw-sL-vFK" id="b5X-px-pwG"/>
@@ -1069,7 +1059,6 @@
         <image name="Geolocation-Active" width="16" height="16"/>
         <image name="Geolocation-Icon" width="16" height="16"/>
         <image name="Home-16" width="16" height="16"/>
-        <image name="HomePageLogo" width="56" height="56"/>
         <image name="Microphone-Active" width="12" height="16"/>
         <image name="Microphone-Icon" width="12" height="16"/>
         <image name="PasswordManagement" width="16" height="16"/>

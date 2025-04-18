@@ -51,7 +51,6 @@ final class NavigationBarViewController: NSViewController {
     @IBOutlet weak var networkProtectionButton: MouseOverButton!
     @IBOutlet weak var navigationButtons: NSStackView!
     @IBOutlet weak var addressBarContainer: NSView!
-    @IBOutlet weak var daxLogo: NSImageView!
     @IBOutlet weak var addressBarStack: NSStackView!
 
     @IBOutlet weak var menuButtons: NSStackView!
@@ -63,7 +62,6 @@ final class NavigationBarViewController: NSViewController {
     @IBOutlet var addressBarBottomConstraint: NSLayoutConstraint!
     @IBOutlet var addressBarHeightConstraint: NSLayoutConstraint!
     @IBOutlet var buttonsTopConstraint: NSLayoutConstraint!
-    @IBOutlet var logoWidthConstraint: NSLayoutConstraint!
 
     private let downloadListCoordinator: DownloadListCoordinator
 
@@ -707,13 +705,9 @@ final class NavigationBarViewController: NSViewController {
             })
     }
 
-    private var daxFadeInAnimation: DispatchWorkItem?
     private var heightChangeAnimation: DispatchWorkItem?
     func resizeAddressBar(for sizeClass: AddressBarSizeClass, animated: Bool) {
-        daxFadeInAnimation?.cancel()
         heightChangeAnimation?.cancel()
-
-        daxLogo.alphaValue = !sizeClass.isLogoVisible ? 1 : 0 // initial value to animate from
 
         let performResize = { [weak self] in
             guard let self else { return }
@@ -726,11 +720,6 @@ final class NavigationBarViewController: NSViewController {
 
             let bottom: NSLayoutConstraint = animated ? addressBarBottomConstraint.animator() : addressBarBottomConstraint
             bottom.constant = visualStyleManager.style.addressBarBottomPadding(for: sizeClass)
-
-            let logoWidth: NSLayoutConstraint = animated ? logoWidthConstraint.animator() : logoWidthConstraint
-            logoWidth.constant = sizeClass.logoWidth
-
-            addressBarStack.spacing = visualStyleManager.style.addressBarStackSpacing(for: sizeClass)
         }
 
         let heightChange: () -> Void
@@ -745,13 +734,10 @@ final class NavigationBarViewController: NSViewController {
                 guard let self else { return }
                 NSAnimationContext.runAnimationGroup { ctx in
                     ctx.duration = 0.2
-                    self.daxLogo.alphaValue = sizeClass.isLogoVisible ? 1 : 0
                 }
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1, execute: fadeIn)
-            self.daxFadeInAnimation = fadeIn
         } else {
-            daxLogo.alphaValue = sizeClass.isLogoVisible ? 1 : 0
             heightChange = {
                 performResize()
             }

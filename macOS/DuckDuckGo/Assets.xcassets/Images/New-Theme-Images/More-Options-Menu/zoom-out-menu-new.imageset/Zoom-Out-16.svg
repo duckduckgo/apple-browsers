@@ -1,0 +1,11 @@
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <g fill="#000" clip-path="url(#Zoom-Out-16_svg__a)">
+    <path d="M4.125 6.375a.625.625 0 1 0 0 1.25h5.75a.625.625 0 1 0 0-1.25h-5.75Z"/>
+    <path fill-rule="evenodd" d="M7 14a6.972 6.972 0 0 0 4.488-1.628l3.444 3.445a.625.625 0 1 0 .884-.884l-3.444-3.444A7 7 0 1 0 7 14Zm0-1.25a5.75 5.75 0 1 0 0-11.5 5.75 5.75 0 0 0 0 11.5Z" clip-rule="evenodd"/>
+  </g>
+  <defs>
+    <clipPath id="Zoom-Out-16_svg__a">
+      <path fill="#fff" d="M0 0h16v16H0z"/>
+    </clipPath>
+  </defs>
+</svg>

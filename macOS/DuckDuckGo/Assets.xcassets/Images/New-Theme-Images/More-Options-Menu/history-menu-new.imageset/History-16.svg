@@ -1,0 +1,11 @@
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <g fill="#000" clip-path="url(#History-16_svg__a)">
+    <path d="M8.625 3.625a.625.625 0 1 0-1.25 0V8c0 .345.28.625.625.625h3.375a.625.625 0 1 0 0-1.25h-2.75v-3.75Z"/>
+    <path fill-rule="evenodd" d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0ZM1.25 8a6.75 6.75 0 1 1 13.5 0 6.75 6.75 0 0 1-13.5 0Z" clip-rule="evenodd"/>
+  </g>
+  <defs>
+    <clipPath id="History-16_svg__a">
+      <path fill="#fff" d="M0 0h16v16H0z"/>
+    </clipPath>
+  </defs>
+</svg>

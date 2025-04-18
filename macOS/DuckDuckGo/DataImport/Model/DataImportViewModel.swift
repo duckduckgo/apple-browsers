@@ -172,8 +172,6 @@ struct DataImportViewModel {
         self.reportSenderFactory = reportSenderFactory
         self.onFinished = onFinished
         self.onCancelled = onCancelled
-
-        PixelExperiment.fireOnboardingImportRequestedPixel()
     }
 
     /// Import button press (starts browser data import)

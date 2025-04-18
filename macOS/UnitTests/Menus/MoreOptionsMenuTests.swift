@@ -453,7 +453,6 @@ final class MoreOptionsMenuTests: XCTestCase {
             .bookmarks,
             .history,
             .onboarding,
-            .onboardingDeprecated,
             .dataBrokerProtection
         ]
         for tabContent in tabContentsNotSupportingFindInPage {

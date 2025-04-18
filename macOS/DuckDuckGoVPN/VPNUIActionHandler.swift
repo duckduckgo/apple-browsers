@@ -55,4 +55,8 @@ final class VPNUIActionHandler: VPNUIActionHandling {
     public func showPrivacyPro() async {
         try? await appLauncher.launchApp(withCommand: VPNAppLaunchCommand.showPrivacyPro)
     }
+
+    public func willStopVPN() async -> Bool {
+        true
+    }
 }

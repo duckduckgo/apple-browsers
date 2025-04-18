@@ -89,7 +89,6 @@ final class URLExtensionTests {
     @Test("Creating URLs from address bar strings", arguments: makeURL_from_addressBarString_args)
     func makeURL_from_addressBarString(string: String, expectation: String, line: Int) {
         let url = URL.makeURL(from: string)!
-        // #expect(expectation == url.absoluteString, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: line, column: 0))
         #expect(expectation == url.absoluteString)
     }
 
@@ -109,7 +108,6 @@ final class URLExtensionTests {
     @Test("Sanitizing URLs for quarantine", arguments: sanitizedForQuarantine_args)
     func sanitizedForQuarantine(string: String, expectation: String?, line: Int) {
         let url = URL(string: string)!.sanitizedForQuarantine()
-        // #expect(url?.absoluteString == expectation, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 0))
         #expect(url?.absoluteString == expectation)
     }
 
@@ -125,7 +123,6 @@ final class URLExtensionTests {
     @Test("Adding missing slash after hypertext scheme", arguments: whenOneSlashIsMissingAfterHypertextScheme_ThenItShouldBeAdded_args)
     func whenOneSlashIsMissingAfterHypertextScheme_ThenItShouldBeAdded(string: String, expectation: String, line: Int) {
         let url = URL.makeURL(from: string)
-        // #expect(url?.absoluteString == expectation, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 0))
         #expect(url?.absoluteString == expectation)
     }
 
@@ -373,22 +370,4 @@ final class URLExtensionTests {
         #expect(differentPortURL.matches(protectionSpace) == false)
     }
 
-}
-
-extension URLExtensionTests {
-    struct Case {
-        let string: String
-        let expectation: String?
-        let line: Int
-
-        var sourceLocation: SourceLocation {
-            SourceLocation.init(fileID: #fileID, filePath: #filePath, line: line, column: 0)
-        }
-
-        init(_ string: String, _ expectation: String?, line: Int = #line) {
-            self.string = string
-            self.expectation = expectation
-            self.line = line
-        }
-    }
 }

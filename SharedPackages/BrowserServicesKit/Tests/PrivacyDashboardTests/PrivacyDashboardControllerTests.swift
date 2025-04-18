@@ -289,7 +289,7 @@ class MockWebView: WKWebView {
             capturedJavaScriptString = javaScriptString
             expectation.fulfill()
         }
-        return try await super.evaluateJavaScript(javaScriptString)
+        return try await super.evaluateJavaScript(javaScriptString) as Void? as Any
     }
 
 }

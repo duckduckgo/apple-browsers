@@ -23,6 +23,7 @@ import Foundation
 class MockBookmarkManager: BookmarkManager, URLFavoriteStatusProviding {
     var bookmarksReturnedForSearch = [BaseBookmarkEntity]()
     var wasSearchByQueryCalled = false
+    var isLoading = false
 
     init(bookmarksReturnedForSearch: [BaseBookmarkEntity] = [BaseBookmarkEntity](), wasSearchByQueryCalled: Bool = false, isUrlBookmarked: Bool = false, removeBookmarkCalled: Bool = false, removeFolderCalled: Bool = false, removeObjectsCalled: [String]? = nil, updateBookmarkCalled: Bookmark? = nil, moveObjectsCalled: MoveArgs? = nil, list: BookmarkList? = nil, sortMode: BookmarksSortMode = .manual) {
         self.bookmarksReturnedForSearch = bookmarksReturnedForSearch

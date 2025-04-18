@@ -1,6 +1,5 @@
 //
 //  AIChatUserScriptMessages.swift
-//  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -25,4 +24,3 @@ public enum AIChatUserScriptMessages: String, CaseIterable {
     case openAIChat
     case getAIChatNativeHandoffData
 }
-

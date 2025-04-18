@@ -89,7 +89,8 @@ final class URLExtensionTests {
     @Test("Creating URLs from address bar strings", arguments: makeURL_from_addressBarString_args)
     func makeURL_from_addressBarString(string: String, expectation: String, line: Int) {
         let url = URL.makeURL(from: string)!
-        #expect(expectation == url.absoluteString, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 0))
+        // #expect(expectation == url.absoluteString, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: line, column: 0))
+        #expect(expectation == url.absoluteString)
     }
 
     static let sanitizedForQuarantine_args = [
@@ -108,7 +109,8 @@ final class URLExtensionTests {
     @Test("Sanitizing URLs for quarantine", arguments: sanitizedForQuarantine_args)
     func sanitizedForQuarantine(string: String, expectation: String?, line: Int) {
         let url = URL(string: string)!.sanitizedForQuarantine()
-        #expect(url?.absoluteString == expectation, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 0))
+        // #expect(url?.absoluteString == expectation, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 0))
+        #expect(url?.absoluteString == expectation)
     }
 
     static let whenOneSlashIsMissingAfterHypertextScheme_ThenItShouldBeAdded_args = [
@@ -123,7 +125,8 @@ final class URLExtensionTests {
     @Test("Adding missing slash after hypertext scheme", arguments: whenOneSlashIsMissingAfterHypertextScheme_ThenItShouldBeAdded_args)
     func whenOneSlashIsMissingAfterHypertextScheme_ThenItShouldBeAdded(string: String, expectation: String, line: Int) {
         let url = URL.makeURL(from: string)
-        #expect(url?.absoluteString == expectation, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 0))
+        // #expect(url?.absoluteString == expectation, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 0))
+        #expect(url?.absoluteString == expectation)
     }
 
     @Test("Verifying hypertext scheme when making URL from suggestion phrase with colon")

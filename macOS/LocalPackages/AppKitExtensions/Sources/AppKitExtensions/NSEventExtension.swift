@@ -45,6 +45,9 @@ public extension NSEvent {
         case .leftMouseDown, .leftMouseUp, .leftMouseDragged: .left
         case .rightMouseDown, .rightMouseUp, .rightMouseDragged: .right
         case .otherMouseDown, .otherMouseUp, .otherMouseDragged: Button(rawValue: self.buttonNumber)
+        // when middle-clicking a New Tab or History View with a real mouse, the event type is .systemDefined
+        // (see NewTabPageLinkOpener)
+        case .systemDefined: .middle
         default: nil
         }
     }

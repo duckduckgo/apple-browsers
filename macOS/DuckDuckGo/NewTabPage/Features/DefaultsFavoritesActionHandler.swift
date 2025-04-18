@@ -29,9 +29,9 @@ final class DefaultFavoritesActionsHandler: FavoritesActionsHandling {
     }
 
     @MainActor
-    func open(_ url: URL, sender: LinkOpenSender, in window: NSWindow?) {
+    func open(_ url: URL, sender: LinkOpenSender, target: LinkOpenTarget, in window: NSWindow?) {
         PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
-        NewTabPageLinkOpener.open(url, source: .bookmark, sender: sender, sourceWindow: window)
+        NewTabPageLinkOpener.open(url, source: .bookmark, sender: sender, target: target, sourceWindow: window)
     }
 
     func copyLink(_ favorite: Bookmark) {

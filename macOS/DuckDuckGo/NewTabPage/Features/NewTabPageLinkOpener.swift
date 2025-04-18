@@ -21,17 +21,34 @@ import NewTabPage
 struct NewTabPageLinkOpener: NewTabPageLinkOpening {
 
     @MainActor
-    static func open(_ url: URL, source: Tab.Content.URLSource, sender: LinkOpenSender, sourceWindow: NSWindow?) {
-        lazy var tabCollectionViewModel = WindowControllersManager.shared.mainWindowController(for: sourceWindow)?.mainViewController.tabCollectionViewModel
-        switch sender {
-        case .newTabContextMenuItem:
-            guard let tabCollectionViewModel else { fallthrough }
-            tabCollectionViewModel.insertOrAppendNewTab(.contentFromURL(url, source: .bookmark), selected: TabsPreferences.shared.switchToNewTabWhenOpened)
-        case .newWindowContextMenuItem:
-            WindowsManager.openNewWindow(with: url, source: .bookmark, isBurner: tabCollectionViewModel?.isBurner ?? false)
-        case .script: // click/⌘-click/middle-click…
-            WindowControllersManager.shared.open(url, source: source, target: sourceWindow, event: NSApp.currentEvent)
+    static func open(_ url: URL, source: Tab.Content.URLSource, sender: LinkOpenSender, target: LinkOpenTarget, sourceWindow: NSWindow?) {
+        var tabCollectionViewModel: TabCollectionViewModel? {
+            WindowControllersManager.shared.mainWindowController(for: sourceWindow)?.mainViewController.tabCollectionViewModel
         }
+        let linkOpenBehavior: LinkOpenBehavior = {
+            switch sender {
+            case .userScript:
+                // When using a real mouse, a middle click is sent as `.newTab`.
+                // In this case, `NSApp.currentEvent` will be `.systemDefined` with no button number.
+                LinkOpenBehavior(
+                    event: NSApp.currentEvent,
+                    switchToNewTabWhenOpenedPreference: TabsPreferences.shared.switchToNewTabWhenOpened,
+                    // The frontend always sends `.newWindow` when activating a link with the Shift key pressed,
+                    // which is a behavior specific to Windows. In this case we ignore the `.newWindow` target
+                    // and let LinkOpenBehavior determine the necessary behavior.
+                    canOpenLinkInCurrentTab: target != .newTab
+                )
+            case .contextMenuItem:
+                switch target {
+                case .current: .currentTab
+                case .newTab: .newTab(selected: TabsPreferences.shared.switchToNewTabWhenOpened)
+                case .newWindow: .newWindow(selected: TabsPreferences.shared.switchToNewTabWhenOpened)
+                }
+            }
+        }()
+        let targetWindowController = WindowControllersManager.shared.mainWindowController(for: sourceWindow ?? NSApp.currentEvent?.window)
+
+        WindowControllersManager.shared.open(url, with: linkOpenBehavior, source: source, target: targetWindowController)
     }
 
     func openLink(_ target: NewTabPageDataModel.OpenAction.Target) async {

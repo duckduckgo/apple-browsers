@@ -30,7 +30,7 @@ public protocol NewTabPageFavorite {
 public protocol FavoritesActionsHandling {
     associatedtype FavoriteType: NewTabPageFavorite
 
-    @MainActor func open(_ url: URL, sender: LinkOpenSender, in window: NSWindow?)
+    @MainActor func open(_ url: URL, sender: LinkOpenSender, target: LinkOpenTarget, in window: NSWindow?)
     @MainActor func addNewFavorite(in window: NSWindow?)
     @MainActor func edit(_ favorite: FavoriteType, in window: NSWindow?)
 

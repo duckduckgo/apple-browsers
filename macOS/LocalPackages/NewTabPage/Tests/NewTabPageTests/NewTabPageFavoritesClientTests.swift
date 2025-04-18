@@ -151,9 +151,9 @@ final class NewTabPageFavoritesClientTests: XCTestCase {
             try await messageHelper.handleMessageExpectingNilResponse(named: .open, parameters: action)
         }
         XCTAssertEqual(actionsHandler.openCalls, [
-            .init(URL(string: "https://example.com")!, .script),
-            .init(URL(string: "https://example.com")!, .script),
-            .init(URL(string: "https://example.com")!, .script)
+            .init(URL(string: "https://example.com")!, .userScript),
+            .init(URL(string: "https://example.com")!, .userScript),
+            .init(URL(string: "https://example.com")!, .userScript)
         ])
     }
 

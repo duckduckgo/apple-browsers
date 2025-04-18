@@ -125,8 +125,8 @@ public final class NewTabPageRecentActivityModel {
         return await actionsHandler.confirmBurn(url)
     }
 
-    @MainActor func open(_ url: String, sender: LinkOpenSender, sourceWindow: NSWindow?) {
+    @MainActor func open(_ url: String, sender: LinkOpenSender, target: LinkOpenTarget, sourceWindow: NSWindow?) {
         guard let url = URL(string: url), url.isValid else { return }
-        actionsHandler.openHistoryEntry(url, sender: sender, sourceWindow: sourceWindow)
+        actionsHandler.openHistoryEntry(url, sender: sender, target: target, sourceWindow: sourceWindow)
     }
 }

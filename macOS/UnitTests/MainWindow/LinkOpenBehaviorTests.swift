@@ -191,7 +191,7 @@ final class LinkOpenBehaviorTests {
                                             shouldSelectNewTab: shouldSelectNewTab)
 
             #expect(behavior == expectation, "\(event.testDescr): switchToTabPref: \(switchToNewTabWhenOpenedPreference), canOpenInCurrent: \(canOpenLinkInCurrentTab), shouldSelect: \(shouldSelectNewTab)",
-                    sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 0))
+                    sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
 
             // test overload with button
             let button = event.button

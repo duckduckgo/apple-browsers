@@ -9871,7 +9871,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				85F21DB0210F5E32002631A6 /* AtbIntegrationTests.swift in Sources */,
-				9FD1BDED2D8C183C002F4EFE /* OnboardingManagerTests.swift in Sources */,
 				8551912724746EDC0010FDD0 /* SnapshotHelper.swift in Sources */,
 				1E3C99DA2D9D6C6E009447E2 /* SubscriptionFeatureFlagMappingTests.swift in Sources */,
 			);

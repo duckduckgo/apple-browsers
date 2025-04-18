@@ -220,14 +220,10 @@ extension WindowControllersManager {
         } else {
             show(url: url, source: .bookmark)
         }
-        PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
     }
 
     func show(url: URL?, tabId: String? = nil, source: Tab.TabContent.URLSource, newTab: Bool = false) {
         let nonPopupMainWindowControllers = mainWindowControllers.filter { $0.window?.isPopUpWindow == false }
-        if source == .bookmark {
-            PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
-        }
         // If there is a main window, open the URL in it
         if let windowController = nonPopupMainWindowControllers.first(where: { $0.window?.isMainWindow == true })
             // If a last key window is available, open the URL in it

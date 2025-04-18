@@ -294,7 +294,18 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         tableView.registerForDraggedTypes(BookmarkDragDropManager.draggedTypes)
 
         reloadData()
+    }
 
+    override func viewDidAppear() {
+        subscribeToSelectedSortMode()
+        subscribeToFirstResponder()
+    }
+
+    override func viewWillDisappear() {
+        cancellables.removeAll()
+    }
+
+    private func subscribeToSelectedSortMode() {
         sortBookmarksViewModel.$selectedSortMode.sink { [weak self] newSortMode in
             guard let self else { return }
 
@@ -315,14 +326,17 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         }.store(in: &cancellables)
     }
 
-    override func viewWillAppear() {
-        NotificationCenter.default.addObserver(self, selector: #selector(firstReponderDidChange), name: .firstResponder, object: nil)
-
-        reloadData()
-    }
-
-    override func viewDidDisappear() {
-        NotificationCenter.default.removeObserver(self, name: .firstResponder, object: nil)
+    private func subscribeToFirstResponder() {
+        guard let window = view.window else {
+            assertionFailure("BookmarkManagementDetailViewController.subscribeToFirstResponder: view.window is nil")
+            return
+        }
+        NotificationCenter.default
+            .publisher(for: MainWindow.firstResponderDidChangeNotification, object: window)
+            .sink { [weak self] in
+                self?.firstResponderDidChange($0)
+            }
+            .store(in: &cancellables)
     }
 
     override func keyDown(with event: NSEvent) {
@@ -418,9 +432,9 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
             .show(in: view.window)
     }
 
-    @objc func firstReponderDidChange(notification: Notification) {
+    private func firstResponderDidChange(_ notification: Notification) {
         // clear delete undo history when activating the Address Bar
-        if notification.object is AddressBarTextEditor {
+        if view.window?.firstResponder is AddressBarTextEditor {
             undoManager?.removeAllActions(withTarget: bookmarkManager)
         }
     }
@@ -641,7 +655,6 @@ extension BookmarkManagementDetailViewController: NSTableViewDelegate, NSTableVi
                 burnerMode: tabCollection.burnerMode)
         }
         tabCollection.append(tabs: tabs)
-        PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
     }
 }
 

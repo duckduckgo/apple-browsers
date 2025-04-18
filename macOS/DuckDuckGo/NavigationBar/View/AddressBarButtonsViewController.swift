@@ -37,6 +37,7 @@ final class AddressBarButtonsViewController: NSViewController {
     weak var delegate: AddressBarButtonsViewControllerDelegate?
 
     private let accessibilityPreferences: AccessibilityPreferences
+    private let visualStyleManager: VisualStyleManagerProviding
 
     private var permissionAuthorizationPopover: PermissionAuthorizationPopover?
     private func permissionAuthorizationPopoverCreatingIfNeeded() -> PermissionAuthorizationPopover {
@@ -184,13 +185,15 @@ final class AddressBarButtonsViewController: NSViewController {
           popovers: NavigationBarPopovers?,
           onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
           aiChatTabOpener: AIChatTabOpening,
-          aiChatMenuConfig: AIChatMenuVisibilityConfigurable) {
+          aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
+          visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.accessibilityPreferences = accessibilityPreferences
         self.popovers = popovers
         self.onboardingPixelReporter = onboardingPixelReporter
         self.aiChatTabOpener = aiChatTabOpener
         self.aiChatMenuConfig = aiChatMenuConfig
+        self.visualStyleManager = visualStyleManager
         super.init(coder: coder)
     }
 
@@ -678,6 +681,7 @@ final class AddressBarButtonsViewController: NSViewController {
         }
 
         let isAquaMode = NSApp.effectiveAppearance.name == .aqua
+        let style = visualStyleManager.style.privacyShieldStyleProvider
 
         trackerAnimationView1 = addAndLayoutAnimationViewIfNeeded(animationView: trackerAnimationView1,
                                                                   animationName: isAquaMode ? "trackers-1" : "dark-trackers-1",
@@ -689,9 +693,9 @@ final class AddressBarButtonsViewController: NSViewController {
                                                                   animationName: isAquaMode ? "trackers-3" : "dark-trackers-3",
                                                                   renderingEngine: .mainThread)
         shieldAnimationView = addAndLayoutAnimationViewIfNeeded(animationView: shieldAnimationView,
-                                                                animationName: isAquaMode ? "shield" : "dark-shield")
+                                                                animationName: style.animationForShield(forLightMode: isAquaMode))
         shieldDotAnimationView = addAndLayoutAnimationViewIfNeeded(animationView: shieldDotAnimationView,
-                                                                   animationName: isAquaMode ? "shield-dot" : "dark-shield-dot")
+                                                                   animationName: style.animationForShieldWithDot(forLightMode: isAquaMode))
     }
 
     private func subscribeToSelectedTabViewModel() {
@@ -828,13 +832,13 @@ final class AddressBarButtonsViewController: NSViewController {
         if let url = tabViewModel?.tab.content.userEditableUrl,
            isUrlBookmarked || bookmarkManager.isAnyUrlVariantBookmarked(url: url)
         {
-            bookmarkButton.image = .bookmarkFilled
+            bookmarkButton.image = visualStyleManager.style.addressBarIconsProvider.bookmarkFilledIcon
             bookmarkButton.mouseOverTintColor = NSColor.bookmarkFilledTint
             bookmarkButton.toolTip = UserText.editBookmarkTooltip
             bookmarkButton.setAccessibilityValue("Bookmarked")
         } else {
             bookmarkButton.mouseOverTintColor = nil
-            bookmarkButton.image = .bookmark
+            bookmarkButton.image = visualStyleManager.style.addressBarIconsProvider.addBookmarkIcon
             bookmarkButton.contentTintColor = nil
             bookmarkButton.toolTip = UserText.addBookmarkTooltip
             bookmarkButton.setAccessibilityValue("Unbookmarked")
@@ -864,7 +868,7 @@ final class AddressBarButtonsViewController: NSViewController {
         guard let tabViewModel else { return }
 
         let url = tabViewModel.tab.content.userEditableUrl
-        let isNewTabOrOnboarding = [.newtab, .onboardingDeprecated, .onboarding].contains(tabViewModel.tab.content)
+        let isNewTabOrOnboarding = [.newtab, .onboarding].contains(tabViewModel.tab.content)
         let isHypertextUrl = url?.navigationalScheme?.isHypertextScheme == true && url?.isDuckPlayer == false
         let isEditingMode = controllerMode?.isEditing ?? false
         let isTextFieldValueText = textFieldValue?.isText ?? false
@@ -892,6 +896,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func updatePrivacyEntryPointIcon() {
+        let privacyShieldStyle = visualStyleManager.style.privacyShieldStyleProvider
         guard AppVersion.runType.requiresEnvironment else { return }
         privacyEntryPointButton.image = nil
 
@@ -917,12 +922,12 @@ final class AddressBarButtonsViewController: NSViewController {
                 privacyEntryPointButton.mouseOverTintColor = .alertRedHover
                 privacyEntryPointButton.mouseDownTintColor = .alertRedPressed
             } else {
-                privacyEntryPointButton.image = isShieldDotVisible ? .shieldDot : .shield
+                privacyEntryPointButton.image = isShieldDotVisible ? privacyShieldStyle.iconWithDot : privacyShieldStyle.icon
                 privacyEntryPointButton.isAnimationEnabled = true
 
                 let animationNames = MouseOverAnimationButton.AnimationNames(
-                    aqua: isShieldDotVisible ? "shield-dot-mouse-over" : "shield-mouse-over",
-                    dark: isShieldDotVisible ? "dark-shield-dot-mouse-over" : "dark-shield-mouse-over"
+                    aqua: isShieldDotVisible ? privacyShieldStyle.hoverAnimationWithDot(forLightMode: true) : privacyShieldStyle.hoverAnimation(forLightMode: true),
+                    dark: isShieldDotVisible ? privacyShieldStyle.hoverAnimationWithDot(forLightMode: false) : privacyShieldStyle.hoverAnimation(forLightMode: false)
                 )
                 privacyEntryPointButton.animationNames = animationNames
             }

@@ -26,6 +26,12 @@ public protocol BrokerJobData {
     var historyEvents: [HistoryEvent] { get }
 }
 
+public extension BrokerJobData {
+    var isRemovedByUser: Bool {
+        historyEvents.doesBelongToUserRemovedRecord
+    }
+}
+
 public struct ScanJobData: BrokerJobData, Sendable {
     public let brokerId: Int64
     public let profileQueryId: Int64

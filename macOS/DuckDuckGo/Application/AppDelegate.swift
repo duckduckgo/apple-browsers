@@ -488,8 +488,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         if LocalStatisticsStore().atb == nil {
             AppDelegate.firstLaunchDate = Date()
-            // MARK: Enable pixel experiments here
-            PixelExperiment.install()
         }
         AtbAndVariantCleanup.cleanup()
         DefaultVariantManager().assignVariantIfNeeded { _ in
@@ -628,7 +626,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidBecomeActive(_ notification: Notification) {
         guard didFinishLaunching else { return }
 
-        PixelExperiment.fireOnboardingTestPixels()
         initializeSync()
 
         vpnAppEventsHandler.applicationDidBecomeActive()

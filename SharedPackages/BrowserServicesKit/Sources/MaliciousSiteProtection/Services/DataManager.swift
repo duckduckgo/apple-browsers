@@ -21,7 +21,7 @@ import os
 
 protocol DataManaging {
     func dataSet<DataKey: MaliciousSiteDataKey>(for key: DataKey) async -> DataKey.DataSet
-    func store<DataKey: MaliciousSiteDataKey>(_ dataSet: DataKey.DataSet, for key: DataKey) async throws
+    func updateDataSet<DataKey: MaliciousSiteDataKey>(with key: DataKey, changeSet: APIClient.ChangeSetResponse<DataKey.DataSet.Element>) async throws
     func preloadData(for threatKinds: [ThreatKind]) async
 }
 
@@ -98,7 +98,10 @@ public actor DataManager: DataManaging {
         return storedDataSet
     }
 
-    func store<DataKey: MaliciousSiteDataKey>(_ dataSet: DataKey.DataSet, for key: DataKey) throws {
+    func updateDataSet<DataKey: MaliciousSiteDataKey>(with key: DataKey, changeSet: APIClient.ChangeSetResponse<DataKey.DataSet.Element>) throws {
+        var dataSet = self.dataSet(for: key)
+        dataSet.apply(changeSet)
+
         let dataType = key.dataType
         let fileName = fileNameProvider(dataType)
         self.store[dataType] = dataSet

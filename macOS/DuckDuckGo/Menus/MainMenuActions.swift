@@ -566,7 +566,6 @@ extension MainViewController {
 
         makeKeyIfNeeded()
         getActiveTabAndIndex()?.tab.setContent(.contentFromURL(url, source: .historyEntry))
-        adjustFirstResponder()
     }
 
     @objc func clearAllHistory(_ sender: NSMenuItem) {
@@ -706,7 +705,6 @@ extension MainViewController {
                 burnerMode: tabCollectionViewModel.burnerMode)
         }
         tabCollectionViewModel.append(tabs: tabs)
-        PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
     }
 
     @objc func showManageBookmarks(_ sender: Any?) {

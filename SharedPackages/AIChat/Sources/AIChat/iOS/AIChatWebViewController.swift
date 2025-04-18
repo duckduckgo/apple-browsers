@@ -187,7 +187,7 @@ extension AIChatWebViewController: WKNavigationDelegate {
     private func shouldAllowNavigation(for url: URL, with navigationAction: WKNavigationAction) -> Bool {
         return url.scheme == SchemeType.blob || chatModel.shouldAllowRequestWithNavigationAction(navigationAction)
     }
-    
+
     private func updateLoadingState(isLoading: Bool) {
         if isLoading {
             loadingView.startAnimating()

@@ -30,7 +30,7 @@ final class TitleBarView: UIView {
         titleLabel = UILabel()
         closeButton = UIButton(type: .system)
         handleBar = UIView()
-        
+
         self.closeAction = closeAction
 
         super.init(frame: .zero)

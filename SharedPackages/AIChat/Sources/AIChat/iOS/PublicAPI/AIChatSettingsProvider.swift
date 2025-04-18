@@ -28,7 +28,7 @@ public protocol AIChatSettingsProvider {
 
     /// The user settings state for the AI Chat browsing menu icon.
     var isAIChatBrowsingMenuUserSettingsEnabled: Bool { get }
-    
+
     /// The user settings state for the AI Chat voice search
     var isAIChatVoiceSearchUserSettingsEnabled: Bool { get }
 
@@ -46,6 +46,5 @@ public protocol AIChatSettingsProvider {
 
     /// Updates the user settings state for the AI Chat voice search
     func enableAIChatTabSwitcherUserSettings(enable: Bool)
-
 }
 #endif

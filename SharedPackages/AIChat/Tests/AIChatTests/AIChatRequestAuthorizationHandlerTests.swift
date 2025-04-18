@@ -24,7 +24,7 @@ final class MockAIChatDebugSettings: AIChatDebugSettingsHandling {
     var messagePolicyHostname: String?
 }
 
-class AIChatRequestAuthorizationHandlerTests: XCTestCase {
+final class AIChatRequestAuthorizationHandlerTests: XCTestCase {
 
     var handler: AIChatRequestAuthorizationHandler!
     var mockDebugSettings: MockAIChatDebugSettings!
@@ -144,7 +144,6 @@ class AIChatRequestAuthorizationHandlerTests: XCTestCase {
         XCTAssertFalse(result, "Expected to deny request when debug settings doesnt exist on non-DuckDuckGo URL")
     }
 }
-
 
 final class MockWKNavigationAction: WKNavigationAction {
     private let mockRequest: URLRequest

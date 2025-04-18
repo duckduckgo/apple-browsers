@@ -58,7 +58,6 @@ public final class AIChatViewController: UIViewController {
         return titleBarView
     }()
 
-
     /// Initializes a new instance of `AIChatViewController` with the specified remote settings and web view configuration.
     ///
     /// - Parameters:
@@ -89,8 +88,8 @@ public final class AIChatViewController: UIViewController {
     }
 
     required init?(coder: NSCoder) {
-         fatalError("init(coder:) has not been implemented")
-     }
+        fatalError("init(coder:) has not been implemented")
+    }
 }
 
 // MARK: - Lifecycle
@@ -107,12 +106,12 @@ extension AIChatViewController {
 // MARK: - Public functions
 extension AIChatViewController {
     public func loadQuery(_ query: String, autoSend: Bool) {
-         // Ensure the webViewController is added before loading the query
-         if webViewController == nil {
-             addWebViewController()
-         }
+        // Ensure the webViewController is added before loading the query
+        if webViewController == nil {
+            addWebViewController()
+        }
         webViewController?.loadQuery(query, autoSend: autoSend)
-     }
+    }
 
     public func reload() {
         webViewController?.reload()
@@ -170,7 +169,7 @@ extension AIChatViewController: AIChatWebViewControllerDelegate {
     func aiChatWebViewController(_ viewController: AIChatWebViewController, didRequestOpenDownloadWithFileName fileName: String) {
         delegate?.aiChatViewController(self, didRequestOpenDownloadWithFileName: fileName)
     }
-    
+
     func aiChatWebViewController(_ viewController: AIChatWebViewController, didRequestToLoad url: URL) {
         delegate?.aiChatViewController(self, didRequestToLoad: url)
     }

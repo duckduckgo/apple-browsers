@@ -141,31 +141,25 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
 
     @MainActor
     func test_WhenSyncIsTurnedOff_ErrorHandlerSyncDidTurnOffCalled() async {
-        let expectation = XCTestExpectation(description: "Sync Turned off")
-        Task {
-            _ = await vc.confirmAndDisableSync()
-        }
-        Task {
-            vc.onConfirmSyncDisable?()
-            expectation.fulfill()
-        }
+        let turnOff = Task { await vc.confirmAndDisableSync() }
+        await Task.yield()
 
-        await fulfillment(of: [expectation], timeout: 5.0)
+        vc.onConfirmSyncDisable?()
+        let didTurnOff = await turnOff.value
+
+        XCTAssertTrue(didTurnOff)
         XCTAssertTrue(errorHandler.syncDidTurnOffCalled)
     }
 
     @MainActor
     func test_WhenAccountRemoved_ErrorHandlerSyncDidTurnOffCalled() async {
-        let expectation = XCTestExpectation(description: "Sync Turned off")
+        let deletion = Task { await vc.confirmAndDeleteAllData() }
+        await Task.yield()
 
-        Task {
-            _ = await vc.confirmAndDeleteAllData()
-        }
-        Task {
-            vc.onConfirmAndDeleteAllData?()
-            expectation.fulfill()
-        }
-        await fulfillment(of: [expectation], timeout: 5.0)
+        vc.onConfirmAndDeleteAllData?()
+        let didDelete = await deletion.value
+
+        XCTAssertTrue(didDelete)
         XCTAssertTrue(errorHandler.syncDidTurnOffCalled)
     }
 

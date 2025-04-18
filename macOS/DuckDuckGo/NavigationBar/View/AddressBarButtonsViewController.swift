@@ -927,7 +927,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
                 let animationNames = MouseOverAnimationButton.AnimationNames(
                     aqua: isShieldDotVisible ? privacyShieldStyle.hoverAnimationWithDot(forLightMode: true) : privacyShieldStyle.hoverAnimation(forLightMode: true),
-                    dark: isShieldDotVisible ? privacyShieldStyle.hoverAnimationWithDot(forLightMode: false) : privacyShieldStyle.hoverAnimation(forLightMode: false),
+                    dark: isShieldDotVisible ? privacyShieldStyle.hoverAnimationWithDot(forLightMode: false) : privacyShieldStyle.hoverAnimation(forLightMode: false)
                 )
                 privacyEntryPointButton.animationNames = animationNames
             }

@@ -36,4 +36,3 @@ final class NewAddressBarIconsProvider: AddressBarIconsProviding {
     let addBookmarkIcon: NSImage = .addBookmarkNew
     let bookmarkFilledIcon: NSImage = .bookmarkFilledNew
 }
-

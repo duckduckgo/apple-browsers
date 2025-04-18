@@ -22,8 +22,8 @@ import Foundation
 import NewTabPage
 
 final class CapturingRecentActivityActionsHandler: RecentActivityActionsHandling {
-    func openHistoryEntry(_ url: URL, sender: NewTabPage.LinkOpenSender, sourceWindow: NSWindow?) {
-        openCalls.append(.init(url: url, sender: sender))
+    func openHistoryEntry(_ url: URL, sender: LinkOpenSender, target: LinkOpenTarget, sourceWindow: NSWindow?) {
+        openCalls.append(.init(url: url, sender: sender, target: target))
     }
 
     func addFavorite(_ url: URL) {
@@ -44,6 +44,7 @@ final class CapturingRecentActivityActionsHandler: RecentActivityActionsHandling
     struct Open: Equatable {
         let url: URL
         let sender: LinkOpenSender
+        let target: LinkOpenTarget
     }
 
     // swiftlint:disable:next identifier_name

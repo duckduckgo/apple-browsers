@@ -1,5 +1,5 @@
 //
-//  LinkOpenTarget.swift
+//  LinkOpenSender.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,21 +16,6 @@
 //  limitations under the License.
 //
 
-import Foundation
-
-public enum LinkOpenTarget: Equatable {
-    case current, newTab, newWindow
-}
-
-extension LinkOpenTarget {
-    init(_ target: NewTabPageDataModel.ActivityOpenAction.OpenTarget) {
-        switch target {
-        case .sameTab:
-            self = .current
-        case .newTab:
-            self = .newTab
-        case .newWindow:
-            self = .newWindow
-        }
-    }
+public enum LinkOpenSender: Equatable {
+    case userScript, contextMenuItem
 }

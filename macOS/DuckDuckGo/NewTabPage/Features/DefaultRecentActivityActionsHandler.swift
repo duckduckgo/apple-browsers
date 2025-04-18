@@ -161,9 +161,9 @@ final class DefaultRecentActivityActionsHandler: RecentActivityActionsHandling {
     }
 
     @MainActor
-    func openHistoryEntry(_ url: URL, sender: LinkOpenSender, sourceWindow: NSWindow?) {
+    func openHistoryEntry(_ url: URL, sender: LinkOpenSender, target: LinkOpenTarget, sourceWindow: NSWindow?) {
         PixelKit.fire(NewTabPagePixel.privacyFeedHistoryLinkOpened, frequency: .dailyAndCount)
-        NewTabPageLinkOpener.open(url, source: .historyEntry, sender: sender, sourceWindow: sourceWindow)
+        NewTabPageLinkOpener.open(url, source: .historyEntry, sender: sender, target: target, sourceWindow: sourceWindow)
     }
 
 }

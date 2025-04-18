@@ -111,7 +111,7 @@ public final class NewTabPageFavoritesModel<FavoriteType, ActionHandler>: NSObje
         guard let url = URL(string: url), url.isValid else { return }
         // frontend sends `.newWindow` always when activating a link with Shift key pressed,
         // so let the receiver decide what to open based on current modifier flags using `LinkOpenBehavior`
-        actionsHandler.open(url, sender: .script, in: sourceWindow)
+        actionsHandler.open(url, sender: .userScript, target: LinkOpenTarget(target), in: sourceWindow)
     }
 
     @MainActor
@@ -168,12 +168,12 @@ public final class NewTabPageFavoritesModel<FavoriteType, ActionHandler>: NSObje
 
     @MainActor
     private func openInNewTab(_ url: URL, sourceWindow: NSWindow?) {
-        actionsHandler.open(url, sender: .newTabContextMenuItem, in: sourceWindow)
+        actionsHandler.open(url, sender: .contextMenuItem, target: .newTab, in: sourceWindow)
     }
 
     @MainActor
     private func openInNewWindow(_ url: URL, sourceWindow: NSWindow?) {
-        actionsHandler.open(url, sender: .newWindowContextMenuItem, in: sourceWindow)
+        actionsHandler.open(url, sender: .contextMenuItem, target: .newWindow, in: sourceWindow)
     }
 
     @MainActor

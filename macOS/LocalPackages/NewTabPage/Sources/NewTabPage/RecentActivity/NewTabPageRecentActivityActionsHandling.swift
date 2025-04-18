@@ -22,7 +22,7 @@ import Foundation
 
 public protocol RecentActivityActionsHandling {
 
-    @MainActor func openHistoryEntry(_ url: URL, sender: LinkOpenSender, sourceWindow: NSWindow?)
+    @MainActor func openHistoryEntry(_ url: URL, sender: LinkOpenSender, target: LinkOpenTarget, sourceWindow: NSWindow?)
     @MainActor func addFavorite(_ url: URL)
     @MainActor func removeFavorite(_ url: URL)
     @MainActor func confirmBurn(_ url: URL) async -> Bool

@@ -150,7 +150,7 @@ public final class NewTabPageRecentActivityClient: NewTabPageUserScriptClient {
         guard let openAction: NewTabPageDataModel.ActivityOpenAction = DecodableHelper.decode(from: params) else {
             return nil
         }
-        model.open(openAction.url, sender: .script, sourceWindow: original.webView?.window)
+        model.open(openAction.url, sender: .userScript, target: LinkOpenTarget(openAction.target), sourceWindow: original.webView?.window)
         return nil
     }
 }

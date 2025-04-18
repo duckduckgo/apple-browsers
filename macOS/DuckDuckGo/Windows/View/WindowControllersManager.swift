@@ -39,7 +39,7 @@ protocol WindowControllersManagerProtocol {
     func register(_ windowController: MainWindowController)
     func unregister(_ windowController: MainWindowController)
 
-    func show(url: URL?, tabId: String?, source: Tab.TabContent.URLSource, newTab: Bool)
+    func show(url: URL?, tabId: String?, source: Tab.TabContent.URLSource, newTab: Bool, selected: Bool?)
     func showBookmarksTab()
 
     @discardableResult
@@ -66,8 +66,8 @@ extension WindowControllersManagerProtocol {
                        lazyLoadTabs: Bool = false) -> MainWindow? {
         openNewWindow(with: tabCollectionViewModel, burnerMode: burnerMode, droppingPoint: droppingPoint, contentSize: contentSize, showWindow: showWindow, popUp: popUp, lazyLoadTabs: lazyLoadTabs, isMiniaturized: false, isMaximized: false, isFullscreen: false)
     }
-    func show(url: URL?, source: Tab.TabContent.URLSource, newTab: Bool) {
-        show(url: url, tabId: nil, source: source, newTab: newTab)
+    func show(url: URL?, source: Tab.TabContent.URLSource, newTab: Bool, selected: Bool?) {
+        show(url: url, tabId: nil, source: source, newTab: newTab, selected: selected)
     }
 }
 
@@ -188,7 +188,7 @@ extension WindowControllersManager {
         open(historyEntry.url, source: .historyEntry, target: nil, event: event)
     }
 
-    /// Helper method for opening with an event
+    /// Helper method for opening URL with an event respecting its Key Modifiers
     func open(_ url: URL, source: Tab.TabContent.URLSource, target window: NSWindow?, event: NSEvent?) {
         // get clicked window or last key window if menu item selected
         let windowController = mainWindowController(for: window ?? event?.window) ?? lastKeyMainWindowController
@@ -215,7 +215,7 @@ extension WindowControllersManager {
         switch linkOpenBehavior {
         case .currentTab:
             if let windowController, windowController.window?.isPopUpWindow == false {
-                show(url: url, in: windowController, source: source, newTab: false)
+                show(url: url, in: windowController, source: source, newTab: false, selected: true)
             } else {
                 show(url: url, source: source)
             }
@@ -229,7 +229,22 @@ extension WindowControllersManager {
         PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
     }
 
-    func show(url: URL?, tabId: String? = nil, source: Tab.TabContent.URLSource, newTab: Bool = false) {
+    /// Opens a URL in a specified tab or creates a new tab/window if necessary.
+    ///
+    /// This function can activate or reuse an existing tab, create a new one, or open a new window based on the provided parameters.
+    ///
+    /// - Parameters:
+    ///   - url: The URL to open. If `nil`, New Tab page will be open (`.newtab`).
+    ///   - tabId: An optional identifier for an existing tab to switch to.
+    ///            If provided along with the `source` matching `.appOpenUrl` or `.switchToOpenTab`,
+    ///            the function will attempt to activate the tab with this ID.
+    ///   - source: The origin of the URL being opened, which can indicate whether it is from a bookmark, history record, external link, etc.
+    ///   - newTab: A Boolean value indicating whether to create a new tab instead of reusing an existing one.
+    ///             The default is `false`.
+    ///   - selected: An optional Boolean value that determines whether the new tab should be selected (active) or opened in the background.
+    ///               If `nil`, the new tab activation setting value will be followed (`TabsPreferences.shared.switchToNewTabWhenOpened`).
+    ///               The default is `true`.
+    func show(url: URL?, tabId: String? = nil, source: Tab.TabContent.URLSource, newTab: Bool = false, selected: Bool? = true) {
         let nonPopupMainWindowControllers = mainWindowControllers.filter { $0.window?.isPopUpWindow == false }
         if source == .bookmark {
             PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
@@ -265,7 +280,8 @@ extension WindowControllersManager {
                 return
             }
 
-            show(url: url, in: windowController, source: source, newTab: newTab)
+            let selected = selected ?? TabsPreferences.shared.switchToNewTabWhenOpened
+            show(url: url, in: windowController, source: source, newTab: newTab, selected: selected)
             return
         }
 
@@ -305,7 +321,7 @@ extension WindowControllersManager {
         return false
     }
 
-    private func show(url: URL?, in windowController: MainWindowController, source: Tab.TabContent.URLSource, newTab: Bool) {
+    private func show(url: URL?, in windowController: MainWindowController, source: Tab.TabContent.URLSource, newTab: Bool, selected: Bool) {
         let viewController = windowController.mainViewController
         windowController.window?.makeKeyAndOrderFront(self)
 
@@ -322,7 +338,7 @@ extension WindowControllersManager {
         } else {
             let newTab = Tab(content: url.map { .url($0, source: source) } ?? .newtab, shouldLoadInBackground: true, burnerMode: tabCollectionViewModel.burnerMode)
             newTab.setContent(url.map { .contentFromURL($0, source: source) } ?? .newtab)
-            tabCollectionViewModel.insertOrAppend(tab: newTab, selected: true)
+            tabCollectionViewModel.insertOrAppend(tab: newTab, selected: selected)
         }
     }
 

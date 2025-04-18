@@ -1,5 +1,5 @@
 //
-//  NewTabPageRecentActivityActionsHandling.swift
+//  LinkOpenSender.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,16 +16,6 @@
 //  limitations under the License.
 //
 
-import AppKit
-import Combine
-import Foundation
-
-public protocol RecentActivityActionsHandling {
-
-    @MainActor func openHistoryEntry(_ url: URL, sender: LinkOpenSender, target: LinkOpenTarget, sourceWindow: NSWindow?)
-    @MainActor func addFavorite(_ url: URL)
-    @MainActor func removeFavorite(_ url: URL)
-    @MainActor func confirmBurn(_ url: URL) async -> Bool
-
-    var burnDidCompletePublisher: AnyPublisher<Void, Never> { get }
+public enum LinkOpenSender: Equatable {
+    case userScript, contextMenuItem
 }

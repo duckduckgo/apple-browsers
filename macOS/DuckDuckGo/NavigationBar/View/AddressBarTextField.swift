@@ -297,6 +297,12 @@ final class AddressBarTextField: NSTextField {
         hideSuggestionWindow()
     }
 
+    func aiChatQueryEnterPressed() {
+        suggestionContainerViewModel?.clearUserStringValue()
+        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(value, target: .sameTab)
+        hideSuggestionWindow()
+    }
+
     private func navigate(suggestion: Suggestion?) {
         let autocompletePixel: GeneralPixel? = {
             switch suggestion {
@@ -619,11 +625,6 @@ final class AddressBarTextField: NSTextField {
 
         window.addChildWindow(suggestionWindow, ordered: .above)
         layoutSuggestionWindow()
-        postSuggestionWindowOpenNotification()
-    }
-
-    private func postSuggestionWindowOpenNotification() {
-        NotificationCenter.default.post(name: .suggestionWindowOpen, object: nil)
     }
 
     func hideSuggestionWindow() {
@@ -700,6 +701,14 @@ final class AddressBarTextField: NSTextField {
         AppearancePreferences.shared.showFullURL.toggle()
 
         let shouldShowFullURL = AppearancePreferences.shared.showFullURL
+        menuItem.state = shouldShowFullURL ? .on : .off
+    }
+
+    @objc func toggleAIChatAddress(_ menuItem: NSMenuItem) {
+        let preferences = AIChatPreferences()
+        preferences.showShortcutInAddressBar.toggle()
+
+        let shouldShowFullURL = preferences.showShortcutInAddressBar
         menuItem.state = shouldShowFullURL ? .on : .off
     }
 
@@ -1084,6 +1093,7 @@ extension AddressBarTextField: NSTextViewDelegate {
         let additionalMenuItems: [NSMenuItem] = [
             .toggleAutocompleteSuggestionsMenuItem,
             .toggleFullWebsiteAddressMenuItem,
+            .toggleAIChatAddressMenuItem,
             .separator()
         ]
         let insertionPoint = menuItemInsertionPoint(within: menu)
@@ -1159,6 +1169,18 @@ private extension NSMenuItem {
         return menuItem
     }
 
+    static var toggleAIChatAddressMenuItem: NSMenuItem {
+        let menuItem = NSMenuItem(
+            title: UserText.showAIChatInAddress,
+            action: #selector(AddressBarTextField.toggleAIChatAddress(_:)),
+            keyEquivalent: ""
+        )
+
+        menuItem.state = AIChatPreferences().showShortcutInAddressBar ? .on : .off
+
+        return menuItem
+    }
+
     private static var pasteAndGoMenuItem: NSMenuItem {
         NSMenuItem(
             title: UserText.pasteAndGo,
@@ -1197,10 +1219,6 @@ extension AddressBarTextField: SuggestionViewControllerDelegate {
         navigate(suggestion: suggestion)
     }
 
-}
-
-extension Notification.Name {
-    static let suggestionWindowOpen = Notification.Name("suggestionWindowOpen")
 }
 
 fileprivate extension NSStoryboard {

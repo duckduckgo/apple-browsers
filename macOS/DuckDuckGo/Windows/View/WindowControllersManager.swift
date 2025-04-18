@@ -155,6 +155,24 @@ final class WindowControllersManager: WindowControllersManagerProtocol {
         }
     }
 
+    // MARK: - Active Domain
+
+    var activeDomain: String? {
+        if let tabContent = lastKeyMainWindowController?.activeTab?.content {
+            return Self.domain(from: tabContent)
+        }
+
+        return nil
+    }
+
+    static func domain(from tabContent: Tab.TabContent) -> String? {
+        if case .url(let url, _, _) = tabContent {
+
+            return url.host
+        } else {
+            return nil
+        }
+    }
 }
 
 // MARK: - Opening a url from the external event
@@ -169,6 +187,34 @@ extension WindowControllersManager {
         showTab(with: .bookmarks)
     }
 
+    /// Opens an AI chat URL in the application, either in a new or existing tab.
+    ///
+    /// - Parameters:
+    ///   - url: The AI chat URL to open.
+    ///   - target: Specifies where to open the URL. Can be `.newTabSelected`, `.newTabUnselected`, or `.sameTab`.
+    ///             Defaults to `.sameTab`.
+    ///   - hasPrompt: If `true` and the current tab is an AI chat, reloads the tab. Ignored if `target` is `.newTabSelected`
+    ///                or `.newTabUnselected`. Defaults to `false`.
+    func openAIChat(_ url: AIChatURL, target: AIChatTabOpenerTarget = .sameTab, hasPrompt: Bool = false) {
+
+        let tabCollectionViewModel = mainWindowController?.mainViewController.tabCollectionViewModel
+
+        switch target {
+        case .newTabSelected:
+            tabCollectionViewModel?.insertOrAppendNewTab(.contentFromURL(url.wrappedValue, source: .ui), selected: true)
+        case .newTabUnselected:
+            tabCollectionViewModel?.insertOrAppendNewTab(.contentFromURL(url.wrappedValue, source: .ui), selected: false)
+        case .sameTab:
+            if let currentURL = tabCollectionViewModel?.selectedTab?.url, currentURL.isAIChatURL {
+                if hasPrompt {
+                    tabCollectionViewModel?.selectedTab?.reload()
+                }
+            } else {
+                show(url: url.wrappedValue, source: .ui, newTab: false)
+            }
+        }
+    }
+
     func showPreferencesTab(withSelectedPane pane: PreferencePaneIdentifier? = nil) {
         showTab(with: .settings(pane: pane))
     }
@@ -179,8 +225,6 @@ extension WindowControllersManager {
 
         // Call updated openBookmark
         open(url, source: .bookmark, target: nil, event: event)
-        // Keep the pixel firing
-        PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
     }
 
     /// Opens a history entry in a tab, respecting the current modifier keys when deciding where to open the URL.
@@ -226,7 +270,6 @@ extension WindowControllersManager {
         case .newWindow(let selected):
             WindowsManager.openNewWindow(with: url, source: .bookmark, isBurner: windowController?.mainViewController.isBurner ?? false, showWindow: selected)
         }
-        PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
     }
 
     /// Opens a URL in a specified tab or creates a new tab/window if necessary.
@@ -246,9 +289,6 @@ extension WindowControllersManager {
     ///               The default is `true`.
     func show(url: URL?, tabId: String? = nil, source: Tab.TabContent.URLSource, newTab: Bool = false, selected: Bool? = true) {
         let nonPopupMainWindowControllers = mainWindowControllers.filter { $0.window?.isPopUpWindow == false }
-        if source == .bookmark {
-            PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
-        }
         // If there is a main window, open the URL in it
         if let windowController = nonPopupMainWindowControllers.first(where: { $0.window?.isMainWindow == true })
             // If a last key window is available, open the URL in it

@@ -30,7 +30,6 @@ final class DefaultFavoritesActionsHandler: FavoritesActionsHandling {
 
     @MainActor
     func open(_ url: URL, sender: LinkOpenSender, target: LinkOpenTarget, in window: NSWindow?) {
-        PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
         NewTabPageLinkOpener.open(url, source: .bookmark, sender: sender, target: target, sourceWindow: window)
     }
 

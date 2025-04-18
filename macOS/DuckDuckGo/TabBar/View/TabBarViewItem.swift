@@ -35,6 +35,7 @@ protocol TabBarViewModel {
     var usedPermissionsPublisher: Published<Permissions>.Publisher { get }
     var audioState: WKWebView.AudioState { get }
     var audioStatePublisher: AnyPublisher<WKWebView.AudioState, Never> { get }
+    var canKillWebContentProcess: Bool { get }
 }
 extension TabViewModel: TabBarViewModel {
     var titlePublisher: Published<String>.Publisher { $title }
@@ -43,6 +44,7 @@ extension TabViewModel: TabBarViewModel {
     var usedPermissionsPublisher: Published<Permissions>.Publisher { $usedPermissions }
     var audioState: WKWebView.AudioState { tab.audioState }
     var audioStatePublisher: AnyPublisher<WKWebView.AudioState, Never> { tab.audioStatePublisher }
+    var canKillWebContentProcess: Bool { tab.canKillWebContentProcess }
 }
 
 protocol TabBarViewItemDelegate: AnyObject {
@@ -75,6 +77,7 @@ protocol TabBarViewItemDelegate: AnyObject {
 
     @MainActor func otherTabBarViewItemsState(for tabBarViewItem: TabBarViewItem) -> OtherTabBarViewItemsState
 
+    @MainActor func tabBarViewItemCrashAction(_: TabBarViewItem)
 }
 final class TabBarItemCellView: NSView {
 
@@ -734,6 +737,17 @@ extension TabBarViewItem: NSMenuDelegate {
         if !isBurner {
             addMoveToNewWindowMenuItem(to: menu, areThereOtherTabs: areThereOtherTabs)
         }
+
+        if tabViewModel?.canKillWebContentProcess == true {
+            menu.addItem(.separator())
+            addCrashMenuItem(to: menu)
+        }
+    }
+
+    private func addCrashMenuItem(to menu: NSMenu) {
+        let crashMenuItem = NSMenuItem(title: Tab.crashTabMenuOptionTitle, action: #selector(crashButtonAction(_:)), keyEquivalent: "")
+        crashMenuItem.target = self
+        menu.addItem(crashMenuItem)
     }
 
     private func addDuplicateMenuItem(to menu: NSMenu) {
@@ -741,6 +755,10 @@ extension TabBarViewItem: NSMenuDelegate {
         duplicateMenuItem.target = self
         duplicateMenuItem.isEnabled = delegate?.tabBarViewItemCanBeDuplicated(self) ?? false
         menu.addItem(duplicateMenuItem)
+    }
+
+    @objc private func crashButtonAction(_ sender: NSButton) {
+        delegate?.tabBarViewItemCrashAction(self)
     }
 
     private func addPinMenuItem(to menu: NSMenu) {
@@ -1020,6 +1038,7 @@ extension TabBarViewItem {
             var audioStatePublisher: AnyPublisher<WKWebView.AudioState, Never> {
                 $audioState.eraseToAnyPublisher()
             }
+            var canKillWebContentProcess: Bool = false
             init(width: CGFloat, title: String = "Test Title", favicon: NSImage? = .aDark, tabContent: Tab.TabContent = .none, usedPermissions: Permissions = Permissions(), audioState: WKWebView.AudioState? = nil, selected: Bool = false) {
                 self.width = width
                 self.title = title
@@ -1166,6 +1185,7 @@ extension TabBarViewItem {
         func otherTabBarViewItemsState(for: TabBarViewItem) -> OtherTabBarViewItemsState {
             .init(hasItemsToTheLeft: false, hasItemsToTheRight: false)
         }
+        func tabBarViewItemCrashAction(_: TabBarViewItem) {}
     }
 }
 #endif

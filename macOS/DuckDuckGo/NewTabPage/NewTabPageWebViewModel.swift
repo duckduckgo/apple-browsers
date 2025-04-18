@@ -55,7 +55,7 @@ final class NewTabPageWebViewModel: NSObject {
         webView.publisher(for: \.window)
             .map { $0 != nil }
             .sink { [weak activeRemoteMessageModel] isOnScreen in
-                if isOnScreen && OnboardingViewModel.isOnboardingFinished && AppDelegate.isNewUser {
+                if isOnScreen && OnboardingActionsManager.isOnboardingFinished && AppDelegate.isNewUser {
                     PixelKit.fire(GeneralPixel.newTabInitial, frequency: .legacyInitial)
                 }
                 activeRemoteMessageModel?.isViewOnScreen = isOnScreen

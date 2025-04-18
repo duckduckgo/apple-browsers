@@ -68,8 +68,8 @@ extension AppDelegate {
 
     @objc func newAIChat(_ sender: Any?) {
         DispatchQueue.main.async {
-            AIChatTabOpener.openAIChatTab()
-            PixelKit.fire(GeneralPixel.aichatApplicationMenuFileClicked, includeAppVersionParameter: true)
+            NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(nil, target: .newTabSelected)
+            PixelKit.fire(AIChatPixel.aichatApplicationMenuFileClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
         }
     }
 
@@ -534,10 +534,6 @@ extension MainViewController {
         LocalPinningManager.shared.togglePinning(for: .networkProtection)
     }
 
-    @objc func toggleAIChatShortcut(_ sender: Any) {
-        LocalPinningManager.shared.togglePinning(for: .aiChat)
-    }
-
     // MARK: - History
 
     @objc func back(_ sender: Any?) {
@@ -710,7 +706,6 @@ extension MainViewController {
                 burnerMode: tabCollectionViewModel.burnerMode)
         }
         tabCollectionViewModel.append(tabs: tabs, andSelect: true)
-        PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
     }
 
     @objc func showManageBookmarks(_ sender: Any?) {
@@ -952,7 +947,7 @@ extension MainViewController {
 
     @objc func skipOnboarding(_ sender: Any?) {
         UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.onboardingFinished.rawValue)
-        Application.appDelegate.onboardingStateMachine.state = .onboardingCompleted
+        Application.appDelegate.onboardingContextualDialogsManager.state = .onboardingCompleted
         WindowControllersManager.shared.updatePreventUserInteraction(prevent: false)
         WindowControllersManager.shared.replaceTabWith(Tab(content: .newtab))
     }
@@ -966,7 +961,7 @@ extension MainViewController {
     }
 
     @objc func resetContextualOnboarding(_ sender: Any?) {
-        Application.appDelegate.onboardingStateMachine.state = .notStarted
+        Application.appDelegate.onboardingContextualDialogsManager.state = .notStarted
     }
 
     @objc func resetDuckPlayerPreferences(_ sender: Any?) {

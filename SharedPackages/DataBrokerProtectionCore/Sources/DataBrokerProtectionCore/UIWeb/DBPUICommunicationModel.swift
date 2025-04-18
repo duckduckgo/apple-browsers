@@ -201,6 +201,7 @@ public struct DBPUIBirthYear: Codable {
 /// The message contains the data broker on which the profile was found and the names
 /// and addresses that were matched
 public struct DBPUIDataBrokerProfileMatch: Codable {
+    public let id: Int64?
     public let dataBroker: DBPUIDataBroker
     public let name: String
     public let addresses: [DBPUIUserProfileAddress]
@@ -212,7 +213,8 @@ public struct DBPUIDataBrokerProfileMatch: Codable {
     public let removedDate: Double?
     public let hasMatchingRecordOnParentBroker: Bool
 
-    public init(dataBroker: DBPUIDataBroker, name: String, addresses: [DBPUIUserProfileAddress], alternativeNames: [String], relatives: [String], foundDate: Double, optOutSubmittedDate: Double? = nil, estimatedRemovalDate: Double? = nil, removedDate: Double? = nil, hasMatchingRecordOnParentBroker: Bool) {
+    public init(id: Int64?, dataBroker: DBPUIDataBroker, name: String, addresses: [DBPUIUserProfileAddress], alternativeNames: [String], relatives: [String], foundDate: Double, optOutSubmittedDate: Double? = nil, estimatedRemovalDate: Double? = nil, removedDate: Double? = nil, hasMatchingRecordOnParentBroker: Bool) {
+        self.id = id
         self.dataBroker = dataBroker
         self.name = name
         self.addresses = addresses
@@ -267,7 +269,8 @@ extension DBPUIDataBrokerProfileMatch {
             extractedProfile.doesMatchExtractedProfile(parentOptOut.extractedProfile)
         } ?? false
 
-        self.init(dataBroker: DBPUIDataBroker(name: dataBrokerName, url: dataBrokerURL, parentURL: dataBrokerParentURL, optOutUrl: optOutUrl),
+        self.init(id: extractedProfile.id,
+                  dataBroker: DBPUIDataBroker(name: dataBrokerName, url: dataBrokerURL, parentURL: dataBrokerParentURL, optOutUrl: optOutUrl),
                   name: extractedProfile.fullName ?? "No name",
                   addresses: extractedProfile.addresses?.map {DBPUIUserProfileAddress(addressCityState: $0) } ?? [],
                   alternativeNames: extractedProfile.alternativeNames ?? [String](),
@@ -306,7 +309,7 @@ extension DBPUIDataBrokerProfileMatch {
         return queryData.flatMap {
             var profiles = [DBPUIDataBrokerProfileMatch]()
 
-            for optOutJobData in $0.optOutJobData {
+            for optOutJobData in $0.optOutJobDataExcludingUserRemoved {
                 let dataBroker = $0.dataBroker
 
                 // Find opt-out job data for the parent broker, if applicable.
@@ -530,4 +533,20 @@ struct DBPUIVPNBypassSettingUpdateRequest: DBPUISendableMessage {
 struct DBPUIVPNBypassSettingUpdateResult: DBPUISendableMessage {
     let success: Bool
     let version: Int
+}
+
+/// Represents a user request to remove a profile from the dashboard
+struct DBPUIRemoveOptOutFromDashboardRequest: DBPUISendableMessage {
+    let recordId: Int64
+}
+
+/// Represents the result of manually removing a profile from the dashboard
+struct DBPUIRemoveOptOutFromDashboardResult: DBPUISendableMessage {
+    let success: Bool
+    let error: String?
+
+    init(success: Bool, error: String? = nil) {
+        self.success = success
+        self.error = error
+    }
 }

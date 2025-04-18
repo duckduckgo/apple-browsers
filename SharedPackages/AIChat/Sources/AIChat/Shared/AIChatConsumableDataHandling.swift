@@ -37,7 +37,7 @@ public protocol AIChatConsumableDataHandling {
 }
 
 /// A base class to handle common functionality for data handling.
-public class AIChatConsumableDataHandler<T>: AIChatConsumableDataHandling {
+public final class AIChatConsumableDataHandler<T>: AIChatConsumableDataHandling {
     public typealias DataType = T
     private var data: DataType?
 
@@ -65,7 +65,7 @@ public typealias AIChatPayload = [String: Any]
 
 
 /// Handles prompt data for AI chat interactions.
-final public class AIChatPromptHandler: AIChatConsumableDataHandler<String> {
+public final class AIChatPromptHandler: AIChatConsumableDataHandler<String> {
     public static let shared = AIChatPromptHandler()
 
     private override init() {
@@ -74,4 +74,4 @@ final public class AIChatPromptHandler: AIChatConsumableDataHandler<String> {
 }
 
 /// Handles payload data for AI chat interactions, typically set by the SERP.
-final public class AIChatPayloadHandler: AIChatConsumableDataHandler<AIChatPayload> {}
+public final class AIChatPayloadHandler: AIChatConsumableDataHandler<AIChatPayload> {}

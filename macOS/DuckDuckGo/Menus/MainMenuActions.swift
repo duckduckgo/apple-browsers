@@ -566,7 +566,6 @@ extension MainViewController {
 
         makeKeyIfNeeded()
         getActiveTabAndIndex()?.tab.setContent(.contentFromURL(url, source: .historyEntry))
-        adjustFirstResponder()
     }
 
     @objc func clearAllHistory(_ sender: NSMenuItem) {

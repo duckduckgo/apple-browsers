@@ -1,5 +1,5 @@
 //
-//  CapturingContextMenuPresenter.swift
+//  LinkOpenSender.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,14 +16,6 @@
 //  limitations under the License.
 //
 
-import HistoryView
-
-final class CapturingContextMenuPresenter: HistoryView.ContextMenuPresenting {
-    var window: NSWindow?
-
-    func showContextMenu(_ menu: NSMenu) {
-        showContextMenuCalls.append(menu)
-    }
-
-    var showContextMenuCalls: [NSMenu] = []
+public enum LinkOpenSender: Equatable {
+    case userScript, contextMenuItem
 }

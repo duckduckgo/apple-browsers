@@ -229,6 +229,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         tableView.selectionHighlightStyle = .none
         tableView.allowsMultipleSelection = true
         tableView.usesAutomaticRowHeights = true
+        tableView.target = self
         tableView.doubleAction = #selector(handleDoubleClick)
         tableView.delegate = self
         tableView.dataSource = self
@@ -457,19 +458,21 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
 
         managementDetailViewModel.onBookmarkTapped()
 
-        if let url = (entity as? Bookmark)?.urlObject {
-            if NSApplication.shared.isCommandPressed && NSApplication.shared.isShiftPressed {
-                WindowsManager.openNewWindow(with: url, source: .bookmark, isBurner: false)
-            } else if NSApplication.shared.isCommandPressed {
-                WindowControllersManager.shared.show(url: url, source: .bookmark, newTab: true)
-            } else {
-                WindowControllersManager.shared.show(url: url, source: .bookmark, newTab: true)
-            }
+        if let bookmark = entity as? Bookmark {
+            WindowControllersManager.shared.open(bookmark, with: NSApp.currentEvent)
         } else if let folder = entity as? BookmarkFolder {
             clearSearch()
             resetSelections()
             delegate?.bookmarkManagementDetailViewControllerDidSelectFolder(folder)
         }
+    }
+
+    override func otherMouseUp(with event: NSEvent) {
+        guard case .middle = event.button,
+              let row = tableView.withMouseLocationInViewCoordinates(event.locationInWindow, convert: tableView.row(at:)), row != -1,
+              let bookmark = fetchEntity(at: row) as? Bookmark else { return }
+
+        WindowControllersManager.shared.open(bookmark, with: NSApp.currentEvent)
     }
 
     @objc func presentAddBookmarkModal(_ sender: Any) {
@@ -699,7 +702,7 @@ extension BookmarkManagementDetailViewController: NSTableViewDelegate, NSTableVi
                 shouldLoadInBackground: true,
                 burnerMode: tabCollection.burnerMode)
         }
-        tabCollection.append(tabs: tabs)
+        tabCollection.append(tabs: tabs, andSelect: true)
     }
 }
 

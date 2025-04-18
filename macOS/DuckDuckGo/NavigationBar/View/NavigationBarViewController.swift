@@ -314,13 +314,7 @@ final class NavigationBarViewController: NSViewController {
             Logger.navigation.error("Selected tab view model is nil")
             return
         }
-
-        if NSApp.isCommandPressed,
-           // don‘t open a new tab when the window is cmd-clicked in background
-           sender.window?.isKeyWindow == true && NSApp.isActive,
-           let backItem = selectedTabViewModel.tab.webView.backForwardList.backItem {
-            openBackForwardHistoryItemInNewChildTab(with: backItem.url)
-        } else {
+        if !openBackForwardHistoryItemInNewTabIfNeeded(with: selectedTabViewModel.tab.webView.backForwardList.backItem?.url) {
             selectedTabViewModel.tab.goBack()
         }
     }
@@ -330,20 +324,36 @@ final class NavigationBarViewController: NSViewController {
             Logger.navigation.error("Selected tab view model is nil")
             return
         }
-
-        if NSApp.isCommandPressed,
-           // don‘t open a new tab when the window is cmd-clicked in background
-           sender.window?.isKeyWindow == true && NSApp.isActive,
-           let forwardItem = selectedTabViewModel.tab.webView.backForwardList.forwardItem {
-            openBackForwardHistoryItemInNewChildTab(with: forwardItem.url)
-        } else {
+        if !openBackForwardHistoryItemInNewTabIfNeeded(with: selectedTabViewModel.tab.webView.backForwardList.forwardItem?.url) {
             selectedTabViewModel.tab.goForward()
         }
     }
 
-    private func openBackForwardHistoryItemInNewChildTab(with url: URL) {
-        let tab = Tab(content: .url(url, source: .historyEntry), parentTab: tabCollectionViewModel.selectedTabViewModel?.tab, shouldLoadInBackground: true, burnerMode: tabCollectionViewModel.burnerMode)
-        tabCollectionViewModel.insert(tab, selected: false)
+    /// When ⌘+ or middle- clicked open the back/forward item in a new tab
+    /// - returns:`true` if opened in a new tab
+    private func openBackForwardHistoryItemInNewTabIfNeeded(with url: URL?) -> Bool {
+        guard let url,
+              // don‘t open a new tab when the window is cmd-clicked in background
+              !NSApp.isCommandPressed || (view.window?.isKeyWindow == true && NSApp.isActive) else { return false }
+
+        // Create behavior using current event
+        let behavior = LinkOpenBehavior(
+            event: NSApp.currentEvent,
+            switchToNewTabWhenOpenedPreference: TabsPreferences.shared.switchToNewTabWhenOpened,
+            canOpenLinkInCurrentTab: true
+        )
+
+        lazy var tab = Tab(content: .url(url, source: .historyEntry), parentTab: tabCollectionViewModel.selectedTabViewModel?.tab, shouldLoadInBackground: true, burnerMode: tabCollectionViewModel.burnerMode)
+        switch behavior {
+        case .currentTab:
+            return false
+
+        case .newTab(let selected):
+            tabCollectionViewModel.insert(tab, selected: selected)
+        case .newWindow(let selected):
+            WindowsManager.openNewWindow(with: tab, showWindow: selected)
+        }
+        return true
     }
 
     @IBAction func refreshOrStopAction(_ sender: NSButton) {
@@ -671,9 +681,11 @@ final class NavigationBarViewController: NSViewController {
         let backButtonMenu = NSMenu()
         backButtonMenu.delegate = goBackButtonMenuDelegate
         goBackButton.menu = backButtonMenu
+        goBackButton.sendAction(on: [.leftMouseUp, .otherMouseDown])
         let forwardButtonMenu = NSMenu()
         forwardButtonMenu.delegate = goForwardButtonMenuDelegate
         goForwardButton.menu = forwardButtonMenu
+        goForwardButton.sendAction(on: [.leftMouseUp, .otherMouseDown])
 
         goBackButton.toolTip = UserText.navigateBackTooltip
         goForwardButton.toolTip = UserText.navigateForwardTooltip

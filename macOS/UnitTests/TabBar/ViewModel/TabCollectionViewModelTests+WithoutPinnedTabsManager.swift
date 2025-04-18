@@ -245,7 +245,7 @@ extension TabCollectionViewModelTests {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
 
         let lastTab = Tab()
-        tabCollectionViewModel.append(tabs: [Tab(), lastTab])
+        tabCollectionViewModel.append(tabs: [Tab(), lastTab], andSelect: true)
 
         XCTAssert(tabCollectionViewModel.selectedTabViewModel?.tab === lastTab)
     }

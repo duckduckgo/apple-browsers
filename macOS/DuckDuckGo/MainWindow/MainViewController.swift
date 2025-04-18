@@ -666,21 +666,22 @@ extension MainViewController {
 
     func otherMouseUp(with event: NSEvent) -> NSEvent? {
         guard event.window === self.view.window,
-              mainView.webContainerView.isMouseLocationInsideBounds(event.locationInWindow)
+              mainView.webContainerView.isMouseLocationInsideBounds(event.locationInWindow),
+              let selectedTabViewModel = tabCollectionViewModel.selectedTabViewModel
         else { return event }
 
-        if event.buttonNumber == 3,
-           tabCollectionViewModel.selectedTabViewModel?.canGoBack == true {
-            tabCollectionViewModel.selectedTabViewModel?.tab.goBack()
+        switch event.button {
+        case .back:
+            guard selectedTabViewModel.canGoBack else { return nil }
+            selectedTabViewModel.tab.goBack()
             return nil
-        } else if event.buttonNumber == 4,
-                  tabCollectionViewModel.selectedTabViewModel?.canGoForward == true {
-            tabCollectionViewModel.selectedTabViewModel?.tab.goForward()
+        case .forward:
+            guard selectedTabViewModel.canGoForward else { return nil }
+            selectedTabViewModel.tab.goForward()
             return nil
+        default:
+            return event
         }
-
-        return event
-
     }
 }
 

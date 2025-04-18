@@ -82,7 +82,7 @@ struct AIChatRemoteSettings: AIChatRemoteSettingsProvider {
         if let value = settings[value.rawValue] as? String {
             return value
         } else {
-            PixelKit.fire(GeneralPixel.aichatNoRemoteSettingsFound(value), includeAppVersionParameter: true)
+            PixelKit.fire(AIChatPixel.aichatNoRemoteSettingsFound(value), frequency: .dailyAndCount, includeAppVersionParameter: true)
             return value.defaultValue
         }
     }

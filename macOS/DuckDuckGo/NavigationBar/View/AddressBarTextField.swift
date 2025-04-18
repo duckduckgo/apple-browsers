@@ -606,11 +606,6 @@ final class AddressBarTextField: NSTextField {
 
         window.addChildWindow(suggestionWindow, ordered: .above)
         layoutSuggestionWindow()
-        postSuggestionWindowOpenNotification()
-    }
-
-    private func postSuggestionWindowOpenNotification() {
-        NotificationCenter.default.post(name: .suggestionWindowOpen, object: nil)
     }
 
     func hideSuggestionWindow() {
@@ -1205,10 +1200,6 @@ extension AddressBarTextField: SuggestionViewControllerDelegate {
         navigate(suggestion: suggestion)
     }
 
-}
-
-extension Notification.Name {
-    static let suggestionWindowOpen = Notification.Name("suggestionWindowOpen")
 }
 
 fileprivate extension NSStoryboard {

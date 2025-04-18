@@ -35,7 +35,7 @@ public protocol DBPProfileSavedNotifier {
 }
 
 public protocol DataBrokerProtectionDataManaging {
-    var cache: InMemoryDataCache { get }
+    var communicator: DBPUICommunicator { get }
     var delegate: DataBrokerProtectionDataManagerDelegate? { get set }
 
     init(database: DataBrokerProtectionRepository,
@@ -60,10 +60,9 @@ public protocol DataBrokerProtectionDataManagerDelegate: AnyObject {
 }
 
 public class DataBrokerProtectionDataManager: DataBrokerProtectionDataManaging {
-
     private let profileSavedNotifier: DBPProfileSavedNotifier?
 
-    public let cache = InMemoryDataCache()
+    public let communicator = DBPUICommunicator()
 
     public weak var delegate: DataBrokerProtectionDataManagerDelegate?
 
@@ -74,7 +73,7 @@ public class DataBrokerProtectionDataManager: DataBrokerProtectionDataManaging {
         self.database = database
 
         self.profileSavedNotifier = profileSavedNotifier
-        cache.delegate = self
+        communicator.delegate = self
     }
 
     public func saveProfile(_ profile: DataBrokerProtectionProfile) async throws {
@@ -83,17 +82,17 @@ public class DataBrokerProtectionDataManager: DataBrokerProtectionDataManaging {
             profileSavedNotifier?.postProfileSavedNotificationIfPermitted()
         } catch {
             // We should still invalidate the cache if the save fails
-            cache.invalidate()
+            communicator.invalidateCache()
             throw error
         }
-        cache.invalidate()
-        cache.profile = profile
+        communicator.invalidateCache()
+        communicator.profile = profile
     }
 
     public func fetchProfile() throws -> DataBrokerProtectionProfile? {
-        if cache.profile != nil {
+        if communicator.profile != nil {
             Logger.dataBrokerProtection.log("Returning cached profile")
-            return cache.profile
+            return communicator.profile
         }
 
         return try fetchProfileFromDB()
@@ -109,7 +108,7 @@ public class DataBrokerProtectionDataManager: DataBrokerProtectionDataManaging {
 
     private func fetchProfileFromDB() throws -> DataBrokerProtectionProfile? {
         if let profile = try database.fetchProfile() {
-            cache.profile = profile
+            communicator.profile = profile
             return profile
         } else {
             Logger.dataBrokerProtection.log("No profile found")
@@ -119,25 +118,25 @@ public class DataBrokerProtectionDataManager: DataBrokerProtectionDataManaging {
 
     public func prepareProfileCache() throws {
         if let profile = try database.fetchProfile() {
-            cache.profile = profile
+            communicator.profile = profile
         } else {
             Logger.dataBrokerProtection.log("No profile found")
         }
     }
 
     public func fetchBrokerProfileQueryData(ignoresCache: Bool = false) throws -> [BrokerProfileQueryData] {
-        if !ignoresCache, !cache.brokerProfileQueryData.isEmpty {
+        if !ignoresCache, !communicator.brokerProfileQueryData.isEmpty {
             Logger.dataBrokerProtection.log("Returning cached brokerProfileQueryData")
-            return cache.brokerProfileQueryData
+            return communicator.brokerProfileQueryData
         }
 
         let queryData = try database.fetchAllBrokerProfileQueryData()
-        cache.brokerProfileQueryData = queryData
+        communicator.brokerProfileQueryData = queryData
         return queryData
     }
 
     public func prepareBrokerProfileQueryDataCache() throws {
-        cache.brokerProfileQueryData = try database.fetchAllBrokerProfileQueryData()
+        communicator.brokerProfileQueryData = try database.fetchAllBrokerProfileQueryData()
     }
 
     public func hasMatches() throws -> Bool {
@@ -189,7 +188,7 @@ private extension DataBrokerProtectionDataManager {
     }
 }
 
-extension DataBrokerProtectionDataManager: InMemoryDataCacheDelegate {
+extension DataBrokerProtectionDataManager: DBPUICommunicatorDelegate {
 
     public func saveCachedProfileToDatabase(_ profile: DataBrokerProtectionProfile) async throws {
         try await saveProfile(profile)
@@ -199,7 +198,7 @@ extension DataBrokerProtectionDataManager: InMemoryDataCacheDelegate {
 
     public func removeAllData() throws {
         try database.deleteProfileData()
-        cache.invalidate()
+        communicator.invalidateCache()
 
         delegate?.dataBrokerProtectionDataManagerDidDeleteData()
     }
@@ -215,35 +214,51 @@ extension DataBrokerProtectionDataManager: InMemoryDataCacheDelegate {
     public func isAuthenticatedUser() -> Bool {
         delegate?.isAuthenticatedUser() ?? true
     }
+
+    public func willRemoveOptOutFromDashboard(_ id: Int64) {
+        if let extractedProfile = try? database.fetchExtractedProfile(with: id) {
+            let event = HistoryEvent(extractedProfileId: id,
+                                     brokerId: extractedProfile.brokerId,
+                                     profileQueryId: extractedProfile.profileQueryId,
+                                     type: .matchRemovedByUser)
+            try? database.add(event)
+        }
+    }
 }
 
-public protocol InMemoryDataCacheDelegate: AnyObject {
+public typealias DBPUICommunicatorDelegate = UserProfileDelegate & UserActionDelegate
+
+public protocol UserProfileDelegate: AnyObject {
     func saveCachedProfileToDatabase(_ profile: DataBrokerProtectionProfile) async throws
     func removeAllData() throws
-    func willOpenSendFeedbackForm()
-    func willApplyVPNBypassSetting(_ bypass: Bool) async
     func isAuthenticatedUser() -> Bool
 }
 
-public final class InMemoryDataCache {
+public protocol UserActionDelegate: AnyObject {
+    func willOpenSendFeedbackForm()
+    func willApplyVPNBypassSetting(_ bypass: Bool) async
+    func willRemoveOptOutFromDashboard(_ id: Int64)
+}
+
+public final class DBPUICommunicator {
     var profile: DataBrokerProtectionProfile?
     var brokerProfileQueryData = [BrokerProfileQueryData]()
     private let mapper = MapperToUI()
 
-    weak var delegate: InMemoryDataCacheDelegate?
+    weak var delegate: DBPUICommunicatorDelegate?
     weak var scanDelegate: DBPUIScanOps?
 
     private let emptyProfile: DataBrokerProtectionProfile = {
         DataBrokerProtectionProfile(names: [], addresses: [], phones: [], birthYear: -1)
     }()
 
-    public func invalidate() {
+    public func invalidateCache() {
         profile = nil
         brokerProfileQueryData.removeAll()
     }
 }
 
-extension InMemoryDataCache: DBPUICommunicationDelegate {
+extension DBPUICommunicator: DBPUICommunicationDelegate {
 
     public func getHandshakeUserData() -> DBPUIHandshakeUserData? {
         let isAuthenticatedUser = delegate?.isAuthenticatedUser() ?? true
@@ -439,5 +454,9 @@ extension InMemoryDataCache: DBPUICommunicationDelegate {
 
     public func applyVPNBypassSetting(_ bypass: Bool) async {
         await delegate?.willApplyVPNBypassSetting(bypass)
+    }
+
+    public func removeOptOutFromDashboard(_ id: Int64) async {
+        delegate?.willRemoveOptOutFromDashboard(id)
     }
 }

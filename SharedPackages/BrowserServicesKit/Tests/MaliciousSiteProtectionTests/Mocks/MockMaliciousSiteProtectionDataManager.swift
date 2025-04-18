@@ -40,6 +40,12 @@ actor MockMaliciousSiteProtectionDataManager: MaliciousSiteProtection.DataManagi
         return store[key.dataType] as? DataKey.DataSet ?? .init(revision: 0, items: [])
     }
 
+    public func updateDataSet<DataKey>(with key: DataKey, changeSet: APIClient.ChangeSetResponse<DataKey.DataSet.Element>) async throws where DataKey: MaliciousSiteDataKey {
+        var dataSet = self.dataSet(for: key)
+        dataSet.apply(changeSet)
+        try await store(dataSet, for: key)
+    }
+
     func store<DataKey>(_ dataSet: DataKey.DataSet, for key: DataKey) async throws where DataKey: MaliciousSiteProtection.MaliciousSiteDataKey {
         if storeDatasetSuccess {
             store[key.dataType] = dataSet
@@ -47,5 +53,7 @@ actor MockMaliciousSiteProtectionDataManager: MaliciousSiteProtection.DataManagi
             throw NSError(domain: "com.au.duckduckgo.MockMaliciousSiteProtectionDataManager", code: 0, userInfo: nil)
         }
     }
+
+    func preloadData(for threatKinds: [MaliciousSiteProtection.ThreatKind]) async {}
 
 }

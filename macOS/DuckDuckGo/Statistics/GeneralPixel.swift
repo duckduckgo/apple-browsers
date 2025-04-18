@@ -175,13 +175,6 @@ enum GeneralPixel: PixelKitEventV2 {
     case networkProtectionGeoswitchingSetCustom
     case networkProtectionGeoswitchingNoLocations
 
-    // AI Chat
-    case aichatToolbarClicked
-    case aichatApplicationMenuAppClicked
-    case aichatApplicationMenuFileClicked
-    case aichatToolbarOnboardingPopoverShown
-    case aichatToolbarOnboardingPopoverAccept
-    case aichatNoRemoteSettingsFound(AIChatRemoteSettings.SettingsValue)
     // Sync
     case syncSignupDirect
     case syncSignupConnect
@@ -393,9 +386,6 @@ enum GeneralPixel: PixelKitEventV2 {
     case updaterDidNotFindUpdate
     case updaterDidDownloadUpdate
     case updaterDidRunUpdate
-    case updaterDidCheckForUpdateRespectingRollout
-    case updaterDidCheckForUpdateSkippingRollout
-    case updaterDidForceUpdateRecheck
 
     case faviconDecryptionFailedUnique
     case downloadListItemDecryptionFailedUnique
@@ -758,20 +748,6 @@ enum GeneralPixel: PixelKitEventV2 {
         case .networkProtectionEnabledOnSearch:
             return "m_mac_netp_ev_enabled_on_search"
 
-            // AI Chat
-        case .aichatToolbarClicked:
-            return "m_mac_aichat_toolbar-clicked"
-        case .aichatApplicationMenuAppClicked:
-            return "m_mac_aichat_application-menu-app-clicked"
-        case .aichatApplicationMenuFileClicked:
-            return "m_mac_aichat_application-menu-file-clicked"
-        case .aichatToolbarOnboardingPopoverShown:
-            return "m_mac_aichat_toolbar-onboarding-popover-shown"
-        case .aichatToolbarOnboardingPopoverAccept:
-            return "m_mac_aichat_toolbar-onboarding-popover-accept"
-        case .aichatNoRemoteSettingsFound(let settings):
-            return "m_mac_aichat_no_remote_settings_found-\(settings.rawValue.lowercased())"
-
             // Sync
         case .syncSignupDirect:
             return "m_mac_sync_signup_direct"
@@ -1100,12 +1076,6 @@ enum GeneralPixel: PixelKitEventV2 {
             return "updater_did_download_update"
         case .updaterDidRunUpdate:
             return "updater_did_run_update"
-        case .updaterDidCheckForUpdateRespectingRollout:
-            return "updater_did_check_for_update_respecting_rollout"
-        case .updaterDidCheckForUpdateSkippingRollout:
-            return "updater_did_check_for_update_skipping_rollout"
-        case .updaterDidForceUpdateRecheck:
-            return "updater_did_force_update_recheck"
 
         case .faviconDecryptionFailedUnique:
             return "favicon_decryption_failed_unique"

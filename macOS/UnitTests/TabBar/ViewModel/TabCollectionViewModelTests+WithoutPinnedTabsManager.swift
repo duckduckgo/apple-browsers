@@ -474,7 +474,7 @@ extension TabCollectionViewModelTests {
     func test_WithoutPinnedTabsManager_WhenTabIsDuplicatedThenItsCopyHasTheSameUrl() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
         let firstTabViewModel = tabCollectionViewModel.tabViewModel(at: 0)
-        firstTabViewModel?.tab.url = URL.duckDuckGo
+        firstTabViewModel?.tab.setContent(.url(URL.duckDuckGo, source: .appOpenUrl))
 
         tabCollectionViewModel.duplicateTab(at: .unpinned(0))
 
@@ -487,7 +487,7 @@ extension TabCollectionViewModelTests {
     func test_WithoutPinnedTabsManager_WhenSelectionIndexIsUpdatedWithTheSameValueThenSelectedTabViewModelIsOnlyPublishedOnce() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModel()
         let firstTabViewModel = tabCollectionViewModel.tabViewModel(at: 0)
-        firstTabViewModel?.tab.url = URL.duckDuckGo
+        firstTabViewModel?.tab.setContent(.url(URL.duckDuckGo, source: .appOpenUrl))
 
         var events: [TabViewModel?] = []
         let cancellable = tabCollectionViewModel.$selectedTabViewModel
@@ -512,5 +512,12 @@ fileprivate extension TabCollectionViewModel {
     static func aTabCollectionViewModel() -> TabCollectionViewModel {
         let tabCollection = TabCollection()
         return TabCollectionViewModel(tabCollection: tabCollection, pinnedTabsManagerProvider: nil)
+    }
+}
+
+private extension Tab {
+    @MainActor
+    convenience init(parentTab: Tab? = nil) {
+        self.init(content: .none, parentTab: parentTab)
     }
 }

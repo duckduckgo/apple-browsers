@@ -18,6 +18,7 @@
 
 import AppKit
 import Combine
+import Common
 
 public extension NSEvent {
 
@@ -92,6 +93,40 @@ public extension NSEvent {
             })
             .eraseToAnyPublisher()
     }
+
+#if DEBUG
+    var eventDescription: String {
+        let eventString: String = String(describing: self)
+        let typePattern = regex("type=(\\w+)")
+        let locPattern = regex("loc=\\(([-\\d,.]+)\\)")
+
+        let typeRange = NSRange(eventString.startIndex..<eventString.endIndex, in: eventString)
+        let locRange = NSRange(eventString.startIndex..<eventString.endIndex, in: eventString)
+
+        if let typeMatch = typePattern.firstMatch(in: eventString, range: typeRange),
+           let locMatch = locPattern.firstMatch(in: eventString, range: locRange),
+           let typeRange = Range(typeMatch.range(at: 1), in: eventString),
+           let locRange = Range(locMatch.range(at: 1), in: eventString) {
+            let type = String(eventString[typeRange])
+            let loc = String(eventString[locRange])
+
+            let trackingAreaDescr: String
+            if [.mouseEntered, .mouseExited].contains(self.type) {
+                trackingAreaDescr = ", trackingArea: \(self.trackingArea.map { String(format: "%p", $0) } ?? "<nil>")"
+            } else {
+                trackingAreaDescr = ""
+            }
+
+            return "Event type: \(type), location: \(loc), timestamp: \(self.timestamp)\(trackingAreaDescr)"
+        }
+
+        return self.description
+    }
+#else
+    var eventDescription: String {
+        self.description
+    }
+#endif
 
 }
 

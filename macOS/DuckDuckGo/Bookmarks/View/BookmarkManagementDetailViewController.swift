@@ -410,7 +410,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
 
     private func showEmptyStateView(for mode: BookmarksEmptyStateContent) {
         tableView.isHidden = true
-        emptyState.isHidden = true
+        emptyState.isHidden = false
         loadingProgressIndicator.isHidden = true
         loadingProgressIndicator.stopAnimation(nil)
         emptyStateTitle.stringValue = mode.title

@@ -43,7 +43,7 @@ public struct DefaultAIChatPreferencesStorage: AIChatPreferencesStorage {
     }
 
     public init(userDefaults: UserDefaults = .standard,
-         notificationCenter: NotificationCenter = .default) {
+                notificationCenter: NotificationCenter = .default) {
         self.userDefaults = userDefaults
         self.notificationCenter = notificationCenter
     }

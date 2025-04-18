@@ -262,7 +262,7 @@ final class BookmarksBarViewController: NSViewController {
     }
 
     @IBAction func importBookmarksClicked(_ sender: Any) {
-        DataImportView().show()
+        DataImportView().show(in: view.window)
     }
 
     @IBAction private func clippedItemsIndicatorClicked(_ sender: NSButton) {

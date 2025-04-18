@@ -138,6 +138,11 @@ class OmniBarViewController: UIViewController, OmniBar {
                                                selector: #selector(reloadSpeechRecognizerAvailability),
                                                name: .speechRecognizerDidChangeAvailability,
                                                object: nil)
+
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(didEnterBackground),
+                                               name: UIApplication.didEnterBackgroundNotification,
+                                               object: nil)
     }
 
     private func assignActions() {
@@ -390,6 +395,10 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.customIconView.image = UIImage(named: icon.rawValue)
         barView.privacyInfoContainer.addSubview(barView.customIconView)
         barView.customIconView.isHidden = false
+    }
+
+    @objc private func didEnterBackground() {
+        cancelAllAnimations()
     }
 
     private func refreshState(_ newState: any OmniBarState) {

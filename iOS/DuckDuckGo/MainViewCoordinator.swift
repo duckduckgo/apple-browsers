@@ -86,7 +86,7 @@ class MainViewCoordinator {
         var statusBackgroundToNavigationBarContainerBottom: NSLayoutConstraint!
         var statusBackgroundBottomToSafeAreaTop: NSLayoutConstraint!
         var contentContainerBottomToToolbarTop: NSLayoutConstraint!
-        var contentContainerBottomToNavigationBarContainerTop: NSLayoutConstraint!
+        var contentContainerBottomToSafeArea: NSLayoutConstraint!
         var topSlideContainerBottomToNavigationBarBottom: NSLayoutConstraint!
         var topSlideContainerBottomToStatusBackgroundBottom: NSLayoutConstraint!
         var topSlideContainerTopToNavigationBar: NSLayoutConstraint!
@@ -140,8 +140,9 @@ class MainViewCoordinator {
         // Hiding the container won't suffice as it still defines the contentContainer.bottomY through constraints
         navigationBarContainer.isHidden = true
 
-        constraints.contentContainerBottomToNavigationBarContainerTop.isActive = false
-        constraints.contentContainerBottomToToolbarTop.isActive = true
+        constraints.contentContainerBottomToToolbarTop.isActive = false
+        constraints.contentContainerBottomToSafeArea.isActive = true
+
     }
 
     func showNavigationBarWithBottomPosition() {
@@ -150,6 +151,9 @@ class MainViewCoordinator {
         }
 
         navigationBarContainer.isHidden = false
+
+        constraints.contentContainerBottomToToolbarTop.isActive = true
+        constraints.contentContainerBottomToSafeArea.isActive = false
     }
 
     func setAddressBarTopActive(_ active: Bool) {

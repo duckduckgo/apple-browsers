@@ -21,34 +21,7 @@ import Combine
 import Lottie
 import Common
 
-final class AddressBarViewController: NSViewController, ObservableObject {
-
-    @IBOutlet var addressBarTextField: AddressBarTextField!
-    @IBOutlet var passiveTextField: NSTextField!
-    @IBOutlet var inactiveBackgroundView: NSView!
-    @IBOutlet var activeBackgroundView: ColorView!
-    @IBOutlet var activeOuterBorderView: ColorView!
-    @IBOutlet var activeBackgroundViewWithSuggestions: ColorView!
-    @IBOutlet var innerBorderView: ColorView!
-    @IBOutlet var progressIndicator: LoadingProgressView!
-    @IBOutlet var passiveTextFieldMinXConstraint: NSLayoutConstraint!
-    @IBOutlet var activeTextFieldMinXConstraint: NSLayoutConstraint!
-    @IBOutlet var buttonsContainerView: NSView!
-    @IBOutlet var switchToTabBox: ColorView!
-    @IBOutlet var switchToTabLabel: NSTextField!
-    @IBOutlet var switchToTabBoxMinXConstraint: NSLayoutConstraint!
-    private static let defaultActiveTextFieldMinX: CGFloat = 40
-
-    @IBOutlet weak var addressBarPassiveTextCenterXConstraint: NSLayoutConstraint!
-    @IBOutlet weak var addressBarTextTrailingConstraint: NSLayoutConstraint!
-    private let popovers: NavigationBarPopovers?
-    var addressBarButtonsViewController: AddressBarButtonsViewController?
-
-    private let tabCollectionViewModel: TabCollectionViewModel
-    private var tabViewModel: TabViewModel?
-    private let suggestionContainerViewModel: SuggestionContainerViewModel
-    private let isBurner: Bool
-    private let onboardingPixelReporter: OnboardingAddressBarReporting
+final class AddressBarViewController: NSViewController {
 
     enum Mode: Equatable {
         enum EditingMode {
@@ -67,7 +40,38 @@ final class AddressBarViewController: NSViewController, ObservableObject {
 
     private enum Constants {
         static let switchToTabMinXPadding: CGFloat = 34
+        static let defaultActiveTextFieldMinX: CGFloat = 40
+
+        static let maxClickReleaseDistanceToResignFirstResponder: CGFloat = 4
     }
+
+    @IBOutlet var addressBarTextField: AddressBarTextField!
+    @IBOutlet var passiveTextField: NSTextField!
+    @IBOutlet var inactiveBackgroundView: NSView!
+    @IBOutlet var activeBackgroundView: ColorView!
+    @IBOutlet var activeOuterBorderView: ColorView!
+    @IBOutlet var activeBackgroundViewWithSuggestions: ColorView!
+    @IBOutlet var innerBorderView: ColorView!
+    @IBOutlet var progressIndicator: LoadingProgressView!
+    @IBOutlet var buttonsContainerView: NSView!
+    @IBOutlet var switchToTabBox: ColorView!
+    @IBOutlet var switchToTabLabel: NSTextField!
+    @IBOutlet var shadowView: ShadowView!
+
+    @IBOutlet var switchToTabBoxMinXConstraint: NSLayoutConstraint!
+    @IBOutlet var passiveTextFieldMinXConstraint: NSLayoutConstraint!
+    @IBOutlet var activeTextFieldMinXConstraint: NSLayoutConstraint!
+    @IBOutlet var addressBarPassiveTextCenterXConstraint: NSLayoutConstraint!
+    @IBOutlet var addressBarTextTrailingConstraint: NSLayoutConstraint!
+
+    private let popovers: NavigationBarPopovers?
+    private(set) var addressBarButtonsViewController: AddressBarButtonsViewController?
+
+    private let tabCollectionViewModel: TabCollectionViewModel
+    private var tabViewModel: TabViewModel?
+    private let suggestionContainerViewModel: SuggestionContainerViewModel
+    private let isBurner: Bool
+    private let onboardingPixelReporter: OnboardingAddressBarReporting
 
     private var mode: Mode = .editing(.text) {
         didSet {
@@ -91,12 +95,17 @@ final class AddressBarViewController: NSViewController, ObservableObject {
         }
     }
 
+    private var accentColor: NSColor {
+        return isBurner ? NSColor.burnerAccent : NSColor.controlAccentColor
+    }
+
     private var cancellables = Set<AnyCancellable>()
     private var tabViewModelCancellables = Set<AnyCancellable>()
-    private var eventMonitorCancellables = Set<AnyCancellable>()
 
     /// save mouse-down position to handle same-place clicks outside of the Address Bar to remove first responder
     private var clickPoint: NSPoint?
+
+    // MARK: - View Lifecycle
 
     required init?(coder: NSCoder) {
         fatalError("AddressBarViewController: Bad initializer")
@@ -119,9 +128,19 @@ final class AddressBarViewController: NSViewController, ObservableObject {
         super.init(coder: coder)
     }
 
-    override func viewDidLoad() {
-        super.viewDidLoad()
+    @IBSegueAction func createAddressBarButtonsViewController(_ coder: NSCoder) -> AddressBarButtonsViewController? {
+        let controller = AddressBarButtonsViewController(coder: coder,
+                                                         tabCollectionViewModel: tabCollectionViewModel,
+                                                         popovers: popovers,
+                                                         aiChatTabOpener: NSApp.delegateTyped.aiChatTabOpener,
+                                                         aiChatMenuConfig: AIChatMenuConfiguration())
 
+        self.addressBarButtonsViewController = controller
+        controller?.delegate = self
+        return addressBarButtonsViewController
+    }
+
+    override func viewDidLoad() {
         view.wantsLayer = true
         view.layer?.masksToBounds = false
 
@@ -139,7 +158,11 @@ final class AddressBarViewController: NSViewController, ObservableObject {
     }
 
     override func viewWillAppear() {
-        if view.window?.isPopUpWindow == true {
+        guard let window = view.window else {
+            assertionFailure("AddressBarViewController.viewWillAppear: view.window is nil")
+            return
+        }
+        if window.isPopUpWindow == true {
             addressBarTextField.isHidden = true
             inactiveBackgroundView.isHidden = true
             activeBackgroundViewWithSuggestions.isHidden = true
@@ -149,35 +172,11 @@ final class AddressBarViewController: NSViewController, ObservableObject {
         } else {
             addressBarTextField.suggestionContainerViewModel = suggestionContainerViewModel
 
-            registerForMouseEnteredAndExitedEvents()
-            refreshAddressBarAppearance(self)
-
-            NotificationCenter.default.addObserver(self,
-                                                   selector: #selector(refreshAddressBarAppearance(_:)),
-                                                   name: FireproofDomains.Constants.allowedDomainsChangedNotification,
-                                                   object: nil)
-
-            NotificationCenter.default.addObserver(self,
-                                                   selector: #selector(refreshAddressBarAppearance(_:)),
-                                                   name: NSWindow.didBecomeKeyNotification,
-                                                   object: nil)
-
-            NotificationCenter.default.addObserver(self,
-                                                   selector: #selector(refreshAddressBarAppearance(_:)),
-                                                   name: NSWindow.didResignKeyNotification,
-                                                   object: nil)
-            NotificationCenter.default.addObserver(self,
-                                                   selector: #selector(textFieldFirstReponderNotification(_:)),
-                                                   name: .firstResponder,
-                                                   object: nil)
-            NSApp.publisher(for: \.effectiveAppearance)
-                .dropFirst()
-                .sink { [weak self] _ in
-                    self?.refreshAddressBarAppearance(nil)
-                }
-                .store(in: &cancellables)
-
-            addMouseMonitors()
+            subscribeToAppearanceChanges()
+            subscribeToFireproofDomainsChanges()
+            addTrackingArea()
+            subscribeToMouseEvents()
+            subscribeToFirstResponder()
         }
         subscribeToSelectedTabViewModel()
         subscribeToAddressBarValue()
@@ -185,45 +184,47 @@ final class AddressBarViewController: NSViewController, ObservableObject {
         subscribeForShadowViewUpdates()
     }
 
-    // swiftlint:disable notification_center_detachment
     override func viewWillDisappear() {
-        NotificationCenter.default.removeObserver(self)
-        eventMonitorCancellables.removeAll()
+        cancellables.removeAll()
     }
-    // swiftlint:enable notification_center_detachment
 
     override func viewDidLayout() {
-        super.viewDidLayout()
-
         addressBarTextField.viewDidLayout()
     }
 
-    func escapeKeyDown() -> Bool {
-        guard isFirstResponder else { return false }
+    // MARK: - Subscriptions
 
-        if mode.isEditing {
-            addressBarTextField.escapeKeyDown()
-            return true
+    private func subscribeToAppearanceChanges() {
+        guard let window = view.window else {
+            assertionFailure("AddressBarViewController.subscribeToAppearanceChanges: view.window is nil")
+            return
         }
+        NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification, object: window)
+            .sink { [weak self] _ in
+                self?.refreshAddressBarAppearance(nil)
+            }
+            .store(in: &cancellables)
 
-        view.window?.makeFirstResponder(nil)
+        NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification, object: window)
+            .sink { [weak self] _ in
+                self?.refreshAddressBarAppearance(nil)
+            }
+            .store(in: &cancellables)
 
-        return true
+        NSApp.publisher(for: \.effectiveAppearance)
+            .sink { [weak self] _ in
+                self?.refreshAddressBarAppearance(nil)
+            }
+            .store(in: &cancellables)
     }
 
-    @IBSegueAction func createAddressBarButtonsViewController(_ coder: NSCoder) -> AddressBarButtonsViewController? {
-        let controller = AddressBarButtonsViewController(coder: coder,
-                                                         tabCollectionViewModel: tabCollectionViewModel,
-                                                         popovers: popovers,
-                                                         aiChatTabOpener: NSApp.delegateTyped.aiChatTabOpener,
-                                                         aiChatMenuConfig: AIChatMenuConfiguration())
-
-        self.addressBarButtonsViewController = controller
-        controller?.delegate = self
-        return addressBarButtonsViewController
+    private func subscribeToFireproofDomainsChanges() {
+        NotificationCenter.default.publisher(for: FireproofDomains.Constants.allowedDomainsChangedNotification)
+            .sink { [weak self] _ in
+                self?.refreshAddressBarAppearance(nil)
+            }
+            .store(in: &cancellables)
     }
-
-    @IBOutlet var shadowView: ShadowView!
 
     private func subscribeToSelectedTabViewModel() {
         tabCollectionViewModel.$selectedTabViewModel
@@ -332,12 +333,9 @@ final class AddressBarViewController: NSViewController, ObservableObject {
             .store(in: &cancellables)
     }
 
-    @Published var isSuggestionsWindowVisible: Bool = false
-
     private func subscribeForShadowViewUpdates() {
         addressBarTextField.isSuggestionWindowVisiblePublisher
             .sink { [weak self] isSuggestionsWindowVisible in
-                self?.isSuggestionsWindowVisible = isSuggestionsWindowVisible
                 self?.updateShadowView(isSuggestionsWindowVisible)
                 if isSuggestionsWindowVisible {
                     self?.layoutShadowView()
@@ -352,9 +350,39 @@ final class AddressBarViewController: NSViewController, ObservableObject {
             .store(in: &cancellables)
     }
 
-    var accentColor: NSColor {
-        return isBurner ? NSColor.burnerAccent : NSColor.controlAccentColor
+    private func addTrackingArea() {
+        let trackingArea = NSTrackingArea(rect: .zero, options: [.activeAlways, .mouseEnteredAndExited, .mouseMoved, .inVisibleRect], owner: self, userInfo: nil)
+        self.view.addTrackingArea(trackingArea)
     }
+
+    private func subscribeToMouseEvents() {
+        NSEvent.addLocalCancellableMonitor(forEventsMatching: .leftMouseDown) { [weak self] event in
+            guard let self else { return event }
+            return self.mouseDown(with: event)
+        }.store(in: &cancellables)
+        NSEvent.addLocalCancellableMonitor(forEventsMatching: .leftMouseUp) { [weak self] event in
+            guard let self else { return event }
+            return self.mouseUp(with: event)
+        }.store(in: &cancellables)
+        NSEvent.addLocalCancellableMonitor(forEventsMatching: .rightMouseDown) { [weak self] event in
+            guard let self else { return event }
+            return self.rightMouseDown(with: event)
+        }.store(in: &cancellables)
+    }
+
+    private func subscribeToFirstResponder() {
+        guard let window = view.window else {
+            assertionFailure("AddressBarViewController.subscribeToFirstResponder: view.window is nil")
+            return
+        }
+        NotificationCenter.default.publisher(for: MainWindow.firstResponderDidChangeNotification, object: window)
+            .sink { [weak self] in
+                self?.firstResponderDidChange($0)
+            }
+            .store(in: &cancellables)
+    }
+
+    // MARK: - Layout
 
     private func updateView() {
         let isPassiveTextFieldHidden = isFirstResponder || mode.isEditing
@@ -468,34 +496,33 @@ final class AddressBarViewController: NSViewController, ObservableObject {
         self.passiveTextFieldMinXConstraint.constant = minX
         // adjust min-x to passive text field when “Search or enter” placeholder is displayed (to prevent placeholder overlapping buttons)
         self.activeTextFieldMinXConstraint.constant = (!self.isFirstResponder || self.mode.isEditing)
-        ? minX : Self.defaultActiveTextFieldMinX
+        ? minX : Constants.defaultActiveTextFieldMinX
     }
 
-}
-
-extension AddressBarViewController {
-
-    @objc func textFieldFirstReponderNotification(_ notification: Notification) {
-        if view.window?.firstResponder == addressBarTextField.currentEditor() {
-            isFirstResponder = true
+    private func firstResponderDidChange(_ notification: Notification) {
+        if view.window?.firstResponder === addressBarTextField.currentEditor() {
+            if !isFirstResponder {
+                isFirstResponder = true
+            }
             activeTextFieldMinXConstraint.isActive = true
-        } else {
+        } else if isFirstResponder {
             isFirstResponder = false
         }
     }
 
-}
+    // MARK: - Event handling
 
-// MARK: - Mouse states
+    func escapeKeyDown() -> Bool {
+        guard isFirstResponder else { return false }
 
-extension AddressBarViewController {
+        if mode.isEditing {
+            addressBarTextField.escapeKeyDown()
+            return true
+        }
 
-    func registerForMouseEnteredAndExitedEvents() {
-        let trackingArea = NSTrackingArea(rect: self.view.bounds,
-                                          options: [.activeAlways, .mouseEnteredAndExited, .mouseMoved],
-                                          owner: self,
-                                          userInfo: nil)
-        self.view.addTrackingArea(trackingArea)
+        view.window?.makeFirstResponder(nil)
+
+        return true
     }
 
     override func mouseEntered(with event: NSEvent) {
@@ -521,22 +548,6 @@ extension AddressBarViewController {
     override func mouseExited(with event: NSEvent) {
         NSCursor.arrow.set()
         super.mouseExited(with: event)
-    }
-
-    func addMouseMonitors() {
-        eventMonitorCancellables.removeAll()
-        NSEvent.addLocalCancellableMonitor(forEventsMatching: .leftMouseDown) { [weak self] event in
-            guard let self else { return event }
-            return self.mouseDown(with: event)
-        }.store(in: &eventMonitorCancellables)
-        NSEvent.addLocalCancellableMonitor(forEventsMatching: .leftMouseUp) { [weak self] event in
-            guard let self else { return event }
-            return self.mouseUp(with: event)
-        }.store(in: &eventMonitorCancellables)
-        NSEvent.addLocalCancellableMonitor(forEventsMatching: .rightMouseDown) { [weak self] event in
-            guard let self else { return event }
-            return self.rightMouseDown(with: event)
-        }.store(in: &eventMonitorCancellables)
     }
 
     func mouseDown(with event: NSEvent) -> NSEvent? {
@@ -583,14 +594,12 @@ extension AddressBarViewController {
         return nil
     }
 
-    private static let maxClickReleaseDistanceToResignFirstResponder: CGFloat = 4
-
     func mouseUp(with event: NSEvent) -> NSEvent? {
         // click (same position down+up) outside of the field: resign first responder
         guard let window = self.view.window, event.window === window,
               window.firstResponder === addressBarTextField.currentEditor(),
               let clickPoint,
-              clickPoint.distance(to: window.convertPoint(toScreen: event.locationInWindow)) <= Self.maxClickReleaseDistanceToResignFirstResponder else {
+              clickPoint.distance(to: window.convertPoint(toScreen: event.locationInWindow)) <= Constants.maxClickReleaseDistanceToResignFirstResponder else {
             return event
         }
 

@@ -36,9 +36,33 @@ public protocol AIChatConsumableDataHandling {
     func reset()
 }
 
-/// A base class to handle common functionality for data handling.
-public final class AIChatConsumableDataHandler<T>: AIChatConsumableDataHandling {
-    public typealias DataType = T
+/// Handles prompt data for AI chat interactions.
+public final class AIChatPromptHandler: AIChatConsumableDataHandling {
+    public typealias DataType = String
+    private var data: DataType?
+
+    public static let shared = AIChatPromptHandler()
+
+    private init() {}
+
+    public func setData(_ data: DataType) {
+        self.data = data
+    }
+
+    public func consumeData() -> DataType? {
+        let currentData = data
+        reset()
+        return currentData
+    }
+
+    public func reset() {
+        self.data = nil
+    }
+}
+
+/// Handles payload data for AI chat interactions, typically set by the SERP.
+public final class AIChatPayloadHandler: AIChatConsumableDataHandling {
+    public typealias DataType = AIChatPayload
     private var data: DataType?
 
     public init() {}
@@ -62,16 +86,3 @@ public final class AIChatConsumableDataHandler<T>: AIChatConsumableDataHandling 
 /// For instance, when a user searches for "bread recipe" and clicks the chat button, the SERP sets this payload.
 /// The payload is then consumed when duck.ai is initialized, allowing for seamless data integration.
 public typealias AIChatPayload = [String: Any]
-
-
-/// Handles prompt data for AI chat interactions.
-public final class AIChatPromptHandler: AIChatConsumableDataHandler<String> {
-    public static let shared = AIChatPromptHandler()
-
-    private override init() {
-        super.init()
-    }
-}
-
-/// Handles payload data for AI chat interactions, typically set by the SERP.
-public final class AIChatPayloadHandler: AIChatConsumableDataHandler<AIChatPayload> {}

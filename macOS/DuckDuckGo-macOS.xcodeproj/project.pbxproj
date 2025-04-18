@@ -376,6 +376,10 @@
 		31FBF2322CDD130900626C17 /* AIChatUserScriptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31FBF2302CDD12FE00626C17 /* AIChatUserScriptTests.swift */; };
 		31FC23512DB7A86F00900574 /* AddressBarMenuButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31FC23502DB7A86A00900574 /* AddressBarMenuButton.swift */; };
 		31FC23522DB7A86F00900574 /* AddressBarMenuButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31FC23502DB7A86A00900574 /* AddressBarMenuButton.swift */; };
+		3344ED0B2DAFF47E00AB9376 /* SubscriptionsUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3344ECF52DAFF47E00AB9376 /* SubscriptionsUserScript.swift */; };
+		3344ED142DAFF47E00AB9376 /* SubscriptionsUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3344ECF52DAFF47E00AB9376 /* SubscriptionsUserScript.swift */; };
+		3344ED1B2DAFF51200AB9376 /* SubscriptionsUserScriptHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3344ED1A2DAFF51200AB9376 /* SubscriptionsUserScriptHandling.swift */; };
+		3344ED1C2DAFF51200AB9376 /* SubscriptionsUserScriptHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3344ED1A2DAFF51200AB9376 /* SubscriptionsUserScriptHandling.swift */; };
 		3701C9CE29BD040C00305B15 /* FirefoxBerkeleyDatabaseReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3701C9CD29BD040900305B15 /* FirefoxBerkeleyDatabaseReader.swift */; };
 		3701C9CF29BD040C00305B15 /* FirefoxBerkeleyDatabaseReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3701C9CD29BD040900305B15 /* FirefoxBerkeleyDatabaseReader.swift */; };
 		370245FD2CF7C65400CD79A3 /* PrivacyStatsTrackerDataProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 370245FC2CF7C64B00CD79A3 /* PrivacyStatsTrackerDataProvider.swift */; };
@@ -3935,6 +3939,8 @@
 		31FBF22D2CDD068000626C17 /* AIChatUserScriptHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatUserScriptHandling.swift; sourceTree = "<group>"; };
 		31FBF2302CDD12FE00626C17 /* AIChatUserScriptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatUserScriptTests.swift; sourceTree = "<group>"; };
 		31FC23502DB7A86A00900574 /* AddressBarMenuButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarMenuButton.swift; sourceTree = "<group>"; };
+		3344ECF52DAFF47E00AB9376 /* SubscriptionsUserScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionsUserScript.swift; sourceTree = "<group>"; };
+		3344ED1A2DAFF51200AB9376 /* SubscriptionsUserScriptHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "SubscriptionsUserScriptHandling.swift"; sourceTree = "<group>"; };
 		336B39E22726B4B700C417D3 /* LocalUnprotectedDomains.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalUnprotectedDomains.swift; sourceTree = "<group>"; };
 		3701C9CD29BD040900305B15 /* FirefoxBerkeleyDatabaseReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirefoxBerkeleyDatabaseReader.swift; sourceTree = "<group>"; };
 		370245FC2CF7C64B00CD79A3 /* PrivacyStatsTrackerDataProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyStatsTrackerDataProvider.swift; sourceTree = "<group>"; };
@@ -6203,6 +6209,15 @@
 				D6E0ACB02CE36DC4005D3486 /* DuckPlayerOverlayPixels.swift */,
 			);
 			path = YoutubePlayer;
+			sourceTree = "<group>";
+		};
+		3344ED012DAFF47E00AB9376 /* Subscriptions */ = {
+			isa = PBXGroup;
+			children = (
+				3344ECF52DAFF47E00AB9376 /* SubscriptionsUserScript.swift */,
+				3344ED1A2DAFF51200AB9376 /* SubscriptionsUserScriptHandling.swift */,
+			);
+			path = Subscriptions;
 			sourceTree = "<group>";
 		};
 		370C23172C77C47700A80A3E /* Customization */ = {
@@ -8616,6 +8631,7 @@
 				BBDE001A2D6DE66100109F88 /* DefaultBrowserAndAddToDockPrompts */,
 				CBECDB822CDA812A005B8B87 /* BrokenSitePrompt */,
 				31521ABE2CC0139C00248E6F /* AIChat */,
+				3344ED012DAFF47E00AB9376 /* Subscriptions */,
 				AA4D700525545EDE00C3411E /* Application */,
 				AA585D85248FD31400E9A3E2 /* Assets.xcassets */,
 				B31055BB27A1BA0E001AC618 /* Autoconsent */,
@@ -12325,6 +12341,7 @@
 				4B4D60D42A0C84F700BCD287 /* UserText+NetworkProtection.swift in Sources */,
 				3706FB1A293F65D500E42796 /* OutlineSeparatorViewCell.swift in Sources */,
 				3706FB1B293F65D500E42796 /* SafariDataImporter.swift in Sources */,
+				3344ED1C2DAFF51200AB9376 /* SubscriptionsUserScriptHandling.swift in Sources */,
 				3199AF702C80734A003AEBDC /* DuckPlayerOnboardingDecider.swift in Sources */,
 				3706FB1D293F65D500E42796 /* StatisticsLoader.swift in Sources */,
 				56406D4C2C636A8900BF8FA2 /* SpecialPagesUserScriptExtension.swift in Sources */,
@@ -12859,6 +12876,7 @@
 				379857EE2D721BD6008773F6 /* HistoryViewOnboardingViewModel.swift in Sources */,
 				1DB67F2E2B6FEFDB003DF243 /* ViewSnapshotRenderer.swift in Sources */,
 				3706FC43293F65D500E42796 /* PinnedTabsViewModel.swift in Sources */,
+				3344ED142DAFF47E00AB9376 /* SubscriptionsUserScript.swift in Sources */,
 				85D0327C2B8E3D090041D1FB /* HistoryCoordinatorExtension.swift in Sources */,
 				B6685E4329A61C470043D2EE /* DownloadsTabExtension.swift in Sources */,
 				1DA84D332C119AE70011C80F /* UpdateMenuItemFactory.swift in Sources */,
@@ -14239,6 +14257,7 @@
 				B6DB3CF926A00E2D00D459B7 /* AVCaptureDevice+SwizzledAuthState.swift in Sources */,
 				CBECDB842CDA813C005B8B87 /* BrokenSitePromptLimiterStore.swift in Sources */,
 				1E0C72062ABC63BD00802009 /* SubscriptionPagesUserScript.swift in Sources */,
+				3344ED0B2DAFF47E00AB9376 /* SubscriptionsUserScript.swift in Sources */,
 				AAAB9116288EB46B00A057A9 /* VisitMenuItem.swift in Sources */,
 				B6B71C582B23379600487131 /* NSLayoutConstraintExtension.swift in Sources */,
 				4BA1A6BD258B082300F6F690 /* EncryptionKeyStore.swift in Sources */,
@@ -14578,6 +14597,7 @@
 				C168B9AC2B31DC7E001AFAD9 /* AutofillNeverPromptWebsitesManager.swift in Sources */,
 				9FA173E72B7B122E00EE4E6E /* BookmarkDialogStackedContentView.swift in Sources */,
 				F1C70D7C2BFF510000599292 /* SubscriptionEnvironment+Default.swift in Sources */,
+				3344ED1B2DAFF51200AB9376 /* SubscriptionsUserScriptHandling.swift in Sources */,
 				7B60AFFF2C51426A008E32A3 /* VPNURLEventHandler.swift in Sources */,
 				37A6A8F62AFCCA59008580A3 /* FaviconsFetcherOnboardingViewController.swift in Sources */,
 				5677A9372C9812E800DA7B0A /* TrackerMessageProvider.swift in Sources */,

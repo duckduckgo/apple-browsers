@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AIChat
+
 enum AIChatMessageType {
     case nativeConfigValues
     case nativeHandoffData

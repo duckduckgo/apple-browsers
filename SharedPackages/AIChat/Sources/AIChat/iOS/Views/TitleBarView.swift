@@ -21,6 +21,7 @@
 import UIKit
 import DesignResourcesKit
 
+
 final class TitleBarView: UIView {
     private let titleLabel: UILabel
     private let closeButton: UIButton

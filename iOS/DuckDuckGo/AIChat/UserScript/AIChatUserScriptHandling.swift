@@ -20,16 +20,17 @@ import UserScript
 import Foundation
 import BrowserServicesKit
 import RemoteMessaging
+import AIChat
 
 protocol AIChatUserScriptHandling {
     func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable?
     func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable?
     func openAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
-    func setPayloadHandler(_ payloadHandler: (any AIChatPayloadHandling)?)
+    func setPayloadHandler(_ payloadHandler: (any AIChatConsumableDataHandling)?)
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
-    private var payloadHandler: (any AIChatPayloadHandling)?
+    private var payloadHandler: (any AIChatConsumableDataHandling)?
     private let featureFlagger: FeatureFlagger
 
     init(featureFlagger: FeatureFlagger) {
@@ -73,10 +74,10 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     public func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable? {
         AIChatNativeHandoffData(isAIChatHandoffEnabled: true,
                                platform: platform,
-                               aiChatPayload: payloadHandler?.consumePayload() as? AIChatPayload)
+                               aiChatPayload: payloadHandler?.consumeData() as? AIChatPayload)
     }
 
-    func setPayloadHandler(_ payloadHandler: (any AIChatPayloadHandling)?) {
+    func setPayloadHandler(_ payloadHandler: (any AIChatConsumableDataHandling)?) {
         self.payloadHandler = payloadHandler
     }
 }

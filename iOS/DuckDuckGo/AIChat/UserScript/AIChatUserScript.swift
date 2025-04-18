@@ -80,7 +80,7 @@ final class AIChatUserScript: NSObject, Subfeature {
         }
     }
 
-    func setPayloadHandler(_ payloadHandler: any AIChatPayloadHandling) {
+    func setPayloadHandler(_ payloadHandler: any AIChatConsumableDataHandling) {
         self.handler.setPayloadHandler(payloadHandler)
     }
 }

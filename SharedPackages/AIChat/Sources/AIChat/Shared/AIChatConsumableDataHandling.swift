@@ -18,7 +18,7 @@
 
 /// A protocol that defines a standard interface for handling consumable data.
 /// Types conforming to this protocol can set, consume, and reset data of a specified type.
-protocol AIChatConsumableDataHandling {
+public protocol AIChatConsumableDataHandling {
     /// The type of data that the conforming type will handle.
     associatedtype DataType
 
@@ -36,25 +36,42 @@ protocol AIChatConsumableDataHandling {
     func reset()
 }
 
-final class AIChatPromptHandler: AIChatConsumableDataHandling {
-    typealias DataType = String
-    static let shared = AIChatPromptHandler()
+/// A base class to handle common functionality for data handling.
+public class AIChatDataHandler<T>: AIChatConsumableDataHandling {
+    public typealias DataType = T
+    private var data: DataType?
 
-    private init() {}
+    public init() {}
 
-    private var prompt: String?
-
-    func setData(_ data: String) {
-        self.prompt = data
+    public func setData(_ data: DataType) {
+        self.data = data
     }
 
-    func consumeData() -> String? {
-        let currentPrompt = prompt
+    public func consumeData() -> DataType? {
+        let currentData = data
         reset()
-        return currentPrompt
+        return currentData
     }
 
-    func reset() {
-        self.prompt = nil
+    public func reset() {
+        self.data = nil
     }
 }
+
+/// The payload is configured by the SERP to facilitate data transfer to duck.ai.
+/// For instance, when a user searches for "bread recipe" and clicks the chat button, the SERP sets this payload.
+/// The payload is then consumed when duck.ai is initialized, allowing for seamless data integration.
+public typealias AIChatPayload = [String: Any]
+
+
+/// Handles prompt data for AI chat interactions.
+final public class AIChatPromptHandler: AIChatDataHandler<String> {
+    public static let shared = AIChatPromptHandler()
+
+    private override init() {
+        super.init()
+    }
+}
+
+/// Handles payload data for AI chat interactions, typically set by the SERP.
+final public class AIChatPayloadHandler: AIChatDataHandler<AIChatPayload> {}

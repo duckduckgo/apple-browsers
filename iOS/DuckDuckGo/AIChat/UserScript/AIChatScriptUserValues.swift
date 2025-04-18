@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import AIChat
 
 public struct AIChatNativeHandoffData: Codable {
     let isAIChatHandoffEnabled: Bool

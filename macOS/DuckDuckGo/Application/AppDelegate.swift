@@ -48,6 +48,7 @@ import RemoteMessaging
 import os.log
 import Freemium
 import VPNAppState
+import AIChat
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
 

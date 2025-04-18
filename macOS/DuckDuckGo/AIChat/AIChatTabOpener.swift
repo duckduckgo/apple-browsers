@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AIChat
+
 protocol AIChatTabOpening {
     @MainActor
     func openAIChatTab(_ query: String?, target: AIChatTabOpenerTarget)

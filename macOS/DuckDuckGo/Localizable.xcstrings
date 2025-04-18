@@ -25905,7 +25905,7 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Möchtest du %@ feuerfest machen?"
           }
         },
@@ -25917,43 +25917,43 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "¿Quieres marcar %@ como a prueba de fuego?"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Souhaitez-vous placer %@ en mode coupe-feu ?"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Vuoi proteggere %@?"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Wil je %@ brandveilig maken?"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Chcesz zabezpieczyć %@?"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Gostaria de usar a barreira de segurança em %@?"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Сделать сайт %@ огнеупорным?"
           }
         }
@@ -66355,6 +66355,54 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Остановить чтение"
+          }
+        }
+      }
+    },
+    "storage.access.prompt.body" : {
+      "comment" : "Body of an alert asking users whether to share cookies: [Entity] would like to use cookies and other website data (such as login information) on their other site, [domain]. Declining may result in the site not working properly, but will prevent [entity] from tracking your activity on their websites. DuckDuckGo's Web Tracking Protections will still apply either way.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ would like to use cookies and other website data (such as login information) on their other site, %2$@. Declining may result in the site not working properly, but will prevent %3$@ from tracking your activity on their websites. DuckDuckGo's Web Tracking Protections will still apply either way."
+          }
+        }
+      }
+    },
+    "storage.access.prompt.header" : {
+      "comment" : "Header of an alert asking users whether to share cookies: Allow [current domain] to share cookies and website data with [requesting domain]?",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow %1$@ to share cookies and website data with %2$@?"
+          }
+        }
+      }
+    },
+    "storage.access.quick.domains.prompt.body" : {
+      "comment" : "Header of an alert asking users whether to share cookies: [Entity] would like to use cookies and other website data (such as login information) on their other sites: [domain 1], [domain 2], [domain 3]. Declining may result in these websites not working properly, but will prevent [entity] from tracking your activity on their websites. DuckDuckGo's Web Tracking Protections will still apply either way.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ would like to use cookies and other website data (such as login information) on their other sites: %2$@. Declining may result in these websites not working properly, but will prevent %3$@ from tracking your activity on their websites. DuckDuckGo's Web Tracking Protections will still apply either way."
+          }
+        }
+      }
+    },
+    "storage.access.quick.domains.prompt.header" : {
+      "comment" : "Header of an alert asking users whether to share cookies: Allow [entity]-owned sites to share cookies and website data?",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow %@-owned sites to share cookies and website data?"
           }
         }
       }

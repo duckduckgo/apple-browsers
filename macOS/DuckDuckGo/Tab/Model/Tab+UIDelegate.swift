@@ -250,7 +250,10 @@ extension Tab: WKUIDelegate, PrintingUserScriptDelegate {
                  requestStorageAccessPanelForDomain requestingDomain: String,
                  underCurrentDomain currentDomain: String,
                  completionHandler: @escaping (Bool) -> Void) {
-        completionHandler(true)
+        let alert = NSAlert.storageAccessAlert(currentDomain: currentDomain,
+                                               requestingDomain: requestingDomain)
+        let response = alert.runModal()
+        completionHandler(response == .alertFirstButtonReturn)
     }
 
     @objc(_webView:requestStorageAccessPanelForDomain:underCurrentDomain:forQuirkDomains:completionHandler:)
@@ -260,7 +263,11 @@ extension Tab: WKUIDelegate, PrintingUserScriptDelegate {
                  underCurrentDomain currentDomain: String,
                  forQuirkDomains quirkDomains: [String: [String]],
                  completionHandler: @escaping (Bool) -> Void) {
-        completionHandler(true)
+        let alert = NSAlert.storageAccessAlertForQuirkDomains(requestingDomain: requestingDomain,
+                                                              currentDomain: currentDomain,
+                                                              quirkDomains: Array(quirkDomains.keys))
+        let response = alert.runModal()
+        completionHandler(response == .alertFirstButtonReturn)
     }
 
     func webView(_ webView: WKWebView, runOpenPanelWith parameters: WKOpenPanelParameters, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping ([URL]?) -> Void) {

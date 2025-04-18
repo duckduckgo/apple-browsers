@@ -1004,7 +1004,7 @@ private extension MainWindow {
                     cancellable = nil
                 }
             }
-        
+
         return expectation
     }
 

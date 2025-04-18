@@ -273,20 +273,6 @@ final class BookmarksBarViewController: NSViewController {
         BookmarkFolder(id: PseudoFolder.bookmarks.id, title: PseudoFolder.bookmarks.name, children: viewModel.clippedItems.map(\.entity))
     }
 
-    @IBAction func mouseClickViewMouseUp(_ sender: MouseClickView) {
-        // when collection view reloaded we may receive mouseUp event from a wrong bookmarks bar item
-        // get actual item based on the event coordinates
-        guard let indexPath = bookmarksBarCollectionView.withMouseLocationInViewCoordinates(convert: { point in
-            self.bookmarksBarCollectionView.indexPathForItem(at: point)
-        }),
-              let item = bookmarksBarCollectionView.item(at: indexPath.item) as? BookmarksBarCollectionViewItem else {
-            Logger.bookmarks.error("Item at mouseUp point not found.")
-            return
-        }
-
-        viewModel.bookmarksBarCollectionViewItemClicked(item)
-    }
-
 }
 // MARK: - BookmarksBarViewModelDelegate
 extension BookmarksBarViewController: BookmarksBarViewModelDelegate {
@@ -304,7 +290,7 @@ extension BookmarksBarViewController: BookmarksBarViewModelDelegate {
 
         switch entity {
         case let bookmark as Bookmark:
-            WindowControllersManager.shared.open(bookmark: bookmark)
+            WindowControllersManager.shared.open(bookmark, with: NSApp.currentEvent)
         case let folder as BookmarkFolder:
             showSubmenu(for: folder, from: item.view)
         default:
@@ -447,6 +433,7 @@ private extension BookmarksBarViewController {
             self.bookmarkMenuPopover = bookmarkMenuPopover
         }
 
+        view.window?.makeKeyAndOrderFront(nil)
         bookmarkMenuPopover.show(positionedBelow: view)
 
         if view === clippedItemsIndicator {

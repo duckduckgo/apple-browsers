@@ -787,7 +787,8 @@ class MainViewController: UIViewController {
             button.imageView?.contentMode = .scaleAspectFit
             button.addAction(UIAction(handler: { _ in self.showTabSwitcher() }), for: .touchUpInside)
 
-            let longPressRecognizer = UILongPressGestureRecognizer(target: self, action: #selector(launchNewTab))
+            let longPressRecognizer = UILongPressGestureRecognizer(target: self, action: #selector(onNewTabLongPressRecognizer))
+            longPressRecognizer.minimumPressDuration = 0.4
             button.addGestureRecognizer(longPressRecognizer)
 
             viewCoordinator.toolbarTabSwitcherButton.customView = button
@@ -799,7 +800,14 @@ class MainViewController: UIViewController {
         viewCoordinator.toolbarTabSwitcherButton.isAccessibilityElement = true
         viewCoordinator.toolbarTabSwitcherButton.accessibilityTraits = .button
     }
-    
+
+    @objc private func onNewTabLongPressRecognizer(_ recognizer: UILongPressGestureRecognizer) {
+        guard recognizer.state == .began else { return }
+
+        UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+        newTabShortcutAction()
+    }
+
     private func initMenuButton() {
         viewCoordinator.menuToolbarButton.customView = menuButton
         viewCoordinator.menuToolbarButton.isAccessibilityElement = true
@@ -2231,6 +2239,12 @@ extension MainViewController: OmniBarDelegate {
                                  website: .addressBarClearPressedOnWebsite)
     }
 
+    private func newTabShortcutAction() {
+        Pixel.fire(pixel: .tabSwitchLongPressNewTab)
+        performCancel()
+        newTab()
+    }
+
     private var isSERPPresented: Bool {
         guard let tabURL = currentTab?.url else { return false }
         return tabURL.isDuckDuckGoSearch
@@ -2880,14 +2894,9 @@ extension MainViewController: BookmarksDelegate {
 }
 
 extension MainViewController: TabSwitcherButtonDelegate {
-    
+
     @objc func launchNewTab(_ button: TabSwitcherButton) {
-        if ExperimentalThemingManager().isExperimentalThemingEnabled {
-            UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
-        }
-        Pixel.fire(pixel: .tabSwitchLongPressNewTab)
-        performCancel()
-        newTab()
+        newTabShortcutAction()
     }
 
     func showTabSwitcher(_ button: TabSwitcherButton) {

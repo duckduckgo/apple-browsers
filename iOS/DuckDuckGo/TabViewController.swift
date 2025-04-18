@@ -609,7 +609,7 @@ class TabViewController: UIViewController {
     }
 
     @objc func updateRoundedCorners() {
-        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+        if ExperimentalThemingManager().isRoundedCornersTreatmentEnabled {
             webViewContainer.clipsToBounds = true
             webViewContainer.layer.cornerRadius = isPortrait ? 12 : 0
         }

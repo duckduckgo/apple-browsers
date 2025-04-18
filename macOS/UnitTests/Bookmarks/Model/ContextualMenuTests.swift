@@ -373,7 +373,7 @@ final class ContextualMenuTests: XCTestCase {
         _=menuItem.target!.perform(menuItem.action!, with: menuItem)
 
         // THEN
-        XCTAssertEqual((menu.windowControllersManager as! WindowControllersManagerMock).showCalled, .init(url: URL.duckDuckGo, source: .bookmark, newTab: true))
+        XCTAssertEqual((menu.windowControllersManager as! WindowControllersManagerMock).showCalled, .init(url: URL.duckDuckGo, source: .bookmark, newTab: true, selected: nil))
     }
 
     @MainActor

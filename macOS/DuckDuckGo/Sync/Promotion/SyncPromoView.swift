@@ -25,28 +25,43 @@ struct SyncPromoView: View {
     enum Layout {
         case compact
         case horizontal
-        case vertical
+        case vertical(topPadding: CGFloat)
+        case auto(verticalLayoutTopPadding: CGFloat)
+
+        static let auto = Self.auto(verticalLayoutTopPadding: 70)
+        static let vertical = Self.vertical(topPadding: 70)
     }
 
     @State private var isHovering = false
+    @State private var width: CGFloat = 0
 
     let viewModel: SyncPromoViewModel
     var layout: Layout = .compact
+    var autoLayoutWidthThreshold: CGFloat = 400
 
     var body: some View {
         Group {
             switch layout {
             case .compact:
                 compactLayoutView
-            case .horizontal:
+            case .horizontal,
+                 .auto where width >= autoLayoutWidthThreshold:
                 horizontalLayoutView
-            case .vertical:
-                verticalLayoutView
+            case .vertical(let topPadding), .auto(let topPadding):
+                verticalLayoutView(topPadding: topPadding)
             }
         }
-        .onAppear {
-            PixelKit.fire(SyncPromoPixelKitEvent.syncPromoDisplayed.withoutMacPrefix, withAdditionalParameters: ["source": viewModel.touchpointType.rawValue])
-        }
+        .background(
+            GeometryReader { geometry in
+                Color.clear.onAppear {
+                    PixelKit.fire(SyncPromoPixelKitEvent.syncPromoDisplayed.withoutMacPrefix, withAdditionalParameters: ["source": viewModel.touchpointType.rawValue])
+                    width = geometry.size.width
+                }
+                .onChange(of: geometry.size.width) { newWidth in
+                    width = newWidth
+                }
+            }
+        )
     }
 
     private var closeButton: some View {
@@ -76,15 +91,26 @@ struct SyncPromoView: View {
 
     private var title: some View {
         Text(viewModel.title)
-            .font(.system(size: layout == .vertical ? 15 : 13).bold())
-            .multilineTextAlignment(layout == .vertical ? .center : .leading)
+            .font(.system(size: isVerticalLayout ? 15 : 13).bold())
+            .multilineTextAlignment(isVerticalLayout ? .center : .leading)
             .multilineText()
     }
 
     private var subtitle: some View {
         Text(viewModel.subtitle)
-            .multilineTextAlignment(layout == .vertical ? .center : .leading)
+            .multilineTextAlignment(isVerticalLayout ? .center : .leading)
             .multilineText()
+    }
+
+    private var isVerticalLayout: Bool {
+        switch layout {
+        case .vertical:
+            return true
+        case .horizontal, .compact:
+            return false
+        case .auto:
+            return width < autoLayoutWidthThreshold
+        }
     }
 
     private var compactLayoutView: some View {
@@ -156,7 +182,7 @@ struct SyncPromoView: View {
         }
     }
 
-    private var verticalLayoutView: some View {
+    private func verticalLayoutView(topPadding: CGFloat) -> some View {
         VStack(alignment: .center, spacing: 16) {
 
             Image(.syncStart128)
@@ -207,7 +233,8 @@ struct SyncPromoView: View {
             Spacer()
         }
         .frame(width: 224)
-        .padding(.top, 70)
+        .padding(.top, topPadding)
+        .frame(maxWidth: .infinity, alignment: .center)
     }
 
     private func primaryAction() {
@@ -220,6 +247,8 @@ struct SyncPromoView: View {
         PixelKit.fire(SyncPromoPixelKitEvent.syncPromoDismissed.withoutMacPrefix, withAdditionalParameters: ["source": viewModel.touchpointType.rawValue])
     }
 }
+
+#if DEBUG
 
 #Preview("Compact") {
     SyncPromoView(viewModel: SyncPromoViewModel(touchpointType: .bookmarks, primaryButtonAction: {}, dismissButtonAction: {}),
@@ -238,3 +267,14 @@ struct SyncPromoView: View {
                   layout: .vertical)
         .frame(height: 300)
 }
+
+@available(macOS 12.0, *)
+#Preview("Auto") {
+    ResizablePreviewView(maxSize: CGSize(width: 500, height: 500),
+                         minSize: CGSize(width: 224, height: 80)) {
+        SyncPromoView(viewModel: SyncPromoViewModel(touchpointType: .bookmarks, primaryButtonAction: {}, dismissButtonAction: {}),
+                      layout: .auto)
+    }
+}
+
+#endif

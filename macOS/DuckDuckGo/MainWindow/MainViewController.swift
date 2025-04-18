@@ -45,9 +45,9 @@ final class MainViewController: NSViewController {
     private var addressBarBookmarkIconVisibilityCancellable: AnyCancellable?
     private var selectedTabViewModelCancellable: AnyCancellable?
     private var selectedTabViewModelForHistoryViewOnboardingCancellable: AnyCancellable?
+    private var viewEventsCancellables = Set<AnyCancellable>()
     private var tabViewModelCancellables = Set<AnyCancellable>()
     private var bookmarksBarVisibilityChangedCancellable: AnyCancellable?
-    private var eventMonitorCancellables = Set<AnyCancellable>()
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private var bannerPromptObserver: Any?
     private var bannerDismissedCancellable: AnyCancellable?
@@ -253,7 +253,7 @@ final class MainViewController: NSViewController {
     }
 
     func windowWillClose() {
-        eventMonitorCancellables.removeAll()
+        viewEventsCancellables.removeAll()
     }
 
     func windowWillMiniaturize() {
@@ -399,17 +399,18 @@ final class MainViewController: NSViewController {
             assertionFailure("MainViewController.subscribeToFirstResponder: view.window is nil")
             return
         }
-        window.publisher(for: \.firstResponder)
-            .combineLatest(NSApp.publisher(for: \.mainWindow))
-            .sink { [weak self] firstResponder, _ in
-                self?.firstResponderDidChange(to: firstResponder)
+
+        NotificationCenter.default
+            .publisher(for: MainWindow.firstResponderDidChangeNotification, object: window)
+            .sink { [weak self] in
+                self?.firstResponderDidChange($0)
             }
-            .store(in: &eventMonitorCancellables)
+            .store(in: &viewEventsCancellables)
     }
 
-    private func firstResponderDidChange(to firstResponder: NSResponder?) {
+    private func firstResponderDidChange(_ notification: Notification) {
         // when window first responder is reset (to the window): activate Tab Content View
-        if firstResponder === view.window {
+        if view.window?.firstResponder === view.window {
             browserTabViewController.adjustFirstResponder()
         }
     }
@@ -596,11 +597,11 @@ extension MainViewController {
         NSEvent.addLocalCancellableMonitor(forEventsMatching: .keyDown) { [weak self] event in
             guard let self else { return event }
             return self.customKeyDown(with: event) ? nil : event
-        }.store(in: &eventMonitorCancellables)
+        }.store(in: &viewEventsCancellables)
         NSEvent.addLocalCancellableMonitor(forEventsMatching: .otherMouseUp) { [weak self] event in
             guard let self else { return event }
             return self.otherMouseUp(with: event)
-        }.store(in: &eventMonitorCancellables)
+        }.store(in: &viewEventsCancellables)
     }
 
     func customKeyDown(with event: NSEvent) -> Bool {

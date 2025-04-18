@@ -23,7 +23,7 @@ import os.log
 extension NSTextField {
 
     var isFirstResponder: Bool {
-        window?.firstResponder == currentEditor()
+        window?.firstResponder === currentEditor()
     }
 
     static func label(titled title: String) -> NSTextField {

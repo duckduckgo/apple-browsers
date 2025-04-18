@@ -62,6 +62,18 @@ final class PopUpWindow: NSPanel {
         isMovable = false
     }
 
+    // MARK: - First Responder Notification
+
+    override func makeFirstResponder(_ responder: NSResponder?) -> Bool {
+        // The only reliable way to detect NSTextField is the first responder
+        defer {
+            // Send it after the first responder has been set on the super class so that window.firstResponder matches correctly
+            NotificationCenter.default.post(name: MainWindow.firstResponderDidChangeNotification, object: self)
+        }
+
+        return super.makeFirstResponder(responder)
+    }
+
     override func endEditing(for object: Any?) {
         if case .leftMouseUp = NSApp.currentEvent?.type,
            object is AddressBarTextEditor {

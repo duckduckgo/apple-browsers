@@ -331,10 +331,10 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
             assertionFailure("BookmarkManagementDetailViewController.subscribeToFirstResponder: view.window is nil")
             return
         }
-        window.publisher(for: \.firstResponder)
-            .combineLatest(NSApp.publisher(for: \.mainWindow))
-            .sink { [weak self] firstResponder, _ in
-                self?.firstResponderDidChange(to: firstResponder)
+        NotificationCenter.default
+            .publisher(for: MainWindow.firstResponderDidChangeNotification, object: window)
+            .sink { [weak self] in
+                self?.firstResponderDidChange($0)
             }
             .store(in: &cancellables)
     }
@@ -432,9 +432,9 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
             .show(in: view.window)
     }
 
-    private func firstResponderDidChange(to firstResponder: NSResponder?) {
+    private func firstResponderDidChange(_ notification: Notification) {
         // clear delete undo history when activating the Address Bar
-        if firstResponder is AddressBarTextEditor {
+        if view.window?.firstResponder is AddressBarTextEditor {
             undoManager?.removeAllActions(withTarget: bookmarkManager)
         }
     }

@@ -27,7 +27,7 @@ import PrivacyDashboard
 import SpecialErrorPages
 import Suggestions
 import XCTest
-
+import os.log
 @testable import DuckDuckGo_Privacy_Browser
 
 @available(macOS 12.0, *)
@@ -328,8 +328,9 @@ class AddressBarTests: XCTestCase {
         try await Task.sleep(interval: 0.01)
         XCTAssertTrue(isAddressBarFirstResponder)
 
+        let firstResponderChangeExpectation = window.responderDidChangeExpectation(to: tab.webView)
         viewModel.remove(at: .unpinned(1))
-        try await Task.sleep(interval: 0.01)
+        await fulfillment(of: [firstResponderChangeExpectation], timeout: 1)
         XCTAssertEqual(window.firstResponder, tab.webView)
     }
 
@@ -387,12 +388,18 @@ class AddressBarTests: XCTestCase {
         XCTAssertEqual(window.firstResponder, viewModel.tabs[0].webView)
         _=window.makeFirstResponder(addressBarTextField)
 
+        let firstResponderChangeExpectation = window.responderDidChangeExpectation(to: viewModel.tabs[1].webView)
         viewModel.select(at: .unpinned(1))
-        try await Task.sleep(interval: 0.01)
+        await fulfillment(of: [firstResponderChangeExpectation], timeout: 1)
         XCTAssertEqual(window.firstResponder, viewModel.tabs[1].webView)
 
         _=window.makeFirstResponder(addressBarTextField)
+
+        let firstResponderChangeExpectation2 = window.responderDidChangeExpectation(to: viewModel.tabs[0].webView)
+
         viewModel.select(at: .unpinned(0))
+
+        await fulfillment(of: [firstResponderChangeExpectation2], timeout: 1)
         XCTAssertEqual(window.firstResponder, viewModel.tabs[0].webView)
     }
 
@@ -402,11 +409,15 @@ class AddressBarTests: XCTestCase {
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab]))
         window = WindowsManager.openNewWindow(with: viewModel)!
 
+        try await tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise().value
         XCTAssertEqual(window.firstResponder, viewModel.tabs[0].webView)
-        _=window.makeFirstResponder(addressBarTextField)
-        try await Task.sleep(interval: 0.01)
 
-        type("\u{1b}", global: true) // escape
+        _=window.makeFirstResponder(addressBarTextField)
+        XCTAssertTrue(isAddressBarFirstResponder)
+
+        let firstResponderChangeExpectation = window.responderDidChangeExpectation(to: tab.webView)
+        type("\u{1b}", global: true) // send escape key
+        await fulfillment(of: [firstResponderChangeExpectation], timeout: 1)
 
         XCTAssertEqual(window.firstResponder, tab.webView)
     }
@@ -447,11 +458,14 @@ class AddressBarTests: XCTestCase {
         try await tab.webViewDidFinishNavigationPublisher.timeout(10).first().promise().value
         XCTAssertTrue(isAddressBarFirstResponder)
 
-        try await tab.setContent(.url(.makeSearchUrl(from: "cats")!, credential: nil, source: .bookmark))?.result.get()
+        let serpUrl = URL.makeSearchUrl(from: "cats")!
+        try await tab.setContent(.url(serpUrl, credential: nil, source: .bookmark))?.result.get()
         XCTAssertFalse(isAddressBarFirstResponder)
 
+        // go back to New Tab page
         try await tab.goBack()?.result.get()
         XCTAssertTrue(isAddressBarFirstResponder)
+        XCTAssertEqual(tab.webView.url, .newtab)
 
         // text field value shouldn‘t change to a url before it resigns first responder
         var observer: Any? = addressBarTextField.observe(\.stringValue) { addressBarTextField, _ in
@@ -462,21 +476,16 @@ class AddressBarTests: XCTestCase {
             }
         }
 
-        let firstResponderChangeExpectation = XCTestExpectation(description: "First responder changed to tab.webView")
-        var firstResponderObserver: Any? = window.observe(\.firstResponder) { [unowned webView=tab.webView] window, _ in
-            if window.firstResponder === webView {
-                firstResponderChangeExpectation.fulfill()
-            }
-        }
+        let firstResponderChangeExpectation = window.responderDidChangeExpectation(to: tab.webView)
 
+        // go forward to SERP
         try await tab.goForward()?.result.get()
+        XCTAssertEqual(tab.webView.url, serpUrl)
 
         await fulfillment(of: [firstResponderChangeExpectation], timeout: 5)
         XCTAssertEqual(window.firstResponder, tab.webView)
         withExtendedLifetime(observer) {}
-        withExtendedLifetime(firstResponderObserver) {}
         observer = nil
-        firstResponderObserver = nil
 
         _=window.makeFirstResponder(addressBarTextField)
         try await Task.sleep(interval: 0.01)
@@ -820,21 +829,27 @@ class AddressBarTests: XCTestCase {
 
         XCTAssertEqual(window.firstResponder, tab.webView)
 
-        let viewModel2 = TabCollectionViewModel(tabCollection: TabCollection(tabs: [Tab(content: .newtab, privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())]))
+        let viewModel2 = TabCollectionViewModel(tabCollection: TabCollection(tabs: [Tab(content: .newtab, privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())]), selectionIndex: .unpinned(0))
         let window2 = WindowsManager.openNewWindow(with: viewModel2)!
         defer {
             window2.close()
         }
 
+        let firstResponderChangeExpectation = window2.responderDidChangeExpectation(to: tab.webView)
+
         // when activaing a Pinned Tab in another window its Web View should become the first responder
         viewModel2.select(at: .pinned(0))
-        try await Task.sleep(interval: 0.1)
-        XCTAssertEqual(window.firstResponder, window)
+
+        await fulfillment(of: [firstResponderChangeExpectation], timeout: 1)
         XCTAssertEqual(window2.firstResponder, tab.webView)
+        XCTAssertEqual(window.firstResponder, window)
+
+        // activate the first window back: the Pinned Tab should become the first responder in the first window
+        let firstResponderChangeExpectation2 = window.responderDidChangeExpectation(to: tab.webView)
 
         window.makeKeyAndOrderFront(nil)
-        try await Task.sleep(interval: 0.1)
 
+        await fulfillment(of: [firstResponderChangeExpectation2], timeout: 1)
         XCTAssertEqual(window.firstResponder, tab.webView)
         XCTAssertEqual(window2.firstResponder, window2)
     }
@@ -857,12 +872,15 @@ class AddressBarTests: XCTestCase {
             window2.close()
         }
 
+        let firstResponderChangeExpectation = window2.responderDidChangeExpectation(to: tab.webView)
         viewModel2.select(at: .pinned(0))
-        try await Task.sleep(interval: 0.01)
+
+        await fulfillment(of: [firstResponderChangeExpectation], timeout: 1)
+
         XCTAssertEqual(window.firstResponder, window)
         XCTAssertEqual(window2.firstResponder, tab.webView)
 
-        // when activaing a Pinned Tab in another window when its Address Bar is active, it should be kept active
+        // when activating a Pinned Tab in another window when its Address Bar is active, it should be kept active
         _=window.makeFirstResponder(addressBarTextField)
         window.makeKeyAndOrderFront(nil)
         try await Task.sleep(interval: 0.01)
@@ -980,18 +998,23 @@ class AddressBarTests: XCTestCase {
     }
 }
 
-protocol MainActorPerformer {
-    func perform(_ closure: @MainActor () -> Void)
-}
-struct OnMainActor: MainActorPerformer {
-    private init() {}
+private extension MainWindow {
 
-    static func instance() -> MainActorPerformer { OnMainActor() }
-
-    @MainActor(unsafe)
-    func perform(_ closure: @MainActor () -> Void) {
-        closure()
+    func responderDidChangeExpectation(to firstResponder: NSResponder) -> XCTestExpectation {
+        let expectation = XCTestExpectation(description: "First responder changed to \(firstResponder)")
+        var cancellable: AnyCancellable?
+        cancellable = NotificationCenter.default.publisher(for: MainWindow.firstResponderDidChangeNotification, object: self)
+            .sink { [weak self] _ in
+                if self?.firstResponder === firstResponder {
+                    expectation.fulfill()
+                    withExtendedLifetime(cancellable) {}
+                    cancellable = nil
+                }
+            }
+        
+        return expectation
     }
+
 }
 
 extension NSImage {

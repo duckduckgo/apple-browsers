@@ -21,6 +21,7 @@ import Cocoa
 final class MainWindow: NSWindow {
 
     static let minWindowWidth: CGFloat = 600
+    static let firstResponderDidChangeNotification = Notification.Name("firstResponderDidChange")
 
     override var canBecomeKey: Bool {
         return true
@@ -70,6 +71,17 @@ final class MainWindow: NSWindow {
 
         // Setting minimum width to fit the wide NTP search bar
         minSize = .init(width: Self.minWindowWidth, height: 0)
+    }
+
+    // MARK: - First Responder Notification
+
+    override func makeFirstResponder(_ responder: NSResponder?) -> Bool {
+        // The only reliable way to detect NSTextField is the first responder
+        defer {
+            // Send it after the first responder has been set on the super class so that window.firstResponder matches correctly
+            NotificationCenter.default.post(name: MainWindow.firstResponderDidChangeNotification, object: self)
+        }
+        return super.makeFirstResponder(responder)
     }
 
     override func endEditing(for object: Any?) {

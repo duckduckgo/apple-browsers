@@ -581,7 +581,7 @@ extension MainViewController {
                 let visitsCount = await historyViewDataProvider.countVisibleVisits(matching: .rangeFilter(.all))
 
                 let presenter = DefaultHistoryViewDialogPresenter()
-                switch await presenter.showDeleteDialog(for: visitsCount, deleteMode: .all) {
+                switch await presenter.showDeleteDialog(for: visitsCount, deleteMode: .all, in: nil) {
                 case .burn:
                     FireCoordinator.fireViewModel.fire.burnAll()
                 case .delete:
@@ -619,7 +619,7 @@ extension MainViewController {
 
             Task {
                 let presenter = DefaultHistoryViewDialogPresenter()
-                switch await presenter.showDeleteDialog(for: visits.count, deleteMode: deleteMode) {
+                switch await presenter.showDeleteDialog(for: visits.count, deleteMode: deleteMode, in: nil) {
                 case .burn:
                     FireCoordinator.fireViewModel.fire.burnVisits(visits,
                                                                   except: FireproofDomains.shared,
@@ -709,7 +709,7 @@ extension MainViewController {
                 shouldLoadInBackground: true,
                 burnerMode: tabCollectionViewModel.burnerMode)
         }
-        tabCollectionViewModel.append(tabs: tabs)
+        tabCollectionViewModel.append(tabs: tabs, andSelect: true)
         PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
     }
 
@@ -813,7 +813,7 @@ extension MainViewController {
 
         WindowsManager.closeWindows(except: excludedWindowControllers.compactMap(\.window))
 
-        tabCollectionViewModel.append(tabs: otherTabs)
+        tabCollectionViewModel.append(tabs: otherTabs, andSelect: false)
         tabCollectionViewModel.tabCollection.localHistoryOfRemovedTabs += otherLocalHistoryOfRemovedTabs
     }
 

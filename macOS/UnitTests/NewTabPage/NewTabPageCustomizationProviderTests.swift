@@ -246,6 +246,7 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
     func testThatShowContextMenuPresentsTheMenuForTheSpecifiedImageID() async throws {
 
         final class CapturingNewTabPageContextMenuPresenter: NewTabPageContextMenuPresenting {
+            var window: NSWindow?
             func showContextMenu(_ menu: NSMenu) {
                 showContextMenuCalls.append(menu)
             }

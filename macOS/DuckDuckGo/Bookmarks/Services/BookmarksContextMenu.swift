@@ -290,7 +290,7 @@ extension BookmarksContextMenu: BookmarkMenuItemSelectors {
             return
         }
 
-        windowControllersManager.show(url: bookmark.urlObject, source: .bookmark, newTab: true)
+        windowControllersManager.show(url: bookmark.urlObject, source: .bookmark, newTab: true, selected: nil /* depending on the setting */)
     }
 
     @MainActor
@@ -435,11 +435,11 @@ extension BookmarksContextMenu: FolderMenuItemSelectors {
 
         if let folder = sender.representedObject as? BookmarkFolder {
             let tabs = Tab.withContentOfBookmark(folder: folder, burnerMode: tabCollection.burnerMode)
-            tabCollection.append(tabs: tabs)
+            tabCollection.append(tabs: tabs, andSelect: true)
             PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
         } else if let bookmarks = sender.representedObject as? [Bookmark] {
             let tabs = Tab.with(contentsOf: bookmarks, burnerMode: tabCollection.burnerMode)
-            tabCollection.append(tabs: tabs)
+            tabCollection.append(tabs: tabs, andSelect: true)
             PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
         }
     }

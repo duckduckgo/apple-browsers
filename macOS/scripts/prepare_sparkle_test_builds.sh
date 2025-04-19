@@ -182,18 +182,26 @@ wait_for_builds() {
     echo "- ${branch_release}"
     echo "- ${branch_phased}"
 
+    # Get run IDs first
+    run_ids=()
+    branches=("${branch_release}" "${branch_phased}")
+    for branch in "${branches[@]}"; do
+        run_id=$(gh run list --workflow=macos_build_notarized.yml --branch="${branch}" --limit=1 --json databaseId --jq '.[0].databaseId')
+        run_ids+=("${run_id}")
+    done
+
     # Check if all builds have completed
     while true; do
         all_completed=true
         failed_builds=()
 
-        for branch in "${branch_release}" "${branch_phased}"; do
-            status=$(gh run list --workflow=macos_build_notarized.yml --branch="${branch}" --limit=1 --json status --jq '.[0].status')
+        for i in "${!run_ids[@]}"; do
+            status=$(gh run view "${run_ids[$i]}" --json status --jq '.status')
 
             if [[ "$status" == "completed" ]]; then
-                conclusion=$(gh run list --workflow=macos_build_notarized.yml --branch="${branch}" --limit=1 --json conclusion --jq '.[0].conclusion')
+                conclusion=$(gh run view "${run_ids[$i]}" --json conclusion --jq '.conclusion')
                 if [[ "$conclusion" != "success" ]]; then
-                    failed_builds+=("${branch}")
+                    failed_builds+=("${branches[$i]}")
                 fi
             else
                 all_completed=false
@@ -223,12 +231,12 @@ wait_for_builds() {
 
 download_builds() {
     local branch_prefix="$1"
-    local temp_dir="$2"
+    local updates_dir="$2"
 
     branch_release="${branch_prefix}release"
     branch_phased="${branch_prefix}phased"
 
-    echo "Downloading builds to ${temp_dir}"
+    echo "Downloading builds to ${updates_dir}"
 
     # Get S3 URLs for RELEASE and PHASED builds
     for branch in "${branch_release}" "${branch_phased}"; do
@@ -243,7 +251,7 @@ download_builds() {
 
         # Convert S3 URL to HTTPS URL
         https_url="https://staticcdn.duckduckgo.com/${s3_url#s3://ddg-staticcdn/}"
-        output_file="${temp_dir}/$(basename "${s3_url}")"
+        output_file="${updates_dir}/$(basename "${s3_url}")"
 
         # Skip if file already exists
         if [[ -f "${output_file}" ]]; then
@@ -258,11 +266,11 @@ download_builds() {
         fi
     done
 
-    echo "✅ All builds downloaded successfully to ${temp_dir}"
+    echo "✅ All builds downloaded successfully to ${updates_dir}"
     return 0
 }
 
-generate_appcast() {
+generate_appcast_xml() {
     local branch_prefix="$1"
 
     # Check for key file first
@@ -273,36 +281,55 @@ generate_appcast() {
         exit 1
     fi
 
-    # Create temporary directory for downloads
-    temp_dir="${output_dir}/updates"
-    mkdir -p "${temp_dir}"
+    # Create updates directory
+    updates_dir="${output_dir}/updates"
+    mkdir -p "${updates_dir}"
 
-    # Check if files already exist
-    if ls "${temp_dir}"/*.dmg 1> /dev/null 2>&1; then
-        echo "✅ DMG files already exist in ${temp_dir}, skipping download"
-    else
-        # First wait for all builds to complete
-        if ! wait_for_builds "${branch_prefix}"; then
-            exit 1
-        fi
+    # First wait for all builds to complete
+    if ! wait_for_builds "${branch_prefix}"; then
+        exit 1
+    fi
 
-        # Download all builds
-        if ! download_builds "${branch_prefix}" "${temp_dir}"; then
-            exit 1
-        fi
+    # Download all builds
+    if ! download_builds "${branch_prefix}" "${updates_dir}"; then
+        exit 1
     fi
 
     # Generate appcast
     echo "Generating appcast..."
-    if ! generate_appcast -o "${temp_dir}/appcast.xml" \
+    if ! generate_appcast -o "${output_dir}/appcast.xml" \
         --ed-key-file "${key_file}" \
         --versions "${VERSION_RELEASE},${VERSION_PHASED}" \
-        "${temp_dir}"; then
+        "${updates_dir}"; then
         echo "❌ Failed to generate appcast"
         exit 1
     fi
 
-    echo "✅ Appcast generated successfully at ${temp_dir}/appcast.xml"
+    # Get S3 URLs and replace enclosure URLs in appcast.xml
+    echo "Updating enclosure URLs in appcast.xml..."
+    for branch in "${branch_release}" "${branch_phased}"; do
+        run_id=$(gh run list --workflow=macos_build_notarized.yml --branch="${branch}" --limit=1 --json databaseId --jq '.[0].databaseId')
+        s3_url=$(gh run view "${run_id}" --log | grep -o "s3://[^ ]*\.dmg" | tail -n 1)
+        https_url="https://staticcdn.duckduckgo.com/${s3_url#s3://ddg-staticcdn/}"
+
+        # Get the version number from the branch
+        version=$(echo "${branch}" | grep -o "[0-9]*$")
+
+        # Replace the enclosure URL in appcast.xml
+        sed -i '' "s|url=\"[^\"]*${version}\.dmg\"|url=\"${https_url}\"|g" "${output_dir}/appcast.xml"
+    done
+
+    # Remove sparkle:deltas section using perl for better multiline handling
+    perl -i -pe 'BEGIN{undef $/;} s/<sparkle:deltas>.*?<\/sparkle:deltas>//gs' "${output_dir}/appcast.xml"
+
+    # Add description to each item
+    description='<description><![CDATA[<h3 style="font-size:14px">What'\''s new</h3>
+<ul>
+<li>Bug fixes and improvements.</li>
+</ul>]]></description>'
+    perl -i -pe 's|</item>|'"${description}"'\n</item>|g' "${output_dir}/appcast.xml"
+
+    echo "✅ Appcast generated successfully at ${output_dir}/appcast.xml"
 }
 
 # Define branch names
@@ -330,7 +357,7 @@ elif [[ "${action}" == "generate_appcast" ]]; then
         echo "Missing branches. Cannot generate appcast."
         exit 1
     fi
-    generate_appcast "${branch_prefix}"
+    generate_appcast_xml "${branch_prefix}"
 elif branches_exist; then
     if [[ "${action}" == "new" ]]; then
         read -rp "Branches already exist. Restack them? (y/n): " restack

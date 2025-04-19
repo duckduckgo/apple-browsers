@@ -170,12 +170,10 @@ push_branches() {
 wait_for_builds() {
     local branch_prefix="$1"
 
-    branch_outdated="${branch_prefix}outdated"
     branch_release="${branch_prefix}release"
     branch_phased="${branch_prefix}phased"
 
     echo "Checking build status for branches:"
-    echo "- ${branch_outdated}"
     echo "- ${branch_release}"
     echo "- ${branch_phased}"
 
@@ -184,7 +182,7 @@ wait_for_builds() {
         all_completed=true
         failed_builds=()
 
-        for branch in "${branch_outdated}" "${branch_release}" "${branch_phased}"; do
+        for branch in "${branch_release}" "${branch_phased}"; do
             status=$(gh run list --workflow=macos_build_notarized.yml --branch="${branch}" --limit=1 --json status --jq '.[0].status')
 
             if [[ "$status" == "completed" ]]; then

@@ -27,12 +27,14 @@ check_command generate_appcast
 VERSION_RELEASE=1000
 VERSION_PHASED=2000
 
-default_prefix="$(whoami)/"
+DEFAULT_PREFIX="$(whoami)/"
+DEFAULT_OUTPUT_DIR="${HOME}/Desktop"
 
 # Parse command line arguments
 action="new"
-branch_prefix="${default_prefix}"
-output_dir="${HOME}/Desktop"
+branch_prefix="${DEFAULT_PREFIX}"
+output_dir="${DEFAULT_OUTPUT_DIR}"
+appcast_url=""
 
 # First argument is action
 if [[ $# -gt 0 ]]; then
@@ -49,6 +51,9 @@ for arg in "$@"; do
         --output-dir=*)
             output_dir="${arg#*=}"
             ;;
+        --appcast=*)
+            appcast_url="${arg#*=}"
+            ;;
         *)
             echo "Unknown argument: $arg"
             exit 1
@@ -58,7 +63,7 @@ done
 
 create_branches() {
     local branch_prefix="$1"
-    local feed_url="$2"
+    local appcast_url="$2"
 
     # Store current branch to return to later
     current_branch=$(git rev-parse --abbrev-ref HEAD)
@@ -71,7 +76,7 @@ create_branches() {
     git checkout -b "${branch_outdated}"
 
     # Update Info.plist with the custom feed URL
-    plutil -replace SUFeedURL -string "${feed_url}" "${info_plist}"
+    plutil -replace SUFeedURL -string "${appcast_url}" "${info_plist}"
     git add "${info_plist}"
     git commit -m "Update SUFeedURL for testing"
 
@@ -268,18 +273,23 @@ generate_appcast() {
         exit 1
     fi
 
-    # First wait for all builds to complete
-    if ! wait_for_builds "${branch_prefix}"; then
-        exit 1
-    fi
-
     # Create temporary directory for downloads
     temp_dir="${output_dir}/updates"
     mkdir -p "${temp_dir}"
 
-    # Download all builds
-    if ! download_builds "${branch_prefix}" "${temp_dir}"; then
-        exit 1
+    # Check if files already exist
+    if ls "${temp_dir}"/*.dmg 1> /dev/null 2>&1; then
+        echo "✅ DMG files already exist in ${temp_dir}, skipping download"
+    else
+        # First wait for all builds to complete
+        if ! wait_for_builds "${branch_prefix}"; then
+            exit 1
+        fi
+
+        # Download all builds
+        if ! download_builds "${branch_prefix}" "${temp_dir}"; then
+            exit 1
+        fi
     fi
 
     # Generate appcast
@@ -338,15 +348,11 @@ elif branches_exist; then
     fi
 else
     if [[ "${action}" == "new" ]]; then
-        # Ask for custom SUFeedURL
-        while true; do
-            read -rp "Enter custom SUFeedURL for testing: " feed_url
-            if [[ -n "${feed_url}" ]]; then
-                break
-            fi
-            echo "Error: SUFeedURL cannot be empty"
-        done
-        create_branches "${branch_prefix}" "${feed_url}"
+        if [[ -z "${appcast_url}" ]]; then
+            echo "Error: --appcast parameter is required for 'new' action"
+            exit 1
+        fi
+        create_branches "${branch_prefix}" "${appcast_url}"
     elif [[ "${action}" == "restack" ]]; then
         echo "Branches do not exist. Cannot restack."
         exit 1

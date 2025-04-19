@@ -330,6 +330,16 @@ generate_appcast_xml() {
     perl -i -pe 's|</item>|'"${description}"'\n</item>|g' "${output_dir}/appcast.xml"
 
     echo "✅ Appcast generated successfully at ${output_dir}/appcast.xml"
+    # Get S3 URL for outdated branch
+    branch_outdated="${branch_prefix}outdated"
+    run_id=$(gh run list --workflow=macos_build_notarized.yml --branch="${branch_outdated}" --limit=1 --json databaseId --jq '.[0].databaseId')
+    s3_url=$(gh run view "${run_id}" --log | grep -o "s3://[^ ]*\.dmg" | tail -n 1)
+    outdated_url="https://staticcdn.duckduckgo.com/${s3_url#s3://ddg-staticcdn/}"
+
+    echo "To test the update:"
+    echo "1. Upload appcast.xml to your test server"
+    echo "2. Use the ${branch_prefix}outdated branch build to test the update process"
+    echo "   Download build from: ${outdated_url}"
 }
 
 # Define branch names

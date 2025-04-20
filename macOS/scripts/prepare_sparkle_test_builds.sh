@@ -6,33 +6,18 @@
 # 2. release: Updates version to VERSION_RELEASE (1000)
 # 3. phased: Updates version to VERSION_PHASED (2000) for phased rollout testing
 #
-# Usage: prepare_sparkle_test_builds.sh [action] [--branch-prefix=PREFIX] [--output-dir=DIR] [--appcast=URL] [--key-file=PATH]
-#
-# Actions:
-#   new (default): Create new branches for testing
-#     Required: --appcast=URL
-#     Optional: --branch-prefix=PREFIX
-#   restack: Restack existing branches on top of current branch
-#     Required: --branch-prefix=PREFIX
-#   clean: Delete all test branches
-#     Required: --branch-prefix=PREFIX
-#   push: Push branches and trigger builds
-#     Required: --branch-prefix=PREFIX
-#   generate_appcast: Generate appcast.xml with test builds
-#     Required: --branch-prefix=PREFIX
-#     Optional: --output-dir=DIR, --key-file=PATH
-#
-# Options:
-#   --branch-prefix: Prefix for branch names (default: username/)
-#   --output-dir: Directory for appcast.xml and builds (default: ~/Desktop)
-#   --appcast: Custom appcast URL for testing (required for 'new' action)
-#   --key-file: Key file for signing appcast (default: output-dir/key-file)
+# Usage: prepare_sparkle_test_builds.sh
 #
 # Example workflow:
-#   1. ./prepare_sparkle_test_builds.sh new --branch-prefix=test/ --appcast=https://test.example.com/appcast.xml
-#   2. ./prepare_sparkle_test_builds.sh push --branch-prefix=test/
-#   3. ./prepare_sparkle_test_builds.sh generate_appcast --branch-prefix=test/ --output-dir=~/Desktop/test-updates
-#      Note: Place the key-file in ~/Desktop/test-updates or specify its location with --key-file
+#   1. Run the script and select "Create new test branches"
+#      - Enter test appcast URL when prompted
+#      - Enter branch prefix when prompted (default: username/)
+#   2. Run the script and select "Push branches and trigger builds"
+#      - Enter branch prefix when prompted (default: username/)
+#   3. Run the script and select "Generate test appcast"
+#      - Enter branch prefix when prompted (default: username/)
+#      - Enter output directory when prompted (default: ~/Desktop)
+#      - Enter key file path when prompted (default: output-dir/key-file)
 #   4. Upload appcast.xml to your test server
 #   5. Download and test the outdated build
 #
@@ -57,34 +42,11 @@ DEFAULT_PREFIX="$(whoami)/"
 DEFAULT_OUTPUT_DIR="${HOME}/Desktop"
 
 # Parse command line arguments
-action="new"
-branch_prefix="${DEFAULT_PREFIX}"
-output_dir="${DEFAULT_OUTPUT_DIR}"
-appcast_url=""
 key_file=""
 
-# First argument is action
-if [[ $# -gt 0 ]]; then
-    action="$1"
-    shift
-fi
-
-# Parse remaining arguments
+# Parse arguments
 for arg in "$@"; do
     case $arg in
-        --branch-prefix=*)
-            branch_prefix="${arg#*=}"
-            # Ensure branch_prefix ends with a slash
-            if [[ "${branch_prefix}" != */ ]]; then
-                branch_prefix="${branch_prefix}/"
-            fi
-            ;;
-        --output-dir=*)
-            output_dir="${arg#*=}"
-            ;;
-        --appcast=*)
-            appcast_url="${arg#*=}"
-            ;;
         --key-file=*)
             key_file="${arg#*=}"
             ;;
@@ -95,10 +57,59 @@ for arg in "$@"; do
     esac
 done
 
-# Set default key file if not provided
-if [[ -z "${key_file}" ]]; then
-    key_file="${output_dir}/key-file"
+# Show menu and get user choice
+echo "Select an action:"
+echo "1) Create new test branches"
+echo "2) Restack existing branches"
+echo "3) Push branches and trigger builds"
+echo "4) Generate test appcast"
+echo "5) Clean up test branches"
+echo "6) Exit"
+read -rp "Enter your choice (1-6): " choice
+echo
+
+# Convert choice to action
+case $choice in
+    1) action="new" ;;
+    2) action="restack" ;;
+    3) action="push" ;;
+    4) action="generate_appcast_xml" ;;
+    5) action="clean" ;;
+    6) exit 0 ;;
+    *)
+        echo "Invalid choice"
+        exit 1
+        ;;
+esac
+
+# Prompt for branch prefix
+read -rp "Enter branch prefix [${DEFAULT_PREFIX}]: " branch_prefix
+branch_prefix="${branch_prefix:-${DEFAULT_PREFIX}}"
+# Ensure branch_prefix ends with a slash
+if [[ "${branch_prefix}" != */ ]]; then
+    branch_prefix="${branch_prefix}/"
 fi
+
+# Handle action-specific prompts
+case $action in
+    new)
+        read -rp "Enter test appcast URL: " appcast_url
+        if [[ -z "${appcast_url}" ]]; then
+            echo "Error: Test appcast URL is required"
+            exit 1
+        fi
+        ;;
+    generate_appcast_xml)
+        # Prompt for output directory
+        read -rp "Enter output directory [${DEFAULT_OUTPUT_DIR}]: " output_dir
+        output_dir="${output_dir:-${DEFAULT_OUTPUT_DIR}}"
+
+        # Prompt for key file
+        default_key_file="${output_dir}/key-file"
+        read -rp "Enter key file path [${default_key_file}]: " key_file
+        key_file="${key_file:-${default_key_file}}"
+        ;;
+esac
 
 create_branches() {
     local branch_prefix="$1"
@@ -438,7 +449,7 @@ elif [[ "${action}" == "push" ]]; then
         exit 1
     fi
     push_branches "${branch_prefix}"
-elif [[ "${action}" == "generate_appcast" ]]; then
+elif [[ "${action}" == "generate_appcast_xml" ]]; then
     if ! branches_exist; then
         echo "Missing branches. Cannot generate appcast."
         exit 1
@@ -455,9 +466,6 @@ elif branches_exist; then
         fi
     elif [[ "${action}" == "restack" ]]; then
         restack_branches "${branch_prefix}"
-    else
-        echo "Invalid action: ${action}. Use 'new', 'restack', 'clean', 'push', or 'generate_appcast'."
-        exit 1
     fi
 else
     if [[ "${action}" == "new" ]]; then
@@ -468,9 +476,6 @@ else
         create_branches "${branch_prefix}" "${appcast_url}"
     elif [[ "${action}" == "restack" ]]; then
         echo "Branches do not exist. Cannot restack."
-        exit 1
-    else
-        echo "Invalid action: ${action}. Use 'new', 'restack', 'clean', 'push', or 'generate_appcast'."
         exit 1
     fi
 fi

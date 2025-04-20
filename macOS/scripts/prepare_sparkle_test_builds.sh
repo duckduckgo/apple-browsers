@@ -207,6 +207,10 @@ clean_branches() {
 
     echo "Returning to original branch: ${current_branch}"
     git checkout "${current_branch}"
+
+    echo
+    echo "To clean up remote branches, run:"
+    echo "  git push origin --delete ${branch_outdated} ${branch_release} ${branch_phased}"
 }
 
 push_branches() {
@@ -237,11 +241,6 @@ push_branches() {
     done
 
     echo "✅ Builds triggered successfully!"
-
-    read -rp "Do you want to generate the appcast after builds complete? [Y/n]: " should_generate_appcast
-    if [[ "${should_generate_appcast}" != "n" ]]; then
-        generate_appcast_xml "${branch_prefix}"
-    fi
 }
 
 wait_for_builds() {
@@ -286,8 +285,8 @@ wait_for_builds() {
             break
         fi
 
-        echo "Builds still in progress... (checking again in 30 seconds)"
-        sleep 30
+        echo "Builds still in progress... (checking again in 1 minute)"
+        sleep 60
     done
 
     if [ ${#failed_builds[@]} -eq 0 ]; then
@@ -314,8 +313,6 @@ download_builds() {
 
     branch_release="${branch_prefix}release"
     branch_phased="${branch_prefix}phased"
-
-    echo "Downloading builds to ${updates_dir}"
 
     # Get S3 URLs for RELEASE and PHASED builds
     for branch in "${branch_release}" "${branch_phased}"; do
@@ -366,6 +363,12 @@ generate_appcast_xml() {
         mkdir -p "${updates_dir}"
     fi
 
+    # Delete existing appcast.xml if it exists
+    if [[ -f "${output_dir}/appcast.xml" ]]; then
+        echo "Deleting existing appcast.xml..."
+        rm "${output_dir}/appcast.xml"
+    fi
+
     # First wait for all builds to complete
     echo "Waiting for builds to complete before downloading..."
     if ! wait_for_builds "${branch_prefix}"; then
@@ -390,30 +393,35 @@ generate_appcast_xml() {
 
     # Get S3 URLs and replace enclosure URLs in appcast.xml
     echo "Updating enclosure URLs in appcast.xml..."
-    for branch in "${branch_release}" "${branch_phased}"; do
-        echo "  - Getting URL for ${branch}..."
-        run_id=$(gh run list --workflow=macos_build_notarized.yml --branch="${branch}" --limit=1 --json databaseId --jq '.[0].databaseId')
-        s3_url=$(gh run view "${run_id}" --log | grep -o "s3://[^ ]*\.dmg" | tail -n 1)
-        https_url="https://staticcdn.duckduckgo.com/${s3_url#s3://ddg-staticcdn/}"
 
-        # Get the version number from the branch
-        version=$(echo "${branch}" | grep -o "[0-9]*$")
+    # Get URLs for both builds
+    release_run_id=$(gh run list --workflow=macos_build_notarized.yml --branch="${branch_release}" --limit=1 --json databaseId --jq '.[0].databaseId')
+    release_s3_url=$(gh run view "${release_run_id}" --log | grep -o "s3://[^ ]*\.dmg" | tail -n 1)
+    release_https_url="https://staticcdn.duckduckgo.com/${release_s3_url#s3://ddg-staticcdn/}"
 
-        # Replace the enclosure URL in appcast.xml
-        sed -i '' "s|url=\"[^\"]*${version}\.dmg\"|url=\"${https_url}\"|g" "${output_dir}/appcast.xml"
-    done
+    phased_run_id=$(gh run list --workflow=macos_build_notarized.yml --branch="${branch_phased}" --limit=1 --json databaseId --jq '.[0].databaseId')
+    phased_s3_url=$(gh run view "${phased_run_id}" --log | grep -o "s3://[^ ]*\.dmg" | tail -n 1)
+    phased_https_url="https://staticcdn.duckduckgo.com/${phased_s3_url#s3://ddg-staticcdn/}"
 
-    # Remove sparkle:deltas section using perl for better multiline handling
+    # Update enclosure URLs using sed, matching by version number
+    echo "  - Updating enclosure URLs"
+    sed -i '' "s|url=\"[^\"]*${VERSION_PHASED}\.dmg\"|url=\"${phased_https_url}\"|" "${output_dir}/appcast.xml"
+    sed -i '' "s|url=\"[^\"]*${VERSION_RELEASE}\.dmg\"|url=\"${release_https_url}\"|" "${output_dir}/appcast.xml"
+
+    # Remove sparkle:deltas sections
     echo "Removing delta updates from appcast.xml..."
     perl -i -pe 'BEGIN{undef $/;} s/<sparkle:deltas>.*?<\/sparkle:deltas>//gs' "${output_dir}/appcast.xml"
 
+    # Add phased rollout interval to first item
+    echo "Adding phased rollout interval to first build..."
+    perl -i -pe 'if (/<item>/) { $count++; if ($count == 1) { $is_first = 1; } } if ($is_first && /<\/item>/) { s/<\/item>/    <sparkle:phasedRolloutInterval>86400<\/sparkle:phasedRolloutInterval>\n<\/item>/; $is_first = 0; }' "${output_dir}/appcast.xml"
+
     # Add description to each item
     echo "Adding descriptions to appcast.xml..."
-    description='<description><![CDATA[<h3 style="font-size:14px">What'\''s new</h3>
+    perl -i -pe 's/<\/item>/<description><![CDATA[<h3 style="font-size:14px">What'\''s new<\/h3>
 <ul>
-<li>Bug fixes and improvements.</li>
-</ul>]]></description>'
-    perl -i -pe 's|</item>|'"${description}"'\n</item>|g' "${output_dir}/appcast.xml"
+<li>Bug fixes and improvements.<\/li>
+<\/ul>]]><\/description><\/item>/' "${output_dir}/appcast.xml"
 
     # Get S3 URL for outdated branch
     echo "Getting URL for outdated build..."

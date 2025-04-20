@@ -8,19 +8,6 @@
 #
 # Usage: prepare_sparkle_test_builds.sh
 #
-# Example workflow:
-#   1. Run the script and select "Create new test branches"
-#      - Enter test appcast URL when prompted
-#      - Enter branch prefix when prompted (default: username/)
-#   2. Run the script and select "Push branches and trigger builds"
-#      - Enter branch prefix when prompted (default: username/)
-#   3. Run the script and select "Generate test appcast"
-#      - Enter branch prefix when prompted (default: username/)
-#      - Enter output directory when prompted (default: ~/Desktop)
-#      - Enter key file path when prompted (default: output-dir/key-file)
-#   4. Upload appcast.xml to your test server
-#   5. Download and test the outdated build
-#
 
 if ! [[ $common_sh ]]; then
 	cwd="$(dirname "${BASH_SOURCE[0]}")"
@@ -113,6 +100,7 @@ esac
 
 create_branches() {
     local appcast_url="$1"
+    local current_branch
 
     # Store current branch to return to later
     current_branch=$(git rev-parse --abbrev-ref HEAD)
@@ -149,6 +137,8 @@ create_branches() {
 }
 
 restack_branches() {
+    local current_branch
+
     current_branch=$(git rev-parse --abbrev-ref HEAD)
 
     echo "Restacking test branches on top of: ${current_branch}"
@@ -171,6 +161,8 @@ restack_branches() {
 }
 
 clean_branches() {
+    local current_branch
+
     echo "Cleaning up test branches:"
     echo "  - ${branch_outdated}"
     echo "  - ${branch_release}"
@@ -222,13 +214,18 @@ push_branches() {
 }
 
 wait_for_builds() {
+    local run_ids=()
+    local branches=("${branch_release}" "${branch_phased}")
+    local all_completed
+    local failed_builds=()
+    local status
+    local conclusion
+
     echo "Waiting for test builds to complete (this should take about 15 minutes):"
     echo "  - ${branch_release}"
     echo "  - ${branch_phased}"
 
     # Get run IDs first
-    run_ids=()
-    branches=("${branch_release}" "${branch_phased}")
     for branch in "${branches[@]}"; do
         echo "Getting run ID for ${branch}..."
         run_id=$(gh run list --workflow=macos_build_notarized.yml --branch="${branch}" --limit=1 --json databaseId --jq '.[0].databaseId')
@@ -282,6 +279,10 @@ wait_for_builds() {
 
 download_builds() {
     local updates_dir="$1"
+    local run_id
+    local s3_url
+    local https_url
+    local output_file
 
     # Get S3 URLs for RELEASE and PHASED builds
     for branch in "${branch_release}" "${branch_phased}"; do
@@ -315,6 +316,32 @@ download_builds() {
     return 0
 }
 
+update_appcast_xml() {
+    local appcast_file="$1"
+    local phased_https_url="$2"
+    local release_https_url="$3"
+
+    # Update enclosure URLs using sed, matching by version number
+    echo "  - Updating enclosure URLs"
+    sed -i '' "s|url=\"[^\"]*${VERSION_PHASED}\.dmg\"|url=\"${phased_https_url}\"|" "${appcast_file}"
+    sed -i '' "s|url=\"[^\"]*${VERSION_RELEASE}\.dmg\"|url=\"${release_https_url}\"|" "${appcast_file}"
+
+    # Remove sparkle:deltas sections
+    echo "Removing delta updates from appcast.xml..."
+    perl -i -pe 'BEGIN{undef $/;} s/<sparkle:deltas>.*?<\/sparkle:deltas>//gs' "${appcast_file}"
+
+    # Add phased rollout interval to first item
+    echo "Adding phased rollout interval to first build..."
+    perl -i -pe 'if (/<item>/) { $count++; if ($count == 1) { $is_first = 1; } } if ($is_first && /<\/item>/) { s/<\/item>/    <sparkle:phasedRolloutInterval>86400<\/sparkle:phasedRolloutInterval>\n<\/item>/; $is_first = 0; }' "${appcast_file}"
+
+    # Add description to each item
+    echo "Adding descriptions to appcast.xml..."
+    perl -i -pe 's/<\/item>/<description><![CDATA[<h3 style="font-size:14px">What'\''s new<\/h3>
+<ul>
+<li>Bug fixes and improvements.<\/li>
+<\/ul>]]><\/description><\/item>/' "${appcast_file}"
+}
+
 generate_appcast_xml() {
     # Check for key file
     if [[ ! -f "${key_file}" ]]; then
@@ -324,7 +351,7 @@ generate_appcast_xml() {
     fi
 
     # Create updates directory
-    updates_dir="${output_dir}/updates"
+    local updates_dir="${output_dir}/updates"
     if [[ ! -d "${updates_dir}" ]]; then
         echo "Creating updates directory: ${updates_dir}"
         mkdir -p "${updates_dir}"
@@ -370,25 +397,8 @@ generate_appcast_xml() {
     phased_s3_url=$(gh run view "${phased_run_id}" --log | grep -o "s3://[^ ]*\.dmg" | tail -n 1)
     phased_https_url="https://staticcdn.duckduckgo.com/${phased_s3_url#s3://ddg-staticcdn/}"
 
-    # Update enclosure URLs using sed, matching by version number
-    echo "  - Updating enclosure URLs"
-    sed -i '' "s|url=\"[^\"]*${VERSION_PHASED}\.dmg\"|url=\"${phased_https_url}\"|" "${output_dir}/appcast.xml"
-    sed -i '' "s|url=\"[^\"]*${VERSION_RELEASE}\.dmg\"|url=\"${release_https_url}\"|" "${output_dir}/appcast.xml"
-
-    # Remove sparkle:deltas sections
-    echo "Removing delta updates from appcast.xml..."
-    perl -i -pe 'BEGIN{undef $/;} s/<sparkle:deltas>.*?<\/sparkle:deltas>//gs' "${output_dir}/appcast.xml"
-
-    # Add phased rollout interval to first item
-    echo "Adding phased rollout interval to first build..."
-    perl -i -pe 'if (/<item>/) { $count++; if ($count == 1) { $is_first = 1; } } if ($is_first && /<\/item>/) { s/<\/item>/    <sparkle:phasedRolloutInterval>86400<\/sparkle:phasedRolloutInterval>\n<\/item>/; $is_first = 0; }' "${output_dir}/appcast.xml"
-
-    # Add description to each item
-    echo "Adding descriptions to appcast.xml..."
-    perl -i -pe 's/<\/item>/<description><![CDATA[<h3 style="font-size:14px">What'\''s new<\/h3>
-<ul>
-<li>Bug fixes and improvements.<\/li>
-<\/ul>]]><\/description><\/item>/' "${output_dir}/appcast.xml"
+    # Update the appcast XML
+    update_appcast_xml "${output_dir}/appcast.xml" "${phased_https_url}" "${release_https_url}"
 
     # Get S3 URL for outdated branch
     echo "Getting URL for outdated build..."

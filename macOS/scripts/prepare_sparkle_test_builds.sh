@@ -112,8 +112,7 @@ case $action in
 esac
 
 create_branches() {
-    local branch_prefix="$1"
-    local appcast_url="$2"
+    local appcast_url="$1"
 
     # Store current branch to return to later
     current_branch=$(git rev-parse --abbrev-ref HEAD)
@@ -121,7 +120,6 @@ create_branches() {
     echo "Creating test branches with prefix: ${branch_prefix}"
 
     # Branch for outdated URL changes
-    branch_outdated="${branch_prefix}outdated"
     echo "Creating branch: ${branch_outdated}"
     echo "  - Updating SUFeedURL to: ${appcast_url}"
     git checkout -b "${branch_outdated}"
@@ -130,7 +128,6 @@ create_branches() {
     git commit -m "Update SUFeedURL for testing"
 
     # Branch for regular release
-    branch_release="${branch_prefix}release"
     echo "Creating branch: ${branch_release}"
     echo "  - Setting version to: ${VERSION_RELEASE}"
     git checkout -b "${branch_release}"
@@ -139,7 +136,6 @@ create_branches() {
     git commit -m "Update version to ${VERSION_RELEASE}"
 
     # Branch for phased rollout
-    branch_phased="${branch_prefix}phased"
     echo "Creating branch: ${branch_phased}"
     echo "  - Setting version to: ${VERSION_PHASED}"
     git checkout -b "${branch_phased}"
@@ -153,12 +149,6 @@ create_branches() {
 }
 
 restack_branches() {
-    local branch_prefix="$1"
-
-    branch_outdated="${branch_prefix}outdated"
-    branch_release="${branch_prefix}release"
-    branch_phased="${branch_prefix}phased"
-
     current_branch=$(git rev-parse --abbrev-ref HEAD)
 
     echo "Restacking test branches on top of: ${current_branch}"
@@ -181,12 +171,6 @@ restack_branches() {
 }
 
 clean_branches() {
-    local branch_prefix="$1"
-
-    branch_outdated="${branch_prefix}outdated"
-    branch_release="${branch_prefix}release"
-    branch_phased="${branch_prefix}phased"
-
     echo "Cleaning up test branches:"
     echo "  - ${branch_outdated}"
     echo "  - ${branch_release}"
@@ -214,12 +198,6 @@ clean_branches() {
 }
 
 push_branches() {
-    local branch_prefix="$1"
-
-    branch_outdated="${branch_prefix}outdated"
-    branch_release="${branch_prefix}release"
-    branch_phased="${branch_prefix}phased"
-
     echo "Pushing test branches to remote:"
     echo "  - ${branch_outdated}"
     echo "  - ${branch_release}"
@@ -244,11 +222,6 @@ push_branches() {
 }
 
 wait_for_builds() {
-    local branch_prefix="$1"
-
-    branch_release="${branch_prefix}release"
-    branch_phased="${branch_prefix}phased"
-
     echo "Waiting for test builds to complete (this should take about 15 minutes):"
     echo "  - ${branch_release}"
     echo "  - ${branch_phased}"
@@ -308,11 +281,7 @@ wait_for_builds() {
 }
 
 download_builds() {
-    local branch_prefix="$1"
-    local updates_dir="$2"
-
-    branch_release="${branch_prefix}release"
-    branch_phased="${branch_prefix}phased"
+    local updates_dir="$1"
 
     # Get S3 URLs for RELEASE and PHASED builds
     for branch in "${branch_release}" "${branch_phased}"; do
@@ -347,8 +316,6 @@ download_builds() {
 }
 
 generate_appcast_xml() {
-    local branch_prefix="$1"
-
     # Check for key file
     if [[ ! -f "${key_file}" ]]; then
         echo "❌ Key file not found at ${key_file}"
@@ -371,13 +338,13 @@ generate_appcast_xml() {
 
     # First wait for all builds to complete
     echo "Waiting for builds to complete before downloading..."
-    if ! wait_for_builds "${branch_prefix}"; then
+    if ! wait_for_builds; then
         exit 1
     fi
 
     # Download all builds
     echo "Downloading builds to ${updates_dir}"
-    if ! download_builds "${branch_prefix}" "${updates_dir}"; then
+    if ! download_builds "${updates_dir}"; then
         exit 1
     fi
 
@@ -425,7 +392,6 @@ generate_appcast_xml() {
 
     # Get S3 URL for outdated branch
     echo "Getting URL for outdated build..."
-    branch_outdated="${branch_prefix}outdated"
     run_id=$(gh run list --workflow=macos_build_notarized.yml --branch="${branch_outdated}" --limit=1 --json databaseId --jq '.[0].databaseId')
     s3_url=$(gh run view "${run_id}" --log | grep -o "s3://[^ ]*\.dmg" | tail -n 1)
     outdated_url="https://staticcdn.duckduckgo.com/${s3_url#s3://ddg-staticcdn/}"
@@ -450,30 +416,30 @@ branches_exist() {
 }
 
 if [[ "${action}" == "clean" ]]; then
-    clean_branches "${branch_prefix}"
+    clean_branches
 elif [[ "${action}" == "push" ]]; then
     if ! branches_exist; then
         echo "Missing branches. Cannot push."
         exit 1
     fi
-    push_branches "${branch_prefix}"
+    push_branches
 elif [[ "${action}" == "generate_appcast_xml" ]]; then
     if ! branches_exist; then
         echo "Missing branches. Cannot generate appcast."
         exit 1
     fi
-    generate_appcast_xml "${branch_prefix}"
+    generate_appcast_xml
 elif branches_exist; then
     if [[ "${action}" == "new" ]]; then
         read -rp "Branches already exist. Restack them? (y/n): " restack
         if [[ "${restack}" == "y" ]]; then
-            restack_branches "${branch_prefix}"
+            restack_branches
         else
             echo "Operation cancelled."
             exit 0
         fi
     elif [[ "${action}" == "restack" ]]; then
-        restack_branches "${branch_prefix}"
+        restack_branches
     fi
 else
     if [[ "${action}" == "new" ]]; then
@@ -481,7 +447,7 @@ else
             echo "Error: --appcast parameter is required for 'new' action"
             exit 1
         fi
-        create_branches "${branch_prefix}" "${appcast_url}"
+        create_branches "${appcast_url}"
     elif [[ "${action}" == "restack" ]]; then
         echo "Branches do not exist. Cannot restack."
         exit 1

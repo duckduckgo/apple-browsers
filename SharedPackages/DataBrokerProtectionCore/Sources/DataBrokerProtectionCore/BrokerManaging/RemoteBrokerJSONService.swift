@@ -216,7 +216,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
         guard let uncompressedBrokerJSONDirectoryURL else { throw Error.invalidDestinationURL }
 
         var isDirectory: ObjCBool = false
-        guard fileManager.fileExists(atPath: uncompressedBrokerJSONDirectoryURL.path, isDirectory: &isDirectory) else {
+        guard !fileManager.fileExists(atPath: uncompressedBrokerJSONDirectoryURL.path, isDirectory: &isDirectory) else {
             Logger.dataBrokerProtection.log("Broker JSONs already downloaded and extracted, skipping download")
             return
         }

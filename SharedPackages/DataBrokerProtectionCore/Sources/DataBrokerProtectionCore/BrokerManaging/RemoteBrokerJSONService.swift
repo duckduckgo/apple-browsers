@@ -169,19 +169,11 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
 
             guard response.statusCode == 200 else { throw Error.serverError }
 
-            /// 4. Update main_config ETag
-            let newETag = response.etag
-            settings.mainConfigETag = newETag
-            if let newETag {
-                uncompressedBrokerJSONDirectoryURL = fileManager.temporaryDirectory.appendingPathComponent(newETag)
-            } else {
-                throw Error.serverError
-            }
-
-            /// 5. Download, extract, and process changed broker JSONs
+            /// 4. Download, extract, and process changed broker JSONs
             try await checkForBrokerJSONUpdatesFromMainConfig(try JSONDecoder().decode(MainConfig.self, from: data))
 
-            /// 6. Update last successful update timestamp
+            /// 5. Update last successful update timestamp
+            settings.mainConfigETag = response.etag
             settings.updateLastSuccessfulBrokerJSONUpdateCheckTimestamp()
         } catch {
             pixelHandler?.fire(.miscError(error: error, functionOccurredIn: "checkForBrokerJSONUpdates"))
@@ -202,7 +194,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
 
         Logger.dataBrokerProtection.log("Changes detected in \(diff.count, privacy: .public) brokers")
 
-        try await downloadAndExtractBrokerJSONsIfNeeded()
+        try await downloadAndExtractBrokerJSONs()
         try processBrokerJSONs(withFileNames: diff.map(\.fileName),
                                eTagMapping: eTagMapping,
                                activeBrokers: mainConfig.activeDataBrokers,
@@ -212,7 +204,9 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
 
     // MARK: - File handling
 
-    func downloadAndExtractBrokerJSONsIfNeeded() async throws {
+    func downloadAndExtractBrokerJSONs() async throws {
+        uncompressedBrokerJSONDirectoryURL = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+
         guard let uncompressedBrokerJSONDirectoryURL else { throw Error.invalidDestinationURL }
 
         var isDirectory: ObjCBool = false

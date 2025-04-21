@@ -14,7 +14,6 @@ if ! [[ $common_sh ]]; then
 	source "${cwd}/helpers/common.sh"
 fi
 
-# Define paths relative to script location
 info_plist="${cwd}/../DuckDuckGo/Info.plist"
 build_number_xcconfig="${cwd}/../Configuration/BuildNumber.xcconfig"
 
@@ -28,22 +27,6 @@ VERSION_PHASED=2000
 DEFAULT_PREFIX="$(whoami)/"
 DEFAULT_OUTPUT_DIR="${HOME}/Desktop"
 
-# Parse command line arguments
-key_file=""
-
-# Parse arguments
-for arg in "$@"; do
-    case $arg in
-        --key-file=*)
-            key_file="${arg#*=}"
-            ;;
-        *)
-            echo "Unknown argument: $arg"
-            exit 1
-            ;;
-    esac
-done
-
 # Show menu and get user choice
 echo "Select an action:"
 echo "1) Create new test branches"
@@ -55,7 +38,6 @@ echo "6) Exit"
 read -rp "Enter your choice (1-6): " choice
 echo
 
-# Convert choice to action
 case $choice in
     1) action="new" ;;
     2) action="restack" ;;
@@ -69,9 +51,9 @@ case $choice in
         ;;
 esac
 
-# Prompt for branch prefix
 read -rp "Enter branch prefix [${DEFAULT_PREFIX}]: " branch_prefix
 branch_prefix="${branch_prefix:-${DEFAULT_PREFIX}}"
+
 # Ensure branch_prefix ends with a slash
 if [[ "${branch_prefix}" != */ ]]; then
     branch_prefix="${branch_prefix}/"
@@ -87,14 +69,8 @@ case $action in
         fi
         ;;
     generate_appcast_xml)
-        # Prompt for output directory
         read -rp "Enter output directory [${DEFAULT_OUTPUT_DIR}]: " output_dir
         output_dir="${output_dir:-${DEFAULT_OUTPUT_DIR}}"
-
-        # Prompt for key file
-        default_key_file="${output_dir}/key-file"
-        read -rp "Enter key file path [${default_key_file}]: " key_file
-        key_file="${key_file:-${default_key_file}}"
         ;;
 esac
 
@@ -102,7 +78,6 @@ create_branches() {
     local appcast_url="$1"
     local current_branch
 
-    # Store current branch to return to later
     current_branch=$(git rev-parse --abbrev-ref HEAD)
 
     echo "Creating test branches with prefix: ${branch_prefix}"
@@ -168,10 +143,8 @@ clean_branches() {
     echo "  - ${branch_release}"
     echo "  - ${branch_phased}"
 
-    # Get the current branch to return to later
     current_branch=$(git rev-parse --abbrev-ref HEAD)
 
-    # Delete each branch if it exists
     for branch in "${branch_outdated}" "${branch_release}" "${branch_phased}"; do
         if git show-ref --verify --quiet "refs/heads/${branch}"; then
             echo "Deleting branch: ${branch}"
@@ -195,7 +168,6 @@ push_branches() {
     echo "  - ${branch_release}"
     echo "  - ${branch_phased}"
 
-    # Force push all branches
     for branch in "${branch_outdated}" "${branch_release}" "${branch_phased}"; do
         echo "Pushing branch: ${branch}"
         git push -f origin "${branch}:${branch}"
@@ -225,14 +197,12 @@ wait_for_builds() {
     echo "  - ${branch_release}"
     echo "  - ${branch_phased}"
 
-    # Get run IDs first
     for branch in "${branches[@]}"; do
         echo "Getting run ID for ${branch}..."
         run_id=$(gh run list --workflow=macos_build_notarized.yml --branch="${branch}" --limit=1 --json databaseId --jq '.[0].databaseId')
         run_ids+=("${run_id}")
     done
 
-    # Check if all builds have completed
     while true; do
         all_completed=true
         failed_builds=()
@@ -295,11 +265,9 @@ download_builds() {
             return 1
         fi
 
-        # Convert S3 URL to HTTPS URL
         https_url="https://staticcdn.duckduckgo.com/${s3_url#s3://ddg-staticcdn/}"
         output_file="${updates_dir}/$(basename "${s3_url}")"
 
-        # Skip if file already exists
         if [[ -f "${output_file}" ]]; then
             echo "✅ File already exists: ${output_file}"
             continue
@@ -321,20 +289,16 @@ update_appcast_xml() {
     local phased_https_url="$2"
     local release_https_url="$3"
 
-    # Update enclosure URLs using sed, matching by version number
     echo "  - Updating enclosure URLs"
     sed -i '' "s|url=\"[^\"]*${VERSION_PHASED}\.dmg\"|url=\"${phased_https_url}\"|" "${appcast_file}"
     sed -i '' "s|url=\"[^\"]*${VERSION_RELEASE}\.dmg\"|url=\"${release_https_url}\"|" "${appcast_file}"
 
-    # Remove sparkle:deltas sections
     echo "Removing delta updates from appcast.xml..."
     perl -i -pe 'BEGIN{undef $/;} s/<sparkle:deltas>.*?<\/sparkle:deltas>//gs' "${appcast_file}"
 
-    # Add phased rollout interval to first item
     echo "Adding phased rollout interval to first build..."
     perl -i -pe 'if (/<item>/) { $count++; if ($count == 1) { $is_first = 1; } } if ($is_first && /<\/item>/) { s/<\/item>/    <sparkle:phasedRolloutInterval>86400<\/sparkle:phasedRolloutInterval>\n<\/item>/; $is_first = 0; }' "${appcast_file}"
 
-    # Add description to each item
     echo "Adding descriptions to appcast.xml..."
     perl -i -pe 's/<\/item>/<description><![CDATA[<h3 style="font-size:14px">What'\''s new<\/h3>
 <ul>
@@ -343,39 +307,27 @@ update_appcast_xml() {
 }
 
 generate_appcast_xml() {
-    # Check for key file
-    if [[ ! -f "${key_file}" ]]; then
-        echo "❌ Key file not found at ${key_file}"
-        echo "Please place the key file in the output directory or specify its location with --key-file"
-        exit 1
-    fi
-
-    # Create updates directory
     local updates_dir="${output_dir}/updates"
     if [[ ! -d "${updates_dir}" ]]; then
         echo "Creating updates directory: ${updates_dir}"
         mkdir -p "${updates_dir}"
     fi
 
-    # Delete existing appcast.xml if it exists
     if [[ -f "${output_dir}/appcast.xml" ]]; then
         echo "Deleting existing appcast.xml..."
         rm "${output_dir}/appcast.xml"
     fi
 
-    # First wait for all builds to complete
     echo "Waiting for builds to complete before downloading..."
     if ! wait_for_builds; then
         exit 1
     fi
 
-    # Download all builds
     echo "Downloading builds to ${updates_dir}"
     if ! download_builds "${updates_dir}"; then
         exit 1
     fi
 
-    # Generate appcast
     echo "Generating appcast.xml..."
     if ! generate_appcast -o "${output_dir}/appcast.xml" \
         --ed-key-file "${key_file}" \
@@ -385,10 +337,8 @@ generate_appcast_xml() {
         exit 1
     fi
 
-    # Get S3 URLs and replace enclosure URLs in appcast.xml
     echo "Updating enclosure URLs in appcast.xml..."
 
-    # Get URLs for both builds
     release_run_id=$(gh run list --workflow=macos_build_notarized.yml --branch="${branch_release}" --limit=1 --json databaseId --jq '.[0].databaseId')
     release_s3_url=$(gh run view "${release_run_id}" --log | grep -o "s3://[^ ]*\.dmg" | tail -n 1)
     release_https_url="https://staticcdn.duckduckgo.com/${release_s3_url#s3://ddg-staticcdn/}"
@@ -397,10 +347,8 @@ generate_appcast_xml() {
     phased_s3_url=$(gh run view "${phased_run_id}" --log | grep -o "s3://[^ ]*\.dmg" | tail -n 1)
     phased_https_url="https://staticcdn.duckduckgo.com/${phased_s3_url#s3://ddg-staticcdn/}"
 
-    # Update the appcast XML
     update_appcast_xml "${output_dir}/appcast.xml" "${phased_https_url}" "${release_https_url}"
 
-    # Get S3 URL for outdated branch
     echo "Getting URL for outdated build..."
     run_id=$(gh run list --workflow=macos_build_notarized.yml --branch="${branch_outdated}" --limit=1 --json databaseId --jq '.[0].databaseId')
     s3_url=$(gh run view "${run_id}" --log | grep -o "s3://[^ ]*\.dmg" | tail -n 1)
@@ -418,7 +366,6 @@ branch_outdated="${branch_prefix}outdated"
 branch_release="${branch_prefix}release"
 branch_phased="${branch_prefix}phased"
 
-# Check if branches exist
 branches_exist() {
     git show-ref --verify --quiet "refs/heads/${branch_outdated}" && \
     git show-ref --verify --quiet "refs/heads/${branch_release}" && \

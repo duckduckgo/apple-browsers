@@ -60,7 +60,7 @@ final class AddressBarButtonsViewController: NSViewController {
         }()
     }
 
-    private var daxLogo = NSImageView()
+    private var daxLogo: NSImageView?
 
     @IBOutlet weak var zoomButton: AddressBarButton!
     @IBOutlet weak var privacyEntryPointButton: MouseOverAnimationButton!
@@ -794,6 +794,12 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private func setupDaxLogo() {
         if shouldShowDaxLogInAddressBar {
+            daxLogo = NSImageView()
+
+            guard let daxLogo = daxLogo else {
+                return
+            }
+
             daxLogo.image = .daxAddressBarNew
             view.addSubview(daxLogo)
             daxLogo.translatesAutoresizingMaskIntoConstraints = false
@@ -874,17 +880,9 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private func updateImageButton() {
         guard let tabViewModel else { return }
-        // Image button
 
-        if shouldShowDaxLogInAddressBar {
-            daxLogo.isHidden = false
-            imageButton.image = .search
-            imageButton.alphaValue = 0
-            return
-        }
-
-        daxLogo.isHidden = true
-        imageButton.alphaValue = 1
+        daxLogo?.isHidden = !shouldShowDaxLogInAddressBar
+        imageButton.alphaValue = shouldShowDaxLogInAddressBar ? 0 : 1
 
         switch controllerMode {
         case .browsing where tabViewModel.isShowingErrorPage:

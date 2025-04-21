@@ -125,7 +125,7 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
         MockURLProtocol.requestHandlerQueue.append { _ in (HTTPURLResponse.noAuth, nil) }
         do {
             try await remoteBrokerJSONService.checkForUpdates()
-            /// checkForUpdates() returns only so 2nd request is never invoked
+            /// checkForUpdates() returns early so 2nd request is never invoked
             XCTAssertFalse(MockURLProtocol.requestHandlerQueue.isEmpty)
         } catch {
             XCTFail()
@@ -159,4 +159,76 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
             XCTFail()
         }
     }
+
+    func testCheckForUpdatesThrowsJSONDecodingErrorWhenResponseIsInvalid() async {
+        let expectation = XCTestExpectation(description: "JSON decoding error")
+
+        MockURLProtocol.requestHandlerQueue.append { _ in (HTTPURLResponse.okWithETag, Data()) }
+        do {
+            try await remoteBrokerJSONService.checkForUpdates()
+            XCTFail()
+        } catch DecodingError.dataCorrupted {
+            expectation.fulfill()
+        } catch {
+            XCTFail()
+        }
+    }
+
+    func testCheckForUpdatesDetectsNoChangesInRemoteJSONs() async {
+        let mainConfig = MainConfig(mainConfigETag: "",
+                                    activeDataBrokers: [],
+                                    jsonETags: .init(current: [:]),
+                                    testDataBrokers: [])
+        MockURLProtocol.requestHandlerQueue.append { _ in (HTTPURLResponse.okWithETag, try! JSONEncoder().encode(mainConfig)) }
+        MockURLProtocol.requestHandlerQueue.append { _ in (HTTPURLResponse.noAuth, nil) }
+
+        do {
+            try await remoteBrokerJSONService.checkForUpdates()
+            /// checkForUpdates() returns early so 2nd request is never invoked
+            XCTAssertFalse(MockURLProtocol.requestHandlerQueue.isEmpty)
+        } catch {
+            XCTFail()
+        }
+    }
+
+    func testCheckForUpdatesThrowsServerErrorWhenFailingToDownloadRemoteJSONs() async {
+        let expectation = XCTestExpectation(description: "Server error")
+
+        let mainConfig = MainConfig(mainConfigETag: "",
+                                    activeDataBrokers: [],
+                                    jsonETags: .init(current: ["fakebroker.com": "something"]),
+                                    testDataBrokers: [])
+        MockURLProtocol.requestHandlerQueue.append { _ in (HTTPURLResponse.okWithETag, try! JSONEncoder().encode(mainConfig)) }
+        MockURLProtocol.requestHandlerQueue.append { _ in (HTTPURLResponse.noAuth, nil) }
+
+        do {
+            try await remoteBrokerJSONService.checkForUpdates()
+        } catch RemoteBrokerJSONService.Error.serverError {
+            expectation.fulfill()
+        } catch {
+            XCTFail()
+        }
+    }
+
+    func testCheckForUpdatesProceedsToTheEnd() async {
+        let mainConfig = MainConfig(mainConfigETag: "",
+                                    activeDataBrokers: [],
+                                    jsonETags: .init(current: ["fakebroker.com": "something", "fakebroker2.com": "something", "fakebroker3.com": "something"]),
+                                    testDataBrokers: [])
+        MockURLProtocol.requestHandlerQueue.append { _ in (HTTPURLResponse.okWithETag, try! JSONEncoder().encode(mainConfig)) }
+        MockURLProtocol.requestHandlerQueue.append { _ in (HTTPURLResponse.ok, nil) }
+
+        do {
+            try await remoteBrokerJSONService.checkForUpdates()
+        } catch {
+            XCTFail()
+        }
+    }
+}
+
+extension HTTPURLResponse {
+    static let okWithETag = HTTPURLResponse(url: URL(string: "http://www.example.com")!,
+                                            statusCode: 200,
+                                            httpVersion: nil,
+                                            headerFields: ["ETag": "something"])!
 }

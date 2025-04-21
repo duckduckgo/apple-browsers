@@ -1,6 +1,6 @@
 {
     "name": "DDG Fake Broker",
-    "url": "fakebroker.com",
+    "url": "fakebroker3.com",
     "steps": [
     {
         "stepType": "scan",

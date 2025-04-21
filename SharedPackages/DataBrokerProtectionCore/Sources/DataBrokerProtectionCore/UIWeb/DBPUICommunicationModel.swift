@@ -276,7 +276,8 @@ extension DBPUIDataBrokerProfileMatch {
 #else
         let displayName = dataBrokerName
 #endif
-        self.init(dataBroker: DBPUIDataBroker(name: displayName, url: dataBrokerURL, parentURL: dataBrokerParentURL, optOutUrl: optOutUrl),
+        self.init(id: extractedProfile.id,
+                  dataBroker: DBPUIDataBroker(name: displayName, url: dataBrokerURL, parentURL: dataBrokerParentURL, optOutUrl: optOutUrl),
                   name: extractedProfile.fullName ?? "No name",
                   addresses: extractedProfile.addresses?.map {DBPUIUserProfileAddress(addressCityState: $0) } ?? [],
                   alternativeNames: extractedProfile.alternativeNames ?? [String](),

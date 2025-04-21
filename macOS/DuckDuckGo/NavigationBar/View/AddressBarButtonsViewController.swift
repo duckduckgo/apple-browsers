@@ -60,6 +60,8 @@ final class AddressBarButtonsViewController: NSViewController {
         }()
     }
 
+    private var daxLogo = NSImageView()
+
     @IBOutlet weak var zoomButton: AddressBarButton!
     @IBOutlet weak var privacyEntryPointButton: MouseOverAnimationButton!
     @IBOutlet weak var separator: NSView!
@@ -157,6 +159,10 @@ final class AddressBarButtonsViewController: NSViewController {
         }
     }
 
+    var shouldShowDaxLogInAddressBar: Bool {
+        self.tabViewModel?.tab.content == .newtab && visualStyleManager.style.shouldShowLogoinInAddressBar
+    }
+
     private var cancellables = Set<AnyCancellable>()
     private var urlCancellable: AnyCancellable?
     private var zoomLevelCancellable: AnyCancellable?
@@ -210,33 +216,11 @@ final class AddressBarButtonsViewController: NSViewController {
         subscribeToPrivacyEntryPointIsMouseOver()
         subscribeToButtonsVisibility()
         subscribeToAIChatPreferences()
+        setupDaxLogo()
 
         bookmarkButton.sendAction(on: .leftMouseDown)
 
         privacyEntryPointButton.toolTip = UserText.privacyDashboardTooltip
-
-        if visualStyleManager.style.shouldShowLogoinInAddressBar {
-            addDaxInsideAddressBar()
-        }
-    }
-
-    private func addDaxInsideAddressBar() {
-        let logo = NSImageView()
-        logo.image = .daxAddressBarNew
-        view.addSubview(logo)
-        logo.translatesAutoresizingMaskIntoConstraints = false
-
-        let centerXConstraint = logo.centerYAnchor.constraint(equalTo: view.centerYAnchor)
-        let topConstraint = logo.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 8)
-        let widthConstraint = logo.widthAnchor.constraint(equalToConstant: 24)
-        let heightConstraint = logo.heightAnchor.constraint(equalToConstant: 24)
-
-        NSLayoutConstraint.activate([
-            centerXConstraint,
-            topConstraint,
-            widthConstraint,
-            heightConstraint
-        ])
     }
 
     override func viewWillAppear() {
@@ -808,6 +792,26 @@ final class AddressBarButtonsViewController: NSViewController {
             }).store(in: &cancellables)
     }
 
+    private func setupDaxLogo() {
+        if shouldShowDaxLogInAddressBar {
+            daxLogo.image = .daxAddressBarNew
+            view.addSubview(daxLogo)
+            daxLogo.translatesAutoresizingMaskIntoConstraints = false
+
+            let centerXConstraint = daxLogo.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+            let topConstraint = daxLogo.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 8)
+            let widthConstraint = daxLogo.widthAnchor.constraint(equalToConstant: 24)
+            let heightConstraint = daxLogo.heightAnchor.constraint(equalToConstant: 24)
+
+            NSLayoutConstraint.activate([
+                centerXConstraint,
+                topConstraint,
+                widthConstraint,
+                heightConstraint
+            ])
+        }
+    }
+
     private func updatePermissionButtons() {
         guard let tabViewModel else { return }
 
@@ -871,6 +875,17 @@ final class AddressBarButtonsViewController: NSViewController {
     private func updateImageButton() {
         guard let tabViewModel else { return }
         // Image button
+
+        if shouldShowDaxLogInAddressBar {
+            daxLogo.isHidden = false
+            imageButton.image = .search
+            imageButton.alphaValue = 0
+            return
+        }
+
+        daxLogo.isHidden = true
+        imageButton.alphaValue = 1
+
         switch controllerMode {
         case .browsing where tabViewModel.isShowingErrorPage:
             imageButton.image = .web

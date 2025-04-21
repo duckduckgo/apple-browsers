@@ -652,8 +652,8 @@ extension MainViewController {
                 NSApp.menu?.performKeyEquivalent(with: event)
                 return true
 
-            case ("tab", [.control], _),
-                 ("tab", [.control, .shift], _):
+            case ("\t", [.control], _),
+                 ("\t", [.control, .shift], _):
                 NSApp.menu?.performKeyEquivalent(with: event)
                 return true
 

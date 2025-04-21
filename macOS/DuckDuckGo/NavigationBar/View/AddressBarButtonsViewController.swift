@@ -214,6 +214,29 @@ final class AddressBarButtonsViewController: NSViewController {
         bookmarkButton.sendAction(on: .leftMouseDown)
 
         privacyEntryPointButton.toolTip = UserText.privacyDashboardTooltip
+
+        if visualStyleManager.style.shouldShowLogoinInAddressBar {
+            addDaxInsideAddressBar()
+        }
+    }
+
+    private func addDaxInsideAddressBar() {
+        let logo = NSImageView()
+        logo.image = .daxAddressBarNew
+        view.addSubview(logo)
+        logo.translatesAutoresizingMaskIntoConstraints = false
+
+        let centerXConstraint = logo.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+        let topConstraint = logo.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 8)
+        let widthConstraint = logo.widthAnchor.constraint(equalToConstant: 24)
+        let heightConstraint = logo.heightAnchor.constraint(equalToConstant: 24)
+
+        NSLayoutConstraint.activate([
+            centerXConstraint,
+            topConstraint,
+            widthConstraint,
+            heightConstraint
+        ])
     }
 
     override func viewWillAppear() {

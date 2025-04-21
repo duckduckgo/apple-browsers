@@ -26,6 +26,7 @@ VERSION_PHASED=2000
 
 DEFAULT_PREFIX="$(whoami)/"
 DEFAULT_OUTPUT_DIR="${HOME}/Desktop"
+key_file="${DEFAULT_OUTPUT_DIR}/key-file"
 
 # Show menu and get user choice
 echo "Select an action:"
@@ -71,6 +72,8 @@ case $action in
     generate_appcast_xml)
         read -rp "Enter output directory [${DEFAULT_OUTPUT_DIR}]: " output_dir
         output_dir="${output_dir:-${DEFAULT_OUTPUT_DIR}}"
+        read -rp "Enter key file path [${output_dir}/key-file]: " key_file
+        key_file="${key_file:-${output_dir}/key-file}"
         ;;
 esac
 

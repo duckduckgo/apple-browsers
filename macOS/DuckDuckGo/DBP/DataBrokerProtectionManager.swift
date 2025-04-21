@@ -90,7 +90,8 @@ public final class DataBrokerProtectionManager {
         guard let vault, let sharedPixelsHandler else { return nil }
 
         let localBrokerService = LocalBrokerJSONService(vault: vault, pixelHandler: sharedPixelsHandler)
-        let brokerUpdater = RemoteBrokerJSONService(settings: DataBrokerProtectionSettings(defaults: .dbp),
+        let brokerUpdater = RemoteBrokerJSONService(featureFlagger: Application.appDelegate.featureFlagger,
+            settings: DataBrokerProtectionSettings(defaults: .dbp),
                                                     vault: vault,
                                                     authenticationManager: authenticationManager,
                                                     pixelHandler: sharedPixelsHandler,

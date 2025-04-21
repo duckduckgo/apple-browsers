@@ -84,6 +84,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1148564399326804/task/1209499005452053?focus=true
     case delayedWebviewPresentation
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1205508328452434?focus=true
+    case dbpRemoteBrokerDelivery
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -132,7 +135,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .visualRefresh,
                 .tabCrashDebugging,
                 .tabCrashRecovery,
-                .delayedWebviewPresentation:
+                .delayedWebviewPresentation,
+                .dbpRemoteBrokerDelivery:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -204,6 +208,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.tabCrashRecovery))
         case .delayedWebviewPresentation:
             return .remoteReleasable(.feature(.delayedWebviewPresentation))
+        case .dbpRemoteBrokerDelivery:
+            return .remoteReleasable(.subfeature(DBPSubfeature.remoteBrokerDelivery))
         }
     }
 }

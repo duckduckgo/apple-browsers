@@ -28,6 +28,7 @@ import Freemium
 import Subscription
 import UserNotifications
 import DataBrokerProtectionCore
+import FeatureFlags
 
 // This is to avoid exposing all the dependancies outside of the DBP package
 public class DataBrokerProtectionAgentManagerProvider {
@@ -89,8 +90,19 @@ public class DataBrokerProtectionAgentManagerProvider {
             return nil
         }
 
+        let featureFlagger = DefaultFeatureFlagger(
+            internalUserDecider: privacyConfigurationManager.internalUserDecider,
+            privacyConfigManager: privacyConfigurationManager,
+            localOverrides: FeatureFlagLocalOverrides(
+                keyValueStore: UserDefaults.config,
+                actionHandler: FeatureFlagOverridesPublishingHandler<FeatureFlag>()
+            ),
+            experimentManager: nil,
+            for: FeatureFlag.self
+        )
         let localBrokerService = LocalBrokerJSONService(vault: vault, pixelHandler: sharedPixelsHandler)
-        let brokerUpdater = RemoteBrokerJSONService(settings: dbpSettings,
+        let brokerUpdater = RemoteBrokerJSONService(featureFlagger: featureFlagger,
+                                                    settings: dbpSettings,
                                                     vault: vault,
                                                     authenticationManager: authenticationManager,
                                                     pixelHandler: sharedPixelsHandler,

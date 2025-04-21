@@ -633,7 +633,7 @@ extension MainViewController {
         }
 
         // Handle tab switching (CMD+1 through CMD+9)
-        if flags == .command, "123456789".contains(key) {
+        if [.command, [.command, .numericPad]].contains(flags), "123456789".contains(key) {
             if isWebViewFocused {
                 NSApp.menu?.performKeyEquivalent(with: event)
                 return true

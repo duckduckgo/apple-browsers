@@ -268,7 +268,8 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
 
             subscriptionOptions = await freeTrialSubscriptionOptions(for: freeTrialsCohort)
         } else {
-            subscriptionOptions = await subscriptionManager.storePurchaseManager().subscriptionOptions()
+//            subscriptionOptions = await subscriptionManager.storePurchaseManager().subscriptionOptions()
+            subscriptionOptions = await subscriptionManager.storePurchaseManager().freeTrialSubscriptionOptions()
         }
 
         if let subscriptionOptions {
@@ -844,7 +845,8 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
 
             subscriptionOptions = await freeTrialSubscriptionOptions(for: freeTrialsCohort)
         } else {
-            subscriptionOptions = await subscriptionManager.storePurchaseManager().subscriptionOptions()
+//            subscriptionOptions = await subscriptionManager.storePurchaseManager().subscriptionOptions()
+            subscriptionOptions = await subscriptionManager.storePurchaseManager().freeTrialSubscriptionOptions()
         }
 
         if let subscriptionOptions {

@@ -1036,15 +1036,6 @@ class TabViewController: UIViewController {
             privacyDashboard = controller
         }
         
-        if let controller = segue.destination as? FullscreenDaxDialogViewController {
-            controller.spec = sender as? DaxDialogs.BrowsingSpec
-            controller.woShown = woShownRecently
-            controller.delegate = self
-            
-            if controller.spec?.highlightAddressBar ?? false {
-                chromeDelegate.omniBar.cancelAllAnimations()
-            }
-        }
     }
 
     private var jsAlertController: JSAlertController!

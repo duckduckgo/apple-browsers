@@ -604,26 +604,28 @@ extension MainViewController {
         }.store(in: &viewEventsCancellables)
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     func customKeyDown(with event: NSEvent) -> Bool {
         guard let locWindow = self.view.window,
               NSApplication.shared.keyWindow === locWindow else { return false }
 
-        let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
-            .subtracting(.capsLock)
+        let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask).subtracting(.capsLock)
+        let key = event.charactersIgnoringModifiers?.lowercased() ?? ""
+        let isWebViewFocused = view.window?.firstResponder is WebView
 
-        switch Int(event.keyCode) {
-        case kVK_Return  where navigationBarViewController.addressBarViewController?
-                .addressBarTextField.isFirstResponder == true:
-
+        // Handle Enter
+        if event.keyCode == kVK_Return,
+           navigationBarViewController.addressBarViewController?.addressBarTextField.isFirstResponder == true {
             if flags.contains(.shift) && aiChatMenuConfig.shouldDisplayAddressBarShortcut {
                 navigationBarViewController.addressBarViewController?.addressBarTextField.aiChatQueryEnterPressed()
             } else {
                 navigationBarViewController.addressBarViewController?.addressBarTextField.addressBarEnterPressed()
             }
-
             return true
+        }
 
-        case kVK_Escape:
+        // Handle Escape
+        if event.keyCode == kVK_Escape {
             var isHandled = false
             if !mainView.findInPageContainerView.isHidden {
                 findInPageViewController.findInPageDone(self)
@@ -633,35 +635,48 @@ extension MainViewController {
                 isHandled = isHandled || addressBarVC.escapeKeyDown()
             }
             return isHandled
+        }
 
-        // Handle critical Main Menu actions before WebView
-        case kVK_ANSI_1, kVK_ANSI_2, kVK_ANSI_3, kVK_ANSI_4, kVK_ANSI_5, kVK_ANSI_6,
-             kVK_ANSI_7, kVK_ANSI_8, kVK_ANSI_9,
-             kVK_ANSI_Keypad1, kVK_ANSI_Keypad2, kVK_ANSI_Keypad3, kVK_ANSI_Keypad4,
-             kVK_ANSI_Keypad5, kVK_ANSI_Keypad6, kVK_ANSI_Keypad7, kVK_ANSI_Keypad8,
-             kVK_ANSI_Keypad9:
-            guard flags == .command else { return false }
-            fallthrough
-        case kVK_Tab where [[.control], [.control, .shift]].contains(flags),
-             kVK_ANSI_N where flags == .command,
-             kVK_ANSI_W where flags.contains(.command),
-             kVK_ANSI_T where [[.command], [.command, .shift]].contains(flags),
-             kVK_ANSI_Q where flags == .command,
-             kVK_ANSI_R where flags == .command:
-            guard view.window?.firstResponder is WebView else { return false }
-            NSApp.menu?.performKeyEquivalent(with: event)
-            return true
-
-        case kVK_ANSI_Y where flags == .command:
-            if NSApp.delegateTyped.featureFlagger.isFeatureOn(.historyView) {
-                return false
+        // Handle tab switching (CMD+1 through CMD+9)
+        if [.command, [.command, .numericPad]].contains(flags), "123456789".contains(key) {
+            if isWebViewFocused {
+                NSApp.menu?.performKeyEquivalent(with: event)
+                return true
             }
-            (NSApp.mainMenuTyped.historyMenu.accessibilityParent() as? NSMenuItem)?.accessibilityPerformPress()
-            return true
-
-        default:
             return false
         }
+
+        // Handle browser tab/window actions
+        if isWebViewFocused {
+            switch (key, flags, flags.contains(.command)) {
+            case ("n", [.command], _),
+                 ("t", [.command], _), ("t", [.command, .shift], _),
+                 ("w", _, true),
+                 ("q", [.command], _),
+                 ("r", [.command], _):
+                NSApp.menu?.performKeyEquivalent(with: event)
+                return true
+
+            case ("\t", [.control], _),
+                 ("\t", [.control, .shift], _):
+                NSApp.menu?.performKeyEquivalent(with: event)
+                return true
+
+            default:
+                break
+            }
+        }
+
+        // Handle CMD+Y (history view)
+        if key == "y", flags == .command {
+            if !NSApp.delegateTyped.featureFlagger.isFeatureOn(.historyView) {
+                (NSApp.mainMenuTyped.historyMenu.accessibilityParent() as? NSMenuItem)?.accessibilityPerformPress()
+                return true
+            }
+            return false
+        }
+
+        return false
     }
 
     func otherMouseUp(with event: NSEvent) -> NSEvent? {

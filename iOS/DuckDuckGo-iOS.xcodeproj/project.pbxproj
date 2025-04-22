@@ -1432,7 +1432,6 @@
 		F41C2DA326C1925700F9A760 /* BookmarksAndFolders.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = F41C2DA126C1925600F9A760 /* BookmarksAndFolders.xcdatamodeld */; };
 		F41C2DA526C1975E00F9A760 /* LegacyBookmarksCoreDataStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = F41C2DA426C1975E00F9A760 /* LegacyBookmarksCoreDataStorage.swift */; };
 		F42D541D29DCA40B004C4FF1 /* DesignResourcesKit in Frameworks */ = {isa = PBXBuildFile; productRef = F42D541C29DCA40B004C4FF1 /* DesignResourcesKit */; };
-		F42EF9312614BABE00101FB9 /* ActionSheetDaxDialogViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F42EF9302614BABD00101FB9 /* ActionSheetDaxDialogViewController.swift */; };
 		F44D279C27F331BB0037F371 /* AutofillLoginPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44D279727F331BB0037F371 /* AutofillLoginPromptView.swift */; };
 		F44D279E27F331BB0037F371 /* AutofillLoginPromptViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44D279927F331BB0037F371 /* AutofillLoginPromptViewModel.swift */; };
 		F44D279F27F331BB0037F371 /* AutofillLoginPromptViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F44D279A27F331BB0037F371 /* AutofillLoginPromptViewController.swift */; };
@@ -3574,7 +3573,6 @@
 		F4147353283BF834004AA7A5 /* AutofillContentScopeFeatureToggles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillContentScopeFeatureToggles.swift; sourceTree = "<group>"; };
 		F41C2DA226C1925700F9A760 /* BookmarksAndFolders.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = BookmarksAndFolders.xcdatamodel; sourceTree = "<group>"; };
 		F41C2DA426C1975E00F9A760 /* LegacyBookmarksCoreDataStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LegacyBookmarksCoreDataStorage.swift; sourceTree = "<group>"; };
-		F42EF9302614BABD00101FB9 /* ActionSheetDaxDialogViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ActionSheetDaxDialogViewController.swift; sourceTree = "<group>"; };
 		F44D279727F331BB0037F371 /* AutofillLoginPromptView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AutofillLoginPromptView.swift; sourceTree = "<group>"; };
 		F44D279927F331BB0037F371 /* AutofillLoginPromptViewModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AutofillLoginPromptViewModel.swift; sourceTree = "<group>"; };
 		F44D279A27F331BB0037F371 /* AutofillLoginPromptViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AutofillLoginPromptViewController.swift; sourceTree = "<group>"; };
@@ -5368,7 +5366,6 @@
 				984147CB24F02E9E00362052 /* DaxOnboarding.storyboard */,
 				858650D02469BCDE00C36F8A /* DaxDialogs.swift */,
 				858650DA246B111900C36F8A /* DaxOnboarding.xcassets */,
-				F42EF9302614BABD00101FB9 /* ActionSheetDaxDialogViewController.swift */,
 				F4E1936525AF722F001D2666 /* HighlightCutOutView.swift */,
 				85C297032476C1FD0063A335 /* DaxDialogsSettings.swift */,
 			);
@@ -9210,7 +9207,6 @@
 				0283A1FE2C6E3E1B00508FBD /* BrokenSitePromptViewModel.swift in Sources */,
 				C1D2C3632D6F319B00213E3B /* OnboardingPrivacyProPromoExperiment.swift in Sources */,
 				851672CF2BED1F9500592F24 /* HistoryMessageManager.swift in Sources */,
-				F42EF9312614BABE00101FB9 /* ActionSheetDaxDialogViewController.swift in Sources */,
 				EEC02C142B0519DE0045CE11 /* NetworkProtectionVPNLocationViewModel.swift in Sources */,
 				D63FF8962C1B67E9006DE24D /* YoutubeOverlayUserScript.swift in Sources */,
 				9F38A28C2D09BDE500EB100E /* SpecialErrorPageThreatProvider.swift in Sources */,

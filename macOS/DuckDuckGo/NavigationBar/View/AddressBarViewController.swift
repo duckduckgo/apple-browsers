@@ -621,12 +621,12 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
     func addressBarButtonsViewControllerHideAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
         aiChatSettings.showShortcutInAddressBar = false
     }
-    
+
     func addressBarButtonsViewController(_ controller: AddressBarButtonsViewController, didUpdateAIChatButtonVisibility isVisible: Bool) {
         addressBarTextTrailingConstraint.constant = isVisible ? 80 : 45
         addressBarPassiveTextCenterXConstraint.constant = isVisible ? -20 : 0
     }
-    
+
     func addressBarButtonsViewControllerClearButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
         addressBarTextField.clearValue()
     }

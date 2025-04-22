@@ -30,7 +30,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
     var window: MockWindow!
     var viewController: BrowserTabViewController!
     var dialogProvider: MockDialogsProvider!
-    var pixelReporter: CapturingOnboardingPixelReporter!
+    private var pixelReporter: CapturingOnboardingPixelReporter!
     var factory: CapturingDialogFactory!
     var featureFlagger: MockFeatureFlagger!
     var schemeHandler: TestSchemeHandler!
@@ -332,11 +332,13 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         wait(for: [expectation], timeout: 3.0)
 
         let mainViewController = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])), autofillPopoverPresenter: DefaultAutofillPopoverPresenter())
-        let mainWindowController = MainWindowController(mainViewController: mainViewController, popUp: false)
+        window.isVisible = false
+        let mainWindowController = MainWindowController(window: window, mainViewController: mainViewController, popUp: false)
         mainWindowController.window = window
         WindowControllersManager.shared.lastKeyMainWindowController = mainWindowController
 
         // WHEN
+        window.isVisible = true
         factory.performOnFireButtonPressed()
 
         // THEN
@@ -428,5 +430,45 @@ final class BrowserTabViewControllerDelegateSpy: BrowserTabViewControllerDelegat
 
     func dismissViewHighlight() {
         didCallDismissViewHighlight = true
+    }
+}
+
+private class CapturingOnboardingPixelReporter: OnboardingPixelReporting {
+    var measureFireButtonSkippedCalled = false
+    var measureFireButtonTryItCalled = false
+    var measureLastDialogShownCalled = false
+    var measureSiteVisitedCalled = false
+    var dismissedDialog: ContextualDialogType?
+
+    func measureFireButtonSkipped() {
+        measureFireButtonSkippedCalled = true
+    }
+
+    func measureLastDialogShown() {
+        measureLastDialogShownCalled = true
+    }
+
+    func measureSearchSuggestionOptionTapped() {
+    }
+
+    func measureSiteSuggestionOptionTapped() {
+    }
+
+    func measureFireButtonTryIt() {
+        measureFireButtonTryItCalled = true
+    }
+
+    func measureAddressBarTypedIn() {
+    }
+
+    func measurePrivacyDashboardOpened() {
+    }
+
+    func measureSiteVisited() {
+        measureSiteVisitedCalled = true
+    }
+
+    func measureDialogDismissed(dialogType: ContextualDialogType) {
+        dismissedDialog = dialogType
     }
 }

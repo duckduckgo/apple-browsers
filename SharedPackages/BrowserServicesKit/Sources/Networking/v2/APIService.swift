@@ -19,31 +19,38 @@
 import Foundation
 import os.log
 
+/// Protocol describing the DDG service for fetching API requests
 public protocol APIService {
     typealias AuthorizationRefresherCallback = ((_: APIRequestV2) async throws -> String)
+
+    /// Closure called every time an authenticated request fails with a 401
     var authorizationRefresherCallback: AuthorizationRefresherCallback? { get set }
-    func fetch(request: APIRequestV2, authAlreadyRefreshed: Bool, failureRetryCount: Int) async throws -> APIResponseV2
+
+    /// Fetch an API Request
+    /// - Parameter request: A configured `APIRequest`
+    /// - Returns: An `APIResponseV2` containing the body data and the HTTPURLResponse
+    func fetch(request: APIRequestV2) async throws -> APIResponseV2
 }
 
-extension APIService {
-    public func fetch(request: APIRequestV2) async throws -> APIResponseV2 {
-        return try await fetch(request: request, authAlreadyRefreshed: false, failureRetryCount: 0)
-    }
-}
-
+/// The default implementation of `APIService`
 public class DefaultAPIService: APIService {
     private let urlSession: URLSession
     public var authorizationRefresherCallback: AuthorizationRefresherCallback?
 
+    /// Designited initialiser
+    /// - Parameters:
+    ///   - urlSession: The URLSession used for fetching requests
+    ///   - authorizationRefresherCallback: Optional closure called every time an authenticated request fails with a 401
     public init(urlSession: URLSession = .shared, authorizationRefresherCallback: AuthorizationRefresherCallback? = nil) {
         self.urlSession = urlSession
         self.authorizationRefresherCallback = authorizationRefresherCallback
     }
 
-    /// Fetch an API Request
-    /// - Parameter request: A configured APIRequest
-    /// - Returns: An `APIResponseV2` containing the body data and the HTTPURLResponse
-    public func fetch(request: APIRequestV2, authAlreadyRefreshed: Bool = false, failureRetryCount: Int = 0) async throws -> APIResponseV2 {
+    public func fetch(request: APIRequestV2) async throws -> APIResponseV2 {
+        return try await fetch(request: request, authAlreadyRefreshed: false, failureRetryCount: 0)
+    }
+
+    private func fetch(request: APIRequestV2, authAlreadyRefreshed: Bool, failureRetryCount: Int) async throws -> APIResponseV2 {
         var request = request
 
         Logger.networking.debug("Fetching: \(request.debugDescription)")
@@ -56,11 +63,13 @@ public class DefaultAPIService: APIService {
 
             if let retryPolicy = request.retryPolicy,
                failureRetryCount < retryPolicy.maxRetries {
-                // It's a failure and the request must be retried
 
-                if retryPolicy.delay > 0 {
-                    Logger.networking.debug("Retrying after \(retryPolicy.delay) seconds")
-                    try? await Task.sleep(interval: retryPolicy.delay)
+                // It's a failure and the request must be retried
+                Logger.networking.debug("Retrying applying \(retryPolicy.debugDescription)")
+                let delayTimeInterval = retryPolicy.delay.delayTimeInterval(failureRetryCount: failureRetryCount)
+                if delayTimeInterval > 0 {
+                    Logger.networking.debug("Retrying after \(delayTimeInterval) seconds")
+                    try? await Task.sleep(interval: delayTimeInterval)
                 }
                 // Try again
                 return try await fetch(request: request, authAlreadyRefreshed: authAlreadyRefreshed, failureRetryCount: failureRetryCount + 1)

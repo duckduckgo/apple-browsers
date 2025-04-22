@@ -47,18 +47,6 @@ final class OnboardingPixelReporterTests: XCTestCase {
         userDefaults?.removePersistentDomain(forName: "OnboardingPixelReporterTests")
     }
 
-    func test_WhenMeasureSiteSuggestionOptionTapped_ThenSiteSuggestionOptionTappedEventSent() throws {
-        reporter.measureSiteSuggestionOptionTapped()
-        XCTAssertEqual(eventSent?.name, ContextualOnboardingPixel.siteSuggestionOptionTapped.name)
-        XCTAssertEqual(frequency, .uniqueByName)
-    }
-
-    func test_WhenMeasureSearchSuggestionOptionTapped_ThenSearchSuggestionOptionTappedEventSent() throws {
-        reporter.measureSearchSuggestionOptionTapped()
-        XCTAssertEqual(eventSent?.name, ContextualOnboardingPixel.searchSuggestionOptionTapped.name)
-        XCTAssertEqual(frequency, .uniqueByName)
-    }
-
     func test_WhenMeasureAddressBarTypedIn_ThenDependingOnTheState_CorrectPixelsAreSent() throws {
         onboardingState.lastDialog = .tryASearch
         reporter.measureAddressBarTypedIn()
@@ -78,12 +66,6 @@ final class OnboardingPixelReporterTests: XCTestCase {
         reporter.measureAddressBarTypedIn()
         XCTAssertNil(eventSent)
         XCTAssertNil(frequency)
-    }
-
-    func test_WhenMeasureFireButtonSkipped_ThenOnboardingFireButtonPromptSkipPressedSent() {
-        reporter.measureFireButtonSkipped()
-        XCTAssertEqual(eventSent?.name, ContextualOnboardingPixel.onboardingFireButtonPromptSkipPressed.name)
-        XCTAssertEqual(frequency, .uniqueByName)
     }
 
     func test_WhenMeasureFireButtonTryIt_ThenOnboardingFireButtonTryItPressedSent() {

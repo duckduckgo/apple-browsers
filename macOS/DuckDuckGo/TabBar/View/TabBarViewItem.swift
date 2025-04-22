@@ -883,7 +883,7 @@ extension TabBarViewItem: MouseClickViewDelegate {
 
     func mouseClickView(_ mouseClickView: MouseClickView, otherMouseDownEvent: NSEvent) {
         // close on middle-click
-        guard otherMouseDownEvent.buttonNumber == 2 else { return }
+        guard case .middle = otherMouseDownEvent.button else { return }
 
         guard let indexPath = self.collectionView?.indexPath(for: self) else {
             // doubleclick event arrived at point when we're already removed

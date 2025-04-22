@@ -207,8 +207,7 @@ final class TabBarViewItemTests: XCTestCase {
     @MainActor
     func testWhenFireproofableThenUrlFireProofSiteItemIsDisabled() {
         // Update url
-        let tab = Tab()
-        tab.url = URL(string: "https://www.apple.com")!
+        let tab = Tab(content: .url(URL(string: "https://www.apple.com")!, source: .appOpenUrl))
         delegate.mockedCurrentTab = tab
         let vm = TabViewModel(tab: tab)
         tabBarViewItem.subscribe(to: vm)

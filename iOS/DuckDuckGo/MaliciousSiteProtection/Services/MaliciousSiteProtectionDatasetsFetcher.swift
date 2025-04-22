@@ -23,28 +23,39 @@ import BackgroundTasks
 import Core
 import Combine
 import BrowserServicesKit
+import CombineSchedulers
 
 protocol MaliciousSiteProtectionDatasetsFetching {
-    func startFetching()
-    func registerBackgroundRefreshTaskHandler()
+    @MainActor
+    @discardableResult
+    func startFetching() -> Task<Void, Error>
 }
 
-final class MaliciousSiteProtectionDatasetsFetcher: MaliciousSiteProtectionDatasetsFetching {
+final class MaliciousSiteProtectionDatasetsFetcher {
     private let featureFlagger: MaliciousSiteProtectionFeatureFlagger & MaliciousSiteProtectionFeatureFlagsSettingsProvider
     private let userPreferencesManager: MaliciousSiteProtectionPreferencesProvider
     private let dateProvider: () -> Date
     private let updateManager: MaliciousSiteUpdateManaging
     private let backgroundTaskScheduler: BGTaskScheduling
     private let application: BackgroundRefreshCapable
+    private let preferencesScheduler: AnySchedulerOf<DispatchQueue>
+
+    // Avoid multiple background tasks registrations.
+    private static var registeredTaskIdentifiers: Set<String> = []
+
+    @MainActor
+    private(set) var isDatasetsFetchInProgress: Bool = false
 
     private var preferencesManagerCancellable: AnyCancellable?
     private var featureFlagOverrideCancellable: AnyCancellable?
 
+    @MainActor
     private var shouldUpdateHashPrefixSets: Bool {
         // Absolute interval to avoid never updating the dataset if the `lastHashPrefixSetUpdateDate` is mistakenly set in the far future
         abs(dateProvider().timeIntervalSince(updateManager.lastHashPrefixSetUpdateDate)) > .minutes(featureFlagger.hashPrefixUpdateFrequency)
     }
 
+    @MainActor
     private var shouldUpdateFilterSets: Bool {
         // Absolute interval to avoid never updating the dataset if the `lastFilterSetUpdateDate` is mistakenly set in the far future
         abs(dateProvider().timeIntervalSince(updateManager.lastFilterSetUpdateDate)) > .minutes(featureFlagger.filterSetUpdateFrequency)
@@ -60,7 +71,8 @@ final class MaliciousSiteProtectionDatasetsFetcher: MaliciousSiteProtectionDatas
         userPreferencesManager: MaliciousSiteProtectionPreferencesProvider,
         dateProvider: @escaping () -> Date = Date.init,
         backgroundTaskScheduler: BGTaskScheduling = BGTaskScheduler.shared,
-        application: BackgroundRefreshCapable = UIApplication.shared
+        application: BackgroundRefreshCapable = UIApplication.shared,
+        preferencesScheduler: AnySchedulerOf<DispatchQueue> = DispatchQueue.main.eraseToAnyScheduler()
     ) {
         self.updateManager = updateManager
         self.featureFlagger = featureFlagger
@@ -68,28 +80,41 @@ final class MaliciousSiteProtectionDatasetsFetcher: MaliciousSiteProtectionDatas
         self.dateProvider = dateProvider
         self.backgroundTaskScheduler = backgroundTaskScheduler
         self.application = application
+        self.preferencesScheduler = preferencesScheduler
     }
 }
 
 // MARK: - Public
 
-extension MaliciousSiteProtectionDatasetsFetcher {
+extension MaliciousSiteProtectionDatasetsFetcher: MaliciousSiteProtectionDatasetsFetching {
 
-    func startFetching() {
-        guard canFetchDatasets else { return }
-
-        Logger.MaliciousSiteProtection.datasetsFetcher.debug("Feature is On and Enabled in App Settings")
-
-        // If hashPrefix Sets need to be updated fetch them
-        if shouldUpdateHashPrefixSets {
-            Logger.MaliciousSiteProtection.datasetsFetcher.debug("Downloading HashPrefixSets")
-            _ = updateManager.updateData(datasetType: .hashPrefixSet)
+    @MainActor
+    @discardableResult
+    func startFetching() -> Task<Void, Error> {
+        guard
+            canFetchDatasets,
+            !isDatasetsFetchInProgress
+        else {
+            return Task {}
         }
 
-        // If hashPrefix Sets need to be updated fetch them
-        if shouldUpdateFilterSets {
-            Logger.MaliciousSiteProtection.datasetsFetcher.debug("Downloading FilterSets")
-            _ = updateManager.updateData(datasetType: .filterSet)
+        isDatasetsFetchInProgress = shouldUpdateHashPrefixSets || shouldUpdateFilterSets
+        Logger.MaliciousSiteProtection.datasetsFetcher.debug("Start Updating Datasets...")
+
+        return Task {
+            defer { isDatasetsFetchInProgress = false }
+
+            // If hashPrefix Sets need to be updated fetch them
+            if shouldUpdateHashPrefixSets {
+                Logger.MaliciousSiteProtection.datasetsFetcher.debug("Downloading HashPrefixSets")
+                await updateManager.updateData(datasetType: .hashPrefixSet).value
+            }
+
+            // If hashPrefix Sets need to be updated fetch them
+            if shouldUpdateFilterSets {
+                Logger.MaliciousSiteProtection.datasetsFetcher.debug("Downloading FilterSets")
+                await updateManager.updateData(datasetType: .filterSet).value
+            }
         }
     }
 
@@ -99,16 +124,15 @@ extension MaliciousSiteProtectionDatasetsFetcher {
 
 private extension MaliciousSiteProtectionDatasetsFetcher {
 
-    func setupBindings() {
-        guard featureFlagger.isMaliciousSiteProtectionEnabled else { return }
-        subscribeToDetectionPreferences()
-    }
-
+    @MainActor
     func subscribeToDetectionPreferences() {
+        guard featureFlagger.isMaliciousSiteProtectionEnabled else { return }
+
         let isMaliciousSiteProtectionOn = userPreferencesManager.isMaliciousSiteProtectionOn
 
         preferencesManagerCancellable = userPreferencesManager
             .isMaliciousSiteProtectionOnPublisher
+            .debounce(for: 0.5, scheduler: preferencesScheduler)
             .scan((previous: isMaliciousSiteProtectionOn, current: isMaliciousSiteProtectionOn)) { accumulated, newValue in // Get the previous value of the publisher
                 (accumulated.current, newValue)
             }
@@ -117,25 +141,30 @@ private extension MaliciousSiteProtectionDatasetsFetcher {
             }
     }
 
+    @MainActor
     func handleUserPreferencesChange(wasOn: Bool, isOn: Bool) {
-        // If the feature is turned off in the user Preferences when we launch the App we don't need to stop background tasks.
-        // If the feature was turned off and the user turns it on we want to download the datasets and schedule the background tasks.
-        // If the feature is turned on when in the user Preferences when we launch the App we want to schedule the background tasks as we already started fetching the datasets on App launch.
-        // If the feature was turned on and the user turns it off we want to cancel the background tasks.
         switch (wasOn, isOn) {
+        // If the feature is turned off when the app launches we don't do anything.
+        //   - The datasets won't be fetched on App launch and we don't have to cancel background tasks as they won't be scheduled.
         case (false, false):
             break
+        // If the feature was turned on when the app launches, schedule the background tasks as we already started fetching the datasets on App launch.
         case (true, true):
             // Start only background tasks
             scheduleBackgroundTasksIfNeeded()
+        // If the feature was turned off and the user turns it on we want:
+        //   1. Download the datasets as they haven't downloaded when the app entered foreground.
+        //   2. Schedule background tasks.
         case (false, true):
             // Start downloading and initiate background tasks
             startUpdateTasks()
+        // If the feature was turned on and the user turns it off, cancel the pending background tasks.
         case (true, false):
             stopUpdateTasks()
         }
     }
 
+    @MainActor
     func startUpdateTasks() {
         startFetching()
         scheduleBackgroundTasksIfNeeded()
@@ -178,6 +207,7 @@ private extension MaliciousSiteProtectionDatasetsFetcher {
         }
     }
 
+    @MainActor
     func shouldRefresh(datasetType: DataManager.StoredDataType.Kind) -> Bool {
         switch datasetType {
         case .hashPrefixSet:
@@ -202,32 +232,8 @@ private extension MaliciousSiteProtectionDatasetsFetcher {
         }
     }
 
-}
-
-// MARK: - Background Tasks
-
-extension MaliciousSiteProtectionDatasetsFetcher {
-
-    func registerBackgroundRefreshTaskHandler() {
-        DataManager.StoredDataType.Kind.allCases.forEach { datasetType in
-            backgroundTaskScheduler.register(forTaskWithIdentifier: datasetType.backgroundTaskIdentifier) { [weak self] backgroundTask in
-                guard let self else { return }
-
-                guard shouldRefresh(datasetType: datasetType) else {
-                    backgroundTask.setTaskCompleted(success: true)
-                    scheduleBackgroundRefreshTask(datasetType: datasetType)
-                    return
-                }
-
-                backgroundRefreshTaskHandler(backgroundTask: backgroundTask, datasetType: datasetType)
-            }
-        }
-
-        setupBindings()
-        subscribeToScamProtectionFlagChanges()
-    }
-
-    private func subscribeToScamProtectionFlagChanges() {
+    @MainActor
+    func subscribeToScamProtectionFlagChanges() {
         guard let overridesHandler = AppDependencyProvider.shared.featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
             return
         }
@@ -241,6 +247,40 @@ extension MaliciousSiteProtectionDatasetsFetcher {
                     self?.stopUpdateTasks()
                 }
             }
+    }
+
+}
+
+// MARK: - Background Tasks
+
+extension MaliciousSiteProtectionDatasetsFetcher {
+
+    @MainActor
+    func registerBackgroundRefreshTaskHandler() {
+        // Risk that tasks have been registered twice from stack trace.
+        // https://errors.duckduckgo.com/organizations/ddg/issues/318442/events/701c65b8012b11f0b86f8d2f8a0908f9/
+        // Although is not clear how ensure that background tasks are registered once.
+        // The system kills the app on the second registration of the same task identifier.
+        DataManager.StoredDataType.Kind.allCases.forEach { datasetType in
+            let backgroundTaskIdentifier = datasetType.backgroundTaskIdentifier
+            guard !Self.registeredTaskIdentifiers.contains(backgroundTaskIdentifier) else { return }
+            Self.registeredTaskIdentifiers.insert(backgroundTaskIdentifier)
+
+            backgroundTaskScheduler.register(forTaskWithIdentifier: backgroundTaskIdentifier) { [weak self] backgroundTask in
+                guard let self else { return }
+
+                guard shouldRefresh(datasetType: datasetType) else {
+                    backgroundTask.setTaskCompleted(success: true)
+                    scheduleBackgroundRefreshTask(datasetType: datasetType)
+                    return
+                }
+
+                backgroundRefreshTaskHandler(backgroundTask: backgroundTask, datasetType: datasetType)
+            }
+        }
+
+        subscribeToDetectionPreferences()
+        subscribeToScamProtectionFlagChanges()
     }
 
     private func scheduleBackgroundRefreshTask(datasetType: DataManager.StoredDataType.Kind) {
@@ -277,6 +317,17 @@ extension MaliciousSiteProtectionDatasetsFetcher {
     }
 
 }
+
+#if DEBUG
+extension MaliciousSiteProtectionDatasetsFetcher {
+
+    // To be used only in tests
+    static func resetRegisteredTaskIdentifiers() {
+        registeredTaskIdentifiers = []
+    }
+
+}
+#endif
 
 // MARK: - DataManager.StoredDataType.Kind + Background Tasks
 

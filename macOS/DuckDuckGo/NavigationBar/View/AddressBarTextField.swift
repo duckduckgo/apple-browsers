@@ -335,11 +335,30 @@ final class AddressBarTextField: NSTextField {
             switchTo(OpenTab(tabId: nil, title: title, url: url))
         } else if case .openTab(let title, url: let url, tabId: let tabId, _) = suggestion {
             switchTo(OpenTab(tabId: tabId, title: title, url: url))
-        } else if NSApp.isCommandPressed {
-            openNew(NSApp.isOptionPressed ? .window : .tab, selected: NSApp.isShiftPressed, suggestion: suggestion)
         } else {
-            hideSuggestionWindow()
-            updateTabUrl(suggestion: suggestion, downloadRequested: NSApp.isOptionPressed && !NSApp.isShiftPressed)
+            // Use LinkOpenBehavior to determine how to open the suggestion
+            let behavior = LinkOpenBehavior(
+                modifierFlags: NSEvent.modifierFlags,
+                switchToNewTabWhenOpenedPreference: TabsPreferences.shared.switchToNewTabWhenOpened,
+                canOpenLinkInCurrentTab: true
+            )
+
+            switch behavior {
+            case .currentTab:
+                // Open in current tab
+                hideSuggestionWindow()
+                // Check for option key for download (legacy behavior maintained)
+                let downloadRequested = NSApp.isOptionPressed && !NSApp.isShiftPressed
+                updateTabUrl(suggestion: suggestion, downloadRequested: downloadRequested)
+
+            case .newTab(let selected):
+                // Open in new tab
+                openNew(.tab, selected: selected, suggestion: suggestion)
+
+            case .newWindow(let selected):
+                // Open in new window
+                openNew(.window, selected: selected, suggestion: suggestion)
+            }
         }
 
         currentEditor()?.selectAll(self)
@@ -406,7 +425,7 @@ final class AddressBarTextField: NSTextField {
         makeUrl(suggestion: suggestion,
                 stringValueWithoutSuffix: stringValueWithoutSuffix,
                 completion: { [weak self] url, userEnteredValue, isUpgraded in
-            guard let url = url else { return }
+            guard let url else { return }
 
             if isUpgraded {
                 self?.updateTab(self?.tabCollectionViewModel.selectedTabViewModel?.tab, upgradedTo: url)

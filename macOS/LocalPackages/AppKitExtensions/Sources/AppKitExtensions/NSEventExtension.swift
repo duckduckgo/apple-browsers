@@ -33,8 +33,28 @@ public extension NSEvent {
         public static let global = EventMonitorType(rawValue: 1 << 1)
     }
 
+    enum Button: Int {
+        case left = 0
+        case right = 1
+        case middle = 2
+        case back = 3
+        case forward = 4
+    }
+
+    var button: Button? {
+        switch type {
+        case .leftMouseDown, .leftMouseUp, .leftMouseDragged: .left
+        case .rightMouseDown, .rightMouseUp, .rightMouseDragged: .right
+        case .otherMouseDown, .otherMouseUp, .otherMouseDragged: Button(rawValue: self.buttonNumber)
+        // when middle-clicking a New Tab or History View with a real mouse, the event type is .systemDefined
+        // (see NewTabPageLinkOpener)
+        case .systemDefined: .middle
+        default: nil
+        }
+    }
+
     var deviceIndependentFlags: NSEvent.ModifierFlags {
-        modifierFlags.intersection(.deviceIndependentFlagsMask)
+        modifierFlags.deviceIndependent
     }
 
     typealias KeyEquivalent = Set<KeyEquivalentElement>
@@ -128,6 +148,12 @@ public extension NSEvent {
     }
 #endif
 
+}
+
+public extension NSEvent.ModifierFlags {
+    var deviceIndependent: NSEvent.ModifierFlags {
+        intersection(.deviceIndependentFlagsMask)
+    }
 }
 
 public enum KeyEquivalentElement: ExpressibleByStringLiteral, Hashable {

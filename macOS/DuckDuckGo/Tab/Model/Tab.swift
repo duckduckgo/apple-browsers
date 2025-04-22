@@ -347,7 +347,7 @@ protocol NewWindowPolicyDecisionMaker {
                 let knownUserContentControllers = processPool.knownUserContentControllers
                 processPool.onDeinit {
                     for controller in knownUserContentControllers {
-                        assert(controller.userContentController == nil, "\(controller) has not been deallocated")
+                        assert(controller.userContentController == nil, "\(controller.userContentController!) has not been deallocated")
                     }
                 }
             }
@@ -857,14 +857,10 @@ protocol NewWindowPolicyDecisionMaker {
             return
         }
 #endif
-        if PixelExperiment.cohort == .newOnboarding {
-            if #available(macOS 12.0, *) {
-                Application.appDelegate.onboardingContextualDialogsManager.state = .notStarted
-            }
-            setContent(.onboarding)
-        } else {
-            setContent(.onboardingDeprecated)
+        if #available(macOS 12.0, *) {
+            Application.appDelegate.onboardingContextualDialogsManager.state = .notStarted
         }
+        setContent(.onboarding)
     }
 
     @MainActor(unsafe)
@@ -980,6 +976,10 @@ protocol NewWindowPolicyDecisionMaker {
         case .loadInBackgroundIfNeeded(shouldLoadInBackground: let shouldLoadInBackground):
             switch content {
             case .newtab, .bookmarks, .settings:
+#if DEBUG
+                // prevent auto loading when running Unit Tests
+                guard AppVersion.runType.requiresEnvironment else { return false }
+#endif
                 return webView.url == nil // navigate to empty pages loaded for duck:// urls
             default:
                 return shouldLoadInBackground
@@ -1242,6 +1242,16 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
 
     @MainActor
     func willStart(_ navigation: Navigation) {
+#if DEBUG
+        // prevent real navigation actions when running Unit Tests
+        if AppVersion.runType == .unitTests
+            && !(navigation.url.isDuckURLScheme
+                 || ([.http, .https].contains(navigation.url.navigationalScheme)
+                     && self.webView.configuration.urlSchemeHandler(forURLScheme: navigation.url.scheme!) != nil)) {
+            fatalError("The Unit Test is causing a real navigation action")
+        }
+#endif
+
         if error != nil { error = nil }
 
         /*

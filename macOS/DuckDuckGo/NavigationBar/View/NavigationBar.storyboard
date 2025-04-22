@@ -488,7 +488,7 @@
                                     <color key="backgroundColor" name="textBackgroundColor" catalog="System" colorSpace="catalog"/>
                                 </textFieldCell>
                             </textField>
-                            <textField focusRingType="none" verticalHuggingPriority="750" ambiguous="YES" translatesAutoresizingMaskIntoConstraints="NO" id="zaX-wZ-E3D" customClass="AddressBarTextField" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
+                            <textField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="zaX-wZ-E3D" customClass="AddressBarTextField" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
                                 <rect key="frame" x="38" y="8" width="653" height="16"/>
                                 <textFieldCell key="cell" lineBreakMode="truncatingTail" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" focusRingType="none" tag="5" placeholderString="Search or enter address" usesSingleLineMode="YES" id="1ah-Qg-8lr" customClass="AddressBarTextFieldCell" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
                                     <font key="font" metaFont="system"/>
@@ -604,6 +604,7 @@
                             <constraint firstAttribute="bottom" secondItem="Zjk-bE-Xft" secondAttribute="bottom" constant="-3" id="ic3-He-fz0"/>
                             <constraint firstAttribute="bottom" secondItem="ENV-0H-Fcc" secondAttribute="bottom" constant="2" id="jNf-6E-eDn"/>
                             <constraint firstItem="Ij9-fc-CLI" firstAttribute="leading" secondItem="wj6-L2-5rJ" secondAttribute="leading" id="mPy-45-VDH"/>
+                            <constraint firstAttribute="trailing" secondItem="zaX-wZ-E3D" secondAttribute="trailing" priority="900" id="mhA-CM-51H"/>
                             <constraint firstItem="JKb-5c-xaF" firstAttribute="height" secondItem="zaX-wZ-E3D" secondAttribute="height" id="nDf-yK-Sgh"/>
                             <constraint firstAttribute="bottom" secondItem="e0p-7S-Gan" secondAttribute="bottom" priority="300" id="nuB-My-vJR"/>
                             <constraint firstItem="JKb-5c-xaF" firstAttribute="centerY" secondItem="wj6-L2-5rJ" secondAttribute="centerY" id="opE-0E-iRf"/>

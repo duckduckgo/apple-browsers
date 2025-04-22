@@ -30,6 +30,7 @@ protocol AddressBarButtonsViewControllerDelegate: AnyObject {
 
     func addressBarButtonsViewControllerClearButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
     func addressBarButtonsViewController(_ controller: AddressBarButtonsViewController, didUpdateAIChatButtonVisibility isVisible: Bool)
+    func addressBarButtonsViewControllerHideAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
 }
 
 final class AddressBarButtonsViewController: NSViewController {
@@ -70,7 +71,7 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBOutlet weak var imageButton: NSButton!
     @IBOutlet weak var clearButton: NSButton!
     @IBOutlet private weak var buttonsContainer: NSStackView!
-    @IBOutlet weak var aiChatButton: AddressBarButton!
+    @IBOutlet weak var aiChatButton: AddressBarMenuButton!
 
     @IBOutlet weak var animationWrapperView: NSView!
     var trackerAnimationView1: LottieAnimationView!
@@ -219,7 +220,7 @@ final class AddressBarButtonsViewController: NSViewController {
         setupDaxLogo()
 
         bookmarkButton.sendAction(on: .leftMouseDown)
-
+        configureAIChatButton()
         privacyEntryPointButton.toolTip = UserText.privacyDashboardTooltip
     }
 
@@ -387,6 +388,10 @@ final class AddressBarButtonsViewController: NSViewController {
         aiChatButton.isHidden = !aiChatMenuConfig.shouldDisplayAddressBarShortcut
         updateAIChatDividerVisibility()
         delegate?.addressBarButtonsViewController(self, didUpdateAIChatButtonVisibility: aiChatButton.isShown)
+    }
+
+    @objc func hideAIChatButtonAction(_ sender: NSMenuItem) {
+        delegate?.addressBarButtonsViewControllerHideAIChatButtonClicked(self)
     }
 
     private func updateAIChatDividerVisibility() {
@@ -815,6 +820,15 @@ final class AddressBarButtonsViewController: NSViewController {
                 widthConstraint,
                 heightConstraint
             ])
+        }
+    }
+
+    private func configureAIChatButton() {
+        aiChatButton.setAccessibilityIdentifier("AddressBarButtonsViewController.aiChatButton")
+        aiChatButton.menu = NSMenu {
+            NSMenuItem(title: UserText.aiChatAddressBarHideButton,
+                       action: #selector(hideAIChatButtonAction(_:)),
+                       keyEquivalent: "")
         }
     }
 

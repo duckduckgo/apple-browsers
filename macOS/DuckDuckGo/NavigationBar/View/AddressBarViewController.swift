@@ -73,6 +73,8 @@ final class AddressBarViewController: NSViewController {
     private let isBurner: Bool
     private let onboardingPixelReporter: OnboardingAddressBarReporting
 
+    private var aiChatSettings: AIChatPreferencesStorage
+
     private var mode: Mode = .editing(.text) {
         didSet {
             addressBarButtonsViewController?.controllerMode = mode
@@ -115,7 +117,8 @@ final class AddressBarViewController: NSViewController {
           tabCollectionViewModel: TabCollectionViewModel,
           burnerMode: BurnerMode,
           popovers: NavigationBarPopovers?,
-          onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter()) {
+          onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
+          aiChatSettings: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage()) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.popovers = popovers
         self.suggestionContainerViewModel = SuggestionContainerViewModel(
@@ -124,6 +127,7 @@ final class AddressBarViewController: NSViewController {
             suggestionContainer: SuggestionContainer(burnerMode: burnerMode, isUrlIgnored: { _ in false }))
         self.isBurner = burnerMode.isBurner
         self.onboardingPixelReporter = onboardingPixelReporter
+        self.aiChatSettings = aiChatSettings
 
         super.init(coder: coder)
     }
@@ -133,7 +137,7 @@ final class AddressBarViewController: NSViewController {
                                                          tabCollectionViewModel: tabCollectionViewModel,
                                                          popovers: popovers,
                                                          aiChatTabOpener: NSApp.delegateTyped.aiChatTabOpener,
-                                                         aiChatMenuConfig: AIChatMenuConfiguration())
+                                                         aiChatMenuConfig: AIChatMenuConfiguration(storage: aiChatSettings))
 
         self.addressBarButtonsViewController = controller
         controller?.delegate = self
@@ -586,6 +590,9 @@ final class AddressBarViewController: NSViewController {
         // If the view where the touch occurred is outside the AddressBar forward the event
         guard let viewWithinAddressBar = view.hitTest(pointInView) else { return event }
 
+        // If we have an AddressBarMenuButton, forward the event
+        guard !(viewWithinAddressBar is AddressBarMenuButton) else { return event }
+
         // If the farthest view of the point location is a NSButton or LottieAnimationView don't show contextual menu
         guard viewWithinAddressBar.shouldShowArrowCursor == false else { return nil }
 
@@ -611,6 +618,10 @@ final class AddressBarViewController: NSViewController {
 }
 
 extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
+    func addressBarButtonsViewControllerHideAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
+        aiChatSettings.showShortcutInAddressBar = false
+    }
+
     func addressBarButtonsViewController(_ controller: AddressBarButtonsViewController, didUpdateAIChatButtonVisibility isVisible: Bool) {
         addressBarTextTrailingConstraint.constant = isVisible ? 80 : 45
         addressBarPassiveTextCenterXConstraint.constant = isVisible ? -20 : 0
@@ -619,7 +630,6 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
     func addressBarButtonsViewControllerClearButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
         addressBarTextField.clearValue()
     }
-
 }
 
 fileprivate extension NSView {

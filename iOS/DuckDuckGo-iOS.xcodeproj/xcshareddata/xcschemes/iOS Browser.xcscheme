@@ -72,12 +72,6 @@
                <Test
                   Identifier = "FireButtonReferenceTests/testClearDataUsingLegacyContainer()">
                </Test>
-               <Test
-                  Identifier = "SyncSettingsViewControllerErrorTests/test_WhenAccountRemoved_ErrorHandlerSyncDidTurnOffCalled()">
-               </Test>
-               <Test
-                  Identifier = "SyncSettingsViewControllerErrorTests/test_WhenSyncIsTurnedOff_ErrorHandlerSyncDidTurnOffCalled()">
-               </Test>
             </SkippedTests>
          </TestableReference>
          <TestableReference

@@ -1,6 +1,6 @@
 {
     "readme": "https://github.com/duckduckgo/privacy-configuration",
-    "version": 1744423374947,
+    "version": 1745328842087,
     "features": {
         "adAttributionReporting": {
             "state": "disabled",
@@ -208,9 +208,6 @@
                 },
                 {
                     "domain": "larazon.es"
-                },
-                {
-                    "domain": "motherdenim.com"
                 },
                 {
                     "domain": "nationalgrid.co.uk"
@@ -555,6 +552,24 @@
                     "domain": "ground.news"
                 },
                 {
+                    "domain": "schroders.com"
+                },
+                {
+                    "domain": "monetaaurea.com"
+                },
+                {
+                    "domain": "gartenbauverein-refrath.de"
+                },
+                {
+                    "domain": "galeriebedarf.de"
+                },
+                {
+                    "domain": "outdooraccess-scotland.scot"
+                },
+                {
+                    "domain": "kerknet.be"
+                },
+                {
                     "domain": "marvel.com"
                 },
                 {
@@ -722,7 +737,7 @@
                     "state": "disabled"
                 }
             },
-            "hash": "cbba75ec6e776459b66ac164807d00c6"
+            "hash": "6a5ef71f3f72a3795c4e020031d6cf4c"
         },
         "autofillBreakageReporter": {
             "state": "disabled",
@@ -765,9 +780,36 @@
                 },
                 "partialFormSaves": {
                     "state": "enabled"
+                },
+                "siteSpecificFixes": {
+                    "state": "enabled",
+                    "settings": {
+                        "domains": [
+                            {
+                                "domain": [
+                                    "zendesk.com",
+                                    "localhost"
+                                ],
+                                "patchSettings": [
+                                    {
+                                        "path": "",
+                                        "op": "add",
+                                        "value": {
+                                            "inputTypeSettings": [
+                                                {
+                                                    "selector": "#\\:r0\\:\\-\\-input",
+                                                    "type": "credentials.username"
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            }
+                        ]
+                    }
                 }
             },
-            "hash": "49fa3fee320aa10b90ba364f22d98285"
+            "hash": "617ed6673c95aba720b437bea43eebae"
         },
         "backgroundAgentPixelTest": {
             "state": "enabled",
@@ -1821,6 +1863,10 @@
                         "reason": "https://github.com/duckduckgo/privacy-configuration/pull/2825"
                     },
                     {
+                        "domain": "mercari.jp",
+                        "reason": "https://github.com/duckduckgo/privacy-configuration/pull/2825"
+                    },
+                    {
                         "domain": "ichard26.github.io",
                         "reason": "Next PR fetch errors on DDG user agent"
                     },
@@ -1850,7 +1896,7 @@
             },
             "exceptions": [],
             "state": "enabled",
-            "hash": "ef29ed52e9896f118352089f99074d4a"
+            "hash": "663bc161529b959e8f74047818899fb5"
         },
         "dbp": {
             "state": "enabled",
@@ -1881,6 +1927,11 @@
             "hash": "64fad9d9443db37003211559f9433b2a"
         },
         "defaultBrowserPrompts": {
+            "state": "disabled",
+            "exceptions": [],
+            "hash": "c292bb627849854515cebbded288ef5a"
+        },
+        "downloadManager": {
             "state": "disabled",
             "exceptions": [],
             "hash": "c292bb627849854515cebbded288ef5a"
@@ -6251,6 +6302,9 @@
                     "domain": "flyfrontier.com"
                 },
                 {
+                    "domain": "gladiatorgarageworks.com"
+                },
+                {
                     "domain": "marvel.com"
                 },
                 {
@@ -6272,7 +6326,7 @@
                     "privacy-test-pages.site"
                 ]
             },
-            "hash": "59b838baac04ac0efabc4e0b031881c0"
+            "hash": "08ccc28c266fd21b8f14844800bf483c"
         },
         "harmfulApis": {
             "settings": {
@@ -6719,19 +6773,13 @@
         },
         "privacyDashboard": {
             "exceptions": [],
+            "state": "enabled",
             "features": {
-                "highlightedProtectionsToggle": {
-                    "state": "disabled",
-                    "rollout": {
-                        "steps": []
-                    }
-                },
                 "toggleReports": {
                     "state": "enabled"
                 }
             },
-            "state": "enabled",
-            "hash": "66968d9b69520975185476473cc11824"
+            "hash": "20851a0edb2117dfb923b40fa9e79856"
         },
         "privacyPro": {
             "state": "enabled",
@@ -7020,11 +7068,14 @@
                 },
                 "seamlessAccountSwitching": {
                     "state": "enabled"
+                },
+                "exchangeKeysToSyncWithAnotherDevice": {
+                    "state": "enabled"
                 }
             },
             "exceptions": [],
             "minSupportedVersion": "1.70.0",
-            "hash": "1821acf9b76ace30c2a3fca9f620e496"
+            "hash": "003c4c59d4fb6697038dc43f2ec718b3"
         },
         "tabManager": {
             "exceptions": [],
@@ -7105,7 +7156,7 @@
                     "acdn.no": {
                         "rules": [
                             {
-                                "rule": "acdn.no/pkg/@amedia/browserid/.*/index.js",
+                                "rule": "acdn.no/pkg/@amedia/browserid/",
                                 "domains": [
                                     "<all>"
                                 ]
@@ -7380,6 +7431,22 @@
                                 "domains": [
                                     "oceanofcompressed.xyz"
                                 ]
+                            },
+                            {
+                                "rule": "aax.amazon-adsystem.com/e/dtb/bid",
+                                "domains": [
+                                    "cleveland.com"
+                                ]
+                            }
+                        ]
+                    },
+                    "amazon.dev": {
+                        "rules": [
+                            {
+                                "rule": "apx.amazon.dev",
+                                "domains": [
+                                    "amazon.se"
+                                ]
                             }
                         ]
                     },
@@ -7436,6 +7503,16 @@
                                 "rule": "tag.aticdn.net",
                                 "domains": [
                                     "<all>"
+                                ]
+                            }
+                        ]
+                    },
+                    "atlassian.com": {
+                        "rules": [
+                            {
+                                "rule": "jsd-widget.atlassian.com/assets/iframe.js",
+                                "domains": [
+                                    "brewser.beer"
                                 ]
                             }
                         ]
@@ -8574,6 +8651,16 @@
                             }
                         ]
                     },
+                    "fundraiseup.com": {
+                        "rules": [
+                            {
+                                "rule": "fundraiseup.com",
+                                "domains": [
+                                    "<all>"
+                                ]
+                            }
+                        ]
+                    },
                     "fwmrm.net": {
                         "rules": [
                             {
@@ -9071,6 +9158,16 @@
                                 "rule": "cdn.heapanalytics.com",
                                 "domains": [
                                     "mejuri.com"
+                                ]
+                            }
+                        ]
+                    },
+                    "hsappstatic.net": {
+                        "rules": [
+                            {
+                                "rule": "hsappstatic.net",
+                                "domains": [
+                                    "<all>"
                                 ]
                             }
                         ]
@@ -9583,6 +9680,16 @@
                             }
                         ]
                     },
+                    "nfcube.com": {
+                        "rules": [
+                            {
+                                "rule": "nfcube.com",
+                                "domains": [
+                                    "<all>"
+                                ]
+                            }
+                        ]
+                    },
                     "nintendo.com": {
                         "rules": [
                             {
@@ -9829,6 +9936,16 @@
                                 "rule": "edge.permutive.app",
                                 "domains": [
                                     "globaltv.com"
+                                ]
+                            }
+                        ]
+                    },
+                    "plausible.io": {
+                        "rules": [
+                            {
+                                "rule": "plausible.io",
+                                "domains": [
+                                    "<all>"
                                 ]
                             }
                         ]
@@ -10358,6 +10475,16 @@
                             }
                         ]
                     },
+                    "stripe.com": {
+                        "rules": [
+                            {
+                                "rule": "js.stripe.com/basil/stripe.js",
+                                "domains": [
+                                    "<all>"
+                                ]
+                            }
+                        ]
+                    },
                     "stripe.network": {
                         "rules": [
                             {
@@ -10609,6 +10736,16 @@
                             }
                         ]
                     },
+                    "unbxdapi.com": {
+                        "rules": [
+                            {
+                                "rule": "libraries.unbxdapi.com/",
+                                "domains": [
+                                    "boscovs.com"
+                                ]
+                            }
+                        ]
+                    },
                     "usabilla.com": {
                         "rules": [
                             {
@@ -10619,6 +10756,16 @@
                             },
                             {
                                 "rule": "w.usabilla.com",
+                                "domains": [
+                                    "<all>"
+                                ]
+                            }
+                        ]
+                    },
+                    "usefathom.com": {
+                        "rules": [
+                            {
+                                "rule": "usefathom.com",
                                 "domains": [
                                     "<all>"
                                 ]
@@ -10782,6 +10929,16 @@
                             }
                         ]
                     },
+                    "yieldlove.com": {
+                        "rules": [
+                            {
+                                "rule": "cdn-a.yieldlove.com/v2/yieldlove.js",
+                                "domains": [
+                                    "whatismyip.com"
+                                ]
+                            }
+                        ]
+                    },
                     "yotpo.com": {
                         "rules": [
                             {
@@ -10926,7 +11083,7 @@
                     "domain": "flexmls.com"
                 }
             ],
-            "hash": "46961586fad0c38ae323cafb3c53c28b"
+            "hash": "e5f8336c548cf4f8f47054f19d0523be"
         },
         "trackingCookies1p": {
             "settings": {

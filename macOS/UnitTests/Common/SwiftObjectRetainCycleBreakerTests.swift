@@ -119,7 +119,6 @@ final class SwiftObjectRetainCycleBreakerTests {
         #expect(!aDeallocated)
     }
 
-
     @Test("Field not found should not crash or affect unrelated state")
     func missingFieldName() {
         class A: NSObject {

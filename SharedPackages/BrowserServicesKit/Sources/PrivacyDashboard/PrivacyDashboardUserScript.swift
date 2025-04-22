@@ -423,11 +423,3 @@ final class PrivacyDashboardUserScript: NSObject, StaticUserScript {
     }
 
 }
-
-extension Data {
-
-    func utf8String() -> String? {
-        String(data: self, encoding: .utf8)
-    }
-
-}

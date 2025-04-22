@@ -172,8 +172,6 @@ struct DataImportViewModel {
         self.reportSenderFactory = reportSenderFactory
         self.onFinished = onFinished
         self.onCancelled = onCancelled
-
-        PixelExperiment.fireOnboardingImportRequestedPixel()
     }
 
     /// Import button press (starts browser data import)
@@ -424,7 +422,7 @@ private func dataImporter(for source: DataImport.Source, fileDataType: DataImpor
                             primaryPassword: primaryPassword,
                             loginImporter: SecureVaultLoginImporter(loginImportState: AutofillLoginImportState()),
                             bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: LocalBookmarkManager.shared),
-                            faviconManager: FaviconManager.shared)
+                            faviconManager: NSApp.delegateTyped.faviconManager)
     case .safari, .safariTechnologyPreview:
         SafariDataImporter(profile: profile,
                            bookmarkImporter: CoreDataBookmarkImporter(bookmarkManager: LocalBookmarkManager.shared))

@@ -45,9 +45,9 @@ final class MainViewController: NSViewController {
     private var addressBarBookmarkIconVisibilityCancellable: AnyCancellable?
     private var selectedTabViewModelCancellable: AnyCancellable?
     private var selectedTabViewModelForHistoryViewOnboardingCancellable: AnyCancellable?
+    private var viewEventsCancellables = Set<AnyCancellable>()
     private var tabViewModelCancellables = Set<AnyCancellable>()
     private var bookmarksBarVisibilityChangedCancellable: AnyCancellable?
-    private var eventMonitorCancellables = Set<AnyCancellable>()
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private var bannerPromptObserver: Any?
     private var bannerDismissedCancellable: AnyCancellable?
@@ -129,7 +129,6 @@ final class MainViewController: NSViewController {
                                                                          networkProtectionPopoverManager: networkProtectionPopoverManager,
                                                                          networkProtectionStatusReporter: networkProtectionStatusReporter,
                                                                          autofillPopoverPresenter: autofillPopoverPresenter,
-                                                                         aiChatMenuConfig: aiChatMenuConfig,
                                                                          brokenSitePromptLimiter: brokenSitePromptLimiter)
 
         browserTabViewController = BrowserTabViewController(tabCollectionViewModel: tabCollectionViewModel, bookmarkManager: bookmarkManager)
@@ -160,15 +159,37 @@ final class MainViewController: NSViewController {
         subscribeToMouseTrackingArea()
         subscribeToSelectedTabViewModel()
         subscribeToBookmarkBarVisibility()
-        subscribeToFirstResponder()
         subscribeToSetAsDefaultAndAddToDockPromptsNotifications()
         mainView.findInPageContainerView.applyDropShadow()
 
         view.registerForDraggedTypes([.URL, .fileURL])
     }
 
+    override func viewWillAppear() {
+        subscribeToFirstResponder()
+
+        if isInPopUpWindow {
+            tabBarViewController.view.isHidden = true
+            mainView.tabBarContainerView.isHidden = true
+            mainView.navigationBarTopConstraint.constant = 0.0
+            resizeNavigationBar(isHomePage: false, animated: false)
+
+            updateBookmarksBarViewVisibility(visible: false)
+        } else {
+            mainView.navigationBarContainerView.wantsLayer = true
+            mainView.navigationBarContainerView.layer?.masksToBounds = false
+
+            if tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab {
+                resizeNavigationBar(isHomePage: true, animated: lastTabContent != .newtab)
+            } else {
+                resizeNavigationBar(isHomePage: false, animated: false)
+            }
+        }
+
+        updateDividerColor(isShowingHomePage: tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab)
+    }
+
     override func viewDidAppear() {
-        super.viewDidAppear()
         mainView.setMouseAboveWebViewTrackingAreaEnabled(true)
         registerForBookmarkBarPromptNotifications()
 
@@ -193,29 +214,6 @@ final class MainViewController: NSViewController {
         if let bookmarkBarPromptObserver {
             NotificationCenter.default.removeObserver(bookmarkBarPromptObserver)
         }
-    }
-
-    override func viewWillAppear() {
-        if isInPopUpWindow {
-            tabBarViewController.view.isHidden = true
-            mainView.tabBarContainerView.isHidden = true
-            mainView.navigationBarTopConstraint.constant = 0.0
-            resizeNavigationBar(isHomePage: false, animated: false)
-
-            updateBookmarksBarViewVisibility(visible: false)
-        } else {
-            mainView.navigationBarContainerView.wantsLayer = true
-            mainView.navigationBarContainerView.layer?.masksToBounds = false
-
-            if tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab {
-                resizeNavigationBar(isHomePage: true, animated: lastTabContent != .newtab)
-            } else {
-                resizeNavigationBar(isHomePage: false, animated: false)
-            }
-        }
-
-        updateDividerColor(isShowingHomePage: tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab)
-
     }
 
     override func viewDidLayout() {
@@ -255,8 +253,7 @@ final class MainViewController: NSViewController {
     }
 
     func windowWillClose() {
-        eventMonitorCancellables.removeAll()
-        tabBarViewController.hideTabPreview()
+        viewEventsCancellables.removeAll()
     }
 
     func windowWillMiniaturize() {
@@ -268,11 +265,11 @@ final class MainViewController: NSViewController {
     }
 
     func disableTabPreviews() {
-        tabBarViewController.shouldDisplayTabPreviews = false
+        tabBarViewController.tabPreviewsEnabled = false
     }
 
     func enableTabPreviews() {
-        tabBarViewController.shouldDisplayTabPreviews = true
+        tabBarViewController.tabPreviewsEnabled = true
     }
 
     func toggleBookmarksBarVisibility() {
@@ -398,13 +395,20 @@ final class MainViewController: NSViewController {
     }
 
     private func subscribeToFirstResponder() {
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(firstReponderDidChange(_:)),
-                                               name: .firstResponder,
-                                               object: nil)
+        guard let window = view.window else {
+            assertionFailure("MainViewController.subscribeToFirstResponder: view.window is nil")
+            return
+        }
 
+        NotificationCenter.default
+            .publisher(for: MainWindow.firstResponderDidChangeNotification, object: window)
+            .sink { [weak self] in
+                self?.firstResponderDidChange($0)
+            }
+            .store(in: &viewEventsCancellables)
     }
-    @objc private func firstReponderDidChange(_ notification: Notification) {
+
+    private func firstResponderDidChange(_ notification: Notification) {
         // when window first responder is reset (to the window): activate Tab Content View
         if view.window?.firstResponder === view.window {
             browserTabViewController.adjustFirstResponder()
@@ -593,29 +597,35 @@ extension MainViewController {
         NSEvent.addLocalCancellableMonitor(forEventsMatching: .keyDown) { [weak self] event in
             guard let self else { return event }
             return self.customKeyDown(with: event) ? nil : event
-        }.store(in: &eventMonitorCancellables)
+        }.store(in: &viewEventsCancellables)
         NSEvent.addLocalCancellableMonitor(forEventsMatching: .otherMouseUp) { [weak self] event in
             guard let self else { return event }
             return self.otherMouseUp(with: event)
-        }.store(in: &eventMonitorCancellables)
+        }.store(in: &viewEventsCancellables)
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     func customKeyDown(with event: NSEvent) -> Bool {
         guard let locWindow = self.view.window,
               NSApplication.shared.keyWindow === locWindow else { return false }
 
-        let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
-            .subtracting(.capsLock)
+        let flags = event.modifierFlags.intersection(.deviceIndependentFlagsMask).subtracting(.capsLock)
+        let key = event.charactersIgnoringModifiers?.lowercased() ?? ""
+        let isWebViewFocused = view.window?.firstResponder is WebView
 
-        switch Int(event.keyCode) {
-        case kVK_Return  where navigationBarViewController.addressBarViewController?
-                .addressBarTextField.isFirstResponder == true:
-
-            navigationBarViewController.addressBarViewController?.addressBarTextField.addressBarEnterPressed()
-
+        // Handle Enter
+        if event.keyCode == kVK_Return,
+           navigationBarViewController.addressBarViewController?.addressBarTextField.isFirstResponder == true {
+            if flags.contains(.shift) && aiChatMenuConfig.shouldDisplayAddressBarShortcut {
+                navigationBarViewController.addressBarViewController?.addressBarTextField.aiChatQueryEnterPressed()
+            } else {
+                navigationBarViewController.addressBarViewController?.addressBarTextField.addressBarEnterPressed()
+            }
             return true
+        }
 
-        case kVK_Escape:
+        // Handle Escape
+        if event.keyCode == kVK_Escape {
             var isHandled = false
             if !mainView.findInPageContainerView.isHidden {
                 findInPageViewController.findInPageDone(self)
@@ -625,54 +635,68 @@ extension MainViewController {
                 isHandled = isHandled || addressBarVC.escapeKeyDown()
             }
             return isHandled
+        }
 
-        // Handle critical Main Menu actions before WebView
-        case kVK_ANSI_1, kVK_ANSI_2, kVK_ANSI_3, kVK_ANSI_4, kVK_ANSI_5, kVK_ANSI_6,
-             kVK_ANSI_7, kVK_ANSI_8, kVK_ANSI_9,
-             kVK_ANSI_Keypad1, kVK_ANSI_Keypad2, kVK_ANSI_Keypad3, kVK_ANSI_Keypad4,
-             kVK_ANSI_Keypad5, kVK_ANSI_Keypad6, kVK_ANSI_Keypad7, kVK_ANSI_Keypad8,
-             kVK_ANSI_Keypad9:
-            guard flags == .command else { return false }
-            fallthrough
-        case kVK_Tab where [[.control], [.control, .shift]].contains(flags),
-             kVK_ANSI_N where flags == .command,
-             kVK_ANSI_W where flags.contains(.command),
-             kVK_ANSI_T where [[.command], [.command, .shift]].contains(flags),
-             kVK_ANSI_Q where flags == .command,
-             kVK_ANSI_R where flags == .command:
-            guard view.window?.firstResponder is WebView else { return false }
-            NSApp.menu?.performKeyEquivalent(with: event)
-            return true
-
-        case kVK_ANSI_Y where flags == .command:
-            if NSApp.delegateTyped.featureFlagger.isFeatureOn(.historyView) {
-                return false
+        // Handle tab switching (CMD+1 through CMD+9)
+        if [.command, [.command, .numericPad]].contains(flags), "123456789".contains(key) {
+            if isWebViewFocused {
+                NSApp.menu?.performKeyEquivalent(with: event)
+                return true
             }
-            (NSApp.mainMenuTyped.historyMenu.accessibilityParent() as? NSMenuItem)?.accessibilityPerformPress()
-            return true
-
-        default:
             return false
         }
+
+        // Handle browser tab/window actions
+        if isWebViewFocused {
+            switch (key, flags, flags.contains(.command)) {
+            case ("n", [.command], _),
+                 ("t", [.command], _), ("t", [.command, .shift], _),
+                 ("w", _, true),
+                 ("q", [.command], _),
+                 ("r", [.command], _):
+                NSApp.menu?.performKeyEquivalent(with: event)
+                return true
+
+            case ("\t", [.control], _),
+                 ("\t", [.control, .shift], _):
+                NSApp.menu?.performKeyEquivalent(with: event)
+                return true
+
+            default:
+                break
+            }
+        }
+
+        // Handle CMD+Y (history view)
+        if key == "y", flags == .command {
+            if !NSApp.delegateTyped.featureFlagger.isFeatureOn(.historyView) {
+                (NSApp.mainMenuTyped.historyMenu.accessibilityParent() as? NSMenuItem)?.accessibilityPerformPress()
+                return true
+            }
+            return false
+        }
+
+        return false
     }
 
     func otherMouseUp(with event: NSEvent) -> NSEvent? {
         guard event.window === self.view.window,
-              mainView.webContainerView.isMouseLocationInsideBounds(event.locationInWindow)
+              mainView.webContainerView.isMouseLocationInsideBounds(event.locationInWindow),
+              let selectedTabViewModel = tabCollectionViewModel.selectedTabViewModel
         else { return event }
 
-        if event.buttonNumber == 3,
-           tabCollectionViewModel.selectedTabViewModel?.canGoBack == true {
-            tabCollectionViewModel.selectedTabViewModel?.tab.goBack()
+        switch event.button {
+        case .back:
+            guard selectedTabViewModel.canGoBack else { return nil }
+            selectedTabViewModel.tab.goBack()
             return nil
-        } else if event.buttonNumber == 4,
-                  tabCollectionViewModel.selectedTabViewModel?.canGoForward == true {
-            tabCollectionViewModel.selectedTabViewModel?.tab.goForward()
+        case .forward:
+            guard selectedTabViewModel.canGoForward else { return nil }
+            selectedTabViewModel.tab.goForward()
             return nil
+        default:
+            return event
         }
-
-        return event
-
     }
 }
 

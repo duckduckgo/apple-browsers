@@ -54,7 +54,7 @@ class BookmarksEditModelPerformanceTests: XCTestCase {
         
         measure {
             let time = CACurrentMediaTime()
-            let e = BookmarkEditorViewModel(creatingFolderWithParentID: nil, bookmarksDatabase: db)
+            let e = BookmarkEditorViewModel(creatingFolderWithParentID: nil, bookmarksDatabase: db, favoritesDisplayMode: .displayNative(.mobile), errorEvents: nil)
             print("==============================")
             print("Completed in \(CACurrentMediaTime() - time)")
         }

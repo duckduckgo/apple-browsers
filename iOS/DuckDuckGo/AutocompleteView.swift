@@ -249,7 +249,7 @@ private struct SuggestionView: View {
                                    title: title ?? "",
                                    subtitle: url.formattedForSuggestion())
 
-            case .openTab(title: let title, url: let url, _):
+            case .openTab(title: let title, url: let url, _, _):
                 SuggestionListItem(icon: Image("OpenTab-24"),
                                    title: title,
                                    subtitle: "\(UserText.autocompleteSwitchToTab) · \(url.formattedForSuggestion())")

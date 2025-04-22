@@ -47,20 +47,20 @@ final class DBPEndToEndTests: XCTestCase {
         communicationLayer = DBPUICommunicationLayer(webURLSettings:
                                                         DataBrokerProtectionWebUIURLSettings(UserDefaults.standard),
                                                      privacyConfig: PrivacyConfigurationManagingMock())
-        communicationLayer.delegate = pirProtectionManager.dataManager.cache
+        communicationLayer.delegate = pirProtectionManager.dataManager!.communicator
 
-        communicationDelegate = pirProtectionManager.dataManager.cache
+        communicationDelegate = pirProtectionManager.dataManager!.communicator
 
         viewModel = DBPUIViewModel(dataManager: pirProtectionManager.dataManager, agentInterface: pirProtectionManager.loginItemInterface, webUISettings: DataBrokerProtectionWebUIURLSettings(UserDefaults.standard), pixelHandler: DataBrokerProtectionSharedPixelsHandler(pixelKit: PixelKit.shared!, platform: .macOS))
 
-        pirProtectionManager.dataManager.cache.scanDelegate = viewModel
+        pirProtectionManager.dataManager!.communicator.scanDelegate = viewModel
 
-        let database = pirProtectionManager.dataManager.database
+        let database = pirProtectionManager.dataManager!.database
         try database.deleteProfileData()
     }
 
     override func tearDown() async throws {
-        try pirProtectionManager.dataManager.database.deleteProfileData()
+        try pirProtectionManager.dataManager!.database.deleteProfileData()
         loginItemsManager.disableLoginItems([LoginItem.dbpBackgroundAgent])
     }
 
@@ -97,8 +97,8 @@ final class DBPEndToEndTests: XCTestCase {
 
         // Local state set up
         let dataManager = pirProtectionManager.dataManager
-        let database = dataManager.database
-        let cache = pirProtectionManager.dataManager.cache
+        let database = dataManager!.database
+        let communicator = pirProtectionManager.dataManager!.communicator
         try database.deleteProfileData()
         XCTAssert(try database.fetchAllBrokerProfileQueryData().isEmpty)
 
@@ -113,7 +113,7 @@ final class DBPEndToEndTests: XCTestCase {
         /*
          1/ We save a profile
          */
-        cache.profile = mockProfile
+        communicator.profile = mockProfile
         Task { @MainActor in
             _ = try await communicationLayer.saveProfile(params: [], original: WKScriptMessage())
         }
@@ -169,7 +169,7 @@ final class DBPEndToEndTests: XCTestCase {
         await awaitFulfillment(of: schedulerStartsExpectation,
                                withTimeout: 100,
                                whenCondition: {
-            try! self.pirProtectionManager.dataManager.prepareBrokerProfileQueryDataCache()
+            try! self.pirProtectionManager.dataManager!.prepareBrokerProfileQueryDataCache()
             return await self.communicationDelegate.getBackgroundAgentMetadata().lastStartedSchedulerOperationTimestamp != nil
         })
 

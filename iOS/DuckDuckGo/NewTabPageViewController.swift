@@ -243,6 +243,8 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
 
     func onboardingCompleted() {
         presentNextDaxDialog()
+        // Show Keyboard when showing the first Dax tip
+        chromeDelegate?.omniBar.beginEditing()
     }
 
     func reloadFavorites() {
@@ -311,7 +313,14 @@ extension NewTabPageViewController {
                 self.launchNewSearch()
             }
         }
-        let daxDialogView = AnyView(factory.createDaxDialog(for: spec, onDismiss: onDismiss))
+
+        let onManualDismiss: () -> Void = { [weak self] in
+            self?.dismissHostingController(didFinishNTPOnboarding: true)
+            // Show keyboard when manually dismiss the Dax tips.
+            self?.chromeDelegate?.omniBar.beginEditing()
+        }
+
+        let daxDialogView = AnyView(factory.createDaxDialog(for: spec, onCompletion: onDismiss, onManualDismiss: onManualDismiss))
         let hostingController = UIHostingController(rootView: daxDialogView)
         self.hostingController = hostingController
 

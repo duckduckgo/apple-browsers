@@ -46,6 +46,8 @@ public struct ContextualDaxDialogContent: View {
 
     private let itemsToAnimate: [DisplayableTypes]
 
+    var skipAnimations: Binding<Bool>
+
     public init(
         orientation: Orientation = .verticalStack,
         title: String? = nil,
@@ -55,7 +57,8 @@ public struct ContextualDaxDialogContent: View {
         list: [ContextualOnboardingListItem] = [],
         listAction: ((_: ContextualOnboardingListItem) -> Void)? = nil,
         customView: AnyView? = nil,
-        customActionView: AnyView? = nil
+        customActionView: AnyView? = nil,
+        skipAnimations: Binding<Bool> = .constant(false)
     ) {
         self.title = title
         self.titleFont = titleFont
@@ -66,6 +69,7 @@ public struct ContextualDaxDialogContent: View {
         self.customView = customView
         self.customActionView = customActionView
         self.orientation = orientation
+        self.skipAnimations = skipAnimations
 
         var itemsToAnimate: [DisplayableTypes] = []
         if title != nil {
@@ -134,8 +138,8 @@ public struct ContextualDaxDialogContent: View {
     @ViewBuilder
     private var titleView: some View {
         if let title {
-            let animatingText = AnimatableTypingText(title, startAnimating: $startTypingTitle, onTypingFinished: {
-                startTypingMessage = true
+            let animatingText = AnimatableTypingText(title, startAnimating: $startTypingTitle, skipAnimation: skipAnimations, onTypingFinished: {
+                self.startTypingMessage = true
             })
 
             if let titleFont {
@@ -148,7 +152,7 @@ public struct ContextualDaxDialogContent: View {
 
     @ViewBuilder
     private var messageView: some View {
-        let animatingText = AnimatableTypingText(message, startAnimating: $startTypingMessage, onTypingFinished: {
+        let animatingText = AnimatableTypingText(message, startAnimating: $startTypingMessage, skipAnimation: skipAnimations, onTypingFinished: {
             animateNonTypingItems()
         })
         if let messageFont {
@@ -200,7 +204,20 @@ struct NonTypingAnimatableItems: OptionSet {
 
 extension ContextualDaxDialogContent {
 
+    private func completeAnimations() {
+        // Immediately set all states to their final values
+        skipAnimations.wrappedValue = true
+        startTypingTitle = false
+        startTypingMessage = false
+        nonTypingAnimatableItems = [.list, .customView, .button]
+    }
+
     private func startAnimating() {
+        if skipAnimations.wrappedValue {
+            completeAnimations()
+            return
+        }
+
         if itemsToAnimate.contains(.title) {
             startTypingTitle = true
         } else if itemsToAnimate.contains(.message) {
@@ -209,6 +226,11 @@ extension ContextualDaxDialogContent {
     }
 
     private func animateNonTypingItems() {
+        if skipAnimations.wrappedValue {
+            completeAnimations()
+            return
+        }
+
         // Remove typing items and animate sequentially non typing items
         let nonTypingItems = itemsToAnimate.filter { $0 != .title && $0 != .message }
 

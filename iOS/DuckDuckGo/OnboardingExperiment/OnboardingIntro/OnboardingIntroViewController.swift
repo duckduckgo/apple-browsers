@@ -46,4 +46,10 @@ final class OnboardingIntroViewController: UIHostingController<OnboardingView>, 
     override var preferredInterfaceOrientationForPresentation: UIInterfaceOrientation {
         return .portrait
     }
+
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesBegan(touches, with: event)
+        viewModel.tapped()
+    }
+
 }

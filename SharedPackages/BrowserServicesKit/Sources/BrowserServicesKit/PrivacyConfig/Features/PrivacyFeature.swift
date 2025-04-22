@@ -153,12 +153,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
         .aiChat
     }
 
-    /// Displays the settings item for showing a shortcut in the macOS application menu.
-    case applicationMenuShortcut
-
-    /// Displays the settings item for showing a shortcut in the macOS toolbar.
-    case toolbarShortcut
-
     /// Displays the AI Chat icon in the iOS browsing menu toolbar.
     case browsingToolbarShortcut
 
@@ -230,6 +224,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case setAccessTokenCookieForSubscriptionDomains
     case privacyProFreeTrialJan25
     case privacyProOnboardingCTAMarch25
+    case privacyProAuthV2
 }
 
 public enum SslCertificatesSubfeature: String, PrivacySubfeature {
@@ -244,6 +239,7 @@ public enum DuckPlayerSubfeature: String, PrivacySubfeature {
     case openInNewTab
     case customError
     case enableDuckPlayer // iOS DuckPlayer rollout feature
+    case nativeUI // Use Duckplayer's native UI
 }
 
 public enum SyncPromotionSubfeature: String, PrivacySubfeature {

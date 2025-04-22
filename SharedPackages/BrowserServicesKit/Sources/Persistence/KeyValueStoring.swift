@@ -19,11 +19,22 @@
 import Foundation
 
 /// Key-value store compatible with base UserDefaults API
+/// - Important: Use this for non-critical data that is easily recoverable if lost due to access issues.
 public protocol KeyValueStoring {
 
     func object(forKey defaultName: String) -> Any?
     func set(_ value: Any?, forKey defaultName: String)
     func removeObject(forKey defaultName: String)
+
+}
+
+/// Key-value store that throws an error in case of an issue.
+/// Use this for scenarios that reliability is a must.
+public protocol ThrowingKeyValueStoring {
+
+    func object(forKey defaultName: String) throws -> Any?
+    func set(_ value: Any?, forKey defaultName: String) throws
+    func removeObject(forKey defaultName: String) throws
 
 }
 

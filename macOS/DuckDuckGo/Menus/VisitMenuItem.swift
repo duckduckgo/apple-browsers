@@ -21,9 +21,10 @@ import History
 
 final class VisitMenuItem: NSMenuItem {
 
+    @MainActor
     convenience init(visitViewModel: VisitViewModel) {
         self.init(title: visitViewModel.titleTruncated,
-                  action: #selector(AppDelegate.openVisit(_:)),
+                  action: #selector(MainViewController.openHistoryEntryVisit(_:)),
                   keyEquivalent: "")
         image = visitViewModel.smallFaviconImage?.resizedToFaviconSize()
         // Keep the reference to visit in order to use it for burning

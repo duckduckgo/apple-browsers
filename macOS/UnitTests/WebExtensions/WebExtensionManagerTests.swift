@@ -16,12 +16,14 @@
 //  limitations under the License.
 //
 
+#if WEB_EXTENSIONS_ENABLED
+
 import XCTest
 import Combine
 import BrowserServicesKit
 @testable import DuckDuckGo_Privacy_Browser
 
-@available(macOS 15.3, *)
+@available(macOS 15.4, *)
 final class WebExtensionManagerTests: XCTestCase {
 
     var pathsCachingMock: WebExtensionPathsCachingMock!
@@ -79,7 +81,7 @@ final class WebExtensionManagerTests: XCTestCase {
         let paths = ["/path/to/extension1", "/path/to/extension2"]
         pathsCachingMock.cache = paths
 
-        let webExtensionManager = WebExtensionManager(
+        _ = WebExtensionManager(
             webExtensionPathsCache: pathsCachingMock,
             webExtensionLoader: webExtensionLoadingMock,
             internalUserDecider: featureFlaggerMock.internalUserDecider,
@@ -150,3 +152,5 @@ final class WebExtensionManagerTests: XCTestCase {
         XCTAssertTrue(webExtensionManager.extensions.isEmpty)
     }
 }
+
+#endif

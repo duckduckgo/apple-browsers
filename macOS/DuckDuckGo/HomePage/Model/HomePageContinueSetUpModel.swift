@@ -269,7 +269,7 @@ extension HomePage.Models {
 #if DEBUG
             settings.isFirstSession = false
 #endif
-            if OnboardingViewModel.isOnboardingFinished {
+            if OnboardingActionsManager.isOnboardingFinished {
                 settings.isFirstSession = false
             }
         }

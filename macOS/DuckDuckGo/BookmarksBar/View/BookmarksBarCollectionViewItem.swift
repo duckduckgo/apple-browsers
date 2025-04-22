@@ -121,7 +121,7 @@ final class BookmarksBarCollectionViewItem: NSCollectionViewItem {
         switch entityType {
         case .bookmark(_, let url, let storedFavicon, _):
             let host = URL(string: url)?.host ?? ""
-            let favicon = storedFavicon ?? FaviconManager.shared.getCachedFavicon(for: host, sizeCategory: .small)?.image
+            let favicon = storedFavicon ?? NSApp.delegateTyped.faviconManager.getCachedFavicon(for: host, sizeCategory: .small)?.image
             faviconView.image = favicon ?? .bookmark
         case .folder:
             faviconView.image = .folder16
@@ -130,6 +130,10 @@ final class BookmarksBarCollectionViewItem: NSCollectionViewItem {
         faviconView.isEnabled = !isInteractionPrevented
         titleLabel.isEnabled = !isInteractionPrevented
         titleLabel.alphaValue = isInteractionPrevented ? 0.3 : 1
+    }
+
+    @IBAction func mouseClickAction(_ sender: Any) {
+        delegate?.bookmarksBarCollectionViewItemClicked(self)
     }
 
 }
@@ -160,6 +164,12 @@ extension BookmarksBarCollectionViewItem: MouseOverViewDelegate {
     func mouseOverView(_ mouseOverView: MouseOverView, isMouseOver: Bool) {
         if isMouseOver {
             delegate?.bookmarksBarCollectionViewItemMouseDidHover(self)
+        }
+    }
+
+    func mouseClickView(_ mouseClickView: MouseClickView, otherMouseDownEvent: NSEvent) {
+        if case .middle = otherMouseDownEvent.button {
+            delegate?.bookmarksBarCollectionViewItemClicked(self)
         }
     }
 

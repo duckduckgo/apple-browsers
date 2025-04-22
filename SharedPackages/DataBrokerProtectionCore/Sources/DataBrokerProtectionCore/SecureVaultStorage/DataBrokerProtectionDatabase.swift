@@ -68,6 +68,8 @@ public protocol DataBrokerProtectionRepository {
     func fetchAllAttempts() throws -> [AttemptInformation]
     func fetchAttemptInformation(for extractedProfileId: Int64) throws -> AttemptInformation?
     func addAttempt(extractedProfileId: Int64, attemptUUID: UUID, dataBroker: String, lastStageDate: Date, startTime: Date) throws
+
+    func fetchExtractedProfile(with id: Int64) throws -> (brokerId: Int64, profileQueryId: Int64, profile: ExtractedProfile)?
 }
 
 public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository {
@@ -451,6 +453,15 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
                            startTime: startTime)
         } catch {
             handleError(error, context: "DataBrokerProtectionDatabase.addAttempt extractedProfileId attemptUUID dataBroker lastStageDate startTime")
+            throw error
+        }
+    }
+
+    public func fetchExtractedProfile(with id: Int64) throws -> (brokerId: Int64, profileQueryId: Int64, profile: ExtractedProfile)? {
+        do {
+            return try vault.fetchExtractedProfile(with: id)
+        } catch {
+            handleError(error, context: "DataBrokerProtectionDatabase.fetchExtractedProfile id")
             throw error
         }
     }

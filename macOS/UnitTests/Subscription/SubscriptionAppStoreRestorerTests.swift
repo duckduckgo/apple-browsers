@@ -211,12 +211,12 @@ final class SubscriptionAppStoreRestorerTests: XCTestCase {
         // Then
         XCTAssertEqual(uiEventsHappened, [.didPresentProgressViewController,
                                           .didDismissProgressViewController,
-                                          .didShowAlert(.somethingWentWrong)])
+                                          .didShowAlert(.subscriptionNotFound),
+                                          .didShowTab(.subscription(URL(string: "https://duckduckgo.com/subscriptions")!))])
 
         let expectedPixels = Set([PrivacyProPixel.privacyProRestorePurchaseStoreFailureOther.name + "_d",
                                   PrivacyProPixel.privacyProRestorePurchaseStoreFailureOther.name + "_c",
-                                  PrivacyProPixel.privacyProPurchaseFailure.name + "_d",
-                                  PrivacyProPixel.privacyProPurchaseFailure.name + "_c"])
+                                  PrivacyProPixel.privacyProOfferScreenImpression.name])
 
         XCTAssertTrue(expectedPixels.isSubset(of: pixelsFired))
         XCTAssertTrue(assertNoOtherPrivacyProPixelsExcept(expectedPixels), "Unexpected Privacy Pro pixels fired")

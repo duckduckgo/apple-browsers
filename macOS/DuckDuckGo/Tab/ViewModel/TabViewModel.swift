@@ -87,8 +87,8 @@ final class TabViewModel {
                 zoomLevelSubject.send(zoomLevel)
             }
 
-#if !APPSTORE
-            if #available(macOS 15.3, *) {
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+            if #available(macOS 15.4, *) {
                 WebExtensionManager.shared.eventsListener.didChangeTabProperties([.zoomFactor], for: tab)
             }
 #endif
@@ -96,7 +96,26 @@ final class TabViewModel {
     }
 
     var canPrint: Bool {
-        !isShowingErrorPage && canReload && tab.webView.canPrint
+        guard !isShowingErrorPage else { return false }
+        switch tab.content {
+        case .url(let url, _, _):
+            return !(url.isDuckPlayer || url.isDuckURLScheme) && canReload && tab.webView.canPrint
+        case .history:
+            return false
+        default:
+            return canReload && tab.webView.canPrint
+        }
+    }
+
+    var canShare: Bool {
+        switch tab.content {
+        case .url(let url, _, _):
+            return !(url.isDuckPlayer || url.isDuckURLScheme)
+        case .history:
+            return false
+        default:
+            return canReload
+        }
     }
 
     var canSaveContent: Bool {
@@ -111,7 +130,7 @@ final class TabViewModel {
         case .subscription, .identityTheftRestoration, .releaseNotes, .webExtensionUrl:
             return true
 
-        case .newtab, .settings, .bookmarks, .history, .onboardingDeprecated, .onboarding, .dataBrokerProtection, .none:
+        case .newtab, .settings, .bookmarks, .history, .onboarding, .dataBrokerProtection, .none:
             return false
         }
     }
@@ -186,7 +205,6 @@ final class TabViewModel {
                      .bookmarks,
                      .history,
                      .onboarding,
-                     .onboardingDeprecated,
                      .none,
                      .dataBrokerProtection,
                      .subscription,
@@ -349,7 +367,7 @@ final class TabViewModel {
 
     private func updateAddressBarString() {
         addressBarString = {
-            guard ![.none, .onboardingDeprecated, .newtab].contains(tab.content),
+            guard ![.none, .newtab].contains(tab.content),
                   let url = tab.content.userEditableUrl else { return "" }
 
             if url.isBlobURL {
@@ -362,7 +380,7 @@ final class TabViewModel {
     private func updatePassiveAddressBarString(showFullURL: Bool? = nil) {
         let showFullURL = showFullURL ?? appearancePreferences.showFullURL
         passiveAddressBarAttributedString = switch tab.content {
-        case .newtab, .onboardingDeprecated, .onboarding, .none:
+        case .newtab, .onboarding, .none:
                 .init() // empty
         case .settings:
                 .settingsTrustedIndicator
@@ -435,8 +453,6 @@ final class TabViewModel {
             } else {
                 title = UserText.tabHomeTitle
             }
-        case .onboardingDeprecated:
-            title = UserText.tabOnboardingTitle
         case .url, .none, .subscription, .identityTheftRestoration, .onboarding, .webExtensionUrl:
             if let tabTitle = tab.title?.trimmingWhitespace(), !tabTitle.isEmpty {
                 title = tabTitle
@@ -488,7 +504,7 @@ final class TabViewModel {
             Favicon.duckPlayer
         case .url(let url, _, _) where url.isEmailProtection:
             Favicon.emailProtection
-        case .url, .onboardingDeprecated, .onboarding, .webExtensionUrl, .none:
+        case .url, .onboarding, .webExtensionUrl, .none:
             tabFavicon ?? tab.favicon
         }
     }

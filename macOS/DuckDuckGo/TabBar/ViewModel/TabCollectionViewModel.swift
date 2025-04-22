@@ -95,8 +95,8 @@ final class TabCollectionViewModel: NSObject {
             previouslySelectedTabViewModel = oldValue
             oldValue?.tab.renderTabSnapshot()
 
-#if !APPSTORE
-            if #available(macOS 15.3, *) {
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+            if #available(macOS 15.4, *) {
                 if let oldValue {
                     WebExtensionManager.shared.eventsListener.didDeselectTabs([oldValue.tab])
                 }
@@ -358,14 +358,16 @@ final class TabCollectionViewModel: NSObject {
         }
     }
 
-    func append(tabs: [Tab]) {
+    func append(tabs: [Tab], andSelect shouldSelectLastTab: Bool) {
         guard changesEnabled else { return }
 
         tabs.forEach {
             tabCollection.append(tab: $0)
         }
-        let newSelectionIndex = tabCollection.tabs.count - 1
-        selectUnpinnedTab(at: newSelectionIndex)
+        if shouldSelectLastTab {
+            let newSelectionIndex = tabCollection.tabs.count - 1
+            selectUnpinnedTab(at: newSelectionIndex)
+        }
 
         delegate?.tabCollectionViewModelDidMultipleChanges(self)
     }

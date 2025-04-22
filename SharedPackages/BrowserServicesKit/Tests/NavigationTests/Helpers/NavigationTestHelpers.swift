@@ -1015,10 +1015,6 @@ extension Data {
         return try! PropertyListSerialization.propertyList(from: data, options: [], format: nil) as! [String: Any]
     }
 
-    func string() -> String? {
-        String(data: self, encoding: .utf8)
-    }
-
 }
 
 extension [String: Any] {

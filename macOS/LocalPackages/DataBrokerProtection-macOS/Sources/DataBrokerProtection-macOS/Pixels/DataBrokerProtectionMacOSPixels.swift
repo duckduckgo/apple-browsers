@@ -25,6 +25,10 @@ import DataBrokerProtectionCore
 
 public enum DataBrokerProtectionMacOSPixels {
 
+    // Initialisation failure errors
+    case mainAppSetUpFailedSecureVaultInitFailed(error: Error?)
+    case backgroundAgentSetUpFailedSecureVaultInitFailed(error: Error?)
+
     // Backgrond Agent events
     case backgroundAgentStarted
     case backgroundAgentStartedStoppingDueToAnotherInstanceRunning
@@ -76,6 +80,9 @@ public enum DataBrokerProtectionMacOSPixels {
 extension DataBrokerProtectionMacOSPixels: PixelKitEvent {
     public var name: String {
         switch self {
+
+        case .mainAppSetUpFailedSecureVaultInitFailed: return "m_mac_dbp_main-app_set-up-failed_secure-vault-init-failed"
+        case .backgroundAgentSetUpFailedSecureVaultInitFailed: return "m_mac_dbp_background-agent_set-up-failed_secure-vault-init-failed"
 
         case .backgroundAgentStarted: return "m_mac_dbp_background-agent_started"
         case .backgroundAgentStartedStoppingDueToAnotherInstanceRunning: return "m_mac_dbp_background-agent_started_stopping-due-to-another-instance-running"
@@ -145,7 +152,10 @@ extension DataBrokerProtectionMacOSPixels: PixelKitEvent {
             return [DataBrokerProtectionSharedPixels.Consts.environmentKey: environment]
         case .webUILoadingFailed(let error):
             return [DataBrokerProtectionSharedPixels.Consts.errorCategoryKey: error]
-        case .backgroundAgentStarted,
+        case .mainAppSetUpFailedSecureVaultInitFailed,
+                .backgroundAgentSetUpFailedSecureVaultInitFailed,
+
+                .backgroundAgentStarted,
                 .backgroundAgentStartedStoppingDueToAnotherInstanceRunning,
                 .dataBrokerProtectionNotificationSentFirstScanComplete,
                 .dataBrokerProtectionNotificationOpenedFirstScanComplete,
@@ -188,7 +198,10 @@ public class DataBrokerProtectionMacOSPixelsHandler: EventMapping<DataBrokerProt
     public init() {
         super.init { event, _, _, _ in
             switch event {
-            case .ipcServerProfileSavedXPCError(error: let error),
+            case .mainAppSetUpFailedSecureVaultInitFailed(error: let error),
+                    .backgroundAgentSetUpFailedSecureVaultInitFailed(error: let error),
+
+                    .ipcServerProfileSavedXPCError(error: let error),
                     .ipcServerImmediateScansFinishedWithError(error: let error),
                     .ipcServerAppLaunchedXPCError(error: let error),
                     .ipcServerAppLaunchedScheduledScansFinishedWithError(error: let error):

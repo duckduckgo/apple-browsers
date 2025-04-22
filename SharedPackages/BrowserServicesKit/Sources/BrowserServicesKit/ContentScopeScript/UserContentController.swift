@@ -94,7 +94,7 @@ final public class UserContentController: WKUserContentController {
     @MainActor
     private func installContentBlockingAssets(_ contentBlockingAssets: ContentBlockingAssets) {
         // don‘t install ContentBlockingAssets (especially Message Handlers retaining `self`) after cleanUpBeforeClosing was called
-        guard assetsPublisherCancellable != nil else { return }
+        guard assetsPublisherCancellables != nil else { return }
         // installation should happen in `contentBlockingAssets.willSet`
         // so the $contentBlockingAssets subscribers receive an update only after everything is set
         self.contentBlockingAssets = contentBlockingAssets
@@ -111,7 +111,7 @@ final public class UserContentController: WKUserContentController {
     @MainActor
     private var contentRuleLists = [ContentRuleListIdentifier: WKContentRuleList]()
     @MainActor
-    private var assetsPublisherCancellable: AnyCancellable?
+    private var assetsPublisherCancellables: Set<AnyCancellable>?
     @MainActor
     private let scriptMessageHandler = PermanentScriptMessageHandler()
 
@@ -125,15 +125,22 @@ final public class UserContentController: WKUserContentController {
 
         // Install initial WKScriptMessageHandlers if any. Currently, no WKUserScript are provided at initialization.
         installUserScripts([], handlers: earlyAccessHandlers)
-
-        assetsPublisherCancellable = assetsPublisher.sink { [weak self, selfDescr=self.debugDescription] content in
-            Logger.contentBlocking.debug("\(selfDescr): 📚 received content blocking assets")
-            Task.detached { [weak self] in
-                let contentBlockingAssets = await ContentBlockingAssets(content: content)
-                await self?.installContentBlockingAssets(contentBlockingAssets)
+        // 1. receive UserContentControllerNewContent from assetsPublisher
+        // 2. prepare ContentBlockingAssets(content: userContentControllerNewContent) asynchronously
+        // 3. receive the ContentBlockingAssets from contentBlockingAssetsPublisher and install
+        let contentBlockingAssetsPublisher = PassthroughSubject<ContentBlockingAssets, Never>()
+        assetsPublisherCancellables = [
+            contentBlockingAssetsPublisher.receive(on: DispatchQueue.main).sink { [weak self] contentBlockingAssets in
+                self?.installContentBlockingAssets(contentBlockingAssets)
+            },
+            assetsPublisher.sink { [selfDescr=self.debugDescription] content in
+                Logger.contentBlocking.debug("\(selfDescr): 📚 received content blocking assets")
+                Task.detached {
+                    let contentBlockingAssets = await ContentBlockingAssets(content: content)
+                    contentBlockingAssetsPublisher.send(contentBlockingAssets)
+                }
             }
-        }
-
+        ]
 #if DEBUG
         // make sure delegate for UserScripts is set shortly after init
         DispatchQueue.main.async { [weak self] in
@@ -265,7 +272,7 @@ final public class UserContentController: WKUserContentController {
         }
 
         self.scriptMessageHandler.clear()
-        self.assetsPublisherCancellable = nil
+        self.assetsPublisherCancellables = nil
 
         self.removeAllContentRuleLists()
     }

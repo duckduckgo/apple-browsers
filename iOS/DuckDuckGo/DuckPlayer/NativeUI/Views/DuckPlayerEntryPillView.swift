@@ -39,11 +39,11 @@ struct DuckPlayerEntryPillView: View {
         static let hStackSpacing: CGFloat = 10
         static let fontSize: CGFloat = 16
         static let playButtonFont: CGFloat = 16
-        static let cornerRadius: CGFloat = 12
-        static let shadowOpacity: CGFloat = 0.2
-        static let shadowRadius: CGFloat = 8
+        static let cornerRadius: CGFloat = 16
+        static let shadowOpacity: CGFloat = 0.1
+        static let shadowRadius: CGFloat = 3
         static let shadowOffset: CGSize = CGSize(width: 0, height: 4)
-        static let regularPadding: CGFloat = 16
+        static let regularPadding: CGFloat = 12
     }
 
     private var playButton: some View {
@@ -67,14 +67,15 @@ struct DuckPlayerEntryPillView: View {
                             .frame(width: Constants.iconSize, height: Constants.iconSize)
 
                         VStack(alignment: .leading) {
-                            Text(UserText.duckPlayerNativeOpenInDuckPlayer)
+                            Text(verbatim: "Play in Duck Player")
                                 .daxSubheadSemibold()
                                 .foregroundColor(Color(designSystemColor: .textPrimary))
                                 .multilineTextAlignment(.leading)
                                 .lineLimit(2)
                                 .frame(maxWidth: .infinity, alignment: .leading)
+                                .layoutPriority(1)
 
-                            Text(UserText.duckPlayerTapToWatchWithoutAds)
+                            Text(verbatim: "No targeted ads, always private")
                                 .daxFootnoteRegular()
                                 .foregroundColor(Color(designSystemColor: .textSecondary))
                                 .multilineTextAlignment(.leading)

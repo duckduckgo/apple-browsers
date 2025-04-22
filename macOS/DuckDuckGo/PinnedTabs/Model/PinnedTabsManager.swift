@@ -40,8 +40,8 @@ final class PinnedTabsManager {
         if firePixel {
             PixelKit.fire(PinnedTabsPixel.userPinnedTab, frequency: .dailyAndStandard)
         }
-#if !APPSTORE
-        if #available(macOS 15.3, *) {
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+        if #available(macOS 15.4, *) {
             WebExtensionManager.shared.eventsListener.didChangeTabProperties([.pinned], for: tab)
         }
 #endif
@@ -61,8 +61,8 @@ final class PinnedTabsManager {
         if firePixel {
             PixelKit.fire(PinnedTabsPixel.userUnpinnedTab, frequency: .dailyAndStandard)
         }
-#if !APPSTORE
-        if #available(macOS 15.3, *) {
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+        if #available(macOS 15.4, *) {
             WebExtensionManager.shared.eventsListener.didChangeTabProperties([.pinned], for: tab)
         }
 #endif

@@ -1,4 +1,7 @@
 /* No comment provided by engineer. */
+" " = " ";
+
+/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -240,6 +243,9 @@
 
 /* Description for unable to remove device error */
 "alert.unable-to-remove-device-description" = "Nepavyko pašalinti šio įrenginio iš sinchronizavimo ir atsarginės kopijos kūrimo.";
+
+/* Description for unable to scan qr code error */
+"alert.unable-to-scan-qr-code-description" = "Atsiprašome, šis kodas neteisingas. Įsitikinkite, kad įvestas arba nuskaitytas teisingas kodas.";
 
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Nepavyko prisijungti prie serverio.";
@@ -556,9 +562,11 @@
 /* Do not translate - stringsdict entry */
 "autofill.number.of.passwords" = "autofill.number.of.passwords";
 
-/* Description of autofill onboarding prompt's secure storage feature
-   Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
-"autofill.onboarding.key-features.secure-storage.description" = "Slaptažodžiai užšifruojami, saugomi įrenginyje ir užrakinami naudojant %@.";
+/* Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
+"autofill.onboarding.key-features.secure-storage.biometric.description" = "Slaptažodžiai užšifruojami, saugomi įrenginyje ir užrakinami naudojant %@.";
+
+/* Description of autofill onboarding prompt's secure storage feature */
+"autofill.onboarding.key-features.secure-storage.description" = "Passwords are encrypted, stored on device, and locked with Face ID or passcode.";
 
 /* Parameter for the description of autofill onboarding prompt's secure storage feature describing Face ID biometry + passcode */
 "autofill.onboarding.key-features.secure-storage.description.parameter.face-id" = "„Face ID“ arba slaptažodis";
@@ -932,6 +940,9 @@
 /* Crash Report dialog title */
 "crash.report.dialog.title" = "Automatiškai siųsti pranešimus apie strigtis?";
 
+/* No comment provided by engineer. */
+"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Importuoti žymės failą...";
 
@@ -1202,8 +1213,14 @@
 /* Text for the toggle to autoplay videos */
 "duck-player.native-autoplay-videos" = "Autoplay Videos";
 
+/* Text for the description about autoplay videos */
+"duck-player.native-autoplay-videos.description" = "Videos opened in Duck Player will automatically begin playback. Turn this off if you would like to manually start playback of videos opened in Duck Player.";
+
 /* Text for the button to watch a video on DuckPlayer */
-"duck-player.native-open-in-duckplayer" = "Duck Player";
+"duck-player.native-open-in-duckplayer" = "Play this video in Duck Player";
+
+/* Text for the button to resume watching a video on DuckPlayer */
+"duck-player.native-resume-in-duckplayer" = "Resume in Duck Player";
 
 /* Text for the button to watch a video on YouTube */
 "duck-player.native-watch-on-youtube" = "Watch in Youtube";
@@ -1244,8 +1261,14 @@
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Niekada";
 
+/* Toast message for the Duck Player entry pill dismiss count */
+"duckPlayer.pill.dismiss.count.toast.message" = "Want to turn off Duck Player appearing on Youtube?";
+
+/* Button on Toast message for the Duck Player entry pill dismiss count */
+"duckPlayer.pill.dismiss.count.toast.message.button" = "Atidaryti Nustatymus";
+
 /* Caption for Duck Player entry point */
-"duckplayer.pill.watch.without.ads" = "Tap to watch without targeted ads";
+"duckplayer.pill.watch.without.ads" = "No targeted ads, always private";
 
 /* Body text for the modal feature explanation */
 "duckplayer.presentation.modal.body" = "„Duck Player“ leidžia sistemoje „DuckDuckGo“ žiūrėti „YouTube“ be taikomų reklamų, o tai, ką žiūrite, neturės įtakos jūsų rekomendacijoms.";
@@ -1276,6 +1299,39 @@
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.title" = "Duck Player";
+
+/* Text displayed when DuckPlayer is in 'Ask' mode for Youtube. */
+"duckPlayerNative.ask.label" = "Leisk man pasirinkti";
+
+/* Text displayed when DuckPlayer is automatically enabled for Youtube */
+"duckPlayerNative.auto.label" = "Automatiškai";
+
+/* Label for the automatic youtube video opening */
+"duckPlayerNative.auto.open.label" = "Automatiškai atidaryk „Duck Player“ „YouTube“ platformoje.";
+
+/* CTA for DuckPlayer priming modal */
+"duckPlayerNative.modal.cta" = "Watch Now Privately";
+
+/* Description for DuckPlayer priming modal */
+"duckPlayerNative.modal.description" = "Plus, what you watch in Duck Player won’t influence your YouTube recommendations.";
+
+/* Title for DuckPlayer priming modal */
+"duckPlayerNative.modal.title" = "Play this video in Duck Player to watch without targeted ads!";
+
+/* Text displayed when DuckPlayer is in off for youtube. */
+"duckPlayerNative.never.label" = "Nerodyti";
+
+/* Label for the use DuckPlayer on Youtube toggle footer */
+"duckPlayerNative.use.on.serp.footer" = "Clicking on YouTube videos in DuckDuckGo search results will open in Duck Player.";
+
+/* Label for the use DuckPlayer on SERP toggle */
+"duckPlayerNative.use.on.serp.label" = "DuckDuckGo Search Results";
+
+/* Label for the use DuckPlayer on Youtube toggle footer */
+"duckPlayerNative.use.on.youtube.footer" = "Choose how you would like Duck Player to handle YouTube videos when navigating from the YouTube website.";
+
+/* Label for the use DuckPlayer on Youtube toggle */
+"duckPlayerNative.use.on.youtube.label" = "Naudoti „Youtube.com“";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "El. pašto apsauga";
@@ -1351,6 +1407,9 @@
 
 /* Empty search placeholder on bookmarks search */
 "empty.search" = "Atitikmenų nerasta";
+
+/* No comment provided by engineer. */
+"Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
 "error.email-protection-sign-in.action" = "Prisijungti";
@@ -2156,7 +2215,7 @@
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Vienu mygtuku ištrink naršymo duomenis";
 
-/* Message to highlight browser capability ofblocking 3rd party trackers */
+/* Message to highlight browser capability of blocking 3rd party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Blokuoja trečiųjų šalių stebėjimo priemones";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
@@ -2170,6 +2229,9 @@
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Pirmyn!";
+
+/* Button to skip the onboarding process */
+"onboarding.intro.cta.skip" = "Jau buvau čia anksčiau";
 
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "Sužinoti daugiau";
@@ -2188,6 +2250,18 @@
 
 /* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.privacypro.promo.vpn.message. */
 "onboarding.privacypro.promo.vpn.message.vpn-bold" = "VPN";
+
+/* The title of the button to skip the onboarding and start browsing. */
+"onboarding.skip.cta.confirmSkip" = "Pradėti naršyti";
+
+/* The title of the button to resume the onboarding. */
+"onboarding.skip.cta.resumeOnboarding" = "Rodyti mokymo priemonę";
+
+/* The message of the skip onboarding dialog popup. */
+"onboarding.skip.message" = "Atmink: visus skirtukus, istoriją ir naršymo duomenis gali ištrinti dviem mygtuko🔥 „Fire Button“ bakstelėjimais.";
+
+/* The title of the skip onboarding dialog popup */
+"onboarding.skip.title" = "Supratau! Praleisiu kitus patarimus.";
 
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Pridėti valdiklį";
@@ -2218,6 +2292,9 @@
 
 /* No comment provided by engineer. */
 "onboardingWelcomeHeader" = "Sveiki atvykę į „DuckDuckGo!“";
+
+/* No comment provided by engineer. */
+"Open tabs remain unaffected by this change.  Please close all tabs for this setting to take effect." = "Šis pakeitimas neturi įtakos atidarytiems skirtukams.  Prašome uždaryti visus skirtukus, kad šis nustatymas įsigaliotų.";
 
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Negalima rasti programos, galinčios atidaryti šią nuorodą";
@@ -2291,6 +2368,9 @@
 /* Title for the Privacy Pro feedback form */
 "ppro.feedback-form.title" = "Siųsti atsiliepimą";
 
+/* Description of incorrectly formatted data error when syncing. */
+"prefrences.sync.bad-request.description" = "Kai kurios žymės ar slaptažodžiai suformatuoti neteisingai arba yra per ilgi ir nebuvo sinchronizuoti.";
+
 /* Button title for sync bookmarks limits exceeded warning to go to manage bookmarks */
 "prefrences.sync.bookmarks-limit-exceeded-action" = "Tvarkyti žymes";
 
@@ -2303,13 +2383,14 @@
 /* Description for sync credentials limits exceeded warning */
 "prefrences.sync.credentials-limit-exceeded-description" = "Pasiekėte maksimalų slaptažodžių skaičių. Ištrinkite kai kuriuos slaptažodžius, kad tęstumėte sinchronizavimą.";
 
-/* Description invalid credentials error when syncing.
-   Description of incorrectly formatted data error when syncing.
-   Description of too many requests error when syncing. */
+/* Description invalid credentials error when syncing. */
 "prefrences.sync.invalid-login-description" = "Sinchronizuojant įvyko klaida. Pabandykite išjungti sinchronizavimą šiame prietaise ir vėl prisijungti naudodami kitą prietaisą arba atkūrimo kodą.";
 
 /* Title for sync limits exceeded warning */
 "prefrences.sync.limit-exceeded-title" = "Sinchronizavimas pristabdytas";
+
+/* Description of too many requests error when syncing. */
+"prefrences.sync.too-many-requests.description" = "Sinchronizavimas ir atsarginės kopijos kūrimas laikinai nepasiekiami.";
 
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "Svetainės pagrįstos slapukais, kad liktumėte prisijungę. Apsaugojus svetainę, slapukai nėra ištrinami ir liksite prisijungę net paspaudę apsaugojimo mygtuką. Vis tiek blokuosime trečiųjų šalių stebėjimo priemones, randamas svetainėse, kuriose pasinaudosite parinktimi „Fireproof“.";
@@ -2351,6 +2432,9 @@
 "Primary / First Action" = "Pirminis / pirmasis veiksmas";
 
 /* No comment provided by engineer. */
+"Priming Modal" = "Priming Modal";
+
+/* No comment provided by engineer. */
 "Privacy Protections" = "Privatumo apsaugos priemonės";
 
 /* Privacy Icon accessibility title */
@@ -2376,6 +2460,12 @@
 
 /* No comment provided by engineer. */
 "Reset" = "Nustatyti iš naujo";
+
+/* No comment provided by engineer. */
+"Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
+
+/* No comment provided by engineer. */
+"Reset Priming Modal State" = "Reset Priming Modal State";
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Ieškoti arba įvesti adresą";
@@ -2425,8 +2515,7 @@
 /* Title for the settings VPN subsection where the user can learn how to add the VPN to their home screen */
 "settings.add.widget.vpn" = "Pridėkite „DuckDuckGo“ VPN valdiklį prie pagrindinio ekrano";
 
-/* Name of the settings subsection related to the address bar
-   Settings screen cell text for addess bar position */
+/* Name of the settings subsection related to the address bar */
 "settings.address.bar" = "Adreso juosta";
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
@@ -2437,6 +2526,9 @@
 
 /* Settings screen appearance section title */
 "settings.appearance" = "Išvaizda";
+
+/* Settings screen cell text for addess bar position */
+"settings.appearance.address.bar" = "Adreso juostos padėtis";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Atidaryti nuorodas susijusiose programose";
@@ -2483,8 +2575,7 @@
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Duomenų valymas";
 
-/* Settings screen cell text for setting the app as default browser
-   The name of Settings category in Privacy Features related to configuration of the default browser */
+/* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Numatytoji naršyklė";
 
 /* Label of a button disabling email protection */
@@ -2519,6 +2610,9 @@
 
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Bendrai";
+
+/* Settings screen cell text for setting the app as default browser */
+"settings.general.default.browser" = "Nustatyti kaip numatytąją naršyklę";
 
 /* Settings screen cell text for GPC */
 "settings.gpc" = "Visuotinė privatumo kontrolė (VPK)";
@@ -2661,15 +2755,8 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Apsauga nuo žiniatinklio sekimo";
 
-/* Explanation in Settings how the vpn blocks risky sites (do not remove the link)
-   Explanation in Settings how the web tracking protection feature works */
-"settings.web.tracking.protection.explanation" = "Blokuoti daugiau nei 150 000 domenų, pažymėtų kaip talpinančių kenkėjiškas programas, sukčiavimo atakas ir internetinius sukčius, naudodamas DNS lygmens blokavimo sąrašą. [Sužinokite daugiau](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
-
-/* Header of the vpn blocks risky sites feature settings */
-"settings.web.tracking.protection.header" = "Turinio blokavimas ir filtravimas";
-
-/* Title of the vpn blocks risky sites feature settings */
-"settings.web.tracking.protection.title" = "Blokuoti rizikingus domenus";
+/* Explanation in Settings how the web tracking protection feature works */
+"settings.web.tracking.protection.explanation" = "„DuckDuckGo“ automatiškai blokuoja paslėptas stebėjimo priemones naršant internete.\n[Sužinokite daugiau](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Pasirinkite parinktį, kuri geriausiai apibūdina iškilusią problemą.";
@@ -2707,23 +2794,11 @@
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Išsaugotas pagrindinis vardas: %@";
 
-/* Subscription Activation Info */
-"subscription.activate..header.description" = "Pasiekite savo „Privacy Pro“ prenumeratą šiame įrenginyje per „Apple“ paskyrą arba el. pašto adresą.";
-
 /* Button for adding email address to subscription */
 "subscription.activate.add.email.button" = "Pridėti el. paštą";
 
-/* Apple Account option for activation */
-"subscription.activate.appleid" = "„Apple“ paskyra";
-
-/* Button text for restoring purchase via Apple Account */
-"subscription.activate.appleid.button" = "Atkurti pirkimą";
-
-/* Description for Apple Account activation */
-"subscription.activate.appleid.description" = "Atkurk pirkimą, kad aktyvuotum prenumeratą šiame įrenginyje.";
-
-/* Subscription Activation Info */
-"subscription.activate.description" = "Jūsų prenumerata automatiškai pasiekiama „DuckDuckGo“ bet kuriame įrenginyje, prisijungusiame prie jūsų „Apple“ paskyros.";
+/* Button for adding this subscription to another device */
+"subscription.activate.add.to.device.button" = "Pridėti prie įrenginio";
 
 /* Button for editing email address added to subscription */
 "subscription.activate.edit.email.button" = "Redaguoti el. pašto adresą";
@@ -2731,17 +2806,8 @@
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "Redaguoti el. pašto adresą";
 
-/* Email option for activation */
-"subscription.activate.email" = "El. paštas";
-
-/* Restore button title for Email */
-"subscription.activate.email.button" = "Įveskite el. paštą";
-
-/* Description for Email activation */
-"subscription.activate.email.description" = "Naudokite savo el. pašto adresą, kad aktyvintumėte prenumeratą šiame įrenginyje.";
-
-/* Activate subscription title */
-"subscription.activate.email.title" = "Aktyvuoti prenumeratą";
+/* Header title for the subscription activation view */
+"subscription.activate.header.title" = "Pridėkite savo „Privacy Pro“ prenumeratą prie šio įrenginio";
 
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "Atšaukti";
@@ -2749,11 +2815,26 @@
 /* Button title for confirming email deletion */
 "subscription.activate.manage.email.OK" = "GERAI";
 
-/* Restore button title for AppleID */
-"subscription.activate.restore.apple" = "Atkurti pirkimą";
+/* Button title for starting the process of adding subscription via Apple Account */
+"subscription.activate.via.apple.account.button" = "Atkurti pirkimą";
 
-/* Subscription Activation Title */
-"subscription.activate.title" = "Aktyvuokite prenumeratą šiame įrenginyje";
+/* Description for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.description" = "Atkurk savo prenumeratą „Apple“ įrenginiuose naudodamas (-a) savo „Apple“ paskyrą.";
+
+/* Title for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.title" = "Pridėti per „Apple“ paskyrą";
+
+/* Button title for starting the process of adding subscription via email address */
+"subscription.activate.via.email.button" = "Pradėti";
+
+/* Description for adding subscription via email address */
+"subscription.activate.via.email.description" = "Naudok el. pašto adresą, kad pridėtum „Privacy Pro“ prie šio įrenginio.";
+
+/* Title for adding subscription via email address */
+"subscription.activate.via.email.title" = "Pridėti per el. pašto adresą";
+
+/* View title for activating subscription */
+"subscription.activate.view.title" = "Turiu prenumeratą";
 
 /* Resend activation instructions button */
 "subscription.add.device.resend.instructions" = "Pakartotinai siųsti instrukcijas";
@@ -2763,6 +2844,15 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "Pridėti el. paštą";
+
+/* Header for section for activating subscription on other devices */
+"subscription.add.to.devices.header" = "Pridėti „Privacy Pro“ prie kitų įrenginių";
+
+/* Footer for section for activating subscription on other devices when email was not yet added */
+"subscription.add.to.devices.no.email.footer" = "Pridėk „Privacy Pro“ į kitus įrenginius per „Apple ID“ arba susiedamas el. pašto adresą. **[Sužinok daugiau](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* Footer for section for activating subscription on other devices when email is added */
+"subscription.add.to.devices.with.email.footer" = "Naudok šį el. laišką, norėdami įtraukti prenumeratą į kitus įrenginius „DuckDuckGo“ programėlėje. Eik į „Settings“ (Nustatymai) > „Privacy Pro“ > „I have a Subscription“ (Turiu prenumeratą). **[Sužinok daugiau](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Subscription availability message on Apple devices */
 "subscription.available.apple" = "„Privacy Pro“ galima naudoti bet kuriame įrenginyje, prisijungusiame prie tos pačios „Apple“ paskyros.";
@@ -2784,15 +2874,6 @@
 
 /* Title for Confirm messages */
 "subscription.confirm.title" = "Ar esi tikras?";
-
-/* Header for section for activating subscription on other devices */
-"subscription.devices.header" = "Aktyvuoti kituose įrenginiuose";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.devices.no.email.footer" = "Pridėk alternatyvų el. pašto adresą prie savo prenumeratos, kad galėtum pasiekti „Privacy Pro“ kituose įrenginiuose. **[Sužinokite daugiau](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.devices.with.email.footer" = "Naudokite šį el. laišką, kad aktyvintumėte prenumeratą nustatymuose > „Privacy Pro“ „DuckDuckGo“ programėlėje kituose įrenginiuose. **[Sužinokite daugiau](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Alert content for not found subscription */
 "subscription.email.inactive.alert.message" = "Su šiuo el. paštu susijusi prenumerata nebėra aktyvi.";
@@ -3231,6 +3312,15 @@
 
 /* Title for the Apply button on the DNS Server setting screen */
 "vpn.settings.dns.server.apply.button.title" = "Taikyti";
+
+/* Explanation in Settings how the vpn blocks risky sites (do not remove the link) */
+"vpn.settings.dns.server.content.blocking.explanation" = "Blokuoti daugiau nei 150 000 domenų, pažymėtų kaip talpinančių kenkėjiškas programas, sukčiavimo atakas ir internetinius sukčius, naudodamas DNS lygmens blokavimo sąrašą. [Sužinokite daugiau](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
+
+/* Header of the vpn blocks risky sites feature settings */
+"vpn.settings.dns.server.content.blocking.header" = "Turinio blokavimas ir filtravimas";
+
+/* Title of the vpn blocks risky sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Blokuoti rizikingus domenus";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "„DuckDuckGo“";

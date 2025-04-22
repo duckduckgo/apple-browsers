@@ -80,7 +80,7 @@ final class AutocompleteSuggestionsDataSource: SuggestionLoadingDataSource {
     }
 
     func openTabs(for suggestionLoading: any SuggestionLoading) -> [BrowserTab] {
-        if featureFlagger.isFeatureOn(.autcompleteTabs) {
+        if featureFlagger.isFeatureOn(.autocompleteTabs) {
             return candidateOpenTabs
         }
         return []

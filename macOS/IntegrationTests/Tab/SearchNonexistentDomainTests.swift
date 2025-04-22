@@ -42,7 +42,6 @@ final class SearchNonexistentDomainTests: XCTestCase {
         contentBlockingMock.privacyConfigurationManager.privacyConfig as! MockPrivacyConfiguration
     }
 
-    var webViewConfiguration: WKWebViewConfiguration!
     var schemeHandler: TestSchemeHandler!
 
     var window: NSWindow!
@@ -67,12 +66,9 @@ final class SearchNonexistentDomainTests: XCTestCase {
             return false
         }
 
-        schemeHandler = TestSchemeHandler()
-        WKWebView.customHandlerSchemes = [.http, .https]
-
-        webViewConfiguration = WKWebViewConfiguration()
-        webViewConfiguration.setURLSchemeHandler(schemeHandler, forURLScheme: URL.NavigationalScheme.http.rawValue)
-        webViewConfiguration.setURLSchemeHandler(schemeHandler, forURLScheme: URL.NavigationalScheme.https.rawValue)
+        schemeHandler = TestSchemeHandler { _ in
+            return .ok(.html(""))
+        }
     }
 
     @MainActor
@@ -82,16 +78,14 @@ final class SearchNonexistentDomainTests: XCTestCase {
 
         contentBlockingMock = nil
         privacyFeaturesMock = nil
-        webViewConfiguration = nil
         schemeHandler = nil
-        WKWebView.customHandlerSchemes = []
     }
 
     // MARK: - Tests
 
     @MainActor
     func testWhenNonexistentDomainRequested_redirectedToSERP() async throws {
-        let tab = Tab(content: .none, webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock)
+        let tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
         window = WindowsManager.openNewWindow(with: tab)!
 
         let url = urls.invalidTLD
@@ -119,7 +113,7 @@ final class SearchNonexistentDomainTests: XCTestCase {
 
     @MainActor
     func testWhenNonexistentDomainRequestedWithValidTLD_notRedirectedToSERP() async throws {
-        let tab = Tab(content: .none, webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock)
+        let tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
         window = WindowsManager.openNewWindow(with: tab)!
 
         self.schemeHandler.middleware = [{ request in
@@ -153,7 +147,7 @@ final class SearchNonexistentDomainTests: XCTestCase {
 
     @MainActor
     func testWhenNonexistentDomainRequestedWithScheme_notRedirectedToSERP() async throws {
-        let tab = Tab(content: .none, webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock)
+        let tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
         window = WindowsManager.openNewWindow(with: tab)!
 
         self.schemeHandler.middleware = [{ request in
@@ -187,7 +181,7 @@ final class SearchNonexistentDomainTests: XCTestCase {
 
     @MainActor
     func testWhenNonexistentDomainNotEnteredByUser_notRedirectedToSERP() async throws {
-        let tab = Tab(content: .none, webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock)
+        let tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
         window = WindowsManager.openNewWindow(with: tab)!
 
         self.schemeHandler.middleware = [{ request in
@@ -216,7 +210,7 @@ final class SearchNonexistentDomainTests: XCTestCase {
 
     @MainActor
     func testWhenNonexistentDomainSuggestionChosen_redirectedToSERP() async throws {
-        let tab = Tab(content: .none, webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock)
+        let tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
         window = WindowsManager.openNewWindow(with: tab)!
 
         let url = urls.invalidTLD
@@ -242,7 +236,8 @@ final class SearchNonexistentDomainTests: XCTestCase {
                                                       suggestionLoading: suggestionLoadingMock,
                                                       historyProvider: HistoryCoordinator.shared,
                                                       bookmarkProvider: LocalBookmarkManager.shared,
-                                                      burnerMode: .regular)
+                                                      burnerMode: .regular,
+                                                      isUrlIgnored: { _ in false })
         addressBar.suggestionContainerViewModel = SuggestionContainerViewModel(isHomePage: true, isBurner: false, suggestionContainer: suggestionContainer)
 
         suggestionContainer.getSuggestions(for: enteredString)

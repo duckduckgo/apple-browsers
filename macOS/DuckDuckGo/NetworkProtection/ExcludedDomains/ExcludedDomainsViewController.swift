@@ -45,7 +45,7 @@ final class ExcludedDomainsViewController: NSViewController {
     @IBOutlet var doneButton: NSButton!
     @IBOutlet var excludedDomainsLabel: NSTextField!
 
-    private let faviconManagement: FaviconManagement = FaviconManager.shared
+    private let faviconManagement: FaviconManagement = NSApp.delegateTyped.faviconManager
 
     private var allDomains = [String]()
     private var filteredDomains: [String]?
@@ -99,7 +99,11 @@ final class ExcludedDomainsViewController: NSViewController {
     }
 
     @IBAction func addDomain(_ sender: NSButton) {
-        AddExcludedDomainView(title: UserText.vpnAddExcludedDomainTitle, buttonsState: .compressed, cancelActionTitle: UserText.vpnAddExcludedDomainCancelButtonTitle, cancelAction: { dismiss in
+        addDomain()
+    }
+
+    func addDomain(domain: String = "") {
+        AddExcludedDomainView(title: UserText.vpnAddExcludedDomainTitle, domain: domain, buttonsState: .compressed, cancelActionTitle: UserText.vpnAddExcludedDomainCancelButtonTitle, cancelAction: { dismiss in
 
             dismiss()
         }, defaultActionTitle: UserText.vpnAddExcludedDomainActionButtonTitle) { [weak self] domain, dismiss in

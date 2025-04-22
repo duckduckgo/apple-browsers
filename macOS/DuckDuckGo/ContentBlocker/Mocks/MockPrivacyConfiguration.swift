@@ -48,7 +48,7 @@ final class MockPrivacyConfiguration: PrivacyConfiguration {
                                                                             state: PrivacyConfigurationData.State.enabled)
     var exceptionsList: (PrivacyFeature) -> [String] = { _ in [] }
     var featureSettings: PrivacyConfigurationData.PrivacyFeature.FeatureSettings = [:]
-    var subfeatureSettings: PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings = ""
+    var subfeatureSettings: PrivacyConfigurationData.PrivacyFeature.SubfeatureSettings?
 
     func exceptionsList(forFeature featureKey: PrivacyFeature) -> [String] { exceptionsList(featureKey) }
     var isFeatureKeyEnabled: ((PrivacyFeature, AppVersionProvider) -> Bool)?
@@ -121,7 +121,10 @@ final class MockPrivacyConfigurationManager: NSObject, PrivacyConfigurationManag
     }
 
     var updatesPublisher: AnyPublisher<Void, Never> = Just(()).eraseToAnyPublisher()
-    var privacyConfig: PrivacyConfiguration = MockPrivacyConfiguration()
+    var mockPrivacyConfig = MockPrivacyConfiguration()
+    var privacyConfig: PrivacyConfiguration {
+        mockPrivacyConfig
+    }
     var internalUserDecider: InternalUserDecider = DefaultInternalUserDecider()
 }
 

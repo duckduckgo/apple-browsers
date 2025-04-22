@@ -120,6 +120,7 @@ public final class NetworkProtectionKeychainTokenStore: NetworkProtectionTokenSt
     private func handle(_ error: Error) {
         guard let error = error as? NetworkProtectionKeychainStoreError else {
             assertionFailure("Failed to cast Network Protection Token store error")
+            Logger.networkProtection.fault("Failed to cast Network Protection Keychain store error")
             errorEvents?.fire(NetworkProtectionError.unhandledError(function: #function, line: #line, error: error))
             return
         }
@@ -215,6 +216,7 @@ public final class NetworkProtectionKeychainTokenStoreV2: AuthTokenStoring {
     private func handle(_ error: Error) {
         guard let error = error as? NetworkProtectionKeychainStoreError else {
             assertionFailure("Failed to cast Network Protection Token store error")
+            Logger.networkProtection.fault("Failed to cast Network Protection Keychain store error")
             errorEvents?.fire(NetworkProtectionError.unhandledError(function: #function, line: #line, error: error))
             return
         }

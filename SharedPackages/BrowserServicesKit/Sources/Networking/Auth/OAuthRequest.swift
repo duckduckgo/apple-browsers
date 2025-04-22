@@ -100,7 +100,7 @@ public struct OAuthRequest {
     }
 
     private struct Defaults {
-        static let defaultRetryPolicy = APIRequestV2.RetryPolicy(maxRetries: 3, delay: .seconds(2))
+        static let defaultRetryPolicy = APIRequestV2.RetryPolicy(maxRetries: 3, delay: .fixed(.seconds(2)))
     }
 
     static func ddgAuthSessionCookie(domain: String, path: String, authSessionID: String) -> HTTPCookie? {

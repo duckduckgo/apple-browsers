@@ -2202,6 +2202,10 @@
 		84537A042C998C28008723BC /* FireWindowSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84537A022C998C24008723BC /* FireWindowSession.swift */; };
 		84537A082C99C203008723BC /* DeallocationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6C2C9EE276081AB005B7F0A /* DeallocationTests.swift */; };
 		84537A092C99C203008723BC /* DeallocationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6C2C9EE276081AB005B7F0A /* DeallocationTests.swift */; };
+		845B43312DB699D300D46001 /* SwiftUIContextMenuRetainCycleFix.swift in Sources */ = {isa = PBXBuildFile; fileRef = 845B43302DB699C300D46001 /* SwiftUIContextMenuRetainCycleFix.swift */; };
+		845B43322DB699D300D46001 /* SwiftUIContextMenuRetainCycleFix.swift in Sources */ = {isa = PBXBuildFile; fileRef = 845B43302DB699C300D46001 /* SwiftUIContextMenuRetainCycleFix.swift */; };
+		845B43362DB69F2E00D46001 /* SwiftObjectRetainCycleBreakerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 845B43332DB69F2C00D46001 /* SwiftObjectRetainCycleBreakerTests.swift */; };
+		845B43372DB69F2E00D46001 /* SwiftObjectRetainCycleBreakerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 845B43332DB69F2C00D46001 /* SwiftObjectRetainCycleBreakerTests.swift */; };
 		848648A12C76F4B20082282D /* BookmarksBarMenuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 848648A02C76F4B20082282D /* BookmarksBarMenuViewController.swift */; };
 		848648A22C76F4B20082282D /* BookmarksBarMenuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 848648A02C76F4B20082282D /* BookmarksBarMenuViewController.swift */; };
 		84A72AA72DB276A20092A4B4 /* LinkOpenBehavior.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A72AA52DB276A20092A4B4 /* LinkOpenBehavior.swift */; };
@@ -4561,6 +4565,8 @@
 		8443DC6C2CF0C777000B8829 /* Tab+OnboardingNavigationDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Tab+OnboardingNavigationDelegate.swift"; sourceTree = "<group>"; };
 		844D7DA32C9443E500BE61D4 /* NSPrintInfoExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSPrintInfoExtension.swift; sourceTree = "<group>"; };
 		84537A022C998C24008723BC /* FireWindowSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireWindowSession.swift; sourceTree = "<group>"; };
+		845B43302DB699C300D46001 /* SwiftUIContextMenuRetainCycleFix.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftUIContextMenuRetainCycleFix.swift; sourceTree = "<group>"; };
+		845B43332DB69F2C00D46001 /* SwiftObjectRetainCycleBreakerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwiftObjectRetainCycleBreakerTests.swift; sourceTree = "<group>"; };
 		848648A02C76F4B20082282D /* BookmarksBarMenuViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksBarMenuViewController.swift; sourceTree = "<group>"; };
 		84A72AA52DB276A20092A4B4 /* LinkOpenBehavior.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkOpenBehavior.swift; sourceTree = "<group>"; };
 		84AE5B322D95A019002C3B47 /* ContextualDaxDialogFactoryIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextualDaxDialogFactoryIntegrationTests.swift; sourceTree = "<group>"; };
@@ -4568,8 +4574,8 @@
 		84C96E442CF9BB6400A80A01 /* malwareFilterSet.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = malwareFilterSet.json; sourceTree = "<group>"; };
 		84C96E452CF9BB6400A80A01 /* malwareHashPrefixes.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = malwareHashPrefixes.json; sourceTree = "<group>"; };
 		84CD91B92D4288060089A2E7 /* match.api.response.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = match.api.response.json; sourceTree = "<group>"; };
-		84DBC84D2DA6586B00903C7B /* LinkOpenBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkOpenBehaviorTests.swift; sourceTree = "<group>"; };
 		84CE00152DAE41EA00852AA2 /* ResizablePreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResizablePreviewView.swift; sourceTree = "<group>"; };
+		84DBC84D2DA6586B00903C7B /* LinkOpenBehaviorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkOpenBehaviorTests.swift; sourceTree = "<group>"; };
 		84DC71582C1C1E8A00033B8C /* UserDefaultsWrapperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsWrapperTests.swift; sourceTree = "<group>"; };
 		84DDB9092C92B667008C997B /* WKVisitedLinkStoreWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WKVisitedLinkStoreWrapper.swift; sourceTree = "<group>"; };
 		84F1C8CE2C7705B500716446 /* BookmarksBarMenuPopover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksBarMenuPopover.swift; sourceTree = "<group>"; };
@@ -7398,16 +7404,17 @@
 		4BB88B4E25B7BA20006F6B06 /* Utilities */ = {
 			isa = PBXGroup;
 			children = (
-				BB80DDD12D75EEA100ED1FFF /* ApplicationBuildType.swift */,
 				37534CA62811988E002621E7 /* AdjacentItemEnumerator.swift */,
+				BB80DDD12D75EEA100ED1FFF /* ApplicationBuildType.swift */,
 				B6E319372953446000DD3BCF /* Assertions.swift */,
 				4BB6CE5E26B77ED000EC5860 /* Cryptography.swift */,
+				4B9579202AC687170062CA31 /* HardwareModel.swift */,
 				4BB88B5A25B7BA50006F6B06 /* Instruments.swift */,
 				B6AAAC2C260330580029438D /* PublishedAfter.swift */,
+				845B43302DB699C300D46001 /* SwiftUIContextMenuRetainCycleFix.swift */,
 				4BB88B4F25B7BA2B006F6B06 /* TabInstrumentation.swift */,
-				85C6A29525CC1FFD00EEB5F1 /* UserDefaultsWrapper.swift */,
-				4B9579202AC687170062CA31 /* HardwareModel.swift */,
 				CD2AB5C92C8225E70019EB49 /* URLTokenValidator.swift */,
+				85C6A29525CC1FFD00EEB5F1 /* UserDefaultsWrapper.swift */,
 			);
 			path = Utilities;
 			sourceTree = "<group>";
@@ -8197,28 +8204,29 @@
 		85F69B3A25EDE7F800978E59 /* Common */ = {
 			isa = PBXGroup;
 			children = (
-				EEEFA33F2D142AA6006A3F8A /* CombineTestHelpers.swift */,
-				4BBF09222830812900EE1418 /* FileSystemDSL.swift */,
-				4BBF0924283083EC00EE1418 /* FileSystemDSLTests.swift */,
-				B60C6F8329B1BAD3007BFAA8 /* FileManagerTempDirReplacement.swift */,
-				4B9292C42667104B00AD2C21 /* CoreDataTestUtilities.swift */,
-				9F5E48162D5D867600D2396D /* NSPasteboardExtensionTests.swift */,
 				B683097A274DCFE3004B46BB /* Database */,
 				AAEC74B92642E66600C2EFBC /* Extensions */,
 				4BA1A6CE258BF58C00F6F690 /* FileSystem */,
 				9F0660752BECC7E700B8EEF1 /* Pixel */,
 				B6AE74322609AFBB005B9B1A /* Progress */,
-				B6F56566299A414300A04298 /* WKWebViewMockingExtension.swift */,
+				EEEFA33F2D142AA6006A3F8A /* CombineTestHelpers.swift */,
+				4B9292C42667104B00AD2C21 /* CoreDataTestUtilities.swift */,
 				B603972B29BEDF2100902A34 /* ExpectedNavigationExtension.swift */,
-				B603970F29B9D67E00902A34 /* PublishersExtensions.swift */,
+				B60C6F8329B1BAD3007BFAA8 /* FileManagerTempDirReplacement.swift */,
+				4BBF09222830812900EE1418 /* FileSystemDSL.swift */,
+				4BBF0924283083EC00EE1418 /* FileSystemDSLTests.swift */,
 				B630E7FD29C887ED00363609 /* NSErrorAdditionalInfo.swift */,
-				B693956626F352940015B914 /* TestsBridging.h */,
+				9F5E48162D5D867600D2396D /* NSPasteboardExtensionTests.swift */,
+				B603970F29B9D67E00902A34 /* PublishersExtensions.swift */,
+				845B43332DB69F2C00D46001 /* SwiftObjectRetainCycleBreakerTests.swift */,
 				B6DA06E02913AEDB00225DE2 /* TestNavigationDelegate.swift */,
 				B60C6F8029B1B4AD007BFAA8 /* TestRunHelper.swift */,
 				B60C6F7D29B1B41D007BFAA8 /* TestRunHelperInitializer.m */,
+				B693956626F352940015B914 /* TestsBridging.h */,
 				CD3301282C887B1C009AA127 /* URLTokenValidatorTests.swift */,
 				84DC71582C1C1E8A00033B8C /* UserDefaultsWrapperTests.swift */,
 				B6A60E4F2B73C3B800FD4968 /* WKURLSchemeTask+Private.h */,
+				B6F56566299A414300A04298 /* WKWebViewMockingExtension.swift */,
 			);
 			path = Common;
 			sourceTree = "<group>";
@@ -9357,7 +9365,6 @@
 		AADC60E92493B305008F8EF7 /* Extensions */ = {
 			isa = PBXGroup;
 			children = (
-				844D7DA32C9443E500BE61D4 /* NSPrintInfoExtension.swift */,
 				AA7EB6E427E7D6DC00036718 /* AnimationView.swift */,
 				4BA71ED92B4B81E80002EBCE /* AppVersionExtension.swift */,
 				AA61C0D12727F59B00E6B681 /* ArrayExtension.swift */,
@@ -9398,6 +9405,7 @@
 				4B85A47F28821CC500FC4C39 /* NSPasteboardItemExtension.swift */,
 				AA5C8F5D2590EEE800748EB7 /* NSPointExtension.swift */,
 				1D6A491F29CF7A490011DF74 /* NSPopoverExtension.swift */,
+				844D7DA32C9443E500BE61D4 /* NSPrintInfoExtension.swift */,
 				85625999269CA0A600EE44BC /* NSRectExtension.swift */,
 				B6B3E0DC2657E9CF0040E0A2 /* NSScreenExtension.swift */,
 				AAC5E4E325D6BA9C007F5990 /* NSSizeExtension.swift */,
@@ -9409,7 +9417,6 @@
 				AA6FFB4324DC33320028F4D0 /* NSViewExtension.swift */,
 				AA9E9A5525A3AE8400D1959D /* NSWindowExtension.swift */,
 				B643BF1327ABF772000BACEC /* NSWorkspaceExtension.swift */,
-				843AD3DB2CD389C500163067 /* XMLNodeExtension.swift */,
 				B6A9E46A2614618A0067D1B9 /* OperatingSystemVersionExtension.swift */,
 				EEE50C282C38249C003DD7FF /* OptionalExtension.swift */,
 				B637273C26CCF0C200C8CB02 /* OptionalExtension.swift */,
@@ -9434,6 +9441,7 @@
 				B63D466825BEB6C200874977 /* WKWebView+SessionState.swift */,
 				B68458CC25C7EB9000DC17B6 /* WKWebViewConfigurationExtensions.swift */,
 				AA92127625ADA07900600CD4 /* WKWebViewExtension.swift */,
+				843AD3DB2CD389C500163067 /* XMLNodeExtension.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -12236,6 +12244,7 @@
 				3706FB20293F65D500E42796 /* LocalUnprotectedDomains.swift in Sources */,
 				3707C719294B5D0F00682A9F /* HoveredLinkTabExtension.swift in Sources */,
 				319FCFF22CC81D54004F9288 /* AIChatRemoteSettings.swift in Sources */,
+				845B43322DB699D300D46001 /* SwiftUIContextMenuRetainCycleFix.swift in Sources */,
 				3706FB22293F65D500E42796 /* NSTextViewExtension.swift in Sources */,
 				3706FB23293F65D500E42796 /* DownloadsCellView.swift in Sources */,
 				3706FB25293F65D500E42796 /* PublishedAfter.swift in Sources */,
@@ -13191,6 +13200,7 @@
 				3706FE56293F661700E42796 /* FaviconManagerMock.swift in Sources */,
 				BBC114662D89E859007A82D8 /* TabCollectionViewModelCloseTabLogicTests.swift in Sources */,
 				9F9C49F72BC786790099738D /* MoreOptionsMenu+BookmarksTests.swift in Sources */,
+				845B43372DB69F2E00D46001 /* SwiftObjectRetainCycleBreakerTests.swift in Sources */,
 				3706FE57293F661700E42796 /* LocalPinningManagerTests.swift in Sources */,
 				3706FE58293F661700E42796 /* HistoryStoreTests.swift in Sources */,
 				3706FE59293F661700E42796 /* EncryptionKeyGeneratorTests.swift in Sources */,
@@ -13886,6 +13896,7 @@
 				7BDBAD182CBFF633000379B7 /* TipKitAppEventHandling.swift in Sources */,
 				7BDBAD192CBFF633000379B7 /* TipKitController+ConvenienceInitializers.swift in Sources */,
 				7BDBAD1A2CBFF633000379B7 /* TipKitDebugOptionsUIActionHandling.swift in Sources */,
+				845B43312DB699D300D46001 /* SwiftUIContextMenuRetainCycleFix.swift in Sources */,
 				7BDBAD1B2CBFF633000379B7 /* Logger+TipKit.swift in Sources */,
 				4BA1A6B3258B080A00F6F690 /* EncryptionKeyGeneration.swift in Sources */,
 				37B11B3928095E6600CBB621 /* TabLazyLoader.swift in Sources */,
@@ -15116,6 +15127,7 @@
 				C1E961ED2B879ED9001760E1 /* MockAutofillActionExecutor.swift in Sources */,
 				37D23789288009CF00BCE03B /* TabCollectionViewModelTests+PinnedTabs.swift in Sources */,
 				1D3B1AC62937A478006F4388 /* BWRequestTests.swift in Sources */,
+				845B43362DB69F2E00D46001 /* SwiftObjectRetainCycleBreakerTests.swift in Sources */,
 				B630793A26731F2600DCEE41 /* FileDownloadManagerTests.swift in Sources */,
 				376731992C7F36B200EB097B /* UserBackgroundImageTests.swift in Sources */,
 				31EEAB4C2D9DA63700934428 /* AIChatPromptHandlerTests.swift in Sources */,

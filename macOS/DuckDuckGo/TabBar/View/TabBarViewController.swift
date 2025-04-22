@@ -726,7 +726,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     private func subscribeToChildWindows() {
         guard let window = view.window else {
-            assertionFailure("No window set at the moment of subscription")
+            assert([.unitTests, .integrationTests].contains(AppVersion.runType), "No window set at the moment of subscription")
             return
         }
         // hide Tab Preview when a non-Tab Preview child window is shown (Suggestions, Bookmarks etc…)

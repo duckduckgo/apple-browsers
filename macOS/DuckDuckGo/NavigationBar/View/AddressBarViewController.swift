@@ -159,7 +159,8 @@ final class AddressBarViewController: NSViewController {
 
     override func viewWillAppear() {
         guard let window = view.window else {
-            assertionFailure("AddressBarViewController.viewWillAppear: view.window is nil")
+            assert([.unitTests, .integrationTests].contains(AppVersion.runType),
+                   "AddressBarViewController.viewWillAppear: view.window is nil")
             return
         }
         if window.isPopUpWindow == true {

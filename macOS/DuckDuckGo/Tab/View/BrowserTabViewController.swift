@@ -296,19 +296,20 @@ final class BrowserTabViewController: NSViewController {
     private func subscribeToSelectedTabViewModel() {
         tabCollectionViewModel.$selectedTabViewModel
             .sink { [weak self] selectedTabViewModel in
+                guard let self else { return }
 
-                guard let self = self else { return }
-                generateNativePreviewIfNeeded()
-                self.tabViewModel = selectedTabViewModel
-                self.showTabContent(of: selectedTabViewModel)
-
-                self.tabViewModelCancellables.removeAll(keepingCapacity: true)
-                self.subscribeToTabContent(of: selectedTabViewModel)
-                self.subscribeToHoveredLink(of: selectedTabViewModel)
-                self.subscribeToUserDialogs(of: selectedTabViewModel)
-
-                self.adjustFirstResponder(force: true)
+                tabViewModelCancellables.removeAll(keepingCapacity: true)
                 removeExistingDialog()
+
+                generateNativePreviewIfNeeded()
+                tabViewModel = selectedTabViewModel
+                showTabContent(of: selectedTabViewModel)
+
+                subscribeToTabContent(of: selectedTabViewModel)
+                subscribeToHoveredLink(of: selectedTabViewModel)
+                subscribeToUserDialogs(of: selectedTabViewModel)
+
+                adjustFirstResponder(force: true)
             }
             .store(in: &cancellables)
     }

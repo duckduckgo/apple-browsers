@@ -197,7 +197,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         XCTAssertIdentical(factory.capturedDelegate, viewController.tabViewModel?.tab)
 
         factory.capturedType = nil
-        viewController.windowDidBecomeActive(notification: .init(name: .windowDidBecomeKey))
+        viewController.windowDidBecomeKey()
 
         XCTAssertEqual(factory.capturedType, .tryFireButton)
     }

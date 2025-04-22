@@ -552,7 +552,7 @@ final class AddressBarViewController: NSViewController {
 
     func mouseDown(with event: NSEvent) -> NSEvent? {
         self.clickPoint = nil
-        guard let window = self.view.window, event.window === window else { return event }
+        guard let window = self.view.window, event.window === window, window.sheets.isEmpty else { return event }
 
         if let point = self.view.mouseLocationInsideBounds(event.locationInWindow) {
             guard self.view.window?.firstResponder !== addressBarTextField.currentEditor(),

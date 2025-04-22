@@ -220,7 +220,7 @@ final class MainViewController: NSViewController {
         mainView.findInPageContainerView.applyDropShadow()
     }
 
-    func windowDidBecomeMain() {
+    func windowDidBecomeKey() {
         updateBackMenuItem()
         updateForwardMenuItem()
         updateReloadMenuItem()

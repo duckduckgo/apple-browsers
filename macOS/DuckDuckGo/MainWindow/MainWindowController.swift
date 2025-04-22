@@ -63,6 +63,7 @@ final class MainWindowController: NSWindowController {
         subscribeToBurningData()
         subscribeToResolutionChange()
         subscribeToFullScreenToolbarChanges()
+        subscribeToKeyWindow()
 
 #if !APPSTORE && WEB_EXTENSIONS_ENABLED
         if #available(macOS 15.4, *) {
@@ -122,6 +123,19 @@ final class MainWindowController: NSWindowController {
                         self?.hideTabBarAndBookmarksBar()
                     }
                 }
+            }
+            .store(in: &cancellables)
+    }
+
+    private func subscribeToKeyWindow() {
+        NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)
+            .sink { [weak self] notification in
+                self?.windowDidBecomeKeyNotification(notification)
+            }
+            .store(in: &cancellables)
+        NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)
+            .sink { [weak self] notification in
+                self?.windowDidResignKeyNotification(notification)
             }
             .store(in: &cancellables)
     }
@@ -251,11 +265,15 @@ final class MainWindowController: NSWindowController {
 
 extension MainWindowController: NSWindowDelegate {
 
-    func windowDidBecomeKey(_ notification: Notification) {
-        NotificationCenter.default.post(name: .windowDidBecomeKey, object: nil)
-        mainViewController.windowDidBecomeMain()
+    private func windowDidBecomeKeyNotification(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow,
+              sequence(first: window, next: { $0.parent ?? $0.sheetParent }).contains(where: { $0 === self.window }) else {
+            return
+        }
 
-        if (notification.object as? NSWindow)?.isPopUpWindow == false {
+        mainViewController.windowDidBecomeKey()
+
+        if !window.isPopUpWindow {
             WindowControllersManager.shared.lastKeyMainWindowController = self
         }
 
@@ -266,7 +284,12 @@ extension MainWindowController: NSWindowDelegate {
 #endif
     }
 
-    func windowDidResignKey(_ notification: Notification) {
+    private func windowDidResignKeyNotification(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow,
+              sequence(first: window, next: { $0.parent ?? $0.sheetParent }).contains(where: { $0 === self.window }) else {
+            return
+        }
+
         mainViewController.windowDidResignKey()
     }
 
@@ -477,12 +500,6 @@ fileprivate extension NavigationBarViewController {
                 addressBarViewController?.addressBarButtonsViewController?.bookmarkButton
         ]
     }
-
-}
-
-extension Notification.Name {
-
-    static let windowDidBecomeKey = Notification.Name(rawValue: "windowDidBecomeKey")
 
 }
 

@@ -2035,8 +2035,7 @@ extension MainViewController: BrowserChromeDelegate {
             let topBarsConstant = -browserTabsOffset * (1.0 - ratio)
             viewCoordinator.constraints.tabBarContainerTop.constant = topBarsConstant
         }
-        viewCoordinator.constraints.navigationBarContainerTop.constant = -navBarTopOffset * (1.0 - ratio)
-        
+        viewCoordinator.constraints.navigationBarContainerTop.constant = browserTabsOffset + -navBarTopOffset * (1.0 - ratio)
     }
 
 }

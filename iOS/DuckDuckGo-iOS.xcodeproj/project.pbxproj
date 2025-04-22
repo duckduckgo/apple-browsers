@@ -1448,7 +1448,6 @@
 		F4D7221026F29A70007D6193 /* BookmarkDetailsCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4D7220F26F29A70007D6193 /* BookmarkDetailsCell.swift */; };
 		F4D7F634298C00C3006C3AE9 /* FindInPageIOSJSSupport in Frameworks */ = {isa = PBXBuildFile; productRef = F4D7F633298C00C3006C3AE9 /* FindInPageIOSJSSupport */; };
 		F4D9C4FA25117A0F00814B71 /* HomeMessageStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4D9C4F925117A0F00814B71 /* HomeMessageStorage.swift */; };
-		F4E1936625AF722F001D2666 /* HighlightCutOutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4E1936525AF722F001D2666 /* HighlightCutOutView.swift */; };
 		F4F6DFB226E6AEC100ED7E12 /* AddOrEditBookmarkViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4F6DFB126E6AEC100ED7E12 /* AddOrEditBookmarkViewController.swift */; };
 		F4F6DFB426E6B63700ED7E12 /* BookmarkFolderCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4F6DFB326E6B63700ED7E12 /* BookmarkFolderCell.swift */; };
 		F4F6DFB626E6B71300ED7E12 /* BookmarkFoldersTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F4F6DFB526E6B71300ED7E12 /* BookmarkFoldersTableViewController.swift */; };
@@ -3584,7 +3583,6 @@
 		F4CE6D1A257EA33C00D0A6AA /* FireButtonAnimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireButtonAnimator.swift; sourceTree = "<group>"; };
 		F4D7220F26F29A70007D6193 /* BookmarkDetailsCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkDetailsCell.swift; sourceTree = "<group>"; };
 		F4D9C4F925117A0F00814B71 /* HomeMessageStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeMessageStorage.swift; sourceTree = "<group>"; };
-		F4E1936525AF722F001D2666 /* HighlightCutOutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HighlightCutOutView.swift; sourceTree = "<group>"; };
 		F4F6DFB126E6AEC100ED7E12 /* AddOrEditBookmarkViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddOrEditBookmarkViewController.swift; sourceTree = "<group>"; };
 		F4F6DFB326E6B63700ED7E12 /* BookmarkFolderCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkFolderCell.swift; sourceTree = "<group>"; };
 		F4F6DFB526E6B71300ED7E12 /* BookmarkFoldersTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkFoldersTableViewController.swift; sourceTree = "<group>"; };
@@ -5366,7 +5364,6 @@
 				984147CB24F02E9E00362052 /* DaxOnboarding.storyboard */,
 				858650D02469BCDE00C36F8A /* DaxDialogs.swift */,
 				858650DA246B111900C36F8A /* DaxOnboarding.xcassets */,
-				F4E1936525AF722F001D2666 /* HighlightCutOutView.swift */,
 				85C297032476C1FD0063A335 /* DaxDialogsSettings.swift */,
 			);
 			name = DaxOnboarding;
@@ -8828,7 +8825,6 @@
 				37FCAAC029930E26000E420A /* FailedAssertionView.swift in Sources */,
 				4BBBBA922B03291700D965DA /* VPNWaitlistUserText.swift in Sources */,
 				6F0FEF6D2C52639E0090CDE4 /* ReorderableForEach.swift in Sources */,
-				F4E1936625AF722F001D2666 /* HighlightCutOutView.swift in Sources */,
 				1E162605296840D80004127F /* Triangle.swift in Sources */,
 				6FDC64012C92F4A300DB71B3 /* NewTabPageIntroDataStoring.swift in Sources */,
 				9F46BEF82CD8D7490092E0EF /* OnboardingView+AddToDockContent.swift in Sources */,

@@ -388,6 +388,11 @@ final class AddressBarButtonsViewController: NSViewController {
         aiChatButton.isHidden = !aiChatMenuConfig.shouldDisplayAddressBarShortcut
         updateAIChatDividerVisibility()
         delegate?.addressBarButtonsViewController(self, didUpdateAIChatButtonVisibility: aiChatButton.isShown)
+
+        // Check if the current tab is in the onboarding state and disable the AI chat button if it is
+        guard let tabViewModel else { return }
+        let isOnboarding = [.onboarding].contains(tabViewModel.tab.content)
+        aiChatButton.isEnabled = !isOnboarding
     }
 
     @objc func hideAIChatButtonAction(_ sender: NSMenuItem) {

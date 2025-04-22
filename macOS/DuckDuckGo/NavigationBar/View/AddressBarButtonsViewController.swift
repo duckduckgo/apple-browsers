@@ -790,7 +790,6 @@ final class AddressBarButtonsViewController: NSViewController {
             }).store(in: &cancellables)
     }
 
-
     private func configureAIChatButton() {
         aiChatButton.setAccessibilityIdentifier("AddressBarButtonsViewController.aiChatButton")
         aiChatButton.menu = NSMenu {

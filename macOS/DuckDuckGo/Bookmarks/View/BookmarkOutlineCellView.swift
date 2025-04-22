@@ -213,7 +213,7 @@ final class BookmarkOutlineCellView: NSTableCellView {
             titleLabel.setContentCompressionResistancePriority(.init(300), for: .horizontal)
             titleLabel.setContentHuggingPriority(.init(301), for: .vertical)
             urlLabel.setContentCompressionResistancePriority(.init(200), for: .horizontal)
-            countLabel.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+            countLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
         } else {
             faviconImageView.setContentCompressionResistancePriority(.required, for: .horizontal)

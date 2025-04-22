@@ -43,12 +43,15 @@ final class BookmarkManagementSplitViewController: NSSplitViewController {
         splitView.setValue(NSColor.divider, forKey: #keyPath(NSSplitView.dividerColor))
 
         let sidebarViewItem = NSSplitViewItem(contentListWithViewController: sidebarViewController)
-        sidebarViewItem.minimumThickness = 256
+        sidebarViewItem.minimumThickness = 128
         sidebarViewItem.maximumThickness = 256
+        sidebarViewItem.holdingPriority = .defaultLow
 
         addSplitViewItem(sidebarViewItem)
 
         let detailViewItem = NSSplitViewItem(viewController: detailViewController)
+        detailViewItem.minimumThickness = 415
+        detailViewItem.holdingPriority = .dragThatCannotResizeWindow
         addSplitViewItem(detailViewItem)
 
         view = splitView

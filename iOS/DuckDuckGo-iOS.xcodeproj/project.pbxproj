@@ -5368,7 +5368,6 @@
 				984147CB24F02E9E00362052 /* DaxOnboarding.storyboard */,
 				858650D02469BCDE00C36F8A /* DaxDialogs.swift */,
 				858650DA246B111900C36F8A /* DaxOnboarding.xcassets */,
-				8524CC99246DA81700E59D45 /* FullscreenDaxDialogViewController.swift */,
 				F42EF9302614BABD00101FB9 /* ActionSheetDaxDialogViewController.swift */,
 				F4E1936525AF722F001D2666 /* HighlightCutOutView.swift */,
 				85C297032476C1FD0063A335 /* DaxDialogsSettings.swift */,

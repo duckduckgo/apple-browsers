@@ -409,7 +409,7 @@ final class AddressBarViewController: NSViewController {
     private func updateSwitchToTabBoxAppearance() {
         guard case .editing(.openTabSuggestion) = mode,
               addressBarTextField.isVisible, let editor = addressBarTextField.editor,
-                let window = view.window, window.frame.size.width > 640 else {
+              view.frame.size.width > 280 else {
             switchToTabBox.isHidden = true
             switchToTabBox.alphaValue = 0
             return

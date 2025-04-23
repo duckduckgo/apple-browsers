@@ -201,7 +201,11 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
 
             let onboardingStatusPublisher = UserDefaults.netP.networkProtectionOnboardingStatusPublisher
             let vpnURLEventHandler = VPNURLEventHandler()
-            let uiActionHandler = VPNUIActionHandler(vpnURLEventHandler: vpnURLEventHandler, proxySettings: proxySettings)
+            let uiActionHandler = VPNUIActionHandler(
+                vpnURLEventHandler: vpnURLEventHandler,
+                tunnelController: controller,
+                proxySettings: proxySettings,
+                vpnAppState: vpnAppState)
 
             let connectionStatusPublisher = CurrentValuePublisher(
                 initialValue: statusReporter.statusObserver.recentValue,

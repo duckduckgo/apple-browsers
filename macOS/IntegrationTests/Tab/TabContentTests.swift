@@ -291,6 +291,7 @@ class TabContentTests: XCTestCase {
         persistor.lastUsedCustomDownloadLocation = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask)[0].path
 
         // Hit Cmd+S
+        NSApp.activate(ignoringOtherApps: true)
         let keyDown = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [.command], timestamp: 0, windowNumber: window.windowNumber, context: nil, characters: "s", charactersIgnoringModifiers: "s", isARepeat: false, keyCode: UInt16(kVK_ANSI_S))!
         let keyUp = NSEvent.keyEvent(with: .keyUp, location: .zero, modifierFlags: [.command], timestamp: 0, windowNumber: window.windowNumber, context: nil, characters: "s", charactersIgnoringModifiers: "s", isARepeat: false, keyCode: UInt16(kVK_ANSI_S))!
         window.sendEvent(keyDown)

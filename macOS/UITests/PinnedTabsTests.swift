@@ -160,6 +160,7 @@ class PinnedTabsTests: UITestCase {
 
     private func assertPinnedTabsRestoredState() {
         let newApp = XCUIApplication()
+        newApp.launchEnvironment["UITEST_MODE"] = "1"
         newApp.launch()
         sleep(10) // This was increased from two to ten, because slower VMs needed more time to re-launch the app.
 

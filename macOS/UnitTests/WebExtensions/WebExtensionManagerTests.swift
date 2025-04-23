@@ -81,7 +81,7 @@ final class WebExtensionManagerTests: XCTestCase {
         let paths = ["/path/to/extension1", "/path/to/extension2"]
         pathsCachingMock.cache = paths
 
-        let webExtensionManager = WebExtensionManager(
+        _ = WebExtensionManager(
             webExtensionPathsCache: pathsCachingMock,
             webExtensionLoader: webExtensionLoadingMock,
             internalUserDecider: featureFlaggerMock.internalUserDecider,

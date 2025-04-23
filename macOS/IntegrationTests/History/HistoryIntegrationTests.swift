@@ -27,7 +27,9 @@ import XCTest
 @available(macOS 12.0, *)
 class HistoryIntegrationTests: XCTestCase {
 
+    var schemeHandler: TestSchemeHandler!
     var window: NSWindow!
+    static let testHtml = "<html><head><title>Title 1</title></head><body>test</body></html>"
 
     var mainViewController: MainViewController {
         (window.contentViewController as! MainViewController)
@@ -51,6 +53,9 @@ class HistoryIntegrationTests: XCTestCase {
         privacyConfiguration.isFeatureKeyEnabled = { _, _ in
             return false
         }
+        schemeHandler = TestSchemeHandler { _ in
+            return .ok(.html(Self.testHtml))
+        }
 
         await withCheckedContinuation { continuation in
             HistoryCoordinator.shared.burnAll {
@@ -64,23 +69,17 @@ class HistoryIntegrationTests: XCTestCase {
         window?.close()
         window = nil
         WebTrackingProtectionPreferences.shared.isGPCEnabled = true
+        schemeHandler = nil
     }
 
     // MARK: - Tests
 
     @MainActor
     func testWhenPageTitleIsUpdated_historyEntryTitleUpdated() async throws {
-        let tab = Tab(content: .newtab, privacyFeatures: privacyFeaturesMock)
+        let tab = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
         window = WindowsManager.openNewWindow(with: tab)!
 
-        let html = """
-            <html>
-                <head><title>Title 1</title></head>
-                <body>test content</body>
-            </html>
-        """
-
-        let url = URL.testsServer.appendingTestParameters(data: html.utf8data)
+        let url = URL.duckDuckGo
         let titleChangedPromise1 = tab.$title
             .filter { $0 == "Title 1" }
             .receive(on: DispatchQueue.main)
@@ -114,7 +113,7 @@ class HistoryIntegrationTests: XCTestCase {
 
     @MainActor
     func testWhenSameDocumentNavigation_historyEntryTitleUpdated() async throws {
-        let tab = Tab(content: .newtab, privacyFeatures: privacyFeaturesMock)
+        let tab = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
         window = WindowsManager.openNewWindow(with: tab)!
 
         let html = """
@@ -128,10 +127,13 @@ class HistoryIntegrationTests: XCTestCase {
                 </body>
             </html>
         """
+        schemeHandler.middleware = [{ _ in
+            return .ok(.html(html))
+        }]
 
         let urls = [
-            URL.testsServer.appendingTestParameters(data: html.utf8data),
-            URL(string: URL.testsServer.appendingTestParameters(data: html.utf8data).absoluteString + "#1")!,
+            URL(string: "http://test.com/")!,
+            URL(string: "http://test.com/#1")!,
         ]
 
         _=try await tab.setUrl(urls[0], source: .link)?.result.get()
@@ -158,13 +160,14 @@ class HistoryIntegrationTests: XCTestCase {
 
     @MainActor
     func testWhenNavigatingToSamePage_visitIsAdded() async throws {
-        let tab = Tab(content: .newtab, privacyFeatures: privacyFeaturesMock)
+        let tab = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
         window = WindowsManager.openNewWindow(with: tab)!
 
         let urls = [
-            URL.testsServer,
-            URL.testsServer.appendingPathComponent("page1").appendingTestParameters(data: "".utf8data),
+            URL(string: "http://test.com/")!,
+            URL(string: "http://test.com/page1")!,
         ]
+
         _=try await tab.setUrl(urls[0], source: .link)?.result.get()
         _=try await tab.setUrl(urls[1], source: .link)?.result.get()
         _=try await tab.setUrl(urls[0], source: .link)?.result.get()
@@ -178,12 +181,12 @@ class HistoryIntegrationTests: XCTestCase {
 
     @MainActor
     func testWhenNavigatingBack_visitIsNotAdded() async throws {
-        let tab = Tab(content: .newtab, privacyFeatures: privacyFeaturesMock)
+        let tab = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
         window = WindowsManager.openNewWindow(with: tab)!
 
         let urls = [
-            URL.testsServer,
-            URL.testsServer.appendingPathComponent("page1").appendingTestParameters(data: "".utf8data),
+            URL(string: "http://test.com/")!,
+            URL(string: "http://test.com/page1")!,
         ]
         _=try await tab.setUrl(urls[0], source: .link)?.result.get()
         _=try await tab.setUrl(urls[1], source: .link)?.result.get()
@@ -201,10 +204,28 @@ class HistoryIntegrationTests: XCTestCase {
     func testWhenScriptTrackerLoaded_trackerAddedToHistory() async throws {
         WebTrackingProtectionPreferences.shared.isGPCEnabled = false
 
-        let tab = Tab(content: .newtab)
+        let tab = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration())
         window = WindowsManager.openNewWindow(with: tab)!
 
         let url = URL(string: "http://privacy-test-pages.site/tracker-reporting/1major-via-script.html")!
+        let html = """
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width">
+          <title>1 major tracker loaded via script</title>
+
+          <script src="//doubleclick.net/tracker.js"></script>
+        </head>
+        <body>
+        <p><a href="../index.html">[Home]</a></p>
+        <p>1 major tracker loaded via script src</p>
+        </body>
+        </html>
+        """
+        schemeHandler.middleware = [{ _ in
+            return .ok(.html(html))
+        }]
 
         // navigate to a regular page, tracker count should be reset to 0
         let trackerPromise = tab.privacyInfoPublisher.compactMap { $0?.$trackerInfo }
@@ -229,10 +250,29 @@ class HistoryIntegrationTests: XCTestCase {
     func testWhenSurrogateTrackerLoaded_trackerAddedToHistory() async throws {
         WebTrackingProtectionPreferences.shared.isGPCEnabled = false
 
-        let tab = Tab(content: .newtab)
+        let tab = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration())
         window = WindowsManager.openNewWindow(with: tab)!
 
+        let html = """
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width">
+          <title>1 major tracker with surrogate</title>
+          <script src="//doubleclick.net/instream/ad_status.js"></script>
+        </head>
+        <body>
+        <p><a href="../index.html">[Home]</a></p>
+        <p>1 major tracker with surrogate</p>
+        </body>
+        </html>
+        """
+
         let url = URL(string: "http://privacy-test-pages.site/tracker-reporting/1major-with-surrogate.html")!
+        schemeHandler.middleware = [{ _ in
+            return .ok(.html(html))
+        }]
 
         // navigate to a regular page, tracker count should be reset to 0
         let trackerPromise = tab.privacyInfoPublisher.compactMap { $0?.$trackerInfo }

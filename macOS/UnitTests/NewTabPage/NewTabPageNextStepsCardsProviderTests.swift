@@ -29,7 +29,7 @@ final class NewTabPageNextStepsCardsProviderTests: XCTestCase {
     override func setUp() async throws {
         let privacyConfigManager = MockPrivacyConfigurationManager()
         let config = MockPrivacyConfiguration()
-        privacyConfigManager.privacyConfig = config
+        privacyConfigManager.mockPrivacyConfig = config
 
         let continueSetUpModel = HomePage.Models.ContinueSetUpModel(
             defaultBrowserProvider: CapturingDefaultBrowserProvider(),

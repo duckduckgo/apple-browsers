@@ -18,16 +18,9 @@
 
 import Common
 import UserScript
+import AIChat
 
 final class AIChatUserScript: NSObject, Subfeature {
-
-    enum MessageNames: String, CaseIterable {
-        case openAIChatSettings
-        case getAIChatNativeConfigValues
-        case closeAIChat
-        case getAIChatNativePrompt
-    }
-
     private let handler: AIChatUserScriptHandling
     public let featureName: String = "aiChat"
     weak var broker: UserScriptMessageBroker?
@@ -51,7 +44,7 @@ final class AIChatUserScript: NSObject, Subfeature {
     }
 
     func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
-        switch MessageNames(rawValue: methodName) {
+        switch AIChatUserScriptMessages(rawValue: methodName) {
         case .openAIChatSettings:
             return handler.openAIChatSettings
         case .getAIChatNativeConfigValues:

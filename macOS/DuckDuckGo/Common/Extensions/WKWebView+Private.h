@@ -66,4 +66,8 @@ typedef NS_OPTIONS(NSUInteger, _WKFindOptions) {
 
 @end
 
+@interface WKProcessPool (Private)
++ (void)_setWebProcessCountLimit:(unsigned)limit API_AVAILABLE(macos(13.0), ios(16.0));
+@end
+
 NS_ASSUME_NONNULL_END

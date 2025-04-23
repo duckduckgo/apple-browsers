@@ -36,12 +36,12 @@ final class CapturingHistoryViewDeleteDialogPresenter: HistoryViewDialogPresenti
         }
     }
 
-    func showDeleteDialog(for itemsCount: Int, deleteMode: HistoryViewDeleteDialogModel.DeleteMode) async -> HistoryViewDeleteDialogModel.Response {
+    func showDeleteDialog(for itemsCount: Int, deleteMode: DuckDuckGo_Privacy_Browser.HistoryViewDeleteDialogModel.DeleteMode, in window: NSWindow?) async -> DuckDuckGo_Privacy_Browser.HistoryViewDeleteDialogModel.Response {
         showDeleteDialogCalls.append(.init(itemsCount, deleteMode))
         return deleteDialogResponse
     }
 
-    func showMultipleTabsDialog(for itemsCount: Int) async -> OpenMultipleTabsWarningDialogModel.Response {
+    func showMultipleTabsDialog(for itemsCount: Int, in window: NSWindow?) async -> DuckDuckGo_Privacy_Browser.OpenMultipleTabsWarningDialogModel.Response {
         showMultipleTabsDialogCalls.append(itemsCount)
         return multipleTabsDialogResponse
     }

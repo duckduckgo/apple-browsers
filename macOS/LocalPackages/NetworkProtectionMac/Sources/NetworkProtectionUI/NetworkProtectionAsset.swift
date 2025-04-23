@@ -40,6 +40,9 @@ public enum NetworkProtectionAsset: String, CaseIterable {
     case appVPNOffIcon = "app-vpn-off"
     case appVPNIssueIcon = "app-vpn-issue"
 
+    case appVPNOnIconNew = "app-vpn-on-new"
+    case appVPNOffIconNew = "app-vpn-off-new"
+
     // Status Bar Icons: Release builds
     case statusbarVPNOnIcon = "statusbar-vpn-on"
     case statusbarVPNOffIcon = "statusbar-vpn-off"

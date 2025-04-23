@@ -722,7 +722,7 @@
                                         <rect key="frame" x="0.0" y="0.0" width="5" height="20"/>
                                         <imageCell key="cell" refusesFirstResponder="YES" alignment="left" imageScaling="proportionallyDown" image="AIChat-Divider" id="xf3-M4-GH0"/>
                                     </imageView>
-                                    <button hidden="YES" translatesAutoresizingMaskIntoConstraints="NO" id="vcx-Ct-S1I" customClass="AddressBarButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
+                                    <button hidden="YES" translatesAutoresizingMaskIntoConstraints="NO" id="vcx-Ct-S1I" customClass="AddressBarMenuButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
                                         <rect key="frame" x="0.0" y="-12" width="32" height="32"/>
                                         <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="AIChat" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="ZnX-OO-nlL">
                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>

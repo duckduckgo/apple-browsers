@@ -18,16 +18,30 @@
 
 import AppKit
 
+public typealias NewTabPageContextMenuPresenterProvider = (NSWindow?) -> NewTabPageContextMenuPresenting
+
+@inlinable
+public func DefaultNewTabPageContextMenuPresenterProvider() -> NewTabPageContextMenuPresenterProvider { // swiftlint:disable:this identifier_name
+    DefaultNewTabPageContextMenuPresenter.init
+}
+
 public protocol NewTabPageContextMenuPresenting {
+    var window: NSWindow? { get }
     func showContextMenu(_ menu: NSMenu)
 }
 
 public struct DefaultNewTabPageContextMenuPresenter: NewTabPageContextMenuPresenting {
+
+    public weak var window: NSWindow?
+
+    public init(window: NSWindow? = nil) {
+        self.window = window
+    }
+
     public func showContextMenu(_ menu: NSMenu) {
         if !menu.items.isEmpty {
             menu.popUp(positioning: nil, at: NSEvent.mouseLocation, in: nil)
         }
     }
 
-    public init() {}
 }

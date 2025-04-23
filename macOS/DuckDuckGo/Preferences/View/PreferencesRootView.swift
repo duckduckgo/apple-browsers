@@ -156,13 +156,16 @@ enum Preferences {
                         WindowControllersManager.shared.showTab(with: .identityTheftRestoration(url))
                     case .iHaveASubscriptionClick:
                         PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseClick)
-                    case .postSubscriptionAddEmailClick:
-                        PixelKit.fire(PrivacyProPixel.privacyProWelcomeAddDevice, frequency: .uniqueByName)
-                    case .restorePurchaseStoreClick:
+                    case .activateSubscriptionViaEmailClick:
+                        PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
+                    case .activateSubscriptionViaRestoreAppStorePurchaseClick:
                         PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreStart, frequency: .legacyDailyAndCount)
-                    case .addDeviceEnterEmail:
-                        PixelKit.fire(PrivacyProPixel.privacyProAddDeviceEnterEmail)
-                    case .activeSubscriptionSettingsClick:
+                    case .manageEmailClick:
+                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementEmail, frequency: .uniqueByName)
+                    case .addToDeviceActivationFlow:
+                        // Handled on web
+                        break
+                    case .openSubscriptionSettingsClick:
                         PixelKit.fire(PrivacyProPixel.privacyProSubscriptionSettings)
                     case .changePlanOrBillingClick:
                         PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementPlanBilling)
@@ -316,13 +319,16 @@ enum Preferences {
                         WindowControllersManager.shared.showTab(with: .identityTheftRestoration(url))
                     case .iHaveASubscriptionClick:
                         PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseClick)
-                    case .postSubscriptionAddEmailClick:
-                        PixelKit.fire(PrivacyProPixel.privacyProWelcomeAddDevice, frequency: .uniqueByName)
-                    case .restorePurchaseStoreClick:
+                    case .activateSubscriptionViaEmailClick:
+                        PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
+                    case .activateSubscriptionViaRestoreAppStorePurchaseClick:
                         PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreStart, frequency: .legacyDailyAndCount)
-                    case .addDeviceEnterEmail:
-                        PixelKit.fire(PrivacyProPixel.privacyProAddDeviceEnterEmail)
-                    case .activeSubscriptionSettingsClick:
+                    case .manageEmailClick:
+                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementEmail, frequency: .uniqueByName)
+                    case .addToDeviceActivationFlow:
+                        // Handled on web
+                        break
+                    case .openSubscriptionSettingsClick:
                         PixelKit.fire(PrivacyProPixel.privacyProSubscriptionSettings)
                     case .changePlanOrBillingClick:
                         PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementPlanBilling)

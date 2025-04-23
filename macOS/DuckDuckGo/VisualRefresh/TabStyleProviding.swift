@@ -1,6 +1,5 @@
 //
-//  FireButton.swift
-//  DuckDuckGo
+//  TabStyleProviding.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -17,15 +16,17 @@
 //  limitations under the License.
 //
 
-import UIKit
-import DesignResourcesKit
+protocol TabStyleProviding {
+    var separatorColor: NSColor { get }
+    var separatorHeight: CGFloat { get }
+}
 
-class FireButton: ToolbarButton {
-    convenience init() {
-        self.init(.fire)
+final class LegacyTabStyleProvider: TabStyleProviding {
+    let separatorColor: NSColor = .separator
+    let separatorHeight: CGFloat = 20
+}
 
-        setImage(UIImage(resource: .fireNew24))
-
-        frame = CGRect(x: 0, y: 0, width: 84, height: 44)
-    }
+final class NewlineTabStyleProvider: TabStyleProviding {
+    let separatorColor: NSColor = .tabSeparatorNew
+    let separatorHeight: CGFloat = 16
 }

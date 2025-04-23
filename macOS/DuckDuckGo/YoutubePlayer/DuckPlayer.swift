@@ -370,7 +370,7 @@ final class DuckPlayer {
     private var isCustomErrorFeatureEnabled: Bool
     private var customErrorSignInRequiredSelector: String?
     private let onboardingDecider: DuckPlayerOnboardingDecider
-    private var shouldOpenNextVideoOnYoutube: Bool = false
+    private(set) var shouldOpenNextVideoOnYoutube: Bool = false
 
     private func bindDuckPlayerModeIfNeeded() {
         if isFeatureEnabled {

@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AIChat
+
 protocol AIChatTabOpening {
     @MainActor
     func openAIChatTab(_ query: String?, target: AIChatTabOpenerTarget)
@@ -41,7 +43,7 @@ struct AIChatTabOpener: AIChatTabOpening {
     private let promptHandler: AIChatPromptHandler
     private let addressBarQueryExtractor: AIChatAddressBarPromptExtractor
 
-    let aiChatURL = AIChatURL()
+    let aiChatRemoteSettings = AIChatRemoteSettings()
 
     init(promptHandler: AIChatPromptHandler,
          addressBarQueryExtractor: AIChatAddressBarPromptExtractor) {
@@ -60,6 +62,6 @@ struct AIChatTabOpener: AIChatTabOpening {
         if let query = query {
             promptHandler.setData(query)
         }
-        WindowControllersManager.shared.openAIChat(aiChatURL, target: target, hasPrompt: query != nil)
+        WindowControllersManager.shared.openAIChat(aiChatRemoteSettings.aiChatURL, target: target, hasPrompt: query != nil)
     }
 }

@@ -310,11 +310,17 @@ final class AddressBarButtonsViewController: NSViewController {
         let isCommandPressed = NSEvent.modifierFlags.contains(.command)
         let isShiftPressed = NSApplication.shared.isShiftPressed
 
-        let target: AIChatTabOpenerTarget
+        var target: AIChatTabOpenerTarget = .sameTab
+
         if isCommandPressed {
             target = isShiftPressed ? .newTabSelected : .newTabUnselected
-        } else {
-            target = .sameTab
+        }
+
+        if let tabViewModel = tabViewModel,
+           let tabURL = tabViewModel.tab.url,
+           !tabURL.isDuckAIURL,
+           tabViewModel.tab.content != .newtab {
+            target = .newTabSelected
         }
 
         if let value = textFieldValue {

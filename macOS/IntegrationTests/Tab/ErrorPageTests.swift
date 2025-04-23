@@ -41,7 +41,6 @@ class ErrorPageTests: XCTestCase {
         contentBlockingMock.privacyConfigurationManager.privacyConfig as! MockPrivacyConfiguration
     }
 
-    var webViewConfiguration: WKWebViewConfiguration!
     var schemeHandler: TestSchemeHandler!
 
     static let pageTitle = "test page"
@@ -117,18 +116,12 @@ class ErrorPageTests: XCTestCase {
             return false
         }
 
-        schemeHandler = TestSchemeHandler()
-        WKWebView.customHandlerSchemes = [.http, .https]
-
-        webViewConfiguration = WKWebViewConfiguration()
-        // ! uncomment this to view navigation logs
-        // OSLog.loggingCategories.insert(OSLog.AppCategories.navigation.rawValue)
+        schemeHandler = TestSchemeHandler { _ in
+            return .ok(.html(Self.testHtml))
+        }
 
         // tests return debugDescription instead of localizedDescription
         NSError.disableSwizzledDescription = true
-
-        // mock WebView https protocol handling
-        webViewConfiguration.setURLSchemeHandler(schemeHandler, forURLScheme: URL.NavigationalScheme.https.rawValue)
     }
 
     @MainActor
@@ -136,9 +129,7 @@ class ErrorPageTests: XCTestCase {
         window?.close()
         window = nil
 
-        webViewConfiguration = nil
         schemeHandler = nil
-        WKWebView.customHandlerSchemes = []
 
         NSError.disableSwizzledDescription = false
     }
@@ -148,7 +139,7 @@ class ErrorPageTests: XCTestCase {
     @MainActor
     func testWhenPageFailsToLoad_errorPageShown() async throws {
         // open Tab with newtab page
-        let tab = Tab(content: .newtab, webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock)
+        let tab = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
         let eNewtabPageLoaded = tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise()
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab]))
         window = WindowsManager.openNewWindow(with: viewModel)!
@@ -189,8 +180,8 @@ class ErrorPageTests: XCTestCase {
     @MainActor
     func testWhenTabWithNoConnectionErrorActivated_reloadTriggered() async throws {
         // open 2 Tabs with newtab page
-        let tab1 = Tab(content: .newtab, webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock)
-        let tab2 = Tab(content: .newtab, webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock)
+        let tab1 = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
+        let tab2 = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
         let eNewtabPageLoaded = tab1.webViewDidFinishNavigationPublisher.timeout(5).first().promise()
         let eNewtab2PageLoaded = tab1.webViewDidFinishNavigationPublisher.timeout(5).first().promise()
         let tabsViewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab1, tab2]))
@@ -239,8 +230,8 @@ class ErrorPageTests: XCTestCase {
         schemeHandler.middleware = [{ _ in
             .failure(NSError.connectionLost)
         }]
-        let tab1 = Tab(content: .url(.test, source: .link), webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock)
-        let tab2 = Tab(content: .newtab, webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock)
+        let tab1 = Tab(content: .url(.test, source: .link), webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
+        let tab2 = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
         let eNavigationFailed = tab1.$error.compactMap { $0 }.timeout(5).first().promise()
         let eNavigationFinished = tab1.webViewDidFinishNavigationPublisher.timeout(5).first().promise()
 
@@ -293,8 +284,8 @@ class ErrorPageTests: XCTestCase {
         schemeHandler.middleware = [{ _ in
             .failure(NSError.hostNotFound)
         }]
-        let tab1 = Tab(content: .url(.test, source: .link), webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock)
-        let tab2 = Tab(content: .newtab, webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock)
+        let tab1 = Tab(content: .url(.test, source: .link), webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
+        let tab2 = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
         let eNavigationFailed = tab1.$error.compactMap { $0 }.timeout(5).first().promise()
         let errorNavigationFinished = tab1.webViewDidFinishNavigationPublisher.timeout(5).first().promise()
         let tabsViewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab1, tab2]))
@@ -324,7 +315,7 @@ class ErrorPageTests: XCTestCase {
         schemeHandler.middleware = [{ _ in
             .failure(NSError.hostNotFound)
         }]
-        let tab = Tab(content: .url(.test, source: .link), webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock)
+        let tab = Tab(content: .url(.test, source: .link), webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
         let eNavigationFailed = tab.$error.compactMap { $0 }.timeout(5).first().promise()
         let errorNavigationFinished = tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise()
         window = WindowsManager.openNewWindow(with: tab)!
@@ -377,7 +368,7 @@ class ErrorPageTests: XCTestCase {
         schemeHandler.middleware = [{ _ in
             .failure(NSError.hostNotFound)
         }]
-        let tab = Tab(content: .url(.test, source: .link), webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock)
+        let tab = Tab(content: .url(.test, source: .link), webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
         let eNavigationFailed = tab.$error.compactMap { $0 }.timeout(5).first().promise()
         let errorNavigationFinished = tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise()
         window = WindowsManager.openNewWindow(with: tab)!
@@ -432,7 +423,7 @@ class ErrorPageTests: XCTestCase {
     @MainActor
     func testWhenPageLoadedAndFailsOnRefreshAndOnConsequentRefresh_errorPageIsUpdatedKeepingForwardHistory() async throws {
         // open Tab with newtab page
-        let tab = Tab(content: .newtab, webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock)
+        let tab = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
         let eNewtabPageLoaded = tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise()
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab]))
         window = WindowsManager.openNewWindow(with: viewModel)!
@@ -509,7 +500,7 @@ class ErrorPageTests: XCTestCase {
     @MainActor
     func testWhenPageLoadedAndFailsOnRefreshAndSucceedsOnConsequentRefresh_forwardHistoryIsPreserved() async throws {
         // open Tab with newtab page
-        let tab = Tab(content: .newtab, webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock)
+        let tab = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
         let eNewtabPageLoaded = tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise()
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab]))
         window = WindowsManager.openNewWindow(with: viewModel)!
@@ -578,7 +569,7 @@ class ErrorPageTests: XCTestCase {
     @MainActor
     func testWhenReloadingBySubmittingSameURL_errorPageRemainsSame() async throws {
         // open Tab with newtab page
-        let tab = Tab(content: .newtab, webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock)
+        let tab = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
         let eNewtabPageLoaded = tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise()
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab]))
         window = WindowsManager.openNewWindow(with: viewModel)!
@@ -657,7 +648,7 @@ class ErrorPageTests: XCTestCase {
     @MainActor
     func testWhenGoingToAnotherUrlFails_newBackForwardHistoryItemIsAdded() async throws {
         // open Tab with newtab page
-        let tab = Tab(content: .newtab, webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock)
+        let tab = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
         let eNewtabPageLoaded = tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise()
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab]))
         window = WindowsManager.openNewWindow(with: viewModel)!
@@ -736,7 +727,7 @@ class ErrorPageTests: XCTestCase {
     @MainActor
     func testWhenGoingToAnotherUrlSucceeds_newBackForwardHistoryItemIsAdded() async throws {
         // open Tab with newtab page
-        let tab = Tab(content: .newtab, webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock)
+        let tab = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
         let eNewtabPageLoaded = tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise()
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab]))
         window = WindowsManager.openNewWindow(with: viewModel)!
@@ -809,7 +800,7 @@ class ErrorPageTests: XCTestCase {
             .failure(NSError.noConnection)
         }]
 
-        let tab = Tab(content: .url(.test, source: .pendingStateRestoration), webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock, interactionStateData: Self.sessionStateData)
+        let tab = Tab(content: .url(.test, source: .pendingStateRestoration), webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock, interactionStateData: Self.sessionStateData)
         let eNewtabPageLoaded = tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise()
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab]))
         window = WindowsManager.openNewWindow(with: viewModel)!
@@ -850,7 +841,7 @@ class ErrorPageTests: XCTestCase {
             return .ok(.html(Self.testHtml))
         }]
 
-        let tab = Tab(content: .url(.alternative, source: .ui), webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock)
+        let tab = Tab(content: .url(.alternative, source: .ui), webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
         let eNavigationFinished = tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise()
         let provider = PinnedTabsManagerProvidingMock()
         let manager = PinnedTabsManager()
@@ -898,7 +889,7 @@ class ErrorPageTests: XCTestCase {
     @MainActor
     func testWhenPageFailsToLoadAfterRedirect_errorPageShown() async throws {
         // open Tab with newtab page
-        let tab = Tab(content: .newtab, webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock)
+        let tab = Tab(content: .newtab, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab]))
         let eNewtabPageLoaded = tab.webViewDidFinishNavigationPublisher.timeout(5).first().promise()
         window = WindowsManager.openNewWindow(with: viewModel)!

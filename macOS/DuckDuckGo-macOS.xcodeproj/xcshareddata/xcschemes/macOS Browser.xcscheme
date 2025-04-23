@@ -193,88 +193,10 @@
                   Identifier = "HTTPSUpgradeIntegrationTests">
                </Test>
                <Test
-                  Identifier = "MaliciousSiteProtectionIntegrationTests">
-               </Test>
-               <Test
-                  Identifier = "MaliciousSiteProtectionIntegrationTests/testFeatureDisabledAndMalwareDetection_tabIsNotMarkedMalware()">
-               </Test>
-               <Test
-                  Identifier = "MaliciousSiteProtectionIntegrationTests/testFeatureDisabledAndPhishingDetection_tabIsNotMarkedPhishing()">
-               </Test>
-               <Test
-                  Identifier = "MaliciousSiteProtectionIntegrationTests/testFeatureDisabledAndScamDetection_tabIsNotMarkedScam()">
-               </Test>
-               <Test
-                  Identifier = "MaliciousSiteProtectionIntegrationTests/testMalwareDetectedThenDDGLoaded_tabIsNotMarkedMalware()">
-               </Test>
-               <Test
-                  Identifier = "MaliciousSiteProtectionIntegrationTests/testMalwareDetectedThenNotDetected_tabIsNotMarkedMalware()">
-               </Test>
-               <Test
-                  Identifier = "MaliciousSiteProtectionIntegrationTests/testMalwareDetectedViaHTTPRedirectChain_tabIsMarkedMalware()">
-               </Test>
-               <Test
-                  Identifier = "MaliciousSiteProtectionIntegrationTests/testMalwareDetectedViaJSRedirectChain_tabIsMarkedMalware()">
-               </Test>
-               <Test
-                  Identifier = "MaliciousSiteProtectionIntegrationTests/testMalwareDetected_tabIsMarkedMalware()">
-               </Test>
-               <Test
-                  Identifier = "MaliciousSiteProtectionIntegrationTests/testPhishingDetectedThenDDGLoaded_tabIsNotMarkedPhishing()">
-               </Test>
-               <Test
-                  Identifier = "MaliciousSiteProtectionIntegrationTests/testPhishingDetectedThenNotDetected_tabIsNotMarkedPhishing()">
-               </Test>
-               <Test
-                  Identifier = "MaliciousSiteProtectionIntegrationTests/testPhishingDetectedViaHTTPRedirectChain_tabIsMarkedPhishing()">
-               </Test>
-               <Test
-                  Identifier = "MaliciousSiteProtectionIntegrationTests/testPhishingDetectedViaJSRedirectChain_tabIsMarkedPhishing()">
-               </Test>
-               <Test
-                  Identifier = "MaliciousSiteProtectionIntegrationTests/testPhishingDetected_tabIsMarkedPhishing()">
-               </Test>
-               <Test
-                  Identifier = "MaliciousSiteProtectionIntegrationTests/testPhishingNotDetected_tabIsNotMarkedPhishing()">
-               </Test>
-               <Test
-                  Identifier = "MaliciousSiteProtectionIntegrationTests/testScamDetectedNotDetected_tabIsNotMarkedScam()">
-               </Test>
-               <Test
-                  Identifier = "MaliciousSiteProtectionIntegrationTests/testScamDetectedThenDDGLoaded_tabIsNotMarkedScam()">
-               </Test>
-               <Test
-                  Identifier = "MaliciousSiteProtectionIntegrationTests/testScamDetected_tabIsMarkedScam()">
-               </Test>
-               <Test
                   Identifier = "NavigationProtectionIntegrationTests/testAMPLinks()">
                </Test>
                <Test
                   Identifier = "NavigationProtectionIntegrationTests/testReferrerTrimming()">
-               </Test>
-               <Test
-                  Identifier = "PhishingDetectionIntegrationTests">
-               </Test>
-               <Test
-                  Identifier = "PhishingDetectionIntegrationTests/testFeatureDisabledAndPhishingDetection_tabIsNotMarkedPhishing()">
-               </Test>
-               <Test
-                  Identifier = "PhishingDetectionIntegrationTests/testPhishingDetectedThenDDGLoaded_tabIsNotMarkedPhishing()">
-               </Test>
-               <Test
-                  Identifier = "PhishingDetectionIntegrationTests/testPhishingDetectedThenNotDetected_tabIsNotMarkedPhishing()">
-               </Test>
-               <Test
-                  Identifier = "PhishingDetectionIntegrationTests/testPhishingDetectedViaHTTPRedirectChain_tabIsMarkedPhishing()">
-               </Test>
-               <Test
-                  Identifier = "PhishingDetectionIntegrationTests/testPhishingDetectedViaJSRedirectChain_tabIsMarkedPhishing()">
-               </Test>
-               <Test
-                  Identifier = "PhishingDetectionIntegrationTests/testPhishingDetected_tabIsMarkedPhishing()">
-               </Test>
-               <Test
-                  Identifier = "PhishingDetectionIntegrationTests/testPhishingNotDetected_tabIsNotMarkedPhishing()">
                </Test>
                <Test
                   Identifier = "TabContentTests/testWhenPDFContextMenuPrintChosen_printDialogOpens()">

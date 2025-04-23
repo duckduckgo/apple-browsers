@@ -21,22 +21,22 @@ import Combine
 import Foundation
 import WebKit
 import XCTest
-@testable import PixelKit
 
 @testable import DuckDuckGo_Privacy_Browser
+@testable import PixelKit
 
 final class PermissionModelTests: XCTestCase {
 
-    let permissionManagerMock = PermissionManagerMock()
-    let geolocationServiceMock = GeolocationServiceMock()
+    var permissionManagerMock: PermissionManagerMock!
+    var geolocationServiceMock: GeolocationServiceMock!
     var geolocationProviderMock: GeolocationProviderMock!
-    let webView = WebViewMock()
+    var webView: WebViewMock!
     var model: PermissionModel!
-    let pixelKit = PixelKit(dryRun: true,
-                            appVersion: "1.0.0",
-                            defaultHeaders: [:],
-                            defaults: UserDefaults(),
-                            fireRequest: { _, _, _, _, _, _ in })
+    var pixelKit: PixelKit! = PixelKit(dryRun: true,
+                                       appVersion: "1.0.0",
+                                       defaultHeaders: [:],
+                                       defaults: UserDefaults(),
+                                       fireRequest: { _, _, _, _, _, _ in })
 
     var securityOrigin: WKSecurityOrigin {
         WKSecurityOriginMock.new(url: .duckDuckGo)
@@ -50,6 +50,11 @@ final class PermissionModelTests: XCTestCase {
     override func setUp() {
         PixelKit.setSharedForTesting(pixelKit: pixelKit)
 
+        permissionManagerMock = PermissionManagerMock()
+        geolocationServiceMock = GeolocationServiceMock()
+
+        let configuration = WKWebViewConfiguration(processPool: WKProcessPool())
+        webView = WebViewMock(frame: NSRect(x: 0, y: 0, width: 50, height: 50), configuration: configuration)
         webView.uiDelegate = self
 
         geolocationProviderMock = GeolocationProviderMock(geolocationService: geolocationServiceMock)
@@ -63,6 +68,10 @@ final class PermissionModelTests: XCTestCase {
 
     override func tearDown() {
         AVCaptureDevice.restoreAuthorizationStatusForMediaType()
+        webView = nil
+        permissionManagerMock = nil
+        geolocationServiceMock = nil
+        pixelKit = nil
     }
 
     func testWhenCameraIsActivatedThenCameraPermissionChangesToActive() {
@@ -1069,7 +1078,7 @@ final class PermissionModelTests: XCTestCase {
         } else {
             webView.stopMediaCaptureHandler = { [unowned webView] in
                 e1.fulfill()
-                webView.stopMediaCaptureHandler = {
+                webView!.stopMediaCaptureHandler = {
                     e2.fulfill()
                 }
             }

@@ -559,7 +559,7 @@ final class BrowserTabViewController: NSViewController {
             addWebViewToViewHierarchy(newWebView, tab: tabViewModel.tab)
         }
 
-        guard let tabViewModel = tabViewModel else {
+        guard let tabViewModel else {
             removeWebViewFromHierarchy()
             return
         }
@@ -575,8 +575,9 @@ final class BrowserTabViewController: NSViewController {
         adjustFirstResponderAfterAddingContentViewIfNeeded()
     }
 
-    private func webView(for tabViewModel: TabViewModel) -> WebView {
-        switch tabViewModel.tab.content {
+    private func webView(for tabViewModel: TabViewModel, tabContent: Tab.TabContent? = nil) -> WebView {
+        let tabContent = tabContent ?? tabViewModel.tabContent
+        switch tabContent {
         case .newtab:
             return newTabPageWebViewModel.webView
         default:
@@ -691,7 +692,7 @@ final class BrowserTabViewController: NSViewController {
              .url(_, _, source: .reload):
             return true
 
-        case .settings, .bookmarks, .history, .dataBrokerProtection, .subscription, .onboardingDeprecated, .onboarding, .releaseNotes, .identityTheftRestoration, .webExtensionUrl:
+        case .settings, .bookmarks, .history, .dataBrokerProtection, .subscription, .onboarding, .releaseNotes, .identityTheftRestoration, .webExtensionUrl:
             return true
 
         case .none:
@@ -699,21 +700,23 @@ final class BrowserTabViewController: NSViewController {
         }
     }
 
-    func adjustFirstResponder(force: Bool = false, tabContent: Tab.TabContent? = nil) {
+    func adjustFirstResponder(force: Bool = false, tabViewModel: TabViewModel? = nil, tabContent: Tab.TabContent? = nil) {
         viewToMakeFirstResponderAfterAdding = nil
         guard let window = view.window, window.isVisible,
-              let tabContent = tabContent ?? tabViewModel?.tab.content,
-              force || shouldMakeContentViewFirstResponder(for: tabContent) else { return }
+              let tabViewModel = tabViewModel ?? self.tabViewModel else { return }
+        let tabContent = tabContent ?? tabViewModel.tab.content
+        guard force || shouldMakeContentViewFirstResponder(for: tabContent) else { return }
 
         let getView: (() -> NSView?)?
         switch tabContent {
         case .newtab:
             // don‘t steal focus from the address bar at .newtab page
             return
-        case .onboardingDeprecated:
-            getView = { [weak self] in self?.transientTabContentViewController?.view }
         case .url, .subscription, .identityTheftRestoration, .onboarding, .releaseNotes, .history:
-            getView = { [weak self] in self?.webView }
+            getView = { [weak self, weak tabViewModel] in
+                guard let self, let tabViewModel else { return nil }
+                return webView(for: tabViewModel, tabContent: tabContent)
+            }
         case .settings:
             getView = { [weak self] in self?.preferencesViewController?.view }
         case .bookmarks:
@@ -740,7 +743,9 @@ final class BrowserTabViewController: NSViewController {
     private var viewToMakeFirstResponderAfterAdding: (() -> NSView?)?
     private func adjustFirstResponderAfterAddingContentViewIfNeeded() {
         guard let window = view.window,
-              let contentView = viewToMakeFirstResponderAfterAdding?() else { return }
+              let contentView = viewToMakeFirstResponderAfterAdding?() else {
+            return
+        }
 
         guard contentView.window === window else {
             Logger.general.error("BrowserTabViewController: Content view window is \(contentView.window?.description ?? "<nil>") but expected: \(window)")
@@ -824,13 +829,6 @@ final class BrowserTabViewController: NSViewController {
         case let .settings(pane):
             showTabContentForSettings(pane: pane)
 
-        case .onboardingDeprecated:
-            removeAllTabContent()
-            if !OnboardingViewModel.isOnboardingFinished {
-                requestDisableUI()
-            }
-            showTransientTabContentController(OnboardingViewController.create(withDelegate: self))
-
         case .onboarding, .releaseNotes:
             removeAllTabContent()
             updateTabIfNeeded(tabViewModel: tabViewModel)
@@ -898,9 +896,7 @@ final class BrowserTabViewController: NSViewController {
     }
 
     private func shouldReplaceWebView(for tabViewModel: TabViewModel?) -> Bool {
-        guard let tabViewModel = tabViewModel else {
-            return false
-        }
+        guard let tabViewModel else { return false }
 
         let newWebView = webView(for: tabViewModel)
         let isPinnedTab = tabCollectionViewModel.pinnedTabsCollection?.tabs.contains(tabViewModel.tab) == true
@@ -1400,39 +1396,6 @@ extension BrowserTabViewController: BrowserTabSelectionDelegate {
         if case .settings = selectedTab.content {
             selectedTab.setContent(.settings(pane: identifier))
         }
-    }
-
-}
-
-extension BrowserTabViewController: OnboardingDelegate {
-
-    func onboardingDidRequestImportData(completion: @escaping () -> Void) {
-        DataImportView().show(completion: completion)
-    }
-
-    func onboardingDidRequestSetDefault(completion: @escaping () -> Void) {
-        let defaultBrowserPreferences = DefaultBrowserPreferences.shared
-        if defaultBrowserPreferences.isDefault {
-            completion()
-            return
-        }
-
-        PixelKit.fire(GeneralPixel.defaultRequestedFromOnboarding)
-        defaultBrowserPreferences.becomeDefault { _ in
-            _ = defaultBrowserPreferences
-            withAnimation {
-                completion()
-            }
-        }
-    }
-
-    func onboardingDidRequestAddToDock(completion: @escaping () -> Void) {
-        dockCustomizer.addToDock()
-        completion()
-    }
-
-    func onboardingHasFinished() {
-        (view.window?.windowController as? MainWindowController)?.userInteraction(prevented: false)
     }
 
 }

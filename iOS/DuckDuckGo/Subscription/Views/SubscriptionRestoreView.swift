@@ -143,7 +143,6 @@ struct SubscriptionRestoreView: View {
                         buttonAction: {
             DailyPixel.fireDailyAndCount(pixel: .privacyProRestorePurchaseEmailStart,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
-            DailyPixel.fire(pixel: .privacyProWelcomeAddDevice)
             viewModel.showActivationFlow(true)
         })
     }
@@ -281,9 +280,6 @@ private struct RoundedCardView: View {
                     .padding(Constants.separatorPadding)
 
                 Button(action: {
-                    DailyPixel.fireDailyAndCount(pixel: .privacyProRestorePurchaseEmailStart,
-                                                 pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
-                    DailyPixel.fire(pixel: .privacyProWelcomeAddDevice)
                     self.buttonAction()
                 }, label: {
                     Text(buttonTitle)

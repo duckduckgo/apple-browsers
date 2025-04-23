@@ -740,6 +740,7 @@ final class NavigationBarViewController: NSViewController {
         heightChangeAnimation?.cancel()
 
         daxLogo.alphaValue = !sizeClass.isLogoVisible ? 1 : 0 // initial value to animate from
+        daxLogo.isHidden = visualStyleManager.style.shouldShowLogoinInAddressBar
 
         let performResize = { [weak self] in
             guard let self else { return }

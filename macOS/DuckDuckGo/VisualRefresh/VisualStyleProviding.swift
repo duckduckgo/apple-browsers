@@ -25,6 +25,7 @@ protocol VisualStyleProviding {
     func addressBarHeight(for type: AddressBarSizeClass) -> CGFloat
     func addressBarTopPadding(for type: AddressBarSizeClass) -> CGFloat
     func addressBarBottomPadding(for type: AddressBarSizeClass) -> CGFloat
+    var shouldShowLogoinInAddressBar: Bool { get }
 
     var toolbarButtonsCornerRadius: CGFloat { get }
 
@@ -78,6 +79,8 @@ struct VisualStyle: VisualStyleProviding {
     private let addressBarBottomPaddingForHomePage: CGFloat
     private let addressBarBottomPaddingForPopUpWindow: CGFloat
 
+    let shouldShowLogoinInAddressBar: Bool
+
     let toolbarButtonsCornerRadius: CGFloat
 
     let backButtonImage: NSImage
@@ -128,6 +131,7 @@ struct VisualStyle: VisualStyleProviding {
                            addressBarBottomPaddingForDefault: 6,
                            addressBarBottomPaddingForHomePage: 8,
                            addressBarBottomPaddingForPopUpWindow: 0,
+                           shouldShowLogoinInAddressBar: false,
                            toolbarButtonsCornerRadius: 4,
                            backButtonImage: .back,
                            forwardButtonImage: .forward,
@@ -154,6 +158,7 @@ struct VisualStyle: VisualStyleProviding {
                            addressBarBottomPaddingForDefault: 6,
                            addressBarBottomPaddingForHomePage: 6,
                            addressBarBottomPaddingForPopUpWindow: 6,
+                           shouldShowLogoinInAddressBar: true,
                            toolbarButtonsCornerRadius: 9,
                            backButtonImage: .backNew,
                            forwardButtonImage: .forwardNew,

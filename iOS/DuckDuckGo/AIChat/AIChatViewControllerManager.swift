@@ -88,7 +88,7 @@ final class AIChatViewControllerManager {
 
         // Force a reload to trigger the user script getUserValues
         if let payload = payload as? AIChatPayload {
-            payloadHandler.setPayload(payload)
+            payloadHandler.setData(payload)
             aiChatViewController.reload()
         }
         viewController.present(roundedPageSheet, animated: true, completion: nil)
@@ -147,7 +147,7 @@ extension AIChatViewControllerManager: RoundedPageSheetContainerViewControllerDe
 
 extension AIChatViewControllerManager: AIChatUserScriptDelegate {
 
-    func aiChatUserScript(_ userScript: AIChatUserScript, didReceiveMessage message: AIChatUserScript.MessageName) {
+    func aiChatUserScript(_ userScript: AIChatUserScript, didReceiveMessage message: AIChatUserScriptMessages) {
         switch message {
         case .openAIChatSettings:
             chatViewController?.dismiss(animated: true) { [weak self] in

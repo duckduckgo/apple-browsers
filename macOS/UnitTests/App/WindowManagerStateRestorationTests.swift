@@ -79,13 +79,25 @@ final class WindowManagerStateRestorationTests: XCTestCase {
                 shouldLoadInBackground: false)
         ]
 
-        let model1 = TabCollectionViewModel(tabCollection: TabCollection(tabs: tabs1), selectionIndex: .unpinned(0))
-        let model2 = TabCollectionViewModel(tabCollection: TabCollection(tabs: tabs2), selectionIndex: .unpinned(2))
-        WindowsManager.openNewWindow(with: model1)
-        WindowsManager.openNewWindow(with: model2)
-        WindowControllersManager.shared.lastKeyMainWindowController = WindowControllersManager.shared.mainWindowControllers[1]
+        let pinnedTabManager = PinnedTabsManager(tabCollection: TabCollection(tabs: pinnedTabs))
+        let pinnedTabsManagerProvidingMock = PinnedTabsManagerProvidingMock()
+        pinnedTabsManagerProvidingMock.newPinnedTabsManager = pinnedTabManager
 
-        let state = WindowManagerStateRestoration(windowControllersManager: WindowControllersManager.shared)
+        let model1 = TabCollectionViewModel(tabCollection: TabCollection(tabs: tabs1), selectionIndex: .unpinned(0), pinnedTabsManagerProvider: pinnedTabsManagerProvidingMock)
+        let mainViewController1 = MainViewController(tabCollectionViewModel: model1, autofillPopoverPresenter: DefaultAutofillPopoverPresenter())
+        let model2 = TabCollectionViewModel(tabCollection: TabCollection(tabs: tabs2), selectionIndex: .unpinned(2), pinnedTabsManagerProvider: pinnedTabsManagerProvidingMock)
+        let mainViewController2 = MainViewController(tabCollectionViewModel: model2, autofillPopoverPresenter: DefaultAutofillPopoverPresenter())
+        let windowController1 = MainWindowController(mainViewController: mainViewController1, popUp: false)
+        let windowController2 = MainWindowController(mainViewController: mainViewController2, popUp: false)
+
+        let state = WindowManagerStateRestoration(mainWindowControllers: [windowController1, windowController2], lastKeyMainWindowController: windowController2, applicationPinnedTabs: pinnedTabManager.tabCollection)
+
+        for (idx, window) in state.windows.enumerated() {
+            XCTAssertTrue(areTabCollectionViewModelsEqual(window.model, state.windows[idx].model))
+            XCTAssertEqual(window.frame, state.windows[idx].frame)
+            XCTAssertEqual(window.model.pinnedTabs, pinnedTabs)
+        }
+
         let archiver = NSKeyedArchiver(requiringSecureCoding: true)
         state.encode(with: archiver)
         let data = archiver.encodedData
@@ -98,12 +110,13 @@ final class WindowManagerStateRestorationTests: XCTestCase {
         XCTAssertTrue(areTabsEqual(restored.applicationPinnedTabs!.tabs, pinnedTabs))
         XCTAssertEqual(restored.windows.count, 2)
         XCTAssertEqual(restored.keyWindowIndex, 1)
-        for (idx, window) in state.windows.enumerated() {
-            XCTAssertTrue(areTabCollectionViewModelsEqual(window.model,
-                                                          state.windows[idx].model))
-            XCTAssertEqual(window.frame, state.windows[idx].frame)
-            XCTAssertEqual(window.model.pinnedTabs, pinnedTabs)
-        }
+
     }
 
+}
+private extension Tab {
+    @MainActor
+    @nonobjc convenience override init() {
+        self.init(content: .none)
+    }
 }

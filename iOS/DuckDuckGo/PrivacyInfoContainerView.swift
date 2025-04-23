@@ -22,14 +22,20 @@ import Lottie
 
 class PrivacyInfoContainerView: UIView {
     
-    
     @IBOutlet var privacyIcon: PrivacyIconView!
     @IBOutlet var maskingView: UIView!
     
     @IBOutlet var trackers1Animation: LottieAnimationView!
     @IBOutlet var trackers2Animation: LottieAnimationView!
     @IBOutlet var trackers3Animation: LottieAnimationView!
-    
+
+    var isUsingExperimentalAnimations: Bool = false {
+        didSet {
+            privacyIcon.isUsingExperimentalAnimations = isUsingExperimentalAnimations
+            loadAnimations()
+        }
+    }
+
     override func awakeFromNib() {
         super.awakeFromNib()
         
@@ -50,9 +56,14 @@ class PrivacyInfoContainerView: UIView {
     private func loadAnimations(animationCache cache: AnimationCacheProvider = DefaultAnimationCache.sharedCache) {
         let useDarkStyle = traitCollection.userInterfaceStyle == .dark
 
-        trackers1Animation.animation = LottieAnimation.named(useDarkStyle ? "dark-trackers-1" : "trackers-1", animationCache: cache)
-        trackers2Animation.animation = LottieAnimation.named(useDarkStyle ? "dark-trackers-2" : "trackers-2", animationCache: cache)
-        trackers3Animation.animation = LottieAnimation.named(useDarkStyle ? "dark-trackers-3" : "trackers-3", animationCache: cache)
+        func trackersAnimationName(for count: Int) -> String {
+            let trackersBaseAnimationName = useDarkStyle ? "dark-trackers" : "trackers"
+            return "\(trackersBaseAnimationName)-\(count)\(isUsingExperimentalAnimations ? "-new" : "")"
+        }
+
+        trackers1Animation.animation = LottieAnimation.named(trackersAnimationName(for: 1), animationCache: cache)
+        trackers2Animation.animation = LottieAnimation.named(trackersAnimationName(for: 2), animationCache: cache)
+        trackers3Animation.animation = LottieAnimation.named(trackersAnimationName(for: 3), animationCache: cache)
     }
 
     func trackerAnimationView(for trackerCount: Int) -> LottieAnimationView? {

@@ -20,6 +20,7 @@ import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
 import BrowserServicesKit
+import DesignResourcesKit
 
 public struct PreferencesSubscriptionViewV1: View {
 
@@ -131,7 +132,12 @@ public struct PreferencesSubscriptionViewV1: View {
             Button(UserText.purchaseButton) { model.purchaseAction() }
                 .buttonStyle(DefaultActionButtonStyle(enabled: true))
             Button(UserText.haveSubscriptionButton) {
-                showingActivateSubscriptionSheet.toggle()
+                if model.shouldDirectlyLaunchActivationFlow {
+                    model.sheetModel.handleEmailAction()
+                } else {
+                    showingActivateSubscriptionSheet.toggle()
+                }
+
                 model.userEventHandler(.iHaveASubscriptionClick)
             }
             .buttonStyle(DismissActionButtonStyle())
@@ -246,24 +252,24 @@ public struct PreferencesSubscriptionViewV1: View {
     private var activateSection: some View {
         PreferencePaneSection {
             TextMenuItemHeader(UserText.activateSectionTitle, bottomPadding: 0)
+
+            Text(UserText.activateSectionCaption(hasEmail: model.hasEmail, purchasePlatform: model.currentPurchasePlatform))
+                .foregroundColor(Color(.textSecondary))
+
+            TextButton(UserText.activateSectionLearnMoreButton) {
+                model.openLearnMore()
+            }
+            .padding(.top, -4)
+
             if model.hasEmail {
-                Text(.init(UserText.activateSectionWithEmailCaption)) // required to parse markdown formatting
-                    .onURLTap(onTap: { url in
-                        model.openLearnMore(url)
-                    })
-                    .foregroundColor(Color(.textSecondary))
-                    .padding(.bottom, 2)
-
                 emailView
-            } else {
-                Text(.init(UserText.activateSectionNoEmailCaption)) // required to parse markdown formatting
-                    .onURLTap(onTap: { url in
-                        model.openLearnMore(url)
-                    })
-                    .foregroundColor(Color(.textSecondary))
-                    .padding(.bottom, 8)
+                    .padding(.top, 2)
 
-                TextButton(UserText.addEmailButton, weight: .semibold) { model.addEmailAction() }
+                TextButton(UserText.addToDeviceLinkTitle, weight: .semibold) { model.activationFlowAction() }
+                    .padding(.top, 8)
+            } else {
+                Button(UserText.addToDeviceButtonTitle) { model.activationFlowAction() }
+                    .padding(.top, 4)
             }
         }
     }
@@ -492,7 +498,12 @@ public struct PreferencesSubscriptionViewV2: View {
             Button(UserText.purchaseButton) { model.purchaseAction() }
                 .buttonStyle(DefaultActionButtonStyle(enabled: true))
             Button(UserText.haveSubscriptionButton) {
-                showingActivateSubscriptionSheet.toggle()
+                if model.shouldDirectlyLaunchActivationFlow {
+                    model.sheetModel.handleEmailAction()
+                } else {
+                    showingActivateSubscriptionSheet.toggle()
+                }
+
                 model.userEventHandler(.iHaveASubscriptionClick)
             }
             .buttonStyle(DismissActionButtonStyle())
@@ -607,24 +618,24 @@ public struct PreferencesSubscriptionViewV2: View {
     private var activateSection: some View {
         PreferencePaneSection {
             TextMenuItemHeader(UserText.activateSectionTitle, bottomPadding: 0)
+
+            Text(UserText.activateSectionCaption(hasEmail: model.hasEmail, purchasePlatform: model.currentPurchasePlatform))
+                .foregroundColor(Color(.textSecondary))
+
+            TextButton(UserText.activateSectionLearnMoreButton) {
+                model.openLearnMore()
+            }
+            .padding(.top, -4)
+
             if model.hasEmail {
-                Text(.init(UserText.activateSectionWithEmailCaption)) // required to parse markdown formatting
-                    .onURLTap(onTap: { url in
-                        model.openLearnMore(url)
-                    })
-                    .foregroundColor(Color(.textSecondary))
-                    .padding(.bottom, 2)
-
                 emailView
-            } else {
-                Text(.init(UserText.activateSectionNoEmailCaption)) // required to parse markdown formatting
-                    .onURLTap(onTap: { url in
-                        model.openLearnMore(url)
-                    })
-                    .foregroundColor(Color(.textSecondary))
-                    .padding(.bottom, 8)
+                    .padding(.top, 2)
 
-                TextButton(UserText.addEmailButton, weight: .semibold) { model.addEmailAction() }
+                TextButton(UserText.addToDeviceLinkTitle, weight: .semibold) { model.activationFlowAction() }
+                    .padding(.top, 8)
+            } else {
+                Button(UserText.addToDeviceButtonTitle) { model.activationFlowAction() }
+                    .padding(.top, 4)
             }
         }
     }

@@ -162,7 +162,7 @@ class MainViewController: UIViewController {
 
     var searchBarRect: CGRect {
         let view = UIApplication.shared.firstKeyWindow?.rootViewController?.view
-        return viewCoordinator.omniBar.barView.searchContainerView.convert(viewCoordinator.omniBar.barView.searchContainerView.bounds, to: view)
+        return viewCoordinator.omniBar.barView.searchContainer.convert(viewCoordinator.omniBar.barView.searchContainer.bounds, to: view)
     }
 
     var keyModifierFlags: UIKeyModifierFlags?
@@ -329,19 +329,7 @@ class MainViewController: UIViewController {
                                                               featureFlagger: featureFlagger)
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
 
-        viewCoordinator.toolbarBackButton.action = #selector(onBackPressed)
-        viewCoordinator.toolbarForwardButton.action = #selector(onForwardPressed)
-        if ExperimentalThemingManager().isExperimentalThemingEnabled {
-            viewCoordinator.toolbarFireButton.addTarget(self, action: #selector(onFirePressed), for: .touchUpInside)
-        } else {
-            viewCoordinator.toolbarFireBarButtonItem.action = #selector(onFirePressed)
-        }
-        viewCoordinator.toolbarPasswordsButton.action = #selector(onPasswordsPressed)
-        viewCoordinator.toolbarBookmarksButton.action = #selector(onToolbarBookmarksPressed)
-        if ExperimentalThemingManager().isExperimentalThemingEnabled {
-            viewCoordinator.menuToolbarButton.action = #selector(onMenuPressed)
-        }
-
+        setUpToolbarButtonsActions()
         installSwipeTabs()
             
         loadSuggestionTray()
@@ -354,9 +342,7 @@ class MainViewController: UIViewController {
         chromeManager = BrowserChromeManager()
         chromeManager.delegate = self
         initTabButton()
-        if !ExperimentalThemingManager().isExperimentalThemingEnabled {
-            initMenuButton()
-        }
+        initMenuButton()
         initBookmarksButton()
         loadInitialView()
         previewsSource.prepare()
@@ -449,7 +435,7 @@ class MainViewController: UIViewController {
             self?.updatePreviewForCurrentTab()
         }
     }
-    
+
     func updatePreviewForCurrentTab(completion: (() -> Void)? = nil) {
         assert(Thread.isMainThread)
         
@@ -591,6 +577,21 @@ class MainViewController: UIViewController {
         didSendGestureDismissPixel = false
     }
 
+    private func setUpToolbarButtonsActions() {
+
+        viewCoordinator.toolbarBackButton.setCustomItemAction(on: self, action: #selector(onBackPressed))
+        viewCoordinator.toolbarForwardButton.setCustomItemAction(on: self, action: #selector(onForwardPressed))
+        viewCoordinator.toolbarPasswordsButton.setCustomItemAction(on: self, action: #selector(onPasswordsPressed))
+        viewCoordinator.toolbarBookmarksButton.setCustomItemAction(on: self, action: #selector(onToolbarBookmarksPressed))
+        viewCoordinator.menuToolbarButton.setCustomItemAction(on: self, action: #selector(onMenuPressed))
+
+        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+            viewCoordinator.toolbarFireButton.addTarget(self, action: #selector(onFirePressed), for: .touchUpInside)
+        } else {
+            viewCoordinator.toolbarFireBarButtonItem.action = #selector(onFirePressed)
+        }
+    }
+
     private func registerForPageRefreshPatterns() {
         NotificationCenter.default.addObserver(
             self,
@@ -693,10 +694,10 @@ class MainViewController: UIViewController {
 
         adjustNewTabPageSafeAreaInsets(for: position)
         updateChromeForDuckPlayer()
-
     }
 
     private func updateChromeForDuckPlayer() {
+        themeColorManager.updateThemeColor()
         let position = appSettings.currentAddressBarPosition
         switch position {
         case .top:
@@ -722,7 +723,7 @@ class MainViewController: UIViewController {
         case .top:
             newTabPageViewController?.additionalSafeAreaInsets = .zero
         case .bottom:
-            newTabPageViewController?.additionalSafeAreaInsets = .init(top: 0, left: 0, bottom: 52, right: 0)
+            newTabPageViewController?.additionalSafeAreaInsets = .init(top: 0, left: 0, bottom: viewCoordinator.omniBar.barView.expectedHeight, right: 0)
         }
     }
 
@@ -745,28 +746,34 @@ class MainViewController: UIViewController {
 
         var keyboardHeight = keyboardFrame.size.height
 
+        let omniBarHeight = viewCoordinator.omniBar.barView.expectedHeight
         let keyboardFrameInView = view.convert(keyboardFrame, from: nil)
         let safeAreaFrame = view.safeAreaLayoutGuide.layoutFrame.insetBy(dx: 0, dy: -additionalSafeAreaInsets.bottom)
         let intersection = safeAreaFrame.intersection(keyboardFrameInView)
-        keyboardHeight = intersection.height
+        keyboardHeight = keyboardFrameInView.height
 
-        findInPageBottomLayoutConstraint.constant = keyboardHeight
+        findInPageBottomLayoutConstraint.constant = intersection.height
 
-        let y = self.view.frame.height - keyboardHeight
+        let y = self.view.frame.height - intersection.height
         let frame = self.findInPageView.frame
         UIView.animate(withDuration: duration, delay: 0, options: animationCurve, animations: {
             self.findInPageView.frame = CGRect(x: 0, y: y - frame.height, width: frame.width, height: frame.height)
         }, completion: nil)
 
         if self.appSettings.currentAddressBarPosition.isBottom {
-            self.viewCoordinator.constraints.navigationBarContainerHeight.constant = max(52, keyboardHeight)
+            let intersection = safeAreaFrame.intersection(keyboardFrameInView)
+            let containerHeight = keyboardHeight > 0 ? intersection.height - toolbarHeight + omniBarHeight : 0
+            self.viewCoordinator.constraints.navigationBarContainerHeight.constant = max(omniBarHeight, containerHeight)
 
             // Temporary fix, see https://app.asana.com/0/392891325557410/1207990702991361/f
-            self.currentTab?.webView.scrollView.contentInset = .init(top: 0, left: 0, bottom: keyboardHeight > 0 ? 52 : 0, right: 0)
+            if let currentTab {
+                let inset = intersection.height > 0 ? omniBarHeight : 0
+                currentTab.webView.scrollView.contentInset = .init(top: 0, left: 0, bottom: inset, right: 0)
+            }
 
             UIView.animate(withDuration: duration, delay: 0, options: animationCurve) {
                 self.viewCoordinator.navigationBarContainer.superview?.layoutIfNeeded()
-                self.newTabPageViewController?.additionalSafeAreaInsets = .init(top: 0, left: 0, bottom: max(52, keyboardHeight), right: 0)
+                self.newTabPageViewController?.additionalSafeAreaInsets = .init(top: 0, left: 0, bottom: max(omniBarHeight, containerHeight), right: 0)
             }
         }
 
@@ -774,14 +781,14 @@ class MainViewController: UIViewController {
 
     private func initTabButton() {
         if ExperimentalThemingManager().isExperimentalThemingEnabled {
-            let button = UIButton(type: .system)
+            let button = ToolbarButton()
             button.frame = CGRect(x: 0, y: 0, width: 34, height: 44)
-            button.setImage(UIImage(named: "Tab-New-24"), for: .normal)
-            button.contentMode = .center
-            button.imageView?.contentMode = .scaleAspectFit
+
+            button.setImage(UIImage(resource: .tabNew24))
             button.addAction(UIAction(handler: { _ in self.showTabSwitcher() }), for: .touchUpInside)
 
-            let longPressRecognizer = UILongPressGestureRecognizer(target: self, action: #selector(launchNewTab))
+            let longPressRecognizer = UILongPressGestureRecognizer(target: self, action: #selector(onNewTabLongPressRecognizer))
+            longPressRecognizer.minimumPressDuration = 0.4
             button.addGestureRecognizer(longPressRecognizer)
 
             viewCoordinator.toolbarTabSwitcherButton.customView = button
@@ -793,8 +800,20 @@ class MainViewController: UIViewController {
         viewCoordinator.toolbarTabSwitcherButton.isAccessibilityElement = true
         viewCoordinator.toolbarTabSwitcherButton.accessibilityTraits = .button
     }
-    
+
+    @objc private func onNewTabLongPressRecognizer(_ recognizer: UILongPressGestureRecognizer) {
+        guard recognizer.state == .began else { return }
+
+        UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+        newTabShortcutAction()
+    }
+
     private func initMenuButton() {
+        guard !ExperimentalThemingManager().isExperimentalThemingEnabled else {
+            // For experimental appearance, this is set up in the ToolbarStateHandling
+            return
+        }
+
         viewCoordinator.menuToolbarButton.customView = menuButton
         viewCoordinator.menuToolbarButton.isAccessibilityElement = true
         viewCoordinator.menuToolbarButton.accessibilityTraits = .button
@@ -803,7 +822,7 @@ class MainViewController: UIViewController {
     }
     
     private func initBookmarksButton() {
-        viewCoordinator.omniBar.barView.bookmarksButtonView.addGestureRecognizer(UILongPressGestureRecognizer(target: self,
+        viewCoordinator.omniBar.barView.bookmarksButton.addGestureRecognizer(UILongPressGestureRecognizer(target: self,
                                                                                   action: #selector(quickSaveBookmarkLongPress(gesture:))))
         gestureBookmarksButton.delegate = self
         gestureBookmarksButton.image = UIImage(named: "Bookmarks")
@@ -1200,7 +1219,7 @@ class MainViewController: UIViewController {
         addToContentContainer(controller: tab)
 
         viewCoordinator.logoContainer.isHidden = true
-        
+
         tab.progressWorker.progressBar = viewCoordinator.progress
         chromeManager.attach(to: tab.webView.scrollView)
         themeColorManager.attach(to: tab)
@@ -1276,8 +1295,8 @@ class MainViewController: UIViewController {
     }
 
     func dismissOmniBar() {
-        viewCoordinator.omniBar.endEditing()
         hideSuggestionTray()
+        viewCoordinator.omniBar.endEditing()
         refreshOmniBar()
     }
 
@@ -1359,7 +1378,7 @@ class MainViewController: UIViewController {
 
     func refreshMenuButtonState() {
         if !homeTabManager.isNewTabPageSectionsEnabled && newTabPageViewController != nil {
-            viewCoordinator.omniBar.barView.menuButtonView.accessibilityLabel = UserText.bookmarksButtonHint
+            viewCoordinator.omniBar.barView.menuButton.accessibilityLabel = UserText.bookmarksButtonHint
             viewCoordinator.updateToolbarWithState(.newTab)
             presentedMenuButton.setState(.menuImage, animated: false)
 
@@ -1370,7 +1389,7 @@ class MainViewController: UIViewController {
             } else {
                 expectedState = .menuImage
             }
-            viewCoordinator.omniBar.barView.menuButtonView.accessibilityLabel = UserText.menuButtonHint
+            viewCoordinator.omniBar.barView.menuButton.accessibilityLabel = UserText.menuButtonHint
 
             if let currentTab = currentTab {
                 viewCoordinator.updateToolbarWithState(.pageLoaded(currentTab: currentTab))
@@ -1381,7 +1400,7 @@ class MainViewController: UIViewController {
 
     private func applyWidthToTrayController() {
         if AppWidthObserver.shared.isLargeWidth {
-            self.suggestionTrayController?.float(withWidth: self.viewCoordinator.omniBar.barView.searchContainerWidth + 24)
+            self.suggestionTrayController?.float(under: self.viewCoordinator.omniBar.barView.searchContainer)
         } else {
             self.suggestionTrayController?.fill()
         }
@@ -1699,7 +1718,6 @@ class MainViewController: UIViewController {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.refreshOmniBar()
-                self?.omniBar.barView.refreshOmnibarPaddingConstraintsForAccessoryButton()
             }
             .store(in: &aiChatCancellables)
     }
@@ -1953,12 +1971,20 @@ extension MainViewController: BrowserChromeDelegate {
         }
            
         if animated {
+            self.view.layoutIfNeeded()
             UIView.animate(withDuration: animationDuration ?? ChromeAnimationConstants.duration) {
                 updateBlock()
                 self.view.layoutIfNeeded()
             }
         } else {
             updateBlock()
+
+            // Calling this here is important as it causes the layout to run immediately inside current run loop,
+            // instead of deferring it until next update block.
+            // Late layout after change here could potentially cause a scroll offset update right before the next one,
+            // which may cause an infitie loop layout loop in certain scenarios.
+            // See https://app.asana.com/1/137249556945/project/414709148257752/task/1208671955053442 for details.
+            self.view.layoutIfNeeded()
         }
     }
 
@@ -1989,7 +2015,7 @@ extension MainViewController: BrowserChromeDelegate {
     }
     
     var barsMaxHeight: CGFloat {
-        return max(toolbarHeight, viewCoordinator.omniBar.barView.frame.size.height)
+        max(toolbarHeight, viewCoordinator.omniBar.barView.expectedHeight)
     }
 
     // 1.0 - full size, 0.0 - hidden
@@ -2217,6 +2243,12 @@ extension MainViewController: OmniBarDelegate {
                                  website: .addressBarClearPressedOnWebsite)
     }
 
+    private func newTabShortcutAction() {
+        Pixel.fire(pixel: .tabSwitchLongPressNewTab)
+        performCancel()
+        newTab()
+    }
+
     private var isSERPPresented: Bool {
         guard let tabURL = currentTab?.url else { return false }
         return tabURL.isDuckDuckGoSearch
@@ -2274,7 +2306,7 @@ extension MainViewController: OmniBarDelegate {
         case .share:
             guard let link = currentTab?.link else { return }
             Pixel.fire(pixel: .addressBarShare)
-            currentTab?.onShareAction(forLink: link, fromView: viewCoordinator.omniBar.barView.accessoryButtonView)
+            currentTab?.onShareAction(forLink: link, fromView: viewCoordinator.omniBar.barView.accessoryButton)
         }
     }
 
@@ -2548,6 +2580,7 @@ extension MainViewController: TabDelegate {
     func tabLoadingStateDidChange(tab: TabViewController) {
         if currentTab == tab {
             refreshControls()
+            themeColorManager.updateThemeColor()
         }
         tabManager.save()
         tabsBarController?.refresh(tabsModel: tabManager.model)
@@ -2599,6 +2632,7 @@ extension MainViewController: TabDelegate {
     func tab(_ tab: TabViewController, didChangePrivacyInfo privacyInfo: PrivacyInfo?) {
         if currentTab == tab {
             viewCoordinator.omniBar.updatePrivacyIcon(for: privacyInfo)
+            themeColorManager.updateThemeColor()
         }
     }
 
@@ -2864,14 +2898,9 @@ extension MainViewController: BookmarksDelegate {
 }
 
 extension MainViewController: TabSwitcherButtonDelegate {
-    
+
     @objc func launchNewTab(_ button: TabSwitcherButton) {
-        if ExperimentalThemingManager().isExperimentalThemingEnabled {
-            UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
-        }
-        Pixel.fire(pixel: .tabSwitchLongPressNewTab)
-        performCancel()
-        newTab()
+        newTabShortcutAction()
     }
 
     func showTabSwitcher(_ button: TabSwitcherButton) {
@@ -3220,11 +3249,11 @@ extension MainViewController {
         }
         
         let backMenu = historyMenu(with: currentTab.webView.backForwardList.backList.reversed())
-        viewCoordinator.omniBar.barView.backButtonMenu = backMenu
+        viewCoordinator.omniBar.barView.backButton.menu = backMenu
         viewCoordinator.toolbarBackButton.menu = backMenu
 
         let forwardMenu = historyMenu(with: currentTab.webView.backForwardList.forwardList)
-        viewCoordinator.omniBar.barView.forwardButtonMenu = forwardMenu
+        viewCoordinator.omniBar.barView.forwardButton.menu = forwardMenu
         viewCoordinator.toolbarForwardButton.menu = forwardMenu
     }
 
@@ -3285,6 +3314,16 @@ extension MainViewController {
                     self.viewCoordinator.omniBar.hideSeparator()
                 }
             }
+        }
+    }
+}
+
+private extension UIBarButtonItem {
+    func setCustomItemAction(on target: Any?, action: Selector) {
+        if let customControl = customView as? UIControl {
+            customControl.addTarget(target, action: action, for: .touchUpInside)
+        } else {
+            self.action = action
         }
     }
 }

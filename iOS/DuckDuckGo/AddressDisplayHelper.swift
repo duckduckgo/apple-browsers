@@ -20,79 +20,76 @@
 import Foundation
 import DuckPlayer
 
-extension DefaultOmniBarView {
+struct AddressDisplayHelper {
 
-    struct AddressDisplayHelper {
+    static func addressForDisplay(url: URL, showsFullURL: Bool) -> NSAttributedString {
 
-        static func addressForDisplay(url: URL, showsFullURL: Bool) -> NSAttributedString {
-            
-            if url.isDuckPlayer,
-                let playerURL = getDuckPlayerURL(url: url, showsFullURL: showsFullURL) {
-                return playerURL
-            }
-            
-            if !showsFullURL, let shortAddress = shortURLString(url) {
-                return NSAttributedString(
-                    string: shortAddress,
-                    attributes: [.foregroundColor: ThemeManager.shared.currentTheme.searchBarTextColor])
-                                
-            } else {
-                return deemphasisePath(forUrl: url)
-            }
+        if url.isDuckPlayer,
+           let playerURL = getDuckPlayerURL(url: url, showsFullURL: showsFullURL) {
+            return playerURL
         }
 
-        static func deemphasisePath(forUrl url: URL) -> NSAttributedString {
-            
-            let s = url.absoluteString
-            let attributedString = NSMutableAttributedString(string: s)
-            guard let c = URLComponents(url: url, resolvingAgainstBaseURL: true) else {
-                return attributedString
-            }
+        if !showsFullURL, let shortAddress = shortURLString(url) {
+            return NSAttributedString(
+                string: shortAddress,
+                attributes: [.foregroundColor: ThemeManager.shared.currentTheme.searchBarTextColor])
 
-            let theme = ThemeManager.shared.currentTheme
+        } else {
+            return deemphasisePath(forUrl: url)
+        }
+    }
 
-            if let pathStart = c.rangeOfPath?.lowerBound {
-                let urlEnd = s.endIndex
+    static func deemphasisePath(forUrl url: URL) -> NSAttributedString {
 
-                let pathRange = NSRange(pathStart ..< urlEnd, in: s)
-                attributedString.addAttribute(.foregroundColor, value: theme.searchBarTextDeemphasisColor, range: pathRange)
-
-                let domainRange = NSRange(s.startIndex ..< pathStart, in: s)
-                attributedString.addAttribute(.foregroundColor, value: theme.searchBarTextColor, range: domainRange)
-
-            } else {
-                let range = NSRange(s.startIndex ..< s.endIndex, in: s)
-                attributedString.addAttribute(.foregroundColor, value: theme.searchBarTextColor, range: range)
-            }
-
+        let s = url.absoluteString
+        let attributedString = NSMutableAttributedString(string: s)
+        guard let c = URLComponents(url: url, resolvingAgainstBaseURL: true) else {
             return attributedString
         }
 
-        /// Creates a string containing a short version the http(s) URL.
-        ///
-        /// - returns: URL's host without `www` component. `nil` if no host present or scheme does not match http(s).
-        static func shortURLString(_ url: URL) -> String? {
-            
-            guard !url.isCustomURLScheme() else {
-                return nil
-            }
+        let theme = ThemeManager.shared.currentTheme
 
-            return url.host?.droppingWwwPrefix()
+        if let pathStart = c.rangeOfPath?.lowerBound {
+            let urlEnd = s.endIndex
+
+            let pathRange = NSRange(pathStart ..< urlEnd, in: s)
+            attributedString.addAttribute(.foregroundColor, value: theme.searchBarTextDeemphasisColor, range: pathRange)
+
+            let domainRange = NSRange(s.startIndex ..< pathStart, in: s)
+            attributedString.addAttribute(.foregroundColor, value: theme.searchBarTextColor, range: domainRange)
+
+        } else {
+            let range = NSRange(s.startIndex ..< s.endIndex, in: s)
+            attributedString.addAttribute(.foregroundColor, value: theme.searchBarTextColor, range: range)
         }
-        
-        private static func getDuckPlayerURL(url: URL, showsFullURL: Bool) -> NSAttributedString? {
-            if !showsFullURL {
-                return NSAttributedString(
-                    string: UserText.duckPlayerFeatureName,
-                    attributes: [.foregroundColor: ThemeManager.shared.currentTheme.searchBarTextColor])
-            } else {
-                if let (videoID, _) = url.youtubeVideoParams {
-                    return NSAttributedString(
-                        string: URL.duckPlayer(videoID).absoluteString,
-                        attributes: [.foregroundColor: ThemeManager.shared.currentTheme.searchBarTextColor])
-                }
-            }
+
+        return attributedString
+    }
+
+    /// Creates a string containing a short version the http(s) URL.
+    ///
+    /// - returns: URL's host without `www` component. `nil` if no host present or scheme does not match http(s).
+    static func shortURLString(_ url: URL) -> String? {
+
+        guard !url.isCustomURLScheme() else {
             return nil
         }
+
+        return url.host?.droppingWwwPrefix()
+    }
+
+    private static func getDuckPlayerURL(url: URL, showsFullURL: Bool) -> NSAttributedString? {
+        if !showsFullURL {
+            return NSAttributedString(
+                string: UserText.duckPlayerFeatureName,
+                attributes: [.foregroundColor: ThemeManager.shared.currentTheme.searchBarTextColor])
+        } else {
+            if let (videoID, _) = url.youtubeVideoParams {
+                return NSAttributedString(
+                    string: URL.duckPlayer(videoID).absoluteString,
+                    attributes: [.foregroundColor: ThemeManager.shared.currentTheme.searchBarTextColor])
+            }
+        }
+        return nil
     }
 }

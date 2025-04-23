@@ -142,11 +142,11 @@ final class SyncPreferencesTests: XCTestCase {
         XCTAssertTrue(syncPreferences.isSyncEnabled)
     }
 
-    func testCorrectRecoveryCodeIsReturned() {
+    func testCorrectRecoveryCodeIsReturned() throws {
         let account = SyncAccount(deviceId: "some device", deviceName: "", deviceType: "", userId: "", primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
         ddgSyncing.account = account
 
-        XCTAssertEqual(syncPreferences.recoveryCode, account.recoveryCode)
+        try XCTAssertEqual(SyncCode.RecoveryKey(base64Code: syncPreferences.recoveryCode), SyncCode.RecoveryKey(base64Code: account.recoveryCode))
     }
 
     @MainActor func testOnPresentRecoverSyncAccountDialogThenRecoverAccountDialogShown() async {
@@ -442,5 +442,13 @@ struct MockRemoteConnecting: RemoteConnecting {
     }
 
     func stopPolling() {
+    }
+}
+
+private extension SyncCode.RecoveryKey {
+    init(base64Code: String?) throws {
+        let contents = try Data(base64Encoded: try XCTUnwrap(base64Code))
+            .flatMap { try JSONDecoder.snakeCaseKeys.decode(SyncCode.self, from: $0) }
+        self = try XCTUnwrap(contents?.recovery)
     }
 }

@@ -99,6 +99,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         static let subscriptionsYearlyPriceClicked = "subscriptionsYearlyPriceClicked"
         static let subscriptionsUnknownPriceClicked = "subscriptionsUnknownPriceClicked"
         static let subscriptionsAddEmailSuccess = "subscriptionsAddEmailSuccess"
+        static let subscriptionsWelcomeAddEmailClicked = "subscriptionsWelcomeAddEmailClicked"
         static let subscriptionsWelcomeFaqClicked = "subscriptionsWelcomeFaqClicked"
         static let getAccessToken = "getAccessToken"
     }
@@ -120,6 +121,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         case Handlers.subscriptionsYearlyPriceClicked: return subscriptionsYearlyPriceClicked
         case Handlers.subscriptionsUnknownPriceClicked: return subscriptionsUnknownPriceClicked
         case Handlers.subscriptionsAddEmailSuccess: return subscriptionsAddEmailSuccess
+        case Handlers.subscriptionsWelcomeAddEmailClicked: return subscriptionsWelcomeAddEmailClicked
         case Handlers.subscriptionsWelcomeFaqClicked: return subscriptionsWelcomeFaqClicked
         case Handlers.getAccessToken: return getAccessToken
         default:
@@ -215,7 +217,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
             if #available(macOS 12.0, *) {
                 guard let subscriptionSelection: SubscriptionSelection = DecodableHelper.decode(from: params) else {
                     assertionFailure("SubscriptionPagesUserScript: expected JSON representation of SubscriptionSelection")
-                    subscriptionErrorReporter.report(subscriptionActivationError: .generalError)
+                    subscriptionErrorReporter.report(subscriptionActivationError: .otherPurchaseError)
                     await uiHandler.dismissProgressViewController()
                     return nil
                 }
@@ -228,7 +230,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                 if await subscriptionManager.storePurchaseManager().hasActiveSubscription() {
                     PixelKit.fire(PrivacyProPixel.privacyProRestoreAfterPurchaseAttempt)
                     Logger.subscription.info("[Purchase] Found active subscription during purchase")
-                    subscriptionErrorReporter.report(subscriptionActivationError: .hasActiveSubscription)
+                    subscriptionErrorReporter.report(subscriptionActivationError: .activeSubscriptionAlreadyPresent)
                     await showSubscriptionFoundAlert(originalMessage: message)
                     await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate(type: "canceled"))
                     return nil
@@ -253,11 +255,11 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                 case .failure(let error):
                     switch error {
                     case .noProductsFound:
-                        subscriptionErrorReporter.report(subscriptionActivationError: .subscriptionNotFound)
+                        subscriptionErrorReporter.report(subscriptionActivationError: .failedToGetSubscriptionOptions)
                     case .activeSubscriptionAlreadyPresent:
                         subscriptionErrorReporter.report(subscriptionActivationError: .activeSubscriptionAlreadyPresent)
                     case .authenticatingWithTransactionFailed:
-                        subscriptionErrorReporter.report(subscriptionActivationError: .generalError)
+                        subscriptionErrorReporter.report(subscriptionActivationError: .otherPurchaseError)
                     case .accountCreationFailed:
                         subscriptionErrorReporter.report(subscriptionActivationError: .accountCreationFailed)
                     case .purchaseFailed:
@@ -296,11 +298,11 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                 case .failure(let error):
                     switch error {
                     case .noProductsFound:
-                        subscriptionErrorReporter.report(subscriptionActivationError: .subscriptionNotFound)
+                        subscriptionErrorReporter.report(subscriptionActivationError: .failedToGetSubscriptionOptions)
                     case .activeSubscriptionAlreadyPresent:
                         subscriptionErrorReporter.report(subscriptionActivationError: .activeSubscriptionAlreadyPresent)
                     case .authenticatingWithTransactionFailed:
-                        subscriptionErrorReporter.report(subscriptionActivationError: .generalError)
+                        subscriptionErrorReporter.report(subscriptionActivationError: .otherPurchaseError)
                     case .accountCreationFailed:
                         subscriptionErrorReporter.report(subscriptionActivationError: .accountCreationFailed)
                     case .purchaseFailed:
@@ -331,7 +333,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
                 await showSomethingWentWrongAlert()
                 switch error {
                 case .noProductsFound:
-                    subscriptionErrorReporter.report(subscriptionActivationError: .subscriptionNotFound)
+                    subscriptionErrorReporter.report(subscriptionActivationError: .failedToGetSubscriptionOptions)
                 case .accountCreationFailed:
                     subscriptionErrorReporter.report(subscriptionActivationError: .accountCreationFailed)
                 }
@@ -417,6 +419,11 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
         return nil
     }
 
+    func subscriptionsWelcomeAddEmailClicked(params: Any, original: WKScriptMessage) async -> Encodable? {
+        PixelKit.fire(PrivacyProPixel.privacyProWelcomeAddDevice, frequency: .uniqueByName)
+        return nil
+    }
+
     func subscriptionsWelcomeFaqClicked(params: Any, original: WKScriptMessage) async -> Encodable? {
         PixelKit.fire(PrivacyProPixel.privacyProWelcomeFAQClick, frequency: .uniqueByName)
         return nil
@@ -459,7 +466,6 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
     // MARK: - UI interactions
 
     func showSomethingWentWrongAlert() async {
-        PixelKit.fire(PrivacyProPixel.privacyProPurchaseFailure, frequency: .legacyDailyAndCount)
         switch await uiHandler.dismissProgressViewAndShow(alertType: .somethingWentWrong, text: nil) {
         case .alertFirstButtonReturn:
             let url = subscriptionManager.url(for: .purchase)
@@ -504,6 +510,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
     }
 }
 
+/// For handling subscription access actions when presented as modal VC on purchase page via "I Have a Subscription" link
 extension SubscriptionPagesUseSubscriptionFeature: SubscriptionAccessActionHandling {
 
     func subscriptionAccessActionRestorePurchases(message: WKScriptMessage) {
@@ -530,7 +537,7 @@ extension SubscriptionPagesUseSubscriptionFeature: SubscriptionAccessActionHandl
 
     func subscriptionAccessActionHandleAction(event: SubscriptionAccessActionHandlingEvent) {
         switch event {
-        case .activateAddEmailClick:
+        case .activateSubscriptionViaEmailClick:
             PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
         default: break
         }
@@ -579,13 +586,13 @@ private extension SubscriptionPagesUseSubscriptionFeature {
     /// Sets the origin for attribution if the user has started their first Freemium PIR scan
     ///
     /// This method checks whether the user has started their first Freemium PIR scan.
-    /// If they have, the method sets the subscription success tracking origin to `"funnel_pro_mac_freemium"` and returns `true`.
+    /// If they have, the method sets the subscription success tracking origin to `"funnel_freescan_macos"` and returns `true`.
     ///
     /// - Returns:
     ///   - `true` if the origin is set because the user has started their first Freemim PIR scan.
     ///   - `false` if a first scan has not been started and the origin is not set.
     func setFreemiumOriginIfScanPerformed() -> Bool {
-        let origin = PrivacyProSubscriptionAttributionPixelHandler.Consts.freemiumOrigin
+        let origin = SubscriptionFunnelOrigin.freeScan.rawValue
         if freemiumDBPUserStateManager.didPostFirstProfileSavedNotification {
             subscriptionSuccessPixelHandler.origin = origin
             return true

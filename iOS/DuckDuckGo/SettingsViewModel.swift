@@ -969,12 +969,29 @@ extension SettingsViewModel {
             }
             await self.setupSubscriptionEnvironment()
 
-        case .failure:
+        case .failure(let restoreFlowError):
             DispatchQueue.main.async {
                 self.state.subscription.isRestoring = false
                 self.state.subscription.shouldDisplayRestoreSubscriptionError = true
-                self.state.subscription.shouldDisplayRestoreSubscriptionError = false
 
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    self.state.subscription.shouldDisplayRestoreSubscriptionError = false
+                }
+            }
+
+            switch restoreFlowError {
+            case .missingAccountOrTransactions:
+                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorMissingAccountOrTransactions)
+            case .pastTransactionAuthenticationError:
+                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorPastTransactionAuthenticationError)
+            case .failedToObtainAccessToken:
+                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorFailedToObtainAccessToken)
+            case .failedToFetchAccountDetails:
+                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorFailedToFetchAccountDetails)
+            case .failedToFetchSubscriptionDetails:
+                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorFailedToFetchSubscriptionDetails)
+            case .subscriptionExpired:
+                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorSubscriptionExpired)
             }
         }
     }

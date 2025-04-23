@@ -23,9 +23,8 @@ import BrowserServicesKit
 
 class InternalUserDeciderMock: InternalUserDecider {
 
-    var isInternalUser: Bool {
-        false
-    }
+    var isInternalUser: Bool = false
+
     var isInternalUserPublisher: AnyPublisher<Bool, Never> {
         isInternalUserSubject.eraseToAnyPublisher()
     }

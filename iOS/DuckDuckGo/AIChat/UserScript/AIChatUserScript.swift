@@ -28,19 +28,10 @@ protocol AIChatUserScriptDelegate: AnyObject {
     /// - Parameters:
     ///   - userScript: The user script that received the message
     ///   - message: The type of message received
-    func aiChatUserScript(_ userScript: AIChatUserScript, didReceiveMessage message: AIChatUserScript.MessageName)
+    func aiChatUserScript(_ userScript: AIChatUserScript, didReceiveMessage message: AIChatUserScriptMessages)
 }
 
 final class AIChatUserScript: NSObject, Subfeature {
-
-    enum MessageName: String, CaseIterable {
-        case openAIChat
-        case getAIChatNativeConfigValues
-        case getAIChatNativeHandoffData
-        case closeAIChat
-        case openAIChatSettings
-    }
-
     weak var delegate: AIChatUserScriptDelegate?
     private var handler: AIChatUserScriptHandling
     public let featureName: String = "aiChat"
@@ -64,7 +55,7 @@ final class AIChatUserScript: NSObject, Subfeature {
     }
 
     func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
-        guard let messageName = MessageName(rawValue: methodName) else { return nil }
+        guard let messageName = AIChatUserScriptMessages(rawValue: methodName) else { return nil }
 
         delegate?.aiChatUserScript(self, didReceiveMessage: messageName)
 
@@ -75,12 +66,12 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.getAIChatNativeHandoffData
         case .openAIChat:
             return handler.openAIChat
-        case .closeAIChat, .openAIChatSettings:
+        default:
             return nil
         }
     }
 
-    func setPayloadHandler(_ payloadHandler: any AIChatPayloadHandling) {
+    func setPayloadHandler(_ payloadHandler: any AIChatConsumableDataHandling) {
         self.handler.setPayloadHandler(payloadHandler)
     }
 }

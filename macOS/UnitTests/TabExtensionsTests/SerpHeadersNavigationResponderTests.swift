@@ -50,7 +50,6 @@ class SerpHeadersNavigationResponderTests: XCTestCase {
         contentBlockingMock.privacyConfigurationManager.privacyConfig as! MockPrivacyConfiguration
     }
 
-    var webViewConfiguration: WKWebViewConfiguration!
     var schemeHandler: TestSchemeHandler!
 
     override func setUp() {
@@ -62,17 +61,12 @@ class SerpHeadersNavigationResponderTests: XCTestCase {
         }
 
         schemeHandler = TestSchemeHandler()
-        WKWebView.customHandlerSchemes = [.http, .https]
-        webViewConfiguration = WKWebViewConfiguration()
-        webViewConfiguration.setURLSchemeHandler(schemeHandler, forURLScheme: URL.NavigationalScheme.http.rawValue)
-        webViewConfiguration.setURLSchemeHandler(schemeHandler, forURLScheme: URL.NavigationalScheme.https.rawValue)
     }
 
     override func tearDown() {
         contentBlockingMock = nil
         privacyFeaturesMock = nil
         schemeHandler = nil
-        WKWebView.customHandlerSchemes = []
     }
 
     // MARK: - Tests
@@ -89,7 +83,7 @@ class SerpHeadersNavigationResponderTests: XCTestCase {
                     }))
                 }
             }}
-            let tab = Tab(content: .none, webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock, extensionsBuilder: extensionsBuilder, shouldLoadInBackground: true)
+            let tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock, extensionsBuilder: extensionsBuilder, shouldLoadInBackground: true)
 
             schemeHandler.middleware = [{ request in
                 XCTAssertEqual(request.url, url)
@@ -119,7 +113,7 @@ class SerpHeadersNavigationResponderTests: XCTestCase {
                     }))
                 }
             }}
-            let tab = Tab(content: .none, webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock, extensionsBuilder: extensionsBuilder, shouldLoadInBackground: true)
+            let tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock, extensionsBuilder: extensionsBuilder, shouldLoadInBackground: true)
 
             schemeHandler.middleware = [{ request in
                 XCTAssertEqual(request.url, url)

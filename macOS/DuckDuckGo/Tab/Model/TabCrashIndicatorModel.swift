@@ -32,8 +32,8 @@ final class TabCrashIndicatorModel: ObservableObject {
         /// Resetting recent crash after timeout (responsible for clearing the crash icon)
         let resetRecentTabCrashAfterTimeout = crashPublisher
             .debounce(for: Const.maxIndicatorPresentationDuration, scheduler: RunLoop.main)
-            .filter { [weak self] tabCrashType in
-                return self?.isShowingPopover == false
+            .filter { [weak self] _ in
+                self?.isShowingPopover == false
             }
             .map { _ in TabCrashType?.none }
 

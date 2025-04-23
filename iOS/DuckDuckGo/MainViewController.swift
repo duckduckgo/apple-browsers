@@ -2330,7 +2330,7 @@ extension MainViewController: OmniBarDelegate {
             /// If it is, get the query item and open the chat with the query item's value
             if currentTab?.url?.isDuckDuckGoSearch == true {
                 let queryItem = currentTab?.url?.getQueryItems()?.filter { $0.name == "q" }.first
-                openAIChat(queryItem?.value, autoSend: true)
+                openAIChat(queryItem?.value, autoSend: false)
             } else {
                 openAIChat()
             }

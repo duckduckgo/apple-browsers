@@ -551,21 +551,6 @@ public final class PreferencesSubscriptionModelV2: ObservableObject {
     private var entitlementsObserver: Any?
     private var subscriptionChangeObserver: Any?
 
-//    public enum UserEvent {
-//        case openVPN,
-//             openDB,
-//             openITR,
-//             openFeedback,
-//             iHaveASubscriptionClick,
-//             activateSubscriptionViaEmailClick,
-//             activateSubscriptionViaRestoreAppStorePurchaseClick,
-//             manageEmailClick,
-//             addToDeviceActivationFlow,
-//             openSubscriptionSettingsClick,
-//             changePlanOrBillingClick,
-//             removeSubscriptionClick
-//    }
-
     lazy var statePublisher: AnyPublisher<PreferencesSubscriptionState, Never> = {
         let isSubscriptionActivePublisher: AnyPublisher<Bool, Never> = $subscriptionStatus.map {
             let status = $0

@@ -26,18 +26,26 @@ extension NSAlert {
         alert.messageText = "Allow sharing of cookies and website data?"
         alert.alertStyle = .warning
         alert.icon = NSImage(named: NSImage.cautionName)
-        alert.addButton(withTitle: "Deny")
+        // Buttons: first added is rightmost, so we add Allow then Deny
         alert.addButton(withTitle: "Allow")
+        alert.addButton(withTitle: "Deny")
+        // Make Allow the default button
+        alert.buttons.first?.keyEquivalent = "\r"
 
-        let contentWidth: CGFloat = 360 - 20  // account for 10-point margins
-        let verticalSpacing: CGFloat = 8
+        let containerWidth: CGFloat = 300
+        let marginX: CGFloat = 20
+        let contentWidth: CGFloat = containerWidth - marginX * 2
+        let verticalSpacing: CGFloat = 10
+        let smallSpacing: CGFloat = 4  // spacing between label pairs
+        let topPadding: CGFloat = 0
+        let bottomPadding: CGFloat = 10
 
         // 1) Build labels
         let labels = [
-          makeLabel("This site:", bold: false, size: 13),
-          makeLabel(currentDomain, bold: true, size: 13),
-          makeLabel("Has requested to use cookies and other website data (such as login information) on their other site:", bold: false, size: 13),
-          makeLabel(requestingDomain, bold: true, size: 13),
+          makeLabel("This site:", bold: false, size: 12),
+          makeLabel(currentDomain, bold: true, size: 12),
+          makeLabel("Has requested to use cookies and other website data (such as login information) on their other site:", bold: false, size: 12),
+          makeLabel(requestingDomain, bold: true, size: 12),
           makeLabel("Declining may result in the site not working properly, but will prevent tracking across websites. DuckDuckGo's Web Tracking Protections will still apply either way.", bold: false, size: 12)
         ]
 
@@ -56,27 +64,32 @@ extension NSAlert {
         }
 
         // 3) Compute total height
-        var totalHeight: CGFloat = 10  // top padding
+        var totalHeight: CGFloat = topPadding
         for (i, label) in labels.enumerated() {
             totalHeight += label.frame.height
             if i < labels.count - 1 {
-                totalHeight += verticalSpacing
+                // Use smaller gap between label pairs (0->1, 2->3), default otherwise
+                let gap = (i == 0 || i == 2) ? smallSpacing : verticalSpacing
+                totalHeight += gap
             }
         }
-        totalHeight += 10  // bottom padding
+        totalHeight += bottomPadding
 
         // 4) Make container & position
         let container = NSView(frame: CGRect(x: 0, y: 0,
-                                             width: 360,
+                                             width: containerWidth,
                                              height: totalHeight))
         // Prevent NSAlert from stretching accessory view to its default width
         container.autoresizingMask = []
-        var y = totalHeight - 10
-        for label in labels {
+        var y = totalHeight - topPadding
+        for (labelIndex, label) in labels.enumerated() {
             y -= label.frame.height
-            label.frame.origin = CGPoint(x: 10, y: y)
+            label.frame.origin = CGPoint(x: marginX, y: y)
             container.addSubview(label)
-            y -= verticalSpacing
+            if labelIndex < labels.count - 1 {
+                let gap = (labelIndex == 0 || labelIndex == 2) ? smallSpacing : verticalSpacing
+                y -= gap
+            }
         }
 
         alert.accessoryView = container
@@ -101,6 +114,8 @@ extension NSAlert {
         label.cell?.truncatesLastVisibleLine = false
         // Use word wrapping, not character-by-character
         label.lineBreakMode = .byWordWrapping
+        // Center-align the text in each label
+        label.alignment = .center
 
         return label
     }

@@ -28,8 +28,8 @@ final class LocalizationTests: XCTestCase {
             .deletingLastPathComponent()    // …/UnitTests
             .deletingLastPathComponent()    // …/macOS
 
-        // 2. Regexes for NSLocalizedString key
-        let nslocalisedRegex = try NSRegularExpression(pattern: #"NSLocalizedString\("([^"\\]+)"#, options: [])
+        // 2. Regex for NSLocalizedString key
+        let regex = try NSRegularExpression(pattern: #"NSLocalizedString\("([^"\\]+)"#, options: [])
 
         // 3. Gather relevant files
         let fileManager = FileManager.default
@@ -43,7 +43,7 @@ final class LocalizationTests: XCTestCase {
             let content = try String(contentsOf: fileURL)
 
             // 4. Extract keys
-            let matches = nslocalisedRegex.matches(
+            let matches = regex.matches(
                 in: content, options: [],
                 range: NSRange(content.startIndex..<content.endIndex, in: content)
             ).compactMap { match in

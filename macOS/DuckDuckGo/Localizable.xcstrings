@@ -9815,10 +9815,58 @@
       "comment" : " message with markdown show for bookmarks bar prompt, make sure to keep the ** ** for the translated words Settings and Appearance",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zeige die Lesezeichenleiste an, um schnell auf deine bevorzugten Lesezeichen zuzugreifen. Du kannst das später unter **Einstellungen** > **Erscheinungsbild** anpassen."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Show the Bookmarks Bar for quick access to your favorite bookmarks. You can adjust this later in **Settings** > **Appearance**."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Muestra la barra de marcadores para acceder rápidamente a tus marcadores favoritos. Puedes ajustar esto más tarde en **Configuración** > **Apariencia**."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Affichez la barre des signets pour accéder rapidement à vos favoris. Vous pourrez modifier cela plus tard dans **Réglages** > **Apparence**."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra la barra dei segnalibri per accedere rapidamente ai tuoi segnalibri preferiti. Puoi modificarla in seguito in **Impostazioni** > **Aspetto**."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laat de bladwijzerbalk zien voor snelle toegang tot je favoriete bladwijzers. Je kunt dit later aanpassen in **Instellingen** > **Uiterlijk**."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokaż pasek zakładek, aby mieć szybki dostęp do ulubionych zakładek. Możesz to później zmienić, wybierając kolejno **Ustawienia** > **Wygląd**."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra a barra de marcadores para teres acesso rápido aos teus marcadores favoritos. Podes ajustar isto mais tarde em **Definições** > **Aparência**."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отображать панель для быстрого доступа к закладкам в Избранном. Эту настройку можно изменить позже в разделе **Настройки** > **Внешний вид**."
           }
         }
       }
@@ -9827,10 +9875,58 @@
       "comment" : " message show for bookmarks bar prompt",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zeige die Lesezeichenleiste an, um schnell auf deine bevorzugten Lesezeichen zugreifen zu können. Du kannst das später unter Einstellungen > Erscheinungsbild anpassen."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Show the Bookmarks Bar for quick access to your favorite bookmarks. You can adjust this later in Settings > Appearance."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Muestra la barra de marcadores para acceder rápidamente a tus marcadores favoritos. Puedes ajustar esta configuración más tarde en Ajustes > Apariencia."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Affichez la barre des signets pour accéder rapidement à vos favoris. Vous pourrez modifier cela plus tard dans Réglages > Apparence."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra la barra dei segnalibri per accedere rapidamente ai tuoi segnalibri preferiti. Puoi modificarla in seguito in Impostazioni > Aspetto."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Laat de bladwijzerbalk zien voor snelle toegang tot je favoriete bladwijzers. Je kunt dit later aanpassen in Instellingen > Uiterlijk."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokaż pasek zakładek, aby mieć szybki dostęp do ulubionych. Możesz to później zmienić, wybierając kolejno Ustawienia > Wygląd."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra a barra de marcadores para teres acesso rápido aos teus marcadores favoritos. Podes ajustar isto mais tarde em Definições > Aparência."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показывать панель закладок для быстрого доступа. Выбор можно изменить позже в разделе «Настройки > Внешний вид»."
           }
         }
       }
@@ -21467,10 +21563,58 @@
       "comment" : "Show AI Chat in the address bar",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai-Shortcut in der Adressleiste anzeigen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Show Duck.ai shortcut in the address bar"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar el acceso directo a Duck.ai en la barra de direcciones"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher le raccourci Duck.ai dans la barre d'adresse"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra la scorciatoia Duck.ai nella barra degli indirizzi"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai-snelkoppeling weergeven in de adresbalk"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokaż skrót Duck.ai na pasku adresu"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar atalho Duck.ai na barra de endereço"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показывать ярлык Duck.ai в адресной строке"
           }
         }
       }
@@ -38475,10 +38619,58 @@
       "comment" : "Message for the VPN invite success view",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das VPN von DuckDuckGo sichert den gesamten Internetverkehr deines Geräts, jederzeit und überall."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "DuckDuckGo's VPN secures all of your device's Internet traffic anytime, anywhere."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La VPN de DuckDuckGo protege todo el tráfico de Internet de tu dispositivo en cualquier momento y en cualquier lugar."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le VPN de DuckDuckGo sécurise tout le trafic Internet de votre appareil à tout moment et où que vous soyez."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La VPN di DuckDuckGo protegge tutto il traffico Internet del tuo dispositivo in qualsiasi momento e luogo."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De VPN van DuckDuckGo beveiligt al het internetverkeer van je apparaat, altijd en overal."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "VPN DuckDuckGo zabezpiecza cały ruch internetowy urządzenia, w wybranym momencie i w dowolnej lokalizacji."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A VPN DuckDuckGo protege todo o tráfego de Internet do teu dispositivo a qualquer momento e em qualquer lugar."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "VPN от DuckDuckGo защищает весь интернет-трафик вашего устройства в любое время и в любом месте."
           }
         }
       }
@@ -38489,8 +38681,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Das VPN von DuckDuckGo sichert den gesamten Internetverkehr deines Geräts, jederzeit und überall."
+            "state" : "translated",
+            "value" : "Es hat geklappt! Du bist dabei."
           }
         },
         "en" : {
@@ -38501,44 +38693,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "La VPN de DuckDuckGo protege todo el tráfico de Internet de tu dispositivo en cualquier momento y en cualquier lugar."
+            "state" : "translated",
+            "value" : "¡Conseguido! Estás dentro."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Le VPN de DuckDuckGo sécurise tout le trafic Internet de votre appareil à tout moment et où que vous soyez."
+            "state" : "translated",
+            "value" : "Bravo ! Vous y êtes."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "La VPN di DuckDuckGo protegge tutto il traffico Internet del tuo dispositivo in qualsiasi momento e luogo."
+            "state" : "translated",
+            "value" : "Operazione completata."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "De VPN van DuckDuckGo beveiligt al het internetverkeer van je apparaat, altijd en overal."
+            "state" : "translated",
+            "value" : "Gelukt! Je bent binnen."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "VPN DuckDuckGo zabezpiecza cały ruch internetowy urządzenia, w wybranym momencie i w dowolnej lokalizacji."
+            "state" : "translated",
+            "value" : "Udało się! Dołączono."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "A VPN DuckDuckGo protege todo o tráfego de Internet do teu dispositivo a qualquer momento e em qualquer lugar."
+            "state" : "translated",
+            "value" : "Sucesso! Já está."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "VPN от DuckDuckGo защищает весь интернет-трафик вашего устройства в любое время и в любом месте."
+            "state" : "translated",
+            "value" : "Готово. Добро пожаловать!"
           }
         }
       }
@@ -56196,10 +56388,58 @@
       "comment" : "Content of warning before switching from per window pinned tabs to shared pinned tabs",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dies kann nur rückgängig gemacht werden, indem du wieder auf „Separat in jedem Fenster“ umschaltest und die Tabs in jedem Fenster erneut manuell anheftest."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "This can only be undone by switching back to \"Separate in each window\" and manually pinning the tabs in each window again."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esto solo se puede deshacer volviendo a «Separar en cada ventana» y fijando manualmente las pestañas en cada ventana de nuevo."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cette action ne peut être annulée qu'en revenant à « Séparer dans chaque fenêtre » et en épinglant à nouveau manuellement les onglets dans chaque fenêtre."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questa operazione può essere annullata solo tornando a \"Separate in ogni finestra\" e fissando di nuovo manualmente le schede in ogni finestra."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dit kan alleen ongedaan worden gemaakt door terug te schakelen naar 'Afzonderlijk in ieder venster' en de tabbladen in elk venster opnieuw handmatig vast te zetten."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Można to cofnąć tylko poprzez powrót do opcji „Oddziel w każdym oknie” i ponowne ręczne przypięcie kart w każdym oknie."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta opção só pode ser anulada voltando para \"Separar em cada janela\" e fixando novamente os separadores em cada janela de forma manual."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Это действие можно отменить, только если переключиться на вариант «Отдельно в каждом окне» и вручную закрепить вкладки во всех окнах."
           }
         }
       }
@@ -56208,10 +56448,58 @@
       "comment" : "Title of warning before switching from per window pinned tabs to shared pinned tabs",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bist du sicher, dass du angepinnte Tabs über alle Fenster hinweg freigeben möchtest?"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Are you sure you want to share pinned tabs across all windows?"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Estás seguro de que quieres compartir las pestañas ancladas en todas las ventanas?"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Êtes-vous sûr(e) de vouloir partager les onglets épinglés sur toutes les fenêtres ?"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vuoi davvero condividere le schede fissate in tutte le finestre?"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weet je zeker dat je vastgezette tabbladen in alle vensters wilt delen?"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Czy na pewno chcesz udostępniać przypięte karty we wszystkich oknach?"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tens a certeza de que queres partilhar os separadores afixados em todas as janelas?"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Вы уверены, что хотите поделиться закрепленными вкладками во всех окнах?"
           }
         }
       }
@@ -57060,10 +57348,58 @@
       "comment" : "Action button to add the app to the Dock",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo zum Dock hinzufügen …"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Add DuckDuckGo To Dock…"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir DuckDuckGo al Dock…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ajouter DuckDuckGo au Dock…"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiungi DuckDuckGo al Dock…"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "DuckDuckGo toevoegen aan Dock…"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dodaj DuckDuckGo do Docka…"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Adicionar DuckDuckGo à Dock…"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Добавить DuckDuckGo на док-панель…"
           }
         }
       }
@@ -57074,8 +57410,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "DuckDuckGo zum Dock hinzufügen …"
+            "state" : "translated",
+            "value" : "Zum Dock hinzufügen …"
           }
         },
         "en" : {
@@ -57086,44 +57422,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Añadir DuckDuckGo al Dock…"
+            "state" : "translated",
+            "value" : "Añadir al Dock…"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Ajouter DuckDuckGo au Dock…"
+            "state" : "translated",
+            "value" : "Ajouter au Dock…"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Aggiungi DuckDuckGo al Dock…"
+            "state" : "translated",
+            "value" : "Aggiungi al dock…"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "DuckDuckGo toevoegen aan Dock…"
+            "state" : "translated",
+            "value" : "App toevoegen aan je dock…"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Dodaj DuckDuckGo do Docka…"
+            "state" : "translated",
+            "value" : "Dodaj do Docka…"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Adicionar DuckDuckGo à Dock…"
+            "state" : "translated",
+            "value" : "Adicionar à Dock…"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Добавить DuckDuckGo на док-панель…"
+            "state" : "translated",
+            "value" : "Добавить на док-панель…"
           }
         }
       }
@@ -57372,9 +57708,57 @@
       "comment" : "Option to show AI Chat the address bar",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
+            "value" : "Duck.ai"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "Duck.ai"
           }
         }
@@ -61315,10 +61699,58 @@
       "comment" : "Body of the banner view that invites users to set DuckDuckGo as their default browser and add to their Dock",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Füge DuckDuckGo als Standard-Browser zu deinem Dock hinzu."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Make DuckDuckGo your default browser and add to Dock"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Establece DuckDuckGo como tu navegador predeterminado y añádelo al Dock"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Faites de DuckDuckGo votre navigateur par défaut et ajoutez-le au Dock"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Imposta DuckDuckGo come browser predefinito e aggiungilo al Dock"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stel DuckDuckGo in als je standaardbrowser en voeg deze toe aan Dock"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ustaw DuckDuckGo jako domyślną przeglądarkę i dodaj do Docka"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Faz do DuckDuckGo o teu navegador predefinido e adiciona ao Dock"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Выберите DuckDuckGo браузером по умолчанию и добавьте его на док-панель."
           }
         }
       }
@@ -67084,9 +67516,57 @@
       "comment" : "Tooltip for the AI Chat address bar button",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
+            "value" : "Duck.ai"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "Duck.ai"
           }
         }
@@ -67096,9 +67576,57 @@
       "comment" : "Tooltip With Shortcut for the AI Chat address bar button",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai ⇧↵"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
+            "value" : "Duck.ai ⇧↵"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai ⇧↵"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai ⇧↵"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai ⇧↵"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai ⇧↵"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai ⇧↵"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai ⇧↵"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "Duck.ai ⇧↵"
           }
         }
@@ -67590,7 +68118,7 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Neuer Ordner"
           }
         },
@@ -67602,43 +68130,43 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Nueva carpeta"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Nouveau dossier"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Nuova cartella"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Nieuwe map"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Nowy folder"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Nova pasta"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Новая папка"
           }
         }
@@ -72066,10 +72594,58 @@
       "comment" : "Title of the VPN location list cancel button (Note: seems like a duplicate key with a different purpose, please check)",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abbrechen"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Cancel"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancelar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Annuler"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Annulla"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Annuleren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Anuluj"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancelar"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отменить"
           }
         }
       }
@@ -72140,8 +72716,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Abbrechen"
+            "state" : "translated",
+            "value" : "Benutzerdefiniert"
           }
         },
         "en" : {
@@ -72152,44 +72728,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Cancelar"
+            "state" : "translated",
+            "value" : "Personalizar"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Annuler"
+            "state" : "translated",
+            "value" : "Personnalisé"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Annulla"
+            "state" : "translated",
+            "value" : "Personalizzato"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Annuleren"
+            "state" : "translated",
+            "value" : "Pas Aan"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Anuluj"
+            "state" : "translated",
+            "value" : "Niestandardowy"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Cancelar"
+            "state" : "translated",
+            "value" : "Personalizado"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Отменить"
+            "state" : "translated",
+            "value" : "Свой"
           }
         }
       }

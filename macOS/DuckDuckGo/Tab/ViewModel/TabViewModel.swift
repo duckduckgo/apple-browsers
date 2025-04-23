@@ -63,6 +63,10 @@ final class TabViewModel {
         tab.error != nil
     }
 
+    var isShowingHomePage: Bool {
+        tab.content == .newtab
+    }
+
     @Published var autofillDataToSave: AutofillData?
 
     var loadingStartTime: CFTimeInterval?

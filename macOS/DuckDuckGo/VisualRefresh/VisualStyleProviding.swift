@@ -51,20 +51,6 @@ enum AddressBarSizeClass {
     case `default`
     case homePage
     case popUpWindow
-
-    var logoWidth: CGFloat {
-        switch self {
-        case .homePage: 44
-        case .popUpWindow, .default: 0
-        }
-    }
-
-    var isLogoVisible: Bool {
-        switch self {
-        case .homePage: true
-        case .popUpWindow, .default: false
-        }
-    }
 }
 
 struct VisualStyle: VisualStyleProviding {

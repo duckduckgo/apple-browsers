@@ -858,8 +858,7 @@ hasAnyEntitlement: \(hasAnyEntitlement)
                 self?.fetchSubscriptionDetailsTask = nil
             }
             await self?.fetchEmail()
-            await self?.updateSubscription(cachePolicy: .returnCacheDataDontLoad) // Useful at the first start in case of slow connection, get the cached subscription without waiting for the remote one
-            await self?.updateSubscription(cachePolicy: .reloadIgnoringLocalCacheData) // Force update
+            await self?.updateSubscription(cachePolicy: .reloadIgnoringLocalCacheData)
         }
     }
 

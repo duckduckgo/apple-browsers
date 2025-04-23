@@ -79,7 +79,8 @@ class WebsiteBreakageReportTests: XCTestCase {
             userRefreshCount: 0,
             cookieConsentInfo: nil,
             debugFlags: "",
-            privacyExperiments: [:]
+            privacyExperiments: [:],
+            isPIREnabled: nil
         )
 
         let urlRequest = makeURLRequest(with: breakage.requestParameters)
@@ -130,7 +131,8 @@ class WebsiteBreakageReportTests: XCTestCase {
             userRefreshCount: 0,
             cookieConsentInfo: CookieConsentInfo(consentManaged: true, cosmetic: true, optoutFailed: true, selftestFailed: true),
             debugFlags: "",
-            privacyExperiments: [:]
+            privacyExperiments: [:],
+            isPIREnabled: true
         )
 
         let urlRequest = makeURLRequest(with: breakage.requestParameters)
@@ -155,6 +157,7 @@ class WebsiteBreakageReportTests: XCTestCase {
         XCTAssertEqual(queryItems[valueFor: "consentManaged"], "1")
         XCTAssertEqual(queryItems[valueFor: "consentOptoutFailed"], "1")
         XCTAssertEqual(queryItems[valueFor: "consentSelftestFailed"], "1")
+        XCTAssertEqual(queryItems[valueFor: "isPIREnabled"], "1")
     }
 
     func makeURLRequest(with parameters: [String: String]) -> URLRequest {

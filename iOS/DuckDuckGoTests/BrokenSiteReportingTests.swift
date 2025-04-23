@@ -122,7 +122,8 @@ final class BrokenSiteReportingTests: XCTestCase {
                                       variant: "",
                                       cookieConsentInfo: CookieConsentInfo(consentManaged: true, cosmetic: true, optoutFailed: true, selftestFailed: true),
                                       debugFlags: "",
-                                      privacyExperiments: [:])
+                                      privacyExperiments: [:],
+                                      isPIREnabled: nil)
 
         let reporter = BrokenSiteReporter(pixelHandler: { params in
             

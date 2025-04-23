@@ -21,27 +21,56 @@ import XCTest
 
 final class LocalizationTests: XCTestCase {
 
-    override func setUpWithError() throws {
-        // Put setup code here. This method is called before the invocation of each test method in the class.
-    }
+    func testNoDuplicateLocalizationKeys() throws {
+        // 1. Extract Root URL
+        let testFileURL = URL(fileURLWithPath: #file)
+        let projectRoot = testFileURL
+            .deletingLastPathComponent() // …/LocalizationTests
+            .deletingLastPathComponent() // …/UnitTests
+            .deletingLastPathComponent() // …/iOS
 
-    override func tearDownWithError() throws {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
-    }
+        // 2. Regex for NSLocalizedString key
+        let regex = try NSRegularExpression(pattern: #"NSLocalizedString\("([^"\\]+)"#, options: [])
 
-    func testExample() throws {
-        // This is an example of a functional test case.
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
-        // Any test you write for XCTest can be annotated as throws and async.
-        // Mark your test throws to produce an unexpected failure when your test encounters an uncaught error.
-        // Mark your test async to allow awaiting for asynchronous code to complete. Check the results with assertions afterwards.
-    }
+        // 3. Gather relevant files
+        let fileManager = FileManager.default
+        let allPaths = try fileManager.subpathsOfDirectory(atPath: projectRoot.path)
+        let targetPaths = allPaths.filter { $0.hasSuffix("UserText.swift") }
 
-    func testPerformanceExample() throws {
-        // This is an example of a performance test case.
-        self.measure {
-            // Put the code you want to measure the time of here.
+        var failures: [(file: String, duplicates: [String])] = []
+
+        for relativePath in targetPaths {
+            let fileURL = projectRoot.appendingPathComponent(relativePath)
+            let content = try String(contentsOf: fileURL)
+
+            // 4. Extract keys
+            let matches = regex.matches(
+                in: content, options: [],
+                range: NSRange(content.startIndex..<content.endIndex, in: content)
+            ).compactMap { match in
+                Range(match.range(at: 1), in: content).map { String(content[$0]) }
+            }
+
+            // 5. Detect duplicates
+            let dupKeys = Dictionary(grouping: matches, by: { $0 })
+                .filter { $1.count > 1 }
+                .keys.sorted()
+
+            if !dupKeys.isEmpty {
+                failures.append((relativePath, Array(dupKeys)))
+            }
+        }
+
+        // 6. Assert
+        if !failures.isEmpty {
+            let report = failures.map { file, dups in
+                        """
+                        \n
+                        ❌ Duplicate keys in \(file):
+                        \(dups.map { "   • \($0)" }.joined(separator: "\n"))
+                        """
+            }.joined(separator: "\n")
+            XCTFail(report)
         }
     }
-
 }

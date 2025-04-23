@@ -59,6 +59,7 @@ private struct Handlers {
     static let subscriptionsYearlyPriceClicked = "subscriptionsYearlyPriceClicked"
     static let subscriptionsUnknownPriceClicked = "subscriptionsUnknownPriceClicked"
     static let subscriptionsAddEmailSuccess = "subscriptionsAddEmailSuccess"
+    static let subscriptionsWelcomeAddEmailClicked = "subscriptionsWelcomeAddEmailClicked"
     static let subscriptionsWelcomeFaqClicked = "subscriptionsWelcomeFaqClicked"
     static let getAccessToken = "getAccessToken"
 }
@@ -68,14 +69,12 @@ enum UseSubscriptionError: Error {
          missingEntitlements,
          failedToGetSubscriptionOptions,
          failedToSetSubscription,
-         failedToRestoreFromEmail,
-         failedToRestoreFromEmailSubscriptionInactive,
-         failedToRestorePastPurchase,
-         subscriptionNotFound,
-         subscriptionExpired,
-         hasActiveSubscription,
          cancelledByUser,
          accountCreationFailed,
+         activeSubscriptionAlreadyPresent,
+         restoreFailedDueToNoSubscription,
+         restoreFailedDueToExpiredSubscription,
+         otherRestoreError,
          generalError
 }
 
@@ -126,6 +125,7 @@ protocol SubscriptionPagesUseSubscriptionFeature: Subfeature, ObservableObject {
     func subscriptionsYearlyPriceClicked(params: Any, original: WKScriptMessage) async -> Encodable?
     func subscriptionsUnknownPriceClicked(params: Any, original: WKScriptMessage) async -> Encodable?
     func subscriptionsAddEmailSuccess(params: Any, original: WKScriptMessage) async -> Encodable?
+    func subscriptionsWelcomeAddEmailClicked(params: Any, original: WKScriptMessage) async -> Encodable?
     func subscriptionsWelcomeFaqClicked(params: Any, original: WKScriptMessage) async -> Encodable?
 
     func pushPurchaseUpdate(originalMessage: WKScriptMessage, purchaseUpdate: PurchaseUpdate) async
@@ -211,6 +211,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         case Handlers.subscriptionsYearlyPriceClicked: return subscriptionsYearlyPriceClicked
         case Handlers.subscriptionsUnknownPriceClicked: return subscriptionsUnknownPriceClicked
         case Handlers.subscriptionsAddEmailSuccess: return subscriptionsAddEmailSuccess
+        case Handlers.subscriptionsWelcomeAddEmailClicked: return subscriptionsWelcomeAddEmailClicked
         case Handlers.subscriptionsWelcomeFaqClicked: return subscriptionsWelcomeFaqClicked
         case Handlers.getAccessToken: return getAccessToken
         default:
@@ -307,7 +308,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         // Check for active subscriptions
         if await subscriptionManager.storePurchaseManager().hasActiveSubscription() {
             Logger.subscription.debug("Subscription already active")
-            setTransactionError(.hasActiveSubscription)
+            setTransactionError(.activeSubscriptionAlreadyPresent)
             Pixel.fire(pixel: .privacyProRestoreAfterPurchaseAttempt)
             setTransactionStatus(.idle)
             return nil
@@ -340,7 +341,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
             case .accountCreationFailed:
                 setTransactionError(.accountCreationFailed)
             case .activeSubscriptionAlreadyPresent:
-                setTransactionError(.hasActiveSubscription)
+                setTransactionError(.activeSubscriptionAlreadyPresent)
             default:
                 setTransactionError(.purchaseFailed)
             }
@@ -395,9 +396,8 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
             accountManager.storeAuthToken(token: authToken)
             accountManager.storeAccount(token: accessToken, email: accountDetails.email, externalID: accountDetails.externalID)
             onSetSubscription?()
-
         } else {
-            Logger.subscription.error("Failed to obtain subscription options")
+            Logger.subscription.error("Failed to set subscription")
             setTransactionError(.failedToSetSubscription)
         }
 
@@ -506,6 +506,12 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         return nil
     }
 
+    func subscriptionsWelcomeAddEmailClicked(params: Any, original: WKScriptMessage) async -> Encodable? {
+        Logger.subscription.debug("Web function called: \(#function)")
+        UniquePixel.fire(pixel: .privacyProWelcomeAddDevice)
+        return nil
+    }
+
     func subscriptionsWelcomeFaqClicked(params: Any, original: WKScriptMessage) async -> Encodable? {
         Logger.subscription.debug("Web function called: \(#function)")
         UniquePixel.fire(pixel: .privacyProWelcomeFAQClick)
@@ -551,11 +557,11 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         Logger.subscription.error("\(#function): \(error.localizedDescription)")
         switch error {
         case .subscriptionExpired:
-            return .subscriptionExpired
+            return .restoreFailedDueToExpiredSubscription
         case .missingAccountOrTransactions:
-            return .subscriptionNotFound
+            return .restoreFailedDueToNoSubscription
         default:
-            return .failedToRestorePastPurchase
+            return .otherRestoreError
         }
     }
 
@@ -740,6 +746,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         case Handlers.subscriptionsYearlyPriceClicked: return subscriptionsYearlyPriceClicked
         case Handlers.subscriptionsUnknownPriceClicked: return subscriptionsUnknownPriceClicked
         case Handlers.subscriptionsAddEmailSuccess: return subscriptionsAddEmailSuccess
+        case Handlers.subscriptionsWelcomeAddEmailClicked: return subscriptionsWelcomeAddEmailClicked
         case Handlers.subscriptionsWelcomeFaqClicked: return subscriptionsWelcomeFaqClicked
         case Handlers.getAccessToken: return getAccessToken
         default:
@@ -883,7 +890,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         // Check for active subscriptions
         if await subscriptionManager.storePurchaseManager().hasActiveSubscription() {
             Logger.subscription.log("Subscription already active")
-            setTransactionError(.hasActiveSubscription)
+            setTransactionError(.activeSubscriptionAlreadyPresent)
             Pixel.fire(pixel: .privacyProRestoreAfterPurchaseAttempt)
             setTransactionStatus(.idle)
             return nil
@@ -914,7 +921,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             case .accountCreationFailed:
                 setTransactionError(.accountCreationFailed)
             case .activeSubscriptionAlreadyPresent:
-                setTransactionError(.hasActiveSubscription)
+                setTransactionError(.activeSubscriptionAlreadyPresent)
             default:
                 setTransactionError(.purchaseFailed)
             }
@@ -1046,6 +1053,12 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         return nil
     }
 
+    func subscriptionsWelcomeAddEmailClicked(params: Any, original: WKScriptMessage) async -> Encodable? {
+        Logger.subscription.debug("Web function called: \(#function)")
+        UniquePixel.fire(pixel: .privacyProWelcomeAddDevice)
+        return nil
+    }
+
     func subscriptionsWelcomeFaqClicked(params: Any, original: WKScriptMessage) async -> Encodable? {
         Logger.subscription.log("Web function called: \(#function)")
         UniquePixel.fire(pixel: .privacyProWelcomeFAQClick)
@@ -1093,11 +1106,11 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         Logger.subscription.error("\(#function): \(error.localizedDescription)")
         switch error {
         case .subscriptionExpired:
-            return .subscriptionExpired
+            return .restoreFailedDueToExpiredSubscription
         case .missingAccountOrTransactions:
-            return .subscriptionNotFound
+            return .restoreFailedDueToNoSubscription
         default:
-            return .failedToRestorePastPurchase
+            return .otherRestoreError
         }
     }
 

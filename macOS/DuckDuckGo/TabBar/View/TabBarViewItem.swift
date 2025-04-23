@@ -120,6 +120,8 @@ final class TabBarItemCellView: NSView {
         static let trailingSpaceWithPermissionAndButton: CGFloat = 40
     }
 
+    private var tabStyleProvider: TabStyleProviding = NSApp.delegateTyped.visualStyleManager.style.tabStyleProvider
+
     fileprivate let faviconImageView = {
         let faviconImageView = NSImageView()
         faviconImageView.imageScaling = .scaleProportionallyDown
@@ -207,7 +209,7 @@ final class TabBarItemCellView: NSView {
         return mouseOverView
     }()
 
-    fileprivate let rightSeparatorView = ColorView(frame: .zero, backgroundColor: .separator)
+    fileprivate let rightSeparatorView = ColorView(frame: .zero)
 
     fileprivate lazy var borderLayer: CALayer = {
         let layer = CALayer()
@@ -294,7 +296,8 @@ final class TabBarItemCellView: NSView {
             layoutForCompactMode()
         }
 
-        rightSeparatorView.frame = NSRect(x: bounds.maxX.rounded() - 1, y: bounds.midY - 10, width: 1, height: 20)
+        rightSeparatorView.frame = NSRect(x: bounds.maxX.rounded() - 1, y: bounds.midY - (tabStyleProvider.separatorHeight / 2), width: 1, height: tabStyleProvider.separatorHeight)
+        rightSeparatorView.backgroundColor = tabStyleProvider.separatorColor
     }
 
     private func layoutForNormalMode() {

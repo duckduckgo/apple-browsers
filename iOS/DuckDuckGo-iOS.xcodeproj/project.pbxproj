@@ -409,6 +409,7 @@
 		6F5041C92CC11A5100989E48 /* SimpleNewTabPageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F5041C82CC11A5100989E48 /* SimpleNewTabPageView.swift */; };
 		6F5345AF2C53F2DE00424A43 /* NewTabPageSettingsPersistentStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F5345AE2C53F2DE00424A43 /* NewTabPageSettingsPersistentStorage.swift */; };
 		6F572DA82DAD38E700CD300E /* FireButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F572DA72DAD38E400CD300E /* FireButton.swift */; };
+		6F5938982DB1028200C8C068 /* ToolbarButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F5938972DB1028200C8C068 /* ToolbarButton.swift */; };
 		6F5AA3EF2CC1588400685CB4 /* FavoritesListInteractingAdapterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F5AA3EE2CC1588400685CB4 /* FavoritesListInteractingAdapterTests.swift */; };
 		6F5CC0812C2AFFE400AFC840 /* ToggleExpandButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F5CC0802C2AFFE400AFC840 /* ToggleExpandButtonStyle.swift */; };
 		6F64AA532C47E92600CF4489 /* FavoritesFaviconLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F64AA522C47E92600CF4489 /* FavoritesFaviconLoader.swift */; };
@@ -1969,6 +1970,7 @@
 		6F5041C82CC11A5100989E48 /* SimpleNewTabPageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SimpleNewTabPageView.swift; sourceTree = "<group>"; };
 		6F5345AE2C53F2DE00424A43 /* NewTabPageSettingsPersistentStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageSettingsPersistentStorage.swift; sourceTree = "<group>"; };
 		6F572DA72DAD38E400CD300E /* FireButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireButton.swift; sourceTree = "<group>"; };
+		6F5938972DB1028200C8C068 /* ToolbarButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToolbarButton.swift; sourceTree = "<group>"; };
 		6F5AA3EE2CC1588400685CB4 /* FavoritesListInteractingAdapterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesListInteractingAdapterTests.swift; sourceTree = "<group>"; };
 		6F5CC0802C2AFFE400AFC840 /* ToggleExpandButtonStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToggleExpandButtonStyle.swift; sourceTree = "<group>"; };
 		6F64AA522C47E92600CF4489 /* FavoritesFaviconLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesFaviconLoader.swift; sourceTree = "<group>"; };
@@ -4655,6 +4657,14 @@
 			name = Settings;
 			sourceTree = "<group>";
 		};
+		6F5938962DB1027400C8C068 /* ButtonConfigurations */ = {
+			isa = PBXGroup;
+			children = (
+				6F5938972DB1028200C8C068 /* ToolbarButton.swift */,
+			);
+			path = ButtonConfigurations;
+			sourceTree = "<group>";
+		};
 		6F691CC82C4979DD002E9553 /* Tooltip */ = {
 			isa = PBXGroup;
 			children = (
@@ -4674,6 +4684,7 @@
 		6F922ED92D8C360F0062DFC1 /* Updated */ = {
 			isa = PBXGroup;
 			children = (
+				6F5938962DB1027400C8C068 /* ButtonConfigurations */,
 				6FE3AF422D9EBEF5001AE6B8 /* CompositeShadowView.swift */,
 				6F922EDA2D8C364C0062DFC1 /* UpdatedOmniBarViewController.swift */,
 				6F922EDC2D8C372F0062DFC1 /* UpdatedOmniBarView.swift */,
@@ -9462,6 +9473,7 @@
 				46DD3D5A2D0A29F600F33D49 /* CrashReportSenderExtensions.swift in Sources */,
 				1DEAADEA2BA4539800E25A97 /* SettingsAppearanceView.swift in Sources */,
 				B623C1C22862CA9E0043013E /* DownloadSession.swift in Sources */,
+				6F5938982DB1028200C8C068 /* ToolbarButton.swift in Sources */,
 				7B16810C2D10CF44005EAE24 /* WidgetVPNIntents.swift in Sources */,
 				317CA3432CFF82E100F88848 /* SettingsAIChatView.swift in Sources */,
 				9F7CFF7F2C8A94F70012833E /* OnboardingView+AddressBarPositionContent.swift in Sources */,

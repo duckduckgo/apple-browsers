@@ -33,7 +33,7 @@ extension NSAlert {
         alert.buttons.first?.keyEquivalent = "\r"
 
         let containerWidth: CGFloat = 300
-        let marginX: CGFloat = 20
+        let marginX: CGFloat = 10
         let contentWidth: CGFloat = containerWidth - marginX * 2
         let verticalSpacing: CGFloat = 10
         let smallSpacing: CGFloat = 4  // spacing between label pairs

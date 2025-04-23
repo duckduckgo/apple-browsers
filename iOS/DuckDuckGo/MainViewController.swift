@@ -329,19 +329,7 @@ class MainViewController: UIViewController {
                                                               featureFlagger: featureFlagger)
         viewCoordinator.moveAddressBarToPosition(appSettings.currentAddressBarPosition)
 
-        viewCoordinator.toolbarBackButton.action = #selector(onBackPressed)
-        viewCoordinator.toolbarForwardButton.action = #selector(onForwardPressed)
-        if ExperimentalThemingManager().isExperimentalThemingEnabled {
-            viewCoordinator.toolbarFireButton.addTarget(self, action: #selector(onFirePressed), for: .touchUpInside)
-        } else {
-            viewCoordinator.toolbarFireBarButtonItem.action = #selector(onFirePressed)
-        }
-        viewCoordinator.toolbarPasswordsButton.action = #selector(onPasswordsPressed)
-        viewCoordinator.toolbarBookmarksButton.action = #selector(onToolbarBookmarksPressed)
-        if ExperimentalThemingManager().isExperimentalThemingEnabled {
-            viewCoordinator.menuToolbarButton.action = #selector(onMenuPressed)
-        }
-
+        setUpToolbarButtonsActions()
         installSwipeTabs()
             
         loadSuggestionTray()
@@ -354,9 +342,7 @@ class MainViewController: UIViewController {
         chromeManager = BrowserChromeManager()
         chromeManager.delegate = self
         initTabButton()
-        if !ExperimentalThemingManager().isExperimentalThemingEnabled {
-            initMenuButton()
-        }
+        initMenuButton()
         initBookmarksButton()
         loadInitialView()
         previewsSource.prepare()
@@ -449,7 +435,7 @@ class MainViewController: UIViewController {
             self?.updatePreviewForCurrentTab()
         }
     }
-    
+
     func updatePreviewForCurrentTab(completion: (() -> Void)? = nil) {
         assert(Thread.isMainThread)
         
@@ -589,6 +575,21 @@ class MainViewController: UIViewController {
     private func keyboardDidHide() {
         keyboardShowing = false
         didSendGestureDismissPixel = false
+    }
+
+    private func setUpToolbarButtonsActions() {
+
+        viewCoordinator.toolbarBackButton.setCustomItemAction(on: self, action: #selector(onBackPressed))
+        viewCoordinator.toolbarForwardButton.setCustomItemAction(on: self, action: #selector(onForwardPressed))
+        viewCoordinator.toolbarPasswordsButton.setCustomItemAction(on: self, action: #selector(onPasswordsPressed))
+        viewCoordinator.toolbarBookmarksButton.setCustomItemAction(on: self, action: #selector(onToolbarBookmarksPressed))
+        viewCoordinator.menuToolbarButton.setCustomItemAction(on: self, action: #selector(onMenuPressed))
+
+        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+            viewCoordinator.toolbarFireButton.addTarget(self, action: #selector(onFirePressed), for: .touchUpInside)
+        } else {
+            viewCoordinator.toolbarFireBarButtonItem.action = #selector(onFirePressed)
+        }
     }
 
     private func registerForPageRefreshPatterns() {
@@ -808,6 +809,11 @@ class MainViewController: UIViewController {
     }
 
     private func initMenuButton() {
+        guard !ExperimentalThemingManager().isExperimentalThemingEnabled else {
+            // For experimental appearance, this is set up in the ToolbarStateHandling
+            return
+        }
+
         viewCoordinator.menuToolbarButton.customView = menuButton
         viewCoordinator.menuToolbarButton.isAccessibilityElement = true
         viewCoordinator.menuToolbarButton.accessibilityTraits = .button
@@ -3309,6 +3315,16 @@ extension MainViewController {
                     self.viewCoordinator.omniBar.hideSeparator()
                 }
             }
+        }
+    }
+}
+
+private extension UIBarButtonItem {
+    func setCustomItemAction(on target: Any?, action: Selector) {
+        if let customControl = customView as? UIControl {
+            customControl.addTarget(target, action: action, for: .touchUpInside)
+        } else {
+            self.action = action
         }
     }
 }

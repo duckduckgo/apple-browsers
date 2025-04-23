@@ -858,7 +858,8 @@ hasAnyEntitlement: \(hasAnyEntitlement)
                 self?.fetchSubscriptionDetailsTask = nil
             }
             await self?.fetchEmail()
-            await self?.updateSubscription(cachePolicy: .reloadIgnoringLocalCacheData)
+            await self?.updateSubscription(cachePolicy: .returnCacheDataDontLoad) // Useful at the first start in case of slow connection, get the cached subscription without waiting for the remote one
+            await self?.updateSubscription(cachePolicy: .reloadIgnoringLocalCacheData) // Force update
         }
     }
 
@@ -911,14 +912,7 @@ hasAnyEntitlement: \(hasAnyEntitlement)
 
         if isUserAuthenticated {
             do {
-                var subscription = try? await subscriptionManager.getSubscription(cachePolicy: cachePolicy)
-                if subscription == nil {
-                    subscription = try? await subscriptionManager.getSubscription(cachePolicy: .returnCacheDataDontLoad)
-                }
-                guard let subscription else {
-                    throw SubscriptionEndpointServiceError.noData
-                }
-
+                let subscription = try await subscriptionManager.getSubscription(cachePolicy: cachePolicy)
                 Task { @MainActor in
                     updateDescription(for: subscription.expiresOrRenewsAt, status: subscription.status, period: subscription.billingPeriod)
                     subscriptionPlatform = subscription.platform

@@ -1652,8 +1652,9 @@ extension TabViewController: WKNavigationDelegate {
             scheduleTrackerNetworksAnimation(collapsing: true)
             return
         }
-        
-        scheduleTrackerNetworksAnimation(collapsing: !spec.highlightAddressBar)
+
+        // In new onboarding we do not highlight the address bar so collapsing is default to true.
+        scheduleTrackerNetworksAnimation(collapsing: true)
         let daxDialogSourceURL = self.url
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in

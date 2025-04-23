@@ -298,9 +298,11 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
                 let name: String
                 let cohort: String
 
-                func map(to parameters: inout [String: String]) {
-                    parameters["experimentName"] = name
-                    parameters["experimentCohort"] = cohort
+                func asParameters() -> [String: String] {
+                    [
+                        "experimentName": name,
+                        "experimentCohort": cohort,
+                    ]
                 }
             }
 
@@ -370,10 +372,12 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
             fireFreeTrialSubscriptionPurchasePixel(for: subscriptionSelection.id)
         }
 
-        if let experiment = subscriptionSelection.experiment {
-            var parameters = subscriptionParameters ?? [String: String]()
-            experiment.map(to: &parameters)
-            subscriptionParameters = parameters
+        if let feExperiment = subscriptionSelection.experiment {
+            subscriptionParameters = {
+                let parameters = subscriptionParameters ?? [String: String]()
+
+                return parameters.merging(feExperiment.asParameters()) { $1 }
+            }()
         }
 
         // Privacy Pro Promotion Experiment Pixels

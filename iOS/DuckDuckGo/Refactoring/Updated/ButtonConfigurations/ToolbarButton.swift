@@ -116,8 +116,6 @@ private extension UIButton.Configuration {
 
         config.background.cornerRadius = 14
 
-//        config.contentInsets = .init(top: 8, leading: 16, bottom: 8, trailing: 16)
-
         return config
     }
 }

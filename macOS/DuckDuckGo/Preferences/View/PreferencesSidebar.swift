@@ -62,8 +62,12 @@ extension Preferences {
 
                     if let status = protectionStatus.status {
                         StatusIndicatorView(status: status)
+                            .frame(minWidth: 0, alignment: .trailing)
+                            .layoutPriority(-1)
                     }
                 }
+                .lineLimit(1)
+                .truncationMode(.tail)
             }
             .buttonStyle(SidebarItemButtonStyle(isSelected: isSelected))
             .accessibilityIdentifier("PreferencesSidebar.\(pane.id.rawValue)Button")

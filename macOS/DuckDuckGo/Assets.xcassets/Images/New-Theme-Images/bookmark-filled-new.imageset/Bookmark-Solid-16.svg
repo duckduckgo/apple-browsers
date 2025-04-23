@@ -1,0 +1,10 @@
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <g clip-path="url(#Bookmark-Solid-16_svg__a)">
+    <path fill="#000" d="M6 0a4 4 0 0 0-4 4v9.684c0 1.857 2.079 2.957 3.614 1.912l1.788-1.218c.36-.246.835-.246 1.196 0l1.788 1.218C11.92 16.64 14 15.54 14 13.684V4a4 4 0 0 0-4-4H6Z"/>
+  </g>
+  <defs>
+    <clipPath id="Bookmark-Solid-16_svg__a">
+      <path fill="#fff" d="M0 0h16v16H0z"/>
+    </clipPath>
+  </defs>
+</svg>

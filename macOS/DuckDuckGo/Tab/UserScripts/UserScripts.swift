@@ -23,6 +23,7 @@ import UserScript
 import WebKit
 import Subscription
 import SpecialErrorPages
+import AIChat
 
 @MainActor
 final class UserScripts: UserScriptsProvider {

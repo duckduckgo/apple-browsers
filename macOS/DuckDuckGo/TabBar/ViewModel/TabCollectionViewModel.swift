@@ -358,14 +358,16 @@ final class TabCollectionViewModel: NSObject {
         }
     }
 
-    func append(tabs: [Tab]) {
+    func append(tabs: [Tab], andSelect shouldSelectLastTab: Bool) {
         guard changesEnabled else { return }
 
         tabs.forEach {
             tabCollection.append(tab: $0)
         }
-        let newSelectionIndex = tabCollection.tabs.count - 1
-        selectUnpinnedTab(at: newSelectionIndex)
+        if shouldSelectLastTab {
+            let newSelectionIndex = tabCollection.tabs.count - 1
+            selectUnpinnedTab(at: newSelectionIndex)
+        }
 
         delegate?.tabCollectionViewModelDidMultipleChanges(self)
     }

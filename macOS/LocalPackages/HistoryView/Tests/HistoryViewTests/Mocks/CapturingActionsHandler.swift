@@ -16,17 +16,18 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Foundation
 import HistoryView
 
 final class CapturingActionsHandler: ActionsHandling {
 
-    func showDeleteDialog(for query: DataModel.HistoryQueryKind) async -> HistoryView.DataModel.DeleteDialogResponse {
+    func showDeleteDialog(for query: HistoryView.DataModel.HistoryQueryKind, in window: NSWindow?) async -> HistoryView.DataModel.DeleteDialogResponse {
         showDeleteDialogForQueryCalls.append(query)
         return await showDeleteDialogForQuery(query)
     }
 
-    func showDeleteDialog(for entries: [String]) async -> HistoryView.DataModel.DeleteDialogResponse {
+    func showDeleteDialog(for entries: [String], in window: NSWindow?) async -> HistoryView.DataModel.DeleteDialogResponse {
         showDeleteDialogForEntriesCalls.append(entries)
         return await showDeleteDialogForEntries(entries)
     }
@@ -35,7 +36,7 @@ final class CapturingActionsHandler: ActionsHandling {
         return .noAction
     }
 
-    func open(_ url: URL) {
+    func open(_ url: URL, window: NSWindow?) async {
         openCalls.append(url)
     }
 

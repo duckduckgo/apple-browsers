@@ -25,6 +25,7 @@ protocol VisualStyleProviding {
     func addressBarHeight(for type: AddressBarSizeClass) -> CGFloat
     func addressBarTopPadding(for type: AddressBarSizeClass) -> CGFloat
     func addressBarBottomPadding(for type: AddressBarSizeClass) -> CGFloat
+    var shouldShowLogoinInAddressBar: Bool { get }
 
     var toolbarButtonsCornerRadius: CGFloat { get }
 
@@ -39,6 +40,8 @@ protocol VisualStyleProviding {
     var vpnNavigationIconsProvider: IconProvider { get }
     var fireButtonStyleProvider: FireButtonIconStyleProviding { get }
     var moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding { get }
+    var privacyShieldStyleProvider: PrivacyShieldAddressBarStyleProviding { get }
+    var addressBarIconsProvider: AddressBarIconsProviding { get }
 }
 
 protocol VisualStyleManagerProviding {
@@ -76,6 +79,8 @@ struct VisualStyle: VisualStyleProviding {
     private let addressBarBottomPaddingForHomePage: CGFloat
     private let addressBarBottomPaddingForPopUpWindow: CGFloat
 
+    let shouldShowLogoinInAddressBar: Bool
+
     let toolbarButtonsCornerRadius: CGFloat
 
     let backButtonImage: NSImage
@@ -89,6 +94,8 @@ struct VisualStyle: VisualStyleProviding {
     let vpnNavigationIconsProvider: IconProvider
     let fireButtonStyleProvider: FireButtonIconStyleProviding
     let moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding
+    let privacyShieldStyleProvider: PrivacyShieldAddressBarStyleProviding
+    let addressBarIconsProvider: AddressBarIconsProviding
 
     func addressBarHeight(for type: AddressBarSizeClass) -> CGFloat {
         switch type {
@@ -124,6 +131,7 @@ struct VisualStyle: VisualStyleProviding {
                            addressBarBottomPaddingForDefault: 6,
                            addressBarBottomPaddingForHomePage: 8,
                            addressBarBottomPaddingForPopUpWindow: 0,
+                           shouldShowLogoinInAddressBar: false,
                            toolbarButtonsCornerRadius: 4,
                            backButtonImage: .back,
                            forwardButtonImage: .forward,
@@ -135,7 +143,9 @@ struct VisualStyle: VisualStyleProviding {
                            moreOptionsbuttonImage: .settings,
                            vpnNavigationIconsProvider: NavigationBarIconProvider(),
                            fireButtonStyleProvider: LegacyFireButtonIconStyleProvider(),
-                           moreOptionsMenuIconsProvider: LegacyMoreOptionsMenuIcons())
+                           moreOptionsMenuIconsProvider: LegacyMoreOptionsMenuIcons(),
+                           privacyShieldStyleProvider: LegacyPrivacyShieldAddressBarStyleProvider(),
+                           addressBarIconsProvider: LegacyAddressBarIconsProvider())
     }
 
     static var current: VisualStyleProviding {
@@ -148,6 +158,7 @@ struct VisualStyle: VisualStyleProviding {
                            addressBarBottomPaddingForDefault: 6,
                            addressBarBottomPaddingForHomePage: 6,
                            addressBarBottomPaddingForPopUpWindow: 6,
+                           shouldShowLogoinInAddressBar: true,
                            toolbarButtonsCornerRadius: 9,
                            backButtonImage: .backNew,
                            forwardButtonImage: .forwardNew,
@@ -159,7 +170,9 @@ struct VisualStyle: VisualStyleProviding {
                            moreOptionsbuttonImage: .optionsNew,
                            vpnNavigationIconsProvider: NewVPNNavigationBarIconProvider(),
                            fireButtonStyleProvider: NewFireButtonIconStyleProvider(),
-                           moreOptionsMenuIconsProvider: NewMoreOptionsMenuIcons())
+                           moreOptionsMenuIconsProvider: NewMoreOptionsMenuIcons(),
+                           privacyShieldStyleProvider: NewPrivacyShieldAddressBarStyleProvider(),
+                           addressBarIconsProvider: NewAddressBarIconsProvider())
     }
 }
 

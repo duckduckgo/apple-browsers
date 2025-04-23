@@ -16,14 +16,15 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Combine
 import Foundation
 
 public protocol RecentActivityActionsHandling {
 
-    @MainActor func open(_ url: URL, target: LinkOpenTarget) async
-    @MainActor func addFavorite(_ url: URL) async
-    @MainActor func removeFavorite(_ url: URL) async
+    @MainActor func openHistoryEntry(_ url: URL, sender: LinkOpenSender, target: LinkOpenTarget, sourceWindow: NSWindow?)
+    @MainActor func addFavorite(_ url: URL)
+    @MainActor func removeFavorite(_ url: URL)
     @MainActor func confirmBurn(_ url: URL) async -> Bool
 
     var burnDidCompletePublisher: AnyPublisher<Void, Never> { get }

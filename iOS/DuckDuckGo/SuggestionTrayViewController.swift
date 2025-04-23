@@ -181,11 +181,11 @@ class SuggestionTrayViewController: UIViewController {
             variableHeightConstraint.constant = Constant.suggestionTrayInitialHeight
         }
 
-        view.leadingAnchor.constraint(equalTo: containerView.leadingAnchor).isActive = true
-        view.trailingAnchor.constraint(equalTo: containerView.trailingAnchor).isActive = true
-
         fullWidthConstraint.isActive = false
         fullHeightConstraint.isActive = false
+
+        view.leadingAnchor.constraint(equalTo: containerView.leadingAnchor).isActive = true
+        view.trailingAnchor.constraint(equalTo: containerView.trailingAnchor).isActive = true
     }
     
     func fill() {

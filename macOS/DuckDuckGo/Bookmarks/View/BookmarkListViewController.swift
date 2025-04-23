@@ -693,6 +693,7 @@ final class BookmarkListViewController: NSViewController {
         switch node.representedObject {
         case let bookmark as Bookmark:
             onBookmarkClick(bookmark)
+            delegate?.closeBookmarksPopover(self)
 
         case let folder as BookmarkFolder where dataSource.isSearching:
             bookmarkMetrics.fireSearchResultClicked(origin: .panel)
@@ -704,13 +705,22 @@ final class BookmarkListViewController: NSViewController {
         }
     }
 
+    override func otherMouseUp(with event: NSEvent) {
+        guard case .middle = event.button,
+              let row = outlineView.withMouseLocationInViewCoordinates(event.locationInWindow, convert: outlineView.row(at:)), row != -1,
+              let item = outlineView.item(atRow: row),
+              let node = item as? BookmarkNode,
+              let bookmark = node.representedObject as? Bookmark else { return }
+
+        onBookmarkClick(bookmark)
+    }
+
     private func onBookmarkClick(_ bookmark: Bookmark) {
         if dataSource.isSearching {
             bookmarkMetrics.fireSearchResultClicked(origin: .panel)
         }
 
-        WindowControllersManager.shared.open(bookmark: bookmark)
-        delegate?.closeBookmarksPopover(self)
+        WindowControllersManager.shared.open(bookmark, with: NSApp.currentEvent)
     }
 
     private func handleItemClickWhenNotInSearchMode(item: Any?) {

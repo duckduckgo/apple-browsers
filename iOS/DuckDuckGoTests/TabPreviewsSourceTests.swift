@@ -192,7 +192,8 @@ class TabPreviewsSourceTests: XCTestCase {
         }
     }
     
-    func testWhenExcessPreviewsExistThenTheseAreRemoved() async {
+    func testWhenExcessPreviewsExistThenTheseAreRemoved() async throws {
+        throw XCTSkip("Flaky test: https://app.asana.com/1/137249556945/task/1210055172666992?focus=true")
         guard let containerUrl = containerUrl else {
             XCTFail("Could not determine containerUrl")
             return

@@ -60,7 +60,7 @@ struct AIChatTabOpener: AIChatTabOpening {
     @MainActor
     func openAIChatTab(_ query: String?, target: AIChatTabOpenerTarget) {
         if let query = query {
-            promptHandler.setData(query)
+            promptHandler.setData(.queryPrompt(query, autoSubmit: false))
         }
         WindowControllersManager.shared.openAIChat(aiChatRemoteSettings.aiChatURL, target: target, hasPrompt: query != nil)
     }

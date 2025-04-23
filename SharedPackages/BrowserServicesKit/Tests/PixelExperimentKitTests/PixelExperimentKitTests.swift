@@ -16,11 +16,12 @@
 //  limitations under the License.
 //
 
-import XCTest
-@testable import PixelExperimentKit
-@testable import BrowserServicesKit
-import PixelKit
 import Combine
+import PixelKit
+import PixelExperimentKitTestUtils
+import XCTest
+@testable import BrowserServicesKit
+@testable import PixelExperimentKit
 
 final class PixelExperimentKitTests: XCTestCase {
     var featureJson: Data = "{}".data(using: .utf8)!
@@ -586,57 +587,4 @@ final class PixelExperimentKitTests: XCTestCase {
         firedIncludeAppVersion = []
     }
 
-}
-
-class MockExperimentActionPixelStore: ExperimentActionPixelStore {
-
-    var store: [String: Int] = [:]
-
-    func removeObject(forKey defaultName: String) {
-        store.removeValue(forKey: defaultName)
-    }
-
-    func integer(forKey defaultName: String) -> Int {
-        return store[defaultName] ?? 0
-    }
-
-    func set(_ value: Int, forKey defaultName: String) {
-        store[defaultName] = value
-    }
-}
-
-class MockFeatureFlagger: FeatureFlagger {
-    func resolveCohort<Flag>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? where Flag: FeatureFlagDescribing {
-        nil
-    }
-
-    var experiments: Experiments = [:]
-
-    var internalUserDecider: any InternalUserDecider = MockInternalUserDecider()
-
-    var localOverrides: (any BrowserServicesKit.FeatureFlagLocalOverriding)?
-
-    func resolveCohort<Flag>(for featureFlag: Flag) -> (any FeatureFlagCohortDescribing)? where Flag: FeatureFlagDescribing {
-        return nil
-    }
-
-    var allActiveExperiments: Experiments {
-        return experiments
-    }
-
-    func isFeatureOn<Flag>(for featureFlag: Flag, allowOverride: Bool) -> Bool where Flag: FeatureFlagDescribing {
-        return false
-    }
-}
-
-final class MockInternalUserDecider: InternalUserDecider {
-    var isInternalUser: Bool = false
-
-    var isInternalUserPublisher: AnyPublisher<Bool, Never> {
-        Just(false).eraseToAnyPublisher()
-    }
-
-    func markUserAsInternalIfNeeded(forUrl url: URL?, response: HTTPURLResponse?) -> Bool {
-        return false
-    }
 }

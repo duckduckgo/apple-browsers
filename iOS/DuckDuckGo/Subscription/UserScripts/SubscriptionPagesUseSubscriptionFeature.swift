@@ -294,7 +294,18 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         resetSubscriptionFlow()
 
         struct SubscriptionSelection: Decodable {
+            struct Experiment: Codable {
+                let name: String
+                let cohort: String
+
+                func map(to parameters: inout [String: String]) {
+                    parameters["experimentName"] = name
+                    parameters["experimentCohort"] = cohort
+                }
+            }
+
             let id: String
+            let experiment: Experiment?
         }
 
         let message = original
@@ -351,17 +362,24 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
 
         setTransactionStatus(.polling)
 
+        var subscriptionParameters: [String: String]?
+
         // Free Trials Experiment Parameters & Pixels
-        var freeTrialParameters: [String: String]?
         if shouldPerformFreeTrialPostPurchaseActions {
-            freeTrialParameters = completeSubscriptionFreeTrialParameters
+            subscriptionParameters = completeSubscriptionFreeTrialParameters
             fireFreeTrialSubscriptionPurchasePixel(for: subscriptionSelection.id)
+        }
+
+        if let experiment = subscriptionSelection.experiment {
+            var parameters = subscriptionParameters ?? [String: String]()
+            experiment.map(to: &parameters)
+            subscriptionParameters = parameters
         }
 
         // Privacy Pro Promotion Experiment Pixels
         firePrivacyProPromotionSubscriptionPurchasePixel(for: subscriptionSelection.id)
 
-        switch await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS, additionalParams: freeTrialParameters) {
+        switch await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS, additionalParams: subscriptionParameters) {
         case .success(let purchaseUpdate):
             Logger.subscription.debug("Subscription purchase completed successfully")
             DailyPixel.fireDailyAndCount(pixel: .privacyProPurchaseSuccess,

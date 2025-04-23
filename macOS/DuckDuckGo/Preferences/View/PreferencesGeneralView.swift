@@ -129,7 +129,6 @@ extension Preferences {
                                     Text(UserText.newTabPositionMode(for: position)).tag(position)
                                 }
                             }
-                            .fixedSize()
                         }
                         HStack {
                             Picker(UserText.pinnedTabs, selection: Binding(

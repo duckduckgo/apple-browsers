@@ -375,7 +375,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         if let feExperiment = subscriptionSelection.experiment {
             subscriptionParameters = {
                 let parameters = subscriptionParameters ?? [String: String]()
-
                 return parameters.merging(feExperiment.asParameters()) { $1 }
             }()
         }

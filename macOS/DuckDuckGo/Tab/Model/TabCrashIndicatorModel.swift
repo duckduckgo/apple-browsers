@@ -26,8 +26,10 @@ final class TabCrashIndicatorModel: ObservableObject {
     @Published var isShowingPopover: Bool = false
 
     func setUp(with tab: Tab) {
+        /// Crash events from Tab instance
         let crashPublisher = tab.crashPublisher.map(TabCrashType?.some).share()
 
+        /// Resetting recent crash after timeout (responsible for clearing the crash icon)
         let resetRecentTabCrashAfterTimeout = crashPublisher
             .debounce(for: Const.maxIndicatorPresentationDuration, scheduler: RunLoop.main)
             .filter { [weak self] tabCrashType in
@@ -35,16 +37,14 @@ final class TabCrashIndicatorModel: ObservableObject {
             }
             .map { _ in TabCrashType?.none }
 
-        let clearRecentTabCrashOnPopoverDismiss = $isShowingPopover.dropFirst()
+        /// Resetting recent crash after dismissing popover
+        let resetRecentTabCrashOnPopoverDismiss = $isShowingPopover.dropFirst()
             .filter { !$0 }
             .map { _ in TabCrashType?.none }
 
-        Publishers.Merge3(crashPublisher, resetRecentTabCrashAfterTimeout, clearRecentTabCrashOnPopoverDismiss)
+        Publishers.Merge3(crashPublisher, resetRecentTabCrashAfterTimeout, resetRecentTabCrashOnPopoverDismiss)
             .removeDuplicates()
-            .sink { [weak self] tabCrashType in
-                print("Tab Crash Type: Setting \(String(reflecting: tabCrashType))")
-                self?.recentTabCrash = tabCrashType
-            }
+            .assign(to: \.recentTabCrash, onWeaklyHeld: self)
             .store(in: &cancellables)
     }
 

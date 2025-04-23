@@ -35,7 +35,6 @@ protocol TabBarViewModel {
     var usedPermissionsPublisher: Published<Permissions>.Publisher { get }
     var audioState: WKWebView.AudioState { get }
     var audioStatePublisher: AnyPublisher<WKWebView.AudioState, Never> { get }
-    var crashPublisher: AnyPublisher<TabCrashType, Never> { get }
     var canKillWebContentProcess: Bool { get }
     var crashIndicatorModel: TabCrashIndicatorModel { get }
 
@@ -47,7 +46,6 @@ extension TabViewModel: TabBarViewModel {
     var usedPermissionsPublisher: Published<Permissions>.Publisher { $usedPermissions }
     var audioState: WKWebView.AudioState { tab.audioState }
     var audioStatePublisher: AnyPublisher<WKWebView.AudioState, Never> { tab.audioStatePublisher }
-    var crashPublisher: AnyPublisher<TabCrashType, Never> { tab.crashPublisher.eraseToAnyPublisher() }
     var canKillWebContentProcess: Bool { tab.canKillWebContentProcess }
     var crashIndicatorModel: TabCrashIndicatorModel { tab.crashIndicatorModel }
 }
@@ -1107,7 +1105,6 @@ extension TabBarViewItem {
                 $audioState.eraseToAnyPublisher()
             }
             let crashIndicatorModel: TabCrashIndicatorModel = TabCrashIndicatorModel()
-            let crashPublisher: AnyPublisher<TabCrashType, Never> = Empty<TabCrashType, Never>().eraseToAnyPublisher()
             var canKillWebContentProcess: Bool = false
             init(width: CGFloat, title: String = "Test Title", favicon: NSImage? = .aDark, tabContent: Tab.TabContent = .none, usedPermissions: Permissions = Permissions(), audioState: WKWebView.AudioState? = nil, selected: Bool = false) {
                 self.width = width

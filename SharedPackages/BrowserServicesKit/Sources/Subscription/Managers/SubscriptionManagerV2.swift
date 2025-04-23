@@ -474,9 +474,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
     public func signOut(notifyUI: Bool) async {
         Logger.subscription.log("SignOut: Removing all traces of the subscription and account")
-        Task { // Not waiting for an answer
-            try? await oAuthClient.logout()
-        }
+        try? await oAuthClient.logout()
         clearSubscriptionCache()
         if notifyUI {
             Logger.subscription.log("SignOut: Notifying the UI")

@@ -39,8 +39,6 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
 
     private var hostingController: UIHostingController<AnyView>?
 
-    private var daxDialogHeightConstraint: NSLayoutConstraint?
-
     private let pixelFiring: PixelFiring.Type
 
     private var privacyProPromotionCoordinating: PrivacyProPromotionCoordinating

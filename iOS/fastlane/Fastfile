@@ -237,10 +237,10 @@ platform :ios do
   lane :release_testflight do
     build_release
 
-    # upload_to_testflight(
-    #   api_key: get_api_key,
-    #   skip_waiting_for_build_processing: true
-    # )
+    upload_to_testflight(
+      api_key: get_api_key,
+      skip_waiting_for_build_processing: true
+    )
   end
 
   desc 'Makes Alpha release build and uploads it to TestFlight'

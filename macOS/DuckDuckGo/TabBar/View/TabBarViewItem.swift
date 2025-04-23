@@ -389,9 +389,6 @@ final class TabBarViewItem: NSCollectionViewItem {
 
     static let identifier = NSUserInterfaceItemIdentifier(rawValue: "TabBarViewItem")
 
-    enum Height {
-        static let standard: CGFloat = 34
-    }
     enum Width {
         static let minimum: CGFloat = 52
         static let minimumSelected: CGFloat = 120
@@ -1117,11 +1114,15 @@ extension TabBarViewItem {
             }
         }
 
+        private let tabVisualProvider: TabStyleProviding
+
         let sections: [[TabBarViewModelMock]]
         var collectionViews = [NSCollectionView]()
 
-        init(sections: [[TabBarViewModelMock]]) {
+        init(sections: [[TabBarViewModelMock]],
+             visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
             self.sections = sections
+            self.tabVisualProvider = visualStyleManager.style.tabStyleProvider
             super.init(nibName: nil, bundle: nil)
         }
 
@@ -1194,7 +1195,7 @@ extension TabBarViewItem {
         func collectionView(_ cv: NSCollectionView, layout: NSCollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> NSSize {
             let section = collectionViews.firstIndex(where: { $0 === cv })!
             let item = sections[section][indexPath.item]
-            return NSSize(width: item.width, height: TabBarViewItem.Height.standard)
+            return NSSize(width: item.width, height: tabVisualProvider.standardTabHeight)
         }
 
         func tabBarViewItem(_: TabBarViewItem, isMouseOver: Bool) {}

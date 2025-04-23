@@ -108,7 +108,8 @@ jobs:
         app_version="$(cut -d ' ' -f 3 < Configuration/Version.xcconfig)"
         build_number="$(cut -d ' ' -f 3 < Configuration/BuildNumber.xcconfig)"
         original_dsyms_path="${{ github.workspace }}/iOS/DuckDuckGo.app.dSYM.zip"
-        echo "dsyms_path=${{ github.workspace }}/iOS/DuckDuckGo-${app_version}.${build_number}-dSYM.zip" >> $GITHUB_ENV
+        dsyms_path="${{ github.workspace }}/iOS/DuckDuckGo-${app_version}.${build_number}-dSYM.zip"
+        echo "dsyms_path=${dsyms_path}" >> $GITHUB_ENV
         echo "app_version=${app_version}" >> $GITHUB_ENV
         echo "build_number=${build_number}" >> $GITHUB_ENV
         bundle exec fastlane release_${{ steps.destination.outputs.destination }}

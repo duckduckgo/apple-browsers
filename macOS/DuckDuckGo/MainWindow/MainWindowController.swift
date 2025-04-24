@@ -286,7 +286,9 @@ extension MainWindowController: NSWindowDelegate {
     private func windowDidResignKeyNotification(_ notification: Notification) {
         guard let exKeyWindow = notification.object as? NSWindow,
               let mainWindow = self.window,
-              exKeyWindow.isInHierarchy(of: mainWindow) else { return }
+              exKeyWindow.isInHierarchy(of: mainWindow),
+              // if one of the windows in the window controller chain became key instead of a sheet
+              NSApp.keyWindow?.isInHierarchy(of: mainWindow) != true else { return }
 
         mainViewController.windowDidResignKey()
     }

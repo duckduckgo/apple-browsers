@@ -186,7 +186,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
             settings.mainConfigETag = newETag
             settings.updateLastSuccessfulBrokerJSONUpdateCheckTimestamp()
         } catch {
-            pixelHandler?.fire(.miscError(error: error, functionOccurredIn: "checkForBrokerJSONUpdates"))
+            pixelHandler?.fire(.miscError(error: error, functionOccurredIn: "RemoteBrokerJSONService checkForUpdates"))
             throw error
         }
     }
@@ -300,8 +300,10 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
                 }
             } catch let error as DecodingError {
                 Logger.dataBrokerProtection.log("Failed to decode JSON file \(fileURL.lastPathComponent): \(error), skipping update")
+                pixelHandler?.fire(.miscError(error: error, functionOccurredIn: "RemoteBrokerJSONService processBrokerJSONs"))
             } catch let error as Step.DecodingError {
                 Logger.dataBrokerProtection.log("JSON file \(fileURL.lastPathComponent) contains unsupported data: \(error), skipping update")
+                pixelHandler?.fire(.miscError(error: error, functionOccurredIn: "RemoteBrokerJSONService processBrokerJSONs"))
             } catch {
                 throw error
             }

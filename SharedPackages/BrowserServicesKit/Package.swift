@@ -46,7 +46,6 @@ let package = Package(
         .library(name: "MaliciousSiteProtection", targets: ["MaliciousSiteProtection"]),
         .library(name: "Onboarding", targets: ["Onboarding"]),
         .library(name: "PixelExperimentKit", targets: ["PixelExperimentKit"]),
-        .library(name: "PixelExperimentKitTestUtils", targets: ["PixelExperimentKitTestUtils"]),
         .library(name: "BrokenSitePrompt", targets: ["BrokenSitePrompt"]),
         .library(name: "PageRefreshMonitor", targets: ["PageRefreshMonitor"]),
         .library(name: "PrivacyStats", targets: ["PrivacyStats"])
@@ -464,12 +463,6 @@ let package = Package(
             ]
         ),
         .target(
-            name: "PixelExperimentKitTestUtils",
-            dependencies: [
-                "PixelExperimentKit",
-            ]
-        ),
-        .target(
             name: "BrokenSitePrompt",
             dependencies: [
                 "BrowserServicesKit"
@@ -729,7 +722,6 @@ let package = Package(
             name: "PixelExperimentKitTests",
             dependencies: [
                 "PixelExperimentKit",
-                "PixelExperimentKitTestUtils",
                 "Configuration"
             ]
         ),

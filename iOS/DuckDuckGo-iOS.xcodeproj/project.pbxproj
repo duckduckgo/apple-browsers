@@ -521,7 +521,6 @@
 		7B1C892C2CF714AA0008224E /* VPNTipsModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1C892B2CF714AA0008224E /* VPNTipsModel.swift */; };
 		7B2CCBA32D11ABB100FE5852 /* VPNWidgetSupport in Frameworks */ = {isa = PBXBuildFile; productRef = 7B2CCBA22D11ABB100FE5852 /* VPNWidgetSupport */; };
 		7B2CCBA52D11ABBA00FE5852 /* VPNWidgetSupport in Frameworks */ = {isa = PBXBuildFile; productRef = 7B2CCBA42D11ABBA00FE5852 /* VPNWidgetSupport */; };
-		7B38BCC82DB8D31700408A27 /* PixelKit+ExperimentKitTestingSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B38BCC72DB8D31000408A27 /* PixelKit+ExperimentKitTestingSupport.swift */; };
 		7B4DC5C22CB2AE4600EE5CC2 /* WidgetKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B4DC5C12CB2AE4600EE5CC2 /* WidgetKind.swift */; };
 		7B4DC5C32CB2AF0700EE5CC2 /* WidgetKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B4DC5C12CB2AE4600EE5CC2 /* WidgetKind.swift */; };
 		7B4DC5C42CB2B1D000EE5CC2 /* WidgetKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B4DC5C12CB2AE4600EE5CC2 /* WidgetKind.swift */; };
@@ -2072,7 +2071,6 @@
 		7B1681042D10BC7B005EAE24 /* VPNShortcutIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNShortcutIntents.swift; sourceTree = "<group>"; };
 		7B16810B2D10CF44005EAE24 /* WidgetVPNIntents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetVPNIntents.swift; sourceTree = "<group>"; };
 		7B1C892B2CF714AA0008224E /* VPNTipsModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNTipsModel.swift; sourceTree = "<group>"; };
-		7B38BCC72DB8D31000408A27 /* PixelKit+ExperimentKitTestingSupport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "PixelKit+ExperimentKitTestingSupport.swift"; sourceTree = "<group>"; };
 		7B4DC5BF2CB2A4A500EE5CC2 /* VPNControlStatusValueProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNControlStatusValueProvider.swift; sourceTree = "<group>"; };
 		7B4DC5C12CB2AE4600EE5CC2 /* WidgetKind.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetKind.swift; sourceTree = "<group>"; };
 		7B4DC5E02CB2D87C00EE5CC2 /* VPNAutoShortcuts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNAutoShortcuts.swift; sourceTree = "<group>"; };
@@ -4855,14 +4853,6 @@
 			path = Widgets;
 			sourceTree = "<group>";
 		};
-		7B38BCC62DB8D2FF00408A27 /* TestingSupport */ = {
-			isa = PBXGroup;
-			children = (
-				7B38BCC72DB8D31000408A27 /* PixelKit+ExperimentKitTestingSupport.swift */,
-			);
-			path = TestingSupport;
-			sourceTree = "<group>";
-		};
 		7B4F87E32D0733B30010B18F /* Education */ = {
 			isa = PBXGroup;
 			children = (
@@ -5150,7 +5140,6 @@
 				85F98F8C296F0ED100742F4A /* Sync */,
 				F13B4BF41F18C74500814661 /* Tabs */,
 				F1386BA21E6846320062FC3C /* TabSwitcher */,
-				7B38BCC62DB8D2FF00408A27 /* TestingSupport */,
 				859DB80C2CE6262A001F7210 /* TextZoom */,
 				98F3A1D6217B36EE0011A0D4 /* Themes */,
 				7BF78E002CA2CC100026A1FC /* TipKit */,
@@ -9045,7 +9034,6 @@
 				859DB81C2CE6268C001F7210 /* MockTextZoomCoordinator.swift in Sources */,
 				1E39BEB02CC9477200496FBA /* SubscriptionCookieManageEventPixelMapping.swift in Sources */,
 				C1935A102C88D131001AD72D /* AutofillSurveyManager.swift in Sources */,
-				7B38BCC82DB8D31700408A27 /* PixelKit+ExperimentKitTestingSupport.swift in Sources */,
 				7B1604EE2CB68D2600A44EC6 /* TipKitDebugOptionsUIActionHandling.swift in Sources */,
 				98999D5922FDA41500CBBE1B /* BasicAuthenticationAlert.swift in Sources */,
 				C13B32D22A0E750700A59236 /* AutofillSettingStatus.swift in Sources */,

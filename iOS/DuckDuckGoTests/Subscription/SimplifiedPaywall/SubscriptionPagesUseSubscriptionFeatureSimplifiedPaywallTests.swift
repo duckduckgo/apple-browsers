@@ -23,7 +23,6 @@ import SubscriptionTestingUtilities
 import Core
 import PixelKit
 import PixelExperimentKit
-import PixelExperimentKitTestUtils
 @testable import Subscription
 @testable import DuckDuckGo
 

@@ -18,7 +18,6 @@
 
 import XCTest
 @testable import PixelExperimentKit
-import PixelExperimentKitTestUtils
 import BrowserServicesKit
 import Configuration
 import PixelKit

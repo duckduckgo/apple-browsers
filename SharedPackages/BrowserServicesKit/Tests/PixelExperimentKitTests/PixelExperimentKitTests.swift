@@ -18,7 +18,6 @@
 
 import Combine
 import PixelKit
-import PixelExperimentKitTestUtils
 import XCTest
 @testable import BrowserServicesKit
 @testable import PixelExperimentKit
@@ -587,6 +586,25 @@ final class PixelExperimentKitTests: XCTestCase {
         firedIncludeAppVersion = []
     }
 
+}
+
+public class MockExperimentActionPixelStore: ExperimentActionPixelStore {
+
+    public var store: [String: Int] = [:]
+
+    public init() {}
+
+    public func removeObject(forKey defaultName: String) {
+        store.removeValue(forKey: defaultName)
+    }
+
+    public func integer(forKey defaultName: String) -> Int {
+        return store[defaultName] ?? 0
+    }
+
+    public func set(_ value: Int, forKey defaultName: String) {
+        store[defaultName] = value
+    }
 }
 
 class MockFeatureFlagger: FeatureFlagger {

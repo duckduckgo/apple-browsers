@@ -16,11 +16,11 @@
 //  limitations under the License.
 //
 
-import Combine
-import PixelKit
 import XCTest
-@testable import BrowserServicesKit
 @testable import PixelExperimentKit
+@testable import BrowserServicesKit
+import PixelKit
+import Combine
 
 final class PixelExperimentKitTests: XCTestCase {
     var featureJson: Data = "{}".data(using: .utf8)!
@@ -588,35 +588,33 @@ final class PixelExperimentKitTests: XCTestCase {
 
 }
 
-public class MockExperimentActionPixelStore: ExperimentActionPixelStore {
+class MockExperimentActionPixelStore: ExperimentActionPixelStore {
 
-    public var store: [String: Int] = [:]
+    var store: [String: Int] = [:]
 
-    public init() {}
-
-    public func removeObject(forKey defaultName: String) {
+    func removeObject(forKey defaultName: String) {
         store.removeValue(forKey: defaultName)
     }
 
-    public func integer(forKey defaultName: String) -> Int {
+    func integer(forKey defaultName: String) -> Int {
         return store[defaultName] ?? 0
     }
 
-    public func set(_ value: Int, forKey defaultName: String) {
+    func set(_ value: Int, forKey defaultName: String) {
         store[defaultName] = value
     }
 }
 
 class MockFeatureFlagger: FeatureFlagger {
+    func resolveCohort<Flag>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? where Flag: FeatureFlagDescribing {
+        nil
+    }
+
     var experiments: Experiments = [:]
 
     var internalUserDecider: any InternalUserDecider = MockInternalUserDecider()
 
     var localOverrides: (any BrowserServicesKit.FeatureFlagLocalOverriding)?
-
-    func resolveCohort<Flag>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? where Flag: FeatureFlagDescribing {
-        nil
-    }
 
     func resolveCohort<Flag>(for featureFlag: Flag) -> (any FeatureFlagCohortDescribing)? where Flag: FeatureFlagDescribing {
         return nil

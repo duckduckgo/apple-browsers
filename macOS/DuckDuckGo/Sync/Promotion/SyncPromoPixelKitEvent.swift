@@ -26,9 +26,9 @@ enum SyncPromoPixelKitEvent: PixelKitEventV2 {
 
     var name: String {
         switch self {
-        case .syncPromoDisplayed: return "sync_promotion_displayed_macos_desktop"
-        case .syncPromoConfirmed: return "sync_promotion_confirmed_macos_desktop"
-        case .syncPromoDismissed: return "sync_promotion_dismissed_macos_desktop"
+        case .syncPromoDisplayed: return "sync_promotion_displayed_mac"
+        case .syncPromoConfirmed: return "sync_promotion_confirmed_mac"
+        case .syncPromoDismissed: return "sync_promotion_dismissed_mac"
         }
     }
 

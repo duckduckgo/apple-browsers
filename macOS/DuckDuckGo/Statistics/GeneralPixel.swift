@@ -594,7 +594,7 @@ enum GeneralPixel: PixelKitEventV2 {
             if pixel.isEmailPixel {
                 return "\(pixel.pixelName)_macos_desktop"
             } else if pixel.isCredentialsImportPromotionPixel {
-                return pixel.pixelName
+                return "\(pixel.pixelName)_mac"
             } else {
                 return "m_mac_\(pixel.pixelName)"
             }

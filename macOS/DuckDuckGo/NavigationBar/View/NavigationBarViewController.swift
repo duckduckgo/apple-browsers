@@ -687,9 +687,9 @@ final class NavigationBarViewController: NSViewController {
         goForwardButton.menu = forwardButtonMenu
         goForwardButton.sendAction(on: [.leftMouseUp, .otherMouseDown])
 
-        goBackButton.toolTip = UserText.navigateBackTooltip
-        goForwardButton.toolTip = UserText.navigateForwardTooltip
-        refreshOrStopButton.toolTip = UserText.refreshPageTooltip
+        goBackButton.toolTip = UserText.navigateBackTooltip + TooltipShortcut.back.spacedShortcut
+        goForwardButton.toolTip = UserText.navigateForwardTooltip + TooltipShortcut.forward.spacedShortcut
+        refreshOrStopButton.toolTip = UserText.refreshPageTooltip + TooltipShortcut.reload.spacedShortcut
     }
 
     private func setupNavigationButtonIcons() {
@@ -916,7 +916,7 @@ final class NavigationBarViewController: NSViewController {
                        action: #selector(toggleDownloadsPanelPinning(_:)),
                        keyEquivalent: "")
         }
-        downloadsButton.toolTip = UserText.downloadsShortcutTooltip
+        downloadsButton.toolTip = UserText.downloadsShortcutTooltip + TooltipShortcut.downloads.spacedShortcut
 
         if LocalPinningManager.shared.isPinned(.downloads) {
             downloadsButton.isShown = true
@@ -1064,7 +1064,7 @@ final class NavigationBarViewController: NSViewController {
             .removeDuplicates()
             .sink { [weak refreshOrStopButton] isLoading in
                 refreshOrStopButton?.image = isLoading ? .stop : .refresh
-                refreshOrStopButton?.toolTip = isLoading ? UserText.stopLoadingTooltip : UserText.refreshPageTooltip
+                refreshOrStopButton?.toolTip = isLoading ? UserText.stopLoadingTooltip : UserText.refreshPageTooltip + TooltipShortcut.reload.spacedShortcut
             }
             .store(in: &navigationButtonsCancellables)
     }
@@ -1364,4 +1364,31 @@ extension NavigationBarViewController {
 extension Notification.Name {
     static let ToggleNetworkProtectionInMainWindow = Notification.Name("com.duckduckgo.vpn.toggle-popover-in-main-window")
     static let OpenUnifiedFeedbackForm = Notification.Name("com.duckduckgo.subscription.open-unified-feedback-form")
+}
+
+private enum TooltipShortcut {
+    case back
+    case forward
+    case reload
+    case downloads
+    case bookmark
+
+    var shortcut: String {
+        switch self {
+        case .back:
+            return "⌘ ["
+        case .forward:
+            return "⌘ ]"
+        case .reload:
+            return "⌘ R"
+        case .downloads:
+            return "⌘ J"
+        case .bookmark:
+            return "⌘ D"
+        }
+    }
+
+    var spacedShortcut: String {
+        return " " + shortcut
+    }
 }

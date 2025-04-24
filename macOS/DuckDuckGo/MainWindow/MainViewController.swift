@@ -56,6 +56,12 @@ final class MainViewController: NSViewController {
         return bookmarksBarViewController.parent != nil
     }
 
+    var shouldShowBookmarksBar: Bool {
+        return !isInPopUpWindow
+        && bookmarksBarVisibilityManager.isBookmarksBarVisible
+        && (!(view.window?.isFullScreen ?? false) || AppearancePreferences.shared.showTabsAndBookmarksBarOnFullScreen)
+    }
+
     private var isInPopUpWindow: Bool {
         view.window?.isPopUpWindow == true
     }
@@ -198,7 +204,7 @@ final class MainViewController: NSViewController {
         if isInPopUpWindow {
             tabBarViewController.view.isHidden = true
             mainView.tabBarContainerView.isHidden = true
-            mainView.navigationBarTopConstraint.constant = 0.0
+            mainView.isTabBarShown = false
             resizeNavigationBar(isHomePage: false, animated: false)
 
             updateBookmarksBarViewVisibility(visible: false)
@@ -235,7 +241,9 @@ final class MainViewController: NSViewController {
     }
 
     func showBookmarkPromptIfNeeded() {
-        guard !bookmarksBarViewController.bookmarksBarPromptShown, OnboardingActionsManager.isOnboardingFinished else { return }
+        guard !isInPopUpWindow,
+              !bookmarksBarViewController.bookmarksBarPromptShown,
+              OnboardingActionsManager.isOnboardingFinished else { return }
         if bookmarksBarIsVisible {
             // Don't show this to users who obviously know about the bookmarks bar already
             bookmarksBarViewController.bookmarksBarPromptShown = true
@@ -275,13 +283,11 @@ final class MainViewController: NSViewController {
     }
 
     func toggleBookmarksBarVisibility() {
-        updateBookmarksBarViewVisibility(visible: !(mainView.bookmarksBarHeightConstraint.constant > 0))
+        updateBookmarksBarViewVisibility(visible: !isInPopUpWindow && !mainView.isBookmarksBarShown)
     }
 
     // Can be updated via keyboard shortcut so needs to be internal visibility
-    private func updateBookmarksBarViewVisibility(visible: Bool) {
-        let showBookmarksBar = isInPopUpWindow ? false : visible
-
+    func updateBookmarksBarViewVisibility(visible showBookmarksBar: Bool) {
         if showBookmarksBar {
             if bookmarksBarViewController.parent == nil {
                 addChild(bookmarksBarViewController)
@@ -294,7 +300,7 @@ final class MainViewController: NSViewController {
             bookmarksBarViewController.view.removeFromSuperview()
         }
 
-        mainView.bookmarksBarHeightConstraint?.constant = showBookmarksBar ? 34 : 0
+        mainView.isBookmarksBarShown = showBookmarksBar
         mainView.layoutSubtreeIfNeeded()
         mainView.updateTrackingAreas()
 
@@ -304,7 +310,7 @@ final class MainViewController: NSViewController {
     private func updateDividerColor(isShowingHomePage isHomePage: Bool) {
         NSAppearance.withAppAppearance {
             let backgroundColor: NSColor = {
-                if isBannerViewVisible {
+                if mainView.isBannerViewShown {
                     return bookmarksBarIsVisible ? .bookmarkBarBackground : .addressBarSolidSeparator
                 } else {
                     return (bookmarksBarIsVisible || isHomePage) ? .bookmarkBarBackground : .addressBarSolidSeparator
@@ -369,8 +375,8 @@ final class MainViewController: NSViewController {
         bookmarksBarVisibilityChangedCancellable = bookmarksBarVisibilityManager
             .$isBookmarksBarVisible
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] isBookmarksBarVisible in
-                self?.updateBookmarksBarViewVisibility(visible: isBookmarksBarVisible)
+            .sink { [weak self] _ in
+                self?.updateBookmarksBarViewVisibility(visible: self!.shouldShowBookmarksBar)
             }
     }
 
@@ -487,10 +493,6 @@ final class MainViewController: NSViewController {
 
     // MARK: - Set As Default and Add To Dock Prompts configuration
 
-    var isBannerViewVisible: Bool {
-        mainView.bannerHeightConstraint.constant != 0
-    }
-
     private func subscribeToSetAsDefaultAndAddToDockPromptsNotifications() {
         NotificationCenter.default.addObserver(self,
                                                selector: #selector(showSetAsDefaultAndAddToDockIfNeeded),
@@ -523,10 +525,10 @@ final class MainViewController: NSViewController {
     }
 
     private func showMessageBanner(banner: BannerMessageViewController) {
-        if isBannerViewVisible { return } // If view is being shown already we do not want to show it.
+        if mainView.isBannerViewShown { return } // If view is being shown already we do not want to show it.
 
         addAndLayoutChild(banner, into: mainView.bannerContainerView)
-        mainView.bannerHeightConstraint.animator().constant = 48
+        mainView.isBannerViewShown = true
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
             self?.updateDividerColor(isShowingHomePage: self?.tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab)
@@ -535,7 +537,7 @@ final class MainViewController: NSViewController {
 
     private func hideBanner() {
         mainView.bannerContainerView.subviews.forEach { $0.removeFromSuperview() }
-        mainView.bannerHeightConstraint.animator().constant = 0
+        mainView.isBannerViewShown = false
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
             self?.updateDividerColor(isShowingHomePage: self?.tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab)

@@ -39,13 +39,6 @@ final class SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests: XCTes
     private var mockAppStorePurchaseFlow: AppStorePurchaseFlowMock!
 
     override func setUp() async throws {
-        let mockPixelStore = MockExperimentActionPixelStore()
-        let mockFeatureFlagger = MockFeatureFlagger()
-
-        PixelKit.configureExperimentsForTesting(
-            pixelStore: mockPixelStore,
-            featureFlagger: mockFeatureFlagger)
-
         mockAccountManager = AccountManagerMock()
         mockStorePurchaseManager = StorePurchaseManagerMock()
         mockSubscriptionManager = SubscriptionManagerMock(

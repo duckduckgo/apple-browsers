@@ -64,6 +64,6 @@ infix operator ???: NilCoalescingPrecedence
 /// ```
 /// Logger.general.debug("event received: \(event ??? "<nil>")")
 /// ```
-public func ???<T>(optionalValue: T?, defaultValue: @autoclosure () -> String) -> String {
+public func ??? <T>(optionalValue: T?, defaultValue: @autoclosure () -> String) -> String {
     optionalValue.map { String(describing: $0) } ?? defaultValue()
 }

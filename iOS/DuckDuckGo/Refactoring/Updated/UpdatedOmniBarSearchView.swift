@@ -74,9 +74,9 @@ final class UpdatedOmniBarSearchView: UIView {
 
         leftIconContainerPlaceholder.addSubview(leftIconContainer)
 
-        mainStackView.addArrangedSubview(leftIconContainerPlaceholder)
         mainStackView.addSubview(notificationContainer)
         mainStackView.addSubview(privacyInfoContainer)
+        mainStackView.addArrangedSubview(leftIconContainerPlaceholder)
         mainStackView.addArrangedSubview(textField)
         mainStackView.addArrangedSubview(trailingItemsContainer)
 
@@ -103,8 +103,9 @@ final class UpdatedOmniBarSearchView: UIView {
             mainStackView.bottomAnchor.constraint(equalTo: bottomAnchor),
 
             notificationContainer.leadingAnchor.constraint(equalTo: leftIconContainerPlaceholder.leadingAnchor, constant: 4),
-            notificationContainer.trailingAnchor.constraint(lessThanOrEqualTo: textField.trailingAnchor),
+            notificationContainer.trailingAnchor.constraint(equalTo: textField.trailingAnchor),
             notificationContainer.centerYAnchor.constraint(equalTo: textField.centerYAnchor),
+            notificationContainer.heightAnchor.constraint(equalTo: textField.heightAnchor, constant: 4),
 
             leftIconContainerPlaceholder.leadingAnchor.constraint(equalTo: leftIconContainer.leadingAnchor),
             leftIconContainerPlaceholder.trailingAnchor.constraint(equalTo: leftIconContainer.trailingAnchor),

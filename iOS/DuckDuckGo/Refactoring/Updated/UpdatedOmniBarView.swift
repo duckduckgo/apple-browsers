@@ -398,10 +398,29 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     private func updateShadows() {
         let color = UIColor(designSystemColor: .shadowPrimary)
 
-        let shadow1 = CompositeShadowView.Shadow(id: "shadow1", color: color, opacity: 1, radius: 6.0, offset: CGSize(width: 0, height: 2))
-        // These two have the same name so we can update the existing shadow
-        let shadow2Inactive = CompositeShadowView.Shadow(id: "shadow2", color: color, opacity: 0, radius: 24.0, offset: CGSize(width: 0, height: 16))
-        let shadow2Active = CompositeShadowView.Shadow(id: "shadow2", color: color, opacity: 1, radius: 24.0, offset: CGSize(width: 0, height: 16))
+        let shadow1 = CompositeShadowView.Shadow(
+            id: "shadow1",
+            color: color,
+            opacity: 1,
+            radius: 6.0,
+            offset: CGSize(width: 0, height: 2)
+        )
+
+        // The following two have the same id so we can update the existing shadow
+        let shadow2Inactive = CompositeShadowView.Shadow(
+            id: "shadow2",
+            color: color,
+            opacity: 0,
+            radius: 24.0,
+            offset: CGSize(width: 0, height: 16)
+        )
+        let shadow2Active = CompositeShadowView.Shadow(
+            id: "shadow2",
+            color: color,
+            opacity: 1,
+            radius: 24.0,
+            offset: CGSize(width: 0, height: 16)
+        )
 
         let secondaryShadow = isActiveState ? shadow2Active : shadow2Inactive
 

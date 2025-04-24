@@ -106,7 +106,7 @@ extension NSDraggingSession {
     func setPreviewProvider(_ provider: URLDragPreviewProvider) {
         let dragView = provider.createPreview()
         let dragImage = dragView.imageRepresentation()
-        
+
         self.enumerateDraggingItems(options: [], for: nil, classes: [NSPasteboardItem.self], searchOptions: [:]) { dragItem, _, _ in
             dragItem.imageComponentsProvider = {
                 let component = NSDraggingImageComponent(key: .label)

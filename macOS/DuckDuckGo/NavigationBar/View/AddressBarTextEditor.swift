@@ -470,7 +470,7 @@ final class AddressBarTextEditor: NSTextView {
         if let draggedString = session.draggingPasteboard.string(forType: .string),
            let url = URL(trimmedAddressBarString: draggedString) {
             session.draggingPasteboard.setString(url.absoluteString, forType: .URL)
-            
+
             // Create dragging image
             let favicon: NSImage
             if let tabViewModel = addressBar?.tabCollectionViewModel.selectedTabViewModel,

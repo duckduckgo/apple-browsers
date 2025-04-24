@@ -210,7 +210,7 @@ final class BookmarksOutlineView: NSOutlineView {
         }
         super.addSubview(view)
     }
-    
+
     override func willRemoveSubview(_ subview: NSView) {
         // when the dragging destination view is removed, remove the custom drag insertion indicator view
         if subview.className == Self.NSDraggingDestinationView, let insertionIndicatorView {

@@ -652,7 +652,7 @@ extension AddressBarViewController: NSDraggingSource, NSPasteboardItemDataProvid
 
             let draggingItem = NSDraggingItem(pasteboardWriter: pasteboardItem)
             draggingItem.draggingFrame = passiveTextField.bounds
-            
+
             passiveTextField.beginDraggingSession(with: [draggingItem], event: event, source: self)
             return true
         }
@@ -667,13 +667,13 @@ extension AddressBarViewController: NSDraggingSource, NSPasteboardItemDataProvid
 
     func draggingSession(_ session: NSDraggingSession, willBeginAt screenPoint: NSPoint) {
         guard let url = tabViewModel?.tab.url else { return }
-        
+
         // Set URL and title in pasteboard
         session.draggingPasteboard.setString(url.absoluteString, forType: .URL)
         if let title = tabViewModel?.title, !title.isEmpty {
             session.draggingPasteboard.setString(title, forType: .urlName)
         }
-        
+
         // Create dragging image
         let favicon: NSImage
         if let tabFavicon = tabViewModel?.tab.favicon {
@@ -681,7 +681,7 @@ extension AddressBarViewController: NSDraggingSource, NSPasteboardItemDataProvid
         } else {
             favicon = .web
         }
-        
+
         session.draggingFormation = .none
         session.setPreviewProvider(URLDragPreviewProvider(url: url, favicon: favicon))
     }

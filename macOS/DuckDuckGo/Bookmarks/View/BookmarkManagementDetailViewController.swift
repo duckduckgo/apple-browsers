@@ -256,13 +256,13 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
 
     private func setupLayout() {
         newBookmarkButton.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        newBookmarkButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        newBookmarkButton.setContentCompressionResistancePriority(.init(250), for: .horizontal)
         newFolderButton.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        newFolderButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        newFolderButton.setContentCompressionResistancePriority(.init(251), for: .horizontal)
         deleteItemsButton.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        deleteItemsButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        deleteItemsButton.setContentCompressionResistancePriority(.init(252), for: .horizontal)
         sortItemsButton.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        sortItemsButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        sortItemsButton.setContentCompressionResistancePriority(.init(253), for: .horizontal)
 
         NSLayoutConstraint.activate([
             toolbarButtonsStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),

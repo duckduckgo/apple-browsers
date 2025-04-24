@@ -30,6 +30,7 @@ protocol AddressBarButtonsViewControllerDelegate: AnyObject {
 
     func addressBarButtonsViewControllerClearButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
     func addressBarButtonsViewController(_ controller: AddressBarButtonsViewController, didUpdateAIChatButtonVisibility isVisible: Bool)
+    func addressBarButtonsViewControllerHideAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
 }
 
 final class AddressBarButtonsViewController: NSViewController {
@@ -60,6 +61,8 @@ final class AddressBarButtonsViewController: NSViewController {
         }()
     }
 
+    private var daxLogo: NSImageView?
+
     @IBOutlet weak var zoomButton: AddressBarButton!
     @IBOutlet weak var privacyEntryPointButton: MouseOverAnimationButton!
     @IBOutlet weak var separator: NSView!
@@ -68,7 +71,7 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBOutlet weak var imageButton: NSButton!
     @IBOutlet weak var clearButton: NSButton!
     @IBOutlet private weak var buttonsContainer: NSStackView!
-    @IBOutlet weak var aiChatButton: AddressBarButton!
+    @IBOutlet weak var aiChatButton: AddressBarMenuButton!
 
     @IBOutlet weak var animationWrapperView: NSView!
     var trackerAnimationView1: LottieAnimationView!
@@ -157,6 +160,10 @@ final class AddressBarButtonsViewController: NSViewController {
         }
     }
 
+    var shouldShowDaxLogInAddressBar: Bool {
+        self.tabViewModel?.tab.content == .newtab && visualStyleManager.style.shouldShowLogoinInAddressBar
+    }
+
     private var cancellables = Set<AnyCancellable>()
     private var urlCancellable: AnyCancellable?
     private var zoomLevelCancellable: AnyCancellable?
@@ -210,10 +217,10 @@ final class AddressBarButtonsViewController: NSViewController {
         subscribeToPrivacyEntryPointIsMouseOver()
         subscribeToButtonsVisibility()
         subscribeToAIChatPreferences()
+        setupDaxLogo()
 
         bookmarkButton.sendAction(on: .leftMouseDown)
-
-        aiChatButton.setAccessibilityIdentifier("AddressBarButtonsViewController.aiChatButton")
+        configureAIChatButton()
         privacyEntryPointButton.toolTip = UserText.privacyDashboardTooltip
     }
 
@@ -303,11 +310,17 @@ final class AddressBarButtonsViewController: NSViewController {
         let isCommandPressed = NSEvent.modifierFlags.contains(.command)
         let isShiftPressed = NSApplication.shared.isShiftPressed
 
-        let target: AIChatTabOpenerTarget
+        var target: AIChatTabOpenerTarget = .sameTab
+
         if isCommandPressed {
             target = isShiftPressed ? .newTabSelected : .newTabUnselected
-        } else {
-            target = .sameTab
+        }
+
+        if let tabViewModel = tabViewModel,
+           let tabURL = tabViewModel.tab.url,
+           !tabURL.isDuckAIURL,
+           tabViewModel.tab.content != .newtab {
+            target = .newTabSelected
         }
 
         if let value = textFieldValue {
@@ -381,6 +394,15 @@ final class AddressBarButtonsViewController: NSViewController {
         aiChatButton.isHidden = !aiChatMenuConfig.shouldDisplayAddressBarShortcut
         updateAIChatDividerVisibility()
         delegate?.addressBarButtonsViewController(self, didUpdateAIChatButtonVisibility: aiChatButton.isShown)
+
+        // Check if the current tab is in the onboarding state and disable the AI chat button if it is
+        guard let tabViewModel else { return }
+        let isOnboarding = [.onboarding].contains(tabViewModel.tab.content)
+        aiChatButton.isEnabled = !isOnboarding
+    }
+
+    @objc func hideAIChatButtonAction(_ sender: NSMenuItem) {
+        delegate?.addressBarButtonsViewControllerHideAIChatButtonClicked(self)
     }
 
     private func updateAIChatDividerVisibility() {
@@ -786,6 +808,41 @@ final class AddressBarButtonsViewController: NSViewController {
             }).store(in: &cancellables)
     }
 
+    private func setupDaxLogo() {
+        if shouldShowDaxLogInAddressBar {
+            daxLogo = NSImageView()
+
+            guard let daxLogo = daxLogo else {
+                return
+            }
+
+            daxLogo.image = .daxAddressBarNew
+            view.addSubview(daxLogo)
+            daxLogo.translatesAutoresizingMaskIntoConstraints = false
+
+            let centerXConstraint = daxLogo.centerYAnchor.constraint(equalTo: view.centerYAnchor)
+            let topConstraint = daxLogo.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 8)
+            let widthConstraint = daxLogo.widthAnchor.constraint(equalToConstant: 24)
+            let heightConstraint = daxLogo.heightAnchor.constraint(equalToConstant: 24)
+
+            NSLayoutConstraint.activate([
+                centerXConstraint,
+                topConstraint,
+                widthConstraint,
+                heightConstraint
+            ])
+        }
+    }
+
+    private func configureAIChatButton() {
+        aiChatButton.setAccessibilityIdentifier("AddressBarButtonsViewController.aiChatButton")
+        aiChatButton.menu = NSMenu {
+            NSMenuItem(title: UserText.aiChatAddressBarHideButton,
+                       action: #selector(hideAIChatButtonAction(_:)),
+                       keyEquivalent: "")
+        }
+    }
+
     private func updatePermissionButtons() {
         guard let tabViewModel else { return }
 
@@ -848,7 +905,10 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private func updateImageButton() {
         guard let tabViewModel else { return }
-        // Image button
+
+        daxLogo?.isHidden = !shouldShowDaxLogInAddressBar
+        imageButton.alphaValue = shouldShowDaxLogInAddressBar ? 0 : 1
+
         switch controllerMode {
         case .browsing where tabViewModel.isShowingErrorPage:
             imageButton.image = .web

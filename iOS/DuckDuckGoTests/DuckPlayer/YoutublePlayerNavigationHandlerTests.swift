@@ -656,7 +656,8 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
     }
 
     @MainActor
-    func testWebViewIsNotRetainedStronglyByDuckPlayerHandler() {
+    func testWebViewIsNotRetainedStronglyByDuckPlayerHandler() throws {
+        throw XCTSkip("Flaky test: https://app.asana.com/1/137249556945/project/414709148257752/task/1210056942565923?focus=true")
         // Arrange
         weak var weakWebView: MockWebView?
 

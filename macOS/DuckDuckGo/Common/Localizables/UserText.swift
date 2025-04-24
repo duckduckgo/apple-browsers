@@ -448,6 +448,8 @@ struct UserText {
 
     static let aiChatAddressBarTooltip = NSLocalizedString("tooltip.aichat.address-bar", value: "Duck.ai", comment: "Tooltip for the AI Chat address bar button")
 
+    static let aiChatAddressBarHideButton = NSLocalizedString("aichat.address-bar.hide-button", value: "Hide Duck.ai Shortcut", comment: "Button to hide duck.ai shortcut in address bar")
+
     // Duck Player Preferences
     static let duckPlayerSettingsTitle = NSLocalizedString("duck-player.title", value: "Duck Player", comment: "Private YouTube Player settings title")
     static let duckPlayerAlwaysOpenInPlayer = NSLocalizedString("duck-player.always-open-in-player", value: "Always open YouTube videos in Duck Player", comment: "Private YouTube Player option")

@@ -98,22 +98,26 @@ final class SubscriptionRestoreViewModel: ObservableObject {
     @MainActor
     private func handleRestoreError(error: UseSubscriptionError) {
         switch error {
-        case .failedToRestorePastPurchase:
-            state.activationResult = .error
-        case .subscriptionExpired:
+        case .restoreFailedDueToExpiredSubscription:
             state.activationResult = .expired
-        case .subscriptionNotFound:
+        case .restoreFailedDueToNoSubscription:
             state.activationResult = .notFound
+        case .otherRestoreError:
+            state.activationResult = .error
         default:
             state.activationResult = .error
         }
 
-        if state.activationResult == .notFound {
+        switch state.activationResult {
+        case .expired,
+             .notFound:
             DailyPixel.fireDailyAndCount(pixel: .privacyProRestorePurchaseStoreFailureNotFound,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
-        } else {
+        case .error:
             DailyPixel.fireDailyAndCount(pixel: .privacyProRestorePurchaseStoreFailureOther,
                                          pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+        default:
+            break
         }
     }
     

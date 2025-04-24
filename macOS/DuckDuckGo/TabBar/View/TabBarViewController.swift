@@ -74,6 +74,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private var pinnedTabsHostingView: PinnedTabsHostingView?
     private let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
     private var pinnedTabsDiscoveryPopover: NSPopover?
+    private weak var crashPopoverViewController: PopoverMessageViewController?
 
     var tabPreviewsEnabled: Bool = true
 
@@ -761,7 +762,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             return
         }
 
-        let position = pinnedTabsContainerView.frame.minX + PinnedTabView.Const.dimension * CGFloat(index)
+        let pinnedTabWidth = visualStyleManager.style.tabStyleProvider.pinnedTabWidth
+        let position = pinnedTabsContainerView.frame.minX + pinnedTabWidth * CGFloat(index)
         showTabPreview(for: tabViewModel, from: position)
     }
 
@@ -1022,7 +1024,7 @@ extension TabBarViewController: NSCollectionViewDelegateFlowLayout {
 
     func collectionView(_ collectionView: NSCollectionView, layout collectionViewLayout: NSCollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> NSSize {
         let isItemSelected = tabCollectionViewModel.selectionIndex == .unpinned(indexPath.item)
-        return NSSize(width: self.currentTabWidth(selected: isItemSelected), height: TabBarViewItem.Height.standard)
+        return NSSize(width: self.currentTabWidth(selected: isItemSelected), height: visualStyleManager.style.tabStyleProvider.standardTabHeight)
     }
 
 }
@@ -1220,6 +1222,31 @@ extension TabBarViewController: TabBarViewItemDelegate {
         tabCollectionViewModel.tabViewModel(at: indexPath.item)?.tab.killWebContentProcess()
     }
 
+    func tabBarViewItemDidUpdateCrashInfoPopoverVisibility(_ tabBarViewItem: TabBarViewItem, sender: NSButton, shouldShow: Bool) {
+        guard shouldShow else {
+            crashPopoverViewController?.dismiss()
+            return
+        }
+
+        DispatchQueue.main.async {
+            let viewController = PopoverMessageViewController(
+                title: "This tab has crashed",
+                message: "The page was reloaded automatically. Tab history and form data has been lost.",
+                presentMultiline: true,
+                maxWidth: TabCrashIndicatorModel.Const.popoverWidth,
+                autoDismissDuration: nil,
+                onDismiss: {
+                    tabBarViewItem.hideCrashIndicatorButton()
+                },
+                onClick: {
+                    tabBarViewItem.hideCrashIndicatorButton()
+                }
+            )
+            self.crashPopoverViewController = viewController
+            viewController.show(onParent: self, relativeTo: sender, behavior: .semitransient)
+        }
+    }
+
     func tabBarViewItem(_ tabBarViewItem: TabBarViewItem, isMouseOver: Bool) {
         if isMouseOver {
             // Show tab preview for visible tab bar items
@@ -1288,9 +1315,10 @@ extension TabBarViewController: TabBarViewItemDelegate {
             self.pinnedTabsDiscoveryPopover = popover
 
             guard let view = self.pinnedTabsHostingView else { return }
-            popover.show(relativeTo: NSRect(x: view.bounds.maxX - PinnedTabView.Const.dimension,
+            let pinnedTabWidth = visualStyleManager.style.tabStyleProvider.pinnedTabWidth
+            popover.show(relativeTo: NSRect(x: view.bounds.maxX - pinnedTabWidth,
                                             y: view.bounds.minY,
-                                            width: PinnedTabView.Const.dimension,
+                                            width: pinnedTabWidth,
                                             height: view.bounds.height),
                          of: view,
                          preferredEdge: .maxY)

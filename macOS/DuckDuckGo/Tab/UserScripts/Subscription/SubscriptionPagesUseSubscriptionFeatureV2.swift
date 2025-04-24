@@ -111,6 +111,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
         static let subscriptionsYearlyPriceClicked = "subscriptionsYearlyPriceClicked"
         static let subscriptionsUnknownPriceClicked = "subscriptionsUnknownPriceClicked"
         static let subscriptionsAddEmailSuccess = "subscriptionsAddEmailSuccess"
+        static let subscriptionsWelcomeAddEmailClicked = "subscriptionsWelcomeAddEmailClicked"
         static let subscriptionsWelcomeFaqClicked = "subscriptionsWelcomeFaqClicked"
         static let getAccessToken = "getAccessToken"
     }
@@ -133,6 +134,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
         case Handlers.subscriptionsYearlyPriceClicked: return subscriptionsYearlyPriceClicked
         case Handlers.subscriptionsUnknownPriceClicked: return subscriptionsUnknownPriceClicked
         case Handlers.subscriptionsAddEmailSuccess: return subscriptionsAddEmailSuccess
+        case Handlers.subscriptionsWelcomeAddEmailClicked: return subscriptionsWelcomeAddEmailClicked
         case Handlers.subscriptionsWelcomeFaqClicked: return subscriptionsWelcomeFaqClicked
         case Handlers.getAccessToken: return getAccessToken
         default:
@@ -228,7 +230,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
             if #available(macOS 12.0, *) {
                 guard let subscriptionSelection: SubscriptionSelection = CodableHelper.decode(from: params) else {
                     assertionFailure("SubscriptionPagesUserScript: expected JSON representation of SubscriptionSelection")
-                    subscriptionErrorReporter.report(subscriptionActivationError: .generalError)
+                    subscriptionErrorReporter.report(subscriptionActivationError: .otherPurchaseError)
                     await uiHandler.dismissProgressViewController()
                     return nil
                 }
@@ -242,7 +244,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                     // Sandbox note: Looks like our BE is not receiving updates when a subscription transitions from grace period to expired, so during testing we can end up with a subscription in grace period and we will not be able to purchase a new one, only restore it because Transaction.currentEntitlements will not return the subscription to restore.
                     PixelKit.fire(PrivacyProPixel.privacyProRestoreAfterPurchaseAttempt)
                     Logger.subscription.log("[Purchase] Found active subscription during purchase")
-                    subscriptionErrorReporter.report(subscriptionActivationError: .hasActiveSubscription)
+                    subscriptionErrorReporter.report(subscriptionActivationError: .activeSubscriptionAlreadyPresent)
                     await showSubscriptionFoundAlert(originalMessage: message)
                     await pushPurchaseUpdate(originalMessage: message, purchaseUpdate: PurchaseUpdate(type: "canceled"))
                     return nil
@@ -263,11 +265,11 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                 case .failure(let error):
                     switch error {
                     case .noProductsFound:
-                        subscriptionErrorReporter.report(subscriptionActivationError: .subscriptionNotFound)
+                        subscriptionErrorReporter.report(subscriptionActivationError: .failedToGetSubscriptionOptions)
                     case .activeSubscriptionAlreadyPresent:
                         subscriptionErrorReporter.report(subscriptionActivationError: .activeSubscriptionAlreadyPresent)
                     case .authenticatingWithTransactionFailed:
-                        subscriptionErrorReporter.report(subscriptionActivationError: .generalError)
+                        subscriptionErrorReporter.report(subscriptionActivationError: .otherPurchaseError)
                     case .accountCreationFailed:
                         subscriptionErrorReporter.report(subscriptionActivationError: .accountCreationFailed)
                     case .purchaseFailed:
@@ -305,11 +307,11 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                 case .failure(let error):
                     switch error {
                     case .noProductsFound:
-                        subscriptionErrorReporter.report(subscriptionActivationError: .subscriptionNotFound)
+                        subscriptionErrorReporter.report(subscriptionActivationError: .failedToGetSubscriptionOptions)
                     case .activeSubscriptionAlreadyPresent:
                         subscriptionErrorReporter.report(subscriptionActivationError: .activeSubscriptionAlreadyPresent)
                     case .authenticatingWithTransactionFailed:
-                        subscriptionErrorReporter.report(subscriptionActivationError: .generalError)
+                        subscriptionErrorReporter.report(subscriptionActivationError: .otherPurchaseError)
                     case .accountCreationFailed:
                         subscriptionErrorReporter.report(subscriptionActivationError: .accountCreationFailed)
                     case .purchaseFailed:
@@ -340,7 +342,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
                 await showSomethingWentWrongAlert()
                 switch error {
                 case .noProductsFound:
-                    subscriptionErrorReporter.report(subscriptionActivationError: .subscriptionNotFound)
+                    subscriptionErrorReporter.report(subscriptionActivationError: .failedToGetSubscriptionOptions)
                 case .accountCreationFailed:
                     subscriptionErrorReporter.report(subscriptionActivationError: .accountCreationFailed)
                 }
@@ -426,6 +428,11 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
         return nil
     }
 
+    func subscriptionsWelcomeAddEmailClicked(params: Any, original: WKScriptMessage) async -> Encodable? {
+        PixelKit.fire(PrivacyProPixel.privacyProWelcomeAddDevice, frequency: .uniqueByName)
+        return nil
+    }
+
     func subscriptionsWelcomeFaqClicked(params: Any, original: WKScriptMessage) async -> Encodable? {
         PixelKit.fire(PrivacyProPixel.privacyProWelcomeFAQClick, frequency: .uniqueByName)
         return nil
@@ -473,7 +480,6 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
     // MARK: - UI interactions
 
     func showSomethingWentWrongAlert() async {
-        PixelKit.fire(PrivacyProPixel.privacyProPurchaseFailure, frequency: .legacyDailyAndCount)
         switch await uiHandler.dismissProgressViewAndShow(alertType: .somethingWentWrong, text: nil) {
         case .alertFirstButtonReturn:
             let url = subscriptionManager.url(for: .purchase)
@@ -518,6 +524,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
     }
 }
 
+/// For handling subscription access actions when presented as modal VC on purchase page via "I Have a Subscription" link
 extension SubscriptionPagesUseSubscriptionFeatureV2: SubscriptionAccessActionHandling {
 
     func subscriptionAccessActionRestorePurchases(message: WKScriptMessage) {
@@ -540,7 +547,13 @@ extension SubscriptionPagesUseSubscriptionFeatureV2: SubscriptionAccessActionHan
         }
     }
 
-    func subscriptionAccessActionHandleAction(event: SubscriptionAccessActionHandlingEvent) { }
+    func subscriptionAccessActionHandleAction(event: SubscriptionAccessActionHandlingEvent) {
+        switch event {
+        case .activateSubscriptionViaEmailClick:
+            PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
+        default: break
+        }
+    }
 }
 
 private extension SubscriptionPagesUseSubscriptionFeatureV2 {

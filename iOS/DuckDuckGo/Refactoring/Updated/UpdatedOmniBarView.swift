@@ -113,7 +113,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
             searchAreaView.voiceSearchButton.isHidden = newValue
             // We want the clear button closer to the microphone if they're both visible
             // https://app.asana.com/1/137249556945/project/1206226850447395/task/1209950595275304
-            searchAreaView.reducedButtonSpacing(isEnabled: !newValue)
+            searchAreaView.reduceClearButtonSpacing(!newValue)
         }
     }
     var isAbortButtonHidden: Bool {

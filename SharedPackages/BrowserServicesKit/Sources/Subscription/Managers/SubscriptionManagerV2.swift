@@ -376,20 +376,12 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
     // MARK: - User
     public var isUserAuthenticated: Bool {
-        var tokenContainer: TokenContainer?
-        // extremely ugly hack, will be replaced by `func isUserAuthenticated()` as soon auth v1 is removed
-        let semaphore = DispatchSemaphore(value: 0)
-        Task {
-            tokenContainer = try? await getTokenContainer(policy: .localValid)
-            semaphore.signal()
-        }
-        semaphore.wait()
-        return tokenContainer != nil
+        return oAuthClient.currentTokenContainer?.accessToken != nil
     }
 
     private func isUserAuthenticated() async -> Bool {
-        let token = try? await getTokenContainer(policy: .local)
-        return token != nil
+        let tokenContainer = try? await getTokenContainer(policy: .local)
+        return tokenContainer != nil
     }
 
     public var userEmail: String? {

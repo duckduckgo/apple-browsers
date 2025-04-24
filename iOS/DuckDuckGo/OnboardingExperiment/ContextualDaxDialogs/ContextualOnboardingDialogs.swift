@@ -333,8 +333,7 @@ struct OnboardingAddToDockTutorialContent: View {
     OnboardingTrySearchDialog(
         message: UserText.Onboarding.ContextualOnboarding.onboardingTryASearchMessage,
         viewModel: OnboardingSearchSuggestionsViewModel(
-            suggestedSearchesProvider: OnboardingSuggestedSearchesProvider(),
-            pixelReporter: OnboardingPixelReporter()
+            suggestedSearchesProvider: OnboardingSuggestedSearchesProvider()
         ),
         onManualDismiss: {})
         .padding()
@@ -347,8 +346,7 @@ struct OnboardingAddToDockTutorialContent: View {
             title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteTitle,
             suggestedSitesProvider: OnboardingSuggestedSitesProvider(
                 surpriseItemTitle: UserText.Onboarding.ContextualOnboarding.tryASearchOptionSurpriseMeTitle
-            ),
-            pixelReporter: OnboardingPixelReporter()
+            )
         ),
         onManualDismiss: {}
     )
@@ -362,8 +360,7 @@ struct OnboardingAddToDockTutorialContent: View {
             title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteTitle,
             suggestedSitesProvider: OnboardingSuggestedSitesProvider(
                 surpriseItemTitle: UserText.Onboarding.ContextualOnboarding.tryASearchOptionSurpriseMeTitle
-            ),
-            pixelReporter: OnboardingPixelReporter()
+            )
         ),
         onManualDismiss: {}
     )
@@ -387,8 +384,7 @@ struct OnboardingAddToDockTutorialContent: View {
         shouldFollowUp: true,
         viewModel: OnboardingSiteSuggestionsViewModel(
             title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteTitle,
-            suggestedSitesProvider: OnboardingSuggestedSitesProvider(surpriseItemTitle: UserText.Onboarding.ContextualOnboarding.tryASearchOptionSurpriseMeTitle),
-            pixelReporter: OnboardingPixelReporter()
+            suggestedSitesProvider: OnboardingSuggestedSitesProvider(surpriseItemTitle: UserText.Onboarding.ContextualOnboarding.tryASearchOptionSurpriseMeTitle)
         ),
         gotItAction: {},
         onManualDismiss: { _ in }

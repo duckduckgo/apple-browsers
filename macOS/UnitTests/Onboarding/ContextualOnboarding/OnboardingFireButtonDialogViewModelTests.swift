@@ -49,14 +49,6 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
         viewModel = nil
     }
 
-    func testWhenSkipThenOnGotItPressedAndPixelsSent() throws {
-        viewModel.skip()
-
-        XCTAssertTrue(reporter.measureFireButtonSkippedCalled)
-        XCTAssertTrue(reporter.measureLastDialogShownCalled)
-        XCTAssertTrue(onGotItPressedCalled)
-    }
-
     func testWhenHighFiveThenOnGotItAndOnDismissPressed() throws {
         viewModel.highFive()
 
@@ -66,6 +58,11 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
 
     @MainActor
     func testWhenTryFireButtonThenOnFireButtonPressedCalledAndPixelSent() throws {
+        let mainViewController = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])), autofillPopoverPresenter: DefaultAutofillPopoverPresenter())
+        let mainWindowController = MainWindowController(mainViewController: mainViewController, popUp: false)
+        mainWindowController.window = MockWindow()
+        WindowControllersManager.shared.lastKeyMainWindowController = mainWindowController
+
         viewModel.tryFireButton()
 
         XCTAssertTrue(onFireButtonPressedCalled)

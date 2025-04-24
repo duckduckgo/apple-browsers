@@ -16,6 +16,7 @@ on:
   pull_request:
     paths:
       - '.github/**'
+      - '.xcode-version'
       - 'SharedPackages/**'
       - 'macOS/**'
 

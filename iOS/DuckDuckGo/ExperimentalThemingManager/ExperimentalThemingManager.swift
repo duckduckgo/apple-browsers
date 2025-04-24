@@ -33,6 +33,10 @@ struct ExperimentalThemingManager {
         featureFlagger.isFeatureOn(for: FeatureFlag.experimentalBrowserTheming, allowOverride: true)
     }
 
+    var isRoundedCornersTreatmentEnabled: Bool {
+        isExperimentalThemingEnabled && UIDevice.current.userInterfaceIdiom != .pad
+    }
+
     func toggleExperimentalTheming() {
         featureFlagger.localOverrides?.toggleOverride(for: FeatureFlag.experimentalBrowserTheming)
 

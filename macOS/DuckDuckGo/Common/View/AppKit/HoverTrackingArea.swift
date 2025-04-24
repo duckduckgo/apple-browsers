@@ -18,6 +18,7 @@
 
 import AppKit
 import Foundation
+import os.log
 
 /// Used in `MouseOverView` and `MouseOverButton` to automatically manage `isMouseOver` state and update layer when needed
 final class HoverTrackingArea: NSTrackingArea {
@@ -38,7 +39,7 @@ final class HoverTrackingArea: NSTrackingArea {
         self
     }
 
-    private weak var view: Hoverable? {
+    fileprivate weak var view: Hoverable? {
         super.owner as? Hoverable
     }
 
@@ -57,9 +58,21 @@ final class HoverTrackingArea: NSTrackingArea {
     }
 
     private var observers: [NSKeyValueObservation]?
+    private var lastEventTimestamp: TimeInterval = 0
+
+    private static let mouseExitedSelector = NSStringFromSelector(#selector(NSResponder.mouseExited))
+    private static let swizzleMouseExitedOnce: Void = {
+        guard let originalMethod = class_getInstanceMethod(NSTrackingArea.self, NSSelectorFromString("_" + mouseExitedSelector)),
+            let swizzledMethod = class_getInstanceMethod(NSTrackingArea.self, #selector(swizzled_mouseExited(_:))) else {
+            assertionFailure("Failed to swizzle _mouseExited:")
+            return
+        }
+        method_exchangeImplementations(originalMethod, swizzledMethod)
+    }()
 
     init(owner: some Hoverable) {
         super.init(rect: .zero, options: [.mouseEnteredAndExited, .mouseMoved, .activeInKeyWindow, .inVisibleRect], owner: owner, userInfo: nil)
+       _=Self.swizzleMouseExitedOnce
 
         observers = [
             owner.observe(\.backgroundColor) { [weak self] _, _ in self?.updateLayer() },
@@ -104,21 +117,60 @@ final class HoverTrackingArea: NSTrackingArea {
         }
     }
 
+    /// Fixes the issue where the mouseExited event is dispatched before the mouseEntered event, and the mouseOver state is stuck
+    /// the fix is done by dispatching a new mouseExited if the mouseEntered event has a timestamp older than the last event timestamp.
+    /// The second part of the fix is done by swizzling the `_mouseExited:` method.
+    /// https://app.asana.com/1/137249556945/project/1199230911884351/task/1208347387296425?focus=true
+    private func checkLastEventTimestamp(_ event: NSEvent) {
+        // if the mouseEntered event has a timestamp older than the last event timestamp, it means it's a delayed event
+        guard self.lastEventTimestamp > event.timestamp else { return }
+
+        let description = String(format: "<HoverTrackingArea %p: %@>", self, self.view?.description ?? "<nil>")
+        Logger.general.error("\(description): received delayed mouseEntered event after mouseExited: \(event.eventDescription)")
+
+        DispatchQueue.main.async { [weak self] in
+            self?.sendMouseExited(event)
+        }
+    }
+
+    private func sendMouseExited(_ event: NSEvent) {
+        guard let newEvent = NSEvent.enterExitEvent(with: .mouseExited,
+                                                    location: view?.window?.mouseLocationOutsideOfEventStream ?? event.locationInWindow,
+                                                    modifierFlags: event.modifierFlags,
+                                                    timestamp: event.timestamp,
+                                                    windowNumber: event.windowNumber,
+                                                    context: nil,
+                                                    eventNumber: event.eventNumber,
+                                                    trackingNumber: [.mouseEntered, .mouseExited].contains(event.type) ? event.trackingNumber : 0,
+                                                    userData: nil) else {
+            assertionFailure("Failed to create new mouse exited event")
+            return
+        }
+        self.mouseExited(newEvent)
+    }
+
     @objc func mouseEntered(_ event: NSEvent) {
+        checkLastEventTimestamp(event)
+
         view?.isMouseOver = true
         view?.mouseEntered(with: event)
+        self.lastEventTimestamp = event.timestamp
     }
 
     @objc func mouseMoved(_ event: NSEvent) {
+        checkLastEventTimestamp(event)
+
         if let view, !view.isMouseOver {
             view.isMouseOver = true
         }
         view?.mouseMoved(with: event)
+        self.lastEventTimestamp = event.timestamp
     }
 
     @objc func mouseExited(_ event: NSEvent) {
         view?.isMouseOver = false
         view?.mouseExited(with: event)
+        self.lastEventTimestamp = event.timestamp
     }
 
     private func mouseDownDidChange() {
@@ -142,6 +194,22 @@ final class HoverTrackingArea: NSTrackingArea {
         updateLayer(animated: false)
     }
 
+}
+
+extension NSTrackingArea {
+    /// The second part of the fix for the mouse hover state stuck issue (see above)
+    /// If the mouseExited event is dispatched before the mouseEntered event, the NSTrackingArea won‘t call the mouseExited method
+    /// here we force the call of the mouseExited method and when we receive the delayed mouseEntered event later,
+    /// we will detect that it‘s a delayed event by comparing the event timestamp and fix the mouse hover state
+    /// see `checkLastEventTimestamp`
+    /// https://app.asana.com/1/137249556945/project/1199230911884351/task/1208347387296425?focus=true
+    @objc dynamic fileprivate func swizzled_mouseExited(_ event: NSEvent) {
+        self.swizzled_mouseExited(event) // call original method
+        if let hoverTrackingArea = self as? HoverTrackingArea,
+            hoverTrackingArea.view?.isMouseOver == true {
+            hoverTrackingArea.mouseExited(event)
+        }
+    }
 }
 
 @objc protocol HoverableProperties {

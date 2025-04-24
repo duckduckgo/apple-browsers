@@ -20,68 +20,6 @@ import Bookmarks
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
-struct AppearancePreferencesPersistorMock: AppearancePreferencesPersistor {
-
-    var isFavoriteVisible: Bool
-    var isContinueSetUpVisible: Bool
-    var continueSetUpCardsLastDemonstrated: Date?
-    var continueSetUpCardsNumberOfDaysDemonstrated: Int
-    var continueSetUpCardsClosed: Bool
-    var isRecentActivityVisible: Bool
-    var isPrivacyStatsVisible: Bool
-    var isSearchBarVisible: Bool
-    var showFullURL: Bool
-    var currentThemeName: String
-    var favoritesDisplayMode: String?
-    var showBookmarksBar: Bool
-    var bookmarksBarAppearance: BookmarksBarAppearance
-    var homeButtonPosition: HomeButtonPosition
-    var homePageCustomBackground: String?
-    var centerAlignedBookmarksBar: Bool
-    var didDismissHomePagePromotion: Bool
-    var showTabsAndBookmarksBarOnFullScreen: Bool
-
-    init(
-        showFullURL: Bool = false,
-        currentThemeName: String = ThemeName.systemDefault.rawValue,
-        favoritesDisplayMode: String? = FavoritesDisplayMode.displayNative(.desktop).description,
-        isContinueSetUpVisible: Bool = true,
-        continueSetUpCardsLastDemonstrated: Date? = nil,
-        continueSetUpCardsNumberOfDaysDemonstrated: Int = 0,
-        continueSetUpCardsClosed: Bool = false,
-        isFavoriteVisible: Bool = true,
-        isRecentActivityVisible: Bool = true,
-        isPrivacyStatsVisible: Bool = false,
-        isSearchBarVisible: Bool = true,
-        showBookmarksBar: Bool = true,
-        bookmarksBarAppearance: BookmarksBarAppearance = .alwaysOn,
-        homeButtonPosition: HomeButtonPosition = .right,
-        homePageCustomBackground: String? = nil,
-        centerAlignedBookmarksBar: Bool = true,
-        didDismissHomePagePromotion: Bool = true,
-        showTabsAndBookmarksBarOnFullScreen: Bool = false
-    ) {
-        self.showFullURL = showFullURL
-        self.currentThemeName = currentThemeName
-        self.favoritesDisplayMode = favoritesDisplayMode
-        self.isContinueSetUpVisible = isContinueSetUpVisible
-        self.continueSetUpCardsLastDemonstrated = continueSetUpCardsLastDemonstrated
-        self.continueSetUpCardsNumberOfDaysDemonstrated = continueSetUpCardsNumberOfDaysDemonstrated
-        self.continueSetUpCardsClosed = continueSetUpCardsClosed
-        self.isFavoriteVisible = isFavoriteVisible
-        self.isRecentActivityVisible = isRecentActivityVisible
-        self.isPrivacyStatsVisible = isPrivacyStatsVisible
-        self.isSearchBarVisible = isSearchBarVisible
-        self.showBookmarksBar = showBookmarksBar
-        self.bookmarksBarAppearance = bookmarksBarAppearance
-        self.homeButtonPosition = homeButtonPosition
-        self.homePageCustomBackground = homePageCustomBackground
-        self.centerAlignedBookmarksBar = centerAlignedBookmarksBar
-        self.didDismissHomePagePromotion = didDismissHomePagePromotion
-        self.showTabsAndBookmarksBarOnFullScreen = showTabsAndBookmarksBarOnFullScreen
-    }
-}
-
 final class AppearancePreferencesTests: XCTestCase {
 
     func testWhenInitializedThenItLoadsPersistedValues() throws {

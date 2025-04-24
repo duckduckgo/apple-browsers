@@ -24,7 +24,7 @@ extension NetworkProtectionKeychainTokenStore: SubscriptionTokenHandling {
 
     public func getToken() async throws -> String {
         Logger.networkProtection.debug("[NetworkProtectionKeychainTokenStore+SubscriptionTokenHandling] Getting token")
-        guard let token = try fetchToken() else {
+        guard let token = try await fetchToken() else { // Warning in macOS, will be removed alongside AuthV1
             throw NetworkProtectionError.noAuthTokenFound
         }
         return token

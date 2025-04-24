@@ -20,6 +20,36 @@ import AppKit
 
 public extension NSMenuItem {
 
+    private final class NSMenuItemTarget: NSObject {
+        let action: (NSMenuItem) -> Void
+        init(action: @escaping (NSMenuItem) -> Void) {
+            self.action = action
+        }
+
+        @objc func menuItemSelected(_ sender: NSMenuItem) {
+            action(sender)
+        }
+    }
+
+    private static let targetStrongRefKey = UnsafeRawPointer(bitPattern: "targetStrongRefKey".hashValue)!
+    private var targetStrongRef: NSMenuItemTarget? {
+        get {
+            dispatchPrecondition(condition: .onQueue(.main))
+            return objc_getAssociatedObject(self, Self.targetStrongRefKey) as? NSMenuItemTarget
+        }
+        set {
+            dispatchPrecondition(condition: .onQueue(.main))
+            objc_setAssociatedObject(self, Self.targetStrongRefKey, newValue, .OBJC_ASSOCIATION_RETAIN)
+        }
+    }
+
+    /// Instantiates NSMenuItem with the closure called when the menu item is selected
+    convenience init(title: String, keyEquivalent: NSEvent.KeyEquivalent = [], representedObject: Any? = nil, state: NSControl.StateValue = .off, action: @escaping (NSMenuItem) -> Void) {
+        let target = NSMenuItemTarget(action: action)
+        self.init(title: title, action: #selector(NSMenuItemTarget.menuItemSelected), target: target, keyEquivalent: keyEquivalent, representedObject: representedObject, state: state)
+        self.targetStrongRef = target
+    }
+
     convenience init(title string: String, action selector: Selector? = nil, target: AnyObject? = nil, keyEquivalent: NSEvent.KeyEquivalent = [], representedObject: Any? = nil, state: NSControl.StateValue = .off, items: [NSMenuItem]? = nil) {
         self.init(title: string, action: selector, keyEquivalent: keyEquivalent.charCode)
         if !keyEquivalent.modifierMask.isEmpty {

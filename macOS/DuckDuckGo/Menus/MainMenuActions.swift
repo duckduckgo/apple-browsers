@@ -68,8 +68,8 @@ extension AppDelegate {
 
     @objc func newAIChat(_ sender: Any?) {
         DispatchQueue.main.async {
-            AIChatTabOpener.openAIChatTab()
-            PixelKit.fire(GeneralPixel.aichatApplicationMenuFileClicked, includeAppVersionParameter: true)
+            NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(nil, target: .newTabSelected)
+            PixelKit.fire(AIChatPixel.aichatApplicationMenuFileClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
         }
     }
 
@@ -110,7 +110,7 @@ extension AppDelegate {
         }
     }
 
-    @objc func openVisit(_ sender: NSMenuItem) {
+    @objc func openHistoryEntryVisit(_ sender: NSMenuItem) {
         guard let visit = sender.representedObject as? Visit,
               let url = visit.historyEntry?.url else {
             assertionFailure("Wrong represented object")
@@ -534,10 +534,6 @@ extension MainViewController {
         LocalPinningManager.shared.togglePinning(for: .networkProtection)
     }
 
-    @objc func toggleAIChatShortcut(_ sender: Any) {
-        LocalPinningManager.shared.togglePinning(for: .aiChat)
-    }
-
     // MARK: - History
 
     @objc func back(_ sender: Any?) {
@@ -561,16 +557,16 @@ extension MainViewController {
         tab.openHomePage()
     }
 
-    @objc func openVisit(_ sender: NSMenuItem) {
+    @objc func openHistoryEntryVisit(_ sender: NSMenuItem) {
         guard let visit = sender.representedObject as? Visit,
-              let url = visit.historyEntry?.url else {
+              let historyEntry = visit.historyEntry else {
             assertionFailure("Wrong represented object")
             return
         }
 
         makeKeyIfNeeded()
-        getActiveTabAndIndex()?.tab.setContent(.contentFromURL(url, source: .historyEntry))
-        adjustFirstResponder()
+
+        WindowControllersManager.shared.open(historyEntry, with: NSApp.currentEvent)
     }
 
     @objc func clearAllHistory(_ sender: NSMenuItem) {
@@ -581,7 +577,7 @@ extension MainViewController {
                 let visitsCount = await historyViewDataProvider.countVisibleVisits(matching: .rangeFilter(.all))
 
                 let presenter = DefaultHistoryViewDialogPresenter()
-                switch await presenter.showDeleteDialog(for: visitsCount, deleteMode: .all) {
+                switch await presenter.showDeleteDialog(for: visitsCount, deleteMode: .all, in: nil) {
                 case .burn:
                     FireCoordinator.fireViewModel.fire.burnAll()
                 case .delete:
@@ -619,7 +615,7 @@ extension MainViewController {
 
             Task {
                 let presenter = DefaultHistoryViewDialogPresenter()
-                switch await presenter.showDeleteDialog(for: visits.count, deleteMode: deleteMode) {
+                switch await presenter.showDeleteDialog(for: visits.count, deleteMode: deleteMode, in: nil) {
                 case .burn:
                     FireCoordinator.fireViewModel.fire.burnVisits(visits,
                                                                   except: FireproofDomains.shared,
@@ -691,7 +687,7 @@ extension MainViewController {
         guard let bookmark = menuItem.representedObject as? Bookmark else { return }
         makeKeyIfNeeded()
 
-        WindowControllersManager.shared.open(bookmark: bookmark)
+        WindowControllersManager.shared.open(bookmark, with: NSApp.currentEvent)
     }
 
     @objc func openAllInTabs(_ sender: Any?) {
@@ -709,8 +705,7 @@ extension MainViewController {
                 shouldLoadInBackground: true,
                 burnerMode: tabCollectionViewModel.burnerMode)
         }
-        tabCollectionViewModel.append(tabs: tabs)
-        PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
+        tabCollectionViewModel.append(tabs: tabs, andSelect: true)
     }
 
     @objc func showManageBookmarks(_ sender: Any?) {
@@ -813,7 +808,7 @@ extension MainViewController {
 
         WindowsManager.closeWindows(except: excludedWindowControllers.compactMap(\.window))
 
-        tabCollectionViewModel.append(tabs: otherTabs)
+        tabCollectionViewModel.append(tabs: otherTabs, andSelect: false)
         tabCollectionViewModel.tabCollection.localHistoryOfRemovedTabs += otherLocalHistoryOfRemovedTabs
     }
 
@@ -952,7 +947,7 @@ extension MainViewController {
 
     @objc func skipOnboarding(_ sender: Any?) {
         UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.onboardingFinished.rawValue)
-        Application.appDelegate.onboardingStateMachine.state = .onboardingCompleted
+        Application.appDelegate.onboardingContextualDialogsManager.state = .onboardingCompleted
         WindowControllersManager.shared.updatePreventUserInteraction(prevent: false)
         WindowControllersManager.shared.replaceTabWith(Tab(content: .newtab))
     }
@@ -966,7 +961,7 @@ extension MainViewController {
     }
 
     @objc func resetContextualOnboarding(_ sender: Any?) {
-        Application.appDelegate.onboardingStateMachine.state = .notStarted
+        Application.appDelegate.onboardingContextualDialogsManager.state = .notStarted
     }
 
     @objc func resetDuckPlayerPreferences(_ sender: Any?) {

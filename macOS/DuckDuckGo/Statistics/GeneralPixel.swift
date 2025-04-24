@@ -33,9 +33,8 @@ enum GeneralPixel: PixelKitEventV2 {
     case launchInitial(cohort: String)
     case launch(isDefault: Bool, isAddedToDock: Bool?)
 
-    case serp(cohort: String?)
-    case serpInitial(cohort: String)
-    case serpDay21to27(cohort: String)
+    case serp
+    case serpInitial
 
     case dailyOsVersionCounter
 
@@ -175,13 +174,6 @@ enum GeneralPixel: PixelKitEventV2 {
     case networkProtectionGeoswitchingSetCustom
     case networkProtectionGeoswitchingNoLocations
 
-    // AI Chat
-    case aichatToolbarClicked
-    case aichatApplicationMenuAppClicked
-    case aichatApplicationMenuFileClicked
-    case aichatToolbarOnboardingPopoverShown
-    case aichatToolbarOnboardingPopoverAccept
-    case aichatNoRemoteSettingsFound(AIChatRemoteSettings.SettingsValue)
     // Sync
     case syncSignupDirect
     case syncSignupConnect
@@ -264,27 +256,8 @@ enum GeneralPixel: PixelKitEventV2 {
     case autocompleteToggledOff
     case autocompleteToggledOn
 
-    // Onboarding Experiment
-    case onboardingCohortAssigned(cohort: String)
-    case onboardingHomeButtonEnabled(cohort: String)
-    case onboardingBookmarksBarShown(cohort: String)
-    case onboardingSessionRestoreEnabled(cohort: String)
-    case onboardingSetAsDefaultRequested(cohort: String)
-    case onboardingAddToDockRequested(cohort: String)
-    case onboardingImportRequested(cohort: String)
-    case onboardingStepCompleteWelcome
-    case onboardingStepCompleteGetStarted
-    case onboardingStepCompletePrivateByDefault
-    case onboardingStepCompleteCleanerBrowsing
-    case onboardingStepCompleteSystemSettings
-    case onboardingStepCompleteCustomize
+    // Onboarding
     case onboardingExceptionReported(message: String, id: String)
-    case onboardingSearchPerformed5to7(cohort: String)
-    case onboardingHomeButtonUsed5to7(cohort: String)
-    case onboardingBookmarkUsed5to7(cohort: String)
-    case onboardingSessionRestoreEnabled5to7(cohort: String)
-    case onboardingSetAsDefaultEnabled5to7(cohort: String)
-    case onboardingDuckplayerUsed5to7(cohort: String)
 
     // MARK: - Debug
 
@@ -393,9 +366,6 @@ enum GeneralPixel: PixelKitEventV2 {
     case updaterDidNotFindUpdate
     case updaterDidDownloadUpdate
     case updaterDidRunUpdate
-    case updaterDidCheckForUpdateRespectingRollout
-    case updaterDidCheckForUpdateSkippingRollout
-    case updaterDidForceUpdateRecheck
 
     case faviconDecryptionFailedUnique
     case downloadListItemDecryptionFailedUnique
@@ -735,9 +705,7 @@ enum GeneralPixel: PixelKitEventV2 {
         case .launchInitial:
             return "m_mac_first-launch"
         case .serpInitial:
-            return "m_mac_navigation_first-search"
-        case .serpDay21to27:
-            return "m_mac_search-day-21-27_initial"
+            return "m_mac_navigation_first-search_u"
 
         case .vpnBreakageReport:
             return "m_mac_vpn_breakage_report"
@@ -757,20 +725,6 @@ enum GeneralPixel: PixelKitEventV2 {
 
         case .networkProtectionEnabledOnSearch:
             return "m_mac_netp_ev_enabled_on_search"
-
-            // AI Chat
-        case .aichatToolbarClicked:
-            return "m_mac_aichat_toolbar-clicked"
-        case .aichatApplicationMenuAppClicked:
-            return "m_mac_aichat_application-menu-app-clicked"
-        case .aichatApplicationMenuFileClicked:
-            return "m_mac_aichat_application-menu-file-clicked"
-        case .aichatToolbarOnboardingPopoverShown:
-            return "m_mac_aichat_toolbar-onboarding-popover-shown"
-        case .aichatToolbarOnboardingPopoverAccept:
-            return "m_mac_aichat_toolbar-onboarding-popover-accept"
-        case .aichatNoRemoteSettingsFound(let settings):
-            return "m_mac_aichat_no_remote_settings_found-\(settings.rawValue.lowercased())"
 
             // Sync
         case .syncSignupDirect:
@@ -873,28 +827,8 @@ enum GeneralPixel: PixelKitEventV2 {
         case .autocompleteToggledOff: return "m_mac_autocomplete_toggled_off"
         case .autocompleteToggledOn: return "m_mac_autocomplete_toggled_on"
 
-            // Onboarding experiment
-        case .onboardingCohortAssigned: return "m_mac_onboarding_cohort-assigned"
-        case .onboardingHomeButtonEnabled: return
-            "m_mac_onboarding_home-button-enabled"
-        case .onboardingBookmarksBarShown: return "m_mac_onboarding_bookmarks-bar-shown"
-        case .onboardingSessionRestoreEnabled: return "m_mac_onboarding_session-restore-enabled"
-        case .onboardingSetAsDefaultRequested: return "m_mac_onboarding_set-as-default-requested"
-        case .onboardingAddToDockRequested: return "m_mac_onboarding_add-to-dock-requested"
-        case .onboardingImportRequested: return "m_mac_onboarding_import-requested"
-        case .onboardingStepCompleteWelcome: return "m_mac_onboarding_step-complete-welcome"
-        case .onboardingStepCompleteGetStarted: return "m_mac_onboarding_step-complete-getStarted"
-        case .onboardingStepCompletePrivateByDefault: return "m_mac_onboarding_step-complete-privateByDefault"
-        case .onboardingStepCompleteCleanerBrowsing: return "m_mac_onboarding_step-complete-cleanerBrowsing"
-        case .onboardingStepCompleteSystemSettings: return "m_mac_onboarding_step-complete-systemSettings"
-        case .onboardingStepCompleteCustomize: return "m_mac_onboarding_step-complete-customize"
+            // Onboarding
         case .onboardingExceptionReported: return "m_mac_onboarding_exception-reported"
-        case .onboardingSearchPerformed5to7: return "m_mac_onboarding_search-performed-5-7"
-        case .onboardingHomeButtonUsed5to7: return "m_mac_onboarding_home-button-used-5-7"
-        case .onboardingBookmarkUsed5to7: return "m_mac_onboarding_bookmark-used-5-7"
-        case .onboardingSessionRestoreEnabled5to7: return "m_mac_onboarding_session-restore-enabled-5-7"
-        case .onboardingSetAsDefaultEnabled5to7: return "m_mac_onboarding_set-as-default-enabled-5-7"
-        case .onboardingDuckplayerUsed5to7: return "m_mac_onboarding_duckplayer-used-5-7"
 
             // DEBUG
         case .assertionFailure:
@@ -1100,12 +1034,6 @@ enum GeneralPixel: PixelKitEventV2 {
             return "updater_did_download_update"
         case .updaterDidRunUpdate:
             return "updater_did_run_update"
-        case .updaterDidCheckForUpdateRespectingRollout:
-            return "updater_did_check_for_update_respecting_rollout"
-        case .updaterDidCheckForUpdateSkippingRollout:
-            return "updater_did_check_for_update_skipping_rollout"
-        case .updaterDidForceUpdateRecheck:
-            return "updater_did_force_update_recheck"
 
         case .faviconDecryptionFailedUnique:
             return "favicon_decryption_failed_unique"
@@ -1258,16 +1186,6 @@ enum GeneralPixel: PixelKitEventV2 {
         case .launchInitial(let cohort):
             return [PixelKit.Parameters.experimentCohort: cohort]
 
-        case .serp(let cohort):
-            guard let cohort else { return [:] }
-            return [PixelKit.Parameters.experimentCohort: cohort]
-
-        case .serpInitial(let cohort):
-            return [PixelKit.Parameters.experimentCohort: cohort]
-
-        case .serpDay21to27(let cohort):
-            return [PixelKit.Parameters.experimentCohort: cohort]
-
         case .dailyOsVersionCounter:
             return [PixelKit.Parameters.osMajorVersion: "\(ProcessInfo.processInfo.operatingSystemVersion.majorVersion)"]
 
@@ -1322,34 +1240,8 @@ enum GeneralPixel: PixelKitEventV2 {
                 PixelKit.Parameters.pproIssueSubcategory: subcategory,
             ]
 
-        case .onboardingCohortAssigned(let cohort):
-            return [PixelKit.Parameters.experimentCohort: cohort]
-        case .onboardingHomeButtonEnabled(let cohort):
-            return [PixelKit.Parameters.experimentCohort: cohort]
-        case .onboardingBookmarksBarShown(let cohort):
-            return [PixelKit.Parameters.experimentCohort: cohort]
-        case .onboardingSessionRestoreEnabled(let cohort):
-            return [PixelKit.Parameters.experimentCohort: cohort]
-        case .onboardingSetAsDefaultRequested(let cohort):
-            return [PixelKit.Parameters.experimentCohort: cohort]
-        case .onboardingAddToDockRequested(let cohort):
-            return [PixelKit.Parameters.experimentCohort: cohort]
-        case .onboardingImportRequested(let cohort):
-            return [PixelKit.Parameters.experimentCohort: cohort]
         case .onboardingExceptionReported(let message, let id):
             return [PixelKit.Parameters.assertionMessage: message, "id": id]
-        case .onboardingSearchPerformed5to7(let cohort):
-            return [PixelKit.Parameters.experimentCohort: cohort]
-        case .onboardingHomeButtonUsed5to7(let cohort):
-            return [PixelKit.Parameters.experimentCohort: cohort]
-        case .onboardingBookmarkUsed5to7(let cohort):
-            return [PixelKit.Parameters.experimentCohort: cohort]
-        case .onboardingSessionRestoreEnabled5to7(let cohort):
-            return [PixelKit.Parameters.experimentCohort: cohort]
-        case .onboardingSetAsDefaultEnabled5to7(let cohort):
-            return [PixelKit.Parameters.experimentCohort: cohort]
-        case .onboardingDuckplayerUsed5to7(let cohort):
-            return [PixelKit.Parameters.experimentCohort: cohort]
 
             /// Duck Player pixels
         case .duckPlayerDailyUniqueView,

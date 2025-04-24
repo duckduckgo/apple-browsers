@@ -368,8 +368,10 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         legacyTokenStorage?.token = nil
 
         if let existingToken {
-            Logger.OAuthClient.log("Logging out")
-            try await authService.logout(accessToken: existingToken)
+            Task { // Not waiting for an answer
+                Logger.OAuthClient.log("Invalidating the V2 token")
+                try? await authService.logout(accessToken: existingToken)
+            }
         }
     }
 

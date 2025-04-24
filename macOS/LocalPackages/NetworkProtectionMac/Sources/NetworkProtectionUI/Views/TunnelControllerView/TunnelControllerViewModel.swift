@@ -21,6 +21,7 @@ import Foundation
 import NetworkProtection
 import NetworkProtectionProxy
 import SwiftUI
+import SwiftUIExtensions
 import TipKit
 import VPNAppState
 
@@ -264,17 +265,28 @@ public final class TunnelControllerViewModel: ObservableObject {
             }
 
             return self.internalIsRunning
-        } set: { newValue in
+        } set: { [weak self] newValue in
+            guard let self else { return }
+
             guard newValue != self.internalIsRunning else {
                 return
             }
 
-            self.internalIsRunning = newValue
+            Task {
+                // When turning OFF the VPN we let the parent app offer an alternative
+                // UI/UX to prevent it.  If they return `false` in `willStopVPN` the VPN
+                // will not be stopped.
+                if !newValue, await !self.uiActionHandler.willStopVPN() {
+                    return
+                }
 
-            if newValue {
-                self.startNetworkProtection()
-            } else {
-                self.stopNetworkProtection()
+                self.internalIsRunning = newValue
+
+                if newValue {
+                    self.startNetworkProtection()
+                } else {
+                    self.stopNetworkProtection()
+                }
             }
         }
     }

@@ -16,8 +16,52 @@
 //  limitations under the License.
 //
 
-struct AIChatTabOpener {
-    @MainActor static func openAIChatTab() {
-        WindowControllersManager.shared.showTab(with: .url(AIChatRemoteSettings().aiChatURL, credential: nil, source: .ui))
+import AIChat
+
+protocol AIChatTabOpening {
+    @MainActor
+    func openAIChatTab(_ query: String?, target: AIChatTabOpenerTarget)
+
+    @MainActor
+    func openAIChatTab(_ value: AddressBarTextField.Value, target: AIChatTabOpenerTarget)
+}
+
+extension AIChatTabOpening {
+    @MainActor
+    func openAIChatTab() {
+        openAIChatTab(nil, target: .sameTab)
+    }
+}
+
+enum AIChatTabOpenerTarget {
+    case newTabSelected
+    case newTabUnselected
+    case sameTab
+}
+
+struct AIChatTabOpener: AIChatTabOpening {
+    private let promptHandler: AIChatPromptHandler
+    private let addressBarQueryExtractor: AIChatAddressBarPromptExtractor
+
+    let aiChatRemoteSettings = AIChatRemoteSettings()
+
+    init(promptHandler: AIChatPromptHandler,
+         addressBarQueryExtractor: AIChatAddressBarPromptExtractor) {
+        self.promptHandler = promptHandler
+        self.addressBarQueryExtractor = addressBarQueryExtractor
+    }
+
+    @MainActor
+    func openAIChatTab(_ value: AddressBarTextField.Value, target: AIChatTabOpenerTarget) {
+        let query = addressBarQueryExtractor.queryForValue(value)
+        openAIChatTab(query, target: target)
+    }
+
+    @MainActor
+    func openAIChatTab(_ query: String?, target: AIChatTabOpenerTarget) {
+        if let query = query {
+            promptHandler.setData(query)
+        }
+        WindowControllersManager.shared.openAIChat(aiChatRemoteSettings.aiChatURL, target: target, hasPrompt: query != nil)
     }
 }

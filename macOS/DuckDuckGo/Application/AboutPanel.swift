@@ -119,4 +119,15 @@ private class AboutPanelWindow: NSPanel {
     override func cancelOperation(_ sender: Any?) {
         self.close()
     }
+
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        guard event.type == .keyDown,
+              let chars = event.charactersIgnoringModifiers?.lowercased(),
+              chars == "w",
+              event.modifierFlags.contains(.command) else {
+            return super.performKeyEquivalent(with: event)
+        }
+        self.close()
+        return true
+    }
 }

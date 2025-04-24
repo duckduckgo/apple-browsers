@@ -245,6 +245,9 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
             return .notHandled(.duplicateNavigation)
         }
 
+        // Resets Script Initialization State
+        duckPlayer.scriptInitializerPublisher.send(false)
+
         // Dismiss the pill on every URL change
         duckPlayer.dismissPill(reset: true, animated: true, programatic: true)
 

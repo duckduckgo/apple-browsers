@@ -27,6 +27,14 @@ import DuckPlayer
 
 final class DuckPlayerNativeUserScript: NSObject, Subfeature {
         
+    private enum QueuedEvent {
+        case mediaControl(pause: Bool)
+        case serpNotification(enabled: Bool)
+        case muteAudio(mute: Bool)
+    }
+    
+    var isInitialized = false
+    private var eventQueue: [QueuedEvent] = []
     var duckPlayer: DuckPlayerControlling
     private var cancellables = Set<AnyCancellable>()
 
@@ -49,7 +57,7 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
 
     weak var broker: UserScriptMessageBroker?
     weak var webView: WKWebView?
-    
+
 
     let messageOriginPolicy: MessageOriginPolicy = .only(rules: [
         .exact(hostname: DuckPlayerSettingsDefault.OriginDomains.duckduckgo),
@@ -60,22 +68,16 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
         .exact(hostname: DuckPlayerSettingsDefault.OriginDomains.youtubeNoCookieWWW)
     ])
     public var featureName: String = Constants.featureName
-    
+
 
     init(duckPlayer: DuckPlayerControlling) {
         self.duckPlayer = duckPlayer
         super.init()
-        // Ensure duckPlayer is treated as an object for ObjectIdentifier
-        if let object = duckPlayer as? AnyObject {
-             print("DP: 🟢 DuckPlayerUserScript: Initializing with DuckPlayer instance ID: \(ObjectIdentifier(object))")
-        } else {
-             print("DP: 🔴 DuckPlayerUserScript.swift: Initializing with DuckPlayer, but it's not an AnyObject.")
-        }
         setupSubscriptions()
     }
 
     private func setupSubscriptions() {
-        
+
         duckPlayer.mediaControlPublisher
             .sink { [weak self] pause in
                 self?.handleMediaControl(pause: pause)
@@ -91,6 +93,12 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
         duckPlayer.muteAudioPublisher
             .sink { [weak self] mute in
                 self?.handleMuteAudio(mute: mute)
+            }
+            .store(in: &cancellables)
+
+        duckPlayer.scriptInitializerPublisher
+            .sink { [weak self] initialized in
+                self?.isInitialized = initialized
             }
             .store(in: &cancellables)
     }
@@ -117,7 +125,7 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
         }
     }
 
-    deinit {        
+    deinit {
         cancellables.forEach { $0.cancel() }
         cancellables.removeAll()
     }
@@ -125,20 +133,51 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
 
     private func handleMediaControl(pause: Bool) {
         guard let broker = broker, let webView = webView else { return }
+        if !isInitialized {
+            eventQueue.append(.mediaControl(pause: pause))
+            return
+        }
         print("DP: 🟣 Pushing onMediaControl event with pause: \(pause)")
         broker.push(method: "onMediaControl", params: ["pause": pause], for: self, into: webView)
     }
 
     private func handleSerpNotification(enabled: Bool) {
         guard let broker = broker, let webView = webView else { return }
+        if !isInitialized {
+            eventQueue.append(.serpNotification(enabled: enabled))
+            return
+        }
         print("DP: 🟣 Pushing handleSerpNotification with enabled: \(enabled)")
         broker.push(method: "onSerpNotify", params: ["enabled": enabled], for: self, into: webView)
     }
 
     private func handleMuteAudio(mute: Bool) {
         guard let broker = broker, let webView = webView else { return }
+        if !isInitialized {
+            eventQueue.append(.muteAudio(mute: mute))
+            return
+        }
         print("DP: 🟣 Pushing handleMuteAudio with mute: \(mute)")
         broker.push(method: "onMuteAudio", params: ["mute": mute], for: self, into: webView)
+    }
+
+    private func processEventQueue() {
+        guard let broker = broker, let webView = webView else { return }
+        
+        for event in eventQueue {
+            switch event {
+            case .mediaControl(let pause):
+                print("DP: 🟣 Processing queued onMediaControl event with pause: \(pause)")
+                broker.push(method: "onMediaControl", params: ["pause": pause], for: self, into: webView)
+            case .serpNotification(let enabled):
+                print("DP: 🟣 Processing queued handleSerpNotification with enabled: \(enabled)")
+                broker.push(method: "onSerpNotify", params: ["enabled": enabled], for: self, into: webView)
+            case .muteAudio(let mute):
+                print("DP: 🟣 Processing queued handleMuteAudio with mute: \(mute)")
+                broker.push(method: "onMuteAudio", params: ["mute": mute], for: self, into: webView)
+            }
+        }
+        eventQueue.removeAll()
     }
 
     @MainActor
@@ -150,6 +189,7 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
         switch host {
         case DuckPlayerSettingsDefault.OriginDomains.duckduckgo:
             pageType = Constants.SERP
+        // Only on watch pages
         case DuckPlayerSettingsDefault.OriginDomains.youtube, 
              DuckPlayerSettingsDefault.OriginDomains.youtubeWWW, 
              DuckPlayerSettingsDefault.OriginDomains.youtubeMobile:
@@ -161,17 +201,28 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
             pageType = Constants.UNKNOWN
         }
         let result: [String: String] = [Constants.locale: locale, Constants.pageType: pageType]
+        isInitialized = true
+
+        // Process the event queue after the initial setup is complete
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            self.processEventQueue()
+        }
+
         return result
     }
 
     @MainActor
     private func onCurrentTimeStamp(params: Any, original: WKScriptMessage) -> Encodable? {
         guard let dict = params as? [String: Any],
-              let time = dict[Constants.timestamp] as? String else {
+              let timeString = dict[Constants.timestamp] as? String else {
             return nil
         }
-        duckPlayer.currentTimeStampPublisher.send(TimeInterval(Int(time) ?? 0))
-        print("DP: 🟣 DuckPlayerNativeUserScript onCurrentTimeStamp Called from UserScript: Time \(time)")
+        if let timeInterval = Double(timeString) {
+            print("DP: 🟣 DuckPlayerNativeUserScript onCurrentTimeStamp Called: Time \(timeInterval)")
+            duckPlayer.currentTimeStampPublisher.send(timeInterval)
+        } else {
+            print("DP: 🔴 DuckPlayerNativeUserScript onCurrentTimeStamp Called: Time \(timeString) is not a valid number")
+        }
         let result: [String: String] = [:]
         return result
     }

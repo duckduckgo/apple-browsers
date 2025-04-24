@@ -267,6 +267,7 @@ protocol DuckPlayerControlling: AnyObject {
     var mediaControlPublisher: PassthroughSubject<Bool, Never> { get }
     var currentTimeStampPublisher: PassthroughSubject<TimeInterval, Never> { get }
     var serpNotificationPublisher: PassthroughSubject<Bool, Never> { get }
+    var scriptInitializerPublisher: PassthroughSubject<Bool, Never> { get }
 
 }
 
@@ -346,7 +347,8 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     var mediaControlPublisher: PassthroughSubject<Bool, Never>
     var currentTimeStampPublisher: PassthroughSubject<TimeInterval, Never>
     var serpNotificationPublisher: PassthroughSubject<Bool, Never>
-
+    var scriptInitializerPublisher: PassthroughSubject<Bool, Never>
+    
     /// Initializes a new instance of DuckPlayer with the provided settings and feature flagger.
     ///
     /// - Parameters:
@@ -366,26 +368,9 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         self.mediaControlPublisher = PassthroughSubject<Bool, Never>()
         self.currentTimeStampPublisher = PassthroughSubject<TimeInterval, Never>()
         self.serpNotificationPublisher = PassthroughSubject<Bool, Never>()
+        self.scriptInitializerPublisher = PassthroughSubject<Bool, Never>()
         super.init()
         setupSubscriptions()
-        print("🔵 DP: DuckPlayer: Initialized instance: \(self)")
-
-        // Logging for UserScript Publishers
-        muteAudioPublisher
-            .sink { muted in print("DP: 🔵 DuckPlayer: Mute Audio: \(muted) received") }
-            .store(in: &nativePlayerCancellables)
-
-        mediaControlPublisher
-            .sink { playing in print("DP: 🔵 DuckPlayer: Media Control: \(playing) received") }
-            .store(in: &nativePlayerCancellables)
-
-        currentTimeStampPublisher
-            .sink { timestamp in print("DP: 🔵 DuckPlayer: Current Timestamp: \(timestamp) received") }
-            .store(in: &nativePlayerCancellables)
-
-        serpNotificationPublisher
-            .sink { isSERP in print("DP: 🔵 DuckPlayer: SERP Notification: \(isSERP) received") }
-            .store(in: &nativePlayerCancellables)
 
         NotificationCenter.default.addObserver(self,
                                              selector: #selector(handleChromeVisibilityChange(_:)),

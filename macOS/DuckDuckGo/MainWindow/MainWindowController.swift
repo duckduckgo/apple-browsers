@@ -266,14 +266,13 @@ final class MainWindowController: NSWindowController {
 extension MainWindowController: NSWindowDelegate {
 
     private func windowDidBecomeKeyNotification(_ notification: Notification) {
-        guard let window = notification.object as? NSWindow,
-              sequence(first: window, next: { $0.parent ?? $0.sheetParent }).contains(where: { $0 === self.window }) else {
-            return
-        }
+        guard let keyWindow = notification.object as? NSWindow,
+              let mainWindow = self.window,
+              keyWindow.isInHierarchy(of: mainWindow) else { return }
 
         mainViewController.windowDidBecomeKey()
 
-        if !window.isPopUpWindow {
+        if !mainWindow.isPopUpWindow {
             WindowControllersManager.shared.lastKeyMainWindowController = self
         }
 
@@ -285,10 +284,9 @@ extension MainWindowController: NSWindowDelegate {
     }
 
     private func windowDidResignKeyNotification(_ notification: Notification) {
-        guard let window = notification.object as? NSWindow,
-              sequence(first: window, next: { $0.parent ?? $0.sheetParent }).contains(where: { $0 === self.window }) else {
-            return
-        }
+        guard let exKeyWindow = notification.object as? NSWindow,
+              let mainWindow = self.window,
+              exKeyWindow.isInHierarchy(of: mainWindow) else { return }
 
         mainViewController.windowDidResignKey()
     }

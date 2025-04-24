@@ -627,8 +627,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         initializeSync()
 
-        vpnAppEventsHandler.applicationDidBecomeActive()
-
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
         let pirGatekeeper = DefaultDataBrokerProtectionFeatureGatekeeper(subscriptionManager: subscriptionAuthV1toV2Bridge,
                                                                          freemiumDBPUserStateManager: freemiumDBPUserStateManager)

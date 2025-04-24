@@ -130,7 +130,7 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
 }
 
 class MockPrivacyConfiguration: PrivacyConfiguration {
-    
+
     var isSubfeatureEnabledCheck: ((any PrivacySubfeature) -> Bool)?
     func isSubfeatureEnabled(_ subfeature: any BrowserServicesKit.PrivacySubfeature, versionProvider: BrowserServicesKit.AppVersionProvider, randomizer: (Range<Double>) -> Double, defaultValue: Bool) -> Bool {
         isSubfeatureEnabledCheck?(subfeature) ?? false

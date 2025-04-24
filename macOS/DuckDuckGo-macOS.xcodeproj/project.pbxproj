@@ -2147,34 +2147,6 @@
 		841BE93F2C6F236000E9C2B5 /* BookmarkDragDropManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 841BE93D2C6F235F00E9C2B5 /* BookmarkDragDropManager.swift */; };
 		8426108D2C9811F30070D5F9 /* KeyEquivalentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8426108C2C9811EC0070D5F9 /* KeyEquivalentView.swift */; };
 		8426108E2C9811F30070D5F9 /* KeyEquivalentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8426108C2C9811EC0070D5F9 /* KeyEquivalentView.swift */; };
-		842661CC2DAFBC4E001950AA /* testTextPreviewWithTextOnly.NSAppearanceNameDarkAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661BF2DAFBC4E001950AA /* testTextPreviewWithTextOnly.NSAppearanceNameDarkAqua.png */; };
-		842661CD2DAFBC4E001950AA /* testURLPreviewWithCustomWidthAndWithoutFavicon.NSAppearanceNameAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C42DAFBC4E001950AA /* testURLPreviewWithCustomWidthAndWithoutFavicon.NSAppearanceNameAqua.png */; };
-		842661CE2DAFBC4E001950AA /* testTextPreviewWithTextOnly.NSAppearanceNameAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661BE2DAFBC4E001950AA /* testTextPreviewWithTextOnly.NSAppearanceNameAqua.png */; };
-		842661CF2DAFBC4E001950AA /* testURLPreviewWithCustomColors.NSAppearanceNameAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C02DAFBC4E001950AA /* testURLPreviewWithCustomColors.NSAppearanceNameAqua.png */; };
-		842661D02DAFBC4E001950AA /* testURLPreviewWithCustomWidthAndWithoutFavicon.NSAppearanceNameDarkAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C52DAFBC4E001950AA /* testURLPreviewWithCustomWidthAndWithoutFavicon.NSAppearanceNameDarkAqua.png */; };
-		842661D12DAFBC4E001950AA /* testURLPreviewWithCustomWidth.NSAppearanceNameDarkAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C32DAFBC4E001950AA /* testURLPreviewWithCustomWidth.NSAppearanceNameDarkAqua.png */; };
-		842661D22DAFBC4E001950AA /* testURLPreviewWithoutFavicon.NSAppearanceNameDarkAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661CB2DAFBC4E001950AA /* testURLPreviewWithoutFavicon.NSAppearanceNameDarkAqua.png */; };
-		842661D32DAFBC4E001950AA /* testURLPreviewWithCustomWidth.NSAppearanceNameAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C22DAFBC4E001950AA /* testURLPreviewWithCustomWidth.NSAppearanceNameAqua.png */; };
-		842661D42DAFBC4E001950AA /* testURLPreviewWithFavicon.NSAppearanceNameDarkAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C72DAFBC4E001950AA /* testURLPreviewWithFavicon.NSAppearanceNameDarkAqua.png */; };
-		842661D52DAFBC4E001950AA /* testURLPreviewWithFavicon.NSAppearanceNameAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C62DAFBC4E001950AA /* testURLPreviewWithFavicon.NSAppearanceNameAqua.png */; };
-		842661D62DAFBC4E001950AA /* testURLPreviewWithLongURL.NSAppearanceNameAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C82DAFBC4E001950AA /* testURLPreviewWithLongURL.NSAppearanceNameAqua.png */; };
-		842661D72DAFBC4E001950AA /* testURLPreviewWithCustomColors.NSAppearanceNameDarkAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C12DAFBC4E001950AA /* testURLPreviewWithCustomColors.NSAppearanceNameDarkAqua.png */; };
-		842661D82DAFBC4E001950AA /* testURLPreviewWithLongURL.NSAppearanceNameDarkAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C92DAFBC4E001950AA /* testURLPreviewWithLongURL.NSAppearanceNameDarkAqua.png */; };
-		842661D92DAFBC4E001950AA /* testURLPreviewWithoutFavicon.NSAppearanceNameAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661CA2DAFBC4E001950AA /* testURLPreviewWithoutFavicon.NSAppearanceNameAqua.png */; };
-		842661DA2DAFBC4E001950AA /* testTextPreviewWithTextOnly.NSAppearanceNameDarkAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661BF2DAFBC4E001950AA /* testTextPreviewWithTextOnly.NSAppearanceNameDarkAqua.png */; };
-		842661DB2DAFBC4E001950AA /* testURLPreviewWithCustomWidthAndWithoutFavicon.NSAppearanceNameAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C42DAFBC4E001950AA /* testURLPreviewWithCustomWidthAndWithoutFavicon.NSAppearanceNameAqua.png */; };
-		842661DC2DAFBC4E001950AA /* testTextPreviewWithTextOnly.NSAppearanceNameAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661BE2DAFBC4E001950AA /* testTextPreviewWithTextOnly.NSAppearanceNameAqua.png */; };
-		842661DD2DAFBC4E001950AA /* testURLPreviewWithCustomColors.NSAppearanceNameAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C02DAFBC4E001950AA /* testURLPreviewWithCustomColors.NSAppearanceNameAqua.png */; };
-		842661DE2DAFBC4E001950AA /* testURLPreviewWithCustomWidthAndWithoutFavicon.NSAppearanceNameDarkAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C52DAFBC4E001950AA /* testURLPreviewWithCustomWidthAndWithoutFavicon.NSAppearanceNameDarkAqua.png */; };
-		842661DF2DAFBC4E001950AA /* testURLPreviewWithCustomWidth.NSAppearanceNameDarkAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C32DAFBC4E001950AA /* testURLPreviewWithCustomWidth.NSAppearanceNameDarkAqua.png */; };
-		842661E02DAFBC4E001950AA /* testURLPreviewWithoutFavicon.NSAppearanceNameDarkAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661CB2DAFBC4E001950AA /* testURLPreviewWithoutFavicon.NSAppearanceNameDarkAqua.png */; };
-		842661E12DAFBC4E001950AA /* testURLPreviewWithCustomWidth.NSAppearanceNameAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C22DAFBC4E001950AA /* testURLPreviewWithCustomWidth.NSAppearanceNameAqua.png */; };
-		842661E22DAFBC4E001950AA /* testURLPreviewWithFavicon.NSAppearanceNameDarkAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C72DAFBC4E001950AA /* testURLPreviewWithFavicon.NSAppearanceNameDarkAqua.png */; };
-		842661E32DAFBC4E001950AA /* testURLPreviewWithFavicon.NSAppearanceNameAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C62DAFBC4E001950AA /* testURLPreviewWithFavicon.NSAppearanceNameAqua.png */; };
-		842661E42DAFBC4E001950AA /* testURLPreviewWithLongURL.NSAppearanceNameAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C82DAFBC4E001950AA /* testURLPreviewWithLongURL.NSAppearanceNameAqua.png */; };
-		842661E52DAFBC4E001950AA /* testURLPreviewWithCustomColors.NSAppearanceNameDarkAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C12DAFBC4E001950AA /* testURLPreviewWithCustomColors.NSAppearanceNameDarkAqua.png */; };
-		842661E62DAFBC4E001950AA /* testURLPreviewWithLongURL.NSAppearanceNameDarkAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661C92DAFBC4E001950AA /* testURLPreviewWithLongURL.NSAppearanceNameDarkAqua.png */; };
-		842661E72DAFBC4E001950AA /* testURLPreviewWithoutFavicon.NSAppearanceNameAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 842661CA2DAFBC4E001950AA /* testURLPreviewWithoutFavicon.NSAppearanceNameAqua.png */; };
 		8434E6AC2DB01448008FFA3D /* PinnedTabsManagerProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1D36212D8B7B8C005ED60C /* PinnedTabsManagerProviderTests.swift */; };
 		8434E6AD2DB01448008FFA3D /* PinnedTabsManagerProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D1D36212D8B7B8C005ED60C /* PinnedTabsManagerProviderTests.swift */; };
 		8434E6AE2DB01476008FFA3D /* BookmarksBarViewControllerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56AC09C62C2D7DD6002D70E0 /* BookmarksBarViewControllerTests.swift */; };
@@ -2233,10 +2205,11 @@
 		84537A092C99C203008723BC /* DeallocationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6C2C9EE276081AB005B7F0A /* DeallocationTests.swift */; };
 		848648A12C76F4B20082282D /* BookmarksBarMenuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 848648A02C76F4B20082282D /* BookmarksBarMenuViewController.swift */; };
 		848648A22C76F4B20082282D /* BookmarksBarMenuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 848648A02C76F4B20082282D /* BookmarksBarMenuViewController.swift */; };
-		84A03D202DBA22D200A3685B /* testTextPreviewWithFavicon.NSAppearanceNameDarkAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 84A03D1F2DBA22D200A3685B /* testTextPreviewWithFavicon.NSAppearanceNameDarkAqua.png */; };
-		84A03D212DBA22D200A3685B /* testTextPreviewWithFavicon.NSAppearanceNameAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 84A03D1E2DBA22D200A3685B /* testTextPreviewWithFavicon.NSAppearanceNameAqua.png */; };
-		84A03D222DBA22D200A3685B /* testTextPreviewWithFavicon.NSAppearanceNameDarkAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 84A03D1F2DBA22D200A3685B /* testTextPreviewWithFavicon.NSAppearanceNameDarkAqua.png */; };
-		84A03D232DBA22D200A3685B /* testTextPreviewWithFavicon.NSAppearanceNameAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 84A03D1E2DBA22D200A3685B /* testTextPreviewWithFavicon.NSAppearanceNameAqua.png */; };
+		84A03D252DBA299C00A3685B /* SnapshotTestingExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A03D242DBA299700A3685B /* SnapshotTestingExtension.swift */; };
+		84A03D262DBA299C00A3685B /* SnapshotTestingExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A03D242DBA299700A3685B /* SnapshotTestingExtension.swift */; };
+		84A03D272DBA299C00A3685B /* SnapshotTestingExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A03D242DBA299700A3685B /* SnapshotTestingExtension.swift */; };
+		84A03D282DBA299C00A3685B /* SnapshotTestingExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A03D242DBA299700A3685B /* SnapshotTestingExtension.swift */; };
+		84A03D292DBA299C00A3685B /* SnapshotTestingExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A03D242DBA299700A3685B /* SnapshotTestingExtension.swift */; };
 		84A37DDE2DAFB635009E0A68 /* URLDragPreviewProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A37DDD2DAFB635009E0A68 /* URLDragPreviewProvider.swift */; };
 		84A37DDF2DAFB635009E0A68 /* URLDragPreviewProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A37DDD2DAFB635009E0A68 /* URLDragPreviewProvider.swift */; };
 		84A37DED2DAFB68A009E0A68 /* URLDragPreviewProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A37DEC2DAFB68A009E0A68 /* URLDragPreviewProviderTests.swift */; };
@@ -4595,20 +4568,6 @@
 		841BE93A2C6F1CB200E9C2B5 /* MenuItemNode.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MenuItemNode.swift; sourceTree = "<group>"; };
 		841BE93D2C6F235F00E9C2B5 /* BookmarkDragDropManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = BookmarkDragDropManager.swift; sourceTree = "<group>"; };
 		8426108C2C9811EC0070D5F9 /* KeyEquivalentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyEquivalentView.swift; sourceTree = "<group>"; };
-		842661BE2DAFBC4E001950AA /* testTextPreviewWithTextOnly.NSAppearanceNameAqua.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = testTextPreviewWithTextOnly.NSAppearanceNameAqua.png; sourceTree = "<group>"; };
-		842661BF2DAFBC4E001950AA /* testTextPreviewWithTextOnly.NSAppearanceNameDarkAqua.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = testTextPreviewWithTextOnly.NSAppearanceNameDarkAqua.png; sourceTree = "<group>"; };
-		842661C02DAFBC4E001950AA /* testURLPreviewWithCustomColors.NSAppearanceNameAqua.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = testURLPreviewWithCustomColors.NSAppearanceNameAqua.png; sourceTree = "<group>"; };
-		842661C12DAFBC4E001950AA /* testURLPreviewWithCustomColors.NSAppearanceNameDarkAqua.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = testURLPreviewWithCustomColors.NSAppearanceNameDarkAqua.png; sourceTree = "<group>"; };
-		842661C22DAFBC4E001950AA /* testURLPreviewWithCustomWidth.NSAppearanceNameAqua.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = testURLPreviewWithCustomWidth.NSAppearanceNameAqua.png; sourceTree = "<group>"; };
-		842661C32DAFBC4E001950AA /* testURLPreviewWithCustomWidth.NSAppearanceNameDarkAqua.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = testURLPreviewWithCustomWidth.NSAppearanceNameDarkAqua.png; sourceTree = "<group>"; };
-		842661C42DAFBC4E001950AA /* testURLPreviewWithCustomWidthAndWithoutFavicon.NSAppearanceNameAqua.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = testURLPreviewWithCustomWidthAndWithoutFavicon.NSAppearanceNameAqua.png; sourceTree = "<group>"; };
-		842661C52DAFBC4E001950AA /* testURLPreviewWithCustomWidthAndWithoutFavicon.NSAppearanceNameDarkAqua.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = testURLPreviewWithCustomWidthAndWithoutFavicon.NSAppearanceNameDarkAqua.png; sourceTree = "<group>"; };
-		842661C62DAFBC4E001950AA /* testURLPreviewWithFavicon.NSAppearanceNameAqua.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = testURLPreviewWithFavicon.NSAppearanceNameAqua.png; sourceTree = "<group>"; };
-		842661C72DAFBC4E001950AA /* testURLPreviewWithFavicon.NSAppearanceNameDarkAqua.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = testURLPreviewWithFavicon.NSAppearanceNameDarkAqua.png; sourceTree = "<group>"; };
-		842661C82DAFBC4E001950AA /* testURLPreviewWithLongURL.NSAppearanceNameAqua.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = testURLPreviewWithLongURL.NSAppearanceNameAqua.png; sourceTree = "<group>"; };
-		842661C92DAFBC4E001950AA /* testURLPreviewWithLongURL.NSAppearanceNameDarkAqua.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = testURLPreviewWithLongURL.NSAppearanceNameDarkAqua.png; sourceTree = "<group>"; };
-		842661CA2DAFBC4E001950AA /* testURLPreviewWithoutFavicon.NSAppearanceNameAqua.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = testURLPreviewWithoutFavicon.NSAppearanceNameAqua.png; sourceTree = "<group>"; };
-		842661CB2DAFBC4E001950AA /* testURLPreviewWithoutFavicon.NSAppearanceNameDarkAqua.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = testURLPreviewWithoutFavicon.NSAppearanceNameDarkAqua.png; sourceTree = "<group>"; };
 		8434E6B62DB014F0008FFA3D /* BrowserTabViewControllerOnboardingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrowserTabViewControllerOnboardingTests.swift; sourceTree = "<group>"; };
 		8434E6C22DB0175C008FFA3D /* AppearancePreferencesPersistorMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppearancePreferencesPersistorMock.swift; sourceTree = "<group>"; };
 		843965112C6F2FFE004C8899 /* NSDragOperationExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NSDragOperationExtension.swift; sourceTree = "<group>"; };
@@ -4618,8 +4577,7 @@
 		844D7DA32C9443E500BE61D4 /* NSPrintInfoExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSPrintInfoExtension.swift; sourceTree = "<group>"; };
 		84537A022C998C24008723BC /* FireWindowSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireWindowSession.swift; sourceTree = "<group>"; };
 		848648A02C76F4B20082282D /* BookmarksBarMenuViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksBarMenuViewController.swift; sourceTree = "<group>"; };
-		84A03D1E2DBA22D200A3685B /* testTextPreviewWithFavicon.NSAppearanceNameAqua.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = testTextPreviewWithFavicon.NSAppearanceNameAqua.png; sourceTree = "<group>"; };
-		84A03D1F2DBA22D200A3685B /* testTextPreviewWithFavicon.NSAppearanceNameDarkAqua.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = testTextPreviewWithFavicon.NSAppearanceNameDarkAqua.png; sourceTree = "<group>"; };
+		84A03D242DBA299700A3685B /* SnapshotTestingExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SnapshotTestingExtension.swift; sourceTree = "<group>"; };
 		84A37DDD2DAFB635009E0A68 /* URLDragPreviewProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLDragPreviewProvider.swift; sourceTree = "<group>"; };
 		84A37DEC2DAFB68A009E0A68 /* URLDragPreviewProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLDragPreviewProviderTests.swift; sourceTree = "<group>"; };
 		84A72AA52DB276A20092A4B4 /* LinkOpenBehavior.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkOpenBehavior.swift; sourceTree = "<group>"; };
@@ -7946,41 +7904,9 @@
 		84A37DE02DAFB645009E0A68 /* URLDragPreviewProvider */ = {
 			isa = PBXGroup;
 			children = (
-				84A37DEB2DAFB68A009E0A68 /* __Snapshots__ */,
 				84A37DEC2DAFB68A009E0A68 /* URLDragPreviewProviderTests.swift */,
 			);
 			path = URLDragPreviewProvider;
-			sourceTree = "<group>";
-		};
-		84A37DEA2DAFB68A009E0A68 /* URLDragPreviewProviderTests */ = {
-			isa = PBXGroup;
-			children = (
-				84A03D1E2DBA22D200A3685B /* testTextPreviewWithFavicon.NSAppearanceNameAqua.png */,
-				84A03D1F2DBA22D200A3685B /* testTextPreviewWithFavicon.NSAppearanceNameDarkAqua.png */,
-				842661BE2DAFBC4E001950AA /* testTextPreviewWithTextOnly.NSAppearanceNameAqua.png */,
-				842661BF2DAFBC4E001950AA /* testTextPreviewWithTextOnly.NSAppearanceNameDarkAqua.png */,
-				842661C02DAFBC4E001950AA /* testURLPreviewWithCustomColors.NSAppearanceNameAqua.png */,
-				842661C12DAFBC4E001950AA /* testURLPreviewWithCustomColors.NSAppearanceNameDarkAqua.png */,
-				842661C22DAFBC4E001950AA /* testURLPreviewWithCustomWidth.NSAppearanceNameAqua.png */,
-				842661C32DAFBC4E001950AA /* testURLPreviewWithCustomWidth.NSAppearanceNameDarkAqua.png */,
-				842661C42DAFBC4E001950AA /* testURLPreviewWithCustomWidthAndWithoutFavicon.NSAppearanceNameAqua.png */,
-				842661C52DAFBC4E001950AA /* testURLPreviewWithCustomWidthAndWithoutFavicon.NSAppearanceNameDarkAqua.png */,
-				842661C62DAFBC4E001950AA /* testURLPreviewWithFavicon.NSAppearanceNameAqua.png */,
-				842661C72DAFBC4E001950AA /* testURLPreviewWithFavicon.NSAppearanceNameDarkAqua.png */,
-				842661C82DAFBC4E001950AA /* testURLPreviewWithLongURL.NSAppearanceNameAqua.png */,
-				842661C92DAFBC4E001950AA /* testURLPreviewWithLongURL.NSAppearanceNameDarkAqua.png */,
-				842661CA2DAFBC4E001950AA /* testURLPreviewWithoutFavicon.NSAppearanceNameAqua.png */,
-				842661CB2DAFBC4E001950AA /* testURLPreviewWithoutFavicon.NSAppearanceNameDarkAqua.png */,
-			);
-			path = URLDragPreviewProviderTests;
-			sourceTree = "<group>";
-		};
-		84A37DEB2DAFB68A009E0A68 /* __Snapshots__ */ = {
-			isa = PBXGroup;
-			children = (
-				84A37DEA2DAFB68A009E0A68 /* URLDragPreviewProviderTests */,
-			);
-			path = __Snapshots__;
 			sourceTree = "<group>";
 		};
 		84A72AA62DB276A20092A4B4 /* Model */ = {
@@ -8302,28 +8228,29 @@
 		85F69B3A25EDE7F800978E59 /* Common */ = {
 			isa = PBXGroup;
 			children = (
-				EEEFA33F2D142AA6006A3F8A /* CombineTestHelpers.swift */,
-				4BBF09222830812900EE1418 /* FileSystemDSL.swift */,
-				4BBF0924283083EC00EE1418 /* FileSystemDSLTests.swift */,
-				B60C6F8329B1BAD3007BFAA8 /* FileManagerTempDirReplacement.swift */,
-				4B9292C42667104B00AD2C21 /* CoreDataTestUtilities.swift */,
-				9F5E48162D5D867600D2396D /* NSPasteboardExtensionTests.swift */,
 				B683097A274DCFE3004B46BB /* Database */,
 				AAEC74B92642E66600C2EFBC /* Extensions */,
 				4BA1A6CE258BF58C00F6F690 /* FileSystem */,
 				9F0660752BECC7E700B8EEF1 /* Pixel */,
 				B6AE74322609AFBB005B9B1A /* Progress */,
-				B6F56566299A414300A04298 /* WKWebViewMockingExtension.swift */,
+				EEEFA33F2D142AA6006A3F8A /* CombineTestHelpers.swift */,
+				4B9292C42667104B00AD2C21 /* CoreDataTestUtilities.swift */,
 				B603972B29BEDF2100902A34 /* ExpectedNavigationExtension.swift */,
-				B603970F29B9D67E00902A34 /* PublishersExtensions.swift */,
+				B60C6F8329B1BAD3007BFAA8 /* FileManagerTempDirReplacement.swift */,
+				4BBF09222830812900EE1418 /* FileSystemDSL.swift */,
+				4BBF0924283083EC00EE1418 /* FileSystemDSLTests.swift */,
 				B630E7FD29C887ED00363609 /* NSErrorAdditionalInfo.swift */,
-				B693956626F352940015B914 /* TestsBridging.h */,
+				9F5E48162D5D867600D2396D /* NSPasteboardExtensionTests.swift */,
+				B603970F29B9D67E00902A34 /* PublishersExtensions.swift */,
+				84A03D242DBA299700A3685B /* SnapshotTestingExtension.swift */,
 				B6DA06E02913AEDB00225DE2 /* TestNavigationDelegate.swift */,
 				B60C6F8029B1B4AD007BFAA8 /* TestRunHelper.swift */,
 				B60C6F7D29B1B41D007BFAA8 /* TestRunHelperInitializer.m */,
+				B693956626F352940015B914 /* TestsBridging.h */,
 				CD3301282C887B1C009AA127 /* URLTokenValidatorTests.swift */,
 				84DC71582C1C1E8A00033B8C /* UserDefaultsWrapperTests.swift */,
 				B6A60E4F2B73C3B800FD4968 /* WKURLSchemeTask+Private.h */,
+				B6F56566299A414300A04298 /* WKWebViewMockingExtension.swift */,
 			);
 			path = Common;
 			sourceTree = "<group>";
@@ -11477,8 +11404,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				84A03D222DBA22D200A3685B /* testTextPreviewWithFavicon.NSAppearanceNameDarkAqua.png in Resources */,
-				84A03D232DBA22D200A3685B /* testTextPreviewWithFavicon.NSAppearanceNameAqua.png in Resources */,
 				B65CD8D62B316FCA00A595BB /* __Snapshots__ in Resources */,
 				3706FE8B293F661700E42796 /* empty in Resources */,
 				376E2D282942843D001CD31B /* privacy-reference-tests in Resources */,
@@ -11487,20 +11412,6 @@
 				3706FE8D293F661700E42796 /* DataImportResources in Resources */,
 				3706FE8E293F661700E42796 /* atb.json in Resources */,
 				9FBD845E2BB3B80300220859 /* Origin.txt in Resources */,
-				842661CC2DAFBC4E001950AA /* testTextPreviewWithTextOnly.NSAppearanceNameDarkAqua.png in Resources */,
-				842661CD2DAFBC4E001950AA /* testURLPreviewWithCustomWidthAndWithoutFavicon.NSAppearanceNameAqua.png in Resources */,
-				842661CE2DAFBC4E001950AA /* testTextPreviewWithTextOnly.NSAppearanceNameAqua.png in Resources */,
-				842661CF2DAFBC4E001950AA /* testURLPreviewWithCustomColors.NSAppearanceNameAqua.png in Resources */,
-				842661D02DAFBC4E001950AA /* testURLPreviewWithCustomWidthAndWithoutFavicon.NSAppearanceNameDarkAqua.png in Resources */,
-				842661D12DAFBC4E001950AA /* testURLPreviewWithCustomWidth.NSAppearanceNameDarkAqua.png in Resources */,
-				842661D22DAFBC4E001950AA /* testURLPreviewWithoutFavicon.NSAppearanceNameDarkAqua.png in Resources */,
-				842661D32DAFBC4E001950AA /* testURLPreviewWithCustomWidth.NSAppearanceNameAqua.png in Resources */,
-				842661D42DAFBC4E001950AA /* testURLPreviewWithFavicon.NSAppearanceNameDarkAqua.png in Resources */,
-				842661D52DAFBC4E001950AA /* testURLPreviewWithFavicon.NSAppearanceNameAqua.png in Resources */,
-				842661D62DAFBC4E001950AA /* testURLPreviewWithLongURL.NSAppearanceNameAqua.png in Resources */,
-				842661D72DAFBC4E001950AA /* testURLPreviewWithCustomColors.NSAppearanceNameDarkAqua.png in Resources */,
-				842661D82DAFBC4E001950AA /* testURLPreviewWithLongURL.NSAppearanceNameDarkAqua.png in Resources */,
-				842661D92DAFBC4E001950AA /* testURLPreviewWithoutFavicon.NSAppearanceNameAqua.png in Resources */,
 				3706FE8F293F661700E42796 /* DuckDuckGo-ExampleCrash.ips in Resources */,
 				3706FE90293F661700E42796 /* DuckDuckGo-Symbol.jpg in Resources */,
 				3706FE91293F661700E42796 /* invalid.json in Resources */,
@@ -11714,8 +11625,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				84A03D202DBA22D200A3685B /* testTextPreviewWithFavicon.NSAppearanceNameDarkAqua.png in Resources */,
-				84A03D212DBA22D200A3685B /* testTextPreviewWithFavicon.NSAppearanceNameAqua.png in Resources */,
 				9FBD845D2BB3B80300220859 /* Origin.txt in Resources */,
 				B69B50532726CD8100758A2B /* empty in Resources */,
 				31E163C0293A581900963C10 /* privacy-reference-tests in Resources */,
@@ -11724,20 +11633,6 @@
 				B65CD8D52B316FCA00A595BB /* __Snapshots__ in Resources */,
 				B69B50522726CD8100758A2B /* atb.json in Resources */,
 				4B70C00127B0793D000386ED /* DuckDuckGo-ExampleCrash.ips in Resources */,
-				842661DA2DAFBC4E001950AA /* testTextPreviewWithTextOnly.NSAppearanceNameDarkAqua.png in Resources */,
-				842661DB2DAFBC4E001950AA /* testURLPreviewWithCustomWidthAndWithoutFavicon.NSAppearanceNameAqua.png in Resources */,
-				842661DC2DAFBC4E001950AA /* testTextPreviewWithTextOnly.NSAppearanceNameAqua.png in Resources */,
-				842661DD2DAFBC4E001950AA /* testURLPreviewWithCustomColors.NSAppearanceNameAqua.png in Resources */,
-				842661DE2DAFBC4E001950AA /* testURLPreviewWithCustomWidthAndWithoutFavicon.NSAppearanceNameDarkAqua.png in Resources */,
-				842661DF2DAFBC4E001950AA /* testURLPreviewWithCustomWidth.NSAppearanceNameDarkAqua.png in Resources */,
-				842661E02DAFBC4E001950AA /* testURLPreviewWithoutFavicon.NSAppearanceNameDarkAqua.png in Resources */,
-				842661E12DAFBC4E001950AA /* testURLPreviewWithCustomWidth.NSAppearanceNameAqua.png in Resources */,
-				842661E22DAFBC4E001950AA /* testURLPreviewWithFavicon.NSAppearanceNameDarkAqua.png in Resources */,
-				842661E32DAFBC4E001950AA /* testURLPreviewWithFavicon.NSAppearanceNameAqua.png in Resources */,
-				842661E42DAFBC4E001950AA /* testURLPreviewWithLongURL.NSAppearanceNameAqua.png in Resources */,
-				842661E52DAFBC4E001950AA /* testURLPreviewWithCustomColors.NSAppearanceNameDarkAqua.png in Resources */,
-				842661E62DAFBC4E001950AA /* testURLPreviewWithLongURL.NSAppearanceNameDarkAqua.png in Resources */,
-				842661E72DAFBC4E001950AA /* testURLPreviewWithoutFavicon.NSAppearanceNameAqua.png in Resources */,
 				B67C6C422654BF49006C872E /* DuckDuckGo-Symbol.jpg in Resources */,
 				B69B50552726CD8100758A2B /* invalid.json in Resources */,
 				9FBD84612BB3BC6400220859 /* Origin-empty.txt in Resources */,
@@ -13363,6 +13258,7 @@
 				3706FE63293F661700E42796 /* RecentlyClosedCoordinatorMock.swift in Sources */,
 				1D638D622C44F2BA00530DD5 /* ApplicationUpdateDetectorTests.swift in Sources */,
 				1D6D04202D953E20005BC23F /* FullscreenControllerTests.swift in Sources */,
+				84A03D252DBA299C00A3685B /* SnapshotTestingExtension.swift in Sources */,
 				373E477C2D809EF5006F3FEC /* AddBookmarkPopoverViewModelTests.swift in Sources */,
 				56A054142C1C3796007D8FAB /* CapturingDockCustomizer.swift in Sources */,
 				3730F20F2D2E725D00239F96 /* NewTabPageCustomizationProviderTests.swift in Sources */,
@@ -13489,6 +13385,7 @@
 				84524C152D79E9BF00F723D6 /* SavedStateMock.swift in Sources */,
 				B603973929BF0EBE00902A34 /* PrivacyDashboardIntegrationTests.swift in Sources */,
 				B644B43E29D5682B003FA9AB /* SearchNonexistentDomainTests.swift in Sources */,
+				84A03D272DBA299C00A3685B /* SnapshotTestingExtension.swift in Sources */,
 				B6EEDD7E2B8C69E900637EBC /* TabContentTests.swift in Sources */,
 				3706FEA5293F662100E42796 /* CoreDataEncryptionTesting.xcdatamodeld in Sources */,
 				B603973D29BF1D7D00902A34 /* AutoconsentIntegrationTests.swift in Sources */,
@@ -13560,6 +13457,7 @@
 				84524C142D79E9BF00F723D6 /* SavedStateMock.swift in Sources */,
 				B62A234029C41D4400D22475 /* HistoryIntegrationTests.swift in Sources */,
 				B603973829BF0EBE00902A34 /* PrivacyDashboardIntegrationTests.swift in Sources */,
+				84A03D282DBA299C00A3685B /* SnapshotTestingExtension.swift in Sources */,
 				B6EEDD7D2B8C69E900637EBC /* TabContentTests.swift in Sources */,
 				B644B43D29D56829003FA9AB /* SearchNonexistentDomainTests.swift in Sources */,
 				B603973C29BF1D7D00902A34 /* AutoconsentIntegrationTests.swift in Sources */,
@@ -13851,6 +13749,7 @@
 				9D0668C92CD4F04600D6C9EA /* FireproofDomainsStoreMock.swift in Sources */,
 				EEEFA3402D142AB1006A3F8A /* CombineTestHelpers.swift in Sources */,
 				9D84E44A2CD4EE7C0046CD8B /* TestRunHelperInitializer.m in Sources */,
+				84A03D262DBA299C00A3685B /* SnapshotTestingExtension.swift in Sources */,
 				9D0668CC2CD4F06900D6C9EA /* FindInView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -15077,6 +14976,7 @@
 				B6106BAF26A7C6180013B453 /* PermissionStoreMock.swift in Sources */,
 				4B98D27A28D95F1A003C2B6F /* ChromiumFaviconsReaderTests.swift in Sources */,
 				9F0660732BECC71200B8EEF1 /* SubscriptionAttributionPixelHandlerTests.swift in Sources */,
+				84A03D292DBA299C00A3685B /* SnapshotTestingExtension.swift in Sources */,
 				1D9EB3172D43C2CF004B7270 /* WebExtensionPathsCacheMock.swift in Sources */,
 				986189E62A7CFB3E001B4519 /* LocalBookmarkStoreSavingTests.swift in Sources */,
 				AA652CD325DDA6E9009059CC /* LocalBookmarkManagerTests.swift in Sources */,

@@ -36,9 +36,9 @@ final class TabCrashIndicatorModel: ObservableObject {
         self.maxPresentationDuration = maxPresentationDuration
     }
 
-    func setUp(with tab: Tab) {
+    func setUp(with crashPublisher: AnyPublisher<TabCrashType, Never>) {
         /// We're only showing the icon on "single" crashes (and we're hiding it on crash loops).
-        let showIndicatorOnSingleCrash = tab.crashPublisher
+        let showIndicatorOnSingleCrash = crashPublisher
             .map { $0 == .single }
             .share()
 

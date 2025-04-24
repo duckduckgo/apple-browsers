@@ -323,7 +323,7 @@ protocol NewWindowPolicyDecisionMaker {
             }
 
         addDeallocationChecks(for: webView)
-        crashIndicatorModel.setUp(with: self)
+        crashIndicatorModel.setUp(with: crashPublisher.eraseToAnyPublisher())
     }
 
 #if DEBUG

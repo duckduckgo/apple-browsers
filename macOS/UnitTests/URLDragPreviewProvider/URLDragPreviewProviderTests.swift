@@ -24,17 +24,30 @@ import XCTest
 
 final class URLDragPreviewProviderTests: XCTestCase {
 
-    override class func tearDown() {
+    private var snapshotWindow: SnapshotWindow!
+
+    override func tearDown() {
+        snapshotWindow = nil
         NSApp.appearance = nil
     }
+
+    func snapshot(from provider: URLDragPreviewProvider) -> NSView {
+        let preview = provider.createPreview()
+        // render with scale factor 1.0
+        snapshotWindow = SnapshotWindow(contentRect: preview.bounds, styleMask: [], backing: .buffered, defer: false)
+        snapshotWindow.contentView = preview
+        return preview
+    }
+
+    // MARK: - Tests
 
     func testURLPreviewWithFavicon() {
         for appearanceName: NSAppearance.Name in [.aqua, .darkAqua] {
             NSApp.appearance = .init(named: appearanceName)!
             let provider = URLDragPreviewProvider(url: URL(string: "https://duckduckgo.com")!, favicon: .homeFavicon)
-            let preview = provider.createPreview()
+            let preview = snapshot(from: provider)
 
-            assertSnapshot(of: preview, as: .cleanImage(), named: appearanceName.rawValue)
+            assertSnapshot(of: preview, as: .image(), named: appearanceName.rawValue)
         }
     }
 
@@ -42,9 +55,9 @@ final class URLDragPreviewProviderTests: XCTestCase {
         for appearanceName: NSAppearance.Name in [.aqua, .darkAqua] {
             NSApp.appearance = .init(named: appearanceName)!
             let provider = URLDragPreviewProvider(url: URL(string: "https://duckduckgo.com")!, favicon: nil)
-            let preview = provider.createPreview()
+            let preview = snapshot(from: provider)
 
-            assertSnapshot(of: preview, as: .cleanImage(), named: appearanceName.rawValue)
+            assertSnapshot(of: preview, as: .image(), named: appearanceName.rawValue)
         }
     }
 
@@ -57,9 +70,9 @@ final class URLDragPreviewProviderTests: XCTestCase {
                 backgroundColor: .button,
                 textColor: .textColor
             )
-            let preview = provider.createPreview()
+            let preview = snapshot(from: provider)
 
-            assertSnapshot(of: preview, as: .cleanImage(), named: appearanceName.rawValue)
+            assertSnapshot(of: preview, as: .image(), named: appearanceName.rawValue)
         }
     }
 
@@ -71,9 +84,9 @@ final class URLDragPreviewProviderTests: XCTestCase {
                 favicon: .homeFavicon,
                 width: 300
             )
-            let preview = provider.createPreview()
+            let preview = snapshot(from: provider)
 
-            assertSnapshot(of: preview, as: .cleanImage(), named: appearanceName.rawValue)
+            assertSnapshot(of: preview, as: .image(), named: appearanceName.rawValue)
         }
     }
 
@@ -81,9 +94,9 @@ final class URLDragPreviewProviderTests: XCTestCase {
         for appearanceName: NSAppearance.Name in [.aqua, .darkAqua] {
             NSApp.appearance = .init(named: appearanceName)!
             let provider = URLDragPreviewProvider(url: URL(string: "https://duckduckgo.com")!, favicon: nil, width: 300)
-            let preview = provider.createPreview()
+            let preview = snapshot(from: provider)
 
-            assertSnapshot(of: preview, as: .cleanImage(), named: appearanceName.rawValue)
+            assertSnapshot(of: preview, as: .image(), named: appearanceName.rawValue)
         }
     }
 
@@ -94,9 +107,9 @@ final class URLDragPreviewProviderTests: XCTestCase {
                 url: URL(string: "https://very-long-domain-name-that-should-be-truncated.com/path/to/some/very/long/resource")!,
                 favicon: .homeFavicon
             )
-            let preview = provider.createPreview()
+            let preview = snapshot(from: provider)
 
-            assertSnapshot(of: preview, as: .cleanImage(), named: appearanceName.rawValue)
+            assertSnapshot(of: preview, as: .image(), named: appearanceName.rawValue)
         }
     }
 
@@ -107,9 +120,9 @@ final class URLDragPreviewProviderTests: XCTestCase {
                 text: "Custom Text Only Preview",
                 favicon: nil
             )
-            let preview = provider.createPreview()
+            let preview = snapshot(from: provider)
 
-            assertSnapshot(of: preview, as: .cleanImage(), named: appearanceName.rawValue)
+            assertSnapshot(of: preview, as: .image(), named: appearanceName.rawValue)
         }
     }
 
@@ -117,10 +130,16 @@ final class URLDragPreviewProviderTests: XCTestCase {
         for appearanceName: NSAppearance.Name in [.aqua, .darkAqua] {
             NSApp.appearance = .init(named: appearanceName)!
             let provider = URLDragPreviewProvider(text: "Custom Text Only Preview", favicon: .homeFavicon)
-            let preview = provider.createPreview()
+            let preview = snapshot(from: provider)
 
-            assertSnapshot(of: preview, as: .cleanImage(), named: appearanceName.rawValue)
+            assertSnapshot(of: preview, as: .image(), named: appearanceName.rawValue)
         }
     }
 
+}
+
+private class SnapshotWindow: NSWindow {
+    override var backingScaleFactor: CGFloat {
+        return 1.0
+    }
 }

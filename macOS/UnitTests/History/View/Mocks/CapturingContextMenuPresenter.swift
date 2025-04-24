@@ -19,6 +19,8 @@
 import HistoryView
 
 final class CapturingContextMenuPresenter: HistoryView.ContextMenuPresenting {
+    var window: NSWindow?
+
     func showContextMenu(_ menu: NSMenu) {
         showContextMenuCalls.append(menu)
     }

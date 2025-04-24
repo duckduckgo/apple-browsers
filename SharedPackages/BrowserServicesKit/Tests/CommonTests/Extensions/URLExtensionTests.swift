@@ -68,8 +68,8 @@ final class URLExtensionTests {
         }
 
         let url = rawValue.decodedURL
-        #expect(url != nil, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 0))
-        #expect(url!.isValid, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 0))
+        #expect(url != nil, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
+        #expect(url!.isValid, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
     }
 
     static let non_valid_urls_args = [
@@ -150,8 +150,8 @@ final class URLExtensionTests {
         }
 
         let credential = url.decodedURL!.basicAuthCredential
-        #expect(credential?.user == user, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 0))
-        #expect(credential?.password == password, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 0))
+        #expect(credential?.user == user, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
+        #expect(credential?.password == password, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
     }
 
     static let urlRemovingBasicAuthCredential_args: [(String, String, UInt)] = [
@@ -180,7 +180,7 @@ final class URLExtensionTests {
         }
 
         let filtered = url.decodedURL!.removingBasicAuthCredential()
-        #expect(filtered.absoluteString == removingCredential, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 0))
+        #expect(filtered.absoluteString == removingCredential, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
     }
 
     @Test("URL.isRoot correctly identifies root URLs")
@@ -226,7 +226,7 @@ final class URLExtensionTests {
     @Test("URL.appendingParameter correctly encodes RFC3986 reserved characters", arguments: rfc3986QueryReservedChars_args)
     func addParameterIsCalled_encodesRFC3986QueryReservedCharactersInTheParameter(name: String, value: String, expected: String, line: UInt) {
         let url = URL(string: "https://duck.com/")!
-        #expect(url.appendingParameter(name: name, value: value).absoluteString == expected, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 0))
+        #expect(url.appendingParameter(name: name, value: value).absoluteString == expected, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
     }
 
     @Test("URL.appendingParameter allows unescaped reserved characters when specified")
@@ -303,8 +303,8 @@ final class URLExtensionTests {
         if !address.hasPrefix(expectedScheme) {
             expectedString = expectedScheme + "://" + address
         }
-        #expect(url?.scheme == expectedScheme, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 0))
-        #expect(url?.absoluteString == expectedString, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 0))
+        #expect(url?.scheme == expectedScheme, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
+        #expect(url?.absoluteString == expectedString, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
     }
 
     @Test("URL.trimmedAddressBarString escapes invalid characters in URL parameters")
@@ -356,7 +356,7 @@ final class URLExtensionTests {
 
     @Test("URL.trimmedAddressBarString correctly handles punycode URLs", arguments: punycodeUrls_args)
     func punycodeUrlIsCalledWithEncodedUrlsReturnsCorrectURL(input: String, expected: String, line: UInt) {
-        #expect(input.decodedURL?.absoluteString == expected, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 0))
+        #expect(input.decodedURL?.absoluteString == expected, sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
     }
 
     @Test("URL.getParameter returns the correct value when the parameter exists")
@@ -481,9 +481,9 @@ final class URLExtensionTests {
     @Test("URL.matches correctly compares URLs", arguments: matches_comparator_args)
     func matchesComparator(url1: String, url2: String, expected: Bool, line: UInt) {
         if expected {
-            #expect(url1.url!.matches(url2.url!), sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 0))
+            #expect(url1.url!.matches(url2.url!), sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
         } else {
-            #expect(!url1.url!.matches(url2.url!), sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 0))
+            #expect(!url1.url!.matches(url2.url!), sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
         }
     }
 
@@ -501,9 +501,9 @@ final class URLExtensionTests {
     func matchesProtectionSpace(url: String, host: String, port: Int, scheme: String, expected: Bool, line: UInt) {
         let protectionSpace = URLProtectionSpace(host: host, port: port, protocol: scheme, realm: "realm", authenticationMethod: "basic")
         if expected {
-            #expect(url.url!.matches(protectionSpace), sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 0))
+            #expect(url.url!.matches(protectionSpace), sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
         } else {
-            #expect(!url.url!.matches(protectionSpace), sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 0))
+            #expect(!url.url!.matches(protectionSpace), sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
         }
     }
 

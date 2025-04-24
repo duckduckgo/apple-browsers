@@ -187,10 +187,10 @@ final class TabCollectionTests: XCTestCase {
 
 }
 
-extension Tab {
+private extension Tab {
     @MainActor
     convenience override init() {
-        self.init(content: .newtab)
+        self.init(content: .none)
     }
 
     @MainActor

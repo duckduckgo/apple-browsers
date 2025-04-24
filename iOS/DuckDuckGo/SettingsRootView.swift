@@ -20,6 +20,7 @@
 import SwiftUI
 import UIKit
 import DesignResourcesKit
+import Subscription
 
 struct SettingsRootView: View {
 
@@ -32,6 +33,10 @@ struct SettingsRootView: View {
     @State var deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection?
     @State var isShowingSubscribeFlow = false
 
+    private var settingPrivacyProRedirectURLComponents: URLComponents? {
+        SubscriptionURL.purchaseURLComponentsWithOrigin(SubscriptionFunnelOrigin.appSettings.rawValue)
+    }
+
     var body: some View {
 
         // Hidden navigationLinks for programatic navigation
@@ -42,7 +47,7 @@ struct SettingsRootView: View {
             }
         }
 
-        NavigationLink(destination: navigationDestinationView(for: .subscriptionFlow()),
+        NavigationLink(destination: navigationDestinationView(for: .subscriptionFlow(redirectURLComponents: settingPrivacyProRedirectURLComponents)),
                        isActive: $isShowingSubscribeFlow) { EmptyView() }
 
         List {
@@ -134,6 +139,7 @@ struct SettingsRootView: View {
                                                                subscriptionManager: AppDependencyProvider.shared.subscriptionManager!,
                                                                subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
                                                                internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+                                                               emailFlow: .restoreFlow,
                                                                onDisappear: {})
             case .duckPlayer:
                 SettingsDuckPlayerView().environmentObject(viewModel)
@@ -163,6 +169,7 @@ struct SettingsRootView: View {
                                                                  subscriptionManager: AppDependencyProvider.shared.subscriptionManagerV2!,
                                                                  subscriptionFeatureAvailability: viewModel.subscriptionFeatureAvailability,
                                                                  internalUserDecider: AppDependencyProvider.shared.internalUserDecider,
+                                                                 emailFlow: .restoreFlow,
                                                                  onDisappear: {})
             case .duckPlayer:
                 SettingsDuckPlayerView().environmentObject(viewModel)

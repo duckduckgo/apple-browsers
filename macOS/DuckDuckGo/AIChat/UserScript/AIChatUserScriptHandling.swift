@@ -17,32 +17,40 @@
 //
 
 import UserScript
+import AIChat
 
 protocol AIChatUserScriptHandling {
-    func handleGetUserValues(params: Any, message: UserScriptMessage) -> Encodable?
-    func openSettings(params: Any, message: UserScriptMessage) async -> Encodable?
+    func openAIChatSettings(params: Any, message: UserScriptMessage) async -> Encodable?
+    func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable?
+    func closeAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
+    func getAIChatNativePrompt(params: Any, message: UserScriptMessage) async -> Encodable?
 }
 
 struct AIChatUserScriptHandler: AIChatUserScriptHandling {
-
-    public struct UserValues: Codable {
-        let isToolbarShortcutEnabled: Bool
-        let platform: String
-    }
-
+    private let messageHandling: AIChatMessageHandling
     private let storage: AIChatPreferencesStorage
 
-    init(storage: AIChatPreferencesStorage) {
+    init(storage: AIChatPreferencesStorage,
+         messageHandling: AIChatMessageHandling = AIChatMessageHandler()) {
         self.storage = storage
+        self.messageHandling = messageHandling
     }
 
-    @MainActor public func openSettings(params: Any, message: UserScriptMessage) -> Encodable? {
+    @MainActor public func openAIChatSettings(params: Any, message: UserScriptMessage) async -> Encodable? {
         WindowControllersManager.shared.showTab(with: .settings(pane: .aiChat))
         return nil
     }
 
-    public func handleGetUserValues(params: Any, message: UserScriptMessage) -> Encodable? {
-        UserValues(isToolbarShortcutEnabled: storage.shouldDisplayToolbarShortcut,
-                   platform: "macOS")
+    public func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) async -> Encodable? {
+        messageHandling.getDataForMessageType(.nativeConfigValues)
+    }
+
+    func closeAIChat(params: Any, message: UserScriptMessage) async -> Encodable? {
+        await WindowControllersManager.shared.mainWindowController?.mainViewController.closeTab(nil)
+        return nil
+    }
+
+    func getAIChatNativePrompt(params: Any, message: UserScriptMessage) async -> Encodable? {
+        messageHandling.getDataForMessageType(.nativePrompt)
     }
 }

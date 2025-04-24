@@ -18,6 +18,7 @@
 
 import AppKit
 import Combine
+import Common
 
 public extension NSEvent {
 
@@ -32,8 +33,28 @@ public extension NSEvent {
         public static let global = EventMonitorType(rawValue: 1 << 1)
     }
 
+    enum Button: Int {
+        case left = 0
+        case right = 1
+        case middle = 2
+        case back = 3
+        case forward = 4
+    }
+
+    var button: Button? {
+        switch type {
+        case .leftMouseDown, .leftMouseUp, .leftMouseDragged: .left
+        case .rightMouseDown, .rightMouseUp, .rightMouseDragged: .right
+        case .otherMouseDown, .otherMouseUp, .otherMouseDragged: Button(rawValue: self.buttonNumber)
+        // when middle-clicking a New Tab or History View with a real mouse, the event type is .systemDefined
+        // (see NewTabPageLinkOpener)
+        case .systemDefined: .middle
+        default: nil
+        }
+    }
+
     var deviceIndependentFlags: NSEvent.ModifierFlags {
-        modifierFlags.intersection(.deviceIndependentFlagsMask)
+        modifierFlags.deviceIndependent
     }
 
     typealias KeyEquivalent = Set<KeyEquivalentElement>
@@ -93,6 +114,46 @@ public extension NSEvent {
             .eraseToAnyPublisher()
     }
 
+#if DEBUG
+    var eventDescription: String {
+        let eventString: String = String(describing: self)
+        let typePattern = regex("type=(\\w+)")
+        let locPattern = regex("loc=\\(([-\\d,.]+)\\)")
+
+        let typeRange = NSRange(eventString.startIndex..<eventString.endIndex, in: eventString)
+        let locRange = NSRange(eventString.startIndex..<eventString.endIndex, in: eventString)
+
+        if let typeMatch = typePattern.firstMatch(in: eventString, range: typeRange),
+           let locMatch = locPattern.firstMatch(in: eventString, range: locRange),
+           let typeRange = Range(typeMatch.range(at: 1), in: eventString),
+           let locRange = Range(locMatch.range(at: 1), in: eventString) {
+            let type = String(eventString[typeRange])
+            let loc = String(eventString[locRange])
+
+            let trackingAreaDescr: String
+            if [.mouseEntered, .mouseExited].contains(self.type) {
+                trackingAreaDescr = ", trackingArea: \(self.trackingArea.map { String(format: "%p", $0) } ?? "<nil>")"
+            } else {
+                trackingAreaDescr = ""
+            }
+
+            return "Event type: \(type), location: \(loc), timestamp: \(self.timestamp)\(trackingAreaDescr)"
+        }
+
+        return self.description
+    }
+#else
+    var eventDescription: String {
+        self.description
+    }
+#endif
+
+}
+
+public extension NSEvent.ModifierFlags {
+    var deviceIndependent: NSEvent.ModifierFlags {
+        intersection(.deviceIndependentFlagsMask)
+    }
 }
 
 public enum KeyEquivalentElement: ExpressibleByStringLiteral, Hashable {

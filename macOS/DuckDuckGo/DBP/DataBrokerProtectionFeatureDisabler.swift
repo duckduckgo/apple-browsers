@@ -31,10 +31,10 @@ protocol DataBrokerProtectionFeatureDisabling {
 
 struct DataBrokerProtectionFeatureDisabler: DataBrokerProtectionFeatureDisabling {
     private let loginItemInterface: DataBrokerProtectionLoginItemInterface
-    private let dataManager: InMemoryDataCacheDelegate?
+    private let dataManager: DBPUICommunicatorDelegate?
 
     init(loginItemInterface: DataBrokerProtectionLoginItemInterface = DataBrokerProtectionManager.shared.loginItemInterface,
-         dataManager: InMemoryDataCacheDelegate? = DataBrokerProtectionManager.shared.dataManager) {
+         dataManager: DBPUICommunicatorDelegate? = DataBrokerProtectionManager.shared.dataManager) {
         self.dataManager = dataManager
         self.loginItemInterface = loginItemInterface
     }

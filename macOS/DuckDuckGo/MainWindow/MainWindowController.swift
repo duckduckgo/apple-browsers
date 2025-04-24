@@ -84,17 +84,17 @@ final class MainWindowController: NSWindowController {
         return false
 #elseif REVIEW
         if AppVersion.runType == .uiTests {
-            Application.appDelegate.onboardingStateMachine.state = .onboardingCompleted
+            Application.appDelegate.onboardingContextualDialogsManager.state = .onboardingCompleted
             return false
         } else {
             if AppVersion.runType == .uiTestsOnboarding {
-                Application.appDelegate.onboardingStateMachine.state = .onboardingCompleted
+                Application.appDelegate.onboardingContextualDialogsManager.state = .onboardingCompleted
             }
-            let onboardingIsComplete = OnboardingViewModel.isOnboardingFinished || LocalStatisticsStore().waitlistUnlocked
+            let onboardingIsComplete = OnboardingActionsManager.isOnboardingFinished || LocalStatisticsStore().waitlistUnlocked
             return !onboardingIsComplete
         }
 #else
-        let onboardingIsComplete = OnboardingViewModel.isOnboardingFinished || LocalStatisticsStore().waitlistUnlocked
+        let onboardingIsComplete = OnboardingActionsManager.isOnboardingFinished || LocalStatisticsStore().waitlistUnlocked
         return !onboardingIsComplete
 #endif
     }
@@ -199,6 +199,9 @@ final class MainWindowController: NSWindowController {
 
         tabBarViewController.view.removeFromSuperview()
         if toTitlebarView {
+            // Prevent 1px line from appearing below Tab Bar when hiding and subsequently showing it in fullscreen mode
+            // https://app.asana.com/1/137249556945/project/1201048563534612/task/1209999815083499?focus=true
+            newParentView.layer?.masksToBounds = true
             newParentView.addSubview(tabBarViewController.view)
         } else {
             newParentView.addSubview(tabBarViewController.view, positioned: .below, relativeTo: mainViewController.fireViewController.view)

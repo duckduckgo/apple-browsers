@@ -131,7 +131,7 @@ final class ExperimentContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
             return message.attributed.with(attribute: .font, value: UIFont.daxBodyBold(), in: boldRange)
         }
 
-        let viewModel = OnboardingSiteSuggestionsViewModel(title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteTitle, suggestedSitesProvider: contextualOnboardingSiteSuggestionsProvider, delegate: delegate, pixelReporter: contextualOnboardingPixelReporter)
+        let viewModel = OnboardingSiteSuggestionsViewModel(title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteTitle, suggestedSitesProvider: contextualOnboardingSiteSuggestionsProvider, delegate: delegate)
 
         // If should not show websites search after searching inform the delegate that the user dimissed the dialog, otherwise let the dialog handle it.
         let gotItAction: () -> Void = if shouldFollowUpToWebsiteSearch {
@@ -172,8 +172,7 @@ final class ExperimentContextualDaxDialogsFactory: ContextualDaxDialogsFactory {
         let viewModel = OnboardingSiteSuggestionsViewModel(
             title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteTitle,
             suggestedSitesProvider: contextualOnboardingSiteSuggestionsProvider,
-            delegate: delegate,
-            pixelReporter: contextualOnboardingPixelReporter
+            delegate: delegate
         )
 
         let onManualDismiss: () -> Void = { [weak delegate, weak self] in

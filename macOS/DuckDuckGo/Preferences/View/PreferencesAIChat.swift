@@ -19,6 +19,7 @@
 import PreferencesUI_macOS
 import SwiftUI
 import SwiftUIExtensions
+import PixelKit
 
 extension Preferences {
 
@@ -38,15 +39,40 @@ extension Preferences {
                 }
 
                 PreferencePaneSection {
-                    if model.shouldShowToolBarShortcutOption {
-                        ToggleMenuItem(UserText.aiChatShowInToolbarToggle,
-                                       isOn: $model.showShortcutInToolbar)
+                    ToggleMenuItem(UserText.aiChatShowInAddressBarToggle,
+                                   isOn: $model.showShortcutInAddressBar)
+                    .accessibilityIdentifier("Preferences.AIChat.showInAddressBarToggle")
+                    .onChange(of: model.showShortcutInAddressBar) { newValue in
+                        if newValue {
+                            PixelKit.fire(AIChatPixel.aiChatSettingsAddressBarShortcutTurnedOn,
+                                          frequency: .dailyAndCount,
+                                          includeAppVersionParameter: true)
+                        } else {
+                            PixelKit.fire(AIChatPixel.aiChatSettingsAddressBarShortcutTurnedOff,
+                                          frequency: .dailyAndCount,
+                                          includeAppVersionParameter: true)
+                        }
                     }
-                    if model.shouldShowApplicationMenuShortcutOption {
-                        ToggleMenuItem(UserText.aiChatShowInApplicationMenuToggle,
-                                       isOn: $model.showShortcutInApplicationMenu)
+
+                    ToggleMenuItem(UserText.aiChatShowInApplicationMenuToggle,
+                                   isOn: $model.showShortcutInApplicationMenu)
+                    .accessibilityIdentifier("Preferences.AIChat.showInApplicationMenuToggle")
+                    .onChange(of: model.showShortcutInApplicationMenu) { newValue in
+                        if newValue {
+                            PixelKit.fire(AIChatPixel.aiChatSettingsApplicationMenuShortcutTurnedOn,
+                                          frequency: .dailyAndCount,
+                                          includeAppVersionParameter: true)
+                        } else {
+                            PixelKit.fire(AIChatPixel.aiChatSettingsApplicationMenuShortcutTurnedOff,
+                                          frequency: .dailyAndCount,
+                                          includeAppVersionParameter: true)
+                        }
                     }
                 }
+            }.onAppear {
+                PixelKit.fire(AIChatPixel.aiChatSettingsDisplayed,
+                              frequency: .dailyAndCount,
+                              includeAppVersionParameter: true)
             }
         }
     }

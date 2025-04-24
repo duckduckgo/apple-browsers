@@ -35,7 +35,7 @@ final class OnboardingNavigatingTests: XCTestCase {
     }
 
     @MainActor
-    func testOnImportData_DataImportViewShown() {
+    func testOnImportData_DataImportViewShown() throws {
         // Given
         let mockWindow = MockWindow()
         let mvc = MainWindowController(mainViewController: MainViewController(autofillPopoverPresenter: DefaultAutofillPopoverPresenter()), popUp: false)

@@ -38,6 +38,7 @@ public final class VPNAppState {
     public func resetToDefaults() {
         defaults.resetVPNIsUsingSystemExtension()
         defaults.resetIsVPNMigratedToAuthV2()
+        defaults.resetVPNDontAskAgainExclusionSuggestion()
     }
 
     // MARK: - System Extension support
@@ -86,5 +87,21 @@ public final class VPNAppState {
 
     public func resetIsAuthV2Enabled() {
         defaults.resetIsAuthV2Enabled()
+    }
+
+    // MARK: - VPN Exclusion Suggestion when turning it OFF
+
+    public var dontAskAgainExclusionSuggestion: Bool {
+        get {
+            defaults.vpnDontAskAgainExclusionSuggestion
+        }
+
+        set {
+            defaults.vpnDontAskAgainExclusionSuggestion = newValue
+        }
+    }
+
+    public func resetDontAskAgainExclusionSuggestion() {
+        defaults.resetVPNDontAskAgainExclusionSuggestion()
     }
 }

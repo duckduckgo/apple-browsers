@@ -36,30 +36,16 @@ struct SubscriptionRestoreView: View {
     @Binding var currentView: SubscriptionContainerView.CurrentViewType
     
     private enum Constants {
-        static let heroImage = "ManageSubscriptionHero"
-        static let appleIDIcon = "Platform-Apple-16-subscriptions"
-        static let emailIcon = "Email-16"
-        static let openIndicator = "chevron.up"
-        static let closedIndicator = "chevron.down"
-        
+        static let heroImage = "Privacy-Pro-Add-Device-128"
+        static let appleIcon = "ActivateViaApple-16"
+        static let emailIcon = "ActivateViaEmail-16"
+
         static let viewPadding = EdgeInsets(top: 10, leading: 30, bottom: 0, trailing: 30)
-        static let sectionSpacing: CGFloat = 20
+        static let sectionSpacing: CGFloat = 16
         static let maxWidth: CGFloat = 768
         static let boxMaxWidth: CGFloat = 500
-        static let headerLineSpacing = 10.0
-        static let footerLineSpacing = 7.0
-        
-        static let cornerRadius = 12.0
-        static let boxPadding = EdgeInsets(top: 25,
-                                           leading: 20,
-                                           bottom: 25,
-                                           trailing: 20)
-        static let borderWidth: CGFloat = 1.0
-        static let boxLineSpacing: CGFloat = 14
-        
-        static let buttonCornerRadius = 8.0
-        static let buttonInsets = EdgeInsets(top: 10.0, leading: 16.0, bottom: 10.0, trailing: 16.0)
-        static let buttonTopPadding: CGFloat = 20
+        static let headerItemSpacing = 24.0
+        static let headerBottomSpacing = 16.0
     }
     
     var body: some View {
@@ -77,8 +63,9 @@ struct SubscriptionRestoreView: View {
             ScrollView {
                 VStack(spacing: Constants.sectionSpacing) {
                     headerView
-                    emailView
-                    footerView
+                    addViaEmailView
+                    addViaAppleIDView
+
                     Spacer()
                     
                     // Hidden link to display Email Activation View
@@ -147,68 +134,29 @@ struct SubscriptionRestoreView: View {
     }
 
     // MARK: -
-    
-    private var emailView: some View {
-        emailCellContent
-            .padding(Constants.boxPadding)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(designSystemColor: .panel))
-            .cornerRadius(Constants.cornerRadius)
-            .overlay(
-                RoundedRectangle(cornerRadius: Constants.cornerRadius)
-                    .stroke(Color(designSystemColor: .lines), lineWidth: Constants.borderWidth)
-            )
+
+    private var addViaEmailView: some View {
+        RoundedCardView(title: UserText.subscriptionActivateViaEmailTitle,
+                        description: UserText.subscriptionActivateViaEmailDescription,
+                        imageName: Constants.emailIcon,
+                        buttonTitle: UserText.subscriptionActivateViaEmailButton,
+                        buttonAction: {
+            DailyPixel.fireDailyAndCount(pixel: .privacyProRestorePurchaseEmailStart,
+                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
+            viewModel.showActivationFlow(true)
+        })
     }
-   
-    private var emailCellContent: some View {
-        VStack(alignment: .leading, spacing: Constants.boxLineSpacing) {
-            HStack {
-                Image(Constants.emailIcon)
-                Text(UserText.subscriptionActivateEmail)
-                    .daxSubheadSemibold()
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-            }
-            
-            if !viewModel.state.isLoading {
-                VStack(alignment: .leading) {
-                    Text(UserText.subscriptionActivateEmailDescription)
-                        .daxSubheadRegular()
-                        .foregroundColor(Color(designSystemColor: .textSecondary))
-                    getCellButton(buttonText: UserText.subscriptionActivateEmailButton,
-                                  action: {
-                        DailyPixel.fireDailyAndCount(pixel: .privacyProRestorePurchaseEmailStart,
-                                                     pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes)
-                        DailyPixel.fire(pixel: .privacyProWelcomeAddDevice)
-                        viewModel.showActivationFlow(true)
-                    })
-                }
-            } else {
-                SwiftUI.ProgressView()
-            }
-        }
+
+    private var addViaAppleIDView: some View {
+        RoundedCardView(title: UserText.subscriptionActivateViaAppleAccountTitle,
+                        description: UserText.subscriptionActivateViaAppleAccountDescription,
+                        imageName: Constants.appleIcon,
+                        buttonTitle: UserText.subscriptionActivateViaAppleAccountButton,
+                        buttonAction: {
+            viewModel.restoreAppstoreTransaction()
+        })
     }
-    
-    private func getCellButton(buttonText: String, action: @escaping () -> Void) -> AnyView {
-        AnyView(
-            VStack {
-                Button(action: action, label: {
-                    Text(buttonText)
-                        .daxButton()
-                        .padding(Constants.buttonInsets)
-                        .foregroundColor(.white)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: Constants.buttonCornerRadius)
-                                .stroke(Color.clear, lineWidth: 1)
-                        )
-                })
-                
-                .background(Color(designSystemColor: .accent))
-                .cornerRadius(Constants.buttonCornerRadius)
-            }.padding(.top, Constants.boxLineSpacing)
-            
-        )
-    }
-                
+
     private func getTransactionStatus() -> String {
         switch viewModel.state.transactionStatus {
         case .polling:
@@ -223,34 +171,14 @@ struct SubscriptionRestoreView: View {
     }
     
     private var headerView: some View {
-        VStack(spacing: Constants.headerLineSpacing) {
+        VStack(spacing: Constants.headerItemSpacing) {
             Image(Constants.heroImage)
-            Text(UserText.subscriptionActivateTitle)
-                .daxHeadline()
+            Text(UserText.subscriptionActivateHeaderTitle)
+                .daxTitle1()
                 .multilineTextAlignment(.center)
                 .foregroundColor(Color(designSystemColor: .textPrimary))
-            Text(UserText.subscriptionActivateHeaderDescription)
-                .daxFootnoteRegular()
-                .foregroundColor(Color(designSystemColor: .textSecondary))
-                .multilineTextAlignment(.center)
         }
-        
-    }
-    
-    @ViewBuilder
-    private var footerView: some View {
-        VStack(alignment: .leading, spacing: Constants.footerLineSpacing) {
-            Text(UserText.subscriptionActivateDescription)
-                .daxFootnoteRegular()
-                .foregroundColor(Color(designSystemColor: .textSecondary))
-            Button(action: {
-                viewModel.restoreAppstoreTransaction()
-            }, label: {
-                Text(UserText.subscriptionRestoreAppleID)
-                    .daxFootnoteSemibold()
-                    .foregroundColor(Color(designSystemColor: .accent))
-            })
-        }
+        .padding(.bottom, Constants.headerBottomSpacing)
     }
 
     private func getAlert() -> Alert {
@@ -293,11 +221,76 @@ struct SubscriptionRestoreView: View {
         navAppearance.shadowImage = UIImage()
         navAppearance.tintColor = UIColor(designSystemColor: .textPrimary)
     }
-      
-    struct ListItem {
-        let id: Int
-        let content: AnyView
-        let expandedContent: AnyView
+}
+
+private struct RoundedCardView: View {
+
+    private enum Constants {
+        static let cornerRadius = 12.0
+        static let cardPadding = EdgeInsets(top: 16,
+                                            leading: 16,
+                                            bottom: 16,
+                                            trailing: 16)
+        static let cardHorizontalItemSpacing: CGFloat = 16
+        static let cardVerticalItemSpacing: CGFloat = 8
+        static let imageWidth: CGFloat = 32
+        static let imageHeight: CGFloat = 32
+        static let titleTopOffset: CGFloat = 4
+
+        static let separatorPadding: EdgeInsets = .init(top: 8, leading: 0, bottom: 8, trailing: -Constants.cardPadding.trailing)
     }
-    
+
+    let title: String
+    let description: String
+    let imageName: String
+    let buttonTitle: String
+    let buttonAction: () -> Void
+
+    init(title: String,
+         description: String,
+         imageName: String,
+         buttonTitle: String,
+         buttonAction: @escaping () -> Void) {
+        self.title = title
+        self.description = description
+        self.imageName = imageName
+        self.buttonTitle = buttonTitle
+        self.buttonAction = buttonAction
+    }
+
+    var body: some View {
+        HStack(alignment: .top, spacing: Constants.cardHorizontalItemSpacing) {
+            Image(imageName)
+                .frame(width: Constants.imageWidth, height: Constants.imageHeight)
+                .background(Color(designSystemColor: .lines))
+                .clipShape(Circle())
+
+            VStack(alignment: .leading, spacing: Constants.cardVerticalItemSpacing) {
+                Text(title)
+                    .daxHeadline()
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                    .padding(.top, Constants.titleTopOffset)
+                Text(description)
+                    .daxFootnoteRegular()
+                    .foregroundColor(Color(designSystemColor: .textSecondary))
+
+                Rectangle()
+                    .fill(Color(designSystemColor: .container))
+                    .frame(height: 1)
+                    .padding(Constants.separatorPadding)
+
+                Button(action: {
+                    self.buttonAction()
+                }, label: {
+                    Text(buttonTitle)
+                        .daxBodyRegular()
+                        .foregroundColor(Color(designSystemColor: .accent))
+                })
+            }
+        }
+        .padding(Constants.cardPadding)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color(designSystemColor: .surface))
+        .cornerRadius(Constants.cornerRadius)
+    }
 }

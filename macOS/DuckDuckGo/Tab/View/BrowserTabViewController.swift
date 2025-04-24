@@ -85,6 +85,11 @@ final class BrowserTabViewController: NSViewController {
 
     private var hoverLabelWorkItem: DispatchWorkItem?
 
+    private var lastURL: URL?
+    private weak var lastTab: Tab?
+    private var wasContextualOnboardingDialogDismissed = false
+    private let onboardingPixelReporter: OnboardingPixelReporting
+
     private(set) var transientTabContentViewController: NSViewController?
     private lazy var duckPlayerOnboardingModalManager: DuckPlayerOnboardingModalManager = {
         let modal = DuckPlayerOnboardingModalManager()
@@ -97,7 +102,8 @@ final class BrowserTabViewController: NSViewController {
 
     init(tabCollectionViewModel: TabCollectionViewModel,
          bookmarkManager: BookmarkManager = LocalBookmarkManager.shared,
-         onboardingDialogTypeProvider: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater = Application.appDelegate.onboardingStateMachine,
+         onboardingPixelReporter: OnboardingPixelReporting = OnboardingPixelReporter(),
+         onboardingDialogTypeProvider: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater = Application.appDelegate.onboardingContextualDialogsManager,
          onboardingDialogFactory: ContextualDaxDialogsFactory = DefaultContextualDaxDialogViewFactory(),
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          newTabPageActionsManager: NewTabPageActionsManager = NSApp.delegateTyped.newTabPageCoordinator.actionsManager,
@@ -105,6 +111,7 @@ final class BrowserTabViewController: NSViewController {
     ) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
+        self.onboardingPixelReporter = onboardingPixelReporter
         self.onboardingDialogTypeProvider = onboardingDialogTypeProvider
         self.onboardingDialogFactory = onboardingDialogFactory
         self.featureFlagger = featureFlagger
@@ -163,7 +170,13 @@ final class BrowserTabViewController: NSViewController {
     }
 
     @objc func windowDidBecomeActive(notification: Notification) {
-        presentContextualOnboarding()
+        // When a windows become key it will reload the last contextual onboarding dialog if needed
+        // This helps keep dialogs consistent when moving between Windows
+        //  - If the dialog was dismissed it will not reload when leaving and coming back to the Window
+        //  - It tells presentContextualOnboarding that should show the lastDialog if possible
+        if !wasContextualOnboardingDialogDismissed {
+            presentContextualOnboarding(showLastDialog: true)
+        }
     }
 
     override func viewWillAppear() {
@@ -445,16 +458,6 @@ final class BrowserTabViewController: NSViewController {
         containerStackView.addArrangedSubview(container)
     }
 
-    private func updateStateAndPresentContextualOnboarding() {
-        guard featureFlagger.isFeatureOn(.contextualOnboarding) else {
-            onboardingDialogTypeProvider.turnOffFeature()
-            return
-        }
-        guard let tab = tabViewModel?.tab else { return }
-        onboardingDialogTypeProvider.updateStateFor(tab: tab)
-        presentContextualOnboarding()
-    }
-
     private func removeExistingDialog() {
         containerStackView.arrangedSubviews.filter({ $0 != webViewContainer }).forEach {
             containerStackView.removeArrangedSubview($0)
@@ -462,19 +465,24 @@ final class BrowserTabViewController: NSViewController {
         }
     }
 
-    private func presentContextualOnboarding() {
+    private func presentContextualOnboarding(showLastDialog: Bool = false) {
         // Before presenting a new dialog, remove any existing ones.
         removeExistingDialog()
-        // Remove any existing higlights animation
+        // Remove any existing highlights animation
         delegate?.dismissViewHighlight()
 
+        // Checks if the feature is on
         guard featureFlagger.isFeatureOn(.contextualOnboarding) else {
             onboardingDialogTypeProvider.turnOffFeature()
             return
         }
 
         guard let tab = tabViewModel?.tab else { return }
-        guard let dialogType = onboardingDialogTypeProvider.dialogTypeForTab(tab, privacyInfo: tab.privacyInfo) else {
+
+        // if showLastDialog is true it asks the onboardingDialogTypeProvider for the lastDialog if the last dialog was shown on this tab
+        // If there is it will show it
+        // This allow seeing the dialog when leaving and coming back to the Window but will avoid reloading the same when opening a new Window
+        guard let dialogType = showLastDialog ? onboardingDialogTypeProvider.lastDialogForTab(tab) : onboardingDialogTypeProvider.dialogTypeForTab(tab, privacyInfo: tab.privacyInfo) else {
             delegate?.dismissViewHighlight()
             return
         }
@@ -483,7 +491,12 @@ final class BrowserTabViewController: NSViewController {
         if let webViewContainer {
             onDismissAction = { [weak self] in
                 guard let self else { return }
+                wasContextualOnboardingDialogDismissed = true
+                delegate?.dismissViewHighlight()
                 self.removeChild(in: self.containerStackView, webViewContainer: webViewContainer)
+                if let lastDialog = onboardingDialogTypeProvider.lastDialog {
+                    self.onboardingPixelReporter.measureDialogDismissed(dialogType: lastDialog)
+                }
             }
         }
 
@@ -492,13 +505,13 @@ final class BrowserTabViewController: NSViewController {
 
             onboardingDialogTypeProvider.gotItPressed()
 
-            let currentState = onboardingDialogTypeProvider.state
+            let currentState = onboardingDialogTypeProvider.lastDialog
 
             // Reset highlight animations
             delegate?.dismissViewHighlight()
 
             // Process state
-            if case .showFireButton = currentState {
+            if case .tryFireButton = currentState {
                 delegate?.highlightFireButton()
             }
         }
@@ -546,7 +559,7 @@ final class BrowserTabViewController: NSViewController {
             addWebViewToViewHierarchy(newWebView, tab: tabViewModel.tab)
         }
 
-        guard let tabViewModel = tabViewModel else {
+        guard let tabViewModel else {
             removeWebViewFromHierarchy()
             return
         }
@@ -562,8 +575,9 @@ final class BrowserTabViewController: NSViewController {
         adjustFirstResponderAfterAddingContentViewIfNeeded()
     }
 
-    private func webView(for tabViewModel: TabViewModel) -> WebView {
-        switch tabViewModel.tab.content {
+    private func webView(for tabViewModel: TabViewModel, tabContent: Tab.TabContent? = nil) -> WebView {
+        let tabContent = tabContent ?? tabViewModel.tabContent
+        switch tabContent {
         case .newtab:
             return newTabPageWebViewModel.webView
         default:
@@ -611,7 +625,17 @@ final class BrowserTabViewController: NSViewController {
             .store(in: &tabViewModelCancellables)
 
         tabViewModel?.tab.webViewDidFinishNavigationPublisher.sink { [weak self] in
-            self?.updateStateAndPresentContextualOnboarding()
+            guard let self else { return }
+            // remove dialog on reload
+            if tabViewModel?.tab == lastTab && self.lastURL == tabViewModel?.tab.url && self.lastURL != nil {
+                self.removeExistingDialog()
+                return
+            }
+            // present contextual onboarding dialog if needed
+            self.presentContextualOnboarding()
+            self.lastURL = self.tabViewModel?.tab.url
+            self.lastTab = self.tabViewModel?.tab
+            self.wasContextualOnboardingDialogDismissed = false
         }.store(in: &tabViewModelCancellables)
     }
 
@@ -668,7 +692,7 @@ final class BrowserTabViewController: NSViewController {
              .url(_, _, source: .reload):
             return true
 
-        case .settings, .bookmarks, .history, .dataBrokerProtection, .subscription, .onboardingDeprecated, .onboarding, .releaseNotes, .identityTheftRestoration, .webExtensionUrl:
+        case .settings, .bookmarks, .history, .dataBrokerProtection, .subscription, .onboarding, .releaseNotes, .identityTheftRestoration, .webExtensionUrl:
             return true
 
         case .none:
@@ -676,21 +700,23 @@ final class BrowserTabViewController: NSViewController {
         }
     }
 
-    func adjustFirstResponder(force: Bool = false, tabContent: Tab.TabContent? = nil) {
+    func adjustFirstResponder(force: Bool = false, tabViewModel: TabViewModel? = nil, tabContent: Tab.TabContent? = nil) {
         viewToMakeFirstResponderAfterAdding = nil
         guard let window = view.window, window.isVisible,
-              let tabContent = tabContent ?? tabViewModel?.tab.content,
-              force || shouldMakeContentViewFirstResponder(for: tabContent) else { return }
+              let tabViewModel = tabViewModel ?? self.tabViewModel else { return }
+        let tabContent = tabContent ?? tabViewModel.tab.content
+        guard force || shouldMakeContentViewFirstResponder(for: tabContent) else { return }
 
         let getView: (() -> NSView?)?
         switch tabContent {
         case .newtab:
             // don‘t steal focus from the address bar at .newtab page
             return
-        case .onboardingDeprecated:
-            getView = { [weak self] in self?.transientTabContentViewController?.view }
         case .url, .subscription, .identityTheftRestoration, .onboarding, .releaseNotes, .history:
-            getView = { [weak self] in self?.webView }
+            getView = { [weak self, weak tabViewModel] in
+                guard let self, let tabViewModel else { return nil }
+                return webView(for: tabViewModel, tabContent: tabContent)
+            }
         case .settings:
             getView = { [weak self] in self?.preferencesViewController?.view }
         case .bookmarks:
@@ -717,7 +743,9 @@ final class BrowserTabViewController: NSViewController {
     private var viewToMakeFirstResponderAfterAdding: (() -> NSView?)?
     private func adjustFirstResponderAfterAddingContentViewIfNeeded() {
         guard let window = view.window,
-              let contentView = viewToMakeFirstResponderAfterAdding?() else { return }
+              let contentView = viewToMakeFirstResponderAfterAdding?() else {
+            return
+        }
 
         guard contentView.window === window else {
             Logger.general.error("BrowserTabViewController: Content view window is \(contentView.window?.description ?? "<nil>") but expected: \(window)")
@@ -801,13 +829,6 @@ final class BrowserTabViewController: NSViewController {
         case let .settings(pane):
             showTabContentForSettings(pane: pane)
 
-        case .onboardingDeprecated:
-            removeAllTabContent()
-            if !OnboardingViewModel.isOnboardingFinished {
-                requestDisableUI()
-            }
-            showTransientTabContentController(OnboardingViewController.create(withDelegate: self))
-
         case .onboarding, .releaseNotes:
             removeAllTabContent()
             updateTabIfNeeded(tabViewModel: tabViewModel)
@@ -875,9 +896,7 @@ final class BrowserTabViewController: NSViewController {
     }
 
     private func shouldReplaceWebView(for tabViewModel: TabViewModel?) -> Bool {
-        guard let tabViewModel = tabViewModel else {
-            return false
-        }
+        guard let tabViewModel else { return false }
 
         let newWebView = webView(for: tabViewModel)
         let isPinnedTab = tabCollectionViewModel.pinnedTabsCollection?.tabs.contains(tabViewModel.tab) == true
@@ -1377,39 +1396,6 @@ extension BrowserTabViewController: BrowserTabSelectionDelegate {
         if case .settings = selectedTab.content {
             selectedTab.setContent(.settings(pane: identifier))
         }
-    }
-
-}
-
-extension BrowserTabViewController: OnboardingDelegate {
-
-    func onboardingDidRequestImportData(completion: @escaping () -> Void) {
-        DataImportView().show(completion: completion)
-    }
-
-    func onboardingDidRequestSetDefault(completion: @escaping () -> Void) {
-        let defaultBrowserPreferences = DefaultBrowserPreferences.shared
-        if defaultBrowserPreferences.isDefault {
-            completion()
-            return
-        }
-
-        PixelKit.fire(GeneralPixel.defaultRequestedFromOnboarding)
-        defaultBrowserPreferences.becomeDefault { _ in
-            _ = defaultBrowserPreferences
-            withAnimation {
-                completion()
-            }
-        }
-    }
-
-    func onboardingDidRequestAddToDock(completion: @escaping () -> Void) {
-        dockCustomizer.addToDock()
-        completion()
-    }
-
-    func onboardingHasFinished() {
-        (view.window?.windowController as? MainWindowController)?.userInteraction(prevented: false)
     }
 
 }

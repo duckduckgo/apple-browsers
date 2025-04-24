@@ -307,15 +307,6 @@ protocol NewWindowPolicyDecisionMaker {
             extensions.favicons?.handleFavicon(oldValue: nil, error: error)
         }
 
-        tabCrashRecoveryCancellable = extensions.tabCrashRecovery?.tabCrashErrorPayloadPublisher
-            .sink { [weak self] errorPayload in
-                guard let self else {
-                    return
-                }
-                error = errorPayload.error
-                loadErrorHTML(errorPayload.error, header: UserText.webProcessCrashPageHeader, forUnreachableURL: errorPayload.url, alternate: true)
-            }
-
         emailDidSignOutCancellable = NotificationCenter.default.publisher(for: .emailDidSignOut)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
@@ -323,7 +314,19 @@ protocol NewWindowPolicyDecisionMaker {
             }
 
         addDeallocationChecks(for: webView)
-        crashIndicatorModel.setUp(with: crashPublisher.eraseToAnyPublisher())
+
+        if let crashRecoveryExtension = extensions.tabCrashRecovery {
+            tabCrashRecoveryCancellable = crashRecoveryExtension.tabCrashErrorPayloadPublisher
+                .sink { [weak self] errorPayload in
+                    guard let self else {
+                        return
+                    }
+                    error = errorPayload.error
+                    loadErrorHTML(errorPayload.error, header: UserText.webProcessCrashPageHeader, forUnreachableURL: errorPayload.url, alternate: true)
+                }
+
+            crashIndicatorModel.setUp(with: crashRecoveryExtension.tabDidCrashPublisher)
+        }
     }
 
 #if DEBUG
@@ -420,14 +423,6 @@ protocol NewWindowPolicyDecisionMaker {
 #endif
 
     // MARK: - Event Publishers
-
-    /// Propagates tab crash events published by the crash recovery extension.
-    var crashPublisher: some Publisher<TabCrashType, Never> {
-        guard let crashRecoveryExtension = extensions.tabCrashRecovery else {
-            return Empty<TabCrashType, Never>().eraseToAnyPublisher()
-        }
-        return crashRecoveryExtension.tabDidCrashPublisher
-    }
 
     /// Publishes currently active main frame Navigation state
     var navigationStatePublisher: some Publisher<NavigationState?, Never> {

@@ -64,7 +64,7 @@ final class TabCrashIndicatorModel: ObservableObject {
     }
 
     enum Const {
-        static let maxIndicatorPresentationDuration: RunLoop.SchedulerTimeType.Stride = .seconds(200)
+        static let maxIndicatorPresentationDuration: RunLoop.SchedulerTimeType.Stride = .seconds(20)
         static let popoverWidth: CGFloat = 252
     }
 

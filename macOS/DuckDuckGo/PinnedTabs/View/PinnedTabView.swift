@@ -312,8 +312,8 @@ struct PinnedTabInnerView: View {
         .popover(isPresented: $tabCrashIndicatorModel.isShowingPopover, arrowEdge: .bottom) {
             PopoverMessageView(
                 viewModel: .init(
-                    title: "This tab has crashed",
-                    message: "The page was reloaded automatically. Tab history and form data has been lost.",
+                    title: UserText.tabCrashPopoverTitle,
+                    message: UserText.tabCrashPopoverMessage,
                     maxWidth: TabCrashIndicatorModel.Const.popoverWidth
                 ),
                 onClick: {

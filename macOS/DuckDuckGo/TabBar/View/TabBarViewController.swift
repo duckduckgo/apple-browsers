@@ -1229,8 +1229,8 @@ extension TabBarViewController: TabBarViewItemDelegate {
 
         DispatchQueue.main.async {
             let viewController = PopoverMessageViewController(
-                title: "This tab has crashed",
-                message: "The page was reloaded automatically. Tab history and form data has been lost.",
+                title: UserText.tabCrashPopoverTitle,
+                message: UserText.tabCrashPopoverMessage,
                 presentMultiline: true,
                 maxWidth: TabCrashIndicatorModel.Const.popoverWidth,
                 autoDismissDuration: nil,

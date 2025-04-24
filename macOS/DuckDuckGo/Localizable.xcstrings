@@ -67811,6 +67811,30 @@
         }
       }
     },
+    "tab.crash.popover.message" : {
+      "comment" : "The message in an info popover informing the user about a tab crash",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This page was reloaded automatically. Tab history and any info entered in a form have been lost."
+          }
+        }
+      }
+    },
+    "tab.crash.popover.title" : {
+      "comment" : "The title of an info popover informing the user about a tab crash",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This tab has crashed"
+          }
+        }
+      }
+    },
     "tab.empty.title" : {
       "comment" : "Title for an empty tab without a title",
       "extractionState" : "extracted_with_value",

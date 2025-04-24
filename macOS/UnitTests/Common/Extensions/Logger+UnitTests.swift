@@ -24,3 +24,12 @@ public extension Logger {
 
     static var tests = { Logger(subsystem: subsystem, category: "🧪") }()
 }
+
+infix operator ???: NilCoalescingPrecedence
+/// Provide value debug description or ??? "defaultValue" - to be used for logging like:
+/// ```
+/// Logger.general.debug("event received: \(event ??? "<nil>")")
+/// ```
+public func ??? <T>(optionalValue: T?, defaultValue: @autoclosure () -> String) -> String {
+    optionalValue.map { String(describing: $0) } ?? defaultValue()
+}

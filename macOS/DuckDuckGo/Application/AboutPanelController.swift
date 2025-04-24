@@ -1,5 +1,5 @@
 //
-//  AboutPanelController.swift
+//  AboutPanel.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -20,10 +20,61 @@ import SwiftUI
 import AppKit
 import BrowserServicesKit
 
-/// A custom panel that closes when the user presses Escape.
-private class AboutPanelWindow: NSPanel {
-    override func cancelOperation(_ sender: Any?) {
-        self.close()
+// SwiftUI view for the About panel
+struct AboutPanelView: View {
+
+    let isInternal: Bool
+
+    private var appName: String {
+#if APPSTORE
+        UserText.duckDuckGoForMacAppStore
+#else
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? ""
+#endif
+    }
+    private var appVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? ""
+    }
+    private var appBuild: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? ""
+    }
+    private var copyright: String {
+        Bundle.main.object(forInfoDictionaryKey: "NSHumanReadableCopyright") as? String ?? ""
+    }
+
+    var body: some View {
+        VStack(spacing: 8) {
+            Image(nsImage: NSApp.applicationIconImage)
+                .resizable()
+                .frame(width: 64, height: 64)
+                .cornerRadius(16)
+
+            Text(appName)
+                .font(.title3)
+
+            HStack(spacing: 8) {
+                Text(UserText.versionLabel(version: appVersion, build: appBuild))
+                    .font(.footnote)
+                if isInternal {
+                    Text("BETA")
+                        .font(.footnote)
+                        .fontWeight(.bold)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 2)
+                        .background(
+                            RoundedRectangle(cornerRadius: 4)
+                                .fill(Color.yellow)
+                        )
+                }
+            }
+
+            Text(copyright)
+                .font(.footnote)
+                .multilineTextAlignment(.center)
+        }
+        .padding([.horizontal, .bottom], 20)
+        .padding(.top, 10)
+        .frame(minWidth: 280)
     }
 }
 
@@ -49,5 +100,12 @@ class AboutPanelController {
     func show() {
         panel.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+    }
+}
+
+// A custom panel that closes when the user presses Escape.
+private class AboutPanelWindow: NSPanel {
+    override func cancelOperation(_ sender: Any?) {
+        self.close()
     }
 }

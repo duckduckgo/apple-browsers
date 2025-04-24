@@ -165,7 +165,7 @@ final class UpdatedOmniBarSearchView: UIView {
         dismissButtonView.setImage(UIImage(resource: .arrowLeftNew24))
         UpdatedOmniBarView.setUpCommonProperties(for: dismissButtonView)
 
-        loupeIconView.image = UIImage(resource: .findSearchNew24)
+        loupeIconView.image = UIImage(resource: .findSearchSmall24)
         loupeIconView.tintColor = tintColor
         loupeIconView.contentMode = .center
 

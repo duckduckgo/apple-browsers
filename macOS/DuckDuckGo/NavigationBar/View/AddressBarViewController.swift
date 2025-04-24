@@ -391,8 +391,8 @@ final class AddressBarViewController: NSViewController {
 
     private func updateView() {
         let isPassiveTextFieldHidden = isFirstResponder || mode.isEditing
-        addressBarTextField.alphaValue = isPassiveTextFieldHidden ? 1 : 0
-        passiveTextField.alphaValue = isPassiveTextFieldHidden ? 0 : 1
+        addressBarTextField.isHidden = isPassiveTextFieldHidden ? false : true
+        passiveTextField.isHidden = isPassiveTextFieldHidden ? true : false
 
         updateShadowViewPresence(isFirstResponder)
         inactiveBackgroundView.alphaValue = isFirstResponder ? 0 : 1
@@ -559,6 +559,10 @@ final class AddressBarViewController: NSViewController {
         self.clickPoint = nil
         guard let window = self.view.window, event.window === window else { return event }
 
+        if beginDraggingSessionIfNeeded(with: event, in: window) {
+            return nil
+        }
+
         if let point = self.view.mouseLocationInsideBounds(event.locationInWindow) {
             guard self.view.window?.firstResponder !== addressBarTextField.currentEditor(),
                   self.view.hitTest(point)?.shouldShowArrowCursor == false
@@ -630,6 +634,82 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
 
     func addressBarButtonsViewControllerClearButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
         addressBarTextField.clearValue()
+    }
+}
+
+// MARK: - NSDraggingSource
+extension AddressBarViewController: NSDraggingSource, NSPasteboardItemDataProvider {
+
+    func draggingUpdated(_ draggingInfo: NSDraggingInfo) -> NSDragOperation {
+        // disable dropping url on the same address bar where it came from
+        if draggingInfo.draggingSource as? Self === self {
+            return .none
+        }
+        return .copy
+    }
+
+    private func beginDraggingSessionIfNeeded(with event: NSEvent, in window: NSWindow) -> Bool {
+        guard passiveTextField.isVisible,
+              passiveTextField.withMouseLocationInViewCoordinates(convert: {
+                  passiveTextField.bounds.insetBy(dx: -2, dy: -2).contains($0)
+              }) == true,
+              tabViewModel?.tab.content.userEditableUrl != nil else { return false }
+
+        let initialLocation = event.locationInWindow
+        while let nextEvent = window.nextEvent(matching: [.leftMouseUp, .leftMouseDragged], until: Date.distantFuture, inMode: .default, dequeue: true) {
+            // Let the superclass handle the event if it's not a drag
+            guard nextEvent.type == .leftMouseDragged else {
+                DispatchQueue.main.async { [weak window] in
+                    guard let event = event.makeMouseUpEvent() else { return }
+                    // post new event to unblock waiting for nextEvent
+                    window?.postEvent(event, atStart: true)
+                }
+                break
+            }
+            // If the mouse hasn't moved significantly, don't start dragging
+            guard nextEvent.locationInWindow.distance(to: initialLocation) > 3 else { continue }
+
+            let pasteboardItem = NSPasteboardItem()
+            pasteboardItem.setDataProvider(self, forTypes: [.string, .URL])
+
+            let draggingItem = NSDraggingItem(pasteboardWriter: pasteboardItem)
+            draggingItem.draggingFrame = passiveTextField.bounds
+
+            passiveTextField.beginDraggingSession(with: [draggingItem], event: event, source: self)
+            return true
+        }
+        return false
+    }
+
+    func pasteboard(_ pasteboard: NSPasteboard?, item: NSPasteboardItem, provideDataForType type: NSPasteboard.PasteboardType) {
+        if let url = tabViewModel?.tab.content.userEditableUrl {
+            pasteboard?.setString(url.absoluteString, forType: .string)
+        }
+    }
+
+    func draggingSession(_ session: NSDraggingSession, willBeginAt screenPoint: NSPoint) {
+        guard let url = tabViewModel?.tab.url else { return }
+
+        // Set URL and title in pasteboard
+        session.draggingPasteboard.setString(url.absoluteString, forType: .URL)
+        if let title = tabViewModel?.title, !title.isEmpty {
+            session.draggingPasteboard.setString(title, forType: .urlName)
+        }
+
+        // Create dragging image
+        let favicon: NSImage
+        if let tabFavicon = tabViewModel?.tab.favicon {
+            favicon = tabFavicon
+        } else {
+            favicon = .web
+        }
+
+        session.draggingFormation = .none
+        session.setPreviewProvider(URLDragPreviewProvider(url: url, favicon: favicon))
+    }
+
+    func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
+        return .copy
     }
 }
 

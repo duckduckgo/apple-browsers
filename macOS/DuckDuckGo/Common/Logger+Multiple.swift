@@ -31,3 +31,9 @@ extension Logger {
     static var tabPreview = { Logger(subsystem: "Tab Preview", category: "") }()
     static var maliciousSiteProtection = { Logger(subsystem: "Malsite Protection", category: "") }()
 }
+
+/// Provide value debug description or ??? "defaultValue" - to be used for logging like:
+/// ```
+/// Logger.general.debug("event received: \(event ??? "<nil>")")
+/// ```
+infix operator ???: NilCoalescingPrecedence

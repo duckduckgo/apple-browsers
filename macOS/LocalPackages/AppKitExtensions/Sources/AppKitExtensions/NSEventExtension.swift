@@ -114,6 +114,18 @@ public extension NSEvent {
             .eraseToAnyPublisher()
     }
 
+    func makeMouseUpEvent() -> NSEvent? {
+        return NSEvent.mouseEvent(with: .leftMouseUp,
+                                  location: self.locationInWindow,
+                                  modifierFlags: self.modifierFlags,
+                                  timestamp: self.timestamp,
+                                  windowNumber: self.windowNumber,
+                                  context: nil,
+                                  eventNumber: self.eventNumber,
+                                  clickCount: self.clickCount,
+                                  pressure: self.pressure)
+    }
+
 #if DEBUG
     var eventDescription: String {
         let eventString: String = String(describing: self)

@@ -60068,6 +60068,18 @@
         }
       }
     },
+    "preferences.identityTheftRestoration" : {
+      "comment" : "Title of the option to show the Identity Theft Restoration preferences",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Identity Theft Restoration"
+          }
+        }
+      }
+    },
     "preferences.is-added-to-dock" : {
       "comment" : "Indicates that the browser is added to the macOS system Dock",
       "extractionState" : "extracted_with_value",
@@ -60428,6 +60440,18 @@
         }
       }
     },
+    "preferences.personalInformationRemoval" : {
+      "comment" : "Title of the option to show the Personal Information Removal preferences",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Personal Information Removal"
+          }
+        }
+      }
+    },
     "preferences.privacy-protections" : {
       "comment" : "The section header in Preferences representing browser features related to privacy protection",
       "extractionState" : "extracted_with_value",
@@ -60784,6 +60808,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Открыть новое окно"
+          }
+        }
+      }
+    },
+    "preferences.subscriptionSettings" : {
+      "comment" : "Title of the option to show the Subscription Settings preferences",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Subscription Settings"
           }
         }
       }

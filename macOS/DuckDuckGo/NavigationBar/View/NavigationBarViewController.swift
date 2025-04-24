@@ -1234,7 +1234,7 @@ extension NavigationBarViewController: OptionsButtonMenuDelegate {
     }
 
     func optionsButtonMenuRequestedSubscriptionPreferences(_ menu: NSMenu) {
-        WindowControllersManager.shared.showPreferencesTab(withSelectedPane: .subscription)
+        WindowControllersManager.shared.showPreferencesTab(withSelectedPane: .subscriptionSettings)
     }
 
     func optionsButtonMenuRequestedIdentityTheftRestoration(_ menu: NSMenu) {

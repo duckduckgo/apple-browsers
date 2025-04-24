@@ -105,9 +105,16 @@ enum Preferences {
                     AppearanceView(model: .shared)
                 case .dataClearing:
                     DataClearingView(model: DataClearingPreferences.shared)
+                case .privacyPro:
+                    SubscriptionUI.PreferencesSubscriptionViewV1(model: subscriptionModel!,
+                                                                 subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability())
                 case .vpn:
                     VPNView(model: VPNPreferencesModel(), status: model.vpnProtectionStatus())
-                case .subscription:
+                case .personalInformationRemoval:
+                    EmptyView() // TODO:
+                case .identityTheftRestoration:
+                    EmptyView() // TODO:
+                case .subscriptionSettings:
                     SubscriptionUI.PreferencesSubscriptionViewV1(model: subscriptionModel!,
                                                                  subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability())
                 case .autofill:
@@ -268,9 +275,16 @@ enum Preferences {
                     AppearanceView(model: .shared)
                 case .dataClearing:
                     DataClearingView(model: DataClearingPreferences.shared)
+                case .privacyPro:
+                    SubscriptionUI.PreferencesSubscriptionViewV2(model: subscriptionModel!,
+                                                                 subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability())
                 case .vpn:
                     VPNView(model: VPNPreferencesModel(), status: model.vpnProtectionStatus())
-                case .subscription:
+                case .personalInformationRemoval:
+                    VPNView(model: VPNPreferencesModel(), status: model.vpnProtectionStatus())
+                case .identityTheftRestoration:
+                    VPNView(model: VPNPreferencesModel(), status: model.vpnProtectionStatus())
+                case .subscriptionSettings:
                     SubscriptionUI.PreferencesSubscriptionViewV2(model: subscriptionModel!,
                                                                  subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability())
                 case .autofill:

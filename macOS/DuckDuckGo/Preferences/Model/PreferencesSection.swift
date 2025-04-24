@@ -89,6 +89,7 @@ struct PreferencesSection: Hashable, Identifiable {
 
 enum PreferencesSectionIdentifier: Hashable, CaseIterable {
     case privacyProtections
+    case purchasePrivacyPro
     case privacyPro
     case regularPreferencePanes
     case about
@@ -97,8 +98,10 @@ enum PreferencesSectionIdentifier: Hashable, CaseIterable {
         switch self {
         case .privacyProtections:
             return UserText.privacyProtections
-        case .privacyPro:
+        case .purchasePrivacyPro:
             return nil
+        case .privacyPro:
+            return UserText.subscription
         case .regularPreferencePanes:
             return UserText.mainSettings
         case .about:
@@ -119,8 +122,11 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
     case sync
     case appearance
     case dataClearing
+    case privacyPro
     case vpn
-    case subscription
+    case personalInformationRemoval
+    case identityTheftRestoration
+    case subscriptionSettings
     case autofill
     case accessibility
     case duckPlayer = "duckplayer"
@@ -174,10 +180,16 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
             return UserText.appearance
         case .dataClearing:
             return UserText.dataClearing
+        case .privacyPro:
+            return UserText.subscription
         case .vpn:
             return UserText.vpn
-        case .subscription:
-            return UserText.subscription
+        case .personalInformationRemoval:
+            return UserText.personalInformationRemoval
+        case .identityTheftRestoration:
+            return UserText.identityTheftRestoration
+        case .subscriptionSettings:
+            return UserText.subscriptionSettings
         case .autofill:
             return UserText.passwordManagementTitle
         case .accessibility:
@@ -213,9 +225,15 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
             return "Appearance"
         case .dataClearing:
             return "FireSettings"
+        case .privacyPro:
+            return "PrivacyPro"
         case .vpn:
             return "VPN"
-        case .subscription:
+        case .personalInformationRemoval:
+            return "PrivacyPro"
+        case .identityTheftRestoration:
+            return "PrivacyPro"
+        case .subscriptionSettings:
             return "PrivacyPro"
         case .autofill:
             return "Autofill"

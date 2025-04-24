@@ -358,7 +358,6 @@
                     <connections>
                         <outlet property="addressBarBottomConstraint" destination="Xaz-X5-bmg" id="Xsd-Ca-9o5"/>
                         <outlet property="addressBarContainer" destination="Wba-nA-FYj" id="VEq-Sp-Ns1"/>
-                        <outlet property="addressBarHeightConstraint" destination="KjG-nj-hqf" id="pT7-bY-Rf2"/>
                         <outlet property="addressBarLeftToNavButtonsConstraint" destination="rfA-3F-QAf" id="IJE-cK-DQ6"/>
                         <outlet property="addressBarProportionalWidthConstraint" destination="rqL-Vd-lnY" id="zxF-f6-8wE"/>
                         <outlet property="addressBarStack" destination="gIy-el-24l" id="vlT-AD-nDv"/>
@@ -373,6 +372,7 @@
                         <outlet property="logoWidthConstraint" destination="jSz-y8-vaJ" id="BbD-cr-Hyv"/>
                         <outlet property="menuButtons" destination="aWu-Jm-Oaz" id="gb7-KP-Q3h"/>
                         <outlet property="navigationBarButtonsLeadingConstraint" destination="eSb-tj-UdD" id="Jnt-Xd-aUU"/>
+                        <outlet property="navigationBarHeightConstraint" destination="KjG-nj-hqf" id="pT7-bY-Rf2"/>
                         <outlet property="navigationButtons" destination="eEh-kf-smR" id="XC4-bo-89V"/>
                         <outlet property="networkProtectionButton" destination="iKf-yR-au9" id="HWJ-gT-EXa"/>
                         <outlet property="optionsButton" destination="iIF-Ky-unr" id="vvZ-mm-idv"/>
@@ -1050,7 +1050,7 @@
         <image name="Arrow-Right-12" width="9" height="9"/>
         <image name="Back" width="16" height="16"/>
         <image name="Bookmark" width="16" height="16"/>
-        <image name="Bookmarks" width="16" height="16"/>
+        <image name="Bookmarks" width="24" height="24"/>
         <image name="Camera-Active" width="16" height="12"/>
         <image name="Camera-Icon" width="16" height="12"/>
         <image name="Camera-Tab-Blocked" width="16" height="14"/>

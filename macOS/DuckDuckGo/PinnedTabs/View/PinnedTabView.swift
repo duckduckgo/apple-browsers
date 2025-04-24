@@ -22,9 +22,10 @@ import SwiftUIExtensions
 
 struct PinnedTabView: View, DropDelegate {
     enum Const {
-        static let dimension: CGFloat = 34
         static let cornerRadius: CGFloat = 10
     }
+
+    private let visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager
 
     @ObservedObject var model: Tab
     @EnvironmentObject var collectionModel: PinnedTabsViewModel
@@ -42,6 +43,7 @@ struct PinnedTabView: View, DropDelegate {
                 }
             } label: {
                 PinnedTabInnerView(
+                    tabStyleProvider: visualStyleManager.style.tabStyleProvider,
                     foregroundColor: foregroundColor,
                     drawSeparator: !collectionModel.itemsWithoutSeparator.contains(model)
                 )
@@ -211,6 +213,7 @@ private struct BorderView: View {
 }
 
 struct PinnedTabInnerView: View {
+    let tabStyleProvider: TabStyleProviding
     var foregroundColor: Color
     var drawSeparator: Bool = true
 
@@ -237,7 +240,7 @@ struct PinnedTabInnerView: View {
                 .frame(maxWidth: 16, maxHeight: 16)
                 .aspectRatio(contentMode: .fit)
         }
-        .frame(width: PinnedTabView.Const.dimension)
+        .frame(width: tabStyleProvider.pinnedTabWidth)
     }
 
     @ViewBuilder

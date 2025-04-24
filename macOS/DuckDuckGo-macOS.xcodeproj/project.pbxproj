@@ -2233,6 +2233,10 @@
 		84537A092C99C203008723BC /* DeallocationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6C2C9EE276081AB005B7F0A /* DeallocationTests.swift */; };
 		848648A12C76F4B20082282D /* BookmarksBarMenuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 848648A02C76F4B20082282D /* BookmarksBarMenuViewController.swift */; };
 		848648A22C76F4B20082282D /* BookmarksBarMenuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 848648A02C76F4B20082282D /* BookmarksBarMenuViewController.swift */; };
+		84A03D142DBA0B1B00A3685B /* testTextPreviewWithFavicon.NSAppearanceNameDarkAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 84A03D132DBA0B1B00A3685B /* testTextPreviewWithFavicon.NSAppearanceNameDarkAqua.png */; };
+		84A03D152DBA0B1B00A3685B /* testTextPreviewWithFavicon.NSAppearanceNameAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 84A03D122DBA0B1B00A3685B /* testTextPreviewWithFavicon.NSAppearanceNameAqua.png */; };
+		84A03D162DBA0B1B00A3685B /* testTextPreviewWithFavicon.NSAppearanceNameDarkAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 84A03D132DBA0B1B00A3685B /* testTextPreviewWithFavicon.NSAppearanceNameDarkAqua.png */; };
+		84A03D172DBA0B1B00A3685B /* testTextPreviewWithFavicon.NSAppearanceNameAqua.png in Resources */ = {isa = PBXBuildFile; fileRef = 84A03D122DBA0B1B00A3685B /* testTextPreviewWithFavicon.NSAppearanceNameAqua.png */; };
 		84A37DDE2DAFB635009E0A68 /* URLDragPreviewProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A37DDD2DAFB635009E0A68 /* URLDragPreviewProvider.swift */; };
 		84A37DDF2DAFB635009E0A68 /* URLDragPreviewProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A37DDD2DAFB635009E0A68 /* URLDragPreviewProvider.swift */; };
 		84A37DED2DAFB68A009E0A68 /* URLDragPreviewProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84A37DEC2DAFB68A009E0A68 /* URLDragPreviewProviderTests.swift */; };
@@ -4612,6 +4616,8 @@
 		844D7DA32C9443E500BE61D4 /* NSPrintInfoExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSPrintInfoExtension.swift; sourceTree = "<group>"; };
 		84537A022C998C24008723BC /* FireWindowSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireWindowSession.swift; sourceTree = "<group>"; };
 		848648A02C76F4B20082282D /* BookmarksBarMenuViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksBarMenuViewController.swift; sourceTree = "<group>"; };
+		84A03D122DBA0B1B00A3685B /* testTextPreviewWithFavicon.NSAppearanceNameAqua.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = testTextPreviewWithFavicon.NSAppearanceNameAqua.png; sourceTree = "<group>"; };
+		84A03D132DBA0B1B00A3685B /* testTextPreviewWithFavicon.NSAppearanceNameDarkAqua.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = testTextPreviewWithFavicon.NSAppearanceNameDarkAqua.png; sourceTree = "<group>"; };
 		84A37DDD2DAFB635009E0A68 /* URLDragPreviewProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLDragPreviewProvider.swift; sourceTree = "<group>"; };
 		84A37DEC2DAFB68A009E0A68 /* URLDragPreviewProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = URLDragPreviewProviderTests.swift; sourceTree = "<group>"; };
 		84A72AA52DB276A20092A4B4 /* LinkOpenBehavior.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LinkOpenBehavior.swift; sourceTree = "<group>"; };
@@ -7946,6 +7952,8 @@
 		84A37DEA2DAFB68A009E0A68 /* URLDragPreviewProviderTests */ = {
 			isa = PBXGroup;
 			children = (
+				84A03D122DBA0B1B00A3685B /* testTextPreviewWithFavicon.NSAppearanceNameAqua.png */,
+				84A03D132DBA0B1B00A3685B /* testTextPreviewWithFavicon.NSAppearanceNameDarkAqua.png */,
 				842661BE2DAFBC4E001950AA /* testTextPreviewWithTextOnly.NSAppearanceNameAqua.png */,
 				842661BF2DAFBC4E001950AA /* testTextPreviewWithTextOnly.NSAppearanceNameDarkAqua.png */,
 				842661C02DAFBC4E001950AA /* testURLPreviewWithCustomColors.NSAppearanceNameAqua.png */,
@@ -11465,6 +11473,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				84A03D162DBA0B1B00A3685B /* testTextPreviewWithFavicon.NSAppearanceNameDarkAqua.png in Resources */,
+				84A03D172DBA0B1B00A3685B /* testTextPreviewWithFavicon.NSAppearanceNameAqua.png in Resources */,
 				B65CD8D62B316FCA00A595BB /* __Snapshots__ in Resources */,
 				3706FE8B293F661700E42796 /* empty in Resources */,
 				376E2D282942843D001CD31B /* privacy-reference-tests in Resources */,
@@ -11700,6 +11710,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				84A03D142DBA0B1B00A3685B /* testTextPreviewWithFavicon.NSAppearanceNameDarkAqua.png in Resources */,
+				84A03D152DBA0B1B00A3685B /* testTextPreviewWithFavicon.NSAppearanceNameAqua.png in Resources */,
 				9FBD845D2BB3B80300220859 /* Origin.txt in Resources */,
 				B69B50532726CD8100758A2B /* empty in Resources */,
 				31E163C0293A581900963C10 /* privacy-reference-tests in Resources */,

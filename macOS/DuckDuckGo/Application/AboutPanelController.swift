@@ -32,8 +32,7 @@ class AboutPanelController {
             backing: .buffered,
             defer: false
         )
-        panel.title = "About"
-        panel.isReleasedWhenClosed = true
+        panel.isReleasedWhenClosed = false
         panel.center()
 
         let hosting = NSHostingController(rootView: AboutPanelView(isInternal: internalUserDecider.isInternalUser))

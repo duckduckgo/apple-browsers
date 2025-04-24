@@ -35,15 +35,10 @@ public class MockOAuthClient: OAuthClient {
         }
     }
 
-    public var migrateV1TokenResponse: Result<Networking.TokenContainer, Error>?
-    public func migrateV1Token() async throws -> Networking.TokenContainer? {
-        switch migrateV1TokenResponse {
-        case .success(let success):
-            return success
-        case .failure(let failure):
-            throw failure
-        case .none:
-            return nil
+    public var migrateV1TokenResponseError: Error?
+    public func migrateV1Token() async throws {
+        if let migrateV1TokenResponseError {
+            throw migrateV1TokenResponseError
         }
     }
 

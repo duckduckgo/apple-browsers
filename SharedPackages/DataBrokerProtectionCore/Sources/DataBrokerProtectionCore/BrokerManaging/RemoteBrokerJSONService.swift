@@ -50,11 +50,11 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
         case allBrokers
 
         static func request(for endpoint: Endpoint,
-                            baseURL: URL,
+                            endpointURL: URL,
                             contentType: String? = nil,
                             eTag: String? = nil,
                             accessToken: String) throws -> URLRequest {
-            var request = URLRequest(url: try url(for: endpoint, baseURL: baseURL))
+            var request = URLRequest(url: try url(for: endpoint, endpointURL: endpointURL))
             request.httpMethod = "GET"
             if let contentType {
                 request.setValue(contentType, forHTTPHeaderField: "Content-Type")
@@ -68,14 +68,14 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
             return request
         }
 
-        private static func url(for endpoint: Endpoint, baseURL: URL) throws -> URL {
-            var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: true)
+        private static func url(for endpoint: Endpoint, endpointURL: URL) throws -> URL {
+            var components = URLComponents(url: endpointURL, resolvingAgainstBaseURL: true)
 
             switch endpoint {
             case .mainConfig:
-                components?.path = "/dbp/remote/v0/main_config.json"
+                components?.path += "/dbp/remote/v0/main_config.json"
             case .allBrokers:
-                components?.path = "/dbp/remote/v0"
+                components?.path += "/dbp/remote/v0"
                 components?.queryItems = [
                     .init(name: "name", value: "all.zip"),
                     .init(name: "type", value: "spec")
@@ -165,7 +165,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
             guard let accessToken = await authenticationManager.accessToken() else { throw Error.missingAccessToken }
 
             let request = try Endpoint.request(for: .mainConfig,
-                                               baseURL: settings.selectedEnvironment.endpointURL,
+                                               endpointURL: settings.endpointURL,
                                                contentType: "application/json",
                                                eTag: settings.mainConfigETag,
                                                accessToken: accessToken)
@@ -235,7 +235,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
                 guard let accessToken = await authenticationManager.accessToken() else { throw Error.missingAccessToken }
 
                 let request = try Endpoint.request(for: .allBrokers,
-                                                   baseURL: settings.selectedEnvironment.endpointURL,
+                                                   endpointURL: settings.endpointURL,
                                                    accessToken: accessToken)
 
                 let _: URL = try await withCheckedThrowingContinuation { [weak fileManager] continuation in

@@ -33,6 +33,7 @@ public final class DataBrokerProtectionSettings {
         static let isAuthV2Enabled = "dbp.environment.isAuthV2Enabled"
 
         static let mainConfigETagKey = "dbp.mainConfigETag"
+        static let serviceRootKey = "dbp.serviceRoot"
         static let lastBrokerJSONUpdateCheckTimestampKey = "dbp.lastBrokerJSONUpdateCheckTimestamp"
     }
 
@@ -41,15 +42,6 @@ public final class DataBrokerProtectionSettings {
         case staging
 
         public static var `default`: SelectedEnvironment = .production
-
-        public var endpointURL: URL {
-            switch self {
-            case .production:
-                return URL(string: "https://dbp.duckduckgo.com")!
-            case .staging:
-                return URL(string: "https://dbp-staging.duckduckgo.com")!
-            }
-        }
     }
 
     public init(defaults: UserDefaults) {
@@ -99,6 +91,26 @@ public final class DataBrokerProtectionSettings {
 
     public func updateLastSuccessfulBrokerJSONUpdateCheckTimestamp(_ timestamp: TimeInterval? = nil) {
         lastBrokerJSONUpdateCheckTimestamp = timestamp ?? Date().timeIntervalSince1970
+    }
+
+    // MARK: - Service root
+
+    public var serviceRoot: String {
+        get {
+            defaults.string(forKey: Keys.serviceRootKey) ?? ""
+        }
+        set {
+            defaults.set(newValue, forKey: Keys.serviceRootKey)
+        }
+    }
+
+    public var endpointURL: URL {
+        switch selectedEnvironment {
+        case .production:
+            return URL(string: "https://dbp.duckduckgo.com")!
+        case .staging:
+            return URL(string: "https://dbp-staging.duckduckgo.com")!.appending(serviceRoot)
+        }
     }
 }
 

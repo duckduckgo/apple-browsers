@@ -47,6 +47,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     private var databaseBrowserWindowController: NSWindowController?
     private var dataBrokerForceOptOutWindowController: NSWindowController?
     private let customURLLabelMenuItem = NSMenuItem(title: "")
+    private let customServiceRootLabelMenuItem = NSMenuItem(title: "")
 
     private let environmentMenu = NSMenu()
     private let statusMenuIconMenu = NSMenuItem(title: "Show Status Menu Icon", action: #selector(DataBrokerProtectionDebugMenu.toggleShowStatusMenuItem))
@@ -138,6 +139,13 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
                 customURLLabelMenuItem
             }
 
+            NSMenuItem(title: "DBP API") {
+                NSMenuItem(title: "Set Service Root", action: #selector(DataBrokerProtectionDebugMenu.setCustomServiceRoot))
+                    .targetting(self)
+
+                customServiceRootLabelMenuItem
+            }
+
             NSMenuItem.separator()
 
             NSMenuItem(title: "Toggle VPN Bypass", action: #selector(DataBrokerProtectionDebugMenu.toggleVPNBypass))
@@ -172,6 +180,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
     override func update() {
         updateWebUIMenuItemsState()
+        updateServiceRootMenuItemState()
         updateEnvironmentMenu()
         updateShowStatusMenuIconMenu()
     }
@@ -198,6 +207,15 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
             guard let value = value, let url = URL(string: value), url.isValid else { return false }
 
             self?.webUISettings.setCustomURL(value)
+            return true
+        }
+    }
+
+    @objc private func setCustomServiceRoot() {
+        showCustomServiceRootAlert { [weak self] value in
+            guard let value else { return false }
+
+            self?.settings.serviceRoot = value
             return true
         }
     }
@@ -345,11 +363,44 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
         }
     }
 
+    func showCustomServiceRootAlert(callback: @escaping (String?) -> Bool) {
+        let alert = NSAlert()
+        alert.messageText = "Enter custom service root (staging environment only)"
+        alert.addButton(withTitle: "Accept")
+        alert.addButton(withTitle: "Cancel")
+
+        let inputTextField = NSTextField(frame: NSRect(x: 0, y: 0, width: 200, height: 24))
+        inputTextField.placeholderString = "branches/some-branch"
+        alert.accessoryView = inputTextField
+
+        let response = alert.runModal()
+        if response == .alertFirstButtonReturn {
+            if !callback(inputTextField.stringValue) {
+                let invalidAlert = NSAlert()
+                invalidAlert.messageText = "Invalid service root"
+                invalidAlert.informativeText = "Please enter a valid service root."
+                invalidAlert.addButton(withTitle: "OK")
+                invalidAlert.runModal()
+            }
+        } else {
+            _ = callback(nil)
+        }
+    }
+
     private func updateWebUIMenuItemsState() {
         productionURLMenuItem.state = webUISettings.selectedURLType == .custom ? .off : .on
         customURLMenuItem.state = webUISettings.selectedURLType == .custom ? .on : .off
 
         customURLLabelMenuItem.title = "Custom URL: [\(webUISettings.customURL ?? "")]"
+    }
+
+    private func updateServiceRootMenuItemState() {
+        switch settings.selectedEnvironment {
+        case .production:
+            customServiceRootLabelMenuItem.title = "Production environment currently in used. Please change it to Staging to use a custom service root"
+        case .staging:
+            customServiceRootLabelMenuItem.title = "Endpoint URL: [\(settings.endpointURL)]"
+        }
     }
 
     func menuItem(withTitle title: String, action: Selector, representedObject: Any?) -> NSMenuItem {

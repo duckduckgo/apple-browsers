@@ -515,8 +515,6 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
             handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncLoginError)
         case .failedToCreateAccount:
             handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncSignupError)
-        case .foundExistingAccount:
-            handleError(.unableToMergeTwoAccounts, error: error, event: .syncLoginExistingAccountError)
         }
     }
 }

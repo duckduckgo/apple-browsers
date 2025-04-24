@@ -1376,15 +1376,15 @@ private enum TooltipShortcut {
     var shortcut: String {
         switch self {
         case .back:
-            return "⌘ ["
+            return "⌘["
         case .forward:
-            return "⌘ ]"
+            return "⌘]"
         case .reload:
-            return "⌘ R"
+            return "⌘R"
         case .downloads:
-            return "⌘ J"
+            return "⌘J"
         case .bookmark:
-            return "⌘ D"
+            return "⌘D"
         }
     }
 

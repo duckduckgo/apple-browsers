@@ -25,7 +25,8 @@ struct PinnedTabView: View, DropDelegate {
         static let cornerRadius: CGFloat = 10
     }
 
-    private let visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager
+    let width: CGFloat
+    let height: CGFloat
 
     @ObservedObject var model: Tab
     @EnvironmentObject var collectionModel: PinnedTabsViewModel
@@ -43,7 +44,8 @@ struct PinnedTabView: View, DropDelegate {
                 }
             } label: {
                 PinnedTabInnerView(
-                    tabStyleProvider: visualStyleManager.style.tabStyleProvider,
+                    width: width,
+                    height: height,
                     foregroundColor: foregroundColor,
                     drawSeparator: !collectionModel.itemsWithoutSeparator.contains(model)
                 )
@@ -213,7 +215,8 @@ private struct BorderView: View {
 }
 
 struct PinnedTabInnerView: View {
-    let tabStyleProvider: TabStyleProviding
+    let width: CGFloat
+    let height: CGFloat
     var foregroundColor: Color
     var drawSeparator: Bool = true
 
@@ -240,7 +243,7 @@ struct PinnedTabInnerView: View {
                 .frame(maxWidth: 16, maxHeight: 16)
                 .aspectRatio(contentMode: .fit)
         }
-        .frame(width: tabStyleProvider.pinnedTabWidth)
+        .frame(width: width)
     }
 
     @ViewBuilder

@@ -27,7 +27,10 @@ struct PinnedTabsView: View {
     var body: some View {
         HStack(alignment: .bottom, spacing: 0) {
             ForEach(model.items) { item in
-                PinnedTabView(model: item, showsHover: draggedTab == nil)
+                PinnedTabView(width: tabStyleProvider.pinnedTabWidth,
+                              height: tabStyleProvider.pinnedTabHeight,
+                              model: item,
+                              showsHover: draggedTab == nil)
                     .environmentObject(model)
                     .frame(maxWidth: tabStyleProvider.pinnedTabWidth,
                            maxHeight: tabStyleProvider.pinnedTabHeight)

@@ -90,7 +90,7 @@ struct AboutPanelView: View {
 }
 
 // Controller to display the About panel
-class AboutPanelController {
+final class AboutPanelController {
 
     private var panel: NSPanel!
 

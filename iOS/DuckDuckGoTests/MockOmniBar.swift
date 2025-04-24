@@ -61,7 +61,7 @@ final class MockOmniBar: OmniBar {
     func cancelAllAnimations() { }
     func completeAnimationForDaxDialog() { }
 
-    final class MockOmniBarView: UIView, OmniBarView {
+    final class MockOmniBarView: UIView, OmniBarView {        
 
         required init?(coder: NSCoder) {
             fatalError("init(coder:) has not been implemented")
@@ -72,7 +72,8 @@ final class MockOmniBar: OmniBar {
         }
 
         var text: String?
-        var expectedHeight: CGFloat = 52
+        static let expectedHeight: CGFloat = 52
+        var expectedHeight: CGFloat = MockOmniBarView.expectedHeight
         var textField: DuckDuckGo.TextFieldWithInsets!
         var accessoryType: DuckDuckGo.OmniBarAccessoryType = .chat
         var privacyInfoContainer: DuckDuckGo.PrivacyInfoContainerView!

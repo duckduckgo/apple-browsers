@@ -135,7 +135,18 @@ final class ToolbarHandler: ToolbarStateHandling {
     }
 
     private func createBarButtonItem(title: String, imageName: String) -> UIBarButtonItem {
-        return UIBarButtonItem(title: title, image: UIImage(named: imageName), primaryAction: nil)
+        if self.isExperimentalThemingEnabled {
+            let button = ToolbarButton(.primary)
+            button.setImage(UIImage(named: imageName))
+            button.frame = CGRect(x: 0, y: 0, width: 34, height: 44)
+
+            let barItem = UIBarButtonItem(customView: button)
+            barItem.title = title
+
+            return barItem
+        } else {
+            return UIBarButtonItem(title: title, image: UIImage(named: imageName), primaryAction: nil)
+        }
     }
 
     private func createPageLoadedButtons() -> [UIBarButtonItem] {

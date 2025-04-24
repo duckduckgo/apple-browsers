@@ -588,11 +588,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertNil(result)
         XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseAttempt.name + "_d",
                                      PrivacyProPixel.privacyProPurchaseAttempt.name + "_c",
-                                     PrivacyProPixel.privacyProRestoreAfterPurchaseAttempt.name,
-                                     PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_c",
-                                     PrivacyProPixel.privacyProPurchaseFailureBackendError.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailureBackendError.name + "_c"])
+                                     PrivacyProPixel.privacyProRestoreAfterPurchaseAttempt.name])
     }
 
     func testSubscriptionSelectedErrorWhenPurchasingWhenUnauthenticatedAndHavingActiveSubscriptionOnAppleID() async throws {
@@ -625,10 +621,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertPrivacyPixelsFired([PrivacyProPixel.privacyProPurchaseAttempt.name + "_d",
                                      PrivacyProPixel.privacyProPurchaseAttempt.name + "_c",
                                      PrivacyProPixel.privacyProRestoreAfterPurchaseAttempt.name,
-                                     PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_c",
-                                     PrivacyProPixel.privacyProPurchaseFailureBackendError.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailureBackendError.name + "_c",
                                      PrivacyProPixel.privacyProRestorePurchaseStoreSuccess.name + "_d",
                                      PrivacyProPixel.privacyProRestorePurchaseStoreSuccess.name + "_c"])
     }
@@ -668,8 +660,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                      PrivacyProPixel.privacyProPurchaseAttempt.name + "_c",
                                      PrivacyProPixel.privacyProPurchaseFailureAccountNotCreated.name + "_d",
                                      PrivacyProPixel.privacyProPurchaseFailureAccountNotCreated.name + "_c",
-                                     PrivacyProPixel.privacyProPurchaseFailure.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailure.name + "_c",
                                      PrivacyProPixel.privacyProOfferScreenImpression.name])
     }
 
@@ -719,8 +709,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                      PrivacyProPixel.privacyProPurchaseAttempt.name + "_c",
                                      PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_d",
                                      PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_c",
-                                     PrivacyProPixel.privacyProPurchaseFailure.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailure.name + "_c",
                                      PrivacyProPixel.privacyProOfferScreenImpression.name])
     }
 
@@ -749,8 +737,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                      PrivacyProPixel.privacyProPurchaseAttempt.name + "_c",
                                      PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_d",
                                      PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_c",
-                                     PrivacyProPixel.privacyProPurchaseFailure.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailure.name + "_c",
                                      PrivacyProPixel.privacyProOfferScreenImpression.name])
     }
 
@@ -779,8 +765,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                      PrivacyProPixel.privacyProPurchaseAttempt.name + "_c",
                                      PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_d",
                                      PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_c",
-                                     PrivacyProPixel.privacyProPurchaseFailure.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailure.name + "_c",
                                      PrivacyProPixel.privacyProOfferScreenImpression.name])
     }
 
@@ -809,8 +793,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                      PrivacyProPixel.privacyProPurchaseAttempt.name + "_c",
                                      PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_d",
                                      PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_c",
-                                     PrivacyProPixel.privacyProPurchaseFailure.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailure.name + "_c",
                                      PrivacyProPixel.privacyProOfferScreenImpression.name])
     }
 
@@ -839,8 +821,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                      PrivacyProPixel.privacyProPurchaseAttempt.name + "_c",
                                      PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_d",
                                      PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_c",
-                                     PrivacyProPixel.privacyProPurchaseFailure.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailure.name + "_c",
                                      PrivacyProPixel.privacyProOfferScreenImpression.name])
     }
 
@@ -869,8 +849,6 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                      PrivacyProPixel.privacyProPurchaseAttempt.name + "_c",
                                      PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_d",
                                      PrivacyProPixel.privacyProPurchaseFailureStoreError.name + "_c",
-                                     PrivacyProPixel.privacyProPurchaseFailure.name + "_d",
-                                     PrivacyProPixel.privacyProPurchaseFailure.name + "_c",
                                      PrivacyProPixel.privacyProOfferScreenImpression.name])
     }
 

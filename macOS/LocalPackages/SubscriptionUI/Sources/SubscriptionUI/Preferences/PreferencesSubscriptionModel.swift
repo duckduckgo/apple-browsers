@@ -76,10 +76,11 @@ public final class PreferencesSubscriptionModel: ObservableObject {
              openITR,
              openFeedback,
              iHaveASubscriptionClick,
-             postSubscriptionAddEmailClick,
-             addDeviceEnterEmail,
-             restorePurchaseStoreClick,
-             activeSubscriptionSettingsClick,
+             activateSubscriptionViaEmailClick,
+             activateSubscriptionViaRestoreAppStorePurchaseClick,
+             manageEmailClick,
+             addToDeviceActivationFlow,
+             openSubscriptionSettingsClick,
              changePlanOrBillingClick,
              removeSubscriptionClick
     }
@@ -182,7 +183,7 @@ public final class PreferencesSubscriptionModel: ObservableObject {
     @MainActor
     func didAppear() {
         if isUserAuthenticated {
-            userEventHandler(.activeSubscriptionSettingsClick)
+            userEventHandler(.openSubscriptionSettingsClick)
             fetchAndUpdateSubscriptionDetails()
         } else {
             self.subscriptionStorefrontRegion = currentStorefrontRegion()
@@ -305,16 +306,16 @@ public final class PreferencesSubscriptionModel: ObservableObject {
 
         switch type {
         case .activationFlow:
-            eventType = .addDeviceEnterEmail
+            eventType = .addToDeviceActivationFlow
             url = subscriptionManager.url(for: .activationFlow)
         case .activationFlowAddEmailStep:
-            eventType = .addDeviceEnterEmail
+            eventType = .addToDeviceActivationFlow
             url = subscriptionManager.url(for: .activationFlowAddEmailStep)
         case .activationFlowLinkViaEmailStep:
-            eventType = .addDeviceEnterEmail
+            eventType = .addToDeviceActivationFlow
             url = subscriptionManager.url(for: .activationFlowLinkViaEmailStep)
         case .editEmail:
-            eventType = .postSubscriptionAddEmailClick
+            eventType = .manageEmailClick
             url = subscriptionManager.url(for: .manageEmail)
         }
 
@@ -550,20 +551,6 @@ public final class PreferencesSubscriptionModelV2: ObservableObject {
     private var entitlementsObserver: Any?
     private var subscriptionChangeObserver: Any?
 
-//    public enum UserEvent {
-//        case openVPN,
-//             openDB,
-//             openITR,
-//             openFeedback,
-//             iHaveASubscriptionClick,
-//             postSubscriptionAddEmailClick,
-//             addDeviceEnterEmail,
-//             restorePurchaseStoreClick,
-//             activeSubscriptionSettingsClick,
-//             changePlanOrBillingClick,
-//             removeSubscriptionClick
-//    }
-
     lazy var statePublisher: AnyPublisher<PreferencesSubscriptionState, Never> = {
         let isSubscriptionActivePublisher: AnyPublisher<Bool, Never> = $subscriptionStatus.map {
             let status = $0
@@ -666,7 +653,7 @@ hasAnyEntitlement: \(hasAnyEntitlement)
     @MainActor
     func didAppear() {
         if isUserAuthenticated {
-            userEventHandler(.activeSubscriptionSettingsClick)
+            userEventHandler(.openSubscriptionSettingsClick)
             fetchAndUpdateSubscriptionDetails()
         } else {
             self.subscriptionStorefrontRegion = currentStorefrontRegion()
@@ -789,16 +776,16 @@ hasAnyEntitlement: \(hasAnyEntitlement)
 
         switch type {
         case .activationFlow:
-            eventType = .addDeviceEnterEmail
+            eventType = .addToDeviceActivationFlow
             url = subscriptionManager.url(for: .activationFlow)
         case .activationFlowAddEmailStep:
-            eventType = .addDeviceEnterEmail
+            eventType = .addToDeviceActivationFlow
             url = subscriptionManager.url(for: .activationFlowAddEmailStep)
         case .activationFlowLinkViaEmailStep:
-            eventType = .addDeviceEnterEmail
+            eventType = .addToDeviceActivationFlow
             url = subscriptionManager.url(for: .activationFlowLinkViaEmailStep)
         case .editEmail:
-            eventType = .postSubscriptionAddEmailClick
+            eventType = .manageEmailClick
             url = subscriptionManager.url(for: .manageEmail)
         }
 

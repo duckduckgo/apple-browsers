@@ -151,6 +151,10 @@ extension TabCrashRecoveryExtension: NavigationResponder {
             tabDidCrashSubject.send(isCrashLoop ? .crashLoop : .single)
             lastCrashedAt = crashTimestamp
 
+            if isCrashLoop {
+                firePixel(GeneralPixel.webKitTerminationLoop, [:])
+            }
+
             shouldAutoReload = !isCrashLoop
         } else {
             shouldAutoReload = featureFlagger.internalUserDecider.isInternalUser

@@ -198,15 +198,7 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     // Of pausing newly added elements.
     @MainActor
     private func pauseVideoStart(webView: WKWebView) async {
-        weak var weakWebView = webView
-        Task { @MainActor [weak self] in
-            let startTime = Date()
-            while Date().timeIntervalSince(startTime) < 1.0 {
-                guard let self = self, let webView = weakWebView else { break }
-                self.toggleMediaPlayback(webView, pause: true)
-                try? await Task.sleep(nanoseconds: 50_000_000)
-            }
-        }
+        self.toggleMediaPlayback(webView, pause: true)
     }
 
     private func resetLastHandledVideoID(force: Bool = false) {
@@ -348,7 +340,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     func handleReload(webView: WKWebView) {
         
         webView.reload()
-        
+
         guard featureFlagger.isFeatureOn(.duckPlayer) else { return }
 
         resetLastHandledVideoID(force: true)

@@ -166,12 +166,12 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
 
     @MainActor
     private func onCurrentTimeStamp(params: Any, original: WKScriptMessage) -> Encodable? {
-        //print("DP: 🟣 DuckPlayerNativeUserScript onCurrentTimeStamp Called from UserScript")
         guard let dict = params as? [String: Any],
               let time = dict[Constants.timestamp] as? String else {
             return nil
         }
         duckPlayer.currentTimeStampPublisher.send(TimeInterval(Int(time) ?? 0))
+        print("DP: 🟣 DuckPlayerNativeUserScript onCurrentTimeStamp Called from UserScript: Time \(time)")
         let result: [String: String] = [:]
         return result
     }

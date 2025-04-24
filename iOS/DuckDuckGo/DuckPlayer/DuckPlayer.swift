@@ -372,19 +372,19 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
 
         // Logging for UserScript Publishers
         muteAudioPublisher
-            .sink { muted in print("DP: 🔵 DuckPlayer: Mute Audio: \\(muted) received") }
+            .sink { muted in print("DP: 🔵 DuckPlayer: Mute Audio: \(muted) received") }
             .store(in: &nativePlayerCancellables)
 
         mediaControlPublisher
-            .sink { playing in print("DP: 🔵 DuckPlayer: Media Control Play: \\(playing) received") }
+            .sink { playing in print("DP: 🔵 DuckPlayer: Media Control: \(playing) received") }
             .store(in: &nativePlayerCancellables)
 
         currentTimeStampPublisher
-            .sink { timestamp in print("DP: 🔵 DuckPlayer: Current Timestamp: \\(timestamp) received") }
+            .sink { timestamp in print("DP: 🔵 DuckPlayer: Current Timestamp: \(timestamp) received") }
             .store(in: &nativePlayerCancellables)
 
         serpNotificationPublisher
-            .sink { isSERP in print("DP: 🔵 DuckPlayer: SERP Notification: \\(isSERP) received") }
+            .sink { isSERP in print("DP: 🔵 DuckPlayer: SERP Notification: \(isSERP) received") }
             .store(in: &nativePlayerCancellables)
 
         NotificationCenter.default.addObserver(self,

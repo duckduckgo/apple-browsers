@@ -111,20 +111,6 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
         NotificationCenter.default.removeObserver(self)
     }
 
-    // CSS TESTS
-    @MainActor
-    func testCSS() {
-        print("DP: ⚪️ NavigationHandler testCSS: Sending Serp Message")
-        duckPlayer.serpNotificationPublisher.send(true)
-        
-        print("DP: ⚪️ NavigationHandler: testCSS Sending Mute Audio Message")
-        duckPlayer.muteAudioPublisher.send(true)
-
-        print("DP: ⚪️ NavigationHandler: testCSS Sending Media Control Message")
-        duckPlayer.mediaControlPublisher.send(true)
-            
-    }
-
     /// Sets the referrer based on the current web view
     ///
     /// - Parameter webView: The `WKWebView` whose URL is used to determine the referrer.
@@ -253,10 +239,6 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     /// - Returns: A result indicating whether the URL change was handled.
     @MainActor
     func handleURLChange(webView: WKWebView, previousURL: URL?, newURL: URL?) -> DuckPlayerNavigationHandlerURLChangeResult {
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-            self.testCSS()
-        }
             
         guard featureFlagger.isFeatureOn(.duckPlayer) else { return .notHandled(.featureOff) }
 
@@ -366,11 +348,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     func handleReload(webView: WKWebView) {
         
         webView.reload()
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) {
-            self.testCSS()
-        }
-
+        
         guard featureFlagger.isFeatureOn(.duckPlayer) else { return }
 
         resetLastHandledVideoID(force: true)

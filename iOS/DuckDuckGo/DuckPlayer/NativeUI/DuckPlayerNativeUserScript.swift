@@ -32,6 +32,13 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
 
     struct Constants {
         static let featureName = "duckPlayerNative"
+        static let SERP = "SERP"
+        static let YOUTUBE = "YOUTUBE"
+        static let NOCOOKIE = "NOCOOKIE"
+        static let UNKNOWN = "UNKNOWN"
+        static let locale = "locale"
+        static let pageType = "pageType"
+        static let timestamp = "timestamp"
     }
 
     struct Handlers {
@@ -110,8 +117,7 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
         }
     }
 
-    deinit {
-        print("DP: 🟢 DuckPlayerNativeUserScript deinit called")
+    deinit {        
         cancellables.forEach { $0.cancel() }
         cancellables.removeAll()
     }
@@ -137,8 +143,24 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
 
     @MainActor
     private func initialSetup(params: Any, original: WKScriptMessage) -> Encodable? {
-        print("DP: 🟣 DuckPlayerNativeUserScript initialSetup Called from UserScript")
-        let result: [String: String] = [:]
+        guard let webView = webView else { return nil }
+        let locale = Locale.current.languageCode ?? "en"
+        let pageType: String
+        guard let host = webView.url?.host else { return nil }
+        switch host {
+        case DuckPlayerSettingsDefault.OriginDomains.duckduckgo:
+            pageType = Constants.SERP
+        case DuckPlayerSettingsDefault.OriginDomains.youtube, 
+             DuckPlayerSettingsDefault.OriginDomains.youtubeWWW, 
+             DuckPlayerSettingsDefault.OriginDomains.youtubeMobile:
+            pageType = Constants.YOUTUBE
+        case DuckPlayerSettingsDefault.OriginDomains.youtubeNoCookie, 
+             DuckPlayerSettingsDefault.OriginDomains.youtubeNoCookieWWW:
+            pageType = Constants.NOCOOKIE
+        default:
+            pageType = Constants.UNKNOWN
+        }
+        let result: [String: String] = [Constants.locale: locale, Constants.pageType: pageType]
         return result
     }
 
@@ -146,7 +168,7 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
     private func onCurrentTimeStamp(params: Any, original: WKScriptMessage) -> Encodable? {
         //print("DP: 🟣 DuckPlayerNativeUserScript onCurrentTimeStamp Called from UserScript")
         guard let dict = params as? [String: Any],
-              let time = dict["timestamp"] as? String else {
+              let time = dict[Constants.timestamp] as? String else {
             return nil
         }
         duckPlayer.currentTimeStampPublisher.send(TimeInterval(Int(time) ?? 0))

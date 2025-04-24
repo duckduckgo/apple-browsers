@@ -29,12 +29,14 @@ struct DuckPlayerWebView: UIViewRepresentable {
 
     /// Script to get current timestamp
     private let getCurrentTimeScript: String = {
-        guard let url = Bundle.main.url(forResource: "getCurrentTimestamp", withExtension: "js"),
+        return ""
+        /*guard let url = Bundle.main.url(forResource: "getCurrentTimestamp", withExtension: "js"),
                 let script = try? String(contentsOf: url) else {
             assertionFailure("Failed to load get current timestamp script")
             return ""
         }
         return script
+        */
     }()
 
    struct Constants {
@@ -112,6 +114,7 @@ struct DuckPlayerWebView: UIViewRepresentable {
        /// - Returns: The current timestamp in seconds
        @MainActor
        func getCurrentTimestamp(_ webView: WKWebView) async -> TimeInterval {
+           /*
            do {
                let result = try await (webView.evaluateJavaScript("getCurrentTime()") as Any)
                if let timestamp = result as? TimeInterval {
@@ -122,6 +125,7 @@ struct DuckPlayerWebView: UIViewRepresentable {
            } catch {
                Logger.duckplayer.error("Error getting video timestamp: \(error.localizedDescription)")
            }
+           */
            return 0
        }
 

@@ -25,7 +25,7 @@ extension NSAlert {
         let alert = NSAlert()
         alert.messageText = "Allow sharing of cookies and website data?"
         alert.alertStyle = .warning
-        alert.icon = NSImage(named: NSImage.cautionName)
+        alert.icon = .privacyQuestion
         // Buttons: first added is rightmost, so we add Allow then Deny
         alert.addButton(withTitle: "Allow")
         alert.addButton(withTitle: "Deny")
@@ -126,7 +126,7 @@ extension NSAlert {
         alert.messageText = UserText.storageAccessQuirkDomainsPromptHeader(entity: entity)
         alert.informativeText = UserText.storageAccessQuirkDomainsPromptBody(entity: entity, quirkDomains: quirkDomains.joined(separator: ", "))
         alert.alertStyle = .warning
-        alert.icon = .alertColor16
+        alert.icon = .privacyQuestion
         alert.addButton(withTitle: UserText.permissionPopupAllowButton)
         alert.addButton(withTitle: UserText.permissionPopoverDenyButton)
 

@@ -649,11 +649,30 @@ extension AddressBarViewController: NSDraggingSource, NSPasteboardItemDataProvid
     }
 
     private func beginDraggingSessionIfNeeded(with event: NSEvent, in window: NSWindow) -> Bool {
-        guard passiveTextField.isVisible,
-              passiveTextField.withMouseLocationInViewCoordinates(convert: {
-                  passiveTextField.bounds.insetBy(dx: -2, dy: -2).contains($0)
-              }) == true,
-              tabViewModel?.tab.content.userEditableUrl != nil else { return false }
+        var isMouseDownOnPassiveTextField: Bool {
+            tabViewModel?.tab.content.userEditableUrl != nil
+            && passiveTextField.isVisible
+            && passiveTextField.withMouseLocationInViewCoordinates(convert: {
+                passiveTextField.bounds.insetBy(dx: -2, dy: -2).contains($0)
+            }) == true
+        }
+        var isMouseDownOnActiveTextFieldFavicon: Bool {
+            guard let addressBarButtonsViewController else { return false }
+            return addressBarTextField.isFirstResponder
+            && addressBarButtonsViewController.imageButtonWrapper.withMouseLocationInViewCoordinates(convert: {
+                addressBarButtonsViewController.imageButtonWrapper.bounds.insetBy(dx: -2, dy: -2).contains($0)
+            }) == true
+        }
+        var draggedView: NSView? {
+            if isMouseDownOnPassiveTextField {
+                passiveTextField
+            } else if isMouseDownOnActiveTextFieldFavicon {
+                addressBarButtonsViewController?.imageButtonWrapper
+            } else {
+                nil
+            }
+        }
+        guard let draggedView else { return false }
 
         let initialLocation = event.locationInWindow
         while let nextEvent = window.nextEvent(matching: [.leftMouseUp, .leftMouseDragged], until: Date.distantFuture, inMode: .default, dequeue: true) {
@@ -675,7 +694,7 @@ extension AddressBarViewController: NSDraggingSource, NSPasteboardItemDataProvid
             let draggingItem = NSDraggingItem(pasteboardWriter: pasteboardItem)
             draggingItem.draggingFrame = passiveTextField.bounds
 
-            passiveTextField.beginDraggingSession(with: [draggingItem], event: event, source: self)
+            draggedView.beginDraggingSession(with: [draggingItem], event: event, source: self)
             return true
         }
         return false

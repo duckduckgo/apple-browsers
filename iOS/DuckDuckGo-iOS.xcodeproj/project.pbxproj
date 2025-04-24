@@ -536,7 +536,6 @@
 		7BBE25A52D71EEEB003131FA /* TabViewController+Automation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BBE25A42D71EEEB003131FA /* TabViewController+Automation.swift */; };
 		7BC571202BDBB877003B0CCE /* VPNActivationDateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BC5711F2BDBB877003B0CCE /* VPNActivationDateStore.swift */; };
 		7BC571212BDBB977003B0CCE /* VPNActivationDateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BC5711F2BDBB877003B0CCE /* VPNActivationDateStore.swift */; };
-		7BD0452A2DB823270072A66A /* PixelExperimentKitTestUtils in Frameworks */ = {isa = PBXBuildFile; productRef = 7BD045292DB823270072A66A /* PixelExperimentKitTestUtils */; };
 		7BDBAD0E2CBFB3F1000379B7 /* VPN.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7BDBAD0D2CBFB3F1000379B7 /* VPN.xcassets */; };
 		7BF78E022CA2CC3E0026A1FC /* TipKitAppEventHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BF78E012CA2CC3E0026A1FC /* TipKitAppEventHandling.swift */; };
 		7BFD5FD52C9DA310000FF959 /* VPNAddWidgetTip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BFD5FD42C9DA310000FF959 /* VPNAddWidgetTip.swift */; };
@@ -3634,7 +3633,6 @@
 				4BC95EA52D741787002FAB32 /* Common in Frameworks */,
 				84EFBCCC2D817CB500706739 /* InlineSnapshotTesting in Frameworks */,
 				4BC95EA72D74178C002FAB32 /* ContentBlocking in Frameworks */,
-				7BD0452A2DB823270072A66A /* PixelExperimentKitTestUtils in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -7960,7 +7958,6 @@
 				4BC95EAE2D7417A8002FAB32 /* SubscriptionTestingUtilities */,
 				84EFBCCB2D817CB500706739 /* InlineSnapshotTesting */,
 				84EFBCCD2D817CB500706739 /* SnapshotTesting */,
-				7BD045292DB823270072A66A /* PixelExperimentKitTestUtils */,
 			);
 			productName = DuckDuckGoTests;
 			productReference = 84E341A61E2F7EFB00BDBA6F /* UnitTests.xctest */;
@@ -13236,10 +13233,6 @@
 		7B2CCBA42D11ABBA00FE5852 /* VPNWidgetSupport */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = VPNWidgetSupport;
-		};
-		7BD045292DB823270072A66A /* PixelExperimentKitTestUtils */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = PixelExperimentKitTestUtils;
 		};
 		84EFBCCB2D817CB500706739 /* InlineSnapshotTesting */ = {
 			isa = XCSwiftPackageProductDependency;

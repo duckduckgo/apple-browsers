@@ -64,7 +64,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
         case .initial:
             createInitialDialog(onManualDismiss: onManualDismiss)
         case .addFavorite:
-            createAddFavoriteDialog(message: homeDialog.message)
+            createAddFavoriteDialog(message: UserText.Onboarding.ContextualOnboarding.daxDialogHomeAddFavorite)
         case .subsequent:
             createSubsequentDialog(onManualDismiss: onManualDismiss)
         case .final:
@@ -72,8 +72,6 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
         case .privacyProPromotion:
             // Re-use same dismiss closure as dismissing the final dialog will set onboarding completed true
             createPrivacyProPromoDialog(onDismiss: onCompletion)
-        default:
-            EmptyView()
         }
     }
 

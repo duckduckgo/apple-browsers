@@ -130,6 +130,8 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
 }
 
 class MockPrivacyConfiguration: PrivacyConfiguration {
+    
+    var isSubfeatureEnabledCheck: ((any PrivacySubfeature) -> Bool)?
     func isSubfeatureEnabled(_ subfeature: any BrowserServicesKit.PrivacySubfeature, versionProvider: BrowserServicesKit.AppVersionProvider, randomizer: (Range<Double>) -> Double, defaultValue: Bool) -> Bool {
         isSubfeatureEnabledCheck?(subfeature) ?? false
     }
@@ -138,16 +140,8 @@ class MockPrivacyConfiguration: PrivacyConfiguration {
         true
     }
 
-    func isEnabled(featureKey: PrivacyFeature, versionProvider: AppVersionProvider) -> Bool { true }
-
     func stateFor(featureKey: BrowserServicesKit.PrivacyFeature, versionProvider: BrowserServicesKit.AppVersionProvider) -> BrowserServicesKit.PrivacyConfigurationFeatureState {
         return .enabled
-    }
-
-    var isSubfeatureEnabledCheck: ((any PrivacySubfeature) -> Bool)?
-
-    func isSubfeatureEnabled(_ subfeature: any BrowserServicesKit.PrivacySubfeature, versionProvider: BrowserServicesKit.AppVersionProvider, randomizer: (Range<Double>) -> Double) -> Bool {
-        isSubfeatureEnabledCheck?(subfeature) ?? false
     }
 
     func stateFor(_ subfeature: any BrowserServicesKit.PrivacySubfeature, versionProvider: BrowserServicesKit.AppVersionProvider, randomizer: (Range<Double>) -> Double) -> BrowserServicesKit.PrivacyConfigurationFeatureState {

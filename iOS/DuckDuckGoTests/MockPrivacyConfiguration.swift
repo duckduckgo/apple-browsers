@@ -24,10 +24,6 @@ import Combine
 class MockPrivacyConfiguration: PrivacyConfiguration {
 
     var isSubfeatureKeyEnabled: ((any PrivacySubfeature, AppVersionProvider) -> Bool)?
-    func isSubfeatureEnabled(_ subfeature: any PrivacySubfeature, versionProvider: AppVersionProvider, randomizer: (Range<Double>) -> Double) -> Bool {
-        isSubfeatureKeyEnabled?(subfeature, versionProvider) ?? false
-    }
-
     func isSubfeatureEnabled(_ subfeature: any BrowserServicesKit.PrivacySubfeature, versionProvider: BrowserServicesKit.AppVersionProvider, randomizer: (Range<Double>) -> Double, defaultValue: Bool) -> Bool {
         isSubfeatureKeyEnabled?(subfeature, versionProvider) ?? false
     }
@@ -68,7 +64,7 @@ class MockPrivacyConfiguration: PrivacyConfiguration {
     func exceptionsList(forFeature featureKey: PrivacyFeature) -> [String] { exceptionsList(featureKey) }
     var isFeatureKeyEnabled: ((PrivacyFeature, AppVersionProvider) -> Bool)?
     func isEnabled(featureKey: PrivacyFeature, versionProvider: AppVersionProvider) -> Bool {
-        isFeatureKeyEnabled?(featureKey, versionProvider) ?? true
+        isEnabled(featureKey: featureKey, versionProvider: versionProvider, defaultValue: false)
     }
 
     func isEnabled(featureKey: BrowserServicesKit.PrivacyFeature, versionProvider: BrowserServicesKit.AppVersionProvider, defaultValue: Bool) -> Bool {

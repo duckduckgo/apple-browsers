@@ -45,7 +45,7 @@ class PrivacyConfigurationMock: PrivacyConfiguration {
 
     var enabledFeaturesForVersions: [PrivacyFeature: Set<String>] = [:]
     func isEnabled(featureKey: PrivacyFeature, versionProvider: AppVersionProvider) -> Bool {
-        return enabledFeaturesForVersions[featureKey]?.contains(versionProvider.appVersion() ?? "") ?? false
+        return isEnabled(featureKey: featureKey, versionProvider: versionProvider, defaultValue: false)
     }
 
     func isEnabled(featureKey: BrowserServicesKit.PrivacyFeature, versionProvider: BrowserServicesKit.AppVersionProvider, defaultValue: Bool) -> Bool {
@@ -60,10 +60,6 @@ class PrivacyConfigurationMock: PrivacyConfiguration {
     }
 
     var enabledSubfeaturesForVersions: [String: Set<String>] = [:]
-    func isSubfeatureEnabled(_ subfeature: any PrivacySubfeature, versionProvider: AppVersionProvider, randomizer: (Range<Double>) -> Double) -> Bool {
-        return enabledSubfeaturesForVersions[subfeature.rawValue]?.contains(versionProvider.appVersion() ?? "") ?? false
-    }
-
     func isSubfeatureEnabled(_ subfeature: any BrowserServicesKit.PrivacySubfeature, versionProvider: BrowserServicesKit.AppVersionProvider, randomizer: (Range<Double>) -> Double, defaultValue: Bool) -> Bool {
         return enabledSubfeaturesForVersions[subfeature.rawValue]?.contains(versionProvider.appVersion() ?? "") ?? false
     }

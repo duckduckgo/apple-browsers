@@ -17,27 +17,28 @@
 //  limitations under the License.
 //
 
+#if DEBUG
+import BrowserServicesKit
 import PixelKit
 import PixelExperimentKit
-import PixelExperimentKitTestUtils
 
-#if DEBUG
 extension PixelKit {
 
     /// Helps our automated tests set up PixelKit for experiment testing support
     ///
-    /// The reason this is not in the unit test target or in a separate module is because we need this setup to run
-    /// in the target process we want to configure.
+    /// The reason this is not in the unit test target or in a separate module is because we need to
+    /// execute this code in the main app during testing as otherwise the static configuration for
+    /// PixelExperimentKit won't work.
     ///
-    /// More information in:
+    /// The issue is explained in more detail in [this task](https://app.asana.com/1/137249556945/project/1208889145294658/task/1210054230046600?focus=true)
     ///
-    static func configureExperimentsForTesting() {
-        let mockPixelStore = MockExperimentActionPixelStore()
-        let mockFeatureFlagger = MockFeatureFlagger()
+    static func configureExperimentsForTesting(
+        pixelStore: ExperimentActionPixelStore,
+        featureFlagger: FeatureFlagger) {
 
         PixelKit.configureExperimentKit(
-            featureFlagger: mockFeatureFlagger,
-            eventTracker: ExperimentEventTracker(store: mockPixelStore)) { _, _, _ in }
+            featureFlagger: featureFlagger,
+            eventTracker: ExperimentEventTracker(store: pixelStore)) { _, _, _ in }
     }
 }
 #endif

@@ -588,3 +588,41 @@ final class PixelExperimentKitTests: XCTestCase {
     }
 
 }
+
+public class MockFeatureFlagger: FeatureFlagger {
+    public var experiments: Experiments = [:]
+
+    public var internalUserDecider: any InternalUserDecider = MockInternalUserDecider()
+
+    public var localOverrides: (any BrowserServicesKit.FeatureFlagLocalOverriding)?
+
+    public init() {}
+
+    public func resolveCohort<Flag>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? where Flag: FeatureFlagDescribing {
+        nil
+    }
+
+    func resolveCohort<Flag>(for featureFlag: Flag) -> (any FeatureFlagCohortDescribing)? where Flag: FeatureFlagDescribing {
+        return nil
+    }
+
+    public var allActiveExperiments: Experiments {
+        return experiments
+    }
+
+    public func isFeatureOn<Flag>(for featureFlag: Flag, allowOverride: Bool) -> Bool where Flag: FeatureFlagDescribing {
+        return false
+    }
+}
+
+public final class MockInternalUserDecider: InternalUserDecider {
+    public var isInternalUser: Bool = false
+
+    public var isInternalUserPublisher: AnyPublisher<Bool, Never> {
+        Just(false).eraseToAnyPublisher()
+    }
+
+    public func markUserAsInternalIfNeeded(forUrl url: URL?, response: HTTPURLResponse?) -> Bool {
+        return false
+    }
+}

@@ -522,7 +522,6 @@
 		7B2CCBA32D11ABB100FE5852 /* VPNWidgetSupport in Frameworks */ = {isa = PBXBuildFile; productRef = 7B2CCBA22D11ABB100FE5852 /* VPNWidgetSupport */; };
 		7B2CCBA52D11ABBA00FE5852 /* VPNWidgetSupport in Frameworks */ = {isa = PBXBuildFile; productRef = 7B2CCBA42D11ABBA00FE5852 /* VPNWidgetSupport */; };
 		7B38BCC82DB8D31700408A27 /* PixelKit+ExperimentKitTestingSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B38BCC72DB8D31000408A27 /* PixelKit+ExperimentKitTestingSupport.swift */; };
-		7B38BCCA2DB8D5E100408A27 /* PixelExperimentKitTestUtils in Frameworks */ = {isa = PBXBuildFile; productRef = 7B38BCC92DB8D5E100408A27 /* PixelExperimentKitTestUtils */; };
 		7B4DC5C22CB2AE4600EE5CC2 /* WidgetKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B4DC5C12CB2AE4600EE5CC2 /* WidgetKind.swift */; };
 		7B4DC5C32CB2AF0700EE5CC2 /* WidgetKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B4DC5C12CB2AE4600EE5CC2 /* WidgetKind.swift */; };
 		7B4DC5C42CB2B1D000EE5CC2 /* WidgetKind.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B4DC5C12CB2AE4600EE5CC2 /* WidgetKind.swift */; };
@@ -3647,7 +3646,6 @@
 				F1D43AFA2B99C1D300BAB743 /* BareBonesBrowserKit in Frameworks */,
 				7B2CCBA52D11ABBA00FE5852 /* VPNWidgetSupport in Frameworks */,
 				F143C2EB1E4A4CD400CFDE3A /* Core.framework in Frameworks */,
-				7B38BCCA2DB8D5E100408A27 /* PixelExperimentKitTestUtils in Frameworks */,
 				4BC95E792D7416A1002FAB32 /* Crashes in Frameworks */,
 				4BC95E7B2D7416AD002FAB32 /* Navigation in Frameworks */,
 				4BC95E7F2D7416C1002FAB32 /* PrivacyDashboard in Frameworks */,
@@ -7985,7 +7983,6 @@
 				4BC95E7E2D7416C1002FAB32 /* PrivacyDashboard */,
 				4BC95EC42D7418B2002FAB32 /* NetworkProtection */,
 				9FDD72042D895D8C0016246B /* CombineSchedulers */,
-				7B38BCC92DB8D5E100408A27 /* PixelExperimentKitTestUtils */,
 			);
 			productName = DuckDuckGo;
 			productReference = 84E341921E2F7EFB00BDBA6F /* DuckDuckGo.app */;
@@ -13331,10 +13328,6 @@
 		7B2CCBA42D11ABBA00FE5852 /* VPNWidgetSupport */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = VPNWidgetSupport;
-		};
-		7B38BCC92DB8D5E100408A27 /* PixelExperimentKitTestUtils */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = PixelExperimentKitTestUtils;
 		};
 		7BD045292DB823270072A66A /* PixelExperimentKitTestUtils */ = {
 			isa = XCSwiftPackageProductDependency;

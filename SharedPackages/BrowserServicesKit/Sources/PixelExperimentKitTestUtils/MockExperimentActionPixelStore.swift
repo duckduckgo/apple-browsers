@@ -18,9 +18,11 @@
 
 import PixelExperimentKit
 
+/// Convenience implementation of ExperimentActionPixelStore for easy mocking during testing.
+///
 public class MockExperimentActionPixelStore: ExperimentActionPixelStore {
 
-    var store: [String: Int] = [:]
+    public var store: [String: Int] = [:]
 
     public init() {}
 

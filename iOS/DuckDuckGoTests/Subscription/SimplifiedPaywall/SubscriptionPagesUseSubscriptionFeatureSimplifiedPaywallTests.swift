@@ -39,7 +39,12 @@ final class SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests: XCTes
     private var mockAppStorePurchaseFlow: AppStorePurchaseFlowMock!
 
     override func setUp() async throws {
-        PixelKit.configureExperimentsForTesting()
+        let mockPixelStore = MockExperimentActionPixelStore()
+        let mockFeatureFlagger = MockFeatureFlagger()
+
+        PixelKit.configureExperimentsForTesting(
+            pixelStore: mockPixelStore,
+            featureFlagger: mockFeatureFlagger)
 
         mockAccountManager = AccountManagerMock()
         mockStorePurchaseManager = StorePurchaseManagerMock()
@@ -62,7 +67,8 @@ final class SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests: XCTes
             appStorePurchaseFlow: mockAppStorePurchaseFlow,
             appStoreRestoreFlow: AppStoreRestoreFlowMock(),
             appStoreAccountManagementFlow: AppStoreAccountManagementFlowMock(),
-            freeTrialsExperiment: mockFreeTrialsFeatureFlagExperiment)
+            freeTrialsExperiment: mockFreeTrialsFeatureFlagExperiment,
+            onboardingPrivacyProPromoExperiment: OnboardingPrivacyProPromoExperiment(experimentPixelFirer: PixelKit.self))
     }
 
     func testWhenSubscriptionSelectedIncludesExperimentParameters_thenSubscriptionPurchasedReceivesExperimentParameters() async throws {

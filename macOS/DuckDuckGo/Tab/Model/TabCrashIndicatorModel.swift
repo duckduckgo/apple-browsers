@@ -21,37 +21,53 @@ import Foundation
 
 /// This class manages the visibility of tab crash indicator.
 ///
+/// Tab crash indicator is a small info icon displayed in the tab bar item
+/// for a crashed tab. When clicked, it displays a popover explaining that
+/// the tab crashed and was reloaded which may have caused data loss.
+///
 final class TabCrashIndicatorModel: ObservableObject {
-    @Published private(set) var recentTabCrash: TabCrashType?
+
+    @Published private(set) var isShowingIndicator: Bool = false
     @Published var isShowingPopover: Bool = false
 
-    func setUp(with tab: Tab) {
-        /// Crash events from Tab instance
-        let crashPublisher = tab.crashPublisher.map(TabCrashType?.some).share()
+    /// This initializer allows for parametrizing presentation duration
+    /// in order to simplify unit testing.
+    init(maxPresentationDuration: RunLoop.SchedulerTimeType.Stride = Const.maxIndicatorPresentationDuration) {
+        self.maxPresentationDuration = maxPresentationDuration
+    }
 
-        /// Resetting recent crash after timeout (responsible for clearing the crash icon)
-        let resetRecentTabCrashAfterTimeout = crashPublisher
-            .debounce(for: Const.maxIndicatorPresentationDuration, scheduler: RunLoop.main)
+    func setUp(with tab: Tab) {
+        /// We're only showing the icon on "single" crashes (and we're hiding it on crash loops).
+        let showIndicatorOnSingleCrash = tab.crashPublisher
+            .map { $0 == .single }
+            .share()
+
+        /// We're auto-hiding the icon after a predefined time, but only if the popover isn't on screen.
+        /// If the popover is displayed, we're not auto-hiding and instead we'll hide the icon as soon
+        /// as the popover is dismissed.
+        let hideIndicatorAfterTimeout = showIndicatorOnSingleCrash
+            .debounce(for: maxPresentationDuration, scheduler: RunLoop.main)
             .filter { [weak self] _ in
                 self?.isShowingPopover == false
             }
-            .map { _ in TabCrashType?.none }
+            .map { _ in false }
 
-        /// Resetting recent crash after dismissing popover
-        let resetRecentTabCrashOnPopoverDismiss = $isShowingPopover.dropFirst()
+        /// Hiding the icon after dismissing the popover.
+        let hideIndicatorOnPopoverDismiss = $isShowingPopover.dropFirst()
             .filter { !$0 }
-            .map { _ in TabCrashType?.none }
+            .map { _ in false }
 
-        Publishers.Merge3(crashPublisher, resetRecentTabCrashAfterTimeout, resetRecentTabCrashOnPopoverDismiss)
+        Publishers.Merge3(showIndicatorOnSingleCrash, hideIndicatorAfterTimeout, hideIndicatorOnPopoverDismiss)
             .removeDuplicates()
-            .assign(to: \.recentTabCrash, onWeaklyHeld: self)
+            .assign(to: \.isShowingIndicator, onWeaklyHeld: self)
             .store(in: &cancellables)
     }
 
     enum Const {
-        static let maxIndicatorPresentationDuration: RunLoop.SchedulerTimeType.Stride = .seconds(20)
+        static let maxIndicatorPresentationDuration: RunLoop.SchedulerTimeType.Stride = .seconds(200)
         static let popoverWidth: CGFloat = 252
     }
 
+    private let maxPresentationDuration: RunLoop.SchedulerTimeType.Stride
     private var cancellables: Set<AnyCancellable> = []
 }

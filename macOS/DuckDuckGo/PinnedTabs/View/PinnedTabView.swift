@@ -260,7 +260,7 @@ struct PinnedTabInnerView: View {
 
     @ViewBuilder
     var accessoryButton: some View {
-        if tabCrashIndicatorModel.recentTabCrash == .single {
+        if tabCrashIndicatorModel.isShowingIndicator {
             crashIndicatorView
         } else {
             audioStateView

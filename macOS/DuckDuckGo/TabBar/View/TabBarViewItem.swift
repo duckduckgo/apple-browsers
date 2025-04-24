@@ -622,12 +622,12 @@ final class TabBarViewItem: NSCollectionViewItem {
             self?.updateAudioPlayState(audioState)
         }.store(in: &cancellables)
 
-        tabViewModel.crashIndicatorModel.$recentTabCrash.dropFirst()
-            .sink { [weak self] crashType in
+        tabViewModel.crashIndicatorModel.$isShowingIndicator
+            .sink { [weak self] isShowingIndicator in
                 guard let self else {
                     return
                 }
-                if crashType == .single {
+                if isShowingIndicator {
                     showCrashIndicatorButton()
                 } else {
                     hideCrashIndicatorButton()
@@ -635,7 +635,7 @@ final class TabBarViewItem: NSCollectionViewItem {
             }
             .store(in: &cancellables)
 
-        tabViewModel.crashIndicatorModel.$isShowingPopover.dropFirst()
+        tabViewModel.crashIndicatorModel.$isShowingPopover
             .sink { [weak self] isShowingPopover in
                 guard let self else {
                     return

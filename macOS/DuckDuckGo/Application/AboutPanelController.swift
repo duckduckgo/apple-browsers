@@ -20,13 +20,20 @@ import SwiftUI
 import AppKit
 import BrowserServicesKit
 
+/// A custom panel that closes when the user presses Escape.
+private class AboutPanelWindow: NSPanel {
+    override func cancelOperation(_ sender: Any?) {
+        self.close()
+    }
+}
+
 // Controller to display the About panel
 class AboutPanelController {
 
     private var panel: NSPanel!
 
     init(internalUserDecider: InternalUserDecider) {
-        panel = NSPanel(
+        panel = AboutPanelWindow(
             contentRect: NSRect(x: 0, y: 0, width: 360, height: 300),
             styleMask: [.titled, .closable],
             backing: .buffered,

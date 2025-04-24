@@ -48,11 +48,9 @@ final class FullscreenControllerTests: XCTestCase {
     @MainActor
     func testWhenManuallyExitFullscreenIsCalledWhileInFullscreenThenWindowExitsFullscreen() async throws {
         let controller = FullscreenController()
-        let window = try XCTUnwrap(WindowsManager.openNewWindow(isFullscreen: true))
-        try? await Task.sleep(interval: 3)
+        let window = MockWindow(styleMask: .fullScreen)
 
         controller.manuallyExitFullscreen(window: window)
-        try? await Task.sleep(interval: 3)
 
         XCTAssertFalse(window.styleMask.contains(.fullScreen))
     }
@@ -60,10 +58,9 @@ final class FullscreenControllerTests: XCTestCase {
     @MainActor
     func testWhenManuallyExitFullscreenIsCalledWhileNotInFullscreenThenWindowStaysInNormalState() async throws {
         let controller = FullscreenController()
-        let window = try XCTUnwrap(WindowsManager.openNewWindow(isFullscreen: false))
+        let window = MockWindow()
 
         controller.manuallyExitFullscreen(window: window)
-        try? await Task.sleep(interval: 3)
 
         XCTAssertFalse(window.styleMask.contains(.fullScreen))
     }

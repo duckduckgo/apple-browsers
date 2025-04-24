@@ -52,7 +52,9 @@ final class NetworkProtectionAssetTests: XCTestCase {
             .enableSysexImage: "enable-sysex-bottom",
             .allowSysexScreenshot: "allow-sysex-screenshot",
             .allowSysexScreenshotBigSur: "allow-sysex-screenshot-bigsur",
-            .accordionViewCheckmark: "Check-16D"
+            .accordionViewCheckmark: "Check-16D",
+            .appVPNOnIconNew: "app-vpn-on-new",
+            .appVPNOffIconNew: "app-vpn-off-new"
         ]
 
         XCTAssertEqual(assetsAndExpectedRawValues.count, NetworkProtectionAsset.allCases.count)

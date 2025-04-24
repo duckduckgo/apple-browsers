@@ -251,7 +251,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         }
 
         preview?.frame.origin.x = coordinator.contentContainer.frame.width * CGFloat(modifier)
-        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+        if ExperimentalThemingManager().isRoundedCornersTreatmentEnabled {
             preview?.clipsToBounds = true
             preview?.layer.cornerRadius = 12
         }
@@ -427,7 +427,7 @@ class OmniBarCell: UICollectionViewCell {
     func addMaskViewIfNeeded() {
         guard let omniBarView = omniBar?.barView else { return }
 
-        if ExperimentalThemingManager().isExperimentalThemingEnabled,
+        if ExperimentalThemingManager().isRoundedCornersTreatmentEnabled,
            AppDependencyProvider.shared.appSettings.currentAddressBarPosition == .bottom,
            isPortrait {
             let maskView = RoundedCornersMaskView(cornerRadius: 12.0,

@@ -173,7 +173,7 @@ class TabBarTests: UITestCase {
         app.menuItems["Pin Tab"].tap()
     }
 
-    private func openSite(pageTitle: String, siteWithLinks: Bool = false) {
+    private func openSite(pageTitle: String) {
         let url = UITests.simpleServedPage(titled: pageTitle)
 
         let addressBarTextField = app.windows.firstMatch.textFields["AddressBarViewController.addressBarTextField"]

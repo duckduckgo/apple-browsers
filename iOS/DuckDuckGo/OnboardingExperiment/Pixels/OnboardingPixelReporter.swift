@@ -93,7 +93,7 @@ protocol OnboardingSetAsDefaultBrowserExperimentReporting {
 }
 
 typealias LinearOnboardingPixelReporting = OnboardingIntroPixelReporting & OnboardingAddToDockReporting & OnboardingSetAsDefaultBrowserExperimentReporting
-typealias OnboardingPixelReporting = LinearOnboardingPixelReporting & OnboardingSearchSuggestionsPixelReporting & OnboardingSiteSuggestionsPixelReporting & OnboardingCustomInteractionPixelReporting & OnboardingDaxDialogsReporting
+typealias OnboardingPixelReporting = LinearOnboardingPixelReporting & OnboardingCustomInteractionPixelReporting & OnboardingDaxDialogsReporting
 
 // MARK: - Implementation
 
@@ -206,24 +206,6 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
 
     func measureChooseBottomAddressBarPosition() {
         fire(event: .onboardingIntroBottomAddressBarSelected, unique: false)
-    }
-
-}
-
-// MARK: - OnboardingPixelReporter + List
-
-extension OnboardingPixelReporter: OnboardingSearchSuggestionsPixelReporting {
-    
-    func measureSearchSuggestionOptionTapped() {
-        // Left empty on purpose. These were temporary pixels in iOS. macOS will still use them.
-    }
-
-}
-
-extension OnboardingPixelReporter: OnboardingSiteSuggestionsPixelReporting {
-    
-    func measureSiteSuggestionOptionTapped() {
-        // Left empty on purpose. These were temporary pixels in iOS. macOS will still use them.
     }
 
 }

@@ -44,7 +44,7 @@
                         </userDefinedRuntimeAttribute>
                     </userDefinedRuntimeAttributes>
                     <connections>
-                        <action selector="mouseClickViewMouseUp:" target="-1" id="Wrs-iG-5om"/>
+                        <action selector="mouseClickAction:" target="mo5-Bi-OJI" id="Bt3-Fu-ZhS"/>
                         <outlet property="delegate" destination="mo5-Bi-OJI" id="hSe-lM-Q2c"/>
                     </connections>
                 </customView>

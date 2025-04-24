@@ -118,6 +118,8 @@ final class URLDragPreviewProviderTests: XCTestCase {
             NSApp.appearance = .init(named: appearanceName)!
             let provider = URLDragPreviewProvider(text: "Custom Text Only Preview", favicon: .homeFavicon)
             let preview = provider.createPreview()
+
+            assertSnapshot(of: preview, as: .image, named: appearanceName.rawValue)
         }
     }
 

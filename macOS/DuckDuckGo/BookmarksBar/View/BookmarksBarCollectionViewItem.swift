@@ -132,6 +132,10 @@ final class BookmarksBarCollectionViewItem: NSCollectionViewItem {
         titleLabel.alphaValue = isInteractionPrevented ? 0.3 : 1
     }
 
+    @IBAction func mouseClickAction(_ sender: Any) {
+        delegate?.bookmarksBarCollectionViewItemClicked(self)
+    }
+
     deinit {
         // Sometimes the ItemCachingCollectionView doesn‘t remove the cell views
         // when the BookmarksBarCollectionViewItem is deallocated
@@ -174,6 +178,12 @@ extension BookmarksBarCollectionViewItem: MouseOverViewDelegate {
     func mouseOverView(_ mouseOverView: MouseOverView, isMouseOver: Bool) {
         if isMouseOver {
             delegate?.bookmarksBarCollectionViewItemMouseDidHover(self)
+        }
+    }
+
+    func mouseClickView(_ mouseClickView: MouseClickView, otherMouseDownEvent: NSEvent) {
+        if case .middle = otherMouseDownEvent.button {
+            delegate?.bookmarksBarCollectionViewItemClicked(self)
         }
     }
 

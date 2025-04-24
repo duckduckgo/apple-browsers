@@ -688,7 +688,7 @@ final class BookmarksBarMenuViewController: NSViewController {
 
         switch node.representedObject {
         case let bookmark as Bookmark:
-            WindowControllersManager.shared.open(bookmark: bookmark)
+            WindowControllersManager.shared.open(bookmark, with: NSApp.currentEvent)
             delegate?.closeBookmarksPopovers(self)
 
         case let menuItem as MenuItemNode:
@@ -703,6 +703,16 @@ final class BookmarksBarMenuViewController: NSViewController {
         }
     }
 
+    override func otherMouseDown(with event: NSEvent) {
+        guard case .middle = event.button,
+              let row = outlineView.withMouseLocationInViewCoordinates(event.locationInWindow, convert: outlineView.row(at:)), row != -1,
+              let item = outlineView.item(atRow: row),
+              let node = item as? BookmarkNode,
+              let bookmark = node.representedObject as? Bookmark else { return }
+
+        WindowControllersManager.shared.open(bookmark, with: NSApp.currentEvent)
+    }
+
     private func openAllInNewTabs() {
         guard let tabCollection = WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel,
               let folder = self.treeController.rootNode.representedObject as? BookmarkFolder else {
@@ -712,8 +722,7 @@ final class BookmarksBarMenuViewController: NSViewController {
         delegate?.closeBookmarksPopovers(self)
 
         let tabs = Tab.withContentOfBookmark(folder: folder, burnerMode: tabCollection.burnerMode)
-        tabCollection.append(tabs: tabs)
-        PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
+        tabCollection.append(tabs: tabs, andSelect: true)
     }
 
     // MARK: NSOutlineView Configuration

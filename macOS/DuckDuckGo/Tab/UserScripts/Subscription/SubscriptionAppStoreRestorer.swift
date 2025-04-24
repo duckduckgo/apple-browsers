@@ -75,22 +75,17 @@ struct DefaultSubscriptionAppStoreRestorer: SubscriptionAppStoreRestorer {
             PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreSuccess, frequency: .legacyDailyAndCount)
         case .failure(let error):
             switch error {
-            case .missingAccountOrTransactions: break
-            default:
-                PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreFailureOther, frequency: .legacyDailyAndCount)
-            }
-            switch error {
             case .missingAccountOrTransactions:
-                subscriptionErrorReporter.report(subscriptionActivationError: .subscriptionNotFound)
+                subscriptionErrorReporter.report(subscriptionActivationError: .restoreFailedDueToNoSubscription)
                 await showSubscriptionNotFoundAlert()
             case .subscriptionExpired:
-                subscriptionErrorReporter.report(subscriptionActivationError: .subscriptionExpired)
+                subscriptionErrorReporter.report(subscriptionActivationError: .restoreFailedDueToExpiredSubscription)
                 await showSubscriptionInactiveAlert()
             case .failedToObtainAccessToken, .failedToFetchAccountDetails, .failedToFetchSubscriptionDetails:
-                subscriptionErrorReporter.report(subscriptionActivationError: .generalError)
+                subscriptionErrorReporter.report(subscriptionActivationError: .otherRestoreError)
                 await showSomethingWentWrongAlert()
             case .pastTransactionAuthenticationError:
-                subscriptionErrorReporter.report(subscriptionActivationError: .generalError)
+                subscriptionErrorReporter.report(subscriptionActivationError: .otherRestoreError)
                 await showSubscriptionNotFoundAlert()
             }
         }
@@ -99,7 +94,6 @@ struct DefaultSubscriptionAppStoreRestorer: SubscriptionAppStoreRestorer {
     // MARK: - UI interactions
 
     private func showSomethingWentWrongAlert() async {
-        PixelKit.fire(PrivacyProPixel.privacyProPurchaseFailure, frequency: .legacyDailyAndCount)
         await uiHandler.show(alertType: .somethingWentWrong)
     }
 
@@ -171,20 +165,18 @@ struct DefaultSubscriptionAppStoreRestorerV2: SubscriptionAppStoreRestorer {
             PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreSuccess, frequency: .legacyDailyAndCount)
         case .failure(let error):
             switch error {
-            case .missingAccountOrTransactions: break
-            default:
-                PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreFailureOther, frequency: .legacyDailyAndCount)
-            }
-            switch error {
             case .missingAccountOrTransactions:
-                subscriptionErrorReporter.report(subscriptionActivationError: .subscriptionNotFound)
+                subscriptionErrorReporter.report(subscriptionActivationError: .restoreFailedDueToNoSubscription)
                 await showSubscriptionNotFoundAlert()
             case .subscriptionExpired:
-                subscriptionErrorReporter.report(subscriptionActivationError: .subscriptionExpired)
+                subscriptionErrorReporter.report(subscriptionActivationError: .restoreFailedDueToExpiredSubscription)
                 await showSubscriptionInactiveAlert()
-            case .pastTransactionAuthenticationError, .failedToObtainAccessToken, .failedToFetchAccountDetails, .failedToFetchSubscriptionDetails:
-                subscriptionErrorReporter.report(subscriptionActivationError: .generalError)
+            case .failedToObtainAccessToken, .failedToFetchAccountDetails, .failedToFetchSubscriptionDetails:
+                subscriptionErrorReporter.report(subscriptionActivationError: .otherRestoreError)
                 await showSomethingWentWrongAlert()
+            case .pastTransactionAuthenticationError:
+                subscriptionErrorReporter.report(subscriptionActivationError: .otherRestoreError)
+                await showSubscriptionNotFoundAlert()
             }
         }
     }
@@ -192,7 +184,6 @@ struct DefaultSubscriptionAppStoreRestorerV2: SubscriptionAppStoreRestorer {
     // MARK: - UI interactions
 
     private func showSomethingWentWrongAlert() async {
-        PixelKit.fire(PrivacyProPixel.privacyProPurchaseFailure, frequency: .legacyDailyAndCount)
         await uiHandler.show(alertType: .somethingWentWrong)
     }
 

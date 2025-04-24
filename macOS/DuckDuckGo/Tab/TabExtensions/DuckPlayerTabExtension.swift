@@ -57,7 +57,7 @@ final class DuckPlayerTabExtension {
     private weak var youtubeOverlayScript: YoutubeOverlayUserScript?
     private weak var youtubePlayerScript: YoutubePlayerUserScript?
     private let onboardingDecider: DuckPlayerOnboardingDecider
-    private var shouldSelectNextNewTab: Bool?
+    private var nextNewWindowPolicy: NewWindowPolicy?
     private var duckPlayerOverlayUsagePixels: DuckPlayerOverlayPixelFiring
     private var duckPlayerModeCancellable: AnyCancellable?
 
@@ -178,26 +178,30 @@ final class DuckPlayerTabExtension {
 
 extension DuckPlayerTabExtension: YoutubeOverlayUserScriptDelegate {
 
+    @MainActor
     func youtubeOverlayUserScriptDidRequestDuckPlayer(with url: URL, in webView: WKWebView) {
         if duckPlayer.mode == .enabled {
             PixelKit.fire(GeneralPixel.duckPlayerViewFromYoutubeAutomatic)
         }
 
-        var shouldRequestNewTab = shouldOpenInNewTab
-
-        // PopUpWindows don't support tabs
-        if let window = webView.window, window is PopUpWindow {
-            shouldRequestNewTab = false
-        }
-
-        let isRequestingNewTab = NSApp.isCommandPressed || shouldRequestNewTab
-        if isRequestingNewTab {
-            shouldSelectNextNewTab = NSApp.isShiftPressed || shouldOpenInNewTab
-            webView.loadInNewWindow(url)
-        } else {
-            shouldSelectNextNewTab = nil
+        let linkOpenBehavior = LinkOpenBehavior(event: NSApp.currentEvent,
+                                                switchToNewTabWhenOpenedPreference: TabsPreferences.shared.switchToNewTabWhenOpened,
+                                                canOpenLinkInCurrentTab: !(shouldOpenInNewTab || webView.window is PopUpWindow),
+                                                shouldSelectNewTab: true) // select new tab by default; ⌘-click modifies the selection state
+        switch linkOpenBehavior {
+        case .currentTab:
+            nextNewWindowPolicy = nil
             webView.load(URLRequest(url: url))
+
+            return
+
+        case .newTab(let selected):
+            nextNewWindowPolicy = .tab(selected: selected, burner: isBurner)
+        case .newWindow(let selected):
+            nextNewWindowPolicy = .window(active: selected, burner: isBurner)
         }
+
+        webView.loadInNewWindow(url)
     }
 
 }
@@ -216,11 +220,11 @@ extension DuckPlayerTabExtension: NewWindowPolicyDecisionMaker {
             return .cancel
         }
 
-        if let shouldSelectNextNewTab {
+        if let nextNewWindowPolicy {
             defer {
-                self.shouldSelectNextNewTab = nil
+                self.nextNewWindowPolicy = nil
             }
-            return .allow(.tab(selected: shouldSelectNextNewTab, burner: isBurner))
+            return .allow(nextNewWindowPolicy)
         }
         return nil
     }
@@ -291,7 +295,7 @@ extension DuckPlayerTabExtension: NavigationResponder {
 
                 if shouldOpenInNewTab,
                    let url = webView?.url, !url.isEmpty, !url.isYoutubeVideo {
-                    shouldSelectNextNewTab = true
+                    nextNewWindowPolicy = .tab(selected: true, burner: isBurner)
                     webView?.loadInNewWindow(navigationAction.url)
                     return .cancel
                 }
@@ -306,6 +310,16 @@ extension DuckPlayerTabExtension: NavigationResponder {
 
     @MainActor
     private func handleYoutubeNavigation(for navigationAction: NavigationAction) -> NavigationActionPolicy? {
+
+        // “Watch in YouTube” selected
+        if let videoID = navigationAction.url.youtubeVideoID {
+            if didUserSelectWatchInYoutubeFromDuckPlayer(navigationAction, preferences: preferences, videoID: videoID) {
+            duckPlayer.setNextVideoToOpenOnYoutube()
+                PixelKit.fire(GeneralPixel.duckPlayerWatchOnYoutube)
+                return .next
+            }
+        }
+
         guard navigationAction.url.isYoutubeVideo,
               let (videoID, timestamp) = navigationAction.url.youtubeVideoParams else {
             return .next
@@ -379,11 +393,8 @@ extension DuckPlayerTabExtension: NavigationResponder {
             }
         }
 
-        // “Watch in YouTube” selected
-        // when currently displayed content is the Duck Player and loading a YouTube URL, don‘t override it
-        if didUserSelectWatchInYoutubeFromDuckPlayer(navigationAction, preferences: preferences, videoID: videoID) {
-            duckPlayer.setNextVideoToOpenOnYoutube()
-            PixelKit.fire(GeneralPixel.duckPlayerWatchOnYoutube)
+        // Do not handle as the user has already requested to open the next video on Youtube
+        if duckPlayer.shouldOpenNextVideoOnYoutube {
             return .next
 
         // If this is a child tab of a Duck Player and it's loading a YouTube URL, don‘t override it
@@ -418,6 +429,7 @@ extension DuckPlayerTabExtension: NavigationResponder {
         return .next
     }
 
+    // Validate if the user has selected "Watch in YouTube" from the Duck Player
     private func didUserSelectWatchInYoutubeFromDuckPlayer(_ navigationAction: NavigationAction, preferences: DuckPlayerPreferences, videoID: String) -> Bool {
         let url = preferences.duckPlayerOpenInNewTab ? navigationAction.sourceFrame.url : navigationAction.targetFrame?.url
         return url?.isDuckPlayer == true && url?.youtubeVideoID == videoID

@@ -40,9 +40,7 @@ final class FullscreenController {
     }
 
     func manuallyExitFullscreen(window: NSWindow?) {
-        guard let window = window, window.styleMask.contains(.fullScreen) else {
-            return
-        }
+        guard let window, window.styleMask.contains(.fullScreen) else { return }
 
         // Exit full screen
         window.toggleFullScreen(nil)

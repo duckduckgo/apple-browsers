@@ -280,8 +280,7 @@ extension MainViewFactory {
 
         coordinator.constraints.contentContainerTop = contentContainer.constrainView(coordinator.topSlideContainer!, by: .top, to: .bottom)
         coordinator.constraints.contentContainerBottomToToolbarTop = contentContainer.constrainView(toolbar, by: .bottom, to: .top)
-        coordinator.constraints.contentContainerBottomToNavigationBarContainerTop
-            = contentContainer.constrainView(navigationBarContainer, by: .bottom, to: .top)
+        coordinator.constraints.contentContainerBottomToSafeArea = contentContainer.constrainView(superview, by: .bottom)
 
         NSLayoutConstraint.activate([
             contentContainer.constrainView(superview, by: .leading),

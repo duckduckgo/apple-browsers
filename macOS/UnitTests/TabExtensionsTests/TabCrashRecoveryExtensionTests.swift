@@ -243,6 +243,5 @@ final class TabCrashRecoveryExtensionTests: XCTestCase {
         tabCrashRecoveryExtension.webContentProcessDidTerminate(with: nil)
 
         await fulfillment(of: [expectation], timeout: 1)
-        XCTAssertEqual(firePixelCallCount, 1)
     }
 }

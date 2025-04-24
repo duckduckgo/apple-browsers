@@ -39,16 +39,9 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
 
     private var hostingController: UIHostingController<AnyView>?
 
-    private weak var daxDialogViewController: DaxDialogViewController?
-    private var daxDialogHeightConstraint: NSLayoutConstraint?
-
     private let pixelFiring: PixelFiring.Type
 
     private var privacyProPromotionCoordinating: PrivacyProPromotionCoordinating
-
-    var isDaxDialogVisible: Bool {
-        daxDialogViewController?.view.isHidden == false
-    }
 
     init(tab: Tab,
          isNewTabPageCustomizationEnabled: Bool,
@@ -99,7 +92,6 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
         super.viewDidLoad()
 
         registerForSettingsDidDisappear()
-        setUpDaxDialog()
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -130,32 +122,6 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
         if self.favoritesModel.hasMissingIcons {
             self.delegate?.newTabPageDidRequestFaviconsFetcherOnboarding(self)
         }
-    }
-
-    private func setUpDaxDialog() {
-        let daxDialogController = DaxDialogViewController.loadFromStoryboard()
-        guard let dialogView = daxDialogController.view else { return }
-
-        self.addChild(daxDialogController)
-        self.view.addSubview(dialogView)
-
-        dialogView.translatesAutoresizingMaskIntoConstraints = false
-        dialogView.isHidden = true
-
-        let widthConstraint = dialogView.widthAnchor.constraint(equalTo: view.safeAreaLayoutGuide.widthAnchor, multiplier: 1)
-        widthConstraint.priority = .defaultHigh
-        let heightConstraint = dialogView.heightAnchor.constraint(equalToConstant: 250)
-        daxDialogHeightConstraint = heightConstraint
-        NSLayoutConstraint.activate([
-            dialogView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 44.0),
-            dialogView.centerXAnchor.constraint(equalTo: view.centerXAnchor),
-            dialogView.widthAnchor.constraint(lessThanOrEqualToConstant: 375),
-            heightConstraint,
-            widthConstraint
-        ])
-
-        daxDialogController.didMove(toParent: self)
-        daxDialogViewController = daxDialogController
     }
 
     // MARK: - Private

@@ -236,7 +236,6 @@ extension Pixel {
         case daxDialogsWithTrackersUnique
         case daxDialogsSiteIsMajorUnique
         case daxDialogsSiteOwnedByMajorUnique
-        case daxDialogsHiddenUnique
         case daxDialogsFireEducationShownUnique
         case daxDialogsFireEducationConfirmedUnique
         case daxDialogsFireEducationCancelledUnique
@@ -1349,7 +1348,6 @@ extension Pixel.Event {
         case .daxDialogsWithTrackersUnique: return "m_dx_wt_unique"
         case .daxDialogsSiteIsMajorUnique: return "m_dx_sm_unique"
         case .daxDialogsSiteOwnedByMajorUnique: return "m_dx_so_unique"
-        case .daxDialogsHiddenUnique: return "m_dx_h_unique"
         case .daxDialogsFireEducationShownUnique: return "m_dx_fe_s_unique"
         case .daxDialogsFireEducationConfirmedUnique: return "m_dx_fe_co_unique"
         case .daxDialogsFireEducationCancelledUnique: return "m_dx_fe_ca_unique"

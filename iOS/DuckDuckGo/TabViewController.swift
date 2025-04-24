@@ -1036,15 +1036,6 @@ class TabViewController: UIViewController {
             privacyDashboard = controller
         }
         
-        if let controller = segue.destination as? FullscreenDaxDialogViewController {
-            controller.spec = sender as? DaxDialogs.BrowsingSpec
-            controller.woShown = woShownRecently
-            controller.delegate = self
-            
-            if controller.spec?.highlightAddressBar ?? false {
-                chromeDelegate.omniBar.cancelAllAnimations()
-            }
-        }
     }
 
     private var jsAlertController: JSAlertController!
@@ -1661,8 +1652,9 @@ extension TabViewController: WKNavigationDelegate {
             scheduleTrackerNetworksAnimation(collapsing: true)
             return
         }
-        
-        scheduleTrackerNetworksAnimation(collapsing: !spec.highlightAddressBar)
+
+        // In new onboarding we do not highlight the address bar so collapsing is default to true.
+        scheduleTrackerNetworksAnimation(collapsing: true)
         let daxDialogSourceURL = self.url
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in

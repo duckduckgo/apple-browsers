@@ -123,7 +123,7 @@ public final class NewTabPageRecentActivityClient: NewTabPageUserScriptClient {
         guard let action: NewTabPageDataModel.ActivityItemAction = DecodableHelper.decode(from: params) else {
             return nil
         }
-        await model.addFavorite(action.url)
+        model.addFavorite(action.url)
         return nil
     }
 
@@ -132,7 +132,7 @@ public final class NewTabPageRecentActivityClient: NewTabPageUserScriptClient {
         guard let action: NewTabPageDataModel.ActivityItemAction = DecodableHelper.decode(from: params) else {
             return nil
         }
-        await model.removeFavorite(action.url)
+        model.removeFavorite(action.url)
         return nil
     }
 
@@ -150,7 +150,7 @@ public final class NewTabPageRecentActivityClient: NewTabPageUserScriptClient {
         guard let openAction: NewTabPageDataModel.ActivityOpenAction = DecodableHelper.decode(from: params) else {
             return nil
         }
-        await model.open(openAction.url, target: .init(openAction.target))
+        model.open(openAction.url, sender: .userScript, target: LinkOpenTarget(openAction.target), sourceWindow: original.webView?.window)
         return nil
     }
 }

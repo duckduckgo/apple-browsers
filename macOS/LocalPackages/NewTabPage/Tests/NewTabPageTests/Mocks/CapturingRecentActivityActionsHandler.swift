@@ -16,20 +16,21 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Combine
 import Foundation
 import NewTabPage
 
 final class CapturingRecentActivityActionsHandler: RecentActivityActionsHandling {
-    func open(_ url: URL, target: LinkOpenTarget) async {
-        openCalls.append(.init(url: url, target: target))
+    func openHistoryEntry(_ url: URL, sender: LinkOpenSender, target: LinkOpenTarget, sourceWindow: NSWindow?) {
+        openCalls.append(.init(url: url, sender: sender, target: target))
     }
 
-    func addFavorite(_ url: URL) async {
+    func addFavorite(_ url: URL) {
         addFavoriteCalls.append(url)
     }
 
-    func removeFavorite(_ url: URL) async {
+    func removeFavorite(_ url: URL) {
         removeFavoriteCalls.append(url)
     }
 
@@ -42,6 +43,7 @@ final class CapturingRecentActivityActionsHandler: RecentActivityActionsHandling
 
     struct Open: Equatable {
         let url: URL
+        let sender: LinkOpenSender
         let target: LinkOpenTarget
     }
 

@@ -18,7 +18,7 @@
 
 import XCTest
 import UserScript
-
+import AIChat
 @testable import DuckDuckGo_Privacy_Browser
 
 final class AIChatUserScriptTests: XCTestCase {
@@ -38,14 +38,14 @@ final class AIChatUserScriptTests: XCTestCase {
     }
 
     @MainActor func testOpenSettingsMessageTriggersOpenSettingsMethod() async throws {
-        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScript.MessageNames.openAIChatSettings.rawValue))
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.openAIChatSettings.rawValue))
         _ = try await handler([""], WKScriptMessage())
 
         XCTAssertTrue(mockHandler.didOpenSettings, "openSettings should be called")
     }
 
     @MainActor func testGetAIChatNativeConfigValues() async throws {
-        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScript.MessageNames.getAIChatNativeConfigValues.rawValue))
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatNativeConfigValues.rawValue))
         let result = try await handler([""], WKScriptMessage())
 
         XCTAssertTrue(mockHandler.didGetConfigValues, "getAIChatNativeConfigValues should be called")
@@ -53,7 +53,7 @@ final class AIChatUserScriptTests: XCTestCase {
     }
 
     @MainActor func testCloseAIChat() async throws {
-        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScript.MessageNames.closeAIChat.rawValue))
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.closeAIChat.rawValue))
         let result = try await handler([""], WKScriptMessage())
 
         XCTAssertTrue(mockHandler.didCloseChat, "closeAIChat should be called")
@@ -61,7 +61,7 @@ final class AIChatUserScriptTests: XCTestCase {
     }
 
     @MainActor func testGetAIChatNativePrompt() async throws {
-        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScript.MessageNames.getAIChatNativePrompt.rawValue))
+        let handler = try XCTUnwrap(userScript.handler(forMethodNamed: AIChatUserScriptMessages.getAIChatNativePrompt.rawValue))
         let result = try await handler([""], WKScriptMessage())
 
         XCTAssertTrue(mockHandler.didGetPrompt, "getAIChatNativePrompt should be called")

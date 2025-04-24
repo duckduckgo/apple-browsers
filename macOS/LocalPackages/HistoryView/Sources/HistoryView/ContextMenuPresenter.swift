@@ -18,16 +18,30 @@
 
 import AppKit
 
+public typealias ContextMenuPresenterProvider = (NSWindow?) -> ContextMenuPresenting
+
+@inlinable
+public func DefaultContextMenuPresenterProvider() -> ContextMenuPresenterProvider { // swiftlint:disable:this identifier_name
+    DefaultContextMenuPresenter.init
+}
+
 public protocol ContextMenuPresenting {
+    var window: NSWindow? { get }
     func showContextMenu(_ menu: NSMenu)
 }
 
 public struct DefaultContextMenuPresenter: ContextMenuPresenting {
+
+    public weak var window: NSWindow?
+
+    public init(window: NSWindow? = nil) {
+        self.window = window
+    }
+
     public func showContextMenu(_ menu: NSMenu) {
         if !menu.items.isEmpty {
             menu.popUp(positioning: nil, at: NSEvent.mouseLocation, in: nil)
         }
     }
 
-    public init() {}
 }

@@ -244,6 +244,9 @@
 /* Description for unable to remove device error */
 "alert.unable-to-remove-device-description" = "Bu cihaz Senkronizasyon ve Yedekleme'den kaldırılamıyor.";
 
+/* Description for unable to scan qr code error */
+"alert.unable-to-scan-qr-code-description" = "Üzgünüz, bu kod geçersiz. Lütfen doğru kodun girildiğinden veya tarandığından emin olun.";
+
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Sunucuya bağlanılamıyor.";
 
@@ -559,9 +562,11 @@
 /* Do not translate - stringsdict entry */
 "autofill.number.of.passwords" = "autofill.number.of.passwords";
 
-/* Description of autofill onboarding prompt's secure storage feature
-   Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
-"autofill.onboarding.key-features.secure-storage.description" = "Parolalar şifrelenir, cihazda saklanır ve %@ ile kilitlenir.";
+/* Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
+"autofill.onboarding.key-features.secure-storage.biometric.description" = "Parolalar şifrelenir, cihazda saklanır ve %@ ile kilitlenir.";
+
+/* Description of autofill onboarding prompt's secure storage feature */
+"autofill.onboarding.key-features.secure-storage.description" = "Passwords are encrypted, stored on device, and locked with Face ID or passcode.";
 
 /* Parameter for the description of autofill onboarding prompt's secure storage feature describing Face ID biometry + passcode */
 "autofill.onboarding.key-features.secure-storage.description.parameter.face-id" = "Yüz Kimliği veya şifre";
@@ -935,6 +940,9 @@
 /* Crash Report dialog title */
 "crash.report.dialog.title" = "Kilitlenme raporları otomatik olarak gönderilsin mi?";
 
+/* No comment provided by engineer. */
+"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Yer İşaretleri Dosyasını İçe Aktar...";
 
@@ -1205,8 +1213,14 @@
 /* Text for the toggle to autoplay videos */
 "duck-player.native-autoplay-videos" = "Autoplay Videos";
 
+/* Text for the description about autoplay videos */
+"duck-player.native-autoplay-videos.description" = "Videos opened in Duck Player will automatically begin playback. Turn this off if you would like to manually start playback of videos opened in Duck Player.";
+
 /* Text for the button to watch a video on DuckPlayer */
-"duck-player.native-open-in-duckplayer" = "Duck Player";
+"duck-player.native-open-in-duckplayer" = "Play this video in Duck Player";
+
+/* Text for the button to resume watching a video on DuckPlayer */
+"duck-player.native-resume-in-duckplayer" = "Resume in Duck Player";
 
 /* Text for the button to watch a video on YouTube */
 "duck-player.native-watch-on-youtube" = "Watch in Youtube";
@@ -1247,8 +1261,14 @@
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Hiçbir zaman";
 
+/* Toast message for the Duck Player entry pill dismiss count */
+"duckPlayer.pill.dismiss.count.toast.message" = "Want to turn off Duck Player appearing on Youtube?";
+
+/* Button on Toast message for the Duck Player entry pill dismiss count */
+"duckPlayer.pill.dismiss.count.toast.message.button" = "Ayarları Aç";
+
 /* Caption for Duck Player entry point */
-"duckplayer.pill.watch.without.ads" = "Tap to watch without targeted ads";
+"duckplayer.pill.watch.without.ads" = "No targeted ads, always private";
 
 /* Body text for the modal feature explanation */
 "duckplayer.presentation.modal.body" = "Duck Player, DuckDuckGo'da hedefli reklamlar olmadan YouTube'u izlemenizi sağlar ve izlediğiniz şeyler önerilerinizi etkilemez.";
@@ -1279,6 +1299,39 @@
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.title" = "Duck Player";
+
+/* Text displayed when DuckPlayer is in 'Ask' mode for Youtube. */
+"duckPlayerNative.ask.label" = "Seçmeme izin ver";
+
+/* Text displayed when DuckPlayer is automatically enabled for Youtube */
+"duckPlayerNative.auto.label" = "Otomatik olarak";
+
+/* Label for the automatic youtube video opening */
+"duckPlayerNative.auto.open.label" = "YouTube'da Duck Player'ı otomatik olarak aç";
+
+/* CTA for DuckPlayer priming modal */
+"duckPlayerNative.modal.cta" = "Watch Now Privately";
+
+/* Description for DuckPlayer priming modal */
+"duckPlayerNative.modal.description" = "Plus, what you watch in Duck Player won’t influence your YouTube recommendations.";
+
+/* Title for DuckPlayer priming modal */
+"duckPlayerNative.modal.title" = "Play this video in Duck Player to watch without targeted ads!";
+
+/* Text displayed when DuckPlayer is in off for youtube. */
+"duckPlayerNative.never.label" = "Gösterme";
+
+/* Label for the use DuckPlayer on Youtube toggle footer */
+"duckPlayerNative.use.on.serp.footer" = "Clicking on YouTube videos in DuckDuckGo search results will open in Duck Player.";
+
+/* Label for the use DuckPlayer on SERP toggle */
+"duckPlayerNative.use.on.serp.label" = "DuckDuckGo Search Results";
+
+/* Label for the use DuckPlayer on Youtube toggle footer */
+"duckPlayerNative.use.on.youtube.footer" = "Choose how you would like Duck Player to handle YouTube videos when navigating from the YouTube website.";
+
+/* Label for the use DuckPlayer on Youtube toggle */
+"duckPlayerNative.use.on.youtube.label" = "Youtube.com'da kullan";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "E-posta Koruması";
@@ -1354,6 +1407,9 @@
 
 /* Empty search placeholder on bookmarks search */
 "empty.search" = "Eşleşme bulunamadı";
+
+/* No comment provided by engineer. */
+"Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
 "error.email-protection-sign-in.action" = "Oturum Aç";
@@ -2237,6 +2293,9 @@
 /* No comment provided by engineer. */
 "onboardingWelcomeHeader" = "DuckDuckGo'ya Hoş Geldiniz!";
 
+/* No comment provided by engineer. */
+"Open tabs remain unaffected by this change.  Please close all tabs for this setting to take effect." = "Açık sekmeler bu değişiklikten etkilenmez.  Bu ayarın etkili olması için lütfen tüm sekmeleri kapatın.";
+
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Bu bağlantıyı açmak için gereken uygulama bulunamıyor";
 
@@ -2309,6 +2368,9 @@
 /* Title for the Privacy Pro feedback form */
 "ppro.feedback-form.title" = "Geri Bildirim gönder";
 
+/* Description of incorrectly formatted data error when syncing. */
+"prefrences.sync.bad-request.description" = "Bazı yer işaretleri veya parolalar yanlış veya çok uzun biçimlendirilmiş ve senkronize edilmemiş.";
+
 /* Button title for sync bookmarks limits exceeded warning to go to manage bookmarks */
 "prefrences.sync.bookmarks-limit-exceeded-action" = "Yer İmlerini Yönet";
 
@@ -2321,13 +2383,14 @@
 /* Description for sync credentials limits exceeded warning */
 "prefrences.sync.credentials-limit-exceeded-description" = "Maksimum şifre sayısına ulaştınız. Lütfen senkronizasyona devam etmek için bazılarını silin.";
 
-/* Description invalid credentials error when syncing.
-   Description of incorrectly formatted data error when syncing.
-   Description of too many requests error when syncing. */
+/* Description invalid credentials error when syncing. */
 "prefrences.sync.invalid-login-description" = "Senkronizasyon bir hatayla karşılaştı. Bu cihazda senkronizasyonu devre dışı bırakmayı deneyin ve ardından başka bir cihaz veya kurtarma kodunuzu kullanarak yeniden bağlanın.";
 
 /* Title for sync limits exceeded warning */
 "prefrences.sync.limit-exceeded-title" = "Senkronizasyon Duraklatıldı";
+
+/* Description of too many requests error when syncing. */
+"prefrences.sync.too-many-requests.description" = "Senkronizasyon ve Yedekleme geçici olarak kullanılamıyor.";
 
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "Web siteleri oturumunuzu açık tutmak için çerezler kullanır. Bir siteyi Korumalı hâle getirdiğinizde çerezler silinmez ve Yangın Düğmesi'ni kullandıktan sonra bile oturumunuz açık kalır. Korumalı web sitelerinde bulunan üçüncü taraf izleyicileri yine engelleriz.";
@@ -2369,6 +2432,9 @@
 "Primary / First Action" = "Birincil / İlk İşlem";
 
 /* No comment provided by engineer. */
+"Priming Modal" = "Priming Modal";
+
+/* No comment provided by engineer. */
 "Privacy Protections" = "Gizlilik Korumaları";
 
 /* Privacy Icon accessibility title */
@@ -2394,6 +2460,12 @@
 
 /* No comment provided by engineer. */
 "Reset" = "Sıfırla";
+
+/* No comment provided by engineer. */
+"Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
+
+/* No comment provided by engineer. */
+"Reset Priming Modal State" = "Reset Priming Modal State";
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Adres ara veya gir";
@@ -2443,8 +2515,7 @@
 /* Title for the settings VPN subsection where the user can learn how to add the VPN to their home screen */
 "settings.add.widget.vpn" = "DuckDuckGo VPN Widget'ını Ana Ekranına Ekle";
 
-/* Name of the settings subsection related to the address bar
-   Settings screen cell text for addess bar position */
+/* Name of the settings subsection related to the address bar */
 "settings.address.bar" = "Adres Çubuğu";
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
@@ -2455,6 +2526,9 @@
 
 /* Settings screen appearance section title */
 "settings.appearance" = "Görünüm";
+
+/* Settings screen cell text for addess bar position */
+"settings.appearance.address.bar" = "Adres Çubuğu Konumu";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Bağlantıları İlişkili Uygulamalarda Aç";
@@ -2501,8 +2575,7 @@
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Veri Temizleme";
 
-/* Settings screen cell text for setting the app as default browser
-   The name of Settings category in Privacy Features related to configuration of the default browser */
+/* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Varsayılan Tarayıcı";
 
 /* Label of a button disabling email protection */
@@ -2537,6 +2610,9 @@
 
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Genel";
+
+/* Settings screen cell text for setting the app as default browser */
+"settings.general.default.browser" = "Varsayılan Tarayıcı olarak ayarla";
 
 /* Settings screen cell text for GPC */
 "settings.gpc" = "Küresel Gizlilik Kontrolü (GPC)";
@@ -2679,15 +2755,8 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Web İzleme Koruması";
 
-/* Explanation in Settings how the vpn blocks risky sites (do not remove the link)
-   Explanation in Settings how the web tracking protection feature works */
-"settings.web.tracking.protection.explanation" = "DNS düzeyinde bir engelleme listesiyle kötü amaçlı yazılım, kimlik avı saldırıları ve çevrimiçi dolandırıcılık barındırdığı için işaretlenmiş 150.000'den fazla alan adını engelleyin. [Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
-
-/* Header of the vpn blocks risky sites feature settings */
-"settings.web.tracking.protection.header" = "İçerik Engelleme ve Filtreleme";
-
-/* Title of the vpn blocks risky sites feature settings */
-"settings.web.tracking.protection.title" = "Riskli alan adlarını engelleyin";
+/* Explanation in Settings how the web tracking protection feature works */
+"settings.web.tracking.protection.explanation" = "DuckDuckGo, web'de gezinirken gizli izleyicileri otomatik olarak engeller.\n[Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Karşılaştığınız sorunu en iyi tanımlayan seçeneği seçin.";
@@ -3243,6 +3312,15 @@
 
 /* Title for the Apply button on the DNS Server setting screen */
 "vpn.settings.dns.server.apply.button.title" = "Uygula";
+
+/* Explanation in Settings how the vpn blocks risky sites (do not remove the link) */
+"vpn.settings.dns.server.content.blocking.explanation" = "DNS düzeyinde bir engelleme listesiyle kötü amaçlı yazılım, kimlik avı saldırıları ve çevrimiçi dolandırıcılık barındırdığı için işaretlenmiş 150.000'den fazla alan adını engelleyin. [Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
+
+/* Header of the vpn blocks risky sites feature settings */
+"vpn.settings.dns.server.content.blocking.header" = "İçerik Engelleme ve Filtreleme";
+
+/* Title of the vpn blocks risky sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Riskli alan adlarını engelleyin";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";

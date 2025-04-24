@@ -20,6 +20,7 @@ import Navigation
 import Foundation
 import Combine
 import WebKit
+import AIChat
 
 final class AIChatOnboardingTabExtension {
     private weak var webView: WKWebView?

@@ -1884,6 +1884,18 @@
         }
       }
     },
+    "aichat.address-bar.hide-button" : {
+      "comment" : "Button to hide duck.ai shortcut in address bar",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hide Duck.ai Shortcut"
+          }
+        }
+      }
+    },
     "alert.sync-bookmarks-bad-data-error-description" : {
       "comment" : "Description for alert shown when sync error occurs because of bad data",
       "extractionState" : "extracted_with_value",

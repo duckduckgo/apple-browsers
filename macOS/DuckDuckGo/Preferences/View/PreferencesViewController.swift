@@ -23,6 +23,7 @@ import SwiftUIExtensions
 import Combine
 import DDGSync
 import NetworkProtection
+import AIChat
 
 final class PreferencesViewController: NSViewController {
 

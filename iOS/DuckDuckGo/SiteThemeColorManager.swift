@@ -76,21 +76,23 @@ final class SiteThemeColorManager {
     private func startObservingThemeColor() {
         themeColorObservation = tabViewController?.webView?.observe(\.themeColor, options: [.initial, .new]) { [weak self] webView, change in
 
-            guard self?.isCurrentTabShowingDaxPlayer == false else {
+            guard let self, self.isCurrentTabShowingDaxPlayer == false else {
                 return
             }
 
-            guard let self,
-                  let newColor = change.newValue as? UIColor,
-                  let host = webView.url?.host,
-            self.shouldApplyColorToCurrentTab else {
-                self?.resetThemeColor()
+            guard self.shouldApplyColorToCurrentTab, let host = webView.url?.host else {
+                self.resetThemeColor()
                 return
             }
 
-            colorCache[host] = newColor
-            if isCurrentTab {
-                updateThemeColor(newColor)
+            if let newColor = change.newValue as? UIColor {
+                colorCache[host] = newColor
+                if isCurrentTab {
+                    updateThemeColor(newColor)
+                }
+            } else {
+                self.resetThemeColor()
+                self.colorCache[host] = nil
             }
         }
     }

@@ -161,17 +161,9 @@ final class DefaultRecentActivityActionsHandler: RecentActivityActionsHandling {
     }
 
     @MainActor
-    func open(_ url: URL, target: LinkOpenTarget) {
-        guard let tabCollectionViewModel else {
-            return
-        }
-
+    func openHistoryEntry(_ url: URL, sender: LinkOpenSender, target: LinkOpenTarget, sourceWindow: NSWindow?) {
         PixelKit.fire(NewTabPagePixel.privacyFeedHistoryLinkOpened, frequency: .dailyAndCount)
-        NewTabPageLinkOpener.open(url, target: target, using: tabCollectionViewModel)
+        NewTabPageLinkOpener.open(url, source: .historyEntry, sender: sender, target: target, sourceWindow: sourceWindow)
     }
 
-    @MainActor
-    private var tabCollectionViewModel: TabCollectionViewModel? {
-        WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel
-    }
 }

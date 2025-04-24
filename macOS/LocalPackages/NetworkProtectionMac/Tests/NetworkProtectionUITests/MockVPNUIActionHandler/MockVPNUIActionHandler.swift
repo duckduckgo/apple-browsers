@@ -39,4 +39,8 @@ public final class MockVPNUIActionHandler: VPNUIActionHandling {
     public func showPrivacyPro() async {
         // placeholder
     }
+
+    public func willStopVPN() async -> Bool {
+        true
+    }
 }

@@ -7328,6 +7328,9 @@
         }
       }
     },
+    "BETA" : {
+
+    },
     "Birthday" : {
       "comment" : "Title of the section of the Identities manager where the user can add/modify a date of birth",
       "localizations" : {

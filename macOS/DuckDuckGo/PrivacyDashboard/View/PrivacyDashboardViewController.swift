@@ -318,7 +318,7 @@ extension PrivacyDashboardViewController {
         return webVitalsResult
     }
 
-    private func isPIREnabledAndUserHasProfile() async -> Bool {
+    private func isPirEnabledAndUserHasProfile() async -> Bool {
         let isPIRFeatureEnabled = try? await Application.appDelegate.subscriptionAuthV1toV2Bridge.isEnabled(feature: .dataBrokerProtection)
         guard let isPIRFeatureEnabled,
               isPIRFeatureEnabled == true else {
@@ -366,7 +366,7 @@ extension PrivacyDashboardViewController {
             return experiments
         }
 
-        let isPIREnabled = await isPIREnabledAndUserHasProfile()
+        let isPirEnabled = await isPirEnabledAndUserHasProfile()
 
         let websiteBreakage = BrokenSiteReport(siteUrl: currentURL,
                                                category: category.lowercased(),
@@ -392,7 +392,7 @@ extension PrivacyDashboardViewController {
                                                cookieConsentInfo: currentTab.privacyInfo?.cookieConsentManaged,
                                                debugFlags: currentTab.privacyInfo?.debugFlags ?? "",
                                                privacyExperiments: privacyExperimentCohorts,
-                                               isPIREnabled: isPIREnabled)
+                                               isPirEnabled: isPirEnabled)
         return websiteBreakage
     }
 }

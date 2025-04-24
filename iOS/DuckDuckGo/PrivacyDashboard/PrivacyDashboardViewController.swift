@@ -373,7 +373,7 @@ extension PrivacyDashboardViewController {
                                 cookieConsentInfo: privacyInfo.cookieConsentManaged,
                                 debugFlags: privacyInfo.debugFlags,
                                 privacyExperiments: privacyExperimentCohorts,
-                                isPIREnabled: nil)
+                                isPirEnabled: nil)
     }
 
 }

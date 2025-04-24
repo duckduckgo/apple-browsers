@@ -100,7 +100,7 @@ public struct BrokenSiteReport {
     let cookieConsentInfo: CookieConsentInfo?
     let debugFlags: String
     let privacyExperiments: [String: String]
-    let isPIREnabled: Bool?
+    let isPirEnabled: Bool?
 #if os(iOS)
     let siteType: SiteType
     let atb: String
@@ -135,7 +135,7 @@ public struct BrokenSiteReport {
         cookieConsentInfo: CookieConsentInfo?,
         debugFlags: String,
         privacyExperiments: [String: String],
-        isPIREnabled: Bool?
+        isPirEnabled: Bool?
     ) {
         self.siteUrl = siteUrl
         self.category = category
@@ -162,7 +162,7 @@ public struct BrokenSiteReport {
         self.cookieConsentInfo = cookieConsentInfo
         self.debugFlags = debugFlags
         self.privacyExperiments = privacyExperiments
-        self.isPIREnabled = isPIREnabled
+        self.isPirEnabled = isPirEnabled
     }
 #endif
 
@@ -197,7 +197,7 @@ public struct BrokenSiteReport {
         cookieConsentInfo: CookieConsentInfo?,
         debugFlags: String,
         privacyExperiments: [String: String],
-        isPIREnabled: Bool?
+        isPirEnabled: Bool?
     ) {
         self.siteUrl = siteUrl
         self.category = category
@@ -228,7 +228,7 @@ public struct BrokenSiteReport {
         self.cookieConsentInfo = cookieConsentInfo
         self.debugFlags = debugFlags
         self.privacyExperiments = privacyExperiments
-        self.isPIREnabled = isPIREnabled
+        self.isPirEnabled = isPirEnabled
     }
 #endif
 
@@ -287,8 +287,8 @@ public struct BrokenSiteReport {
             result[key] = value
         }
 
-        if isPIREnabled == true {
-            result["isPIREnabled"] = boolToStringValue(isPIREnabled)
+        if isPirEnabled == true {
+            result["isPirEnabled"] = "true"
         }
 
 #if os(iOS)

@@ -51,7 +51,7 @@ struct BrokenSiteReportMocks {
                          cookieConsentInfo: nil,
                          debugFlags: "",
                          privacyExperiments: [:],
-                         isPIREnabled: nil)
+                         isPirEnabled: nil)
 #else
         BrokenSiteReport(siteUrl: URL(string: "https://duckduckgo.com")!,
                          category: "test",
@@ -77,7 +77,7 @@ struct BrokenSiteReportMocks {
                          cookieConsentInfo: nil,
                          debugFlags: "",
                          privacyExperiments: [:],
-                         isPIREnabled: nil)
+                         isPirEnabled: nil)
 #endif
     }
 
@@ -111,7 +111,7 @@ struct BrokenSiteReportMocks {
                          cookieConsentInfo: nil,
                          debugFlags: "",
                          privacyExperiments: [:],
-                         isPIREnabled: nil)
+                         isPirEnabled: nil)
 #else
         BrokenSiteReport(siteUrl: URL(string: "https://somethingelse.zz")!,
                          category: "test",
@@ -137,7 +137,7 @@ struct BrokenSiteReportMocks {
                          cookieConsentInfo: nil,
                          debugFlags: "",
                          privacyExperiments: [:],
-                         isPIREnabled: nil)
+                         isPirEnabled: nil)
 #endif
     }
 
@@ -171,7 +171,7 @@ struct BrokenSiteReportMocks {
                          cookieConsentInfo: nil,
                          debugFlags: "",
                          privacyExperiments: [:],
-                         isPIREnabled: nil)
+                         isPirEnabled: nil)
 #else
         BrokenSiteReport(siteUrl: URL(string: "https://www.subdomain.example.com/some/pathname?t=param#aaa")!,
                          category: "test",
@@ -197,7 +197,7 @@ struct BrokenSiteReportMocks {
                          cookieConsentInfo: nil,
                          debugFlags: "",
                          privacyExperiments: [:],
-                         isPIREnabled: nil)
+                         isPirEnabled: nil)
 #endif
     }
 }

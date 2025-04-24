@@ -56,8 +56,8 @@ internal class ColorView: NSView {
         }
     }
     private func updateCornerRadius() {
-        layer!.cornerRadius = cornerRadius
-        layer!.masksToBounds = true
+        layer?.cornerRadius = cornerRadius
+        layer?.masksToBounds = true
     }
 
     @IBInspectable var borderColor: NSColor? {
@@ -67,7 +67,7 @@ internal class ColorView: NSView {
     }
     private func updateBorderColor() {
         NSAppearance.withAppAppearance {
-            layer!.borderColor = borderColor?.cgColor
+            layer?.borderColor = borderColor?.cgColor
         }
     }
 

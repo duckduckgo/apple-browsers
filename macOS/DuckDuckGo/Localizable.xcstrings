@@ -13446,6 +13446,18 @@
         }
       }
     },
+    "click.to.copy.version" : {
+      "comment" : "Description of a button which copies version to clipboard when clicked",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Click to copy version"
+          }
+        }
+      }
+    },
     "close" : {
       "comment" : "Close button",
       "extractionState" : "extracted_with_value",

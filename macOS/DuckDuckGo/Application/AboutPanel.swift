@@ -19,6 +19,7 @@
 import SwiftUI
 import AppKit
 import BrowserServicesKit
+import Common
 
 // SwiftUI view for the About panel
 struct AboutPanelView: View {
@@ -55,6 +56,16 @@ struct AboutPanelView: View {
             HStack(spacing: 8) {
                 Text(UserText.versionLabel(version: appVersion, build: appBuild))
                     .font(.footnote)
+                    .onTapGesture {
+                        let pasteboard = NSPasteboard.general
+                        pasteboard.clearContents()
+                        pasteboard.setString(
+                            AppVersion.shared.versionAndBuildNumber,
+                            forType: .string
+                        )
+                    }
+                    .cursor(.pointingHand)
+                    .help(UserText.clickToCopyVersion)
                 if isInternal {
                     Text("BETA")
                         .font(.footnote)

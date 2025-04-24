@@ -41,7 +41,8 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     var refreshButton: UIButton! { searchAreaView.reloadButton }
     var privacyIconView: UIView? { privacyInfoContainer.privacyIcon }
     var searchContainer: UIView! { searchAreaContainerView }
-    let expectedHeight: CGFloat = Metrics.height
+    let expectedHeight: CGFloat = UpdatedOmniBarView.expectedHeight
+    static let expectedHeight: CGFloat = Metrics.height
 
     var accessoryType: OmniBarAccessoryType = .share {
         didSet {

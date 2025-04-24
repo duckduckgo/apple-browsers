@@ -118,7 +118,7 @@ class SwipeTabsCoordinator: NSObject {
     }
 
     private func updateLayout() {
-        let omniBarHeight: CGFloat = ExperimentalThemingManager().isExperimentalThemingEnabled ? 68 : 52
+        let omniBarHeight: CGFloat = ExperimentalThemingManager().isExperimentalThemingEnabled ? UpdatedOmniBarView.expectedHeight : DefaultOmniBarView.expectedHeight
         let layout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout
         layout?.itemSize = CGSize(width: coordinator.superview.frame.size.width, height: omniBarHeight)
         layout?.minimumLineSpacing = 0

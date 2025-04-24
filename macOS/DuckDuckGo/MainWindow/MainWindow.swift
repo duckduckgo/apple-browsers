@@ -21,6 +21,7 @@ import Cocoa
 final class MainWindow: NSWindow {
 
     static let minWindowWidth: CGFloat = 600
+    static let firstResponderDidChangeNotification = Notification.Name("firstResponderDidChange")
 
     override var canBecomeKey: Bool {
         return true
@@ -78,16 +79,9 @@ final class MainWindow: NSWindow {
         // The only reliable way to detect NSTextField is the first responder
         defer {
             // Send it after the first responder has been set on the super class so that window.firstResponder matches correctly
-            postFirstResponderNotification(with: responder)
+            NotificationCenter.default.post(name: MainWindow.firstResponderDidChangeNotification, object: self)
         }
-
         return super.makeFirstResponder(responder)
-    }
-
-    override func becomeMain() {
-        super.becomeMain()
-
-        postFirstResponderNotification(with: firstResponder)
     }
 
     override func endEditing(for object: Any?) {
@@ -100,12 +94,17 @@ final class MainWindow: NSWindow {
         super.endEditing(for: object)
     }
 
-    private func postFirstResponderNotification(with firstResponder: NSResponder?) {
-        NotificationCenter.default.post(name: .firstResponder, object: firstResponder)
+    // used to observe childWindows property
+    override func addChildWindow(_ childWin: NSWindow, ordered place: NSWindow.OrderingMode) {
+        willChangeValue(forKey: "childWindows")
+        super.addChildWindow(childWin, ordered: place)
+        didChangeValue(forKey: "childWindows")
     }
 
-}
+    override func removeChildWindow(_ childWin: NSWindow) {
+        willChangeValue(forKey: "childWindows")
+        super.removeChildWindow(childWin)
+        didChangeValue(forKey: "childWindows")
+    }
 
-extension Notification.Name {
-    static let firstResponder = Notification.Name("firstResponder")
 }

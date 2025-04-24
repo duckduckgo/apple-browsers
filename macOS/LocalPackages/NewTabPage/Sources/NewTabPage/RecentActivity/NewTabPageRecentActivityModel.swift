@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Combine
 import Common
 import Foundation
@@ -109,14 +110,14 @@ public final class NewTabPageRecentActivityModel {
 
     // MARK: - Actions
 
-    @MainActor func addFavorite(_ url: String) async {
+    @MainActor func addFavorite(_ url: String) {
         guard let url = URL(string: url), url.isValid else { return }
-        await actionsHandler.addFavorite(url)
+        actionsHandler.addFavorite(url)
     }
 
-    @MainActor func removeFavorite(_ url: String) async {
+    @MainActor func removeFavorite(_ url: String) {
         guard let url = URL(string: url), url.isValid else { return }
-        await actionsHandler.removeFavorite(url)
+        actionsHandler.removeFavorite(url)
     }
 
     @MainActor func confirmBurn(_ url: String) async -> Bool {
@@ -124,8 +125,8 @@ public final class NewTabPageRecentActivityModel {
         return await actionsHandler.confirmBurn(url)
     }
 
-    @MainActor func open(_ url: String, target: LinkOpenTarget) async {
+    @MainActor func open(_ url: String, sender: LinkOpenSender, target: LinkOpenTarget, sourceWindow: NSWindow?) {
         guard let url = URL(string: url), url.isValid else { return }
-        await actionsHandler.open(url, target: target)
+        actionsHandler.openHistoryEntry(url, sender: sender, target: target, sourceWindow: sourceWindow)
     }
 }

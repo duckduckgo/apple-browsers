@@ -20,24 +20,21 @@ import UserScript
 import Foundation
 import BrowserServicesKit
 import RemoteMessaging
+import AIChat
 
 protocol AIChatUserScriptHandling {
     func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable?
     func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable?
     func openAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
-    func setPayloadHandler(_ payloadHandler: (any AIChatPayloadHandling)?)
+    func setPayloadHandler(_ payloadHandler: (any AIChatConsumableDataHandling)?)
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
-    private var payloadHandler: (any AIChatPayloadHandling)?
+    private var payloadHandler: (any AIChatConsumableDataHandling)?
     private let featureFlagger: FeatureFlagger
 
     init(featureFlagger: FeatureFlagger) {
         self.featureFlagger = featureFlagger
-    }
-
-    private var platform: String {
-        "ios"
     }
 
     enum AIChatKeys {
@@ -64,19 +61,14 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     public func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable? {
-        AIChatNativeConfigValues(isAIChatHandoffEnabled: true,
-                                 platform: platform,
-                                 supportsClosingAIChat: true,
-                                 supportsOpeningSettings: true)
+        AIChatNativeConfigValues.defaultValues
     }
 
     public func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable? {
-        AIChatNativeHandoffData(isAIChatHandoffEnabled: true,
-                               platform: platform,
-                               aiChatPayload: payloadHandler?.consumePayload() as? AIChatPayload)
+        AIChatNativeHandoffData.defaultValuesWithPayload(payloadHandler?.consumeData() as? AIChatPayload)
     }
 
-    func setPayloadHandler(_ payloadHandler: (any AIChatPayloadHandling)?) {
+    func setPayloadHandler(_ payloadHandler: (any AIChatConsumableDataHandling)?) {
         self.payloadHandler = payloadHandler
     }
 }

@@ -61,11 +61,15 @@ final class TabBarCollectionView: NSCollectionView {
     }
 
     func scroll(to indexPath: IndexPath) {
+        guard isIndexPathValid(indexPath) else {
+            assertionFailure("TabBarCollectionView: Index path out of bounds")
+            return
+        }
         let rect = frameForItem(at: indexPath.item)
         animator().performBatchUpdates {
             animator().scrollToVisible(rect)
         } completionHandler: { [weak self] didFinish in
-            guard let self, didFinish else { return }
+            guard let self, didFinish, isIndexPathValid(indexPath) else { return }
             let newRect = frameForItem(at: indexPath.item)
             // make extra pass to make sure the cell is really visible after the animation finishes:
             // in overflown mode the cells are expanded when selected and may get partly hidden
@@ -130,4 +134,10 @@ extension NSCollectionView {
         return clipView.bounds.origin.x <= 0
     }
 
+}
+
+extension NSCollectionView {
+    func isIndexPathValid(_ indexPath: IndexPath) -> Bool {
+        return indexPath.section < numberOfSections && indexPath.item < numberOfItems(inSection: indexPath.section)
+    }
 }

@@ -445,26 +445,8 @@ extension URL {
         return false
     }
 
-    public var isAIChatURL: Bool {
-        return isDuckDuckGo && isAIChatQuery
-    }
-
-    private var isAIChatQuery: Bool {
-        guard let queryItems = URLComponents(url: self, resolvingAgainstBaseURL: false)?.queryItems else {
-            return false
-        }
-        return queryItems.contains { item in
-            item.name == AIChatParameters.identifiableQuery && item.value == AIChatParameters.identifiableQueryValue
-        }
-    }
-
     var isEmailProtection: Bool {
         self.isChild(of: .duckDuckGoEmailLogin) || self == .duckDuckGoEmail
-    }
-
-    enum AIChatParameters {
-        static let identifiableQuery = "ia"
-        static let identifiableQueryValue = "chat"
     }
 
     enum DuckDuckGoParameters: String {

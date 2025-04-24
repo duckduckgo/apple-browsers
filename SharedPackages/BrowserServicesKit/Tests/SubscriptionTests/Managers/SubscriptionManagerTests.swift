@@ -105,8 +105,8 @@ final class SubscriptionManagerTests: XCTestCase {
         try await Task.sleep(seconds: 0.5)
 
         // Then
-        XCTAssertTrue(storePurchaseManager.updateAvailableProductsCalled)
-        XCTAssertTrue(subscriptionManager.canPurchase)
+        XCTAssertTrue(storePurchaseManager.updateAvailableProductsCalled, "StorePurchaseManager should have called updateAvailableProducts")
+        XCTAssertTrue(subscriptionManager.canPurchase, "SubscriptionManager should be able to purchase")
     }
 
     // MARK: - Tests for loadInitialData

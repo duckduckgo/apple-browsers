@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import AIChat
 
 final class AIChatDebugMenu: NSMenu {
     private var storage = DefaultAIChatPreferencesStorage()

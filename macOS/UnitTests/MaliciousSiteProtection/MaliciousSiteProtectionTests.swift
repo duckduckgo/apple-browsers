@@ -33,7 +33,7 @@ final class MaliciousSiteProtectionTests: XCTestCase {
         privacyConfig.isSubfeatureKeyEnabled = { (subfeature: any PrivacySubfeature, _: AppVersionProvider) -> Bool in
             if case MaliciousSiteProtectionSubfeature.onByDefault = subfeature { true } else { false }
         }
-        configManager.privacyConfig = privacyConfig
+        configManager.mockPrivacyConfig = privacyConfig
         return MaliciousSiteProtectionManager(apiService: apiService, dataManager: dataManager, detector: MockMaliciousSiteDetector(), featureFlagger: MockFeatureFlagger())
     }()
     var apiService: MockAPIService!

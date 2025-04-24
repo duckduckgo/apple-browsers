@@ -337,7 +337,7 @@ extension TabCollectionViewModelTests {
     func test_WithPinnedTabs_WhenSelectionIndexIsUpdatedWithTheSameValueThenSelectedTabViewModelIsOnlyPublishedOnce() {
         let tabCollectionViewModel = TabCollectionViewModel.aTabCollectionViewModelWithPinnedTab()
         let firstTabViewModel = tabCollectionViewModel.pinnedTabsManager!.tabViewModel(at: 0)
-        firstTabViewModel?.tab.url = URL.duckDuckGo
+        firstTabViewModel?.tab.setContent(.url(.duckDuckGo, source: .link))
 
         var events: [TabViewModel?] = []
         let cancellable = tabCollectionViewModel.$selectedTabViewModel
@@ -369,5 +369,12 @@ fileprivate extension TabCollectionViewModel {
 
     func appendPinnedTab() {
         pinnedTabsManager?.tabCollection.append(tab: .init(content: .url("https://duck.com".url!, source: .link), shouldLoadInBackground: false))
+    }
+}
+
+private extension Tab {
+    @MainActor
+    convenience init(parentTab: Tab? = nil) {
+        self.init(content: .none, parentTab: parentTab)
     }
 }

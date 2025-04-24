@@ -80,8 +80,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
     private func createInitialDialog(onManualDismiss: @escaping () -> Void) -> some View {
         let viewModel = OnboardingSearchSuggestionsViewModel(
             suggestedSearchesProvider: OnboardingSuggestedSearchesProvider(),
-            delegate: delegate,
-            pixelReporter: onboardingPixelReporter
+            delegate: delegate
         )
         let message = UserText.Onboarding.ContextualOnboarding.onboardingTryASearchMessage
 
@@ -105,8 +104,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
         let viewModel = OnboardingSiteSuggestionsViewModel(
             title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteNTPTitle,
             suggestedSitesProvider: OnboardingSuggestedSitesProvider(surpriseItemTitle: UserText.Onboarding.ContextualOnboarding.tryASearchOptionSurpriseMeTitle),
-            delegate: delegate,
-            pixelReporter: onboardingPixelReporter
+            delegate: delegate
         )
 
         let manualDismissAction = { [weak self] in

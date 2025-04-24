@@ -20,6 +20,7 @@ import Cocoa
 import Combine
 import Lottie
 import Common
+import AIChat
 
 final class AddressBarViewController: NSViewController {
 

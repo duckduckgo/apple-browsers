@@ -2,6 +2,9 @@
 <Workspace
    version = "1.0">
    <FileRef
+      location = "group:SharedPackages/AIChat">
+   </FileRef>
+   <FileRef
       location = "group:SharedPackages/BrowserServicesKit">
    </FileRef>
    <FileRef

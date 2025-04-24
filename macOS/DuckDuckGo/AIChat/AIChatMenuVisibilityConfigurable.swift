@@ -18,6 +18,7 @@
 
 import Combine
 import BrowserServicesKit
+import AIChat
 
 protocol AIChatMenuVisibilityConfigurable {
 

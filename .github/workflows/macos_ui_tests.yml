@@ -22,6 +22,7 @@ on:
   pull_request:
     paths:
       - '.github/**'
+      - '.xcode-version'
       - 'BrowserServicesKit/**'
       - 'macOS/**'
 

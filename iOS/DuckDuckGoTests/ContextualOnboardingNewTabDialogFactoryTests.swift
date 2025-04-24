@@ -33,7 +33,6 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
     var window: UIWindow!
 
     override func setUpWithError() throws {
-        throw XCTSkip("Potentially flaky")
         try super.setUpWithError()
         mockDelegate = CapturingOnboardingNavigationDelegate()
         contextualOnboardingLogicMock = ContextualOnboardingLogicMock()
@@ -45,7 +44,7 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
             onboardingPixelReporter: pixelReporterMock
         )
         window = UIWindow(frame: UIScreen.main.bounds)
-        window.makeKeyAndVisible()
+        window.isHidden = false
     }
 
     override func tearDown() {

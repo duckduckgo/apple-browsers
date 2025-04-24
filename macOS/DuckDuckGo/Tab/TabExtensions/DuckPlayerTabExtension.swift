@@ -310,6 +310,16 @@ extension DuckPlayerTabExtension: NavigationResponder {
 
     @MainActor
     private func handleYoutubeNavigation(for navigationAction: NavigationAction) -> NavigationActionPolicy? {
+
+        // “Watch in YouTube” selected
+        if let videoID = navigationAction.url.youtubeVideoID {
+            if didUserSelectWatchInYoutubeFromDuckPlayer(navigationAction, preferences: preferences, videoID: videoID) {
+            duckPlayer.setNextVideoToOpenOnYoutube()
+                PixelKit.fire(GeneralPixel.duckPlayerWatchOnYoutube)
+                return .next
+            }
+        }
+
         guard navigationAction.url.isYoutubeVideo,
               let (videoID, timestamp) = navigationAction.url.youtubeVideoParams else {
             return .next
@@ -383,11 +393,8 @@ extension DuckPlayerTabExtension: NavigationResponder {
             }
         }
 
-        // “Watch in YouTube” selected
-        // when currently displayed content is the Duck Player and loading a YouTube URL, don‘t override it
-        if didUserSelectWatchInYoutubeFromDuckPlayer(navigationAction, preferences: preferences, videoID: videoID) {
-            duckPlayer.setNextVideoToOpenOnYoutube()
-            PixelKit.fire(GeneralPixel.duckPlayerWatchOnYoutube)
+        // Do not handle as the user has already requested to open the next video on Youtube
+        if duckPlayer.shouldOpenNextVideoOnYoutube {
             return .next
 
         // If this is a child tab of a Duck Player and it's loading a YouTube URL, don‘t override it
@@ -422,6 +429,7 @@ extension DuckPlayerTabExtension: NavigationResponder {
         return .next
     }
 
+    // Validate if the user has selected "Watch in YouTube" from the Duck Player
     private func didUserSelectWatchInYoutubeFromDuckPlayer(_ navigationAction: NavigationAction, preferences: DuckPlayerPreferences, videoID: String) -> Bool {
         let url = preferences.duckPlayerOpenInNewTab ? navigationAction.sourceFrame.url : navigationAction.targetFrame?.url
         return url?.isDuckPlayer == true && url?.youtubeVideoID == videoID

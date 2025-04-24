@@ -268,40 +268,47 @@ struct PinnedTabInnerView: View {
     }
 
     private func audioIndicator(isMuted: Bool) -> some View {
-        ZStack {
-            Circle()
-                .stroke(Color.gray.opacity(0.5), lineWidth: 0.5)
-                .background(Circle().foregroundColor(.pinnedTabMuteStateCircle))
-                .frame(width: 16, height: 16)
+        Button {
+            model.muteUnmuteTab()
+        } label: {
+            ZStack {
+                Circle()
+                    .stroke(Color.gray.opacity(0.5), lineWidth: 0.5)
+                    .background(Circle().foregroundColor(.pinnedTabMuteStateCircle))
+                    .frame(width: 16, height: 16)
 
-            if isMuted {
-                Image(.audioMute)
-                    .resizable()
-                    .frame(width: 12, height: 12)
-            } else {
-                Image(.audio)
-                    .resizable()
-                    .frame(width: 12, height: 12)
+                if isMuted {
+                    Image(.audioMute)
+                        .resizable()
+                        .frame(width: 12, height: 12)
+                } else {
+                    Image(.audio)
+                        .resizable()
+                        .frame(width: 12, height: 12)
+                }
             }
         }
+        .buttonStyle(.plain)
         .offset(x: 8, y: -8)
-        .onTapGesture {
-            model.muteUnmuteTab()
-        }
     }
 
     @ViewBuilder
     var crashIndicatorView: some View {
-        ZStack {
-            Circle()
-                .stroke(Color.gray.opacity(0.5), lineWidth: 0.5)
-                .background(Circle().foregroundColor(.pinnedTabMuteStateCircle))
-                .frame(width: 16, height: 16)
+        Button {
+            tabCrashIndicatorModel.isShowingPopover.toggle()
+        } label: {
+            ZStack {
+                Circle()
+                    .stroke(Color.gray.opacity(0.5), lineWidth: 0.5)
+                    .background(Circle().foregroundColor(.pinnedTabMuteStateCircle))
+                    .frame(width: 16, height: 16)
 
-            Image(.tabCrash)
-                .resizable()
-                .frame(width: 12, height: 12)
+                Image(.tabCrash)
+                    .resizable()
+                    .frame(width: 12, height: 12)
+            }
         }
+        .buttonStyle(.plain)
         .popover(isPresented: $tabCrashIndicatorModel.isShowingPopover, arrowEdge: .bottom) {
             PopoverMessageView(
                 viewModel: .init(
@@ -317,9 +324,6 @@ struct PinnedTabInnerView: View {
             )
         }
         .offset(x: 8, y: -8)
-        .onTapGesture {
-            tabCrashIndicatorModel.isShowingPopover.toggle()
-        }
     }
 
     private var faviconImage: NSImage? {

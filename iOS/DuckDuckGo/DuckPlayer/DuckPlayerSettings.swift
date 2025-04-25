@@ -87,7 +87,7 @@ enum NativeDuckPlayerYoutubeMode: Equatable, Codable, CustomStringConvertible, C
         }
     }
 
-    var stringValue: String {
+    public var stringValue: String {
         switch self {
         case .auto:
             return Self.autoString
@@ -101,7 +101,7 @@ enum NativeDuckPlayerYoutubeMode: Equatable, Codable, CustomStringConvertible, C
     /// Initializes a `NativeDuckPlayerYoutubeMode` from a string value.
     ///
     /// - Parameter stringValue: The string representation of the mode.
-    init?(stringValue: String) {
+    public init?(stringValue: String) {
         switch stringValue {
         case Self.autoString:
             self = .auto
@@ -109,6 +109,54 @@ enum NativeDuckPlayerYoutubeMode: Equatable, Codable, CustomStringConvertible, C
             self = .ask
         case Self.neverString:
             self = .never
+        default:
+            return nil
+        }
+    }
+}
+
+enum DuckPlayerVariant: Equatable, Codable, CustomStringConvertible, CaseIterable {
+    case classicA
+    case nativeB
+    case nativeC
+
+    private static let classicAString = "classicA"
+    private static let nativeBString = "nativeB"
+    private static let nativeCString = "nativeC"
+    
+    var stringValue: String {
+        switch self {
+        case .classicA:
+            return Self.classicAString
+        case .nativeB:
+            return Self.nativeBString
+        case .nativeC:
+            return Self.nativeCString
+        }
+    }
+
+    var description: String {
+        switch self {
+        case .classicA:
+            return Self.classicAString
+        case .nativeB:
+            return Self.nativeBString
+        case .nativeC:
+            return Self.nativeCString
+        }
+    }
+
+     /// Initializes a `DuckPlayerVariant` from a string value.
+    ///
+    /// - Parameter stringValue: The string representation of the mode.
+    init?(stringValue: String) {
+        switch stringValue {
+        case Self.classicAString:
+            self = .classicA
+        case Self.nativeBString:
+            self = .nativeB
+        case Self.nativeCString:
+            self = .nativeC
         default:
             return nil
         }

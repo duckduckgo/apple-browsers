@@ -18,12 +18,7 @@
 //
 
 import Foundation
-
-public enum DuckPlayerVariant {
-    case classicA
-    case nativeB
-    case nativeC
-}
+import Core
 
 protocol DuckPlayerVariantManager {
     
@@ -57,7 +52,7 @@ class DefaultDuckPlayerVariantManager: DuckPlayerVariantManager {
         }
     }
 
-    // Private methods
+    // MARK: Private methods
     private func setClassicAVariant() {
         settings.nativeUI = false
         settings.mode = .alwaysAsk

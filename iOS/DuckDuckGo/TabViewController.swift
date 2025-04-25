@@ -3255,7 +3255,7 @@ extension TabViewController: SaveLoginViewControllerDelegate {
                                       onAction: { [weak self] in
                 Pixel.fire(pixel: .autofillLoginsFillLoginInlineDisableSnackbarOpenSettings)
                 guard let mainVC = self?.view.window?.rootViewController as? MainViewController else { return }
-                mainVC.segueToSettingsLoginsWithAccount(nil, source: .saveLoginDisablePrompt)
+                mainVC.segueToSettingsAutofillWith(account: nil, card: nil, source: .saveLoginDisablePrompt)
             })
         }
     }
@@ -3270,12 +3270,15 @@ extension TabViewController: SaveCreditCardViewControllerDelegate {
                                   presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom),
                                   onAction: { [weak self] in
             guard let self = self else { return }
+            self.delegate?.tab(self, didRequestSettingsToCreditCards: card)
         })
     }
     
     func saveCreditCardViewControllerDidCancel(_ viewController: SaveCreditCardViewController) {
         viewController.dismiss(animated: true)
     }
+    
+    
 }
 
 extension TabViewController: OnboardingNavigationDelegate {

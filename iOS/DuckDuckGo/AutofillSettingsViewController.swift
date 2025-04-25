@@ -52,6 +52,7 @@ final class AutofillSettingsViewController: UIViewController {
     private let syncService: DDGSyncing
     private let syncDataProviders: SyncDataProviders
     private let selectedAccount: SecureVaultModels.WebsiteAccount?
+    private let selectedCard: SecureVaultModels.CreditCard?
     private let source: AutofillSettingsSource
     private let bookmarksDatabase: CoreDataDatabase
     private let favoritesDisplayMode: FavoritesDisplayMode
@@ -60,6 +61,7 @@ final class AutofillSettingsViewController: UIViewController {
          syncService: DDGSyncing,
          syncDataProviders: SyncDataProviders,
          selectedAccount: SecureVaultModels.WebsiteAccount?,
+         selectedCard: SecureVaultModels.CreditCard?,
          source: AutofillSettingsSource,
          bookmarksDatabase: CoreDataDatabase,
          favoritesDisplayMode: FavoritesDisplayMode
@@ -68,6 +70,7 @@ final class AutofillSettingsViewController: UIViewController {
         self.syncService = syncService
         self.syncDataProviders = syncDataProviders
         self.selectedAccount = selectedAccount
+        self.selectedCard = selectedCard
         self.source = source
         self.bookmarksDatabase = bookmarksDatabase
         self.favoritesDisplayMode = favoritesDisplayMode
@@ -89,6 +92,8 @@ final class AutofillSettingsViewController: UIViewController {
         
         if selectedAccount != nil {
             segueToPasswords()
+        } else if selectedCard != nil {
+            segueToCreditCards()
         }
         
         Pixel.fire(pixel: .autofillSettingsOpened)
@@ -120,7 +125,8 @@ final class AutofillSettingsViewController: UIViewController {
     
     private func segueToCreditCards() {
         let autofillCreditCardsViewController = AutofillCreditCardListViewController(
-            secureVault: viewModel.secureVault)
+            secureVault: viewModel.secureVault,
+            selectedCard: selectedCard)
         navigationController?.pushViewController(autofillCreditCardsViewController, animated: true)
     }
     

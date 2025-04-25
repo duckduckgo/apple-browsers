@@ -64,7 +64,7 @@ class SettingsLegacyViewProvider: ObservableObject {
     enum LegacyView {
         case addToDock,
              sync,
-             logins,
+             autofill,
              appIcon,
              gpc,
              autoconsent,
@@ -139,14 +139,16 @@ class SettingsLegacyViewProvider: ObservableObject {
 
     func loginSettings(delegate: AutofillSettingsViewControllerDelegate,
                        selectedAccount: SecureVaultModels.WebsiteAccount?,
+                       selectedCard: SecureVaultModels.CreditCard?,
                        source: AutofillSettingsSource?) -> AutofillSettingsViewController {
         return AutofillSettingsViewController(appSettings: self.appSettings,
-                                                       syncService: self.syncService,
-                                                       syncDataProviders: self.syncDataProviders,
-                                                       selectedAccount: selectedAccount,
-                                                       source: source ?? .settings,
-                                                       bookmarksDatabase: self.bookmarksDatabase,
-                                                       favoritesDisplayMode: self.appSettings.favoritesDisplayMode)
+                                              syncService: self.syncService,
+                                              syncDataProviders: self.syncDataProviders,
+                                              selectedAccount: selectedAccount,
+                                              selectedCard: selectedCard,
+                                              source: source ?? .settings,
+                                              bookmarksDatabase: self.bookmarksDatabase,
+                                              favoritesDisplayMode: self.appSettings.favoritesDisplayMode)
     }
-
+    
 }

@@ -400,6 +400,9 @@
 /* Title for prompt asking the user if they wish to save their credit card details */
 "autofill.creditcard.save-prompt.title" = "Do you want DuckDuckGo to save your card info?";
 
+/* Authentication message shown when asking the user if they wish to autofill a saved credit card */
+"autofill.creditcard.use-saved-prompt.authentication" = "Authenticate to fill credit card information";
+
 /* Title for prompt asking the user if they wish to autofill a saved credit card */
 "autofill.creditcard.use-saved-prompt.title" = "Use a saved card?";
 

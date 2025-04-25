@@ -52,7 +52,7 @@ struct SettingsMainSettingsView: View {
             // Passwords
             SettingsCellView(label: UserText.settingsLogins,
                              image: Image("SettingsPasswords"),
-                             action: { viewModel.presentLegacyView(.logins) },
+                             action: { viewModel.presentLegacyView(.autofill) },
                              disclosureIndicator: true,
                              isButton: true)
 

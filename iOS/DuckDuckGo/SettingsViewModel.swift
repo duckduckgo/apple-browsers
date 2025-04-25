@@ -665,11 +665,12 @@ extension SettingsViewModel {
         UIApplication.shared.open(url)
     }
     
-    @MainActor func shouldPresentLoginsViewWithAccount(accountDetails: SecureVaultModels.WebsiteAccount?, source: AutofillSettingsSource? = nil) {
+    @MainActor func shouldPresentAutofillViewWith(accountDetails: SecureVaultModels.WebsiteAccount?, card: SecureVaultModels.CreditCard?, source: AutofillSettingsSource? = nil) {
         state.activeWebsiteAccount = accountDetails
+        state.activeWebsiteCreditCard = card
         state.autofillSource = source
         
-        presentLegacyView(.logins)
+        presentLegacyView(.autofill)
     }
 
     @MainActor func shouldPresentSyncViewWithSource(_ source: String? = nil) {
@@ -744,11 +745,11 @@ extension SettingsViewModel {
             
         case .feedback:
             presentViewController(legacyViewProvider.feedback, modal: false)
-        case .logins:
+        case .autofill:
             pushViewController(legacyViewProvider.loginSettings(delegate: self,
                                                                 selectedAccount: state.activeWebsiteAccount,
+                                                                selectedCard: state.activeWebsiteCreditCard,
                                                                 source: state.autofillSource))
-
         case .gpc:
             firePixel(.settingsDoNotSellShown)
             pushViewController(legacyViewProvider.gpc)

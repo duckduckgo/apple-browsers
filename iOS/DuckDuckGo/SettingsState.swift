@@ -78,6 +78,7 @@ struct SettingsState {
 
     // Logins properties
     var activeWebsiteAccount: SecureVaultModels.WebsiteAccount?
+    var activeWebsiteCreditCard: SecureVaultModels.CreditCard?
     var autofillSource: AutofillSettingsSource?
 
     // About properties

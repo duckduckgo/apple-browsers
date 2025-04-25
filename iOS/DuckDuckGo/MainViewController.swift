@@ -2561,7 +2561,8 @@ extension MainViewController: TabDelegate {
                                               inheritedAttribution: inheritingAttribution)
         newTab.openedByPage = true
         newTab.openingTab = tab
-        
+        swipeTabsCoordinator?.refresh(tabsModel: tabManager.model)
+
         newTabAnimation {
             guard self.tabManager.model.tabs.contains(newTab.tabModel) else { return }
 

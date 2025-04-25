@@ -100,6 +100,8 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
 
         duckPlayer.urlChangedPublisher
             .sink { [weak self] initialized in
+                self?.isFeatureReady = false
+                self?.eventQueue.removeAll()
                 self?.onUrlChanged()
             }
             .store(in: &cancellables)

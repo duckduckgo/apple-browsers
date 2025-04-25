@@ -246,7 +246,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         }
 
         // Resets Script Initialization State
-        duckPlayer.scriptInitializerPublisher.send(false)
+        duckPlayer.urlChangedPublisher.send(newURL?.absoluteString ?? "")
 
         // Dismiss the pill on every URL change
         duckPlayer.dismissPill(reset: true, animated: true, programatic: true)

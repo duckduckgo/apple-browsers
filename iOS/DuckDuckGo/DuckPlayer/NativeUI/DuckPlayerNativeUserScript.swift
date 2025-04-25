@@ -163,10 +163,10 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
     }
 
     private func onUrlChanged() {
-        guard let broker = broker, let webView = webView else { return } 
-
+        guard let broker = broker, let webView = webView else { return }         
         let pageType: String
         guard let host = webView.url?.host else { return }
+        guard let url = webView.url else { return }
         switch host {
         case DuckPlayerSettingsDefault.OriginDomains.duckduckgo:
             pageType = Constants.SERP
@@ -174,7 +174,11 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
         case DuckPlayerSettingsDefault.OriginDomains.youtube, 
              DuckPlayerSettingsDefault.OriginDomains.youtubeWWW, 
              DuckPlayerSettingsDefault.OriginDomains.youtubeMobile:
-            pageType = Constants.YOUTUBE
+            if url.isYoutubeWatch {
+                pageType = Constants.YOUTUBE
+            } else {
+                pageType = Constants.UNKNOWN
+            }
         case DuckPlayerSettingsDefault.OriginDomains.youtubeNoCookie, 
              DuckPlayerSettingsDefault.OriginDomains.youtubeNoCookieWWW:
             pageType = Constants.NOCOOKIE
@@ -182,7 +186,7 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
             pageType = Constants.UNKNOWN
         }
         let result: [String: String] = [Constants.pageType: pageType]
-        
+        print("DP: 🟣 onUrlChanged: \(result)")
         if !isFeatureReady {
             eventQueue.append(.urlChanged(pageType: pageType))
             return
@@ -192,7 +196,7 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
 
     private func processEventQueue() {
         guard let broker = broker, let webView = webView else { return }
-        
+        print("DP: 🟣 Processing event queue")
         for event in eventQueue {
             switch event {
             case .mediaControl(let pause):
@@ -210,7 +214,8 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
 
     @MainActor
     private func initialSetup(params: Any, original: WKScriptMessage) -> Encodable? {    
-        let locale = Locale.current.languageCode ?? "en"        
+        print("DP: 🟣 Initial setup")
+        let locale = Locale.current.languageCode ?? "en"
         let result: [String: String] = [Constants.locale: locale]
         return result
     }
@@ -237,6 +242,7 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
 
     @MainActor
     private func onDuckPlayerReady(params: Any, original: WKScriptMessage) -> Encodable? {
+        print("DP: 🟣 onDuckPlayerReady")
         processEventQueue()
         isFeatureReady = true
         return nil

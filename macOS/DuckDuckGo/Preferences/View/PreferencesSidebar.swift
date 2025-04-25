@@ -139,6 +139,7 @@ extension Preferences {
                 button.font = PreferencesUI_macOS.Const.Fonts.popUpButton
                 button.setButtonType(.momentaryLight)
                 button.isBordered = false
+                button.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
                 for (index, type) in model.tabSwitcherTabs.enumerated() {
                     guard let tabTitle = type.title else {

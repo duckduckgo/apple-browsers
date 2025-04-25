@@ -504,8 +504,8 @@ final class AddressBarButtonsViewController: NSViewController {
 
         clearButton.isShown = isTextFieldEditorFirstResponder && !textFieldValue.isEmpty
 
-        updatePrivacyEntryPointButton()
         updateImageButton()
+        updatePrivacyEntryPointButton()
         updatePermissionButtons()
         updateBookmarkButtonVisibility()
         updateZoomButtonVisibility()
@@ -913,7 +913,11 @@ final class AddressBarButtonsViewController: NSViewController {
         case .browsing where tabViewModel.isShowingErrorPage:
             imageButton.image = .web
         case .browsing:
-            imageButton.image = tabViewModel.favicon
+            if let favicon = tabViewModel.favicon {
+                imageButton.image = tabViewModel.favicon
+            } else if isTextFieldEditorFirstResponder {
+                imageButton.image = .web
+            }
         case .editing(.url):
             imageButton.image = .web
         case .editing(.text):

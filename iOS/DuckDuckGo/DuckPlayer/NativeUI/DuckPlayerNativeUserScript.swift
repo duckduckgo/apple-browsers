@@ -31,9 +31,10 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
         case mediaControl(pause: Bool)
         case serpNotification(enabled: Bool)
         case muteAudio(mute: Bool)
+        case urlChanged(pageType: String)
     }
     
-    var isInitialized = false
+    var isFeatureReady = false
     private var eventQueue: [QueuedEvent] = []
     var duckPlayer: DuckPlayerControlling
     private var cancellables = Set<AnyCancellable>()
@@ -53,6 +54,7 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
         static let initialSetup = "initialSetup"
         static let onCurrentTimeStamp = "onCurrentTimestamp"
         static let onYoutubeError = "onYoutubeError"
+        static let onDuckPlayerReady = "onDuckPlayerReady"
     }
 
     weak var broker: UserScriptMessageBroker?
@@ -96,9 +98,9 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
             }
             .store(in: &cancellables)
 
-        duckPlayer.scriptInitializerPublisher
+        duckPlayer.urlChangedPublisher
             .sink { [weak self] initialized in
-                self?.isInitialized = initialized
+                self?.onUrlChanged()
             }
             .store(in: &cancellables)
     }
@@ -120,6 +122,8 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
             return onYoutubeError
         case Handlers.initialSetup:
             return initialSetup
+        case Handlers.onDuckPlayerReady:
+            return onDuckPlayerReady
         default:
             return nil
         }
@@ -133,59 +137,36 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
 
     private func handleMediaControl(pause: Bool) {
         guard let broker = broker, let webView = webView else { return }
-        if !isInitialized {
+        if !isFeatureReady {
             eventQueue.append(.mediaControl(pause: pause))
             return
         }
-        print("DP: 🟣 Pushing onMediaControl event with pause: \(pause)")
         broker.push(method: "onMediaControl", params: ["pause": pause], for: self, into: webView)
     }
 
     private func handleSerpNotification(enabled: Bool) {
         guard let broker = broker, let webView = webView else { return }
-        if !isInitialized {
+        if !isFeatureReady {
             eventQueue.append(.serpNotification(enabled: enabled))
             return
         }
-        print("DP: 🟣 Pushing handleSerpNotification with enabled: \(enabled)")
         broker.push(method: "onSerpNotify", params: ["enabled": enabled], for: self, into: webView)
     }
 
     private func handleMuteAudio(mute: Bool) {
         guard let broker = broker, let webView = webView else { return }
-        if !isInitialized {
+        if !isFeatureReady {
             eventQueue.append(.muteAudio(mute: mute))
             return
         }
-        print("DP: 🟣 Pushing handleMuteAudio with mute: \(mute)")
         broker.push(method: "onMuteAudio", params: ["mute": mute], for: self, into: webView)
     }
 
-    private func processEventQueue() {
-        guard let broker = broker, let webView = webView else { return }
-        
-        for event in eventQueue {
-            switch event {
-            case .mediaControl(let pause):
-                print("DP: 🟣 Processing queued onMediaControl event with pause: \(pause)")
-                broker.push(method: "onMediaControl", params: ["pause": pause], for: self, into: webView)
-            case .serpNotification(let enabled):
-                print("DP: 🟣 Processing queued handleSerpNotification with enabled: \(enabled)")
-                broker.push(method: "onSerpNotify", params: ["enabled": enabled], for: self, into: webView)
-            case .muteAudio(let mute):
-                print("DP: 🟣 Processing queued handleMuteAudio with mute: \(mute)")
-                broker.push(method: "onMuteAudio", params: ["mute": mute], for: self, into: webView)
-            }
-        }
-        eventQueue.removeAll()
-    }
+    private func onUrlChanged() {
+        guard let broker = broker, let webView = webView else { return } 
 
-    @MainActor
-    private func initialSetup(params: Any, original: WKScriptMessage) -> Encodable? {
-        guard let webView = webView else { return nil }
-        let locale = Locale.current.languageCode ?? "en"
         let pageType: String
-        guard let host = webView.url?.host else { return nil }
+        guard let host = webView.url?.host else { return }
         switch host {
         case DuckPlayerSettingsDefault.OriginDomains.duckduckgo:
             pageType = Constants.SERP
@@ -200,14 +181,37 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
         default:
             pageType = Constants.UNKNOWN
         }
-        let result: [String: String] = [Constants.locale: locale, Constants.pageType: pageType]
-        isInitialized = true
-
-        // Process the event queue after the initial setup is complete
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            self.processEventQueue()
+        let result: [String: String] = [Constants.pageType: pageType]
+        
+        if !isFeatureReady {
+            eventQueue.append(.urlChanged(pageType: pageType))
+            return
         }
+        broker.push(method: "onUrlChanged", params: result, for: self, into: webView)
+    }
 
+    private func processEventQueue() {
+        guard let broker = broker, let webView = webView else { return }
+        
+        for event in eventQueue {
+            switch event {
+            case .mediaControl(let pause):
+                broker.push(method: "onMediaControl", params: ["pause": pause], for: self, into: webView)
+            case .serpNotification(let enabled):
+                broker.push(method: "onSerpNotify", params: ["enabled": enabled], for: self, into: webView)
+            case .muteAudio(let mute):
+                broker.push(method: "onMuteAudio", params: ["mute": mute], for: self, into: webView)
+            case .urlChanged(let pageType):
+                broker.push(method: "onUrlChanged", params: [Constants.pageType: pageType], for: self, into: webView)
+            }
+        }
+        eventQueue.removeAll()
+    }
+
+    @MainActor
+    private func initialSetup(params: Any, original: WKScriptMessage) -> Encodable? {    
+        let locale = Locale.current.languageCode ?? "en"        
+        let result: [String: String] = [Constants.locale: locale]
         return result
     }
 
@@ -218,10 +222,8 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
             return nil
         }
         if let timeInterval = Double(timeString) {
-            print("DP: 🟣 DuckPlayerNativeUserScript onCurrentTimeStamp Called: Time \(timeInterval)")
             duckPlayer.currentTimeStampPublisher.send(timeInterval)
         } else {
-            print("DP: 🔴 DuckPlayerNativeUserScript onCurrentTimeStamp Called: Time \(timeString) is not a valid number")
         }
         let result: [String: String] = [:]
         return result
@@ -229,9 +231,15 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
 
     @MainActor
     private func onYoutubeError(params: Any, original: WKScriptMessage) -> Encodable? {
-        print("DP: 🟣 DuckPlayerNativeUserScript onYoutubeError Called from UserScript")
         let result: [String: String] = [:]
         return result
+    }
+
+    @MainActor
+    private func onDuckPlayerReady(params: Any, original: WKScriptMessage) -> Encodable? {
+        processEventQueue()
+        isFeatureReady = true
+        return nil
     }
 
 }

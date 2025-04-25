@@ -267,7 +267,7 @@ protocol DuckPlayerControlling: AnyObject {
     var mediaControlPublisher: PassthroughSubject<Bool, Never> { get }
     var currentTimeStampPublisher: PassthroughSubject<TimeInterval, Never> { get }
     var serpNotificationPublisher: PassthroughSubject<Bool, Never> { get }
-    var scriptInitializerPublisher: PassthroughSubject<Bool, Never> { get }
+    var urlChangedPublisher: PassthroughSubject<String, Never> { get }
 
 }
 
@@ -347,7 +347,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     var mediaControlPublisher: PassthroughSubject<Bool, Never>
     var currentTimeStampPublisher: PassthroughSubject<TimeInterval, Never>
     var serpNotificationPublisher: PassthroughSubject<Bool, Never>
-    var scriptInitializerPublisher: PassthroughSubject<Bool, Never>
+    var urlChangedPublisher: PassthroughSubject<String, Never>
     
     /// Initializes a new instance of DuckPlayer with the provided settings and feature flagger.
     ///
@@ -368,7 +368,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         self.mediaControlPublisher = PassthroughSubject<Bool, Never>()
         self.currentTimeStampPublisher = PassthroughSubject<TimeInterval, Never>()
         self.serpNotificationPublisher = PassthroughSubject<Bool, Never>()
-        self.scriptInitializerPublisher = PassthroughSubject<Bool, Never>()
+        self.urlChangedPublisher = PassthroughSubject<String, Never>()
         super.init()
         setupSubscriptions()
 

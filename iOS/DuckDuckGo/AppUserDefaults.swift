@@ -539,6 +539,22 @@ public class AppUserDefaults: AppSettings {
             userDefaults?.set(newValue.rawValue, forKey: DebugKeys.onboardingIsNewUserKey)
         }
     }
+
+   var duckPlayerVariant: DuckPlayerVariant {
+        get {
+            if let value = userDefaults?.string(forKey: Keys.duckPlayerVariant),
+               let mode = DuckPlayerVariant(stringValue: value) {
+                return mode
+            }
+            return .ask
+        }
+        set {
+            userDefaults?.set(newValue.stringValue, forKey: Keys.duckPlayerNativeYoutubeMode)
+            userDefaults?.set(false, forKey: Keys.duckPlayerAskModeOverlayHidden)
+            NotificationCenter.default.post(name: AppUserDefaults.Notifications.duckPlayerSettingsUpdated,
+                                            object: duckPlayerNativeYoutubeMode)
+        }
+    }
 }
 
 extension AppUserDefaults: AppConfigurationFetchStatistics {

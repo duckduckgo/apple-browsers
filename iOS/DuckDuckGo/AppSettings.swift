@@ -94,6 +94,7 @@ protocol AppSettings: AnyObject, OnboardingDebugAppSettings {
     var duckPlayerNativeUIPrimingModalPresentationEventCount: Int { get set }
     var duckPlayerNativeUIPrimingModalLastPresentationTime: Int { get set }
     var duckPlayerPillDismissCount: Int { get set }
+    var duckPlayerVariant: DuckPlayerVariant { get set }
 }
 
 // MARK: - AppSettings + OnboardingDebugSettings

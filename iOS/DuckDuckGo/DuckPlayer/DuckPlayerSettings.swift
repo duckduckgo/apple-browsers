@@ -127,25 +127,25 @@ protocol DuckPlayerSettings: AnyObject {
     var duckPlayerSettingsPublisher: AnyPublisher<Void, Never> { get }
 
     /// The current mode of Duck Player.
-    var mode: DuckPlayerMode { get }
+    var mode: DuckPlayerMode { get set }
 
     /// Indicates if the "Always Ask" overlay has been hidden.
-    var askModeOverlayHidden: Bool { get }
+    var askModeOverlayHidden: Bool { get set }
 
     /// Flag to allow the first video to play in Youtube
     var allowFirstVideo: Bool { get set }
 
     /// Determines if Duck Player should open videos in a new tab.
-    var openInNewTab: Bool { get }
+    var openInNewTab: Bool { get set }
 
     /// Determines if the native UI should be used
-    var nativeUI: Bool { get }
+    var nativeUI: Bool { get set }
 
     /// Determines if the native UI should be used for SERP
-    var nativeUISERPEnabled: Bool { get }
+    var nativeUISERPEnabled: Bool { get set }
 
     /// Determines if the native UI should be used for Youtube
-    var nativeUIYoutubeMode: NativeDuckPlayerYoutubeMode { get }
+    var nativeUIYoutubeMode: NativeDuckPlayerYoutubeMode { get set }
 
     /// Determines if the priming modal has been presented
     var nativeUIPrimingModalPresentedCount: Int { get }
@@ -154,7 +154,7 @@ protocol DuckPlayerSettings: AnyObject {
     var duckPlayerNativeUIPrimingModalTimeSinceLastPresented: Int { get }
 
     /// Autoplay Videos when opening
-    var autoplay: Bool { get }
+    var autoplay: Bool { get set }
 
     // Determines if we should show a custom view when YouTube returns an error
     var customError: Bool { get }
@@ -162,22 +162,14 @@ protocol DuckPlayerSettings: AnyObject {
     // Holds additional configuration for the custom error view
     var customErrorSettings: CustomErrorSettings? { get }
 
+    var variant: DuckPlayerVariant { get set }
+
     /// Initializes a new instance with the provided app settings and privacy configuration manager.
     ///
     /// - Parameters:
     ///   - appSettings: The application settings.
     ///   - privacyConfigManager: The privacy configuration manager.
     init(appSettings: AppSettings, privacyConfigManager: PrivacyConfigurationManaging, internalUserDecider: InternalUserDecider)
-
-    /// Sets the Duck Player mode.
-    ///
-    /// - Parameter mode: The mode to set.
-    func setMode(_ mode: DuckPlayerMode)
-
-    /// Sets whether the "Always Ask" overlay has been hidden.
-    ///
-    /// - Parameter overlayHidden: A Boolean indicating if the overlay is hidden.
-    func setAskModeOverlayHidden(_ overlayHidden: Bool)
 
     /// Triggers a notification to update subscribers about settings changes.
     func triggerNotification()
@@ -235,46 +227,95 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
 
     /// The current mode of Duck Player.
     var mode: DuckPlayerMode {
-        if isFeatureEnabled {
-            return appSettings.duckPlayerMode
-        } else {
-            return .disabled
+        get {
+            if isFeatureEnabled {
+                return appSettings.duckPlayerMode
+            } else {
+                return .disabled
+            }
+        }
+        set {
+            if newValue != appSettings.duckPlayerMode {
+                appSettings.duckPlayerMode = newValue
+                triggerNotification()
+            }
         }
     }
 
     /// Indicates if the "Always Ask" overlay has been hidden.
     var askModeOverlayHidden: Bool {
-        if isFeatureEnabled {
-            return appSettings.duckPlayerAskModeOverlayHidden
-        } else {
-            return false
+        get {
+            if isFeatureEnabled {
+                return appSettings.duckPlayerAskModeOverlayHidden
+            } else {
+                return false
+            }
+        }
+        set {
+            if newValue != appSettings.duckPlayerAskModeOverlayHidden {
+                appSettings.duckPlayerAskModeOverlayHidden = newValue
+                triggerNotification()
+            }
         }
     }
+    
 
     /// Flag to allow the first video to play without redirection.
     var allowFirstVideo: Bool = false
 
     /// Determines if Duck Player should open videos in a new tab.
     var openInNewTab: Bool {
-        return appSettings.duckPlayerOpenInNewTab
+        get {
+            return appSettings.duckPlayerOpenInNewTab
+        }
+        set {
+            if newValue != appSettings.duckPlayerOpenInNewTab {
+                appSettings.duckPlayerOpenInNewTab = newValue
+                triggerNotification()
+            }
+        }
     }
 
     // Determines if we should use the native verion of DuckPlayer (Internal only)
     var nativeUI: Bool {
-        return appSettings.duckPlayerNativeUI && internalUserDecider.isInternalUser && UIDevice.current.userInterfaceIdiom == .phone
+        get {
+            return appSettings.duckPlayerNativeUI && internalUserDecider.isInternalUser && UIDevice.current.userInterfaceIdiom == .phone
+        }
+        set {
+            if newValue != appSettings.duckPlayerNativeUI {
+                appSettings.duckPlayerNativeUI = newValue
+                triggerNotification()
+            }
+        }
     }
 
     // Determines if DuckPlayer Native is enabled for SERP
     var nativeUISERPEnabled: Bool {
-        return appSettings.duckPlayerNativeUI && appSettings.duckPlayerNativeUISERPEnabled && internalUserDecider.isInternalUser && UIDevice.current.userInterfaceIdiom == .phone
+        get {
+            return appSettings.duckPlayerNativeUI && appSettings.duckPlayerNativeUISERPEnabled && internalUserDecider.isInternalUser && UIDevice.current.userInterfaceIdiom == .phone
+        }
+        set {
+            if newValue != appSettings.duckPlayerNativeUISERPEnabled {
+                appSettings.duckPlayerNativeUISERPEnabled = newValue
+                triggerNotification()
+            }
+        }
     }
 
     // Determines the Youtube mode for DuckPlayer Native
     var nativeUIYoutubeMode: NativeDuckPlayerYoutubeMode {
-        if isFeatureEnabled {
-            return appSettings.duckPlayerNativeYoutubeMode
-        } else {
-            return .never
+        get {
+            if isFeatureEnabled {
+                return appSettings.duckPlayerNativeYoutubeMode
+            } else {
+                return .never
+            }
+        }
+        set {
+            if newValue != appSettings.duckPlayerNativeYoutubeMode {
+                appSettings.duckPlayerNativeYoutubeMode = newValue
+                triggerNotification()
+            }
         }
     }
 
@@ -286,9 +327,16 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
 
     // Determines if we should use the native verion of DuckPlayer (Internal only)
     var autoplay: Bool {
-        return appSettings.duckPlayerAutoplay && internalUserDecider.isInternalUser && UIDevice.current.userInterfaceIdiom == .phone
+        get {
+            return appSettings.duckPlayerAutoplay && internalUserDecider.isInternalUser && UIDevice.current.userInterfaceIdiom == .phone
+        }
+        set {
+            if newValue != appSettings.duckPlayerAutoplay {
+                appSettings.duckPlayerAutoplay = newValue
+                triggerNotification()
+            }
+        }
     }
-
     // Determines if we should show a custom view when YouTube returns an error
     var customError: Bool {
         return privacyConfigManager.privacyConfig.isSubfeatureEnabled(DuckPlayerSubfeature.customError)
@@ -310,6 +358,18 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
         return nil
     }
 
+    var variant: DuckPlayerVariant {
+        get {
+            return appSettings.duckPlayerVariant
+        }
+        set {
+            if newValue != appSettings.duckPlayerVariant {
+                appSettings.duckPlayerVariant = newValue
+                triggerNotification()
+            }
+        }
+    }
+
     /// Registers a publisher to listen for changes in the privacy configuration.
     private func registerConfigPublisher() {
         isFeatureEnabledCancellable = privacyConfigManager.updatesPublisher
@@ -328,26 +388,6 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
                                                selector: #selector(publishUpdate),
                                                name: AppUserDefaults.Notifications.duckPlayerSettingsUpdated,
                                                object: nil)
-    }
-
-    /// Sets the Duck Player mode.
-    ///
-    /// - Parameter mode: The mode to set.
-    func setMode(_ mode: DuckPlayerMode) {
-        if mode != appSettings.duckPlayerMode {
-            appSettings.duckPlayerMode = mode
-            triggerNotification()
-        }
-    }
-
-    /// Sets whether the "Always Ask" overlay has been hidden.
-    ///
-    /// - Parameter overlayHidden: A Boolean indicating if the overlay is hidden.
-    func setAskModeOverlayHidden(_ overlayHidden: Bool) {
-        if overlayHidden != appSettings.duckPlayerAskModeOverlayHidden {
-            appSettings.duckPlayerAskModeOverlayHidden = overlayHidden
-            triggerNotification()
-        }
     }
 
     /// Publishes an update notification when settings change.

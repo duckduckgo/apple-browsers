@@ -711,6 +711,8 @@ final class NavigationBarViewController: NSViewController {
         goForwardButton.menu = forwardButtonMenu
         goForwardButton.sendAction(on: [.leftMouseUp, .otherMouseDown])
 
+        homeButton.sendAction(on: [.leftMouseUp, .otherMouseDown])
+
         goBackButton.toolTip = UserText.navigateBackTooltip
         goForwardButton.toolTip = UserText.navigateForwardTooltip
         refreshOrStopButton.toolTip = UserText.refreshPageTooltip

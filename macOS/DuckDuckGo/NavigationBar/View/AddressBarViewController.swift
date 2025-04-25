@@ -164,7 +164,8 @@ final class AddressBarViewController: NSViewController {
 
     override func viewWillAppear() {
         guard let window = view.window else {
-            assertionFailure("AddressBarViewController.viewWillAppear: view.window is nil")
+            assert([.unitTests, .integrationTests].contains(AppVersion.runType),
+                   "AddressBarViewController.viewWillAppear: view.window is nil")
             return
         }
         if window.isPopUpWindow == true {
@@ -557,7 +558,7 @@ final class AddressBarViewController: NSViewController {
 
     func mouseDown(with event: NSEvent) -> NSEvent? {
         self.clickPoint = nil
-        guard let window = self.view.window, event.window === window else { return event }
+        guard let window = self.view.window, event.window === window, window.sheets.isEmpty else { return event }
 
         if beginDraggingSessionIfNeeded(with: event, in: window) {
             return nil

@@ -1136,7 +1136,7 @@ extension Tab {
     static let crashTabMenuOptionTitle = "Crash Tab"
 
     private enum Selector {
-        static let killWebContentProcess = NSSelectorFromString("_killWebContentProcess")
+        static let killWebContentProcessAndResetState = NSSelectorFromString("_killWebContentProcessAndResetState")
     }
 
     var canKillWebContentProcess: Bool {
@@ -1144,8 +1144,8 @@ extension Tab {
     }
 
     func killWebContentProcess() {
-        if webView.responds(to: Selector.killWebContentProcess) {
-            webView.perform(Selector.killWebContentProcess)
+        if webView.responds(to: Selector.killWebContentProcessAndResetState) {
+            webView.perform(Selector.killWebContentProcessAndResetState)
         }
     }
 }

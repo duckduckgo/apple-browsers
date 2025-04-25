@@ -455,6 +455,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         _ = NSPopover.swizzleShowRelativeToRectOnce
         // disable macOS system-wide window tabbing
         NSWindow.allowsAutomaticWindowTabbing = false
+        // Fix SwifUI context menus and its owner View leaking
+        SwiftUIContextMenuRetainCycleFix.setUp()
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {

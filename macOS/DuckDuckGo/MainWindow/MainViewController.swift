@@ -226,7 +226,7 @@ final class MainViewController: NSViewController {
         mainView.findInPageContainerView.applyDropShadow()
     }
 
-    func windowDidBecomeMain() {
+    func windowDidBecomeKey() {
         updateBackMenuItem()
         updateForwardMenuItem()
         updateReloadMenuItem()
@@ -402,7 +402,8 @@ final class MainViewController: NSViewController {
 
     private func subscribeToFirstResponder() {
         guard let window = view.window else {
-            assertionFailure("MainViewController.subscribeToFirstResponder: view.window is nil")
+            assert([.unitTests, .integrationTests].contains(AppVersion.runType),
+                   "MainViewController.subscribeToFirstResponder: view.window is nil")
             return
         }
 

@@ -525,7 +525,7 @@ final class TabViewModel {
                 return .redAlertCircle16
             }
         default:
-            return.alertCircleColor16
+            return .alertCircleColor16
         }
     }
 

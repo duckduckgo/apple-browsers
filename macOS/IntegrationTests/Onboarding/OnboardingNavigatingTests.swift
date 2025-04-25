@@ -27,18 +27,21 @@ final class OnboardingNavigatingTests: XCTestCase {
     override func setUp() {
         super.setUp()
         onboardingNavigation = WindowControllersManager.shared
+        assert(WindowControllersManager.shared.mainWindowControllers.isEmpty)
     }
 
+    @MainActor
     override func tearDown() {
         onboardingNavigation = nil
+        WindowControllersManager.shared.lastKeyMainWindowController = nil
         super.tearDown()
     }
 
     @MainActor
     func testOnImportData_DataImportViewShown() throws {
         // Given
-        let mockWindow = MockWindow()
-        let mvc = MainWindowController(mainViewController: MainViewController(autofillPopoverPresenter: DefaultAutofillPopoverPresenter()), popUp: false)
+        let mockWindow = MockWindow(isVisible: false)
+        let mvc = MainWindowController(window: mockWindow, mainViewController: MainViewController(autofillPopoverPresenter: DefaultAutofillPopoverPresenter()), popUp: false)
         mvc.window = mockWindow
         WindowControllersManager.shared.lastKeyMainWindowController = mvc
 
@@ -50,12 +53,18 @@ final class OnboardingNavigatingTests: XCTestCase {
     }
 
     @MainActor
-    func testOnFocusOnAddressBar_AddressBarIsFocussed() {
+    func testOnFocusOnAddressBar_AddressBarIsFocussed() throws {
+        // Given
+        let mockWindow = MockWindow(isVisible: false)
+        let mvc = MainWindowController(window: mockWindow, mainViewController: MainViewController(autofillPopoverPresenter: DefaultAutofillPopoverPresenter()), popUp: false)
+        mvc.window = mockWindow
+        WindowControllersManager.shared.lastKeyMainWindowController = mvc
+
         // When
         onboardingNavigation.focusOnAddressBar()
 
         // Then
-        guard let mainVC = WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController else { return }
+        let mainVC = try XCTUnwrap(WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController)
         XCTAssertTrue(mainVC.navigationBarViewController.addressBarViewController?.addressBarTextField.stringValue.isEmpty ?? false)
         XCTAssertTrue(mainVC.navigationBarViewController.addressBarViewController?.addressBarTextField.isFirstResponder ?? false)
     }

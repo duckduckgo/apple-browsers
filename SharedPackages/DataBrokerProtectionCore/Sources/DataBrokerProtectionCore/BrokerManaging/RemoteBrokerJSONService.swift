@@ -22,10 +22,11 @@ import ZIPFoundation
 import Common
 import os.log
 
-public protocol ZipArchiveHandling: FileManager {
+public protocol ZipArchiveHandling: FileManager, Sendable {
     func unzipArchive(at sourceURL: URL, to destinationURL: URL) throws
 }
 
+extension FileManager: @retroactive @unchecked Sendable {}
 extension FileManager: ZipArchiveHandling {
     @objc public func unzipArchive(at sourceURL: URL, to destinationURL: URL) throws {
         try unzipItem(at: sourceURL, to: destinationURL, skipCRC32: false, allowUncontainedSymlinks: false, progress: nil, pathEncoding: nil)
@@ -37,7 +38,6 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
         case missingAccessToken
         case serverError
         case clientError
-        case invalidDestinationURL
     }
 
     enum Endpoint {
@@ -59,7 +59,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
                 request.setValue(eTag, forHTTPHeaderField: "If-None-Match")
             }
             request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-
+            
             return request
         }
 
@@ -167,13 +167,13 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
                 return
             }
 
-            guard response.statusCode == 200 else { throw Error.serverError }
+            guard response.statusCode == 200, let newETag = response.etag else { throw Error.serverError }
 
             /// 4. Download, extract, and process changed broker JSONs
-            try await checkForBrokerJSONUpdatesFromMainConfig(try JSONDecoder().decode(MainConfig.self, from: data))
+            try await checkForBrokerJSONUpdatesFromMainConfig(try JSONDecoder().decode(MainConfig.self, from: data), eTag: newETag)
 
             /// 5. Update last successful update timestamp
-            settings.mainConfigETag = response.etag
+            settings.mainConfigETag = newETag
             settings.updateLastSuccessfulBrokerJSONUpdateCheckTimestamp()
         } catch {
             pixelHandler?.fire(.miscError(error: error, functionOccurredIn: "checkForBrokerJSONUpdates"))
@@ -181,7 +181,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
         }
     }
 
-    func checkForBrokerJSONUpdatesFromMainConfig(_ mainConfig: MainConfig) async throws {
+    func checkForBrokerJSONUpdatesFromMainConfig(_ mainConfig: MainConfig, eTag: String) async throws {
         let eTagMapping = mainConfig.jsonETags.current
         let incomingBrokerJSONs = BrokerJSON.from(payload: eTagMapping)
         let savedBrokerJSONs = try vault.fetchAllBrokers().map { BrokerJSON(fileName: $0.url.appendingPathExtension("json"), eTag: $0.eTag) }
@@ -194,73 +194,88 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
 
         Logger.dataBrokerProtection.log("Changes detected in \(diff.count, privacy: .public) brokers")
 
-        try await downloadAndExtractBrokerJSONs()
-        try processBrokerJSONs(withFileNames: diff.map(\.fileName),
+        try await downloadAndExtractBrokerJSONsIfNeeded(eTag: eTag)
+        try processBrokerJSONs(eTag: eTag,
+                               fileNames: diff.map(\.fileName),
                                eTagMapping: eTagMapping,
                                activeBrokers: mainConfig.activeDataBrokers,
                                testBrokers: mainConfig.testDataBrokers)
-        try cleanUp()
+        try cleanUp(eTag: eTag)
     }
 
     // MARK: - File handling
 
-    func downloadAndExtractBrokerJSONs() async throws {
-        uncompressedBrokerJSONDirectoryURL = fileManager.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    func downloadAndExtractBrokerJSONsIfNeeded(eTag: String) async throws {
+        let brokerArchiveURL = fileManager.temporaryDirectory.appendingPathComponent(eTag).appendingPathExtension("zip")
+        let directoryURL = fileManager.temporaryDirectory.appendingPathComponent(eTag)
 
-        guard let uncompressedBrokerJSONDirectoryURL else { throw Error.invalidDestinationURL }
-
+        /// 1. Return early if all.zip is already extracted
         var isDirectory: ObjCBool = false
-        guard !fileManager.fileExists(atPath: uncompressedBrokerJSONDirectoryURL.path, isDirectory: &isDirectory) else {
+        guard !fileManager.fileExists(atPath: directoryURL.path, isDirectory: &isDirectory) else {
             Logger.dataBrokerProtection.log("Broker JSONs already downloaded and extracted, skipping download")
             return
         }
 
-        guard let accessToken = await authenticationManager.accessToken() else { throw Error.missingAccessToken }
+        /// 2. Download all.zip if not exists
+        do {
+            if !fileManager.fileExists(atPath: brokerArchiveURL.path) {
+                guard let accessToken = await authenticationManager.accessToken() else { throw Error.missingAccessToken }
 
         let request = try Endpoint.request(for: .allBrokers,
                                            baseURL: settings.selectedEnvironment.endpointURL,
                                            accessToken: accessToken)
 
-        let temporaryURL: URL = try await withCheckedThrowingContinuation { continuation in
-            let task = urlSession.downloadTask(with: request) { url, response, error in
-                if let error {
-                    continuation.resume(throwing: error)
-                    return
-                }
+                let _: URL = try await withCheckedThrowingContinuation { [weak fileManager] continuation in
+                    let task = urlSession.downloadTask(with: request) { url, response, error in
+                        if let error {
+                            continuation.resume(throwing: error)
+                            return
+                        }
 
-                guard let response = response as? HTTPURLResponse, response.statusCode == 200 else {
-                    continuation.resume(throwing: Error.serverError)
-                    return
-                }
+                        guard let response = response as? HTTPURLResponse, response.statusCode == 200 else {
+                            continuation.resume(throwing: Error.serverError)
+                            return
+                        }
 
-                guard let url else {
-                    continuation.resume(throwing: Error.clientError)
-                    return
-                }
+                        guard let url else {
+                            continuation.resume(throwing: Error.clientError)
+                            return
+                        }
 
-                continuation.resume(returning: url)
+                        do {
+                            try fileManager?.moveItem(at: url, to: brokerArchiveURL)
+                            continuation.resume(returning: url)
+                        } catch {
+                            continuation.resume(throwing: error)
+                        }
+                    }
+                    task.resume()
+                }
             }
-            task.resume()
+            Logger.dataBrokerProtection.log("Broker JSONs downloaded")
+        } catch {
+            Logger.dataBrokerProtection.log("Failed to download broker JSONs: \(error)")
+            throw error
         }
 
+        /// 3. Extract all.zip
         do {
-            try fileManager.unzipArchive(at: temporaryURL, to: uncompressedBrokerJSONDirectoryURL)
-            Logger.dataBrokerProtection.log("Broker JSONs downloaded and extracted to temporary directory")
+            try fileManager.unzipArchive(at: brokerArchiveURL, to: directoryURL)
+            Logger.dataBrokerProtection.log("Broker JSONs extracted to temporary directory")
         } catch {
-            Logger.dataBrokerProtection.log("Failed to extract downloaded broker JSONs: \(error)")
+            Logger.dataBrokerProtection.log("Failed to extract broker JSONs: \(error)")
             throw error
         }
     }
 
     /// brokerFileNames might contain both active and test brokers
     /// TODO: Inject directory URL, test this logic
-    func processBrokerJSONs(withFileNames changedBrokerFileNames: [String],
+    func processBrokerJSONs(eTag: String,
+                            fileNames changedBrokerFileNames: [String],
                             eTagMapping: [String: String],
                             activeBrokers: [String],
                             testBrokers: [String]) throws {
-        guard let uncompressedBrokerJSONDirectoryURL else { throw Error.invalidDestinationURL }
-
-        let directoryURL = uncompressedBrokerJSONDirectoryURL.appendingPathComponent("json", isDirectory: true)
+        let directoryURL = fileManager.temporaryDirectory.appendingPathComponent(eTag).appendingPathComponent("json", isDirectory: true)
         let fileURLs = try fileManager.contentsOfDirectory(at: directoryURL,
                                                            includingPropertiesForKeys: nil,
                                                            options: [.skipsHiddenFiles])
@@ -276,10 +291,13 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
         }
     }
 
-    private func cleanUp() throws {
-        guard let uncompressedBrokerJSONDirectoryURL else { return }
-        try fileManager.removeItem(at: uncompressedBrokerJSONDirectoryURL)
-        Logger.dataBrokerProtection.log("Temporary directory removed")
+    private func cleanUp(eTag: String) throws {
+        let brokerArchiveURL = fileManager.temporaryDirectory.appendingPathComponent(eTag).appendingPathExtension("zip")
+        let directoryURL = fileManager.temporaryDirectory.appendingPathComponent(eTag)
+
+        try fileManager.removeItem(at: brokerArchiveURL)
+        try fileManager.removeItem(at: directoryURL)
+        Logger.dataBrokerProtection.log("Temporary files removed")
     }
 }
 

@@ -687,9 +687,9 @@ final class NavigationBarViewController: NSViewController {
         goForwardButton.menu = forwardButtonMenu
         goForwardButton.sendAction(on: [.leftMouseUp, .otherMouseDown])
 
-        goBackButton.toolTip = UserText.navigateBackTooltip + TooltipShortcut.back.spacedShortcut
-        goForwardButton.toolTip = UserText.navigateForwardTooltip + TooltipShortcut.forward.spacedShortcut
-        refreshOrStopButton.toolTip = UserText.refreshPageTooltip + TooltipShortcut.reload.spacedShortcut
+        goBackButton.toolTip = Tooltip.back.value
+        goForwardButton.toolTip = Tooltip.forward.value
+        refreshOrStopButton.toolTip = Tooltip.reload.value
     }
 
     private func setupNavigationButtonIcons() {
@@ -916,7 +916,7 @@ final class NavigationBarViewController: NSViewController {
                        action: #selector(toggleDownloadsPanelPinning(_:)),
                        keyEquivalent: "")
         }
-        downloadsButton.toolTip = UserText.downloadsShortcutTooltip + TooltipShortcut.downloads.spacedShortcut
+        downloadsButton.toolTip = Tooltip.downloads.value
 
         if LocalPinningManager.shared.isPinned(.downloads) {
             downloadsButton.isShown = true
@@ -1064,7 +1064,7 @@ final class NavigationBarViewController: NSViewController {
             .removeDuplicates()
             .sink { [weak refreshOrStopButton] isLoading in
                 refreshOrStopButton?.image = isLoading ? .stop : .refresh
-                refreshOrStopButton?.toolTip = isLoading ? UserText.stopLoadingTooltip : UserText.refreshPageTooltip + TooltipShortcut.reload.spacedShortcut
+                refreshOrStopButton?.toolTip = isLoading ? Tooltip.stopLoading.value : Tooltip.reload.value
             }
             .store(in: &navigationButtonsCancellables)
     }
@@ -1366,14 +1366,14 @@ extension Notification.Name {
     static let OpenUnifiedFeedbackForm = Notification.Name("com.duckduckgo.subscription.open-unified-feedback-form")
 }
 
-private enum TooltipShortcut {
+private enum Tooltip {
     case back
     case forward
     case reload
+    case stopLoading
     case downloads
-    case bookmark
 
-    var shortcut: String {
+    private var shortcut: String {
         switch self {
         case .back:
             return "⌘["
@@ -1383,12 +1383,28 @@ private enum TooltipShortcut {
             return "⌘R"
         case .downloads:
             return "⌘J"
-        case .bookmark:
-            return "⌘D"
+        case .stopLoading:
+            return ""
         }
     }
 
-    var spacedShortcut: String {
+    private var spacedShortcut: String {
         return " " + shortcut
     }
+
+    var value: String {
+        switch self {
+        case .back:
+            return UserText.navigateBackTooltipHeader + spacedShortcut + "\n" + UserText.navigateBackTooltipFooter
+        case .forward:
+            return UserText.navigateForwardTooltipHeader + spacedShortcut + "\n" + UserText.navigateForwardTooltipFooter
+        case .reload:
+            return UserText.refreshPageTooltip + spacedShortcut
+        case .downloads:
+            return UserText.refreshPageTooltip + spacedShortcut
+        case .stopLoading:
+            return UserText.stopLoadingTooltip
+        }
+    }
 }
+

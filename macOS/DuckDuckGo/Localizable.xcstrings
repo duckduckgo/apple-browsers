@@ -70022,7 +70022,7 @@
     },
     "tooltip.navigation.back" : {
       "comment" : "Tooltip for the Back button",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -70080,9 +70080,33 @@
         }
       }
     },
+    "tooltip.navigation.back.footer" : {
+      "comment" : "Tooltip for the Back button footer",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hold to show history"
+          }
+        }
+      }
+    },
+    "tooltip.navigation.back.header" : {
+      "comment" : "Tooltip for the Back button header",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show the previous page"
+          }
+        }
+      }
+    },
     "tooltip.navigation.forward" : {
       "comment" : "Tooltip for the Forward button",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -70136,6 +70160,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Показать следующую страницу\nУдерживайте эту кнопку для просмотра истории"
+          }
+        }
+      }
+    },
+    "tooltip.navigation.forward.footer" : {
+      "comment" : "Tooltip for the Forward button footer",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Hold to show history"
+          }
+        }
+      }
+    },
+    "tooltip.navigation.forward.header" : {
+      "comment" : "Tooltip for the Forward button header",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show the next page"
           }
         }
       }

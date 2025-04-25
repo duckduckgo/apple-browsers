@@ -362,6 +362,7 @@
 		653561022D4D2C6D0064F258 /* Logger+DuckPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 653561012D4D2C680064F258 /* Logger+DuckPlayer.swift */; };
 		6553AFF72D95B8EA00D64241 /* DuckPlayer-PrimingAnimation.json in Resources */ = {isa = PBXBuildFile; fileRef = 6553AFF62D95B8EA00D64241 /* DuckPlayer-PrimingAnimation.json */; };
 		6566A5D02D775D560033283C /* DuckPlayerMiniPillViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6526CA6A2D70CAAD0048819E /* DuckPlayerMiniPillViewModel.swift */; };
+		658016052DBBEAC100B028AB /* DuckPlayerNativeUserScriptTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 658016042DBBEAC100B028AB /* DuckPlayerNativeUserScriptTests.swift */; };
 		65898D8C2D9C161800D5EC22 /* DuckPlayerDelayHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65898D8B2D9C161800D5EC22 /* DuckPlayerDelayHandler.swift */; };
 		659AD5B12D76160C00420D1D /* YoutubeOembedService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 659AD5B02D76160500420D1D /* YoutubeOembedService.swift */; };
 		65A6848B2D6F904A0029FE9E /* DuckPlayerContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65A6848A2D6F904A0029FE9E /* DuckPlayerContainer.swift */; };
@@ -1901,6 +1902,7 @@
 		652CEDE52D89B70C00235B4C /* FaviconsHelperTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaviconsHelperTests.swift; sourceTree = "<group>"; };
 		653561012D4D2C680064F258 /* Logger+DuckPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+DuckPlayer.swift"; sourceTree = "<group>"; };
 		6553AFF62D95B8EA00D64241 /* DuckPlayer-PrimingAnimation.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "DuckPlayer-PrimingAnimation.json"; sourceTree = "<group>"; };
+		658016042DBBEAC100B028AB /* DuckPlayerNativeUserScriptTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerNativeUserScriptTests.swift; sourceTree = "<group>"; };
 		65898D8B2D9C161800D5EC22 /* DuckPlayerDelayHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerDelayHandler.swift; sourceTree = "<group>"; };
 		659AD5B02D76160500420D1D /* YoutubeOembedService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YoutubeOembedService.swift; sourceTree = "<group>"; };
 		65A6848A2D6F904A0029FE9E /* DuckPlayerContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerContainer.swift; sourceTree = "<group>"; };
@@ -4547,6 +4549,7 @@
 		65F436152D9AD4610034CC36 /* DuckPlayer */ = {
 			isa = PBXGroup;
 			children = (
+				658016042DBBEAC100B028AB /* DuckPlayerNativeUserScriptTests.swift */,
 				65F436102D9AD4610034CC36 /* DuckPlayerMocks.swift */,
 				65F436112D9AD4610034CC36 /* DuckPlayerSettingsTests.swift */,
 				65F436122D9AD4610034CC36 /* DuckPlayerTests.swift */,
@@ -9606,6 +9609,7 @@
 				4B27FBB12C9252F4007E21A7 /* DefaultPersistentPixelStorageTests.swift in Sources */,
 				564DE45A2C450BE600D23241 /* DaxDialogsNewTabTests.swift in Sources */,
 				C174CE602BD6A6CE00AED2EA /* MockDDGSyncing.swift in Sources */,
+				658016052DBBEAC100B028AB /* DuckPlayerNativeUserScriptTests.swift in Sources */,
 				987DA29E2D936330002E03B7 /* KeyValueFileStoreServiceTests.swift in Sources */,
 				9F4CC51F2C48D758006A96EB /* ContextualDaxDialogsFactoryTests.swift in Sources */,
 				8521FDE6238D414B00A44CC3 /* FileStoreTests.swift in Sources */,

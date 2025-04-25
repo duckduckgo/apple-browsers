@@ -173,7 +173,7 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
         handleEvent(.muteAudio(mute: mute))
     }
 
-    private func onUrlChanged() {
+    internal func onUrlChanged() {
         guard let webView = webView else { return }         
         let pageType: String
         guard let host = webView.url?.host else { return }
@@ -251,7 +251,7 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
     }
 
     @MainActor
-    private func onDuckPlayerReady(params: Any, original: WKScriptMessage) -> Encodable? {        
+    internal func onDuckPlayerReady(params: Any, original: WKScriptMessage) -> Encodable? {        
         isFeatureReady = true
         while !eventQueue.isEmpty {
             if let event = eventQueue.first {

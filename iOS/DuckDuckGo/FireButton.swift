@@ -20,19 +20,12 @@
 import UIKit
 import DesignResourcesKit
 
-class FireButton: UIButton {
+class FireButton: ToolbarButton {
     convenience init() {
-        self.init(type: .custom)
+        self.init(.fire)
 
-        setImage(UIImage(resource: .fireNew24), for: .normal)
-        tintColor = UIColor(designSystemColor: .icons)
+        setImage(UIImage(resource: .fireNew24))
 
         frame = CGRect(x: 0, y: 0, width: 84, height: 44)
-        backgroundColor = UIColor(designSystemColor: .controlsFillPrimary)
-        layer.cornerRadius = 14
-
-        imageView?.contentMode = .scaleAspectFit
-        contentVerticalAlignment = .center
-        contentHorizontalAlignment = .center
     }
 }

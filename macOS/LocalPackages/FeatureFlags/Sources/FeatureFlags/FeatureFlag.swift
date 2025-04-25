@@ -179,7 +179,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .tabCrashDebugTools:
             return .disabled
         case .tabCrashRecovery:
-            return .disabled
+            return .remoteReleasable(.feature(.tabCrashRecovery))
         }
     }
 }

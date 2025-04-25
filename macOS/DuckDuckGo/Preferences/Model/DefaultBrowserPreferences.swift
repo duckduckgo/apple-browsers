@@ -101,7 +101,7 @@ final class DefaultBrowserPreferences: ObservableObject {
         let notificationCenter = NotificationCenter.default
         appDidBecomeActiveCancellable = notificationCenter
             .publisher(for: NSApplication.didBecomeActiveNotification)
-            .merge(with: notificationCenter.publisher(for: .windowDidBecomeKey))
+            .merge(with: notificationCenter.publisher(for: NSWindow.didBecomeKeyNotification))
             .sink { [weak self] _ in
                 self?.checkIfDefault()
             }

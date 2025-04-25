@@ -106,8 +106,6 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
     private let localBrokerProvider: BrokerJSONFallbackProvider?
 
-    private var uncompressedBrokerJSONDirectoryURL: URL?
-
     public init(settings: DataBrokerProtectionSettings,
                 vault: any DataBrokerProtectionSecureVault,
                 fileManager: ZipArchiveHandling = FileManager.default,
@@ -221,9 +219,9 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
             if !fileManager.fileExists(atPath: brokerArchiveURL.path) {
                 guard let accessToken = await authenticationManager.accessToken() else { throw Error.missingAccessToken }
 
-        let request = try Endpoint.request(for: .allBrokers,
-                                           baseURL: settings.selectedEnvironment.endpointURL,
-                                           accessToken: accessToken)
+                let request = try Endpoint.request(for: .allBrokers,
+                                                   baseURL: settings.selectedEnvironment.endpointURL,
+                                                   accessToken: accessToken)
 
                 let _: URL = try await withCheckedThrowingContinuation { [weak fileManager] continuation in
                     let task = urlSession.downloadTask(with: request) { url, response, error in

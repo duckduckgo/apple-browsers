@@ -230,9 +230,9 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
         case .vpn:
             return "VPN"
         case .personalInformationRemoval:
-            return "PrivacyPro"
+            return "PersonalInformationRemoval-Multicolor-16"
         case .identityTheftRestoration:
-            return "PrivacyPro"
+            return "Identity-Theft-Restoration-Multicolor-16"
         case .subscriptionSettings:
             return "PrivacyPro"
         case .autofill:

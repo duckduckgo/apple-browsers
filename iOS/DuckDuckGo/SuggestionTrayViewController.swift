@@ -184,8 +184,16 @@ class SuggestionTrayViewController: UIViewController {
         fullWidthConstraint.isActive = false
         fullHeightConstraint.isActive = false
 
-        view.leadingAnchor.constraint(equalTo: containerView.leadingAnchor).isActive = true
-        view.trailingAnchor.constraint(equalTo: containerView.trailingAnchor).isActive = true
+        // Speculative fix for a crash happening in background on iPad.
+        // Check if view and container are in the same hierarchy.
+        // https://app.asana.com/1/137249556945/project/414235014887631/task/1210031492395115
+        if view.window == containerView.window {
+            view.leadingAnchor.constraint(equalTo: containerView.leadingAnchor).isActive = true
+            view.trailingAnchor.constraint(equalTo: containerView.trailingAnchor).isActive = true
+        } else if let superview = containerView.superview {
+            containerView.widthAnchor.constraint(equalTo: superview.readableContentGuide.widthAnchor).isActive = true
+            containerView.centerXAnchor.constraint(equalTo: superview.readableContentGuide.centerXAnchor).isActive = true
+        }
     }
     
     func fill() {

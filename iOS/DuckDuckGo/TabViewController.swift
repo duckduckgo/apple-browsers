@@ -1395,7 +1395,6 @@ extension TabViewController: WKNavigationDelegate {
         self.fireWoFollowUp = false
 
         self.httpsForced = httpsForced
-        delegate?.showBars()
 
         resetDashboardInfo()
 

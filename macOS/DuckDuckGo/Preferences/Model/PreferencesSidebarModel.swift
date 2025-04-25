@@ -17,6 +17,7 @@
 //
 
 import BrowserServicesKit
+import Common
 import Combine
 import DDGSync
 import SwiftUI
@@ -33,6 +34,8 @@ final class PreferencesSidebarModel: ObservableObject {
     private let vpnGatekeeper: VPNFeatureGatekeeper
     let vpnTunnelIPCClient: VPNControllerXPCClient
 
+    var currentSubscriptionState: PreferencesSidebarSubscriptionState = .initial
+
     var selectedTabContent: AnyPublisher<Tab.TabContent, Never> {
         $selectedTabIndex.map { [tabSwitcherTabs] in tabSwitcherTabs[$0] }.eraseToAnyPublisher()
     }
@@ -40,7 +43,7 @@ final class PreferencesSidebarModel: ObservableObject {
     // MARK: - Initializers
 
     init(
-        loadSections: @escaping () -> [PreferencesSection],
+        loadSections: @escaping (PreferencesSidebarSubscriptionState) -> [PreferencesSection],
         tabSwitcherTabs: [Tab.TabContent],
         privacyConfigurationManager: PrivacyConfigurationManaging,
         syncService: DDGSyncing,
@@ -53,22 +56,13 @@ final class PreferencesSidebarModel: ObservableObject {
         self.vpnTunnelIPCClient = vpnTunnelIPCClient
 
         resetTabSelectionIfNeeded()
+
         refreshSections()
+        refreshSubscriptionStateAndSectionsIfNeeded()
 
-        let duckPlayerFeatureFlagDidChange = featureFlagDidChange(with: privacyConfigurationManager, on: .duckPlayer)
-        let aiChatFeatureFlagDidChange = featureFlagDidChange(with: privacyConfigurationManager, on: .aiChat)
-
-        let syncFeatureFlagsDidChange = syncService.featureFlagsPublisher.map { $0.contains(.userInterface) }
-            .removeDuplicates()
-            .asVoid()
-
-        Publishers.Merge(duckPlayerFeatureFlagDidChange, syncFeatureFlagsDidChange)
-            .merge(with: aiChatFeatureFlagDidChange)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] in
-                self?.refreshSections()
-            }
-            .store(in: &cancellables)
+        subscribeToFeatureFlagChanges(syncService: syncService,
+                                      privacyConfigurationManager: privacyConfigurationManager)
+        subscribeToSubscriptionChanges()
 
         setupVPNPaneVisibility()
     }
@@ -83,14 +77,15 @@ final class PreferencesSidebarModel: ObservableObject {
         includeAIChat: Bool,
         userDefaults: UserDefaults = .netP
     ) {
-        let loadSections = {
+        let loadSections = { currentSubscriptionFeatures in
             let includingVPN = vpnGatekeeper.isInstalled
 
             return PreferencesSection.defaultSections(
                 includingDuckPlayer: includeDuckPlayer,
                 includingSync: syncService.featureFlags.contains(.userInterface),
                 includingVPN: includingVPN,
-                includingAIChat: includeAIChat
+                includingAIChat: includeAIChat,
+                subscriptionState: currentSubscriptionFeatures
             )
         }
 
@@ -102,6 +97,34 @@ final class PreferencesSidebarModel: ObservableObject {
     }
 
     // MARK: - Setup
+
+    private func subscribeToFeatureFlagChanges(syncService: DDGSyncing,
+                                               privacyConfigurationManager: PrivacyConfigurationManaging) {
+        let duckPlayerFeatureFlagDidChange = featureFlagDidChange(with: privacyConfigurationManager, on: .duckPlayer)
+        let aiChatFeatureFlagDidChange = featureFlagDidChange(with: privacyConfigurationManager, on: .aiChat)
+
+        let syncFeatureFlagsDidChange = syncService.featureFlagsPublisher.map { $0.contains(.userInterface) }
+            .removeDuplicates()
+            .asVoid()
+
+        Publishers.Merge(duckPlayerFeatureFlagDidChange, syncFeatureFlagsDidChange)
+            .merge(with: aiChatFeatureFlagDidChange)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] in
+                self?.refreshSections()
+            }
+            .store(in: &cancellables)
+    }
+
+    private func subscribeToSubscriptionChanges() {
+        subscriptionEventsPublisher()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                self.refreshSubscriptionStateAndSectionsIfNeeded()
+            }
+            .store(in: &cancellables)
+    }
 
     private func setupVPNPaneVisibility() {
         vpnGatekeeper.onboardStatusPublisher
@@ -149,10 +172,50 @@ final class PreferencesSidebarModel: ObservableObject {
             .eraseToAnyPublisher()
     }
 
+    private func subscriptionEventsPublisher() -> AnyPublisher<Void, Never> {
+        return Publishers.Merge(NotificationCenter.default.publisher(for: .accountDidSignIn),
+                                NotificationCenter.default.publisher(for: .accountDidSignOut))
+        .merge(with: NotificationCenter.default.publisher(for: .availableAppStoreProductsDidChange))
+        .merge(with: NotificationCenter.default.publisher(for: .subscriptionDidChange))
+        .merge(with: NotificationCenter.default.publisher(for: .entitlementsDidChange))
+        .debounce(for: .seconds(0.5), scheduler: RunLoop.main)
+        .asVoid()
+        .eraseToAnyPublisher()
+    }
+
+    private func refreshSubscriptionStateAndSectionsIfNeeded() {
+        Task { @MainActor in
+            let subscriptionManager = Application.appDelegate.subscriptionAuthV1toV2Bridge
+            let currentSubscriptionFeatures = await subscriptionManager.currentSubscriptionFeatures()
+            let shouldHideSubscriptionPurchase = subscriptionManager.currentEnvironment.purchasePlatform == .appStore && subscriptionManager.canPurchase == false
+
+            let updatedState = PreferencesSidebarSubscriptionState(hasSubscription: subscriptionManager.isUserAuthenticated,
+                                                                   subscriptionFeatures: currentSubscriptionFeatures,
+                                                                   userEntitlements: nil, // TODO: provide user's entitlements
+                                                                   shouldHideSubscriptionPurchase: shouldHideSubscriptionPurchase)
+            if self.currentSubscriptionState != updatedState {
+                self.currentSubscriptionState = updatedState
+                self.refreshSections()
+            }
+        }
+    }
+
     func refreshSections() {
-        sections = loadSections()
-        if !sections.flatMap(\.panes).contains(selectedPane), let firstPane = sections.first?.panes.first {
-            selectedPane = firstPane
+        sections = loadSections(currentSubscriptionState)
+        adjustSelectedPaneIfNeeded()
+    }
+
+    func adjustSelectedPaneIfNeeded() {
+        let allPanes = sections.flatMap(\.panes)
+
+        if !allPanes.contains(selectedPane) {
+            if selectedPane == .subscriptionSettings, allPanes.contains(.privacyPro) {
+                selectedPane = .privacyPro
+            } else if selectedPane == .privacyPro, allPanes.contains(.subscriptionSettings) {
+                selectedPane = .subscriptionSettings
+            } else if let firstPane = sections.first?.panes.first {
+                selectedPane = firstPane
+            }
         }
     }
 
@@ -179,6 +242,20 @@ final class PreferencesSidebarModel: ObservableObject {
         }
     }
 
-    private let loadSections: () -> [PreferencesSection]
+    private let loadSections: (PreferencesSidebarSubscriptionState) -> [PreferencesSection]
     private var cancellables = Set<AnyCancellable>()
+}
+
+struct PreferencesSidebarSubscriptionState: Equatable {
+    let hasSubscription: Bool
+    let subscriptionFeatures: [Entitlement.ProductName]?
+    let userEntitlements: [Entitlement.ProductName]?
+    let shouldHideSubscriptionPurchase: Bool
+
+    static var initial: Self {
+        .init(hasSubscription: false,
+              subscriptionFeatures: nil,
+              userEntitlements: nil,
+              shouldHideSubscriptionPurchase: true)
+    }
 }

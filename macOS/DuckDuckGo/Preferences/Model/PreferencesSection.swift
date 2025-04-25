@@ -29,7 +29,8 @@ struct PreferencesSection: Hashable, Identifiable {
     static func defaultSections(includingDuckPlayer: Bool,
                                 includingSync: Bool,
                                 includingVPN: Bool,
-                                includingAIChat: Bool) -> [PreferencesSection] {
+                                includingAIChat: Bool,
+                                subscriptionState: PreferencesSidebarSubscriptionState) -> [PreferencesSection] {
         let privacyPanes: [PreferencePaneIdentifier] = [
             .defaultBrowser, .privateSearch, .webTrackingProtection, .cookiePopupProtection, .emailProtection
         ]
@@ -65,25 +66,37 @@ struct PreferencesSection: Hashable, Identifiable {
             .init(id: .about, panes: otherPanes)
         ]
 
-        let subscriptionManager = Application.appDelegate.subscriptionAuthV1toV2Bridge
-        let platform = subscriptionManager.currentEnvironment.purchasePlatform
-        var shouldHidePrivacyProDueToNoProducts = platform == .appStore && subscriptionManager.canPurchase == false
-
-        if subscriptionManager.isUserAuthenticated {
-            shouldHidePrivacyProDueToNoProducts = false
-        }
-
-        if !shouldHidePrivacyProDueToNoProducts {
-            var subscriptionPanes: [PreferencePaneIdentifier] = [.subscription]
-
-            if includingVPN {
-                subscriptionPanes.append(.vpn)
-            }
-
-            sections.insert(.init(id: .privacyPro, panes: subscriptionPanes), at: 1)
+        if let subscriptionSection = makeSubscriptionSection(subscriptionState: subscriptionState) {
+            sections.insert(subscriptionSection, at: 1)
         }
 
         return sections
+    }
+
+    private static func makeSubscriptionSection(subscriptionState: PreferencesSidebarSubscriptionState) -> PreferencesSection? {
+        guard !subscriptionState.shouldHideSubscriptionPurchase else { return nil }
+
+        if subscriptionState.hasSubscription {
+            var subscriptionPanes: [PreferencePaneIdentifier] = []
+
+            if let currentSubscriptionFeatures = subscriptionState.subscriptionFeatures {
+                if currentSubscriptionFeatures.contains(.networkProtection) { //  && includingVPN {
+                    subscriptionPanes.append(.vpn)
+                }
+                if currentSubscriptionFeatures.contains(.dataBrokerProtection) {
+                    subscriptionPanes.append(.personalInformationRemoval)
+                }
+                if currentSubscriptionFeatures.contains(.identityTheftRestoration) || currentSubscriptionFeatures.contains(.identityTheftRestorationGlobal) {
+                    subscriptionPanes.append(.identityTheftRestoration)
+                }
+            }
+
+            subscriptionPanes.append(.subscriptionSettings)
+            return PreferencesSection(id: .privacyPro, panes: subscriptionPanes)
+        } else {
+            // No active subscription
+            return PreferencesSection(id: .purchasePrivacyPro, panes: [.privacyPro])
+        }
     }
 }
 

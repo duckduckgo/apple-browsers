@@ -18,6 +18,7 @@
 
 import Combine
 import Foundation
+import PixelKit
 
 /// This class manages the visibility of tab crash indicator.
 ///
@@ -28,12 +29,22 @@ import Foundation
 final class TabCrashIndicatorModel: ObservableObject {
 
     @Published private(set) var isShowingIndicator: Bool = false
-    @Published var isShowingPopover: Bool = false
+    @Published var isShowingPopover: Bool = false {
+        didSet {
+            if isShowingPopover && !oldValue {
+                firePixel(GeneralPixel.webKitTerminationIndicatorClicked)
+            }
+        }
+    }
 
     /// This initializer allows for parametrizing presentation duration
     /// in order to simplify unit testing.
-    init(maxPresentationDuration: RunLoop.SchedulerTimeType.Stride = Const.maxIndicatorPresentationDuration) {
+    init(
+        maxPresentationDuration: RunLoop.SchedulerTimeType.Stride = Const.maxIndicatorPresentationDuration,
+        firePixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .dailyAndStandard) }
+    ) {
         self.maxPresentationDuration = maxPresentationDuration
+        self.firePixel = firePixel
     }
 
     func setUp(with crashPublisher: AnyPublisher<TabCrashType, Never>) {
@@ -65,9 +76,10 @@ final class TabCrashIndicatorModel: ObservableObject {
 
     enum Const {
         static let maxIndicatorPresentationDuration: RunLoop.SchedulerTimeType.Stride = .seconds(20)
-        static let popoverWidth: CGFloat = 252
+        static let popoverWidth: CGFloat = 262
     }
 
     private let maxPresentationDuration: RunLoop.SchedulerTimeType.Stride
+    private let firePixel: (PixelKitEvent) -> Void
     private var cancellables: Set<AnyCancellable> = []
 }

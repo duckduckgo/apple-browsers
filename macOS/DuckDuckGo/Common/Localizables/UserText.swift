@@ -314,6 +314,9 @@ struct UserText {
     static let sslErrorPageTabTitle = NSLocalizedString("ssl.error.page.tab.title", value: "Warning: Site May Be Insecure", comment: "Title shown in an error page tab that warn users of security risks on a website due to SSL issues")
     static let maliciousSiteErrorPageTabTitle = NSLocalizedString("malicious.site.error.page.tab.title", value: "Warning: Security Risk", comment: "Title shown in an error page tab that warn users of security risks on a website that has been flagged as Malicious.")
 
+    static let tabCrashPopoverTitle = NSLocalizedString("tab.crash.popover.title", value: "This tab has crashed", comment: "The title of an info popover informing the user about a tab crash")
+    static let tabCrashPopoverMessage = NSLocalizedString("tab.crash.popover.message", value: "This page was reloaded automatically. Tab history and any info entered in a form have been lost.", comment: "The message in an info popover informing the user about a tab crash")
+
     static let openSystemPreferences = NSLocalizedString("open.preferences", value: "Open System Preferences", comment: "Open System Preferences (to re-enable permission for the App) (up to and including macOS 12")
     static let openSystemSettings = NSLocalizedString("open.settings", value: "Open System Settings…", comment: "This string represents a prompt or button label prompting the user to open system settings")
     static let checkForUpdate = NSLocalizedString("check.for.update", value: "Check for Update", comment: "Button users can use to check for a new update")

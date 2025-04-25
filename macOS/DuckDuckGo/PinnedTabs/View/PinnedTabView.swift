@@ -22,9 +22,11 @@ import SwiftUIExtensions
 
 struct PinnedTabView: View, DropDelegate {
     enum Const {
-        static let dimension: CGFloat = 34
         static let cornerRadius: CGFloat = 10
     }
+
+    let width: CGFloat
+    let height: CGFloat
 
     @ObservedObject var model: Tab
     @EnvironmentObject var collectionModel: PinnedTabsViewModel
@@ -42,6 +44,8 @@ struct PinnedTabView: View, DropDelegate {
                 }
             } label: {
                 PinnedTabInnerView(
+                    width: width,
+                    height: height,
                     foregroundColor: foregroundColor,
                     drawSeparator: !collectionModel.itemsWithoutSeparator.contains(model)
                 )
@@ -211,6 +215,8 @@ private struct BorderView: View {
 }
 
 struct PinnedTabInnerView: View {
+    let width: CGFloat
+    let height: CGFloat
     var foregroundColor: Color
     var drawSeparator: Bool = true
 
@@ -237,7 +243,7 @@ struct PinnedTabInnerView: View {
                 .frame(maxWidth: 16, maxHeight: 16)
                 .aspectRatio(contentMode: .fit)
         }
-        .frame(width: PinnedTabView.Const.dimension)
+        .frame(width: width)
     }
 
     @ViewBuilder
@@ -312,8 +318,8 @@ struct PinnedTabInnerView: View {
         .popover(isPresented: $tabCrashIndicatorModel.isShowingPopover, arrowEdge: .bottom) {
             PopoverMessageView(
                 viewModel: .init(
-                    title: "This tab has crashed",
-                    message: "The page was reloaded automatically. Tab history and form data has been lost.",
+                    title: UserText.tabCrashPopoverTitle,
+                    message: UserText.tabCrashPopoverMessage,
                     maxWidth: TabCrashIndicatorModel.Const.popoverWidth
                 ),
                 onClick: {
@@ -329,6 +335,8 @@ struct PinnedTabInnerView: View {
     private var faviconImage: NSImage? {
         if let error = model.error, (error as NSError as? URLError)?.code == .serverCertificateUntrusted || (error as NSError as? MaliciousSiteError != nil) {
             return .redAlertCircle16
+        } else if model.error?.isWebContentProcessTerminated == true {
+            return .alertCircleColor16
         } else if let favicon = model.favicon {
             return favicon
         }

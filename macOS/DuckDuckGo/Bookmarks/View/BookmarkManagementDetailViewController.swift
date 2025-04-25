@@ -294,9 +294,9 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
             deleteItemsButton.heightAnchor.constraint(equalToConstant: 24),
             sortItemsButton.heightAnchor.constraint(equalToConstant: 24),
 
-            newBookmarkButton.widthAnchor.constraint(equalTo: newFolderButton.widthAnchor).priority(.defaultLow),
-            newFolderButton.widthAnchor.constraint(equalTo: deleteItemsButton.widthAnchor).priority(.defaultLow),
-            deleteItemsButton.widthAnchor.constraint(equalTo: sortItemsButton.widthAnchor).priority(.defaultLow),
+            newBookmarkButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 24),
+            newFolderButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 24),
+            deleteItemsButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 24),
 
             emptyStateMessage.centerXAnchor.constraint(equalTo: emptyState.centerXAnchor),
 

@@ -247,11 +247,12 @@ final class MockDuckPlayerHosting: UIViewController, DuckPlayerHosting {
 }
 
 final class MockDuckPlayer: DuckPlayerControlling {
-    
+
     var muteAudioPublisher: PassthroughSubject<Bool, Never>
     var mediaControlPublisher: PassthroughSubject<Bool, Never>
     var currentTimeStampPublisher: PassthroughSubject<TimeInterval, Never>
     var serpNotificationPublisher: PassthroughSubject<Bool, Never>
+    var urlChangedPublisher: PassthroughSubject<String, Never>
     
 
     // MARK: - Required Properties
@@ -285,7 +286,7 @@ final class MockDuckPlayer: DuckPlayerControlling {
         self.mediaControlPublisher = PassthroughSubject<Bool, Never>()
         self.currentTimeStampPublisher = PassthroughSubject<TimeInterval, Never>()
         self.serpNotificationPublisher = PassthroughSubject<Bool, Never>()
-        
+        self.urlChangedPublisher = PassthroughSubject<String, Never>()
     }
 
     // MARK: - User Values Methods

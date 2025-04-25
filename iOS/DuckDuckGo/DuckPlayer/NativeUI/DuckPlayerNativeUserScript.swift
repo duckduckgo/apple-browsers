@@ -41,6 +41,7 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
 
     struct Constants {
         static let featureName = "duckPlayerNative"
+        
         static let SERP = "SERP"
         static let YOUTUBE = "YOUTUBE"
         static let NOCOOKIE = "NOCOOKIE"
@@ -48,6 +49,16 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
         static let locale = "locale"
         static let pageType = "pageType"
         static let timestamp = "timestamp"
+        static let mute = "mute"
+        static let pause = "pause"
+        static let enabled = "enabled"
+    }
+
+    struct FEEvents {
+        static let onMediaControl = "onMediaControl"
+        static let onSerpNotify = "onSerpNotify"
+        static let onMuteAudio = "onMuteAudio"
+        static let onUrlChanged = "onUrlChanged"        
     }
 
     struct Handlers {
@@ -141,23 +152,24 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
     }
 
     private func handleEvent(_ event: QueuedEvent) {
+        print("DP: handleEvent: \(event)")
         if isFeatureReady {
             processEvent(event)
         } else {
             eventQueue.append(event)
-        }
+        }   
     }
 
     private func processEvent(_ event: QueuedEvent) {
         switch event {
         case .mediaControl(let pause):
-            pushMediaControl(pause: pause)
+            pushToWebView(method: FEEvents.onMediaControl, params: [Constants.pause: String(pause)])
         case .serpNotification(let enabled):
-            pushSerpNotification(enabled: enabled)
+            pushToWebView(method: FEEvents.onSerpNotify, params: [Constants.enabled: String(enabled)])
         case .muteAudio(let mute):
-            pushMuteAudio(mute: mute)
+            pushToWebView(method: FEEvents.onMuteAudio, params: [Constants.mute: String(mute)])
         case .urlChanged(let pageType):
-            pushUrlChanged(pageType: pageType)
+            pushToWebView(method: FEEvents.onUrlChanged, params: [Constants.pageType: pageType])
         }
     }
 
@@ -174,90 +186,84 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
     }
 
     internal func onUrlChanged() {
-        guard let webView = webView else { return }         
+        print("DP: onUrlChanged")
+        guard let webView = webView, 
+              let url = webView.url,
+              let host = url.host else { return }
+        
+        // Determine the page type based on the host and URL
         let pageType: String
-        guard let host = webView.url?.host else { return }
-        guard let url = webView.url else { return }
+        let shouldClearQueue: Bool
+        
         switch host {
         case DuckPlayerSettingsDefault.OriginDomains.duckduckgo:
-            pageType = Constants.SERP            
-            eventQueue.removeAll()
+            pageType = Constants.SERP
+            shouldClearQueue = true
         case DuckPlayerSettingsDefault.OriginDomains.youtube, 
              DuckPlayerSettingsDefault.OriginDomains.youtubeWWW, 
              DuckPlayerSettingsDefault.OriginDomains.youtubeMobile:
             if url.isYoutubeWatch {
-                pageType = Constants.YOUTUBE                
+                pageType = Constants.YOUTUBE
+                shouldClearQueue = false
             } else {
-                pageType = Constants.UNKNOWN                
-                eventQueue.removeAll()
+                pageType = Constants.UNKNOWN
+                shouldClearQueue = true
             }
         case DuckPlayerSettingsDefault.OriginDomains.youtubeNoCookie, 
              DuckPlayerSettingsDefault.OriginDomains.youtubeNoCookieWWW:
-            pageType = Constants.NOCOOKIE            
-            eventQueue.removeAll()
+            pageType = Constants.NOCOOKIE
+            shouldClearQueue = true
         default:
-            pageType = Constants.UNKNOWN            
-            eventQueue.removeAll()
+            pageType = Constants.UNKNOWN
+            shouldClearQueue = true
         }
 
-        // Mark feature as not ready
-        isFeatureReady = false
+        if shouldClearQueue {
+            eventQueue.removeAll()
+        }
         
-        // Queue the URL change event to be processed when ready
-        handleEvent(.urlChanged(pageType: pageType))
-    }
-
-    private func pushMediaControl(pause: Bool) {
-        pushToWebView(method: "onMediaControl", params: ["pause": String(pause)])
-    }
-
-    private func pushSerpNotification(enabled: Bool) {
-        pushToWebView(method: "onSerpNotify", params: ["enabled": String(enabled)])
-    }
-
-    private func pushMuteAudio(mute: Bool) {
-        pushToWebView(method: "onMuteAudio", params: ["mute": String(mute)])
-    }
-
-    private func pushUrlChanged(pageType: String) {
-        pushToWebView(method: "onUrlChanged", params: [Constants.pageType: pageType])
+        // If already ready, send directly; otherwise queue
+        if isFeatureReady {
+            print("DP: onUrlChanged: already ready")
+            pushToWebView(method: FEEvents.onUrlChanged, params: [Constants.pageType: pageType])
+        } else {
+            print("DP: onUrlChanged: not ready")
+            isFeatureReady = false
+            handleEvent(.urlChanged(pageType: pageType))
+        }
     }
 
     @MainActor
-    private func initialSetup(params: Any, original: WKScriptMessage) -> Encodable? {            
-        let locale = Locale.current.languageCode ?? "en"
-        let result: [String: String] = [Constants.locale: locale]
+    private func initialSetup(params: Any, original: WKScriptMessage) -> Encodable? {
+        print("DP: initialSetup")
+        let result: [String: String] = [Constants.locale: Locale.current.languageCode ?? "en"]
         return result
     }
 
     @MainActor
     private func onCurrentTimeStamp(params: Any, original: WKScriptMessage) -> Encodable? {
         guard let dict = params as? [String: Any],
-              let timeString = dict[Constants.timestamp] as? String else {
-            return nil
+              let timeString = dict[Constants.timestamp] as? String,
+              let timeInterval = Double(timeString) else {
+            return [:] as [String: String]
         }
-        if let timeInterval = Double(timeString) {
-            duckPlayer.currentTimeStampPublisher.send(timeInterval)
-        } else {
-        }
-        let result: [String: String] = [:]
-        return result
+        duckPlayer.currentTimeStampPublisher.send(timeInterval)
+        return [:] as [String: String]
     }
 
     @MainActor
     private func onYoutubeError(params: Any, original: WKScriptMessage) -> Encodable? {
-        let result: [String: String] = [:]
-        return result
+        return [:] as [String: String]
     }
 
     @MainActor
-    internal func onDuckPlayerReady(params: Any, original: WKScriptMessage) -> Encodable? {        
+    internal func onDuckPlayerReady(params: Any, original: WKScriptMessage) -> Encodable? {
+        print("DP: onDuckPlayerReady")
         isFeatureReady = true
+        // Process all queued events
         while !eventQueue.isEmpty {
-            if let event = eventQueue.first {
-                processEvent(event)
-                eventQueue.removeFirst()
-            }
+            let event = eventQueue.removeFirst()
+            processEvent(event)
         }
         return nil
     }

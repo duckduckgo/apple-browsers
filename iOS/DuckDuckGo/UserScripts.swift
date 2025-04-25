@@ -38,9 +38,13 @@ final class UserScripts: UserScriptsProvider {
     let aiChatUserScript: AIChatUserScript
 
     var specialPages: SpecialPagesUserScript?
+    var isDuckPlayerReady = false
     var duckPlayer: DuckPlayerControlling? {
         didSet {
-            initializeDuckPlayer()
+            if !isDuckPlayerReady {
+                isDuckPlayerReady = true
+                initializeDuckPlayer()                
+            }
         }
     }
     var youtubeOverlayScript: YoutubeOverlayUserScript?

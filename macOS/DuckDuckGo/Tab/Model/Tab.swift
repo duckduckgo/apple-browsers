@@ -73,6 +73,7 @@ protocol NewWindowPolicyDecisionMaker {
     private let internalUserDecider: InternalUserDecider?
     private let pageRefreshMonitor: PageRefreshMonitoring
     private let featureFlagger: FeatureFlagger
+    let crashIndicatorModel = TabCrashIndicatorModel()
     let pinnedTabsManagerProvider: PinnedTabsManagerProviding
 
     private let webViewConfiguration: WKWebViewConfiguration
@@ -306,14 +307,6 @@ protocol NewWindowPolicyDecisionMaker {
             extensions.favicons?.handleFavicon(oldValue: nil, error: error)
         }
 
-        tabCrashRecoveryCancellable = extensions.tabCrashRecovery?.tabCrashErrorPublisher
-            .sink { [weak self] errorPayload in
-                guard let self else {
-                    return
-                }
-                loadErrorHTML(errorPayload.error, header: UserText.webProcessCrashPageHeader, forUnreachableURL: errorPayload.url, alternate: true)
-            }
-
         emailDidSignOutCancellable = NotificationCenter.default.publisher(for: .emailDidSignOut)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
@@ -321,6 +314,19 @@ protocol NewWindowPolicyDecisionMaker {
             }
 
         addDeallocationChecks(for: webView)
+
+        if let crashRecoveryExtension = extensions.tabCrashRecovery {
+            tabCrashRecoveryCancellable = crashRecoveryExtension.tabCrashErrorPayloadPublisher
+                .sink { [weak self] errorPayload in
+                    guard let self else {
+                        return
+                    }
+                    error = errorPayload.error
+                    loadErrorHTML(errorPayload.error, header: UserText.webProcessCrashPageHeader, forUnreachableURL: errorPayload.url, alternate: true)
+                }
+
+            crashIndicatorModel.setUp(with: crashRecoveryExtension.tabDidCrashPublisher)
+        }
     }
 
 #if DEBUG
@@ -1130,7 +1136,7 @@ extension Tab {
     static let crashTabMenuOptionTitle = "Crash Tab"
 
     private enum Selector {
-        static let killWebContentProcess = NSSelectorFromString("_killWebContentProcess")
+        static let killWebContentProcessAndResetState = NSSelectorFromString("_killWebContentProcessAndResetState")
     }
 
     var canKillWebContentProcess: Bool {
@@ -1138,8 +1144,8 @@ extension Tab {
     }
 
     func killWebContentProcess() {
-        if webView.responds(to: Selector.killWebContentProcess) {
-            webView.perform(Selector.killWebContentProcess)
+        if webView.responds(to: Selector.killWebContentProcessAndResetState) {
+            webView.perform(Selector.killWebContentProcessAndResetState)
         }
     }
 }

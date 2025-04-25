@@ -65,6 +65,10 @@ final class UpdatedOmniBarSearchView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
+    func reduceClearButtonSpacing(_ isReduced: Bool) {
+        trailingItemsContainer.setCustomSpacing(isReduced ? -8 : 0, after: clearButton)
+    }
+
     private func setUpSubviews() {
         addSubview(mainStackView)
 

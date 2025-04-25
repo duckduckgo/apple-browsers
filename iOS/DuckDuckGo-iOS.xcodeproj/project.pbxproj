@@ -1106,6 +1106,14 @@
 		C1935A242C89CC6D001AD72D /* AutofillHeaderViewFactoryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1935A232C89CC6D001AD72D /* AutofillHeaderViewFactoryTests.swift */; };
 		C1963863283794A000298D4D /* BookmarksCachingSearch.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1963862283794A000298D4D /* BookmarksCachingSearch.swift */; };
 		C19D90D12CFE3A7F00D17DF3 /* AutofillLoginListSectionType.swift in Sources */ = {isa = PBXBuildFile; fileRef = C19D90D02CFE3A7F00D17DF3 /* AutofillLoginListSectionType.swift */; };
+		C1AD33282DBAD18E003B80A4 /* CreditCardPromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AD33242DBAD18E003B80A4 /* CreditCardPromptView.swift */; };
+		C1AD33292DBAD18E003B80A4 /* CreditCardPromptViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AD33252DBAD18E003B80A4 /* CreditCardPromptViewController.swift */; };
+		C1AD332A2DBAD18E003B80A4 /* CreditCardPromptViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AD33262DBAD18E003B80A4 /* CreditCardPromptViewModel.swift */; };
+		C1AD332E2DBAD1BD003B80A4 /* CreditCardRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AD332B2DBAD1BD003B80A4 /* CreditCardRow.swift */; };
+		C1AD332F2DBAD1BD003B80A4 /* CreditCardRowViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AD332C2DBAD1BD003B80A4 /* CreditCardRowViewModel.swift */; };
+		C1AD33342DBAD1DD003B80A4 /* SaveCreditCardViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AD33312DBAD1DD003B80A4 /* SaveCreditCardViewController.swift */; };
+		C1AD33352DBAD1DD003B80A4 /* SaveCreditCardViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AD33322DBAD1DD003B80A4 /* SaveCreditCardViewModel.swift */; };
+		C1AD33362DBAD1DD003B80A4 /* SaveCreditCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1AD33302DBAD1DD003B80A4 /* SaveCreditCardView.swift */; };
 		C1B3BF472D8D99DA00EE1D43 /* AutofillCreditCardListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1B3BF432D8D99DA00EE1D43 /* AutofillCreditCardListView.swift */; };
 		C1B3BF482D8D99DA00EE1D43 /* AutofillCreditCardListViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1B3BF442D8D99DA00EE1D43 /* AutofillCreditCardListViewModel.swift */; };
 		C1B3BF4F2D91805F00EE1D43 /* AutofillCreditCardListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1B3BF4E2D91805F00EE1D43 /* AutofillCreditCardListViewController.swift */; };
@@ -3172,6 +3180,14 @@
 		C19D90D02CFE3A7F00D17DF3 /* AutofillLoginListSectionType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillLoginListSectionType.swift; sourceTree = "<group>"; };
 		C1A001092D08635100372C87 /* lt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = lt; path = lt.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C1A0010A2D08635100372C87 /* lt */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = lt; path = lt.lproj/Localizable.strings; sourceTree = "<group>"; };
+		C1AD33242DBAD18E003B80A4 /* CreditCardPromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreditCardPromptView.swift; sourceTree = "<group>"; };
+		C1AD33252DBAD18E003B80A4 /* CreditCardPromptViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreditCardPromptViewController.swift; sourceTree = "<group>"; };
+		C1AD33262DBAD18E003B80A4 /* CreditCardPromptViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreditCardPromptViewModel.swift; sourceTree = "<group>"; };
+		C1AD332B2DBAD1BD003B80A4 /* CreditCardRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreditCardRow.swift; sourceTree = "<group>"; };
+		C1AD332C2DBAD1BD003B80A4 /* CreditCardRowViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreditCardRowViewModel.swift; sourceTree = "<group>"; };
+		C1AD33302DBAD1DD003B80A4 /* SaveCreditCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveCreditCardView.swift; sourceTree = "<group>"; };
+		C1AD33312DBAD1DD003B80A4 /* SaveCreditCardViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveCreditCardViewController.swift; sourceTree = "<group>"; };
+		C1AD33322DBAD1DD003B80A4 /* SaveCreditCardViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveCreditCardViewModel.swift; sourceTree = "<group>"; };
 		C1B0F6412AB08BE9001EAF05 /* MockPrivacyConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockPrivacyConfiguration.swift; sourceTree = "<group>"; };
 		C1B3BF432D8D99DA00EE1D43 /* AutofillCreditCardListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillCreditCardListView.swift; sourceTree = "<group>"; };
 		C1B3BF442D8D99DA00EE1D43 /* AutofillCreditCardListViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillCreditCardListViewModel.swift; sourceTree = "<group>"; };
@@ -4243,6 +4259,7 @@
 		31951E9328230D8900CAF535 /* Shared */ = {
 			isa = PBXGroup;
 			children = (
+				C1AD332D2DBAD1BD003B80A4 /* CreditCardRow */,
 				C1C18C072D972EED00FFBA2E /* LockScreenView.swift */,
 				31A42563285A09E800049386 /* FaviconView.swift */,
 				31A42565285A0A6300049386 /* FaviconViewModel.swift */,
@@ -6335,6 +6352,35 @@
 			name = Survey;
 			sourceTree = "<group>";
 		};
+		C1AD33272DBAD18E003B80A4 /* CreditCardPrompt */ = {
+			isa = PBXGroup;
+			children = (
+				C1AD33242DBAD18E003B80A4 /* CreditCardPromptView.swift */,
+				C1AD33252DBAD18E003B80A4 /* CreditCardPromptViewController.swift */,
+				C1AD33262DBAD18E003B80A4 /* CreditCardPromptViewModel.swift */,
+			);
+			path = CreditCardPrompt;
+			sourceTree = "<group>";
+		};
+		C1AD332D2DBAD1BD003B80A4 /* CreditCardRow */ = {
+			isa = PBXGroup;
+			children = (
+				C1AD332B2DBAD1BD003B80A4 /* CreditCardRow.swift */,
+				C1AD332C2DBAD1BD003B80A4 /* CreditCardRowViewModel.swift */,
+			);
+			path = CreditCardRow;
+			sourceTree = "<group>";
+		};
+		C1AD33332DBAD1DD003B80A4 /* SaveCreditCard */ = {
+			isa = PBXGroup;
+			children = (
+				C1AD33302DBAD1DD003B80A4 /* SaveCreditCardView.swift */,
+				C1AD33312DBAD1DD003B80A4 /* SaveCreditCardViewController.swift */,
+				C1AD33322DBAD1DD003B80A4 /* SaveCreditCardViewModel.swift */,
+			);
+			path = SaveCreditCard;
+			sourceTree = "<group>";
+		};
 		C1AFFC4B2B8773060060448E /* AuthConfirmation */ = {
 			isa = PBXGroup;
 			children = (
@@ -7857,10 +7903,12 @@
 				C1AFFC4B2B8773060060448E /* AuthConfirmation */,
 				F407605328131910006B1E0B /* AutofillLoginUI */,
 				C1B3BF462D8D99DA00EE1D43 /* CreditCardManagement */,
+				C1AD33272DBAD18E003B80A4 /* CreditCardPrompt */,
 				C1641EAD2BC2F46C0012607A /* ImportViaSync */,
 				C17B59552A03AAC40055F2D1 /* PasswordGeneration */,
 				310C4B4A281B69BC00BA79A9 /* PasswordManagement */,
 				C15516042D47D2D9001B94E9 /* Resources */,
+				C1AD33332DBAD1DD003B80A4 /* SaveCreditCard */,
 				F407605428131923006B1E0B /* SaveLogin */,
 				C181289E2D737D5B00807C09 /* Settings */,
 				31951E9328230D8900CAF535 /* Shared */,
@@ -8930,6 +8978,9 @@
 				6F8496412BC3D8EE00ADA54E /* OnboardingButtonsView.swift in Sources */,
 				CB3C78892D06D3A700A7E4ED /* Foreground.swift in Sources */,
 				CB3C788A2D06D3A700A7E4ED /* Background.swift in Sources */,
+				C1AD33342DBAD1DD003B80A4 /* SaveCreditCardViewController.swift in Sources */,
+				C1AD33352DBAD1DD003B80A4 /* SaveCreditCardViewModel.swift in Sources */,
+				C1AD33362DBAD1DD003B80A4 /* SaveCreditCardView.swift in Sources */,
 				65D091242D47DF2100226164 /* DuckPlayerViewModel.swift in Sources */,
 				CB3C788B2D06D3A700A7E4ED /* Launching.swift in Sources */,
 				CB3C788C2D06D3A700A7E4ED /* AppStateMachine.swift in Sources */,
@@ -9040,6 +9091,8 @@
 				D6F93E3C2B4FFA97004C268D /* SubscriptionDebugViewController.swift in Sources */,
 				8505836E219F424500ED4EDB /* RoundedRectangleView.swift in Sources */,
 				EE8594992A44791C008A6D06 /* NetworkProtectionTunnelController.swift in Sources */,
+				C1AD332E2DBAD1BD003B80A4 /* CreditCardRow.swift in Sources */,
+				C1AD332F2DBAD1BD003B80A4 /* CreditCardRowViewModel.swift in Sources */,
 				1EEF123F2850A68A003DDE57 /* PrivacyInfoContainerView.swift in Sources */,
 				CBF259582D3AA85900AC63E4 /* VPNService.swift in Sources */,
 				F4B0B796252CB35700830156 /* OnboardingWidgetsDetailsViewController.swift in Sources */,
@@ -9089,6 +9142,9 @@
 				980891A52237D4F500313A70 /* FeedbackNavigator.swift in Sources */,
 				1E8AD1C927BFAD1500ABA377 /* DirectoryMonitor.swift in Sources */,
 				377D80222AB48554002AF251 /* FavoritesDisplayModeSyncHandler.swift in Sources */,
+				C1AD33282DBAD18E003B80A4 /* CreditCardPromptView.swift in Sources */,
+				C1AD33292DBAD18E003B80A4 /* CreditCardPromptViewController.swift in Sources */,
+				C1AD332A2DBAD18E003B80A4 /* CreditCardPromptViewModel.swift in Sources */,
 				1E8AD1D127C000AB00ABA377 /* OngoingDownloadRow.swift in Sources */,
 				C1935A0E2C88D11D001AD72D /* AutofillSurveyView.swift in Sources */,
 				1DEAADF02BA46E0700E25A97 /* PrivateSearchView.swift in Sources */,

@@ -18,8 +18,6 @@
 
 import Foundation
 import Common
-import AppKitExtensions
-import Cocoa
 import SecureStorage
 import os.log
 
@@ -65,8 +63,8 @@ public final class FileResources: ResourcesRepository {
 
             let brokerJSONFiles = fileURLs.filter {
                 $0.isJSON && (
-                    (shouldUseFakeBrokers && $0.hasFakePrefix) ||
-                    (!shouldUseFakeBrokers && !$0.hasFakePrefix))
+                (shouldUseFakeBrokers && $0.hasFakePrefix) ||
+                (!shouldUseFakeBrokers && !$0.hasFakePrefix))
             }
 
             return try brokerJSONFiles.map(DataBroker.initFromResource(_:))

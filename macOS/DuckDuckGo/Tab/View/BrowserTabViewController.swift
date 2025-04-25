@@ -822,7 +822,7 @@ final class BrowserTabViewController: NSViewController {
 
     private func showTabContent(of tabViewModel: TabViewModel?) {
         // window closing is handled in the MainWindowController
-        guard delegate?.closeWindowIfNeeded() == false else { return }
+        guard delegate?.closeWindowIfNeeded() != true else { return }
 
         scheduleHoverLabelUpdatesForUrl(nil)
         defer {

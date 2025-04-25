@@ -381,7 +381,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     func showCustomServiceRootAlert(callback: @escaping (String?) -> Bool) {
         let alert = NSAlert()
         alert.messageText = "Enter custom service root (staging environment only)"
-        alert.informativeText = "This will remove all profile data and trigger a remote broker JSON update."
+        alert.informativeText = "Leave blank for default"
         alert.addButton(withTitle: "Accept")
         alert.addButton(withTitle: "Cancel")
 

@@ -109,7 +109,9 @@ public final class DataBrokerProtectionSettings {
         case .production:
             return URL(string: "https://dbp.duckduckgo.com")!
         case .staging:
-            return URL(string: "https://dbp-staging.duckduckgo.com")!.appending(serviceRoot)
+            return serviceRoot.isEmpty
+                ? URL(string: "https://dbp-staging.duckduckgo.com")!
+                : URL(string: "https://dbp-staging.duckduckgo.com")!.appending(serviceRoot)
         }
     }
 }

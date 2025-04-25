@@ -227,9 +227,14 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     private func firePixelIfNeededFor(event: Pixel.Event, error: Error?) {
-        guard let syncError = error as? SyncError else { return }
-        if !syncError.isServerError {
-            Pixel.fire(pixel: event, withAdditionalParameters: syncError.errorParameters)
+        if let syncError = error as? SyncError {
+            if !syncError.isServerError {
+                Pixel.fire(pixel: event, error: syncError, withAdditionalParameters: syncError.errorParameters)
+            }
+        } else if let error {
+            Pixel.fire(pixel: event, error: error)
+        } else {
+            Pixel.fire(pixel: event)
         }
     }
 

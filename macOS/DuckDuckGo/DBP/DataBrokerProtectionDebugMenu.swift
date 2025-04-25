@@ -213,9 +213,24 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
     @objc private func setCustomServiceRoot() {
         showCustomServiceRootAlert { [weak self] value in
-            guard let value else { return false }
+            guard let value, let self else { return false }
 
-            self?.settings.serviceRoot = value
+            self.settings.serviceRoot = value
+
+            let pixelHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: PixelKit.shared!, platform: .macOS)
+            let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: pixelHandler)
+            let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
+            let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
+            let vault = try! vaultFactory.makeVault(reporter: reporter)
+            let database = DataBrokerProtectionDatabase(fakeBrokerFlag: DataBrokerDebugFlagFakeBroker(),
+                                                        pixelHandler: pixelHandler,
+                                                        vault: vault,
+                                                        localBrokerService: self.brokerUpdater)
+            let dataManager = DataBrokerProtectionDataManager(database: database)
+            try! dataManager.removeAllData()
+
+            self.forceBrokerJSONFilesUpdate()
+
             return true
         }
     }
@@ -366,6 +381,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     func showCustomServiceRootAlert(callback: @escaping (String?) -> Bool) {
         let alert = NSAlert()
         alert.messageText = "Enter custom service root (staging environment only)"
+        alert.informativeText = "This will remove all profile data and trigger a remote broker JSON update."
         alert.addButton(withTitle: "Accept")
         alert.addButton(withTitle: "Cancel")
 

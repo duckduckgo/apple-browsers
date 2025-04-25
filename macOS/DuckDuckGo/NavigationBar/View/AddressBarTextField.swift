@@ -726,6 +726,22 @@ extension AddressBarTextField {
     }
 
     override func performDragOperation(_ draggingInfo: NSDraggingInfo) -> Bool {
+        guard isFirstResponder else {
+            // drop to inactive address bar requested (by MainViewController)
+            if let stringValue = draggingInfo.draggingPasteboard.string(forType: .string) {
+                // replace the value and activate
+                self.value = .init(stringValue: stringValue, userTyped: false)
+                clearUndoManager()
+
+                window?.makeKeyAndOrderFront(self)
+                self.makeMeFirstResponder()
+                NSApp.activate(ignoringOtherApps: true)
+
+                return true
+            }
+            return false
+        }
+
         // navigate to the dropped url when the home page is open
         // if we‘re in url editing mode (non-empty), perform standard system text drag-drop
         guard let url = draggingInfo.draggingPasteboard.url, self.stringValue.trimmingWhitespace().isEmpty else {

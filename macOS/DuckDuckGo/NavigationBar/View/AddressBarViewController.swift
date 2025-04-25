@@ -163,6 +163,9 @@ final class AddressBarViewController: NSViewController {
         activeTextFieldMinXConstraint.isActive = false
         addressBarTextField.tabCollectionViewModel = tabCollectionViewModel
         addressBarTextField.onboardingDelegate = onboardingPixelReporter
+
+        // allow dropping text to inactive address bar
+        inactiveBackgroundView.registerForDraggedTypes( [.string] )
     }
 
     override func viewWillAppear() {
@@ -644,14 +647,6 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
 // MARK: - NSDraggingSource
 extension AddressBarViewController: NSDraggingSource, NSPasteboardItemDataProvider {
 
-    func draggingUpdated(_ draggingInfo: NSDraggingInfo) -> NSDragOperation {
-        // disable dropping url on the same address bar where it came from
-        if draggingInfo.draggingSource as? Self === self {
-            return .none
-        }
-        return .copy
-    }
-
     private func beginDraggingSessionIfNeeded(with event: NSEvent, in window: NSWindow) -> Bool {
         var isMouseDownOnPassiveTextField: Bool {
             tabViewModel?.tab.content.userEditableUrl != nil
@@ -733,6 +728,34 @@ extension AddressBarViewController: NSDraggingSource, NSPasteboardItemDataProvid
 
     func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
         return .copy
+    }
+}
+
+// MARK: - NSDraggingDestination
+extension AddressBarViewController: NSDraggingDestination {
+
+    func draggingEntered(_ draggingInfo: NSDraggingInfo) -> NSDragOperation {
+        return draggingUpdated(draggingInfo)
+    }
+
+    func draggingUpdated(_ draggingInfo: NSDraggingInfo) -> NSDragOperation {
+        // disable dropping url on the same address bar where it came from
+        if draggingInfo.draggingSource as? Self === self {
+            return .none
+        }
+        return .copy
+    }
+
+    func performDragOperation(_ draggingInfo: NSDraggingInfo) -> Bool {
+        // navigate to dragged url (if available)
+        if let url = draggingInfo.draggingPasteboard.url {
+            tabCollectionViewModel.selectedTabViewModel?.tab.setUrl(url, source: .userEntered(draggingInfo.draggingPasteboard.string(forType: .string) ?? url.absoluteString))
+            return true
+
+        } else {
+            // activate the address bar and replace its string value
+            return addressBarTextField.performDragOperation(draggingInfo)
+        }
     }
 }
 

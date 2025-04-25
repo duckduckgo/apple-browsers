@@ -18,7 +18,7 @@
 
 import Cocoa
 
-internal class ColorView: NSView {
+internal class ColorView: DraggingDestinationView {
 
     required init?(coder: NSCoder) {
         super.init(coder: coder)

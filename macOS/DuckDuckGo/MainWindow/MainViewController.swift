@@ -572,33 +572,18 @@ final class MainViewController: NSViewController {
 extension MainViewController: NSDraggingDestination {
 
     func draggingEntered(_ draggingInfo: NSDraggingInfo) -> NSDragOperation {
-
         return draggingUpdated(draggingInfo)
     }
 
     func draggingUpdated(_ draggingInfo: NSDraggingInfo) -> NSDragOperation {
-        if draggingInfo.draggingPasteboard.url != nil,
-           let addressBarVC = navigationBarViewController.addressBarViewController,
-           // disable dropping url on the same address bar where it came from
-           addressBarVC.view.isMouseLocationInsideBounds(draggingInfo.draggingLocation) {
-            return addressBarVC.draggingUpdated(draggingInfo)
-        }
-
         return .copy
     }
 
     func performDragOperation(_ draggingInfo: NSDraggingInfo) -> Bool {
-        guard let url = draggingInfo.draggingPasteboard.url else { return false }
-
-        // if dragging to passive address bar: open the url in current tab
-        if let addressBarView = navigationBarViewController.addressBarViewController?.view,
-           addressBarView.withMouseLocationInViewCoordinates(draggingInfo.draggingLocation, convert: {
-            addressBarView.bounds.contains($0)
-           }) == true {
-            tabCollectionViewModel.selectedTabViewModel?.tab.setUrl(url, source: .userEntered(draggingInfo.draggingPasteboard.string(forType: .string) ?? url.absoluteString))
-            return true
+        // open new tab if url dropped outside of the address bar
+        guard let url = draggingInfo.draggingPasteboard.url else {
+            return false
         }
-
         browserTabViewController.openNewTab(with: .url(url, source: .appOpenUrl))
         return true
     }

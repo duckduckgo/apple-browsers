@@ -517,7 +517,12 @@ final class AddressBarTextEditor: NSTextView {
     }
 
     override func performDragOperation(_ sender: any NSDraggingInfo) -> Bool {
-        self.addressBar?.performDragOperation(sender) ?? false
+        // should navigate to the dropped url?
+        if self.addressBar?.performDragOperation(sender) == true {
+            return true
+        }
+        // perform default text reordering
+        return super.performDragOperation(sender)
     }
 
 }

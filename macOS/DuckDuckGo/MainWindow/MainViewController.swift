@@ -590,6 +590,15 @@ extension MainViewController: NSDraggingDestination {
     func performDragOperation(_ draggingInfo: NSDraggingInfo) -> Bool {
         guard let url = draggingInfo.draggingPasteboard.url else { return false }
 
+        // if dragging to passive address bar: open the url in current tab
+        if let addressBarView = navigationBarViewController.addressBarViewController?.view,
+           addressBarView.withMouseLocationInViewCoordinates(draggingInfo.draggingLocation, convert: {
+            addressBarView.bounds.contains($0)
+           }) == true {
+            tabCollectionViewModel.selectedTabViewModel?.tab.setUrl(url, source: .userEntered(draggingInfo.draggingPasteboard.string(forType: .string) ?? url.absoluteString))
+            return true
+        }
+
         browserTabViewController.openNewTab(with: .url(url, source: .appOpenUrl))
         return true
     }

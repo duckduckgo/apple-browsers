@@ -240,7 +240,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     func migrateAuthV1toAuthV2IfNeeded() async {
 
         guard v1MigrationNeeded, // stops multiple attempts in a session, even in case of unrecoverable failures
-              !isUserAuthenticated else { // warning: using `isUserAuthenticated()` would create a loop
+        oAuthClient.currentTokenContainer == nil else { // Already migrated
             return
         }
 

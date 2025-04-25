@@ -103,6 +103,9 @@ public enum FeatureFlag: String {
     case experimentalAIChat
 
     case privacyProOnboardingPromotion
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210081345713964?focus=true
+    case syncSetupBarcodeIsUrlBased
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -139,7 +142,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .autofillCreditCards,
                 .autofillCreditCardsOnByDefault,
                 .exchangeKeysToSyncWithAnotherDevice,
-                .privacyProOnboardingPromotion:
+                .privacyProOnboardingPromotion,
+                .syncSetupBarcodeIsUrlBased:
             return true
         case .onboardingSetAsDefaultBrowser:
             if #available(iOS 18.3, *) {
@@ -246,6 +250,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .privacyProOnboardingPromotion:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProOnboardingPromotion))
+        case .syncSetupBarcodeIsUrlBased:
+            return .disabled
         }
     }
 }

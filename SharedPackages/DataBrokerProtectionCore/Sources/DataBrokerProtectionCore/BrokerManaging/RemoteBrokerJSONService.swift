@@ -59,7 +59,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
                 request.setValue(eTag, forHTTPHeaderField: "If-None-Match")
             }
             request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-            
+
             return request
         }
 
@@ -134,7 +134,6 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
         try await checkForUpdates(skipsLimiter: false)
     }
 
-    /// TODO: First scan should check for updates (needs double checking)
     public func checkForUpdates(skipsLimiter: Bool) async throws {
         do {
             /// 1. Ensure we're due for an update
@@ -267,7 +266,6 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
     }
 
     /// brokerFileNames might contain both active and test brokers
-    /// TODO: Inject directory URL, test this logic
     func processBrokerJSONs(eTag: String,
                             fileNames changedBrokerFileNames: [String],
                             eTagMapping: [String: String],

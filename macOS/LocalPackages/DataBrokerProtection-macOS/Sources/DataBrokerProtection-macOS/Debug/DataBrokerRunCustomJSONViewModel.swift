@@ -198,7 +198,6 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         self.privacyConfigManager = privacyConfigurationManager
         self.contentScopeProperties = contentScopeProperties
 
-        /// TODO: Fetch both active & test brokers
         let pixelKit = PixelKit.shared!
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .macOS)
         let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler)

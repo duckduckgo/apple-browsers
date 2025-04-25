@@ -154,7 +154,7 @@ final class AutofillCreditCardListViewModel: CreditCardListViewModelProtocol {
     private func fetchCreditCards() {
         do {
             let creditCards = try self.secureVault?.creditCards() ?? []
-            cards = creditCards.asCardRowViewModels
+            cards = creditCards.sorted(by: { $0.created > $1.created }).asCardRowViewModels
             updateViewState()
         } catch {
             Logger.autofill.error("Failed to fetch credit cards from vault: \(error)")
@@ -181,7 +181,8 @@ final class AutofillCreditCardListViewModel: CreditCardListViewModelProtocol {
                 cardholderName: oldCard.cardholderName,
                 cardSecurityCode: oldCard.cardSecurityCode,
                 expirationMonth: oldCard.expirationMonth,
-                expirationYear: oldCard.expirationYear)
+                expirationYear: oldCard.expirationYear,
+                created: oldCard.created)
             cachedDeletedCreditCard = newCard
             try secureVault.storeCreditCard(cachedDeletedCreditCard)
             clearUndoCache()

@@ -42,7 +42,7 @@ final class CreditCardPromptViewModel {
     let cards: [CreditCardRowViewModel]
     
     init(creditCards: [SecureVaultModels.CreditCard]) {
-        self.cards = creditCards.asCardRowViewModels
+        self.cards = creditCards.sorted(by: { $0.created > $1.created }).asCardRowViewModels
     }
     
     func selected(card: CreditCardRowViewModel) {

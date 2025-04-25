@@ -190,7 +190,7 @@ public struct SecureVaultModels {
         public var id: Int64?
         public var title: String
         public let created: Date
-        public let lastUpdated: Date
+        public var lastUpdated: Date
 
         public var cardNumberData: Data
         public var cardSuffix: String // Stored as L1 data, used when presenting a list of cards in the Autofill UI
@@ -219,10 +219,11 @@ public struct SecureVaultModels {
                     cardholderName: String?,
                     cardSecurityCode: String?,
                     expirationMonth: Int?,
-                    expirationYear: Int?) {
+                    expirationYear: Int?,
+                    created: Date? = nil) {
             self.id = id
             self.title = title ?? ""
-            self.created = Date()
+            self.created = created ?? Date()
             self.lastUpdated = self.created
 
             self.cardNumberData = cardNumber.data(using: .utf8)!

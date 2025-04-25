@@ -29,7 +29,7 @@ public protocol NetworkProtectionTokenStore {
 
     /// Obtain the current auth token.
     ///
-    func fetchToken() throws -> String?
+    func fetchToken() async throws -> String?
 
     /// Delete the stored auth token.
     ///
@@ -120,6 +120,7 @@ public final class NetworkProtectionKeychainTokenStore: NetworkProtectionTokenSt
     private func handle(_ error: Error) {
         guard let error = error as? NetworkProtectionKeychainStoreError else {
             assertionFailure("Failed to cast Network Protection Token store error")
+            Logger.networkProtection.fault("Failed to cast Network Protection Keychain store error")
             errorEvents?.fire(NetworkProtectionError.unhandledError(function: #function, line: #line, error: error))
             return
         }
@@ -131,11 +132,11 @@ public final class NetworkProtectionKeychainTokenStore: NetworkProtectionTokenSt
 #else
 
 public final class NetworkProtectionKeychainTokenStore: NetworkProtectionTokenStore {
-    private let accessTokenProvider: () -> String?
+    private let accessTokenProvider: () async -> String?
 
     public static var authTokenPrefix: String { "ddg:" }
 
-    public init(accessTokenProvider: @escaping () -> String?) {
+    public init(accessTokenProvider: @escaping () async -> String?) {
         self.accessTokenProvider = accessTokenProvider
     }
 
@@ -143,8 +144,8 @@ public final class NetworkProtectionKeychainTokenStore: NetworkProtectionTokenSt
         assertionFailure("Unsupported operation")
     }
 
-    public func fetchToken() throws -> String? {
-        accessTokenProvider().map { makeToken(from: $0) }
+    public func fetchToken() async throws -> String? {
+        await accessTokenProvider().map { makeToken(from: $0) }
     }
 
     public func deleteToken() throws {
@@ -215,6 +216,7 @@ public final class NetworkProtectionKeychainTokenStoreV2: AuthTokenStoring {
     private func handle(_ error: Error) {
         guard let error = error as? NetworkProtectionKeychainStoreError else {
             assertionFailure("Failed to cast Network Protection Token store error")
+            Logger.networkProtection.fault("Failed to cast Network Protection Keychain store error")
             errorEvents?.fire(NetworkProtectionError.unhandledError(function: #function, line: #line, error: error))
             return
         }

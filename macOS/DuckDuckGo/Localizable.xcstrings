@@ -67811,6 +67811,126 @@
         }
       }
     },
+    "tab.crash.popover.message" : {
+      "comment" : "The message in an info popover informing the user about a tab crash",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Diese Seite wurde automatisch neu geladen. Der Tab-Verlauf und alle in Formulare eingegebenen Informationen sind verloren gegangen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This page was reloaded automatically. Tab history and any info entered in a form have been lost."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta página se ha recargado automáticamente. Se ha perdido el historial de pestañas y cualquier información introducida en un formulario."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cette page a été rechargée automatiquement. L'historique des onglets et toutes les informations saisies dans un formulaire ont été perdues."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questa pagina è stata ricaricata automaticamente. La cronologia delle schede e tutte le informazioni inserite in un modulo sono andate perse."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deze pagina werd automatisch opnieuw geladen. De tabbladgeschiedenis en alle informatie die in een formulier is ingevoerd, zijn verloren gegaan."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ta strona została automatycznie załadowana ponownie. Historia kart oraz wszelkie informacje wprowadzone w formularzu zostały utracone."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta página foi recarregada automaticamente. O histórico do separador e qualquer informação introduzida num formulário foram perdidos."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Страница перезагрузилась автоматически. История вкладок и данные, внесенные в формы, не сохранились."
+          }
+        }
+      }
+    },
+    "tab.crash.popover.title" : {
+      "comment" : "The title of an info popover informing the user about a tab crash",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dieser Tab ist abgestürzt"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This tab has crashed"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta pestaña ha fallado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cet onglet a planté"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Questa scheda ha subito un arresto anomalo"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dit tabblad is gecrasht."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ta zakładka uległa awarii"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este separador falhou"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Сбой на вкладке"
+          }
+        }
+      }
+    },
     "tab.empty.title" : {
       "comment" : "Title for an empty tab without a title",
       "extractionState" : "extracted_with_value",

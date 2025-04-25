@@ -37,14 +37,10 @@ final class UserScripts: UserScriptsProvider {
     let autoconsentUserScript: AutoconsentUserScript
     let aiChatUserScript: AIChatUserScript
 
-    var specialPages: SpecialPagesUserScript?
-    var isDuckPlayerReady = false
+    var specialPages: SpecialPagesUserScript?    
     var duckPlayer: DuckPlayerControlling? {
-        didSet {
-            if !isDuckPlayerReady {
-                isDuckPlayerReady = true
-                initializeDuckPlayer()                
-            }
+        didSet {            
+            initializeDuckPlayer()
         }
     }
     var youtubeOverlayScript: YoutubeOverlayUserScript?

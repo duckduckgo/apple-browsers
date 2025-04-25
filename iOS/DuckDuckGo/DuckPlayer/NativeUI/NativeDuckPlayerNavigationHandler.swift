@@ -362,6 +362,8 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
 
         setReferrer(webView: webView)
 
+        duckPlayer.urlChangedPublisher.send(webView.url?.absoluteString ?? "")
+
         // Pause Videos if needed
         if duckPlayer.settings.nativeUIYoutubeMode != .never {
             toggleMediaPlayback(webView, pause: true)

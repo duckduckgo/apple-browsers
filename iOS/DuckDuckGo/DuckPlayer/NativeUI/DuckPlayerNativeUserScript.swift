@@ -100,8 +100,6 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
 
         duckPlayer.urlChangedPublisher
             .sink { [weak self] initialized in
-                self?.isFeatureReady = false
-                self?.eventQueue.removeAll()
                 self?.onUrlChanged()
             }
             .store(in: &cancellables)
@@ -137,42 +135,52 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
     }
     
 
-    private func handleMediaControl(pause: Bool) {
+    private func pushToWebView(method: String, params: [String: String]) {
         guard let broker = broker, let webView = webView else { return }
-        if !isFeatureReady {
-            eventQueue.append(.mediaControl(pause: pause))
-            return
+        broker.push(method: method, params: params, for: self, into: webView)
+    }
+
+    private func handleEvent(_ event: QueuedEvent) {
+        if isFeatureReady {
+            processEvent(event)
+        } else {
+            eventQueue.append(event)
         }
-        broker.push(method: "onMediaControl", params: ["pause": pause], for: self, into: webView)
+    }
+
+    private func processEvent(_ event: QueuedEvent) {
+        switch event {
+        case .mediaControl(let pause):
+            pushMediaControl(pause: pause)
+        case .serpNotification(let enabled):
+            pushSerpNotification(enabled: enabled)
+        case .muteAudio(let mute):
+            pushMuteAudio(mute: mute)
+        case .urlChanged(let pageType):
+            pushUrlChanged(pageType: pageType)
+        }
+    }
+
+    private func handleMediaControl(pause: Bool) {
+        handleEvent(.mediaControl(pause: pause))
     }
 
     private func handleSerpNotification(enabled: Bool) {
-        guard let broker = broker, let webView = webView else { return }
-        if !isFeatureReady {
-            eventQueue.append(.serpNotification(enabled: enabled))
-            return
-        }
-        broker.push(method: "onSerpNotify", params: ["enabled": enabled], for: self, into: webView)
+        handleEvent(.serpNotification(enabled: enabled))
     }
 
     private func handleMuteAudio(mute: Bool) {
-        guard let broker = broker, let webView = webView else { return }
-        if !isFeatureReady {
-            eventQueue.append(.muteAudio(mute: mute))
-            return
-        }
-        broker.push(method: "onMuteAudio", params: ["mute": mute], for: self, into: webView)
+        handleEvent(.muteAudio(mute: mute))
     }
 
     private func onUrlChanged() {
-        guard let broker = broker, let webView = webView else { return }         
+        guard let webView = webView else { return }         
         let pageType: String
         guard let host = webView.url?.host else { return }
         guard let url = webView.url else { return }
         switch host {
         case DuckPlayerSettingsDefault.OriginDomains.duckduckgo:
             pageType = Constants.SERP
-        // Only on watch pages
         case DuckPlayerSettingsDefault.OriginDomains.youtube, 
              DuckPlayerSettingsDefault.OriginDomains.youtubeWWW, 
              DuckPlayerSettingsDefault.OriginDomains.youtubeMobile:
@@ -187,36 +195,30 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
         default:
             pageType = Constants.UNKNOWN
         }
-        let result: [String: String] = [Constants.pageType: pageType]
-        print("DP: 🟣 onUrlChanged: \(result)")
-        if !isFeatureReady {
-            eventQueue.append(.urlChanged(pageType: pageType))
-            return
-        }
-        broker.push(method: "onUrlChanged", params: result, for: self, into: webView)
+
+        isFeatureReady = false
+        eventQueue.removeAll()
+        handleEvent(.urlChanged(pageType: pageType))
     }
 
-    private func processEventQueue() {
-        guard let broker = broker, let webView = webView else { return }
-        print("DP: 🟣 Processing event queue")
-        for event in eventQueue {
-            switch event {
-            case .mediaControl(let pause):
-                broker.push(method: "onMediaControl", params: ["pause": pause], for: self, into: webView)
-            case .serpNotification(let enabled):
-                broker.push(method: "onSerpNotify", params: ["enabled": enabled], for: self, into: webView)
-            case .muteAudio(let mute):
-                broker.push(method: "onMuteAudio", params: ["mute": mute], for: self, into: webView)
-            case .urlChanged(let pageType):
-                broker.push(method: "onUrlChanged", params: [Constants.pageType: pageType], for: self, into: webView)
-            }
-        }
-        eventQueue.removeAll()
+    private func pushMediaControl(pause: Bool) {
+        pushToWebView(method: "onMediaControl", params: ["pause": String(pause)])
+    }
+
+    private func pushSerpNotification(enabled: Bool) {
+        pushToWebView(method: "onSerpNotify", params: ["enabled": String(enabled)])
+    }
+
+    private func pushMuteAudio(mute: Bool) {
+        pushToWebView(method: "onMuteAudio", params: ["mute": String(mute)])
+    }
+
+    private func pushUrlChanged(pageType: String) {
+        pushToWebView(method: "onUrlChanged", params: [Constants.pageType: pageType])
     }
 
     @MainActor
-    private func initialSetup(params: Any, original: WKScriptMessage) -> Encodable? {    
-        print("DP: 🟣 Initial setup")
+    private func initialSetup(params: Any, original: WKScriptMessage) -> Encodable? {            
         let locale = Locale.current.languageCode ?? "en"
         let result: [String: String] = [Constants.locale: locale]
         return result
@@ -243,10 +245,14 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
     }
 
     @MainActor
-    private func onDuckPlayerReady(params: Any, original: WKScriptMessage) -> Encodable? {
-        print("DP: 🟣 onDuckPlayerReady")
-        processEventQueue()
+    private func onDuckPlayerReady(params: Any, original: WKScriptMessage) -> Encodable? {        
         isFeatureReady = true
+        while !eventQueue.isEmpty {
+            if let event = eventQueue.first {
+                processEvent(event)
+                eventQueue.removeFirst()
+            }
+        }
         return nil
     }
 

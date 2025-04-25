@@ -41,6 +41,7 @@ final class PopoverMessageViewController: NSHostingController<PopoverMessageView
          buttonAction: (() -> Void)? = nil,
          shouldShowCloseButton: Bool = false,
          presentMultiline: Bool = false,
+         maxWidth: CGFloat? = nil,
          autoDismissDuration: TimeInterval? = Constants.autoDismissDuration,
          onDismiss: (() -> Void)? = nil,
          onClick: (() -> Void)? = nil) {
@@ -50,7 +51,8 @@ final class PopoverMessageViewController: NSHostingController<PopoverMessageView
                                                  buttonText: buttonText,
                                                  buttonAction: buttonAction,
                                                  shouldShowCloseButton: shouldShowCloseButton,
-                                                 shouldPresentMultiline: presentMultiline)
+                                                 shouldPresentMultiline: presentMultiline,
+                                                 maxWidth: maxWidth)
         self.onDismiss = onDismiss
         self.autoDismissDuration = autoDismissDuration
         self.onClick = onClick

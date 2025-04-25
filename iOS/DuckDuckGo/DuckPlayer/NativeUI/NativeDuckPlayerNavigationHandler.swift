@@ -251,9 +251,6 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         // Dismiss the pill on every URL change
         duckPlayer.dismissPill(reset: true, animated: true, programatic: true)
 
-        // Ensure all media playback is allowed by default
-        self.toggleMediaPlayback(webView, pause: false)
-
         // If we are in link preview mode, we don't need to show the DuckPlayer Pill
         if isLinkPreview {
             return .notHandled(.isLinkPreview)
@@ -315,8 +312,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
             return .handled(.duckPlayerEnabled)
         }
 
-        // Resume media playback
-        toggleMediaPlayback(webView, pause: false)
+        // Resume media playback        
         return .notHandled(.isNotYoutubeWatch)
     }
 

@@ -180,24 +180,30 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
         guard let url = webView.url else { return }
         switch host {
         case DuckPlayerSettingsDefault.OriginDomains.duckduckgo:
-            pageType = Constants.SERP
+            pageType = Constants.SERP            
+            eventQueue.removeAll()
         case DuckPlayerSettingsDefault.OriginDomains.youtube, 
              DuckPlayerSettingsDefault.OriginDomains.youtubeWWW, 
              DuckPlayerSettingsDefault.OriginDomains.youtubeMobile:
             if url.isYoutubeWatch {
-                pageType = Constants.YOUTUBE
+                pageType = Constants.YOUTUBE                
             } else {
-                pageType = Constants.UNKNOWN
+                pageType = Constants.UNKNOWN                
+                eventQueue.removeAll()
             }
         case DuckPlayerSettingsDefault.OriginDomains.youtubeNoCookie, 
              DuckPlayerSettingsDefault.OriginDomains.youtubeNoCookieWWW:
-            pageType = Constants.NOCOOKIE
+            pageType = Constants.NOCOOKIE            
+            eventQueue.removeAll()
         default:
-            pageType = Constants.UNKNOWN
+            pageType = Constants.UNKNOWN            
+            eventQueue.removeAll()
         }
 
+        // Mark feature as not ready
         isFeatureReady = false
-        eventQueue.removeAll()
+        
+        // Queue the URL change event to be processed when ready
         handleEvent(.urlChanged(pageType: pageType))
     }
 

@@ -73,6 +73,7 @@ final class AddressBarViewController: NSViewController {
     private let suggestionContainerViewModel: SuggestionContainerViewModel
     private let isBurner: Bool
     private let onboardingPixelReporter: OnboardingAddressBarReporting
+    private let visualStyleManager: VisualStyleManagerProviding
 
     private var aiChatSettings: AIChatPreferencesStorage
 
@@ -119,7 +120,8 @@ final class AddressBarViewController: NSViewController {
           burnerMode: BurnerMode,
           popovers: NavigationBarPopovers?,
           onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
-          aiChatSettings: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage()) {
+          aiChatSettings: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
+          visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.popovers = popovers
         self.suggestionContainerViewModel = SuggestionContainerViewModel(
@@ -129,6 +131,7 @@ final class AddressBarViewController: NSViewController {
         self.isBurner = burnerMode.isBurner
         self.onboardingPixelReporter = onboardingPixelReporter
         self.aiChatSettings = aiChatSettings
+        self.visualStyleManager = visualStyleManager
 
         super.init(coder: coder)
     }
@@ -401,7 +404,7 @@ final class AddressBarViewController: NSViewController {
 
         let isKey = self.view.window?.isKeyWindow == true
 
-        activeOuterBorderView.alphaValue = isKey && isFirstResponder && isHomePage ? 1 : 0
+        activeOuterBorderView.alphaValue = isKey && isFirstResponder && visualStyleManager.style.shouldShowOutlineBorder(isHomePage: isHomePage) ? 1 : 0
         activeOuterBorderView.backgroundColor = accentColor.withAlphaComponent(0.2)
         activeBackgroundView.borderColor = accentColor.withAlphaComponent(0.8)
 
@@ -486,7 +489,7 @@ final class AddressBarViewController: NSViewController {
                 activeBackgroundView.backgroundColor = NSColor.addressBarBackground
                 switchToTabBox.backgroundColor = NSColor.navigationBarBackground.blended(with: .addressBarBackground)
 
-                activeOuterBorderView.isHidden = !isHomePage
+                activeOuterBorderView.isHidden = !visualStyleManager.style.shouldShowOutlineBorder(isHomePage: isHomePage)
             } else {
                 activeBackgroundView.borderWidth = 0
                 activeBackgroundView.borderColor = nil

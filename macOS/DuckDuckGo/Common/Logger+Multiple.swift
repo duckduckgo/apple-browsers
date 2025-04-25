@@ -30,6 +30,7 @@ extension Logger {
     static var updates = { Logger(subsystem: "Updates", category: "") }()
     static var tabPreview = { Logger(subsystem: "Tab Preview", category: "") }()
     static var maliciousSiteProtection = { Logger(subsystem: "Malsite Protection", category: "") }()
+    static var pinnedTabs = { Logger(subsystem: "PinnedTabs", category: "") }()
 }
 
 /// Provide value debug description or ??? "defaultValue" - to be used for logging like:

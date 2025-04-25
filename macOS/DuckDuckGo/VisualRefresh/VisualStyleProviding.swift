@@ -25,8 +25,9 @@ protocol VisualStyleProviding {
     func addressBarHeight(for type: AddressBarSizeClass) -> CGFloat
     func addressBarTopPadding(for type: AddressBarSizeClass) -> CGFloat
     func addressBarBottomPadding(for type: AddressBarSizeClass) -> CGFloat
-    var shouldShowLogoinInAddressBar: Bool { get }
+    func shouldShowOutlineBorder(isHomePage: Bool) -> Bool
 
+    var shouldShowLogoinInAddressBar: Bool { get }
     var toolbarButtonsCornerRadius: CGFloat { get }
 
     var backButtonImage: NSImage { get }
@@ -79,9 +80,9 @@ struct VisualStyle: VisualStyleProviding {
     private let addressBarBottomPaddingForDefault: CGFloat
     private let addressBarBottomPaddingForHomePage: CGFloat
     private let addressBarBottomPaddingForPopUpWindow: CGFloat
+    private let alwaysShowAddressBarOutline: Bool
 
     let shouldShowLogoinInAddressBar: Bool
-
     let toolbarButtonsCornerRadius: CGFloat
 
     let backButtonImage: NSImage
@@ -123,6 +124,10 @@ struct VisualStyle: VisualStyleProviding {
         }
     }
 
+    func shouldShowOutlineBorder(isHomePage: Bool) -> Bool {
+        return alwaysShowAddressBarOutline || isHomePage
+    }
+
     static var legacy: VisualStyleProviding {
         return VisualStyle(addressBarHeightForDefault: 48,
                            addressBarHeightForHomePage: 52,
@@ -133,6 +138,7 @@ struct VisualStyle: VisualStyleProviding {
                            addressBarBottomPaddingForDefault: 6,
                            addressBarBottomPaddingForHomePage: 8,
                            addressBarBottomPaddingForPopUpWindow: 0,
+                           alwaysShowAddressBarOutline: false,
                            shouldShowLogoinInAddressBar: false,
                            toolbarButtonsCornerRadius: 4,
                            backButtonImage: .back,
@@ -161,6 +167,7 @@ struct VisualStyle: VisualStyleProviding {
                            addressBarBottomPaddingForDefault: 6,
                            addressBarBottomPaddingForHomePage: 6,
                            addressBarBottomPaddingForPopUpWindow: 6,
+                           alwaysShowAddressBarOutline: true,
                            shouldShowLogoinInAddressBar: true,
                            toolbarButtonsCornerRadius: 9,
                            backButtonImage: .backNew,

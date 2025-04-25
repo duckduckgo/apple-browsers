@@ -857,7 +857,7 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
                                 didRemoveTabAt removedIndex: Int,
                                 andSelectTabAt selectionIndex: Int?) {
         let removedIndexPathSet = Set(arrayLiteral: IndexPath(item: removedIndex))
-        guard let selectionIndex = selectionIndex else {
+        guard let selectionIndex else {
             collectionView.animator().deleteItems(at: removedIndexPathSet)
             return
         }

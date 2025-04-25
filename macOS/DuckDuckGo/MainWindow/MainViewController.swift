@@ -735,6 +735,33 @@ extension MainViewController: BrowserTabViewControllerDelegate {
         navigationBarViewController.addressBarViewController?.addressBarButtonsViewController?.highlightPrivacyShield()
     }
 
+    /// Closes the window if it has no more regular tabs and its pinned tabs are available in other windows
+    func closeWindowIfNeeded() -> Bool {
+        guard let window = view.window,
+              tabCollectionViewModel.tabCollection.tabs.isEmpty else { return false }
+
+        let noPinnedTabs = tabCollectionViewModel.isBurner || tabCollectionViewModel.pinnedTabsManager?.tabCollection.tabs.isEmpty != false
+
+        var isSharedPinnedTabsMode: Bool {
+            TabsPreferences.shared.pinnedTabsMode == .shared
+        }
+
+        lazy var areOtherWindowsWithPinnedTabsAvailable: Bool = {
+            WindowControllersManager.shared.mainWindowControllers
+                .contains { mainWindowController -> Bool in
+                    mainWindowController.mainViewController !== self
+                    && mainWindowController.mainViewController.isBurner == false
+                    && mainWindowController.window?.isPopUpWindow == false
+                }
+        }()
+
+        if noPinnedTabs || (isSharedPinnedTabsMode && areOtherWindowsWithPinnedTabsAvailable) {
+            window.performClose(self)
+            return true
+        }
+        return false
+    }
+
 }
 
 #if DEBUG

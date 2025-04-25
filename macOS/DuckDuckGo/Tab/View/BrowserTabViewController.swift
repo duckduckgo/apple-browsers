@@ -37,6 +37,7 @@ protocol BrowserTabViewControllerDelegate: AnyObject {
     func highlightFireButton()
     func highlightPrivacyShield()
     func dismissViewHighlight()
+    func closeWindowIfNeeded() -> Bool
 }
 
 final class BrowserTabViewController: NSViewController {
@@ -820,10 +821,9 @@ final class BrowserTabViewController: NSViewController {
     }
 
     private func showTabContent(of tabViewModel: TabViewModel?) {
-        guard tabCollectionViewModel.allTabsCount > 0 else {
-            view.window?.performClose(self)
-            return
-        }
+        // window closing is handled in the MainWindowController
+        guard delegate?.closeWindowIfNeeded() != true else { return }
+
         scheduleHoverLabelUpdatesForUrl(nil)
         defer {
             adjustFirstResponderAfterAddingContentViewIfNeeded()
@@ -1449,11 +1449,11 @@ extension BrowserTabViewController {
             .compactMap { $0 }
             .removeDuplicates()
             .sink { [weak self] index in
-                self?.handleTabSelectedInKeyWindow(index)
+                self?.handleTabSelectedInOtherKeyWindow(index)
             }
     }
 
-    private func handleTabSelectedInKeyWindow(_ tabIndex: TabIndex) {
+    private func handleTabSelectedInOtherKeyWindow(_ tabIndex: TabIndex) {
         if pinnedTabsManagerProvider.pinnedTabsMode == .shared, tabIndex.isPinnedTab, tabIndex == tabCollectionViewModel.selectionIndex, webViewSnapshot == nil {
             makeWebViewSnapshot()
         } else {
@@ -1474,11 +1474,13 @@ extension BrowserTabViewController {
 
         showWebViewSnapshot(with: tabViewModel?.snapshot)
         webView.takeSnapshot(with: config) { [weak self] image, _ in
-            guard let image = image else {
+            guard let self, let image,
+                  // the window became key while the snapshot was prepared
+                  self.view.window?.isKeyWindow == false else {
                 Logger.general.error("BrowserTabViewController: failed to create a snapshot of webView")
                 return
             }
-            self?.showWebViewSnapshot(with: image)
+            showWebViewSnapshot(with: image)
         }
     }
 

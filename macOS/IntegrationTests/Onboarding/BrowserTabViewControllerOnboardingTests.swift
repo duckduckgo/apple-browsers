@@ -419,6 +419,7 @@ final class BrowserTabViewControllerDelegateSpy: BrowserTabViewControllerDelegat
     private(set) var didCallHighlightFireButton = false
     private(set) var didCallHighlightPrivacyShield = false
     private(set) var didCallDismissViewHighlight = false
+    private(set) var didCallCloseWindowIfNeeded = false
 
     func highlightFireButton() {
         didCallHighlightFireButton = true
@@ -431,6 +432,12 @@ final class BrowserTabViewControllerDelegateSpy: BrowserTabViewControllerDelegat
     func dismissViewHighlight() {
         didCallDismissViewHighlight = true
     }
+
+    func closeWindowIfNeeded() -> Bool {
+        didCallCloseWindowIfNeeded = true
+        return false
+    }
+
 }
 
 private class CapturingOnboardingPixelReporter: OnboardingPixelReporting {

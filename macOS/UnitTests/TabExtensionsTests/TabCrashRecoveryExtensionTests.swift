@@ -226,4 +226,22 @@ final class TabCrashRecoveryExtensionTests: XCTestCase {
             .init(secondCrashTimestamp, firstCrashTimestamp)
         ])
     }
+
+    @MainActor
+    func testThatCrashLoopFiresCrashLoopPixel() async {
+
+        let expectation = expectation(description: "pixel fired")
+        firePixelHandler = { event, _ in
+            if case GeneralPixel.webKitTerminationLoop = event {
+                expectation.fulfill()
+            }
+        }
+        featureFlagger.isFeatureOn = true
+        crashLoopDetector.isCrashLoop = { _, _ in true }
+        setUpRegularTab()
+
+        tabCrashRecoveryExtension.webContentProcessDidTerminate(with: nil)
+
+        await fulfillment(of: [expectation], timeout: 1)
+    }
 }

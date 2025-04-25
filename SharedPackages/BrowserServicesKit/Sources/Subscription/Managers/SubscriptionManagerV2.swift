@@ -239,17 +239,20 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
     func migrateAuthV1toAuthV2IfNeeded() async {
 
-        guard v1MigrationNeeded else {
+        guard v1MigrationNeeded, // stops multiple attempts in a session, even in case of unrecoverable failures
+        oAuthClient.currentTokenContainer == nil else { // Already migrated
             return
         }
 
         // Attempting V1 token migration
         do {
             pixelHandler.handle(pixelType: .migrationStarted)
-            if (try await oAuthClient.migrateV1Token()) != nil {
-                pixelHandler.handle(pixelType: .migrationSucceeded)
-            }
+            try await oAuthClient.migrateV1Token()
+            pixelHandler.handle(pixelType: .migrationSucceeded)
             v1MigrationNeeded = false
+            Logger.subscription.log("V1 token migration completed")
+        } catch OAuthClientError.authMigrationNotPerformed {
+            Logger.subscription.log("V1 token migration not needed")
         } catch {
             Logger.subscription.error("Failed to migrate V1 token: \(error, privacy: .public)")
             pixelHandler.handle(pixelType: .migrationFailed(error))

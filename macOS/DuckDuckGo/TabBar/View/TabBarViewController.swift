@@ -727,7 +727,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     private func subscribeToChildWindows() {
         guard let window = view.window else {
-            assertionFailure("No window set at the moment of subscription")
+            assert([.unitTests, .integrationTests].contains(AppVersion.runType), "No window set at the moment of subscription")
             return
         }
         // hide Tab Preview when a non-Tab Preview child window is shown (Suggestions, Bookmarks etc…)
@@ -857,7 +857,7 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
                                 didRemoveTabAt removedIndex: Int,
                                 andSelectTabAt selectionIndex: Int?) {
         let removedIndexPathSet = Set(arrayLiteral: IndexPath(item: removedIndex))
-        guard let selectionIndex = selectionIndex else {
+        guard let selectionIndex else {
             collectionView.animator().deleteItems(at: removedIndexPathSet)
             return
         }
@@ -1230,8 +1230,8 @@ extension TabBarViewController: TabBarViewItemDelegate {
 
         DispatchQueue.main.async {
             let viewController = PopoverMessageViewController(
-                title: "This tab has crashed",
-                message: "The page was reloaded automatically. Tab history and form data has been lost.",
+                title: UserText.tabCrashPopoverTitle,
+                message: UserText.tabCrashPopoverMessage,
                 presentMultiline: true,
                 maxWidth: TabCrashIndicatorModel.Const.popoverWidth,
                 autoDismissDuration: nil,

@@ -17,7 +17,6 @@
 //
 
 import Foundation
-import Subscription
 
 enum UserText {
     static let statusIndicatorOn = NSLocalizedString("preferences.status-indicator.on", bundle: Bundle.module, value: "On", comment: "Status indicator of a browser privacy protection feature.")

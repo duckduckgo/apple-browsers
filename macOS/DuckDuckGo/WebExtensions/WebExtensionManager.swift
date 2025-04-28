@@ -34,14 +34,14 @@ protocol WebExtensionManaging {
 
     // Adding and removing extensions
     var webExtensionPaths: [String] { get }
-    func addExtension(path: String)
+    func addExtension(path: String) async
     func removeExtension(path: String)
 
     // Provides the extension name for the extension resource base path
     func extensionName(from path: String) -> String?
 
     // Controller for tabs
-    var controller: WKWebExtensionController? { get }
+    var controller: WKWebExtensionController { get }
 
     // Listening of events
     var eventsListener: WebExtensionEventsListening { get }
@@ -58,12 +58,15 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
          webExtensionLoader: WebExtensionLoading = WebExtensionLoader(),
          internalUserDecider: InternalUserDecider = NSApp.delegateTyped.internalUserDecider,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+
+        self.controller = WKWebExtensionController()
         self.pathsCache = webExtensionPathsCache
         self.internalUserDecider = internalUserDecider
         self.featureFlagger = featureFlagger
         self.loader = webExtensionLoader
         super.init()
 
+        eventsListener.controller = controller
         internalSiteHandler.dataSource = self
     }
 
@@ -80,14 +83,13 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
     // Loads web extensions after selection or application start
     var loader: WebExtensionLoading
 
-    // Loaded extensions
-    var extensions: [WKWebExtension] = []
-
     // Context manages the extension's permissions and allows it to inject content, run background logic, show popovers, and display other web-based UI to the user.
-    var contexts: [WKWebExtensionContext] = []
+    var contexts: [WKWebExtensionContext] {
+        Array(controller.extensionContexts)
+    }
 
     // Controller manages a set of loaded extension contexts
-    var controller: WKWebExtensionController?
+    var controller: WKWebExtensionController
 
     // Events listening
     var eventsListener: WebExtensionEventsListening = WebExtensionEventsListener()
@@ -103,12 +105,26 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
         pathsCache.cache
     }
 
-    func addExtension(path: String) {
+    func addExtension(path: String) async {
         pathsCache.add(path)
+
+        do {
+            try await loader.loadWebExtension(path: path, into: controller)
+        } catch {
+            // This is temporary.  The actual handling of this error should be done outside of this manager.
+            assertionFailure("Failed to unload web extension \(path): \(error)")
+        }
     }
 
     func removeExtension(path: String) {
         pathsCache.remove(path)
+
+        do {
+            try loader.unloadExtension(at: path, from: controller)
+        } catch {
+            // This is temporary.  The actual handling of this error should be done outside of this manager.
+            assertionFailure("Failed to unload web extension \(path): \(error)")
+        }
     }
 
     func extensionName(from path: String) -> String? {
@@ -125,50 +141,15 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
         guard areExtenstionsEnabled else { return }
 
         // Load extensions
-        extensions = await loader.loadWebExtensions(from: pathsCache.cache)
+        let results = await loader.loadWebExtensions(from: pathsCache.cache, into: controller)
 
-        // Make contexts
-        contexts = extensions.compactMap {
-            makeContext(for: $0)
-        }
-
-        // Make controller and load extension contexts
-        let controller = WKWebExtensionController()
-        do {
-            try contexts.forEach {
-                try controller.load($0)
+        for result in results {
+            if case .failure(let failure) = result {
+                assertionFailure("Failed to load web extension \(pathsCache.cache): \(failure)")
             }
-        } catch {
-            assertionFailure("Failed to load extension context: \(error)")
-            return
         }
 
         controller.delegate = self
-        eventsListener.controller = controller
-        self.controller = controller
-    }
-
-    private func makeContext(for webExtension: WKWebExtension) -> WKWebExtensionContext? {
-        let context = WKWebExtensionContext(for: webExtension)
-
-        // Temporary fix to have the same state on multiple browser sessions
-        context.uniqueIdentifier = UUID(uuidString: "36dbd1f8-27c7-43fd-a206-726958a1018d")!.uuidString
-
-        // In future, we should grant only what the extension requests.
-        let matchPatterns = context.webExtension.allRequestedMatchPatterns
-        for pattern in matchPatterns {
-            context.setPermissionStatus(.grantedExplicitly, for: pattern, expirationDate: nil)
-        }
-        let permissions: [WKWebExtension.Permission] = (["activeTab", "alarms", "clipboardWrite", "contextMenus", "cookies", "declarativeNetRequest", "declarativeNetRequestFeedback", "declarativeNetRequestWithHostAccess", "menus", "nativeMessaging", "notifications", "scripting", "sidePanel", "storage", "tabs", "unlimitedStorage", "webNavigation", "webRequest"]).map {
-            WKWebExtension.Permission($0)
-        }
-        for permission in permissions {
-            context.setPermissionStatus(.grantedExplicitly, for: permission, expirationDate: nil)
-        }
-
-        // For debugging purposes
-        context.isInspectable = true
-        return context
     }
 
     // MARK: - UI

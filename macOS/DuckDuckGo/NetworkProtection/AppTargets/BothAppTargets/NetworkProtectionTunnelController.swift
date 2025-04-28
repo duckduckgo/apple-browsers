@@ -679,7 +679,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             let tokenContainer = try await fetchTokenContainer()
             options[NetworkProtectionOptionKey.tokenContainer] = tokenContainer.data
 
-            // Important: Here we force the token refresh in order to immediately branch the one used by the main app from the system extension one.
+            // Important: Here we force refresh the token in order to immediately branch the one used by the main app from the one sent to system extension.
             // See discussion https://app.asana.com/0/1199230911884351/1208785842165508/f
             try await subscriptionManagerV2.getTokenContainer(policy: .localForceRefresh)
         }

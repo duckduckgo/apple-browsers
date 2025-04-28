@@ -64,6 +64,7 @@ final class NavigationBarViewController: NSViewController {
     @IBOutlet var addressBarHeightConstraint: NSLayoutConstraint!
     @IBOutlet var buttonsTopConstraint: NSLayoutConstraint!
     @IBOutlet var logoWidthConstraint: NSLayoutConstraint!
+    @IBOutlet var backgroundColorView: ColorView!
 
     private let downloadListCoordinator: DownloadListCoordinator
 
@@ -188,6 +189,8 @@ final class NavigationBarViewController: NSViewController {
         view.layer?.masksToBounds = false
         addressBarContainer.wantsLayer = true
         addressBarContainer.layer?.masksToBounds = false
+
+        backgroundColorView.backgroundColor = visualStyleManager.style.navigationBackgroundColor
 
         setupNavigationButtonsCornerRadius()
         setupNavigationButtonMenus()

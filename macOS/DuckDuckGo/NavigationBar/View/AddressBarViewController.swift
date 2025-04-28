@@ -494,7 +494,8 @@ final class AddressBarViewController: NSViewController {
                 activeBackgroundView.borderWidth = 0
                 activeBackgroundView.borderColor = nil
                 activeBackgroundView.backgroundColor = NSColor.inactiveSearchBarBackground
-                switchToTabBox.backgroundColor = NSColor.navigationBarBackground.blended(with: .inactiveSearchBarBackground)
+                let navigationBarBackgroundColor = visualStyleManager.style.navigationBackgroundColor
+                switchToTabBox.backgroundColor = navigationBarBackgroundColor.blended(with: .inactiveSearchBarBackground)
 
                 activeOuterBorderView.isHidden = true
             }

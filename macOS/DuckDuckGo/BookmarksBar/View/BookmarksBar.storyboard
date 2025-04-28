@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="23094" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" initialViewController="JFF-Nj-8om">
+<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="23727" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" initialViewController="JFF-Nj-8om">
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23094"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23727"/>
         <capability name="Image references" minToolsVersion="12.0"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -78,7 +78,7 @@
                                 <rect key="frame" x="10" y="26" width="65" height="28"/>
                                 <subviews>
                                     <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="gwe-JW-nZ6">
-                                        <rect key="frame" x="4" y="3" width="16" height="24"/>
+                                        <rect key="frame" x="4" y="3" width="16.5" height="24"/>
                                         <constraints>
                                             <constraint firstAttribute="width" constant="16" id="TNn-Xg-utS"/>
                                             <constraint firstAttribute="height" constant="16" id="ZuD-h5-gbG"/>
@@ -152,6 +152,7 @@
                         </userDefinedRuntimeAttributes>
                     </view>
                     <connections>
+                        <outlet property="backgroundColorView" destination="R54-3G-cms" id="6vA-l4-sG5"/>
                         <outlet property="bookmarksBarCollectionView" destination="vwg-NL-UPk" id="1LG-QE-Dgd"/>
                         <outlet property="clippedItemsIndicator" destination="Mgr-xJ-Pl5" id="4ww-Po-dNb"/>
                         <outlet property="importBookmarksButton" destination="YdB-zl-3Cf" id="phi-lN-qHs"/>
@@ -168,7 +169,7 @@
     </scenes>
     <resources>
         <image name="Chevron-Double-Right-16" width="16" height="16"/>
-        <image name="square.and.arrow.down" catalog="system" width="16" height="17"/>
+        <image name="square.and.arrow.down" catalog="system" width="15" height="17"/>
         <namedColor name="AddressBarFocusedBackgroundColor">
             <color red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>

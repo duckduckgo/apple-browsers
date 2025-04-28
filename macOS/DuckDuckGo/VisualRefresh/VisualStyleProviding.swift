@@ -44,6 +44,16 @@ protocol VisualStyleProviding {
     var privacyShieldStyleProvider: PrivacyShieldAddressBarStyleProviding { get }
     var addressBarIconsProvider: AddressBarIconsProviding { get }
     var tabStyleProvider: TabStyleProviding { get }
+
+
+    /// Colors
+    /// New colors:
+    /// - Text primary -> Light: #1C1F21, Dark: #FFFFFF · 90%
+    /// - Background Navigation -> Light: #E9EBEC, Dark: #27282A - DONE
+    /// - Base -> Light: #DCDEE0, Dark: #141415
+    /// - Icons colors -> Light: #1C1F21 · 84%, Dark: #FFFFFF · 78%
+    var navigationBackgroundColor: NSColor { get }
+    var baseBackgroundColor: NSColor { get }
 }
 
 protocol VisualStyleManagerProviding {
@@ -99,6 +109,8 @@ struct VisualStyle: VisualStyleProviding {
     let privacyShieldStyleProvider: PrivacyShieldAddressBarStyleProviding
     let addressBarIconsProvider: AddressBarIconsProviding
     let tabStyleProvider: TabStyleProviding
+    let navigationBackgroundColor: NSColor
+    let baseBackgroundColor: NSColor
 
     func addressBarHeight(for type: AddressBarSizeClass) -> CGFloat {
         switch type {
@@ -154,7 +166,9 @@ struct VisualStyle: VisualStyleProviding {
                            moreOptionsMenuIconsProvider: LegacyMoreOptionsMenuIcons(),
                            privacyShieldStyleProvider: LegacyPrivacyShieldAddressBarStyleProvider(),
                            addressBarIconsProvider: LegacyAddressBarIconsProvider(),
-                           tabStyleProvider: LegacyTabStyleProvider())
+                           tabStyleProvider: LegacyTabStyleProvider(),
+                           navigationBackgroundColor: .navigationBarBackground,
+                           baseBackgroundColor: .windowBackgroundColor)
     }
 
     static var current: VisualStyleProviding {
@@ -183,7 +197,9 @@ struct VisualStyle: VisualStyleProviding {
                            moreOptionsMenuIconsProvider: NewMoreOptionsMenuIcons(),
                            privacyShieldStyleProvider: NewPrivacyShieldAddressBarStyleProvider(),
                            addressBarIconsProvider: NewAddressBarIconsProvider(),
-                           tabStyleProvider: NewlineTabStyleProvider())
+                           tabStyleProvider: NewlineTabStyleProvider(),
+                           navigationBackgroundColor: .navigationBackgroundColorNew,
+                           baseBackgroundColor: .backgroundBaseColorNew)
     }
 }
 

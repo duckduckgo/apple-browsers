@@ -436,6 +436,8 @@ final class TabBarViewItem: NSCollectionViewItem {
         return tabViewModel
     }
 
+    private var visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager
+
     private(set) var isMouseOver = false
 
     private var cell: TabBarItemCellView {
@@ -674,7 +676,7 @@ final class TabBarViewItem: NSCollectionViewItem {
         withoutAnimation {
             if isSelected || isDragged {
                 cell.mouseOverView.mouseOverColor = nil
-                cell.mouseOverView.backgroundColor = .navigationBarBackground
+                cell.mouseOverView.backgroundColor = visualStyleManager.style.navigationBackgroundColor
             } else {
                 cell.mouseOverView.mouseOverColor = .tabMouseOver
                 cell.mouseOverView.backgroundColor = nil

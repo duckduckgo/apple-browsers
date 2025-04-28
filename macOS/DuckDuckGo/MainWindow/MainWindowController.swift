@@ -47,7 +47,10 @@ final class MainWindowController: NSWindowController {
          fireViewModel: FireViewModel? = nil,
          contentSize: NSSize? = nil) {
 
-        var contentSize = contentSize ?? NSSize(width: 1024, height: 790)
+        let screenVisibleFrame = NSScreen.main?.visibleFrame ?? NSRect(origin: .zero, size: NSSize(width: 1024, height: 790))
+        let defaultContentSize = NSSize(width: screenVisibleFrame.width * 0.95,
+                                        height: screenVisibleFrame.height * 0.95)
+        var contentSize = contentSize ?? defaultContentSize
         contentSize.width = min(NSScreen.main?.frame.size.width ?? 1024, max(contentSize.width, 300))
         contentSize.height = min(NSScreen.main?.frame.size.height ?? 790, max(contentSize.height, 300))
 

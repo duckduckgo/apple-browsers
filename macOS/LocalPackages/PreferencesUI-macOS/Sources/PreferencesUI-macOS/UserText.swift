@@ -20,7 +20,7 @@ import Foundation
 import Subscription
 
 enum UserText {
-    static let preferencesOn = NSLocalizedString("preferences.on", value: "On", comment: "Status indicator of a browser privacy protection feature.")
-    static let preferencesOff = NSLocalizedString("preferences.off", value: "Off", comment: "Status indicator of a browser privacy protection feature.")
-    static let preferencesAlwaysOn = NSLocalizedString("preferences.always-on", value: "Always On", comment: "Status indicator of a browser privacy protection feature.")
+    static let statusIndicatorOn = NSLocalizedString("preferences.status-indicator.on", bundle: Bundle.module, value: "On", comment: "Status indicator of a browser privacy protection feature.")
+    static let statusIndicatorOff = NSLocalizedString("preferences.status-indicator.off", bundle: Bundle.module, value: "Off", comment: "Status indicator of a browser privacy protection feature.")
+    static let statusIndicatorAlwaysOn = NSLocalizedString("preferences.status-indicator.always-on", bundle: Bundle.module, value: "Always On", comment: "Status indicator of a browser privacy protection feature.")
 }

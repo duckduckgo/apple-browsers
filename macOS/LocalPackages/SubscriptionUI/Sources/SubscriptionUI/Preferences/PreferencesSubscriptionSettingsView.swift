@@ -39,6 +39,8 @@ public struct PreferencesSubscriptionSettingsViewV1: View {
     public var body: some View {
 
         TextMenuTitle(UserText.preferencesTitle)
+        StatusIndicatorView(status: .on, isLarge: true)
+        StatusIndicatorView(status: .off, isLarge: true)
 
         PreferencePane("a", spacing: 4) {
             switch state {
@@ -52,7 +54,7 @@ public struct PreferencesSubscriptionSettingsViewV1: View {
                 PreferencePaneSection {
                     helpSection
                 }
-                
+
             case .subscriptionExpired:
                 PreferencePaneSection {
                     expiredHeaderView

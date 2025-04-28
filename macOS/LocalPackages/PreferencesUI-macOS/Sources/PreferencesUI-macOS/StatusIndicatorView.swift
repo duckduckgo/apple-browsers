@@ -23,18 +23,31 @@ public enum StatusIndicator: Equatable {
     case alwaysOn
     case on
     case off
-    case custom(String)
+    case custom(String, Color)
 
     var text: String {
         switch self {
         case .alwaysOn:
-            return UserText.preferencesAlwaysOn
+            UserText.statusIndicatorAlwaysOn
         case .on:
-            return UserText.preferencesOn
+            UserText.statusIndicatorOn
         case .off:
-            return UserText.preferencesOff
-        case .custom(let customText):
-            return customText
+            UserText.statusIndicatorOff
+        case .custom(let customText, _):
+            customText
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .alwaysOn:
+            Color(designSystemColor: .alertGreen)
+        case .on:
+            Color(designSystemColor: .alertGreen)
+        case .off:
+            Color.secondary.opacity(0.33)
+        case .custom(_, let customColor):
+            customColor
         }
     }
 }
@@ -60,22 +73,11 @@ public struct StatusIndicatorView: View {
         HStack(spacing: isLarge ? 6 : 4) {
             Circle()
                 .frame(width: circleSize, height: circleSize)
-                .foregroundColor(colorForStatus(status))
+                .foregroundColor(status.color)
 
             Text(status.text)
                 .font(.system(size: fontSize))
                 .foregroundColor(.secondary)
-        }
-    }
-
-    private func colorForStatus(_ status: StatusIndicator) -> Color {
-        switch status {
-        case .on, .alwaysOn:
-            return Color(designSystemColor: .alertGreen)
-        case .off:
-            return Color.secondary.opacity(0.33)
-        case .custom:
-            return .orange
         }
     }
 }

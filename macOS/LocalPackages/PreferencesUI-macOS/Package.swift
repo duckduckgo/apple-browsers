@@ -5,6 +5,7 @@ import PackageDescription
 
 let package = Package(
     name: "PreferencesUI-macOS",
+    defaultLocalization: "en",
     platforms: [ .macOS("11.4") ],
     products: [
         .library(name: "PreferencesUI-macOS", targets: ["PreferencesUI-macOS"]),
@@ -19,6 +20,9 @@ let package = Package(
             dependencies: [
                 .product(name: "SwiftUIExtensions", package: "SwiftUIExtensions"),
                 "DesignResourcesKit"
+            ],
+            resources: [
+                .process("Resources")
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))

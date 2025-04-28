@@ -86,9 +86,9 @@ public enum DataBrokerProtectionSharedPixels {
         public static let calculatedOrphanedRecords = "calculated-orphaned-records"
     }
 
-    case httpError(error: Error, code: Int, dataBroker: String)
-    case actionFailedError(error: Error, actionId: String, message: String, dataBroker: String)
-    case otherError(error: Error, dataBroker: String)
+    case httpError(error: Error, code: Int, dataBroker: String, version: String)
+    case actionFailedError(error: Error, actionId: String, message: String, dataBroker: String, version: String)
+    case otherError(error: Error, dataBroker: String, version: String)
     case databaseError(error: Error, functionOccurredIn: String)
     case cocoaError(error: Error, functionOccurredIn: String)
     case miscError(error: Error, functionOccurredIn: String)
@@ -250,16 +250,19 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
 
     public var parameters: [String: String]? {
         switch self {
-        case .httpError(_, let code, let dataBroker):
+        case .httpError(_, let code, let dataBroker, let version):
             return ["code": String(code),
-                    "dataBroker": dataBroker]
-        case .actionFailedError(_, let actionId, let message, let dataBroker):
+                    "dataBroker": dataBroker,
+                    "version": version]
+        case .actionFailedError(_, let actionId, let message, let dataBroker, let version):
             return ["actionID": actionId,
                     "message": message,
-                    "dataBroker": dataBroker]
-        case .otherError(let error, let dataBroker):
+                    "dataBroker": dataBroker,
+                    "version": version]
+        case .otherError(let error, let dataBroker, let version):
             return ["kind": (error as? DataBrokerProtectionError)?.name ?? "unknown",
-                    "dataBroker": dataBroker]
+                    "dataBroker": dataBroker,
+                    "version": version]
         case .databaseError(_, let functionOccurredIn),
                 .cocoaError(_, let functionOccurredIn),
                 .miscError(_, let functionOccurredIn):
@@ -420,9 +423,9 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                 self.pixelKit.fire(event, frequency: .daily, withNamePrefix: platform.pixelNamePrefix)
             case .emptyAccessTokenDaily:
                 self.pixelKit.fire(event, frequency: .daily, withNamePrefix: platform.pixelNamePrefix)
-            case .httpError(let error, _, _),
-                    .actionFailedError(let error, _, _, _),
-                    .otherError(let error, _):
+            case .httpError(let error, _, _, _),
+                    .actionFailedError(let error, _, _, _, _),
+                    .otherError(let error, _, _):
                 self.pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
             case .databaseError(let error, _),
                     .cocoaError(let error, _),

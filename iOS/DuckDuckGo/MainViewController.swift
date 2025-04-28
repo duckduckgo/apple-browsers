@@ -2652,7 +2652,8 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestAIChat(tab: TabViewController) {
-        Pixel.fire(pixel: .browsingMenuListAIChat)
+        Pixel.fire(pixel: .browsingMenuListAIChat,
+                   withAdditionalParameters: featureDiscovery.addToParams([:], forFeature: .aiChat))
         openAIChat()
     }
 
@@ -2887,6 +2888,8 @@ extension MainViewController: TabSwitcherDelegate {
     }
 
     func tabSwitcherDidRequestAIChat(tabSwitcher: TabSwitcherViewController) {
+        Pixel.fire(pixel: .openAIChatFromTabManager,
+                   withAdditionalParameters: featureDiscovery.addToParams([:], forFeature: .aiChat))
         self.aiChatViewControllerManager.openAIChat(on: tabSwitcher)
     }
 

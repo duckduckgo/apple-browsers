@@ -47,6 +47,8 @@ public protocol FeatureDiscovery {
     /// Retrieve the stored state for a given feature.
     func wasUsedBefore(_ feature: WasUsedBeforeFeature) -> Bool
 
+    func addToParams(_ params: [String: String], forFeature feature: WasUsedBeforeFeature) -> [String: String]
+
 }
 
 final public class DefaultFeatureDiscovery: FeatureDiscovery {
@@ -63,6 +65,12 @@ final public class DefaultFeatureDiscovery: FeatureDiscovery {
     
     public func wasUsedBefore(_ feature: WasUsedBeforeFeature) -> Bool {
         return wasUsedBeforeStorage.object(forKey: feature.storageKey) as? Bool ?? false
+    }
+
+    public func addToParams(_ params: [String : String], forFeature feature: WasUsedBeforeFeature) -> [String : String] {
+        var params = params
+        params["was_used_before"] = wasUsedBefore(feature) ? "1" : "0"
+        return params
     }
 
 }

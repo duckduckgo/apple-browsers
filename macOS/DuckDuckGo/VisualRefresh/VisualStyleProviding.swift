@@ -50,10 +50,11 @@ protocol VisualStyleProviding {
     /// New colors:
     /// - Text primary -> Light: #1C1F21, Dark: #FFFFFF · 90%
     /// - Background Navigation -> Light: #E9EBEC, Dark: #27282A - DONE
-    /// - Base -> Light: #DCDEE0, Dark: #141415
+    /// - Base -> Light: #DCDEE0, Dark: #141415 DONE
     /// - Icons colors -> Light: #1C1F21 · 84%, Dark: #FFFFFF · 78%
     var navigationBackgroundColor: NSColor { get }
     var baseBackgroundColor: NSColor { get }
+    var textPrimaryColor: NSColor { get }
 }
 
 protocol VisualStyleManagerProviding {
@@ -111,6 +112,7 @@ struct VisualStyle: VisualStyleProviding {
     let tabStyleProvider: TabStyleProviding
     let navigationBackgroundColor: NSColor
     let baseBackgroundColor: NSColor
+    let textPrimaryColor: NSColor
 
     func addressBarHeight(for type: AddressBarSizeClass) -> CGFloat {
         switch type {
@@ -168,7 +170,8 @@ struct VisualStyle: VisualStyleProviding {
                            addressBarIconsProvider: LegacyAddressBarIconsProvider(),
                            tabStyleProvider: LegacyTabStyleProvider(),
                            navigationBackgroundColor: .navigationBarBackground,
-                           baseBackgroundColor: .windowBackgroundColor)
+                           baseBackgroundColor: .windowBackgroundColor,
+                           textPrimaryColor: .labelColor)
     }
 
     static var current: VisualStyleProviding {
@@ -199,7 +202,8 @@ struct VisualStyle: VisualStyleProviding {
                            addressBarIconsProvider: NewAddressBarIconsProvider(),
                            tabStyleProvider: NewlineTabStyleProvider(),
                            navigationBackgroundColor: .navigationBackgroundColorNew,
-                           baseBackgroundColor: .backgroundBaseColorNew)
+                           baseBackgroundColor: .backgroundBaseColorNew,
+                           textPrimaryColor: .primaryTextColorNew)
     }
 }
 

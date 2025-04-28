@@ -274,7 +274,8 @@ class MainViewController: UIViewController {
                                      websiteDataManager: websiteDataManager,
                                      fireproofing: fireproofing,
                                      maliciousSiteProtectionManager: maliciousSiteProtectionManager,
-                                     maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager)
+                                     maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager,
+                                     featureDiscovery: featureDiscovery)
         self.syncPausedStateManager = syncPausedStateManager
         self.privacyProDataReporter = privacyProDataReporter
         self.homeTabManager = NewTabPageManager()
@@ -2342,7 +2343,8 @@ extension MainViewController: OmniBarDelegate {
             }
         }
 
-        Pixel.fire(pixel: .openAIChatFromAddressBar)
+        Pixel.fire(pixel: .openAIChatFromAddressBar,
+                   withAdditionalParameters: featureDiscovery.addToParams([:], forFeature: .aiChat))
     }
 
     func onAccessoryLongPressed(accessoryType: OmniBarAccessoryType) {
@@ -2652,8 +2654,7 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestAIChat(tab: TabViewController) {
-        Pixel.fire(pixel: .browsingMenuListAIChat,
-                   withAdditionalParameters: featureDiscovery.addToParams([:], forFeature: .aiChat))
+        // Pixel fired at point where this is triggered to avoid over firing
         openAIChat()
     }
 

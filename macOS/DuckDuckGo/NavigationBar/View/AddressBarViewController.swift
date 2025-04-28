@@ -166,6 +166,9 @@ final class AddressBarViewController: NSViewController {
 
         // allow dropping text to inactive address bar
         inactiveBackgroundView.registerForDraggedTypes( [.string] )
+
+        // disallow dragging window by the background view
+        activeBackgroundView.interceptClickEvents = true
     }
 
     override func viewWillAppear() {

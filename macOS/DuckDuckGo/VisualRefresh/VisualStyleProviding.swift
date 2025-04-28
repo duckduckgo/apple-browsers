@@ -55,6 +55,7 @@ protocol VisualStyleProviding {
     var navigationBackgroundColor: NSColor { get }
     var baseBackgroundColor: NSColor { get }
     var textPrimaryColor: NSColor { get }
+    var textSecondaryColor: NSColor { get }
 }
 
 protocol VisualStyleManagerProviding {
@@ -113,6 +114,7 @@ struct VisualStyle: VisualStyleProviding {
     let navigationBackgroundColor: NSColor
     let baseBackgroundColor: NSColor
     let textPrimaryColor: NSColor
+    let textSecondaryColor: NSColor
 
     func addressBarHeight(for type: AddressBarSizeClass) -> CGFloat {
         switch type {
@@ -171,7 +173,8 @@ struct VisualStyle: VisualStyleProviding {
                            tabStyleProvider: LegacyTabStyleProvider(),
                            navigationBackgroundColor: .navigationBarBackground,
                            baseBackgroundColor: .windowBackgroundColor,
-                           textPrimaryColor: .labelColor)
+                           textPrimaryColor: .labelColor,
+                           textSecondaryColor: .secondaryLabelColor)
     }
 
     static var current: VisualStyleProviding {
@@ -203,7 +206,8 @@ struct VisualStyle: VisualStyleProviding {
                            tabStyleProvider: NewlineTabStyleProvider(),
                            navigationBackgroundColor: .navigationBackgroundColorNew,
                            baseBackgroundColor: .backgroundBaseColorNew,
-                           textPrimaryColor: .primaryTextColorNew)
+                           textPrimaryColor: .primaryTextColorNew,
+                           textSecondaryColor: .secondaryTextColorNew)
     }
 }
 

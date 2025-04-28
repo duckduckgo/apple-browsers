@@ -152,7 +152,7 @@ final class AddressBarViewController: NSViewController {
         view.wantsLayer = true
         view.layer?.masksToBounds = false
 
-        addressBarTextField.placeholderString = UserText.addressBarPlaceholder
+        setupAddressBarPlaceHolder()
         addressBarTextField.setAccessibilityIdentifier("AddressBarViewController.addressBarTextField")
 
         switchToTabBox.isHidden = true
@@ -408,7 +408,17 @@ final class AddressBarViewController: NSViewController {
         activeOuterBorderView.backgroundColor = accentColor.withAlphaComponent(0.2)
         activeBackgroundView.borderColor = accentColor.withAlphaComponent(0.8)
 
-        addressBarTextField.placeholderString = tabViewModel?.tab.content == .newtab ? UserText.addressBarPlaceholder : ""
+        setupAddressBarPlaceHolder()
+    }
+
+    private func setupAddressBarPlaceHolder() {
+        let addressBarPlaceholder = tabViewModel?.tab.content == .newtab ? UserText.addressBarPlaceholder : ""
+        let font = NSFont.systemFont(ofSize: 15, weight: .regular)
+        let attributes: [NSAttributedString.Key: Any] = [
+            .foregroundColor: visualStyleManager.style.textSecondaryColor,
+            .font: font
+        ]
+        addressBarTextField.placeholderAttributedString = NSAttributedString(string: addressBarPlaceholder, attributes: attributes)
     }
 
     private func updateSwitchToTabBoxAppearance() {
@@ -481,20 +491,20 @@ final class AddressBarViewController: NSViewController {
         self.addressBarButtonsViewController?.updateButtons()
 
         guard let window = view.window, AppVersion.runType != .unitTests else { return }
+        let navigationBarBackgroundColor = visualStyleManager.style.navigationBackgroundColor
 
         NSAppearance.withAppAppearance {
             if window.isKeyWindow {
                 activeBackgroundView.borderWidth = 2.0
                 activeBackgroundView.borderColor = accentColor.withAlphaComponent(0.6)
                 activeBackgroundView.backgroundColor = NSColor.addressBarBackground
-                switchToTabBox.backgroundColor = NSColor.navigationBarBackground.blended(with: .addressBarBackground)
+                switchToTabBox.backgroundColor = navigationBarBackgroundColor.blended(with: .addressBarBackground)
 
                 activeOuterBorderView.isHidden = !visualStyleManager.style.shouldShowOutlineBorder(isHomePage: isHomePage)
             } else {
                 activeBackgroundView.borderWidth = 0
                 activeBackgroundView.borderColor = nil
                 activeBackgroundView.backgroundColor = NSColor.inactiveSearchBarBackground
-                let navigationBarBackgroundColor = visualStyleManager.style.navigationBackgroundColor
                 switchToTabBox.backgroundColor = navigationBarBackgroundColor.blended(with: .inactiveSearchBarBackground)
 
                 activeOuterBorderView.isHidden = true

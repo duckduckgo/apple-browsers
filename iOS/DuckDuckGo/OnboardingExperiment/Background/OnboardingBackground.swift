@@ -42,7 +42,7 @@ struct OnboardingBackground: View {
 }
 
 private enum Metrics {
-    static let imageCentering = MetricBuilder<Alignment>(iPhone: .bottomLeading, iPad: .center)
+    static let imageCentering = MetricBuilder<Alignment>(iPhone: .center, iPad: .center)
 }
 
 #Preview("Light Mode") {

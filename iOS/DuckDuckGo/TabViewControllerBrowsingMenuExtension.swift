@@ -488,6 +488,7 @@ extension TabViewController {
     }
     
     private func onBrowsingSettingsAction() {
+        Pixel.fire(pixel: .settingsPresentedFromMenu)
         delegate?.tabDidRequestSettings(tab: self)
     }
 

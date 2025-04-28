@@ -1008,6 +1008,9 @@ extension Pixel {
         case settingsNextStepsAddWidget
         case settingsMoreSearchSettings
 
+        /// [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210068471808737)
+        case settingsPresentedFromMenu
+
         // Web pixels
         case privacyProOfferMonthlyPriceClick
         case privacyProOfferYearlyPriceClick
@@ -2020,6 +2023,7 @@ extension Pixel.Event {
 
         // MARK: Settings
         case .settingsPresented: return "m_settings_presented"
+        case .settingsPresentedFromMenu: return "m_settings_presented-from-menu"
         case .settingsSetAsDefault: return "m_settings_set_as_default"
         case .settingsVoiceSearchOn: return "m_settings_voice_search_on"
         case .settingsVoiceSearchOff: return "m_settings_voice_search_off"

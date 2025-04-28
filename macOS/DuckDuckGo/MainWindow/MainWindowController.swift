@@ -40,6 +40,7 @@ final class MainWindowController: NSWindowController {
         return window?.standardWindowButton(.closeButton)?.superview
     }
 
+    @MainActor
     init(window: NSWindow? = nil,
          mainViewController: MainViewController,
          popUp: Bool,
@@ -47,19 +48,33 @@ final class MainWindowController: NSWindowController {
          fireViewModel: FireViewModel? = nil,
          contentSize: NSSize? = nil) {
 
-        let screenVisibleFrame = NSScreen.main?.visibleFrame ?? NSRect(origin: .zero, size: NSSize(width: 1024, height: 790))
-        let defaultContentSize = NSSize(width: screenVisibleFrame.width * 0.95,
-                                        height: screenVisibleFrame.height * 0.95)
+        // 1) Grab the visible screen area (excluding Dock & menu bar)
+        let screenVisibleFrame = NSScreen.main?.visibleFrame
+            ?? NSRect(origin: .zero,
+                      size: NSSize(width: 1024, height: 790))
+
+        // 2) Default to 95% of that visible area
+        let defaultContentSize = NSSize(
+            width: screenVisibleFrame.width * 0.95,
+            height: screenVisibleFrame.height * 0.95
+        )
+        //    but allow an override if passed in:
         var contentSize = contentSize ?? defaultContentSize
-        contentSize.width = min(NSScreen.main?.frame.size.width ?? 1024, max(contentSize.width, 300))
-        contentSize.height = min(NSScreen.main?.frame.size.height ?? 790, max(contentSize.height, 300))
 
-        let moveToCenter = CGAffineTransform(translationX: ((NSScreen.main?.frame.width ?? 1024) - contentSize.width) / 2,
-                                             y: ((NSScreen.main?.frame.height ?? 790) - contentSize.height) / 2)
-        let frame = NSRect(origin: (NSScreen.main?.frame.origin ?? .zero).applying(moveToCenter),
-                           size: contentSize)
+        // 3) Clamp so we never exceed the visible bounds (and never go below 300×300)
+        contentSize.width = min(screenVisibleFrame.width,  max(contentSize.width,  300))
+        contentSize.height = min(screenVisibleFrame.height, max(contentSize.height, 300))
 
-        assert(window == nil || [.unitTests, .integrationTests].contains(AppVersion.runType), "Window should not be set in non-test environment")
+        // 4) Center *within* that visible frame
+        let origin = CGPoint(
+            x: screenVisibleFrame.origin.x + (screenVisibleFrame.width  - contentSize.width)  / 2,
+            y: screenVisibleFrame.origin.y + (screenVisibleFrame.height - contentSize.height) / 2
+        )
+        let frame = NSRect(origin: origin, size: contentSize)
+
+        // 5) Create & configure the window
+        assert(window == nil || [.unitTests, .integrationTests].contains(AppVersion.runType),
+               "Window should not be set in non-test environment")
         let window = window ?? (popUp ? PopUpWindow(frame: frame) : MainWindow(frame: frame))
         window.contentViewController = mainViewController
         window.setContentSize(contentSize)
@@ -71,6 +86,7 @@ final class MainWindowController: NSWindowController {
 
         super.init(window: window)
 
+        // 6) All the usual wiring
         setupWindow(window)
         setupToolbar()
         subscribeToTrafficLightsAlpha()

@@ -1110,8 +1110,9 @@ class TabViewController: UIViewController {
     }
 
     func showPrivacyDashboard() {
-        Pixel.fire(pixel: .privacyDashboardOpened)
+        Pixel.fire(pixel: .privacyDashboardOpened, withAdditionalParameters: featureDiscovery.addToParams([:], forFeature: .privacyDashboard))
         performSegue(withIdentifier: "PrivacyDashboard", sender: self)
+        featureDiscovery.setWasUsedBefore(.privacyDashboard)
     }
 
     func setRefreshControlEnabled(_ isEnabled: Bool) {

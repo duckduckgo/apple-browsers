@@ -529,6 +529,7 @@
 		7B4F87EA2D0738F90010B18F /* SiriEducationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B4F87E92D0738F40010B18F /* SiriEducationView.swift */; };
 		7B4F87EC2D07396A0010B18F /* SiriEducation.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 7B4F87EB2D07396A0010B18F /* SiriEducation.xcassets */; };
 		7B4F87EE2D0739EB0010B18F /* SiriBubbleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B4F87ED2D0739E80010B18F /* SiriBubbleView.swift */; };
+		7B65863A2DB7F5B600D12BE3 /* SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B6586392DB7F5AC00D12BE3 /* SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests.swift */; };
 		7B8E0EC62CC81B4900B2B722 /* TipKitController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B8E0EC52CC81B4800B2B722 /* TipKitController.swift */; };
 		7BBE25A12D71ECFD003131FA /* AutomationServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BBE25A02D71ECFD003131FA /* AutomationServer.swift */; };
 		7BBE25A32D71EE72003131FA /* MainViewController+Automation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BBE25A22D71EE72003131FA /* MainViewController+Automation.swift */; };
@@ -2076,6 +2077,7 @@
 		7B4F87E92D0738F40010B18F /* SiriEducationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SiriEducationView.swift; sourceTree = "<group>"; };
 		7B4F87EB2D07396A0010B18F /* SiriEducation.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = SiriEducation.xcassets; sourceTree = "<group>"; };
 		7B4F87ED2D0739E80010B18F /* SiriBubbleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SiriBubbleView.swift; sourceTree = "<group>"; };
+		7B6586392DB7F5AC00D12BE3 /* SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests.swift; sourceTree = "<group>"; };
 		7B8E0EC52CC81B4800B2B722 /* TipKitController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TipKitController.swift; sourceTree = "<group>"; };
 		7BBE25A02D71ECFD003131FA /* AutomationServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutomationServer.swift; sourceTree = "<group>"; };
 		7BBE25A22D71EE72003131FA /* MainViewController+Automation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MainViewController+Automation.swift"; sourceTree = "<group>"; };
@@ -4870,6 +4872,14 @@
 			path = Siri;
 			sourceTree = "<group>";
 		};
+		7B6586382DB7F51000D12BE3 /* SimplifiedPaywall */ = {
+			isa = PBXGroup;
+			children = (
+				7B6586392DB7F5AC00D12BE3 /* SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests.swift */,
+			);
+			path = SimplifiedPaywall;
+			sourceTree = "<group>";
+		};
 		7BF78E002CA2CC100026A1FC /* TipKit */ = {
 			isa = PBXGroup;
 			children = (
@@ -7471,6 +7481,7 @@
 		F1BDDBFC2C340D9C00459306 /* Subscription */ = {
 			isa = PBXGroup;
 			children = (
+				7B6586382DB7F51000D12BE3 /* SimplifiedPaywall */,
 				C162A1B52D79F6EC00C34BAB /* OnboardingPromotionExperiment */,
 				C1106F2F2D0EFD6F0054A221 /* FreeTrialsExperiment */,
 				1E25D5302C921246004400F0 /* Mocks */,
@@ -9574,6 +9585,7 @@
 				858650D32469BFAD00C36F8A /* DaxDialogTests.swift in Sources */,
 				31C138B227A4097800FFD4B2 /* DownloadTestsHelper.swift in Sources */,
 				1E1D8B5D2994FFE100C96994 /* AutoconsentMessageProtocolTests.swift in Sources */,
+				7B65863A2DB7F5B600D12BE3 /* SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests.swift in Sources */,
 				85C11E532090B23A00BFFEB4 /* UserDefaultsHomeRowReminderStorageTests.swift in Sources */,
 				1E7851452D6F267D006AFBE1 /* AsyncHeadlessWebViewSettingsTests.swift in Sources */,
 				F1DA2F7D1EBCF23700313F51 /* ExternalUrlSchemeTests.swift in Sources */,

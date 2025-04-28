@@ -33,6 +33,8 @@ import FeatureFlags
 // This is to avoid exposing all the dependancies outside of the DBP package
 public class DataBrokerProtectionAgentManagerProvider {
 
+    static let featureFlagOverridesPublishingHandler = FeatureFlagOverridesPublishingHandler<FeatureFlag>()
+
     private let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
 
     public static func agentManager(authenticationManager: DataBrokerProtectionAuthenticationManaging, vpnBypassService: VPNBypassFeatureProvider) -> DataBrokerProtectionAgentManager? {
@@ -95,7 +97,7 @@ public class DataBrokerProtectionAgentManagerProvider {
             privacyConfigManager: privacyConfigurationManager,
             localOverrides: FeatureFlagLocalOverrides(
                 keyValueStore: UserDefaults.config,
-                actionHandler: FeatureFlagOverridesPublishingHandler<FeatureFlag>()
+                actionHandler: featureFlagOverridesPublishingHandler
             ),
             experimentManager: nil,
             for: FeatureFlag.self

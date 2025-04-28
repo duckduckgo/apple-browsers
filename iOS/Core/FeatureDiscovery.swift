@@ -41,9 +41,6 @@ public enum WasUsedBeforeFeature: String {
 ///
 public protocol FeatureDiscovery {
 
-    /// Delegates to sync
-    var isSyncEnabled: Bool { get }
-
     /// Delegates to email
     var isEmailSignedIn: Bool { get }
 
@@ -57,21 +54,15 @@ public protocol FeatureDiscovery {
 
 final public class DefaultFeatureDiscovery: FeatureDiscovery {
 
-    public var isSyncEnabled: Bool {
-        sync.account != nil
-    }
-
     public var isEmailSignedIn: Bool {
         return emailManager.isSignedIn
     }
 
-    private let sync: DDGSyncing
     private let emailManager: EmailManager
     private let wasUsedBeforeStorage: KeyValueStoring
 
-    public init(sync: DDGSyncing, emailManager: EmailManager,
+    public init(emailManager: EmailManager,
                 wasUsedBeforeStorage: KeyValueStoring) {
-        self.sync = sync
         self.emailManager = emailManager
         self.wasUsedBeforeStorage = wasUsedBeforeStorage
     }

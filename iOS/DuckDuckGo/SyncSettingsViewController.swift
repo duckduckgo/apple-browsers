@@ -255,7 +255,9 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        Pixel.fire(pixel: .settingsSyncOpen)
+        Pixel.fire(pixel: .settingsSyncOpen, withAdditionalParameters: [
+            "is_enabled": isSyncEnabled ? "1" : "0"
+        ])
     }
 
     func updateOptions() {

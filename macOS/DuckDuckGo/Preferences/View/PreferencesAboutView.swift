@@ -102,8 +102,9 @@ extension Preferences {
                             .padding(.vertical, 4)
                             .background(
                                 RoundedRectangle(cornerRadius: 4)
-                                    .fill(Color.yellow)
+                                    .fill(Color.betaLabelBackground)
                             )
+                            .foregroundColor(Color.betaLabelForeground)
                     }
                 }
 
@@ -129,8 +130,9 @@ extension Preferences {
                             .padding(.vertical, 4)
                             .background(
                                 RoundedRectangle(cornerRadius: 4)
-                                    .fill(Color.yellow)
+                                    .fill(Color.betaLabelBackground)
                             )
+                            .foregroundColor(Color.betaLabelForeground)
                     }
                 }
 

@@ -74,8 +74,9 @@ struct AboutPanelView: View {
                         .padding(.vertical, 2)
                         .background(
                             RoundedRectangle(cornerRadius: 4)
-                                .fill(Color.yellow)
+                                .fill(Color.betaLabelBackground)
                         )
+                        .foregroundColor(Color.betaLabelForeground)
                 }
             }
 

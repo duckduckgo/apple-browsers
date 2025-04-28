@@ -104,7 +104,7 @@ final class DuckPlayerNativeUserScriptTests: XCTestCase {
         mockDuckPlayer.muteAudioPublisher.send(true)
         
         // When
-        sut.onDuckPlayerReady(params: [:], original: WKScriptMessage())
+        _ = sut.onDuckPlayerReady(params: [:], original: WKScriptMessage())
         
         // Then
         XCTAssertTrue(sut.isFeatureReady)
@@ -130,7 +130,7 @@ final class DuckPlayerNativeUserScriptTests: XCTestCase {
         sut.onUrlChanged()
         
         // When
-        sut.onDuckPlayerReady(params: [:], original: WKScriptMessage())
+        _ = sut.onDuckPlayerReady(params: [:], original: WKScriptMessage())
         
         // Then
         XCTAssertTrue(sut.isFeatureReady)
@@ -157,7 +157,7 @@ final class DuckPlayerNativeUserScriptTests: XCTestCase {
         sut.onUrlChanged()
         
         // Now feature becomes ready
-        sut.onDuckPlayerReady(params: [:], original: WKScriptMessage())
+        _ = sut.onDuckPlayerReady(params: [:], original: WKScriptMessage())
         XCTAssertTrue(sut.isFeatureReady)
         
         // When - Second URL change (while ready)
@@ -179,17 +179,6 @@ class UserScriptMessageBrokerWrapper {
     
     init(broker: UserScriptMessageBroker) {
         self.broker = broker
-    }
-    
-    func hookPushMethod() {
-        // This is a simplified version for test purposes
-        // In a real implementation, we would use method swizzling to hook the push method
-        // For this test, we'll just simulate capturing the messages
-        let timer = Timer.scheduledTimer(withTimeInterval: 0.01, repeats: true) { [weak self] _ in
-            // This timer is just a placeholder to represent the hook mechanism
-            // In reality, we'd use method swizzling or a proper mock object
-        }
-        timer.tolerance = 0.01
     }
     
     // In a real implementation, we would hook the push method to capture calls

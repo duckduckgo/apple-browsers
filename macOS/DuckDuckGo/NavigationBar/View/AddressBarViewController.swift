@@ -194,6 +194,7 @@ final class AddressBarViewController: NSViewController {
 
     override func viewDidLayout() {
         addressBarTextField.viewDidLayout()
+        updateSwitchToTabBoxAppearance()
     }
 
     // MARK: - Subscriptions

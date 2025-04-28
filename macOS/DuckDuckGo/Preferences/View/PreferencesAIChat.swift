@@ -41,6 +41,7 @@ extension Preferences {
                 PreferencePaneSection {
                     ToggleMenuItem(UserText.aiChatShowInAddressBarToggle,
                                    isOn: $model.showShortcutInAddressBar)
+                    .accessibilityIdentifier("Preferences.AIChat.showInAddressBarToggle")
                     .onChange(of: model.showShortcutInAddressBar) { newValue in
                         if newValue {
                             PixelKit.fire(AIChatPixel.aiChatSettingsAddressBarShortcutTurnedOn,
@@ -55,6 +56,7 @@ extension Preferences {
 
                     ToggleMenuItem(UserText.aiChatShowInApplicationMenuToggle,
                                    isOn: $model.showShortcutInApplicationMenu)
+                    .accessibilityIdentifier("Preferences.AIChat.showInApplicationMenuToggle")
                     .onChange(of: model.showShortcutInApplicationMenu) { newValue in
                         if newValue {
                             PixelKit.fire(AIChatPixel.aiChatSettingsApplicationMenuShortcutTurnedOn,

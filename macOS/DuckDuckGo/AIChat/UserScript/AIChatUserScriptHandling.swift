@@ -17,6 +17,7 @@
 //
 
 import UserScript
+import AIChat
 
 protocol AIChatUserScriptHandling {
     func openAIChatSettings(params: Any, message: UserScriptMessage) async -> Encodable?

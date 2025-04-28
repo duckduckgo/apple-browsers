@@ -76,6 +76,7 @@ public enum PrivacyFeature: String {
     case iOSBrowserConfig
     // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlyFeatureForTests
+    case tabCrashRecovery
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.

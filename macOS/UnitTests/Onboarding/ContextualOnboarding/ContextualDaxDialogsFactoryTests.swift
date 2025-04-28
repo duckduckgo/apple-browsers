@@ -26,7 +26,6 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
     private var reporter: CapturingOnboardingPixelReporter!
 
     override func setUpWithError() throws {
-        try super.setUpWithError()
         reporter = CapturingOnboardingPixelReporter()
         factory = DefaultContextualDaxDialogViewFactory(onboardingPixelReporter: reporter)
         delegate = CapturingOnboardingNavigationDelegate()
@@ -36,7 +35,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         factory = nil
         delegate = nil
         reporter = nil
-        try super.tearDownWithError()
+        WindowControllersManager.shared.lastKeyMainWindowController = nil
     }
 
     func testWhenMakeViewForTryASearchThenOnboardingTrySearchDialogViewCreatedAndOnActionExpectedSearchOccurs() throws {
@@ -238,8 +237,9 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         let onDismiss = { onDismissRun = true }
 
         let mainViewController = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])), autofillPopoverPresenter: DefaultAutofillPopoverPresenter())
-        let mainWindowController = MainWindowController(mainViewController: mainViewController, popUp: false)
-        mainWindowController.window = MockWindow()
+        let window = MockWindow(isVisible: false)
+        let mainWindowController = MainWindowController(window: window, mainViewController: mainViewController, popUp: false)
+        mainWindowController.window = window
         WindowControllersManager.shared.lastKeyMainWindowController = mainWindowController
 
         // WHEN
@@ -249,6 +249,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         let view = try XCTUnwrap(find(OnboardingFireDialog.self, in: result))
 
         // WHEN
+        window.isVisible = true
         view.viewModel.tryFireButton()
 
         // THEN

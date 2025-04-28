@@ -32,7 +32,7 @@ final class UpdatedOmniBarSearchView: UIView {
 
     let loupeIconView = UIImageView()
     let customIconView = UIImageView()
-    let dismissButtonView = UIButton(type: .custom)
+    let dismissButtonView = ToolbarButton()
 
     let leftIconContainer = UIView()
     let textField = TextFieldWithInsets()
@@ -42,13 +42,13 @@ final class UpdatedOmniBarSearchView: UIView {
 
     let separatorView = URLSeparatorView()
 
-    let reloadButton = UIButton(type: .custom)
-    let clearButton = UIButton(type: .custom)
+    let reloadButton = ToolbarButton()
+    let clearButton = ToolbarButton(.secondary)
 
-    let shareButton = UIButton(type: .custom)
-    let cancelButton = UIButton(type: .custom)
-    let voiceSearchButton = UIButton(type: .custom)
-    let accessoryButton = UIButton(type: .custom)
+    let shareButton = ToolbarButton()
+    let cancelButton = ToolbarButton(.secondary)
+    let voiceSearchButton = ToolbarButton()
+    let accessoryButton = ToolbarButton()
 
     private let mainStackView = UIStackView()
 
@@ -63,6 +63,10 @@ final class UpdatedOmniBarSearchView: UIView {
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    func reduceClearButtonSpacing(_ isReduced: Bool) {
+        trailingItemsContainer.setCustomSpacing(isReduced ? -8 : 0, after: clearButton)
     }
 
     private func setUpSubviews() {
@@ -140,30 +144,28 @@ final class UpdatedOmniBarSearchView: UIView {
         textField.spellCheckingType = .no
         textField.keyboardType = .webSearch
 
-        accessoryButton.setImage(UIImage(resource: .aiChatNew24), for: .normal)
+        accessoryButton.setImage(UIImage(resource: .aiChatNew24))
         UpdatedOmniBarView.setUpCommonProperties(for: accessoryButton)
 
-        reloadButton.setImage(UIImage(resource: .reloadNew24), for: .normal)
+        reloadButton.setImage(UIImage(resource: .reloadNew24))
         UpdatedOmniBarView.setUpCommonProperties(for: reloadButton)
 
-        clearButton.setImage(UIImage(resource: .closeCircleSmallNew24), for: .normal)
+        clearButton.setImage(UIImage(resource: .closeCircleSmallNew24))
         UpdatedOmniBarView.setUpCommonProperties(for: clearButton)
-        clearButton.tintColor = UIColor(designSystemColor: .iconsSecondary)
 
-        shareButton.setImage(UIImage(resource: .shareAppleNew24), for: .normal)
+        shareButton.setImage(UIImage(resource: .shareAppleNew24))
         UpdatedOmniBarView.setUpCommonProperties(for: shareButton)
 
-        cancelButton.setImage(UIImage(resource: .closeNew24), for: .normal)
+        cancelButton.setImage(UIImage(resource: .closeNew24))
         UpdatedOmniBarView.setUpCommonProperties(for: cancelButton)
-        cancelButton.tintColor = UIColor(designSystemColor: .iconsSecondary)
 
-        voiceSearchButton.setImage(UIImage(resource: .microphoneNew24), for: .normal)
+        voiceSearchButton.setImage(UIImage(resource: .microphoneNew24))
         UpdatedOmniBarView.setUpCommonProperties(for: voiceSearchButton)
 
-        dismissButtonView.setImage(UIImage(resource: .arrowLeftNew24), for: .normal)
+        dismissButtonView.setImage(UIImage(resource: .arrowLeftNew24))
         UpdatedOmniBarView.setUpCommonProperties(for: dismissButtonView)
 
-        loupeIconView.image = UIImage(resource: .findSearchNew24)
+        loupeIconView.image = UIImage(resource: .findSearchSmall24)
         loupeIconView.tintColor = tintColor
         loupeIconView.contentMode = .center
 

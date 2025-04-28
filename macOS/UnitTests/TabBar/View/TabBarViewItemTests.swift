@@ -328,6 +328,7 @@ private class TabBarViewModelMock: TabBarViewModel {
         $audioState.eraseToAnyPublisher()
     }
     var canKillWebContentProcess: Bool = false
+    var crashIndicatorModel = TabCrashIndicatorModel()
     init(width: CGFloat = 0, title: String = "Test Title", favicon: NSImage? = .aDark, tabContent: Tab.TabContent = .none, usedPermissions: Permissions = Permissions(), audioState: WKWebView.AudioState? = nil, selected: Bool = false) {
         self.width = width
         self.title = title

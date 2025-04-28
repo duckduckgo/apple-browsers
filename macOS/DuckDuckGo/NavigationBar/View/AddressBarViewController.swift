@@ -20,6 +20,7 @@ import Cocoa
 import Combine
 import Lottie
 import Common
+import AIChat
 
 final class AddressBarViewController: NSViewController {
 
@@ -72,6 +73,9 @@ final class AddressBarViewController: NSViewController {
     private let suggestionContainerViewModel: SuggestionContainerViewModel
     private let isBurner: Bool
     private let onboardingPixelReporter: OnboardingAddressBarReporting
+    private let visualStyleManager: VisualStyleManagerProviding
+
+    private var aiChatSettings: AIChatPreferencesStorage
 
     private var mode: Mode = .editing(.text) {
         didSet {
@@ -115,7 +119,9 @@ final class AddressBarViewController: NSViewController {
           tabCollectionViewModel: TabCollectionViewModel,
           burnerMode: BurnerMode,
           popovers: NavigationBarPopovers?,
-          onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter()) {
+          onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
+          aiChatSettings: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
+          visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.popovers = popovers
         self.suggestionContainerViewModel = SuggestionContainerViewModel(
@@ -124,6 +130,8 @@ final class AddressBarViewController: NSViewController {
             suggestionContainer: SuggestionContainer(burnerMode: burnerMode, isUrlIgnored: { _ in false }))
         self.isBurner = burnerMode.isBurner
         self.onboardingPixelReporter = onboardingPixelReporter
+        self.aiChatSettings = aiChatSettings
+        self.visualStyleManager = visualStyleManager
 
         super.init(coder: coder)
     }
@@ -133,7 +141,7 @@ final class AddressBarViewController: NSViewController {
                                                          tabCollectionViewModel: tabCollectionViewModel,
                                                          popovers: popovers,
                                                          aiChatTabOpener: NSApp.delegateTyped.aiChatTabOpener,
-                                                         aiChatMenuConfig: AIChatMenuConfiguration())
+                                                         aiChatMenuConfig: AIChatMenuConfiguration(storage: aiChatSettings))
 
         self.addressBarButtonsViewController = controller
         controller?.delegate = self
@@ -159,7 +167,8 @@ final class AddressBarViewController: NSViewController {
 
     override func viewWillAppear() {
         guard let window = view.window else {
-            assertionFailure("AddressBarViewController.viewWillAppear: view.window is nil")
+            assert([.unitTests, .integrationTests].contains(AppVersion.runType),
+                   "AddressBarViewController.viewWillAppear: view.window is nil")
             return
         }
         if window.isPopUpWindow == true {
@@ -395,7 +404,7 @@ final class AddressBarViewController: NSViewController {
 
         let isKey = self.view.window?.isKeyWindow == true
 
-        activeOuterBorderView.alphaValue = isKey && isFirstResponder && isHomePage ? 1 : 0
+        activeOuterBorderView.alphaValue = isKey && isFirstResponder && visualStyleManager.style.shouldShowOutlineBorder(isHomePage: isHomePage) ? 1 : 0
         activeOuterBorderView.backgroundColor = accentColor.withAlphaComponent(0.2)
         activeBackgroundView.borderColor = accentColor.withAlphaComponent(0.8)
 
@@ -480,7 +489,7 @@ final class AddressBarViewController: NSViewController {
                 activeBackgroundView.backgroundColor = NSColor.addressBarBackground
                 switchToTabBox.backgroundColor = NSColor.navigationBarBackground.blended(with: .addressBarBackground)
 
-                activeOuterBorderView.isHidden = !isHomePage
+                activeOuterBorderView.isHidden = !visualStyleManager.style.shouldShowOutlineBorder(isHomePage: isHomePage)
             } else {
                 activeBackgroundView.borderWidth = 0
                 activeBackgroundView.borderColor = nil
@@ -552,7 +561,7 @@ final class AddressBarViewController: NSViewController {
 
     func mouseDown(with event: NSEvent) -> NSEvent? {
         self.clickPoint = nil
-        guard let window = self.view.window, event.window === window else { return event }
+        guard let window = self.view.window, event.window === window, window.sheets.isEmpty else { return event }
 
         if let point = self.view.mouseLocationInsideBounds(event.locationInWindow) {
             guard self.view.window?.firstResponder !== addressBarTextField.currentEditor(),
@@ -586,6 +595,9 @@ final class AddressBarViewController: NSViewController {
         // If the view where the touch occurred is outside the AddressBar forward the event
         guard let viewWithinAddressBar = view.hitTest(pointInView) else { return event }
 
+        // If we have an AddressBarMenuButton, forward the event
+        guard !(viewWithinAddressBar is AddressBarMenuButton) else { return event }
+
         // If the farthest view of the point location is a NSButton or LottieAnimationView don't show contextual menu
         guard viewWithinAddressBar.shouldShowArrowCursor == false else { return nil }
 
@@ -611,6 +623,10 @@ final class AddressBarViewController: NSViewController {
 }
 
 extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
+    func addressBarButtonsViewControllerHideAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
+        aiChatSettings.showShortcutInAddressBar = false
+    }
+
     func addressBarButtonsViewController(_ controller: AddressBarButtonsViewController, didUpdateAIChatButtonVisibility isVisible: Bool) {
         addressBarTextTrailingConstraint.constant = isVisible ? 80 : 45
         addressBarPassiveTextCenterXConstraint.constant = isVisible ? -20 : 0
@@ -619,7 +635,6 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
     func addressBarButtonsViewControllerClearButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
         addressBarTextField.clearValue()
     }
-
 }
 
 fileprivate extension NSView {

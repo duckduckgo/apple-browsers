@@ -34,7 +34,7 @@ enum PrivacyProPixel: PixelKitEventV2 {
     case privacyProSubscriptionActive
     case privacyProOfferScreenImpression
     case privacyProPurchaseAttempt
-    case privacyProPurchaseFailure
+    case privacyProPurchaseFailureOther
     case privacyProPurchaseFailureStoreError
     case privacyProPurchaseFailureBackendError
     case privacyProPurchaseFailureAccountNotCreated
@@ -42,6 +42,7 @@ enum PrivacyProPixel: PixelKitEventV2 {
     case privacyProRestorePurchaseOfferPageEntry
     case privacyProRestorePurchaseClick
     case privacyProRestorePurchaseSettingsMenuEntry
+    case privacyProRestorePurchaseEmailStart
     case privacyProRestorePurchaseStoreStart
     case privacyProRestorePurchaseEmailSuccess
     case privacyProRestorePurchaseStoreSuccess
@@ -50,7 +51,6 @@ enum PrivacyProPixel: PixelKitEventV2 {
     case privacyProRestoreAfterPurchaseAttempt
     case privacyProSubscriptionActivated
     case privacyProWelcomeAddDevice
-    case privacyProAddDeviceEnterEmail
     case privacyProWelcomeVPN
     case privacyProWelcomePersonalInformationRemoval
     case privacyProWelcomeIdentityRestoration
@@ -82,7 +82,7 @@ enum PrivacyProPixel: PixelKitEventV2 {
         case .privacyProSubscriptionActive: return "m_mac_\(appDistribution)_privacy-pro_app_subscription_active"
         case .privacyProOfferScreenImpression: return "m_mac_\(appDistribution)_privacy-pro_offer_screen_impression"
         case .privacyProPurchaseAttempt: return "m_mac_\(appDistribution)_privacy-pro_terms-conditions_subscribe_click"
-        case .privacyProPurchaseFailure: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-purchase_failure_other"
+        case .privacyProPurchaseFailureOther: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-purchase_failure_other"
         case .privacyProPurchaseFailureStoreError: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-purchase_failure_store"
         case .privacyProPurchaseFailureBackendError: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-purchase_failure_backend"
         case .privacyProPurchaseFailureAccountNotCreated: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-purchase_failure_account-creation"
@@ -90,6 +90,7 @@ enum PrivacyProPixel: PixelKitEventV2 {
         case .privacyProRestorePurchaseOfferPageEntry: return "m_mac_\(appDistribution)_privacy-pro_offer_restore-purchase_click"
         case .privacyProRestorePurchaseClick: return "m_mac_\(appDistribution)_privacy-pro_settings_restore-purchase_click"
         case .privacyProRestorePurchaseSettingsMenuEntry: return "m_mac_\(appDistribution)_privacy-pro_settings_restore-purchase_click"
+        case .privacyProRestorePurchaseEmailStart: return "m_mac_\(appDistribution)_privacy-pro_activate-subscription_enter-email_click"
         case .privacyProRestorePurchaseStoreStart: return "m_mac_\(appDistribution)_privacy-pro_activate-subscription_restore-purchase_click"
         case .privacyProRestorePurchaseEmailSuccess: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-restore-using-email_success"
         case .privacyProRestorePurchaseStoreSuccess: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-restore-using-store_success"
@@ -98,7 +99,6 @@ enum PrivacyProPixel: PixelKitEventV2 {
         case .privacyProRestoreAfterPurchaseAttempt: return "m_mac_\(appDistribution)_privacy-pro_app_subscription-restore-after-purchase-attempt_success"
         case .privacyProSubscriptionActivated: return "m_mac_\(appDistribution)_privacy-pro_app_subscription_activated_u"
         case .privacyProWelcomeAddDevice: return "m_mac_\(appDistribution)_privacy-pro_welcome_add-device_click_u"
-        case .privacyProAddDeviceEnterEmail: return "m_mac_\(appDistribution)_privacy-pro_add-device_enter-email_click"
         case .privacyProWelcomeVPN: return "m_mac_\(appDistribution)_privacy-pro_welcome_vpn_click_u"
         case .privacyProWelcomePersonalInformationRemoval: return "m_mac_\(appDistribution)_privacy-pro_welcome_personal-information-removal_click_u"
         case .privacyProWelcomeIdentityRestoration: return "m_mac_\(appDistribution)_privacy-pro_welcome_identity-theft-restoration_click_u"

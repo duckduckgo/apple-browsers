@@ -109,7 +109,12 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     }
     var isVoiceSearchButtonHidden: Bool {
         get { searchAreaView.voiceSearchButton.isHidden }
-        set { searchAreaView.voiceSearchButton.isHidden = newValue }
+        set {
+            searchAreaView.voiceSearchButton.isHidden = newValue
+            // We want the clear button closer to the microphone if they're both visible
+            // https://app.asana.com/1/137249556945/project/1206226850447395/task/1209950595275304
+            searchAreaView.reduceClearButtonSpacing(!newValue)
+        }
     }
     var isAbortButtonHidden: Bool {
         get { searchAreaView.cancelButton.isHidden }
@@ -193,11 +198,11 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         set { forwardButton.menu = newValue }
     }
 
-    let settingsButtonView = UIButton()
-    let bookmarksButtonView = UIButton()
-    let menuButtonView = UIButton()
-    let forwardButtonView = UIButton()
-    let backButtonView = UIButton()
+    let settingsButtonView = ToolbarButton()
+    let bookmarksButtonView = ToolbarButton()
+    let menuButtonView = ToolbarButton()
+    let forwardButtonView = ToolbarButton()
+    let backButtonView = ToolbarButton()
 
     var menuButtonContent: MenuButton = MenuButton()
 
@@ -356,19 +361,19 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
 
         leadingButtonsContainer.isHidden = true
 
-        backButtonView.setImage(UIImage(resource: .arrowLeftNew24), for: .normal)
+        backButtonView.setImage(UIImage(resource: .arrowLeftSmall24))
         UpdatedOmniBarView.setUpCommonProperties(for: backButtonView)
 
-        forwardButtonView.setImage(UIImage(resource: .arrowRightNew24), for: .normal)
+        forwardButtonView.setImage(UIImage(resource: .arrowRightNew24))
         UpdatedOmniBarView.setUpCommonProperties(for: forwardButtonView)
 
-        bookmarksButtonView.setImage(UIImage(resource: .bookmarksStacked24), for: .normal)
+        bookmarksButtonView.setImage(UIImage(resource: .bookmarksStacked24))
         UpdatedOmniBarView.setUpCommonProperties(for: bookmarksButtonView)
 
-        menuButtonView.setImage(UIImage(resource: .menuHamburgerNew24), for: .normal)
+        menuButtonView.setImage(UIImage(resource: .menuHamburgerNew24))
         UpdatedOmniBarView.setUpCommonProperties(for: menuButtonView)
 
-        settingsButtonView.setImage(UIImage(resource: .settingsNew24), for: .normal)
+        settingsButtonView.setImage(UIImage(resource: .settingsNew24))
         UpdatedOmniBarView.setUpCommonProperties(for: settingsButtonView)
 
         progressView?.hide()
@@ -599,9 +604,6 @@ extension UpdatedOmniBarView {
     }
 
     static func setUpCommonProperties(for button: UIButton) {
-        button.tintColor = UIColor(designSystemColor: .icons)
-        button.adjustsImageWhenDisabled = true
-        button.adjustsImageWhenHighlighted = true
         button.isHidden = true
     }
 }

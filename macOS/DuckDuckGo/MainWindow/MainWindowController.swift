@@ -40,16 +40,26 @@ final class MainWindowController: NSWindowController {
         return window?.standardWindowButton(.closeButton)?.superview
     }
 
-    init(window: NSWindow? = nil, mainViewController: MainViewController, popUp: Bool, fireWindowSession: FireWindowSession? = nil, fireViewModel: FireViewModel? = nil) {
-        let size = mainViewController.view.frame.size
-        let moveToCenter = CGAffineTransform(translationX: ((NSScreen.main?.frame.width ?? 1024) - size.width) / 2,
-                                             y: ((NSScreen.main?.frame.height ?? 790) - size.height) / 2)
+    init(window: NSWindow? = nil,
+         mainViewController: MainViewController,
+         popUp: Bool,
+         fireWindowSession: FireWindowSession? = nil,
+         fireViewModel: FireViewModel? = nil,
+         contentSize: NSSize? = nil) {
+
+        var contentSize = contentSize ?? NSSize(width: 1024, height: 790)
+        contentSize.width = min(NSScreen.main?.frame.size.width ?? 1024, max(contentSize.width, 300))
+        contentSize.height = min(NSScreen.main?.frame.size.height ?? 790, max(contentSize.height, 300))
+
+        let moveToCenter = CGAffineTransform(translationX: ((NSScreen.main?.frame.width ?? 1024) - contentSize.width) / 2,
+                                             y: ((NSScreen.main?.frame.height ?? 790) - contentSize.height) / 2)
         let frame = NSRect(origin: (NSScreen.main?.frame.origin ?? .zero).applying(moveToCenter),
-                           size: size)
+                           size: contentSize)
 
         assert(window == nil || [.unitTests, .integrationTests].contains(AppVersion.runType), "Window should not be set in non-test environment")
         let window = window ?? (popUp ? PopUpWindow(frame: frame) : MainWindow(frame: frame))
         window.contentViewController = mainViewController
+        window.setContentSize(contentSize)
         self.fireViewModel = fireViewModel ?? FireCoordinator.fireViewModel
 
         assert(!mainViewController.isBurner || fireWindowSession != nil)

@@ -61,7 +61,9 @@ struct SettingsAIChatView: View {
                                      displayMode: .inline,
                                      viewModel: viewModel)
         .onAppear {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsDisplayed)
+            let usedBefore = viewModel.featureDiscovery.wasUsedBefore(.aiChat)
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsDisplayed,
+                                         withAdditionalParameters: ["was_used_before": usedBefore ? "1" : "0"])
         }
     }
 }

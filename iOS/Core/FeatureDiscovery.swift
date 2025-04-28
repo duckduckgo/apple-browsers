@@ -25,7 +25,7 @@ import Persistence
 ///  Don't change these unless you intend to reset the feature discovery flag.
 public enum WasUsedBeforeFeature: String {
 
-    case duckChat
+    case aiChat
     case duckPlayer
     case vpn
     case privacyDashboard
@@ -41,9 +41,6 @@ public enum WasUsedBeforeFeature: String {
 ///
 public protocol FeatureDiscovery {
 
-    /// Delegates to email
-    var isEmailSignedIn: Bool { get }
-
     /// Some features don't have clear state for their previous usage, so let it be set explicitly.
     func setWasUsedBefore(_ feature: WasUsedBeforeFeature)
 
@@ -54,16 +51,9 @@ public protocol FeatureDiscovery {
 
 final public class DefaultFeatureDiscovery: FeatureDiscovery {
 
-    public var isEmailSignedIn: Bool {
-        return emailManager.isSignedIn
-    }
-
-    private let emailManager: EmailManager
     private let wasUsedBeforeStorage: KeyValueStoring
 
-    public init(emailManager: EmailManager,
-                wasUsedBeforeStorage: KeyValueStoring) {
-        self.emailManager = emailManager
+    public init(wasUsedBeforeStorage: KeyValueStoring = UserDefaults.standard) {
         self.wasUsedBeforeStorage = wasUsedBeforeStorage
     }
 

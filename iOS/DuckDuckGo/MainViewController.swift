@@ -179,6 +179,7 @@ class MainViewController: UIViewController {
         fatalError("Use init?(code:")
     }
 
+    let featureDiscovery: FeatureDiscovery
     let fireproofing: Fireproofing
     let websiteDataManager: WebsiteDataManaging
     let textZoomCoordinator: TextZoomCoordinating
@@ -239,7 +240,8 @@ class MainViewController: UIViewController {
         appDidFinishLaunchingStartTime: CFAbsoluteTime?,
         maliciousSiteProtectionManager: MaliciousSiteProtectionManaging,
         maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
-        aiChatSettings: AIChatSettingsProvider
+        aiChatSettings: AIChatSettingsProvider,
+        featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard)
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.bookmarksDatabaseCleaner = bookmarksDatabaseCleaner
@@ -252,6 +254,7 @@ class MainViewController: UIViewController {
         self.appSettings = appSettings
         self.aiChatSettings = aiChatSettings
         self.previewsSource = previewsSource
+        self.featureDiscovery = featureDiscovery
 
         let interactionStateSource = WebViewStateRestorationManager(featureFlagger: featureFlagger).isFeatureEnabled ? TabInteractionStateDiskSource() : nil
         self.tabManager = TabManager(model: tabsModel,
@@ -1897,6 +1900,7 @@ class MainViewController: UIViewController {
     }
 
     func openAIChat(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil) {
+        featureDiscovery.setWasUsedBefore(.aiChat)
         aiChatViewControllerManager.openAIChat(query, payload: payload, autoSend: autoSend, on: self)
     }
 }

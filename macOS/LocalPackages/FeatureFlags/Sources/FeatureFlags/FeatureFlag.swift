@@ -72,7 +72,7 @@ public enum FeatureFlag: String, CaseIterable {
     // Demonstrative cases for default value. Remove once a real-world feature/subfeature is added
     case failsafeExampleCrossPlatformFeature
     case failsafeExamplePlatformSpecificSubfeature
-  
+
     /// https://app.asana.com/0/72649045549333/1209793701087222/f
     case visualRefresh
 

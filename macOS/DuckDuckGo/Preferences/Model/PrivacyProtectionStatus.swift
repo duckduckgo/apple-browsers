@@ -19,6 +19,7 @@
 import SwiftUI
 import Combine
 import BrowserServicesKit
+import PreferencesUI_macOS
 
 final class PrivacyProtectionStatus: ObservableObject {
 
@@ -50,12 +51,12 @@ final class PrivacyProtectionStatus: ObservableObject {
     }
 
     var statusSubscription: AnyCancellable?
-    @Published var status: Preferences.StatusIndicator?
+    @Published var status: StatusIndicator?
 
     // Initializer for observable properties
     init<T: Publisher>(statusPublisher: T,
-                       initialValue: Preferences.StatusIndicator? = nil,
-                       transform: @escaping (T.Output) -> Preferences.StatusIndicator?) where T.Failure == Never {
+                       initialValue: StatusIndicator? = nil,
+                       transform: @escaping (T.Output) -> StatusIndicator?) where T.Failure == Never {
         self.status = initialValue
 
         statusSubscription = statusPublisher
@@ -71,7 +72,7 @@ final class PrivacyProtectionStatus: ObservableObject {
     }
 
     // Initializer for items with static status
-    init(statusIndicator: Preferences.StatusIndicator) {
+    init(statusIndicator: StatusIndicator) {
         self.status = statusIndicator
     }
 }

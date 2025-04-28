@@ -58558,7 +58558,7 @@
     },
     "preferences.always-on" : {
       "comment" : "Status indicator of a browser privacy protection feature.",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -60262,7 +60262,7 @@
     },
     "preferences.off" : {
       "comment" : "Status indicator of a browser privacy protection feature.",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -60322,7 +60322,7 @@
     },
     "preferences.on" : {
       "comment" : "Status indicator of a browser privacy protection feature.",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

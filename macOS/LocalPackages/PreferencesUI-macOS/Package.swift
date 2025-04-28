@@ -11,12 +11,14 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../SwiftUIExtensions"),
+        .package(url: "https://github.com/duckduckgo/DesignResourcesKit", exact: "4.2.0")
     ],
     targets: [
         .target(
             name: "PreferencesUI-macOS",
             dependencies: [
-                .product(name: "SwiftUIExtensions", package: "SwiftUIExtensions")
+                .product(name: "SwiftUIExtensions", package: "SwiftUIExtensions"),
+                "DesignResourcesKit"
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))

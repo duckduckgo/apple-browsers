@@ -70,62 +70,6 @@ extension Preferences {
         }
     }
 
-    enum StatusIndicator: Equatable {
-        case alwaysOn
-        case on
-        case off
-        case custom(String)
-
-        var text: String {
-            switch self {
-            case .alwaysOn:
-                return UserText.preferencesAlwaysOn
-            case .on:
-                return UserText.preferencesOn
-            case .off:
-                return UserText.preferencesOff
-            case .custom(let customText):
-                return customText
-            }
-        }
-    }
-
-    struct StatusIndicatorView: View {
-        var status: StatusIndicator
-        var isLarge: Bool = false
-
-        private var fontSize: CGFloat {
-            isLarge ? 13 : 10
-        }
-
-        private var circleSize: CGFloat {
-            isLarge ? 7 : 5
-        }
-
-        var body: some View {
-            HStack(spacing: isLarge ? 6 : 4) {
-                Circle()
-                    .frame(width: circleSize, height: circleSize)
-                    .foregroundColor(colorForStatus(status))
-
-                Text(status.text)
-                    .font(.system(size: fontSize))
-                    .foregroundColor(.secondary)
-            }
-        }
-
-        private func colorForStatus(_ status: StatusIndicator) -> Color {
-            switch status {
-            case .on, .alwaysOn:
-                return .alertGreen
-            case .off:
-                return Color.secondary.opacity(0.33)
-            case .custom:
-                return .orange
-            }
-        }
-    }
-
     struct TabSwitcher: View {
         @EnvironmentObject var model: PreferencesSidebarModel
 

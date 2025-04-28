@@ -508,17 +508,24 @@ extension DataBrokerProtectionDatabase {
         let newProfileQueries = profile.profileQueries
         _ = try vault.save(profile: profile)
 
+        /// Fetch all broker IDs
         let storedBrokers = try vault.fetchAllBrokers()
-        if let brokers = storedBrokers.isEmpty ? try localBrokerService.bundledBrokers() : storedBrokers {
-            let brokerIDs = brokers.compactMap(\.id)
+        var brokerIDs = storedBrokers.compactMap(\.id)
 
-            try initializeDatabaseForProfile(
-                profileId: Self.profileId,
-                vault: vault,
-                brokerIDs: brokerIDs,
-                profileQueries: newProfileQueries
-            )
+        /// If none exists in the vault, populate them with bundled JSONs
+        if storedBrokers.isEmpty, let brokers = try localBrokerService.bundledBrokers() {
+            for broker in brokers {
+                let brokerId = try vault.save(broker: broker)
+                brokerIDs.append(brokerId)
+            }
         }
+
+        try initializeDatabaseForProfile(
+            profileId: Self.profileId,
+            vault: vault,
+            brokerIDs: brokerIDs,
+            profileQueries: newProfileQueries
+        )
     }
 
     // https://app.asana.com/0/481882893211075/1205574642847432/f

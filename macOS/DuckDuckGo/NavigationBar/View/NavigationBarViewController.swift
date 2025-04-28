@@ -374,7 +374,31 @@ final class NavigationBarViewController: NSViewController {
             Logger.navigation.error("Selected tab view model is nil")
             return
         }
-        selectedTabViewModel.tab.openHomePage()
+
+        let behavior = LinkOpenBehavior(
+            event: NSApp.currentEvent,
+            switchToNewTabWhenOpenedPreference: TabsPreferences.shared.switchToNewTabWhenOpened,
+            canOpenLinkInCurrentTab: true
+        )
+
+        let startupPreferences = StartupPreferences.shared
+        let tabContent: TabContent
+        if startupPreferences.launchToCustomHomePage,
+           let customURL = URL(string: startupPreferences.formattedCustomHomePageURL) {
+            tabContent = .contentFromURL(customURL, source: .ui)
+        } else {
+            tabContent = .newtab
+        }
+
+        lazy var tab = Tab(content: tabContent, parentTab: nil, shouldLoadInBackground: true, burnerMode: tabCollectionViewModel.burnerMode)
+        switch behavior {
+        case .currentTab:
+            selectedTabViewModel.tab.openHomePage()
+        case .newTab(let selected):
+            tabCollectionViewModel.insert(tab, selected: selected)
+        case .newWindow(let selected):
+            WindowsManager.openNewWindow(with: tab, showWindow: selected)
+        }
     }
 
     @IBAction func optionsButtonAction(_ sender: NSButton) {
@@ -686,6 +710,8 @@ final class NavigationBarViewController: NSViewController {
         forwardButtonMenu.delegate = goForwardButtonMenuDelegate
         goForwardButton.menu = forwardButtonMenu
         goForwardButton.sendAction(on: [.leftMouseUp, .otherMouseDown])
+
+        homeButton.sendAction(on: [.leftMouseUp, .otherMouseDown])
 
         goBackButton.toolTip = UserText.navigateBackTooltip
         goForwardButton.toolTip = UserText.navigateForwardTooltip

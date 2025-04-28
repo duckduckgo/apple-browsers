@@ -1,6 +1,6 @@
 {
     "readme": "https://github.com/duckduckgo/privacy-configuration",
-    "version": 1745517221118,
+    "version": 1745847640452,
     "features": {
         "adAttributionReporting": {
             "state": "disabled",
@@ -1822,7 +1822,7 @@
                     "rollout": {
                         "steps": [
                             {
-                                "percent": 25
+                                "percent": 50
                             }
                         ]
                     },
@@ -1838,7 +1838,7 @@
                     ]
                 }
             },
-            "hash": "575351f24585295a2c4216155c53ad46"
+            "hash": "645e2dc759d7289ca00ba713d9dc0b3e"
         },
         "contextualOnboarding": {
             "exceptions": [],
@@ -2403,6 +2403,10 @@
                     },
                     {
                         "selector": ".ad-current",
+                        "type": "hide-empty"
+                    },
+                    {
+                        "selector": ".ad-frame",
                         "type": "hide-empty"
                     },
                     {
@@ -5939,7 +5943,7 @@
                 ]
             },
             "state": "enabled",
-            "hash": "86d8a4761c419eba0a9f180fd977d0cf"
+            "hash": "86c95cf83c3e8a62102c8f3a0bf45f0a"
         },
         "exceptionHandler": {
             "exceptions": [
@@ -7111,6 +7115,11 @@
             "exceptions": [],
             "minSupportedVersion": "7.104.0",
             "hash": "ef41f9656524eafe4b723341eb1fa7e7"
+        },
+        "tabCrashRecovery": {
+            "state": "disabled",
+            "exceptions": [],
+            "hash": "c292bb627849854515cebbded288ef5a"
         },
         "tabManager": {
             "exceptions": [],

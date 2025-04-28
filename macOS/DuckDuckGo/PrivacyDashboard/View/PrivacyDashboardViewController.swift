@@ -233,7 +233,7 @@ extension PrivacyDashboardViewController: PrivacyDashboardControllerDelegate {
 
         switch target {
         case .cookiePopupManagement:
-            tabCollection.appendNewTab(with: .settings(pane: .dataClearing), selected: true)
+            tabCollection.appendNewTab(with: .settings(pane: .cookiePopupProtection), selected: true)
         default:
             tabCollection.appendNewTab(with: .anySettingsPane, selected: true)
         }

@@ -140,7 +140,7 @@ struct ColumnData: Identifiable {
     )
 }
 
-fileprivate struct MockLocalBrokerJSONService: LocalBrokerJSONServiceProvider {
+private struct MockLocalBrokerJSONService: LocalBrokerJSONServiceProvider {
     func bundledBrokers() throws -> [DataBroker]? { [] }
     func checkForUpdates() async throws {}
 }

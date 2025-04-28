@@ -132,6 +132,7 @@ struct ScanResult {
     let extractedProfile: ExtractedProfile
 }
 
+// swiftlint:disable force_try
 final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     @Published var birthYear: String = ""
     @Published var results = [ScanResult]()
@@ -669,3 +670,4 @@ extension ScrapedData {
         }
     }
 }
+// swiftlint:enable force_try

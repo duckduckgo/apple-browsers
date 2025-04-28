@@ -113,8 +113,6 @@ final class WebExtensionSubMenu: NSMenu {
 
     @objc func unloadWebExtension() {
         webExtensionManager.removeExtension(path: webExtensionPath)
-
-        NSAlert.extensionAlert().runModal()
     }
 
 }

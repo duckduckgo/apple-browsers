@@ -31,14 +31,15 @@ protocol WebExtensionLoading: AnyObject {
 @available(macOS 15.4, *)
 final class WebExtensionLoader: WebExtensionLoading {
 
-    enum WebExtensionLoadingError: Error {
+    enum WebExtensionLoaderError: Error {
         case failedToCreateURLFromPath(path: String)
+        case failedToFindContextForPath(path: String)
     }
 
     func loadWebExtension(path: String, into controller: WKWebExtensionController) async throws -> WKWebExtensionContext {
         guard let extensionURL = URL(string: path) else {
             assertionFailure("Failed to create URL from path: \(path)")
-            throw WebExtensionLoadingError.failedToCreateURLFromPath(path: path)
+            throw WebExtensionLoaderError.failedToCreateURLFromPath(path: path)
         }
 
         let webExtension = try await WKWebExtension(resourceBaseURL: extensionURL)
@@ -66,9 +67,11 @@ final class WebExtensionLoader: WebExtensionLoading {
             $0.uniqueIdentifier == identifierHash(forPath: path)
         }
 
-        if let context {
-            try controller.unload(context)
+        guard let context else {
+            throw WebExtensionLoaderError.failedToFindContextForPath(path: path)
         }
+
+        try controller.unload(context)
     }
 
     private func identifierHash(forPath path: String) -> String {

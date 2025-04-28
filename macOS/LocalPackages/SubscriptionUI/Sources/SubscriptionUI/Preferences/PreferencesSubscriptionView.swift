@@ -836,7 +836,7 @@ public struct SectionView: View {
     }
 }
 
-private struct SubscriptionDialog<Buttons>: View where Buttons: View {
+public struct SubscriptionDialog<Buttons>: View where Buttons: View {
     public var imageName: String
     public var title: String
     public var description: String

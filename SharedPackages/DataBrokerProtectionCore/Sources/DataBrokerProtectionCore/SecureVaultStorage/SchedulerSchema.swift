@@ -100,6 +100,7 @@ public struct BrokerDB: Codable {
 
 extension BrokerDB: PersistableRecord, FetchableRecord {
     public static let databaseTableName: String = "broker"
+    static let missingETagValue = "MISSING_ETAG_VALUE"
 
     enum Columns: String, ColumnExpression {
         case id
@@ -116,7 +117,11 @@ extension BrokerDB: PersistableRecord, FetchableRecord {
         json = row[Columns.json]
         version = row[Columns.version]
         url = row[Columns.url]
-        eTag = row[Columns.eTag]
+        if row.hasColumn(Columns.eTag.rawValue) {
+            eTag = row[Columns.eTag]
+        } else {
+            eTag = Self.missingETagValue
+        }
     }
 
     public func encode(to container: inout PersistenceContainer) throws {

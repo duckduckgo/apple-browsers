@@ -269,8 +269,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
 
             subscriptionOptions = await freeTrialSubscriptionOptions(for: freeTrialsCohort)
         } else {
-            //subscriptionOptions = await subscriptionManager.storePurchaseManager().subscriptionOptions()
-            subscriptionOptions = await subscriptionManager.storePurchaseManager().freeTrialSubscriptionOptions()
+            subscriptionOptions = await subscriptionManager.storePurchaseManager().subscriptionOptions()
         }
 
         if let subscriptionOptions {
@@ -371,8 +370,8 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         if shouldPerformFreeTrialPostPurchaseActions {
             subscriptionParameters = completeSubscriptionFreeTrialParameters
             fireFreeTrialSubscriptionPurchasePixel(for: subscriptionSelection.id)
-        } else if let feExperiment = subscriptionSelection.experiment {
-            subscriptionParameters = feExperiment.asParameters()
+        } else if let frontEndExperiment = subscriptionSelection.experiment {
+            subscriptionParameters = frontEndExperiment.asParameters()
         }
 
 
@@ -869,8 +868,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
 
             subscriptionOptions = await freeTrialSubscriptionOptions(for: freeTrialsCohort)
         } else {
-            //subscriptionOptions = await subscriptionManager.storePurchaseManager().subscriptionOptions()
-            subscriptionOptions = await subscriptionManager.storePurchaseManager().freeTrialSubscriptionOptions()
+            subscriptionOptions = await subscriptionManager.storePurchaseManager().subscriptionOptions()
         }
 
         if let subscriptionOptions {
@@ -976,8 +974,8 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         if shouldPerformFreeTrialPostPurchaseActions {
             subscriptionParameters = completeSubscriptionFreeTrialParameters
             fireFreeTrialSubscriptionPurchasePixel(for: subscriptionSelection.id)
-        } else if let feExperiment = subscriptionSelection.experiment {
-            subscriptionParameters = feExperiment.asParameters()
+        } else if let frontEndExperiment = subscriptionSelection.experiment {
+            subscriptionParameters = frontEndExperiment.asParameters()
         }
 
         // Privacy Pro Promotion Experiment Pixels

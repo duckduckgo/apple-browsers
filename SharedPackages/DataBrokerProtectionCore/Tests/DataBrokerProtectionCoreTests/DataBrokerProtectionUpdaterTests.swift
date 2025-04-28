@@ -148,7 +148,7 @@ final class DataBrokerProtectionUpdaterTests: XCTestCase {
         if let vault = self.vault {
             let sut = DefaultDataBrokerProtectionBrokerUpdater(repository: repository, resources: resources, vault: vault, pixelHandler: pixelHandler)
             repository.lastCheckedVersion = nil
-            resources.brokersList = [.init(id: 1, name: "Broker", url: "broker.com", steps: [Step](), version: "1.0.0", schedulingConfig: .mock, optOutUrl: "")]
+            resources.brokersList = [.init(id: 1, name: "Broker", url: "broker.com", steps: [Step](), version: "1.0.0", schedulingConfig: .mock, optOutUrl: "", eTag: "")]
             vault.profileQueries = [.mock]
 
             sut.checkForUpdatesInBrokerJSONFiles()

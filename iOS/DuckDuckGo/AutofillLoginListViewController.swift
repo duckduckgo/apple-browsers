@@ -28,6 +28,7 @@ import SwiftUI
 import os.log
 import Persistence
 import Bookmarks
+import Core
 
 protocol AutofillLoginListViewControllerDelegate: AnyObject {
     func autofillLoginListViewControllerDidFinish(_ controller: AutofillLoginListViewController)
@@ -217,7 +218,12 @@ final class AutofillLoginListViewController: UIViewController {
                 }
             }
 
-        Pixel.fire(pixel: .autofillManagementOpened, withAdditionalParameters: ["source": source.rawValue])
+        let hasCredentials = ((try? secureVault?.accountsCount()) ?? 0) > 0
+        Pixel.fire(pixel: .autofillManagementOpened,
+                   withAdditionalParameters: [
+                    "source": source.rawValue,
+                    "has_credentials_saved": "\(hasCredentials ? 1 : 0)"
+                   ])
     }
 
     required init?(coder: NSCoder) {

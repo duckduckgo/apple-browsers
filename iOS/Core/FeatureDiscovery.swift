@@ -23,7 +23,7 @@ import Persistence
 
 /// These features don't have a way to see if have been used before so storage is provided here.
 ///  Don't change these unless you intend to reset the feature discovery flag.
-enum WasUsedBeforeFeature: String {
+public enum WasUsedBeforeFeature: String {
 
     case duckChat
     case duckPlayer
@@ -39,10 +39,7 @@ enum WasUsedBeforeFeature: String {
 /// Allows easy querying of feature usage, primarily for use with feature discovery pixels.
 /// See <a href="https://app.asana.com/1/137249556945/project/715106103902962/task/1210059260849216">feature discovery for iOS list</a>.
 ///
-protocol FeatureDiscovery {
-
-    /// Delegates to passwords
-    var hasCredentialsSaved: Bool { get }
+public protocol FeatureDiscovery {
 
     /// Delegates to sync
     var isSyncEnabled: Bool { get }
@@ -58,37 +55,32 @@ protocol FeatureDiscovery {
 
 }
 
-final class DefaultFeatureDiscovery: FeatureDiscovery {
+final public class DefaultFeatureDiscovery: FeatureDiscovery {
 
-    var hasCredentialsSaved: Bool {
-        (try? secureVaultMaker()?.accounts())?.isEmpty == false
-    }
-
-    var isSyncEnabled: Bool {
+    public var isSyncEnabled: Bool {
         sync.account != nil
     }
 
-    var isEmailSignedIn: Bool {
+    public var isEmailSignedIn: Bool {
         return emailManager.isSignedIn
     }
 
-    private let secureVaultMaker: () -> (any AutofillSecureVault)?
     private let sync: DDGSyncing
     private let emailManager: EmailManager
     private let wasUsedBeforeStorage: KeyValueStoring
 
-    init(secureVaultMaker: @escaping () -> (any AutofillSecureVault)?, sync: DDGSyncing, emailManager: EmailManager, wasUsedBeforeStorage: KeyValueStoring) {
-        self.secureVaultMaker = secureVaultMaker
+    public init(sync: DDGSyncing, emailManager: EmailManager,
+                wasUsedBeforeStorage: KeyValueStoring) {
         self.sync = sync
         self.emailManager = emailManager
         self.wasUsedBeforeStorage = wasUsedBeforeStorage
     }
 
-    func setWasUsedBefore(_ feature: WasUsedBeforeFeature) {
+    public func setWasUsedBefore(_ feature: WasUsedBeforeFeature) {
         wasUsedBeforeStorage.set(true, forKey: feature.storageKey)
     }
     
-    func wasUsedBefore(_ feature: WasUsedBeforeFeature) -> Bool {
+    public func wasUsedBefore(_ feature: WasUsedBeforeFeature) -> Bool {
         return wasUsedBeforeStorage.object(forKey: feature.storageKey) as? Bool ?? false
     }
 

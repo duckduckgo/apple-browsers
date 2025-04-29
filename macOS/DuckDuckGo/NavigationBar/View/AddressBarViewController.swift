@@ -407,8 +407,8 @@ final class AddressBarViewController: NSViewController {
         let isKey = self.view.window?.isKeyWindow == true
 
         activeOuterBorderView.alphaValue = isKey && isFirstResponder && visualStyleManager.style.shouldShowOutlineBorder(isHomePage: isHomePage) ? 1 : 0
-        activeOuterBorderView.backgroundColor = accentColor.withAlphaComponent(0.2)
-        activeBackgroundView.borderColor = accentColor.withAlphaComponent(0.8)
+        activeOuterBorderView.backgroundColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.2) : visualStyleManager.style.accentAlternateColor
+        activeBackgroundView.borderColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.2) : visualStyleManager.style.accentPrimaryColor
 
         setupAddressBarPlaceHolder()
     }

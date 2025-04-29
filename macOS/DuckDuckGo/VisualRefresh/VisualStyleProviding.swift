@@ -52,6 +52,8 @@ protocol VisualStyleProviding {
     var textPrimaryColor: NSColor { get }
     var textSecondaryColor: NSColor { get }
     var backgroundTertiaryColor: NSColor { get }
+    var accentPrimaryColor: NSColor { get }
+    var accentAlternateColor: NSColor { get }
 
     var defaultAddressBarFontSize: CGFloat { get }
     var newTabOrHomePageAddressBarFontSize: CGFloat { get }
@@ -115,6 +117,8 @@ struct VisualStyle: VisualStyleProviding {
     let textPrimaryColor: NSColor
     let textSecondaryColor: NSColor
     let backgroundTertiaryColor: NSColor
+    let accentPrimaryColor: NSColor
+    let accentAlternateColor: NSColor
 
     let defaultAddressBarFontSize: CGFloat
     let newTabOrHomePageAddressBarFontSize: CGFloat
@@ -179,6 +183,8 @@ struct VisualStyle: VisualStyleProviding {
                            textPrimaryColor: .labelColor,
                            textSecondaryColor: .secondaryLabelColor,
                            backgroundTertiaryColor: .inactiveSearchBarBackground,
+                           accentPrimaryColor: .controlAccentColor.withAlphaComponent(0.8),
+                           accentAlternateColor: .controlColor.withAlphaComponent(0.2),
                            defaultAddressBarFontSize: 13,
                            newTabOrHomePageAddressBarFontSize: 15)
     }
@@ -215,6 +221,8 @@ struct VisualStyle: VisualStyleProviding {
                            textPrimaryColor: .primaryTextColorNew,
                            textSecondaryColor: .secondaryTextColorNew,
                            backgroundTertiaryColor: .surfaceTertiaryNew,
+                           accentPrimaryColor: .accentPrimaryNew,
+                           accentAlternateColor: .accentAltNew,
                            defaultAddressBarFontSize: 13,
                            newTabOrHomePageAddressBarFontSize: 13)
     }

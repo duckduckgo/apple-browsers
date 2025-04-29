@@ -1140,7 +1140,7 @@ extension Tab {
     }
 
     var canKillWebContentProcess: Bool {
-        featureFlagger.isFeatureOn(.tabCrashDebugTools)
+        featureFlagger.isFeatureOn(.tabCrashDebugging)
     }
 
     func killWebContentProcess() {

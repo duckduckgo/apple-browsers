@@ -36,15 +36,43 @@ extension NSAlert {
         let marginX: CGFloat = 10
         let contentWidth: CGFloat = containerWidth - marginX * 2
         let verticalSpacing: CGFloat = 10
-        let smallSpacing: CGFloat = 4  // spacing between label pairs
         let topPadding: CGFloat = 0
         let bottomPadding: CGFloat = 10
 
+        // Mixed-style label: bold only the domains
+        let domainLabel: NSTextField = {
+            let label = NSTextField(labelWithString: "")
+            let text = "\(requestingDomain) wants to use cookies and data from \(currentDomain)."
+            // Base font for entire string
+            let attributed = NSMutableAttributedString(string: text,
+                attributes: [.font: NSFont.systemFont(ofSize: 12)])
+            // Bold the requesting domain
+            let reqRange = (text as NSString).range(of: requestingDomain)
+            attributed.addAttribute(.font, value: NSFont.boldSystemFont(ofSize: 12), range: reqRange)
+            // Bold the current domain
+            let currRange = (text as NSString).range(of: currentDomain)
+            attributed.addAttribute(.font, value: NSFont.boldSystemFont(ofSize: 12), range: currRange)
+            // Center-align all lines via paragraph style for attributed string
+            let paragraphStyle = NSMutableParagraphStyle()
+            paragraphStyle.alignment = .center
+            attributed.addAttribute(.paragraphStyle,
+                                    value: paragraphStyle,
+                                    range: NSRange(location: 0, length: attributed.length))
+            label.attributedStringValue = attributed
+            // Enable wrapping
+            label.usesSingleLineMode = false
+            label.cell?.isScrollable = false
+            label.cell?.wraps = true
+            label.cell?.truncatesLastVisibleLine = false
+            label.lineBreakMode = .byWordWrapping
+            label.alignment = .center
+            return label
+        }()
         // 1) Build labels
         let labels = [
-          makeLabel("\(requestingDomain) wants to use cookies and data from \(currentDomain).", bold: false, size: 12),
-          makeLabel("Selecting \"Don't Allow\" means some site features may not work as expected, but cross-site tracking will be blocked.", bold: false, size: 12),
-          makeLabel("DuckDuckGo protections still apply either way.", bold: false, size: 12)
+            domainLabel,
+            makeLabel("Selecting \"Don't Allow\" means some site features may not work as expected, but cross-site tracking will be blocked.", bold: false, size: 12),
+            makeLabel("DuckDuckGo protections still apply either way.", bold: false, size: 12)
         ]
 
         // 2) Size each to wrap at our target width

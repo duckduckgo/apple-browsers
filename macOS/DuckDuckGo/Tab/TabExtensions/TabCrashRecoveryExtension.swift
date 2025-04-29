@@ -130,16 +130,16 @@ extension TabCrashRecoveryExtension: NavigationResponder {
             NSUnderlyingErrorKey: NSError(domain: WKErrorDomain, code: terminationReason)
         ])
 
-        Task {
+        attemptTabCrashRecovery(for: error, in: webView)
+
+        Task.detached(priority: .utility) {
 #if APPSTORE
             let additionalParameters = [String: String]()
 #else
             let additionalParameters = await SystemInfo.pixelParameters()
 #endif
-            firePixel(DebugEvent(GeneralPixel.webKitDidTerminate, error: error), additionalParameters)
+            self.firePixel(DebugEvent(GeneralPixel.webKitDidTerminate, error: error), additionalParameters)
         }
-
-        attemptTabCrashRecovery(for: error, in: webView)
     }
 
     private func attemptTabCrashRecovery(for error: WKError, in webView: WKWebView) {
@@ -152,12 +152,15 @@ extension TabCrashRecoveryExtension: NavigationResponder {
             lastCrashedAt = crashTimestamp
 
             if isCrashLoop {
-                firePixel(GeneralPixel.webKitTerminationLoop, [:])
+                Task.detached(priority: .utility) {
+                    self.firePixel(GeneralPixel.webKitTerminationLoop, [:])
+                }
             }
 
             shouldAutoReload = !isCrashLoop
         } else {
-            shouldAutoReload = featureFlagger.internalUserDecider.isInternalUser
+            // disable auto-reload if tab crash debugging flag is enabled, to allow testing
+            shouldAutoReload = featureFlagger.internalUserDecider.isInternalUser && !featureFlagger.isFeatureOn(.tabCrashDebugging)
         }
 
         handleTabCrash(error, in: webView, shouldAutoReload: shouldAutoReload)

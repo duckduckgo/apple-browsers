@@ -361,7 +361,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
 
         leadingButtonsContainer.isHidden = true
 
-        backButtonView.setImage(UIImage(resource: .arrowLeftNew24))
+        backButtonView.setImage(UIImage(resource: .arrowLeftSmall24))
         UpdatedOmniBarView.setUpCommonProperties(for: backButtonView)
 
         forwardButtonView.setImage(UIImage(resource: .arrowRightNew24))

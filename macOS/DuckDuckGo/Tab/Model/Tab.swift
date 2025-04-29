@@ -1140,7 +1140,7 @@ extension Tab {
     }
 
     var canKillWebContentProcess: Bool {
-        featureFlagger.isFeatureOn(.tabCrashDebugTools)
+        featureFlagger.isFeatureOn(.tabCrashDebugging)
     }
 
     func killWebContentProcess() {
@@ -1319,6 +1319,9 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
 
     @MainActor
     func navigation(_ navigation: Navigation, didFailWith error: WKError) {
+        guard !error.isWebContentProcessTerminated else {
+            return
+        }
         let url = error.failingUrl ?? navigation.url
         guard navigation.isCurrent else { return }
         invalidateInteractionStateData()

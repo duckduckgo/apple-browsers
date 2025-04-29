@@ -1,6 +1,6 @@
 {
     "readme": "https://github.com/duckduckgo/privacy-configuration",
-    "version": 1745328842087,
+    "version": 1745829810305,
     "features": {
         "adAttributionReporting": {
             "state": "disabled",
@@ -570,6 +570,12 @@
                     "domain": "kerknet.be"
                 },
                 {
+                    "domain": "medscape.com"
+                },
+                {
+                    "domain": "telekom.de"
+                },
+                {
                     "domain": "marvel.com"
                 },
                 {
@@ -584,7 +590,8 @@
             ],
             "settings": {
                 "disabledCMPs": [
-                    "healthline-media"
+                    "healthline-media",
+                    "paypal-us"
                 ],
                 "filterlistExceptions": [
                     "google.ae",
@@ -737,7 +744,7 @@
                     "state": "disabled"
                 }
             },
-            "hash": "6a5ef71f3f72a3795c4e020031d6cf4c"
+            "hash": "26fbb1f002757d923e9e6481ce6dc1e9"
         },
         "autofillBreakageReporter": {
             "state": "disabled",
@@ -1702,6 +1709,33 @@
             },
             "hash": "5fc4eb8ffcdc72d26ec601f7354ebcf6"
         },
+        "contentScopeExperiments": {
+            "state": "enabled",
+            "exceptions": [],
+            "features": {
+                "fingerprintingCanvas": {
+                    "state": "enabled",
+                    "rollout": {
+                        "steps": [
+                            {
+                                "percent": 75
+                            }
+                        ]
+                    },
+                    "cohorts": [
+                        {
+                            "name": "control",
+                            "weight": 1
+                        },
+                        {
+                            "name": "treatment",
+                            "weight": 1
+                        }
+                    ]
+                }
+            },
+            "hash": "d16e37acdd458df34ba259aa5b011f44"
+        },
         "contextualOnboarding": {
             "exceptions": [],
             "state": "enabled",
@@ -2336,6 +2370,10 @@
                     },
                     {
                         "selector": ".ad-current",
+                        "type": "hide-empty"
+                    },
+                    {
+                        "selector": ".ad-frame",
                         "type": "hide-empty"
                     },
                     {
@@ -5872,7 +5910,7 @@
                 ]
             },
             "state": "enabled",
-            "hash": "b774e7e3e873c9e2f8ff787bec0ea11d"
+            "hash": "693682fb8295d98b311a3e00894cd8d1"
         },
         "exceptionHandler": {
             "exceptions": [
@@ -6874,11 +6912,20 @@
                         ]
                     },
                     "minSupportedVersion": "1.116.0"
+                },
+                "privacyProAuthV2": {
+                    "state": "internal",
+                    "minSupportedVersion": "1.133.0"
                 }
             },
-            "hash": "9738cff7f6a81e78fa9a0dfbd1dc99d6"
+            "hash": "a4343dad6dd63ad1069af95283c5190d"
         },
         "privacyProtectionsPopup": {
+            "state": "disabled",
+            "exceptions": [],
+            "hash": "c292bb627849854515cebbded288ef5a"
+        },
+        "quickNavTldLookup": {
             "state": "disabled",
             "exceptions": [],
             "hash": "c292bb627849854515cebbded288ef5a"
@@ -7076,6 +7123,11 @@
             "exceptions": [],
             "minSupportedVersion": "1.70.0",
             "hash": "003c4c59d4fb6697038dc43f2ec718b3"
+        },
+        "tabCrashRecovery": {
+            "state": "internal",
+            "exceptions": [],
+            "hash": "f1daaefe788583c2a00d7d19a23864a7"
         },
         "tabManager": {
             "exceptions": [],
@@ -7436,6 +7488,12 @@
                                 "rule": "aax.amazon-adsystem.com/e/dtb/bid",
                                 "domains": [
                                     "cleveland.com"
+                                ]
+                            },
+                            {
+                                "rule": "client.aps.amazon-adsystem.com/publisher.js",
+                                "domains": [
+                                    "ign.com"
                                 ]
                             }
                         ]
@@ -7859,6 +7917,16 @@
                                 "rule": "convertexperiments.com",
                                 "domains": [
                                     "ground.news"
+                                ]
+                            }
+                        ]
+                    },
+                    "convertkit.com": {
+                        "rules": [
+                            {
+                                "rule": "convertkit.com",
+                                "domains": [
+                                    "kit.com"
                                 ]
                             }
                         ]
@@ -8295,6 +8363,7 @@
                                 "rule": "pubads.g.doubleclick.net/gampad/ads",
                                 "domains": [
                                     "crunchyroll.com",
+                                    "iheart.com",
                                     "nhl.com",
                                     "pch.com",
                                     "rocketnews24.com",
@@ -9249,6 +9318,16 @@
                                 "domains": [
                                     "cox.com",
                                     "cox.net"
+                                ]
+                            }
+                        ]
+                    },
+                    "improvedigital.com": {
+                        "rules": [
+                            {
+                                "rule": "hb.improvedigital.com/pbw/prebid/prebid-idhb-v8.51a.min.js",
+                                "domains": [
+                                    "chicagotribune.com"
                                 ]
                             }
                         ]
@@ -11083,7 +11162,7 @@
                     "domain": "flexmls.com"
                 }
             ],
-            "hash": "e5f8336c548cf4f8f47054f19d0523be"
+            "hash": "1f42fea428309de67561253162607c91"
         },
         "trackingCookies1p": {
             "settings": {

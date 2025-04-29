@@ -40,14 +40,15 @@ final class MainWindowController: NSWindowController {
         return window?.standardWindowButton(.closeButton)?.superview
     }
 
-    init(mainViewController: MainViewController, popUp: Bool, fireWindowSession: FireWindowSession? = nil, fireViewModel: FireViewModel? = nil) {
+    init(window: NSWindow? = nil, mainViewController: MainViewController, popUp: Bool, fireWindowSession: FireWindowSession? = nil, fireViewModel: FireViewModel? = nil) {
         let size = mainViewController.view.frame.size
         let moveToCenter = CGAffineTransform(translationX: ((NSScreen.main?.frame.width ?? 1024) - size.width) / 2,
                                              y: ((NSScreen.main?.frame.height ?? 790) - size.height) / 2)
         let frame = NSRect(origin: (NSScreen.main?.frame.origin ?? .zero).applying(moveToCenter),
                            size: size)
 
-        let window = popUp ? PopUpWindow(frame: frame) : MainWindow(frame: frame)
+        assert(window == nil || [.unitTests, .integrationTests].contains(AppVersion.runType), "Window should not be set in non-test environment")
+        let window = window ?? (popUp ? PopUpWindow(frame: frame) : MainWindow(frame: frame))
         window.contentViewController = mainViewController
         self.fireViewModel = fireViewModel ?? FireCoordinator.fireViewModel
 
@@ -63,6 +64,7 @@ final class MainWindowController: NSWindowController {
         subscribeToBurningData()
         subscribeToResolutionChange()
         subscribeToFullScreenToolbarChanges()
+        subscribeToKeyWindow()
 
 #if !APPSTORE && WEB_EXTENSIONS_ENABLED
         if #available(macOS 15.4, *) {
@@ -122,6 +124,19 @@ final class MainWindowController: NSWindowController {
                         self?.hideTabBarAndBookmarksBar()
                     }
                 }
+            }
+            .store(in: &cancellables)
+    }
+
+    private func subscribeToKeyWindow() {
+        NotificationCenter.default.publisher(for: NSWindow.didBecomeKeyNotification)
+            .sink { [weak self] notification in
+                self?.windowDidBecomeKeyNotification(notification)
+            }
+            .store(in: &cancellables)
+        NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)
+            .sink { [weak self] notification in
+                self?.windowDidResignKeyNotification(notification)
             }
             .store(in: &cancellables)
     }
@@ -251,11 +266,14 @@ final class MainWindowController: NSWindowController {
 
 extension MainWindowController: NSWindowDelegate {
 
-    func windowDidBecomeKey(_ notification: Notification) {
-        NotificationCenter.default.post(name: .windowDidBecomeKey, object: nil)
-        mainViewController.windowDidBecomeMain()
+    private func windowDidBecomeKeyNotification(_ notification: Notification) {
+        guard let keyWindow = notification.object as? NSWindow,
+              let mainWindow = self.window,
+              keyWindow.isInHierarchy(of: mainWindow) else { return }
 
-        if (notification.object as? NSWindow)?.isPopUpWindow == false {
+        mainViewController.windowDidBecomeKey()
+
+        if !mainWindow.isPopUpWindow {
             WindowControllersManager.shared.lastKeyMainWindowController = self
         }
 
@@ -266,7 +284,13 @@ extension MainWindowController: NSWindowDelegate {
 #endif
     }
 
-    func windowDidResignKey(_ notification: Notification) {
+    private func windowDidResignKeyNotification(_ notification: Notification) {
+        guard let exKeyWindow = notification.object as? NSWindow,
+              let mainWindow = self.window,
+              exKeyWindow.isInHierarchy(of: mainWindow),
+              // if one of the windows in the window controller chain became key instead of a sheet
+              NSApp.keyWindow?.isInHierarchy(of: mainWindow) != true else { return }
+
         mainViewController.windowDidResignKey()
     }
 
@@ -477,12 +501,6 @@ fileprivate extension NavigationBarViewController {
                 addressBarViewController?.addressBarButtonsViewController?.bookmarkButton
         ]
     }
-
-}
-
-extension Notification.Name {
-
-    static let windowDidBecomeKey = Notification.Name(rawValue: "windowDidBecomeKey")
 
 }
 

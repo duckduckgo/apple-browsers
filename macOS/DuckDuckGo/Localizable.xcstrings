@@ -7328,6 +7328,9 @@
         }
       }
     },
+    "BETA" : {
+
+    },
     "Birthday" : {
       "comment" : "Title of the section of the Identities manager where the user can add/modify a date of birth",
       "localizations" : {
@@ -13439,6 +13442,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Очистить и выйти"
+          }
+        }
+      }
+    },
+    "click.to.copy.version" : {
+      "comment" : "Description of a button which copies version to clipboard when clicked",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Click to copy version"
           }
         }
       }

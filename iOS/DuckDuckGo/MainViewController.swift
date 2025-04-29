@@ -1400,7 +1400,7 @@ class MainViewController: UIViewController {
 
     private func applyWidthToTrayController() {
         if AppWidthObserver.shared.isLargeWidth {
-            self.suggestionTrayController?.float(under: self.viewCoordinator.omniBar.barView.searchContainer)
+            self.suggestionTrayController?.float(withWidth: self.viewCoordinator.omniBar.barView.searchContainerWidth)
         } else {
             self.suggestionTrayController?.fill()
         }
@@ -2328,9 +2328,11 @@ extension MainViewController: OmniBarDelegate {
         } else {
             /// Check if the current tab's URL is a DuckDuckGo search page
             /// If it is, get the query item and open the chat with the query item's value
+            /// Do not auto-send if the user is on SERP
+            /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1210024262385459?focus=true
             if currentTab?.url?.isDuckDuckGoSearch == true {
                 let queryItem = currentTab?.url?.getQueryItems()?.filter { $0.name == "q" }.first
-                openAIChat(queryItem?.value, autoSend: true)
+                openAIChat(queryItem?.value, autoSend: false)
             } else {
                 openAIChat()
             }
@@ -2561,7 +2563,8 @@ extension MainViewController: TabDelegate {
                                               inheritedAttribution: inheritingAttribution)
         newTab.openedByPage = true
         newTab.openingTab = tab
-        
+        swipeTabsCoordinator?.refresh(tabsModel: tabManager.model)
+
         newTabAnimation {
             guard self.tabManager.model.tabs.contains(newTab.tabModel) else { return }
 

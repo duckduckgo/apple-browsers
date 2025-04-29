@@ -44,9 +44,11 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
         viewModel = OnboardingFireButtonDialogViewModel(onboardingPixelReporter: reporter, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed)
     }
 
+    @MainActor
     override func tearDownWithError() throws {
         reporter = nil
         viewModel = nil
+        WindowControllersManager.shared.lastKeyMainWindowController = nil
     }
 
     func testWhenHighFiveThenOnGotItAndOnDismissPressed() throws {
@@ -59,10 +61,12 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
     @MainActor
     func testWhenTryFireButtonThenOnFireButtonPressedCalledAndPixelSent() throws {
         let mainViewController = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])), autofillPopoverPresenter: DefaultAutofillPopoverPresenter())
-        let mainWindowController = MainWindowController(mainViewController: mainViewController, popUp: false)
-        mainWindowController.window = MockWindow()
+        let window = MockWindow(isVisible: false)
+        let mainWindowController = MainWindowController(window: window, mainViewController: mainViewController, popUp: false)
+        mainWindowController.window = window
         WindowControllersManager.shared.lastKeyMainWindowController = mainWindowController
 
+        window.isVisible = true
         viewModel.tryFireButton()
 
         XCTAssertTrue(onFireButtonPressedCalled)

@@ -100,8 +100,15 @@ extension DefaultSubscriptionManager {
 extension DefaultSubscriptionManager: @retroactive AccountManagerKeychainAccessDelegate {
 
     public func accountManagerKeychainAccessFailed(accessType: AccountKeychainAccessType, error: any Error) {
+
+        guard let expectedError = error as? AccountKeychainAccessError else {
+            assertionFailure("Unexpected error type: \(error)")
+            Logger.networkProtection.fault("Unexpected error type: \(error)")
+            return
+        }
+
         PixelKit.fire(PrivacyProErrorPixel.privacyProKeychainAccessError(accessType: accessType,
-                                                                         accessError: error,
+                                                                         accessError: expectedError,
                                                                          source: KeychainErrorSource.shared,
                                                                          authVersion: KeychainErrorAuthVersion.v1),
                       frequency: .legacyDailyAndCount)

@@ -156,7 +156,7 @@ enum PrivacyProPixel: PixelKitEventV2 {
 enum PrivacyProErrorPixel: PixelKitEventV2 {
 
     case privacyProKeychainAccessError(accessType: AccountKeychainAccessType,
-                                       accessError: any Error,
+                                       accessError: AccountKeychainAccessError,
                                        source: KeychainErrorSource,
                                        authVersion: KeychainErrorAuthVersion )
 

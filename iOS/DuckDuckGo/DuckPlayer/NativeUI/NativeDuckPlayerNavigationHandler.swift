@@ -237,6 +237,9 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         let previousVideoID = previousURL?.youtubeVideoParams?.0
         let newVideoID = newURL?.youtubeVideoParams?.0
 
+        // Resets Script Initialization State
+        duckPlayer.urlChangedPublisher.send(newURL?.absoluteString ?? "")
+
         // Never update the pill when navigating Youtube Internal Menu
         // which is accessed via the same url and a fragment
         // eg https://www.youtube.com/watch?v=dQw4w9WgXcQ#settings
@@ -244,9 +247,6 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         if let url = newURL, url.isYoutubeWatchWithFragment && previousVideoID == newVideoID {
             return .notHandled(.duplicateNavigation)
         }
-
-        // Resets Script Initialization State
-        duckPlayer.urlChangedPublisher.send(newURL?.absoluteString ?? "")
 
         // Dismiss the pill on every URL change
         duckPlayer.dismissPill(reset: true, animated: true, programatic: true)
@@ -380,13 +380,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
 
         // Update referrer
         setReferrer(webView: webView)
-
-        // Notify SERP about Duckplayer State
-        // This disables SERP Overlays when DuckPlayer is enabled
-        if webView.url?.isDuckDuckGoSearch ?? false {
-            let isEnabled = duckPlayer.settings.nativeUISERPEnabled || duckPlayer.settings.nativeUIYoutubeMode != .never
-            duckPlayer.serpNotificationPublisher.send(isEnabled)
-        }
+        
     }
 
     /// Resets settings when the web view starts loading a new page.

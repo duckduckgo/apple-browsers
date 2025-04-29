@@ -30,12 +30,12 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
     private var mockActivityScheduler: MockDataBrokerProtectionBackgroundActivityScheduler!
     private var mockEventsHandler: MockOperationEventsHandler!
     private var mockNotificationService: MockUserNotificationService!
-    private var mockQueueManager: MockDataBrokerProtectionOperationQueueManager!
+    private var mockQueueManager: MockBrokerProfileJobQueueManager!
     private var mockDataManager: MockDataBrokerProtectionDataManager!
     private var mockIPCServer: MockIPCServer!
     private var mockSharedPixelsHandler: DataBrokerProtectionCoreTestsUtils.MockPixelHandler!
     private var mockPixelHandler: MockPixelHandler!
-    private var mockDependencies: MockDataBrokerOperationDependencies!
+    private var mockDependencies: MockBrokerProfileJobDependencies!
     private var mockProfile: DataBrokerProtectionProfile!
     private var mockAgentStopper: MockAgentStopper!
     private var mockConfigurationManager: MockConfigurationManager!
@@ -57,9 +57,9 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
 
         let mockDatabase = MockDatabase()
         let mockMismatchCalculator = MockMismatchCalculator(database: mockDatabase, pixelHandler: mockSharedPixelsHandler)
-        mockQueueManager = MockDataBrokerProtectionOperationQueueManager(
-            operationQueue: MockDataBrokerProtectionOperationQueue(),
-            operationsCreator: MockDataBrokerOperationsCreator(),
+        mockQueueManager = MockBrokerProfileJobQueueManager(
+            jobQueue: MockBrokerProfileJobQueue(),
+            jobProvider: MockDataBrokerOperationsCreator(),
             mismatchCalculator: mockMismatchCalculator,
             brokerUpdater: MockDataBrokerProtectionBrokerUpdater(),
             pixelHandler: mockSharedPixelsHandler)
@@ -68,7 +68,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
 
         mockDataManager = MockDataBrokerProtectionDataManager(database: mockDatabase)
 
-        mockDependencies = MockDataBrokerOperationDependencies()
+        mockDependencies = MockBrokerProfileJobDependencies()
         mockDependencies.database = mockDatabase
         mockDependencies.pixelHandler = mockSharedPixelsHandler
         mockDependencies.eventsHandler = mockEventsHandler
@@ -90,7 +90,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
-            operationDependencies: mockDependencies,
+            jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
@@ -134,7 +134,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
-            operationDependencies: mockDependencies,
+            jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
@@ -183,7 +183,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
-            operationDependencies: mockDependencies,
+            jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
             agentStopper: agentStopper,
@@ -221,7 +221,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
-            operationDependencies: mockDependencies,
+            jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
@@ -263,7 +263,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
-            operationDependencies: mockDependencies,
+            jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
@@ -296,7 +296,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
-            operationDependencies: mockDependencies,
+            jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
@@ -328,7 +328,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
-            operationDependencies: mockDependencies,
+            jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
@@ -360,7 +360,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
-            operationDependencies: mockDependencies,
+            jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
@@ -392,7 +392,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
-            operationDependencies: mockDependencies,
+            jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
@@ -418,7 +418,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
-            operationDependencies: mockDependencies,
+            jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
@@ -444,7 +444,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
-            operationDependencies: mockDependencies,
+            jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
@@ -471,7 +471,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
-            operationDependencies: mockDependencies,
+            jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
@@ -498,7 +498,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
-            operationDependencies: mockDependencies,
+            jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
@@ -525,7 +525,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
-            operationDependencies: mockDependencies,
+            jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
@@ -557,7 +557,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
-            operationDependencies: mockDependencies,
+            jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
@@ -588,7 +588,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
-            operationDependencies: mockDependencies,
+            jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
@@ -615,7 +615,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             ipcServer: mockIPCServer,
             queueManager: mockQueueManager,
             dataManager: mockDataManager,
-            operationDependencies: mockDependencies,
+            jobDependencies: mockDependencies,
             sharedPixelsHandler: mockSharedPixelsHandler,
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,

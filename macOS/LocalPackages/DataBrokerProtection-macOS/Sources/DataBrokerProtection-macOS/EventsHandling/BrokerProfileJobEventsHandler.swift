@@ -1,5 +1,5 @@
 //
-//  OperationEventsHandler.swift
+//  BrokerProfileJobEventsHandler.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -24,7 +24,7 @@ import os.log
 import PixelKit
 import DataBrokerProtectionCore
 
-public class DefaultOperationEventsHandler: EventMapping<OperationEvent> {
+public class BrokerProfileJobEventsHandler: EventMapping<JobEvent> {
 
     private let userNotificationService: DataBrokerProtectionUserNotificationService
 
@@ -46,7 +46,7 @@ public class DefaultOperationEventsHandler: EventMapping<OperationEvent> {
         }
     }
 
-    override init(mapping: @escaping EventMapping<OperationEvent>.Mapping) {
+    override init(mapping: @escaping EventMapping<JobEvent>.Mapping) {
         fatalError("Use init()")
     }
 }

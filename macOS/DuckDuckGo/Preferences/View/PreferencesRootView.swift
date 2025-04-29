@@ -47,6 +47,8 @@ enum Preferences {
         @ObservedObject var model: PreferencesSidebarModel
 
         var purchaseSubscriptionModel: PreferencesPurchaseSubscriptionModel?
+        var personalInformationRemovalModel: PreferencesPersonalInformationRemovalModel?
+        var identityTheftRestorationModel: PreferencesIdentityTheftRestorationModel?
         var subscriptionSettingsModel: PreferencesSubscriptionSettingsModel?
         var subscriptionModel: PreferencesSubscriptionModel?
         let subscriptionManager: SubscriptionManager
@@ -59,6 +61,8 @@ enum Preferences {
             self.subscriptionManager = subscriptionManager
             self.subscriptionUIHandler = subscriptionUIHandler
             self.purchaseSubscriptionModel = makePurchaseSubscriptionViewModel()
+            self.personalInformationRemovalModel = makePersonalInformationRemovalViewModel()
+            self.identityTheftRestorationModel = makeIdentityTheftRestorationViewModel()
             self.subscriptionSettingsModel = makeSubscriptionSettingsViewModel()
             self.subscriptionModel = makeSubscriptionViewModel()
         }
@@ -115,11 +119,9 @@ enum Preferences {
                 case .vpn:
                     VPNView(model: VPNPreferencesModel(), status: model.vpnProtectionStatus())
                 case .personalInformationRemoval:
-                    EmptyView() // TODO:
-                    SubscriptionUI.PreferencesPurchaseSubscriptionViewV1(model: purchaseSubscriptionModel!)
+                    SubscriptionUI.PreferencesPersonalInformationRemovalView(model: personalInformationRemovalModel!)
                 case .identityTheftRestoration:
-                    EmptyView() // TODO:
-                    SubscriptionUI.PreferencesSubscriptionSettingsViewV1(model: subscriptionSettingsModel!)
+                    SubscriptionUI.PreferencesIdentityTheftRestorationView(model: identityTheftRestorationModel!)
                 case .subscriptionSettings:
                     SubscriptionUI.PreferencesSubscriptionSettingsViewV1(model: subscriptionSettingsModel!)
 //                    SubscriptionUI.PreferencesSubscriptionViewV1(model: subscriptionModel!,
@@ -213,6 +215,106 @@ enum Preferences {
                                                         userEventHandler: handleUIEvent,
                                                         sheetActionHandler: sheetActionHandler,
                                                         subscriptionManager: subscriptionManager)
+        }
+
+        private func makePersonalInformationRemovalViewModel() -> PreferencesPersonalInformationRemovalModel {
+            let openURL: (URL) -> Void = { url in
+                DispatchQueue.main.async {
+                    WindowControllersManager.shared.showTab(with: .subscription(url.appendingParameter(name: AttributionParameter.origin, value: SubscriptionFunnelOrigin.appSettings.rawValue)))
+                }
+            }
+
+            let handleUIEvent: (PreferencesSubscriptionModel.UserEvent) -> Void = { event in
+                DispatchQueue.main.async {
+                    switch event {
+                    case .openVPN:
+                        PixelKit.fire(PrivacyProPixel.privacyProVPNSettings)
+                        NotificationCenter.default.post(name: .ToggleNetworkProtectionInMainWindow, object: self, userInfo: nil)
+                    case .openFeedback:
+                        NotificationCenter.default.post(name: .OpenUnifiedFeedbackForm,
+                                                        object: self,
+                                                        userInfo: UnifiedFeedbackSource.userInfo(source: .ppro))
+                    case .openDB:
+                        PixelKit.fire(PrivacyProPixel.privacyProPersonalInformationRemovalSettings)
+                        WindowControllersManager.shared.showTab(with: .dataBrokerProtection)
+                    case .openITR:
+                        PixelKit.fire(PrivacyProPixel.privacyProIdentityRestorationSettings)
+                        let url = subscriptionManager.url(for: .identityTheftRestoration)
+                        WindowControllersManager.shared.showTab(with: .identityTheftRestoration(url))
+                    case .iHaveASubscriptionClick:
+                        PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseClick)
+                    case .activateSubscriptionViaEmailClick:
+                        PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
+                    case .activateSubscriptionViaRestoreAppStorePurchaseClick:
+                        PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreStart, frequency: .legacyDailyAndCount)
+                    case .manageEmailClick:
+                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementEmail, frequency: .uniqueByName)
+                    case .addToDeviceActivationFlow:
+                        // Handled on web
+                        break
+                    case .openSubscriptionSettingsClick:
+                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionSettings)
+                    case .changePlanOrBillingClick:
+                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementPlanBilling)
+                    case .removeSubscriptionClick:
+                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementRemoval)
+                    }
+                }
+            }
+
+            return PreferencesPersonalInformationRemovalModel(openURLHandler: openURL,
+                                                              userEventHandler: handleUIEvent,
+                                                              subscriptionManager: subscriptionManager)
+        }
+
+        private func makeIdentityTheftRestorationViewModel() -> PreferencesIdentityTheftRestorationModel {
+            let openURL: (URL) -> Void = { url in
+                DispatchQueue.main.async {
+                    WindowControllersManager.shared.showTab(with: .subscription(url.appendingParameter(name: AttributionParameter.origin, value: SubscriptionFunnelOrigin.appSettings.rawValue)))
+                }
+            }
+
+            let handleUIEvent: (PreferencesSubscriptionModel.UserEvent) -> Void = { event in
+                DispatchQueue.main.async {
+                    switch event {
+                    case .openVPN:
+                        PixelKit.fire(PrivacyProPixel.privacyProVPNSettings)
+                        NotificationCenter.default.post(name: .ToggleNetworkProtectionInMainWindow, object: self, userInfo: nil)
+                    case .openFeedback:
+                        NotificationCenter.default.post(name: .OpenUnifiedFeedbackForm,
+                                                        object: self,
+                                                        userInfo: UnifiedFeedbackSource.userInfo(source: .ppro))
+                    case .openDB:
+                        PixelKit.fire(PrivacyProPixel.privacyProPersonalInformationRemovalSettings)
+                        WindowControllersManager.shared.showTab(with: .dataBrokerProtection)
+                    case .openITR:
+                        PixelKit.fire(PrivacyProPixel.privacyProIdentityRestorationSettings)
+                        let url = subscriptionManager.url(for: .identityTheftRestoration)
+                        WindowControllersManager.shared.showTab(with: .identityTheftRestoration(url))
+                    case .iHaveASubscriptionClick:
+                        PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseClick)
+                    case .activateSubscriptionViaEmailClick:
+                        PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
+                    case .activateSubscriptionViaRestoreAppStorePurchaseClick:
+                        PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreStart, frequency: .legacyDailyAndCount)
+                    case .manageEmailClick:
+                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementEmail, frequency: .uniqueByName)
+                    case .addToDeviceActivationFlow:
+                        // Handled on web
+                        break
+                    case .openSubscriptionSettingsClick:
+                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionSettings)
+                    case .changePlanOrBillingClick:
+                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementPlanBilling)
+                    case .removeSubscriptionClick:
+                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementRemoval)
+                    }
+                }
+            }
+
+            return PreferencesIdentityTheftRestorationModel(openURLHandler: openURL,
+                                                            userEventHandler: handleUIEvent,
+                                                            subscriptionManager: subscriptionManager)
         }
 
         private func makeSubscriptionSettingsViewModel() -> PreferencesSubscriptionSettingsModel {

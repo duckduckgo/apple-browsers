@@ -2806,6 +2806,18 @@
         }
       }
     },
+    "subscription.preferences.purchase.subscription.title" : {
+      "comment" : "Title of the preferences pane for purchase subscription",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Privacy Pro"
+          }
+        }
+      }
+    },
     "subscription.preferences.remove.from.this.device.button" : {
       "comment" : "Button to remove subscription from this device",
       "extractionState" : "extracted_with_value",
@@ -4973,7 +4985,7 @@
       }
     },
     "subscription.preferences.subscription.settings.title" : {
-      "comment" : "Title for the subscription preferences settings section",
+      "comment" : "Title for the subscription preferences settings section\nTitle of the preferences pane for subscription settings",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {

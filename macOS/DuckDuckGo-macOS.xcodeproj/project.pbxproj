@@ -259,6 +259,8 @@
 		3135647C2D9EB8E800BF4B5D /* AIChatAddressBarPromptExtractor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3135647A2D9EB8E800BF4B5D /* AIChatAddressBarPromptExtractor.swift */; };
 		3135647E2D9EBB9900BF4B5D /* AIChatAddressBarPromptExtractorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3135647D2D9EBB9900BF4B5D /* AIChatAddressBarPromptExtractorTests.swift */; };
 		3135647F2D9EBB9900BF4B5D /* AIChatAddressBarPromptExtractorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3135647D2D9EBB9900BF4B5D /* AIChatAddressBarPromptExtractorTests.swift */; };
+		3145BF5B2DC109DF00A9B8D4 /* ShortcutTooltip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3145BF5A2DC109DF00A9B8D4 /* ShortcutTooltip.swift */; };
+		3145BF5C2DC109DF00A9B8D4 /* ShortcutTooltip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3145BF5A2DC109DF00A9B8D4 /* ShortcutTooltip.swift */; };
 		3148727E2CC68F6900EEF89B /* AIChatOnboardingTabExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3148727D2CC68F6200EEF89B /* AIChatOnboardingTabExtension.swift */; };
 		3148727F2CC68F6900EEF89B /* AIChatOnboardingTabExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3148727D2CC68F6200EEF89B /* AIChatOnboardingTabExtension.swift */; };
 		31521AC02CC013AD00248E6F /* AIChatMenuVisibilityConfigurable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31521ABF2CC013A400248E6F /* AIChatMenuVisibilityConfigurable.swift */; };
@@ -3858,6 +3860,7 @@
 		3135647A2D9EB8E800BF4B5D /* AIChatAddressBarPromptExtractor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatAddressBarPromptExtractor.swift; sourceTree = "<group>"; };
 		3135647D2D9EBB9900BF4B5D /* AIChatAddressBarPromptExtractorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatAddressBarPromptExtractorTests.swift; sourceTree = "<group>"; };
 		3139A1512AA4B3C000969C7D /* DataBrokerProtectionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataBrokerProtectionManager.swift; sourceTree = "<group>"; };
+		3145BF5A2DC109DF00A9B8D4 /* ShortcutTooltip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutTooltip.swift; sourceTree = "<group>"; };
 		3148727D2CC68F6200EEF89B /* AIChatOnboardingTabExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatOnboardingTabExtension.swift; sourceTree = "<group>"; };
 		31521ABF2CC013A400248E6F /* AIChatMenuVisibilityConfigurable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatMenuVisibilityConfigurable.swift; sourceTree = "<group>"; };
 		31521AC22CC01BC300248E6F /* AIChatTabOpener.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatTabOpener.swift; sourceTree = "<group>"; };
@@ -7930,6 +7933,7 @@
 		853014D425E6709500FB8205 /* Support */ = {
 			isa = PBXGroup;
 			children = (
+				3145BF5A2DC109DF00A9B8D4 /* ShortcutTooltip.swift */,
 				853014D525E671A000FB8205 /* PageObserverUserScript.swift */,
 			);
 			path = Support;
@@ -12506,6 +12510,7 @@
 				3706FB9F293F65D500E42796 /* PasswordManagementCreditCardItemView.swift in Sources */,
 				C153E7C62C8B21B500B9BAD7 /* Logger+FreemiumDBP.swift in Sources */,
 				9F9C4A022BC7F36D0099738D /* BookmarkAllTabsDialogCoordinatorViewModel.swift in Sources */,
+				3145BF5C2DC109DF00A9B8D4 /* ShortcutTooltip.swift in Sources */,
 				3706FBA0293F65D500E42796 /* NSTextFieldExtension.swift in Sources */,
 				9FA173E82B7B122E00EE4E6E /* BookmarkDialogStackedContentView.swift in Sources */,
 				3706FBA1293F65D500E42796 /* FireproofDomainsContainer.swift in Sources */,
@@ -14416,6 +14421,7 @@
 				31CF74572CDC177D004ACCE5 /* AIChatUserScript.swift in Sources */,
 				1DB9618329F67F6200CF5568 /* FaviconNullStore.swift in Sources */,
 				84A72AA82DB276A20092A4B4 /* LinkOpenBehavior.swift in Sources */,
+				3145BF5B2DC109DF00A9B8D4 /* ShortcutTooltip.swift in Sources */,
 				379E4D612D4383D200A901B1 /* NewTabPageCoordinator.swift in Sources */,
 				8400DC4E2C6E2770006509D2 /* SteppedScrollView.swift in Sources */,
 				BB5789722B2CA70F0009DFE2 /* DataBrokerProtectionSubscriptionEventHandler.swift in Sources */,

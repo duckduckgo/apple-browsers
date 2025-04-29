@@ -898,7 +898,7 @@ final class AddressBarButtonsViewController: NSViewController {
             bookmarkButton.mouseOverTintColor = nil
             bookmarkButton.image = visualStyleManager.style.addressBarIconsProvider.addBookmarkIcon
             bookmarkButton.contentTintColor = nil
-            bookmarkButton.toolTip = UserText.addBookmarkTooltip
+            bookmarkButton.toolTip = ShortcutTooltip.bookmarkThisPage.value
             bookmarkButton.setAccessibilityValue("Unbookmarked")
         }
     }

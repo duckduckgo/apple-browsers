@@ -94,8 +94,8 @@ final class AutofillCreditCardDetailsViewController: UIViewController {
         title = viewModel.navigationTitle
         
         if viewModel.authenticationRequired {
-            navigationItem.rightBarButtonItem = nil
-            navigationItem.leftBarButtonItem = nil
+            saveBarButtonItem.isEnabled = false
+            editBarButtonItem.isEnabled = false
         } else {
             switch viewModel.viewMode {
             case .edit, .new:
@@ -104,6 +104,7 @@ final class AutofillCreditCardDetailsViewController: UIViewController {
                 navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(cancel))
                 
             case .view:
+                editBarButtonItem.isEnabled = true
                 navigationItem.rightBarButtonItem = editBarButtonItem
                 navigationItem.leftBarButtonItem = nil
             }
@@ -147,9 +148,10 @@ final class AutofillCreditCardDetailsViewController: UIViewController {
     }
     
     @objc private func cancel() {
-        if viewModel.viewMode == .new {
+        switch viewModel.viewMode {
+        case .new:
             dismiss(animated: true)
-        } else {
+        default:
             toggleEditMode()
         }
     }
@@ -168,12 +170,13 @@ final class AutofillCreditCardDetailsViewController: UIViewController {
 extension AutofillCreditCardDetailsViewController: AutofillCreditCardDetailsViewModelDelegate {
     
     func autofillCreditCardDetailsViewModelDidSave() {
-        if viewModel.viewMode == .new {
+        switch viewModel.viewMode {
+        case .new:
             dismiss(animated: true) { [weak self] in
                 guard let self = self else { return }
                 self.delegate?.autofillCreditCardDetailsViewControllerDidSave(self, card: viewModel.creditCard)
             }
-        } else {
+        default:
             delegate?.autofillCreditCardDetailsViewControllerDidSave(self, card: nil)
         }
     }

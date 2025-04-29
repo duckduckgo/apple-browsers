@@ -73,9 +73,10 @@ final class AutofillCreditCardListViewController: UIViewController {
     }
     
     @objc private func appDidBecomeActiveCallback() {
-        if navigationController?.topViewController is AutofillCreditCardDetailsViewController {
-            return
-        } else if let presentedViewController = navigationController?.presentedViewController as? UINavigationController, presentedViewController.topViewController is AutofillCreditCardDetailsViewController {
+        guard !(navigationController?.topViewController is AutofillCreditCardDetailsViewController) else { return }
+
+        if let presentedNavController = navigationController?.presentedViewController as? UINavigationController,
+           presentedNavController.topViewController is AutofillCreditCardDetailsViewController {
             return
         }
         

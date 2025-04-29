@@ -37,84 +37,52 @@ public struct PreferencesSubscriptionSettingsViewV1: View {
     }
 
     public var body: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            // Title, dialogs and status indicator
+            VStack(alignment: .leading, spacing: 4) {
+                TextMenuTitle(UserText.preferencesSubscriptionSettingsTitle)
+                    .sheet(isPresented: $showingActivateSubscriptionSheet) {
+                        SubscriptionAccessView(model: model.sheetModel)
+                    }
+                    .sheet(isPresented: $showingRemoveConfirmationDialog) {
+                        removeConfirmationDialog
+                    }
+                    .sheet(item: $manageSubscriptionSheet) { sheet in
+                        switch sheet {
+                        case .apple:
+                            manageSubscriptionAppStoreDialog
+                        case .google:
+                            manageSubscriptionGooglePlayDialog
+                        }
+                    }
 
-        TextMenuTitle(UserText.preferencesTitle)
-        StatusIndicatorView(status: .on, isLarge: true)
-        StatusIndicatorView(status: .off, isLarge: true)
+                StatusIndicatorView(status: .on, isLarge: true)
+            }
+            .padding(.bottom, 16)
 
-        PreferencePane("a", spacing: 4) {
             switch state {
             case .subscriptionActive:
-                PreferencePaneSection {
-                    activateSection
-                }
-                PreferencePaneSection {
-                    settingsSection
-                }
-                PreferencePaneSection {
-                    helpSection
-                }
+                activateSection
+                settingsSection
+                helpSection
 
             case .subscriptionExpired:
-                PreferencePaneSection {
-                    expiredHeaderView
-                }
-                PreferencePaneSection {
-                    activateSection
-                }
+                expiredHeaderView
+                activateSection
+                helpSection
 
             case .subscriptionPendingActivation:
-                PreferencePaneSection {
-                    pendingActivationHeaderView
-                }
-            }
-
-            PreferencePaneSection {
+                pendingActivationHeaderView
                 helpSection
             }
         }
+        .onAppear(perform: {
+            model.didAppear()
+        })
+        .onReceive(model.statePublisher, perform: updateState(state:))
+/*
 
-        Divider()
-
-        switch state {
-        case .subscriptionActive:
-            activateSection
-            settingsSection
-            helpSection
-        case .subscriptionExpired:
-            expiredHeaderView
-            activateSection
-            helpSection
-        case .subscriptionPendingActivation:
-            pendingActivationHeaderView
-            helpSection
-        }
-
-        Divider()
-
-
-
-        VStack(alignment: .leading, spacing: 12) {
-
-            // Title and dialogs
-            TextMenuTitle(UserText.preferencesTitle)
-                .sheet(isPresented: $showingActivateSubscriptionSheet) {
-                    SubscriptionAccessView(model: model.sheetModel)
-                }
-                .sheet(isPresented: $showingRemoveConfirmationDialog) {
-                    removeConfirmationDialog
-                }
-                .sheet(item: $manageSubscriptionSheet) { sheet in
-                    switch sheet {
-                    case .apple:
-                        manageSubscriptionAppStoreDialog
-                    case .google:
-                        manageSubscriptionGooglePlayDialog
-                    }
-                }
-
-
-
+ TODO: .subscriptionPendingActivation and .subscriptionExpired need a rounded border
             // Header
             if(state != .subscriptionActive) {
                 VStack {
@@ -132,24 +100,8 @@ public struct PreferencesSubscriptionSettingsViewV1: View {
                 .padding(.top, 4)
                 .padding(.bottom, 12)
             }
+ */
 
-            // Activate section
-            if [.subscriptionActive, .subscriptionExpired].contains(state) {
-                activateSection
-            }
-
-            // Settings section
-            if state == .subscriptionActive {
-                settingsSection
-            }
-
-            // Help section
-            helpSection
-        }
-        .onAppear(perform: {
-            model.didAppear()
-        })
-        .onReceive(model.statePublisher, perform: updateState(state:))
     }
 
     private func updateState(state: PreferencesSubscriptionSettingsState) {
@@ -168,6 +120,7 @@ public struct PreferencesSubscriptionSettingsViewV1: View {
             Button(UserText.restorePurchaseButton) { model.refreshSubscriptionPendingState() }
                 .buttonStyle(DefaultActionButtonStyle(enabled: true))
         }
+        .padding(.bottom, 12)
     }
 
     @ViewBuilder
@@ -221,7 +174,7 @@ public struct PreferencesSubscriptionSettingsViewV1: View {
             TextMenuItemCaption(model.subscriptionDetails ?? "")
                 .padding(.bottom, 8)
 
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 14) {
                 TextButton(UserText.updatePlanOrCancelButton, weight: .semibold) {
                     model.userEventHandler(.changePlanOrBillingClick)
                     Task {
@@ -248,7 +201,7 @@ public struct PreferencesSubscriptionSettingsViewV1: View {
             TextMenuItemCaption(UserText.preferencesSubscriptionHelpFooterCaption)
                 .padding(.bottom, 8)
 
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 14) {
                 TextButton(UserText.viewFaqsButton, weight: .semibold) { model.openFAQ() }
 
                 if state == .subscriptionActive {

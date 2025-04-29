@@ -22,6 +22,11 @@ import Subscription
 enum UserText {
     // MARK: - Subscription preferences
 
+    static let preferencesSubscriptionSettingsTitle = NSLocalizedString("subscription.preferences.subscription.settings.title", bundle: Bundle.module, value: "Subscription Settings", comment: "Title of the preferences pane for subscription settings")
+
+    static let preferencesPurchaseSubscriptionTitle = NSLocalizedString("subscription.preferences.purchase.subscription.title", bundle: Bundle.module, value: "Privacy Pro", comment: "Title of the preferences pane for purchase subscription")
+
+    // TODO: To be removed
     static let preferencesTitle = NSLocalizedString("subscription.preferences.title", bundle: Bundle.module, value: "Privacy Pro", comment: "Title for the preferences pane for the subscription")
 
     static let vpnServiceTitle = NSLocalizedString("subscription.preferences.services.vpn.title", bundle: Bundle.module, value: "VPN", comment: "Title for the VPN service listed in the subscription preferences pane")

@@ -121,8 +121,9 @@ enum Preferences {
                     EmptyView() // TODO:
                     SubscriptionUI.PreferencesSubscriptionSettingsViewV1(model: subscriptionSettingsModel!)
                 case .subscriptionSettings:
-                    SubscriptionUI.PreferencesSubscriptionViewV1(model: subscriptionModel!,
-                                                                 subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability())
+                    SubscriptionUI.PreferencesSubscriptionSettingsViewV1(model: subscriptionSettingsModel!)
+//                    SubscriptionUI.PreferencesSubscriptionViewV1(model: subscriptionModel!,
+//                                                                 subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability())
                 case .autofill:
                     AutofillView(model: AutofillPreferencesModel())
                 case .accessibility:

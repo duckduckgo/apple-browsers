@@ -35,7 +35,7 @@ public struct PreferencesPurchaseSubscriptionViewV1: View {
         VStack(alignment: .leading, spacing: 12) {
 
             // Title and dialogs
-            TextMenuTitle(UserText.preferencesTitle)
+            TextMenuTitle(UserText.preferencesPurchaseSubscriptionTitle)
                 .sheet(isPresented: $showingActivateSubscriptionSheet) {
                     SubscriptionAccessView(model: model.sheetModel)
                 }

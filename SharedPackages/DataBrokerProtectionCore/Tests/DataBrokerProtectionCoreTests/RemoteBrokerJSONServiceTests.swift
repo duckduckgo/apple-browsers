@@ -79,7 +79,7 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
             /// Successful attempt, lastBrokerJSONUpdateCheckTimestamp should've been updated
             XCTAssert(settings.lastBrokerJSONUpdateCheckTimestamp > 0)
         } catch {
-            XCTFail()
+            XCTFail("Unexpected error")
         }
 
         /// Second attempt
@@ -89,7 +89,7 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
             /// Failed attempt (rate limited), lastBrokerJSONUpdateCheckTimestamp should've remained unchanged
             XCTAssertEqual(lastCheckTimestamp, settings.lastBrokerJSONUpdateCheckTimestamp)
         } catch {
-            XCTFail()
+            XCTFail("Unexpected error")
         }
 
         /// Third attempt
@@ -102,7 +102,7 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
             /// Successful attempt, lastBrokerJSONUpdateCheckTimestamp should've been updated
             XCTAssert(settings.lastBrokerJSONUpdateCheckTimestamp > lastCheckTimestamp)
         } catch {
-            XCTFail()
+            XCTFail("Unexpected error")
         }
     }
 
@@ -112,11 +112,11 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
         authenticationManager.accessTokenValue = nil
         do {
             try await remoteBrokerJSONService.checkForUpdates()
-            XCTFail()
+            XCTFail("Unexpected error")
         } catch RemoteBrokerJSONService.Error.missingAccessToken {
             expectation.fulfill()
         } catch {
-            XCTFail()
+            XCTFail("Unexpected error")
         }
     }
 
@@ -128,7 +128,7 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
             /// checkForUpdates() returns early so 2nd request is never invoked
             XCTAssertFalse(MockURLProtocol.requestHandlerQueue.isEmpty)
         } catch {
-            XCTFail()
+            XCTFail("Unexpected error")
         }
     }
 
@@ -138,11 +138,11 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
         MockURLProtocol.requestHandlerQueue.append { _ in (HTTPURLResponse.noAuth, nil) }
         do {
             try await remoteBrokerJSONService.checkForUpdates()
-            XCTFail()
+            XCTFail("Unexpected error")
         } catch RemoteBrokerJSONService.Error.serverError {
             expectation.fulfill()
         } catch {
-            XCTFail()
+            XCTFail("Unexpected error")
         }
     }
 
@@ -152,11 +152,11 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
         MockURLProtocol.requestHandlerQueue.append { _ in (HTTPURLResponse.ok, nil) }
         do {
             try await remoteBrokerJSONService.checkForUpdates()
-            XCTFail()
+            XCTFail("Unexpected error")
         } catch RemoteBrokerJSONService.Error.serverError {
             expectation.fulfill()
         } catch {
-            XCTFail()
+            XCTFail("Unexpected error")
         }
     }
 
@@ -166,11 +166,11 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
         MockURLProtocol.requestHandlerQueue.append { _ in (HTTPURLResponse.okWithETag, Data()) }
         do {
             try await remoteBrokerJSONService.checkForUpdates()
-            XCTFail()
+            XCTFail("Unexpected error")
         } catch DecodingError.dataCorrupted {
             expectation.fulfill()
         } catch {
-            XCTFail()
+            XCTFail("Unexpected error")
         }
     }
 
@@ -187,7 +187,7 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
             /// checkForUpdates() returns early so 2nd request is never invoked
             XCTAssertFalse(MockURLProtocol.requestHandlerQueue.isEmpty)
         } catch {
-            XCTFail()
+            XCTFail("Unexpected error")
         }
     }
 
@@ -206,7 +206,7 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
         } catch RemoteBrokerJSONService.Error.serverError {
             expectation.fulfill()
         } catch {
-            XCTFail()
+            XCTFail("Unexpected error")
         }
     }
 
@@ -221,7 +221,7 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
         do {
             try await remoteBrokerJSONService.checkForUpdates()
         } catch {
-            XCTFail()
+            XCTFail("Unexpected error")
         }
     }
 }

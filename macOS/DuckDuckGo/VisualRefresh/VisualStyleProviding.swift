@@ -56,6 +56,9 @@ protocol VisualStyleProviding {
     var baseBackgroundColor: NSColor { get }
     var textPrimaryColor: NSColor { get }
     var textSecondaryColor: NSColor { get }
+
+    var defaultAddressBarFontSize: CGFloat { get }
+    var newTabOrHomePageAddressBarFontSize: CGFloat { get }
 }
 
 protocol VisualStyleManagerProviding {
@@ -116,6 +119,9 @@ struct VisualStyle: VisualStyleProviding {
     let textPrimaryColor: NSColor
     let textSecondaryColor: NSColor
 
+    let defaultAddressBarFontSize: CGFloat
+    let newTabOrHomePageAddressBarFontSize: CGFloat
+
     func addressBarHeight(for type: AddressBarSizeClass) -> CGFloat {
         switch type {
         case .default: return addressBarHeightForDefault
@@ -174,7 +180,9 @@ struct VisualStyle: VisualStyleProviding {
                            navigationBackgroundColor: .navigationBarBackground,
                            baseBackgroundColor: .windowBackgroundColor,
                            textPrimaryColor: .labelColor,
-                           textSecondaryColor: .secondaryLabelColor)
+                           textSecondaryColor: .secondaryLabelColor,
+                           defaultAddressBarFontSize: 13,
+                           newTabOrHomePageAddressBarFontSize: 15)
     }
 
     static var current: VisualStyleProviding {
@@ -207,7 +215,9 @@ struct VisualStyle: VisualStyleProviding {
                            navigationBackgroundColor: .navigationBackgroundColorNew,
                            baseBackgroundColor: .backgroundBaseColorNew,
                            textPrimaryColor: .primaryTextColorNew,
-                           textSecondaryColor: .secondaryTextColorNew)
+                           textSecondaryColor: .secondaryTextColorNew,
+                           defaultAddressBarFontSize: 13,
+                           newTabOrHomePageAddressBarFontSize: 13)
     }
 }
 

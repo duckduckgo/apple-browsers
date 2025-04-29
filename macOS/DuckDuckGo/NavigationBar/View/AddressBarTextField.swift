@@ -51,6 +51,8 @@ final class AddressBarTextField: NSTextField {
         tabCollectionViewModel.isBurner
     }
 
+    var visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager
+
     private var suggestionResultCancellable: AnyCancellable?
     private var selectedSuggestionViewModelCancellable: AnyCancellable?
     private var selectedTabViewModelCancellable: AnyCancellable?
@@ -79,6 +81,7 @@ final class AddressBarTextField: NSTextField {
 
         registerForDraggedTypes([.string, .URL, .fileURL])
     }
+
 
     override func mouseDown(with event: NSEvent) {
         super.mouseDown(with: event)
@@ -123,7 +126,11 @@ final class AddressBarTextField: NSTextField {
     private func subscribeToContentType(selectedTabViewModel: TabViewModel) {
         contentTypeCancellable = selectedTabViewModel.tab.$content
             .sink { [weak self] contentType in
-                self?.font = .systemFont(ofSize: contentType == .newtab ? 15 : 13)
+                guard let self else { return }
+
+                let newTabFontSize = visualStyleManager.style.newTabOrHomePageAddressBarFontSize
+                let defaultFontSize = visualStyleManager.style.defaultAddressBarFontSize
+                self.font = .systemFont(ofSize: contentType == .newtab ? newTabFontSize : defaultFontSize)
             }
     }
 
@@ -188,7 +195,10 @@ final class AddressBarTextField: NSTextField {
 
     private func updateAttributedStringValue() {
         withUndoDisabled {
-            if let attributedString = value.toAttributedString(isHomePage: isHomePage, isBurner: isBurner) {
+            let newTabFontSize = visualStyleManager.style.newTabOrHomePageAddressBarFontSize
+            let defaultFontSize = visualStyleManager.style.defaultAddressBarFontSize
+
+            if let attributedString = value.toAttributedString(size: isHomePage ? newTabFontSize : defaultFontSize, isBurner: isBurner) {
                 self.attributedStringValue = attributedString
             } else {
                 self.stringValue = value.string
@@ -818,9 +828,8 @@ extension AddressBarTextField {
             self.suggestion != nil
         }
 
-        func toAttributedString(isHomePage: Bool, isBurner: Bool) -> NSAttributedString? {
+        func toAttributedString(size: CGFloat, isBurner: Bool) -> NSAttributedString? {
             var attributes: [NSAttributedString.Key: Any] {
-                let size: CGFloat = isHomePage ? 15 : 13
                 return [
                     .font: NSFont.systemFont(ofSize: size, weight: .regular),
                     .foregroundColor: NSColor.textColor,
@@ -831,7 +840,7 @@ extension AddressBarTextField {
             guard let suffix else { return nil }
 
             let attributedString = NSMutableAttributedString(string: self.string, attributes: attributes)
-            attributedString.append(suffix.toAttributedString(size: isHomePage ? 15 : 13, isBurner: isBurner))
+            attributedString.append(suffix.toAttributedString(size: size, isBurner: isBurner))
 
             return attributedString
         }

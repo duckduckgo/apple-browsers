@@ -412,8 +412,12 @@ final class AddressBarViewController: NSViewController {
     }
 
     private func setupAddressBarPlaceHolder() {
-        let addressBarPlaceholder = tabViewModel?.tab.content == .newtab ? UserText.addressBarPlaceholder : ""
-        let font = NSFont.systemFont(ofSize: 15, weight: .regular)
+        let isNewTab = tabViewModel?.tab.content == .newtab
+        let addressBarPlaceholder = isNewTab ? UserText.addressBarPlaceholder : ""
+        let newTabFontSize = visualStyleManager.style.newTabOrHomePageAddressBarFontSize
+        let defaultFontSize = visualStyleManager.style.defaultAddressBarFontSize
+
+        let font = NSFont.systemFont(ofSize: isNewTab ? newTabFontSize : defaultFontSize, weight: .regular)
         let attributes: [NSAttributedString.Key: Any] = [
             .foregroundColor: visualStyleManager.style.textSecondaryColor,
             .font: font

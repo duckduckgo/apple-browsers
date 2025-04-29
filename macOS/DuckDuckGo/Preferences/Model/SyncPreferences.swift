@@ -815,7 +815,9 @@ extension SyncPreferences: ManagementDialogModelDelegate {
         if isSyncEnabled && !featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) {
             code = recoveryCode
         } else {
-            code = codeToDisplay
+            // Fall back to recovery code if no other codeToDisplay is set as, if available,
+            // a recovery code will always work for connection
+            code = codeToDisplay ?? recoveryCode
         }
         guard let code else { return }
         let pasteboard = NSPasteboard.general
@@ -973,11 +975,9 @@ extension SyncPreferences: SyncConnectionControllerDelegate {
         case .unableToRecognizeCode:
             handleError(.unableToRecognizeCode, error: underlyingError, pixelEvent: nil)
         case .failedToFetchPublicKey, .failedToTransmitExchangeRecoveryKey, .failedToFetchConnectRecoveryKey, .failedToLogIn, .failedToTransmitExchangeKey, .failedToFetchExchangeRecoveryKey, .failedToTransmitConnectRecoveryKey:
-            handleError(.unableToSyncToOtherDevice, error: error, pixelEvent: GeneralPixel.syncLoginError(error: error))
+            handleError(.unableToSyncToOtherDevice, error: underlyingError, pixelEvent: GeneralPixel.syncLoginError(error: underlyingError ?? error))
         case .failedToCreateAccount:
-            handleError(.unableToSyncToOtherDevice, error: underlyingError, pixelEvent: GeneralPixel.syncSignupError(error: error))
-        case .foundExistingAccount:
-            handleError(.unableToMergeTwoAccounts, error: underlyingError, pixelEvent: nil)
+            handleError(.unableToSyncToOtherDevice, error: underlyingError, pixelEvent: GeneralPixel.syncSignupError(error: underlyingError ?? error))
         }
     }
 }

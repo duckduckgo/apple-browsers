@@ -608,7 +608,7 @@ class TabViewController: UIViewController {
     }
 
     @objc func updateRoundedCorners() {
-        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+        if ExperimentalThemingManager().isRoundedCornersTreatmentEnabled {
             webViewContainer.clipsToBounds = true
             webViewContainer.layer.cornerRadius = isPortrait ? 12 : 0
         }
@@ -727,6 +727,7 @@ class TabViewController: UIViewController {
         webView.addObserver(self, forKeyPath: #keyPath(WKWebView.canGoBack), options: .new, context: nil)
         webView.addObserver(self, forKeyPath: #keyPath(WKWebView.canGoForward), options: .new, context: nil)
         webView.addObserver(self, forKeyPath: #keyPath(WKWebView.title), options: .new, context: nil)
+        webView.addObserver(self, forKeyPath: #keyPath(WKWebView.isLoading), options: .new, context: nil)
     }
 
     private func configureRefreshControl(_ control: UIRefreshControl) {
@@ -843,7 +844,12 @@ class TabViewController: UIViewController {
               let webView = webView else { return }
 
         switch keyPath {
-            
+
+        case #keyPath(WKWebView.isLoading):
+            if webView.isLoading {
+                delegate?.showBars()
+            }
+
         case #keyPath(WKWebView.estimatedProgress):
             progressWorker.progressDidChange(webView.estimatedProgress)
             
@@ -1035,15 +1041,6 @@ class TabViewController: UIViewController {
             privacyDashboard = controller
         }
         
-        if let controller = segue.destination as? FullscreenDaxDialogViewController {
-            controller.spec = sender as? DaxDialogs.BrowsingSpec
-            controller.woShown = woShownRecently
-            controller.delegate = self
-            
-            if controller.spec?.highlightAddressBar ?? false {
-                chromeDelegate.omniBar.cancelAllAnimations()
-            }
-        }
     }
 
     private var jsAlertController: JSAlertController!
@@ -1243,6 +1240,7 @@ class TabViewController: UIViewController {
         webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.canGoForward))
         webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.canGoBack))
         webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.title))
+        webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.isLoading))
     }
 
     public func makeBreakageAdditionalInfo() -> PrivacyDashboardViewController.BreakageAdditionalInfo? {
@@ -1396,7 +1394,6 @@ extension TabViewController: WKNavigationDelegate {
         self.fireWoFollowUp = false
 
         self.httpsForced = httpsForced
-        delegate?.showBars()
 
         resetDashboardInfo()
 
@@ -1660,8 +1657,9 @@ extension TabViewController: WKNavigationDelegate {
             scheduleTrackerNetworksAnimation(collapsing: true)
             return
         }
-        
-        scheduleTrackerNetworksAnimation(collapsing: !spec.highlightAddressBar)
+
+        // In new onboarding we do not highlight the address bar so collapsing is default to true.
+        scheduleTrackerNetworksAnimation(collapsing: true)
         let daxDialogSourceURL = self.url
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in

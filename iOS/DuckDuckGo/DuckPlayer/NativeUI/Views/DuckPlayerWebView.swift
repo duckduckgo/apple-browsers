@@ -116,7 +116,7 @@ struct DuckPlayerWebView: UIViewRepresentable {
        func getCurrentTimestamp(_ webView: WKWebView) async -> TimeInterval {
            /*
            do {
-               let result = try await (webView.evaluateJavaScript("getCurrentTime()") as Any)
+               let result: Any? = try await webView.evaluateJavaScript("getCurrentTime()")
                if let timestamp = result as? TimeInterval {
                    return timestamp
                } else {

@@ -53,13 +53,13 @@ struct DuckPlayerPrimingModalView: View {
                 .frame(width: Constants.imageWidth, height: Constants.imageHeight)
                 .aspectRatio(contentMode: .fit)
 
-                Text(UserText.duckPlayerNativeModalTitle)
+                Text(verbatim: "Play this video in Duck Player to watch without targeted ads!")
                     .daxTitle3()
                     .foregroundColor(Color(designSystemColor: .textPrimary))
                     .multilineTextAlignment(.center)
                     .lineLimit(3)
 
-                Text(UserText.duckPlayerNativeModalDescription)
+                Text(verbatim: "Plus, what you watch in Duck Player won’t influence your YouTube recommendations.")
                     .daxBodyRegular()
                     .foregroundColor(Color(designSystemColor: .textSecondary))
                     .multilineTextAlignment(.center)
@@ -67,7 +67,7 @@ struct DuckPlayerPrimingModalView: View {
                 Button(
                     action: { viewModel.tryDuckPlayer() },
                     label: {
-                        Text(UserText.duckPlayerNativeModalCTA).daxButton()
+                        Text(verbatim: "Watch Now Privately").daxButton()
                             .frame(maxWidth: .infinity)
                             .frame(height: Constants.buttonHeight)
                             .foregroundColor(Color(designSystemColor: .buttonsPrimaryText))

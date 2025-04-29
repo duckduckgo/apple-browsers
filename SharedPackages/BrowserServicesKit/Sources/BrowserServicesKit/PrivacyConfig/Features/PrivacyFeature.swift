@@ -72,6 +72,7 @@ public enum PrivacyFeature: String {
     case setAsDefaultAndAddToDock
     case contentScopeExperiments
     case extendedOnboarding
+    case tabCrashRecovery
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -130,12 +131,6 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
     public var parent: PrivacyFeature {
         .aiChat
     }
-
-    /// Displays the settings item for showing a shortcut in the macOS application menu.
-    case applicationMenuShortcut
-
-    /// Displays the settings item for showing a shortcut in the macOS toolbar.
-    case toolbarShortcut
 
     /// Displays the AI Chat icon in the iOS browsing menu toolbar.
     case browsingToolbarShortcut

@@ -36,6 +36,8 @@ tags:
 - inputText: "https://example.com"
 - pressKey: Enter
 
+- assertVisible: ".*Example Domain.*"
+
 # Close tab
 - tapOn: "Tab Switcher"
 - tapOn: "Close \"Example Domain\" at example.com"

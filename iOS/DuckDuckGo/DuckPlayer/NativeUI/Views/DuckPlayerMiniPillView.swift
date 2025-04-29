@@ -116,7 +116,7 @@ struct DuckPlayerMiniPillView: View {
                         .clipShape(RoundedRectangle(cornerRadius: Constants.thumbnailCornerRadius))
 
                         VStack(alignment: .leading) {
-                            Text(UserText.duckPlayerNativeResumeInDuckPlayer)
+                            Text(verbatim: "Resume in Duck Player")
                                 .daxSubheadSemibold()
                                 .foregroundColor(Color(designSystemColor: .textPrimary))
                                 .multilineTextAlignment(.leading)

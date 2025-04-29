@@ -19,6 +19,7 @@
 import Combine
 import Foundation
 import NetworkProtectionUI
+import VPNAppState
 
 extension UserDefaults {
     // Convenience declaration
@@ -68,10 +69,12 @@ extension NetworkProtectionUI.OnboardingStatus {
     /// - For DeveloperID builds the default is asking the user to allow the System Extension.
     ///
     public static let `default`: OnboardingStatus = {
-#if NETP_SYSTEM_EXTENSION
-        .isOnboarding(step: .userNeedsToAllowExtension)
-#else
-        .isOnboarding(step: .userNeedsToAllowVPNConfiguration)
-#endif
+        let vpnAppState = VPNAppState(defaults: .netP)
+
+        if vpnAppState.isUsingSystemExtension {
+            return .isOnboarding(step: .userNeedsToAllowExtension)
+        } else {
+            return .isOnboarding(step: .userNeedsToAllowVPNConfiguration)
+        }
     }()
 }

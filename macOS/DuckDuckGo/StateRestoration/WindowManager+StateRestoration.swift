@@ -75,7 +75,9 @@ extension WindowControllersManager {
 
     @MainActor
     func encodeState(with coder: NSCoder) {
-        coder.encode(WindowManagerStateRestoration(windowControllersManager: self),
+        coder.encode(WindowManagerStateRestoration(mainWindowControllers: mainWindowControllers,
+                                                   lastKeyMainWindowController: lastKeyMainWindowController,
+                                                   applicationPinnedTabs: Application.appDelegate.pinnedTabsManager.tabCollection),
                      forKey: NSKeyedArchiveRootObjectKey)
     }
 
@@ -118,8 +120,8 @@ final class WindowManagerStateRestoration: NSObject, NSSecureCoding {
     }
 
     @MainActor
-    init(windowControllersManager: WindowControllersManager) {
-        self.windows = windowControllersManager.mainWindowControllers
+    init(mainWindowControllers: [MainWindowController], lastKeyMainWindowController: MainWindowController?, applicationPinnedTabs: TabCollection) {
+        self.windows = mainWindowControllers
             .filter { $0.window?.isPopUpWindow == false }
             .sorted { (lhs, rhs) in
                 let leftIndex = lhs.window?.orderedIndex ?? Int.min
@@ -127,11 +129,11 @@ final class WindowManagerStateRestoration: NSObject, NSSecureCoding {
                 return leftIndex < rightIndex
             }
             .compactMap { WindowRestorationItem(windowController: $0) }
-        self.keyWindowIndex = windowControllersManager.lastKeyMainWindowController.flatMap {
-            windowControllersManager.mainWindowControllers.firstIndex(of: $0)
+        self.keyWindowIndex = lastKeyMainWindowController.flatMap {
+            mainWindowControllers.firstIndex(of: $0)
         }
 
-        self.applicationPinnedTabs = Application.appDelegate.pinnedTabsManager.tabCollection
+        self.applicationPinnedTabs = applicationPinnedTabs
     }
 
     func encode(with coder: NSCoder) {

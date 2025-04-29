@@ -72,16 +72,7 @@ final class VPNAppEventsHandler {
         let loginItemsManager = LoginItemsManager()
 
         Task { @MainActor in
-            await featureGatekeeper.disableIfUserHasNoAccess()
             restartNetworkProtectionIfVersionChanged(using: loginItemsManager)
-        }
-    }
-
-    /// Call this method when the app becomes active to run the associated NetP logic.
-    ///
-    func applicationDidBecomeActive() {
-        Task { @MainActor in
-            await featureGatekeeper.disableIfUserHasNoAccess()
         }
     }
 

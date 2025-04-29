@@ -132,12 +132,12 @@ final class MockDataBrokerProtectionDataManager: DataBrokerProtectionDataManagin
     var profileToReturn: DataBrokerProtectionProfile?
     var shouldReturnHasMatches = false
 
-    var cache: InMemoryDataCache
+    var communicator: DBPUICommunicator
     var delegate: DataBrokerProtectionDataManagerDelegate?
 
     init(database: DataBrokerProtectionRepository,
          profileSavedNotifier: DBPProfileSavedNotifier? = nil) {
-        cache = InMemoryDataCache()
+        communicator = DBPUICommunicator()
     }
 
     func saveProfile(_ profile: DataBrokerProtectionProfile) async throws {

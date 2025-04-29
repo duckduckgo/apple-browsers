@@ -63,13 +63,13 @@ struct MapperToUI {
         brokerProfileQueryData.forEach {
             let dataBroker = $0.dataBroker
             let scanJob = $0.scanJobData
-            for optOutJob in $0.optOutJobData {
+            for optOutJob in $0.optOutJobDataExcludingUserRemoved {
                 let extractedProfile = optOutJob.extractedProfile
 
                 var parentBrokerOptOutJobData: [OptOutJobData]?
                 if let parent = $0.dataBroker.parent,
                    let parentsQueryData = brokerURLsToQueryData[parent] {
-                    parentBrokerOptOutJobData = parentsQueryData.flatMap { $0.optOutJobData }
+                    parentBrokerOptOutJobData = parentsQueryData.flatMap { $0.optOutJobDataExcludingUserRemoved }
                 }
 
                 let profileMatch = DBPUIDataBrokerProfileMatch(optOutJobData: optOutJob,
@@ -468,11 +468,5 @@ fileprivate extension BrokerJobData {
         } else {
             return "scan"
         }
-    }
-}
-
-fileprivate extension Array where Element == HistoryEvent {
-    var closestHistoryEvent: HistoryEvent? {
-        self.sorted(by: { $0.date > $1.date }).first
     }
 }

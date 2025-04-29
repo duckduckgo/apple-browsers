@@ -236,7 +236,6 @@ extension Pixel {
         case daxDialogsWithTrackersUnique
         case daxDialogsSiteIsMajorUnique
         case daxDialogsSiteOwnedByMajorUnique
-        case daxDialogsHiddenUnique
         case daxDialogsFireEducationShownUnique
         case daxDialogsFireEducationConfirmedUnique
         case daxDialogsFireEducationCancelledUnique
@@ -917,7 +916,7 @@ extension Pixel {
         case privacyProSubscriptionActive
         case privacyProOfferScreenImpression
         case privacyProPurchaseAttempt
-        case privacyProPurchaseFailure
+        case privacyProPurchaseFailureOther
         case privacyProPurchaseFailureStoreError
         case privacyProPurchaseFailureBackendError
         case privacyProPurchaseFailureAccountNotCreated
@@ -933,7 +932,6 @@ extension Pixel {
         case privacyProRestoreAfterPurchaseAttempt
         case privacyProSubscriptionActivated
         case privacyProWelcomeAddDevice
-        case privacyProAddDeviceEnterEmail
         case privacyProWelcomeVPN
         case privacyProWelcomePersonalInformationRemoval
         case privacyProWelcomeIdentityRestoration
@@ -944,7 +942,6 @@ extension Pixel {
         case privacyProSubscriptionManagementEmail
         case privacyProSubscriptionManagementPlanBilling
         case privacyProSubscriptionManagementRemoval
-        case privacyProTransactionProgressNotHiddenAfter60s
         case privacyProSuccessfulSubscriptionAttribution
         case privacyProKeychainAccessError
         case privacyProSubscriptionCookieMissingTokenOnSignIn
@@ -956,7 +953,6 @@ extension Pixel {
         case privacyProInvalidRefreshTokenDetected
         case privacyProInvalidRefreshTokenSignedOut
         case privacyProInvalidRefreshTokenRecovered
-        case privacyProAuthV2MigrationStarted
         case privacyProAuthV2MigrationFailed
         case privacyProAuthV2MigrationSucceeded
         case privacyProAuthV2GetTokensError
@@ -1351,7 +1347,6 @@ extension Pixel.Event {
         case .daxDialogsWithTrackersUnique: return "m_dx_wt_unique"
         case .daxDialogsSiteIsMajorUnique: return "m_dx_sm_unique"
         case .daxDialogsSiteOwnedByMajorUnique: return "m_dx_so_unique"
-        case .daxDialogsHiddenUnique: return "m_dx_h_unique"
         case .daxDialogsFireEducationShownUnique: return "m_dx_fe_s_unique"
         case .daxDialogsFireEducationConfirmedUnique: return "m_dx_fe_co_unique"
         case .daxDialogsFireEducationCancelledUnique: return "m_dx_fe_ca_unique"
@@ -1968,7 +1963,7 @@ extension Pixel.Event {
         case .privacyProSubscriptionActive: return "m_privacy-pro_app_subscription_active"
         case .privacyProOfferScreenImpression: return "m_privacy-pro_offer_screen_impression"
         case .privacyProPurchaseAttempt: return "m_privacy-pro_terms-conditions_subscribe_click"
-        case .privacyProPurchaseFailure: return "m_privacy-pro_app_subscription-purchase_failure_other"
+        case .privacyProPurchaseFailureOther: return "m_privacy-pro_app_subscription-purchase_failure_other"
         case .privacyProPurchaseFailureStoreError: return "m_privacy-pro_app_subscription-purchase_failure_store"
         case .privacyProPurchaseFailureAccountNotCreated: return "m_privacy-pro_app_subscription-purchase_failure_account-creation"
         case .privacyProPurchaseFailureBackendError: return "m_privacy-pro_app_subscription-purchase_failure_backend"
@@ -1984,7 +1979,6 @@ extension Pixel.Event {
         case .privacyProRestoreAfterPurchaseAttempt: return "m_privacy-pro_app_subscription-restore-after-purchase-attempt_success"
         case .privacyProSubscriptionActivated: return "m_privacy-pro_app_subscription_activated_u"
         case .privacyProWelcomeAddDevice: return "m_privacy-pro_welcome_add-device_click_u"
-        case .privacyProAddDeviceEnterEmail: return "m_privacy-pro_add-device_enter-email_click"
         case .privacyProWelcomeVPN: return "m_privacy-pro_welcome_vpn_click_u"
         case .privacyProWelcomePersonalInformationRemoval: return "m_privacy-pro_welcome_personal-information-removal_click_u"
         case .privacyProWelcomeIdentityRestoration: return "m_privacy-pro_welcome_identity-theft-restoration_click_u"
@@ -1995,7 +1989,6 @@ extension Pixel.Event {
         case .privacyProSubscriptionManagementEmail: return "m_privacy-pro_manage-email_edit_click"
         case .privacyProSubscriptionManagementPlanBilling: return "m_privacy-pro_settings_change-plan-or-billing_click"
         case .privacyProSubscriptionManagementRemoval: return "m_privacy-pro_settings_remove-from-device_click"
-        case .privacyProTransactionProgressNotHiddenAfter60s: return "m_privacy-pro_progress_not_hidden_after_60s"
         case .privacyProSuccessfulSubscriptionAttribution: return "m_subscribe"
         case .privacyProKeychainAccessError: return "m_privacy-pro_keychain_access_error"
         case .privacyProSubscriptionCookieMissingTokenOnSignIn: return "m_privacy-pro_subscription-cookie-missing_token_on_sign_in"
@@ -2007,7 +2000,6 @@ extension Pixel.Event {
         case .privacyProInvalidRefreshTokenDetected: return "m_privacy-pro_auth_invalid_refresh_token_detected"
         case .privacyProInvalidRefreshTokenSignedOut: return "m_privacy-pro_auth_invalid_refresh_token_signed_out"
         case .privacyProInvalidRefreshTokenRecovered: return "m_privacy-pro_auth_invalid_refresh_token_recovered"
-        case .privacyProAuthV2MigrationStarted: return "m_privacy-pro_auth_v2_migration_started"
         case .privacyProAuthV2MigrationFailed: return "m_privacy-pro_auth_v2_migration_failure"
         case .privacyProAuthV2MigrationSucceeded: return "m_privacy-pro_auth_v2_migration_success"
         case .privacyProAuthV2GetTokensError: return "m_privacy-pro_auth_v2_get_tokens_error"

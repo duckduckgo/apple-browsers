@@ -48,6 +48,7 @@ import RemoteMessaging
 import os.log
 import Freemium
 import VPNAppState
+import AIChat
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
 
@@ -112,11 +113,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         privacyStats: privacyStats,
         freemiumDBPPromotionViewCoordinator: freemiumDBPPromotionViewCoordinator
     )
+
+    private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(
+        promptHandler: AIChatPromptHandler.shared,
+        addressBarQueryExtractor: AIChatAddressBarPromptExtractor()
+    )
+
     let privacyStats: PrivacyStatsCollecting
     let activeRemoteMessageModel: ActiveRemoteMessageModel
     let newTabPageCustomizationModel = NewTabPageCustomizationModel()
     let remoteMessagingClient: RemoteMessagingClient!
-    let onboardingStateMachine: ContextualOnboardingStateMachine & ContextualOnboardingStateUpdater
+    let onboardingContextualDialogsManager: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater
     let defaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPresenter
     let visualStyleManager: VisualStyleManagerProviding
 
@@ -279,7 +286,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         visualStyleManager = VisualStyleManager(featureFlagger: featureFlagger)
 
-        onboardingStateMachine = ContextualOnboardingStateMachine()
+        onboardingContextualDialogsManager = ContextualDialogsManager()
 
         // MARK: - Subscription configuration
 
@@ -443,7 +450,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Freemium DBP
         freemiumDBPFeature.subscribeToDependencyUpdates()
 
+        // ignore popovers shown from a view not in view hierarchy
+        // https://app.asana.com/0/1201037661562251/1206407295280737/f
         _ = NSPopover.swizzleShowRelativeToRectOnce
+        // disable macOS system-wide window tabbing
+        NSWindow.allowsAutomaticWindowTabbing = false
+        // Fix SwifUI context menus and its owner View leaking
+        SwiftUIContextMenuRetainCycleFix.setUp()
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -477,8 +490,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         if LocalStatisticsStore().atb == nil {
             AppDelegate.firstLaunchDate = Date()
-            // MARK: Enable pixel experiments here
-            PixelExperiment.install()
         }
         AtbAndVariantCleanup.cleanup()
         DefaultVariantManager().assignVariantIfNeeded { _ in
@@ -617,10 +628,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidBecomeActive(_ notification: Notification) {
         guard didFinishLaunching else { return }
 
-        PixelExperiment.fireOnboardingTestPixels()
         initializeSync()
-
-        vpnAppEventsHandler.applicationDidBecomeActive()
 
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
         let pirGatekeeper = DefaultDataBrokerProtectionFeatureGatekeeper(subscriptionManager: subscriptionAuthV1toV2Bridge,

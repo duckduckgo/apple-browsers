@@ -26,6 +26,7 @@ public final class PopoverMessageViewModel: ObservableObject {
     @Published var image: NSImage?
     @Published var buttonText: String?
     @Published public var buttonAction: (() -> Void)?
+    @Published var maxWidth: CGFloat?
     var shouldShowCloseButton: Bool
     var shouldPresentMultiline: Bool
 
@@ -35,7 +36,9 @@ public final class PopoverMessageViewModel: ObservableObject {
                 buttonText: String? = nil,
                 buttonAction: (() -> Void)? = nil,
                 shouldShowCloseButton: Bool = false,
-                shouldPresentMultiline: Bool = true) {
+                shouldPresentMultiline: Bool = true,
+                maxWidth: CGFloat? = nil
+    ) {
         self.title = title
         self.message = message
         self.image = image
@@ -43,6 +46,7 @@ public final class PopoverMessageViewModel: ObservableObject {
         self.buttonAction = buttonAction
         self.shouldShowCloseButton = shouldShowCloseButton
         self.shouldPresentMultiline = shouldPresentMultiline
+        self.maxWidth = maxWidth
     }
 }
 
@@ -86,7 +90,7 @@ public struct PopoverMessageView: View {
                 .frame(minHeight: 22)
                 .lineLimit(nil)
                 .if(viewModel.shouldPresentMultiline) { view in
-                    view.frame(width: 160, alignment: .leading)
+                    view.frame(width: viewModel.maxWidth ?? 160, alignment: .leading)
                 }
 
             if let text = viewModel.buttonText,
@@ -133,7 +137,7 @@ public struct PopoverMessageView: View {
             }
             .padding(.leading, 8)
             .if(viewModel.shouldPresentMultiline) { view in
-                view.frame(width: 300, alignment: .leading)
+                view.frame(width: viewModel.maxWidth ?? 300, alignment: .leading)
             }
 
             if let text = viewModel.buttonText,

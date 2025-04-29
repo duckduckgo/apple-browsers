@@ -170,6 +170,6 @@ final class NewTabPageRecentActivityClientTests: XCTestCase {
         let action: NewTabPageDataModel.ActivityOpenAction = .init(id: "abcd", url: url.absoluteString, target: .sameTab)
 
         try await messageHelper.handleMessageExpectingNilResponse(named: .open, parameters: action)
-        XCTAssertEqual(actionsHandler.openCalls, [.init(url: url, target: .current)])
+        XCTAssertEqual(actionsHandler.openCalls, [.init(url: url, sender: .userScript, target: .current)])
     }
 }

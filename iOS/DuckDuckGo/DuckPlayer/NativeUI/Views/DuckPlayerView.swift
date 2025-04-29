@@ -92,7 +92,7 @@ struct DuckPlayerView: View {
                         RoundedRectangle(cornerRadius: 8)
                             .fill(Color.gray.opacity(0.2))
                         HStack(spacing: 8) {
-                            Text(UserText.duckPlayerNativeAutoOpenLabel)
+                            Text(verbatim: "Auto-open Duck Player on Youtube")
                                 .daxBodyRegular()
                                 .foregroundColor(.white)
                             Spacer()
@@ -118,7 +118,7 @@ struct DuckPlayerView: View {
                             viewModel.openInYouTube()
                         } label: {
                             HStack(spacing: 8) {
-                                Text(UserText.duckPlayerNativeWatchOnYouTube)
+                                Text(verbatim: "Watch in Youtube")
                                     .daxBodyRegular()
                                     .foregroundColor(.white)
                                 Spacer()

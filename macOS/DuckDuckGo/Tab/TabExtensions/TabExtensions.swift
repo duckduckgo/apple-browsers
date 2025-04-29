@@ -76,6 +76,7 @@ protocol TabExtensionDependencies {
     var tunnelController: NetworkProtectionIPCTunnelController? { get }
     var maliciousSiteDetector: MaliciousSiteDetecting { get }
     var faviconManagement: FaviconManagement? { get }
+    var featureFlagger: FeatureFlagger { get }
 }
 
 // swiftlint:disable:next large_tuple
@@ -87,6 +88,7 @@ typealias TabExtensionsBuilderArguments = (
     setContent: (Tab.TabContent) -> Void,
     closeTab: () -> Void,
     titlePublisher: AnyPublisher<String?, Never>,
+    errorPublisher: AnyPublisher<WKError?, Never>,
     userScriptsPublisher: AnyPublisher<UserScripts?, Never>,
     inheritedAttribution: AdClickAttributionLogic.State?,
     userContentControllerFuture: Future<UserContentController, Never>,
@@ -224,6 +226,15 @@ extension TabExtensionsBuilder {
             FaviconsTabExtension(scriptsPublisher: userScripts.compactMap { $0 },
                                  contentPublisher: args.contentPublisher,
                                  faviconManagement: dependencies.faviconManagement)
+        }
+
+        add {
+            TabCrashRecoveryExtension(
+                featureFlagger: dependencies.featureFlagger,
+                contentPublisher: args.contentPublisher,
+                webViewPublisher: args.webViewFuture,
+                webViewErrorPublisher: args.errorPublisher
+            )
         }
 
 #if SPARKLE

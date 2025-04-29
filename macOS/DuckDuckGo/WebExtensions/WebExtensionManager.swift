@@ -230,7 +230,8 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
         return WindowControllersManager.shared.lastKeyMainWindowController
     }
 
-    private func webExtensionController(_ controller: WKWebExtensionController!, openNewWindowUsingConfiguration configuration: WKWebExtension.WindowConfiguration!, for extensionContext: WKWebExtensionContext!) async throws -> any WKWebExtensionWindow {
+    func webExtensionController(_ controller: WKWebExtensionController, openNewWindowUsing configuration: WKWebExtension.WindowConfiguration, for extensionContext: WKWebExtensionContext) async throws -> (any WKWebExtensionWindow)? {
+
         // Extract options
         let tabs = configuration.tabURLs.map { Tab(content: .contentFromURL($0, source: .ui)) }
         let burnerMode = BurnerMode(isBurner: configuration.shouldBePrivate)
@@ -296,19 +297,20 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
         throw WKWebExtensionControllerDelegateError.notSupported
     }
 
-    private func webExtensionController(_ controller: WKWebExtensionController!, promptForPermissions permissions: Set<WKWebExtension.Permission>!, in tab: (any WKWebExtensionTab)?, for extensionContext: WKWebExtensionContext!) async -> (Set<WKWebExtension.Permission>?, Date?) {
+    func webExtensionController(_ controller: WKWebExtensionController, promptForPermissions permissions: Set<WKWebExtension.Permission>, in tab: (any WKWebExtensionTab)?, for extensionContext: WKWebExtensionContext) async -> (Set<WKWebExtension.Permission>, Date?) {
         return (permissions, nil)
     }
 
-    private func webExtensionController(_ controller: WKWebExtensionController!, promptForPermissionToAccessURLs urls: Set<URL>!, in tab: (any WKWebExtensionTab)?, for extensionContext: WKWebExtensionContext!) async -> (Set<URL>?, Date?) {
+    func webExtensionController(_ controller: WKWebExtensionController, promptForPermissionToAccess urls: Set<URL>, in tab: (any WKWebExtensionTab)?, for extensionContext: WKWebExtensionContext) async -> (Set<URL>, Date?) {
         return (urls, nil)
     }
 
-    private func webExtensionController(_ controller: WKWebExtensionController!, promptForPermissionMatchPatterns matchPatterns: Set<WKWebExtension.MatchPattern>!, in tab: (any WKWebExtensionTab)?, for extensionContext: WKWebExtensionContext!) async -> (Set<WKWebExtension.MatchPattern>?, Date?) {
+    func webExtensionController(_ controller: WKWebExtensionController, promptForPermissionMatchPatterns matchPatterns: Set<WKWebExtension.MatchPattern>, in tab: (any WKWebExtensionTab)?, for extensionContext: WKWebExtensionContext) async -> (Set<WKWebExtension.MatchPattern>, Date?) {
         return (matchPatterns, nil)
     }
 
-    private func webExtensionController(_ controller: WKWebExtensionController!, presentPopupFor action: WKWebExtension.Action!, for context: WKWebExtensionContext!) async throws {
+    func webExtensionController(_ controller: WKWebExtensionController, presentActionPopup action: WKWebExtension.Action, for context: WKWebExtensionContext) async throws {
+
         guard let button = buttonForContext(context) else {
             return
         }
@@ -323,8 +325,6 @@ extension WebExtensionManager: WKWebExtensionControllerDelegate {
         popupWebView.configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
 
         popupPopover.show(relativeTo: button.bounds, of: button, preferredEdge: .maxY)
-
-        popupWebView.reload()
     }
 
     func webExtensionController(_ controller: WKWebExtensionController, sendMessage message: Any, toApplicationWithIdentifier applicationIdentifier: String?, for extensionContext: WKWebExtensionContext, replyHandler: ((Any?, (any Error)?) -> Void)) {

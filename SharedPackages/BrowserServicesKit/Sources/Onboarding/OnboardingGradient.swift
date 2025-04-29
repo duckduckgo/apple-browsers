@@ -94,20 +94,6 @@ extension OnboardingGradient {
 
         init() {}
 
-//        struct GradientColor {
-//            static let top1_macOS = Color(red: 0.7, green: 0.77, blue: 0.98).opacity(0.16)
-//            static let top2_macOS = Color(red: 0.7, green: 0.77, blue: 0.98).opacity(0.64)
-//
-//            static let top1_iOS = Color(red: 1, green: 0.94, blue: 0.76).opacity(0.64)
-//            static let top2_iOS = Color(red: 0.7, green: 0.77, blue: 0.98).opacity(0.8)
-//
-//            static let bottom1_macOS = Color(red: 1, green: 0.94, blue: 0.76)
-//            static let bottom2_macOS = Color(red: 1, green: 0.94, blue: 0.76).opacity(0)
-//
-//            static let bottom1_iOS = Color(red: 1, green: 0.91, blue: 0.64).opacity(0)
-//            static let bottom2_iOS = Color(red: 1, green: 0.91, blue: 0.64).opacity(0)
-//        }
-
         var body: some View {
             ZStack {
                 EllipticalGradient(
@@ -129,68 +115,25 @@ extension OnboardingGradient {
             }
             .background(.white)
         }
-
-//        func stops(for type: OnboardingGradient.GradientType) -> [Gradient.Stop] {
-//            switch type {
-//            case .bottom:
-//                if DevicePlatform.isMac {
-//                    return [
-//                        Gradient.Stop(color: GradientColor.bottom1_macOS, location: 0.00),
-//                        Gradient.Stop(color: GradientColor.bottom2_macOS, location: 1.00),
-//                    ]
-//                } else {
-//                    return [
-//                        Gradient.Stop(color: Color(red: 1, green: 0.91, blue: 0.64).opacity(0), location: 0.00),
-//                        Gradient.Stop(color: Color(red: 1, green: 0.91, blue: 0.64).opacity(0), location: 1.00),
-//                    ]
-//                }
-//            case .top:
-//                if DevicePlatform.isMac {
-//                    return [
-//                        Gradient.Stop(color: GradientColor.top1_macOS, location: 0.00),
-//                        Gradient.Stop(color: GradientColor.top2_macOS, location: 1.00),
-//                    ]
-//                } else {
-//                    return [
-//                        Gradient.Stop(color: GradientColor.top1_iOS, location: 0.00),
-//                        Gradient.Stop(color: GradientColor.top2_iOS, location: 1.00),
-//                    ]
-//                }
-//            }
-//        }
     }
 
     struct DarkGradient: View {
 
         init() {}
 
-//        struct GradientColor {
-//            static let top1_macOS = Color(red: 0.28, green: 0.39, blue: 0.92).opacity(0.56)
-//            static let top2_macOS = Color(red: 0.02, green: 0.1, blue: 0.42).opacity(0.9)
-//
-//            static let top1_iOS = Color(red: 0.28, green: 0.39, blue: 0.92).opacity(0.48)
-//            static let top2_iOS = Color(red: 0.02, green: 0.1, blue: 0.42).opacity(0.72)
-//
-//            static let bottom1_macOS = Color(red: 0.26, green: 0.26, blue: 0.84).opacity(0.64)
-//            static let bottom2_macOS = Color(red: 0.34, green: 0.17, blue: 0.8).opacity(0)
-//
-//            static let bottom1_iOS = Color(red: 0.26, green: 0.26, blue: 0.84).opacity(0.64)
-//            static let bottom2_iOS = Color(red: 0.25, green: 0.14, blue: 0.56).opacity(0)
-//        }
-
         var body: some View {
             ZStack {
                 EllipticalGradient(
                     stops: [
-                        Gradient.Stop(color: Color(red: 0.26, green: 0.26, blue: 0.84).opacity(0.64), location: 0.00),
-                        Gradient.Stop(color: Color(red: 0.25, green: 0.14, blue: 0.56).opacity(0), location: 1.00),
+                        Gradient.Stop(color: Color(red: 0.28, green: 0.39, blue: 0.92).opacity(0.48), location: 0.00),
+                        Gradient.Stop(color: Color(red: 0.02, green: 0.1, blue: 0.42).opacity(0.72), location: 1.00),
                     ],
                     center: center(for: .bottom),
                     endRadiusFraction: 1
                 )
                 EllipticalGradient(
                     stops: [
-                        Gradient.Stop(color: Color(red: 0.28, green: 0.39, blue: 0.92).opacity(0.48), location: 0.00),
+                        Gradient.Stop(color: Color(red: 0.26, green: 0.26, blue: 0.84).opacity(0.64), location: 0.00),
                         Gradient.Stop(color: Color(red: 0.25, green: 0.14, blue: 0.56).opacity(0), location: 1.00),
                     ],
                     center: OnboardingGradient.center(for: .top),
@@ -199,35 +142,6 @@ extension OnboardingGradient {
             }
             .background(Color(red: 0.07, green: 0.07, blue: 0.07))
         }
-
-//        func stops(for type: OnboardingGradient.GradientType) -> [Gradient.Stop] {
-//            switch type {
-//            case .bottom:
-//                if DevicePlatform.isMac {
-//                    return [
-//                        Gradient.Stop(color: GradientColor.bottom1_macOS, location: 0.00),
-//                        Gradient.Stop(color: GradientColor.bottom2_macOS, location: 1.00),
-//                    ]
-//                } else {
-//                    return [
-//                        Gradient.Stop(color: GradientColor.bottom1_iOS, location: 0.00),
-//                        Gradient.Stop(color: GradientColor.bottom2_iOS, location: 1.00),
-//                    ]
-//                }
-//            case .top:
-//                if DevicePlatform.isMac {
-//                    return [
-//                        Gradient.Stop(color: GradientColor.top1_macOS, location: 0.00),
-//                        Gradient.Stop(color: GradientColor.top2_macOS, location: 1.00),
-//                    ]
-//                } else {
-//                    return [
-//                        Gradient.Stop(color: GradientColor.top1_iOS, location: 0.00),
-//                        Gradient.Stop(color: GradientColor.top2_iOS, location: 1.00),
-//                    ]
-//                }
-//            }
-//        }
     }
 }
 

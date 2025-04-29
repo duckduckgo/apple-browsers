@@ -39,6 +39,7 @@ import os.log
 import PageRefreshMonitor
 import BrokenSitePrompt
 import AIChat
+import NetworkExtension
 
 class MainViewController: UIViewController {
 
@@ -1727,6 +1728,14 @@ class MainViewController: UIViewController {
     }
 
     private func subscribeToNetworkProtectionEvents() {
+        if !featureDiscovery.wasUsedBefore(.vpn) {
+            // If the VPN was used before we don't care about this notification any more
+            NotificationCenter.default.publisher(for: .NEVPNStatusDidChange)
+                .sink { [weak self] notification in
+                    self?.onVPNStatusDidChange(notification)
+                }.store(in: &vpnCancellables)
+        }
+
         NotificationCenter.default.publisher(for: .accountDidSignIn)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
@@ -1787,6 +1796,14 @@ class MainViewController: UIViewController {
                                               presentationLocation: .withoutBottomBar)
                 }
             }
+    }
+
+    private func onVPNStatusDidChange(_ notification: Notification) {
+        guard let session = (notification.object as? NETunnelProviderSession),
+           session.status == .connected else {
+            return
+        }
+        self.featureDiscovery.setWasUsedBefore(.vpn)
     }
 
     private func onNetworkProtectionEntitlementMessagingChange() {

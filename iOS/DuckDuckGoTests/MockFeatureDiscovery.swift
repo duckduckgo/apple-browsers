@@ -28,7 +28,7 @@ class MockFeatureDiscovery: FeatureDiscovery {
         return false
     }
     
-    func addToParams(_ params: [String : String], forFeature feature: Core.WasUsedBeforeFeature) -> [String : String] {
+    func addToParams(_ params: [String: String], forFeature feature: Core.WasUsedBeforeFeature) -> [String: String] {
         params
     }
 

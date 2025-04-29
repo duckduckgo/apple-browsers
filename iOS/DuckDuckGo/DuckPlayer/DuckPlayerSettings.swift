@@ -120,9 +120,9 @@ enum DuckPlayerVariant: Equatable, Codable, CustomStringConvertible, CaseIterabl
     case nativeB
     case nativeC
 
-    private static let classicAString = "classicA"
-    private static let nativeBString = "nativeB"
-    private static let nativeCString = "nativeC"
+    private static let classicAString = "Classic (Web)"
+    private static let nativeBString = "Native (Opt-in)"
+    private static let nativeCString = "Native (Opt-out)"
     
     var stringValue: String {
         switch self {

@@ -86,6 +86,15 @@ jobs:
           name: ${{ env.dsyms_filename }}
           path: ${{ env.dsyms_path }}
 
+      - name: Upload dSYM to S3
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
+          DSYM_S3_PATH: s3://${{ vars.DSYM_BUCKET_NAME }}/${{ vars.IOS_DSYM_BUCKET_PREFIX }}/
+        run: |
+          aws s3 cp "${{ env.dsyms_path }}" ${{ env.DSYM_S3_PATH }}
+
       - name: Get Asana Task ID
         if: inputs.asana-task-url
         id: get-task-id
@@ -93,8 +102,10 @@ jobs:
           ASANA_TASK_URL: ${{ inputs.asana-task-url }}
         run: |
           task_id=$(echo "$ASANA_TASK_URL" \
-            | sed -E 's|.*https://(.*)|\1|' \
-            | cut -d '/' -f 4)
+            | perl -pe 's|.*https://app.asana.com/0/[0-9]+/([0-9]+)(?:/f)?|\1|; \
+              s|.*https://app.asana.com/1/[0-9]+(?:/[0-9a-z/]*)?/task/([0-9]+)(:?/[0-9a-z/]*)?(?:\?focus=true)?|\1|; \
+              s|.*https://app.asana.com/1/[0-9]+/inbox/[0-9]+/item/([0-9]+)/story/([0-9]+)(?:\?focus=true)?|\1|'
+          )
           echo "task_id=${task_id//[^0-9]/}" >> $GITHUB_OUTPUT
 
       - name: Upload IPA to Asana

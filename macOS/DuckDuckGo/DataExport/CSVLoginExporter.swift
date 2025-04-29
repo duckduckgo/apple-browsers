@@ -63,14 +63,15 @@ final class CSVLoginExporter {
             let domain = credential.account.domain ?? ""
             let username = credential.account.username ?? ""
             let password = credential.password?.utf8String() ?? ""
+            let notes = credential.account.notes ?? ""
 
             // Ensure that exported passwords escape any quotes they contain
             let escapedPassword = password.replacingOccurrences(of: "\"", with: "\\\"")
 
-            return "\"\(title)\",\"\(domain)\",\"\(username)\",\"\(escapedPassword)\""
+            return "\"\(title)\",\"\(domain)\",\"\(username)\",\"\(escapedPassword)\",\"\(notes)\""
         }
 
-        let headerRow = ["\"title\",\"url\",\"username\",\"password\""]
+        let headerRow = ["\"title\",\"url\",\"username\",\"password\",\"notes\""]
         let csvString = (headerRow + credentialsAsCSVRows).joined(separator: "\n")
 
         let stringData = csvString.utf8data

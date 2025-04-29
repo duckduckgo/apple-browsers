@@ -30,6 +30,10 @@ public enum ContentScopeExperimentsFeatureFlag: String, CaseIterable {
 }
 
 extension ContentScopeExperimentsFeatureFlag: FeatureFlagDescribing {
+    public var defaultValue: Bool {
+        false
+    }
+
     public var supportsLocalOverriding: Bool {
         true
     }

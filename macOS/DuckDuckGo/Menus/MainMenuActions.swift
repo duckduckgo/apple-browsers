@@ -263,12 +263,8 @@ extension AppDelegate {
     }
 
     @objc func openAbout(_ sender: Any?) {
-#if APPSTORE
-        let options = [NSApplication.AboutPanelOptionKey.applicationName: UserText.duckDuckGoForMacAppStore]
-#else
-        let options: [NSApplication.AboutPanelOptionKey: Any] = [:]
-#endif
-        NSApp.orderFrontStandardAboutPanel(options: options)
+        let aboutController = AboutPanelController(internalUserDecider: internalUserDecider)
+        aboutController.show()
     }
 
     @objc func openImportBrowserDataWindow(_ sender: Any?) {

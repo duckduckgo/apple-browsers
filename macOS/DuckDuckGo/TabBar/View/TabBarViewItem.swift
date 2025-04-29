@@ -36,6 +36,8 @@ protocol TabBarViewModel {
     var audioState: WKWebView.AudioState { get }
     var audioStatePublisher: AnyPublisher<WKWebView.AudioState, Never> { get }
     var canKillWebContentProcess: Bool { get }
+    var crashIndicatorModel: TabCrashIndicatorModel { get }
+
 }
 extension TabViewModel: TabBarViewModel {
     var titlePublisher: Published<String>.Publisher { $title }
@@ -45,6 +47,7 @@ extension TabViewModel: TabBarViewModel {
     var audioState: WKWebView.AudioState { tab.audioState }
     var audioStatePublisher: AnyPublisher<WKWebView.AudioState, Never> { tab.audioStatePublisher }
     var canKillWebContentProcess: Bool { tab.canKillWebContentProcess }
+    var crashIndicatorModel: TabCrashIndicatorModel { tab.crashIndicatorModel }
 }
 
 protocol TabBarViewItemDelegate: AnyObject {
@@ -78,6 +81,7 @@ protocol TabBarViewItemDelegate: AnyObject {
     @MainActor func otherTabBarViewItemsState(for tabBarViewItem: TabBarViewItem) -> OtherTabBarViewItemsState
 
     @MainActor func tabBarViewItemCrashAction(_: TabBarViewItem)
+    @MainActor func tabBarViewItemDidUpdateCrashInfoPopoverVisibility(_: TabBarViewItem, sender: NSButton, shouldShow: Bool)
 }
 final class TabBarItemCellView: NSView {
 
@@ -114,10 +118,26 @@ final class TabBarItemCellView: NSView {
         static let trailingSpaceWithPermissionAndButton: CGFloat = 40
     }
 
+    private var tabStyleProvider: TabStyleProviding = NSApp.delegateTyped.visualStyleManager.style.tabStyleProvider
+
     fileprivate let faviconImageView = {
         let faviconImageView = NSImageView()
         faviconImageView.imageScaling = .scaleProportionallyDown
         return faviconImageView
+    }()
+
+    fileprivate let crashIndicatorButton = {
+        let crashIndicatorButton = MouseOverButton(title: "", target: nil, action: #selector(TabBarViewItem.crashButtonAction))
+        crashIndicatorButton.bezelStyle = .shadowlessSquare
+        crashIndicatorButton.cornerRadius = 2
+        crashIndicatorButton.normalTintColor = .audioTabIcon
+        crashIndicatorButton.mouseDownColor = .buttonMouseDown
+        crashIndicatorButton.mouseOverColor = .buttonMouseOver
+        crashIndicatorButton.imagePosition = .imageOnly
+        crashIndicatorButton.imageScaling = .scaleNone
+        crashIndicatorButton.image = .tabCrash
+        crashIndicatorButton.isHidden = true
+        return crashIndicatorButton
     }()
 
     fileprivate let audioButton = {
@@ -176,6 +196,7 @@ final class TabBarItemCellView: NSView {
         set {
             closeButton.target = newValue
             audioButton.target = newValue
+            crashIndicatorButton.target = newValue
             permissionButton.target = newValue
         }
     }
@@ -186,7 +207,7 @@ final class TabBarItemCellView: NSView {
         return mouseOverView
     }()
 
-    fileprivate let rightSeparatorView = ColorView(frame: .zero, backgroundColor: .separator)
+    fileprivate let rightSeparatorView = ColorView(frame: .zero)
 
     fileprivate lazy var borderLayer: CALayer = {
         let layer = CALayer()
@@ -243,6 +264,7 @@ final class TabBarItemCellView: NSView {
 
         addSubview(mouseOverView)
         addSubview(faviconImageView)
+        addSubview(crashIndicatorButton)
         addSubview(audioButton)
         addSubview(titleTextField)
         addSubview(permissionButton)
@@ -272,7 +294,8 @@ final class TabBarItemCellView: NSView {
             layoutForCompactMode()
         }
 
-        rightSeparatorView.frame = NSRect(x: bounds.maxX.rounded() - 1, y: bounds.midY - 10, width: 1, height: 20)
+        rightSeparatorView.frame = NSRect(x: bounds.maxX.rounded() - 1, y: bounds.midY - (tabStyleProvider.separatorHeight / 2), width: 1, height: tabStyleProvider.separatorHeight)
+        rightSeparatorView.backgroundColor = tabStyleProvider.separatorColor
     }
 
     private func layoutForNormalMode() {
@@ -281,7 +304,10 @@ final class TabBarItemCellView: NSView {
             faviconImageView.frame = NSRect(x: minX, y: bounds.midY - 8, width: 16, height: 16)
             minX = faviconImageView.frame.maxX + 4
         }
-        if audioButton.isShown {
+        if crashIndicatorButton.isShown {
+            crashIndicatorButton.frame = NSRect(x: minX, y: bounds.midY - 8, width: 16, height: 16)
+            minX = crashIndicatorButton.frame.maxX
+        } else if audioButton.isShown {
             audioButton.frame = NSRect(x: minX, y: bounds.midY - 8, width: 16, height: 16)
             minX = audioButton.frame.maxX
         }
@@ -314,7 +340,7 @@ final class TabBarItemCellView: NSView {
     }
 
     private func layoutForCompactMode() {
-        let numberOfElements: CGFloat = (faviconImageView.isShown ? 1 : 0) + (audioButton.isShown ? 1 : 0) + (permissionButton.isShown ? 1 : 0) + (closeButton.isShown ? 1 : 0) + (titleTextField.isShown ? 1 : 0)
+        let numberOfElements: CGFloat = (faviconImageView.isShown ? 1 : 0) + (crashIndicatorButton.isShown || audioButton.isShown ? 1 : 0) + (permissionButton.isShown ? 1 : 0) + (closeButton.isShown ? 1 : 0) + (titleTextField.isShown ? 1 : 0)
         let elementWidth: CGFloat = 16
         var totalWidth = numberOfElements * elementWidth
         // tighten elements to fit all
@@ -331,7 +357,10 @@ final class TabBarItemCellView: NSView {
             titleTextField.frame = NSRect(x: 4, y: bounds.midY - 8, width: bounds.maxX - 8, height: 16)
             updateTitleTextFieldMask()
         }
-        if audioButton.isShown {
+        if crashIndicatorButton.isShown {
+            crashIndicatorButton.frame = NSRect(x: x.rounded(), y: bounds.midY - 8, width: 16, height: 16)
+            x = crashIndicatorButton.frame.maxX + spacing
+        } else if audioButton.isShown {
             audioButton.frame = NSRect(x: x.rounded(), y: bounds.midY - 8, width: 16, height: 16)
             x = audioButton.frame.maxX + spacing
         }
@@ -360,9 +389,6 @@ final class TabBarViewItem: NSCollectionViewItem {
 
     static let identifier = NSUserInterfaceItemIdentifier(rawValue: "TabBarViewItem")
 
-    enum Height {
-        static let standard: CGFloat = 34
-    }
     enum Width {
         static let minimum: CGFloat = 52
         static let minimumSelected: CGFloat = 120
@@ -540,6 +566,11 @@ final class TabBarViewItem: NSCollectionViewItem {
         self.delegate?.tabBarViewItemMuteUnmuteSite(self)
     }
 
+    @objc fileprivate func crashButtonAction(_ sender: NSButton) {
+        // toggle, because when the popover is displayed, clicking the button should hide it
+        tabViewModel?.crashIndicatorModel.isShowingPopover.toggle()
+    }
+
     @objc fileprivate func permissionButtonAction(_ sender: NSButton) {
         delegate?.tabBarViewItemTogglePermissionAction(self)
     }
@@ -587,6 +618,28 @@ final class TabBarViewItem: NSCollectionViewItem {
         tabViewModel.audioStatePublisher.sink { [weak self] audioState in
             self?.updateAudioPlayState(audioState)
         }.store(in: &cancellables)
+
+        tabViewModel.crashIndicatorModel.$isShowingIndicator
+            .sink { [weak self] isShowingIndicator in
+                guard let self else {
+                    return
+                }
+                if isShowingIndicator {
+                    showCrashIndicatorButton()
+                } else {
+                    hideCrashIndicatorButton()
+                }
+            }
+            .store(in: &cancellables)
+
+        tabViewModel.crashIndicatorModel.$isShowingPopover
+            .sink { [weak self] isShowingPopover in
+                guard let self else {
+                    return
+                }
+                delegate?.tabBarViewItemDidUpdateCrashInfoPopoverVisibility(self, sender: cell.crashIndicatorButton, shouldShow: isShowingPopover)
+            }
+            .store(in: &cancellables)
     }
 
     func clear() {
@@ -594,6 +647,16 @@ final class TabBarViewItem: NSCollectionViewItem {
         usedPermissions = Permissions()
         cell.faviconImageView.image = nil
         cell.titleTextField.stringValue = ""
+    }
+
+    private func showCrashIndicatorButton() {
+        cell.crashIndicatorButton.isHidden = false
+    }
+
+    func hideCrashIndicatorButton() {
+        tabViewModel?.crashIndicatorModel.isShowingPopover = false
+        cell.crashIndicatorButton.isHidden = true
+        cell.needsLayout = true
     }
 
     private var isDragged = false {
@@ -745,7 +808,7 @@ extension TabBarViewItem: NSMenuDelegate {
     }
 
     private func addCrashMenuItem(to menu: NSMenu) {
-        let crashMenuItem = NSMenuItem(title: Tab.crashTabMenuOptionTitle, action: #selector(crashButtonAction(_:)), keyEquivalent: "")
+        let crashMenuItem = NSMenuItem(title: Tab.crashTabMenuOptionTitle, action: #selector(crashMenuItemAction(_:)), keyEquivalent: "")
         crashMenuItem.target = self
         menu.addItem(crashMenuItem)
     }
@@ -757,7 +820,7 @@ extension TabBarViewItem: NSMenuDelegate {
         menu.addItem(duplicateMenuItem)
     }
 
-    @objc private func crashButtonAction(_ sender: NSButton) {
+    @objc private func crashMenuItemAction(_ sender: NSButton) {
         delegate?.tabBarViewItemCrashAction(self)
     }
 
@@ -1038,6 +1101,7 @@ extension TabBarViewItem {
             var audioStatePublisher: AnyPublisher<WKWebView.AudioState, Never> {
                 $audioState.eraseToAnyPublisher()
             }
+            let crashIndicatorModel: TabCrashIndicatorModel = TabCrashIndicatorModel()
             var canKillWebContentProcess: Bool = false
             init(width: CGFloat, title: String = "Test Title", favicon: NSImage? = .aDark, tabContent: Tab.TabContent = .none, usedPermissions: Permissions = Permissions(), audioState: WKWebView.AudioState? = nil, selected: Bool = false) {
                 self.width = width
@@ -1050,11 +1114,15 @@ extension TabBarViewItem {
             }
         }
 
+        private let tabVisualProvider: TabStyleProviding
+
         let sections: [[TabBarViewModelMock]]
         var collectionViews = [NSCollectionView]()
 
-        init(sections: [[TabBarViewModelMock]]) {
+        init(sections: [[TabBarViewModelMock]],
+             visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
             self.sections = sections
+            self.tabVisualProvider = visualStyleManager.style.tabStyleProvider
             super.init(nibName: nil, bundle: nil)
         }
 
@@ -1127,7 +1195,7 @@ extension TabBarViewItem {
         func collectionView(_ cv: NSCollectionView, layout: NSCollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> NSSize {
             let section = collectionViews.firstIndex(where: { $0 === cv })!
             let item = sections[section][indexPath.item]
-            return NSSize(width: item.width, height: TabBarViewItem.Height.standard)
+            return NSSize(width: item.width, height: tabVisualProvider.standardTabHeight)
         }
 
         func tabBarViewItem(_: TabBarViewItem, isMouseOver: Bool) {}
@@ -1186,6 +1254,7 @@ extension TabBarViewItem {
             .init(hasItemsToTheLeft: false, hasItemsToTheRight: false)
         }
         func tabBarViewItemCrashAction(_: TabBarViewItem) {}
+        func tabBarViewItemDidUpdateCrashInfoPopoverVisibility(_: TabBarViewItem, sender: NSButton, shouldShow: Bool) {}
     }
 }
 #endif

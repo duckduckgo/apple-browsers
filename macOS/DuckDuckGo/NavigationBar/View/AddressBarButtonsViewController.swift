@@ -310,11 +310,17 @@ final class AddressBarButtonsViewController: NSViewController {
         let isCommandPressed = NSEvent.modifierFlags.contains(.command)
         let isShiftPressed = NSApplication.shared.isShiftPressed
 
-        let target: AIChatTabOpenerTarget
+        var target: AIChatTabOpenerTarget = .sameTab
+
         if isCommandPressed {
             target = isShiftPressed ? .newTabSelected : .newTabUnselected
-        } else {
-            target = .sameTab
+        }
+
+        if let tabViewModel = tabViewModel,
+           let tabURL = tabViewModel.tab.url,
+           !tabURL.isDuckAIURL,
+           tabViewModel.tab.content != .newtab {
+            target = .newTabSelected
         }
 
         if let value = textFieldValue {
@@ -388,6 +394,11 @@ final class AddressBarButtonsViewController: NSViewController {
         aiChatButton.isHidden = !aiChatMenuConfig.shouldDisplayAddressBarShortcut
         updateAIChatDividerVisibility()
         delegate?.addressBarButtonsViewController(self, didUpdateAIChatButtonVisibility: aiChatButton.isShown)
+
+        // Check if the current tab is in the onboarding state and disable the AI chat button if it is
+        guard let tabViewModel else { return }
+        let isOnboarding = [.onboarding].contains(tabViewModel.tab.content)
+        aiChatButton.isEnabled = !isOnboarding
     }
 
     @objc func hideAIChatButtonAction(_ sender: NSMenuItem) {

@@ -216,12 +216,12 @@ final class LocalBookmarkStore: BookmarkStore {
                 params[PixelKit.Parameters.errorSource] = source
                 PixelKit.fire(
                     DebugEvent(GeneralPixel.bookmarksSaveFailed, error: error),
-                    frequency: .dailyAndCount,
+                    frequency: .dailyAndStandard,
                     withAdditionalParameters: params)
             } else {
                 PixelKit.fire(
                     DebugEvent(GeneralPixel.bookmarksSaveFailed, error: localError),
-                    frequency: .dailyAndCount,
+                    frequency: .dailyAndStandard,
                     withAdditionalParameters: [PixelKit.Parameters.errorSource: source])
             }
         } else {
@@ -232,7 +232,7 @@ final class LocalBookmarkStore: BookmarkStore {
             params[PixelKit.Parameters.errorSource] = source
             PixelKit.fire(
                 DebugEvent(GeneralPixel.bookmarksSaveFailed, error: error),
-                frequency: .dailyAndCount,
+                frequency: .dailyAndStandard,
                 withAdditionalParameters: params)
         }
     }
@@ -746,7 +746,7 @@ final class LocalBookmarkStore: BookmarkStore {
             if AppVersion.runType.requiresEnvironment {
                 PixelKit.fire(
                     DebugEvent(GeneralPixel.bookmarksSaveFailedOnImport, error: error),
-                    frequency: .dailyAndCount,
+                    frequency: .dailyAndStandard,
                     withAdditionalParameters: processedErrors.errorPixelParameters)
                 assertionFailure("LocalBookmarkStore: Saving of context failed, error: \(error.localizedDescription)")
             }

@@ -1546,34 +1546,21 @@ struct UserText {
     static let storageAccessPromptAllow = NSLocalizedString("storage.access.prompt.allow", value: "Allow", comment: "Allow sharing data between sites")
     static let storageAccessPromptDontAllow = NSLocalizedString("storage.access.prompt.dont.allow", value: "Don't Allow", comment: "Don't allow sharing data between sites")
     static let storageAccessPromptHeader = NSLocalizedString("storage.access.prompt.header", value: "Share data like login info between two sites?", comment: "Header of an alert asking users whether to share data between websites")
+    static let storageAccessPromptQuirkDomainsHeader = NSLocalizedString("storage.access.prompt.quirk.domains.header", value: "Share site data like login info between related sites?", comment: "Header of an alert asking users whether to share data between websites")
+
     static func storageAccessPromptLabel1(currentDomain: String, requestingDomain: String) -> String {
         let localized = NSLocalizedString("storage.access.prompt.label.1",
                                           value: "%@ wants to use cookies and data from %@.",
                                           comment: "Part 1 of an alert asking users whether to share cookies: [requestingdomain.com] wants to use cookies and data from [currentdomain.com].")
         return String(format: localized, requestingDomain, currentDomain)
     }
+    static func storageAccessPromptQuirkDomainsLabel1(requestingDomain: String) -> String {
+        let localized = NSLocalizedString("storage.access.prompt.quirk.domains.label.1",
+                                          value: "%@ wants to use cookies and data across sites they own, including:",
+                                          comment: "Part 1 of an alert for quirk domains asking users whether to share cookies: requestingDomain wants to use cookies and data across sites they own, including:")
+        return String(format: localized, requestingDomain)
+    }
+
     static let storageAccessPromptLabel2 = NSLocalizedString("storage.access.prompt.label.2", value: "Selecting \"Don't Allow\" means some site features may not work as expected, but cross-site tracking will be blocked.", comment: "Part 2 of an alert asking users whether to share cookies: Selecting “Don’t Allow” means some site features may not work as expected, but cross-site tracking will be blocked.")
     static let storageAccessPromptLabel3 = NSLocalizedString("storage.access.prompt.label.3", value: "DuckDuckGo protections still apply either way.", comment: "Part 3 of an alert asking users whether to share cookies: DuckDuckGo protections still apply either way.")
-
-    static func storageAccessPromptBody(entity: String, domain: String) -> String {
-        let localized = NSLocalizedString("storage.access.prompt.body",
-                                          value: "%@ would like to use cookies and other website data (such as login information) on their other site, %@. Declining may result in the site not working properly, but will prevent %@ from tracking your activity on their websites. DuckDuckGo's Web Tracking Protections will still apply either way.",
-                                          comment: "Body of an alert asking users whether to share cookies: [Entity] would like to use cookies and other website data (such as login information) on their other site, [domain]. Declining may result in the site not working properly, but will prevent [entity] from tracking your activity on their websites. DuckDuckGo's Web Tracking Protections will still apply either way.")
-        return String(format: localized, entity, domain, entity)
-    }
-
-    static func storageAccessQuirkDomainsPromptHeader(entity: String) -> String {
-        let localized = NSLocalizedString("storage.access.quick.domains.prompt.header",
-                                          value: "Allow %@-owned sites to share cookies and website data?",
-                                          comment: "Header of an alert asking users whether to share cookies: Allow [entity]-owned sites to share cookies and website data?")
-        return String(format: localized, entity)
-    }
-
-    static func storageAccessQuirkDomainsPromptBody(entity: String, quirkDomains: String) -> String {
-        let localized = NSLocalizedString("storage.access.quick.domains.prompt.body",
-                                          value: "%@ would like to use cookies and other website data (such as login information) on their other sites: %@. Declining may result in these websites not working properly, but will prevent %@ from tracking your activity on their websites. DuckDuckGo's Web Tracking Protections will still apply either way.",
-                                          comment: "Header of an alert asking users whether to share cookies: [Entity] would like to use cookies and other website data (such as login information) on their other sites: [domain 1], [domain 2], [domain 3]. Declining may result in these websites not working properly, but will prevent [entity] from tracking your activity on their websites. DuckDuckGo's Web Tracking Protections will still apply either way.")
-        return String(format: localized, entity, quirkDomains, entity)
-    }
-
 }

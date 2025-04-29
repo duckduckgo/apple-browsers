@@ -66371,18 +66371,6 @@
         }
       }
     },
-    "storage.access.prompt.body" : {
-      "comment" : "Body of an alert asking users whether to share cookies: [Entity] would like to use cookies and other website data (such as login information) on their other site, [domain]. Declining may result in the site not working properly, but will prevent [entity] from tracking your activity on their websites. DuckDuckGo's Web Tracking Protections will still apply either way.",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ would like to use cookies and other website data (such as login information) on their other site, %2$@. Declining may result in the site not working properly, but will prevent %3$@ from tracking your activity on their websites. DuckDuckGo's Web Tracking Protections will still apply either way."
-          }
-        }
-      }
-    },
     "storage.access.prompt.dont.allow" : {
       "comment" : "Don't allow sharing data between sites",
       "extractionState" : "extracted_with_value",
@@ -66443,26 +66431,26 @@
         }
       }
     },
-    "storage.access.quick.domains.prompt.body" : {
-      "comment" : "Header of an alert asking users whether to share cookies: [Entity] would like to use cookies and other website data (such as login information) on their other sites: [domain 1], [domain 2], [domain 3]. Declining may result in these websites not working properly, but will prevent [entity] from tracking your activity on their websites. DuckDuckGo's Web Tracking Protections will still apply either way.",
+    "storage.access.prompt.quirk.domains.header" : {
+      "comment" : "Header of an alert asking users whether to share data between websites",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "%1$@ would like to use cookies and other website data (such as login information) on their other sites: %2$@. Declining may result in these websites not working properly, but will prevent %3$@ from tracking your activity on their websites. DuckDuckGo's Web Tracking Protections will still apply either way."
+            "value" : "Share site data like login info between related sites?"
           }
         }
       }
     },
-    "storage.access.quick.domains.prompt.header" : {
-      "comment" : "Header of an alert asking users whether to share cookies: Allow [entity]-owned sites to share cookies and website data?",
+    "storage.access.prompt.quirk.domains.label.1" : {
+      "comment" : "Part 1 of an alert for quirk domains asking users whether to share cookies: requestingDomain wants to use cookies and data across sites they own, including:",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Allow %@-owned sites to share cookies and website data?"
+            "value" : "%@ wants to use cookies and data across sites they own, including:"
           }
         }
       }

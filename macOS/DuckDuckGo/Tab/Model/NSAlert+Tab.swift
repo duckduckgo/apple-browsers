@@ -1,5 +1,5 @@
 //
-//  Untitled.swift
+//  NSAlert+Tab.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -146,27 +146,107 @@ extension NSAlert {
 
     static func storageAccessAlertForQuirkDomains(requestingDomain: String, currentDomain: String, quirkDomains: [String]) -> NSAlert {
         let alert = NSAlert()
-        let entity = entity(from: requestingDomain)
-        alert.messageText = UserText.storageAccessQuirkDomainsPromptHeader(entity: entity)
-        alert.informativeText = UserText.storageAccessQuirkDomainsPromptBody(entity: entity, quirkDomains: quirkDomains.joined(separator: ", "))
+        alert.messageText = UserText.storageAccessPromptQuirkDomainsHeader
         alert.alertStyle = .warning
         alert.icon = .privacyQuestion
-        alert.addButton(withTitle: UserText.permissionPopupAllowButton)
-        alert.addButton(withTitle: UserText.permissionPopoverDenyButton)
+        alert.addButton(withTitle: UserText.storageAccessPromptAllow)
+        alert.addButton(withTitle: UserText.storageAccessPromptDontAllow)
 
-        // Force the alert to be wider
-        let spacer = NSView(frame: NSRect(x: 0, y: 0, width: 250, height: 1))
-        alert.accessoryView = spacer
+        // Make Allow the default button
+        alert.buttons.first?.keyEquivalent = "\r"
+
+        // Build labels
+        let introLabel = makeIntroLabel(requestingDomain: requestingDomain, fontSize: 12)
+        let domainListLabels = quirkDomains.map { makeLabel($0, bold: true, size: 12) }
+        let selectionLabel = makeLabel(UserText.storageAccessPromptLabel2, bold: false, size: 12)
+        let protectionLabel = makeLabel(UserText.storageAccessPromptLabel3, bold: false, size: 12)
+        let labels = [introLabel] + domainListLabels + [selectionLabel, protectionLabel]
+
+        // Layout constants
+        let containerWidth: CGFloat = 320
+        let marginX: CGFloat = 8
+        let contentWidth: CGFloat = containerWidth - marginX * 2
+        let verticalSpacing: CGFloat = 10
+        let topPadding: CGFloat = 0
+        let bottomPadding: CGFloat = 10
+
+        // Size each label
+        for label in labels {
+            let boundingSize = CGSize(width: contentWidth, height: .greatestFiniteMagnitude)
+            let boundingRect = label.attributedStringValue.boundingRect(
+                with: boundingSize,
+                options: [.usesLineFragmentOrigin, .usesFontLeading])
+            label.frame = CGRect(origin: .zero,
+                                 size: CGSize(width: contentWidth,
+                                              height: ceil(boundingRect.height)))
+        }
+
+        // Remove spacing between intro and domain list, and between domain labels
+        let domainCount = domainListLabels.count
+        let lastDomainIndex = domainCount
+        let selectionLabelIndex = domainCount + 1
+
+        // Compute total height
+        var totalHeight: CGFloat = topPadding
+        for (i, label) in labels.enumerated() {
+            totalHeight += label.frame.height
+            if i < labels.count - 1 && (i == lastDomainIndex || i == selectionLabelIndex) {
+                totalHeight += verticalSpacing
+            }
+        }
+        totalHeight += bottomPadding
+
+        // Create container and position labels
+        let container = NSView(frame: CGRect(x: 0, y: 0, width: containerWidth, height: totalHeight))
+        container.autoresizingMask = []
+        var yPosition = totalHeight - topPadding
+        for (i, label) in labels.enumerated() {
+            yPosition -= label.frame.height
+            label.frame.origin = CGPoint(x: marginX, y: yPosition)
+            container.addSubview(label)
+            if i < labels.count - 1 && (i == lastDomainIndex || i == selectionLabelIndex) {
+                yPosition -= verticalSpacing
+            }
+        }
+
+        alert.accessoryView = container
         return alert
     }
 
-    fileprivate static func entity(from requestingDomain: String, tds: TrackerData = ContentBlocking.shared.trackerDataManager.trackerData) -> String {
+    private static func entity(from requestingDomain: String, tds: TrackerData = ContentBlocking.shared.trackerDataManager.trackerData) -> String {
         if let entity = tds.findEntity(forHost: requestingDomain),
            let entityName = entity.displayName {
             return entityName
         } else {
             return "\"\(requestingDomain)\""
         }
+    }
+
+    /// Creates an intro label with the requesting domain bolded and centered alignment.
+    private static func makeIntroLabel(requestingDomain: String, fontSize: CGFloat = 12) -> NSTextField {
+        let label = NSTextField(labelWithString: "")
+        let text = UserText.storageAccessPromptQuirkDomainsLabel1(requestingDomain: requestingDomain)
+        // Build attributed string
+        let attributed = NSMutableAttributedString(string: text,
+            attributes: [.font: NSFont.systemFont(ofSize: fontSize)])
+        // Bold the requesting domain
+        let reqRange = (text as NSString).range(of: requestingDomain)
+        attributed.addAttribute(.font, value: NSFont.boldSystemFont(ofSize: fontSize), range: reqRange)
+        // Center-align paragraph
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.alignment = .center
+        attributed.addAttribute(.paragraphStyle,
+                                value: paragraphStyle,
+                                range: NSRange(location: 0, length: attributed.length))
+        label.attributedStringValue = attributed
+        // Enable wrapping and multi-line
+        label.usesSingleLineMode = false
+        label.cell?.isScrollable = false
+        label.cell?.wraps = true
+        label.cell?.truncatesLastVisibleLine = false
+        label.lineBreakMode = .byWordWrapping
+        label.alignment = .center
+        return label
     }
 
 }

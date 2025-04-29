@@ -16,7 +16,6 @@
 //  limitations under the License.
 //
 
-
 enum ShortcutTooltip {
     case back
     case forward

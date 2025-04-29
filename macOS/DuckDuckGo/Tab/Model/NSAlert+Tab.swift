@@ -37,36 +37,7 @@ extension NSAlert {
         let topPadding: CGFloat = 0
         let bottomPadding: CGFloat = 10
 
-        // Mixed-style label: bold only the domains
-        let domainLabel: NSTextField = {
-            let label = NSTextField(labelWithString: "")
-            let text = UserText.storageAccessPromptLabel1(currentDomain: currentDomain,
-                                                          requestingDomain: requestingDomain)
-
-            let attributed = NSMutableAttributedString(string: text,
-                attributes: [.font: NSFont.systemFont(ofSize: 12)])
-
-            // Bold domains
-            let reqRange = (text as NSString).range(of: requestingDomain)
-            attributed.addAttribute(.font, value: NSFont.boldSystemFont(ofSize: 12), range: reqRange)
-            let currRange = (text as NSString).range(of: currentDomain)
-            attributed.addAttribute(.font, value: NSFont.boldSystemFont(ofSize: 12), range: currRange)
-
-            // Center-align all lines via paragraph style for attributed string
-            let paragraphStyle = NSMutableParagraphStyle()
-            paragraphStyle.alignment = .center
-            attributed.addAttribute(.paragraphStyle,
-                                    value: paragraphStyle,
-                                    range: NSRange(location: 0, length: attributed.length))
-            label.attributedStringValue = attributed
-            label.usesSingleLineMode = false
-            label.cell?.isScrollable = false
-            label.cell?.wraps = true
-            label.cell?.truncatesLastVisibleLine = false
-            label.lineBreakMode = .byWordWrapping
-            label.alignment = .center
-            return label
-        }()
+        let domainLabel = makeDomainLabel(currentDomain: currentDomain, requestingDomain: requestingDomain)
 
         // Other labels
         let labels = [
@@ -139,6 +110,37 @@ extension NSAlert {
         // Center-align the text in each label
         label.alignment = .center
 
+        return label
+    }
+
+    /// Creates the domain label with bolded domains and centered alignment.
+    private static func makeDomainLabel(currentDomain: String, requestingDomain: String, fontSize: CGFloat = 12) -> NSTextField {
+        let label = NSTextField(labelWithString: "")
+        let text = UserText.storageAccessPromptLabel1(currentDomain: currentDomain,
+                                                      requestingDomain: requestingDomain)
+        // Build attributed string
+        let attributed = NSMutableAttributedString(string: text,
+            attributes: [.font: NSFont.systemFont(ofSize: fontSize)])
+        // Bold the requesting domain
+        let reqRange = (text as NSString).range(of: requestingDomain)
+        attributed.addAttribute(.font, value: NSFont.boldSystemFont(ofSize: fontSize), range: reqRange)
+        // Bold the current domain
+        let currRange = (text as NSString).range(of: currentDomain)
+        attributed.addAttribute(.font, value: NSFont.boldSystemFont(ofSize: fontSize), range: currRange)
+        // Center-align paragraph
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.alignment = .center
+        attributed.addAttribute(.paragraphStyle,
+                                value: paragraphStyle,
+                                range: NSRange(location: 0, length: attributed.length))
+        label.attributedStringValue = attributed
+        // Enable wrapping and multi-line
+        label.usesSingleLineMode = false
+        label.cell?.isScrollable = false
+        label.cell?.wraps = true
+        label.cell?.truncatesLastVisibleLine = false
+        label.lineBreakMode = .byWordWrapping
+        label.alignment = .center
         return label
     }
 

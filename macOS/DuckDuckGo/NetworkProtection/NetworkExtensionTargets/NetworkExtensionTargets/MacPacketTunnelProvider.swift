@@ -758,7 +758,10 @@ final class DefaultWireGuardInterface: WireGuardInterface {
 extension MacPacketTunnelProvider: AccountManagerKeychainAccessDelegate {
 
     public func accountManagerKeychainAccessFailed(accessType: AccountKeychainAccessType, error: any Error) {
-        PixelKit.fire(PrivacyProErrorPixel.privacyProKeychainAccessError(accessType: accessType, accessError: error),
+        PixelKit.fire(PrivacyProErrorPixel.privacyProKeychainAccessError(accessType: accessType,
+                                                                         accessError: error,
+                                                                         source: KeychainErrorSource.vpn,
+                                                                         authVersion: KeychainErrorAuthVersion.v1),
                       frequency: .legacyDailyAndCount)
     }
 }

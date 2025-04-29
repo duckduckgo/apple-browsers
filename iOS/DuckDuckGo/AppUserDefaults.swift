@@ -547,7 +547,7 @@ public class AppUserDefaults: AppSettings {
                let mode = DuckPlayerVariant(stringValue: value) {
                 return mode
             }
-            return .classicA
+            return .classicWeb
         }
         set {
             userDefaults?.set(newValue.stringValue, forKey: Keys.duckPlayerVariant)            

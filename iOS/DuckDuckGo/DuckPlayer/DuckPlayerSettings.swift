@@ -116,9 +116,9 @@ enum NativeDuckPlayerYoutubeMode: Equatable, Codable, CustomStringConvertible, C
 }
 
 enum DuckPlayerVariant: Equatable, Codable, CustomStringConvertible, CaseIterable {
-    case classicA
-    case nativeB
-    case nativeC
+    case classicWeb
+    case nativeOptIn
+    case nativeOptOut
 
     private static let classicAString = "Classic (Web)"
     private static let nativeBString = "Native (Opt-in)"
@@ -126,22 +126,22 @@ enum DuckPlayerVariant: Equatable, Codable, CustomStringConvertible, CaseIterabl
     
     var stringValue: String {
         switch self {
-        case .classicA:
+        case .classicWeb:
             return Self.classicAString
-        case .nativeB:
+        case .nativeOptIn:
             return Self.nativeBString
-        case .nativeC:
+        case .nativeOptOut:
             return Self.nativeCString
         }
     }
 
     var description: String {
         switch self {
-        case .classicA:
+        case .classicWeb:
             return Self.classicAString
-        case .nativeB:
+        case .nativeOptIn:
             return Self.nativeBString
-        case .nativeC:
+        case .nativeOptOut:
             return Self.nativeCString
         }
     }
@@ -152,11 +152,11 @@ enum DuckPlayerVariant: Equatable, Codable, CustomStringConvertible, CaseIterabl
     init?(stringValue: String) {
         switch stringValue {
         case Self.classicAString:
-            self = .classicA
+            self = .classicWeb
         case Self.nativeBString:
-            self = .nativeB
+            self = .nativeOptIn
         case Self.nativeCString:
-            self = .nativeC
+            self = .nativeOptOut
         default:
             return nil
         }
@@ -420,7 +420,7 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
 
                 // Apply specific settings based on the new variant
                 switch newValue {
-                case .classicA:
+                case .classicWeb:
                     // Set Classic A specific settings
                     self.nativeUI = false
                     self.nativeUISERPEnabled = false
@@ -429,7 +429,7 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
                     self.openInNewTab = true
                     self.autoplay = false
 
-                case .nativeB:
+                case .nativeOptIn:
                     // Set Native B specific settings
                     self.nativeUI = true
                     self.nativeUISERPEnabled = true
@@ -438,7 +438,7 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
                     // openInNewTab remains unchanged (Only used in classicA)
                     self.autoplay = true
 
-                case .nativeC:
+                case .nativeOptOut:
                     // Set Native C specific settings
                     self.nativeUI = true
                     self.nativeUISERPEnabled = true

@@ -328,7 +328,7 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
     // Determines if we should use the native verion of DuckPlayer (Internal only)
     var nativeUI: Bool {
         get {
-            guard internalUserDecider.isInternalUser, UIDevice.current.userInterfaceIdiom == .phone else { return false }        
+            guard internalUserDecider.isInternalUser, UIDevice.current.userInterfaceIdiom == .phone else { return false }
             return appSettings.duckPlayerNativeUI
         }
         set {
@@ -346,7 +346,7 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
             guard internalUserDecider.isInternalUser, UIDevice.current.userInterfaceIdiom == .phone else { return false }
             return appSettings.duckPlayerNativeUI && appSettings.duckPlayerNativeUISERPEnabled
         }
-        set {            
+        set {
             if newValue != appSettings.duckPlayerNativeUISERPEnabled {
                 appSettings.duckPlayerNativeUISERPEnabled = newValue
                 triggerNotification()
@@ -382,7 +382,7 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
             guard internalUserDecider.isInternalUser, UIDevice.current.userInterfaceIdiom == .phone else { return false }
             return appSettings.duckPlayerAutoplay
         }
-        set {            
+        set {
             if newValue != appSettings.duckPlayerAutoplay {
                 appSettings.duckPlayerAutoplay = newValue
                 triggerNotification()

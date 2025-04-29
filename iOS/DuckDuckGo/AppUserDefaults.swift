@@ -550,9 +550,9 @@ public class AppUserDefaults: AppSettings {
             return .classicWeb
         }
         set {
-            userDefaults?.set(newValue.stringValue, forKey: Keys.duckPlayerVariant)            
+            userDefaults?.set(newValue.stringValue, forKey: Keys.duckPlayerVariant)
             NotificationCenter.default.post(name: AppUserDefaults.Notifications.duckPlayerSettingsUpdated,
-                                            object: nil) 
+                                            object: nil)
         }
     }
 }

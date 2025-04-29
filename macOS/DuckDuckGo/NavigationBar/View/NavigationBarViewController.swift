@@ -876,7 +876,7 @@ final class NavigationBarViewController: NSViewController {
         menu.addItem(withTitle: title, action: #selector(toggleAutofillPanelPinning), keyEquivalent: "")
 
         passwordManagementButton.menu = menu
-        passwordManagementButton.toolTip = UserText.autofillShortcutTooltip
+        passwordManagementButton.toolTip = UserText.passwordsShortcutTooltip
 
         let url = tabCollectionViewModel.selectedTabViewModel?.tab.content.userEditableUrl
 
@@ -1427,7 +1427,7 @@ private enum Tooltip {
         case .reload:
             return UserText.refreshPageTooltip + spacedShortcut
         case .downloads:
-            return UserText.refreshPageTooltip + spacedShortcut
+            return UserText.downloadsShortcutTooltip + spacedShortcut
         case .stopLoading:
             return UserText.stopLoadingTooltip
         }

@@ -68837,7 +68837,7 @@
     },
     "tooltip.autofill.shortcut" : {
       "comment" : "Tooltip for the autofill shortcut",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -70102,7 +70102,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Hold to show history"
+            "value" : "Click and hold to show history"
           }
         }
       }
@@ -70186,7 +70186,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Hold to show history"
+            "value" : "Click and hold to show history"
           }
         }
       }
@@ -70319,6 +70319,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Остановить загрузку страницы"
+          }
+        }
+      }
+    },
+    "tooltip.passwords.shortcut" : {
+      "comment" : "Tooltip for the passwords shortcut",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Passwords"
           }
         }
       }

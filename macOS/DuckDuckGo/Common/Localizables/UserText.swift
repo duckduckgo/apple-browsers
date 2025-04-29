@@ -1120,7 +1120,7 @@ struct UserText {
 
     // MARK: - Tooltips
 
-    static let autofillShortcutTooltip = NSLocalizedString("tooltip.autofill.shortcut", value: "Autofill", comment: "Tooltip for the autofill shortcut")
+    static let passwordsShortcutTooltip = NSLocalizedString("tooltip.passwords.shortcut", value: "Passwords", comment: "Tooltip for the passwords shortcut")
 
     static let homeButtonTooltip = NSLocalizedString("tooltip.home.button", value: "Home", comment: "Tooltip for the home button")
 
@@ -1154,10 +1154,10 @@ struct UserText {
     static let newTabTooltip = NSLocalizedString("tooltip.tab.new-tab", value: "Open a new tab", comment: "Tooltip for the New Tab button")
     static let clearBrowsingHistoryTooltip = NSLocalizedString("tooltip.fire.clear-browsing-history", value: "Clear browsing history", comment: "Tooltip for the Fire button")
     static let navigateBackTooltipHeader = NSLocalizedString("tooltip.navigation.back.header", value: "Show the previous page", comment: "Tooltip for the Back button header")
-    static let navigateBackTooltipFooter = NSLocalizedString("tooltip.navigation.back.footer", value: "Hold to show history", comment: "Tooltip for the Back button footer")
+    static let navigateBackTooltipFooter = NSLocalizedString("tooltip.navigation.back.footer", value: "Click and hold to show history", comment: "Tooltip for the Back button footer")
 
     static let navigateForwardTooltipHeader = NSLocalizedString("tooltip.navigation.forward.header", value: "Show the next page", comment: "Tooltip for the Forward button header")
-    static let navigateForwardTooltipFooter = NSLocalizedString("tooltip.navigation.forward.footer", value: "Hold to show history", comment: "Tooltip for the Forward button footer")
+    static let navigateForwardTooltipFooter = NSLocalizedString("tooltip.navigation.forward.footer", value: "Click and hold to show history", comment: "Tooltip for the Forward button footer")
 
     static let refreshPageTooltip = NSLocalizedString("tooltip.navigation.refresh", value: "Reload this page", comment: "Tooltip for the Refresh button")
     static let stopLoadingTooltip = NSLocalizedString("tooltip.navigation.stop", value: "Stop loading this page", comment: "Tooltip for the Stop Navigation button")

@@ -57,7 +57,6 @@ public enum SubscriptionManagerError: Error, Equatable, LocalizedError {
 
 public enum SubscriptionPixelType {
     case invalidRefreshToken
-    case migrationStarted
     case migrationSucceeded
     case migrationFailed(Error)
     case subscriptionIsActive
@@ -246,7 +245,6 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
         // Attempting V1 token migration
         do {
-            pixelHandler.handle(pixelType: .migrationStarted)
             try await oAuthClient.migrateV1Token()
             pixelHandler.handle(pixelType: .migrationSucceeded)
             v1MigrationNeeded = false

@@ -243,9 +243,13 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
             Logger.OAuthClient.log("Local tokens found, expiry: \(tokenExpiryDate, privacy: .public)")
 
             // If the token expires in less than `Constants.tokenExpiryBufferInterval` minutes we treat it as already expired
-            let expiresSoon = tokenExpiryDate.timeIntervalSinceNow < Constants.tokenExpiryBufferInterval
+            let expirationInterval = tokenExpiryDate.timeIntervalSinceNow
+            let expiresSoon = expirationInterval < Constants.tokenExpiryBufferInterval
             if localTokenContainer.decodedAccessToken.isExpired() || expiresSoon {
-                Logger.OAuthClient.log("Refreshing local expired token")
+                Logger.OAuthClient.log("Refreshing local already expired token")
+                return try await getTokens(policy: .localForceRefresh)
+            } else if expiresSoon {
+                Logger.OAuthClient.log("Refreshing local token expiring in \(expirationInterval)s")
                 return try await getTokens(policy: .localForceRefresh)
             } else {
                 return localTokenContainer

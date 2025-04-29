@@ -307,55 +307,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Copyright © 2024 DuckDuckGo. Alle Rechte vorbehalten."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Copyright © 2024 DuckDuckGo. All rights reserved."
+            "value" : "Copyright © 2025 DuckDuckGo. All rights reserved."
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Copyright © 2024 DuckDuckGo. Todos los derechos reservados."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Copyright © 2024 DuckDuckGo. Tous droits réservés."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Copyright © 2024 DuckDuckGo. Tutti i diritti riservati."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Copyright © 2024 DuckDuckGo. Alle rechten voorbehouden."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Copyright © 2024 DuckDuckGo. Wszelkie prawa zastrzeżone."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Copyright © 2024 DuckDuckGo. Todos os direitos reservados."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "© 2024 DuckDuckGo. Все права защищены."
           }
         }

@@ -109,6 +109,7 @@ extension NSAlert {
         label.lineBreakMode = .byWordWrapping
         // Center-align the text in each label
         label.alignment = .center
+        label.textColor = NSColor.labelColor
 
         return label
     }
@@ -120,7 +121,10 @@ extension NSAlert {
                                                       requestingDomain: requestingDomain)
         // Build attributed string
         let attributed = NSMutableAttributedString(string: text,
-            attributes: [.font: NSFont.systemFont(ofSize: fontSize)])
+                                                   attributes: [
+                                                    .font: NSFont.systemFont(ofSize: fontSize),
+                                                    .foregroundColor: NSColor.labelColor
+                                                   ])
         // Bold the requesting domain
         let reqRange = (text as NSString).range(of: requestingDomain)
         attributed.addAttribute(.font, value: NSFont.boldSystemFont(ofSize: fontSize), range: reqRange)
@@ -228,7 +232,10 @@ extension NSAlert {
         let text = UserText.storageAccessPromptQuirkDomainsLabel1(requestingDomain: requestingDomain)
         // Build attributed string
         let attributed = NSMutableAttributedString(string: text,
-            attributes: [.font: NSFont.systemFont(ofSize: fontSize)])
+                                                   attributes: [
+                                                    .font: NSFont.systemFont(ofSize: fontSize),
+                                                    .foregroundColor: NSColor.labelColor
+                                                   ])
         // Bold the requesting domain
         let reqRange = (text as NSString).range(of: requestingDomain)
         attributed.addAttribute(.font, value: NSFont.boldSystemFont(ofSize: fontSize), range: reqRange)

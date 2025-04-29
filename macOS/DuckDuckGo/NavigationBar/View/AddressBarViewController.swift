@@ -127,7 +127,7 @@ final class AddressBarViewController: NSViewController {
         self.suggestionContainerViewModel = SuggestionContainerViewModel(
             isHomePage: tabViewModel?.tab.content == .newtab,
             isBurner: burnerMode.isBurner,
-            suggestionContainer: SuggestionContainer(burnerMode: burnerMode, isUrlIgnored: { _ in false }))
+            suggestionContainer: SuggestionContainer(burnerMode: burnerMode, isUrlIgnored: { _ in false }), visualStyleManager: visualStyleManager)
         self.isBurner = burnerMode.isBurner
         self.onboardingPixelReporter = onboardingPixelReporter
         self.aiChatSettings = aiChatSettings

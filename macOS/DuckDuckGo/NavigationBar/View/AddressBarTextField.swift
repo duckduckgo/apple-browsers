@@ -974,7 +974,7 @@ extension AddressBarTextField: NSTextFieldDelegate {
         // don't blink and keep the Suggestion displayed
         if case .userAppendingTextToTheEnd = currentTextDidChangeEvent,
            let suggestion = autocompleteSuggestionBeingTypedOverByUser(with: stringValueWithoutSuffix) {
-            self.value = .suggestion(SuggestionViewModel(isHomePage: isHomePage, suggestion: suggestion.suggestion, userStringValue: stringValueWithoutSuffix))
+            self.value = .suggestion(SuggestionViewModel(isHomePage: isHomePage, suggestion: suggestion.suggestion, userStringValue: stringValueWithoutSuffix, visualStyleManager: visualStyleManager))
 
         } else {
             suggestionContainerViewModel?.clearSelection()

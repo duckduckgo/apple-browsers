@@ -397,6 +397,7 @@ final class AddressBarViewController: NSViewController {
         let isPassiveTextFieldHidden = isFirstResponder || mode.isEditing
         addressBarTextField.alphaValue = isPassiveTextFieldHidden ? 1 : 0
         passiveTextField.alphaValue = isPassiveTextFieldHidden ? 0 : 1
+        passiveTextField.textColor = visualStyleManager.style.textPrimaryColor
 
         updateShadowViewPresence(isFirstResponder)
         inactiveBackgroundView.alphaValue = isFirstResponder ? 0 : 1

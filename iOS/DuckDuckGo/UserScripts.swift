@@ -39,7 +39,7 @@ final class UserScripts: UserScriptsProvider {
 
     var specialPages: SpecialPagesUserScript?    
     var duckPlayer: DuckPlayerControlling? {
-        didSet {            
+        didSet {
             initializeDuckPlayer()
         }
     }
@@ -109,16 +109,18 @@ final class UserScripts: UserScriptsProvider {
     // Initialize DuckPlayer scripts
     private func initializeDuckPlayer() {
         if let duckPlayer {
-            
-            // Initialize Duckplayer UserScripts
             if !duckPlayer.settings.nativeUI {
-                youtubeOverlayScript = YoutubeOverlayUserScript(duckPlayer: duckPlayer)
-                youtubePlayerUserScript = YoutubePlayerUserScript(duckPlayer: duckPlayer)
-                youtubeOverlayScript.map { contentScopeUserScriptIsolated.registerSubfeature(delegate: $0) }
-                youtubePlayerUserScript.map { specialPages?.registerSubfeature(delegate: $0) }
+                if youtubeOverlayScript == nil {
+                    youtubeOverlayScript = YoutubeOverlayUserScript(duckPlayer: duckPlayer)
+                    youtubePlayerUserScript = YoutubePlayerUserScript(duckPlayer: duckPlayer)
+                    youtubeOverlayScript.map { contentScopeUserScriptIsolated.registerSubfeature(delegate: $0) }
+                    youtubePlayerUserScript.map { specialPages?.registerSubfeature(delegate: $0) }
+                }
             } else {
-                duckPlayerNativeUserScript = DuckPlayerNativeUserScript(duckPlayer: duckPlayer)
-                duckPlayerNativeUserScript.map { contentScopeUserScriptIsolated.registerSubfeature(delegate: $0) }
+                if duckPlayerNativeUserScript == nil {
+                    duckPlayerNativeUserScript = DuckPlayerNativeUserScript(duckPlayer: duckPlayer)
+                    duckPlayerNativeUserScript.map { contentScopeUserScriptIsolated.registerSubfeature(delegate: $0) }
+                }
             }
         }
     }

@@ -1920,7 +1920,6 @@
 		65898D8B2D9C161800D5EC22 /* DuckPlayerDelayHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerDelayHandler.swift; sourceTree = "<group>"; };
 		659AD5B02D76160500420D1D /* YoutubeOembedService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YoutubeOembedService.swift; sourceTree = "<group>"; };
 		65A6848A2D6F904A0029FE9E /* DuckPlayerContainer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerContainer.swift; sourceTree = "<group>"; };
-		65ABEECD2DA65B5000B487D7 /* content-scope-scripts */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "content-scope-scripts"; path = "/Users/daniel/Developer/content-scope-scripts"; sourceTree = "<absolute>"; };
 		65B4D5C12D68EE4200FC677A /* DuckPlayerNativeUIPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerNativeUIPresenter.swift; sourceTree = "<group>"; };
 		65BA72D02D79F2E600E442E0 /* DuckPlayerEntryPillView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerEntryPillView.swift; sourceTree = "<group>"; };
 		65BD16332D8C206F000795DE /* DuckPlayerPrimingModalView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerPrimingModalView.swift; sourceTree = "<group>"; };
@@ -3338,6 +3337,7 @@
 		D63FF8972C1B6A45006DE24D /* DuckPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayer.swift; sourceTree = "<group>"; };
 		D64648AC2B59936B0033090B /* SubscriptionEmailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionEmailView.swift; sourceTree = "<group>"; };
 		D64648AE2B5993890033090B /* SubscriptionEmailViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionEmailViewModel.swift; sourceTree = "<group>"; };
+		D64A4B682DC0F633006EBFBE /* content-scope-scripts */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "content-scope-scripts"; path = "../../content-scope-scripts"; sourceTree = SOURCE_ROOT; };
 		D652498D2B515A6A0056B0DE /* SubscriptionSettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionSettingsViewModel.swift; sourceTree = "<group>"; };
 		D65625A02C232F5E006EF297 /* SettingsDuckPlayerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsDuckPlayerView.swift; sourceTree = "<group>"; };
 		D65CEA6F2B6AC6C9008A759B /* Subscription.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Subscription.xcassets; sourceTree = "<group>"; };
@@ -4317,6 +4317,7 @@
 				7B10FF282D11AA0D00F36BF2 /* VPNiOS */,
 				37FCAACB2993149A000E420A /* Waitlist */,
 				311F87622DB1556B0011DFB3 /* AIChat */,
+				D64A4B682DC0F633006EBFBE /* content-scope-scripts */,
 			);
 			path = LocalPackages;
 			sourceTree = "<group>";
@@ -8430,7 +8431,6 @@
 				B6BA95E828924730004ABA20 /* JSAlertController.storyboard in Resources */,
 				85EE7F55224667DD000FE757 /* WebContainer.storyboard in Resources */,
 				858566E8252E4F56007501B8 /* Debug.storyboard in Resources */,
-				65F4CB422D7A082400E89416 /* getCurrentTimestamp.js in Resources */,
 				6FE3AEFB2D9D8933001AE6B8 /* trackers-2-new.json in Resources */,
 				6FE3AEFC2D9D8933001AE6B8 /* dark-trackers-3-new.json in Resources */,
 				6FE3AEFD2D9D8933001AE6B8 /* dark-shield-new.json in Resources */,

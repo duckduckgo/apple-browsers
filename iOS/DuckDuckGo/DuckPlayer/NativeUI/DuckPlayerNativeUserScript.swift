@@ -65,7 +65,8 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
         static let initialSetup = "initialSetup"
         static let onCurrentTimeStamp = "onCurrentTimestamp"
         static let onYoutubeError = "onYoutubeError"
-        static let onDuckPlayerReady = "onDuckPlayerReady"
+        static let onDuckPlayerFeatureReady = "onDuckPlayerReady"
+        static let onDuckPlayerScriptsReady = "onDuckPlayerScriptsReady"
     }
 
     weak var broker: UserScriptMessageBroker?
@@ -133,8 +134,8 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
             return onYoutubeError
         case Handlers.initialSetup:
             return initialSetup
-        case Handlers.onDuckPlayerReady:
-            return onDuckPlayerReady
+        case Handlers.onDuckPlayerFeatureReady:
+            return onDuckPlayerFeatureReady
         default:
             return nil
         }
@@ -257,8 +258,8 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
     }
 
     @MainActor
-    internal func onDuckPlayerReady(params: Any, original: WKScriptMessage) -> Encodable? {
-        print("DP: onDuckPlayerReady")
+    internal func onDuckPlayerFeatureReady(params: Any, original: WKScriptMessage) -> Encodable? {
+        print("DP: onDuckPlayerFeatureReady")
         isFeatureReady = true
         // Process all queued events
         while !eventQueue.isEmpty {

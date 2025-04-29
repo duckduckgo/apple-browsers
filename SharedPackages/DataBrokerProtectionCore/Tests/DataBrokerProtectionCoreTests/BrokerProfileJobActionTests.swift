@@ -1,5 +1,5 @@
 //
-//  DataBrokerOperationActionTests.swift
+//  BrokerProfileJobActionTests.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -24,7 +24,7 @@ import XCTest
 @testable import DataBrokerProtectionCore
 import DataBrokerProtectionCoreTestsUtils
 
-final class DataBrokerOperationActionTests: XCTestCase {
+final class BrokerProfileJobActionTests: XCTestCase {
     let webViewHandler = WebViewHandlerMock()
     let emailService = EmailServiceMock()
     let captchaService = CaptchaServiceMock()

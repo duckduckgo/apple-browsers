@@ -21,9 +21,9 @@ import Common
 import os.log
 
 struct BrokerProfileOptOutSubJob {
-    private let dependencies: DataBrokerOperationDependencies
+    private let dependencies: BrokerProfileJobDependencyProviding
 
-    init(dependencies: DataBrokerOperationDependencies) {
+    init(dependencies: BrokerProfileJobDependencyProviding) {
         dependencies.vpnBypassService?.setUp()
         self.dependencies = dependencies
     }
@@ -38,10 +38,10 @@ struct BrokerProfileOptOutSubJob {
 
     // MARK: - Opt-Out Jobs
 
-    public func runOptOutOperation(for extractedProfile: ExtractedProfile,
-                                   brokerProfileQueryData: BrokerProfileQueryData,
-                                   showWebView: Bool = false,
-                                   shouldRunNextStep: @escaping () -> Bool) async throws {
+    public func runOptOut(for extractedProfile: ExtractedProfile,
+                          brokerProfileQueryData: BrokerProfileQueryData,
+                          showWebView: Bool = false,
+                          shouldRunNextStep: @escaping () -> Bool) async throws {
         // 1. Validate that the broker and profile query data objects each have an ID:
         guard let brokerId = brokerProfileQueryData.dataBroker.id,
               let profileQueryId = brokerProfileQueryData.profileQuery.id,

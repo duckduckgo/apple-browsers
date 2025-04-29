@@ -1,5 +1,5 @@
 //
-//  DataBrokerOperationsCreatorTests.swift
+//  BrokerProfileJobProviderTests.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -21,32 +21,32 @@ import BrowserServicesKit
 import DataBrokerProtectionCoreTestsUtils
 import XCTest
 
-final class DataBrokerOperationsCreatorTests: XCTestCase {
+final class BrokerProfileJobProviderTests: XCTestCase {
 
-    private let sut: DataBrokerOperationsCreator = DefaultDataBrokerOperationsCreator()
+    private let sut: BrokerProfileJobProviding = BrokerProfileJobProvider()
 
     // Dependencies
     private var mockDatabase: MockDatabase!
-    private var mockSchedulerConfig = DataBrokerExecutionConfig()
+    private var mockSchedulerConfig = BrokerJobExecutionConfig()
     private var mockPixelHandler: MockPixelHandler!
     private var mockEventsHandler: MockOperationEventsHandler!
-    var mockDependencies: DefaultDataBrokerOperationDependencies!
+    var mockDependencies: BrokerProfileJobDependencies!
 
     override func setUpWithError() throws {
         mockDatabase = MockDatabase()
         mockPixelHandler = MockPixelHandler()
         mockEventsHandler = MockOperationEventsHandler()
 
-        mockDependencies = DefaultDataBrokerOperationDependencies(database: mockDatabase,
-                                                                  contentScopeProperties: ContentScopeProperties.mock,
-                                                                  privacyConfig: PrivacyConfigurationManagingMock(),
-                                                                  executionConfig: mockSchedulerConfig,
-                                                                  notificationCenter: .default,
-                                                                  pixelHandler: mockPixelHandler,
-                                                                  eventsHandler: mockEventsHandler,
-                                                                  dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard),
-                                                                  emailService: EmailServiceMock(),
-                                                                  captchaService: CaptchaServiceMock())
+        mockDependencies = BrokerProfileJobDependencies(database: mockDatabase,
+                                                        contentScopeProperties: ContentScopeProperties.mock,
+                                                        privacyConfig: PrivacyConfigurationManagingMock(),
+                                                        executionConfig: mockSchedulerConfig,
+                                                        notificationCenter: .default,
+                                                        pixelHandler: mockPixelHandler,
+                                                        eventsHandler: mockEventsHandler,
+                                                        dataBrokerProtectionSettings: DataBrokerProtectionSettings(defaults: .standard),
+                                                        emailService: EmailServiceMock(),
+                                                        captchaService: CaptchaServiceMock())
     }
 
     func testWhenBuildOperations_andBrokerQueryDataHasDuplicateBrokers_thenDuplicatesAreIgnored() throws {
@@ -74,11 +74,11 @@ final class DataBrokerOperationsCreatorTests: XCTestCase {
         mockDatabase.brokerProfileQueryDataToReturn = dataBrokerProfileQueries
 
         // When
-        let result = try! sut.operations(forOperationType: .manualScan,
+        let result = try! sut.createJobs(with: .manualScan,
                                          withPriorityDate: Date(),
                                          showWebView: false,
-                                         errorDelegate: MockDataBrokerOperationErrorDelegate(),
-                                         operationDependencies: mockDependencies)
+                                         errorDelegate: MockBrokerProfileJobErrorDelegate(),
+                                         jobDependencies: mockDependencies)
 
         // Then
         XCTAssert(result.count == 3)

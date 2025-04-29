@@ -21,9 +21,9 @@ import Common
 import os.log
 
 struct BrokerProfileScanSubJob {
-    private let dependencies: DataBrokerOperationDependencies
+    private let dependencies: BrokerProfileJobDependencyProviding
 
-    init(dependencies: DataBrokerOperationDependencies) {
+    init(dependencies: BrokerProfileJobDependencyProviding) {
         dependencies.vpnBypassService?.setUp()
         self.dependencies = dependencies
     }
@@ -38,10 +38,10 @@ struct BrokerProfileScanSubJob {
 
     // MARK: - Scan Jobs
 
-    public func runScanOperation(brokerProfileQueryData: BrokerProfileQueryData,
-                                 showWebView: Bool = false,
-                                 isManual: Bool = false,
-                                 shouldRunNextStep: @escaping () -> Bool) async throws {
+    public func runScan(brokerProfileQueryData: BrokerProfileQueryData,
+                        showWebView: Bool = false,
+                        isManual: Bool = false,
+                        shouldRunNextStep: @escaping () -> Bool) async throws {
         Logger.dataBrokerProtection.log("Running scan operation: \(brokerProfileQueryData.dataBroker.name, privacy: .public)")
 
         // 1. Validate that the broker and profile query data objects each have an ID:
@@ -244,7 +244,7 @@ struct BrokerProfileScanSubJob {
         brokerProfileQueryData: BrokerProfileQueryData,
         database: DataBrokerProtectionRepository,
         pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-        eventsHandler: EventMapping<OperationEvent>
+        eventsHandler: EventMapping<JobEvent>
     ) throws {
         var shouldSendProfileRemovedEvent = false
         for removedProfile in removedProfiles {
@@ -287,7 +287,7 @@ struct BrokerProfileScanSubJob {
         }
     }
 
-    private func sendProfilesRemovedEventIfNecessary(eventsHandler: EventMapping<OperationEvent>,
+    private func sendProfilesRemovedEventIfNecessary(eventsHandler: EventMapping<JobEvent>,
                                                      database: DataBrokerProtectionRepository) {
 
         guard let savedExtractedProfiles = try? database.fetchAllBrokerProfileQueryData().flatMap({ $0.extractedProfiles }),

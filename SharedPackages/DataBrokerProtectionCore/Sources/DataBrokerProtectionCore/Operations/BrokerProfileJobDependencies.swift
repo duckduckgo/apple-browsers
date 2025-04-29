@@ -1,5 +1,5 @@
 //
-//  DataBrokerOperationDependencies.swift
+//  BrokerProfileJobDependencies.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -21,14 +21,14 @@ import Common
 import os.log
 import BrowserServicesKit
 
-public protocol DataBrokerOperationDependencies {
+public protocol BrokerProfileJobDependencyProviding {
     var database: DataBrokerProtectionRepository { get }
     var contentScopeProperties: ContentScopeProperties { get }
     var privacyConfig: PrivacyConfigurationManaging { get }
-    var executionConfig: DataBrokerExecutionConfig { get }
+    var executionConfig: BrokerJobExecutionConfig { get }
     var notificationCenter: NotificationCenter { get }
     var pixelHandler: EventMapping<DataBrokerProtectionSharedPixels> { get }
-    var eventsHandler: EventMapping<OperationEvent> { get }
+    var eventsHandler: EventMapping<JobEvent> { get }
     var dataBrokerProtectionSettings: DataBrokerProtectionSettings { get }
     var emailService: EmailServiceProtocol { get }
     var captchaService: CaptchaServiceProtocol { get }
@@ -43,14 +43,14 @@ public protocol DataBrokerOperationDependencies {
                             shouldRunNextStep: @escaping () -> Bool) -> BrokerProfileOptOutSubJobWebRunning
 }
 
-public struct DefaultDataBrokerOperationDependencies: DataBrokerOperationDependencies {
+public struct BrokerProfileJobDependencies: BrokerProfileJobDependencyProviding {
     public let database: DataBrokerProtectionRepository
     public let contentScopeProperties: ContentScopeProperties
     public let privacyConfig: PrivacyConfigurationManaging
-    public var executionConfig: DataBrokerExecutionConfig
+    public var executionConfig: BrokerJobExecutionConfig
     public let notificationCenter: NotificationCenter
     public let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
-    public let eventsHandler: EventMapping<OperationEvent>
+    public let eventsHandler: EventMapping<JobEvent>
     public let dataBrokerProtectionSettings: DataBrokerProtectionSettings
     public let emailService: EmailServiceProtocol
     public let captchaService: CaptchaServiceProtocol
@@ -59,10 +59,10 @@ public struct DefaultDataBrokerOperationDependencies: DataBrokerOperationDepende
     public init(database: any DataBrokerProtectionRepository,
                 contentScopeProperties: ContentScopeProperties,
                 privacyConfig: PrivacyConfigurationManaging,
-                executionConfig: DataBrokerExecutionConfig,
+                executionConfig: BrokerJobExecutionConfig,
                 notificationCenter: NotificationCenter,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-                eventsHandler: EventMapping<OperationEvent>,
+                eventsHandler: EventMapping<JobEvent>,
                 dataBrokerProtectionSettings: DataBrokerProtectionSettings,
                 emailService: EmailServiceProtocol,
                 captchaService: CaptchaServiceProtocol,

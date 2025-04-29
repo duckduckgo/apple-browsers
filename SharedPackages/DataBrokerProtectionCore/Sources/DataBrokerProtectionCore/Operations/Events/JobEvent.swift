@@ -1,5 +1,5 @@
 //
-//  OperationEvent.swift
+//  JobEvent.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -18,7 +18,7 @@
 
 import Foundation
 
-public enum OperationEvent {
+public enum JobEvent {
     case profileSaved
     case firstScanCompleted
     case firstScanCompletedAndMatchesFound

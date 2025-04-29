@@ -364,7 +364,6 @@
 		6553AFF72D95B8EA00D64241 /* DuckPlayer-PrimingAnimation.json in Resources */ = {isa = PBXBuildFile; fileRef = 6553AFF62D95B8EA00D64241 /* DuckPlayer-PrimingAnimation.json */; };
 		6562F7792D7F9C7100205677 /* serpNotify.js in Resources */ = {isa = PBXBuildFile; fileRef = 6562F7782D7F9C7100205677 /* serpNotify.js */; };
 		6566A5D02D775D560033283C /* DuckPlayerMiniPillViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6526CA6A2D70CAAD0048819E /* DuckPlayerMiniPillViewModel.swift */; };
-		658016032DBB89C000B028AB /* DuckPlayerVariantManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 658016022DBB89C000B028AB /* DuckPlayerVariantManager.swift */; };
 		65898D8C2D9C161800D5EC22 /* DuckPlayerDelayHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65898D8B2D9C161800D5EC22 /* DuckPlayerDelayHandler.swift */; };
 		659AD5B12D76160C00420D1D /* YoutubeOembedService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 659AD5B02D76160500420D1D /* YoutubeOembedService.swift */; };
 		65A6848B2D6F904A0029FE9E /* DuckPlayerContainer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 65A6848A2D6F904A0029FE9E /* DuckPlayerContainer.swift */; };
@@ -6649,7 +6648,6 @@
 				31DE43C82C2DAA8F00F8C51F /* Modal */,
 				31DE43C72C2DAA7F00F8C51F /* Resources */,
 				653561012D4D2C680064F258 /* Logger+DuckPlayer.swift */,
-				658016022DBB89C000B028AB /* DuckPlayerVariantManager.swift */,
 				D63FF8972C1B6A45006DE24D /* DuckPlayer.swift */,
 				D6037E682C32F2E7009AAEC0 /* DuckPlayerSettings.swift */,
 				65D7483E2D9C3EDB00554B1D /* DuckPlayerHosting.swift */,
@@ -9062,7 +9060,6 @@
 				1DEAADF22BA4716C00E25A97 /* StatusIndicator.swift in Sources */,
 				857917E22D806C1900E23CDC /* BulkGeneratorView.swift in Sources */,
 				C18ED43C2AB8364400BF3805 /* FileTextPreviewDebugViewController.swift in Sources */,
-				658016032DBB89C000B028AB /* DuckPlayerVariantManager.swift in Sources */,
 				1EEF12502851016B003DDE57 /* PrivacyIconAndTrackersAnimator.swift in Sources */,
 				31CB4251273AF50700FA0F3F /* SpeechRecognizerProtocol.swift in Sources */,
 				319A37172829C8AD0079FBCE /* UITableViewExtension.swift in Sources */,

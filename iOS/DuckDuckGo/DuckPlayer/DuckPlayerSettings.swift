@@ -276,13 +276,12 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
     /// The current mode of Duck Player.
     var mode: DuckPlayerMode {
         get {
-            if isFeatureEnabled {
-                return appSettings.duckPlayerMode
-            } else {
-                return .disabled
-            }
+            guard isFeatureEnabled else { return .disabled }
+            // Return the underlying setting, reflecting user choice or variant default
+            return appSettings.duckPlayerMode
         }
         set {
+            // Allow direct setting if needed, but primarily managed by variant
             if newValue != appSettings.duckPlayerMode {
                 appSettings.duckPlayerMode = newValue
                 triggerNotification()
@@ -314,9 +313,11 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
     /// Determines if Duck Player should open videos in a new tab.
     var openInNewTab: Bool {
         get {
+            // Return the underlying AppSetting value directly
             return appSettings.duckPlayerOpenInNewTab
         }
         set {
+            // Allow direct setting if needed, potentially overridden by variant change
             if newValue != appSettings.duckPlayerOpenInNewTab {
                 appSettings.duckPlayerOpenInNewTab = newValue
                 triggerNotification()
@@ -327,9 +328,11 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
     // Determines if we should use the native verion of DuckPlayer (Internal only)
     var nativeUI: Bool {
         get {
-            return appSettings.duckPlayerNativeUI && internalUserDecider.isInternalUser && UIDevice.current.userInterfaceIdiom == .phone
+            guard internalUserDecider.isInternalUser, UIDevice.current.userInterfaceIdiom == .phone else { return false }        
+            return appSettings.duckPlayerNativeUI
         }
         set {
+             // Allow direct setting if needed, potentially overridden by variant change
             if newValue != appSettings.duckPlayerNativeUI {
                 appSettings.duckPlayerNativeUI = newValue
                 triggerNotification()
@@ -340,9 +343,10 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
     // Determines if DuckPlayer Native is enabled for SERP
     var nativeUISERPEnabled: Bool {
         get {
-            return appSettings.duckPlayerNativeUI && appSettings.duckPlayerNativeUISERPEnabled && internalUserDecider.isInternalUser && UIDevice.current.userInterfaceIdiom == .phone
+            guard internalUserDecider.isInternalUser, UIDevice.current.userInterfaceIdiom == .phone else { return false }
+            return appSettings.duckPlayerNativeUI && appSettings.duckPlayerNativeUISERPEnabled
         }
-        set {
+        set {            
             if newValue != appSettings.duckPlayerNativeUISERPEnabled {
                 appSettings.duckPlayerNativeUISERPEnabled = newValue
                 triggerNotification()
@@ -353,13 +357,12 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
     // Determines the Youtube mode for DuckPlayer Native
     var nativeUIYoutubeMode: NativeDuckPlayerYoutubeMode {
         get {
-            if isFeatureEnabled {
-                return appSettings.duckPlayerNativeYoutubeMode
-            } else {
-                return .never
-            }
+            guard isFeatureEnabled else { return .never }
+            // Return the underlying AppSetting value
+            return appSettings.duckPlayerNativeYoutubeMode
         }
         set {
+            // Allow direct setting if needed, potentially overridden by variant change
             if newValue != appSettings.duckPlayerNativeYoutubeMode {
                 appSettings.duckPlayerNativeYoutubeMode = newValue
                 triggerNotification()
@@ -376,9 +379,10 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
     // Determines if we should use the native verion of DuckPlayer (Internal only)
     var autoplay: Bool {
         get {
-            return appSettings.duckPlayerAutoplay && internalUserDecider.isInternalUser && UIDevice.current.userInterfaceIdiom == .phone
+            guard internalUserDecider.isInternalUser, UIDevice.current.userInterfaceIdiom == .phone else { return false }
+            return appSettings.duckPlayerAutoplay
         }
-        set {
+        set {            
             if newValue != appSettings.duckPlayerAutoplay {
                 appSettings.duckPlayerAutoplay = newValue
                 triggerNotification()
@@ -413,7 +417,37 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
         set {
             if newValue != appSettings.duckPlayerVariant {
                 appSettings.duckPlayerVariant = newValue
-                triggerNotification()
+
+                // Apply specific settings based on the new variant
+                switch newValue {
+                case .classicA:
+                    // Set Classic A specific settings
+                    self.nativeUI = false
+                    self.nativeUISERPEnabled = false
+                    self.mode = .alwaysAsk
+                    self.nativeUIYoutubeMode = .never
+                    self.openInNewTab = true
+                    self.autoplay = false
+
+                case .nativeB:
+                    // Set Native B specific settings
+                    self.nativeUI = true
+                    self.nativeUISERPEnabled = true
+                    // mode remains unchanged (Only used in classicA)
+                    self.nativeUIYoutubeMode = .ask
+                    // openInNewTab remains unchanged (Only used in classicA)
+                    self.autoplay = true
+
+                case .nativeC:
+                    // Set Native C specific settings
+                    self.nativeUI = true
+                    self.nativeUISERPEnabled = true
+                    // mode remains unchanged (Only used in classicA)
+                    self.nativeUIYoutubeMode = .auto
+                    // openInNewTab remains unchanged (Only used in classicA)
+                    self.autoplay = true
+                }
+                
             }
         }
     }

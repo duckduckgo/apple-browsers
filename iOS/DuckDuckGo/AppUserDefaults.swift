@@ -550,10 +550,9 @@ public class AppUserDefaults: AppSettings {
             return .classicA
         }
         set {
-            userDefaults?.set(newValue.stringValue, forKey: Keys.duckPlayerNativeYoutubeMode)
-            userDefaults?.set(false, forKey: Keys.duckPlayerAskModeOverlayHidden)
+            userDefaults?.set(newValue.stringValue, forKey: Keys.duckPlayerVariant)            
             NotificationCenter.default.post(name: AppUserDefaults.Notifications.duckPlayerSettingsUpdated,
-                                            object: duckPlayerNativeYoutubeMode)
+                                            object: nil) 
         }
     }
 }

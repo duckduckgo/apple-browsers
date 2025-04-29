@@ -110,9 +110,10 @@ struct SettingsDuckPlayerView: View {
                 }
 
                 Section("Experimental", content: {
-                    SettingsCellView(label: "Use Native UI",
-                                   accessory: .toggle(isOn: viewModel.duckPlayerNativeUI))
-                        .onChange(of: viewModel.state.duckPlayerNativeUI) { _ in
+                    SettingsPickerCellView(label: "Duck Player Variant",
+                                           options: DuckPlayerVariant.allCases,
+                                           selectedOption: viewModel.duckPlayerVariantBinding)
+                        .onChange(of: viewModel.appSettings.duckPlayerVariant) { _ in // Observe the source setting directly
                             showNewTabAlert = true
                         }
                 })

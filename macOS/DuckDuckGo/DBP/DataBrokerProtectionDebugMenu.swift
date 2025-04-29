@@ -212,7 +212,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     }
 
     @objc private func setCustomServiceRoot() {
-        showCustomServiceRootAlert { [weak self] value in
+        showCustomServiceRootAlert { [weak self] value, removeBrokers in
             guard let value, let self else { return false }
 
             self.settings.serviceRoot = value
@@ -228,6 +228,10 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
                                                         localBrokerService: self.brokerUpdater)
             let dataManager = DataBrokerProtectionDataManager(database: database)
             try! dataManager.removeAllData()
+
+            if removeBrokers {
+                try! vault.deleteAllBrokers()
+            }
 
             self.forceBrokerJSONFilesUpdate()
 
@@ -378,20 +382,24 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
         }
     }
 
-    func showCustomServiceRootAlert(callback: @escaping (String?) -> Bool) {
+    func showCustomServiceRootAlert(callback: @escaping (String?, Bool) -> Bool) {
         let alert = NSAlert()
         alert.messageText = "Enter custom service root (staging environment only)"
         alert.informativeText = "Leave blank for default"
         alert.addButton(withTitle: "Accept")
         alert.addButton(withTitle: "Cancel")
+        alert.showsSuppressionButton = true
+        alert.suppressionButton?.title = "Remove existing brokers"
 
         let inputTextField = NSTextField(frame: NSRect(x: 0, y: 0, width: 200, height: 24))
         inputTextField.placeholderString = "branches/some-branch"
         alert.accessoryView = inputTextField
 
+        let shouldRemoveBrokers = alert.suppressionButton?.state == .on
+
         let response = alert.runModal()
         if response == .alertFirstButtonReturn {
-            if !callback(inputTextField.stringValue) {
+            if !callback(inputTextField.stringValue, shouldRemoveBrokers) {
                 let invalidAlert = NSAlert()
                 invalidAlert.messageText = "Invalid service root"
                 invalidAlert.informativeText = "Please enter a valid service root."
@@ -399,7 +407,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
                 invalidAlert.runModal()
             }
         } else {
-            _ = callback(nil)
+            _ = callback(nil, shouldRemoveBrokers)
         }
     }
 

@@ -156,7 +156,7 @@
                                     <real value="3.4028234663852886e+38"/>
                                 </customSpacing>
                             </stackView>
-                            <stackView distribution="fill" orientation="horizontal" alignment="centerY" spacing="16" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="gIy-el-24l" userLabel="Address Bar">
+                            <stackView distribution="fill" orientation="horizontal" alignment="centerY" spacing="16" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="gIy-el-24l" userLabel="Address Bar">
                                 <rect key="frame" x="422" y="6" width="832" height="56"/>
                                 <subviews>
                                     <containerView translatesAutoresizingMaskIntoConstraints="NO" id="Wba-nA-FYj">
@@ -177,8 +177,8 @@
                                     <real value="3.4028234663852886e+38"/>
                                 </customSpacing>
                             </stackView>
-                            <stackView distribution="fill" orientation="horizontal" alignment="centerY" spacing="0.0" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="aWu-Jm-Oaz" userLabel="Menu Buttons">
-                                <rect key="frame" x="1567" y="18" width="96" height="32"/>
+                            <stackView distribution="fill" orientation="horizontal" alignment="centerY" spacing="0.0" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" horizontalCompressionResistancePriority="250" verticalCompressionResistancePriority="250" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="aWu-Jm-Oaz" userLabel="Menu Buttons">
+                                <rect key="frame" x="1535" y="18" width="128" height="32"/>
                                 <subviews>
                                     <button hidden="YES" translatesAutoresizingMaskIntoConstraints="NO" id="l0L-Gq-8p3" userLabel="Downloads Button" customClass="MouseOverButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
                                         <rect key="frame" x="0.0" y="0.0" width="32" height="32"/>
@@ -284,8 +284,34 @@
                                             <action selector="networkProtectionButtonAction:" target="o2v-eH-jTI" id="DeW-ut-BEh"/>
                                         </connections>
                                     </button>
-                                    <button translatesAutoresizingMaskIntoConstraints="NO" id="iIF-Ky-unr" customClass="MoreOptionsMenuButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
+                                    <button translatesAutoresizingMaskIntoConstraints="NO" id="NvC-7a-4eG" userLabel="Overflow Button" customClass="MouseOverButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
                                         <rect key="frame" x="64" y="0.0" width="32" height="32"/>
+                                        <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="Chevron-Double-Right-16" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="Eo9-Y2-FKc">
+                                            <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
+                                            <font key="font" metaFont="system"/>
+                                        </buttonCell>
+                                        <color key="contentTintColor" name="ButtonColor"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" constant="32" id="9kl-8f-u1e"/>
+                                            <constraint firstAttribute="height" constant="32" id="jN5-Ge-fDt"/>
+                                        </constraints>
+                                        <userDefinedRuntimeAttributes>
+                                            <userDefinedRuntimeAttribute type="color" keyPath="mouseOverColor">
+                                                <color key="value" name="ButtonMouseOverColor"/>
+                                            </userDefinedRuntimeAttribute>
+                                            <userDefinedRuntimeAttribute type="color" keyPath="mouseDownColor">
+                                                <color key="value" name="ButtonMouseDownColor"/>
+                                            </userDefinedRuntimeAttribute>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
+                                                <real key="value" value="4"/>
+                                            </userDefinedRuntimeAttribute>
+                                        </userDefinedRuntimeAttributes>
+                                        <connections>
+                                            <action selector="overflowButtonAction:" target="o2v-eH-jTI" id="c2X-Pj-Kye"/>
+                                        </connections>
+                                    </button>
+                                    <button translatesAutoresizingMaskIntoConstraints="NO" id="iIF-Ky-unr" customClass="MoreOptionsMenuButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
+                                        <rect key="frame" x="96" y="0.0" width="32" height="32"/>
                                         <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="Settings" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="N7m-mn-k3W">
                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                             <font key="font" metaFont="system"/>
@@ -317,8 +343,10 @@
                                     <integer value="1000"/>
                                     <integer value="1000"/>
                                     <integer value="1000"/>
+                                    <integer value="1000"/>
                                 </visibilityPriorities>
                                 <customSpacing>
+                                    <real value="3.4028234663852886e+38"/>
                                     <real value="3.4028234663852886e+38"/>
                                     <real value="3.4028234663852886e+38"/>
                                     <real value="3.4028234663852886e+38"/>
@@ -355,6 +383,7 @@
                         <outlet property="addressBarContainer" destination="Wba-nA-FYj" id="VEq-Sp-Ns1"/>
                         <outlet property="addressBarHeightConstraint" destination="KjG-nj-hqf" id="pT7-bY-Rf2"/>
                         <outlet property="addressBarLeftToNavButtonsConstraint" destination="rfA-3F-QAf" id="IJE-cK-DQ6"/>
+                        <outlet property="addressBarMinWidthConstraint" destination="cjs-qz-wlM" id="Zd3-Mb-E0r"/>
                         <outlet property="addressBarProportionalWidthConstraint" destination="rqL-Vd-lnY" id="zxF-f6-8wE"/>
                         <outlet property="addressBarStack" destination="gIy-el-24l" id="vlT-AD-nDv"/>
                         <outlet property="addressBarTopConstraint" destination="km5-nE-hfK" id="dR8-qN-sMa"/>
@@ -369,6 +398,7 @@
                         <outlet property="navigationButtons" destination="eEh-kf-smR" id="XC4-bo-89V"/>
                         <outlet property="networkProtectionButton" destination="iKf-yR-au9" id="HWJ-gT-EXa"/>
                         <outlet property="optionsButton" destination="iIF-Ky-unr" id="vvZ-mm-idv"/>
+                        <outlet property="overflowButton" destination="NvC-7a-4eG" id="uvf-br-tuC"/>
                         <outlet property="passwordManagementButton" destination="1nW-I1-nut" id="wDs-oE-b7d"/>
                         <outlet property="refreshOrStopButton" destination="B2U-XM-Vo0" id="EaI-Kz-Qwi"/>
                     </connections>
@@ -1052,6 +1082,7 @@
         <image name="Camera-Active" width="16" height="12"/>
         <image name="Camera-Icon" width="16" height="12"/>
         <image name="Camera-Tab-Blocked" width="16" height="14"/>
+        <image name="Chevron-Double-Right-16" width="16" height="16"/>
         <image name="Clear" width="9" height="9"/>
         <image name="Downloads" width="16" height="16"/>
         <image name="ExternalAppScheme" width="16" height="16"/>

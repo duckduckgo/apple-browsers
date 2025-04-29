@@ -43,6 +43,7 @@ final class NavigationBarViewController: NSViewController {
     @IBOutlet weak var goForwardButton: NSButton!
     @IBOutlet weak var refreshOrStopButton: NSButton!
     @IBOutlet weak var optionsButton: MouseOverButton!
+    @IBOutlet weak var overflowButton: MouseOverButton!
     @IBOutlet weak var bookmarkListButton: MouseOverButton!
     @IBOutlet weak var passwordManagementButton: MouseOverButton!
     @IBOutlet weak var homeButton: MouseOverButton!
@@ -62,6 +63,7 @@ final class NavigationBarViewController: NSViewController {
     @IBOutlet var addressBarBottomConstraint: NSLayoutConstraint!
     @IBOutlet var addressBarHeightConstraint: NSLayoutConstraint!
     @IBOutlet var buttonsTopConstraint: NSLayoutConstraint!
+    @IBOutlet var addressBarMinWidthConstraint: NSLayoutConstraint!
 
     private let downloadListCoordinator: DownloadListCoordinator
 
@@ -191,6 +193,7 @@ final class NavigationBarViewController: NSViewController {
         setupNavigationButtonMenus()
         setupNavigationButtonIcons()
         addContextMenu()
+        setupOverflowMenu()
 
         optionsButton.sendAction(on: .leftMouseDown)
         bookmarkListButton.sendAction(on: .leftMouseDown)
@@ -230,6 +233,7 @@ final class NavigationBarViewController: NSViewController {
         listenToMessageNotifications()
         listenToFeedbackFormNotifications()
         subscribeToDownloads()
+        subscribeToNavigationBarWidthChanges()
 
         updateDownloadsButton(source: .default)
         updatePasswordManagementButton()
@@ -243,6 +247,7 @@ final class NavigationBarViewController: NSViewController {
             optionsButton.isHidden = true
             homeButton.isHidden = true
             homeButtonSeparator.isHidden = true
+            overflowButton.isHidden = true
             addressBarTopConstraint.constant = 0
             addressBarBottomConstraint.constant = 0
             addressBarLeftToNavButtonsConstraint.isActive = false
@@ -254,6 +259,12 @@ final class NavigationBarViewController: NSViewController {
                 .leading: .leading(multiplier: 1.0, const: 72)
             ]))
         }
+    }
+
+    override func viewDidAppear() {
+        super.viewDidAppear()
+
+        updateNavigationBarForCurrentWidth()
     }
 
     /**
@@ -375,6 +386,14 @@ final class NavigationBarViewController: NSViewController {
         selectedTabViewModel.tab.openHomePage()
     }
 
+    @IBAction func overflowButtonAction(_ sender: NSButton) {
+        guard let menu = overflowButton.menu else {
+            return
+        }
+        let location = NSPoint(x: -menu.size.width + sender.bounds.width, y: sender.bounds.height + 4)
+        menu.popUp(positioning: nil, at: location, in: sender)
+    }
+
     @IBAction func optionsButtonAction(_ sender: NSButton) {
         let internalUserDecider = NSApp.delegateTyped.internalUserDecider
         let freemiumDBPFeature = Application.appDelegate.freemiumDBPFeature
@@ -453,6 +472,7 @@ final class NavigationBarViewController: NSViewController {
             if let userInfo = notification.userInfo as? [String: Any],
                let viewType = userInfo[LocalPinningManager.pinnedViewChangedNotificationViewTypeKey] as? String,
                let view = PinnableView(rawValue: viewType) {
+                updateNavigationBarForCurrentWidth()
                 switch view {
                 case .autofill:
                     self.updatePasswordManagementButton()
@@ -700,6 +720,7 @@ final class NavigationBarViewController: NSViewController {
         passwordManagementButton.image = visualStyleManager.style.passwordManagerButtonImage
         bookmarkListButton.image = visualStyleManager.style.bookmarksButtonImage
         optionsButton.image = visualStyleManager.style.moreOptionsbuttonImage
+        overflowButton.image = visualStyleManager.style.overflowButtonImage
     }
 
     private func setupNavigationButtonsCornerRadius() {
@@ -713,6 +734,7 @@ final class NavigationBarViewController: NSViewController {
         bookmarkListButton.setCornerRadius(visualStyleManager.style.toolbarButtonsCornerRadius)
         networkProtectionButton.setCornerRadius(visualStyleManager.style.toolbarButtonsCornerRadius)
         optionsButton.setCornerRadius(visualStyleManager.style.toolbarButtonsCornerRadius)
+        overflowButton.setCornerRadius(visualStyleManager.style.toolbarButtonsCornerRadius)
     }
 
     private func subscribeToSelectedTabViewModel() {
@@ -890,7 +912,6 @@ final class NavigationBarViewController: NSViewController {
             homeButtonSeparator.isHidden = true
         }
     }
-
     private enum DownloadsButtonUpdateSource {
         case pinnedViewsNotification
         case popoverDidClose
@@ -1056,6 +1077,198 @@ final class NavigationBarViewController: NSViewController {
             .store(in: &navigationButtonsCancellables)
     }
 
+    // MARK: - Overflow menu
+
+    private struct OverflowableItem: Hashable {
+        let navBarViews: [NSView]
+        let menuItem: NSMenuItem
+
+        var isVisibleInNavBar: Bool {
+            navBarViews.contains { !$0.isHidden }
+        }
+
+        var navBarWidth: CGFloat {
+            navBarViews.map( \.bounds.width ).reduce( 0, + )
+        }
+    }
+
+    var pinnedViews: [PinnableView] {
+        let allButtons: [PinnableView] = [.downloads, .autofill, .bookmarks, .networkProtection, .homeButton]
+        return allButtons.filter(LocalPinningManager.shared.isPinned)
+    }
+
+    private var visiblePinnedItems: [OverflowableItem] {
+        pinnedViews.map(overflowableItem).filter(\.isVisibleInNavBar)
+    }
+
+    private var visiblePinnedViewsRequiredWidth: CGFloat {
+        let visiblePinnedViewsWidth = visiblePinnedItems.map(\.navBarWidth).reduce(0, +)
+        let overflowButtonWidth = overflowButton.isVisible ? overflowButton.bounds.width : 0
+        return visiblePinnedViewsWidth + overflowButtonWidth
+    }
+
+    private var overflowItems: [OverflowableItem] {
+        pinnedViews.map(overflowableItem).filter { !$0.isVisibleInNavBar }
+    }
+
+    private var addressBarButtonsAddedWidth: CGFloat = 0
+
+    private var overflowThreshold: CGFloat {
+        let availableWidth = view.bounds.width - 24 // account for leading and trailing space
+        let alwaysVisibleButtonsWidth = goBackButton.bounds.width + goForwardButton.bounds.width + refreshOrStopButton.bounds.width + optionsButton.bounds.width
+        let addressBarMinWidth = addressBarMinWidthConstraint.constant + addressBarButtonsAddedWidth + 24 // account for leading and trailing space
+        return availableWidth - alwaysVisibleButtonsWidth - addressBarMinWidth - 3
+    }
+
+    private func setupOverflowMenu() {
+        overflowButton.menu = NSMenu()
+        overflowButton.isHidden = true
+        overflowButton.sendAction(on: .leftMouseDown)
+    }
+
+    private func subscribeToNavigationBarWidthChanges() {
+        NotificationCenter.default.publisher(for: NSView.frameDidChangeNotification, object: view)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateNavigationBarForCurrentWidth()
+            }
+            .store(in: &cancellables)
+
+        // Listen for changes to the buttons inside the address bar (e.g. zoom or permissions)
+        NotificationCenter.default.publisher(for: .AddressBarButtonsChanged)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                if let self, let userInfo = notification.userInfo as? [String: Any],
+                   let buttonWidth = userInfo[AddressBarButtonsViewController.addressBarButtonsChangedNotificationWidthKey] as? CGFloat {
+                    let buttonContainerSpacing: CGFloat = buttonWidth > 0 ? 4 : 0
+                    addressBarButtonsAddedWidth = ( buttonWidth * 2 ) + buttonContainerSpacing // The address bar expands by twice the button width to center the displayed address
+                    updateNavigationBarForCurrentWidth()
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    private func updateNavigationBarForCurrentWidth() {
+        guard !pinnedViews.isEmpty else {
+            return
+        }
+
+        if visiblePinnedViewsRequiredWidth >= overflowThreshold {
+            // Move buttons into overflow menu if needed
+            while visiblePinnedViewsRequiredWidth >= overflowThreshold {
+                guard let itemToOverflow = visiblePinnedItems.last else {
+                    break
+                }
+                updateNavBarViews(with: itemToOverflow, isHidden: true)
+            }
+        } else if !overflowItems.isEmpty {
+            // Restore buttons into nav bar if possible
+            while let itemToRestore = overflowItems.first {
+                let restorableButtonWidth = itemToRestore.navBarWidth
+                let newMaximumWidth = visiblePinnedViewsRequiredWidth + restorableButtonWidth
+
+                if newMaximumWidth < overflowThreshold {
+                    updateNavBarViews(with: itemToRestore, isHidden: false)
+                } else {
+                    break
+                }
+            }
+        }
+    }
+
+    private func updateNavBarViews(with item: OverflowableItem, isHidden: Bool) {
+        for view in item.navBarViews {
+            view.isHidden = isHidden
+        }
+        updateOverflowMenu()
+    }
+
+    private func updateOverflowMenu() {
+        overflowButton.menu?.removeAllItems()
+        if overflowItems.isEmpty {
+            overflowButton.isHidden = true
+        } else {
+            for item in overflowItems {
+                overflowButton.menu?.addItem(item.menuItem)
+            }
+            overflowButton.isHidden = false
+        }
+    }
+
+    private func overflowableItem(for pinnableView: PinnableView) -> OverflowableItem {
+        OverflowableItem(navBarViews: navBarButtonViews(for: pinnableView), menuItem: overflowMenuItem(for: pinnableView))
+    }
+
+    private func overflowMenuItem(for view: PinnableView) -> NSMenuItem {
+        switch view {
+        case .autofill:
+            return NSMenuItem(title: UserText.autofill, action: #selector(overflowMenuRequestedLoginsPopover), keyEquivalent: "")
+                .targetting(self)
+                .withImage(.passwordMenuNew)
+        case .bookmarks:
+            return NSMenuItem(title: UserText.bookmarks, action: #selector(overflowMenuRequestedBookmarkPopover), keyEquivalent: "")
+                .targetting(self)
+                .withImage(.bookmarksNew)
+        case .downloads:
+            return NSMenuItem(title: UserText.downloads, action: #selector(overflowMenuRequestedDownloadsPopover), keyEquivalent: "")
+                .targetting(self)
+                .withImage(.downloadsNew)
+        case .homeButton:
+            return NSMenuItem(title: UserText.homeButtonTooltip, action: #selector(overflowMenuRequestedHomeButton), keyEquivalent: "")
+                .targetting(self)
+                .withImage(.homeNew)
+        case .networkProtection:
+            return NSMenuItem(title: UserText.networkProtection, action: #selector(overflowMenuRequestedNetworkProtectionPopover), keyEquivalent: "")
+                .targetting(self)
+                .withImage(.vpnNew)
+        }
+    }
+
+    @objc
+    func overflowMenuRequestedLoginsPopover(_ menu: NSMenu) {
+        popovers.showPasswordManagementPopover(selectedCategory: nil, from: passwordManagementButton, withDelegate: self, source: .overflow)
+    }
+
+    @objc
+    func overflowMenuRequestedBookmarkPopover(_ menu: NSMenu) {
+        popovers.showBookmarkListPopover(from: bookmarkListButton, withDelegate: self, forTab: tabCollectionViewModel.selectedTabViewModel?.tab)
+    }
+
+    @objc
+    func overflowMenuRequestedNetworkProtectionPopover(_ menu: NSMenu) {
+        toggleNetworkProtectionPopover()
+    }
+
+    @objc
+    func overflowMenuRequestedHomeButton(_ menu: NSMenu) {
+        guard let selectedTabViewModel = tabCollectionViewModel.selectedTabViewModel else {
+            Logger.navigation.error("Selected tab view model is nil")
+            return
+        }
+        selectedTabViewModel.tab.openHomePage()
+    }
+
+    @objc
+    func overflowMenuRequestedDownloadsPopover(_ menu: NSMenu) {
+        toggleDownloadsPopover(keepButtonVisible: true)
+    }
+
+    private func navBarButtonViews(for view: PinnableView) -> [NSView] {
+        switch view {
+        case .autofill:
+            return [passwordManagementButton]
+        case .bookmarks:
+            return [bookmarkListButton]
+        case .downloads:
+            return [downloadsButton]
+        case .homeButton where Self.homeButtonPosition == .left:
+            return [homeButton, homeButtonSeparator]
+        case .homeButton:
+            return [homeButton]
+        case .networkProtection:
+            return [networkProtectionButton]
+        }
+    }
 }
 
 extension NavigationBarViewController: NSMenuDelegate {

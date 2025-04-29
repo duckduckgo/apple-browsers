@@ -23,12 +23,12 @@ extension NSAlert {
     static func storageAccessAlert(currentDomain: String,
                                    requestingDomain: String) -> NSAlert {
         let alert = NSAlert()
-        alert.messageText = "Allow sharing of cookies and website data?"
+        alert.messageText = "Share data like login info between two sites?"
         alert.alertStyle = .warning
         alert.icon = .privacyQuestion
-        // Buttons: first added is rightmost, so we add Allow then Deny
+        // Buttons: first added is rightmost, so add Allow then Don't Allow
         alert.addButton(withTitle: "Allow")
-        alert.addButton(withTitle: "Deny")
+        alert.addButton(withTitle: "Don't Allow")
         // Make Allow the default button
         alert.buttons.first?.keyEquivalent = "\r"
 
@@ -42,11 +42,9 @@ extension NSAlert {
 
         // 1) Build labels
         let labels = [
-          makeLabel("This site:", bold: false, size: 12),
-          makeLabel(currentDomain, bold: true, size: 12),
-          makeLabel("Has requested to use cookies and other website data (such as login information) on their other site:", bold: false, size: 12),
-          makeLabel(requestingDomain, bold: true, size: 12),
-          makeLabel("Declining may result in the site not working properly, but will prevent tracking across websites. DuckDuckGo's Web Tracking Protections will still apply either way.", bold: false, size: 12)
+          makeLabel("\(requestingDomain) wants to use cookies and data from \(currentDomain).", bold: false, size: 12),
+          makeLabel("Selecting \"Don't Allow\" means some site features may not work as expected, but cross-site tracking will be blocked.", bold: false, size: 12),
+          makeLabel("DuckDuckGo protections still apply either way.", bold: false, size: 12)
         ]
 
         // 2) Size each to wrap at our target width
@@ -68,9 +66,7 @@ extension NSAlert {
         for (i, label) in labels.enumerated() {
             totalHeight += label.frame.height
             if i < labels.count - 1 {
-                // Use smaller gap between label pairs (0->1, 2->3), default otherwise
-                let gap = (i == 0 || i == 2) ? smallSpacing : verticalSpacing
-                totalHeight += gap
+                totalHeight += verticalSpacing
             }
         }
         totalHeight += bottomPadding
@@ -87,8 +83,7 @@ extension NSAlert {
             label.frame.origin = CGPoint(x: marginX, y: y)
             container.addSubview(label)
             if labelIndex < labels.count - 1 {
-                let gap = (labelIndex == 0 || labelIndex == 2) ? smallSpacing : verticalSpacing
-                y -= gap
+                y -= verticalSpacing
             }
         }
 

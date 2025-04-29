@@ -957,11 +957,7 @@ extension SyncPreferences: SyncConnectionControllerDelegate {
         mapDevices(registeredDevices)
         PixelKit.fire(GeneralPixel.syncLogin)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            if isRecovery {
-                self.showDevicesSynced()
-            } else {
-                self.presentDialog(for: .saveRecoveryCode(self.recoveryCode ?? ""))
-            }
+            self.presentDialog(for: .saveRecoveryCode(self.recoveryCode ?? ""))
             self.stopPollingForRecoveryKey()
         }
     }

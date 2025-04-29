@@ -23,13 +23,11 @@ extension NSAlert {
     static func storageAccessAlert(currentDomain: String,
                                    requestingDomain: String) -> NSAlert {
         let alert = NSAlert()
-        alert.messageText = "Share data like login info between two sites?"
+        alert.messageText = UserText.storageAccessPromptHeader
         alert.alertStyle = .warning
         alert.icon = .privacyQuestion
-        // Buttons: first added is rightmost, so add Allow then Don't Allow
-        alert.addButton(withTitle: "Allow")
-        alert.addButton(withTitle: "Don't Allow")
-        // Make Allow the default button
+        alert.addButton(withTitle: UserText.storageAccessPromptAllow)
+        alert.addButton(withTitle: UserText.storageAccessPromptDontAllow)
         alert.buttons.first?.keyEquivalent = "\r"
 
         let containerWidth: CGFloat = 300
@@ -42,16 +40,18 @@ extension NSAlert {
         // Mixed-style label: bold only the domains
         let domainLabel: NSTextField = {
             let label = NSTextField(labelWithString: "")
-            let text = "\(requestingDomain) wants to use cookies and data from \(currentDomain)."
-            // Base font for entire string
+            let text = UserText.storageAccessPromptLabel1(currentDomain: currentDomain,
+                                                          requestingDomain: requestingDomain)
+
             let attributed = NSMutableAttributedString(string: text,
                 attributes: [.font: NSFont.systemFont(ofSize: 12)])
-            // Bold the requesting domain
+
+            // Bold domains
             let reqRange = (text as NSString).range(of: requestingDomain)
             attributed.addAttribute(.font, value: NSFont.boldSystemFont(ofSize: 12), range: reqRange)
-            // Bold the current domain
             let currRange = (text as NSString).range(of: currentDomain)
             attributed.addAttribute(.font, value: NSFont.boldSystemFont(ofSize: 12), range: currRange)
+
             // Center-align all lines via paragraph style for attributed string
             let paragraphStyle = NSMutableParagraphStyle()
             paragraphStyle.alignment = .center
@@ -59,7 +59,6 @@ extension NSAlert {
                                     value: paragraphStyle,
                                     range: NSRange(location: 0, length: attributed.length))
             label.attributedStringValue = attributed
-            // Enable wrapping
             label.usesSingleLineMode = false
             label.cell?.isScrollable = false
             label.cell?.wraps = true
@@ -68,28 +67,27 @@ extension NSAlert {
             label.alignment = .center
             return label
         }()
-        // 1) Build labels
+
+        // Other labels
         let labels = [
             domainLabel,
-            makeLabel("Selecting \"Don't Allow\" means some site features may not work as expected, but cross-site tracking will be blocked.", bold: false, size: 12),
-            makeLabel("DuckDuckGo protections still apply either way.", bold: false, size: 12)
+            makeLabel(UserText.storageAccessPromptLabel2, bold: false, size: 12),
+            makeLabel(UserText.storageAccessPromptLabel3, bold: false, size: 12)
         ]
 
-        // 2) Size each to wrap at our target width
+        // Size each to wrap at our target width
         for label in labels {
-            // compute height for wrapping text at our fixed width
             let boundingSize = CGSize(width: contentWidth,
                                       height: CGFloat.greatestFiniteMagnitude)
             let boundingRect = label.attributedStringValue.boundingRect(
                 with: boundingSize,
                 options: [.usesLineFragmentOrigin, .usesFontLeading])
-            // set the field's frame to the fixed width and calculated height
             label.frame = CGRect(origin: .zero,
                                  size: CGSize(width: contentWidth,
                                               height: ceil(boundingRect.height)))
         }
 
-        // 3) Compute total height
+        // Compute total height
         var totalHeight: CGFloat = topPadding
         for (i, label) in labels.enumerated() {
             totalHeight += label.frame.height
@@ -99,10 +97,11 @@ extension NSAlert {
         }
         totalHeight += bottomPadding
 
-        // 4) Make container & position
+        // Make container & position
         let container = NSView(frame: CGRect(x: 0, y: 0,
                                              width: containerWidth,
                                              height: totalHeight))
+
         // Prevent NSAlert from stretching accessory view to its default width
         container.autoresizingMask = []
         var y = totalHeight - topPadding

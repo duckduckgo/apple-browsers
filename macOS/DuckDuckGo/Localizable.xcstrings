@@ -66359,6 +66359,18 @@
         }
       }
     },
+    "storage.access.prompt.allow" : {
+      "comment" : "Allow sharing data between sites",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow"
+          }
+        }
+      }
+    },
     "storage.access.prompt.body" : {
       "comment" : "Body of an alert asking users whether to share cookies: [Entity] would like to use cookies and other website data (such as login information) on their other site, [domain]. Declining may result in the site not working properly, but will prevent [entity] from tracking your activity on their websites. DuckDuckGo's Web Tracking Protections will still apply either way.",
       "extractionState" : "extracted_with_value",
@@ -66371,14 +66383,62 @@
         }
       }
     },
-    "storage.access.prompt.header" : {
-      "comment" : "Header of an alert asking users whether to share cookies: Allow [current domain] to share cookies and website data with [requesting domain]?",
+    "storage.access.prompt.dont.allow" : {
+      "comment" : "Don't allow sharing data between sites",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Allow %1$@ to share cookies and website data with %2$@?"
+            "value" : "Don't Allow"
+          }
+        }
+      }
+    },
+    "storage.access.prompt.header" : {
+      "comment" : "Header of an alert asking users whether to share data between websites",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Share data like login info between two sites?"
+          }
+        }
+      }
+    },
+    "storage.access.prompt.label.1" : {
+      "comment" : "Part 1 of an alert asking users whether to share cookies: [requestingdomain.com] wants to use cookies and data from [currentdomain.com].",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ wants to use cookies and data from %2$@."
+          }
+        }
+      }
+    },
+    "storage.access.prompt.label.2" : {
+      "comment" : "Part 2 of an alert asking users whether to share cookies: Selecting “Don’t Allow” means some site features may not work as expected, but cross-site tracking will be blocked.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Selecting \"Don't Allow\" means some site features may not work as expected, but cross-site tracking will be blocked."
+          }
+        }
+      }
+    },
+    "storage.access.prompt.label.3" : {
+      "comment" : "Part 3 of an alert asking users whether to share cookies: DuckDuckGo protections still apply either way.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo protections still apply either way."
           }
         }
       }

@@ -1542,12 +1542,18 @@ struct UserText {
     static let switchToTab = NSLocalizedString("switch.to.tab", value: "Switch to Tab", comment: "Suggestion to switch to an open tab button title")
 
     // MARK: - Storage Access
-    static func storageAccessPromptHeader(currentDomain: String, requestingDomain: String) -> String {
-        let localized = NSLocalizedString("storage.access.prompt.header",
-                                          value: "Allow %@ to share cookies and website data with %@?",
-                                          comment: "Header of an alert asking users whether to share cookies: Allow [current domain] to share cookies and website data with [requesting domain]?")
-        return String(format: localized, currentDomain, requestingDomain)
+
+    static let storageAccessPromptAllow = NSLocalizedString("storage.access.prompt.allow", value: "Allow", comment: "Allow sharing data between sites")
+    static let storageAccessPromptDontAllow = NSLocalizedString("storage.access.prompt.dont.allow", value: "Don't Allow", comment: "Don't allow sharing data between sites")
+    static let storageAccessPromptHeader = NSLocalizedString("storage.access.prompt.header", value: "Share data like login info between two sites?", comment: "Header of an alert asking users whether to share data between websites")
+    static func storageAccessPromptLabel1(currentDomain: String, requestingDomain: String) -> String {
+        let localized = NSLocalizedString("storage.access.prompt.label.1",
+                                          value: "%@ wants to use cookies and data from %@.",
+                                          comment: "Part 1 of an alert asking users whether to share cookies: [requestingdomain.com] wants to use cookies and data from [currentdomain.com].")
+        return String(format: localized, requestingDomain, currentDomain)
     }
+    static let storageAccessPromptLabel2 = NSLocalizedString("storage.access.prompt.label.2", value: "Selecting \"Don't Allow\" means some site features may not work as expected, but cross-site tracking will be blocked.", comment: "Part 2 of an alert asking users whether to share cookies: Selecting “Don’t Allow” means some site features may not work as expected, but cross-site tracking will be blocked.")
+    static let storageAccessPromptLabel3 = NSLocalizedString("storage.access.prompt.label.3", value: "DuckDuckGo protections still apply either way.", comment: "Part 3 of an alert asking users whether to share cookies: DuckDuckGo protections still apply either way.")
 
     static func storageAccessPromptBody(entity: String, domain: String) -> String {
         let localized = NSLocalizedString("storage.access.prompt.body",

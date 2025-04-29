@@ -52,8 +52,6 @@ public struct AuthV2PixelHandler: SubscriptionPixelHandler {
             DailyPixel.fireDailyAndCount(pixel: .privacyProInvalidRefreshTokenDetected, withAdditionalParameters: sourceParam)
         case .subscriptionIsActive:
             DailyPixel.fire(pixel: .privacyProSubscriptionActive)
-        case .migrationStarted:
-            DailyPixel.fireDailyAndCount(pixel: .privacyProAuthV2MigrationStarted, withAdditionalParameters: sourceParam)
         case .migrationFailed(let error):
             DailyPixel.fireDailyAndCount(pixel: .privacyProAuthV2MigrationFailed, withAdditionalParameters: [Defaults.errorKey: error.localizedDescription].merging(sourceParam) { $1 })
         case .migrationSucceeded:

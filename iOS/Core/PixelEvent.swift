@@ -953,7 +953,6 @@ extension Pixel {
         case privacyProInvalidRefreshTokenDetected
         case privacyProInvalidRefreshTokenSignedOut
         case privacyProInvalidRefreshTokenRecovered
-        case privacyProAuthV2MigrationStarted
         case privacyProAuthV2MigrationFailed
         case privacyProAuthV2MigrationSucceeded
         case privacyProAuthV2GetTokensError
@@ -2001,7 +2000,6 @@ extension Pixel.Event {
         case .privacyProInvalidRefreshTokenDetected: return "m_privacy-pro_auth_invalid_refresh_token_detected"
         case .privacyProInvalidRefreshTokenSignedOut: return "m_privacy-pro_auth_invalid_refresh_token_signed_out"
         case .privacyProInvalidRefreshTokenRecovered: return "m_privacy-pro_auth_invalid_refresh_token_recovered"
-        case .privacyProAuthV2MigrationStarted: return "m_privacy-pro_auth_v2_migration_started"
         case .privacyProAuthV2MigrationFailed: return "m_privacy-pro_auth_v2_migration_failure"
         case .privacyProAuthV2MigrationSucceeded: return "m_privacy-pro_auth_v2_migration_success"
         case .privacyProAuthV2GetTokensError: return "m_privacy-pro_auth_v2_get_tokens_error"

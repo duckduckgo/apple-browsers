@@ -54,7 +54,7 @@ final class DataBrokerTests: XCTestCase {
         } catch Step.DecodingError.unsupportedStepType {
             expectation.fulfill()
         } catch {
-            XCTFail()
+            XCTFail("Unexpected error")
         }
     }
 
@@ -66,7 +66,7 @@ final class DataBrokerTests: XCTestCase {
         } catch Step.DecodingError.unsupportedActionType {
             expectation.fulfill()
         } catch {
-            XCTFail()
+            XCTFail("Unexpected error")
         }
     }
 }

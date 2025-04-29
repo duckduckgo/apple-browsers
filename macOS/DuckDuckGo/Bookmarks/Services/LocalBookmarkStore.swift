@@ -214,11 +214,15 @@ final class LocalBookmarkStore: BookmarkStore {
 
                 var params = processedErrors.errorPixelParameters
                 params[PixelKit.Parameters.errorSource] = source
-                PixelKit.fire(DebugEvent(GeneralPixel.bookmarksSaveFailed, error: error),
-                           withAdditionalParameters: params)
+                PixelKit.fire(
+                    DebugEvent(GeneralPixel.bookmarksSaveFailed, error: error),
+                    frequency: .dailyAndCount,
+                    withAdditionalParameters: params)
             } else {
-                PixelKit.fire(DebugEvent(GeneralPixel.bookmarksSaveFailed, error: localError),
-                           withAdditionalParameters: [PixelKit.Parameters.errorSource: source])
+                PixelKit.fire(
+                    DebugEvent(GeneralPixel.bookmarksSaveFailed, error: localError),
+                    frequency: .dailyAndCount,
+                    withAdditionalParameters: [PixelKit.Parameters.errorSource: source])
             }
         } else {
             let error = error as NSError
@@ -226,8 +230,10 @@ final class LocalBookmarkStore: BookmarkStore {
 
             var params = processedErrors.errorPixelParameters
             params[PixelKit.Parameters.errorSource] = source
-            PixelKit.fire(DebugEvent(GeneralPixel.bookmarksSaveFailed, error: error),
-                       withAdditionalParameters: params)
+            PixelKit.fire(
+                DebugEvent(GeneralPixel.bookmarksSaveFailed, error: error),
+                frequency: .dailyAndCount,
+                withAdditionalParameters: params)
         }
     }
 

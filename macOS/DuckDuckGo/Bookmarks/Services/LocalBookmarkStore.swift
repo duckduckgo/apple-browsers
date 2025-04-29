@@ -744,8 +744,10 @@ final class LocalBookmarkStore: BookmarkStore {
             let processedErrors = CoreDataErrorsParser.parse(error: error)
 
             if AppVersion.runType.requiresEnvironment {
-                PixelKit.fire(DebugEvent(GeneralPixel.bookmarksSaveFailedOnImport, error: error),
-                           withAdditionalParameters: processedErrors.errorPixelParameters)
+                PixelKit.fire(
+                    DebugEvent(GeneralPixel.bookmarksSaveFailedOnImport, error: error),
+                    frequency: .dailyAndCount,
+                    withAdditionalParameters: processedErrors.errorPixelParameters)
                 assertionFailure("LocalBookmarkStore: Saving of context failed, error: \(error.localizedDescription)")
             }
         }

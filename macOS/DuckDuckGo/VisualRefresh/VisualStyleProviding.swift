@@ -47,15 +47,11 @@ protocol VisualStyleProviding {
 
 
     /// Colors
-    /// New colors:
-    /// - Text primary -> Light: #1C1F21, Dark: #FFFFFF · 90%
-    /// - Background Navigation -> Light: #E9EBEC, Dark: #27282A - DONE
-    /// - Base -> Light: #DCDEE0, Dark: #141415 DONE
-    /// - Icons colors -> Light: #1C1F21 · 84%, Dark: #FFFFFF · 78%
     var navigationBackgroundColor: NSColor { get }
     var baseBackgroundColor: NSColor { get }
     var textPrimaryColor: NSColor { get }
     var textSecondaryColor: NSColor { get }
+    var backgroundTertiaryColor: NSColor { get }
 
     var defaultAddressBarFontSize: CGFloat { get }
     var newTabOrHomePageAddressBarFontSize: CGFloat { get }
@@ -118,6 +114,7 @@ struct VisualStyle: VisualStyleProviding {
     let baseBackgroundColor: NSColor
     let textPrimaryColor: NSColor
     let textSecondaryColor: NSColor
+    let backgroundTertiaryColor: NSColor
 
     let defaultAddressBarFontSize: CGFloat
     let newTabOrHomePageAddressBarFontSize: CGFloat
@@ -181,6 +178,7 @@ struct VisualStyle: VisualStyleProviding {
                            baseBackgroundColor: .windowBackgroundColor,
                            textPrimaryColor: .labelColor,
                            textSecondaryColor: .secondaryLabelColor,
+                           backgroundTertiaryColor: .inactiveSearchBarBackground,
                            defaultAddressBarFontSize: 13,
                            newTabOrHomePageAddressBarFontSize: 15)
     }
@@ -216,6 +214,7 @@ struct VisualStyle: VisualStyleProviding {
                            baseBackgroundColor: .backgroundBaseColorNew,
                            textPrimaryColor: .primaryTextColorNew,
                            textSecondaryColor: .secondaryTextColorNew,
+                           backgroundTertiaryColor: .surfaceTertiaryNew,
                            defaultAddressBarFontSize: 13,
                            newTabOrHomePageAddressBarFontSize: 13)
     }

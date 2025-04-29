@@ -48,7 +48,7 @@ final class AddressBarViewController: NSViewController {
 
     @IBOutlet var addressBarTextField: AddressBarTextField!
     @IBOutlet var passiveTextField: NSTextField!
-    @IBOutlet var inactiveBackgroundView: NSView!
+    @IBOutlet var inactiveBackgroundView: ColorView!
     @IBOutlet var activeBackgroundView: ColorView!
     @IBOutlet var activeOuterBorderView: ColorView!
     @IBOutlet var activeBackgroundViewWithSuggestions: ColorView!
@@ -400,6 +400,7 @@ final class AddressBarViewController: NSViewController {
         passiveTextField.textColor = visualStyleManager.style.textPrimaryColor
 
         updateShadowViewPresence(isFirstResponder)
+        inactiveBackgroundView.backgroundColor = visualStyleManager.style.backgroundTertiaryColor
         inactiveBackgroundView.alphaValue = isFirstResponder ? 0 : 1
         activeBackgroundView.alphaValue = isFirstResponder ? 1 : 0
 

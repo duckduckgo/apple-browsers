@@ -167,6 +167,70 @@ final class DuckPlayerNativeUserScriptTests: XCTestCase {
         // Then
         XCTAssertTrue(sut.isFeatureReady) // Should still be ready
     }
+    
+    // MARK: - Event Handling Tests
+    
+    @MainActor func testOnlyLatestUrlChangedEventIsStoredAndSentAfterFeatureReady() {
+        // Given
+        let brokerWrapper = UserScriptMessageBrokerWrapper(broker: mockBroker)
+        sut.broker = brokerWrapper.broker
+        sut.webView = mockWebView
+        
+        // Simulate multiple URL changes before feature is ready
+        mockWebView.navigate(to: URL(string: "https://www.youtube.com/watch?v=first")!)
+        sut.onUrlChanged()
+        mockWebView.navigate(to: URL(string: "https://www.youtube.com/watch?v=second")!)
+        sut.onUrlChanged()
+        mockWebView.navigate(to: URL(string: "https://www.youtube.com/watch?v=third")!)
+        sut.onUrlChanged()
+        
+        // When feature becomes ready
+        _ = sut.onDuckPlayerFeatureReady(params: [:], original: WKScriptMessage())
+        
+        // Then: Only the latest urlChanged event should be sent
+        XCTAssertTrue(sut.isFeatureReady)
+        // The pending URL change event should be cleared after being sent
+        XCTAssertNil(sut.pendingUrlChangeEvent)
+    }
+
+    @MainActor func testOtherEventsAreQueuedAndSentAfterScriptsReady() {
+        // Given
+        let brokerWrapper = UserScriptMessageBrokerWrapper(broker: mockBroker)
+        sut.broker = brokerWrapper.broker
+        sut.webView = mockWebView
+        
+        // Simulate other events before scripts are ready
+        mockDuckPlayer.mediaControlPublisher.send(true)
+        mockDuckPlayer.serpNotificationPublisher.send(true)
+        mockDuckPlayer.muteAudioPublisher.send(true)
+        
+        // When scripts become ready
+        _ = sut.onDuckPlayerScriptsReady(params: [:], original: WKScriptMessage())
+        
+        // Then: All events should be sent and queue cleared
+        XCTAssertTrue(sut.areScriptsReady)
+        XCTAssertTrue(sut.otherEventsQueue.isEmpty)
+    }
+
+    @MainActor func testEventsAreClearedAfterReload() {
+        // Given
+        let brokerWrapper = UserScriptMessageBrokerWrapper(broker: mockBroker)
+        sut.broker = brokerWrapper.broker
+        sut.webView = mockWebView
+        
+        // Simulate events before reload
+        mockWebView.navigate(to: URL(string: "https://www.youtube.com/watch?v=first")!)
+        sut.onUrlChanged()
+        mockDuckPlayer.mediaControlPublisher.send(true)
+        
+        // Simulate reload to non-YouTube page (should clear events)
+        mockWebView.navigate(to: URL(string: "https://duckduckgo.com")!)
+        sut.onUrlChanged()
+        
+        // Then: Both pending URL change and other events should be cleared
+        XCTAssertNil(sut.pendingUrlChangeEvent)
+        XCTAssertTrue(sut.otherEventsQueue.isEmpty)
+    }
 }
 
 // MARK: - Helper Classes

@@ -15,6 +15,24 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
+/**
+ DuckPlayerNativeUserScript
+ 
+ This class manages the communication between the native Duck Player UI and the web content via user scripts. It is responsible for queuing and dispatching events to the webview in a controlled manner, ensuring that events are only sent when the web content is ready to handle them.
+ 
+ ## Dual-Queue Event Handling
+ 
+ The event flow is split into two distinct phases, each with its own queue:
+ 
+ - **URL Change Events**: These are queued and only dispatched when the web content signals that the DuckPlayer feature is ready (via the `onDuckPlayerFeatureReady` message). Only the latest URL change event is kept in the queue, ensuring that the webview always receives the most up-to-date navigation state.
+ 
+ - **Other Events**: All other events (such as media control, mute, and notifications) are queued separately and are only dispatched when the web content signals that all scripts are ready (via the `onDuckPlayerScriptsReady` message). This ensures that no event is lost or sent prematurely during page reloads or script initialization.
+ 
+ After every page reload, the URL change event is queued and sent after the feature is ready, while all other events are queued and sent after the scripts are ready. This design guarantees robust and predictable communication between the native and web layers, even in the presence of navigation or reloads.
+ 
+ - Author: DuckDuckGo
+ - Since: 2024
+ */
 
 import Foundation
 import WebKit
@@ -34,8 +52,9 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
         case urlChanged(pageType: String)
     }
     
-    var isFeatureReady = false
-    private var eventQueue: [QueuedEvent] = []
+    private var pendingUrlChangeEvent: QueuedEvent?
+    private var otherEventsQueue: [QueuedEvent] = []
+    private var areScriptsReady = false
     var duckPlayer: DuckPlayerControlling
     private var cancellables = Set<AnyCancellable>()
 
@@ -65,7 +84,7 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
         static let initialSetup = "initialSetup"
         static let onCurrentTimeStamp = "onCurrentTimestamp"
         static let onYoutubeError = "onYoutubeError"
-        static let onDuckPlayerFeatureReady = "onDuckPlayerReady"
+        static let onDuckPlayerFeatureReady = "onDuckPlayerFeatureReady"
         static let onDuckPlayerScriptsReady = "onDuckPlayerScriptsReady"
     }
 
@@ -136,6 +155,8 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
             return initialSetup
         case Handlers.onDuckPlayerFeatureReady:
             return onDuckPlayerFeatureReady
+        case Handlers.onDuckPlayerScriptsReady:
+            return onDuckPlayerScriptsReady
         default:
             return nil
         }
@@ -154,11 +175,16 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
 
     private func handleEvent(_ event: QueuedEvent) {
         print("DP: handleEvent: \(event)")
-        if isFeatureReady {
-            processEvent(event)
-        } else {
-            eventQueue.append(event)
-        }   
+        switch event {
+        case .urlChanged:
+            pendingUrlChangeEvent = event // Always store the latest URL change
+        default:
+            if areScriptsReady {
+                processEvent(event)
+            } else {
+                otherEventsQueue.append(event)
+            }
+        }
     }
 
     private func processEvent(_ event: QueuedEvent) {
@@ -194,44 +220,38 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
         
         // Determine the page type based on the host and URL
         let pageType: String
-        let shouldClearQueue: Bool
+        let shouldClearEvents: Bool
         
         switch host {
         case DuckPlayerSettingsDefault.OriginDomains.duckduckgo:
             pageType = Constants.SERP
-            shouldClearQueue = true
+            shouldClearEvents = true
         case DuckPlayerSettingsDefault.OriginDomains.youtube, 
              DuckPlayerSettingsDefault.OriginDomains.youtubeWWW, 
              DuckPlayerSettingsDefault.OriginDomains.youtubeMobile:
             if url.isYoutubeWatch {
                 pageType = Constants.YOUTUBE
-                shouldClearQueue = false
+                shouldClearEvents = false
             } else {
                 pageType = Constants.UNKNOWN
-                shouldClearQueue = true
+                shouldClearEvents = true
             }
         case DuckPlayerSettingsDefault.OriginDomains.youtubeNoCookie, 
              DuckPlayerSettingsDefault.OriginDomains.youtubeNoCookieWWW:
             pageType = Constants.NOCOOKIE
-            shouldClearQueue = true
+            shouldClearEvents = true
         default:
             pageType = Constants.UNKNOWN
-            shouldClearQueue = true
+            shouldClearEvents = true
         }
 
-        if shouldClearQueue {
-            eventQueue.removeAll()
+        if shouldClearEvents {
+            pendingUrlChangeEvent = nil
+            otherEventsQueue.removeAll()
         }
         
-        // If already ready, send directly; otherwise queue
-        if isFeatureReady {
-            print("DP: onUrlChanged: already ready")
-            pushToWebView(method: FEEvents.onUrlChanged, params: [Constants.pageType: pageType])
-        } else {
-            print("DP: onUrlChanged: not ready")
-            isFeatureReady = false
-            handleEvent(.urlChanged(pageType: pageType))
-        }
+        // Always store the latest URL change event
+        handleEvent(.urlChanged(pageType: pageType))
     }
 
     @MainActor
@@ -257,13 +277,38 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
         return [:] as [String: String]
     }
 
+    /**
+     Handles the message indicating the DuckPlayer feature is ready. This will send the latest urlChanged event (if any) to the webview.
+     - Parameters:
+        - params: The parameters from the message.
+        - original: The original WKScriptMessage.
+     - Returns: nil
+     */
     @MainActor
     internal func onDuckPlayerFeatureReady(params: Any, original: WKScriptMessage) -> Encodable? {
         print("DP: onDuckPlayerFeatureReady")
-        isFeatureReady = true
-        // Process all queued events
-        while !eventQueue.isEmpty {
-            let event = eventQueue.removeFirst()
+        // Send the latest urlChanged event if present
+        if let event = pendingUrlChangeEvent {
+            processEvent(event)
+            pendingUrlChangeEvent = nil
+        }
+        return nil
+    }
+
+    /**
+     Handles the message indicating the DuckPlayer scripts are ready. This will send all queued events to the webview.
+     - Parameters:
+        - params: The parameters from the message.
+        - original: The original WKScriptMessage.
+     - Returns: nil
+     */
+    @MainActor
+    internal func onDuckPlayerScriptsReady(params: Any, original: WKScriptMessage) -> Encodable? {
+        print("DP: onDuckPlayerScriptsReady")
+        areScriptsReady = true
+        // Send all queued events
+        while !otherEventsQueue.isEmpty {
+            let event = otherEventsQueue.removeFirst()
             processEvent(event)
         }
         return nil

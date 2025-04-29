@@ -499,11 +499,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         mapDevices(registeredDevices)
         Pixel.fire(pixel: .syncLogin, includedParameters: [.appVersion])
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            if isRecovery {
-                self.dismissPresentedViewController()
-            } else {
-                self.dismissVCAndShowRecoveryPDF()
-            }
+            self.dismissVCAndShowRecoveryPDF()
         }
     }
     

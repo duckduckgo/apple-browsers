@@ -58,32 +58,32 @@ public struct OnboardingGradient: View {
         switch type {
         case .bottom:
             if DevicePlatform.isMac {
-                return Center.bottom_macOS
+                return Center.macOSBottom
             } else if DevicePlatform.isIpad {
-                return Center.bottom_iPad
+                return Center.iPadBottom
             } else {
-                return Center.bottom_iOS
+                return Center.iOSBottom
             }
         case .top:
             if DevicePlatform.isMac {
-                return Center.top_macOS
+                return Center.macOSTop
             } else if DevicePlatform.isIpad {
-                return Center.top_iPad
+                return Center.iPadTop
             } else {
-                return Center.top_iOS
+                return Center.iOSTop
             }
         }
     }
 
     struct Center {
-        static let bottom_iOS = UnitPoint(x: 1.11, y: 0.76)
-        static let top_iOS = UnitPoint(x: 0.87, y: 1.0)
+        static let iOSBottom = UnitPoint(x: 1.11, y: 0.76)
+        static let iOSTop = UnitPoint(x: 0.87, y: 1.0)
 
-        static let bottom_iPad = UnitPoint(x: 0.82, y: 0.98)
-        static let top_iPad = UnitPoint(x: 0.9, y: 1.14)
+        static let iPadBottom = UnitPoint(x: 0.82, y: 0.98)
+        static let iPadTop = UnitPoint(x: 0.9, y: 1.14)
 
-        static let bottom_macOS = UnitPoint(x: 0.5, y: 1.45)
-        static let top_macOS = UnitPoint(x: 0.71, y: 1.2)
+        static let macOSBottom = UnitPoint(x: 0.5, y: 1.45)
+        static let macOSTop = UnitPoint(x: 0.71, y: 1.2)
     }
 }
 

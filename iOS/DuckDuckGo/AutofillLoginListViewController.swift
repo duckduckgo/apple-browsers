@@ -28,7 +28,6 @@ import SwiftUI
 import os.log
 import Persistence
 import Bookmarks
-import Core
 
 protocol AutofillLoginListViewControllerDelegate: AnyObject {
     func autofillLoginListViewControllerDidFinish(_ controller: AutofillLoginListViewController)

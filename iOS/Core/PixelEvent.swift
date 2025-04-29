@@ -1056,7 +1056,11 @@ extension Pixel {
         case newTabPageCustomizeShortcutRemoved(_ shortcutName: String)
         case newTabPageCustomizeShortcutAdded(_ shortcutName: String)
 
-        // MARK: DuckPlayer        
+        // MARK: DuckPlayer
+
+        /// [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210068471808737)
+        case duckPlayerSettingsOpen
+
         case duckPlayerDailyUniqueView
         case duckPlayerViewFromYoutubeViaMainOverlay
         case duckPlayerViewFromYoutubeViaHoverButton
@@ -2123,6 +2127,7 @@ extension Pixel.Event {
             return "m_new_tab_page_customize_shortcut_added_\(shortcutName)"
 
         // MARK: DuckPlayer
+        case .duckPlayerSettingsOpen: return "m_settings_duckplayer_open"
         case .duckPlayerDailyUniqueView: return "duckplayer_daily-unique-view"
         case .duckPlayerViewFromYoutubeViaMainOverlay: return "duckplayer_view-from_youtube_main-overlay"
         case .duckPlayerViewFromYoutubeViaHoverButton: return "duckplayer_view-from_youtube_hover-button"

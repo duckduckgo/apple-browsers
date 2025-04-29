@@ -67,7 +67,7 @@ final public class DefaultFeatureDiscovery: FeatureDiscovery {
         return wasUsedBeforeStorage.object(forKey: feature.storageKey) as? Bool ?? false
     }
 
-    public func addToParams(_ params: [String : String], forFeature feature: WasUsedBeforeFeature) -> [String : String] {
+    public func addToParams(_ params: [String: String], forFeature feature: WasUsedBeforeFeature) -> [String: String] {
         var params = params
         params["was_used_before"] = wasUsedBefore(feature) ? "1" : "0"
         return params

@@ -84,15 +84,23 @@ class TabSwitcherBarsStateHandler {
     func updateBottomBar() {
         switch interfaceMode {
         case .regularSize:
+
             bottomBarItems = [
-                doneButton,
-                UIBarButtonItem.flexibleSpace(),
+                tabSwitcherStyleButton,
+
+                .flexibleSpace(),
+                .fixedSpace(20),
+                .flexibleSpace(),
+
                 fireButton,
-                UIBarButtonItem.flexibleSpace(),
-                showAIChatButton ? duckChatButton : nil,
-                showAIChatButton ? UIBarButtonItem.fixedSpace(24) : nil,
+
+                .flexibleSpace(),
+                showAIChatButton ? duckChatButton : .fixedSpace(34),
+                .flexibleSpace(),
+
                 plusButton,
             ].compactMap { $0 }
+
             isBottomBarHidden = false
 
         case .editingRegularSize:
@@ -116,8 +124,8 @@ class TabSwitcherBarsStateHandler {
 
         case .regularSize:
             topBarLeftButtonItems = [
-                tabSwitcherStyleButton,
-            ]
+                canShowEditButton ? editButton : nil,
+            ].compactMap { $0 }
 
         case .largeSize:
             topBarLeftButtonItems = [
@@ -127,7 +135,7 @@ class TabSwitcherBarsStateHandler {
 
         case .editingRegularSize:
             topBarLeftButtonItems = [
-                selectedTabsCount == totalTabsCount ? deselectAllButton : selectAllButton,
+                doneButton
             ]
 
         case .editingLargeSize:
@@ -152,12 +160,12 @@ class TabSwitcherBarsStateHandler {
 
         case .regularSize:
             topBarRightButtonItems = [
-                canShowEditButton ? editButton : nil,
-            ].compactMap { $0 }
+                doneButton
+            ]
 
         case .editingRegularSize:
             topBarRightButtonItems = [
-                doneButton,
+                selectedTabsCount == totalTabsCount ? deselectAllButton : selectAllButton,
             ]
 
         case .editingLargeSize:

@@ -424,6 +424,7 @@ extension TabSwitcherViewController {
             guard let self else { return }
             self.onTabStyleChange()
         })
+        barsHandler.tabSwitcherStyleButton.tintColor = UIColor(designSystemColor: .icons)
 
         barsHandler.addAllBookmarksButton.accessibilityLabel = UserText.bookmarkAllTabs
         barsHandler.addAllBookmarksButton.primaryAction = action(image: "Bookmark-New-24") { [weak self] in
@@ -440,7 +441,7 @@ extension TabSwitcherViewController {
         })
 
         barsHandler.fireButton.accessibilityLabel = "Close all tabs and clear data"
-        barsHandler.fireButton.primaryAction = action(image: "FireLeftPadded") { [weak self] in
+        barsHandler.fireButton.primaryAction = action(image: "Fire") { [weak self] in
             self?.burn(sender: self!.barsHandler.fireButton)
         }
 

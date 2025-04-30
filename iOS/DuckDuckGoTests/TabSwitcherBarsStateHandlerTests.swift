@@ -40,18 +40,20 @@ class TabSwitcherBarsStateHandlerTests: XCTestCase {
         stateHandler.update(.regularSize, selectedTabsCount: 0, totalTabsCount: 0, containsWebPages: false, showAIChatButton: true)
 
         XCTAssertEqual(stateHandler.bottomBarItems, [
-            stateHandler.doneButton,
+            stateHandler.tabSwitcherStyleButton,
+            UIBarButtonItem.flexibleSpace(),
+            UIBarButtonItem.fixedSpace(20),
             UIBarButtonItem.flexibleSpace(),
             stateHandler.fireButton,
             UIBarButtonItem.flexibleSpace(),
             stateHandler.duckChatButton,
-            UIBarButtonItem.fixedSpace(24),
+            UIBarButtonItem.flexibleSpace(),
             stateHandler.plusButton
         ])
         XCTAssertFalse(stateHandler.isBottomBarHidden)
     }
 
-    func testWhenInterfaceModeIsMultiSelectEditingNormalThenBottomBarItemsAreSetCorrectly() {
+    func testWhenInterfaceModeIsEditingRegularSizeThenBottomBarItemsAreSetCorrectly() {
         stateHandler.update(.editingRegularSize, selectedTabsCount: 0, totalTabsCount: 0, containsWebPages: false, showAIChatButton: false)
 
         XCTAssertEqual(stateHandler.bottomBarItems, [
@@ -62,18 +64,26 @@ class TabSwitcherBarsStateHandlerTests: XCTestCase {
         XCTAssertFalse(stateHandler.isBottomBarHidden)
     }
 
-    func testWhenInterfaceModeIsMultiSelectedEditingLargeThenBottomBarIsHidden() {
+    func testWhenInterfaceModeIsEditingLargeThenBottomBarIsHidden() {
         stateHandler.update(.editingLargeSize, selectedTabsCount: 0, totalTabsCount: 0, containsWebPages: false, showAIChatButton: false)
 
         XCTAssertTrue(stateHandler.bottomBarItems.isEmpty)
         XCTAssertTrue(stateHandler.isBottomBarHidden)
     }
 
-    func testWhenInterfaceModeIsMultiSelectAvailableNormalThenTopRightButtonItemsAreSetCorrectly() {
+    func testWhenInterfaceModeIsRegularSizeThenTopRightButtonItemsAreSetCorrectly() {
         stateHandler.update(.regularSize, selectedTabsCount: 0, totalTabsCount: 2, containsWebPages: false, showAIChatButton: false)
 
         XCTAssertEqual(stateHandler.topBarRightButtonItems, [
-            stateHandler.editButton
+            stateHandler.doneButton
+        ])
+    }
+
+    func testWhenInterfaceModeIsEditingRegularSizeThenTopRightButtonItemsAreSetCorrectly() {
+        stateHandler.update(.editingRegularSize, selectedTabsCount: 0, totalTabsCount: 2, containsWebPages: false, showAIChatButton: false)
+
+        XCTAssertEqual(stateHandler.topBarRightButtonItems, [
+            stateHandler.selectAllButton
         ])
     }
 
@@ -95,14 +105,22 @@ class TabSwitcherBarsStateHandlerTests: XCTestCase {
         XCTAssertTrue(stateHandler.canShowEditButton)
     }
 
-    func testWhenInterfaceModeIsMultiSelectAvailableLargeThenBottomBarIsHidden() {
+    func testWhenInterfaceModeIsLargeSizeThenBottomBarIsHidden() {
         stateHandler.update(.largeSize, selectedTabsCount: 0, totalTabsCount: 0, containsWebPages: false, showAIChatButton: false)
 
         XCTAssertTrue(stateHandler.bottomBarItems.isEmpty)
         XCTAssertTrue(stateHandler.isBottomBarHidden)
     }
 
-    func testWhenInterfaceModeIsMultiSelectAvailableLargeThenTopLeftButtonItemsAreSetCorrectly() {
+    func testWhenInterfaceModeIsEditingRegularSizeThenTopLeftButtonItemsAreSetCorrectly() {
+        stateHandler.update(.editingRegularSize, selectedTabsCount: 0, totalTabsCount: 2, containsWebPages: false, showAIChatButton: false)
+
+        XCTAssertEqual(stateHandler.topBarLeftButtonItems, [
+            stateHandler.doneButton
+        ])
+    }
+
+    func testWhenInterfaceModeIsLargeSizeThenTopLeftButtonItemsAreSetCorrectly() {
         stateHandler.update(.largeSize, selectedTabsCount: 0, totalTabsCount: 2, containsWebPages: false, showAIChatButton: false)
 
         XCTAssertEqual(stateHandler.topBarLeftButtonItems, [
@@ -111,7 +129,7 @@ class TabSwitcherBarsStateHandlerTests: XCTestCase {
         ])
     }
 
-    func testWhenInterfaceModeIsMultiSelectAvailableLargeAndCannotShowEditButtonThenTopLeftButtonItemsAreSetCorrectly() {
+    func testWhenInterfaceModeIsLargeSizeAndCannotShowEditButtonThenTopLeftButtonItemsAreSetCorrectly() {
         stateHandler.update(.largeSize, selectedTabsCount: 0, totalTabsCount: 0, containsWebPages: false, showAIChatButton: false)
 
         XCTAssertEqual(stateHandler.topBarLeftButtonItems, [
@@ -119,7 +137,7 @@ class TabSwitcherBarsStateHandlerTests: XCTestCase {
         ])
     }
 
-    func testWhenInterfaceModeIsMultiSelectAvailableLargeThenTopRightButtonItemsAreSetCorrectly() {
+    func testWhenInterfaceModeIsLargeSizeThenTopRightButtonItemsAreSetCorrectly() {
         stateHandler.update(.largeSize, selectedTabsCount: 0, totalTabsCount: 0, containsWebPages: false, showAIChatButton: true)
 
         XCTAssertEqual(stateHandler.topBarRightButtonItems, [

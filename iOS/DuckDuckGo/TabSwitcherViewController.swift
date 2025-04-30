@@ -47,17 +47,17 @@ class TabSwitcherViewController: UIViewController {
     enum InterfaceMode {
 
         var isLarge: Bool {
-            return [.multiSelectLarge, .multiSelectedEditingLarge].contains(self)
+            return [.largeSize, .editingLargeSize].contains(self)
         }
 
         var isNormal: Bool {
             return !isLarge
         }
 
-        case multiSelectNormal
-        case multiSelectLarge
-        case multiSelectEditingNormal
-        case multiSelectedEditingLarge
+        case regularSize
+        case largeSize
+        case editingRegularSize
+        case editingLargeSize
 
     }
 
@@ -100,7 +100,7 @@ class TabSwitcherViewController: UIViewController {
     let favicons: Favicons
 
     var tabsStyle: TabsStyle = .list
-    var interfaceMode: InterfaceMode = .multiSelectNormal
+    var interfaceMode: InterfaceMode = .regularSize
     var canShowSelectionMenu = false
 
     let featureFlagger: FeatureFlagger

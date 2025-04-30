@@ -29,7 +29,7 @@ protocol SaveCreditCardViewModelDelegate: AnyObject {
 }
 
 final class SaveCreditCardViewModel {
-
+    
     weak var delegate: SaveCreditCardViewModelDelegate?
     
     var minHeight: CGFloat = AutofillViews.saveLoginMinHeight
@@ -40,28 +40,28 @@ final class SaveCreditCardViewModel {
             delegate?.saveCreditCardViewModelDidResizeContent(self, contentHeight: max(contentHeight, minHeight))
         }
     }
-
+    
     /*
      - The url of the last site where autofill for cards was declined is stored in app memory
      - The count of the number of times autofill has been declined is kept in user defaults
      - If the user has never saved a card and declines to save a card:
-         - The count will increment unless the user is declining to fill on the same site as the one which is currently recorded in memory
-         - The current site will replace the one stored in memory (if different)
+     - The count will increment unless the user is declining to fill on the same site as the one which is currently recorded in memory
+     - The current site will replace the one stored in memory (if different)
      - If the count reaches 3, we show the prompt to explain that autofill for cards can be disabled
      */
     private let domainLastShownOn: String?
-
+    
     @UserDefaultsWrapper(key: .autofillCreditCardsSaveModalRejectionCount, defaultValue: 0)
     private var autofillCreditCardsSaveModalRejectionCount: Int
-
+    
     @UserDefaultsWrapper(key: .autofillCreditCardsSaveModalDisablePromptShown, defaultValue: false)
     private var autofillCreditCardsSaveModalDisablePromptShown: Bool
-
+    
     @UserDefaultsWrapper(key: .autofillCreditCardsFirstTimeUser, defaultValue: true)
     private var autofillCreditCardsFirstTimeUser: Bool
-
+    
     private let numberOfRejectionsToTurnOffCreditCardAutofill = 2
-
+    
     private let creditCard: SecureVaultModels.CreditCard
     private let accountDomain: String
     let card: CreditCardRowViewModel
@@ -100,14 +100,14 @@ final class SaveCreditCardViewModel {
             throw error
         }
     }
-
+    
     private func shouldShowDisableAutofillPrompt() -> Bool {
         if autofillCreditCardsSaveModalDisablePromptShown || !autofillCreditCardsFirstTimeUser {
             return false
         }
         return autofillCreditCardsSaveModalRejectionCount >= numberOfRejectionsToTurnOffCreditCardAutofill
     }
-
+    
     private func updateRejectionCountIfNeeded() {
         // If the prompt has already been shown on this domain (that we know of), we don't want to increment the rejection count
         if let domainLastShownOn = domainLastShownOn, domainLastShownOn == accountDomain {
@@ -115,7 +115,7 @@ final class SaveCreditCardViewModel {
         }
         autofillCreditCardsSaveModalRejectionCount += 1
     }
-
+    
     private func showDisableAutofillPromptIfNeeded() {
         if shouldShowDisableAutofillPrompt() {
             delegate?.saveCreditCardViewModelConfirmKeepUsing(self)

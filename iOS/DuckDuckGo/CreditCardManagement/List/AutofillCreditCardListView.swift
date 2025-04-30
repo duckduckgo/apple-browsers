@@ -68,13 +68,13 @@ private struct EmptyStateView: View {
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 96, height: 96)
-
+            
             Group {
                 Text(UserText.autofillCreditCardEmptyViewTitle)
                     .daxTitle3()
                     .foregroundStyle(Color(designSystemColor: .textPrimary))
                     .padding(.top, 16)
-
+                
                 Text(UserText.autofillCreditCardEmptyViewSubtitle)
                     .daxBodyRegular()
                     .foregroundStyle(Color.init(designSystemColor: .textSecondary))

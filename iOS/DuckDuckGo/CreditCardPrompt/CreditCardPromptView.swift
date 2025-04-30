@@ -26,7 +26,7 @@ struct CreditCardPromptView: View {
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
     @Environment(\.verticalSizeClass) var verticalSizeClass
     @State private var orientation = UIDevice.current.orientation
-
+    
     var body: some View {
         GeometryReader { geometry in
             makeBodyView(geometry)

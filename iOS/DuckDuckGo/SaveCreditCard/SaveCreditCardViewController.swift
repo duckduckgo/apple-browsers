@@ -67,11 +67,11 @@ extension SaveCreditCardViewController: SaveCreditCardViewModelDelegate {
     func saveCreditCardViewModelCancel(_ viewModel: SaveCreditCardViewModel) {
         delegate?.saveCreditCardViewControllerDidCancel(self)
     }
-
+    
     func saveCreditCardViewModelConfirmKeepUsing(_ viewModel: SaveCreditCardViewModel) {
         delegate?.saveCreditCardViewControllerConfirmKeepUsing(self)
     }
-
+    
     func saveCreditCardViewModelDidResizeContent(_ viewModel: SaveCreditCardViewModel, contentHeight: CGFloat) {
         if #available(iOS 16.0, *) {
             if let sheetPresentationController = self.presentationController as? UISheetPresentationController {

@@ -37,35 +37,35 @@ protocol CreditCardListViewModelProtocol: ObservableObject {
 }
 
 final class AutofillCreditCardListViewModel: CreditCardListViewModelProtocol {
-
+    
     enum ViewState {
         case authLocked
         case noAuthAvailable
         case empty
         case showItems
     }
-
-    @Published var cards: [CreditCardViewModel] = []
+    
+    @Published var cards: [CreditCardRowViewModel] = []
     @Published var showingModal: Bool = false
     @Published private(set) var viewState: AutofillCreditCardListViewModel.ViewState = .authLocked
-
+    
     weak var delegate: AutofillCreditCardListViewModelDelegate?
-
+    
     let authenticator: AutofillLoginListAuthenticator = AutofillLoginListAuthenticator(
         reason: UserText.autofillCreditCardAuthenticationReason,
         cancelTitle: UserText.autofillLoginListAuthenticationCancelButton
     )
-
+    
     var authenticationNotRequired = false
-
+    
     var hasCardsSaved: Bool {
         return !cards.isEmpty
     }
-
+    
     private var secureVault: (any AutofillSecureVault)?
     private var cachedDeletedCreditCard: SecureVaultModels.CreditCard?
     private var cancellables: Set<AnyCancellable> = []
-
+    
     init(secureVault: (any AutofillSecureVault)? = nil) {
         self.secureVault = secureVault
         
@@ -79,20 +79,20 @@ final class AutofillCreditCardListViewModel: CreditCardListViewModelProtocol {
     func addCard() {
         delegate?.autofillCreditCardListViewModelAddCard(self)
     }
-
+    
     func cardSelected(_ card: CreditCardRowViewModel) {
         delegate?.autofillCreditCardListViewModelDidSelectCard(self, card: card.creditCard)
     }
-
+    
     func refreshData() {
         fetchCreditCards()
     }
-
+    
     func deleteCard(_ creditCard: SecureVaultModels.CreditCard) {
         guard let cardId = creditCard.id else {
             return
         }
-
+        
         do {
             cachedDeletedCreditCard = creditCard
             try secureVault?.deleteCreditCardFor(cardId: cardId)
@@ -102,27 +102,27 @@ final class AutofillCreditCardListViewModel: CreditCardListViewModelProtocol {
             Pixel.fire(pixel: .secureVaultError, error: error)
         }
     }
-
+    
     func lockUI() {
         authenticationNotRequired = !hasCardsSaved
         authenticator.logOut()
     }
-
+    
     func authenticate(completion: @escaping (AutofillLoginListAuthenticator.AuthError?) -> Void) {
         if !authenticator.canAuthenticate() {
             viewState = .noAuthAvailable
             completion(.noAuthAvailable)
             return
         }
-
+        
         if viewState != .authLocked {
             completion(nil)
             return
         }
-
+        
         authenticator.authenticate(completion: completion)
     }
-
+    
     // MARK: - Private methods
     
     private func setupCancellables() {
@@ -133,10 +133,10 @@ final class AutofillCreditCardListViewModel: CreditCardListViewModelProtocol {
             }
             .store(in: &cancellables)
     }
-
+    
     private func updateViewState() {
         var newViewState: AutofillCreditCardListViewModel.ViewState
-
+        
         if !authenticator.canAuthenticate() {
             newViewState = .noAuthAvailable
         } else if authenticator.state == .loggedOut && !authenticationNotRequired {
@@ -144,30 +144,30 @@ final class AutofillCreditCardListViewModel: CreditCardListViewModelProtocol {
         } else {
             newViewState = cards.count > 0 ? .showItems : .empty
         }
-
+        
         // Avoid unnecessary updates
         if newViewState != viewState {
             viewState = newViewState
         }
     }
-
+    
     private func fetchCreditCards() {
         do {
             let creditCards = try self.secureVault?.creditCards() ?? []
-            cards = creditCards.sorted(by: { $0.created > $1.created }).asCardRowViewModels
+            cards = creditCards.asCardViewModels
             updateViewState()
         } catch {
             Logger.autofill.error("Failed to fetch credit cards from vault: \(error)")
         }
     }
-
+    
     private func undoLastDelete() {
         guard let cachedDeletedCreditCard = cachedDeletedCreditCard else {
             return
         }
         undelete(cachedDeletedCreditCard)
     }
-
+    
     private func undelete(_ account: SecureVaultModels.CreditCard) {
         guard let secureVault = secureVault,
               var cachedDeletedCreditCard = cachedDeletedCreditCard else {
@@ -191,11 +191,11 @@ final class AutofillCreditCardListViewModel: CreditCardListViewModelProtocol {
             Pixel.fire(pixel: .secureVaultError, error: error)
         }
     }
-
+    
     private func clearUndoCache() {
         cachedDeletedCreditCard = nil
     }
-
+    
     private func presentDeleteConfirmation() {
         ActionMessageView.present(message: UserText.autofillCreditCardDeletedToastMessage,
                                   actionTitle: UserText.actionGenericUndo,

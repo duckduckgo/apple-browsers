@@ -150,5 +150,5 @@ class SettingsLegacyViewProvider: ObservableObject {
                                               bookmarksDatabase: self.bookmarksDatabase,
                                               favoritesDisplayMode: self.appSettings.favoritesDisplayMode)
     }
-    
+
 }

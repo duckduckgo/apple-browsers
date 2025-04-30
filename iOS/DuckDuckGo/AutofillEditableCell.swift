@@ -70,5 +70,6 @@ struct AutofillEditableCell: View {
                 selectedCell = id
             }
         }
+
     }
 }

@@ -750,6 +750,7 @@ extension SettingsViewModel {
                                                                 selectedAccount: state.activeWebsiteAccount,
                                                                 selectedCard: state.activeWebsiteCreditCard,
                                                                 source: state.autofillSource))
+
         case .gpc:
             firePixel(.settingsDoNotSellShown)
             pushViewController(legacyViewProvider.gpc)

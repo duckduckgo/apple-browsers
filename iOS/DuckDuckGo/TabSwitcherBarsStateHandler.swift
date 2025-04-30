@@ -89,7 +89,7 @@ class TabSwitcherBarsStateHandler {
                 tabSwitcherStyleButton,
 
                 .flexibleSpace(),
-                .fixedSpace(12),
+                .fixedSpace(11),
                 .flexibleSpace(),
 
                 fireButton,

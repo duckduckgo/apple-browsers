@@ -35,6 +35,7 @@ enum AutofillSettingsSource: String {
     case lockScreenWidget = "lock_screen_widget"
     case newTabPageShortcut = "new_tab_page_shortcut"
     case saveLoginDisablePrompt = "save_login_disable_prompt"
+    case saveCreditCardDisablePrompt = "save_credit_card_disable_prompt"
     case viewSavedLoginPrompt = "view_saved_login_prompt"
     case newTabPageToolbar = "new_tab_page_toolbar"
 }

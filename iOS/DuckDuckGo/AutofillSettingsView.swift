@@ -50,7 +50,7 @@ struct AutofillSettingsView: View {
                                   title: UserText.autofillLoginListTitle)
 
                     if viewModel.showCreditCards {
-                        ToggleRowView(toggleStatus: $viewModel.saveCreditCardsEnabled,
+                        ToggleRowView(toggleStatus: viewModel.saveCreditCardsEnabled,
                                       title: UserText.autofillCreditCardListTitle)
                     }
                 }

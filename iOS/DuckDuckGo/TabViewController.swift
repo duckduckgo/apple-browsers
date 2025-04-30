@@ -3278,6 +3278,20 @@ extension TabViewController: SaveCreditCardViewControllerDelegate {
         viewController.dismiss(animated: true)
     }
     
+    func saveCreditCardViewControllerConfirmKeepUsing(_ viewController: SaveCreditCardViewController) {
+        DispatchQueue.main.async {
+            let addressBarBottom = self.appSettings.currentAddressBarPosition.isBottom
+            ActionMessageView.present(message: UserText.autofillCreditCardsDisablePromptMessage,
+                                      actionTitle: UserText.autofillDisablePromptAction,
+                                      presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom),
+                                      duration: 4.0,
+                                      onAction: { [weak self] in
+                
+                guard let mainVC = self?.view.window?.rootViewController as? MainViewController else { return }
+                mainVC.segueToSettingsAutofillWith(account: nil, card: nil, source: .saveCreditCardDisablePrompt)
+            })
+        }
+    }
     
 }
 

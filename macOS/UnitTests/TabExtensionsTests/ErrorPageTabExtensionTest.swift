@@ -548,9 +548,9 @@ class MockFeatureFlagger: FeatureFlagger {
         self.internalUserDecider = internalUserDecider
     }
 
-    var isFeatureOn = true
+    var isFeatureOn: (any FeatureFlagDescribing) -> Bool = { _ in true }
     func isFeatureOn<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> Bool {
-        return isFeatureOn
+        return isFeatureOn(featureFlag)
     }
 
     func getCohortIfEnabled(_ subfeature: any PrivacySubfeature) -> CohortID? {

@@ -118,7 +118,7 @@ class SwipeTabsCoordinator: NSObject {
     }
 
     private func updateLayout() {
-        let omniBarHeight: CGFloat = ExperimentalThemingManager().isExperimentalThemingEnabled ? 68 : 52
+        let omniBarHeight: CGFloat = ExperimentalThemingManager().isExperimentalThemingEnabled ? UpdatedOmniBarView.expectedHeight : DefaultOmniBarView.expectedHeight
         let layout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout
         layout?.itemSize = CGSize(width: coordinator.superview.frame.size.width, height: omniBarHeight)
         layout?.minimumLineSpacing = 0
@@ -365,6 +365,8 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
             fatalError("Not \(OmniBarCell.self)")
         }
 
+        removeControllerForCell(cell)
+
         if !isEnabled || tabsModel.currentIndex == indexPath.row {
             cell.omniBar = coordinator.omniBar
         } else {
@@ -396,7 +398,18 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
 
         return cell
     }
-    
+
+    private func removeControllerForCell(_ cell: OmniBarCell) {
+        if let existingOmniBarView = cell.omniBar?.barView,
+           let backingVC = coordinator.parentController?.children.first(where: { $0.view === existingOmniBarView }) {
+
+            backingVC.willMove(toParent: nil)
+            existingOmniBarView.removeFromSuperview()
+            cell.omniBar = nil
+            backingVC.removeFromParent()
+        }
+    }
+
 }
 
 class OmniBarCell: UICollectionViewCell {
@@ -407,8 +420,6 @@ class OmniBarCell: UICollectionViewCell {
     weak var omniBar: OmniBar? {
         didSet {
             guard let omniBarView = omniBar?.barView else { return }
-
-            subviews.forEach { $0.removeFromSuperview() }
 
             omniBarView.translatesAutoresizingMaskIntoConstraints = false
             addSubview(omniBarView)

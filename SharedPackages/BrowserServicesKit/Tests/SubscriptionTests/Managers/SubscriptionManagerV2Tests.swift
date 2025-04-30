@@ -151,7 +151,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
         let testSignature = "invalidSignature"
         mockSubscriptionEndpointService.confirmPurchaseResult = .failure(APIRequestV2.Error.invalidResponse)
         mockOAuthClient.getTokensResponse = .success(OAuthTokensFactory.makeValidTokenContainer())
-        mockOAuthClient.migrateV1TokenResponse = nil
+        mockOAuthClient.migrateV1TokenResponseError = OAuthClientError.authMigrationNotPerformed
         do {
             _ = try await subscriptionManager.confirmPurchase(signature: testSignature, additionalParams: nil)
             XCTFail("Error expected")

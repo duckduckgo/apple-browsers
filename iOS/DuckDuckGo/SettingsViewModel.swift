@@ -49,6 +49,7 @@ final class SettingsViewModel: ObservableObject {
     let aiChatSettings: AIChatSettingsProvider
     let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
     let experimentalThemingManager: ExperimentalThemingManager
+    let featureDiscovery: FeatureDiscovery
 
     // Subscription Dependencies
     let isAuthV2Enabled: Bool
@@ -460,7 +461,8 @@ final class SettingsViewModel: ObservableObject {
          textZoomCoordinator: TextZoomCoordinating,
          aiChatSettings: AIChatSettingsProvider,
          maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
-         experimentalThemingManager: ExperimentalThemingManager
+         experimentalThemingManager: ExperimentalThemingManager,
+         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()
     ) {
 
         self.state = SettingsState.defaults
@@ -479,6 +481,7 @@ final class SettingsViewModel: ObservableObject {
         self.aiChatSettings = aiChatSettings
         self.maliciousSiteProtectionPreferencesManager = maliciousSiteProtectionPreferencesManager
         self.experimentalThemingManager = experimentalThemingManager
+        self.featureDiscovery = featureDiscovery
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
     }

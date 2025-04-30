@@ -233,7 +233,7 @@ extension PrivacyDashboardViewController: PrivacyDashboardControllerDelegate {
 
         switch target {
         case .cookiePopupManagement:
-            tabCollection.appendNewTab(with: .settings(pane: .dataClearing), selected: true)
+            tabCollection.appendNewTab(with: .settings(pane: .cookiePopupProtection), selected: true)
         default:
             tabCollection.appendNewTab(with: .anySettingsPane, selected: true)
         }
@@ -318,6 +318,16 @@ extension PrivacyDashboardViewController {
         return webVitalsResult
     }
 
+    private func isPirEnabledAndUserHasProfile() async -> Bool {
+        let isPIRFeatureEnabled = try? await Application.appDelegate.subscriptionAuthV1toV2Bridge.isEnabled(feature: .dataBrokerProtection)
+        guard let isPIRFeatureEnabled,
+              isPIRFeatureEnabled == true else {
+            return false
+        }
+        let profile = try? DataBrokerProtectionManager.shared.dataManager?.fetchProfile()
+        return profile != nil
+    }
+
     private func makeBrokenSiteReport(category: String = "",
                                       description: String = "",
                                       source: BrokenSiteReport.Source) async throws -> BrokenSiteReport {
@@ -356,6 +366,8 @@ extension PrivacyDashboardViewController {
             return experiments
         }
 
+        let isPirEnabled = await isPirEnabledAndUserHasProfile()
+
         let websiteBreakage = BrokenSiteReport(siteUrl: currentURL,
                                                category: category.lowercased(),
                                                description: description,
@@ -379,7 +391,8 @@ extension PrivacyDashboardViewController {
                                                userRefreshCount: currentTab.brokenSiteInfo?.refreshCountSinceLoad ?? -1,
                                                cookieConsentInfo: currentTab.privacyInfo?.cookieConsentManaged,
                                                debugFlags: currentTab.privacyInfo?.debugFlags ?? "",
-                                               privacyExperiments: privacyExperimentCohorts)
+                                               privacyExperiments: privacyExperimentCohorts,
+                                               isPirEnabled: isPirEnabled)
         return websiteBreakage
     }
 }

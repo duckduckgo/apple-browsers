@@ -8,14 +8,6 @@
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
-        <!--FullscreenDaxDialog-->
-        <scene sceneID="nOU-yi-qgJ">
-            <objects>
-                <viewControllerPlaceholder storyboardName="DaxOnboarding" referencedIdentifier="FullscreenDaxDialog" id="fuG-ev-dKt" sceneMemberID="viewController"/>
-                <placeholder placeholderIdentifier="IBFirstResponder" id="xGp-WH-MnZ" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
-            </objects>
-            <point key="canvasLocation" x="1747" y="366"/>
-        </scene>
         <!--Tab View Controller-->
         <scene sceneID="AZu-6t-VLj">
             <objects>
@@ -151,7 +143,6 @@
                         <segue destination="5Os-y0-IaV" kind="popoverPresentation" identifier="PrivacyDashboard" destinationCreationSelector="makePrivacyDashboardViewControllerWithCoder:" popoverAnchorView="ypz-s2-KJB" id="nKl-8K-k03">
                             <popoverArrowDirection key="popoverArrowDirection" up="YES"/>
                         </segue>
-                        <segue destination="fuG-ev-dKt" kind="presentation" identifier="DaxDialog" modalPresentationStyle="overFullScreen" modalTransitionStyle="crossDissolve" id="cG3-cw-u7d"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Xy9-lL-XjG" userLabel="First Responder" sceneMemberID="firstResponder"/>

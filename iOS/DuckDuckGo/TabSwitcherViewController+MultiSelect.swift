@@ -480,7 +480,6 @@ extension TabSwitcherViewController {
 
         barsHandler.duckChatButton.tintColor = UIColor(designSystemColor: .icons)
         barsHandler.duckChatButton.primaryAction = action(image: "AIChat-24", { [weak self] in
-            Pixel.fire(pixel: .openAIChatFromTabManager)
             self?.delegate.tabSwitcherDidRequestAIChat(tabSwitcher: self!)
         })
     }

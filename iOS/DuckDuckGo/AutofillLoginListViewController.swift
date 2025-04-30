@@ -217,12 +217,14 @@ final class AutofillLoginListViewController: UIViewController {
                 }
             }
 
-        let hasCredentials = ((try? secureVault?.accountsCount()) ?? 0) > 0
-        Pixel.fire(pixel: .autofillManagementOpened,
-                   withAdditionalParameters: [
-                    "source": source.rawValue,
-                    "has_credentials_saved": "\(hasCredentials ? 1 : 0)"
-                   ])
+        Task {
+            let hasCredentials = ((try? secureVault?.accountsCount()) ?? 0) > 0
+            Pixel.fire(pixel: .autofillManagementOpened,
+                       withAdditionalParameters: [
+                        "source": source.rawValue,
+                        "has_credentials_saved": "\(hasCredentials ? 1 : 0)"
+                       ])
+        }
     }
 
     required init?(coder: NSCoder) {

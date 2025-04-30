@@ -396,38 +396,48 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     }
 
     private func updateShadows() {
-        let color = UIColor(designSystemColor: .shadowPrimary)
+        let inactiveColor = UIColor(designSystemColor: .shadowPrimary)
+        let activeColor = UIColor(designSystemColor: .shadowSecondary)
 
-        let shadow1 = CompositeShadowView.Shadow(
+        // The following two have the same id so we can update the existing shadow
+        let shadow1Inactive = CompositeShadowView.Shadow(
             id: "shadow1",
-            color: color,
+            color: inactiveColor,
             opacity: 1,
-            radius: 6.0,
+            radius: 12.0,
+            offset: CGSize(width: 0, height: 4)
+        )
+        let shadow1Active = CompositeShadowView.Shadow(
+            id: "shadow1",
+            color: activeColor,
+            opacity: 1,
+            radius: 12.0,
             offset: CGSize(width: 0, height: 2)
         )
 
         // The following two have the same id so we can update the existing shadow
         let shadow2Inactive = CompositeShadowView.Shadow(
             id: "shadow2",
-            color: color,
+            color: inactiveColor,
             opacity: 0,
-            radius: 24.0,
+            radius: 48.0,
             offset: CGSize(width: 0, height: 16)
         )
         let shadow2Active = CompositeShadowView.Shadow(
             id: "shadow2",
-            color: color,
+            color: activeColor,
             opacity: 1,
-            radius: 24.0,
+            radius: 32,
             offset: CGSize(width: 0, height: 16)
         )
 
+        let primaryShadow = isActiveState ? shadow1Active : shadow1Inactive
         let secondaryShadow = isActiveState ? shadow2Active : shadow2Inactive
 
         if searchAreaContainerView.shadows.isEmpty {
-            let shadows = [shadow1, secondaryShadow].compactMap { $0 }
-            searchAreaContainerView.shadows = shadows
+            searchAreaContainerView.shadows = [primaryShadow, secondaryShadow]
         } else {
+            searchAreaContainerView.updateShadow(primaryShadow)
             searchAreaContainerView.updateShadow(secondaryShadow)
         }
     }

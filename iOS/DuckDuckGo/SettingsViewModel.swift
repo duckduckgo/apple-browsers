@@ -474,7 +474,7 @@ final class SettingsViewModel: ObservableObject {
          aiChatSettings: AIChatSettingsProvider,
          maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
          experimentalThemingManager: ExperimentalThemingManager,
-         duckPlayerSettings: DuckPlayerSettings = DuckPlayerSettingsDefault()
+         duckPlayerSettings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
          experimentalThemingManager: ExperimentalThemingManager,
          featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()
     ) {

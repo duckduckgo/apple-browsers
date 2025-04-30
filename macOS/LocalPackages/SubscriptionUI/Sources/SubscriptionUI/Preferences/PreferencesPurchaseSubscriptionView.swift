@@ -34,28 +34,15 @@ public struct PreferencesPurchaseSubscriptionViewV1: View {
     public var body: some View {
         VStack(alignment: .leading, spacing: 12) {
 
-            // Title and dialogs
             TextMenuTitle(UserText.preferencesPurchaseSubscriptionTitle)
                 .sheet(isPresented: $showingActivateSubscriptionSheet) {
                     SubscriptionAccessView(model: model.sheetModel)
                 }
 
-            // Header
-            VStack {
-                unauthenticatedHeaderView
+            unauthenticatedHeaderView
 
-                Divider()
-                    .foregroundColor(Color.secondary)
-                    .padding(.horizontal, -10)
+            featureRowsForNoSubscriptionView
 
-                featureRowsForNoSubscriptionView
-            }
-            .padding(10)
-            .roundedBorder()
-            .padding(.top, 4)
-            .padding(.bottom, 12)
-
-            // Help section
             helpSection
         }
         .onAppear(perform: {
@@ -92,42 +79,49 @@ public struct PreferencesPurchaseSubscriptionViewV1: View {
             }
             .buttonStyle(DismissActionButtonStyle())
         }
+        .padding(10)
+        .roundedBorder()
     }
 
     @ViewBuilder
     private var featureRowsForNoSubscriptionView: some View {
-        switch model.subscriptionStorefrontRegion {
-        case .usa:
-            SectionView(iconName: "VPN-Icon",
-                        title: UserText.vpnServiceTitle,
-                        description: UserText.vpnServiceDescription)
+        VStack {
+            switch model.subscriptionStorefrontRegion {
+            case .usa:
+                SectionView(iconName: "VPN-Icon",
+                            title: UserText.vpnServiceTitle,
+                            description: UserText.vpnServiceDescription)
 
-            Divider()
-                .foregroundColor(Color.secondary)
+                Divider()
+                    .foregroundColor(Color.secondary)
 
-            SectionView(iconName: "PIR-Icon",
-                        title: UserText.personalInformationRemovalServiceTitle,
-                        description: UserText.personalInformationRemovalServiceDescription)
+                SectionView(iconName: "PIR-Icon",
+                            title: UserText.personalInformationRemovalServiceTitle,
+                            description: UserText.personalInformationRemovalServiceDescription)
 
-            Divider()
-                .foregroundColor(Color.secondary)
+                Divider()
+                    .foregroundColor(Color.secondary)
 
-            SectionView(iconName: "ITR-Icon",
-                        title: UserText.identityTheftRestorationServiceTitle,
-                        description: UserText.identityTheftRestorationServiceDescription)
+                SectionView(iconName: "ITR-Icon",
+                            title: UserText.identityTheftRestorationServiceTitle,
+                            description: UserText.identityTheftRestorationServiceDescription)
 
-        case .restOfWorld:
-            SectionView(iconName: "VPN-Icon",
-                        title: UserText.vpnServiceTitle,
-                        description: UserText.vpnServiceDescription)
+            case .restOfWorld:
+                SectionView(iconName: "VPN-Icon",
+                            title: UserText.vpnServiceTitle,
+                            description: UserText.vpnServiceDescription)
 
-            Divider()
-                .foregroundColor(Color.secondary)
+                Divider()
+                    .foregroundColor(Color.secondary)
 
-            SectionView(iconName: "ITR-Icon",
-                        title: UserText.identityTheftRestorationServiceTitle,
-                        description: UserText.identityTheftRestorationServiceDescription)
+                SectionView(iconName: "ITR-Icon",
+                            title: UserText.identityTheftRestorationServiceTitle,
+                            description: UserText.identityTheftRestorationServiceDescription)
+            }
         }
+        .padding(10)
+        .roundedBorder()
+        .padding(.bottom, 20)
     }
 
     @ViewBuilder

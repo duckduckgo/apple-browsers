@@ -114,8 +114,7 @@ enum Preferences {
                 case .dataClearing:
                     DataClearingView(model: DataClearingPreferences.shared)
                 case .privacyPro:
-                    SubscriptionUI.PreferencesSubscriptionViewV1(model: subscriptionModel!,
-                                                                 subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability())
+                    SubscriptionUI.PreferencesPurchaseSubscriptionViewV1(model: purchaseSubscriptionModel!)
                 case .vpn:
                     VPNView(model: VPNPreferencesModel(), status: model.vpnProtectionStatus())
                 case .personalInformationRemoval:
@@ -124,8 +123,6 @@ enum Preferences {
                     SubscriptionUI.PreferencesIdentityTheftRestorationView(model: identityTheftRestorationModel!)
                 case .subscriptionSettings:
                     SubscriptionUI.PreferencesSubscriptionSettingsViewV1(model: subscriptionSettingsModel!)
-//                    SubscriptionUI.PreferencesSubscriptionViewV1(model: subscriptionModel!,
-//                                                                 subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability())
                 case .autofill:
                     AutofillView(model: AutofillPreferencesModel())
                 case .accessibility:

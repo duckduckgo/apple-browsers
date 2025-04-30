@@ -336,13 +336,17 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
 
         searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .urlBar)
         searchAreaContainerView.layer.cornerRadius = Metrics.cornerRadius
+        searchAreaContainerView.layer.cornerCurve = .continuous
 
         searchAreaView.layer.cornerRadius = Metrics.cornerRadius
+        searchAreaView.layer.cornerCurve = .continuous
 
         activeOutlineView.isUserInteractionEnabled = false
         activeOutlineView.translatesAutoresizingMaskIntoConstraints = false
         activeOutlineView.layer.borderColor = UIColor(Color(designSystemColor: .accent)).cgColor
         activeOutlineView.layer.borderWidth = Metrics.activeBorderWidth
+        activeOutlineView.layer.cornerRadius = Metrics.activeBorderRadius
+        activeOutlineView.layer.cornerCurve = .continuous
         activeOutlineView.backgroundColor = .clear
 
         stackView.axis = .horizontal

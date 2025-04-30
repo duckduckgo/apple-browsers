@@ -579,7 +579,8 @@ final class AddressBarTextField: NSTextField {
         NSStoryboard.suggestion.instantiateController(identifier: "SuggestionViewController") { coder in
             let suggestionViewController = SuggestionViewController(coder: coder,
                                                                     suggestionContainerViewModel: self.suggestionContainerViewModel!,
-                                                                    isBurner: self.isBurner)
+                                                                    isBurner: self.isBurner,
+                                                                    visualStyleManager: self.visualStyleManager)
             suggestionViewController?.delegate = self
             return suggestionViewController
         }

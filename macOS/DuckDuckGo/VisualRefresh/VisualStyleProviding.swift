@@ -54,6 +54,8 @@ protocol VisualStyleProviding {
     var backgroundTertiaryColor: NSColor { get }
     var accentPrimaryColor: NSColor { get }
     var accentAlternateColor: NSColor { get }
+    var addressBarSuffixTextColor: NSColor { get }
+    var addressBarTextFieldColor: NSColor { get }
 
     var defaultAddressBarFontSize: CGFloat { get }
     var newTabOrHomePageAddressBarFontSize: CGFloat { get }
@@ -119,6 +121,8 @@ struct VisualStyle: VisualStyleProviding {
     let backgroundTertiaryColor: NSColor
     let accentPrimaryColor: NSColor
     let accentAlternateColor: NSColor
+    let addressBarSuffixTextColor: NSColor
+    let addressBarTextFieldColor: NSColor
 
     let defaultAddressBarFontSize: CGFloat
     let newTabOrHomePageAddressBarFontSize: CGFloat
@@ -185,6 +189,8 @@ struct VisualStyle: VisualStyleProviding {
                            backgroundTertiaryColor: .inactiveSearchBarBackground,
                            accentPrimaryColor: .controlAccentColor.withAlphaComponent(0.8),
                            accentAlternateColor: .controlColor.withAlphaComponent(0.2),
+                           addressBarSuffixTextColor: .addressBarSuffix,
+                           addressBarTextFieldColor: .suggestionText,
                            defaultAddressBarFontSize: 13,
                            newTabOrHomePageAddressBarFontSize: 15)
     }
@@ -223,6 +229,8 @@ struct VisualStyle: VisualStyleProviding {
                            backgroundTertiaryColor: .surfaceTertiaryNew,
                            accentPrimaryColor: .accentPrimaryNew,
                            accentAlternateColor: .accentAltNew,
+                           addressBarSuffixTextColor: .accentPrimaryNew,
+                           addressBarTextFieldColor: .primaryTextColorNew,
                            defaultAddressBarFontSize: 13,
                            newTabOrHomePageAddressBarFontSize: 13)
     }

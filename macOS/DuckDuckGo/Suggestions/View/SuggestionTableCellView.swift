@@ -48,6 +48,7 @@ final class SuggestionTableCellView: NSTableCellView {
     @IBOutlet var switchToTabBoxLeadingConstraint: NSLayoutConstraint!
     @IBOutlet var switchToTabBoxTrailingConstraint: NSLayoutConstraint!
 
+    var visualStyleManager: VisualStyleManagerProviding?
     var suggestion: Suggestion?
 
     static let switchToTabAttributedString: NSAttributedString = {
@@ -108,6 +109,7 @@ final class SuggestionTableCellView: NSTableCellView {
     private var attributedString: NSAttributedString?
 
     private func updateTextField() {
+        // TODO: Change here the suggestions colors
         guard let attributedString = attributedString else {
             Logger.general.error("SuggestionTableCellView: Attributed strings are nil")
             return
@@ -121,14 +123,14 @@ final class SuggestionTableCellView: NSTableCellView {
             switchToTabBox.backgroundColor = .white.withAlphaComponent(0.09)
         } else {
             textField?.attributedStringValue = attributedString
-            textField?.textColor = Constants.textColor
+            textField?.textColor = visualStyleManager?.style.addressBarTextFieldColor ?? Constants.textColor
             switchToTabLabel.textColor = Constants.textColor
             switchToTabArrowView.contentTintColor = Constants.textColor
             switchToTabBox.backgroundColor = .buttonMouseOver
             if isBurner {
                 suffixTextField.textColor = Constants.burnerSuffixColor
             } else {
-                suffixTextField.textColor = Constants.suffixColor
+                suffixTextField.textColor = visualStyleManager?.style.addressBarSuffixTextColor ?? Constants.suffixColor
             }
         }
     }

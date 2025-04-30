@@ -21,9 +21,10 @@ import Foundation
 
 class MockWindow: NSWindow {
 
-    init(contentRect: NSRect = NSRect(x: 300, y: 300, width: 50, height: 50), styleMask: NSWindow.StyleMask = .titled) {
+    init(contentRect: NSRect = NSRect(x: 300, y: 300, width: 50, height: 50), styleMask: NSWindow.StyleMask = .titled, isVisible: Bool = true) {
         super.init(contentRect: contentRect, styleMask: styleMask, backing: .buffered, defer: false)
         self.isReleasedWhenClosed = false
+        self._isVisible = isVisible
     }
 
     private var _isVisible: Bool = true
@@ -77,4 +78,24 @@ class MockWindow: NSWindow {
             styleMask.insert(.fullScreen)
         }
     }
+
+    // window?.standardWindowButton(.closeButton)?.superview
+    private var _standardWindowButton: NSButton?
+    private var _toolbarView: NSView?
+
+    private var toolbarView: NSView {
+        if _toolbarView == nil {
+            _toolbarView = NSView()
+        }
+        return _toolbarView!
+    }
+
+    override func standardWindowButton(_ b: NSWindow.ButtonType) -> NSButton? {
+        if _standardWindowButton == nil {
+            _standardWindowButton = NSButton()
+            toolbarView.addSubview(_standardWindowButton!)
+        }
+        return _standardWindowButton!
+    }
+
 }

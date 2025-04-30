@@ -20,12 +20,12 @@ import Foundation
 import Common
 import os.log
 
-enum NetworkProtectionKeychainStoreError: Error, NetworkProtectionErrorConvertible {
+enum NetworkProtectionKeychainStoreError: Error, NetworkProtectionErrorConvertible, LocalizedError {
     case failedToCastKeychainValueToData(field: String)
-    case keychainReadError(field: String, status: Int32)
-    case keychainWriteError(field: String, status: Int32)
-    case keychainUpdateError(field: String, status: Int32)
-    case keychainDeleteError(status: Int32)
+    case keychainReadError(field: String, status: OSStatus)
+    case keychainWriteError(field: String, status: OSStatus)
+    case keychainUpdateError(field: String, status: OSStatus)
+    case keychainDeleteError(status: OSStatus)
 
     var networkProtectionError: NetworkProtectionError {
         switch self {
@@ -34,6 +34,25 @@ enum NetworkProtectionKeychainStoreError: Error, NetworkProtectionErrorConvertib
         case .keychainWriteError(let field, let status): return .keychainWriteError(field: field, status: status)
         case .keychainUpdateError(let field, let status): return .keychainUpdateError(field: field, status: status)
         case .keychainDeleteError(let status): return .keychainDeleteError(status: status)
+        }
+    }
+
+    var errorDescription: String? {
+        switch self {
+        case .failedToCastKeychainValueToData(let field):
+            return "Failed to cast the keychain value to Data for the field '\(field)'."
+
+        case .keychainReadError(let field, let status):
+            return "Failed to read the keychain item for the field '\(field)'. OSStatus: \(status)."
+
+        case .keychainWriteError(let field, let status):
+            return "Failed to write the keychain item for the field '\(field)'. OSStatus: \(status)."
+
+        case .keychainUpdateError(let field, let status):
+            return "Failed to update the keychain item for the field '\(field)'. OSStatus: \(status)."
+
+        case .keychainDeleteError(let status):
+            return "Failed to delete the keychain item. OSStatus: \(status)."
         }
     }
 }

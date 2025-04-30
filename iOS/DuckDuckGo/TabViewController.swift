@@ -728,6 +728,7 @@ class TabViewController: UIViewController {
         webView.addObserver(self, forKeyPath: #keyPath(WKWebView.canGoBack), options: .new, context: nil)
         webView.addObserver(self, forKeyPath: #keyPath(WKWebView.canGoForward), options: .new, context: nil)
         webView.addObserver(self, forKeyPath: #keyPath(WKWebView.title), options: .new, context: nil)
+        webView.addObserver(self, forKeyPath: #keyPath(WKWebView.isLoading), options: .new, context: nil)
     }
 
     private func configureRefreshControl(_ control: UIRefreshControl) {
@@ -844,7 +845,12 @@ class TabViewController: UIViewController {
               let webView = webView else { return }
 
         switch keyPath {
-            
+
+        case #keyPath(WKWebView.isLoading):
+            if webView.isLoading {
+                delegate?.showBars()
+            }
+
         case #keyPath(WKWebView.estimatedProgress):
             progressWorker.progressDidChange(webView.estimatedProgress)
             
@@ -1235,6 +1241,7 @@ class TabViewController: UIViewController {
         webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.canGoForward))
         webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.canGoBack))
         webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.title))
+        webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.isLoading))
     }
 
     public func makeBreakageAdditionalInfo() -> PrivacyDashboardViewController.BreakageAdditionalInfo? {
@@ -1388,7 +1395,6 @@ extension TabViewController: WKNavigationDelegate {
         self.fireWoFollowUp = false
 
         self.httpsForced = httpsForced
-        delegate?.showBars()
 
         resetDashboardInfo()
 

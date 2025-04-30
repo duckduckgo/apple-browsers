@@ -17,6 +17,7 @@
 //
 
 import Combine
+import PixelKit
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -27,12 +28,21 @@ final class TabCrashIndicatorModelTests: XCTestCase {
     var isShowingIndicatorEvents: [Bool] = []
     var cancellables: Set<AnyCancellable> = []
 
+    var firePixelCallCount: Int = 0
+    var firePixelHandler: (PixelKitEvent) -> Void = { _ in }
+
     override func setUp() async throws {
         crashPublisher = PassthroughSubject()
         isShowingIndicatorEvents = []
         cancellables = []
 
-        model = TabCrashIndicatorModel(maxPresentationDuration: .milliseconds(200))
+        model = TabCrashIndicatorModel(
+            maxPresentationDuration: .milliseconds(200),
+            firePixel: { [unowned self] event in
+                firePixelCallCount += 1
+                firePixelHandler(event)
+            }
+        )
         model.setUp(with: crashPublisher.eraseToAnyPublisher())
 
         model.$isShowingIndicator.dropFirst()
@@ -103,5 +113,34 @@ final class TabCrashIndicatorModelTests: XCTestCase {
         try await Task.sleep(nanoseconds: 500_000_000)
 
         XCTAssertEqual(isShowingIndicatorEvents, [true])
+    }
+
+    func testWhenPopoverIsShownThenPixelIsFired() {
+        let expectation = expectation(description: "pixel fired")
+        expectation.expectedFulfillmentCount = 3
+
+        firePixelHandler = { event in
+            if case GeneralPixel.webKitTerminationIndicatorClicked = event {
+                expectation.fulfill()
+            }
+        }
+
+        model.isShowingPopover = true
+        model.isShowingPopover = true
+        model.isShowingPopover = true
+        XCTAssertEqual(firePixelCallCount, 1)
+
+        model.isShowingPopover = false
+        model.isShowingPopover = true
+        XCTAssertEqual(firePixelCallCount, 2)
+
+        model.isShowingPopover = false
+        model.isShowingPopover = false
+        model.isShowingPopover = false
+        model.isShowingPopover = true
+        model.isShowingPopover = true
+        XCTAssertEqual(firePixelCallCount, 3)
+
+        waitForExpectations(timeout: 0.1)
     }
 }

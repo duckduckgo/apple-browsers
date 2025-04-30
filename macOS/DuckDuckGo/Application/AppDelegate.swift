@@ -455,6 +455,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         _ = NSPopover.swizzleShowRelativeToRectOnce
         // disable macOS system-wide window tabbing
         NSWindow.allowsAutomaticWindowTabbing = false
+        // Fix SwifUI context menus and its owner View leaking
+        SwiftUIContextMenuRetainCycleFix.setUp()
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -627,8 +629,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard didFinishLaunching else { return }
 
         initializeSync()
-
-        vpnAppEventsHandler.applicationDidBecomeActive()
 
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
         let pirGatekeeper = DefaultDataBrokerProtectionFeatureGatekeeper(subscriptionManager: subscriptionAuthV1toV2Bridge,

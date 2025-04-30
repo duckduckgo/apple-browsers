@@ -33,6 +33,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         case buttonPadding = 4
     }
 
+    private let standardTabHeight: CGFloat
+
     @IBOutlet weak var visualEffectBackgroundView: NSVisualEffectView!
     @IBOutlet weak var pinnedTabsContainerView: NSView!
     @IBOutlet private weak var collectionView: TabBarCollectionView!
@@ -155,6 +157,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             self.pinnedTabsView = nil
             self.pinnedTabsHostingView = nil
         }
+
+        standardTabHeight = visualStyleManager.style.tabStyleProvider.standardTabHeight
 
         super.init(coder: coder)
     }
@@ -727,7 +731,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     private func subscribeToChildWindows() {
         guard let window = view.window else {
-            assertionFailure("No window set at the moment of subscription")
+            assert([.unitTests, .integrationTests].contains(AppVersion.runType), "No window set at the moment of subscription")
             return
         }
         // hide Tab Preview when a non-Tab Preview child window is shown (Suggestions, Bookmarks etc…)
@@ -762,7 +766,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             return
         }
 
-        let position = pinnedTabsContainerView.frame.minX + PinnedTabView.Const.dimension * CGFloat(index)
+        let pinnedTabWidth = visualStyleManager.style.tabStyleProvider.pinnedTabWidth
+        let position = pinnedTabsContainerView.frame.minX + pinnedTabWidth * CGFloat(index)
         showTabPreview(for: tabViewModel, from: position)
     }
 
@@ -856,7 +861,7 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
                                 didRemoveTabAt removedIndex: Int,
                                 andSelectTabAt selectionIndex: Int?) {
         let removedIndexPathSet = Set(arrayLiteral: IndexPath(item: removedIndex))
-        guard let selectionIndex = selectionIndex else {
+        guard let selectionIndex else {
             collectionView.animator().deleteItems(at: removedIndexPathSet)
             return
         }
@@ -1023,7 +1028,7 @@ extension TabBarViewController: NSCollectionViewDelegateFlowLayout {
 
     func collectionView(_ collectionView: NSCollectionView, layout collectionViewLayout: NSCollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> NSSize {
         let isItemSelected = tabCollectionViewModel.selectionIndex == .unpinned(indexPath.item)
-        return NSSize(width: self.currentTabWidth(selected: isItemSelected), height: TabBarViewItem.Height.standard)
+        return NSSize(width: self.currentTabWidth(selected: isItemSelected), height: standardTabHeight)
     }
 
 }
@@ -1229,8 +1234,8 @@ extension TabBarViewController: TabBarViewItemDelegate {
 
         DispatchQueue.main.async {
             let viewController = PopoverMessageViewController(
-                title: "This tab has crashed",
-                message: "The page was reloaded automatically. Tab history and form data has been lost.",
+                title: UserText.tabCrashPopoverTitle,
+                message: UserText.tabCrashPopoverMessage,
                 presentMultiline: true,
                 maxWidth: TabCrashIndicatorModel.Const.popoverWidth,
                 autoDismissDuration: nil,
@@ -1314,9 +1319,10 @@ extension TabBarViewController: TabBarViewItemDelegate {
             self.pinnedTabsDiscoveryPopover = popover
 
             guard let view = self.pinnedTabsHostingView else { return }
-            popover.show(relativeTo: NSRect(x: view.bounds.maxX - PinnedTabView.Const.dimension,
+            let pinnedTabWidth = visualStyleManager.style.tabStyleProvider.pinnedTabWidth
+            popover.show(relativeTo: NSRect(x: view.bounds.maxX - pinnedTabWidth,
                                             y: view.bounds.minY,
-                                            width: PinnedTabView.Const.dimension,
+                                            width: pinnedTabWidth,
                                             height: view.bounds.height),
                          of: view,
                          preferredEdge: .maxY)

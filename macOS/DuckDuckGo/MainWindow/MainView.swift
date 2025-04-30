@@ -21,6 +21,20 @@ import Combine
 import WebKit
 
 final class MainView: NSView {
+
+    private enum Constants {
+        static let bookmarksBarHeight: CGFloat = 28
+        static let tabBarHeight: CGFloat = 38
+        static let dividerHeight: CGFloat = 1
+        static let webContainerMinHeight: CGFloat = 178
+        static let webContainerMinWidth: CGFloat = 512
+        static let findInPageContainerWidth: CGFloat = 400
+        static let findInPageContainerHeight: CGFloat = 40
+        static let findInPageContainerTopOffset: CGFloat = -4
+        static let fireContainerHeight: CGFloat = 32
+        static let bannerHeight: CGFloat = 48
+    }
+
     let tabBarContainerView = NSView()
     let navigationBarContainerView = NSView()
     let webContainerView = NSView()
@@ -30,12 +44,13 @@ final class MainView: NSView {
     let fireContainerView = NSView()
     let divider = ColorView(frame: .zero, backgroundColor: .separatorColor)
 
-    private(set) var navigationBarTopConstraint: NSLayoutConstraint!
-    private(set) var bookmarksBarHeightConstraint: NSLayoutConstraint!
-    private(set) var webContainerTopConstraint: NSLayoutConstraint!
-    private(set) var webContainerTopConstraintToNavigation: NSLayoutConstraint!
-    private(set) var tabBarHeightConstraint: NSLayoutConstraint!
-    private(set) var bannerHeightConstraint: NSLayoutConstraint!
+    private var navigationBarTopConstraint: NSLayoutConstraint!
+    private var bookmarksBarHeightConstraint: NSLayoutConstraint!
+    private var webContainerTopConstraint: NSLayoutConstraint!
+    private var webContainerTopConstraintToNavigation: NSLayoutConstraint!
+    private var tabBarHeightConstraint: NSLayoutConstraint!
+    private var bannerTopConstraint: NSLayoutConstraint!
+    private var bannerHeightConstraint: NSLayoutConstraint!
 
     @Published var isMouseAboveWebView: Bool = false
 
@@ -64,15 +79,16 @@ final class MainView: NSView {
     }
 
     private func addConstraints() {
-        bookmarksBarHeightConstraint = bookmarksBarContainerView.heightAnchor.constraint(equalToConstant: 34)
-        tabBarHeightConstraint = tabBarContainerView.heightAnchor.constraint(equalToConstant: 38)
-        navigationBarTopConstraint = navigationBarContainerView.topAnchor.constraint(equalTo: topAnchor, constant: 38)
+        bookmarksBarHeightConstraint = bookmarksBarContainerView.heightAnchor.constraint(equalToConstant: Constants.bookmarksBarHeight)
+        tabBarHeightConstraint = tabBarContainerView.heightAnchor.constraint(equalToConstant: Constants.tabBarHeight)
+        navigationBarTopConstraint = navigationBarContainerView.topAnchor.constraint(equalTo: topAnchor, constant: Constants.tabBarHeight)
         webContainerTopConstraint = webContainerView.topAnchor.constraint(equalTo: bannerContainerView.bottomAnchor)
         webContainerTopConstraintToNavigation = webContainerView.topAnchor.constraint(equalTo: navigationBarContainerView.bottomAnchor)
 
         webContainerTopConstraint.priority = .defaultHigh
         webContainerTopConstraintToNavigation.priority = .defaultLow
 
+        bannerTopConstraint = bannerContainerView.topAnchor.constraint(equalTo: bookmarksBarContainerView.bottomAnchor)
         bannerHeightConstraint = bannerContainerView.heightAnchor.constraint(equalToConstant: 0)
 
         NSLayoutConstraint.activate([
@@ -86,7 +102,7 @@ final class MainView: NSView {
             divider.trailingAnchor.constraint(equalTo: trailingAnchor),
             divider.heightAnchor.constraint(equalToConstant: 1),
 
-            bookmarksBarContainerView.topAnchor.constraint(equalTo: divider.bottomAnchor),
+            bookmarksBarContainerView.topAnchor.constraint(equalTo: navigationBarContainerView.bottomAnchor),
             bookmarksBarContainerView.leadingAnchor.constraint(equalTo: leadingAnchor),
             bookmarksBarContainerView.trailingAnchor.constraint(equalTo: trailingAnchor),
             bookmarksBarHeightConstraint,
@@ -98,21 +114,23 @@ final class MainView: NSView {
             bannerHeightConstraint,
             bannerContainerView.leadingAnchor.constraint(equalTo: leadingAnchor),
             bannerContainerView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            bannerContainerView.topAnchor.constraint(equalTo: bookmarksBarContainerView.bottomAnchor),
+
+            bannerTopConstraint,
+            bannerContainerView.topAnchor.constraint(equalTo: navigationBarContainerView.bottomAnchor).priority(900),
 
             webContainerTopConstraint,
             webContainerTopConstraintToNavigation,
             webContainerView.bottomAnchor.constraint(equalTo: bottomAnchor),
             webContainerView.leadingAnchor.constraint(equalTo: leadingAnchor),
             webContainerView.trailingAnchor.constraint(equalTo: trailingAnchor),
-            webContainerView.widthAnchor.constraint(greaterThanOrEqualToConstant: 512),
-            webContainerView.heightAnchor.constraint(greaterThanOrEqualToConstant: 178),
+            webContainerView.widthAnchor.constraint(greaterThanOrEqualToConstant: Constants.webContainerMinWidth),
+            webContainerView.heightAnchor.constraint(greaterThanOrEqualToConstant: Constants.webContainerMinHeight),
 
-            findInPageContainerView.topAnchor.constraint(equalTo: bookmarksBarContainerView.bottomAnchor, constant: -4),
-            findInPageContainerView.topAnchor.constraint(equalTo: navigationBarContainerView.bottomAnchor, constant: -4).priority(900),
+            findInPageContainerView.topAnchor.constraint(equalTo: bookmarksBarContainerView.bottomAnchor, constant: Constants.findInPageContainerTopOffset),
+            findInPageContainerView.topAnchor.constraint(equalTo: navigationBarContainerView.bottomAnchor, constant: Constants.findInPageContainerTopOffset).priority(900),
             findInPageContainerView.centerXAnchor.constraint(equalTo: navigationBarContainerView.centerXAnchor),
-            findInPageContainerView.widthAnchor.constraint(equalToConstant: 400),
-            findInPageContainerView.heightAnchor.constraint(equalToConstant: 40),
+            findInPageContainerView.widthAnchor.constraint(equalToConstant: Constants.findInPageContainerWidth),
+            findInPageContainerView.heightAnchor.constraint(equalToConstant: Constants.findInPageContainerHeight),
 
             fireContainerView.topAnchor.constraint(equalTo: topAnchor),
             fireContainerView.bottomAnchor.constraint(equalTo: bottomAnchor),
@@ -190,6 +208,50 @@ final class MainView: NSView {
                         at: insertionIdx)
     }
 
+    // MARK: - View Layout
+
+    var isBookmarksBarShown: Bool {
+        get {
+            bookmarksBarHeightConstraint.constant > 0
+        }
+        set {
+            bookmarksBarHeightConstraint.animator().constant = newValue ? Constants.bookmarksBarHeight : 0
+            bannerTopConstraint.animator().isActive = newValue
+        }
+    }
+
+    enum WebContainerTopBinding {
+        case navigationBar
+        case tabBar
+    }
+    var webContainerTopBinding: WebContainerTopBinding {
+        get {
+            webContainerTopConstraintToNavigation.priority == .defaultLow ? .navigationBar : .tabBar
+        }
+        set {
+            webContainerTopConstraintToNavigation.priority = newValue == .navigationBar ? .defaultHigh : .defaultLow
+            webContainerTopConstraint.priority = newValue == .navigationBar ? .defaultLow : .defaultHigh
+        }
+    }
+
+    var isBannerViewShown: Bool {
+        get {
+            bannerHeightConstraint.constant > 0
+        }
+        set {
+            bannerHeightConstraint.animator().constant = newValue ? Constants.bannerHeight : 0
+        }
+    }
+
+    var isTabBarShown: Bool {
+        get {
+            navigationBarTopConstraint.constant > 0
+        }
+        set {
+            tabBarHeightConstraint.animator().constant = newValue ? Constants.tabBarHeight : 0
+            navigationBarTopConstraint.animator().constant = newValue ? Constants.tabBarHeight : 0
+        }
+    }
     // MARK: - NSDraggingDestination
 
     override func draggingEntered(_ draggingInfo: NSDraggingInfo) -> NSDragOperation {

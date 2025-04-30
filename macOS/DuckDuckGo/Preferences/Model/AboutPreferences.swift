@@ -19,10 +19,22 @@
 import SwiftUI
 import Common
 import Combine
+import BrowserServicesKit
 
 final class AboutPreferences: ObservableObject, PreferencesTabOpening {
 
-    static let shared = AboutPreferences()
+    static let shared = AboutPreferences(internalUserDecider: NSApp.delegateTyped.internalUserDecider)
+
+    private let internalUserDecider: InternalUserDecider
+    @Published var isInternalUser: Bool
+    private var internalUserCancellable: AnyCancellable?
+
+    private init(internalUserDecider: InternalUserDecider) {
+        self.internalUserDecider = internalUserDecider
+        self.isInternalUser = internalUserDecider.isInternalUser
+        self.internalUserCancellable = internalUserDecider.isInternalUserPublisher
+            .sink { [weak self] in self?.isInternalUser = $0 }
+    }
 
 #if SPARKLE
     @Published var updateState = UpdateState.upToDate

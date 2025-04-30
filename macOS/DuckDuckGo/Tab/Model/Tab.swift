@@ -1136,16 +1136,16 @@ extension Tab {
     static let crashTabMenuOptionTitle = "Crash Tab"
 
     private enum Selector {
-        static let killWebContentProcess = NSSelectorFromString("_killWebContentProcess")
+        static let killWebContentProcessAndResetState = NSSelectorFromString("_killWebContentProcessAndResetState")
     }
 
     var canKillWebContentProcess: Bool {
-        featureFlagger.isFeatureOn(.tabCrashDebugTools)
+        featureFlagger.isFeatureOn(.tabCrashDebugging)
     }
 
     func killWebContentProcess() {
-        if webView.responds(to: Selector.killWebContentProcess) {
-            webView.perform(Selector.killWebContentProcess)
+        if webView.responds(to: Selector.killWebContentProcessAndResetState) {
+            webView.perform(Selector.killWebContentProcessAndResetState)
         }
     }
 }
@@ -1319,6 +1319,9 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
 
     @MainActor
     func navigation(_ navigation: Navigation, didFailWith error: WKError) {
+        guard !error.isWebContentProcessTerminated else {
+            return
+        }
         let url = error.failingUrl ?? navigation.url
         guard navigation.isCurrent else { return }
         invalidateInteractionStateData()

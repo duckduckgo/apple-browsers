@@ -37,7 +37,7 @@ class TabSwitcherBarsStateHandlerTests: XCTestCase {
     }
 
     func testWhenDuckChatEnabledThenBottomBarItemsAreSetCorrectly() {
-        stateHandler.update(.singleSelectNormal, selectedTabsCount: 0, totalTabsCount: 0, containsWebPages: false, showAIChatButton: true)
+        stateHandler.update(.multiSelectNormal, selectedTabsCount: 0, totalTabsCount: 0, containsWebPages: false, showAIChatButton: true)
 
         XCTAssertEqual(stateHandler.bottomBarItems, [
             stateHandler.doneButton,
@@ -46,19 +46,6 @@ class TabSwitcherBarsStateHandlerTests: XCTestCase {
             UIBarButtonItem.flexibleSpace(),
             stateHandler.duckChatButton,
             UIBarButtonItem.fixedSpace(24),
-            stateHandler.plusButton
-        ])
-        XCTAssertFalse(stateHandler.isBottomBarHidden)
-    }
-
-    func testWhenInterfaceModeIsSingleSelectNormalThenBottomBarItemsAreSetCorrectly() {
-        stateHandler.update(.singleSelectNormal, selectedTabsCount: 0, totalTabsCount: 0, containsWebPages: false, showAIChatButton: false)
-
-        XCTAssertEqual(stateHandler.bottomBarItems, [
-            stateHandler.doneButton,
-            UIBarButtonItem.flexibleSpace(),
-            stateHandler.fireButton,
-            UIBarButtonItem.flexibleSpace(),
             stateHandler.plusButton
         ])
         XCTAssertFalse(stateHandler.isBottomBarHidden)
@@ -82,25 +69,8 @@ class TabSwitcherBarsStateHandlerTests: XCTestCase {
         XCTAssertTrue(stateHandler.isBottomBarHidden)
     }
 
-    func testWhenInterfaceModeIsSingleSelectNormalThenTopLeftButtonItemsAreSetCorrectly() {
-        stateHandler.update(.singleSelectNormal, selectedTabsCount: 0, totalTabsCount: 0, containsWebPages: false, showAIChatButton: false)
-
-        XCTAssertEqual(stateHandler.topBarLeftButtonItems, [
-            stateHandler.addAllBookmarksButton
-        ])
-    }
-
-    func testWhenInterfaceModeIsSingleSelectLargeThenTopLeftButtonItemsAreSetCorrectly() {
-        stateHandler.update(.singleSelectLarge, selectedTabsCount: 0, totalTabsCount: 0, containsWebPages: false, showAIChatButton: false)
-
-        XCTAssertEqual(stateHandler.topBarLeftButtonItems, [
-            stateHandler.addAllBookmarksButton,
-            stateHandler.tabSwitcherStyleButton
-        ])
-    }
-
     func testWhenInterfaceModeIsMultiSelectAvailableNormalThenTopRightButtonItemsAreSetCorrectly() {
-        stateHandler.update(.multiSelectAvailableNormal, selectedTabsCount: 0, totalTabsCount: 2, containsWebPages: false, showAIChatButton: false)
+        stateHandler.update(.multiSelectNormal, selectedTabsCount: 0, totalTabsCount: 2, containsWebPages: false, showAIChatButton: false)
 
         XCTAssertEqual(stateHandler.topBarRightButtonItems, [
             stateHandler.editButton
@@ -108,32 +78,32 @@ class TabSwitcherBarsStateHandlerTests: XCTestCase {
     }
 
     func testWhenShowAIChatButtonIsTrueThenDuckChatButtonIsIncludedInToolbarItems() {
-        stateHandler.update(.singleSelectNormal, selectedTabsCount: 0, totalTabsCount: 0, containsWebPages: false, showAIChatButton: true)
+        stateHandler.update(.multiSelectNormal, selectedTabsCount: 0, totalTabsCount: 0, containsWebPages: false, showAIChatButton: true)
 
         XCTAssertTrue(stateHandler.bottomBarItems.contains(stateHandler.duckChatButton))
     }
 
     func testWhenTotalTabsCountIsGreaterThanOneThenCanShowEditButtonIsTrue() {
-        stateHandler.update(.multiSelectAvailableNormal, selectedTabsCount: 0, totalTabsCount: 2, containsWebPages: false, showAIChatButton: false)
+        stateHandler.update(.multiSelectNormal, selectedTabsCount: 0, totalTabsCount: 2, containsWebPages: false, showAIChatButton: false)
 
         XCTAssertTrue(stateHandler.canShowEditButton)
     }
 
     func testWhenContainsWebPagesIsTrueThenCanShowEditButtonIsTrue() {
-        stateHandler.update(.multiSelectAvailableNormal, selectedTabsCount: 0, totalTabsCount: 0, containsWebPages: true, showAIChatButton: false)
+        stateHandler.update(.multiSelectNormal, selectedTabsCount: 0, totalTabsCount: 0, containsWebPages: true, showAIChatButton: false)
 
         XCTAssertTrue(stateHandler.canShowEditButton)
     }
 
     func testWhenInterfaceModeIsMultiSelectAvailableLargeThenBottomBarIsHidden() {
-        stateHandler.update(.multiSelectAvailableLarge, selectedTabsCount: 0, totalTabsCount: 0, containsWebPages: false, showAIChatButton: false)
+        stateHandler.update(.multiSelectLarge, selectedTabsCount: 0, totalTabsCount: 0, containsWebPages: false, showAIChatButton: false)
 
         XCTAssertTrue(stateHandler.bottomBarItems.isEmpty)
         XCTAssertTrue(stateHandler.isBottomBarHidden)
     }
 
     func testWhenInterfaceModeIsMultiSelectAvailableLargeThenTopLeftButtonItemsAreSetCorrectly() {
-        stateHandler.update(.multiSelectAvailableLarge, selectedTabsCount: 0, totalTabsCount: 2, containsWebPages: false, showAIChatButton: false)
+        stateHandler.update(.multiSelectLarge, selectedTabsCount: 0, totalTabsCount: 2, containsWebPages: false, showAIChatButton: false)
 
         XCTAssertEqual(stateHandler.topBarLeftButtonItems, [
             stateHandler.editButton,
@@ -142,7 +112,7 @@ class TabSwitcherBarsStateHandlerTests: XCTestCase {
     }
 
     func testWhenInterfaceModeIsMultiSelectAvailableLargeAndCannotShowEditButtonThenTopLeftButtonItemsAreSetCorrectly() {
-        stateHandler.update(.multiSelectAvailableLarge, selectedTabsCount: 0, totalTabsCount: 0, containsWebPages: false, showAIChatButton: false)
+        stateHandler.update(.multiSelectLarge, selectedTabsCount: 0, totalTabsCount: 0, containsWebPages: false, showAIChatButton: false)
 
         XCTAssertEqual(stateHandler.topBarLeftButtonItems, [
             stateHandler.tabSwitcherStyleButton
@@ -150,7 +120,7 @@ class TabSwitcherBarsStateHandlerTests: XCTestCase {
     }
 
     func testWhenInterfaceModeIsMultiSelectAvailableLargeThenTopRightButtonItemsAreSetCorrectly() {
-        stateHandler.update(.multiSelectAvailableLarge, selectedTabsCount: 0, totalTabsCount: 0, containsWebPages: false, showAIChatButton: true)
+        stateHandler.update(.multiSelectLarge, selectedTabsCount: 0, totalTabsCount: 0, containsWebPages: false, showAIChatButton: true)
 
         XCTAssertEqual(stateHandler.topBarRightButtonItems, [
             stateHandler.doneButton,

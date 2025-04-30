@@ -251,18 +251,10 @@ extension TabSwitcherViewController {
 extension TabSwitcherViewController {
     
     func updateUIForSelectionMode() {
-        if featureFlagger.isFeatureOn(.tabManagerMultiSelection) {
-            if AppWidthObserver.shared.isLargeWidth {
-                interfaceMode = isEditing ? .multiSelectedEditingLarge : .multiSelectAvailableLarge
-            } else {
-                interfaceMode = isEditing ? .multiSelectEditingNormal : .multiSelectAvailableNormal
-            }
+        if AppWidthObserver.shared.isLargeWidth {
+            interfaceMode = isEditing ? .multiSelectedEditingLarge : .multiSelectLarge
         } else {
-            if AppWidthObserver.shared.isLargeWidth {
-               interfaceMode = .singleSelectLarge
-            } else {
-               interfaceMode = .singleSelectNormal
-            }
+            interfaceMode = isEditing ? .multiSelectEditingNormal : .multiSelectNormal
         }
 
         barsHandler.update(interfaceMode,

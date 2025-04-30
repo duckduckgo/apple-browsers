@@ -675,7 +675,6 @@ class MainViewController: UIViewController {
         switch position {
         case .top:
             swipeTabsCoordinator?.addressBarPositionChanged(isTop: true)
-            viewCoordinator.omniBar.moveSeparatorToBottom()
             if ExperimentalThemingManager().isExperimentalThemingEnabled {
                 viewCoordinator.hideToolbarSeparator()
             } else {
@@ -685,13 +684,13 @@ class MainViewController: UIViewController {
                     
         case .bottom:
             swipeTabsCoordinator?.addressBarPositionChanged(isTop: false)
-            viewCoordinator.omniBar.moveSeparatorToTop()
             // If this is called before the toolbar has shown it will not re-add the separator when moving to the top position
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 self.viewCoordinator.hideToolbarSeparator()
             }
         }
 
+        omniBar.adjust(for: position)
         adjustNewTabPageSafeAreaInsets(for: position)
         updateChromeForDuckPlayer()
     }

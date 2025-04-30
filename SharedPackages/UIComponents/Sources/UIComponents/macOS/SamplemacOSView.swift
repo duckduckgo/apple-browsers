@@ -19,8 +19,11 @@
 import SwiftUI
 
 #if os(macOS)
-struct SamplemacOSView: View {
-    var body: some View {
+public struct SamplemacOSView: View {
+
+    public init() {}
+
+    public var body: some View {
         Text("Hello, macOS!")
     }
 }

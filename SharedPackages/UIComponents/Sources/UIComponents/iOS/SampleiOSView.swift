@@ -19,8 +19,11 @@
 import SwiftUI
 
 #if os(iOS)
-struct SampleiOSView: View {
-    var body: some View {
+public struct SampleiOSView: View {
+
+    public init() {}
+
+    public var body: some View {
         Text("Hello, iOS!")
     }
 }

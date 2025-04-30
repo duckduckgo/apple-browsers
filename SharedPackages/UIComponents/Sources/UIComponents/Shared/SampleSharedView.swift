@@ -18,8 +18,11 @@
 
 import SwiftUI
 
-struct SampleSharedView: View {
-    var body: some View {
+public struct SampleSharedView: View {
+
+    public init() {}
+
+    public var body: some View {
         Text("Hello, Shared!")
     }
 }

@@ -1,7 +1,6 @@
 name: iOS - Shared Web Tests
 
 on:
-  pull_request: # Remove this before merging
   workflow_dispatch:
   schedule:
     - cron: '0 2 * * *' # Run at 2 AM UTC
@@ -31,9 +30,6 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
-
-    - name: Force failure for testing # Remove this before merging
-      run: exit 1
 
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version

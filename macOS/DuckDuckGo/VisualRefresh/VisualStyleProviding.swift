@@ -57,6 +57,10 @@ protocol VisualStyleProviding {
     var iconsColor: NSColor { get }
     var buttonMouseOverColor: NSColor { get }
 
+    /// New Tab Page
+    var ntpLightBackgroundColor: String { get }
+    var ntpDarkBackgroundColor: String { get }
+
     /// Other
     var vpnNavigationIconsProvider: IconProvider { get }
     var fireButtonStyleProvider: FireButtonIconStyleProviding { get }
@@ -129,6 +133,9 @@ struct VisualStyle: VisualStyleProviding {
     let iconsColor: NSColor
     let buttonMouseOverColor: NSColor
 
+    let ntpLightBackgroundColor: String
+    let ntpDarkBackgroundColor: String
+
     let defaultAddressBarFontSize: CGFloat
     let newTabOrHomePageAddressBarFontSize: CGFloat
 
@@ -198,6 +205,8 @@ struct VisualStyle: VisualStyleProviding {
                            addressBarTextFieldColor: .suggestionText,
                            iconsColor: .button,
                            buttonMouseOverColor: .buttonMouseOver,
+                           ntpLightBackgroundColor: "#FAFAFA",
+                           ntpDarkBackgroundColor: "#333333",
                            defaultAddressBarFontSize: 13,
                            newTabOrHomePageAddressBarFontSize: 15)
     }
@@ -240,6 +249,8 @@ struct VisualStyle: VisualStyleProviding {
                            addressBarTextFieldColor: .primaryTextColorNew,
                            iconsColor: .iconsPrimaryNew,
                            buttonMouseOverColor: .controlsFillPrimaryNew,
+                           ntpLightBackgroundColor: "#E9EBEC",
+                           ntpDarkBackgroundColor: "#27282A",
                            defaultAddressBarFontSize: 13,
                            newTabOrHomePageAddressBarFontSize: 13)
     }

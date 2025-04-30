@@ -84,14 +84,6 @@ final class AutofillSettingsViewModel: ObservableObject {
     @Published var saveCreditCardsEnabled: Bool = false {
         didSet {
             appSettings.autofillCreditCardsEnabled = saveCreditCardsEnabled
-            //            keyValueStore.set(false, forKey: UserDefaultsWrapper<Bool>.Key.autofillFirstTimeUser.rawValue)
-            //            NotificationCenter.default.post(name: AppUserDefaults.Notifications.autofillEnabledChange, object: self)
-
-            if saveCreditCardsEnabled {
-                //                Pixel.fire(pixel: .autofillLoginsSettingsEnabled)
-            } else {
-                //                Pixel.fire(pixel: .autofillLoginsSettingsDisabled, withAdditionalParameters: ["source": source.rawValue])
-            }
         }
     }
 
@@ -125,6 +117,13 @@ final class AutofillSettingsViewModel: ObservableObject {
             } catch {
                 return
             }
+        }
+    }
+    
+    func refreshCounts() {
+        updatePasswordsCount()
+        if showCreditCards {
+            updateCreditCardsCount()
         }
     }
 

@@ -27,16 +27,19 @@ struct AutofillCreditCardListView: View {
     
     var body: some View {
         Group {
-            if viewModel.creditCards.isEmpty {
+            switch viewModel.viewState {
+            case .authLocked, .noAuthAvailable:
+                LockScreenView()
+            case .empty:
                 EmptyStateView()
-            } else {
+            case .showItems:
                 List {
                     Section {
-                        ForEach(viewModel.creditCards, id: \.self) { cardItem in
+                        ForEach(viewModel.cards, id: \.self) { card in
                             Button {
-                                viewModel.cardSelected(cardItem)
+                                viewModel.cardSelected(card)
                             } label: {
-                                CreditCardRow(card: cardItem)
+                                CreditCardRow(card: card)
                             }
                         }
                     }
@@ -55,13 +58,13 @@ private struct EmptyStateView: View {
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 96, height: 96)
-
+            
             Group {
                 Text(UserText.autofillCreditCardEmptyViewTitle)
                     .daxTitle3()
                     .foregroundStyle(Color(designSystemColor: .textPrimary))
                     .padding(.top, 16)
-
+                
                 Text(UserText.autofillCreditCardEmptyViewSubtitle)
                     .daxBodyRegular()
                     .foregroundStyle(Color.init(designSystemColor: .textSecondary))
@@ -80,13 +83,13 @@ private struct EmptyStateView: View {
 
 private struct CreditCardRow: View {
     
-    var card: CreditCardItem
+    var card: CreditCardViewModel
     
     var body: some View {
         HStack {
             card.icon
                 .padding(.trailing, 8)
-                
+            
             VStack(alignment: .leading) {
                 Text(card.displayTitle)
                     .daxSubheadRegular()
@@ -96,8 +99,8 @@ private struct CreditCardRow: View {
                  + Text(verbatim: " ")
                  + Text(card.lastFourDigits)
                  + Text(card.expirationDate))
-                    .daxFootnoteRegular()
-                    .foregroundStyle(Color(designSystemColor: .textSecondary))
+                .daxFootnoteRegular()
+                .foregroundStyle(Color(designSystemColor: .textSecondary))
             }
             .padding(.vertical, 4)
             

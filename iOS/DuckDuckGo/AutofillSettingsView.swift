@@ -119,7 +119,7 @@ struct AutofillSettingsView: View {
             Text(UserText.autofillResetNeverSavedActionTitle)
         }
         .onAppear {
-            viewModel.updatePasswordsCount()
+            viewModel.refreshCounts()
         }
     }
 

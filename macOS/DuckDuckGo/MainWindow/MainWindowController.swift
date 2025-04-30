@@ -315,26 +315,26 @@ extension MainWindowController: NSWindowDelegate {
 
     private func hideTabBarAndBookmarksBar() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
-            self?.mainViewController.disableTabPreviews()
-            self?.mainViewController.mainView.navigationBarTopConstraint.animator().constant = 0
-            self?.mainViewController.mainView.tabBarHeightConstraint.animator().constant = 0
-            self?.mainViewController.mainView.webContainerTopConstraintToNavigation.animator().priority = .defaultHigh
-            self?.mainViewController.mainView.webContainerTopConstraint.animator().priority = .defaultLow
-            self?.moveTabBarView(toTitlebarView: false)
-            self?.window?.titlebarAppearsTransparent = false
-            self?.window?.toolbar = nil
+            guard let self else { return }
+            mainViewController.disableTabPreviews()
+            mainViewController.mainView.isTabBarShown = false
+            mainViewController.mainView.webContainerTopBinding = .navigationBar
+            mainViewController.updateBookmarksBarViewVisibility(visible: false)
+            moveTabBarView(toTitlebarView: false)
+            window?.titlebarAppearsTransparent = false
+            window?.toolbar = nil
         }
     }
 
     private func showTabBarAndBookmarksBar() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
-            self?.mainViewController.enableTabPreviews()
-            self?.mainViewController.mainView.tabBarHeightConstraint.animator().constant = 38
-            self?.mainViewController.mainView.navigationBarTopConstraint.animator().constant = 38
-            self?.mainViewController.mainView.webContainerTopConstraintToNavigation.animator().priority = .defaultLow
-            self?.mainViewController.mainView.webContainerTopConstraint.animator().priority = .defaultHigh
-            self?.window?.titlebarAppearsTransparent = true
-            self?.setupToolbar()
+            guard let self else { return }
+            mainViewController.enableTabPreviews()
+            mainViewController.mainView.isTabBarShown = true
+            mainViewController.mainView.webContainerTopBinding = .tabBar
+            mainViewController.updateBookmarksBarViewVisibility(visible: mainViewController.shouldShowBookmarksBar)
+            window?.titlebarAppearsTransparent = true
+            setupToolbar()
         }
     }
 

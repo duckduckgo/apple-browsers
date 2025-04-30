@@ -119,7 +119,7 @@ final class TabTests: XCTestCase {
         let internalUserDecider = InternalUserDeciderMock()
         internalUserDecider.isInternalUser = true
 
-        let featureFlagger = FeatureFlaggerMock(internalUserDecider: internalUserDecider, enabledFeatureFlags: [.tabCrashDebugTools])
+        let featureFlagger = FeatureFlaggerMock(internalUserDecider: internalUserDecider, enabledFeatureFlags: [.tabCrashDebugging])
 
         let tab = Tab(content: .newtab, featureFlagger: featureFlagger)
         XCTAssertTrue(tab.canKillWebContentProcess)

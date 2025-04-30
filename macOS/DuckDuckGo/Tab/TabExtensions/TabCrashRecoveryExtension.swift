@@ -159,7 +159,8 @@ extension TabCrashRecoveryExtension: NavigationResponder {
 
             shouldAutoReload = !isCrashLoop
         } else {
-            shouldAutoReload = featureFlagger.internalUserDecider.isInternalUser
+            // disable auto-reload if tab crash debugging flag is enabled, to allow testing
+            shouldAutoReload = featureFlagger.internalUserDecider.isInternalUser && !featureFlagger.isFeatureOn(.tabCrashDebugging)
         }
 
         handleTabCrash(error, in: webView, shouldAutoReload: shouldAutoReload)

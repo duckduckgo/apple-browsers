@@ -77,7 +77,8 @@ final class DefaultOmniBarView: UIView {
     /// Additionally, it facilitates smooth animations for the elements it contains.
     @IBOutlet weak var leftIconContainerView: UIView!
 
-    let expectedHeight: CGFloat = 52
+    let expectedHeight: CGFloat = DefaultOmniBarView.expectedHeight
+    static let expectedHeight: CGFloat = 52
 
     var onTextEntered: (() -> Void)?
     var onVoiceSearchButtonPressed: (() -> Void)?

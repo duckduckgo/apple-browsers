@@ -33,6 +33,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         case buttonPadding = 4
     }
 
+    private let standardTabHeight: CGFloat
+
     @IBOutlet weak var visualEffectBackgroundView: NSVisualEffectView!
     @IBOutlet weak var backgroundColorView: ColorView!
     @IBOutlet weak var pinnedTabsContainerView: NSView!
@@ -156,6 +158,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             self.pinnedTabsView = nil
             self.pinnedTabsHostingView = nil
         }
+
+        standardTabHeight = visualStyleManager.style.tabStyleProvider.standardTabHeight
 
         super.init(coder: coder)
     }
@@ -1026,7 +1030,7 @@ extension TabBarViewController: NSCollectionViewDelegateFlowLayout {
 
     func collectionView(_ collectionView: NSCollectionView, layout collectionViewLayout: NSCollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> NSSize {
         let isItemSelected = tabCollectionViewModel.selectionIndex == .unpinned(indexPath.item)
-        return NSSize(width: self.currentTabWidth(selected: isItemSelected), height: visualStyleManager.style.tabStyleProvider.standardTabHeight)
+        return NSSize(width: self.currentTabWidth(selected: isItemSelected), height: standardTabHeight)
     }
 
 }

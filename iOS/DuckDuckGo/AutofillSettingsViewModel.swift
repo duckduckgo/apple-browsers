@@ -81,10 +81,17 @@ final class AutofillSettingsViewModel: ObservableObject {
     @Published var showingResetConfirmation = false
     @Published var showCreditCards = false
     @Published var creditCardsCount: Int?
-    @Published var saveCreditCardsEnabled: Bool = false {
-        didSet {
-            appSettings.autofillCreditCardsEnabled = saveCreditCardsEnabled
-        }
+    var saveCreditCardsEnabled: Binding<Bool> {
+        Binding(
+            get: { self.showCreditCards ? self.appSettings.autofillCreditCardsEnabled : false },
+            set: { newValue in
+                guard self.showCreditCards else { return }
+                
+                self.appSettings.autofillCreditCardsEnabled = newValue
+                self.keyValueStore.set(false, forKey: UserDefaultsWrapper<Bool>.Key.autofillCreditCardsFirstTimeUser.rawValue)
+                NotificationCenter.default.post(name: AppUserDefaults.Notifications.autofillEnabledChange, object: self)
+            }
+        )
     }
 
     init(appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
@@ -105,7 +112,6 @@ final class AutofillSettingsViewModel: ObservableObject {
 
         showCreditCards = featureFlagger.isFeatureOn(.autofillCreditCards)
         if showCreditCards {
-            saveCreditCardsEnabled = appSettings.autofillCreditCardsEnabled
             updateCreditCardsCount()
         }
     }

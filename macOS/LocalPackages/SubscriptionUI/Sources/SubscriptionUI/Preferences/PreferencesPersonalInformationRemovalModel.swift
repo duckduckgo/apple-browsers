@@ -42,6 +42,7 @@ public final class PreferencesPersonalInformationRemovalModel: ObservableObject 
 
     @MainActor
     func didAppear() {
+        // TODO: should register opening settings?
 //        userEventHandler(.openSubscriptionSettingsClick)
     }
 

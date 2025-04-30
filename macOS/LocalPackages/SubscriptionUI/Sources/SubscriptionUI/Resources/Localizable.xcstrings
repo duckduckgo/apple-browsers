@@ -2626,6 +2626,18 @@
         }
       }
     },
+    "subscription.preferences.identity.theft.restoration.title" : {
+      "comment" : "Title of the preferences pane for PersoIdentity Theft Restorationmoval",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Identity Theft Restoration"
+          }
+        }
+      }
+    },
     "subscription.preferences.manage.subscription.button" : {
       "comment" : "Button to manage subscription",
       "extractionState" : "extracted_with_value",
@@ -2682,6 +2694,42 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Управление подпиской"
+          }
+        }
+      }
+    },
+    "subscription.preferences.open.identity.theft.restoration.button" : {
+      "comment" : "Title for the preferences pane button to open Identity Theft Restoration",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open Identity Theft Restoration..."
+          }
+        }
+      }
+    },
+    "subscription.preferences.open.personal.information.removal.button" : {
+      "comment" : "Title for the preferences pane button to open Personal Information Removal",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open Personal Information Removal..."
+          }
+        }
+      }
+    },
+    "subscription.preferences.personal.information.removal.title" : {
+      "comment" : "Title of the preferences pane for Personal Information Removal",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Personal Information Removal"
           }
         }
       }

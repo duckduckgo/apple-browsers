@@ -39,6 +39,16 @@ enum UserText {
     static let identityTheftRestorationServiceDescription = NSLocalizedString("subscription.preferences.services.identity.theft.restoration.description", bundle: Bundle.module, value: "Get help restoring stolen accounts and financial losses in the event of identity theft.", comment: "Description for the Identity Theft Restoration service listed in the subscription preferences pane")
     static let identityTheftRestorationServiceButtonTitle = NSLocalizedString("subscription.preferences.services.identity.theft.restoration.button.title", bundle: Bundle.module, value: "View", comment: "Title for the Identity Theft Restoration service button to open its settings")
 
+    // MARK: Preferences - Personal Information Removal
+
+    static let preferencesPersonalInformationRemovalTitle = NSLocalizedString("subscription.preferences.personal.information.removal.title", bundle: Bundle.module, value: "Personal Information Removal", comment: "Title of the preferences pane for Personal Information Removal")
+    static let openPersonalInformationRemovalButton = NSLocalizedString("subscription.preferences.open.personal.information.removal.button", bundle: Bundle.module, value: "Open Personal Information Removal...", comment: "Title for the preferences pane button to open Personal Information Removal")
+
+    // MARK: Preferences - Identity Theft Restoration
+
+    static let preferencesIdentityTheftRestorationTitle = NSLocalizedString("subscription.preferences.identity.theft.restoration.title", bundle: Bundle.module, value: "Identity Theft Restoration", comment: "Title of the preferences pane for PersoIdentity Theft Restorationmoval")
+    static let openIdentityTheftRestorationButton = NSLocalizedString("subscription.preferences.open.identity.theft.restoration.button", bundle: Bundle.module, value: "Open Identity Theft Restoration...", comment: "Title for the preferences pane button to open Identity Theft Restoration")
+
     // MARK: Preferences - Subscription Settings
 
     static let preferencesSubscriptionSettingsTitle = NSLocalizedString("subscription.preferences.subscription.settings.title", bundle: Bundle.module, value: "Subscription Settings", comment: "Title of the preferences pane for subscription settings")

@@ -42,13 +42,9 @@ public final class PreferencesIdentityTheftRestorationModel: ObservableObject {
 
     @MainActor
     func didAppear() {
+        // TODO: should register opening settings?
 //        userEventHandler(.openSubscriptionSettingsClick)
     }
-
-//    @MainActor
-//    func openPersonalInformationRemoval() {
-//        userEventHandler(.openDB)
-//    }
 
     @MainActor
     func openIdentityTheftRestoration() {

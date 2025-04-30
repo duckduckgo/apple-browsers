@@ -31,7 +31,7 @@ public struct PreferencesIdentityTheftRestorationView: View {
     public var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             VStack(alignment: .leading, spacing: 4) {
-                TextMenuTitle(UserText.preferencesSubscriptionSettingsTitle)
+                TextMenuTitle(UserText.preferencesIdentityTheftRestorationTitle)
 
                 StatusIndicatorView(status: .on, isLarge: true)
             }
@@ -47,7 +47,7 @@ public struct PreferencesIdentityTheftRestorationView: View {
     @ViewBuilder
     private var openFeatureSection: some View {
         PreferencePaneSection {
-            Button(UserText.addToDeviceButtonTitle) { model.openIdentityTheftRestoration() }
+            Button(UserText.openIdentityTheftRestorationButton) { model.openIdentityTheftRestoration() }
                 .padding(.top, 4)
         }
     }

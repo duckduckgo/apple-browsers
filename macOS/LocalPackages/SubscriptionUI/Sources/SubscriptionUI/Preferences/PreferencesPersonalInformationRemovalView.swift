@@ -31,8 +31,9 @@ public struct PreferencesPersonalInformationRemovalView: View {
     public var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             VStack(alignment: .leading, spacing: 4) {
-                TextMenuTitle(UserText.preferencesSubscriptionSettingsTitle)
+                TextMenuTitle(UserText.preferencesPersonalInformationRemovalTitle)
 
+                // TODO: Status should be dynamically resolved if user is actually using PIR
                 StatusIndicatorView(status: .on, isLarge: true)
             }
 
@@ -47,7 +48,7 @@ public struct PreferencesPersonalInformationRemovalView: View {
     @ViewBuilder
     private var openFeatureSection: some View {
         PreferencePaneSection {
-            Button(UserText.addToDeviceButtonTitle) { model.openPersonalInformationRemoval() }
+            Button(UserText.openPersonalInformationRemovalButton) { model.openPersonalInformationRemoval() }
                 .padding(.top, 4)
         }
     }

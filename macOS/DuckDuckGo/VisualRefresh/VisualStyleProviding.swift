@@ -22,14 +22,20 @@ import FeatureFlags
 import NetworkProtectionUI
 
 protocol VisualStyleProviding {
+    /// Address bar
     func addressBarHeight(for type: AddressBarSizeClass) -> CGFloat
     func addressBarTopPadding(for type: AddressBarSizeClass) -> CGFloat
     func addressBarBottomPadding(for type: AddressBarSizeClass) -> CGFloat
     func shouldShowOutlineBorder(isHomePage: Bool) -> Bool
-
+    var addressBarSuffixTextColor: NSColor { get }
+    var addressBarTextFieldColor: NSColor { get }
+    var defaultAddressBarFontSize: CGFloat { get }
+    var newTabOrHomePageAddressBarFontSize: CGFloat { get }
+    var addressBarIconsProvider: AddressBarIconsProviding { get }
+    var privacyShieldStyleProvider: PrivacyShieldAddressBarStyleProviding { get }
     var shouldShowLogoinInAddressBar: Bool { get }
-    var toolbarButtonsCornerRadius: CGFloat { get }
 
+    /// Navigation toolbar
     var backButtonImage: NSImage { get }
     var forwardButtonImage: NSImage { get }
     var reloadButtonImage: NSImage { get }
@@ -38,29 +44,24 @@ protocol VisualStyleProviding {
     var passwordManagerButtonImage: NSImage { get }
     var bookmarksButtonImage: NSImage { get }
     var moreOptionsbuttonImage: NSImage { get }
-    var vpnNavigationIconsProvider: IconProvider { get }
-    var fireButtonStyleProvider: FireButtonIconStyleProviding { get }
-    var moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding { get }
-    var privacyShieldStyleProvider: PrivacyShieldAddressBarStyleProviding { get }
-    var addressBarIconsProvider: AddressBarIconsProviding { get }
-    var tabStyleProvider: TabStyleProviding { get }
-
-
-    /// Colors
+    var toolbarButtonsCornerRadius: CGFloat { get }
     var navigationBackgroundColor: NSColor { get }
+
+    /// General colors
     var baseBackgroundColor: NSColor { get }
     var textPrimaryColor: NSColor { get }
     var textSecondaryColor: NSColor { get }
     var backgroundTertiaryColor: NSColor { get }
     var accentPrimaryColor: NSColor { get }
     var accentAlternateColor: NSColor { get }
-    var addressBarSuffixTextColor: NSColor { get }
-    var addressBarTextFieldColor: NSColor { get }
     var iconsColor: NSColor { get }
     var buttonMouseOverColor: NSColor { get }
 
-    var defaultAddressBarFontSize: CGFloat { get }
-    var newTabOrHomePageAddressBarFontSize: CGFloat { get }
+    /// Other
+    var vpnNavigationIconsProvider: IconProvider { get }
+    var fireButtonStyleProvider: FireButtonIconStyleProviding { get }
+    var moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding { get }
+    var tabStyleProvider: TabStyleProviding { get }
 }
 
 protocol VisualStyleManagerProviding {

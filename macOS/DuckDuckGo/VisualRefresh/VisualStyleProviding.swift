@@ -57,6 +57,7 @@ protocol VisualStyleProviding {
     var addressBarSuffixTextColor: NSColor { get }
     var addressBarTextFieldColor: NSColor { get }
     var iconsColor: NSColor { get }
+    var buttonMouseOverColor: NSColor { get }
 
     var defaultAddressBarFontSize: CGFloat { get }
     var newTabOrHomePageAddressBarFontSize: CGFloat { get }
@@ -125,6 +126,7 @@ struct VisualStyle: VisualStyleProviding {
     let addressBarSuffixTextColor: NSColor
     let addressBarTextFieldColor: NSColor
     let iconsColor: NSColor
+    let buttonMouseOverColor: NSColor
 
     let defaultAddressBarFontSize: CGFloat
     let newTabOrHomePageAddressBarFontSize: CGFloat
@@ -194,6 +196,7 @@ struct VisualStyle: VisualStyleProviding {
                            addressBarSuffixTextColor: .addressBarSuffix,
                            addressBarTextFieldColor: .suggestionText,
                            iconsColor: .button,
+                           buttonMouseOverColor: .buttonMouseOver,
                            defaultAddressBarFontSize: 13,
                            newTabOrHomePageAddressBarFontSize: 15)
     }
@@ -235,6 +238,7 @@ struct VisualStyle: VisualStyleProviding {
                            addressBarSuffixTextColor: .accentPrimaryNew,
                            addressBarTextFieldColor: .primaryTextColorNew,
                            iconsColor: .iconsPrimaryNew,
+                           buttonMouseOverColor: .controlsFillPrimaryNew,
                            defaultAddressBarFontSize: 13,
                            newTabOrHomePageAddressBarFontSize: 13)
     }

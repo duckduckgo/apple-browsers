@@ -735,15 +735,14 @@ final class NavigationBarViewController: NSViewController {
     }
 
     private func setupNavigationButtonColors() {
-        goBackButton.normalTintColor = visualStyle.iconsColor
-        goForwardButton.normalTintColor = visualStyle.iconsColor
-        refreshOrStopButton.normalTintColor = visualStyle.iconsColor
-        homeButton.normalTintColor = visualStyle.iconsColor
+        let allButtons: [MouseOverButton] = [
+            goBackButton, goForwardButton, refreshOrStopButton, homeButton,
+            downloadsButton, passwordManagementButton, bookmarkListButton, optionsButton]
 
-        downloadsButton.normalTintColor = visualStyle.iconsColor
-        passwordManagementButton.normalTintColor = visualStyle.iconsColor
-        bookmarkListButton.normalTintColor = visualStyle.iconsColor
-        optionsButton.normalTintColor = visualStyle.iconsColor
+        allButtons.forEach { button in
+            button.normalTintColor = visualStyle.iconsColor
+            button.mouseOverColor = visualStyle.buttonMouseOverColor
+        }
     }
 
     private func setupNavigationButtonsCornerRadius() {

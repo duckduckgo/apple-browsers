@@ -266,7 +266,7 @@ struct DuckPlayerView: View {
    @ViewBuilder
   private var bubbleContent: some View {
     VStack(alignment: .leading, spacing: LayoutConstants.defaultSpacing) {
-        Text("You're watching in Duck Player!\nNo targeted ads here.")
+        Text(verbatim: "You're watching in Duck Player!\nNo targeted ads here.")
             .daxHeadline()
             .foregroundColor(.white)
             .lineLimit(2)
@@ -274,7 +274,7 @@ struct DuckPlayerView: View {
             .fixedSize(horizontal: false, vertical: true)
             .multilineTextAlignment(.leading)
         
-        Text("To go back to YouTube, close Duck Player. Not for you? Turn it off below!")
+        Text(verbatim: "To go back to YouTube, close Duck Player. Not for you? Turn it off below!")
             .daxBodyRegular()
             .foregroundColor(.white.opacity(0.8))
             .multilineTextAlignment(.leading)
@@ -344,7 +344,7 @@ struct DuckPlayerView: View {
                     }
                     .padding(8)
                 }
-                .offset(x: 2, y: 10 + Constants.duckPlayerLogoSize)
+                .offset(x: 2, y: 10 + LayoutConstants.duckPlayerLogoSize)
                 .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 0)
             }
             .transition(.opacity)

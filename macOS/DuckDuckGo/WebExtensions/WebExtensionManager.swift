@@ -39,8 +39,10 @@ protocol WebExtensionManaging {
     // Adding and removing extensions
     var webExtensionPaths: [String] { get }
     func installExtension(path: String) async
-    func uninstallExtension(path: String)
-    func uninstallAllExtensions()
+    func uninstallExtension(path: String) throws
+
+    @discardableResult
+    func uninstallAllExtensions() -> [Result<Void, Error>]
 
     // Provides the extension name for the extension resource base path
     func extensionName(from path: String) -> String?
@@ -56,6 +58,10 @@ protocol WebExtensionManaging {
 // Manages the initialization and ownership of key components: web extensions, contexts, and the controller
 @available(macOS 15.4, *)
 final class WebExtensionManager: NSObject, WebExtensionManaging {
+
+    enum WebExtensionError: Error {
+        case failedToUnloadWebExtension(_ error: Error)
+    }
 
     static let shared = WebExtensionManager()
 
@@ -137,20 +143,25 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
         continuation?.yield()
     }
 
-    func uninstallAllExtensions() {
-        for path in pathsCache.cache {
-            uninstallExtension(path: path)
+    @discardableResult
+    func uninstallAllExtensions() -> [Result<Void, Error>] {
+        pathsCache.cache.map { path in
+            do {
+                try uninstallExtension(path: path)
+                return .success(())
+            } catch {
+                return .failure(error)
+            }
         }
     }
 
-    func uninstallExtension(path: String) {
+    func uninstallExtension(path: String) throws {
         pathsCache.remove(path)
 
         do {
             try loader.unloadExtension(at: path, from: controller)
         } catch {
-            // This is temporary.  The actual handling of this error should be done outside of this manager.
-            assertionFailure("Failed to unload web extension \(path): \(error)")
+            throw WebExtensionError.failedToUnloadWebExtension(error)
         }
 
         continuation?.yield()
@@ -175,6 +186,8 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
 
         for result in results {
             if case .failure(let failure) = result {
+                // If this is blocking from starting up the app, disable this
+                // assertion then go to Debug Menu > Web Extensions > Uninstall all extensions
                 assertionFailure("Failed to load web extension \(pathsCache.cache): \(failure)")
             }
         }

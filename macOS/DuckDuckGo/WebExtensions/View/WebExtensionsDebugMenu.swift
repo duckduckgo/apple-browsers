@@ -122,7 +122,7 @@ final class WebExtensionSubMenu: NSMenu {
     }
 
     @objc func uninstallExtension() {
-        webExtensionManager.uninstallExtension(path: webExtensionPath)
+        try? webExtensionManager.uninstallExtension(path: webExtensionPath)
     }
 
 }

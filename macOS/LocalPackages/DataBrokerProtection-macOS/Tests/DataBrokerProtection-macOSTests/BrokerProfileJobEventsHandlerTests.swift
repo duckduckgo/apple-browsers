@@ -1,5 +1,5 @@
 //
-//  DefaultOperationEventsHandlerTests.swift
+//  BrokerProfileJobEventsHandlerTests.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -23,9 +23,9 @@ import Persistence
 import DataBrokerProtectionCore
 import DataBrokerProtectionCoreTestsUtils
 
-final class DefaultOperationEventsHandlerTests: XCTestCase {
+final class BrokerProfileJobEventsHandlerTests: XCTestCase {
 
-    private var sut: DefaultOperationEventsHandler!
+    private var sut: BrokerProfileJobEventsHandler!
 
     private var mockNotificationService: MockUserNotificationService!
 
@@ -35,7 +35,7 @@ final class DefaultOperationEventsHandlerTests: XCTestCase {
 
     func testWhenProfileSaved_thenRequestPermissionWasAsked() async throws {
         // Given
-        sut = DefaultOperationEventsHandler(userNotificationService: mockNotificationService)
+        sut = BrokerProfileJobEventsHandler(userNotificationService: mockNotificationService)
 
         mockNotificationService.reset()
 
@@ -48,7 +48,7 @@ final class DefaultOperationEventsHandlerTests: XCTestCase {
 
     func testWhenFirstScanCompleted_thenFirstScanNotificationWasSent() async throws {
         // Given
-        sut = DefaultOperationEventsHandler(userNotificationService: mockNotificationService)
+        sut = BrokerProfileJobEventsHandler(userNotificationService: mockNotificationService)
 
         mockNotificationService.reset()
 
@@ -61,7 +61,7 @@ final class DefaultOperationEventsHandlerTests: XCTestCase {
 
     func testWhenFirstScanCompletedAndMatchesFound_thenCheckInNotificationWasScheduled() async throws {
         // Given
-        sut = DefaultOperationEventsHandler(userNotificationService: mockNotificationService)
+        sut = BrokerProfileJobEventsHandler(userNotificationService: mockNotificationService)
 
         mockNotificationService.reset()
 
@@ -74,7 +74,7 @@ final class DefaultOperationEventsHandlerTests: XCTestCase {
 
     func testWhenFirstProfileRemoved_thenFirstScanNotificationWasSent() async throws {
         // Given
-        sut = DefaultOperationEventsHandler(userNotificationService: mockNotificationService)
+        sut = BrokerProfileJobEventsHandler(userNotificationService: mockNotificationService)
 
         mockNotificationService.reset()
 
@@ -87,7 +87,7 @@ final class DefaultOperationEventsHandlerTests: XCTestCase {
 
     func testWhenAllProfilesRemoved_thenAllInfoRemovedWasSent() async throws {
         // Given
-        sut = DefaultOperationEventsHandler(userNotificationService: mockNotificationService)
+        sut = BrokerProfileJobEventsHandler(userNotificationService: mockNotificationService)
 
         mockNotificationService.reset()
 

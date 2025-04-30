@@ -1,5 +1,5 @@
 //
-//  DataBrokerOperationActionTests.swift
+//  BrokerProfileJobActionTests.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -24,7 +24,7 @@ import XCTest
 @testable import DataBrokerProtectionCore
 import DataBrokerProtectionCoreTestsUtils
 
-final class DataBrokerOperationActionTests: XCTestCase {
+final class BrokerProfileJobActionTests: XCTestCase {
     let webViewHandler = WebViewHandlerMock()
     let emailService = EmailServiceMock()
     let captchaService = CaptchaServiceMock()
@@ -41,7 +41,7 @@ final class DataBrokerOperationActionTests: XCTestCase {
         let emailConfirmationAction = EmailConfirmationAction(id: "", actionType: .emailConfirmation, pollingTime: 1, dataSource: nil)
         let step = Step(type: .optOut, actions: [emailConfirmationAction])
         let extractedProfile = ExtractedProfile(email: "test@duck.com")
-        let sut = OptOutJob(
+        let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             query: BrokerProfileQueryData.mock(with: [step]),
@@ -66,7 +66,7 @@ final class DataBrokerOperationActionTests: XCTestCase {
         let emailConfirmationAction = EmailConfirmationAction(id: "", actionType: .emailConfirmation, pollingTime: 1, dataSource: nil)
         let step = Step(type: .optOut, actions: [emailConfirmationAction])
         let noEmailExtractedProfile = ExtractedProfile()
-        let sut = OptOutJob(
+        let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             query: BrokerProfileQueryData.mock(with: [step]),
@@ -98,7 +98,7 @@ final class DataBrokerOperationActionTests: XCTestCase {
         let step = Step(type: .optOut, actions: [emailConfirmationAction])
         let extractedProfile = ExtractedProfile(email: "test@duck.com")
         emailService.shouldThrow = true
-        let sut = OptOutJob(
+        let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             query: BrokerProfileQueryData.mock(with: [step]),
@@ -128,7 +128,7 @@ final class DataBrokerOperationActionTests: XCTestCase {
     func testWhenActionNeedsEmail_thenExtractedProfileEmailIsSet() async {
         let fillFormAction = FillFormAction(id: "1", actionType: .fillForm, selector: "#test", elements: [.init(type: "email", selector: "#email", parent: nil, multiple: nil, min: nil, max: nil, failSilently: nil)], dataSource: nil)
         let step = Step(type: .optOut, actions: [fillFormAction])
-        let sut = OptOutJob(
+        let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             query: BrokerProfileQueryData.mock(with: [step]),
@@ -151,7 +151,7 @@ final class DataBrokerOperationActionTests: XCTestCase {
     func testWhenGetEmailServiceFails_thenOperationThrows() async {
         let fillFormAction = FillFormAction(id: "1", actionType: .fillForm, selector: "#test", elements: [.init(type: "email", selector: "#email", parent: nil, multiple: nil, min: nil, max: nil, failSilently: nil)], dataSource: nil)
         let step = Step(type: .optOut, actions: [fillFormAction])
-        let sut = OptOutJob(
+        let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             query: BrokerProfileQueryData.mock(with: [step]),
@@ -179,7 +179,7 @@ final class DataBrokerOperationActionTests: XCTestCase {
     }
 
     func testWhenClickActionSucceeds_thenWeWaitForWebViewToLoad() async {
-        let sut = OptOutJob(
+        let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             query: BrokerProfileQueryData.mock(),
@@ -200,7 +200,7 @@ final class DataBrokerOperationActionTests: XCTestCase {
     }
 
     func testWhenAnActionThatIsNotClickSucceeds_thenWeDoNotWaitForWebViewToLoad() async {
-        let sut = OptOutJob(
+        let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             query: BrokerProfileQueryData.mock(),
@@ -222,7 +222,7 @@ final class DataBrokerOperationActionTests: XCTestCase {
     func testWhenSolveCaptchaActionIsRun_thenCaptchaIsResolved() async {
         let solveCaptchaAction = SolveCaptchaAction(id: "1", actionType: .solveCaptcha, selector: "g-captcha", dataSource: nil, captchaType: nil)
         let step = Step(type: .optOut, actions: [solveCaptchaAction])
-        let sut = OptOutJob(
+        let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             query: BrokerProfileQueryData.mock(),
@@ -245,7 +245,7 @@ final class DataBrokerOperationActionTests: XCTestCase {
     func testWhenSolveCapchaActionFailsToSubmitDataToTheBackend_thenOperationFails() async {
         let solveCaptchaAction = SolveCaptchaAction(id: "1", actionType: .solveCaptcha, selector: "g-captcha", dataSource: nil, captchaType: nil)
         let step = Step(type: .optOut, actions: [solveCaptchaAction])
-        let sut = OptOutJob(
+        let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             query: BrokerProfileQueryData.mock(with: [step]),
@@ -275,7 +275,7 @@ final class DataBrokerOperationActionTests: XCTestCase {
     func testWhenCaptchaInformationIsReturned_thenWeSubmitItTotTheBackend() async {
         let getCaptchaResponse = GetCaptchaInfoResponse(siteKey: "siteKey", url: "url", type: "recaptcha")
         let step = Step(type: .optOut, actions: [Action]())
-        let sut = OptOutJob(
+        let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             query: BrokerProfileQueryData.mock(),
@@ -298,7 +298,7 @@ final class DataBrokerOperationActionTests: XCTestCase {
     func testWhenCaptchaInformationFailsToBeSubmitted_thenTheOperationFails() async {
         let getCaptchaResponse = GetCaptchaInfoResponse(siteKey: "siteKey", url: "url", type: "recaptcha")
         let step = Step(type: .optOut, actions: [Action]())
-        let sut = OptOutJob(
+        let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             query: BrokerProfileQueryData.mock(),
@@ -322,7 +322,7 @@ final class DataBrokerOperationActionTests: XCTestCase {
 
     func testWhenRunningActionWithoutExtractedProfile_thenExecuteIsCalledWithProfileData() async {
         let expectationAction = ExpectationAction(id: "1", actionType: .expectation, expectations: [Item](), dataSource: nil, actions: nil)
-        let sut = OptOutJob(
+        let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             query: BrokerProfileQueryData.mock(),
@@ -341,7 +341,7 @@ final class DataBrokerOperationActionTests: XCTestCase {
     }
 
     func testWhenLoadURLDelegateIsCalled_thenCorrectMethodIsExecutedOnWebViewHandler() async {
-        let sut = OptOutJob(
+        let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             query: BrokerProfileQueryData.mock(),
@@ -362,7 +362,7 @@ final class DataBrokerOperationActionTests: XCTestCase {
     func testWhenGetCaptchaActionRuns_thenStageIsSetToCaptchaParse() async {
         let mockStageCalculator = MockStageDurationCalculator()
         let captchaAction = GetCaptchaInfoAction(id: "1", actionType: .getCaptchaInfo, selector: "captcha", dataSource: nil, captchaType: nil)
-        let sut = OptOutJob(
+        let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             query: BrokerProfileQueryData.mock(),
@@ -382,7 +382,7 @@ final class DataBrokerOperationActionTests: XCTestCase {
     func testWhenClickActionRuns_thenStageIsSetToSubmit() async {
         let mockStageCalculator = MockStageDurationCalculator()
         let clickAction = ClickAction(id: "1", actionType: .click, elements: [PageElement](), dataSource: nil, choices: nil, default: nil, hasDefault: false)
-        let sut = OptOutJob(
+        let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             query: BrokerProfileQueryData.mock(),
@@ -402,7 +402,7 @@ final class DataBrokerOperationActionTests: XCTestCase {
     func testWhenExpectationActionRuns_thenStageIsSetToSubmit() async {
         let mockStageCalculator = MockStageDurationCalculator()
         let expectationAction = ExpectationAction(id: "1", actionType: .expectation, expectations: [Item](), dataSource: nil, actions: nil)
-        let sut = OptOutJob(
+        let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             query: BrokerProfileQueryData.mock(),
@@ -422,7 +422,7 @@ final class DataBrokerOperationActionTests: XCTestCase {
     func testWhenFillFormActionRuns_thenStageIsSetToFillForm() async {
         let mockStageCalculator = MockStageDurationCalculator()
         let fillFormAction = FillFormAction(id: "1", actionType: .fillForm, selector: "", elements: [PageElement](), dataSource: nil)
-        let sut = OptOutJob(
+        let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             query: BrokerProfileQueryData.mock(),
@@ -441,7 +441,7 @@ final class DataBrokerOperationActionTests: XCTestCase {
 
     func testWhenLoadUrlOnSpokeo_thenSetCookiesIsCalled() async {
         let mockCookieHandler = MockCookieHandler()
-        let sut = OptOutJob(
+        let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             query: BrokerProfileQueryData.mock(url: "spokeo.com"),
@@ -463,7 +463,7 @@ final class DataBrokerOperationActionTests: XCTestCase {
 
     func testWhenLoadUrlOnOtherBroker_thenSetCookiesIsNotCalled() async {
         let mockCookieHandler = MockCookieHandler()
-        let sut = OptOutJob(
+        let sut = BrokerProfileOptOutSubJobWebRunner(
             privacyConfig: PrivacyConfigurationManagingMock(),
             prefs: ContentScopeProperties.mock,
             query: BrokerProfileQueryData.mock(url: "verecor.com"),

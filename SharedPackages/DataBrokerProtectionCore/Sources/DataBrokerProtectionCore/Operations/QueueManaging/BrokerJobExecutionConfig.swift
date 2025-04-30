@@ -1,5 +1,5 @@
 //
-//  DataBrokerExecutionConfig.swift
+//  BrokerJobExecutionConfig.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -18,19 +18,19 @@
 
 import Foundation
 
-public struct DataBrokerExecutionConfig {
+public struct BrokerJobExecutionConfig {
 
-    let intervalBetweenSameBrokerOperations: TimeInterval = 2
+    let intervalBetweenSameBrokerJobs: TimeInterval = 2
 
-    private let concurrentOperationsDifferentBrokers: Int = 2
+    private let concurrentJobsDifferentBrokers: Int = 2
     // https://app.asana.com/0/481882893211075/1206981742767469/f
-    private let concurrentOperationsOnManualScans: Int = 6
-    func concurrentOperationsFor(_ operation: OperationType) -> Int {
-        switch operation {
+    private let concurrentJobsOnManualScans: Int = 6
+    func concurrentJobsFor(_ jobType: JobType) -> Int {
+        switch jobType {
         case .all, .optOut, .scheduledScan:
-            return concurrentOperationsDifferentBrokers
+            return concurrentJobsDifferentBrokers
         case .manualScan:
-            return concurrentOperationsOnManualScans
+            return concurrentJobsOnManualScans
         }
     }
 

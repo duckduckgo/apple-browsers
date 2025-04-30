@@ -24,7 +24,7 @@ import SwiftUI
 protocol SaveCreditCardViewControllerDelegate: AnyObject {
     func saveCreditCardViewController(_ viewController: SaveCreditCardViewController, didSaveCreditCard card: SecureVaultModels.CreditCard)
     func saveCreditCardViewControllerDidCancel(_ viewController: SaveCreditCardViewController)
-    
+    func saveCreditCardViewControllerConfirmKeepUsing(_ viewController: SaveCreditCardViewController)
 }
 
 class SaveCreditCardViewController: UIViewController {
@@ -32,8 +32,8 @@ class SaveCreditCardViewController: UIViewController {
     weak var delegate: SaveCreditCardViewControllerDelegate?
     let viewModel: SaveCreditCardViewModel
     
-    internal init(creditCard: SecureVaultModels.CreditCard) {
-        viewModel = .init(creditCard: creditCard)
+    internal init(creditCard: SecureVaultModels.CreditCard, accountDomain: String, domainLastShownOn: String? = nil) {
+        viewModel = .init(creditCard: creditCard, accountDomain: accountDomain, domainLastShownOn: domainLastShownOn)
         
         super.init(nibName: nil, bundle: nil)
     }

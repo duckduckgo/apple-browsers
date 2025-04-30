@@ -195,7 +195,7 @@ struct VisualStyle: VisualStyleProviding {
                            addressBarIconsProvider: LegacyAddressBarIconsProvider(),
                            tabStyleProvider: LegacyTabStyleProvider(),
                            navigationBackgroundColor: .navigationBarBackground,
-                           baseBackgroundColor: .windowBackgroundColor,
+                           baseBackgroundColor: .windowBackground,
                            textPrimaryColor: .labelColor,
                            textSecondaryColor: .secondaryLabelColor,
                            backgroundTertiaryColor: .inactiveSearchBarBackground,

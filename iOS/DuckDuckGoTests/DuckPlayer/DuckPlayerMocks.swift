@@ -25,6 +25,7 @@ import BrowserServicesKit
 import SwiftUI
 
 @testable import DuckDuckGo
+@testable import Core
 
 class MockWKNavigationDelegate: NSObject, WKNavigationDelegate {
     var didFinishNavigation: ((WKWebView, WKNavigation?) -> Void)?
@@ -268,7 +269,7 @@ final class MockDuckPlayer: DuckPlayerControlling {
     private var nativeUIPresenter: DuckPlayerNativeUIPresenting
 
     // MARK: - Initialization
-    init(settings: DuckPlayerSettings, featureFlagger: FeatureFlagger, nativeUIPresenter: DuckPlayerNativeUIPresenting = MockDuckPlayerNativeUIPresenting()) {
+    init(settings: DuckPlayerSettings, featureFlagger: FeatureFlagger, nativeUIPresenter: DuckPlayerNativeUIPresenting = MockDuckPlayerNativeUIPresenting(), featureDiscovery: FeatureDiscovery = MockFeatureDiscovery()) {
         self.settings = settings
         self.featureFlagger = featureFlagger
         self.nativeUIPresenter = nativeUIPresenter

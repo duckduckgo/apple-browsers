@@ -123,7 +123,7 @@ class ContextualOnboardingNewTabDialogFactoryTests: XCTestCase {
         // Then
         let addFavoriteDialog = find(ContextualDaxDialogContent.self, in: host)
         XCTAssertNotNil(addFavoriteDialog)
-        XCTAssertEqual(addFavoriteDialog?.message.string, homeDialog.message)
+        XCTAssertEqual(addFavoriteDialog?.message.string, UserText.Onboarding.ContextualOnboarding.daxDialogHomeAddFavorite)
     }
 
     // MARK: - Pixels

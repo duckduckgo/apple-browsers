@@ -51,6 +51,7 @@ class TabManager {
     private let appSettings: AppSettings
     private let maliciousSiteProtectionManager: MaliciousSiteProtectionManaging
     private let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
+    private let featureDiscovery: FeatureDiscovery
 
     weak var delegate: TabDelegate?
 
@@ -76,7 +77,8 @@ class TabManager {
          websiteDataManager: WebsiteDataManaging,
          fireproofing: Fireproofing,
          maliciousSiteProtectionManager: MaliciousSiteProtectionManaging,
-         maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
+         maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
+         featureDiscovery: FeatureDiscovery
     ) {
         self.model = model
         self.previewsSource = previewsSource
@@ -97,6 +99,7 @@ class TabManager {
         self.fireproofing = fireproofing
         self.maliciousSiteProtectionManager = maliciousSiteProtectionManager
         self.maliciousSiteProtectionPreferencesManager = maliciousSiteProtectionPreferencesManager
+        self.featureDiscovery = featureDiscovery
         registerForNotifications()
     }
 
@@ -134,7 +137,8 @@ class TabManager {
                                                               websiteDataManager: websiteDataManager,
                                                               fireproofing: fireproofing,
                                                               tabInteractionStateSource: interactionStateSource,
-                                                              specialErrorPageNavigationHandler: specialErrorPageNavigationHandler)
+                                                              specialErrorPageNavigationHandler: specialErrorPageNavigationHandler,
+                                                              featureDiscovery: featureDiscovery)
         controller.applyInheritedAttribution(inheritedAttribution)
         controller.attachWebView(configuration: configuration,
                                  interactionStateData: interactionState,
@@ -225,7 +229,8 @@ class TabManager {
                                                               websiteDataManager: websiteDataManager,
                                                               fireproofing: fireproofing,
                                                               tabInteractionStateSource: interactionStateSource,
-                                                              specialErrorPageNavigationHandler: specialErrorPageNavigationHandler)
+                                                              specialErrorPageNavigationHandler: specialErrorPageNavigationHandler,
+                                                              featureDiscovery: featureDiscovery)
         controller.attachWebView(configuration: configCopy,
                                  andLoadRequest: request,
                                  consumeCookies: !model.hasActiveTabs,

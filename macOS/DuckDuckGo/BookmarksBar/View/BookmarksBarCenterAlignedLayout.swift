@@ -24,7 +24,7 @@ extension NSCollectionView {
 extension NSCollectionLayoutGroup {
 
     static func align(cellSizes: [CGSize], interItemSpacing: CGFloat, centered: Bool) -> NSCollectionLayoutGroup {
-        let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .absolute(28))
+        let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .absolute(24))
 
         return custom(layoutSize: groupSize) { environment in
             let verticalPosition: CGFloat = environment.container.contentInsets.top
@@ -57,7 +57,8 @@ extension NSCollectionLayoutGroup {
 
 final class BookmarksBarCenterAlignedLayout: NSCollectionViewCompositionalLayout {
 
-    private static let interItemGapWidth: CGFloat = 2.0
+    /// Width of the insertion indicator appearing between items when dragging an item over the Bookmarks Bar
+    private static let interItemGapWidth: CGFloat = 8.0
 
     private var lastKnownInterItemGapIndicatorLayoutAttributes: NSCollectionViewLayoutAttributes?
 

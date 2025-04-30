@@ -432,7 +432,7 @@ extension AutoconsentUserScript {
     @MainActor
     func handleSelfTestResult(message: WKScriptMessage, replyHandler: @escaping (Any?, String?) -> Void) {
         guard let messageData: SelfTestResultMessage = decodeMessageBody(from: message.body),
-              let url = URL(string: messageData.url) else {
+              URL(string: messageData.url) != nil else {
             assertionFailure("Received a malformed message from autoconsent")
             replyHandler(nil, "cannot decode message")
             return

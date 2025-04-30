@@ -84,16 +84,12 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
         
     }
     
-    struct HomeScreenSpec: Equatable {
-        static let initial = HomeScreenSpec(message: UserText.daxDialogHomeInitial, accessibilityLabel: nil)
-        static let subsequent = HomeScreenSpec(message: "", accessibilityLabel: nil)
-        static let final = HomeScreenSpec(message: UserText.daxDialogHomeSubsequent, accessibilityLabel: nil)
-        static let addFavorite = HomeScreenSpec(message: UserText.daxDialogHomeAddFavorite,
-                                                accessibilityLabel: UserText.daxDialogHomeAddFavoriteAccessible)
-        static let privacyProPromotion = HomeScreenSpec(message: UserText.PrivacyProPromotionOnboarding.Promo.message().string, accessibilityLabel: nil)
-
-        let message: String
-        let accessibilityLabel: String?
+    enum HomeScreenSpec: Equatable {
+        case initial
+        case subsequent
+        case final
+        case addFavorite
+        case privacyProPromotion
     }
     
     func overrideShownFlagFor(_ spec: BrowsingSpec, flag: Bool) {
@@ -132,51 +128,44 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
         }
         // swiftlint:enable nesting
 
-        static let afterSearch = BrowsingSpec(message: UserText.daxDialogBrowsingAfterSearch,
-                                              cta: UserText.daxDialogBrowsingAfterSearchCTA,
-                                              highlightAddressBar: false,
-                                              pixelName: .daxDialogsSerpUnique,
-                                              type: .afterSearch)
+        static let afterSearch = BrowsingSpec(type: .afterSearch, pixelName: .daxDialogsSerpUnique)
 
-        // Message and CTA empty on purpose as for this case we use only pixelName and type
-        static let visitWebsite = BrowsingSpec(message: "", cta: "", highlightAddressBar: false, pixelName: .onboardingContextualTryVisitSiteUnique, type: .visitWebsite)
+        static let visitWebsite = BrowsingSpec(type: .visitWebsite, pixelName: .onboardingContextualTryVisitSiteUnique)
 
-        static let withoutTrackers = BrowsingSpec(message: UserText.daxDialogBrowsingWithoutTrackers,
-                                                  cta: UserText.daxDialogBrowsingWithoutTrackersCTA,
-                                                  highlightAddressBar: false,
-                                                  pixelName: .daxDialogsWithoutTrackersUnique, type: .withoutTrackers)
+        static let withoutTrackers = BrowsingSpec(type: .withoutTrackers,
+                                                  pixelName: .daxDialogsWithoutTrackersUnique,
+                                                  message: UserText.Onboarding.ContextualOnboarding.daxDialogBrowsingWithoutTrackers)
 
-        static let siteIsMajorTracker = BrowsingSpec(message: UserText.daxDialogBrowsingSiteIsMajorTracker,
-                                                     cta: UserText.daxDialogBrowsingSiteIsMajorTrackerCTA,
-                                                     highlightAddressBar: false,
-                                                     pixelName: .daxDialogsSiteIsMajorUnique, type: .siteIsMajorTracker)
+        static let siteIsMajorTracker = BrowsingSpec(type: .siteIsMajorTracker,
+                                                     pixelName: .daxDialogsSiteIsMajorUnique,
+                                                     message: UserText.Onboarding.ContextualOnboarding.daxDialogBrowsingSiteIsMajorTracker)
 
-        static let siteOwnedByMajorTracker = BrowsingSpec(message: UserText.daxDialogBrowsingSiteOwnedByMajorTracker,
-                                                          cta: UserText.daxDialogBrowsingSiteOwnedByMajorTrackerCTA,
-                                                          highlightAddressBar: false,
-                                                          pixelName: .daxDialogsSiteOwnedByMajorUnique, type: .siteOwnedByMajorTracker)
+        static let siteOwnedByMajorTracker = BrowsingSpec(type: .siteOwnedByMajorTracker,
+                                                          pixelName: .daxDialogsSiteOwnedByMajorUnique,
+                                                          message: UserText.Onboarding.ContextualOnboarding.daxDialogBrowsingSiteOwnedByMajorTracker)
 
-        static let withOneTracker = BrowsingSpec(message: UserText.Onboarding.ContextualOnboarding.daxDialogBrowsingWithOneTracker,
-                                                 cta: UserText.daxDialogBrowsingWithOneTrackerCTA,
-                                                 highlightAddressBar: false,
-                                                 pixelName: .daxDialogsWithTrackersUnique, type: .withOneTracker)
+        static let withOneTracker = BrowsingSpec(type: .withOneTracker,
+                                                 pixelName: .daxDialogsWithTrackersUnique,
+                                                 message: UserText.Onboarding.ContextualOnboarding.daxDialogBrowsingWithOneTracker)
 
-        static let withMultipleTrackers = BrowsingSpec(message: UserText.Onboarding.ContextualOnboarding.daxDialogBrowsingWithMultipleTrackers,
-                                                      cta: UserText.daxDialogBrowsingWithMultipleTrackersCTA,
-                                                      highlightAddressBar: false,
-                                                      pixelName: .daxDialogsWithTrackersUnique, type: .withMultipleTrackers)
+        static let withMultipleTrackers = BrowsingSpec(type: .withMultipleTrackers,
+                                                       pixelName: .daxDialogsWithTrackersUnique,
+                                                       message: UserText.Onboarding.ContextualOnboarding.daxDialogBrowsingWithMultipleTrackers)
 
-        // Message and CTA empty on purpose as for this case we use only pixelName and type
-        static let fire = BrowsingSpec(message: "", cta: "", highlightAddressBar: false, pixelName: .daxDialogsFireEducationShownUnique, type: .fire)
+        static let fire = BrowsingSpec(type: .fire, pixelName: .daxDialogsFireEducationShownUnique)
 
-        static let final = BrowsingSpec(message: UserText.daxDialogHomeSubsequent, cta: "", highlightAddressBar: false, pixelName: .daxDialogsEndOfJourneyTabUnique, type: .final)
+        static let final = BrowsingSpec(type: .final, pixelName: .daxDialogsEndOfJourneyTabUnique)
 
         let message: String
-        let cta: String
-        fileprivate(set) var highlightAddressBar: Bool
         let pixelName: Pixel.Event
         let type: SpecType
-        
+
+        init(type: SpecType, pixelName: Pixel.Event, message: String = "") {
+            self.type = type
+            self.pixelName = pixelName
+            self.message = message
+        }
+
         func format(args: CVarArg...) -> BrowsingSpec {
             format(message: message, args: args)
         }
@@ -187,32 +176,11 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
 
         func withUpdatedMessage(_ message: String) -> BrowsingSpec {
             BrowsingSpec(
-                message: message,
-                cta: cta,
-                highlightAddressBar: highlightAddressBar,
+                type: type,
                 pixelName: pixelName,
-                type: type
+                message: message
             )
         }
-    }
-    
-    struct ActionSheetSpec: Equatable {
-        static let fireButtonEducation = ActionSheetSpec(message: UserText.daxDialogFireButtonEducation,
-                                                         confirmAction: UserText.daxDialogFireButtonEducationConfirmAction,
-                                                         cancelAction: UserText.daxDialogFireButtonEducationCancelAction,
-                                                         isConfirmActionDestructive: true,
-                                                         displayedPixelName: .daxDialogsFireEducationShownUnique,
-                                                         confirmActionPixelName: .daxDialogsFireEducationConfirmedUnique,
-                                                         cancelActionPixelName: .daxDialogsFireEducationCancelledUnique)
-
-        let message: String
-        let confirmAction: String
-        let cancelAction: String
-        let isConfirmActionDestructive: Bool
-        
-        let displayedPixelName: Pixel.Event
-        let confirmActionPixelName: Pixel.Event
-        let cancelActionPixelName: Pixel.Event
     }
 
     private enum Constants {

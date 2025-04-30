@@ -38,7 +38,7 @@ public protocol AIChatConsumableDataHandling {
 
 /// Handles prompt data for AI chat interactions.
 public final class AIChatPromptHandler: AIChatConsumableDataHandling {
-    public typealias DataType = String
+    public typealias DataType = AIChatNativePrompt
     private var data: DataType?
 
     public static let shared = AIChatPromptHandler()

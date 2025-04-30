@@ -71,7 +71,7 @@ file_header:
 # General Config
 excluded:
   - SharedPackages/BrowserServicesKit/Package.swift
-  - SharedPackages/BrowserServicesKit/.build
+  - SharedPackages/*/.build
   - SharedPackages/BrowserServicesKit/scripts/
   - SharedPackages/BrowserServicesKit/Sources/RemoteMessaging/Model/AnyDecodable.swift
   - SharedPackages/BrowserServicesKit/Sources/Common/Concurrency/AsyncStream.swift
@@ -79,13 +79,15 @@ excluded:
   - iOS/DuckDuckGo/UserText.swift
   - iOS/fastlane/SnapshotHelper.swift
   - iOS/LocalPackages/*/Package.swift
+  - iOS/LocalPackages/*/.build
   - iOS/PacketTunnelProvider/ProxyServer
+  - iOS/scripts
   - iOS/.ruby-lsp
   - macOS/DuckDuckGo/Common/Localizables/UserText.swift
   - macOS/LocalPackages/*/Package.swift
+  - macOS/LocalPackages/*/.build
   - macOS/scripts
   - macOS/DerivedData
   - macOS/release
-  - macOS/DerivedData
   - macOS/.ruby-lsp
   - macOS/vendor

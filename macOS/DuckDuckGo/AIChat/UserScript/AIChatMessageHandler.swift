@@ -58,10 +58,10 @@ extension AIChatMessageHandler {
     }
 
     private func getAIChatNativePrompt() -> Encodable? {
-        guard let prompt = promptHandler.consumeData() as? String else {
+        guard let prompt = promptHandler.consumeData() as? AIChatNativePrompt else {
             return nil
         }
 
-        return AIChatNativePrompt.defaultValuesWithPrompt(prompt)
+        return prompt
     }
 }

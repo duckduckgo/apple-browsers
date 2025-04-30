@@ -21,11 +21,13 @@ import Foundation
 #if DEBUG
 public var customAssertionFailure: ((@autoclosure () -> String, StaticString, UInt) -> Void)?
 public func assertionFailure(_ message: @autoclosure () -> String = String(), file: StaticString = #file, line: UInt = #line) {
-//    customAssertionFailure?(message(), file, line) ?? Swift.assertionFailure(message(), file: file, line: line)
+    // use `customAssertionFailure = { _, _, _ in }` to disable during tests
+    customAssertionFailure?(message(), file, line) ?? Swift.assertionFailure(message(), file: file, line: line)
 }
 
 public var customAssert: ((@autoclosure () -> Bool, @autoclosure () -> String, StaticString, UInt) -> Void)?
 public func assert(_ condition: @autoclosure () -> Bool, _ message: @autoclosure () -> String = String(), file: StaticString = #file, line: UInt = #line) {
+    // use `customAssert = { _, _, _, _ in }` to disable during tests
     customAssert?(condition(), message(), file, line) ?? Swift.assert(condition(), message(), file: file, line: line)
 }
 #endif

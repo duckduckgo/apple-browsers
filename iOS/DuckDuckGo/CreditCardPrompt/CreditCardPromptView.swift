@@ -48,13 +48,13 @@ struct CreditCardPromptView: View {
                 
                 Spacer(minLength: Const.Size.topPadding)
                 
-                AutofillViews.AppIconHeader(size: Const.Size.iconSize)
+                AutofillViews.AppIconHeader()
                 
-                Spacer(minLength: Const.Size.contentSpacing)
+                Spacer(minLength: Const.Size.headlineTopPadding)
                 
                 AutofillViews.Headline(title: UserText.autofillCreditCardFillPromptTitle)
                 
-                Spacer(minLength: Const.Size.headlineToContentSpacing)
+                contentSpacer
                 
                 ForEach(viewModel.cards, id: \.self) { card in
                     Button {
@@ -68,8 +68,9 @@ struct CreditCardPromptView: View {
                     }
                     
                 }
+                
+                bottomSpacer
             }
-            .padding([.bottom], Const.Size.bodyBottomPadding)
             .fixedSize(horizontal: false, vertical: shouldFixSize)
             .background(GeometryReader { proxy -> Color in
                 DispatchQueue.main.async { viewModel.contentHeight = proxy.size.height }
@@ -96,6 +97,16 @@ struct CreditCardPromptView: View {
         return useScrollView
     }
     
+    private var contentSpacer: some View {
+        VStack {
+            if AutofillViews.isIPhoneLandscape(verticalSizeClass) {
+                Spacer(minLength: Const.Size.contentSpacerHeight)
+            } else {
+                AutofillViews.LegacySpacerView(height: Const.Size.headlineToContentSpacing)
+            }
+        }
+    }
+    
     private var horizontalPadding: CGFloat {
         if AutofillViews.isIPhonePortrait(verticalSizeClass, horizontalSizeClass) {
             if AutofillViews.isSmallFrame(frame) {
@@ -107,6 +118,18 @@ struct CreditCardPromptView: View {
             return Const.Size.closeButtonOffset
         }
     }
+    
+    private var bottomSpacer: some View {
+        VStack {
+            if AutofillViews.isIPhonePortrait(verticalSizeClass, horizontalSizeClass) {
+                AutofillViews.LegacySpacerView(height: Const.Size.bottomSpacerHeight)
+            } else if AutofillViews.isIPad(verticalSizeClass, horizontalSizeClass) {
+                AutofillViews.LegacySpacerView(height: Const.Size.bottomSpacerHeightIPad)
+            } else {
+                AutofillViews.LegacySpacerView()
+            }
+        }
+    }
 }
 
 private enum Const {
@@ -115,13 +138,14 @@ private enum Const {
         static let closeButtonOffsetPortrait: CGFloat = 44.0
         static let closeButtonOffsetPortraitSmallFrame: CGFloat = 16.0
         static let topPadding: CGFloat = 56.0
-        static let iconSize: CGFloat = 32.0
-        static let contentSpacing: CGFloat = 24.0
+        static let headlineTopPadding: CGFloat = 24.0
+        static let contentSpacerHeight: CGFloat = 56.0
         static let headlineToContentSpacing: CGFloat = 24.0
-        static let bodyBottomPadding: CGFloat = 48.0
         static let cardHorizontalPadding: CGFloat = 16.0
         static let cardVerticalPadding: CGFloat = 12.0
         static let cornerRadius: CGFloat = 8.0
         static let maxWidth: CGFloat = 480.0
+        static let bottomSpacerHeight: CGFloat = 40.0
+        static let bottomSpacerHeightIPad: CGFloat = 60.0
     }
 }

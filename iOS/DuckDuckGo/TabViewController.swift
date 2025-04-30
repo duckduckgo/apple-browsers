@@ -173,9 +173,10 @@ class TabViewController: UIViewController {
 
     let privacyProDataReporter: PrivacyProDataReporting
 
-    // Required to know when to disable autofill, see SaveLoginViewModel for details
+    // Required to know when to disable autofill, see SaveLoginViewModel / SaveCreditCardViewModel for details
     // Stored in memory on TabViewController for privacy reasons
     private var domainSaveLoginPromptLastShownOn: String?
+    private var domainSaveCreditCardPromptLastShownOn: String?
     // Required to prevent fireproof prompt presenting before autofill save login prompt
     private var saveLoginPromptLastDismissed: Date?
     private var saveLoginPromptIsPresenting: Bool = false
@@ -2865,7 +2866,8 @@ extension TabViewController: SecureVaultManagerDelegate {
             return
         }
         
-        let saveCreditCardController = SaveCreditCardViewController(creditCard: creditCard)
+        let saveCreditCardController = SaveCreditCardViewController(creditCard: creditCard, accountDomain: self.url?.host ?? "", domainLastShownOn: self.domainSaveCreditCardPromptLastShownOn)
+        self.domainSaveCreditCardPromptLastShownOn = self.url?.host
         saveCreditCardController.delegate = self
         if let presentationController = saveCreditCardController.presentationController as? UISheetPresentationController {
             if #available(iOS 16.0, *) {

@@ -341,6 +341,8 @@ enum GeneralPixel: PixelKitEventV2 {
 
     case webKitDidTerminate
     case userViewedWebKitTerminationErrorPage
+    case webKitTerminationLoop
+    case webKitTerminationIndicatorClicked
 
     case removedInvalidBookmarkManagedObjects
 
@@ -983,10 +985,18 @@ enum GeneralPixel: PixelKitEventV2 {
         case .adAttributionLogicWrongVendorOnFailedCompilation:
             return "ad_attribution_logic_wrong_vendor_on_failed_compilation"
 
+        /// Event trigger: WebKit process crashes
         case .webKitDidTerminate:
             return "webkit_did_terminate"
+        /// Event trigger: Error page is displayed in response to the WebKit process crash
         case .userViewedWebKitTerminationErrorPage:
             return "webkit-termination-error-page-viewed"
+        /// Event trigger: WebKit process crash loop is detected
+        case .webKitTerminationLoop:
+            return "webkit_termination_loop"
+        /// Event trigger: User clicked WebKit process crash indicator icon
+        case .webKitTerminationIndicatorClicked:
+            return "webkit_termination_indicator_clicked"
 
         case .removedInvalidBookmarkManagedObjects:
             return "removed_invalid_bookmark_managed_objects"

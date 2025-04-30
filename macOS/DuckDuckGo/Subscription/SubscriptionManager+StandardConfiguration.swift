@@ -162,7 +162,7 @@ extension DefaultSubscriptionManagerV2 {
         }
 
         // Pixel handler configuration
-        var pixelHandler: SubscriptionPixelHandler = AuthV2PixelHandler(source: pixelHandlingSource)
+        let pixelHandler: SubscriptionPixelHandler = AuthV2PixelHandler(source: pixelHandlingSource)
 
         let isInternalUserEnabled = { featureFlagger?.internalUserDecider.isInternalUser ?? false }
         let legacyAccountStorage = AccountKeychainStorage()

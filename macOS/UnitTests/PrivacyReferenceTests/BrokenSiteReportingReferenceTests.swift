@@ -97,7 +97,8 @@ final class BrokenSiteReportingReferenceTests: XCTestCase {
                                             userRefreshCount: 0,
                                             cookieConsentInfo: nil,
                                             debugFlags: "",
-                                            privacyExperiments: [:])
+                                            privacyExperiments: [:],
+                                            isPirEnabled: nil)
 
             let request = makeURLRequest(with: breakage.requestParameters)
 

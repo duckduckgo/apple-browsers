@@ -236,7 +236,6 @@ extension Pixel {
         case daxDialogsWithTrackersUnique
         case daxDialogsSiteIsMajorUnique
         case daxDialogsSiteOwnedByMajorUnique
-        case daxDialogsHiddenUnique
         case daxDialogsFireEducationShownUnique
         case daxDialogsFireEducationConfirmedUnique
         case daxDialogsFireEducationCancelledUnique
@@ -954,7 +953,6 @@ extension Pixel {
         case privacyProInvalidRefreshTokenDetected
         case privacyProInvalidRefreshTokenSignedOut
         case privacyProInvalidRefreshTokenRecovered
-        case privacyProAuthV2MigrationStarted
         case privacyProAuthV2MigrationFailed
         case privacyProAuthV2MigrationSucceeded
         case privacyProAuthV2GetTokensError
@@ -1349,7 +1347,6 @@ extension Pixel.Event {
         case .daxDialogsWithTrackersUnique: return "m_dx_wt_unique"
         case .daxDialogsSiteIsMajorUnique: return "m_dx_sm_unique"
         case .daxDialogsSiteOwnedByMajorUnique: return "m_dx_so_unique"
-        case .daxDialogsHiddenUnique: return "m_dx_h_unique"
         case .daxDialogsFireEducationShownUnique: return "m_dx_fe_s_unique"
         case .daxDialogsFireEducationConfirmedUnique: return "m_dx_fe_co_unique"
         case .daxDialogsFireEducationCancelledUnique: return "m_dx_fe_ca_unique"
@@ -2003,7 +2000,6 @@ extension Pixel.Event {
         case .privacyProInvalidRefreshTokenDetected: return "m_privacy-pro_auth_invalid_refresh_token_detected"
         case .privacyProInvalidRefreshTokenSignedOut: return "m_privacy-pro_auth_invalid_refresh_token_signed_out"
         case .privacyProInvalidRefreshTokenRecovered: return "m_privacy-pro_auth_invalid_refresh_token_recovered"
-        case .privacyProAuthV2MigrationStarted: return "m_privacy-pro_auth_v2_migration_started"
         case .privacyProAuthV2MigrationFailed: return "m_privacy-pro_auth_v2_migration_failure"
         case .privacyProAuthV2MigrationSucceeded: return "m_privacy-pro_auth_v2_migration_success"
         case .privacyProAuthV2GetTokensError: return "m_privacy-pro_auth_v2_get_tokens_error"

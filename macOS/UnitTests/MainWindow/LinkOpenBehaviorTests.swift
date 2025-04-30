@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import CoreGraphics
 import Foundation
 import Testing
@@ -75,7 +76,7 @@ final class LinkOpenBehaviorTests {
             // test overload with button
             let button = event.button
             let behavior2 = LinkOpenBehavior(button: button, modifierFlags: event.modifierFlags, switchToNewTabWhenOpenedPreference: switchToNewTabWhenOpenedPreference, canOpenLinkInCurrentTab: canOpenLinkInCurrentTab, shouldSelectNewTab: shouldSelectNewTab)
-            #expect(behavior2 == expectation, "\(event.modifierFlags.testDescr):\(button): switchToTabPref: \(switchToNewTabWhenOpenedPreference), canOpenInCurrent: \(canOpenLinkInCurrentTab), shouldSelect: \(shouldSelectNewTab)",
+            #expect(behavior2 == expectation, "\(event.modifierFlags.testDescr):\(button ??? "<nil>"): switchToTabPref: \(switchToNewTabWhenOpenedPreference), canOpenInCurrent: \(canOpenLinkInCurrentTab), shouldSelect: \(shouldSelectNewTab)",
                     sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
         }
     }
@@ -139,7 +140,7 @@ final class LinkOpenBehaviorTests {
             // test overload with button
             let button = event.button
             let behavior2 = LinkOpenBehavior(button: button, modifierFlags: event.modifierFlags, switchToNewTabWhenOpenedPreference: switchToNewTabWhenOpenedPreference, canOpenLinkInCurrentTab: canOpenLinkInCurrentTab, shouldSelectNewTab: shouldSelectNewTab)
-            #expect(behavior2 == expectation, "\(event.modifierFlags.testDescr):\(button): switchToTabPref: \(switchToNewTabWhenOpenedPreference), canOpenInCurrent: \(canOpenLinkInCurrentTab), shouldSelect: \(shouldSelectNewTab)",
+            #expect(behavior2 == expectation, "\(event.modifierFlags.testDescr):\(button ??? "<nil>"): switchToTabPref: \(switchToNewTabWhenOpenedPreference), canOpenInCurrent: \(canOpenLinkInCurrentTab), shouldSelect: \(shouldSelectNewTab)",
                     sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
         }
     }
@@ -196,7 +197,7 @@ final class LinkOpenBehaviorTests {
             // test overload with button
             let button = event.button
             let behavior2 = LinkOpenBehavior(button: button, modifierFlags: event.modifierFlags, switchToNewTabWhenOpenedPreference: switchToNewTabWhenOpenedPreference, canOpenLinkInCurrentTab: canOpenLinkInCurrentTab, shouldSelectNewTab: shouldSelectNewTab)
-            #expect(behavior2 == expectation, "\(event.modifierFlags.testDescr):\(button): switchToTabPref: \(switchToNewTabWhenOpenedPreference), canOpenInCurrent: \(canOpenLinkInCurrentTab), shouldSelect: \(shouldSelectNewTab)",
+            #expect(behavior2 == expectation, "\(event.modifierFlags.testDescr):\(button ??? "<nil>"): switchToTabPref: \(switchToNewTabWhenOpenedPreference), canOpenInCurrent: \(canOpenLinkInCurrentTab), shouldSelect: \(shouldSelectNewTab)",
                     sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
         }
     }
@@ -251,7 +252,7 @@ final class LinkOpenBehaviorTests {
             // test overload with button
             let button = event.button
             let behavior2 = LinkOpenBehavior(button: button, modifierFlags: event.modifierFlags, switchToNewTabWhenOpenedPreference: switchToNewTabWhenOpenedPreference, canOpenLinkInCurrentTab: canOpenLinkInCurrentTab, shouldSelectNewTab: shouldSelectNewTab)
-            #expect(behavior2 == expectation, "\(event.modifierFlags.testDescr):\(button): switchToTabPref: \(switchToNewTabWhenOpenedPreference), canOpenInCurrent: \(canOpenLinkInCurrentTab), shouldSelect: \(shouldSelectNewTab)",
+            #expect(behavior2 == expectation, "\(event.modifierFlags.testDescr):\(button ??? "<nil>"): switchToTabPref: \(switchToNewTabWhenOpenedPreference), canOpenInCurrent: \(canOpenLinkInCurrentTab), shouldSelect: \(shouldSelectNewTab)",
                     sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
         }
     }
@@ -306,7 +307,7 @@ final class LinkOpenBehaviorTests {
             // test overload with button
             let button = event.button
             let behavior2 = LinkOpenBehavior(button: button, modifierFlags: event.modifierFlags, switchToNewTabWhenOpenedPreference: switchToNewTabWhenOpenedPreference, canOpenLinkInCurrentTab: canOpenLinkInCurrentTab, shouldSelectNewTab: shouldSelectNewTab)
-            #expect(behavior2 == expectation, "\(event.modifierFlags.testDescr):\(button): switchToTabPref: \(switchToNewTabWhenOpenedPreference), canOpenInCurrent: \(canOpenLinkInCurrentTab), shouldSelect: \(shouldSelectNewTab)",
+            #expect(behavior2 == expectation, "\(event.modifierFlags.testDescr):\(button ??? "<nil>"): switchToTabPref: \(switchToNewTabWhenOpenedPreference), canOpenInCurrent: \(canOpenLinkInCurrentTab), shouldSelect: \(shouldSelectNewTab)",
                     sourceLocation: .init(fileID: #fileID, filePath: #filePath, line: Int(line), column: 1))
         }
     }

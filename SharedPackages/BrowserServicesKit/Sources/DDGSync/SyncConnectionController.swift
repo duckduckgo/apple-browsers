@@ -51,8 +51,6 @@ public enum SyncConnectionError: Error {
 
     case failedToCreateAccount
     case failedToTransmitConnectRecoveryKey
-
-    case foundExistingAccount
 }
 
 public protocol SyncConnectionControlling {

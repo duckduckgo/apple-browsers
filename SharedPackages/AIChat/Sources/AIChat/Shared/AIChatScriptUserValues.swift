@@ -103,9 +103,9 @@ public struct AIChatNativePrompt: Codable {
     public let platform: String
     public let query: Query?
 
-    public static func defaultValuesWithPrompt(_ prompt: String) -> AIChatNativePrompt {
+    public static func queryPrompt(_ prompt: String, autoSubmit: Bool) -> AIChatNativePrompt {
         AIChatNativePrompt(platform: Platform.name, query: .init(prompt: prompt,
-                                                                 autoSubmit: true))
+                                                                 autoSubmit: autoSubmit))
     }
 }
 

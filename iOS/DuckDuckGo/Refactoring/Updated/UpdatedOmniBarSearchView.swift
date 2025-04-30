@@ -65,6 +65,10 @@ final class UpdatedOmniBarSearchView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
+    func reduceClearButtonSpacing(_ isReduced: Bool) {
+        trailingItemsContainer.setCustomSpacing(isReduced ? -8 : 0, after: clearButton)
+    }
+
     private func setUpSubviews() {
         addSubview(mainStackView)
 
@@ -161,7 +165,7 @@ final class UpdatedOmniBarSearchView: UIView {
         dismissButtonView.setImage(UIImage(resource: .arrowLeftNew24))
         UpdatedOmniBarView.setUpCommonProperties(for: dismissButtonView)
 
-        loupeIconView.image = UIImage(resource: .findSearchNew24)
+        loupeIconView.image = UIImage(resource: .findSearchSmall24)
         loupeIconView.tintColor = tintColor
         loupeIconView.contentMode = .center
 

@@ -19,6 +19,7 @@
 import AppKit
 import Carbon
 import Combine
+import Common
 import SwiftUI
 
 protocol BookmarkManagementDetailViewControllerDelegate: AnyObject {
@@ -363,7 +364,8 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
 
     private func subscribeToFirstResponder() {
         guard let window = view.window else {
-            assertionFailure("BookmarkManagementDetailViewController.subscribeToFirstResponder: view.window is nil")
+            assert([.unitTests, .integrationTests].contains(AppVersion.runType),
+                   "BookmarkManagementDetailViewController.subscribeToFirstResponder: view.window is nil")
             return
         }
         NotificationCenter.default

@@ -111,7 +111,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
     func test_WhenMakeViewForVisitWebsiteSpec_AndActionIsTapped_AndTrackersDialogHasShown_ThenNavigateToActionIsCalledOnDelegate() throws {
         // GIVEN
         settingsMock.userHasSeenTrackersDialog = true
-        let spec = DaxDialogs.BrowsingSpec(message: "", cta: "", highlightAddressBar: false, pixelName: .onboardingIntroShownUnique, type: .visitWebsite)
+        let spec = DaxDialogs.BrowsingSpec(type: .visitWebsite, pixelName: .onboardingIntroShownUnique)
         let result = sut.makeView(for: spec, delegate: delegate, onSizeUpdate: {})
         let view = try XCTUnwrap(find(OnboardingTryVisitingSiteDialog.self, in: result))
         XCTAssertFalse(delegate.didCallDidTapDismissContextualOnboardingAction)
@@ -176,7 +176,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
     // MARK: - Fire
     func test_WhenMakeViewFire_ThenReturnViewOnboardingFireDialog() throws {
         // GIVEN
-        let spec = DaxDialogs.BrowsingSpec(message: "", cta: "", highlightAddressBar: false, pixelName: .onboardingIntroShownUnique, type: .fire)
+        let spec = DaxDialogs.BrowsingSpec(type: .fire, pixelName: .onboardingIntroShownUnique)
 
         // WHEN
         let result = sut.makeView(for: spec, delegate: delegate, onSizeUpdate: {})

@@ -19,14 +19,24 @@
 protocol TabStyleProviding {
     var separatorColor: NSColor { get }
     var separatorHeight: CGFloat { get }
+
+    var standardTabHeight: CGFloat { get }
+    var pinnedTabHeight: CGFloat { get }
+    var pinnedTabWidth: CGFloat { get }
 }
 
 final class LegacyTabStyleProvider: TabStyleProviding {
     let separatorColor: NSColor = .separator
     let separatorHeight: CGFloat = 20
+    let standardTabHeight: CGFloat = 34
+    let pinnedTabWidth: CGFloat = 34
+    let pinnedTabHeight: CGFloat = 34
 }
 
 final class NewlineTabStyleProvider: TabStyleProviding {
     let separatorColor: NSColor = .tabSeparatorNew
     let separatorHeight: CGFloat = 16
+    let standardTabHeight: CGFloat = 38
+    let pinnedTabWidth: CGFloat = 34
+    let pinnedTabHeight: CGFloat = 36
 }

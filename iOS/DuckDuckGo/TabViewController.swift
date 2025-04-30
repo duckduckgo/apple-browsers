@@ -2892,15 +2892,19 @@ extension TabViewController: SecureVaultManagerDelegate {
     }
 
     func secureVaultManagerIsEnabledStatus(_ manager: SecureVaultManager, forType type: AutofillType?) -> Bool {
-        let isEnabled = AutofillSettingStatus.isAutofillEnabledInSettings &&
+        let isCredentialsEnabled = AutofillSettingStatus.isAutofillEnabledInSettings &&
                         featureFlagger.isFeatureOn(.autofillCredentialInjecting) &&
                         !isLinkPreview
+        let isCreditCardsEnabled = AutofillSettingStatus.isCreditCardAutofillEnabledInSettings &&
+                featureFlagger.isFeatureOn(.autofillCreditCards) &&
+                !isLinkPreview
+
         let isDataProtected = !UIApplication.shared.isProtectedDataAvailable
-        if isEnabled && isDataProtected {
+        if (isCredentialsEnabled || isCreditCardsEnabled) && isDataProtected {
             DailyPixel.fire(pixel: .secureVaultIsEnabledCheckedWhenEnabledAndDataProtected,
                        withAdditionalParameters: [PixelParameters.isDataProtected: "true"])
         }
-        return isEnabled
+        return isCredentialsEnabled || isCreditCardsEnabled
     }
 
     func secureVaultManagerShouldSaveData(_ manager: SecureVaultManager) -> Bool {

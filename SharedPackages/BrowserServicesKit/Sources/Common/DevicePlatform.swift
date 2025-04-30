@@ -17,7 +17,7 @@
 //
 
 import Foundation
-import UIKit
+import SwiftUI
 
 public enum DevicePlatform {
     public static var isMac: Bool {

@@ -109,7 +109,6 @@ final class SuggestionTableCellView: NSTableCellView {
     private var attributedString: NSAttributedString?
 
     private func updateTextField() {
-        // TODO: Change here the suggestions colors
         guard let attributedString = attributedString else {
             Logger.general.error("SuggestionTableCellView: Attributed strings are nil")
             return

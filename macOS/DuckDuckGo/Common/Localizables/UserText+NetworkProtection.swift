@@ -38,7 +38,7 @@ extension UserText {
 
     static let networkProtectionInviteSuccessTitle = NSLocalizedString("network.protection.invite.success.title", value: "Success! You’re in.", comment: "Title for the VPN invite success view")
 
-    static let networkProtectionInviteSuccessMessage = NSLocalizedString("network.protection.invite.success.title", value: "DuckDuckGo's VPN secures all of your device's Internet traffic anytime, anywhere.", comment: "Message for the VPN invite success view")
+    static let networkProtectionInviteSuccessMessage = NSLocalizedString("network.protection.invite.success.message", value: "DuckDuckGo's VPN secures all of your device's Internet traffic anytime, anywhere.", comment: "Message for the VPN invite success view")
 
     // MARK: - VPN Status View submenu (legacy)
 
@@ -234,7 +234,7 @@ extension UserText {
 
     static let vpnLocationSubmitButtonTitle = NSLocalizedString("vpn.location.submit.button.title", value: "Submit", comment: "Title of the VPN location list submit button")
 
-    static let vpnLocationCancelButtonTitle = NSLocalizedString("vpn.location.custom.section.title", value: "Cancel", comment: "Title of the VPN location list cancel button (Note: seems like a duplicate key with a different purpose, please check)")
+    static let vpnLocationCancelButtonTitle = NSLocalizedString("vpn.location.cancel.button.title", value: "Cancel", comment: "Title of the VPN location list cancel button (Note: seems like a duplicate key with a different purpose, please check)")
 
     static let vpnLocationNearest = NSLocalizedString("vpn.location.description.nearest", value: "Nearest", comment: "Nearest city setting description")
 

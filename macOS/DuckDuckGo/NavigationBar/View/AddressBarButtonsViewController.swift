@@ -391,7 +391,9 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private func updateAIChatButtonVisibility() {
         aiChatButton.toolTip = isTextFieldEditorFirstResponder ? UserText.aiChatAddressBarShortcutTooltip : UserText.aiChatAddressBarTooltip
-        aiChatButton.isHidden = !aiChatMenuConfig.shouldDisplayAddressBarShortcut
+
+        let isPopUpWindow = view.window?.isPopUpWindow ?? false
+        aiChatButton.isHidden = !aiChatMenuConfig.shouldDisplayAddressBarShortcut || isPopUpWindow
         updateAIChatDividerVisibility()
         delegate?.addressBarButtonsViewController(self, didUpdateAIChatButtonVisibility: aiChatButton.isShown)
 
@@ -504,8 +506,8 @@ final class AddressBarButtonsViewController: NSViewController {
 
         clearButton.isShown = isTextFieldEditorFirstResponder && !textFieldValue.isEmpty
 
-        updatePrivacyEntryPointButton()
         updateImageButton()
+        updatePrivacyEntryPointButton()
         updatePermissionButtons()
         updateBookmarkButtonVisibility()
         updateZoomButtonVisibility()
@@ -913,7 +915,11 @@ final class AddressBarButtonsViewController: NSViewController {
         case .browsing where tabViewModel.isShowingErrorPage:
             imageButton.image = .web
         case .browsing:
-            imageButton.image = tabViewModel.favicon
+            if let favicon = tabViewModel.favicon {
+                imageButton.image = tabViewModel.favicon
+            } else if isTextFieldEditorFirstResponder {
+                imageButton.image = .web
+            }
         case .editing(.url):
             imageButton.image = .web
         case .editing(.text):

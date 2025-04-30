@@ -41,7 +41,8 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     var refreshButton: UIButton! { searchAreaView.reloadButton }
     var privacyIconView: UIView? { privacyInfoContainer.privacyIcon }
     var searchContainer: UIView! { searchAreaContainerView }
-    let expectedHeight: CGFloat = Metrics.height
+    let expectedHeight: CGFloat = UpdatedOmniBarView.expectedHeight
+    static let expectedHeight: CGFloat = Metrics.height
 
     var accessoryType: OmniBarAccessoryType = .share {
         didSet {
@@ -55,10 +56,10 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         }
     }
 
-    private var searchAreaTopPaddingConstraint: NSLayoutConstraint?
-    private var searchAreaBottomPaddingConstraint: NSLayoutConstraint?
     private var readableSearchAreaWidthConstraint: NSLayoutConstraint?
     private var largeSizeSpacingConstraint: NSLayoutConstraint?
+    private var textAreaTopPaddingConstraint: NSLayoutConstraint?
+    private var textAreaBottomPaddingConstraint: NSLayoutConstraint?
 
     // iPad elements
 
@@ -151,6 +152,12 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         }
     }
 
+    var isUsingSmallTopSpacing: Bool = false {
+        didSet {
+            updateVerticalSpacing()
+        }
+    }
+
     var isShowingSeparator: Bool = false {
         didSet {
             searchAreaView.separatorView.isHidden = !isShowingSeparator
@@ -238,6 +245,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         setUpAccessibility()
 
         updateActiveState()
+        updateVerticalSpacing()
     }
 
     @available(*, unavailable)
@@ -278,17 +286,17 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         let searchAreaCenterXConstraint = searchAreaContainerView.centerXAnchor.constraint(equalTo: centerXAnchor)
         searchAreaCenterXConstraint.priority = .defaultHigh
 
-        let searchAreaTopPadding = stackView.topAnchor.constraint(equalTo: topAnchor, constant: Metrics.textAreaTopPadding)
-        let searchAreaBottomPadding = stackView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Metrics.textAreaBottomPadding)
-
         let largeSizeSpacing = leadingSpacer.widthAnchor.constraint(equalTo: trailingSpacer.widthAnchor)
         largeSizeSpacing.priority = .init(700)
         largeSizeSpacing.isActive = false
 
-        searchAreaTopPaddingConstraint = searchAreaTopPadding
-        searchAreaBottomPaddingConstraint = searchAreaBottomPadding
+        let textAreaTopPaddingConstraint = stackView.topAnchor.constraint(equalTo: topAnchor, constant: Metrics.textAreaVerticalPaddingRegularSpacing)
+        let textAreaBottomPaddingConstraint = stackView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Metrics.textAreaVerticalPaddingRegularSpacing)
+
         readableSearchAreaWidthConstraint = readableSearchAreaWidth
         largeSizeSpacingConstraint = largeSizeSpacing
+        self.textAreaTopPaddingConstraint = textAreaTopPaddingConstraint
+        self.textAreaBottomPaddingConstraint = textAreaBottomPaddingConstraint
 
         omniBarProgressView.translatesAutoresizingMaskIntoConstraints = false
         activeOutlineView.translatesAutoresizingMaskIntoConstraints = false
@@ -298,8 +306,8 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         NSLayoutConstraint.activate([
             stackView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: Metrics.textAreaHorizontalPadding),
             stackView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -Metrics.textAreaHorizontalPadding),
-            searchAreaTopPadding,
-            searchAreaBottomPadding,
+            textAreaTopPaddingConstraint,
+            textAreaBottomPaddingConstraint,
 
             searchAreaView.topAnchor.constraint(greaterThanOrEqualTo: searchAreaContainerView.topAnchor),
             searchAreaView.bottomAnchor.constraint(lessThanOrEqualTo: searchAreaContainerView.bottomAnchor),
@@ -310,10 +318,10 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
             searchAreaCenterXConstraint,
             readableSearchAreaWidth,
 
-            activeOutlineView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor, constant: -Metrics.activeBorderWidth/2),
-            activeOutlineView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor, constant: Metrics.activeBorderWidth/2),
-            activeOutlineView.topAnchor.constraint(equalTo: searchAreaContainerView.topAnchor, constant: -Metrics.activeBorderWidth/2),
-            activeOutlineView.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor, constant: Metrics.activeBorderWidth/2),
+            activeOutlineView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor, constant: -Metrics.activeBorderWidth),
+            activeOutlineView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor, constant: Metrics.activeBorderWidth),
+            activeOutlineView.topAnchor.constraint(equalTo: searchAreaContainerView.topAnchor, constant: -Metrics.activeBorderWidth),
+            activeOutlineView.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor, constant: Metrics.activeBorderWidth),
 
             omniBarProgressView.topAnchor.constraint(equalTo: searchAreaContainerView.topAnchor),
             omniBarProgressView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
@@ -342,13 +350,17 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
 
         searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .urlBar)
         searchAreaContainerView.layer.cornerRadius = Metrics.cornerRadius
+        searchAreaContainerView.layer.cornerCurve = .continuous
 
         searchAreaView.layer.cornerRadius = Metrics.cornerRadius
+        searchAreaView.layer.cornerCurve = .continuous
 
         activeOutlineView.isUserInteractionEnabled = false
         activeOutlineView.translatesAutoresizingMaskIntoConstraints = false
         activeOutlineView.layer.borderColor = UIColor(Color(designSystemColor: .accent)).cgColor
         activeOutlineView.layer.borderWidth = Metrics.activeBorderWidth
+        activeOutlineView.layer.cornerRadius = Metrics.activeBorderRadius
+        activeOutlineView.layer.cornerCurve = .continuous
         activeOutlineView.backgroundColor = .clear
 
         stackView.axis = .horizontal
@@ -402,19 +414,48 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     }
 
     private func updateShadows() {
-        let color = UIColor(designSystemColor: .shadowPrimary)
+        let inactiveColor = UIColor(designSystemColor: .shadowPrimary)
+        let activeColor = UIColor(designSystemColor: .shadowSecondary)
 
-        let shadow1 = CompositeShadowView.Shadow(id: "shadow1", color: color, opacity: 1, radius: 6.0, offset: CGSize(width: 0, height: 2))
-        // These two have the same name so we can update the existing shadow
-        let shadow2Inactive = CompositeShadowView.Shadow(id: "shadow2", color: color, opacity: 0, radius: 24.0, offset: CGSize(width: 0, height: 16))
-        let shadow2Active = CompositeShadowView.Shadow(id: "shadow2", color: color, opacity: 1, radius: 24.0, offset: CGSize(width: 0, height: 16))
+        // The following two have the same id so we can update the existing shadow
+        let shadow1Inactive = CompositeShadowView.Shadow(
+            id: "shadow1",
+            color: inactiveColor,
+            opacity: 1,
+            radius: 12.0,
+            offset: CGSize(width: 0, height: 4)
+        )
+        let shadow1Active = CompositeShadowView.Shadow(
+            id: "shadow1",
+            color: activeColor,
+            opacity: 1,
+            radius: 12.0,
+            offset: CGSize(width: 0, height: 2)
+        )
 
+        // The following two have the same id so we can update the existing shadow
+        let shadow2Inactive = CompositeShadowView.Shadow(
+            id: "shadow2",
+            color: inactiveColor,
+            opacity: 0,
+            radius: 48.0,
+            offset: CGSize(width: 0, height: 16)
+        )
+        let shadow2Active = CompositeShadowView.Shadow(
+            id: "shadow2",
+            color: activeColor,
+            opacity: 1,
+            radius: 32,
+            offset: CGSize(width: 0, height: 16)
+        )
+
+        let primaryShadow = isActiveState ? shadow1Active : shadow1Inactive
         let secondaryShadow = isActiveState ? shadow2Active : shadow2Inactive
 
         if searchAreaContainerView.shadows.isEmpty {
-            let shadows = [shadow1, secondaryShadow].compactMap { $0 }
-            searchAreaContainerView.shadows = shadows
+            searchAreaContainerView.shadows = [primaryShadow, secondaryShadow]
         } else {
+            searchAreaContainerView.updateShadow(primaryShadow)
             searchAreaContainerView.updateShadow(secondaryShadow)
         }
     }
@@ -486,19 +527,19 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     }
 
     private func updateActiveState() {
-        searchAreaTopPaddingConstraint?.constant = isActiveState ? Metrics.activeTextAreaTopPadding : Metrics.textAreaTopPadding
-        searchAreaBottomPaddingConstraint?.constant = isActiveState ? -Metrics.activeTextAreaBottomPadding : -Metrics.textAreaBottomPadding
-
-        let cornerRadius = isActiveState ? Metrics.activeCornerRadius : Metrics.cornerRadius
-
         // This is needed so progress bar is clipped properly
-        omniBarProgressView.layer.cornerRadius = cornerRadius
-        searchAreaContainerView.layer.cornerRadius = cornerRadius
-        activeOutlineView.layer.cornerRadius = cornerRadius
+        omniBarProgressView.layer.cornerRadius = Metrics.cornerRadius
+        searchAreaContainerView.layer.cornerRadius = Metrics.cornerRadius
+        activeOutlineView.layer.cornerRadius = isActiveState ? Metrics.activeBorderRadius : Metrics.cornerRadius
 
         activeOutlineView.alpha = isActiveState ? 1 : 0
 
         updateShadows()
+    }
+
+    private func updateVerticalSpacing() {
+        textAreaTopPaddingConstraint?.constant = isUsingSmallTopSpacing ? Metrics.textAreaTopPaddingAdjustedSpacing : Metrics.textAreaVerticalPaddingRegularSpacing
+        textAreaBottomPaddingConstraint?.constant = -(isUsingSmallTopSpacing ? Metrics.textAreaBottomPaddingAdjustedSpacing : Metrics.textAreaVerticalPaddingRegularSpacing)
     }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
@@ -569,19 +610,20 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
 
     private struct Metrics {
         static let itemSize: CGFloat = 44
-        static let height: CGFloat = 68
+        static let height: CGFloat = 60
 
         static let cornerRadius: CGFloat = 16
-        static let activeCornerRadius: CGFloat = 18
 
+        static let activeBorderRadius: CGFloat = 18
         static let activeBorderWidth: CGFloat = 2
 
         static let textAreaHorizontalPadding: CGFloat = 16
 
-        static let textAreaTopPadding: CGFloat = 12
-        static let textAreaBottomPadding: CGFloat = 12
-        static let activeTextAreaTopPadding: CGFloat = 10
-        static let activeTextAreaBottomPadding: CGFloat = 10
+        // Used when OmniBar is positioned on the bottom of the screen
+        static let textAreaTopPaddingAdjustedSpacing: CGFloat = 10
+        static let textAreaBottomPaddingAdjustedSpacing: CGFloat = 6
+
+        static let textAreaVerticalPaddingRegularSpacing: CGFloat = 8
 
         static let expandedSizeSpacing: CGFloat = 24.0
         static let expandedSizeMargins = NSDirectionalEdgeInsets(

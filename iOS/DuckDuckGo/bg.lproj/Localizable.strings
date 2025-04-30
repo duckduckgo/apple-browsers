@@ -1,7 +1,4 @@
 /* No comment provided by engineer. */
-" " = " ";
-
-/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -1210,21 +1207,6 @@
 /* Title for message explaining to the user that Duck Player is not available */
 "duck-player.contingency-title" = "Duck Player не е достъпен";
 
-/* Text for the toggle to autoplay videos */
-"duck-player.native-autoplay-videos" = "Autoplay Videos";
-
-/* Text for the description about autoplay videos */
-"duck-player.native-autoplay-videos.description" = "Videos opened in Duck Player will automatically begin playback. Turn this off if you would like to manually start playback of videos opened in Duck Player.";
-
-/* Text for the button to watch a video on DuckPlayer */
-"duck-player.native-open-in-duckplayer" = "Play this video in Duck Player";
-
-/* Text for the button to resume watching a video on DuckPlayer */
-"duck-player.native-resume-in-duckplayer" = "Resume in Duck Player";
-
-/* Text for the button to watch a video on YouTube */
-"duck-player.native-watch-on-youtube" = "Watch in Youtube";
-
 /* Button for the message explaining to the user that Duck Player is not available so the user can learn more */
 "duck-player.video-contingency-cta" = "Научете повече";
 
@@ -1261,14 +1243,8 @@
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Никога";
 
-/* Toast message for the Duck Player entry pill dismiss count */
-"duckPlayer.pill.dismiss.count.toast.message" = "Want to turn off Duck Player appearing on Youtube?";
-
-/* Button on Toast message for the Duck Player entry pill dismiss count */
-"duckPlayer.pill.dismiss.count.toast.message.button" = "Отваряне на настройки";
-
-/* Caption for Duck Player entry point */
-"duckplayer.pill.watch.without.ads" = "No targeted ads, always private";
+/* Settings screen cell text for DuckPlayer settings */
+"duckplayer.open.video.settings.title" = "Duck Player";
 
 /* Body text for the modal feature explanation */
 "duckplayer.presentation.modal.body" = "С Duck Player на DuckDuckGo можете да гледате YouTube без насочени реклами и вече гледаните видеоклипове няма да повлияят на препоръчаните.";
@@ -1299,39 +1275,6 @@
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.title" = "Duck Player";
-
-/* Text displayed when DuckPlayer is in 'Ask' mode for Youtube. */
-"duckPlayerNative.ask.label" = "Нека да избера";
-
-/* Text displayed when DuckPlayer is automatically enabled for Youtube */
-"duckPlayerNative.auto.label" = "Автоматично";
-
-/* Label for the automatic youtube video opening */
-"duckPlayerNative.auto.open.label" = "Автоматично отваряне на Duck Player в YouTube";
-
-/* CTA for DuckPlayer priming modal */
-"duckPlayerNative.modal.cta" = "Watch Now Privately";
-
-/* Description for DuckPlayer priming modal */
-"duckPlayerNative.modal.description" = "Plus, what you watch in Duck Player won’t influence your YouTube recommendations.";
-
-/* Title for DuckPlayer priming modal */
-"duckPlayerNative.modal.title" = "Play this video in Duck Player to watch without targeted ads!";
-
-/* Text displayed when DuckPlayer is in off for youtube. */
-"duckPlayerNative.never.label" = "Не показвай";
-
-/* Label for the use DuckPlayer on Youtube toggle footer */
-"duckPlayerNative.use.on.serp.footer" = "Clicking on YouTube videos in DuckDuckGo search results will open in Duck Player.";
-
-/* Label for the use DuckPlayer on SERP toggle */
-"duckPlayerNative.use.on.serp.label" = "DuckDuckGo Search Results";
-
-/* Label for the use DuckPlayer on Youtube toggle footer */
-"duckPlayerNative.use.on.youtube.footer" = "Choose how you would like Duck Player to handle YouTube videos when navigating from the YouTube website.";
-
-/* Label for the use DuckPlayer on Youtube toggle */
-"duckPlayerNative.use.on.youtube.label" = "Използване в Youtube.com";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Защита на имейл";
@@ -2258,7 +2201,7 @@
 "onboarding.skip.cta.resumeOnboarding" = "Показване на указанията";
 
 /* The message of the skip onboarding dialog popup. */
-"onboarding.skip.message" = "Не забравяйте: можете да изтриете всички раздели, хронологията и данните от сърфиране с две докосвания на Fire Button 🔥";
+"onboarding.skip.message" = "Не забравяйте: можете да изтриете всички раздели, историята и данните от сърфирането с две докосвания на Fire Button 🔥";
 
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Разбрах! Ще пропусна другите съвети.";
@@ -2794,9 +2737,6 @@
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Запазено име на хост: %@";
 
-/* Button for adding email address to subscription */
-"subscription.activate.add.email.button" = "Добавяне на имейл";
-
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Добавяне към устройството";
 
@@ -3018,6 +2958,9 @@
 
 /* Unknown period subscription renewal info where parameter is renewal date. This reads as 'Your subscription renews on (date)' */
 "subscription.subscription.renewing.unknown.caption" = "Абонаментът ви се подновява на %@.";
+
+/* Unknown period subscription renewal info where parameter is renewal date. This reads as 'Your subscription renews on (date)' */
+"subscription.subscription.renewing.unknown.trial.caption" = "Абонаментът ви се подновява на %@.";
 
 /* Annual subscription renewal info where parameter is renewal date. This reads as 'Your annual subscription renews on (date)' */
 "subscription.subscription.renewing.yearly.caption" = "Годишният ви абонамент се подновява на %@.";

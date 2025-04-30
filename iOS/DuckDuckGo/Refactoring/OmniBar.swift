@@ -48,6 +48,9 @@ protocol OmniBar: AnyObject {
     func moveSeparatorToTop()
     func moveSeparatorToBottom()
 
+    func useSmallTopSpacing()
+    func useRegularTopSpacing()
+
     func enterPhoneState()
     func enterPadState()
 
@@ -74,4 +77,17 @@ protocol OmniBar: AnyObject {
 
     func cancelAllAnimations()
     func completeAnimationForDaxDialog()
+}
+
+extension OmniBar {
+    func adjust(for position: AddressBarPosition) {
+        switch position {
+        case .bottom:
+            moveSeparatorToTop()
+            useSmallTopSpacing()
+        case .top:
+            moveSeparatorToBottom()
+            useRegularTopSpacing()
+        }
+    }
 }

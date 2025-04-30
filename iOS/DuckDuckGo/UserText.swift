@@ -1366,7 +1366,7 @@ Take back control of your personal information with the browser designed for dat
                                           value: "Your free trial ends on %@ & automatically converts to an annual paid subscription on that day.",
                                           comment: "Annual trial subscription renewal info where parameter is renewal date. This reads as 'Your free trial ends on (date) & automatically converts to an annual paid subscription on that day.'")
         case .unknown:
-            localized = NSLocalizedString("subscription.subscription.renewing.unknown.caption",
+            localized = NSLocalizedString("subscription.subscription.renewing.unknown.trial.caption",
                                           value: "Your subscription renews on %@.",
                                           comment: "Unknown period subscription renewal info where parameter is renewal date. This reads as 'Your subscription renews on (date)'")
         }
@@ -1497,7 +1497,7 @@ Take back control of your personal information with the browser designed for dat
     public static let settingsOpenDuckPlayerNewTabLabel = NSLocalizedString("duckplayer.settings.open-new-tab-label", value: "Open Duck Player in a New Tab", comment: "Settings screen cell text for DuckPlayer settings to open in new tab")
 
 
-    public static let settingsOpenVideosInDuckPlayerTitle = NSLocalizedString("duckplayer.settings.title", value: "Duck Player", comment: "Settings screen cell text for DuckPlayer settings")
+    public static let settingsOpenVideosInDuckPlayerTitle = NSLocalizedString("duckplayer.open.video.settings.title", value: "Duck Player", comment: "Settings screen cell text for DuckPlayer settings")
     public static let settingsDuckPlayerFooter = NSLocalizedString("duckplayer.settings.footer", value: "DuckDuckGo provides all the privacy essentials you need to protect yourself as you browse the web.", comment: "Footer label in the settings screen for Duck Player")
     public static let settingsDuckPlayerLearnMore = NSLocalizedString("duckplayer.settings.learn-more", value: "Learn More", comment: "Button that takes the user to learn more about Duck Player.")
     public static let settingsDuckPlayerInfoText = NSLocalizedString("duckplayer.settings.info-text", value: "Duck Player lets you watch YouTube without targeted ads in DuckDuckGo and what you watch won’t influence your recommendations.", comment: "Text explaining what Duck Player is in the settings screen.")

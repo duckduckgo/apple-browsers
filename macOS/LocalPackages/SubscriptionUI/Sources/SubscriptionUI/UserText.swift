@@ -53,6 +53,7 @@ enum UserText {
 
     static let preferencesSubscriptionSettingsTitle = NSLocalizedString("subscription.preferences.subscription.settings.title", bundle: Bundle.module, value: "Subscription Settings", comment: "Title of the preferences pane for subscription settings")
     static let subscribedStatusIndicator = NSLocalizedString("subscription.preferences.subscription.settings.subscribed", bundle: Bundle.module, value: "Subscribed", comment: "Title for the status indicator informing that user is currently subscribed")
+    static let activatingStatusIndicator = NSLocalizedString("subscription.preferences.subscription.settings.activating", bundle: Bundle.module, value: "Activating", comment: "Title for the status indicator informing that user's subscription is still activating")
 
     // MARK: Preferences activate section
     static let activateSectionTitle = NSLocalizedString("subscription.preferences.subscription.add.to.device.title", bundle: Bundle.module, value: "Add Privacy Pro to Other Devices", comment: "Title for the subscription preferences section for adding subscription to other devices")
@@ -159,6 +160,8 @@ enum UserText {
     static let haveSubscriptionButton = NSLocalizedString("subscription.preferences.i.have.a.subscription.button", bundle: Bundle.module, value: "I Have a Subscription", comment: "Button enabling user to activate a subscription user bought earlier or on another device")
 
     // MARK: Preferences when subscription activation is pending
+
+    //TODO: To be removed
     static let preferencesSubscriptionPendingHeader = NSLocalizedString("subscription.preferences.subscription.pending.header", bundle: Bundle.module, value: "Your subscription is being activated", comment: "Header for the subscription preferences pane when the subscription activation is pending")
     static let preferencesSubscriptionPendingCaption = NSLocalizedString("subscription.preferences.subscription.pending.caption", bundle: Bundle.module, value: "This is taking longer than usual. Please check back later.", comment: "Caption for the subscription preferences pane when the subscription activation is pending")
 

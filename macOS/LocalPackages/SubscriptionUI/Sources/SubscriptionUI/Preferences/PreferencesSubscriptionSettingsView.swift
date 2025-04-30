@@ -42,12 +42,14 @@ public struct PreferencesSubscriptionSettingsViewV1: View {
             VStack(alignment: .leading, spacing: 4) {
                 TextMenuTitle(UserText.preferencesSubscriptionSettingsTitle)
 
-                if state == .subscriptionActive {
+                switch state {
+                case .subscriptionActive:
                     StatusIndicatorView(status: .custom(UserText.subscribedStatusIndicator, Color(designSystemColor: .alertGreen)), isLarge: true)
-                } else if state == .subscriptionExpired {
+                case .subscriptionExpired:
                     expiredHeaderView
+                case .subscriptionPendingActivation:
+                    pendingActivationHeaderView
                 }
-
             }
             .sheet(isPresented: $showingActivateSubscriptionSheet) {
                 SubscriptionAccessView(model: model.sheetModel)
@@ -77,7 +79,6 @@ public struct PreferencesSubscriptionSettingsViewV1: View {
                 helpSection
 
             case .subscriptionPendingActivation:
-                pendingActivationHeaderView
                 helpSection
             }
         }
@@ -85,28 +86,6 @@ public struct PreferencesSubscriptionSettingsViewV1: View {
             model.didAppear()
         })
         .onReceive(model.statePublisher, perform: updateState(state:))
-/*
-
- TODO: .subscriptionPendingActivation and .subscriptionExpired need a rounded border
-            // Header
-            if(state != .subscriptionActive) {
-                VStack {
-                    switch state {
-                    case .subscriptionPendingActivation:
-                        pendingActivationHeaderView
-                    case .subscriptionActive:
-                        EmptyView() // new design omits header for active subscription
-                    case .subscriptionExpired:
-                        expiredHeaderView
-                    }
-                }
-                .padding(10)
-                .roundedBorder()
-                .padding(.top, 4)
-                .padding(.bottom, 12)
-            }
- */
-
     }
 
     private func updateState(state: PreferencesSubscriptionSettingsState) {
@@ -115,17 +94,15 @@ public struct PreferencesSubscriptionSettingsViewV1: View {
 
     @ViewBuilder
     private var pendingActivationHeaderView: some View {
-        UniversalHeaderView {
-            Image(.subscriptionPendingIcon)
-                .padding(4)
-        } content: {
-            TextMenuItemHeader(UserText.preferencesSubscriptionPendingHeader)
+        VStack(alignment: .leading, spacing: 16) {
+            StatusIndicatorView(status: .custom(UserText.activatingStatusIndicator, Color(designSystemColor: .alertYellow)), isLarge: true)
+
             TextMenuItemCaption(UserText.preferencesSubscriptionPendingCaption)
-        } buttons: {
-            Button(UserText.restorePurchaseButton) { model.refreshSubscriptionPendingState() }
-                .buttonStyle(DefaultActionButtonStyle(enabled: true))
+
+            TextButton(UserText.restorePurchaseButton, weight: .semibold) {
+                model.refreshSubscriptionPendingState()
+            }
         }
-        .padding(.bottom, 12)
     }
 
     @ViewBuilder

@@ -5032,6 +5032,18 @@
         }
       }
     },
+    "subscription.preferences.subscription.settings.activating" : {
+      "comment" : "Title for the status indicator informing that user's subscription is still activating",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Activating"
+          }
+        }
+      }
+    },
     "subscription.preferences.subscription.settings.subscribed" : {
       "comment" : "Title for the status indicator informing that user is currently subscribed",
       "extractionState" : "extracted_with_value",

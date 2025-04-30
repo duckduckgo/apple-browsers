@@ -248,7 +248,6 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
             return prefs.askToSaveAddresses || prefs.askToSavePaymentMethods || prefs.askToSaveUsernamesAndPasswords
         }
     }
-
     public func secureVaultManagerShouldSaveData(_: SecureVaultManager) -> Bool {
         return true
     }
@@ -265,6 +264,10 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
                                    withTrigger trigger: AutofillUserScript.GetTriggerType,
                                    onAccountSelected account: @escaping (SecureVaultModels.WebsiteAccount?) -> Void,
                                    completionHandler: @escaping (SecureVaultModels.WebsiteAccount?) -> Void) {
+        // no-op on macOS
+    }
+    
+    public func secureVaultManagerShouldPromptUserToAutofillCreditCard(_: SecureVaultManager, withCreditCards creditCards: [SecureVaultModels.CreditCard], withTrigger trigger: AutofillUserScript.GetTriggerType, completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         // no-op on macOS
     }
 

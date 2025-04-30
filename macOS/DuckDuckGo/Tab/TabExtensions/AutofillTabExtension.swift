@@ -120,6 +120,10 @@ extension AutofillTabExtension: SecureVaultManagerDelegate {
         // no-op on macOS
     }
 
+    func secureVaultManagerShouldPromptUserToAutofillCreditCard(_: SecureVaultManager, withCreditCards creditCards: [SecureVaultModels.CreditCard], withTrigger trigger: AutofillUserScript.GetTriggerType, completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+        // no-op on macOS
+    }
+    
     func secureVaultManager(_: SecureVaultManager, promptUserWithGeneratedPassword password: String, completionHandler: @escaping (Bool) -> Void) {
         // no-op on macOS
     }

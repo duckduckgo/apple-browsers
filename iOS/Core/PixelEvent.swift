@@ -953,7 +953,6 @@ extension Pixel {
         case privacyProInvalidRefreshTokenDetected
         case privacyProInvalidRefreshTokenSignedOut
         case privacyProInvalidRefreshTokenRecovered
-        case privacyProAuthV2MigrationStarted
         case privacyProAuthV2MigrationFailed
         case privacyProAuthV2MigrationSucceeded
         case privacyProAuthV2GetTokensError
@@ -1008,6 +1007,9 @@ extension Pixel {
         case settingsNextStepsAddWidget
         case settingsMoreSearchSettings
 
+        /// [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210068471808737)
+        case settingsPresentedFromMenu
+
         // Web pixels
         case privacyProOfferMonthlyPriceClick
         case privacyProOfferYearlyPriceClick
@@ -1053,7 +1055,11 @@ extension Pixel {
         case newTabPageCustomizeShortcutRemoved(_ shortcutName: String)
         case newTabPageCustomizeShortcutAdded(_ shortcutName: String)
 
-        // MARK: DuckPlayer        
+        // MARK: DuckPlayer
+
+        /// [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210068471808737)
+        case duckPlayerSettingsOpen
+
         case duckPlayerDailyUniqueView
         case duckPlayerViewFromYoutubeViaMainOverlay
         case duckPlayerViewFromYoutubeViaHoverButton
@@ -2001,7 +2007,6 @@ extension Pixel.Event {
         case .privacyProInvalidRefreshTokenDetected: return "m_privacy-pro_auth_invalid_refresh_token_detected"
         case .privacyProInvalidRefreshTokenSignedOut: return "m_privacy-pro_auth_invalid_refresh_token_signed_out"
         case .privacyProInvalidRefreshTokenRecovered: return "m_privacy-pro_auth_invalid_refresh_token_recovered"
-        case .privacyProAuthV2MigrationStarted: return "m_privacy-pro_auth_v2_migration_started"
         case .privacyProAuthV2MigrationFailed: return "m_privacy-pro_auth_v2_migration_failure"
         case .privacyProAuthV2MigrationSucceeded: return "m_privacy-pro_auth_v2_migration_success"
         case .privacyProAuthV2GetTokensError: return "m_privacy-pro_auth_v2_get_tokens_error"
@@ -2020,6 +2025,7 @@ extension Pixel.Event {
 
         // MARK: Settings
         case .settingsPresented: return "m_settings_presented"
+        case .settingsPresentedFromMenu: return "m_settings_presented-from-menu"
         case .settingsSetAsDefault: return "m_settings_set_as_default"
         case .settingsVoiceSearchOn: return "m_settings_voice_search_on"
         case .settingsVoiceSearchOff: return "m_settings_voice_search_off"
@@ -2119,6 +2125,7 @@ extension Pixel.Event {
             return "m_new_tab_page_customize_shortcut_added_\(shortcutName)"
 
         // MARK: DuckPlayer
+        case .duckPlayerSettingsOpen: return "m_settings_duckplayer_open"
         case .duckPlayerDailyUniqueView: return "duckplayer_daily-unique-view"
         case .duckPlayerViewFromYoutubeViaMainOverlay: return "duckplayer_view-from_youtube_main-overlay"
         case .duckPlayerViewFromYoutubeViaHoverButton: return "duckplayer_view-from_youtube_hover-button"

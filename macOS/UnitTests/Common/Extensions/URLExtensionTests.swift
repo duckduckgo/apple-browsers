@@ -379,7 +379,7 @@ extension URLExtensionTests {
         let line: Int
 
         var sourceLocation: SourceLocation {
-            SourceLocation.init(fileID: #fileID, filePath: #filePath, line: line, column: 1)
+            SourceLocation(fileID: #fileID, filePath: #filePath, line: line, column: 1)
         }
 
         init(_ string: String, _ expectation: String?, line: Int = #line) {

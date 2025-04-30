@@ -26,6 +26,10 @@ enum TestExperimentFlags: String, CaseIterable {
 }
 
 extension TestExperimentFlags: FeatureFlagDescribing {
+    var defaultValue: Bool {
+        false
+    }
+
     var supportsLocalOverriding: Bool { true }
 
     var source: FeatureFlagSource {

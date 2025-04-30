@@ -475,7 +475,6 @@ final class SettingsViewModel: ObservableObject {
          maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
          experimentalThemingManager: ExperimentalThemingManager,
          duckPlayerSettings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
-         experimentalThemingManager: ExperimentalThemingManager,
          featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()
     ) {
 

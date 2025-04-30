@@ -400,13 +400,19 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
     }
 
     private func removeControllerForCell(_ cell: OmniBarCell) {
-        if let existingOmniBarView = cell.omniBar?.barView,
+        guard let existingOmniBarView = cell.omniBar?.barView else { return }
+
+        // Only remove controller of a "fake" OmniBar
+        if coordinator.omniBar !== cell.omniBar,
            let backingVC = coordinator.parentController?.children.first(where: { $0.view === existingOmniBarView }) {
 
             backingVC.willMove(toParent: nil)
             existingOmniBarView.removeFromSuperview()
             cell.omniBar = nil
             backingVC.removeFromParent()
+        } else { // For cell with real OmniBar just remove existing view
+            existingOmniBarView.removeFromSuperview()
+            cell.omniBar = nil
         }
     }
 

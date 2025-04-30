@@ -23,14 +23,17 @@ final class WebExtensionsDebugMenu: NSMenu {
 
     private let webExtensionManager: WebExtensionManaging
 
-    private let selectAndLoadMenuItem = NSMenuItem(title: "Install web extension...", action: #selector(WebExtensionsDebugMenu.selectAndLoadWebExtension))
+    private let installExtensionMenuItem = NSMenuItem(title: "Install web extension...", action: #selector(WebExtensionsDebugMenu.selectAndLoadWebExtension))
+    private let uninstallAllExtensionsMenuItem = NSMenuItem(title: "Uninstall all extensions", action: #selector(WebExtensionsDebugMenu.uninstallAllExtensions))
 
     init(webExtensionManager: WebExtensionManaging = WebExtensionManager.shared) {
         self.webExtensionManager = webExtensionManager
         super.init(title: "")
 
-        selectAndLoadMenuItem.target = self
-        selectAndLoadMenuItem.isEnabled = webExtensionManager.areExtenstionsEnabled
+        installExtensionMenuItem.target = self
+        installExtensionMenuItem.isEnabled = webExtensionManager.areExtenstionsEnabled
+        uninstallAllExtensionsMenuItem.target = self
+        uninstallAllExtensionsMenuItem.isEnabled = webExtensionManager.areExtenstionsEnabled && webExtensionManager.hasInstalledExtensions
 
         addItems()
     }
@@ -38,7 +41,9 @@ final class WebExtensionsDebugMenu: NSMenu {
     private func addItems() {
         removeAllItems()
 
-        addItem(selectAndLoadMenuItem)
+        addItem(installExtensionMenuItem)
+        addItem(uninstallAllExtensionsMenuItem)
+
         if !webExtensionManager.webExtensionPaths.isEmpty {
             addItem(.separator())
             for webExtensionPath in webExtensionManager.webExtensionPaths {
@@ -58,7 +63,8 @@ final class WebExtensionsDebugMenu: NSMenu {
 
         addItems()
 
-        selectAndLoadMenuItem.isEnabled = webExtensionManager.areExtenstionsEnabled
+        installExtensionMenuItem.isEnabled = webExtensionManager.areExtenstionsEnabled
+        uninstallAllExtensionsMenuItem.isEnabled = webExtensionManager.areExtenstionsEnabled && webExtensionManager.hasInstalledExtensions
     }
 
     @objc func selectAndLoadWebExtension() {
@@ -69,8 +75,12 @@ final class WebExtensionsDebugMenu: NSMenu {
               let url = panel.url else { return }
 
         Task {
-            await webExtensionManager.addExtension(path: url.absoluteString)
+            await webExtensionManager.installExtension(path: url.absoluteString)
         }
+    }
+
+    @objc func uninstallAllExtensions() {
+        webExtensionManager.uninstallAllExtensions()
     }
 
 }
@@ -107,12 +117,12 @@ final class WebExtensionSubMenu: NSMenu {
         super.init(title: "")
 
         buildItems {
-            NSMenuItem(title: "Remove the extension", action: #selector(unloadWebExtension), target: self)
+            NSMenuItem(title: "Remove the extension", action: #selector(uninstallExtension), target: self)
         }
     }
 
-    @objc func unloadWebExtension() {
-        webExtensionManager.removeExtension(path: webExtensionPath)
+    @objc func uninstallExtension() {
+        webExtensionManager.uninstallExtension(path: webExtensionPath)
     }
 
 }

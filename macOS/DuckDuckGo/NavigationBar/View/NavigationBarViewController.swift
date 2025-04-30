@@ -217,8 +217,8 @@ final class NavigationBarViewController: NSViewController {
 
 #if !APPSTORE && WEB_EXTENSIONS_ENABLED
         if #available(macOS 15.4, *), !burnerMode.isBurner {
-            WebExtensionManager.shared.toolbarButtons().enumerated().forEach { (index, button) in
-                menuButtons.insertArrangedSubview(button, at: index)
+            Task { @MainActor in
+                await WebExtensionNavigationBarUpdater(container: menuButtons).runUpdateLoop()
             }
         }
 #endif

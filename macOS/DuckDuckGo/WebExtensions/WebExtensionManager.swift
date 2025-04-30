@@ -27,15 +27,20 @@ import BrowserServicesKit
 @available(macOS 15.4, *)
 protocol WebExtensionManaging {
 
+    typealias WebExtensionIdentifier = String
+
     var areExtenstionsEnabled: Bool { get }
+    var hasInstalledExtensions: Bool { get }
+    var loadedExtensions: Set<WKWebExtensionContext> { get }
 
     @MainActor
-    func loadWebExtensions() async
+    func loadInstalledExtensions() async
 
     // Adding and removing extensions
     var webExtensionPaths: [String] { get }
-    func addExtension(path: String) async
-    func removeExtension(path: String)
+    func installExtension(path: String) async
+    func uninstallExtension(path: String)
+    func uninstallAllExtensions()
 
     // Provides the extension name for the extension resource base path
     func extensionName(from path: String) -> String?
@@ -54,6 +59,11 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
 
     static let shared = WebExtensionManager()
 
+    private var continuation: AsyncStream<Void>.Continuation?
+    private(set) lazy var extensionUpdates = AsyncStream<Void> { [weak self] continuation in
+        self?.continuation = continuation
+    }
+
     init(webExtensionPathsCache: WebExtensionPathsCaching = WebExtensionPathsCache(),
          webExtensionLoader: WebExtensionLoading = WebExtensionLoader(),
          internalUserDecider: InternalUserDecider = NSApp.delegateTyped.internalUserDecider,
@@ -64,6 +74,7 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
         self.internalUserDecider = internalUserDecider
         self.featureFlagger = featureFlagger
         self.loader = webExtensionLoader
+
         super.init()
 
         eventsListener.controller = controller
@@ -105,7 +116,15 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
         pathsCache.cache
     }
 
-    func addExtension(path: String) async {
+    var hasInstalledExtensions: Bool {
+        controller.extensions.count > 0
+    }
+
+    var loadedExtensions: Set<WKWebExtensionContext> {
+        controller.extensionContexts
+    }
+
+    func installExtension(path: String) async {
         pathsCache.add(path)
 
         do {
@@ -114,9 +133,17 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
             // This is temporary.  The actual handling of this error should be done outside of this manager.
             assertionFailure("Failed to unload web extension \(path): \(error)")
         }
+
+        continuation?.yield()
     }
 
-    func removeExtension(path: String) {
+    func uninstallAllExtensions() {
+        for path in pathsCache.cache {
+            uninstallExtension(path: path)
+        }
+    }
+
+    func uninstallExtension(path: String) {
         pathsCache.remove(path)
 
         do {
@@ -125,6 +152,8 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
             // This is temporary.  The actual handling of this error should be done outside of this manager.
             assertionFailure("Failed to unload web extension \(path): \(error)")
         }
+
+        continuation?.yield()
     }
 
     func extensionName(from path: String) -> String? {
@@ -137,11 +166,12 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
     // MARK: - Lifecycle
 
     @MainActor
-    func loadWebExtensions() async {
+    func loadInstalledExtensions() async {
         guard areExtenstionsEnabled else { return }
 
         // Load extensions
         let results = await loader.loadWebExtensions(from: pathsCache.cache, into: controller)
+        continuation?.yield()
 
         for result in results {
             if case .failure(let failure) = result {
@@ -156,22 +186,37 @@ final class WebExtensionManager: NSObject, WebExtensionManaging {
 
     static let buttonSize: CGFloat = 28
 
-    func toolbarButtons() -> [MouseOverButton] {
-        return contexts.enumerated().map { (index, context) in
-            let image = context.webExtension.icon(for: CGSize(width: Self.buttonSize, height: Self.buttonSize)) ?? NSImage(named: "Web")!
-            let button = MouseOverButton(image: image, target: self, action: #selector(WebExtensionManager.toolbarButtonClicked))
-            button.translatesAutoresizingMaskIntoConstraints = false
-            button.widthAnchor.constraint(equalToConstant: Self.buttonSize).isActive = true
-            button.heightAnchor.constraint(equalToConstant: Self.buttonSize).isActive = true
-            button.tag = index
-            return button
-        }
+    func toolbarButton(for context: WKWebExtensionContext) -> MouseOverButton {
+        let image = context.webExtension.icon(for: CGSize(width: Self.buttonSize, height: Self.buttonSize)) ?? NSImage(named: "Web")!
+        let button = MouseOverButton(image: image, target: self, action: #selector(WebExtensionManager.toolbarButtonClicked))
+
+        button.identifier = NSUserInterfaceItemIdentifier(context.uniqueIdentifier)
+        button.bezelStyle = .shadowlessSquare
+        button.cornerRadius = 4
+        button.normalTintColor = .button
+        button.translatesAutoresizingMaskIntoConstraints = false
+
+        button.widthAnchor.constraint(equalToConstant: Self.buttonSize).isActive = true
+        button.heightAnchor.constraint(equalToConstant: Self.buttonSize).isActive = true
+
+        return button
     }
 
     @MainActor
     @objc func toolbarButtonClicked(sender: NSButton) {
-        let index = sender.tag
-        let context = contexts[index]
+        guard let identifier = sender.identifier?.rawValue else {
+            assertionFailure("Web Extension toolbar button has no identifier")
+            return
+        }
+
+        let context = contexts.first { context in
+            context.uniqueIdentifier == identifier
+        }
+
+        guard let context else {
+            assertionFailure("Navigation bar button for extension has no matching extension context")
+            return
+        }
 
         // If the popover is already open
         if let popover = context.action(for: nil)?.popupPopover, popover.isShown {

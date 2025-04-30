@@ -116,8 +116,15 @@ final class AppDependencyProvider: DependencyProvider {
         var accessTokenProvider: () async -> String?
         var authenticationStateProvider: (any SubscriptionAuthenticationStateProvider)!
 
-        let tokenStorageV2 = SubscriptionTokenKeychainStorageV2(keychainType: .dataProtection(.named(subscriptionAppGroup))) { keychainType, error in
-            Pixel.fire(.privacyProKeychainAccessError, withAdditionalParameters: ["type": keychainType.rawValue, "error": error.errorDescription])
+        let tokenStorageV2 = SubscriptionTokenKeychainStorageV2(keychainType: .dataProtection(.named(subscriptionAppGroup))) { accessType, error in
+
+            let parameters = [PixelParameters.privacyProKeychainAccessType: accessType.rawValue,
+                              PixelParameters.privacyProKeychainError: error.localizedDescription,
+                              PixelParameters.source: KeychainErrorSource.browser.rawValue,
+                              PixelParameters.authVersion: KeychainErrorAuthVersion.v2.rawValue]
+            DailyPixel.fireDailyAndCount(pixel: .privacyProKeychainAccessError,
+                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
+                                         withAdditionalParameters: parameters)
         }
         self.isAuthV2Enabled = featureFlagger.isFeatureOn(.privacyProAuthV2)
         vpnSettings.isAuthV2Enabled = self.isAuthV2Enabled

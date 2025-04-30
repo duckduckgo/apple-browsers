@@ -52,34 +52,37 @@ public struct PreferencesPurchaseSubscriptionViewV1: View {
 
     @ViewBuilder
     private var unauthenticatedHeaderView: some View {
-        UniversalHeaderView {
+        HStack(alignment: .top) {
             Image(.privacyPro)
                 .padding(4)
                 .background(Color("BadgeBackground", bundle: .module))
                 .cornerRadius(4)
-        } content: {
-            TextMenuItemHeader(UserText.preferencesSubscriptionInactiveHeader)
-            switch model.subscriptionStorefrontRegion {
-            case .usa:
-                TextMenuItemCaption(UserText.preferencesSubscriptionInactiveUSCaption)
-            case .restOfWorld:
-                TextMenuItemCaption(UserText.preferencesSubscriptionInactiveROWCaption)
-            }
-        } buttons: {
-            Button(UserText.purchaseButton) { model.purchaseAction() }
-                .buttonStyle(DefaultActionButtonStyle(enabled: true))
-            Button(UserText.haveSubscriptionButton) {
-                if model.shouldDirectlyLaunchActivationFlow {
-                    model.sheetModel.handleEmailAction()
-                } else {
-                    showingActivateSubscriptionSheet.toggle()
-                }
 
-                model.userEventHandler(.iHaveASubscriptionClick)
+            VStack(alignment: .leading, spacing: 8) {
+                TextMenuItemHeader(UserText.preferencesSubscriptionInactiveHeader)
+                TextMenuItemCaption(UserText.preferencesSubscriptionInactiveCaption(region: model.subscriptionStorefrontRegion))
+
+                HStack {
+                    Button(UserText.purchaseButton) { model.purchaseAction() }
+                        .buttonStyle(DefaultActionButtonStyle(enabled: true))
+                    Button(UserText.haveSubscriptionButton) {
+                        if model.shouldDirectlyLaunchActivationFlow {
+                            model.sheetModel.handleEmailAction()
+                        } else {
+                            showingActivateSubscriptionSheet.toggle()
+                        }
+
+                        model.userEventHandler(.iHaveASubscriptionClick)
+                    }
+                    .buttonStyle(DismissActionButtonStyle())
+                }
+                .padding(.top, 10)
             }
-            .buttonStyle(DismissActionButtonStyle())
+
+            Spacer()
         }
-        .padding(10)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 20)
         .roundedBorder()
     }
 

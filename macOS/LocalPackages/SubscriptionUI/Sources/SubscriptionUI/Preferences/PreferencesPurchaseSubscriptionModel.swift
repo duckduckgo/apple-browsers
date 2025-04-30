@@ -28,10 +28,6 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
 
     @Published var subscriptionStorefrontRegion: SubscriptionRegion = .usa
 
-    @Published var shouldShowVPN: Bool = false
-    @Published var shouldShowDBP: Bool = false
-    @Published var shouldShowITR: Bool = false
-
     var currentPurchasePlatform: SubscriptionEnvironment.PurchasePlatform { subscriptionManager.currentEnvironment.purchasePlatform }
 
     lazy var sheetModel = SubscriptionAccessViewModel(actionHandlers: sheetActionHandler,
@@ -106,14 +102,5 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
         }
 
         return region ?? .usa
-    }
-
-    @MainActor
-    private func updateAvailableSubscriptionFeatures() async {
-        let features = await subscriptionManager.currentSubscriptionFeatures()
-
-        shouldShowVPN = features.contains(.networkProtection)
-        shouldShowDBP = features.contains(.dataBrokerProtection)
-        shouldShowITR = features.contains(.identityTheftRestoration) || features.contains(.identityTheftRestorationGlobal)
     }
 }

@@ -122,12 +122,7 @@ public struct PreferencesSubscriptionViewV1: View {
                 .cornerRadius(4)
         } content: {
             TextMenuItemHeader(UserText.preferencesSubscriptionInactiveHeader)
-            switch model.subscriptionStorefrontRegion {
-            case .usa:
-                TextMenuItemCaption(UserText.preferencesSubscriptionInactiveUSCaption)
-            case .restOfWorld:
-                TextMenuItemCaption(UserText.preferencesSubscriptionInactiveROWCaption)
-            }
+            TextMenuItemCaption(UserText.preferencesSubscriptionInactiveCaption(region: model.subscriptionStorefrontRegion))
         } buttons: {
             Button(UserText.purchaseButton) { model.purchaseAction() }
                 .buttonStyle(DefaultActionButtonStyle(enabled: true))
@@ -488,12 +483,7 @@ public struct PreferencesSubscriptionViewV2: View {
                 .cornerRadius(4)
         } content: {
             TextMenuItemHeader(UserText.preferencesSubscriptionInactiveHeader)
-            switch model.subscriptionStorefrontRegion {
-            case .usa:
-                TextMenuItemCaption(UserText.preferencesSubscriptionInactiveUSCaption)
-            case .restOfWorld:
-                TextMenuItemCaption(UserText.preferencesSubscriptionInactiveROWCaption)
-            }
+            TextMenuItemCaption(UserText.preferencesSubscriptionInactiveCaption(region: model.subscriptionStorefrontRegion))
         } buttons: {
             Button(UserText.purchaseButton) { model.purchaseAction() }
                 .buttonStyle(DefaultActionButtonStyle(enabled: true))

@@ -153,8 +153,14 @@ enum UserText {
 
     // MARK: Preferences when subscription is inactive
     static let preferencesSubscriptionInactiveHeader = NSLocalizedString("subscription.preferences.subscription.inactive.header", bundle: Bundle.module, value: "Protect your connection and identity with Privacy Pro", comment: "Header for the subscription preferences pane when the subscription is inactive")
-    static let preferencesSubscriptionInactiveUSCaption = NSLocalizedString("subscription.preferences.subscription.inactive.us.caption", bundle: Bundle.module, value: "Three premium protections in one subscription.", comment: "Caption for the subscription preferences pane when the subscription is inactive")
-    static let preferencesSubscriptionInactiveROWCaption = NSLocalizedString("subscription.preferences.subscription.inactive.row.caption", bundle: Bundle.module, value: "Two premium protections in one subscription.", comment: "Caption for the subscription preferences pane when the subscription is inactive")
+    static func preferencesSubscriptionInactiveCaption(region: SubscriptionRegion) -> String {
+        switch region {
+        case .usa:
+            return NSLocalizedString("subscription.preferences.subscription.inactive.us.caption", bundle: Bundle.module, value: "Three premium protections in one subscription.", comment: "Caption for the subscription preferences pane when the subscription is inactive")
+        case .restOfWorld:
+            return NSLocalizedString("subscription.preferences.subscription.inactive.row.caption", bundle: Bundle.module, value: "Two premium protections in one subscription.", comment: "Caption for the subscription preferences pane when the subscription is inactive")
+        }
+    }
 
     static let purchaseButton = NSLocalizedString("subscription.preferences.purchase.button", bundle: Bundle.module, value: "Get Privacy Pro", comment: "Button to open a page where user can learn more and purchase the subscription")
     static let haveSubscriptionButton = NSLocalizedString("subscription.preferences.i.have.a.subscription.button", bundle: Bundle.module, value: "I Have a Subscription", comment: "Button enabling user to activate a subscription user bought earlier or on another device")

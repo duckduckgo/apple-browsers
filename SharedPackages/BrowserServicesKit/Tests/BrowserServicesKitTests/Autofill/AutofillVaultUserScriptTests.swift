@@ -624,6 +624,9 @@ class MockSecureVaultDelegate: AutofillSecureVaultDelegate {
                             didRequestCredentialsForDomain domain: String,
                             completionHandler: @escaping ([BrowserServicesKit.SecureVaultModels.WebsiteCredentials], BrowserServicesKit.SecureVaultModels.CredentialsProvider) -> Void) {
     }
+    
+    func autofillUserScriptDidRequestCreditCard(_: BrowserServicesKit.AutofillUserScript, trigger: BrowserServicesKit.AutofillUserScript.GetTriggerType, completionHandler: @escaping (BrowserServicesKit.SecureVaultModels.CreditCard?, BrowserServicesKit.RequestVaultDataAction) -> Void) {
+    }
 
     var didRequestAutoFillInitDataForDomainCompletionHandler: (([BrowserServicesKit.SecureVaultModels.WebsiteCredentials],
                                                                 [BrowserServicesKit.SecureVaultModels.Identity],
@@ -651,7 +654,7 @@ class MockSecureVaultDelegate: AutofillSecureVaultDelegate {
                             didRequestCredentialsForDomain: String,
                             subType: BrowserServicesKit.AutofillUserScript.GetAutofillDataSubType,
                             trigger: BrowserServicesKit.AutofillUserScript.GetTriggerType,
-                            completionHandler: @escaping (BrowserServicesKit.SecureVaultModels.WebsiteCredentials?, BrowserServicesKit.SecureVaultModels.CredentialsProvider, BrowserServicesKit.RequestVaultCredentialsAction) -> Void) {
+                            completionHandler: @escaping (BrowserServicesKit.SecureVaultModels.WebsiteCredentials?, BrowserServicesKit.SecureVaultModels.CredentialsProvider, BrowserServicesKit.RequestVaultDataAction) -> Void) {
         lastSubtype = subType
         receivedCallbacks.append(.didRequestCredentialsForDomain)
         let provider = SecureVaultModels.CredentialsProvider(name: .duckduckgo, locked: false)

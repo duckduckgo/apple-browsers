@@ -171,7 +171,7 @@ enum PrivacyProErrorPixel: PixelKitEventV2 {
         case .privacyProKeychainAccessError(let accessType, let accessError, let source, let authVersion):
             return [
                 "access_type": accessType.rawValue,
-                "error": accessError.localizedDescription,
+                "error": accessError.errorDescription,
                 "source": source.rawValue,
                 "authVersion": authVersion.rawValue
             ]

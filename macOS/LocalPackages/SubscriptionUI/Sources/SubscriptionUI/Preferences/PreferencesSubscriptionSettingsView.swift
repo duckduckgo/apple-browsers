@@ -41,22 +41,24 @@ public struct PreferencesSubscriptionSettingsViewV1: View {
             // Title, dialogs and status indicator
             VStack(alignment: .leading, spacing: 4) {
                 TextMenuTitle(UserText.preferencesSubscriptionSettingsTitle)
-                    .sheet(isPresented: $showingActivateSubscriptionSheet) {
-                        SubscriptionAccessView(model: model.sheetModel)
-                    }
-                    .sheet(isPresented: $showingRemoveConfirmationDialog) {
-                        removeConfirmationDialog
-                    }
-                    .sheet(item: $manageSubscriptionSheet) { sheet in
-                        switch sheet {
-                        case .apple:
-                            manageSubscriptionAppStoreDialog
-                        case .google:
-                            manageSubscriptionGooglePlayDialog
-                        }
-                    }
 
-                StatusIndicatorView(status: .on, isLarge: true)
+                if state == .subscriptionActive {
+                    StatusIndicatorView(status: .custom(UserText.subscribedStatusIndicator, Color(designSystemColor: .alertGreen)), isLarge: true)
+                }
+            }
+            .sheet(isPresented: $showingActivateSubscriptionSheet) {
+                SubscriptionAccessView(model: model.sheetModel)
+            }
+            .sheet(isPresented: $showingRemoveConfirmationDialog) {
+                removeConfirmationDialog
+            }
+            .sheet(item: $manageSubscriptionSheet) { sheet in
+                switch sheet {
+                case .apple:
+                    manageSubscriptionAppStoreDialog
+                case .google:
+                    manageSubscriptionGooglePlayDialog
+                }
             }
             .padding(.bottom, 16)
 

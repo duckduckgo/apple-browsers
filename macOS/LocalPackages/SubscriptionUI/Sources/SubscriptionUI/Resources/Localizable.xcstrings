@@ -4984,6 +4984,18 @@
         }
       }
     },
+    "subscription.preferences.subscription.settings.subscribed" : {
+      "comment" : "Title for the status indicator informing that user is currently subscribed",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Subscribed"
+          }
+        }
+      }
+    },
     "subscription.preferences.subscription.settings.title" : {
       "comment" : "Title for the subscription preferences settings section\nTitle of the preferences pane for subscription settings",
       "extractionState" : "extracted_with_value",

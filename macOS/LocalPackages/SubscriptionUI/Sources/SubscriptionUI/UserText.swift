@@ -20,10 +20,8 @@ import Foundation
 import Subscription
 
 enum UserText {
-    // MARK: - Subscription preferences
 
-    static let preferencesSubscriptionSettingsTitle = NSLocalizedString("subscription.preferences.subscription.settings.title", bundle: Bundle.module, value: "Subscription Settings", comment: "Title of the preferences pane for subscription settings")
-
+    // MARK: Preferences - Purchase Subscription
     static let preferencesPurchaseSubscriptionTitle = NSLocalizedString("subscription.preferences.purchase.subscription.title", bundle: Bundle.module, value: "Privacy Pro", comment: "Title of the preferences pane for purchase subscription")
 
     // TODO: To be removed
@@ -40,6 +38,11 @@ enum UserText {
     static let identityTheftRestorationServiceTitle = NSLocalizedString("subscription.preferences.services.identity.theft.restoration.title", bundle: Bundle.module, value: "Identity Theft Restoration", comment: "Title for the Identity Theft Restoration service listed in the subscription preferences pane")
     static let identityTheftRestorationServiceDescription = NSLocalizedString("subscription.preferences.services.identity.theft.restoration.description", bundle: Bundle.module, value: "Get help restoring stolen accounts and financial losses in the event of identity theft.", comment: "Description for the Identity Theft Restoration service listed in the subscription preferences pane")
     static let identityTheftRestorationServiceButtonTitle = NSLocalizedString("subscription.preferences.services.identity.theft.restoration.button.title", bundle: Bundle.module, value: "View", comment: "Title for the Identity Theft Restoration service button to open its settings")
+
+    // MARK: Preferences - Subscription Settings
+
+    static let preferencesSubscriptionSettingsTitle = NSLocalizedString("subscription.preferences.subscription.settings.title", bundle: Bundle.module, value: "Subscription Settings", comment: "Title of the preferences pane for subscription settings")
+    static let subscribedStatusIndicator = NSLocalizedString("subscription.preferences.subscription.settings.subscribed", bundle: Bundle.module, value: "Subscribed", comment: "Title for the status indicator informing that user is currently subscribed")
 
     // MARK: Preferences activate section
     static let activateSectionTitle = NSLocalizedString("subscription.preferences.subscription.add.to.device.title", bundle: Bundle.module, value: "Add Privacy Pro to Other Devices", comment: "Title for the subscription preferences section for adding subscription to other devices")

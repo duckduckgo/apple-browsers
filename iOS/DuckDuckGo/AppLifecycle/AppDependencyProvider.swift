@@ -116,9 +116,9 @@ final class AppDependencyProvider: DependencyProvider {
         var accessTokenProvider: () async -> String?
         var authenticationStateProvider: (any SubscriptionAuthenticationStateProvider)!
 
-        let tokenStorageV2 = SubscriptionTokenKeychainStorageV2(keychainType: .dataProtection(.named(subscriptionAppGroup))) { keychainType, error in
+        let tokenStorageV2 = SubscriptionTokenKeychainStorageV2(keychainType: .dataProtection(.named(subscriptionAppGroup))) { accessType, error in
 
-            let parameters = [PixelParameters.privacyProKeychainAccessType: keychainType.rawValue,
+            let parameters = [PixelParameters.privacyProKeychainAccessType: accessType.rawValue,
                               PixelParameters.privacyProKeychainError: error.localizedDescription,
                               PixelParameters.source: KeychainErrorSource.browser.rawValue,
                               PixelParameters.authVersion: KeychainErrorAuthVersion.v2.rawValue]

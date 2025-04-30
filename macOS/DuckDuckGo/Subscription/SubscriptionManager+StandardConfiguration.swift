@@ -127,8 +127,8 @@ extension DefaultSubscriptionManagerV2 {
                             pixelHandlingSource: AuthV2PixelHandler.Source) {
 
         let authService = DefaultOAuthService(baseURL: environment.authEnvironment.url, apiService: APIServiceFactory.makeAPIServiceForAuthV2())
-        let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainType: keychainType) { keychainType, error in
-            PixelKit.fire(PrivacyProErrorPixel.privacyProKeychainAccessError(accessType: keychainType,
+        let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainType: keychainType) { accessType, error in
+            PixelKit.fire(PrivacyProErrorPixel.privacyProKeychainAccessError(accessType: accessType,
                                                                              accessError: error,
                                                                              source: KeychainErrorSource.shared,
                                                                              authVersion: KeychainErrorAuthVersion.v2),

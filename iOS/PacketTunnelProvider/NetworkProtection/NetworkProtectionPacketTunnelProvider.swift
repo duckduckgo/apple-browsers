@@ -473,8 +473,8 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
             // keychain storage
             let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
-            let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainType: .dataProtection(.named(subscriptionAppGroup))) { keychainType, error in
-                let parameters = [PixelParameters.privacyProKeychainAccessType: keychainType.rawValue,
+            let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainType: .dataProtection(.named(subscriptionAppGroup))) { accessType, error in
+                let parameters = [PixelParameters.privacyProKeychainAccessType: accessType.rawValue,
                                   PixelParameters.privacyProKeychainError: error.localizedDescription,
                                   PixelParameters.source: KeychainErrorSource.vpn.rawValue,
                                   PixelParameters.authVersion: KeychainErrorAuthVersion.v2.rawValue]

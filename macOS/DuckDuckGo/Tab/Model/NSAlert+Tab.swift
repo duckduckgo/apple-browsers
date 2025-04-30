@@ -90,24 +90,16 @@ extension NSAlert {
     }
 
     static func makeLabel(_ text: String, bold: Bool, size: CGFloat) -> NSTextField {
-        // Create a "label" style text field
         let label = NSTextField(labelWithString: text)
         label.font = bold
             ? .boldSystemFont(ofSize: size)
             : .systemFont(ofSize: size)
 
-        // **Enable wrapping & multi-line:**
-        // Turn off the "single-line" optimization:
         label.usesSingleLineMode = false
-        // Prevent horizontal scrolling so wrapping takes effect
         label.cell?.isScrollable = false
-        // Make the cell actually wrap
         label.cell?.wraps = true
-        // Don't ever truncate
         label.cell?.truncatesLastVisibleLine = false
-        // Use word wrapping, not character-by-character
         label.lineBreakMode = .byWordWrapping
-        // Center-align the text in each label
         label.alignment = .center
         label.textColor = NSColor.labelColor
 
@@ -119,26 +111,21 @@ extension NSAlert {
         let label = NSTextField(labelWithString: "")
         let text = UserText.storageAccessPromptLabel1(currentDomain: currentDomain,
                                                       requestingDomain: requestingDomain)
-        // Build attributed string
         let attributed = NSMutableAttributedString(string: text,
                                                    attributes: [
                                                     .font: NSFont.systemFont(ofSize: fontSize),
                                                     .foregroundColor: NSColor.labelColor
                                                    ])
-        // Bold the requesting domain
         let reqRange = (text as NSString).range(of: requestingDomain)
         attributed.addAttribute(.font, value: NSFont.boldSystemFont(ofSize: fontSize), range: reqRange)
-        // Bold the current domain
         let currRange = (text as NSString).range(of: currentDomain)
         attributed.addAttribute(.font, value: NSFont.boldSystemFont(ofSize: fontSize), range: currRange)
-        // Center-align paragraph
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.alignment = .center
         attributed.addAttribute(.paragraphStyle,
                                 value: paragraphStyle,
                                 range: NSRange(location: 0, length: attributed.length))
         label.attributedStringValue = attributed
-        // Enable wrapping and multi-line
         label.usesSingleLineMode = false
         label.cell?.isScrollable = false
         label.cell?.wraps = true
@@ -230,23 +217,19 @@ extension NSAlert {
     private static func makeIntroLabel(requestingDomain: String, fontSize: CGFloat = 12) -> NSTextField {
         let label = NSTextField(labelWithString: "")
         let text = UserText.storageAccessPromptQuirkDomainsLabel1(requestingDomain: requestingDomain)
-        // Build attributed string
         let attributed = NSMutableAttributedString(string: text,
                                                    attributes: [
                                                     .font: NSFont.systemFont(ofSize: fontSize),
                                                     .foregroundColor: NSColor.labelColor
                                                    ])
-        // Bold the requesting domain
         let reqRange = (text as NSString).range(of: requestingDomain)
         attributed.addAttribute(.font, value: NSFont.boldSystemFont(ofSize: fontSize), range: reqRange)
-        // Center-align paragraph
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.alignment = .center
         attributed.addAttribute(.paragraphStyle,
                                 value: paragraphStyle,
                                 range: NSRange(location: 0, length: attributed.length))
         label.attributedStringValue = attributed
-        // Enable wrapping and multi-line
         label.usesSingleLineMode = false
         label.cell?.isScrollable = false
         label.cell?.wraps = true

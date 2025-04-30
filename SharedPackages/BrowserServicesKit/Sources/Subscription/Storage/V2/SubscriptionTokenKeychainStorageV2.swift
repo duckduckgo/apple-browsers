@@ -21,6 +21,18 @@ import os.log
 import Networking
 import Common
 
+public enum KeychainErrorSource: String {
+    case browser
+    case vpn
+    case pir
+    case shared
+}
+
+public enum KeychainErrorAuthVersion: String {
+    case v1
+    case v2
+}
+
 public final class SubscriptionTokenKeychainStorageV2: AuthTokenStoring {
 
     private let keychainType: KeychainType

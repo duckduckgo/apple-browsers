@@ -23,6 +23,7 @@ import XcodeProjectPlugin
 let extensionsInputFiles: [InputFile] = [
     .init("WebExtensionsDebugMenu.swift", .source),
     .init("WebExtensionManager.swift", .source),
+    .init("WebExtensionNavigationBarUpdater.swift", .source),
     .init("WebExtensionPathsCache.swift", .source),
     .init("WebExtensionLoader.swift", .source),
     .init("WebExtensionEventsListener.swift", .source),

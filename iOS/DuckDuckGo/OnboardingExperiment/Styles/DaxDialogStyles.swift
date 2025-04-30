@@ -43,7 +43,7 @@ extension OnboardingStyles {
                     OnboardingBackground()
                         .ignoresSafeArea(.keyboard)
                 case .gradientOnly:
-                    OnboardingGradientView()
+                    OnboardingGradient()
                         .ignoresSafeArea(.keyboard)
                 }
 

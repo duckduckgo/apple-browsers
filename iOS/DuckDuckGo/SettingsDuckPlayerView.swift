@@ -123,6 +123,10 @@ struct SettingsDuckPlayerView: View {
         .applySettingsListModifiers(title: UserText.duckPlayerFeatureName,
                                     displayMode: .inline,
                                     viewModel: viewModel)
+        .onAppear {
+            DailyPixel.fireDailyAndCount(pixel: .duckPlayerSettingsOpen,
+                                         withAdditionalParameters: viewModel.featureDiscovery.addToParams([:], forFeature: .duckPlayer))
+        }
         .alert("Important!", isPresented: $showNewTabAlert) {
             Button("OK", role: .cancel) { }
         } message: {

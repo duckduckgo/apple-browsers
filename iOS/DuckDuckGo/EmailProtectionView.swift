@@ -57,7 +57,8 @@ struct EmailProtectionView: View {
             shouldShowEmailAlert = value
         }
         .onFirstAppear {
-            Pixel.fire(pixel: .settingsEmailProtectionOpen)
+            Pixel.fire(pixel: .settingsEmailProtectionOpen,
+                       withAdditionalParameters: ["is_signed_in": viewModel.emailManager.isSignedIn ? "1" : "0"])
         }
     }
 }

@@ -50,6 +50,7 @@ final class SettingsViewModel: ObservableObject {
     let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
     let experimentalThemingManager: ExperimentalThemingManager
     private let duckPlayerSettings: DuckPlayerSettings
+    let featureDiscovery: FeatureDiscovery
 
     // Subscription Dependencies
     let isAuthV2Enabled: Bool
@@ -474,6 +475,8 @@ final class SettingsViewModel: ObservableObject {
          maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
          experimentalThemingManager: ExperimentalThemingManager,
          duckPlayerSettings: DuckPlayerSettings = DuckPlayerSettingsDefault()
+         experimentalThemingManager: ExperimentalThemingManager,
+         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()
     ) {
 
         self.state = SettingsState.defaults
@@ -493,6 +496,7 @@ final class SettingsViewModel: ObservableObject {
         self.maliciousSiteProtectionPreferencesManager = maliciousSiteProtectionPreferencesManager
         self.experimentalThemingManager = experimentalThemingManager
         self.duckPlayerSettings = duckPlayerSettings
+        self.featureDiscovery = featureDiscovery
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
     }

@@ -46,8 +46,8 @@ final class URLSeparatorView: UIView {
             lineView.widthAnchor.constraint(equalToConstant: Metrics.width),
             lineView.heightAnchor.constraint(equalToConstant: Metrics.height),
 
-            lineView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 2),
-            lineView.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -2),
+            lineView.leadingAnchor.constraint(equalTo: leadingAnchor),
+            lineView.trailingAnchor.constraint(equalTo: trailingAnchor),
             lineView.centerYAnchor.constraint(equalTo: centerYAnchor),
             lineView.topAnchor.constraint(greaterThanOrEqualTo: topAnchor),
             lineView.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor)

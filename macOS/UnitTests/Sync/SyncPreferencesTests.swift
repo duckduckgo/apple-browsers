@@ -343,7 +343,6 @@ final class SyncPreferencesTests: XCTestCase {
         // Removal of currentDialog indicates end of flow
         managementDialogModel.currentDialog = .enterRecoveryCode(code: "")
         let loginCalledExpectation = XCTestExpectation(description: "Login Called Once")
-        let secondLoginCalledExpectation = XCTestExpectation(description: "Login Called Again")
 
         ddgSyncing.spyLogin = { [weak self] _, _, _ in
             self?.ddgSyncing.spyLogin = { _, _, _ in

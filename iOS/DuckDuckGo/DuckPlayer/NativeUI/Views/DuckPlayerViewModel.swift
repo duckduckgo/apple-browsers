@@ -94,6 +94,10 @@ final class DuckPlayerViewModel: ObservableObject {
         !isLandscape && showAutoOpenOnYoutubeToggle
     }
 
+    var shouldShowWelcomeMessage: Bool {
+        !isLandscape && showWelcomeMessage
+    }
+
     var cancellables = Set<AnyCancellable>()
 
     /// The DuckPlayer instance
@@ -109,7 +113,7 @@ final class DuckPlayerViewModel: ObservableObject {
         didSet {
             appSettings.duckPlayerNativeYoutubeMode = autoOpenOnYoutube ? .auto : .ask
         }
-    }
+    }    
 
     /// Current interface orientation state.
     /// - `true` when device is in landscape orientation
@@ -120,6 +124,11 @@ final class DuckPlayerViewModel: ObservableObject {
     private var timestampUpdateTimer: Timer?
     private var webView: WKWebView?
     private var coordinator: DuckPlayerWebView.Coordinator?
+
+    // Show the welcome message if the variant is nativeOptOut and not shown before
+    private var showWelcomeMessage: Bool {
+        return appSettings.duckPlayerVariant == .nativeOptOut        
+    }
 
     /// Creates a new DuckPlayerViewModel instance
     /// - Parameters:

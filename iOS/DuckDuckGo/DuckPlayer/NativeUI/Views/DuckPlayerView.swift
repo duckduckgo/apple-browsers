@@ -42,11 +42,17 @@ struct DuckPlayerView: View {
         static let daxLogo = "Home"
         static let duckPlayerImage: String = "DuckPlayer"
         static let duckPlayerSettingsImage: String = "DuckPlayerOpenSettings"
-        static let duckPlayerYoutubeImage: String = "OpenInYoutube"
+        static let duckPlayerYoutubeImage: String = "OpenInYoutube"        
         static let bottomButtonHeight: CGFloat = 44
         static let grabHandleHeight: CGFloat = 4
         static let grabHandleWidth: CGFloat = 36
         static let videoContainerPadding: CGFloat = 20
+        static let welcomeMessageSpacing: CGFloat = 16
+        static let welcomeMessageInternalPadding: CGFloat = 16
+        static let welcomeMessageCornerRadius: CGFloat = 12
+        static let welcomeMessagePadding: CGFloat = 16
+        static let duckPlayerLogoSize: CGFloat = 64
+        static let duckPlayerLogoSpacing: CGFloat = 16
     }
 
     var body: some View {
@@ -87,56 +93,13 @@ struct DuckPlayerView: View {
                 }
 
                 // Show only if the source is youtube and the toggle should be visible
-                if viewModel.showAutoOpenOnYoutubeToggle && viewModel.source == .youtube && showOpenInYoutubeToggle {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color.gray.opacity(0.2))
-                        HStack(spacing: 8) {
-                            Text(verbatim: "Auto-open Duck Player on Youtube")
-                                .daxBodyRegular()
-                                .foregroundColor(.white)
-                            Spacer()
-                            Toggle(isOn: $autoOpenOnYoutube) {}
-                                .labelsHidden()
-                                .tint(.init(designSystemColor: .accent))
-                        }
-                        .padding(.horizontal, Constants.horizontalPadding)
-                    }
-                    .frame(height: Constants.bottomButtonHeight)
-                    .padding(.horizontal, Constants.horizontalPadding)
-                    .padding(.bottom, Constants.horizontalPadding)
-                    .padding(.top, Constants.videoContainerPadding)
-                    .transition(.opacity)
-                    .animation(.easeInOut, value: showOpenInYoutubeToggle)
-                }
+                autoOpenToggleView
 
-                if viewModel.shouldShowYouTubeButton {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color.gray.opacity(0.2))
-                        Button {
-                            viewModel.openInYouTube()
-                        } label: {
-                            HStack(spacing: 8) {
-                                Text(verbatim: "Watch in Youtube")
-                                    .daxBodyRegular()
-                                    .foregroundColor(.white)
-                                Spacer()
-                                Image(Constants.duckPlayerYoutubeImage)
-                                    .renderingMode(.template)
-                                    .foregroundColor(.white)
-                                    .frame(width: 24, height: 24)
-                            }
-                            .padding(.horizontal, Constants.horizontalPadding)
-                        }
-                    }
-                    .frame(height: Constants.bottomButtonHeight)
-                    .padding(.horizontal, Constants.horizontalPadding)
-                    .padding(.bottom, Constants.horizontalPadding)
-                    .padding(.top, Constants.videoContainerPadding)
-                } else {
-                    Spacer()
-                }
+                // Show the youtube button if needed
+                youtubeButtonView
+
+                // Show the welcome message if needed
+                welcomeMessage
             }
         }
         .gesture(
@@ -181,6 +144,66 @@ struct DuckPlayerView: View {
         }
     }
 
+    
+    @ViewBuilder
+    private var autoOpenToggleView: some View {
+        if viewModel.showAutoOpenOnYoutubeToggle && viewModel.source == .youtube && showOpenInYoutubeToggle {
+            ZStack {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.gray.opacity(0.2))
+                HStack(spacing: 8) {
+                    Text(verbatim: "Auto-open Duck Player on Youtube")
+                        .daxBodyRegular()
+                        .foregroundColor(.white)
+                    Spacer()
+                    Toggle(isOn: $autoOpenOnYoutube) {}
+                        .labelsHidden()
+                        .tint(.init(designSystemColor: .accent))
+                }
+                .padding(.horizontal, Constants.horizontalPadding)
+            }
+            .frame(height: Constants.bottomButtonHeight)
+            .padding(.horizontal, Constants.horizontalPadding)
+            .padding(.bottom, Constants.horizontalPadding)
+            .padding(.top, Constants.videoContainerPadding)
+            .transition(.opacity)
+            .animation(.easeInOut, value: showOpenInYoutubeToggle)
+        }
+    }
+
+    @ViewBuilder
+    private var youtubeButtonView: some View {
+        if viewModel.shouldShowYouTubeButton {
+            ZStack {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.gray.opacity(0.2))
+                Button {
+                    viewModel.openInYouTube()
+                } label: {
+                    HStack(spacing: 8) {
+                        Text(verbatim: "Watch in Youtube")
+                            .daxBodyRegular()
+                            .foregroundColor(.white)
+                        Spacer()
+                        Image(Constants.duckPlayerYoutubeImage)
+                            .renderingMode(.template)
+                            .foregroundColor(.white)
+                            .frame(width: 24, height: 24)
+                    }
+                    .padding(.horizontal, Constants.horizontalPadding)
+                }
+            }
+            .frame(height: Constants.bottomButtonHeight)
+            .padding(.horizontal, Constants.horizontalPadding)
+            .padding(.bottom, Constants.horizontalPadding)
+            .padding(.top, Constants.videoContainerPadding)
+        } else {
+            Spacer()
+        }
+    }
+    
+    
+    @ViewBuilder
     private var header: some View {
         HStack(spacing: Constants.horizontalPadding) {
 
@@ -220,10 +243,88 @@ struct DuckPlayerView: View {
                     Image(systemName: "xmark")
                         .foregroundColor(.white)
                         .font(.system(size: 20, weight: .semibold))
-                        .frame(width: 44, height: 44)  // Larger touch target
+                        .frame(width: 44, height: 44)
                 })
         }
         .padding(.horizontal, Constants.horizontalPadding)
+    }
+
+
+    @ViewBuilder
+    private var welcomeMessage: some View {
+        if viewModel.shouldShowWelcomeMessage {
+            ZStack(alignment: .topTrailing) {
+                VStack {
+                    HStack {
+                        Image(Constants.daxLogo)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: Constants.duckPlayerLogoSize, height: Constants.duckPlayerLogoSize)
+                        Spacer()
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("You’re watching in Duck Player!\nNo targeted ads here.")
+                            .daxHeadline()
+                            .foregroundColor(.white)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.9)
+                            .fixedSize(horizontal: false, vertical: true)
+                        
+                        Text("To go back to YouTube, close Duck Player. Not for you? Turn it off below!")
+                            .daxBodyRegular()
+                            .foregroundColor(.white.opacity(0.8))
+                            .multilineTextAlignment(.center)
+                            .lineLimit(3)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .padding(.top, 4)
+                        
+                        // Toggle
+                        ZStack {
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color.black.opacity(0.8))
+                            HStack(spacing: 8) {
+                                Text(verbatim: "Open YouTube videos here")
+                                    .daxBodyRegular()
+                                    .foregroundColor(.white)
+                                Spacer()
+                                Toggle(isOn: $autoOpenOnYoutube) {}
+                                    .labelsHidden()
+                                    .tint(.init(designSystemColor: .accent))
+                            }
+                            .padding(.horizontal, Constants.horizontalPadding)
+                        }
+                        .frame(height: Constants.bottomButtonHeight)
+                        .padding(.top, Constants.welcomeMessageSpacing)
+                    }
+                    .padding(Constants.welcomeMessageInternalPadding)
+                    .background(
+                        RoundedRectangle(cornerRadius: Constants.welcomeMessageCornerRadius)
+                        .fill(Color.gray.opacity(0.2))
+                    )
+                }
+                .padding(Constants.welcomeMessagePadding)
+                
+                // Close Button
+                Button(action: {
+                    //viewModel.closeWelcomeMessage()
+                }) {
+                    ZStack {
+                        Circle()
+                            .fill(Color(white: 0.2, opacity: 1.0))
+                            .frame(width: 32, height: 32)
+                        
+                        Image(systemName: "xmark")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.white)
+                    }
+                    .padding(8)
+                }
+                .offset(x: 2, y: 2 + Constants.duckPlayerLogoSize)
+                .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 0)
+            }
+            .transition(.opacity)
+        }
     }
 
 }

@@ -1027,7 +1027,7 @@ private class MockSecureVaultManagerDelegate: SecureVaultManagerDelegate {
                             completionHandler: @escaping (SecureVaultModels.WebsiteAccount?) -> Void) {}
 
     func secureVaultManagerShouldPromptUserToAutofillCreditCard(_: SecureVaultManager, withCreditCards creditCards: [SecureVaultModels.CreditCard], withTrigger trigger: AutofillUserScript.GetTriggerType, completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {}
-    
+
     func secureVaultManager(_: BrowserServicesKit.SecureVaultManager, promptUserWithGeneratedPassword password: String, completionHandler: @escaping (Bool) -> Void) {}
 
     func secureVaultManager(_: SecureVaultManager, didAutofill type: AutofillType, withObjectId objectId: String) {}

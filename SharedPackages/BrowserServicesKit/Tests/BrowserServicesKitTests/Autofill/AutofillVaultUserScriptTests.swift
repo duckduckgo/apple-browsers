@@ -624,7 +624,7 @@ class MockSecureVaultDelegate: AutofillSecureVaultDelegate {
                             didRequestCredentialsForDomain domain: String,
                             completionHandler: @escaping ([BrowserServicesKit.SecureVaultModels.WebsiteCredentials], BrowserServicesKit.SecureVaultModels.CredentialsProvider) -> Void) {
     }
-    
+
     func autofillUserScriptDidRequestCreditCard(_: BrowserServicesKit.AutofillUserScript, trigger: BrowserServicesKit.AutofillUserScript.GetTriggerType, completionHandler: @escaping (BrowserServicesKit.SecureVaultModels.CreditCard?, BrowserServicesKit.RequestVaultDataAction) -> Void) {
     }
 

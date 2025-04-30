@@ -447,7 +447,6 @@ extension AutofillUserScript {
         let success: CredentialResponse
     }
 
-
     struct RequestVaultCreditCardResponse: Codable {
 
         struct RequestVaultCreditCardResponseContents: Codable {
@@ -458,7 +457,7 @@ extension AutofillUserScript {
         let success: RequestVaultCreditCardResponseContents
 
         static func responseFromSecureVaultCreditCards(_ creditCard: SecureVaultModels.CreditCard?,
-                                                              action: RequestVaultDataAction) -> Self {
+                                                       action: RequestVaultDataAction) -> Self {
             let creditCardResponse: CreditCardResponse?
             if let creditCard = creditCard,
                let id = creditCard.id {

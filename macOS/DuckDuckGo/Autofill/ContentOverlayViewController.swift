@@ -266,7 +266,7 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
                                    completionHandler: @escaping (SecureVaultModels.WebsiteAccount?) -> Void) {
         // no-op on macOS
     }
-    
+
     public func secureVaultManagerShouldPromptUserToAutofillCreditCard(_: SecureVaultManager, withCreditCards creditCards: [SecureVaultModels.CreditCard], withTrigger trigger: AutofillUserScript.GetTriggerType, completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         // no-op on macOS
     }

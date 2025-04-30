@@ -38,13 +38,16 @@ public struct PreferencesSubscriptionSettingsViewV1: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            // Title, dialogs and status indicator
+            // Header part - Title, dialogs and status indicator
             VStack(alignment: .leading, spacing: 4) {
                 TextMenuTitle(UserText.preferencesSubscriptionSettingsTitle)
 
                 if state == .subscriptionActive {
                     StatusIndicatorView(status: .custom(UserText.subscribedStatusIndicator, Color(designSystemColor: .alertGreen)), isLarge: true)
+                } else if state == .subscriptionExpired {
+                    expiredHeaderView
                 }
+
             }
             .sheet(isPresented: $showingActivateSubscriptionSheet) {
                 SubscriptionAccessView(model: model.sheetModel)
@@ -62,6 +65,7 @@ public struct PreferencesSubscriptionSettingsViewV1: View {
             }
             .padding(.bottom, 16)
 
+            // Sections
             switch state {
             case .subscriptionActive:
                 activateSection
@@ -69,7 +73,6 @@ public struct PreferencesSubscriptionSettingsViewV1: View {
                 helpSection
 
             case .subscriptionExpired:
-                expiredHeaderView
                 activateSection
                 helpSection
 
@@ -127,19 +130,18 @@ public struct PreferencesSubscriptionSettingsViewV1: View {
 
     @ViewBuilder
     private var expiredHeaderView: some View {
-        UniversalHeaderView {
-            Image(.subscriptionExpiredIcon)
-                .padding(4)
-        } content: {
-            TextMenuItemHeader(model.subscriptionDetails ?? UserText.preferencesSubscriptionInactiveHeader)
-            TextMenuItemCaption(UserText.preferencesSubscriptionExpiredCaption)
-        } buttons: {
-            // We need to improve re-purchase flow
-            Button(UserText.viewPlansExpiredButtonTitle) { model.purchaseAction() }
-                .buttonStyle(DefaultActionButtonStyle(enabled: true))
-            Button(UserText.removeFromThisDeviceButton, action: {
-                showingRemoveConfirmationDialog.toggle()
-            })
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Image(.subscriptionExpiredIcon)
+                TextMenuItemCaption(model.subscriptionDetails ?? UserText.preferencesSubscriptionInactiveHeader)
+            }
+            HStack {
+                Button(UserText.viewPlansExpiredButtonTitle) { model.purchaseAction() }
+                    .buttonStyle(DefaultActionButtonStyle(enabled: true))
+                Button(UserText.removeFromThisDeviceButton, action: {
+                    showingRemoveConfirmationDialog.toggle()
+                })
+            }
         }
     }
 

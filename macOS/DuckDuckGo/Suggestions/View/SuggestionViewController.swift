@@ -43,7 +43,7 @@ final class SuggestionViewController: NSViewController {
     @IBOutlet weak var pixelPerfectConstraint: NSLayoutConstraint!
 
     let suggestionContainerViewModel: SuggestionContainerViewModel
-    let visualStyleManager: VisualStyleManagerProviding
+    let visualStyle: VisualStyleProviding
     let isBurner: Bool
 
     required init?(coder: NSCoder) {
@@ -53,10 +53,10 @@ final class SuggestionViewController: NSViewController {
     required init?(coder: NSCoder,
                    suggestionContainerViewModel: SuggestionContainerViewModel,
                    isBurner: Bool,
-                   visualStyleManager: VisualStyleManagerProviding) {
+                   visualStyle: VisualStyleProviding) {
         self.suggestionContainerViewModel = suggestionContainerViewModel
         self.isBurner = isBurner
-        self.visualStyleManager = visualStyleManager
+        self.visualStyle = visualStyle
 
         super.init(coder: coder)
     }
@@ -282,7 +282,7 @@ extension SuggestionViewController: NSTableViewDelegate {
 
     func tableView(_ tableView: NSTableView, viewFor tableColumn: NSTableColumn?, row: Int) -> NSView? {
         let cell = tableView.makeView(withIdentifier: SuggestionTableCellView.identifier, owner: self) as? SuggestionTableCellView ?? SuggestionTableCellView()
-        cell.visualStyleManager = visualStyleManager
+        cell.visualStyle = visualStyle
 
         guard let suggestionViewModel = suggestionContainerViewModel.suggestionViewModel(at: row) else {
             assertionFailure("SuggestionViewController: Failed to get suggestion")

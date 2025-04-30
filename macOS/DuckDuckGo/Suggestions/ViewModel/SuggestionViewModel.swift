@@ -28,12 +28,12 @@ struct SuggestionViewModel {
     init(isHomePage: Bool,
          suggestion: Suggestion,
          userStringValue: String,
-         visualStyleManager: VisualStyleManagerProviding) {
+         visualStyle: VisualStyleProviding) {
         self.isHomePage = isHomePage
         self.suggestion = suggestion
         self.userStringValue = userStringValue
 
-        let fontSize = isHomePage ? visualStyleManager.style.newTabOrHomePageAddressBarFontSize : visualStyleManager.style.defaultAddressBarFontSize
+        let fontSize = isHomePage ? visualStyle.newTabOrHomePageAddressBarFontSize : visualStyle.defaultAddressBarFontSize
         self.tableRowViewStandardAttributes = Self.rowViewStandardAttributes(size: fontSize, isBold: false)
         self.tableRowViewBoldAttributes = Self.rowViewStandardAttributes(size: fontSize, isBold: true)
     }

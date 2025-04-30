@@ -48,7 +48,7 @@ final class SuggestionTableCellView: NSTableCellView {
     @IBOutlet var switchToTabBoxLeadingConstraint: NSLayoutConstraint!
     @IBOutlet var switchToTabBoxTrailingConstraint: NSLayoutConstraint!
 
-    var visualStyleManager: VisualStyleManagerProviding?
+    var visualStyle: VisualStyleProviding?
     var suggestion: Suggestion?
 
     static let switchToTabAttributedString: NSAttributedString = {
@@ -123,14 +123,14 @@ final class SuggestionTableCellView: NSTableCellView {
             switchToTabBox.backgroundColor = .white.withAlphaComponent(0.09)
         } else {
             textField?.attributedStringValue = attributedString
-            textField?.textColor = visualStyleManager?.style.addressBarTextFieldColor ?? Constants.textColor
+            textField?.textColor = visualStyle?.addressBarTextFieldColor ?? Constants.textColor
             switchToTabLabel.textColor = Constants.textColor
             switchToTabArrowView.contentTintColor = Constants.textColor
             switchToTabBox.backgroundColor = .buttonMouseOver
             if isBurner {
                 suffixTextField.textColor = Constants.burnerSuffixColor
             } else {
-                suffixTextField.textColor = visualStyleManager?.style.addressBarSuffixTextColor ?? Constants.suffixColor
+                suffixTextField.textColor = visualStyle?.addressBarSuffixTextColor ?? Constants.suffixColor
             }
         }
     }

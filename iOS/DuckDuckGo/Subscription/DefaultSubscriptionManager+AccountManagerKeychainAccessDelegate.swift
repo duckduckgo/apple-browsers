@@ -20,16 +20,22 @@
 import Foundation
 import Core
 import Subscription
+import os.log
 
-extension DefaultSubscriptionManager: AccountManagerKeychainAccessDelegate {
+extension DefaultSubscriptionManager: @retroactive AccountManagerKeychainAccessDelegate {
 
     public func accountManagerKeychainAccessFailed(accessType: AccountKeychainAccessType, error: any Error) {
-        let parameters = [
-            PixelParameters.privacyProKeychainAccessType: accessType.rawValue,
-            PixelParameters.privacyProKeychainError: error.localizedDescription,
-            PixelParameters.source: "browser"
-        ]
 
+        guard let expectedError = error as? AccountKeychainAccessError else {
+            assertionFailure("Unexpected error type: \(error)")
+            Logger.subscription.fault("Unexpected error type: \(error)")
+            return
+        }
+
+        let parameters = [PixelParameters.privacyProKeychainAccessType: accessType.rawValue,
+                          PixelParameters.privacyProKeychainError: expectedError.errorDescription,
+                          PixelParameters.source: KeychainErrorSource.browser.rawValue,
+                          PixelParameters.authVersion: KeychainErrorAuthVersion.v1.rawValue]
         DailyPixel.fireDailyAndCount(pixel: .privacyProKeychainAccessError,
                                      pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
                                      withAdditionalParameters: parameters)

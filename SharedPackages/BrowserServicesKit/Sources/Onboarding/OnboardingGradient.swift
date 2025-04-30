@@ -17,6 +17,7 @@
 //
 
 import SwiftUI
+import Common
 
 public struct OnboardingGradient: View {
     @Environment(\.colorScheme) private var colorScheme
@@ -48,6 +49,43 @@ public struct OnboardingGradient: View {
         Image("OnboardingGradient", bundle: bundle)
             .resizable()
     }
+
+    enum GradientType {
+        case bottom
+        case top
+    }
+
+    static func center(for type: GradientType) -> UnitPoint {
+        switch type {
+        case .bottom:
+            if DevicePlatform.isMac {
+                return Center.macOSBottom
+            } else if DevicePlatform.isIpad {
+                return Center.iPadBottom
+            } else {
+                return Center.iOSBottom
+            }
+        case .top:
+            if DevicePlatform.isMac {
+                return Center.macOSTop
+            } else if DevicePlatform.isIpad {
+                return Center.iPadTop
+            } else {
+                return Center.iOSTop
+            }
+        }
+    }
+
+    struct Center {
+        static let iOSBottom = UnitPoint(x: 1.11, y: 0.76)
+        static let iOSTop = UnitPoint(x: 0.87, y: 1.0)
+
+        static let iPadBottom = UnitPoint(x: 0.82, y: 0.98)
+        static let iPadTop = UnitPoint(x: 0.9, y: 1.14)
+
+        static let macOSBottom = UnitPoint(x: 0.5, y: 1.45)
+        static let macOSTop = UnitPoint(x: 0.71, y: 1.2)
+    }
 }
 
 @available(iOS 15, macOS 13, *)
@@ -59,53 +97,20 @@ extension OnboardingGradient {
 
         var body: some View {
             ZStack {
-                // 5th gradient
                 EllipticalGradient(
                     stops: [
-                        Gradient.Stop(color: Color(red: 0.97, green: 0.73, blue: 0.67).opacity(0.5), location: 0.00),
-                        Gradient.Stop(color: .clear, location: 1.00),
+                        Gradient.Stop(color: Color(red: 1, green: 0.94, blue: 0.76).opacity(0.64), location: 0.00),
+                        Gradient.Stop(color: Color(red: 0.7, green: 0.77, blue: 0.98).opacity(0.8), location: 1.00)
                     ],
-                    center: UnitPoint(x: 0.2, y: 0.17),
+                    center: OnboardingGradient.center(for: .top),
                     endRadiusFraction: 1
                 )
-
-                // 4th gradient
                 EllipticalGradient(
                     stops: [
-                        Gradient.Stop(color: Color(red: 1, green: 0.91, blue: 0.64).opacity(0.12), location: 0.00),
-                        Gradient.Stop(color: .clear, location: 1.00),
+                        Gradient.Stop(color: Color(red: 1, green: 0.91, blue: 0.64).opacity(0), location: 0.00),
+                        Gradient.Stop(color: Color(red: 1, green: 0.91, blue: 0.64).opacity(0), location: 1.00)
                     ],
-                    center: UnitPoint(x: 0.16, y: 0.86),
-                    endRadiusFraction: 1
-                )
-
-                // 3rd gradient
-                EllipticalGradient(
-                    stops: [
-                        Gradient.Stop(color: Color(red: 0.93, green: 0.9, blue: 1).opacity(0.8), location: 0.00),
-                        Gradient.Stop(color: .clear, location: 1.00),
-                    ],
-                    center: UnitPoint(x: 0.92, y: 0),
-                    endRadiusFraction: 1
-                )
-
-                // 2nd gradient
-                EllipticalGradient(
-                    stops: [
-                        Gradient.Stop(color: Color(red: 0.93, green: 0.9, blue: 1).opacity(0.8), location: 0.00),
-                        Gradient.Stop(color: .clear, location: 1.00),
-                    ],
-                    center: UnitPoint(x: 0.89, y: 1.07),
-                    endRadiusFraction: 1
-                )
-
-                // 1st gradient
-                EllipticalGradient(
-                    stops: [
-                        Gradient.Stop(color: Color(red: 0.8, green: 0.85, blue: 1).opacity(0.58), location: 0.15),
-                        Gradient.Stop(color: .clear, location: 1.00),
-                    ],
-                    center: UnitPoint(x: 1.02, y: 0.5),
+                    center: center(for: .bottom),
                     endRadiusFraction: 1
                 )
             }
@@ -119,56 +124,22 @@ extension OnboardingGradient {
 
         var body: some View {
             ZStack {
-                // 5th Gradient
                 EllipticalGradient(
                     stops: [
-                        Gradient.Stop(color: Color(red: 0.17, green: 0.08, blue: 0.44).opacity(0.5), location: 0.00),
-                        Gradient.Stop(color: Color(red: 0.17, green: 0.08, blue: 0.44).opacity(0), location: 1.00),
+                        Gradient.Stop(color: Color(red: 0.28, green: 0.39, blue: 0.92).opacity(0.48), location: 0.00),
+                        Gradient.Stop(color: Color(red: 0.02, green: 0.1, blue: 0.42).opacity(0.72), location: 1.00),
                     ],
-                    center: UnitPoint(x: 0.2, y: 0.17),
+                    center: center(for: .bottom),
                     endRadiusFraction: 1
                 )
-
-                // 4th Gradient
                 EllipticalGradient(
                     stops: [
-                        Gradient.Stop(color: Color(red: 1, green: 1, blue: 0.54).opacity(0), location: 0.00),
-                        Gradient.Stop(color: Color(red: 1, green: 0.91, blue: 0.64).opacity(0), location: 1.00),
+                        Gradient.Stop(color: Color(red: 0.26, green: 0.26, blue: 0.84).opacity(0.64), location: 0.00),
+                        Gradient.Stop(color: Color(red: 0.25, green: 0.14, blue: 0.56).opacity(0), location: 1.00),
                     ],
-                    center: UnitPoint(x: 0.16, y: 0.86),
+                    center: OnboardingGradient.center(for: .top),
                     endRadiusFraction: 1
                 )
-
-                // 3rd Gradient
-                EllipticalGradient(
-                    stops: [
-                        Gradient.Stop(color: Color(red: 0.17, green: 0.08, blue: 0.44).opacity(0.8), location: 0.00),
-                        Gradient.Stop(color: Color(red: 0.17, green: 0.08, blue: 0.44).opacity(0), location: 1.00),
-                    ],
-                    center: UnitPoint(x: 0.92, y: 0),
-                    endRadiusFraction: 1
-                )
-
-                // 2nd Gradient
-                EllipticalGradient(
-                    stops: [
-                        Gradient.Stop(color: Color(red: 0.17, green: 0.08, blue: 0.44).opacity(0.8), location: 0.00),
-                        Gradient.Stop(color: Color(red: 0.17, green: 0.08, blue: 0.44).opacity(0), location: 1.00),
-                    ],
-                    center: UnitPoint(x: 0.89, y: 1.07),
-                    endRadiusFraction: 1
-                )
-
-                // 1st Gradient
-                EllipticalGradient(
-                    stops: [
-                        Gradient.Stop(color: Color(red: 0.89, green: 0.44, blue: 0.31).opacity(0.32), location: 0.15),
-                        Gradient.Stop(color: Color(red: 0.89, green: 0.44, blue: 0.31).opacity(0), location: 1.00),
-                    ],
-                    center: UnitPoint(x: 1.0, y: 0.5),
-                    endRadiusFraction: 1
-                )
-
             }
             .background(Color(red: 0.07, green: 0.07, blue: 0.07))
         }

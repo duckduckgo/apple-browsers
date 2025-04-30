@@ -39,6 +39,7 @@ import os.log
 import PageRefreshMonitor
 import BrokenSitePrompt
 import AIChat
+import NetworkExtension
 
 class MainViewController: UIViewController {
 
@@ -179,6 +180,7 @@ class MainViewController: UIViewController {
         fatalError("Use init?(code:")
     }
 
+    let featureDiscovery: FeatureDiscovery
     let fireproofing: Fireproofing
     let websiteDataManager: WebsiteDataManaging
     let textZoomCoordinator: TextZoomCoordinating
@@ -239,7 +241,8 @@ class MainViewController: UIViewController {
         appDidFinishLaunchingStartTime: CFAbsoluteTime?,
         maliciousSiteProtectionManager: MaliciousSiteProtectionManaging,
         maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
-        aiChatSettings: AIChatSettingsProvider
+        aiChatSettings: AIChatSettingsProvider,
+        featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard)
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.bookmarksDatabaseCleaner = bookmarksDatabaseCleaner
@@ -252,6 +255,7 @@ class MainViewController: UIViewController {
         self.appSettings = appSettings
         self.aiChatSettings = aiChatSettings
         self.previewsSource = previewsSource
+        self.featureDiscovery = featureDiscovery
 
         let interactionStateSource = WebViewStateRestorationManager(featureFlagger: featureFlagger).isFeatureEnabled ? TabInteractionStateDiskSource() : nil
         self.tabManager = TabManager(model: tabsModel,
@@ -271,7 +275,8 @@ class MainViewController: UIViewController {
                                      websiteDataManager: websiteDataManager,
                                      fireproofing: fireproofing,
                                      maliciousSiteProtectionManager: maliciousSiteProtectionManager,
-                                     maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager)
+                                     maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager,
+                                     featureDiscovery: featureDiscovery)
         self.syncPausedStateManager = syncPausedStateManager
         self.privacyProDataReporter = privacyProDataReporter
         self.homeTabManager = NewTabPageManager()
@@ -1722,6 +1727,14 @@ class MainViewController: UIViewController {
     }
 
     private func subscribeToNetworkProtectionEvents() {
+        if !featureDiscovery.wasUsedBefore(.vpn) {
+            // If the VPN was used before we don't care about this notification any more
+            NotificationCenter.default.publisher(for: .NEVPNStatusDidChange)
+                .sink { [weak self] notification in
+                    self?.onVPNStatusDidChange(notification)
+                }.store(in: &vpnCancellables)
+        }
+
         NotificationCenter.default.publisher(for: .accountDidSignIn)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
@@ -1782,6 +1795,14 @@ class MainViewController: UIViewController {
                                               presentationLocation: .withoutBottomBar)
                 }
             }
+    }
+
+    private func onVPNStatusDidChange(_ notification: Notification) {
+        guard let session = (notification.object as? NETunnelProviderSession),
+           session.status == .connected else {
+            return
+        }
+        self.featureDiscovery.setWasUsedBefore(.vpn)
     }
 
     private func onNetworkProtectionEntitlementMessagingChange() {
@@ -1896,6 +1917,7 @@ class MainViewController: UIViewController {
     }
 
     func openAIChat(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil) {
+        featureDiscovery.setWasUsedBefore(.aiChat)
         aiChatViewControllerManager.openAIChat(query, payload: payload, autoSend: autoSend, on: self)
     }
 }
@@ -2337,7 +2359,8 @@ extension MainViewController: OmniBarDelegate {
             }
         }
 
-        Pixel.fire(pixel: .openAIChatFromAddressBar)
+        Pixel.fire(pixel: .openAIChatFromAddressBar,
+                   withAdditionalParameters: featureDiscovery.addToParams([:], forFeature: .aiChat))
     }
 
     func onAccessoryLongPressed(accessoryType: OmniBarAccessoryType) {
@@ -2647,7 +2670,7 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestAIChat(tab: TabViewController) {
-        Pixel.fire(pixel: .browsingMenuListAIChat)
+        // Pixel fired at point where this is triggered to avoid over firing
         openAIChat()
     }
 
@@ -2882,6 +2905,8 @@ extension MainViewController: TabSwitcherDelegate {
     }
 
     func tabSwitcherDidRequestAIChat(tabSwitcher: TabSwitcherViewController) {
+        Pixel.fire(pixel: .openAIChatFromTabManager,
+                   withAdditionalParameters: featureDiscovery.addToParams([:], forFeature: .aiChat))
         self.aiChatViewControllerManager.openAIChat(on: tabSwitcher)
     }
 

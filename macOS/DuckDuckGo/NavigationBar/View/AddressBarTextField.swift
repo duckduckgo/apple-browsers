@@ -82,7 +82,6 @@ final class AddressBarTextField: NSTextField {
         registerForDraggedTypes([.string, .URL, .fileURL])
     }
 
-
     override func mouseDown(with event: NSEvent) {
         super.mouseDown(with: event)
         currentEditor()?.selectAll(self)

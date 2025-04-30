@@ -42,7 +42,7 @@ class TabSwitcherBarsStateHandlerTests: XCTestCase {
         XCTAssertEqual(stateHandler.bottomBarItems, [
             stateHandler.tabSwitcherStyleButton,
             UIBarButtonItem.flexibleSpace(),
-            UIBarButtonItem.fixedSpace(12),
+            UIBarButtonItem.fixedSpace(11),
             UIBarButtonItem.flexibleSpace(),
             stateHandler.fireButton,
             UIBarButtonItem.flexibleSpace(),

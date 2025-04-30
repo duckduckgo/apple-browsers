@@ -17,6 +17,7 @@
 //
 
 import SwiftUI
+import Common
 
 public struct OnboardingGradient: View {
     @Environment(\.colorScheme) private var colorScheme
@@ -153,30 +154,4 @@ extension OnboardingGradient {
 #Preview("Dark Mode - Elliptical") {
     OnboardingGradient()
         .preferredColorScheme(.dark)
-}
-
-enum DevicePlatform {
-    static var isMac: Bool {
-        #if os(macOS)
-        return true
-        #else
-        return false
-        #endif
-    }
-
-    static var isIpad: Bool {
-        #if os(iOS)
-        return UIDevice.current.userInterfaceIdiom == .pad
-        #else
-        return false
-        #endif
-    }
-
-    static var isIphone: Bool {
-        #if os(iOS)
-        return UIDevice.current.userInterfaceIdiom == .phone
-        #else
-        return false
-        #endif
-    }
 }

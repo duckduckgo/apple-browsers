@@ -48,7 +48,7 @@ struct SaveCreditCardView: View {
             VStack {
                 Spacer(minLength: Const.Size.topPadding)
                 
-                AutofillViews.AppIconHeader(size: Const.Size.iconSize)
+                AutofillViews.AppIconHeader()
                 
                 Spacer(minLength: Const.Size.contentSpacing)
                 

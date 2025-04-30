@@ -16,6 +16,10 @@
 //  limitations under the License.
 //
 
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+
+import WebKit
+
 @available(macOS 15.4, *)
 @MainActor
 final class WebExtensionNavigationBarUpdater {
@@ -79,3 +83,5 @@ final class WebExtensionNavigationBarUpdater {
         }
     }
 }
+
+#endif

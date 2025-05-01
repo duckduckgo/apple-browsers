@@ -1,5 +1,5 @@
 //
-//  PasswordHider.swift
+//  TextMasker.swift
 //  DuckDuckGo
 //
 //  Copyright © 2022 DuckDuckGo. All rights reserved.
@@ -19,15 +19,18 @@
 
 import Foundation
 
-public struct PasswordHider {
-    public let password: String
-    public var hiddenPassword: String {
-        let maximumPasswordDisplayCount = 22
-        let passwordCount = password.count > maximumPasswordDisplayCount ? maximumPasswordDisplayCount : password.count
-        return String(repeating: "•", count: passwordCount)
+public struct TextMasker {
+    
+    public let originalText: String
+    public let maxDisplayLength: Int
+    
+    public var maskedText: String {
+        let textCount = originalText.count > maxDisplayLength ? maxDisplayLength : originalText.count
+        return String(repeating: "•", count: textCount)
     }
 
-    public init(password: String) {
-        self.password = password
+    public init(text: String, maxDisplayLength: Int = 22) {
+        self.originalText = text
+        self.maxDisplayLength = maxDisplayLength
     }
 }

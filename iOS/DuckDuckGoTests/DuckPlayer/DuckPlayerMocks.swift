@@ -183,6 +183,7 @@ final class MockDuckPlayerSettings: DuckPlayerSettings {
     var nativeUIYoutubeMode: DuckDuckGo.NativeDuckPlayerYoutubeMode = .allCases.first!
     var nativeUIPrimingModalPresentedCount: Int = 0
     var duckPlayerNativeUIPrimingModalTimeSinceLastPresented: Int = 0
+    var variant: DuckDuckGo.DuckPlayerVariant = .classicWeb
 
     init(appSettings: any DuckDuckGo.AppSettings, privacyConfigManager: any BrowserServicesKit.PrivacyConfigurationManaging, internalUserDecider: any BrowserServicesKit.InternalUserDecider) {}
 

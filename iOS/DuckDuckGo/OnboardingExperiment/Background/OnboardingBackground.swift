@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import Onboarding
 
 struct OnboardingBackground: View {
     @Environment(\.verticalSizeClass) private var vSizeClass
@@ -26,23 +27,17 @@ struct OnboardingBackground: View {
 
     var body: some View {
         GeometryReader { proxy in
-            // On iPhone we want the background image to start from the left but on iPad we want to take the center part
-            let alignment = Metrics.imageCentering.build(v: vSizeClass, h: hSizeClass)
             Image(.onboardingBackground)
                 .resizable()
                 .aspectRatio(contentMode: .fill)
                 .opacity(colorScheme == .light ? 0.5 : 0.3)
-                .frame(width: proxy.size.width, height: proxy.size.height, alignment: alignment)
+                .frame(width: proxy.size.width, height: proxy.size.height, alignment: .center)
                 .background(
-                    OnboardingGradientView()
+                    OnboardingGradient()
                         .ignoresSafeArea()
                 )
         }
     }
-}
-
-private enum Metrics {
-    static let imageCentering = MetricBuilder<Alignment>(iPhone: .bottomLeading, iPad: .center)
 }
 
 #Preview("Light Mode") {

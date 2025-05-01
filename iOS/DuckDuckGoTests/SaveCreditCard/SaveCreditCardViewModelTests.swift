@@ -39,7 +39,7 @@ final class SaveCreditCardViewModelTests: XCTestCase {
         UserDefaults.app = customSuite
         
         testCard = createTestCreditCard()
-        viewModel = SaveCreditCardViewModel(creditCard: testCard, accountDomain:  "example.com", vault: vault)
+        viewModel = SaveCreditCardViewModel(creditCard: testCard, accountDomain: "example.com", vault: vault)
     }
     
     override func tearDownWithError() throws {

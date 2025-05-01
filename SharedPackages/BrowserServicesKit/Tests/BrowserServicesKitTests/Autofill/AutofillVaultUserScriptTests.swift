@@ -559,7 +559,7 @@ class AutofillVaultUserScriptTests: XCTestCase {
         userScript.processEncryptedMessage(message, from: userContentController)
         XCTAssertNil(delegate.lastSubtype)
     }
-    
+
     func testWhenGetAutofillDataForCreditCardsCalled_ThenDelegateMethodCalled() {
         class CreditCardDelegate: MockSecureVaultDelegate {
             var didRequestCreditCardCalled = false

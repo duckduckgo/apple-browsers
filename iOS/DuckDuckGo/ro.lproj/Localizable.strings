@@ -1,7 +1,4 @@
 /* No comment provided by engineer. */
-" " = " ";
-
-/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -310,6 +307,93 @@
 /* No comment provided by engineer. */
 "autoconsent.info.header" = "Când DuckDuckGo detectează ferestre pop-up în care ți se solicită consimțământul cu privire la modulele cookie pe site-urile pe care le vizitezi, putem încerca să îți setăm automat preferințele privind modulele cookie pentru a minimiza modulele cookie și a maximiza confidențialitatea și, apoi, pentru a închide ferestrele pop-up. Unele site-uri nu oferă o opțiune de gestionare a preferințelor privind modulele cookie, prin urmare putem doar să ascundem ferestrele pop-up precum acestea.";
 
+/* Toast message when a credit card item is deleted */
+"autofill.creditcard.deleted-message-no-title" = "Cardul a fost șters";
+
+/* Card name label for credit card details on autofill */
+"autofill.creditcard.details.card-name" = "Numele de pe card";
+
+/* Card nickname label for credit card details on autofill */
+"autofill.creditcard.details.card-nickname" = "Pseudonimul cardului";
+
+/* Card number label for credit card details on autofill */
+"autofill.creditcard.details.card-number" = "Numărul cardului";
+
+/* Card number label for credit card details on autofill when editing */
+"autofill.creditcard.details.card-number.required" = "Numărul cardului";
+
+/* Title for toast when copying the credit card name */
+"autofill.creditcard.details.copy-toast.card-name-copied" = "Nume copiat";
+
+/* Title for toast when copying the credit card number */
+"autofill.creditcard.details.copy-toast.card-number-copied" = "Numărul cardului a fost copiat";
+
+/* Title for toast when copying the credit card cvv (security code) */
+"autofill.creditcard.details.copy-toast.cvv-copied" = "CVV a fost copiat";
+
+/* Title for toast when copying the credit card expiration date */
+"autofill.creditcard.details.copy-toast.exp-date-copied" = "Data de expirare a fost copiată";
+
+/* CVV (security code) label for credit card details on autofill */
+"autofill.creditcard.details.cvv" = "CVV";
+
+/* Title for autofill credit card details */
+"autofill.creditcard.details.default-title" = "Card";
+
+/* Delete button when deleting an autofill credit card */
+"autofill.creditcard.details.delete" = "Șterge cardul";
+
+/* Autofill alert button confirming delete credit card */
+"autofill.creditcard.details.delete-confirmation.button" = "Șterge cardul";
+
+/* Autofill message confirming delete credit card */
+"autofill.creditcard.details.delete-confirmation.message" = "Sigur dorești să ștergi acest card?";
+
+/* Title when editing autofill credit card details */
+"autofill.creditcard.details.edit-title" = "Editează cardul";
+
+/* Placeholder for card number field on autofill credit card details */
+"autofill.creditcard.details.edit.card-number-placeholder" = "1234 5678 1234 5678";
+
+/* Placeholder for CVV security code field on autofill credit card details */
+"autofill.creditcard.details.edit.cvv-placeholder" = "Cod de securitate";
+
+/* Placeholder for expiration date field on autofill credit card details */
+"autofill.creditcard.details.edit.exp-date-placeholder" = "LL / AA";
+
+/* Expiration date label for credit card details on autofill */
+"autofill.creditcard.details.exp-date" = "Data expirării";
+
+/* Title when adding new autofill credit card */
+"autofill.creditcard.details.new-title" = "Adaugă cardul";
+
+/* Placeholder for card name field on autofill credit card details */
+"autofill.creditcard.edit.card-name-placeholder" = "Numele de pe card";
+
+/* Placeholder for card nickname field on autofill credit card details */
+"autofill.creditcard.edit.card-nickname-placeholder" = "(de ex., Serviciu)";
+
+/* Subtitle for view displayed when no autofill credit cards have been saved */
+"autofill.creditcard.empty-view.subtitle.first.paragraph" = "Cardurile de credit sunt stocate în siguranță pe dispozitivul tău.";
+
+/* Title for view displayed when autofill has no credit cards saved */
+"autofill.creditcard.empty-view.title" = "Nu a fost încă salvat niciun card de credit";
+
+/* Reason for auth when opening credit card list */
+"autofill.creditcard.list.auth.reason" = "Deblochează dispozitivul pentru a accesa cardurile de credit";
+
+/* Credit card row label for credit card expiry date */
+"autofill.creditcard.list.item.expiry" = "Expiră:";
+
+/* Title for screen listing autofill credit cards */
+"autofill.creditcard.list.title" = "Carduri de credit";
+
+/* Title for view displayed when autofill is locked on devices where a passcode has not been set */
+"autofill.creditcard.no-auth.subtitle" = "Este necesară o parolă pentru a-ți proteja cardurile de credit.";
+
+/* Title for view displayed when autofill is locked on devices where a passcode has not been set */
+"autofill.creditcard.no-auth.title" = "Securizează-ți dispozitivul pentru a salva cardurile de credit";
+
 /* Do not translate - stringsdict entry */
 "autofill.delete.all.passwords.completion" = "autofill.delete.all.passwords.completion";
 
@@ -330,6 +414,9 @@
 
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Activează Email Protection";
+
+/* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
+"autofill.hide-card-cvv" = "Ascunde codul CVV";
 
 /* Accessibility title for a Hide Password button replacing displayed password with ***** */
 "autofill.hide-password" = "Ascunde parola";
@@ -385,7 +472,7 @@
 /* Message displayed after updating an autofill login */
 "autofill.login-updated.toast" = "Parolă actualizată";
 
-/* Menu item text for copying autofill login details */
+/* Menu item text for copying autofill details */
 "autofill.logins.copy-prompt" = "Copiază %@";
 
 /* Title for toast when copying address */
@@ -519,6 +606,9 @@
 
 /* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
 "autofill.logins.list.settings.footer" = "Parolele sunt criptate. Nimeni în afară de tine nu le poate vedea, nici măcar noi.";
+
+/* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
+"autofill.logins.list.settings.passwords.cards.footer" = "Parolele și cardurile de credit sunt criptate. Nimeni în afară de tine nu le poate vedea, nici măcar noi.";
 
 /* Section title for group of suggested saved logins */
 "autofill.logins.list.suggested" = "Sugerat";
@@ -687,6 +777,9 @@
 
 /* Section header for the autofill settings screen */
 "autofill.settings.view.section-header" = "Vezi";
+
+/* Accessibility title for a Show CVV button displaying actual credit card CVV (security code) instead of *** */
+"autofill.show-card-cvv" = "Afișează codul CVV";
 
 /* Accessibility title for a Show Password button displaying actial password instead of ***** */
 "autofill.show-password" = "Arată parola";
@@ -1210,21 +1303,6 @@
 /* Title for message explaining to the user that Duck Player is not available */
 "duck-player.contingency-title" = "Duck Player indisponibil";
 
-/* Text for the toggle to autoplay videos */
-"duck-player.native-autoplay-videos" = "Autoplay Videos";
-
-/* Text for the description about autoplay videos */
-"duck-player.native-autoplay-videos.description" = "Videos opened in Duck Player will automatically begin playback. Turn this off if you would like to manually start playback of videos opened in Duck Player.";
-
-/* Text for the button to watch a video on DuckPlayer */
-"duck-player.native-open-in-duckplayer" = "Play this video in Duck Player";
-
-/* Text for the button to resume watching a video on DuckPlayer */
-"duck-player.native-resume-in-duckplayer" = "Resume in Duck Player";
-
-/* Text for the button to watch a video on YouTube */
-"duck-player.native-watch-on-youtube" = "Watch in Youtube";
-
 /* Button for the message explaining to the user that Duck Player is not available so the user can learn more */
 "duck-player.video-contingency-cta" = "Află mai multe";
 
@@ -1261,14 +1339,8 @@
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Niciodată";
 
-/* Toast message for the Duck Player entry pill dismiss count */
-"duckPlayer.pill.dismiss.count.toast.message" = "Want to turn off Duck Player appearing on Youtube?";
-
-/* Button on Toast message for the Duck Player entry pill dismiss count */
-"duckPlayer.pill.dismiss.count.toast.message.button" = "Deschide Setări";
-
-/* Caption for Duck Player entry point */
-"duckplayer.pill.watch.without.ads" = "No targeted ads, always private";
+/* Settings screen cell text for DuckPlayer settings */
+"duckplayer.open.video.settings.title" = "Duck Player";
 
 /* Body text for the modal feature explanation */
 "duckplayer.presentation.modal.body" = "Duck Player îți permite să vizionezi YouTube fără reclame țintite în DuckDuckGo, iar ceea ce vizionezi nu îți va influența recomandările.";
@@ -1299,39 +1371,6 @@
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.title" = "Duck Player";
-
-/* Text displayed when DuckPlayer is in 'Ask' mode for Youtube. */
-"duckPlayerNative.ask.label" = "Permite-mi să aleg";
-
-/* Text displayed when DuckPlayer is automatically enabled for Youtube */
-"duckPlayerNative.auto.label" = "Automat";
-
-/* Label for the automatic youtube video opening */
-"duckPlayerNative.auto.open.label" = "Deschidere automată Duck Player pe YouTube";
-
-/* CTA for DuckPlayer priming modal */
-"duckPlayerNative.modal.cta" = "Watch Now Privately";
-
-/* Description for DuckPlayer priming modal */
-"duckPlayerNative.modal.description" = "Plus, what you watch in Duck Player won’t influence your YouTube recommendations.";
-
-/* Title for DuckPlayer priming modal */
-"duckPlayerNative.modal.title" = "Play this video in Duck Player to watch without targeted ads!";
-
-/* Text displayed when DuckPlayer is in off for youtube. */
-"duckPlayerNative.never.label" = "Nu arăta";
-
-/* Label for the use DuckPlayer on Youtube toggle footer */
-"duckPlayerNative.use.on.serp.footer" = "Clicking on YouTube videos in DuckDuckGo search results will open in Duck Player.";
-
-/* Label for the use DuckPlayer on SERP toggle */
-"duckPlayerNative.use.on.serp.label" = "DuckDuckGo Search Results";
-
-/* Label for the use DuckPlayer on Youtube toggle footer */
-"duckPlayerNative.use.on.youtube.footer" = "Choose how you would like Duck Player to handle YouTube videos when navigating from the YouTube website.";
-
-/* Label for the use DuckPlayer on Youtube toggle */
-"duckPlayerNative.use.on.youtube.label" = "Folosește pe Youtube.com";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Protecția comunicațiilor prin e-mail";
@@ -2258,7 +2297,7 @@
 "onboarding.skip.cta.resumeOnboarding" = "Afișează tutorialul";
 
 /* The message of the skip onboarding dialog popup. */
-"onboarding.skip.message" = "Nu uita: poți șterge toate filele, istoricul și datele de navigare în două atingeri cu Fire Button 🔥";
+"onboarding.skip.message" = "Nu uita: poți șterge toate filele, istoricul și datele de navigare în două atingeri, cu Fire Button 🔥";
 
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Am înțeles! O să omit celelalte sfaturi.";
@@ -2794,9 +2833,6 @@
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Numele gazdă stocat: %@";
 
-/* Button for adding email address to subscription */
-"subscription.activate.add.email.button" = "Adaugă adresa de e-mail";
-
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Adaugă pe dispozitiv";
 
@@ -3018,6 +3054,9 @@
 
 /* Unknown period subscription renewal info where parameter is renewal date. This reads as 'Your subscription renews on (date)' */
 "subscription.subscription.renewing.unknown.caption" = "Abonamentul tău se reînnoiește la data de %@.";
+
+/* Unknown period subscription renewal info where parameter is renewal date. This reads as 'Your subscription renews on (date)' */
+"subscription.subscription.renewing.unknown.trial.caption" = "Abonamentul tău se reînnoiește la data de %@.";
 
 /* Annual subscription renewal info where parameter is renewal date. This reads as 'Your annual subscription renews on (date)' */
 "subscription.subscription.renewing.yearly.caption" = "Abonamentul tău anual se reînnoiește la data de %@.";

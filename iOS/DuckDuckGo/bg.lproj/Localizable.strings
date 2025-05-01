@@ -1,7 +1,4 @@
 /* No comment provided by engineer. */
-" " = " ";
-
-/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -310,6 +307,93 @@
 /* No comment provided by engineer. */
 "autoconsent.info.header" = "Когато DuckDuckGo открие изскачащи прозорци за съгласие за използване на бисквитки в сайтовете, които посещавате, можем да опитаме автоматично да настроим предпочитанията Ви за бисквитки, така че бисквитките да са сведени до минимум, а поверителността да е максимална, след което да затворим изскачащите прозорци. Някои сайтове не предоставят възможност за управление на предпочитанията за бисквитки, затова можем само да скрием техните изскачащи прозорци.";
 
+/* Toast message when a credit card item is deleted */
+"autofill.creditcard.deleted-message-no-title" = "Картата е изтрита";
+
+/* Card name label for credit card details on autofill */
+"autofill.creditcard.details.card-name" = "Име на картата";
+
+/* Card nickname label for credit card details on autofill */
+"autofill.creditcard.details.card-nickname" = "Псевдоним на картата";
+
+/* Card number label for credit card details on autofill */
+"autofill.creditcard.details.card-number" = "Номер на картата";
+
+/* Card number label for credit card details on autofill when editing */
+"autofill.creditcard.details.card-number.required" = "Номер на картата";
+
+/* Title for toast when copying the credit card name */
+"autofill.creditcard.details.copy-toast.card-name-copied" = "Името е копирано";
+
+/* Title for toast when copying the credit card number */
+"autofill.creditcard.details.copy-toast.card-number-copied" = "Номерът на картата е копиран";
+
+/* Title for toast when copying the credit card cvv (security code) */
+"autofill.creditcard.details.copy-toast.cvv-copied" = "CVV е копиран";
+
+/* Title for toast when copying the credit card expiration date */
+"autofill.creditcard.details.copy-toast.exp-date-copied" = "Срокът на валидност е копиран";
+
+/* CVV (security code) label for credit card details on autofill */
+"autofill.creditcard.details.cvv" = "CVV";
+
+/* Title for autofill credit card details */
+"autofill.creditcard.details.default-title" = "Карта";
+
+/* Delete button when deleting an autofill credit card */
+"autofill.creditcard.details.delete" = "Изтриване на карта";
+
+/* Autofill alert button confirming delete credit card */
+"autofill.creditcard.details.delete-confirmation.button" = "Изтриване на карта";
+
+/* Autofill message confirming delete credit card */
+"autofill.creditcard.details.delete-confirmation.message" = "Сигурни ли сте, че искате да изтриете тази карта?";
+
+/* Title when editing autofill credit card details */
+"autofill.creditcard.details.edit-title" = "Редактиране на карта";
+
+/* Placeholder for card number field on autofill credit card details */
+"autofill.creditcard.details.edit.card-number-placeholder" = "1234 5678 1234 5678";
+
+/* Placeholder for CVV security code field on autofill credit card details */
+"autofill.creditcard.details.edit.cvv-placeholder" = "Код за сигурност";
+
+/* Placeholder for expiration date field on autofill credit card details */
+"autofill.creditcard.details.edit.exp-date-placeholder" = "ММ / ГГ";
+
+/* Expiration date label for credit card details on autofill */
+"autofill.creditcard.details.exp-date" = "Срок на валидност";
+
+/* Title when adding new autofill credit card */
+"autofill.creditcard.details.new-title" = "Добавяне на карта";
+
+/* Placeholder for card name field on autofill credit card details */
+"autofill.creditcard.edit.card-name-placeholder" = "Име на картата";
+
+/* Placeholder for card nickname field on autofill credit card details */
+"autofill.creditcard.edit.card-nickname-placeholder" = "(напр. Служебна)";
+
+/* Subtitle for view displayed when no autofill credit cards have been saved */
+"autofill.creditcard.empty-view.subtitle.first.paragraph" = "Кредитните карти се съхраняват сигурно на Вашето устройство.";
+
+/* Title for view displayed when autofill has no credit cards saved */
+"autofill.creditcard.empty-view.title" = "Все още няма запазени кредитни карти";
+
+/* Reason for auth when opening credit card list */
+"autofill.creditcard.list.auth.reason" = "Отключете устройството, за да получите достъп до кредитните карти";
+
+/* Credit card row label for credit card expiry date */
+"autofill.creditcard.list.item.expiry" = "Срок на валидност:";
+
+/* Title for screen listing autofill credit cards */
+"autofill.creditcard.list.title" = "Кредитни карти";
+
+/* Title for view displayed when autofill is locked on devices where a passcode has not been set */
+"autofill.creditcard.no-auth.subtitle" = "За защита на кредитните карти се изисква парола.";
+
+/* Title for view displayed when autofill is locked on devices where a passcode has not been set */
+"autofill.creditcard.no-auth.title" = "Защитете устройството, за да можете да запазвате кредитни карти";
+
 /* Do not translate - stringsdict entry */
 "autofill.delete.all.passwords.completion" = "autofill.delete.all.passwords.completion";
 
@@ -330,6 +414,9 @@
 
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Активиране на Email Protection";
+
+/* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
+"autofill.hide-card-cvv" = "Скриване на CVV";
 
 /* Accessibility title for a Hide Password button replacing displayed password with ***** */
 "autofill.hide-password" = "Скриване на паролата";
@@ -385,7 +472,7 @@
 /* Message displayed after updating an autofill login */
 "autofill.login-updated.toast" = "Паролата е актуализирана";
 
-/* Menu item text for copying autofill login details */
+/* Menu item text for copying autofill details */
 "autofill.logins.copy-prompt" = "Копиране на %@";
 
 /* Title for toast when copying address */
@@ -519,6 +606,9 @@
 
 /* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
 "autofill.logins.list.settings.footer" = "Паролите са криптирани. Никой освен Вас не може да ги види, дори ние.";
+
+/* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
+"autofill.logins.list.settings.passwords.cards.footer" = "Паролите и кредитните карти са криптирани. Никой освен Вас не може да ги види, дори ние.";
 
 /* Section title for group of suggested saved logins */
 "autofill.logins.list.suggested" = "Предложения";
@@ -687,6 +777,9 @@
 
 /* Section header for the autofill settings screen */
 "autofill.settings.view.section-header" = "Преглед";
+
+/* Accessibility title for a Show CVV button displaying actual credit card CVV (security code) instead of *** */
+"autofill.show-card-cvv" = "Показване на CVV";
 
 /* Accessibility title for a Show Password button displaying actial password instead of ***** */
 "autofill.show-password" = "Показване на паролата";
@@ -1210,21 +1303,6 @@
 /* Title for message explaining to the user that Duck Player is not available */
 "duck-player.contingency-title" = "Duck Player не е достъпен";
 
-/* Text for the toggle to autoplay videos */
-"duck-player.native-autoplay-videos" = "Autoplay Videos";
-
-/* Text for the description about autoplay videos */
-"duck-player.native-autoplay-videos.description" = "Videos opened in Duck Player will automatically begin playback. Turn this off if you would like to manually start playback of videos opened in Duck Player.";
-
-/* Text for the button to watch a video on DuckPlayer */
-"duck-player.native-open-in-duckplayer" = "Play this video in Duck Player";
-
-/* Text for the button to resume watching a video on DuckPlayer */
-"duck-player.native-resume-in-duckplayer" = "Resume in Duck Player";
-
-/* Text for the button to watch a video on YouTube */
-"duck-player.native-watch-on-youtube" = "Watch in Youtube";
-
 /* Button for the message explaining to the user that Duck Player is not available so the user can learn more */
 "duck-player.video-contingency-cta" = "Научете повече";
 
@@ -1261,14 +1339,8 @@
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Никога";
 
-/* Toast message for the Duck Player entry pill dismiss count */
-"duckPlayer.pill.dismiss.count.toast.message" = "Want to turn off Duck Player appearing on Youtube?";
-
-/* Button on Toast message for the Duck Player entry pill dismiss count */
-"duckPlayer.pill.dismiss.count.toast.message.button" = "Отваряне на настройки";
-
-/* Caption for Duck Player entry point */
-"duckplayer.pill.watch.without.ads" = "No targeted ads, always private";
+/* Settings screen cell text for DuckPlayer settings */
+"duckplayer.open.video.settings.title" = "Duck Player";
 
 /* Body text for the modal feature explanation */
 "duckplayer.presentation.modal.body" = "С Duck Player на DuckDuckGo можете да гледате YouTube без насочени реклами и вече гледаните видеоклипове няма да повлияят на препоръчаните.";
@@ -1299,39 +1371,6 @@
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.title" = "Duck Player";
-
-/* Text displayed when DuckPlayer is in 'Ask' mode for Youtube. */
-"duckPlayerNative.ask.label" = "Нека да избера";
-
-/* Text displayed when DuckPlayer is automatically enabled for Youtube */
-"duckPlayerNative.auto.label" = "Автоматично";
-
-/* Label for the automatic youtube video opening */
-"duckPlayerNative.auto.open.label" = "Автоматично отваряне на Duck Player в YouTube";
-
-/* CTA for DuckPlayer priming modal */
-"duckPlayerNative.modal.cta" = "Watch Now Privately";
-
-/* Description for DuckPlayer priming modal */
-"duckPlayerNative.modal.description" = "Plus, what you watch in Duck Player won’t influence your YouTube recommendations.";
-
-/* Title for DuckPlayer priming modal */
-"duckPlayerNative.modal.title" = "Play this video in Duck Player to watch without targeted ads!";
-
-/* Text displayed when DuckPlayer is in off for youtube. */
-"duckPlayerNative.never.label" = "Не показвай";
-
-/* Label for the use DuckPlayer on Youtube toggle footer */
-"duckPlayerNative.use.on.serp.footer" = "Clicking on YouTube videos in DuckDuckGo search results will open in Duck Player.";
-
-/* Label for the use DuckPlayer on SERP toggle */
-"duckPlayerNative.use.on.serp.label" = "DuckDuckGo Search Results";
-
-/* Label for the use DuckPlayer on Youtube toggle footer */
-"duckPlayerNative.use.on.youtube.footer" = "Choose how you would like Duck Player to handle YouTube videos when navigating from the YouTube website.";
-
-/* Label for the use DuckPlayer on Youtube toggle */
-"duckPlayerNative.use.on.youtube.label" = "Използване в Youtube.com";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Защита на имейл";
@@ -2258,7 +2297,7 @@
 "onboarding.skip.cta.resumeOnboarding" = "Показване на указанията";
 
 /* The message of the skip onboarding dialog popup. */
-"onboarding.skip.message" = "Не забравяйте: можете да изтриете всички раздели, хронологията и данните от сърфиране с две докосвания на Fire Button 🔥";
+"onboarding.skip.message" = "Не забравяйте: можете да изтриете всички раздели, историята и данните от сърфирането с две докосвания на Fire Button 🔥";
 
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Разбрах! Ще пропусна другите съвети.";
@@ -2794,9 +2833,6 @@
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Запазено име на хост: %@";
 
-/* Button for adding email address to subscription */
-"subscription.activate.add.email.button" = "Добавяне на имейл";
-
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Добавяне към устройството";
 
@@ -3018,6 +3054,9 @@
 
 /* Unknown period subscription renewal info where parameter is renewal date. This reads as 'Your subscription renews on (date)' */
 "subscription.subscription.renewing.unknown.caption" = "Абонаментът ви се подновява на %@.";
+
+/* Unknown period subscription renewal info where parameter is renewal date. This reads as 'Your subscription renews on (date)' */
+"subscription.subscription.renewing.unknown.trial.caption" = "Абонаментът ви се подновява на %@.";
 
 /* Annual subscription renewal info where parameter is renewal date. This reads as 'Your annual subscription renews on (date)' */
 "subscription.subscription.renewing.yearly.caption" = "Годишният ви абонамент се подновява на %@.";

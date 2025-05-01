@@ -1,7 +1,4 @@
 /* No comment provided by engineer. */
-" " = " ";
-
-/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -310,6 +307,93 @@
 /* No comment provided by engineer. */
 "autoconsent.info.header" = "Kai „DuckDuckGo“ jūsų lankomose svetainėse aptinka sutikimo su slapukais iškylančiuosius langus, galime automatiškai nustatyti jūsų slapukų nuostatas, kad sumažintume slapukų skaičių, sustiprintume privatumą ir uždarytume iškylančiuosius langus. Kai kuriose svetainėse nėra galimybės tvarkyti slapukų nuostatas, todėl galime tik paslėpti tokius iškylančiuosius langus.";
 
+/* Toast message when a credit card item is deleted */
+"autofill.creditcard.deleted-message-no-title" = "Kortelė ištrinta";
+
+/* Card name label for credit card details on autofill */
+"autofill.creditcard.details.card-name" = "Vardas kortelėje";
+
+/* Card nickname label for credit card details on autofill */
+"autofill.creditcard.details.card-nickname" = "Kortelės pavadinimas";
+
+/* Card number label for credit card details on autofill */
+"autofill.creditcard.details.card-number" = "Kortelės numeris";
+
+/* Card number label for credit card details on autofill when editing */
+"autofill.creditcard.details.card-number.required" = "Kortelės numeris";
+
+/* Title for toast when copying the credit card name */
+"autofill.creditcard.details.copy-toast.card-name-copied" = "Vardas nukopijuotas";
+
+/* Title for toast when copying the credit card number */
+"autofill.creditcard.details.copy-toast.card-number-copied" = "Kortelės numeris nukopijuotas";
+
+/* Title for toast when copying the credit card cvv (security code) */
+"autofill.creditcard.details.copy-toast.cvv-copied" = "CVV nukopijuotas";
+
+/* Title for toast when copying the credit card expiration date */
+"autofill.creditcard.details.copy-toast.exp-date-copied" = "Galiojimo data nukopijuota";
+
+/* CVV (security code) label for credit card details on autofill */
+"autofill.creditcard.details.cvv" = "CVV";
+
+/* Title for autofill credit card details */
+"autofill.creditcard.details.default-title" = "Kortelė";
+
+/* Delete button when deleting an autofill credit card */
+"autofill.creditcard.details.delete" = "Ištrinti kortelę";
+
+/* Autofill alert button confirming delete credit card */
+"autofill.creditcard.details.delete-confirmation.button" = "Ištrinti kortelę";
+
+/* Autofill message confirming delete credit card */
+"autofill.creditcard.details.delete-confirmation.message" = "Ar tikrai nori ištrinti šią kortelę?";
+
+/* Title when editing autofill credit card details */
+"autofill.creditcard.details.edit-title" = "Redaguoti kortelę";
+
+/* Placeholder for card number field on autofill credit card details */
+"autofill.creditcard.details.edit.card-number-placeholder" = "1234 5678 1234 5678";
+
+/* Placeholder for CVV security code field on autofill credit card details */
+"autofill.creditcard.details.edit.cvv-placeholder" = "Saugos kodas";
+
+/* Placeholder for expiration date field on autofill credit card details */
+"autofill.creditcard.details.edit.exp-date-placeholder" = "mėn. / m.";
+
+/* Expiration date label for credit card details on autofill */
+"autofill.creditcard.details.exp-date" = "Galiojimo data";
+
+/* Title when adding new autofill credit card */
+"autofill.creditcard.details.new-title" = "Pridėti kortelę";
+
+/* Placeholder for card name field on autofill credit card details */
+"autofill.creditcard.edit.card-name-placeholder" = "Vardas kortelėje";
+
+/* Placeholder for card nickname field on autofill credit card details */
+"autofill.creditcard.edit.card-nickname-placeholder" = "(pvz. Darbas)";
+
+/* Subtitle for view displayed when no autofill credit cards have been saved */
+"autofill.creditcard.empty-view.subtitle.first.paragraph" = "Kreditinės kortelės saugiai saugomos tavo įrenginyje.";
+
+/* Title for view displayed when autofill has no credit cards saved */
+"autofill.creditcard.empty-view.title" = "Dar nėra išsaugotų kredito kortelių";
+
+/* Reason for auth when opening credit card list */
+"autofill.creditcard.list.auth.reason" = "Atrakink įrenginį, kad pasiektum kreditines korteles";
+
+/* Credit card row label for credit card expiry date */
+"autofill.creditcard.list.item.expiry" = "Galiojimo data:";
+
+/* Title for screen listing autofill credit cards */
+"autofill.creditcard.list.title" = "Kreditinės kortelės";
+
+/* Title for view displayed when autofill is locked on devices where a passcode has not been set */
+"autofill.creditcard.no-auth.subtitle" = "Norint apsaugoti kredito korteles, reikalingas slaptažodis.";
+
+/* Title for view displayed when autofill is locked on devices where a passcode has not been set */
+"autofill.creditcard.no-auth.title" = "Apsaugok savo įrenginį, kad išsaugotum kredito korteles";
+
 /* Do not translate - stringsdict entry */
 "autofill.delete.all.passwords.completion" = "autofill.delete.all.passwords.completion";
 
@@ -330,6 +414,9 @@
 
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Įjungti „Email Protection“";
+
+/* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
+"autofill.hide-card-cvv" = "Slėpti CVV";
 
 /* Accessibility title for a Hide Password button replacing displayed password with ***** */
 "autofill.hide-password" = "Paslėpti slaptažodį";
@@ -385,7 +472,7 @@
 /* Message displayed after updating an autofill login */
 "autofill.login-updated.toast" = "Slaptažodis atnaujintas";
 
-/* Menu item text for copying autofill login details */
+/* Menu item text for copying autofill details */
 "autofill.logins.copy-prompt" = "Kopijuoti %@";
 
 /* Title for toast when copying address */
@@ -519,6 +606,9 @@
 
 /* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
 "autofill.logins.list.settings.footer" = "Slaptažodžiai yra užšifruoti. Niekas, išskyrus jus, negali jų matyti – net mes.";
+
+/* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
+"autofill.logins.list.settings.passwords.cards.footer" = "Slaptažodžiai ir kredito kortelės yra užšifruoti. Niekas, išskyrus tave, jų nematys – net mes.";
 
 /* Section title for group of suggested saved logins */
 "autofill.logins.list.suggested" = "Siūloma";
@@ -687,6 +777,9 @@
 
 /* Section header for the autofill settings screen */
 "autofill.settings.view.section-header" = "Peržiūrėti";
+
+/* Accessibility title for a Show CVV button displaying actual credit card CVV (security code) instead of *** */
+"autofill.show-card-cvv" = "Rodyti CVV";
 
 /* Accessibility title for a Show Password button displaying actial password instead of ***** */
 "autofill.show-password" = "Rodyti slaptažodį";
@@ -1210,21 +1303,6 @@
 /* Title for message explaining to the user that Duck Player is not available */
 "duck-player.contingency-title" = "„Duck Player“ nepasiekiamas";
 
-/* Text for the toggle to autoplay videos */
-"duck-player.native-autoplay-videos" = "Autoplay Videos";
-
-/* Text for the description about autoplay videos */
-"duck-player.native-autoplay-videos.description" = "Videos opened in Duck Player will automatically begin playback. Turn this off if you would like to manually start playback of videos opened in Duck Player.";
-
-/* Text for the button to watch a video on DuckPlayer */
-"duck-player.native-open-in-duckplayer" = "Play this video in Duck Player";
-
-/* Text for the button to resume watching a video on DuckPlayer */
-"duck-player.native-resume-in-duckplayer" = "Resume in Duck Player";
-
-/* Text for the button to watch a video on YouTube */
-"duck-player.native-watch-on-youtube" = "Watch in Youtube";
-
 /* Button for the message explaining to the user that Duck Player is not available so the user can learn more */
 "duck-player.video-contingency-cta" = "Sužinoti daugiau";
 
@@ -1261,14 +1339,8 @@
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Niekada";
 
-/* Toast message for the Duck Player entry pill dismiss count */
-"duckPlayer.pill.dismiss.count.toast.message" = "Want to turn off Duck Player appearing on Youtube?";
-
-/* Button on Toast message for the Duck Player entry pill dismiss count */
-"duckPlayer.pill.dismiss.count.toast.message.button" = "Atidaryti Nustatymus";
-
-/* Caption for Duck Player entry point */
-"duckplayer.pill.watch.without.ads" = "No targeted ads, always private";
+/* Settings screen cell text for DuckPlayer settings */
+"duckplayer.open.video.settings.title" = "Duck Player";
 
 /* Body text for the modal feature explanation */
 "duckplayer.presentation.modal.body" = "„Duck Player“ leidžia sistemoje „DuckDuckGo“ žiūrėti „YouTube“ be taikomų reklamų, o tai, ką žiūrite, neturės įtakos jūsų rekomendacijoms.";
@@ -1299,39 +1371,6 @@
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.title" = "Duck Player";
-
-/* Text displayed when DuckPlayer is in 'Ask' mode for Youtube. */
-"duckPlayerNative.ask.label" = "Leisk man pasirinkti";
-
-/* Text displayed when DuckPlayer is automatically enabled for Youtube */
-"duckPlayerNative.auto.label" = "Automatiškai";
-
-/* Label for the automatic youtube video opening */
-"duckPlayerNative.auto.open.label" = "Automatiškai atidaryk „Duck Player“ „YouTube“ platformoje.";
-
-/* CTA for DuckPlayer priming modal */
-"duckPlayerNative.modal.cta" = "Watch Now Privately";
-
-/* Description for DuckPlayer priming modal */
-"duckPlayerNative.modal.description" = "Plus, what you watch in Duck Player won’t influence your YouTube recommendations.";
-
-/* Title for DuckPlayer priming modal */
-"duckPlayerNative.modal.title" = "Play this video in Duck Player to watch without targeted ads!";
-
-/* Text displayed when DuckPlayer is in off for youtube. */
-"duckPlayerNative.never.label" = "Nerodyti";
-
-/* Label for the use DuckPlayer on Youtube toggle footer */
-"duckPlayerNative.use.on.serp.footer" = "Clicking on YouTube videos in DuckDuckGo search results will open in Duck Player.";
-
-/* Label for the use DuckPlayer on SERP toggle */
-"duckPlayerNative.use.on.serp.label" = "DuckDuckGo Search Results";
-
-/* Label for the use DuckPlayer on Youtube toggle footer */
-"duckPlayerNative.use.on.youtube.footer" = "Choose how you would like Duck Player to handle YouTube videos when navigating from the YouTube website.";
-
-/* Label for the use DuckPlayer on Youtube toggle */
-"duckPlayerNative.use.on.youtube.label" = "Naudoti „Youtube.com“";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "El. pašto apsauga";
@@ -2258,7 +2297,7 @@
 "onboarding.skip.cta.resumeOnboarding" = "Rodyti mokymo priemonę";
 
 /* The message of the skip onboarding dialog popup. */
-"onboarding.skip.message" = "Atmink: visus skirtukus, istoriją ir naršymo duomenis gali ištrinti dviem mygtuko🔥 „Fire Button“ bakstelėjimais.";
+"onboarding.skip.message" = "Atminkite: visus skirtukus, istoriją ir naršymo duomenis galite ištrinti dviem mygtuko „Fire Button“ 🔥 bakstelėjimais.";
 
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Supratau! Praleisiu kitus patarimus.";
@@ -2794,9 +2833,6 @@
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Išsaugotas pagrindinis vardas: %@";
 
-/* Button for adding email address to subscription */
-"subscription.activate.add.email.button" = "Pridėti el. paštą";
-
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Pridėti prie įrenginio";
 
@@ -3018,6 +3054,9 @@
 
 /* Unknown period subscription renewal info where parameter is renewal date. This reads as 'Your subscription renews on (date)' */
 "subscription.subscription.renewing.unknown.caption" = "Tavo prenumerata atsinaujina %@.";
+
+/* Unknown period subscription renewal info where parameter is renewal date. This reads as 'Your subscription renews on (date)' */
+"subscription.subscription.renewing.unknown.trial.caption" = "Tavo prenumerata atsinaujina %@.";
 
 /* Annual subscription renewal info where parameter is renewal date. This reads as 'Your annual subscription renews on (date)' */
 "subscription.subscription.renewing.yearly.caption" = "Tavo metinė prenumerata atnaujinama %@.";

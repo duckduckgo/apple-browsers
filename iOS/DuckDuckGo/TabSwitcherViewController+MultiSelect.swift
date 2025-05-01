@@ -251,18 +251,10 @@ extension TabSwitcherViewController {
 extension TabSwitcherViewController {
     
     func updateUIForSelectionMode() {
-        if featureFlagger.isFeatureOn(.tabManagerMultiSelection) {
-            if AppWidthObserver.shared.isLargeWidth {
-                interfaceMode = isEditing ? .multiSelectedEditingLarge : .multiSelectAvailableLarge
-            } else {
-                interfaceMode = isEditing ? .multiSelectEditingNormal : .multiSelectAvailableNormal
-            }
+        if AppWidthObserver.shared.isLargeWidth {
+            interfaceMode = isEditing ? .editingLargeSize : .largeSize
         } else {
-            if AppWidthObserver.shared.isLargeWidth {
-               interfaceMode = .singleSelectLarge
-            } else {
-               interfaceMode = .singleSelectNormal
-            }
+            interfaceMode = isEditing ? .editingRegularSize : .regularSize
         }
 
         barsHandler.update(interfaceMode,
@@ -432,6 +424,7 @@ extension TabSwitcherViewController {
             guard let self else { return }
             self.onTabStyleChange()
         })
+        barsHandler.tabSwitcherStyleButton.tintColor = UIColor(designSystemColor: .icons)
 
         barsHandler.addAllBookmarksButton.accessibilityLabel = UserText.bookmarkAllTabs
         barsHandler.addAllBookmarksButton.primaryAction = action(image: "Bookmark-New-24") { [weak self] in
@@ -448,7 +441,7 @@ extension TabSwitcherViewController {
         })
 
         barsHandler.fireButton.accessibilityLabel = "Close all tabs and clear data"
-        barsHandler.fireButton.primaryAction = action(image: "FireLeftPadded") { [weak self] in
+        barsHandler.fireButton.primaryAction = action(image: "Fire") { [weak self] in
             self?.burn(sender: self!.barsHandler.fireButton)
         }
 
@@ -480,7 +473,6 @@ extension TabSwitcherViewController {
 
         barsHandler.duckChatButton.tintColor = UIColor(designSystemColor: .icons)
         barsHandler.duckChatButton.primaryAction = action(image: "AIChat-24", { [weak self] in
-            Pixel.fire(pixel: .openAIChatFromTabManager)
             self?.delegate.tabSwitcherDidRequestAIChat(tabSwitcher: self!)
         })
     }

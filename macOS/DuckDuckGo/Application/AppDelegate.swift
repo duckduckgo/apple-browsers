@@ -417,7 +417,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #if !APPSTORE && WEB_EXTENSIONS_ENABLED
         if #available(macOS 15.4, *) {
             Task { @MainActor in
-                await WebExtensionManager.shared.loadWebExtensions()
+                await WebExtensionManager.shared.loadInstalledExtensions()
             }
         }
 #endif

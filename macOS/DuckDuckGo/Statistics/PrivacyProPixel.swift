@@ -155,7 +155,10 @@ enum PrivacyProPixel: PixelKitEventV2 {
 
 enum PrivacyProErrorPixel: PixelKitEventV2 {
 
-    case privacyProKeychainAccessError(accessType: AccountKeychainAccessType, accessError: any Error)
+    case privacyProKeychainAccessError(accessType: AccountKeychainAccessType,
+                                       accessError: AccountKeychainAccessError,
+                                       source: KeychainErrorSource,
+                                       authVersion: KeychainErrorAuthVersion )
 
     var name: String {
         switch self {
@@ -165,10 +168,12 @@ enum PrivacyProErrorPixel: PixelKitEventV2 {
 
     var parameters: [String: String]? {
         switch self {
-        case .privacyProKeychainAccessError(let accessType, let accessError):
+        case .privacyProKeychainAccessError(let accessType, let accessError, let source, let authVersion):
             return [
-                "type": accessType.rawValue,
-                "error": accessError.localizedDescription
+                "access_type": accessType.rawValue,
+                "error": accessError.errorDescription,
+                "source": source.rawValue,
+                "authVersion": authVersion.rawValue
             ]
         }
     }

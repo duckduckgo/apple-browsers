@@ -489,8 +489,8 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     ///
     /// - Parameter userValues: The user values to update settings with.
     private func updateSettings(userValues: UserValues) async {
-        settings.setMode(userValues.duckPlayerMode)
-        settings.setAskModeOverlayHidden(userValues.askModeOverlayHidden)
+        settings.mode = userValues.duckPlayerMode
+        settings.askModeOverlayHidden = userValues.askModeOverlayHidden
     }
 
     /// Registers an Nootification observer for orientation changes

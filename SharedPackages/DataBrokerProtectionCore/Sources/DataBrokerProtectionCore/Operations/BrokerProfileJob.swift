@@ -118,6 +118,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
                 .sortedByEarliestPreferredRunDateFirst()
         } else {
             filteredAndSortedJobData = jobsData
+                .excludingUserRemoved()
         }
 
         return filteredAndSortedJobData
@@ -207,7 +208,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
 
 private extension Array where Element == BrokerJobData {
     /// Filters jobs based on their preferred run date:
-    /// - Opt-out jobs with no preferred run date are included.
+    /// - Opt-out jobs with no preferred run date and not manually removed by users (using "This isn't me") are included.
     /// - Jobs with a preferred run date on or before the priority date are included.
     ///
     /// Note: Opt-out jobs without a preferred run date may be:
@@ -216,7 +217,7 @@ private extension Array where Element == BrokerJobData {
     func filteredByNilOrEarlierPreferredRunDateThan(date priorityDate: Date) -> [BrokerJobData] {
         filter { jobData in
             guard let preferredRunDate = jobData.preferredRunDate else {
-                return jobData is OptOutJobData
+                return jobData is OptOutJobData && !jobData.isRemovedByUser
             }
 
             return preferredRunDate <= priorityDate
@@ -239,5 +240,9 @@ private extension Array where Element == BrokerJobData {
                 return lhsRunDate < rhsRunDate
             }
         }
+    }
+
+    func excludingUserRemoved() -> [BrokerJobData] {
+        filter { !$0.isRemovedByUser }
     }
 }

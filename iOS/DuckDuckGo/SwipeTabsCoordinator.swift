@@ -378,11 +378,7 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
             cell.omniBar = controller
 
             cell.omniBar?.showSeparator()
-            if self.appSettings.currentAddressBarPosition.isBottom {
-                cell.omniBar?.moveSeparatorToTop()
-            } else {
-                cell.omniBar?.moveSeparatorToBottom()
-            }
+            cell.omniBar?.adjust(for: appSettings.currentAddressBarPosition)
 
             if let url = tabsModel.safeGetTabAt(indexPath.row)?.link?.url {
                 cell.omniBar?.startBrowsing()

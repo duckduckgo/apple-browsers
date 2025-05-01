@@ -99,4 +99,12 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
             self.omniBarView.layoutIfNeeded()
         }
     }
+
+    override func useSmallTopSpacing() {
+        omniBarView.isUsingSmallTopSpacing = true
+    }
+
+    override func useRegularTopSpacing() {
+        omniBarView.isUsingSmallTopSpacing = false
+    }
 }

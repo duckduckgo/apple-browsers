@@ -41,6 +41,8 @@ final class MockOmniBar: OmniBar {
     func hideSeparator() { }
     func moveSeparatorToTop() { }
     func moveSeparatorToBottom() { }
+    func useSmallTopSpacing() { }
+    func useRegularTopSpacing() { }
     func enterPhoneState() { }
     func enterPadState() { }
     func startBrowsing() { }

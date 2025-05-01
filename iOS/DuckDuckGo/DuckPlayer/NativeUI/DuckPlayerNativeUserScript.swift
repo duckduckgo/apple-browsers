@@ -177,7 +177,7 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
         print("DP: handleEvent: \(event)")
         switch event {
         case .urlChanged:
-            pendingUrlChangeEvent = event // Always store the latest URL change
+            processEvent(event) // Always store the latest URL change
         default:
             if areScriptsReady {
                 processEvent(event)
@@ -212,38 +212,36 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
         handleEvent(.muteAudio(mute: mute))
     }
 
-    internal func onUrlChanged() {
-        print("DP: onUrlChanged")
-        guard let webView = webView, 
+    internal func getPageType() -> String {
+        guard let webView = webView,
               let url = webView.url,
-              let host = url.host else { return }
-        
-        // Determine the page type based on the host and URL
-        let pageType: String
-        let shouldClearEvents: Bool
+              let host = url.host else { return Constants.UNKNOWN }
         
         switch host {
         case DuckPlayerSettingsDefault.OriginDomains.duckduckgo:
-            pageType = Constants.SERP
-            shouldClearEvents = true
-        case DuckPlayerSettingsDefault.OriginDomains.youtube, 
-             DuckPlayerSettingsDefault.OriginDomains.youtubeWWW, 
+            return Constants.SERP
+        case DuckPlayerSettingsDefault.OriginDomains.youtube,
+             DuckPlayerSettingsDefault.OriginDomains.youtubeWWW,
              DuckPlayerSettingsDefault.OriginDomains.youtubeMobile:
             if url.isYoutubeWatch {
-                pageType = Constants.YOUTUBE
-                shouldClearEvents = false
+                return Constants.YOUTUBE
             } else {
-                pageType = Constants.UNKNOWN
-                shouldClearEvents = true
+                return Constants.UNKNOWN
             }
-        case DuckPlayerSettingsDefault.OriginDomains.youtubeNoCookie, 
+        case DuckPlayerSettingsDefault.OriginDomains.youtubeNoCookie,
              DuckPlayerSettingsDefault.OriginDomains.youtubeNoCookieWWW:
-            pageType = Constants.NOCOOKIE
-            shouldClearEvents = true
+            return Constants.NOCOOKIE
         default:
-            pageType = Constants.UNKNOWN
-            shouldClearEvents = true
+            return Constants.UNKNOWN
         }
+}
+    
+    internal func onUrlChanged() {
+        print("DP: onUrlChanged")
+        
+        // Determine the page type based on the host and URL
+        let pageType = getPageType()
+        let shouldClearEvents = pageType != Constants.YOUTUBE
 
         if shouldClearEvents {
             pendingUrlChangeEvent = nil
@@ -257,7 +255,12 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
     @MainActor
     private func initialSetup(params: Any, original: WKScriptMessage) -> Encodable? {
         print("DP: initialSetup")
-        let result: [String: String] = [Constants.locale: Locale.current.languageCode ?? "en"]
+        
+        let pageType = getPageType()
+        let result: [String: String] = [
+            Constants.locale: Locale.current.languageCode ?? "en",
+            Constants.pageType: pageType
+        ]
         return result
     }
 

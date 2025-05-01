@@ -21,8 +21,7 @@ import DesignResourcesKit
 import Foundation
 import SwiftUI
 
-
-struct DuckPlayerView: View {
+struct DuckPlayerView: View {    
     @Environment(\.dismiss) var dismiss
     @StateObject var viewModel: DuckPlayerViewModel
     var webView: DuckPlayerWebView
@@ -59,6 +58,7 @@ struct DuckPlayerView: View {
         static let welcomeMessageInternalPadding: CGFloat = 10
         static let welcomeMessageCornerRadius: CGFloat = 12
         static let welcomeMessagePadding: CGFloat = 16
+        static let welcomeMessageExternalPadding: CGFloat = 5
         static let duckPlayerLogoSize: CGFloat = 55
         static let duckPlayerLogoSpacing: CGFloat = 16
         static let defaultSpacing: CGFloat = 8
@@ -69,7 +69,7 @@ struct DuckPlayerView: View {
     }
 
     var body: some View {
-        ZStack {
+        return ZStack {
             // Background with blur effect
             Color(.black)
                 .edgesIgnoringSafeArea(.all)
@@ -154,7 +154,7 @@ struct DuckPlayerView: View {
             } else {
                 viewModel.autoOpenOnYoutube = false
             }
-        }
+        }        
     }
 
     
@@ -319,15 +319,17 @@ struct DuckPlayerView: View {
                   BubbleView(
                       arrowLength: 15, 
                       arrowWidth: 25, 
-                      arrowPositionPercent: 2,
+                      arrowPositionPercent: 1,
                       fillColor: Constants.uiElementsBackground,
                       paddingAmount: LayoutConstants.welcomeMessageInternalPadding,
                   ) {
                       bubbleContent
+                        .padding(LayoutConstants.welcomeMessageInternalPadding)
                   }
-                  .padding(LayoutConstants.welcomeMessageInternalPadding)
+                  .offset(x: 0, y: 2)
+                  .padding(.horizontal, LayoutConstants.horizontalPadding)
                 }
-                .offset(x: 0, y: -5)
+
                 // Close Button
                 Button(action: {
                     //viewModel.closeWelcomeMessage()
@@ -343,7 +345,7 @@ struct DuckPlayerView: View {
                     }
                     .padding(8)
                 }
-                .offset(x: 2, y: 10 + LayoutConstants.duckPlayerLogoSize)
+                .offset(x: 2, y: 4 + LayoutConstants.duckPlayerLogoSize)
                 .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 0)
             }
             .transition(.opacity)

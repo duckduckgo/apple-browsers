@@ -125,9 +125,10 @@ final class DuckPlayerViewModel: ObservableObject {
     private var webView: WKWebView?
     private var coordinator: DuckPlayerWebView.Coordinator?
 
-    // Show the welcome message if the variant is nativeOptOut and not shown before
+    // Show the welcome message if the variant is nativeOptOut and we're not in SERP
     private var showWelcomeMessage: Bool {
-        return appSettings.duckPlayerVariant == .nativeOptOut        
+        // shouldShowAutoOpenToggle is false when in SERP
+        return appSettings.duckPlayerVariant == .nativeOptOut && !shouldShowAutoOpenToggle
     }
 
     /// Creates a new DuckPlayerViewModel instance

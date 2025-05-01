@@ -61,7 +61,7 @@ final class NavigationBarViewController: NSViewController {
     @IBOutlet var navigationBarButtonsLeadingConstraint: NSLayoutConstraint!
     @IBOutlet var addressBarTopConstraint: NSLayoutConstraint!
     @IBOutlet var addressBarBottomConstraint: NSLayoutConstraint!
-    @IBOutlet var addressBarHeightConstraint: NSLayoutConstraint!
+    @IBOutlet var navigationBarHeightConstraint: NSLayoutConstraint!
     @IBOutlet var buttonsTopConstraint: NSLayoutConstraint!
     @IBOutlet var logoWidthConstraint: NSLayoutConstraint!
 
@@ -164,7 +164,9 @@ final class NavigationBarViewController: NSViewController {
 
         self.popovers = NavigationBarPopovers(networkProtectionPopoverManager: networkProtectionPopoverManager, autofillPopoverPresenter: autofillPopoverPresenter, isBurner: tabCollectionViewModel.isBurner)
         self.tabCollectionViewModel = tabCollectionViewModel
-        self.networkProtectionButtonModel = NetworkProtectionNavBarButtonModel(popoverManager: networkProtectionPopoverManager, statusReporter: networkProtectionStatusReporter)
+        self.networkProtectionButtonModel = NetworkProtectionNavBarButtonModel(popoverManager: networkProtectionPopoverManager,
+                                                                               statusReporter: networkProtectionStatusReporter,
+                                                                               iconProvider: visualStyleManager.style.vpnNavigationIconsProvider)
         self.downloadListCoordinator = downloadListCoordinator
         self.dragDropManager = dragDropManager
         self.brokenSitePromptLimiter = brokenSitePromptLimiter
@@ -189,6 +191,7 @@ final class NavigationBarViewController: NSViewController {
 
         setupNavigationButtonsCornerRadius()
         setupNavigationButtonMenus()
+        setupNavigationButtonIcons()
         addContextMenu()
 
         optionsButton.sendAction(on: .leftMouseDown)
@@ -214,8 +217,8 @@ final class NavigationBarViewController: NSViewController {
 
 #if !APPSTORE && WEB_EXTENSIONS_ENABLED
         if #available(macOS 15.4, *), !burnerMode.isBurner {
-            WebExtensionManager.shared.toolbarButtons().enumerated().forEach { (index, button) in
-                menuButtons.insertArrangedSubview(button, at: index)
+            Task { @MainActor in
+                await WebExtensionNavigationBarUpdater(container: menuButtons).runUpdateLoop()
             }
         }
 #endif
@@ -311,13 +314,7 @@ final class NavigationBarViewController: NSViewController {
             Logger.navigation.error("Selected tab view model is nil")
             return
         }
-
-        if NSApp.isCommandPressed,
-           // don‘t open a new tab when the window is cmd-clicked in background
-           sender.window?.isKeyWindow == true && NSApp.isActive,
-           let backItem = selectedTabViewModel.tab.webView.backForwardList.backItem {
-            openBackForwardHistoryItemInNewChildTab(with: backItem.url)
-        } else {
+        if !openBackForwardHistoryItemInNewTabIfNeeded(with: selectedTabViewModel.tab.webView.backForwardList.backItem?.url) {
             selectedTabViewModel.tab.goBack()
         }
     }
@@ -327,20 +324,36 @@ final class NavigationBarViewController: NSViewController {
             Logger.navigation.error("Selected tab view model is nil")
             return
         }
-
-        if NSApp.isCommandPressed,
-           // don‘t open a new tab when the window is cmd-clicked in background
-           sender.window?.isKeyWindow == true && NSApp.isActive,
-           let forwardItem = selectedTabViewModel.tab.webView.backForwardList.forwardItem {
-            openBackForwardHistoryItemInNewChildTab(with: forwardItem.url)
-        } else {
+        if !openBackForwardHistoryItemInNewTabIfNeeded(with: selectedTabViewModel.tab.webView.backForwardList.forwardItem?.url) {
             selectedTabViewModel.tab.goForward()
         }
     }
 
-    private func openBackForwardHistoryItemInNewChildTab(with url: URL) {
-        let tab = Tab(content: .url(url, source: .historyEntry), parentTab: tabCollectionViewModel.selectedTabViewModel?.tab, shouldLoadInBackground: true, burnerMode: tabCollectionViewModel.burnerMode)
-        tabCollectionViewModel.insert(tab, selected: false)
+    /// When ⌘+ or middle- clicked open the back/forward item in a new tab
+    /// - returns:`true` if opened in a new tab
+    private func openBackForwardHistoryItemInNewTabIfNeeded(with url: URL?) -> Bool {
+        guard let url,
+              // don‘t open a new tab when the window is cmd-clicked in background
+              !NSApp.isCommandPressed || (view.window?.isKeyWindow == true && NSApp.isActive) else { return false }
+
+        // Create behavior using current event
+        let behavior = LinkOpenBehavior(
+            event: NSApp.currentEvent,
+            switchToNewTabWhenOpenedPreference: TabsPreferences.shared.switchToNewTabWhenOpened,
+            canOpenLinkInCurrentTab: true
+        )
+
+        lazy var tab = Tab(content: .url(url, source: .historyEntry), parentTab: tabCollectionViewModel.selectedTabViewModel?.tab, shouldLoadInBackground: true, burnerMode: tabCollectionViewModel.burnerMode)
+        switch behavior {
+        case .currentTab:
+            return false
+
+        case .newTab(let selected):
+            tabCollectionViewModel.insert(tab, selected: selected)
+        case .newWindow(let selected):
+            WindowsManager.openNewWindow(with: tab, showWindow: selected)
+        }
+        return true
     }
 
     @IBAction func refreshOrStopAction(_ sender: NSButton) {
@@ -361,8 +374,31 @@ final class NavigationBarViewController: NSViewController {
             Logger.navigation.error("Selected tab view model is nil")
             return
         }
-        selectedTabViewModel.tab.openHomePage()
-        PixelExperiment.fireOnboardingHomeButtonUsed5to7Pixel()
+
+        let behavior = LinkOpenBehavior(
+            event: NSApp.currentEvent,
+            switchToNewTabWhenOpenedPreference: TabsPreferences.shared.switchToNewTabWhenOpened,
+            canOpenLinkInCurrentTab: true
+        )
+
+        let startupPreferences = StartupPreferences.shared
+        let tabContent: TabContent
+        if startupPreferences.launchToCustomHomePage,
+           let customURL = URL(string: startupPreferences.formattedCustomHomePageURL) {
+            tabContent = .contentFromURL(customURL, source: .ui)
+        } else {
+            tabContent = .newtab
+        }
+
+        lazy var tab = Tab(content: tabContent, parentTab: nil, shouldLoadInBackground: true, burnerMode: tabCollectionViewModel.burnerMode)
+        switch behavior {
+        case .currentTab:
+            selectedTabViewModel.tab.openHomePage()
+        case .newTab(let selected):
+            tabCollectionViewModel.insert(tab, selected: selected)
+        case .newWindow(let selected):
+            WindowsManager.openNewWindow(with: tab, showWindow: selected)
+        }
     }
 
     @IBAction func optionsButtonAction(_ sender: NSButton) {
@@ -669,13 +705,29 @@ final class NavigationBarViewController: NSViewController {
         let backButtonMenu = NSMenu()
         backButtonMenu.delegate = goBackButtonMenuDelegate
         goBackButton.menu = backButtonMenu
+        goBackButton.sendAction(on: [.leftMouseUp, .otherMouseDown])
         let forwardButtonMenu = NSMenu()
         forwardButtonMenu.delegate = goForwardButtonMenuDelegate
         goForwardButton.menu = forwardButtonMenu
+        goForwardButton.sendAction(on: [.leftMouseUp, .otherMouseDown])
+
+        homeButton.sendAction(on: [.leftMouseUp, .otherMouseDown])
 
         goBackButton.toolTip = UserText.navigateBackTooltip
         goForwardButton.toolTip = UserText.navigateForwardTooltip
         refreshOrStopButton.toolTip = UserText.refreshPageTooltip
+    }
+
+    private func setupNavigationButtonIcons() {
+        goBackButton.image = visualStyleManager.style.backButtonImage
+        goForwardButton.image = visualStyleManager.style.forwardButtonImage
+        refreshOrStopButton.image = visualStyleManager.style.reloadButtonImage
+        homeButton.image = visualStyleManager.style.homeButtonImage
+
+        downloadsButton.image = visualStyleManager.style.downloadsButtonImage
+        passwordManagementButton.image = visualStyleManager.style.passwordManagerButtonImage
+        bookmarkListButton.image = visualStyleManager.style.bookmarksButtonImage
+        optionsButton.image = visualStyleManager.style.moreOptionsbuttonImage
     }
 
     private func setupNavigationButtonsCornerRadius() {
@@ -714,11 +766,12 @@ final class NavigationBarViewController: NSViewController {
         heightChangeAnimation?.cancel()
 
         daxLogo.alphaValue = !sizeClass.isLogoVisible ? 1 : 0 // initial value to animate from
+        daxLogo.isHidden = visualStyleManager.style.shouldShowLogoinInAddressBar
 
         let performResize = { [weak self] in
             guard let self else { return }
 
-            let height: NSLayoutConstraint = animated ? addressBarHeightConstraint.animator() : addressBarHeightConstraint
+            let height: NSLayoutConstraint = animated ? navigationBarHeightConstraint.animator() : navigationBarHeightConstraint
             height.constant = visualStyleManager.style.addressBarHeight(for: sizeClass)
 
             let barTop: NSLayoutConstraint = animated ? addressBarTopConstraint.animator() : addressBarTopConstraint

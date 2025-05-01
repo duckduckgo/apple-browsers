@@ -156,6 +156,15 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
             .init(name: "Mirror #2", url: "url.com", addedAt: Date(), removedAt: Date().yesterday)
         ]
         let broker: DataBroker = .mockWith(mirroSites: mirrorSites)
+        let historyEventsForScanOperation: [HistoryEvent] = [
+            .init(brokerId: 1, profileQueryId: 1, type: .scanStarted),
+            .init(brokerId: 1, profileQueryId: 1, type: .matchesFound(count: 3)),
+            .init(brokerId: 1, profileQueryId: 1, type: .scanStarted),
+            .init(brokerId: 1, profileQueryId: 1, type: .matchesFound(count: 2)),
+            .init(brokerId: 1, profileQueryId: 1, type: .scanStarted),
+            .init(brokerId: 1, profileQueryId: 1, type: .matchesFound(count: 3)),
+            .init(brokerId: 1, profileQueryId: 1, type: .reAppearence)
+        ]
         let historyEventsForFirstOptOutOperation: [HistoryEvent] = [
             .init(brokerId: 1, profileQueryId: 1, type: .optOutStarted),
             .init(brokerId: 1, profileQueryId: 1, type: .error(error: .unknown("Error"))),
@@ -168,14 +177,14 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
             .init(brokerId: 1, profileQueryId: 1, type: .optOutStarted),
             .init(brokerId: 1, profileQueryId: 1, type: .optOutRequested)
         ]
-        let historyEventsForScanOperation: [HistoryEvent] = [
-            .init(brokerId: 1, profileQueryId: 1, type: .scanStarted),
-            .init(brokerId: 1, profileQueryId: 1, type: .matchesFound(count: 3)),
-            .init(brokerId: 1, profileQueryId: 1, type: .scanStarted),
-            .init(brokerId: 1, profileQueryId: 1, type: .matchesFound(count: 2)),
-            .init(brokerId: 1, profileQueryId: 1, type: .scanStarted),
-            .init(brokerId: 1, profileQueryId: 1, type: .matchesFound(count: 3)),
-            .init(brokerId: 1, profileQueryId: 1, type: .reAppearence)
+        let historyEventForInProgressOptOutRemovedByUser: [HistoryEvent] = [
+            .init(brokerId: 1, profileQueryId: 1, type: .optOutStarted),
+            .init(brokerId: 1, profileQueryId: 1, type: .matchRemovedByUser),
+            .init(brokerId: 1, profileQueryId: 1, type: .optOutRequested),
+        ]
+        let historyEventForOptOutRemovedByUser: [HistoryEvent] = [
+            .init(brokerId: 1, profileQueryId: 1, type: .optOutStarted),
+            .init(brokerId: 1, profileQueryId: 1, type: .matchRemovedByUser),
         ]
         let brokerProfileQueryData = BrokerProfileQueryData(
             dataBroker: broker,
@@ -186,6 +195,8 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
                 .mock(with: .mockWithoutRemovedDate, historyEvents: historyEventForOptOutWithSubmittedRequest),
                 .mock(with: .mockWithoutRemovedDate, historyEvents: historyEventForOptOutWithSubmittedRequest),
                 .mock(with: .mockWithRemovedDate, historyEvents: historyEventForOptOutWithSubmittedRequest),
+                .mock(with: .mockWithoutRemovedDate, historyEvents: historyEventForInProgressOptOutRemovedByUser),
+                .mock(with: .mockWithoutRemovedDate, historyEvents: historyEventForOptOutRemovedByUser),
             ])
         let sut = DataBrokerProtectionStatsPixels(database: MockDatabase(),
                                                   handler: handler,
@@ -193,12 +204,13 @@ final class DataBrokerProtectionStatsPixelsTests: XCTestCase {
 
         let result = sut.calculateByBroker(broker, data: [brokerProfileQueryData])
 
-        XCTAssertEqual(result.numberOfProfilesFound, 8)
-        XCTAssertEqual(result.numberOfOptOutsInProgress, 4)
+        XCTAssertEqual(result.numberOfProfilesFound, 12)
+        XCTAssertEqual(result.numberOfOptOutsInProgress, 6)
         XCTAssertEqual(result.numberOfSuccessfulOptOuts, 2)
-        XCTAssertEqual(result.numberOfFailureOptOuts, 2)
+        XCTAssertEqual(result.numberOfFailureOptOuts, 4)
         XCTAssertEqual(result.numberOfNewMatchesFound, 2)
         XCTAssertEqual(result.numberOfReAppereances, 2)
+        XCTAssertEqual(result.numberOfHiddenFound, 4)
     }
 
     /// This test data has the following parameters

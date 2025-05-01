@@ -187,7 +187,6 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         Logger.updates.log("Checking for updates respecting rollout")
 
         updater.checkForUpdatesInBackground()
-        PixelKit.fire(DebugEvent(GeneralPixel.updaterDidCheckForUpdateRespectingRollout))
     }
 
     // Check for updates immediately, bypassing the rollout schedule
@@ -198,7 +197,6 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         Logger.updates.log("Checking for updates skipping rollout")
 
         updater.checkForUpdates()
-        PixelKit.fire(DebugEvent(GeneralPixel.updaterDidCheckForUpdateSkippingRollout))
     }
 
     // MARK: - Private
@@ -301,8 +299,6 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
             userDriver.resume()
             return
         }
-
-        PixelKit.fire(DebugEvent(GeneralPixel.updaterDidForceUpdateRecheck))
 
         userDriver.cancelAndDismissCurrentUpdate()
         updater = nil

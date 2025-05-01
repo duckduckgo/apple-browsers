@@ -33,6 +33,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         case buttonPadding = 4
     }
 
+    private let standardTabHeight: CGFloat
+
     @IBOutlet weak var visualEffectBackgroundView: NSVisualEffectView!
     @IBOutlet weak var pinnedTabsContainerView: NSView!
     @IBOutlet private weak var collectionView: TabBarCollectionView!
@@ -68,11 +70,13 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     private let bookmarkManager: BookmarkManager = LocalBookmarkManager.shared
+    private let visualStyleManager: VisualStyleManagerProviding
     private var pinnedTabsViewModel: PinnedTabsViewModel?
     private var pinnedTabsView: PinnedTabsView?
     private var pinnedTabsHostingView: PinnedTabsHostingView?
     private let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
     private var pinnedTabsDiscoveryPopover: NSPopover?
+    private weak var crashPopoverViewController: PopoverMessageViewController?
 
     var tabPreviewsEnabled: Bool = true
 
@@ -134,11 +138,14 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         fatalError("TabBarViewController: Bad initializer")
     }
 
-    init?(coder: NSCoder, tabCollectionViewModel: TabCollectionViewModel, activeRemoteMessageModel: ActiveRemoteMessageModel) {
+    init?(coder: NSCoder, tabCollectionViewModel: TabCollectionViewModel,
+          activeRemoteMessageModel: ActiveRemoteMessageModel,
+          visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
         self.tabCollectionViewModel = tabCollectionViewModel
         let tabBarActiveRemoteMessageModel = TabBarActiveRemoteMessage(activeRemoteMessageModel: activeRemoteMessageModel)
         self.tabBarRemoteMessageViewModel = TabBarRemoteMessageViewModel(activeRemoteMessageModel: tabBarActiveRemoteMessageModel,
                                                                          isFireWindow: tabCollectionViewModel.isBurner)
+        self.visualStyleManager = visualStyleManager
         if !tabCollectionViewModel.isBurner, let pinnedTabCollection = tabCollectionViewModel.pinnedTabsManager?.tabCollection {
             let pinnedTabsViewModel = PinnedTabsViewModel(collection: pinnedTabCollection)
             let pinnedTabsView = PinnedTabsView(model: pinnedTabsViewModel)
@@ -150,6 +157,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             self.pinnedTabsView = nil
             self.pinnedTabsHostingView = nil
         }
+
+        standardTabHeight = visualStyleManager.style.tabStyleProvider.standardTabHeight
 
         super.init(coder: coder)
     }
@@ -249,9 +258,10 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     private func setupFireButton() {
-        fireButton.image = .burn
+        fireButton.image = visualStyleManager.style.fireButtonStyleProvider.icon
         fireButton.toolTip = UserText.clearBrowsingHistoryTooltip
-        fireButton.animationNames = MouseOverAnimationButton.AnimationNames(aqua: "flame-mouse-over", dark: "dark-flame-mouse-over")
+        fireButton.animationNames = MouseOverAnimationButton.AnimationNames(aqua: visualStyleManager.style.fireButtonStyleProvider.lightAnimation,
+                                                                            dark: visualStyleManager.style.fireButtonStyleProvider.darkAnimation)
         fireButton.sendAction(on: .leftMouseDown)
         fireButtonMouseOverCancellable = fireButton.publisher(for: \.isMouseOver)
             .first(where: { $0 }) // only interested when mouse is over
@@ -721,7 +731,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     private func subscribeToChildWindows() {
         guard let window = view.window else {
-            assertionFailure("No window set at the moment of subscription")
+            assert([.unitTests, .integrationTests].contains(AppVersion.runType), "No window set at the moment of subscription")
             return
         }
         // hide Tab Preview when a non-Tab Preview child window is shown (Suggestions, Bookmarks etc…)
@@ -756,7 +766,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             return
         }
 
-        let position = pinnedTabsContainerView.frame.minX + PinnedTabView.Const.dimension * CGFloat(index)
+        let pinnedTabWidth = visualStyleManager.style.tabStyleProvider.pinnedTabWidth
+        let position = pinnedTabsContainerView.frame.minX + pinnedTabWidth * CGFloat(index)
         showTabPreview(for: tabViewModel, from: position)
     }
 
@@ -850,7 +861,7 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
                                 didRemoveTabAt removedIndex: Int,
                                 andSelectTabAt selectionIndex: Int?) {
         let removedIndexPathSet = Set(arrayLiteral: IndexPath(item: removedIndex))
-        guard let selectionIndex = selectionIndex else {
+        guard let selectionIndex else {
             collectionView.animator().deleteItems(at: removedIndexPathSet)
             return
         }
@@ -1017,7 +1028,7 @@ extension TabBarViewController: NSCollectionViewDelegateFlowLayout {
 
     func collectionView(_ collectionView: NSCollectionView, layout collectionViewLayout: NSCollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> NSSize {
         let isItemSelected = tabCollectionViewModel.selectionIndex == .unpinned(indexPath.item)
-        return NSSize(width: self.currentTabWidth(selected: isItemSelected), height: TabBarViewItem.Height.standard)
+        return NSSize(width: self.currentTabWidth(selected: isItemSelected), height: standardTabHeight)
     }
 
 }
@@ -1206,6 +1217,39 @@ extension TabBarViewController: NSCollectionViewDelegate {
 // MARK: - TabBarViewItemDelegate
 
 extension TabBarViewController: TabBarViewItemDelegate {
+    func tabBarViewItemCrashAction(_ tabBarViewItem: TabBarViewItem) {
+        guard let indexPath = collectionView.indexPath(for: tabBarViewItem) else {
+            assertionFailure("TabBarViewController: Failed to get index path of tab bar view item")
+            return
+        }
+
+        tabCollectionViewModel.tabViewModel(at: indexPath.item)?.tab.killWebContentProcess()
+    }
+
+    func tabBarViewItemDidUpdateCrashInfoPopoverVisibility(_ tabBarViewItem: TabBarViewItem, sender: NSButton, shouldShow: Bool) {
+        guard shouldShow else {
+            crashPopoverViewController?.dismiss()
+            return
+        }
+
+        DispatchQueue.main.async {
+            let viewController = PopoverMessageViewController(
+                title: UserText.tabCrashPopoverTitle,
+                message: UserText.tabCrashPopoverMessage,
+                presentMultiline: true,
+                maxWidth: TabCrashIndicatorModel.Const.popoverWidth,
+                autoDismissDuration: nil,
+                onDismiss: {
+                    tabBarViewItem.hideCrashIndicatorButton()
+                },
+                onClick: {
+                    tabBarViewItem.hideCrashIndicatorButton()
+                }
+            )
+            self.crashPopoverViewController = viewController
+            viewController.show(onParent: self, relativeTo: sender, behavior: .semitransient)
+        }
+    }
 
     func tabBarViewItem(_ tabBarViewItem: TabBarViewItem, isMouseOver: Bool) {
         if isMouseOver {
@@ -1275,9 +1319,10 @@ extension TabBarViewController: TabBarViewItemDelegate {
             self.pinnedTabsDiscoveryPopover = popover
 
             guard let view = self.pinnedTabsHostingView else { return }
-            popover.show(relativeTo: NSRect(x: view.bounds.maxX - PinnedTabView.Const.dimension,
+            let pinnedTabWidth = visualStyleManager.style.tabStyleProvider.pinnedTabWidth
+            popover.show(relativeTo: NSRect(x: view.bounds.maxX - pinnedTabWidth,
                                             y: view.bounds.minY,
-                                            width: PinnedTabView.Const.dimension,
+                                            width: pinnedTabWidth,
                                             height: view.bounds.height),
                          of: view,
                          preferredEdge: .maxY)

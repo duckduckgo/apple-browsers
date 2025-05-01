@@ -42,6 +42,7 @@ final class FindInPageViewController: NSViewController {
     @IBOutlet weak var previousButton: NSButton!
 
     private var modelCancellables = Set<AnyCancellable>()
+    private var cancellables = Set<AnyCancellable>()
 
     static func create() -> FindInPageViewController {
         (NSStoryboard(name: "FindInPage", bundle: nil).instantiateInitialController() as? FindInPageViewController)!
@@ -52,9 +53,6 @@ final class FindInPageViewController: NSViewController {
         focusRingView.strokedBackgroundColor = .findInPageFocusedBackground
         textField.placeholderString = UserText.findInPageTextFieldPlaceholder
         textField.delegate = self
-        listenForTextFieldResponderNotifications()
-        subscribeToModelChanges()
-        updateFieldStates()
 
         closeButton.toolTip = UserText.findInPageCloseTooltip
         nextButton.toolTip = UserText.findInPageNextTooltip
@@ -67,6 +65,16 @@ final class FindInPageViewController: NSViewController {
         textField.setAccessibilityRole(.textField)
         statusField.setAccessibilityIdentifier("FindInPageController.statusField")
         statusField.setAccessibilityRole(.textField)
+    }
+
+    override func viewWillAppear() {
+        subscribeToModel()
+        subscribeToFirstResponder()
+    }
+
+    override func viewWillDisappear() {
+        modelCancellables.removeAll()
+        cancellables.removeAll()
     }
 
     @IBAction func findInPageNext(_ sender: Any?) {
@@ -110,34 +118,34 @@ final class FindInPageViewController: NSViewController {
         }
     }
 
-    private func subscribeToModelChanges() {
-        modelCancellables.forEach { $0.cancel() }
+    private func subscribeToModel() {
+        $model.receive(on: DispatchQueue.main).sink { [weak self] model in
+            self?.subscribeToModelChanges(model: model)
+        }.store(in: &cancellables)
+    }
+
+    private func subscribeToModelChanges(model: FindInPageModel?) {
         modelCancellables.removeAll()
-        $model.receive(on: DispatchQueue.main).sink { [weak self] _ in
 
+        guard let model else { return }
+        updateFieldStates(model: model)
+
+        model.$text.receive(on: DispatchQueue.main).sink { [weak self] text in
+            self?.textField.stringValue = text
+        }.store(in: &modelCancellables)
+
+        model.$matchesFound.receive(on: DispatchQueue.main).sink { [weak self] _ in
+            self?.rebuildStatus()
             self?.updateFieldStates()
+        }.store(in: &modelCancellables)
 
-            guard let self = self,
-                  let model = self.model else { return }
-
-            model.$text.receive(on: DispatchQueue.main).sink { [weak self] text in
-                self?.textField.stringValue = text
-            }.store(in: &self.modelCancellables)
-
-            model.$matchesFound.receive(on: DispatchQueue.main).sink { [weak self] _ in
-                self?.rebuildStatus()
-                self?.updateFieldStates()
-            }.store(in: &self.modelCancellables)
-
-            model.$currentSelection.receive(on: DispatchQueue.main).sink { [weak self] _ in
-                self?.rebuildStatus()
-            }.store(in: &self.modelCancellables)
-
+        model.$currentSelection.receive(on: DispatchQueue.main).sink { [weak self] _ in
+            self?.rebuildStatus()
         }.store(in: &modelCancellables)
     }
 
     private func rebuildStatus() {
-        guard let model = model else { return }
+        guard let model else { return }
         statusField.stringValue = {
             guard let matchesFound = model.matchesFound,
                   let currentSelection = model.currentSelection else { return "" }
@@ -149,26 +157,30 @@ final class FindInPageViewController: NSViewController {
         focusRingView.updateView(stroke: firstResponder)
     }
 
-    private func updateFieldStates() {
-        guard let model else { return }
+    private func updateFieldStates(model: FindInPageModel? = nil) {
+        guard let model = model ?? self.model else { return }
+
         statusField.isHidden = model.text.isEmpty
         // enable next/prev buttons by default if current status is unknown (fallback to public find API)
         nextButton.isEnabled = model.matchesFound.map { $0 > 0 } ?? !model.text.isEmpty
         previousButton.isEnabled = model.matchesFound.map { $0 > 0 } ?? !model.text.isEmpty
     }
 
-    private func listenForTextFieldResponderNotifications() {
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(textFieldFirstReponderNotification(_:)),
-                                               name: .firstResponder,
-                                               object: nil)
+    private func subscribeToFirstResponder() {
+        guard let window = view.window else {
+            assertionFailure("FindInPageViewController.subscribeToFirstResponder: view.window is nil")
+            return
+        }
+
+        NotificationCenter.default
+            .publisher(for: MainWindow.firstResponderDidChangeNotification, object: window)
+            .sink { [weak self] in
+                self?.firstResponderDidChange($0)
+            }
+            .store(in: &cancellables)
     }
 
-}
-
-extension FindInPageViewController {
-
-    @objc func textFieldFirstReponderNotification(_ notification: Notification) {
+    private func firstResponderDidChange(_ notification: Notification) {
         if view.window?.firstResponder == textField.currentEditor() {
             updateView(firstResponder: true)
         } else {

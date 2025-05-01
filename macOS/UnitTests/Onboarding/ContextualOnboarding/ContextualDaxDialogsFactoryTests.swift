@@ -26,7 +26,6 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
     private var reporter: CapturingOnboardingPixelReporter!
 
     override func setUpWithError() throws {
-        try super.setUpWithError()
         reporter = CapturingOnboardingPixelReporter()
         factory = DefaultContextualDaxDialogViewFactory(onboardingPixelReporter: reporter)
         delegate = CapturingOnboardingNavigationDelegate()
@@ -36,7 +35,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         factory = nil
         delegate = nil
         reporter = nil
-        try super.tearDownWithError()
+        WindowControllersManager.shared.lastKeyMainWindowController = nil
     }
 
     func testWhenMakeViewForTryASearchThenOnboardingTrySearchDialogViewCreatedAndOnActionExpectedSearchOccurs() throws {
@@ -237,6 +236,12 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         let onFireButtonPressed = { onFireButtonRun = true }
         let onDismiss = { onDismissRun = true }
 
+        let mainViewController = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])), autofillPopoverPresenter: DefaultAutofillPopoverPresenter())
+        let window = MockWindow(isVisible: false)
+        let mainWindowController = MainWindowController(window: window, mainViewController: mainViewController, popUp: false)
+        mainWindowController.window = window
+        WindowControllersManager.shared.lastKeyMainWindowController = mainWindowController
+
         // WHEN
         let result = factory.makeView(for: dialogType, delegate: delegate, onDismiss: onDismiss, onGotItPressed: {}, onFireButtonPressed: onFireButtonPressed)
 
@@ -244,6 +249,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         let view = try XCTUnwrap(find(OnboardingFireDialog.self, in: result))
 
         // WHEN
+        window.isVisible = true
         view.viewModel.tryFireButton()
 
         // THEN
@@ -262,7 +268,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         let dialogType = ContextualDialogType.highFive
 
         // WHEN
-        _ = factory.makeView(for: dialogType, delegate: delegate, onDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {})
+        _=factory.makeView(for: dialogType, delegate: delegate, onDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {})
 
         // THEN
         XCTAssertTrue(reporter.measureLastDialogShownCalled)

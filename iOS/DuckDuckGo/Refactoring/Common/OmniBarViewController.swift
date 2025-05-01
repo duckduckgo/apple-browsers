@@ -28,8 +28,16 @@ class OmniBarViewController: UIViewController, OmniBar {
     // swiftlint:disable:next force_cast
     var barView: any OmniBarView { view as! OmniBarView }
 
-    var isBackButtonEnabled: Bool = false
-    var isForwardButtonEnabled: Bool = false
+    var isBackButtonEnabled: Bool {
+        get { barView.backButton.isEnabled }
+        set { barView.backButton.isEnabled = newValue }
+    }
+
+    var isForwardButtonEnabled: Bool {
+        get { barView.forwardButton.isEnabled }
+        set { barView.forwardButton.isEnabled = newValue }
+    }
+    
     var text: String? {
         get { textField.text }
         set { textField.text = newValue }
@@ -138,6 +146,11 @@ class OmniBarViewController: UIViewController, OmniBar {
                                                selector: #selector(reloadSpeechRecognizerAvailability),
                                                name: .speechRecognizerDidChangeAvailability,
                                                object: nil)
+
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(didEnterBackground),
+                                               name: UIApplication.didEnterBackgroundNotification,
+                                               object: nil)
     }
 
     private func assignActions() {
@@ -215,6 +228,14 @@ class OmniBarViewController: UIViewController, OmniBar {
 
     func moveSeparatorToBottom() {
         barView.moveSeparatorToBottom()
+    }
+
+    func useSmallTopSpacing() {
+        // no-op
+    }
+
+    func useRegularTopSpacing() {
+        // no-op
     }
 
     func startBrowsing() {
@@ -390,6 +411,10 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.customIconView.image = UIImage(named: icon.rawValue)
         barView.privacyInfoContainer.addSubview(barView.customIconView)
         barView.customIconView.isHidden = false
+    }
+
+    @objc private func didEnterBackground() {
+        cancelAllAnimations()
     }
 
     private func refreshState(_ newState: any OmniBarState) {

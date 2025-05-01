@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AIChat
+
 protocol AIChatTabOpening {
     @MainActor
     func openAIChatTab(_ query: String?, target: AIChatTabOpenerTarget)
@@ -41,7 +43,7 @@ struct AIChatTabOpener: AIChatTabOpening {
     private let promptHandler: AIChatPromptHandler
     private let addressBarQueryExtractor: AIChatAddressBarPromptExtractor
 
-    let aiChatURL = AIChatURL()
+    let aiChatRemoteSettings = AIChatRemoteSettings()
 
     init(promptHandler: AIChatPromptHandler,
          addressBarQueryExtractor: AIChatAddressBarPromptExtractor) {
@@ -52,14 +54,28 @@ struct AIChatTabOpener: AIChatTabOpening {
     @MainActor
     func openAIChatTab(_ value: AddressBarTextField.Value, target: AIChatTabOpenerTarget) {
         let query = addressBarQueryExtractor.queryForValue(value)
-        openAIChatTab(query, target: target)
+
+        // We don't want to auto-submit if the user is opening duck.ai from the SERP
+        // https://app.asana.com/1/137249556945/project/1204167627774280/task/1210024262385459?focus=true
+        let shouldAutoSubmit: Bool
+        if case let .url(_, url, _) = value {
+            shouldAutoSubmit = !url.isDuckDuckGoSearch
+        } else {
+            shouldAutoSubmit = true
+        }
+        openAIChatTab(query, target: target, autoSubmit: shouldAutoSubmit)
     }
 
     @MainActor
     func openAIChatTab(_ query: String?, target: AIChatTabOpenerTarget) {
+        openAIChatTab(query, target: target, autoSubmit: true)
+    }
+
+    @MainActor
+    private func openAIChatTab(_ query: String?, target: AIChatTabOpenerTarget, autoSubmit: Bool) {
         if let query = query {
-            promptHandler.setData(query)
+            promptHandler.setData(.queryPrompt(query, autoSubmit: autoSubmit))
         }
-        WindowControllersManager.shared.openAIChat(aiChatURL, target: target, hasPrompt: query != nil)
+        WindowControllersManager.shared.openAIChat(aiChatRemoteSettings.aiChatURL, target: target, hasPrompt: query != nil)
     }
 }

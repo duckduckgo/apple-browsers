@@ -1,59 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Cancel" : {
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Abbrechen"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cancelar"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Annuler"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Annulla"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Annuleren"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Anuluj"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cancelar"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Отменить"
-          }
-        }
-      }
-    },
     "Close" : {
       "localizations" : {
         "de" : {
@@ -102,306 +49,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Закрыть"
-          }
-        }
-      }
-    },
-    "subscription.access.channel.email.name" : {
-      "comment" : "Service name displayed when accessing subscription using email address",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "E-Mail"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Email"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Correo electrónico"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adresse électronique"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Email"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "E-mail"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "E-mail"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "E-mail"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Электронная почта"
-          }
-        }
-      }
-    },
-    "subscription.activate.modal.description" : {
-      "comment" : "Activate subscription modal view subtitle description",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Greife über eine E-Mail-Adresse auf dein Privacy Pro Abonnement zu."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Access your Privacy Pro subscription via an email address."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Accede a tu suscripción a Privacy Pro a través de una dirección de correo electrónico."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Accédez à votre abonnement Privacy Pro via une adresse e-mail."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Accedi al tuo abbonamento Privacy Pro tramite un indirizzo e-mail."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Krijg toegang tot je Privacy Pro-abonnement via een e-mailadres."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Uzyskaj dostęp do subskrypcji Privacy Pro za pośrednictwem adresu e-mail."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Acede à tua subscrição Privacy Pro com um endereço de e-mail."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Подписку на услуги Privacy Pro можно активировать по электронной почте."
-          }
-        }
-      }
-    },
-    "subscription.activate.modal.email.description" : {
-      "comment" : "Activate subscription modal description for email address channel",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Verwende deine E-Mail-Adresse, um dein Abonnement auf diesem Gerät zu aktivieren."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Use your email to activate your subscription on this device."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Utiliza tu correo electrónico para activar tu suscripción en este dispositivo."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Utilisez votre adresse e-mail pour activer votre abonnement sur cet appareil."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Usa la tua e-mail per attivare l'abbonamento su questo dispositivo."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gebruik je e-mailadres om je abonnement op dit apparaat te activeren."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Użyj adresu e-mail, aby aktywować subskrypcję na tym urządzeniu."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Utiliza o teu e-mail para ativares a tua subscrição neste dispositivo."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Используйте адрес электронной почты, чтобы активировать подписку на этом устройстве."
-          }
-        }
-      }
-    },
-    "subscription.activate.modal.restore.purchase.description" : {
-      "comment" : "Activate subscription modal description via restore purchase from Apple Account",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dein Abonnement ist automatisch in DuckDuckGo auf jedem Gerät verfügbar, das bei deinem Apple-Konto angemeldet ist."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Your subscription is automatically available in DuckDuckGo on any device signed in to your Apple Account."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Tu suscripción está disponible automáticamente en DuckDuckGo en cualquier dispositivo que haya iniciado sesión en tu cuenta de Apple."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Votre abonnement est automatiquement disponible dans DuckDuckGo sur n'importe quel appareil connecté à votre compte Apple."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il tuo abbonamento è automaticamente disponibile in DuckDuckGo su qualsiasi dispositivo collegato al tuo account Apple."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Je abonnement is automatisch beschikbaar in DuckDuckGo op elk apparaat dat is aangemeld bij je Apple-account."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Twoja subskrypcja jest automatycznie dostępna w DuckDuckGo na każdym urządzeniu, na którym zalogujesz się na konto Apple."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A tua subscrição está automaticamente disponível no DuckDuckGo em qualquer dispositivo com sessão iniciada na tua conta Apple."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ваша подписка на DuckDuckGo автоматически доступна на любом устройстве: просто войдите в аккаунт Apple."
-          }
-        }
-      }
-    },
-    "subscription.activate.modal.title" : {
-      "comment" : "Activate subscription modal view title",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Abonnement auf diesem Gerät aktivieren"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Activate your subscription on this device"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Activar tu suscripción en este dispositivo"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Activez votre abonnement sur cet appareil"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Attiva il tuo abbonamento su questo dispositivo"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Activeer je abonnement op dit apparaat"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aktywuj subskrypcję na tym urządzeniu"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ativa a tua subscrição neste dispositivo"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Активировать подписку на этом устройстве"
           }
         }
       }
@@ -1666,66 +1313,6 @@
         }
       }
     },
-    "subscription.appstore.activate.modal.description" : {
-      "comment" : "Activate subscription modal view subtitle description",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Greife auf diesem Gerät über dein Apple-Konto oder eine E-Mail-Adresse auf dein Privacy Pro-Abonnement zu."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Access your Privacy Pro subscription on this device via Apple Account or an email address."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Accede a tu suscripción a Privacy Pro en este dispositivo mediante tu cuenta de Apple o una dirección de correo electrónico."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Accédez à votre abonnement Privacy Pro sur cet appareil via un compte Apple ou via une adresse e-mail."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Accedi al tuo abbonamento Privacy Pro su questo dispositivo tramite un account Apple o un indirizzo e-mail."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Krijg op dit apparaat toegang tot je Privacy Pro-abonnement via je Apple-account of e-mailadres."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Uzyskaj dostęp do subskrypcji Privacy Pro na tym urządzeniu za pośrednictwem konta Apple lub adresu e-mail."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Acede à tua subscrição Privacy Pro neste dispositivo através da tua conta Apple ou de um endereço de e-mail."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Подпиской Privacy Pro можно пользоваться на этом устройстве через аккаунт Apple или адрес электронной почты."
-          }
-        }
-      }
-    },
     "subscription.dialog.change.apple.description" : {
       "comment" : "Change plan or billing dialog subtitle description for subscription purchased via Apple",
       "extractionState" : "extracted_with_value",
@@ -2202,66 +1789,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Удалить с этого устройства?"
-          }
-        }
-      }
-    },
-    "subscription.modal.enter.email.button" : {
-      "comment" : "Button for opening page to enter email address",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "E-Mail-Adresse eingeben"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Enter Email"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Introducir correo electrónico"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Saisir votre e-mail"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Inserisci l'e-mail"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "E-mailadres invoeren"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wpisz adres e-mail"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Introduzir E-mail"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ввести адрес эл. почты"
           }
         }
       }
@@ -3412,66 +2939,6 @@
         }
       }
     },
-    "subscription.preferences.subscription.activate.add.email.button" : {
-      "comment" : "Button for adding email address to subscription",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "E-Mail-Adresse hinzufügen"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Add Email"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Añadir correo electrónico"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajouter un e-mail"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aggiungi e-mail"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "E-mailadres toevoegen"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dodaj adres e-mail"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adicionar E-mail"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Добавить адрес эл. почты"
-          }
-        }
-      }
-    },
     "subscription.preferences.subscription.activate.edit.email.button" : {
       "comment" : "Button for editing email address added to subscription",
       "extractionState" : "extracted_with_value",
@@ -3588,126 +3055,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Узнать больше"
-          }
-        }
-      }
-    },
-    "subscription.preferences.subscription.activate.no.email.caption" : {
-      "comment" : "Caption for the subscription preferences activate section when email is not added to subscription",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Füge eine optionale E-Mail-Adresse zu deinem Abo hinzu oder verwende dein Apple-Konto, um auf anderen Geräten auf Privacy Pro zuzugreifen. [Mehr erfahren](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Add an optional email to your subscription or use your Apple Account to access Privacy Pro on other devices. [Learn more](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Añade un correo electrónico opcional a tu suscripción o usa tu Cuenta de Apple para acceder a Privacy Pro en otros dispositivos. [Más información](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ajoutez un e-mail facultatif à votre abonnement ou utilisez votre compte Apple pour accéder à Privacy Pro sur d'autres appareils. [En savoir plus](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aggiungi un'e-mail opzionale all'abbonamento o usa il tuo account Apple per accedere a Privacy Pro su altri dispositivi. [Scopri di più](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Voeg een optioneel e-mailadres toe aan je abonnement of gebruik je Apple-account om toegang te krijgen tot Privacy Pro op andere apparaten. [Meer informatie](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dodaj opcjonalny adres e-mail do subskrypcji lub użyj konta Apple, aby uzyskać dostęp do Privacy Pro na innych urządzeniach. [Więcej informacji](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Adiciona um e-mail opcional à tua subscrição ou utiliza a tua conta Apple para aceder ao Privacy Pro noutros dispositivos. [Sabe mais](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Чтобы пользоваться подпиской Privacy Pro на других устройствах, привяжите адрес электронной почты или аккаунт Apple. [Подробнее...](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)"
-          }
-        }
-      }
-    },
-    "subscription.preferences.subscription.activate.title" : {
-      "comment" : "Title for the subscription preferences activate section",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Auf anderen Geräten aktivieren"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Activate on Other Devices"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Activar en otros dispositivos"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Activer sur d'autres appareils"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Attiva sugli altri dispositivi"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Activeren op andere apparaten"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aktywuj na innych urządzeniach"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ativar Noutros Dispositivos"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Активация подписки на других устройствах"
           }
         }
       }
@@ -4433,7 +3780,67 @@
       }
     },
     "subscription.preferences.subscription.expired.caption" : {
-      "comment" : "Caption for the subscription preferences pane when the subscription activation is pending\nCaption for the subscription preferences pane when the subscription has expired. The parameter is date of expiry.",
+      "comment" : "Caption for the subscription preferences pane when the subscription has expired. The parameter is date of expiry.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dein Privacy Pro-Abonnement ist am %@ abgelaufen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your Privacy Pro subscription expired on %@"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu suscripción a Privacy Pro caducó el %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Votre abonnement Privacy Pro a expiré le %@"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Il tuo abbonamento Privacy Pro è scaduto il %@"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Je Privacy Pro-abonnement is verlopen op %@"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Twoja subskrypcja Privacy Pro wygasła %@"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A tua subscrição Privacy Pro expirou a %@"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Срок действия вашей подписки Privacy Pro истек %@."
+          }
+        }
+      }
+    },
+    "subscription.preferences.subscription.expired.invitation.caption" : {
+      "comment" : "Caption for the subscription preferences pane when the subscription activation is pending",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
@@ -4488,66 +3895,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Чтобы пользоваться возможностями Privacy Pro, оформите подписку заново."
-          }
-        }
-      }
-    },
-    "subscription.preferences.subscription.footer.caption" : {
-      "comment" : "Caption for the subscription preferences pane footer",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Erhalte Antworten auf häufig gestellte Fragen oder kontaktiere den Privacy-Pro-Support über unsere Hilfeseiten."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Get answers to frequently asked questions or contact Privacy Pro support from our help pages."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Obtén respuestas a las preguntas más frecuentes o ponte en contacto con el servicio de asistencia de Privacy Pro en nuestras páginas de ayuda."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Trouvez les réponses aux questions fréquemment posées ou contactez l'assistance de Privacy Pro sur nos pages d'aide."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ottieni risposte alle domande frequenti o contatta l'assistenza di Privacy Pro dalle nostre pagine di assistenza."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Krijg antwoorden op veelgestelde vragen of neem contact op met de klantenservice van Privacy Pro via onze helppagina's."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Uzyskaj odpowiedzi na często zadawane pytania lub skontaktuj się z pomocą techniczną Privacy Pro na naszych stronach pomocy."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Obtém respostas a perguntas frequentes ou contacta o apoio técnico do Privacy Pro a partir das nossas páginas de ajuda."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "На страницах справочного раздела вы найдете ответы на часто задаваемые вопросы, а также контактную информацию службы поддержки Privacy Pro."
           }
         }
       }

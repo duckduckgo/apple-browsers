@@ -20,11 +20,7 @@ import Foundation
 import Onboarding
 import PixelKit
 
-typealias OnboardingPixelReporting =
-OnboardingSearchSuggestionsPixelReporting
-& OnboardingSiteSuggestionsPixelReporting
-& OnboardingDialogsReporting
-& OnboardingAddressBarReporting
+typealias OnboardingPixelReporting = OnboardingDialogsReporting & OnboardingAddressBarReporting
 
 protocol OnboardingAddressBarReporting: AnyObject {
     func measureAddressBarTypedIn()
@@ -33,7 +29,6 @@ protocol OnboardingAddressBarReporting: AnyObject {
 }
 
 protocol OnboardingDialogsReporting: AnyObject {
-    func measureFireButtonSkipped()
     func measureLastDialogShown()
     func measureFireButtonTryIt()
     func measureDialogDismissed(dialogType: ContextualDialogType)
@@ -43,7 +38,7 @@ protocol OnboardingFireReporting: AnyObject {
     func measureFireButtonPressed()
 }
 
-final class OnboardingPixelReporter: OnboardingSearchSuggestionsPixelReporting, OnboardingSiteSuggestionsPixelReporting {
+final class OnboardingPixelReporter {
 
     private weak var onboardingStateProvider: (ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater)?
     private let fire: (PixelKitEventV2, PixelKit.Frequency) -> Void
@@ -56,14 +51,6 @@ final class OnboardingPixelReporter: OnboardingSearchSuggestionsPixelReporting, 
         self.onboardingStateProvider = onboardingStateProvider
         self.fire = fireAction
         self.userDefaults = userDefaults
-    }
-
-    func measureSiteSuggestionOptionTapped() {
-        fire(ContextualOnboardingPixel.siteSuggestionOptionTapped, .uniqueByName)
-    }
-
-    func measureSearchSuggestionOptionTapped() {
-        fire(ContextualOnboardingPixel.searchSuggestionOptionTapped, .uniqueByName)
     }
 }
 
@@ -122,10 +109,6 @@ extension OnboardingPixelReporter: OnboardingDialogsReporting {
 
     func measureLastDialogShown() {
         fire(ContextualOnboardingPixel.onboardingFinished, .uniqueByName)
-    }
-
-    func measureFireButtonSkipped() {
-        fire(ContextualOnboardingPixel.onboardingFireButtonPromptSkipPressed, .uniqueByName)
     }
 
     func measureFireButtonTryIt() {

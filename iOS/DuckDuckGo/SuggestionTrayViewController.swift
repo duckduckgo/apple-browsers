@@ -29,12 +29,12 @@ class SuggestionTrayViewController: UIViewController {
     
     @IBOutlet weak var backgroundView: UIView!
     @IBOutlet weak var containerView: UIView!
+    @IBOutlet var variableWidthConstraint: NSLayoutConstraint!
     @IBOutlet var fullWidthConstraint: NSLayoutConstraint!
     @IBOutlet var topConstraint: NSLayoutConstraint!
     @IBOutlet var variableHeightConstraint: NSLayoutConstraint!
     @IBOutlet var fullHeightConstraint: NSLayoutConstraint!
-
-
+    
     weak var autocompleteDelegate: AutocompleteViewControllerDelegate?
     weak var favoritesOverlayDelegate: FavoritesOverlayDelegate?
     
@@ -161,7 +161,7 @@ class SuggestionTrayViewController: UIViewController {
         autocompleteController?.keyboardMoveSelectionUp()
     }
     
-    func float(under view: UIView) {
+    func float(withWidth width: CGFloat) {
 
         containerView.layer.cornerRadius = 16
         containerView.layer.masksToBounds = true
@@ -181,9 +181,7 @@ class SuggestionTrayViewController: UIViewController {
             variableHeightConstraint.constant = Constant.suggestionTrayInitialHeight
         }
 
-        view.leadingAnchor.constraint(equalTo: containerView.leadingAnchor).isActive = true
-        view.trailingAnchor.constraint(equalTo: containerView.trailingAnchor).isActive = true
-
+        variableWidthConstraint.constant = width
         fullWidthConstraint.isActive = false
         fullHeightConstraint.isActive = false
     }

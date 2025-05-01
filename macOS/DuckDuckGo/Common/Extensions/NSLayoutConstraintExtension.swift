@@ -26,6 +26,11 @@ extension NSLayoutConstraint {
         return self
     }
 
+    func priority(_ priority: Priority) -> Self {
+        self.priority = priority
+        return self
+    }
+
     @discardableResult
     func autoDeactivatedWhenViewIsHidden(_ view: NSView) -> Self {
         let c = view.publisher(for: \.isHidden).sink { [self /* bind the constraint lifetime to the view */] isHidden in

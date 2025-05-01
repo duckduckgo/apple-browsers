@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AIChat
+
 enum AIChatMessageType {
     case nativeConfigValues
     case nativeHandoffData
@@ -47,14 +49,8 @@ struct AIChatMessageHandler: AIChatMessageHandling {
 
 // MARK: - Messages
 extension AIChatMessageHandler {
-    private var platform: String { "macOS" }
-
     private func getNativeConfigValues() -> Encodable? {
-        AIChatNativeConfigValues(isAIChatHandoffEnabled: false,
-                                 platform: platform,
-                                 supportsClosingAIChat: true,
-                                 supportsOpeningSettings: true,
-                                 supportsNativePrompt: true)
+        AIChatNativeConfigValues.defaultValues
     }
 
     private func getNativeHandoffData() -> Encodable? {
@@ -62,30 +58,10 @@ extension AIChatMessageHandler {
     }
 
     private func getAIChatNativePrompt() -> Encodable? {
-        guard let prompt = promptHandler.consumeData() as? String else {
+        guard let prompt = promptHandler.consumeData() as? AIChatNativePrompt else {
             return nil
         }
 
-        return AIChatNativePrompt(platform: platform,
-                                  query: .init(prompt: prompt,
-                                               autoSubmit: true))
+        return prompt
     }
-}
-
-private struct AIChatNativeConfigValues: Codable {
-    let isAIChatHandoffEnabled: Bool
-    let platform: String
-    let supportsClosingAIChat: Bool
-    let supportsOpeningSettings: Bool
-    let supportsNativePrompt: Bool
-}
-
-private struct AIChatNativePrompt: Codable {
-    struct Query: Codable {
-        let prompt: String
-        let autoSubmit: Bool
-    }
-
-    let platform: String
-    let query: Query?
 }

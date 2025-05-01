@@ -46,13 +46,13 @@ final class DBPEndToEndTests: XCTestCase {
 
         communicationLayer = DBPUICommunicationLayer(webURLSettings: DataBrokerProtectionWebUIURLSettings(UserDefaults.standard),
                                                      privacyConfig: PrivacyConfigurationManagingMock())
-        communicationLayer.delegate = pirProtectionManager.dataManager!.cache
+        communicationLayer.delegate = pirProtectionManager.dataManager!.communicator
 
-        communicationDelegate = pirProtectionManager.dataManager!.cache
+        communicationDelegate = pirProtectionManager.dataManager!.communicator
 
         viewModel = DBPUIViewModel(dataManager: pirProtectionManager.dataManager, agentInterface: pirProtectionManager.loginItemInterface, webUISettings: DataBrokerProtectionWebUIURLSettings(UserDefaults.standard), pixelHandler: DataBrokerProtectionSharedPixelsHandler(pixelKit: PixelKit.shared!, platform: .macOS))
 
-        pirProtectionManager.dataManager!.cache.scanDelegate = viewModel
+        pirProtectionManager.dataManager!.communicator.scanDelegate = viewModel
 
         let database = pirProtectionManager.dataManager!.database
         try database.deleteProfileData()
@@ -97,7 +97,7 @@ final class DBPEndToEndTests: XCTestCase {
         // Local state set up
         let dataManager = pirProtectionManager.dataManager
         let database = dataManager!.database
-        let cache = pirProtectionManager.dataManager!.cache
+        let communicator = pirProtectionManager.dataManager!.communicator
         try database.deleteProfileData()
         XCTAssert(try database.fetchAllBrokerProfileQueryData().isEmpty)
 
@@ -112,7 +112,7 @@ final class DBPEndToEndTests: XCTestCase {
         /*
          1/ We save a profile
          */
-        cache.profile = mockProfile
+        communicator.profile = mockProfile
         Task { @MainActor in
             _ = try await communicationLayer.saveProfile(params: [], original: WKScriptMessage())
         }
@@ -465,7 +465,7 @@ private extension DBPEndToEndTests {
 
         var trackerAllowlist = BrowserServicesKit.PrivacyConfigurationData.TrackerAllowlist(entries: [String: [PrivacyConfigurationData.TrackerAllowlist.Entry]](), state: "mock")
 
-        func isEnabled(featureKey: BrowserServicesKit.PrivacyFeature, versionProvider: BrowserServicesKit.AppVersionProvider) -> Bool {
+        func isEnabled(featureKey: BrowserServicesKit.PrivacyFeature, versionProvider: BrowserServicesKit.AppVersionProvider, defaultValue: Bool) -> Bool {
             false
         }
 
@@ -473,7 +473,7 @@ private extension DBPEndToEndTests {
             .disabled(.disabledInConfig)
         }
 
-        func isSubfeatureEnabled(_ subfeature: any PrivacySubfeature, versionProvider: BrowserServicesKit.AppVersionProvider) -> Bool {
+        func isSubfeatureEnabled(_ subfeature: any BrowserServicesKit.PrivacySubfeature, versionProvider: AppVersionProvider, randomizer: (Range<Double>) -> Double, defaultValue: Bool) -> Bool {
             false
         }
 
@@ -519,10 +519,6 @@ private extension DBPEndToEndTests {
 
         func userDisabledProtection(forDomain: String) {
 
-        }
-
-        func isSubfeatureEnabled(_ subfeature: any BrowserServicesKit.PrivacySubfeature, versionProvider: BrowserServicesKit.AppVersionProvider, randomizer: (Range<Double>) -> Double) -> Bool {
-            false
         }
 
         func stateFor(subfeatureID: SubfeatureID, parentFeatureID: ParentFeatureID, versionProvider: AppVersionProvider, randomizer: (Range<Double>) -> Double) -> PrivacyConfigurationFeatureState {

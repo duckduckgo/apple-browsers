@@ -110,7 +110,7 @@ extension AppDelegate {
         }
     }
 
-    @objc func openVisit(_ sender: NSMenuItem) {
+    @objc func openHistoryEntryVisit(_ sender: NSMenuItem) {
         guard let visit = sender.representedObject as? Visit,
               let url = visit.historyEntry?.url else {
             assertionFailure("Wrong represented object")
@@ -263,12 +263,8 @@ extension AppDelegate {
     }
 
     @objc func openAbout(_ sender: Any?) {
-#if APPSTORE
-        let options = [NSApplication.AboutPanelOptionKey.applicationName: UserText.duckDuckGoForMacAppStore]
-#else
-        let options: [NSApplication.AboutPanelOptionKey: Any] = [:]
-#endif
-        NSApp.orderFrontStandardAboutPanel(options: options)
+        let aboutController = AboutPanelController(internalUserDecider: internalUserDecider)
+        aboutController.show()
     }
 
     @objc func openImportBrowserDataWindow(_ sender: Any?) {
@@ -557,16 +553,16 @@ extension MainViewController {
         tab.openHomePage()
     }
 
-    @objc func openVisit(_ sender: NSMenuItem) {
+    @objc func openHistoryEntryVisit(_ sender: NSMenuItem) {
         guard let visit = sender.representedObject as? Visit,
-              let url = visit.historyEntry?.url else {
+              let historyEntry = visit.historyEntry else {
             assertionFailure("Wrong represented object")
             return
         }
 
         makeKeyIfNeeded()
-        getActiveTabAndIndex()?.tab.setContent(.contentFromURL(url, source: .historyEntry))
-        adjustFirstResponder()
+
+        WindowControllersManager.shared.open(historyEntry, with: NSApp.currentEvent)
     }
 
     @objc func clearAllHistory(_ sender: NSMenuItem) {
@@ -577,7 +573,7 @@ extension MainViewController {
                 let visitsCount = await historyViewDataProvider.countVisibleVisits(matching: .rangeFilter(.all))
 
                 let presenter = DefaultHistoryViewDialogPresenter()
-                switch await presenter.showDeleteDialog(for: visitsCount, deleteMode: .all) {
+                switch await presenter.showDeleteDialog(for: visitsCount, deleteMode: .all, in: nil) {
                 case .burn:
                     FireCoordinator.fireViewModel.fire.burnAll()
                 case .delete:
@@ -615,7 +611,7 @@ extension MainViewController {
 
             Task {
                 let presenter = DefaultHistoryViewDialogPresenter()
-                switch await presenter.showDeleteDialog(for: visits.count, deleteMode: deleteMode) {
+                switch await presenter.showDeleteDialog(for: visits.count, deleteMode: deleteMode, in: nil) {
                 case .burn:
                     FireCoordinator.fireViewModel.fire.burnVisits(visits,
                                                                   except: FireproofDomains.shared,
@@ -687,7 +683,7 @@ extension MainViewController {
         guard let bookmark = menuItem.representedObject as? Bookmark else { return }
         makeKeyIfNeeded()
 
-        WindowControllersManager.shared.open(bookmark: bookmark)
+        WindowControllersManager.shared.open(bookmark, with: NSApp.currentEvent)
     }
 
     @objc func openAllInTabs(_ sender: Any?) {
@@ -705,8 +701,7 @@ extension MainViewController {
                 shouldLoadInBackground: true,
                 burnerMode: tabCollectionViewModel.burnerMode)
         }
-        tabCollectionViewModel.append(tabs: tabs)
-        PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
+        tabCollectionViewModel.append(tabs: tabs, andSelect: true)
     }
 
     @objc func showManageBookmarks(_ sender: Any?) {
@@ -809,7 +804,7 @@ extension MainViewController {
 
         WindowsManager.closeWindows(except: excludedWindowControllers.compactMap(\.window))
 
-        tabCollectionViewModel.append(tabs: otherTabs)
+        tabCollectionViewModel.append(tabs: otherTabs, andSelect: false)
         tabCollectionViewModel.tabCollection.localHistoryOfRemovedTabs += otherLocalHistoryOfRemovedTabs
     }
 

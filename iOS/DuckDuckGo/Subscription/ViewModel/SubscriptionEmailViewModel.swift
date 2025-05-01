@@ -63,8 +63,7 @@ final class SubscriptionEmailViewModel: ObservableObject {
     @Published private(set) var state = State()
 
     enum SubscriptionRestoreError: Error {
-        case failedToRestoreFromEmail,
-             subscriptionExpired,
+        case subscriptionExpired,
              generalError
     }
 
@@ -243,7 +242,7 @@ final class SubscriptionEmailViewModel: ObservableObject {
     private func handleTransactionError(error: UseSubscriptionError) {
         switch error {
         
-        case .subscriptionExpired:
+        case .restoreFailedDueToExpiredSubscription:
             state.transactionError = .subscriptionExpired
         default:
             state.transactionError = .generalError

@@ -64,7 +64,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
         case .initial:
             createInitialDialog(onManualDismiss: onManualDismiss)
         case .addFavorite:
-            createAddFavoriteDialog(message: homeDialog.message)
+            createAddFavoriteDialog(message: UserText.Onboarding.ContextualOnboarding.daxDialogHomeAddFavorite)
         case .subsequent:
             createSubsequentDialog(onManualDismiss: onManualDismiss)
         case .final:
@@ -72,16 +72,13 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
         case .privacyProPromotion:
             // Re-use same dismiss closure as dismissing the final dialog will set onboarding completed true
             createPrivacyProPromoDialog(onDismiss: onCompletion)
-        default:
-            EmptyView()
         }
     }
 
     private func createInitialDialog(onManualDismiss: @escaping () -> Void) -> some View {
         let viewModel = OnboardingSearchSuggestionsViewModel(
             suggestedSearchesProvider: OnboardingSuggestedSearchesProvider(),
-            delegate: delegate,
-            pixelReporter: onboardingPixelReporter
+            delegate: delegate
         )
         let message = UserText.Onboarding.ContextualOnboarding.onboardingTryASearchMessage
 
@@ -105,8 +102,7 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
         let viewModel = OnboardingSiteSuggestionsViewModel(
             title: UserText.Onboarding.ContextualOnboarding.onboardingTryASiteNTPTitle,
             suggestedSitesProvider: OnboardingSuggestedSitesProvider(surpriseItemTitle: UserText.Onboarding.ContextualOnboarding.tryASearchOptionSurpriseMeTitle),
-            delegate: delegate,
-            pixelReporter: onboardingPixelReporter
+            delegate: delegate
         )
 
         let manualDismissAction = { [weak self] in

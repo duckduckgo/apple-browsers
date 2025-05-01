@@ -88,6 +88,7 @@ public class AppUserDefaults: AppSettings {
         static let duckPlayerNativeUIPrimingModalPresentationEventCount = "com.duckduckgo.ios.duckPlayerNativeUIPrimingModalPresentationEventCount"
         static let duckPlayerNativeUIPrimingModalTimeSinceLastPresented = "com.duckduckgo.ios.duckPlayerNativeUIPrimingModalTimeSinceLastPresented"
         static let duckPlayerPillDismissCount = "com.duckduckgo.ios.duckPlayerPillDismissCount"
+        static let duckPlayerVariant = "com.duckduckgo.ios.duckPlayerVariant"
     }
 
     private struct DebugKeys {
@@ -537,6 +538,21 @@ public class AppUserDefaults: AppSettings {
         }
         set {
             userDefaults?.set(newValue.rawValue, forKey: DebugKeys.onboardingIsNewUserKey)
+        }
+    }
+
+   var duckPlayerVariant: DuckPlayerVariant {
+        get {
+            if let value = userDefaults?.string(forKey: Keys.duckPlayerVariant),
+               let mode = DuckPlayerVariant(stringValue: value) {
+                return mode
+            }
+            return .classicWeb
+        }
+        set {
+            userDefaults?.set(newValue.stringValue, forKey: Keys.duckPlayerVariant)
+            NotificationCenter.default.post(name: AppUserDefaults.Notifications.duckPlayerSettingsUpdated,
+                                            object: nil)
         }
     }
 }

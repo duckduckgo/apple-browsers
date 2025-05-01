@@ -76,7 +76,7 @@ public struct ScanOrSeeCode: View {
     }
 
     var instructionsString: AttributedString {
-        let baseString = UserText.scanOrSeeCodeInstructionAttributed(syncMenuPath: UserText.syncMenuPath)
+        let baseString = UserText.scanOrSeeCodeOtherDeviceInstruction(syncMenuPath: UserText.syncMenuPath)
         var instructions = AttributedString(baseString)
         if let range = instructions.range(of: UserText.syncMenuPath) {
             instructions[range].font = .boldSystemFont(ofSize: 13)
@@ -98,7 +98,7 @@ public struct ScanOrSeeCode: View {
                 QRCodeView(string: qrCodeModel.code ?? "", size: 120)
                 VStack(alignment: .leading, spacing: 10) {
                     HStack {
-                        Text(UserText.scanOrSeeCodeScanCodeInstructionsTitle)
+                        Text(UserText.scanOrSeeCodeScanCodeQRInstructionsTitle)
                             .daxBodyBold()
                             .fixedSize(horizontal: false, vertical: true)
                             .multilineTextAlignment(.leading)
@@ -110,7 +110,7 @@ public struct ScanOrSeeCode: View {
                                     .fill(Color(designSystemColor: .lines))
                             )
                     }
-                    Text(UserText.scanOrSeeCodeScanCodeInstructionsBody)
+                    Text(UserText.scanOrSeeCodeScanCodeQRInstructionsBody)
                         .foregroundColor(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                         .multilineTextAlignment(.leading)
@@ -121,8 +121,9 @@ public struct ScanOrSeeCode: View {
             .padding(20)
             .background(
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(.black)
+                    .fill(Color(designSystemColor: .container))
                     .frame(width: width - 20)
+                    .preferredColorScheme(.dark)
             )
             .padding(20)
             cantScanView()

@@ -154,7 +154,7 @@ final class AutofillCreditCardListViewModel: CreditCardListViewModelProtocol {
     private func fetchCreditCards() {
         do {
             let creditCards = try self.secureVault?.creditCards() ?? []
-            cards = creditCards.asCardRowViewModels
+            cards = creditCards.sorted(by: { $0.created > $1.created }).asCardRowViewModels
             updateViewState()
         } catch {
             Logger.autofill.error("Failed to fetch credit cards from vault: \(error)")

@@ -66432,13 +66432,25 @@
       }
     },
     "storage.access.prompt.quirk.domains.label.1" : {
-      "comment" : "Part 1 of an alert for quirk domains asking users whether to share cookies: requestingDomain wants to use cookies and data across sites they own, including:\nPart 2 of an alert asking users whether to share cookies: If you pick “Don’t Allow” some site features may not work as expected, but it will reduce tracking by [requestingdomain].",
+      "comment" : "Part 1 of an alert for quirk domains asking users whether to share cookies: requestingDomain wants to use cookies and data across sites they own, including:",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "%@ wants to use cookies and data across sites they own, including:"
+          }
+        }
+      }
+    },
+    "storage.access.prompt.quirk.domains.label.2" : {
+      "comment" : "Part 2 of an alert asking users whether to share cookies: If you pick “Don’t Allow” some site features may not work as expected, but it will reduce tracking by [requestingdomain].",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "If you pick “Don’t Allow” some site features may not work as expected, but it will reduce tracking by %@."
           }
         }
       }

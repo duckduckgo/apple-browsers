@@ -1561,7 +1561,7 @@ struct UserText {
         return String(format: localized, requestingDomain)
     }
     static func storageAccessPromptLabel2(entity: String) -> String {
-        let localized = NSLocalizedString("storage.access.prompt.quirk.domains.label.1",
+        let localized = NSLocalizedString("storage.access.prompt.quirk.domains.label.2",
                                           value: "If you pick “Don’t Allow” some site features may not work as expected, but it will reduce tracking by %@.",
                                           comment: "Part 2 of an alert asking users whether to share cookies: If you pick “Don’t Allow” some site features may not work as expected, but it will reduce tracking by [requestingdomain].")
         return String(format: localized, entity)

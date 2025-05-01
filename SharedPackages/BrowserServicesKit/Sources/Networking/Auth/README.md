@@ -123,6 +123,11 @@ public enum OAuthClientError: Error {
 }
 ```
 
+**Notable errors:**
+
+- `refreshTokenExpired` is generally bad news, that means the account is become unusable, the token can't be refreshed and the user must be logged out.
+- `authMigrationNotPerformed` is not really an error, just a state for when a migration is attempted but is not needed.
+
 ## Auth V1 to V2 Migration
 
 The framework provides automatic migration from Auth V1 to V2 tokens. When initializing the `DefaultOAuthClient` with a `legacyTokenStorage` that contains a V1 token, the migration process will:
@@ -134,12 +139,26 @@ The framework provides automatic migration from Auth V1 to V2 tokens. When initi
 
 Note: A log out will remove both V1 and V2 tokens.
 
-## Security Considerations
+## Security and other considerations
 
 - Secure token storage is not the responsibility of this framework and is provided by dependency injection of objects implementing `AuthTokenStoring` and `LegacyAuthTokenStoring`.
 - JWT verification uses server-provided public keys.
-- Automatic token refresh before expiration.
-- Support for token invalidation and logout.
+- The token is automatically refreshed if requested less than 45s before expiration.
+- On logout the token is invalidated server side.
+- Tokens durations
+    - Access Token: 4h (4m in Staging)
+    - Refresh token: 1M
+    
+    
+## Testing and mocks
+
+The `NetworkTestingUtils` Swift package contains all needed mocks, factories and utilities needed for testing the Auth code itself and code that uses the AuthV2 authentication.
+
+- `OAuthTokensFactory` creates different type of `TokenContainer` in different states of expiration.
+- `MockURLProtocol` can be used for isolating the code from the real API and run integration tests  
+- `HTTPURLResponseExtension` provides pre-configured `HTTPURLResponse` responses like `HTTPURLResponse.ok` or `HTTPURLResponse.internalServerError`
+
+All mocks are completely independent and configurable with errors or successful responses for each function
 
 ## Additional Documentation
 - [OAuth 2.0 protocol](https://auth0.com/intro-to-iam/what-is-oauth-2)

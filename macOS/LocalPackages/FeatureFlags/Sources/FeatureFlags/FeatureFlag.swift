@@ -135,8 +135,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .visualRefresh,
                 .tabCrashDebugging,
                 .tabCrashRecovery,
-                .delayedWebviewPresentation,
-                .dbpRemoteBrokerDelivery:
+                .delayedWebviewPresentation:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -145,7 +144,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .contextualOnboarding,
                 .unknownUsernameCategorization,
                 .credentialsImportPromotionForExistingUsers,
-                .maliciousSiteProtection:
+                .maliciousSiteProtection,
+                .dbpRemoteBrokerDelivery:
             return false
         }
     }

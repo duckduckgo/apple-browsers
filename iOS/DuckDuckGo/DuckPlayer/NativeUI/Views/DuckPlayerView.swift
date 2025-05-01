@@ -59,7 +59,7 @@ struct DuckPlayerView: View {
         static let welcomeMessageInternalPadding: CGFloat = 10
         static let welcomeMessageCornerRadius: CGFloat = 12
         static let welcomeMessagePadding: CGFloat = 16
-        static let duckPlayerLogoSize: CGFloat = 64
+        static let duckPlayerLogoSize: CGFloat = 55
         static let duckPlayerLogoSpacing: CGFloat = 16
         static let defaultSpacing: CGFloat = 8
         static let youtubeButtonsize: CGFloat = 24
@@ -307,28 +307,27 @@ struct DuckPlayerView: View {
     private var welcomeMessage: some View {
         if viewModel.shouldShowWelcomeMessage {
             ZStack(alignment: .topTrailing) {
-                VStack {
+                VStack(alignment: .leading) {
                     HStack {
                         Image(Constants.daxLogo)
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .frame(width: LayoutConstants.duckPlayerLogoSize, height: LayoutConstants.duckPlayerLogoSize)
+                            .frame(width: LayoutConstants.duckPlayerLogoSize, height: LayoutConstants.duckPlayerLogoSize, alignment: .leading)
                             .padding(.leading, LayoutConstants.welcomeMessageInternalPadding)
-                        Spacer()
                     }
                     
                   BubbleView(
+                      arrowLength: 15, 
+                      arrowWidth: 25, 
                       arrowPositionPercent: 2,
                       fillColor: Constants.uiElementsBackground,
-                      paddingAmount: LayoutConstants.welcomeMessageInternalPadding
+                      paddingAmount: LayoutConstants.welcomeMessageInternalPadding,
                   ) {
                       bubbleContent
                   }
                   .padding(LayoutConstants.welcomeMessageInternalPadding)
-                  .padding(.top, LayoutConstants.welcomeMessageSpacing)
                 }
-                
-                
+                .offset(x: 0, y: -5)
                 // Close Button
                 Button(action: {
                     //viewModel.closeWelcomeMessage()

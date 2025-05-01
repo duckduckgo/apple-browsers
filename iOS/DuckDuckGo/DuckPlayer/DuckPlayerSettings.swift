@@ -212,6 +212,9 @@ protocol DuckPlayerSettings: AnyObject {
 
     var variant: DuckPlayerVariant { get set }
 
+    // Determines if the welcome message has been shown
+    var welcomeMessageShown: Bool { get set }
+
     /// Initializes a new instance with the provided app settings and privacy configuration manager.
     ///
     /// - Parameters:
@@ -446,9 +449,22 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
                     self.nativeUIYoutubeMode = .auto
                     // openInNewTab remains unchanged (Only used in classicA)
                     self.autoplay = true
+                    // Reset the welcome message shown flag
+                    self.welcomeMessageShown = false
                 }
                 
             }
+        }
+    }
+
+    // Determines if we should show a custom view when YouTube returns an error
+    var welcomeMessageShown: Bool {
+        get {
+            return appSettings.duckPlayerWelcomeMessageShown
+        }
+        set {
+            appSettings.duckPlayerWelcomeMessageShown = newValue
+            triggerNotification()
         }
     }
 

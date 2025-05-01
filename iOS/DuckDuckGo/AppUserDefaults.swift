@@ -89,6 +89,7 @@ public class AppUserDefaults: AppSettings {
         static let duckPlayerNativeUIPrimingModalTimeSinceLastPresented = "com.duckduckgo.ios.duckPlayerNativeUIPrimingModalTimeSinceLastPresented"
         static let duckPlayerPillDismissCount = "com.duckduckgo.ios.duckPlayerPillDismissCount"
         static let duckPlayerVariant = "com.duckduckgo.ios.duckPlayerVariant"
+        static let duckPlayerWelcomeMessageShown = "com.duckduckgo.ios.duckPlayerWelcomeMessageShown"
     }
 
     private struct DebugKeys {
@@ -466,6 +467,9 @@ public class AppUserDefaults: AppSettings {
     
     @UserDefaultsWrapper(key: .duckPlayerAutoplay, defaultValue: true)
     var duckPlayerAutoplay: Bool
+
+    @UserDefaultsWrapper(key: .duckPlayerWelcomeMessageShown, defaultValue: false)
+    var duckPlayerWelcomeMessageShown: Bool
 
     var duckPlayerNativeUISERPEnabled: Bool {
         get {

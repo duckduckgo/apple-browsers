@@ -69,6 +69,9 @@ final class DuckPlayerViewModel: ObservableObject {
     /// The YouTube video ID to be played
     let videoID: String
 
+    /// DuckPlayer settings instance for accessing user preferences
+    private var duckPlayerSettings: DuckPlayerSettings
+
     /// Default parameters applied to all YouTube video URLs
     let defaultParameters: [String: String] = [
         Constants.relParameter: Constants.disabled,
@@ -78,9 +81,6 @@ final class DuckPlayerViewModel: ObservableObject {
 
     /// The referrer for the DuckPlayer
     let source: DuckPlayer.VideoNavigationSource
-
-    /// App settings instance for accessing user preferences
-    var appSettings: AppSettings
 
     /// Whether the "Watch in YouTube" button should be visible
     /// This is only shown for SERP videos as otherwise the video is already on YouTube    
@@ -95,7 +95,10 @@ final class DuckPlayerViewModel: ObservableObject {
     }
 
     var shouldShowWelcomeMessage: Bool {
-        !isLandscape && showWelcomeMessage
+        !isLandscape && 
+        !duckPlayerSettings.welcomeMessageShown && 
+        duckPlayerSettings.variant == .nativeOptOut && 
+        !shouldShowAutoOpenToggle
     }
 
     var cancellables = Set<AnyCancellable>()
@@ -111,7 +114,7 @@ final class DuckPlayerViewModel: ObservableObject {
     @Published var showAutoOpenOnYoutubeToggle: Bool = true
     @Published var autoOpenOnYoutube: Bool = false {
         didSet {
-            appSettings.duckPlayerNativeYoutubeMode = autoOpenOnYoutube ? .auto : .ask
+            duckPlayerSettings.nativeUIYoutubeMode = autoOpenOnYoutube ? .auto : .ask
         }
     }    
 
@@ -124,23 +127,21 @@ final class DuckPlayerViewModel: ObservableObject {
     private var timestampUpdateTimer: Timer?
     private var webView: WKWebView?
     private var coordinator: DuckPlayerWebView.Coordinator?
-
-    // Show the welcome message if the variant is nativeOptOut and we're not in SERP
-    private var showWelcomeMessage: Bool {
-        // shouldShowAutoOpenToggle is false when in SERP
-        return appSettings.duckPlayerVariant == .nativeOptOut && !shouldShowAutoOpenToggle
-    }
+    
 
     /// Creates a new DuckPlayerViewModel instance
     /// - Parameters:
     ///   - videoID: The YouTube video ID to be played
     ///   - appSettings: App settings instance for accessing user preferences
-    init(videoID: String, timestamp: TimeInterval? = nil, appSettings: AppSettings = AppDependencyProvider.shared.appSettings, source: DuckPlayer.VideoNavigationSource = .other) {
+    init(videoID: String, 
+         timestamp: TimeInterval? = nil, 
+         duckPlayerSettings: DuckPlayerSettings = DuckPlayerSettingsDefault(), 
+         source: DuckPlayer.VideoNavigationSource = .other) {
         self.videoID = videoID
-        self.appSettings = appSettings
+        self.duckPlayerSettings = duckPlayerSettings
         self.timestamp = timestamp ?? 0
         self.source = source
-        self.autoOpenOnYoutube = appSettings.duckPlayerNativeYoutubeMode == .auto
+        self.autoOpenOnYoutube = duckPlayerSettings.nativeUIYoutubeMode == .auto
         self.url = getVideoURL()
     }
 
@@ -251,6 +252,11 @@ final class DuckPlayerViewModel: ObservableObject {
         showAutoOpenOnYoutubeToggle = false
     }
 
+    /// Hides the welcome message
+    func hideWelcomeMessage() {
+        duckPlayerSettings.welcomeMessageShown = true
+    }
+
     // MARK: - Private Methods
 
     /// Handles device orientation change notifications
@@ -262,7 +268,7 @@ final class DuckPlayerViewModel: ObservableObject {
     /// - Returns: A URL configured for the embedded YouTube player with privacy-preserving parameters
     private func getVideoURLWithParameters() -> URL? {
         var parameters = defaultParameters
-        parameters[Constants.autoplayParameter] = appSettings.duckPlayerAutoplay ? Constants.enabled : Constants.disabled
+        parameters[Constants.autoplayParameter] = duckPlayerSettings.autoplay ? Constants.enabled : Constants.disabled
         let queryString = parameters.map { "\($0.key)=\($0.value)" }.joined(separator: "&")
         return URL(string: "\(Constants.baseURL)\(videoID)?\(queryString)")
     }

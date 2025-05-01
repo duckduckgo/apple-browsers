@@ -332,7 +332,7 @@ struct DuckPlayerView: View {
 
                 // Close Button
                 Button(action: {
-                    //viewModel.closeWelcomeMessage()
+                    viewModel.hideWelcomeMessage()
                 }) {
                     ZStack {
                         Circle()

@@ -183,7 +183,6 @@ final class WindowsManager {
     }
 
     private class func makeNewWindow(tabCollectionViewModel: TabCollectionViewModel? = nil,
-                                     contentSize: NSSize? = nil,
                                      popUp: Bool = false,
                                      burnerMode: BurnerMode,
                                      autofillPopoverPresenter: AutofillPopoverPresenter) -> MainWindowController {
@@ -194,7 +193,7 @@ final class WindowsManager {
                 $0.mainViewController.tabCollectionViewModel.burnerMode == burnerMode
             })?.fireWindowSession ?? FireWindowSession()
         } else { FireWindowSession?.none }
-        return MainWindowController(mainViewController: mainViewController, popUp: popUp, fireWindowSession: fireWindowSession, contentSize: contentSize)
+        return MainWindowController(mainViewController: mainViewController, popUp: popUp, fireWindowSession: fireWindowSession)
     }
 
 }

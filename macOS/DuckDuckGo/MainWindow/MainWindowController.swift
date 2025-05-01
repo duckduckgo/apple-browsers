@@ -45,39 +45,50 @@ final class MainWindowController: NSWindowController {
          mainViewController: MainViewController,
          popUp: Bool,
          fireWindowSession: FireWindowSession? = nil,
-         fireViewModel: FireViewModel? = nil,
-         contentSize: NSSize? = nil) {
+         fireViewModel: FireViewModel? = nil) {
 
-        // 1) Grab the visible screen area (excluding Dock & menu bar)
-        let screenVisibleFrame = NSScreen.main?.visibleFrame
-            ?? NSRect(origin: .zero,
-                      size: NSSize(width: 1024, height: 790))
+        // Size the window
+        // Handle ultra‑wide monitors: cap size and center like Windows team approach
+        let workArea = NSScreen.main?.visibleFrame
+            ?? NSRect(origin: .zero, size: NSSize(width: 1024, height: 790))
+        let monitorTopLeft = CGPoint(x: workArea.minX, y: workArea.minY)
+        let monitorSize = CGSize(width: workArea.width, height: workArea.height)
 
-        // 2) Default to 95% of that visible area
-        let defaultContentSize = NSSize(
-            width: screenVisibleFrame.width * 0.95,
-            height: screenVisibleFrame.height * 0.95
-        )
-        //    but allow an override if passed in:
-        var contentSize = contentSize ?? defaultContentSize
+        // Minimum logical size
+        let minWidth: CGFloat = 300
+        let minHeight: CGFloat = 300
 
-        // 3) Clamp so we never exceed the visible bounds (and never go below 300×300)
-        contentSize.width = min(screenVisibleFrame.width,  max(contentSize.width,  300))
-        contentSize.height = min(screenVisibleFrame.height, max(contentSize.height, 300))
+        // Calculate 95% of the work area
+        var desiredWidth  = monitorSize.width  * 0.95
+        var desiredHeight = monitorSize.height * 0.95
 
-        // 4) Center *within* that visible frame
-        let origin = CGPoint(
-            x: screenVisibleFrame.origin.x + (screenVisibleFrame.width  - contentSize.width)  / 2,
-            y: screenVisibleFrame.origin.y + (screenVisibleFrame.height - contentSize.height) / 2
-        )
-        let frame = NSRect(origin: origin, size: contentSize)
+        // Enforce minimums
+        desiredWidth  = max(desiredWidth,  minWidth)
+        desiredHeight = max(desiredHeight, minHeight)
 
-        // 5) Create & configure the window
+        // Cap aspect ratio at 16:9
+        let maxAspectRatio: CGFloat = 16.0 / 9.0
+        if desiredWidth / desiredHeight > maxAspectRatio {
+            desiredWidth = desiredHeight * maxAspectRatio
+        }
+
+        let finalSize = NSSize(width: desiredWidth, height: desiredHeight)
+
+        // Center within the work area
+        let calcLeft = max((monitorSize.width - finalSize.width) / 2 + monitorTopLeft.x,
+                           monitorTopLeft.x)
+        let calcBottom = max((monitorSize.height - finalSize.height) / 2 + monitorTopLeft.y,
+                             monitorTopLeft.y)
+        let frame = NSRect(origin: CGPoint(x: calcLeft, y: calcBottom),
+                           size: finalSize)
+
         assert(window == nil || [.unitTests, .integrationTests].contains(AppVersion.runType),
                "Window should not be set in non-test environment")
-        let window = window ?? (popUp ? PopUpWindow(frame: frame) : MainWindow(frame: frame))
+        let window = window ?? (popUp
+            ? PopUpWindow(frame: frame)
+            : MainWindow(frame: frame))
         window.contentViewController = mainViewController
-        window.setContentSize(contentSize)
+        window.setContentSize(frame.size)
         self.fireViewModel = fireViewModel ?? FireCoordinator.fireViewModel
 
         assert(!mainViewController.isBurner || fireWindowSession != nil)
@@ -86,7 +97,6 @@ final class MainWindowController: NSWindowController {
 
         super.init(window: window)
 
-        // 6) All the usual wiring
         setupWindow(window)
         setupToolbar()
         subscribeToTrafficLightsAlpha()

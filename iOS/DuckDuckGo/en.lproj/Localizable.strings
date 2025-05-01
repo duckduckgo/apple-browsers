@@ -469,8 +469,8 @@
 /* Button label to sync passwords with desktop browser */
 "autofill.import.passwords.via.sync.sync-button" = "Sync With Desktop";
 
-/* Title for screen to import passwords */
-"autofill.import.passwords.via.sync.title" = "How To Import Passwords";
+/* Title for screen to import passwords by syncing with desktop browser */
+"autofill.import.passwords.via.sync.title" = "How to Sync Desktop Passwords";
 
 /* Disable action for alert when asking the user if they want to keep using autofill */
 "autofill.keep-enabled.alert.disable" = "Disable";

@@ -1055,7 +1055,7 @@ Take back control of your personal information with the browser designed for dat
     static let autofillActivate = NSLocalizedString("pm.activate", value: "Reactivate", comment: "Activate button")
 
     // Autofill Password Import
-    public static let autofillImportPasswordsViaSyncTitle = NSLocalizedString("autofill.import.passwords.via.sync.title", value:"How To Import Passwords", comment: "Title for screen to import passwords")
+    public static let autofillImportPasswordsViaSyncTitle = NSLocalizedString("autofill.import.passwords.via.sync.title", value:"How to Sync Desktop Passwords", comment: "Title for screen to import passwords by syncing with desktop browser")
     public static let autofillImportPasswordsViaSyncSubtitle = NSLocalizedString("autofill.import.passwords.via.sync.subtitle", value:"Import passwords in the desktop version of the DuckDuckGo browser, then sync across devices.", comment: "Subtitle for screen to import passwords")
     public static let autofillImportPasswordsViaSyncGetBrowserButton = NSLocalizedString("autofill.import.passwords.via.sync.get-browser-button", value:"Get Desktop Browser", comment: "Button label to get link to download the desktop browser")
     public static let autofillImportPasswordsViaSyncSyncButton = NSLocalizedString("autofill.import.passwords.via.sync.sync-button", value:"Sync With Desktop", comment: "Button label to sync passwords with desktop browser")

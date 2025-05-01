@@ -1560,7 +1560,11 @@ struct UserText {
                                           comment: "Part 1 of an alert for quirk domains asking users whether to share cookies: requestingDomain wants to use cookies and data across sites they own, including:")
         return String(format: localized, requestingDomain)
     }
-
-    static let storageAccessPromptLabel2 = NSLocalizedString("storage.access.prompt.label.2", value: "Selecting \"Don't Allow\" means some site features may not work as expected, but cross-site tracking will be blocked.", comment: "Part 2 of an alert asking users whether to share cookies: Selecting “Don’t Allow” means some site features may not work as expected, but cross-site tracking will be blocked.")
+    static func storageAccessPromptLabel2(entity: String) -> String {
+        let localized = NSLocalizedString("storage.access.prompt.quirk.domains.label.1",
+                                          value: "If you pick “Don’t Allow” some site features may not work as expected, but it will reduce tracking by %@.",
+                                          comment: "Part 2 of an alert asking users whether to share cookies: If you pick “Don’t Allow” some site features may not work as expected, but it will reduce tracking by [requestingdomain].")
+        return String(format: localized, entity)
+    }
     static let storageAccessPromptLabel3 = NSLocalizedString("storage.access.prompt.label.3", value: "DuckDuckGo protections still apply either way.", comment: "Part 3 of an alert asking users whether to share cookies: DuckDuckGo protections still apply either way.")
 }

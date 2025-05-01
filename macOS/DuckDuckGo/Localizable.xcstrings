@@ -66407,18 +66407,6 @@
         }
       }
     },
-    "storage.access.prompt.label.2" : {
-      "comment" : "Part 2 of an alert asking users whether to share cookies: Selecting “Don’t Allow” means some site features may not work as expected, but cross-site tracking will be blocked.",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Selecting \"Don't Allow\" means some site features may not work as expected, but cross-site tracking will be blocked."
-          }
-        }
-      }
-    },
     "storage.access.prompt.label.3" : {
       "comment" : "Part 3 of an alert asking users whether to share cookies: DuckDuckGo protections still apply either way.",
       "extractionState" : "extracted_with_value",
@@ -66444,7 +66432,7 @@
       }
     },
     "storage.access.prompt.quirk.domains.label.1" : {
-      "comment" : "Part 1 of an alert for quirk domains asking users whether to share cookies: requestingDomain wants to use cookies and data across sites they own, including:",
+      "comment" : "Part 1 of an alert for quirk domains asking users whether to share cookies: requestingDomain wants to use cookies and data across sites they own, including:\nPart 2 of an alert asking users whether to share cookies: If you pick “Don’t Allow” some site features may not work as expected, but it will reduce tracking by [requestingdomain].",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "en" : {

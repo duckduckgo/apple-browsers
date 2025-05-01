@@ -42,7 +42,7 @@ extension NSAlert {
         // Other labels
         let labels = [
             domainLabel,
-            makeLabel(UserText.storageAccessPromptLabel2, bold: false, size: 12),
+            makeLabel(UserText.storageAccessPromptLabel2(entity: entity(from: requestingDomain)), bold: false, size: 12),
             makeLabel(UserText.storageAccessPromptLabel3, bold: false, size: 12)
         ]
 
@@ -149,7 +149,7 @@ extension NSAlert {
         // Build labels
         let introLabel = makeIntroLabel(requestingDomain: requestingDomain, fontSize: 12)
         let domainListLabels = quirkDomains.map { makeLabel($0, bold: true, size: 12) }
-        let selectionLabel = makeLabel(UserText.storageAccessPromptLabel2, bold: false, size: 12)
+        let selectionLabel = makeLabel(UserText.storageAccessPromptLabel2(entity: entity(from: requestingDomain)), bold: false, size: 12)
         let protectionLabel = makeLabel(UserText.storageAccessPromptLabel3, bold: false, size: 12)
         let labels = [introLabel] + domainListLabels + [selectionLabel, protectionLabel]
 
@@ -209,7 +209,7 @@ extension NSAlert {
            let entityName = entity.displayName {
             return entityName
         } else {
-            return "\"\(requestingDomain)\""
+            return "\(requestingDomain)"
         }
     }
 

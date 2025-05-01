@@ -133,13 +133,6 @@ final class AutofillSettingsViewModel: ObservableObject {
         }
     }
 
-    func refreshCounts() {
-        updatePasswordsCount()
-        if showCreditCards {
-            updateCreditCardsCount()
-        }
-    }
-
     func updatePasswordsCount() {
         initSecureVaultIfRequired()
 

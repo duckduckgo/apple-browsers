@@ -1,15 +1,13 @@
-# AuthV2
-
-A Swift framework implementing OAuth 2.0 authentication for DuckDuckGo's Privacy Pro services on macOS and iOS. This library handles user authentication, token management, and secure communication with DuckDuckGo's authentication services.
+# Auth
 
 ## Overview
 
-The AuthV2 framework provides a complete implementation of OAuth 2.0 authentication flow, specifically designed for DuckDuckGo's Privacy Pro services. It handles token management, secure storage, and automatic token refresh, while providing a clean API for client applications.
+A Swift framework semi-implementing OAuth 2.0 authentication for DuckDuckGo's Privacy Pro services on macOS and iOS. This library handles user authentication, token management, and secure communication with DuckDuckGo's authentication services.
 
 ## Main Components
 
 ### TokenContainer
-The core data structure that holds authentication tokens and their decoded representations:
+The structure that holds authentication token, the refresh token and their decoded representations:
 
 ```swift
 public struct TokenContainer: Codable {

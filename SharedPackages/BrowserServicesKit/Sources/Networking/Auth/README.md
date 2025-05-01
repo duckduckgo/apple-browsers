@@ -2,12 +2,14 @@
 
 ## Overview
 
-A Swift framework semi-implementing OAuth 2.0 authentication for DuckDuckGo's Privacy Pro services on macOS and iOS. This library handles user authentication, token management, and secure communication with DuckDuckGo's authentication services.
+A Swift framework implementing a subset of OAuth 2.0 authentication for DuckDuckGo's Privacy Pro services on macOS and iOS. This library handles user authentication, token management, and secure communication with DuckDuckGo's authentication services.
+
+[Overview of OAuth2 Implementation for Privacy Pro](https://dub.duckduckgo.com/duckduckgo/ddg/blob/main/components/auth/docs/AuthAPIV2Documentation.md#overview-of-oauth2-implementation-for-privacy-pro)
 
 ## Main Components
 
 ### TokenContainer
-The structure that holds authentication token, the refresh token and their decoded representations:
+The structure that holds authentication token, the refresh token, and their decoded representations:
 
 ```swift
 public struct TokenContainer: Codable {
@@ -18,8 +20,14 @@ public struct TokenContainer: Codable {
 }
 ```
 
+**Warnings:**
+- Never store or cache a TokenContainer outside this framework.
+- Never pass the TokenContainer around, always ask the `OAuthClient` for it, use it and discard it. (Notable exception is IPC coms for the VPN SysExt) 
+
 ### OAuthClient
-The main interface for client applications to interact with the authentication system. Key features include:
+The **main** interface for client applications to interact with the authentication system and the **only** source of truth for the authentication token. 
+
+Key features include:
 - Token management and refresh
 - Account creation and activation
 - Token migration from V1 to V2
@@ -45,26 +53,27 @@ Defines all API endpoints and request structures for the authentication service:
 - **Secure Token Management**: Automatic token refresh and secure storage
 - **JWT Verification**: Built-in JWT verification using server-provided keys
 - **Error Handling**: Comprehensive error handling with detailed error messages
-- **Token Migration**: Support for migrating from Auth V1 to V2
-- **Environment Support**: Support for both production and staging environments
+- **Token Migration**: Support for migrating from Auth V1 to V2.
+- **Environment Support**: Support for both production and staging environments.
 
 ## Usage
 
 ### Basic Authentication Flow
 
-1. Initialize the OAuthClient with appropriate storage and service implementations
-2. Use the client to create or activate an account
-3. Store the returned TokenContainer for future use
-4. Use the stored tokens for authenticated requests
+1. Initialise the OAuthClient with appropriate storage and service implementations.
+2. Use the client to create or activate an account.
+3. Store the returned TokenContainer for future use.
+4. Use the stored tokens for authenticated requests.
 
 ### Example
 
 ```swift
-// Initialize the client
+// Initialise the client
+let authService = DefaultOAuthService(baseURL: <API base URL>, apiService: <Your APIService>)
 let oAuthClient = DefaultOAuthClient(
     tokensStorage: yourTokenStorage,
     legacyTokenStorage: yourLegacyStorage,
-    authService: DefaultOAuthService(baseURL: environment.url, apiService: yourAPIService)
+    authService: authService)
 )
 
 // Create a new account
@@ -74,9 +83,24 @@ let tokenContainer = try await oAuthClient.createAccount()
 let validTokens = try await oAuthClient.getTokens(policy: .localValid)
 ```
 
+**Warning:**
+
+The `APIService` must disable automatic redirection because in our specific OAuth implementation, we manage the redirection, not the user.
+This is done using our custom `SessionDelegate` as `URLSession` delegate.
+
+```
+public static func makeAPIServiceForAuthV2() -> APIService {
+    let configuration = URLSessionConfiguration.ephemeral
+    configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
+    configuration.httpCookieStorage = nil
+    let urlSession = URLSession(configuration: configuration, delegate: SessionDelegate(), delegateQueue: nil)
+    return DefaultAPIService(urlSession: urlSession)
+}
+```
+
 ## Token Management
 
-The framework provides several token management policies:
+The framework provides several token retrieval policies:
 
 - `.local`: Use stored tokens as-is
 - `.localValid`: Use stored tokens, refresh if needed
@@ -104,18 +128,18 @@ public enum OAuthClientError: Error {
 The framework provides automatic migration from Auth V1 to V2 tokens. When initializing the `DefaultOAuthClient` with a `legacyTokenStorage` that contains a V1 token, the migration process will:
 
 1. Check if a V2 token already exists
-2. If no V2 token exists, attempt to exchange the V1 token for a V2 token container
+2. If no V2 token exists, attempt to exchange the V1 token for a V2 token container.
 3. Store the new V2 token container while preserving the V1 token for potential rollback. This ensures a smooth transition while maintaining backward compatibility.
-4. Use the V2 token container for all subsequent operations
+4. Use the V2 token container for all subsequent operations.
 
-Note: A log out will remove both v1 and v2 tokens
+Note: A log out will remove both V1 and V2 tokens.
 
 ## Security Considerations
 
-- Secure tokens storage is not responsibility of this framework and is provided by dependency injection of objects implementing `AuthTokenStoring` and `LegacyAuthTokenStoring`
-- JWT verification uses server-provided public keys
-- Automatic token refresh before expiration
-- Support for token invalidation and logout
+- Secure token storage is not the responsibility of this framework and is provided by dependency injection of objects implementing `AuthTokenStoring` and `LegacyAuthTokenStoring`.
+- JWT verification uses server-provided public keys.
+- Automatic token refresh before expiration.
+- Support for token invalidation and logout.
 
 ## Additional Documentation
 - [OAuth 2.0 protocol](https://auth0.com/intro-to-iam/what-is-oauth-2)

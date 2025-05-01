@@ -1547,4 +1547,31 @@ struct UserText {
     static let removeSuggestionTooltip = NSLocalizedString("remove.suggestion.tooltip", value: "Remove from browsing history", comment: "Tooltip for the button which removes the history entry from the history")
 
     static let switchToTab = NSLocalizedString("switch.to.tab", value: "Switch to Tab", comment: "Suggestion to switch to an open tab button title")
+
+    // MARK: - Storage Access
+
+    static let storageAccessPromptAllow = NSLocalizedString("storage.access.prompt.allow", value: "Allow", comment: "Allow sharing data between sites")
+    static let storageAccessPromptDontAllow = NSLocalizedString("storage.access.prompt.dont.allow", value: "Don't Allow", comment: "Don't allow sharing data between sites")
+    static let storageAccessPromptHeader = NSLocalizedString("storage.access.prompt.header", value: "Share data like login info between two sites?", comment: "Header of an alert asking users whether to share data between websites")
+    static let storageAccessPromptQuirkDomainsHeader = NSLocalizedString("storage.access.prompt.quirk.domains.header", value: "Share site data like login info between related sites?", comment: "Header of an alert asking users whether to share data between websites")
+
+    static func storageAccessPromptLabel1(currentDomain: String, requestingDomain: String) -> String {
+        let localized = NSLocalizedString("storage.access.prompt.label.1",
+                                          value: "%@ wants to use cookies and data from %@.",
+                                          comment: "Part 1 of an alert asking users whether to share cookies: [requestingdomain.com] wants to use cookies and data from [currentdomain.com].")
+        return String(format: localized, requestingDomain, currentDomain)
+    }
+    static func storageAccessPromptQuirkDomainsLabel1(requestingDomain: String) -> String {
+        let localized = NSLocalizedString("storage.access.prompt.quirk.domains.label.1",
+                                          value: "%@ wants to use cookies and data across sites they own, including:",
+                                          comment: "Part 1 of an alert for quirk domains asking users whether to share cookies: requestingDomain wants to use cookies and data across sites they own, including:")
+        return String(format: localized, requestingDomain)
+    }
+    static func storageAccessPromptLabel2(entity: String) -> String {
+        let localized = NSLocalizedString("storage.access.prompt.quirk.domains.label.2",
+                                          value: "If you pick “Don’t Allow” some site features may not work as expected, but it will reduce tracking by %@.",
+                                          comment: "Part 2 of an alert asking users whether to share cookies: If you pick “Don’t Allow” some site features may not work as expected, but it will reduce tracking by [requestingdomain].")
+        return String(format: localized, entity)
+    }
+    static let storageAccessPromptLabel3 = NSLocalizedString("storage.access.prompt.label.3", value: "DuckDuckGo protections still apply either way.", comment: "Part 3 of an alert asking users whether to share cookies: DuckDuckGo protections still apply either way.")
 }

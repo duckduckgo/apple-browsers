@@ -177,6 +177,8 @@
 		1DBFD9132D6C7387003F8D98 /* PinnedTabsManagerProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DBFD9112D6C7381003F8D98 /* PinnedTabsManagerProvider.swift */; };
 		1DC669702B6CF0D700AA0645 /* TabSnapshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DC6696F2B6CF0D700AA0645 /* TabSnapshotStore.swift */; };
 		1DC669712B6CF0D700AA0645 /* TabSnapshotStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DC6696F2B6CF0D700AA0645 /* TabSnapshotStore.swift */; };
+		1DC9DD1E2DB041760029D4A5 /* NSAlert+Tab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DC9DD1D2DB0416D0029D4A5 /* NSAlert+Tab.swift */; };
+		1DC9DD1F2DB041760029D4A5 /* NSAlert+Tab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DC9DD1D2DB0416D0029D4A5 /* NSAlert+Tab.swift */; };
 		1DCFBC8A29ADF32B00313531 /* BurnerHomePageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DCFBC8929ADF32B00313531 /* BurnerHomePageView.swift */; };
 		1DCFBC8B29ADF32B00313531 /* BurnerHomePageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DCFBC8929ADF32B00313531 /* BurnerHomePageView.swift */; };
 		1DD6A7B12D804786006AE043 /* PinnedTabsDiscoveryPopUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1DD6A7B02D80477D006AE043 /* PinnedTabsDiscoveryPopUpView.swift */; };
@@ -3826,6 +3828,7 @@
 		1DB9617F29F67F3E00CF5568 /* FaviconNullStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FaviconNullStore.swift; sourceTree = "<group>"; };
 		1DBFD9112D6C7381003F8D98 /* PinnedTabsManagerProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedTabsManagerProvider.swift; sourceTree = "<group>"; };
 		1DC6696F2B6CF0D700AA0645 /* TabSnapshotStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSnapshotStore.swift; sourceTree = "<group>"; };
+		1DC9DD1D2DB0416D0029D4A5 /* NSAlert+Tab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSAlert+Tab.swift"; sourceTree = "<group>"; };
 		1DCFBC8929ADF32B00313531 /* BurnerHomePageView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BurnerHomePageView.swift; sourceTree = "<group>"; };
 		1DD6A7B02D80477D006AE043 /* PinnedTabsDiscoveryPopUpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedTabsDiscoveryPopUpView.swift; sourceTree = "<group>"; };
 		1DD6A7B32D804AD3006AE043 /* PinnedTabsDiscoveryPopUpViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PinnedTabsDiscoveryPopUpViewController.swift; sourceTree = "<group>"; };
@@ -9078,6 +9081,7 @@
 				F4A6198B283CFFBB007F2080 /* ContentScopeFeatureFlagging.swift */,
 				B626A75929921FAA00053070 /* NavigationActionPolicyExtension.swift */,
 				B634DBE4293C944700C3C99E /* NewWindowPolicy.swift */,
+				1DC9DD1D2DB0416D0029D4A5 /* NSAlert+Tab.swift */,
 				85B49AF92CD1B7C5007FAA2A /* SystemInfo.swift */,
 				AA9FF95824A1ECF20039E328 /* Tab.swift */,
 				B634DBE0293C8FD500C3C99E /* Tab+Dialogs.swift */,
@@ -12496,6 +12500,7 @@
 				4BF97AD82B43C5B300EB4240 /* VPNAppEventsHandler.swift in Sources */,
 				3706FEC5293F6F0600E42796 /* BWInstallationService.swift in Sources */,
 				3775912E29AAC72700E26367 /* SyncPreferences.swift in Sources */,
+				1DC9DD1E2DB041760029D4A5 /* NSAlert+Tab.swift in Sources */,
 				3706FB83293F65D500E42796 /* NSApplicationExtension.swift in Sources */,
 				37197EA42942441D00394917 /* NewWindowPolicy.swift in Sources */,
 				1D72D59D2BFF61B200AEDE36 /* UpdateNotificationPresenter.swift in Sources */,
@@ -13914,6 +13919,7 @@
 				4B1E6EED27AB5E5100F51793 /* SecureVaultSorting.swift in Sources */,
 				37CD54CE27F2FDD100F1F7B9 /* PreferencesSidebarModel.swift in Sources */,
 				BB9BA2272D10C08F009229F3 /* TabBarRemoteMessage.swift in Sources */,
+				1DC9DD1F2DB041760029D4A5 /* NSAlert+Tab.swift in Sources */,
 				1D43EB32292788C70065E5D6 /* BWEncryptionOutput.m in Sources */,
 				B6106BAD26A7BF390013B453 /* PermissionState.swift in Sources */,
 				371C0A2927E33EDC0070591F /* FeedbackPresenter.swift in Sources */,

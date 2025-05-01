@@ -25440,7 +25440,7 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Möchtest du %@ feuerfest machen?"
           }
         },
@@ -25452,43 +25452,43 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "¿Quieres marcar %@ como a prueba de fuego?"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Souhaitez-vous placer %@ en mode coupe-feu ?"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Vuoi proteggere %@?"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Wil je %@ brandveilig maken?"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Chcesz zabezpieczyć %@?"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Gostaria de usar a barreira de segurança em %@?"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Сделать сайт %@ огнеупорным?"
           }
         }
@@ -65890,6 +65890,102 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Остановить чтение"
+          }
+        }
+      }
+    },
+    "storage.access.prompt.allow" : {
+      "comment" : "Allow sharing data between sites",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow"
+          }
+        }
+      }
+    },
+    "storage.access.prompt.dont.allow" : {
+      "comment" : "Don't allow sharing data between sites",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Don't Allow"
+          }
+        }
+      }
+    },
+    "storage.access.prompt.header" : {
+      "comment" : "Header of an alert asking users whether to share data between websites",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Share data like login info between two sites?"
+          }
+        }
+      }
+    },
+    "storage.access.prompt.label.1" : {
+      "comment" : "Part 1 of an alert asking users whether to share cookies: [requestingdomain.com] wants to use cookies and data from [currentdomain.com].",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ wants to use cookies and data from %2$@."
+          }
+        }
+      }
+    },
+    "storage.access.prompt.label.3" : {
+      "comment" : "Part 3 of an alert asking users whether to share cookies: DuckDuckGo protections still apply either way.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo protections still apply either way."
+          }
+        }
+      }
+    },
+    "storage.access.prompt.quirk.domains.header" : {
+      "comment" : "Header of an alert asking users whether to share data between websites",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Share site data like login info between related sites?"
+          }
+        }
+      }
+    },
+    "storage.access.prompt.quirk.domains.label.1" : {
+      "comment" : "Part 1 of an alert for quirk domains asking users whether to share cookies: requestingDomain wants to use cookies and data across sites they own, including:",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ wants to use cookies and data across sites they own, including:"
+          }
+        }
+      }
+    },
+    "storage.access.prompt.quirk.domains.label.2" : {
+      "comment" : "Part 2 of an alert asking users whether to share cookies: If you pick “Don’t Allow” some site features may not work as expected, but it will reduce tracking by [requestingdomain].",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "If you pick “Don’t Allow” some site features may not work as expected, but it will reduce tracking by %@."
           }
         }
       }

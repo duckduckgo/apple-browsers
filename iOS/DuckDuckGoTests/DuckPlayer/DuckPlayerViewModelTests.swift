@@ -192,48 +192,215 @@ final class DuckPlayerViewModelTests: XCTestCase {
         XCTAssertEqual(queryItems[DuckPlayerViewModel.Constants.startParameter], String(Int(expectedTimestamp)), "start parameter should match the timestamp")
     }
 
+    // MARK: - Orientation Dependent Tests
+
     @MainActor
-    func testOrientationChange_UpdatesStateCorrectly() {
-        // Given: Initial state is portrait (default or set)
-        viewModel.isLandscape = false
-        viewModel.showAutoOpenOnYoutubeToggle = true
-        mockSettings.nativeUIYoutubeMode = .ask // Ensure autoOpenOnYoutube is false
-        viewModel.autoOpenOnYoutube = false
+    func testComputedProperties_WhenLandscape() {
+        // Given: ViewModel is configured for SERP source initially
+        viewModel.showAutoOpenOnYoutubeToggle = true // Start with toggle visible
+        mockSettings.welcomeMessageShown = false
+        mockSettings.variant = .nativeOptOut
 
-        // Simulate NotificationCenter posting landscape orientation
-        // We can't directly simulate the NotificationCenter, so we call updateOrientation directly
-        // and manually set the window scene orientation (which updateOrientation would read)
-        // This requires a bit more setup or a mock UIWindowScene, so we'll just test the logic flow triggered by orientation change.
-        // We'll simulate landscape by setting isLandscape directly and verifying dependent properties.
-
-        // When: Simulate landscape orientation update
+        // When: Set orientation to landscape
         viewModel.isLandscape = true
-        // Manually call update to reflect potential side effects (like hiding toggle)
-        viewModel.updateOrientation() // In a real test env, this might be triggered by notification
 
-        // Then: Verify state in landscape
-        XCTAssertTrue(viewModel.isLandscape, "isLandscape should be true after orientation change")
+        // Then: Verify computed properties dependent on landscape state
+        XCTAssertTrue(viewModel.isLandscape, "isLandscape should be true")
         XCTAssertFalse(viewModel.shouldShowYouTubeButton, "YouTube button should be hidden in landscape")
         XCTAssertFalse(viewModel.shouldShowAutoOpenToggle, "Auto-open toggle should be hidden in landscape")
+        XCTAssertFalse(viewModel.shouldShowWelcomeMessage, "Welcome message should be hidden in landscape")
+    }
 
-        // When: Simulate portrait orientation update
+    @MainActor
+    func testComputedProperties_WhenPortrait() {
+        // Given: ViewModel is configured for SERP source initially
+        mockSettings.nativeUIYoutubeMode = .ask // Ensure autoOpenOnYoutube is initially false
+        viewModel.autoOpenOnYoutube = false
+        viewModel.showAutoOpenOnYoutubeToggle = true // Assume toggle is visible initially
+        mockSettings.welcomeMessageShown = false
+        mockSettings.variant = .nativeOptOut
+
+        // When: Set orientation to portrait
         viewModel.isLandscape = false
-        // Manually call update
-        viewModel.updateOrientation() // In a real test env, this might be triggered by notification
 
-        // Then: Verify state restored in portrait
-        XCTAssertFalse(viewModel.isLandscape, "isLandscape should be false after orientation change back to portrait")
-        XCTAssertTrue(viewModel.shouldShowYouTubeButton, "YouTube button should be shown again in portrait (assuming SERP source)")
-        XCTAssertTrue(viewModel.shouldShowAutoOpenToggle, "Auto-open toggle should be shown again in portrait (assuming not explicitly hidden and autoOpen=false)")
+        // Then: Verify computed properties dependent on portrait state
+        XCTAssertFalse(viewModel.isLandscape, "isLandscape should be false")
+        XCTAssertTrue(viewModel.shouldShowYouTubeButton, "YouTube button should be shown in portrait for SERP source")
+        XCTAssertTrue(viewModel.shouldShowAutoOpenToggle, "Auto-open toggle should be shown in portrait when visible flag is true")
 
-        // Test case where toggle remains hidden if auto-open is true
+        // Verify welcome message depends on toggle state (it should be hidden if toggle is visible)
+        XCTAssertFalse(viewModel.shouldShowWelcomeMessage, "Welcome message should be hidden when auto-open toggle is visible")
+
+        // Test case: Welcome message shown when toggle is hidden
+        viewModel.hideAutoOpenToggle() // Explicitly hide toggle
+        XCTAssertTrue(viewModel.shouldShowWelcomeMessage, "Welcome message should be shown when toggle is hidden and other conditions met")
+
+        // Test case: Auto-open toggle remains hidden if explicitly hidden
+        viewModel.hideAutoOpenToggle()
+        XCTAssertFalse(viewModel.shouldShowAutoOpenToggle, "Auto-open toggle should remain hidden if explicitly hidden")
+    }
+
+    @MainActor
+    func testAutoOpenToggleVisibility_WhenPortraitAndAutoOpenIsTrue() {
+        // Given
         mockSettings.nativeUIYoutubeMode = .auto
         viewModel.autoOpenOnYoutube = true
-        viewModel.isLandscape = true // Go to landscape
-        viewModel.updateOrientation()
-        viewModel.isLandscape = false // Back to portrait
-        viewModel.updateOrientation()
-        XCTAssertFalse(viewModel.shouldShowAutoOpenToggle, "Auto-open toggle should remain hidden in portrait if autoOpen is true")
+        viewModel.isLandscape = false // Ensure portrait
+        viewModel.showAutoOpenOnYoutubeToggle = true // Start with toggle notionally visible
+
+        // Then
+        XCTAssertTrue(viewModel.shouldShowAutoOpenToggle, "Auto-open toggle visibility should be true when showAutoOpenOnYoutubeToggle is true, even if autoOpenOnYoutube is true")
+
+        // When: Explicitly hide the toggle
+        viewModel.hideAutoOpenToggle()
+
+        // Then
+        XCTAssertFalse(viewModel.shouldShowAutoOpenToggle, "Auto-open toggle should be hidden after calling hideAutoOpenToggle()")
     }
+
+    // MARK: - State Mutation Tests
+
+    @MainActor
+    func testHideWelcomeMessage_SetsFlagInSettings() {
+        // Given
+        mockSettings.welcomeMessageShown = false // Ensure initial state
+
+        // When
+        viewModel.hideWelcomeMessage()
+
+        // Then
+        XCTAssertTrue(mockSettings.welcomeMessageShown, "welcomeMessageShown flag should be true after hiding the message")
+    }
+
+    // MARK: - Publisher Tests
+
+    @MainActor
+    func testYoutubeNavigationRequestPublisher_OnHandleYouTubeNavigation() {
+        // Given
+        let expectedVideoID = "navigatedVideoID"
+        let testURL = URL(string: "https://www.youtube.com/watch?v=\(expectedVideoID)")!
+        let expectation = XCTestExpectation(description: "YouTube navigation request publisher emitted")
+        var receivedVideoID: String?
+
+        viewModel.youtubeNavigationRequestPublisher
+            .sink { videoID in
+                receivedVideoID = videoID
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        // When
+        viewModel.handleYouTubeNavigation(testURL)
+
+        // Then
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertEqual(receivedVideoID, expectedVideoID, "Publisher should emit the correct video ID from the URL")
+    }
+
+    @MainActor
+    func testYoutubeNavigationRequestPublisher_OnOpenInYouTube() {
+        // Given
+        let expectation = XCTestExpectation(description: "YouTube navigation request publisher emitted")
+        var receivedVideoID: String?
+
+        viewModel.youtubeNavigationRequestPublisher
+            .sink { videoID in
+                receivedVideoID = videoID
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        // When
+        viewModel.openInYouTube()
+
+        // Then
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertEqual(receivedVideoID, viewModel.videoID, "Publisher should emit the viewModel's video ID")
+    }
+
+    @MainActor
+    func testSettingsRequestPublisher_OnOpenSettings() {
+        // Given
+        let expectation = XCTestExpectation(description: "Settings request publisher emitted")
+
+        viewModel.settingsRequestPublisher
+            .sink { _ in
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        // When
+        viewModel.openSettings()
+
+        // Then
+        wait(for: [expectation], timeout: 1.0)
+    }
+
+    @MainActor
+    func testDismissPublisher_OnDisappear() {
+        // Given
+        let expectedTimestamp: TimeInterval = 42.0
+        viewModel.timestamp = expectedTimestamp
+        let expectation = XCTestExpectation(description: "Dismiss publisher emitted")
+        var receivedTimestamp: TimeInterval?
+
+        viewModel.dismissPublisher
+            .sink { timestamp in
+                receivedTimestamp = timestamp
+                expectation.fulfill()
+            }
+            .store(in: &cancellables)
+
+        // When
+        viewModel.onDisappear() // This triggers the publisher
+
+        // Then
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertEqual(receivedTimestamp, expectedTimestamp, "Dismiss publisher should emit the current timestamp")
+    }
+
+    // MARK: - Timestamp Observation Tests
+    // Note: Testing the timer scheduling directly is tricky. We test the effect.
+    @MainActor
+    func testTimestampObservation_UpdatesTimestampPeriodically() async {
+        // Given
+        let mockWebView = MockWebView()
+        // We need a viewModel instance to initialize the Coordinator subclass
+        let tempViewModel = DuckPlayerViewModel(videoID: "coordInit")
+        let mockCoordinator = TestableDuckPlayerWebViewCoordinator(viewModel: tempViewModel)
+        let initialTimestamp: TimeInterval = 0
+        let updatedTimestamp: TimeInterval = 5.0
+
+        viewModel.timestamp = initialTimestamp
+        mockCoordinator.mockTimestamp = updatedTimestamp
+
+        // When: Start observing
+        viewModel.startObservingTimestamp(webView: mockWebView, coordinator: mockCoordinator)
+
+        // Then: Verify timestamp is updated after a short delay (simulating timer firing)
+        // We need to wait slightly longer than the timer interval (0.3s)
+        try? await Task.sleep(nanoseconds: 400_000_000) // 0.4 seconds
+
+        // Perform the check
+        await MainActor.run {
+            XCTAssertEqual(viewModel.timestamp, updatedTimestamp, "Timestamp should be updated by the observer")
+            XCTAssertGreaterThan(mockCoordinator.getCurrentTimestampCallCount, 0, "getCurrentTimestamp should have been called")
+        }
+
+        // When: Stop observing
+        let callCountBeforeStop = mockCoordinator.getCurrentTimestampCallCount
+        viewModel.stopObservingTimestamp()
+
+        // Wait again to ensure no more updates happen
+        try? await Task.sleep(nanoseconds: 400_000_000) // 0.4 seconds
+
+        await MainActor.run {
+             XCTAssertEqual(mockCoordinator.getCurrentTimestampCallCount, callCountBeforeStop, "getCurrentTimestamp should not be called after stopping observation")
+        }
+        
+        // Ensure timestamp didn't change further
+        XCTAssertEqual(viewModel.timestamp, updatedTimestamp, "Timestamp should remain unchanged after stopping observation")
+    }
+
 }
 

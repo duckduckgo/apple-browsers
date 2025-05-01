@@ -108,7 +108,7 @@ final class DuckPlayerViewModel: ObservableObject {
 
     /// The generated URL for the embedded YouTube player
     @Published private(set) var url: URL?
-    @Published private(set) var timestamp: TimeInterval = 0
+    @Published internal var timestamp: TimeInterval = 0
 
     // Automatic open on Youtube toggle
     @Published var showAutoOpenOnYoutubeToggle: Bool = true

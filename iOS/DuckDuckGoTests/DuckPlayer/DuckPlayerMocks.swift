@@ -472,6 +472,18 @@ class MockDelayHandler: DuckPlayerDelayHandling {
     }
 }
 
+// Testable Coordinator subclass for timestamp testing
+@MainActor
+class TestableDuckPlayerWebViewCoordinator: DuckPlayerWebView.Coordinator {
+    var mockTimestamp: TimeInterval = 0.0
+    var getCurrentTimestampCallCount = 0
+
+    override func getCurrentTimestamp(_ webView: WKWebView) async -> TimeInterval {
+        getCurrentTimestampCallCount += 1
+        return mockTimestamp
+    }
+}
+
 // MARK: - TabViewController Test Protocol
 
 // MARK: - DuckPlayerTabViewControllerMock

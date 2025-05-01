@@ -321,7 +321,7 @@ struct DuckPlayerView: View {
                       arrowWidth: 25, 
                       arrowPositionPercent: 1,
                       fillColor: Constants.uiElementsBackground,
-                      paddingAmount: LayoutConstants.welcomeMessageInternalPadding,
+                      paddingAmount: LayoutConstants.welcomeMessageInternalPadding
                   ) {
                       bubbleContent
                         .padding(LayoutConstants.welcomeMessageInternalPadding)

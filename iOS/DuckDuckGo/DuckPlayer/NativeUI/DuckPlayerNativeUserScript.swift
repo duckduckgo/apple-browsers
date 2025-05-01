@@ -52,7 +52,6 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
         case urlChanged(pageType: String)
     }
     
-    private var pendingUrlChangeEvent: QueuedEvent?
     private var otherEventsQueue: [QueuedEvent] = []
     private var areScriptsReady = false
     var duckPlayer: DuckPlayerControlling
@@ -153,8 +152,6 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
             return onYoutubeError
         case Handlers.initialSetup:
             return initialSetup
-        case Handlers.onDuckPlayerFeatureReady:
-            return onDuckPlayerFeatureReady
         case Handlers.onDuckPlayerScriptsReady:
             return onDuckPlayerScriptsReady
         default:
@@ -177,7 +174,7 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
         print("DP: handleEvent: \(event)")
         switch event {
         case .urlChanged:
-            processEvent(event) // Always store the latest URL change
+            processEvent(event) // No need to queue url changes anymore
         default:
             if areScriptsReady {
                 processEvent(event)
@@ -238,13 +235,13 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
     
     internal func onUrlChanged() {
         print("DP: onUrlChanged")
+        areScriptsReady = false
         
         // Determine the page type based on the host and URL
         let pageType = getPageType()
         let shouldClearEvents = pageType != Constants.YOUTUBE
 
         if shouldClearEvents {
-            pendingUrlChangeEvent = nil
             otherEventsQueue.removeAll()
         }
         
@@ -278,24 +275,6 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
     @MainActor
     private func onYoutubeError(params: Any, original: WKScriptMessage) -> Encodable? {
         return [:] as [String: String]
-    }
-
-    /**
-     Handles the message indicating the DuckPlayer feature is ready. This will send the latest urlChanged event (if any) to the webview.
-     - Parameters:
-        - params: The parameters from the message.
-        - original: The original WKScriptMessage.
-     - Returns: nil
-     */
-    @MainActor
-    internal func onDuckPlayerFeatureReady(params: Any, original: WKScriptMessage) -> Encodable? {
-        print("DP: onDuckPlayerFeatureReady")
-        // Send the latest urlChanged event if present
-        if let event = pendingUrlChangeEvent {
-            processEvent(event)
-            pendingUrlChangeEvent = nil
-        }
-        return nil
     }
 
     /**

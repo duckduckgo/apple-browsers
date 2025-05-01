@@ -63,7 +63,7 @@ final class MainWindowController: NSWindowController {
         var desiredHeight = monitorSize.height * 0.95
 
         // Enforce minimums
-        desiredWidth  = max(desiredWidth,  minWidth)
+        desiredWidth  = max(desiredWidth, minWidth)
         desiredHeight = max(desiredHeight, minHeight)
 
         // Cap aspect ratio at 16:9

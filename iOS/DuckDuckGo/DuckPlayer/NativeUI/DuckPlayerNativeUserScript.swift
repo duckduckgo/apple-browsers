@@ -70,6 +70,7 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
         static let mute = "mute"
         static let pause = "pause"
         static let enabled = "enabled"
+        static let playbackPaused = "playbackPaused"
     }
 
     struct FEEvents {
@@ -256,7 +257,8 @@ final class DuckPlayerNativeUserScript: NSObject, Subfeature {
         let pageType = getPageType()
         let result: [String: String] = [
             Constants.locale: Locale.current.languageCode ?? "en",
-            Constants.pageType: pageType
+            Constants.pageType: pageType,
+            Constants.playbackPaused: pageType == Constants.YOUTUBE ? "true" : "false",
         ]
         return result
     }

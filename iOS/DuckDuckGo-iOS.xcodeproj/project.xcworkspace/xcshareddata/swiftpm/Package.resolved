@@ -50,8 +50,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/DesignResourcesKit",
       "state" : {
-        "revision" : "8c99842fed1c7fa19de28132b1bdabfb7a33908a",
-        "version" : "4.2.0"
+        "revision" : "f07a285c6edb5265b3a256c87124135ebcedee6f",
+        "version" : "4.3.0"
       }
     },
     {
@@ -59,8 +59,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/duckduckgo-autofill.git",
       "state" : {
-        "revision" : "90541ed7d3a69733fc37e9c51bd92f21e0d56a57",
-        "version" : "17.1.0"
+        "branch" : "dbajpeyi/fix/ios-prompt-cc-once-and-icons",
+        "revision" : "ba960c7c60062ff2994a13ca962fa612e8e5141f"
       }
     },
     {

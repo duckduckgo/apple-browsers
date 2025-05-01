@@ -58,8 +58,7 @@ public enum FeatureFlag: String {
     case autocompleteTabs
     case textZoom
     case adAttributionReporting
-    case tabManagerMultiSelection
-    
+
     /// https://app.asana.com/0/1208592102886666/1208613627589762/f
     case crashReportOptInStatusResetting
 
@@ -218,8 +217,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .privacyProFreeTrialJan25:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProFreeTrialJan25))
-        case .tabManagerMultiSelection:
-            return .remoteReleasable(.subfeature(TabManagerSubfeature.multiSelection))
         case .webViewStateRestoration:
             return .remoteReleasable(.feature(.webViewStateRestoration))
         case .syncSeamlessAccountSwitching:

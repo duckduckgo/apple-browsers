@@ -559,6 +559,69 @@ class AutofillVaultUserScriptTests: XCTestCase {
         userScript.processEncryptedMessage(message, from: userContentController)
         XCTAssertNil(delegate.lastSubtype)
     }
+    
+    func testWhenGetAutofillDataForCreditCardsCalled_ThenDelegateMethodCalled() {
+        class CreditCardDelegate: MockSecureVaultDelegate {
+            var didRequestCreditCardCalled = false
+            var capturedTrigger: AutofillUserScript.GetTriggerType?
+            
+            override func autofillUserScriptDidRequestCreditCard(_: AutofillUserScript,
+                                                                 trigger: AutofillUserScript.GetTriggerType,
+                                                                 completionHandler: @escaping (SecureVaultModels.CreditCard?, RequestVaultDataAction) -> Void) {
+                didRequestCreditCardCalled = true
+                capturedTrigger = trigger
+                
+                let mockCard = SecureVaultModels.CreditCard(
+                    id: 123,
+                    title: "Test Card",
+                    cardNumber: "4111111111111111",
+                    cardholderName: "Test User",
+                    cardSecurityCode: "123",
+                    expirationMonth: 12,
+                    expirationYear: 2030)
+                
+                completionHandler(mockCard, .fill)
+            }
+        }
+        
+        let delegate = CreditCardDelegate()
+        userScript.vaultDelegate = delegate
+        
+        // Construct the message body
+        var body = encryptedMessagingParams
+        body["mainType"] = "creditCards"
+        body["subType"] = "cardNumber"
+        body["trigger"] = "userInitiated"
+        
+        let mockWebView = MockWebView()
+        let message = MockWKScriptMessage(name: "getAutofillData", body: body, webView: mockWebView)
+        
+        let expect = expectation(description: #function)
+        
+        userScript.userContentController(userContentController, didReceive: message) {
+            XCTAssertNotNil($0)
+            XCTAssertNil($1)
+            
+            // Verify the response format
+            let data = ($0 as? String)?.data(using: .utf8)
+            let response = try? JSONDecoder().decode(AutofillUserScript.RequestVaultCreditCardResponse.self, from: data!)
+            
+            XCTAssertNotNil(response)
+            XCTAssertNotNil(response?.success.creditCards)
+            XCTAssertEqual(response?.success.action, .fill)
+            XCTAssertEqual(response?.success.creditCards?.id, "123")
+            XCTAssertEqual(response?.success.creditCards?.cardNumber, "4111111111111111")
+            XCTAssertEqual(response?.success.creditCards?.cardName, "Test User")
+            
+            // Verify the delegate was called correctly
+            XCTAssertTrue(delegate.didRequestCreditCardCalled)
+            XCTAssertEqual(delegate.capturedTrigger, .userInitiated)
+            
+            expect.fulfill()
+        }
+        
+        waitForExpectations(timeout: 1.0)
+    }
 }
 
 class MockSecureVaultDelegate: AutofillSecureVaultDelegate {
@@ -570,6 +633,7 @@ class MockSecureVaultDelegate: AutofillSecureVaultDelegate {
         case didRequestStoreDataForDomain
         case didRequestAccountsForDomain
         case didRequestCredentialsForDomain
+        case didRequestCreditCard
         case didRequestRuntimeConfigurationForDomain
         case didRequestAutoFillInitDataForDomain
     }
@@ -626,6 +690,7 @@ class MockSecureVaultDelegate: AutofillSecureVaultDelegate {
     }
 
     func autofillUserScriptDidRequestCreditCard(_: BrowserServicesKit.AutofillUserScript, trigger: BrowserServicesKit.AutofillUserScript.GetTriggerType, completionHandler: @escaping (BrowserServicesKit.SecureVaultModels.CreditCard?, BrowserServicesKit.RequestVaultDataAction) -> Void) {
+        receivedCallbacks.append(.didRequestCreditCard)
     }
 
     var didRequestAutoFillInitDataForDomainCompletionHandler: (([BrowserServicesKit.SecureVaultModels.WebsiteCredentials],

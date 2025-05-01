@@ -64,12 +64,14 @@ final class SaveCreditCardViewModel {
     
     private let creditCard: SecureVaultModels.CreditCard
     private let accountDomain: String
+    private let vault: (any AutofillSecureVault)?
     let card: CreditCardRowViewModel
     
-    init(creditCard: SecureVaultModels.CreditCard, accountDomain: String, domainLastShownOn: String? = nil) {
+    init(creditCard: SecureVaultModels.CreditCard, accountDomain: String, domainLastShownOn: String? = nil, vault: (any AutofillSecureVault)? = nil) {
         self.creditCard = creditCard
         self.accountDomain = accountDomain
         self.domainLastShownOn = domainLastShownOn
+        self.vault = vault
         self.card = CreditCardRowViewModel(creditCard: creditCard)
     }
     
@@ -89,7 +91,7 @@ final class SaveCreditCardViewModel {
     
     private func saveCreditCard(_ creditCard: SecureVaultModels.CreditCard, with factory: AutofillVaultFactory) throws -> SecureVaultModels.CreditCard? {
         do {
-            let vault = try AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
+            let vault = try self.vault ?? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
             let cardId = try vault.storeCreditCard(creditCard)
             if let newCard = try vault.creditCardFor(id: cardId) {
                 return newCard

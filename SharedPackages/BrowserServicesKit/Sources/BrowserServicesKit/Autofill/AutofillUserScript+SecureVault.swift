@@ -565,7 +565,7 @@ extension AutofillUserScript {
         }
 
         if request.mainType == .credentials {
-        vaultDelegate?.autofillUserScript(self,
+            vaultDelegate?.autofillUserScript(self,
                                           didRequestCredentialsForDomain: domain,
                                           subType: request.subType,
                                           trigger: request.trigger) { credentials, credentialsProvider, action in

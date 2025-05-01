@@ -507,6 +507,12 @@ extension SecureVaultManager: AutofillSecureVaultDelegate {
         do {
             let vault = try self.vault ?? AutofillSecureVaultFactory.makeVault(reporter: self.delegate)
             let cards: [SecureVaultModels.CreditCard] = try vault.creditCards()
+            
+            guard !cards.isEmpty else {
+                Logger.secureVault.debug("Not showing the modal, no cards found")
+                completionHandler(nil, .none)
+                return
+            }
 
             delegate?.secureVaultManagerShouldPromptUserToAutofillCreditCard(self, withCreditCards: cards, withTrigger: trigger) { creditCard in
                 completionHandler(creditCard, .fill)

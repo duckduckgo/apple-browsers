@@ -65,7 +65,6 @@ extension CreditCardPromptViewController: CreditCardPromptViewModelDelegate {
     func creditCardPromptViewModel(_ viewModel: CreditCardPromptViewModel, didSelectCreditCard creditCard: SecureVaultModels.CreditCard) {
         authenticator.authenticate { [weak self] error in
             if let error = error {
-                print("Error authenticating: \(error)")
                 return
             }
             

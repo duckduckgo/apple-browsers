@@ -23,8 +23,6 @@ on:
     paths:
       - '.github/**'
       - '.xcode-version'
-      - 'BrowserServicesKit/**'
-      - 'macOS/**'
 
 jobs:
   create-notarized-app:

@@ -325,6 +325,9 @@
                                         <constraint firstAttribute="width" priority="900" constant="30" id="fjl-fd-cK0"/>
                                     </constraints>
                                     <state key="normal" image="Share-24"/>
+                                    <connections>
+                                        <action selector="onSharePressed:" destination="ojX-nM-dyN" eventType="touchUpInside" id="1pO-tU-wuk"/>
+                                    </connections>
                                 </button>
                                 <button opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" reversesTitleShadowWhenHighlighted="YES" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="gb5-wL-4OW" userLabel="Abort Button">
                                     <rect key="frame" x="433" y="8" width="30" height="24"/>

@@ -186,6 +186,12 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.onRefreshPressed = { [weak self] in
             self?.onRefreshPressed()
         }
+        barView.onRefreshPressed = { [weak self] in
+            self?.onRefreshPressed()
+        }
+        barView.onSharePressed = { [weak self] in
+            self?.onSharePressed()
+        }
         barView.onBackPressed = { [weak self] in
             self?.onBackPressed()
         }
@@ -603,6 +609,11 @@ class OmniBarViewController: UIViewController, OmniBar {
         Pixel.fire(pixel: .refreshPressed)
         cancelAllAnimations()
         omniDelegate?.onRefreshPressed()
+    }
+
+    private func onSharePressed() {
+        // TODO pixel
+        omniDelegate?.onSharePressed()
     }
 
     private func onBackPressed() {

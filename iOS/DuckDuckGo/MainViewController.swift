@@ -2068,6 +2068,10 @@ extension MainViewController: BrowserChromeDelegate {
 
 extension MainViewController: OmniBarDelegate {
 
+    func onSharePressed() {
+        shareCurrentURLFromAddressBar()
+    }
+
     func selectedSuggestion() -> Suggestion? {
         return suggestionTrayController?.selectedSuggestion
     }
@@ -2325,10 +2329,14 @@ extension MainViewController: OmniBarDelegate {
         case .chat:
             openAIChatFromAddressBar()
         case .share:
-            guard let link = currentTab?.link else { return }
-            Pixel.fire(pixel: .addressBarShare)
-            currentTab?.onShareAction(forLink: link, fromView: viewCoordinator.omniBar.barView.accessoryButton)
+            shareCurrentURLFromAddressBar()
         }
+    }
+
+    private func shareCurrentURLFromAddressBar() {
+        Pixel.fire(pixel: .addressBarShare)
+        guard let link = currentTab?.link else { return }
+        currentTab?.onShareAction(forLink: link, fromView: viewCoordinator.omniBar.barView.accessoryButton)
     }
 
     private func openAIChatFromAddressBar() {

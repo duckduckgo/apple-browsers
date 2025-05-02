@@ -187,6 +187,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     var onSettingsButtonPressed: (() -> Void)?
     var onCancelPressed: (() -> Void)?
     var onRefreshPressed: (() -> Void)?
+    var onSharePressed: (() -> Void)?
     var onBackPressed: (() -> Void)?
     var onForwardPressed: (() -> Void)?
     var onBookmarksPressed: (() -> Void)?

@@ -75,6 +75,7 @@ protocol OmniBarView: UIView, OmniBarStatusUpdateable {
     var onSettingsButtonPressed: (() -> Void)? { get set }
     var onCancelPressed: (() -> Void)? { get set }
     var onRefreshPressed: (() -> Void)? { get set }
+    var onSharePressed: (() -> Void)? { get set }
     var onBackPressed: (() -> Void)? { get set }
     var onForwardPressed: (() -> Void)? { get set }
     var onBookmarksPressed: (() -> Void)? { get set }

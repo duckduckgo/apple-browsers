@@ -458,6 +458,10 @@ protocol NewWindowPolicyDecisionMaker {
             .map { _ in () }
             .eraseToAnyPublisher()
     }
+    let webViewDidReceiveUserInteractiveChallengePublisher = PassthroughSubject<Void, Never>()
+    let webViewDidReceiveRedirectPublisher = PassthroughSubject<Void, Never>()
+    let webViewDidFailNavigationPublisher = PassthroughSubject<Void, Never>()
+    let webViewRenderingProgressDidChangePublisher = PassthroughSubject<Void, Never>()
 
     // MARK: - Properties
 
@@ -1181,6 +1185,9 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
     func didReceive(_ challenge: URLAuthenticationChallenge, for navigation: Navigation?) async -> AuthChallengeDisposition? {
         guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodHTTPBasic else { return nil }
 
+        // send this event only when we're interrupting loading and showing extra UI to the user
+        webViewDidReceiveUserInteractiveChallengePublisher.send()
+
         // when navigating to a URL with basic auth username/password, cache it and redirect to a trimmed URL
         if case .url(let url, credential: .some(let credential), source: let source) = content,
            url.matches(challenge.protectionSpace),
@@ -1202,6 +1209,10 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
         } catch {
             return .cancel
         }
+    }
+
+    func didReceiveRedirect(_ navigationAction: NavigationAction, for navigation: Navigation) {
+        webViewDidReceiveRedirectPublisher.send()
     }
 
     @MainActor
@@ -1355,6 +1366,14 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
             webView.setDocumentHtml(html)
         }
     }
+
+    func renderingProgressDidChangeRaw(progressEventsRawValue: UInt) {
+        // Emit only after first paint event
+        if progressEventsRawValue >= 4 {
+            webViewRenderingProgressDidChangePublisher.send()
+        }
+    }
+
 }
 
 extension Tab: NewWindowPolicyDecisionMaker {

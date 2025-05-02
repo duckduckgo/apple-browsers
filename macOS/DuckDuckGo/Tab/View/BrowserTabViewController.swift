@@ -598,7 +598,7 @@ final class BrowserTabViewController: NSViewController {
                 }
                 return old == new
             })
-            .map { [weak tabViewModel] tabContent -> AnyPublisher<Void, Never> in
+            .map { [weak self,tabViewModel] tabContent -> AnyPublisher<Void, Never> in
                 // For non-URL tabs, just emit an event displaying the tab content
                 guard let tabViewModel, tabContent.isUrl else {
                     return Just(()).eraseToAnyPublisher()
@@ -607,17 +607,30 @@ final class BrowserTabViewController: NSViewController {
                 // For URL tabs, we only want to show tab content (webView) when
                 // it has content to display (first navigation had been committed)
                 // or starts navigation.
-                return Publishers.Merge(
-                    tabViewModel.tab.$hasCommittedContent
-                        .filter { $0 == true }
-                        .asVoid(),
-                    tabViewModel.tab.navigationStatePublisher.compactMap { $0 }
-                        .filter{ $0 >= .started }
-                        .asVoid()
-                )
-                // take the first such event and move forward.
-                .prefix(1)
-                .eraseToAnyPublisher()
+                if [URL.newtab, URL.settings, URL.bookmarks].contains(self?.lastURL) {
+                    return Publishers.Merge5(
+                        tabViewModel.tab.webViewDidReceiveRedirectPublisher,
+                        tabViewModel.tab.webViewRenderingProgressDidChangePublisher,
+                        tabViewModel.tab.webViewDidFailNavigationPublisher,
+                        tabViewModel.tab.webViewDidReceiveUserInteractiveChallengePublisher,
+                        tabViewModel.tab.webViewDidFinishNavigationPublisher
+                        )
+                    // take the first such event and move forward.
+                    .prefix(1)
+                    .eraseToAnyPublisher()
+                } else {
+                    return Publishers.Merge(
+                        tabViewModel.tab.$hasCommittedContent
+                            .filter { $0 == true }
+                            .asVoid(),
+                        tabViewModel.tab.navigationStatePublisher.compactMap { $0 }
+                            .filter{ $0 >= .started }
+                            .asVoid(),
+                    )
+                    // take the first such event and move forward.
+                    .prefix(1)
+                    .eraseToAnyPublisher()
+                }
             }
             .switchToLatest()
             .receive(on: DispatchQueue.main)

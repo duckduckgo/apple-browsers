@@ -929,6 +929,17 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
             responder.didFailProvisionalLoad(with: request, in: frame, with: error)
         }
     }
+
+    @MainActor
+    @objc(_webView:renderingProgressDidChange:)
+    public func webView(_ webView: WKWebView, renderingProgressDidChange progressEventsRawValue: UInt) {
+        // Use raw bitmask directly
+        Logger.navigation.log("renderingProgressDidChange: \(progressEventsRawValue)")
+        for responder in responders {
+            // Forward raw value; responders should handle the bitmask if needed
+            responder.renderingProgressDidChangeRaw(progressEventsRawValue: progressEventsRawValue)
+        }
+    }
 #endif
 
     // MARK: Downloads

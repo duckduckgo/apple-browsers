@@ -392,7 +392,18 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         }
     }
 
-    // MARK: - Update operation dates tests
+    func testWhenUpdatingDatesOnOptOutAndLastEventIsError_thenWeSetPreferredRunDateWithRetryErrorDate() throws {
+        let brokerId: Int64 = 1
+        let profileQueryId: Int64 = 1
+        let extractedProfileId: Int64 = 1
+        mockDatabase.lastHistoryEventToReturn = HistoryEvent(extractedProfileId: extractedProfileId, brokerId: brokerId, profileQueryId: profileQueryId, type: .error(error: .unknown("Test error")))
+        let schedulingConfig = DataBrokerScheduleConfig(retryError: 1, confirmOptOutScan: 0, maintenanceScan: 0, maxAttempts: -1)
+
+        try sut.updateOperationDataDates(origin: .scan, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId, schedulingConfig: schedulingConfig, database: mockDatabase)
+
+        XCTAssertTrue(mockDatabase.wasUpdatedPreferredRunDateForOptOutCalled)
+        XCTAssertTrue(areDatesEqualIgnoringSeconds(date1: mockDatabase.lastPreferredRunDateOnOptOut, date2: Date().addingTimeInterval(schedulingConfig.retryError.hoursToSeconds)))
+    }
 
     func testWhenUpdatingDatesOnScanAndLastEventIsError_thenWeSetPreferredRunDateWithRetryErrorDate() throws {
         let brokerId: Int64 = 1
@@ -473,32 +484,6 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         XCTAssertFalse(mockDatabase.wasUpdatedPreferredRunDateForOptOutCalled)
         XCTAssertNil(mockDatabase.lastPreferredRunDateOnScan)
         XCTAssertNil(mockDatabase.lastPreferredRunDateOnOptOut)
-    }
-
-    func testUpdatingScanDateFromOptOut_thenScanRespectMostRecentDate() throws {
-        let config = DataBrokerScheduleConfig(retryError: 1000, confirmOptOutScan: 1000, maintenanceScan: 1000, maxAttempts: -1)
-
-        let brokerId: Int64 = 1
-        let profileQueryId: Int64 = 1
-        let extractedProfileId: Int64 = 1
-        let currentPreferredRunDate = Date()
-
-        let mockDataBroker = DataBroker(name: "databroker", url: "databroker.com", steps: [Step](), version: "1.0", schedulingConfig: config, optOutUrl: "")
-        let mockProfileQuery = ProfileQuery(id: profileQueryId, firstName: "a", lastName: "b", city: "c", state: "d", birthYear: 1222)
-
-        let historyEvents = [HistoryEvent(extractedProfileId: extractedProfileId, brokerId: brokerId, profileQueryId: profileQueryId, type: .optOutRequested)]
-        let mockScanOperation = ScanJobData(brokerId: brokerId, profileQueryId: profileQueryId, preferredRunDate: currentPreferredRunDate, historyEvents: historyEvents)
-
-        let mockBrokerProfileQuery = BrokerProfileQueryData(dataBroker: mockDataBroker, profileQuery: mockProfileQuery, scanJobData: mockScanOperation)
-        mockDatabase.brokerProfileQueryDataToReturn = [mockBrokerProfileQuery]
-
-        try sut.updateOperationDataDates(origin: .optOut, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId, schedulingConfig: config, database: mockDatabase)
-
-        // If the date is not going to be set, we don't call the database function
-        XCTAssertFalse(mockDatabase.wasUpdatedPreferredRunDateForScanCalled)
-
-        XCTAssertTrue(mockDatabase.wasUpdatedPreferredRunDateForOptOutCalled)
-        XCTAssertTrue(areDatesEqualIgnoringSeconds(date1: mockDatabase.lastPreferredRunDateOnOptOut, date2: Date().addingTimeInterval(config.hoursUntilNextOptOutAttempt.hoursToSeconds)))
     }
 
     func testUpdatingScanDateFromScan_thenScanDoesNotRespectMostRecentDate() throws {

@@ -45,6 +45,7 @@ final class SaveCreditCardViewModelTests: XCTestCase {
     override func tearDownWithError() throws {
         UserDefaults.app = .standard
         viewModel = nil
+        vault.storedCards = []
         
         try super.tearDownWithError()
     }

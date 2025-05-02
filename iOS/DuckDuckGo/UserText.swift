@@ -860,6 +860,46 @@ public struct UserText {
         return message.format(arguments: query)
     }
 
+    // Credit cards
+    public static let autofillCreditCardListTitle = NSLocalizedString("autofill.creditcard.list.title", value:"Credit Cards", comment: "Title for screen listing autofill credit cards")
+    public static let autofillCreditCardEmptyViewTitle = NSLocalizedString("autofill.creditcard.empty-view.title", value:"No credit cards saved yet", comment: "Title for view displayed when autofill has no credit cards saved")
+    public static let autofillCreditCardEmptyViewSubtitle = NSLocalizedString("autofill.creditcard.empty-view.subtitle.first.paragraph", value:"Credit cards are stored securely on your device.", comment: "Subtitle for view displayed when no autofill credit cards have been saved")
+    public static let autofillCreditCardItemExpiry = NSLocalizedString("autofill.creditcard.list.item.expiry", value:"Expiry:", comment: "Credit card row label for credit card expiry date")
+    public static let autofillCreditCardAuthenticationReason = NSLocalizedString("autofill.creditcard.list.auth.reason", value:"Unlock device to access credit cards", comment: "Reason for auth when opening credit card list")
+    public static let autofillCreditCardsNoAuthViewTitle = NSLocalizedString("autofill.creditcard.no-auth.title", value:"Secure your device to save credit cards", comment: "Title for view displayed when autofill is locked on devices where a passcode has not been set")
+    public static let autofillCreditCardsNoAuthViewSubtitle = NSLocalizedString("autofill.creditcard.no-auth.subtitle", value:"A passcode is required to protect your credit cards.", comment: "Title for view displayed when autofill is locked on devices where a passcode has not been set")
+    
+    // Credit card details
+    public static let autofillCreditCardDetailsDefaultTitle = NSLocalizedString("autofill.creditcard.details.default-title", value:"Card", comment: "Title for autofill credit card details")
+    public static let autofillCreditCardDetailsEditTitle = NSLocalizedString("autofill.creditcard.details.edit-title", value:"Edit Card", comment: "Title when editing autofill credit card details")
+    public static let autofillCreditCardDetailsNewTitle = NSLocalizedString("autofill.creditcard.details.new-title", value:"Add Card", comment: "Title when adding new autofill credit card")
+
+    public static let autofillCreditCardDetailsCardNumber = NSLocalizedString("autofill.creditcard.details.card-number", value:"Card number", comment: "Card number label for credit card details on autofill")
+    public static let autofillCreditCardDetailsCardNumberEditing = NSLocalizedString("autofill.creditcard.details.card-number.required", value:"Card number", comment: "Card number label for credit card details on autofill when editing")
+    public static let autofillCreditCardDetailsExpirationDate = NSLocalizedString("autofill.creditcard.details.exp-date", value:"Expiration date", comment: "Expiration date label for credit card details on autofill")
+    public static let autofillCreditCardDetailsCVV = NSLocalizedString("autofill.creditcard.details.cvv", value:"CVV", comment: "CVV (security code) label for credit card details on autofill")
+    public static let autofillCreditCardDetailsCardName = NSLocalizedString("autofill.creditcard.details.card-name", value:"Name on card", comment: "Card name label for credit card details on autofill")
+    public static let autofillCreditCardDetailsCardNickname = NSLocalizedString("autofill.creditcard.details.card-nickname", value:"Card nickname", comment: "Card nickname label for credit card details on autofill")
+
+    public static let autofillCreditCardDetailsDeleteButton = NSLocalizedString("autofill.creditcard.details.delete", value:"Delete Card", comment: "Delete button when deleting an autofill credit card")
+    public static let autofillCreditCardDetailsDeleteConfirmationButtonTitle = NSLocalizedString("autofill.creditcard.details.delete-confirmation.button", value:"Delete Card", comment: "Autofill alert button confirming delete credit card")
+    public static let autofillCreditCardDetailsDeleteConfirmationMessage = NSLocalizedString("autofill.creditcard.details.delete-confirmation.message", value:"Are you sure you want to delete this card?", comment: "Autofill message confirming delete credit card")
+    public static let autofillCreditCardDeletedToastMessage = NSLocalizedString("autofill.creditcard.deleted-message-no-title", value: "Card deleted", comment: "Toast message when a credit card item is deleted")
+
+    public static let autofillCreditCardDetailsEditCardNumberPlaceholder = NSLocalizedString("autofill.creditcard.details.edit.card-number-placeholder", value:"1234 5678 1234 5678", comment: "Placeholder for card number field on autofill credit card details")
+    public static let autofillCreditCardDetailsEditExpirationDatePlaceholder = NSLocalizedString("autofill.creditcard.details.edit.exp-date-placeholder", value:"MM / YY", comment: "Placeholder for expiration date field on autofill credit card details")
+    public static let autofillCreditCardDetailsEditCVVPlaceholder = NSLocalizedString("autofill.creditcard.details.edit.cvv-placeholder", value:"Security code", comment: "Placeholder for CVV security code field on autofill credit card details")
+    public static let autofillCreditCardDetailsEditCardNamePlaceholder = NSLocalizedString("autofill.creditcard.edit.card-name-placeholder", value:"Name on card", comment: "Placeholder for card name field on autofill credit card details")
+    public static let autofillCreditCardDetailsEditCardNicknamePlaceholder = NSLocalizedString("autofill.creditcard.edit.card-nickname-placeholder", value:"(e.g. Work)", comment: "Placeholder for card nickname field on autofill credit card details")
+
+    public static let autofillShowCreditCardCVV = NSLocalizedString("autofill.show-card-cvv", value: "Show CVV", comment: "Accessibility title for a Show CVV button displaying actual credit card CVV (security code) instead of ***")
+    public static let autofillHideCreditCardCVV = NSLocalizedString("autofill.hide-card-cvv", value: "Hide CVV", comment: "Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with ***")
+
+    public static let autofillCreditCardCopyToastCopiedCardNumber = NSLocalizedString("autofill.creditcard.details.copy-toast.card-number-copied", value:"Card number copied", comment: "Title for toast when copying the credit card number")
+    public static let autofillCreditCardCopyToastCopiedExpirationDate = NSLocalizedString("autofill.creditcard.details.copy-toast.exp-date-copied", value:"Expiration date copied", comment: "Title for toast when copying the credit card expiration date")
+    public static let autofillCreditCardCopyToastCopiedCVV = NSLocalizedString("autofill.creditcard.details.copy-toast.cvv-copied", value:"CVV copied", comment: "Title for toast when copying the credit card cvv (security code)")
+    public static let autofillCreditCardCopyToastCopiedCardName = NSLocalizedString("autofill.creditcard.details.copy-toast.card-name-copied", value:"Name copied", comment: "Title for toast when copying the credit card name")
+
     public static let aboutProtectionTagline = NSLocalizedString("settings.about.tagline", value: "Protection. Privacy. Peace of Mind.", comment: "about tagline")
 
     public static let aboutText = NSLocalizedString("settings.about.text.new", value: """
@@ -879,6 +919,7 @@ Take back control of your personal information with the browser designed for dat
     public static let autofillLoginListSearchPlaceholder = NSLocalizedString("autofill.logins.list.search-placeholder", value:"Search passwords", comment: "Placeholder for search field on autofill login listing")
     public static let autofillLoginListSuggested = NSLocalizedString("autofill.logins.list.suggested", value:"Suggested", comment: "Section title for group of suggested saved logins")
     public static let autofillLoginListSettingsFooter = NSLocalizedString("autofill.logins.list.settings.footer", value: "Passwords are encrypted. Nobody but you can see them, not even us.", comment: "Subtext under Autofill Settings briefly explaining security to alleviate user concerns.")
+    public static let autofillLoginListSettingsPasswordsAndCardsFooter = NSLocalizedString("autofill.logins.list.settings.passwords.cards.footer", value: "Passwords and credit cards are encrypted. Nobody but you can see them, not even us.", comment: "Subtext under Autofill Settings briefly explaining security to alleviate user concerns.")
     public static let autofillLearnMoreLinkTitle = NSLocalizedString("autofill.learn.more.link.title", value: "[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/)", comment: "A link that takes the user to the DuckDuckGo help pages explaining password managers")
 
     public static let autofillResetNeverSavedActionTitle = NSLocalizedString("autofill.logins.list.never.saved.reset.action.title", value:"If you reset excluded sites, you will be prompted to save your password next time you sign in to any of these sites.", comment: "Alert title")
@@ -943,7 +984,7 @@ Take back control of your personal information with the browser designed for dat
 
     public static let autofillOpenWebsitePrompt = NSLocalizedString("autofill.logins.details.open-website-prompt.title", value:"Open Website", comment: "Menu item title for option to open website from selected url")
     public static func autofillCopyPrompt(for type: String) -> String {
-        let message = NSLocalizedString("autofill.logins.copy-prompt", value: "Copy %@", comment: "Menu item text for copying autofill login details")
+        let message = NSLocalizedString("autofill.logins.copy-prompt", value: "Copy %@", comment: "Menu item text for copying autofill details")
         return message.format(arguments: type)
     }
     public static let autofillCopyToastUsernameCopied = NSLocalizedString("autofill.logins.copy-toast.username-copied", value:"Username copied", comment: "Title for toast when copying username")

@@ -65,6 +65,7 @@ protocol AppSettings: AnyObject, OnboardingDebugAppSettings {
     var favoritesDisplayMode: FavoritesDisplayMode { get set }
     
     var autofillCredentialsEnabled: Bool { get set }
+    var autofillCreditCardsEnabled: Bool { get set }
     var autofillCredentialsSavePromptShowAtLeastOnce: Bool { get set }
     var autofillCredentialsHasBeenEnabledAutomaticallyIfNecessary: Bool { get set }
     var autofillIsNewInstallForOnByDefault: Bool? { get set }

@@ -49,6 +49,21 @@ struct AutofillSettingStatus {
        case otherFailure
     }
 
+    static var isCreditCardAutofillEnabledInSettings: Bool {
+        setupNotificationObserversIfNeeded()
+        
+        let currentStatus = authenticationStatus
+
+        if currentStatus == nil || currentStatus == .otherFailure {
+            refreshAuthenticationStatusAsync()
+        }
+
+        // Default to .canAuthenticate while waiting for the authentication result
+        let effectiveStatus = currentStatus ?? .canAuthenticate
+
+        return appSettings.autofillCreditCardsEnabled && (effectiveStatus == .canAuthenticate)
+    }
+
     private static let appSettings = AppDependencyProvider.shared.appSettings
 
     private static var observersSetUp = false

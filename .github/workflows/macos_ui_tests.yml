@@ -66,8 +66,8 @@ jobs:
           # scheduled runs don't have inputs so let's default to true for all_os_versions
           all_os_versions="${{ inputs.all_os_versions || 'true' }}"
           if [[ "${{ github.event_name }}" == "pull_request" || "${{ github.event_name }}" == "push" || "$all_os_versions" == "false" ]]; then
-            runner='["macos-15-xlarge"]'
-            include='[{"runner": "macos-15-xlarge", "os-version": "15", "xcode-version": "16.2"}]'
+            runner='["macos-15"]'
+            include='[{"runner": "macos-15", "os-version": "15", "xcode-version": "16.2"}]'
           else
             runner='["macos-13-xlarge", "macos-14-xlarge", "macos-15-xlarge"]'
             include=$(jq -c <<< '[

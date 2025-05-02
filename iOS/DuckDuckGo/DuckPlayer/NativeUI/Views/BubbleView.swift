@@ -1,7 +1,8 @@
 //
 //  BubbleView.swift
+//  DuckDuckGo
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -29,7 +30,7 @@ struct Bubble: InsettableShape {
     let cornerRadius: CGFloat
 
     func path(in rect: CGRect) -> Path {
-        
+
         let radius = max(0, cornerRadius)
         guard rect.width >= 2 * radius, rect.height >= 2 * radius else {
             return Path(roundedRect: rect, cornerRadius: radius)
@@ -93,10 +94,10 @@ struct Bubble: InsettableShape {
         let halfArrowWidth = arrowWidth / 2
         var p1, p2, tip: CGPoint
         switch arrowEdge {
-            case .top:    p1 = CGPoint(x: arrowCenterX - halfArrowWidth, y: arrowCenterY); p2 = CGPoint(x: arrowCenterX + halfArrowWidth, y: arrowCenterY); tip = CGPoint(x: arrowCenterX, y: arrowCenterY - arrowLength)
-            case .right:  p1 = CGPoint(x: arrowCenterX, y: arrowCenterY - halfArrowWidth); p2 = CGPoint(x: arrowCenterX, y: arrowCenterY + halfArrowWidth); tip = CGPoint(x: arrowCenterX + arrowLength, y: arrowCenterY)
-            case .bottom: p1 = CGPoint(x: arrowCenterX + halfArrowWidth, y: arrowCenterY); p2 = CGPoint(x: arrowCenterX - halfArrowWidth, y: arrowCenterY); tip = CGPoint(x: arrowCenterX, y: arrowCenterY + arrowLength)
-            case .left:   p1 = CGPoint(x: arrowCenterX, y: arrowCenterY + halfArrowWidth); p2 = CGPoint(x: arrowCenterX, y: arrowCenterY - halfArrowWidth); tip = CGPoint(x: arrowCenterX - arrowLength, y: arrowCenterY)
+        case .top:    p1 = CGPoint(x: arrowCenterX - halfArrowWidth, y: arrowCenterY); p2 = CGPoint(x: arrowCenterX + halfArrowWidth, y: arrowCenterY); tip = CGPoint(x: arrowCenterX, y: arrowCenterY - arrowLength)
+        case .right:  p1 = CGPoint(x: arrowCenterX, y: arrowCenterY - halfArrowWidth); p2 = CGPoint(x: arrowCenterX, y: arrowCenterY + halfArrowWidth); tip = CGPoint(x: arrowCenterX + arrowLength, y: arrowCenterY)
+        case .bottom: p1 = CGPoint(x: arrowCenterX + halfArrowWidth, y: arrowCenterY); p2 = CGPoint(x: arrowCenterX - halfArrowWidth, y: arrowCenterY); tip = CGPoint(x: arrowCenterX, y: arrowCenterY + arrowLength)
+        case .left:   p1 = CGPoint(x: arrowCenterX, y: arrowCenterY + halfArrowWidth); p2 = CGPoint(x: arrowCenterX, y: arrowCenterY - halfArrowWidth); tip = CGPoint(x: arrowCenterX - arrowLength, y: arrowCenterY)
         }
 
         // Define Rounded Rectangle Corner Points & Arc Centers
@@ -206,10 +207,15 @@ struct BubbleView<Content: View>: View {
         let effectivePercent = min(99.9, max(0.1, adjustedPercent)) / 100.0
         let targetFlatDistance = flatPerimeter * effectivePercent
 
-        if targetFlatDistance <= flatWidth { return .top }
-        else if targetFlatDistance <= flatWidth + flatHeight { return .right }
-        else if targetFlatDistance <= 2 * flatWidth + flatHeight { return .bottom }
-        else { return .left }
+        if targetFlatDistance <= flatWidth { 
+            return .top 
+        } else if targetFlatDistance <= flatWidth + flatHeight { 
+            return .right 
+        } else if targetFlatDistance <= 2 * flatWidth + flatHeight { 
+            return .bottom 
+        } else { 
+            return .left 
+        }
     }
 
      /// Initializer with explicit parameters.

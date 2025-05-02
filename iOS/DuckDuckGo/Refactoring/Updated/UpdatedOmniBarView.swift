@@ -39,6 +39,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     var accessoryButton: UIButton! { searchAreaView.accessoryButton }
     var menuButton: UIButton! { menuButtonView }
     var refreshButton: UIButton! { searchAreaView.reloadButton }
+    var shareButton: UIButton! { searchAreaView.shareButton }
     var privacyIconView: UIView? { privacyInfoContainer.privacyIcon }
     var searchContainer: UIView! { searchAreaContainerView }
     let expectedHeight: CGFloat = UpdatedOmniBarView.expectedHeight
@@ -106,8 +107,14 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     }
     var isRefreshButtonHidden: Bool {
         get { searchAreaView.reloadButton.isHidden }
-        set { searchAreaView.reloadButton.isHidden = newValue }
+        set { searchAreaView.reloadButton.isHidden = true }
     }
+
+    var isShareButtonHidden: Bool {
+        get { searchAreaView.shareButton.isHidden }
+        set { searchAreaView.shareButton.isHidden = true }
+    }
+
     var isVoiceSearchButtonHidden: Bool {
         get { searchAreaView.voiceSearchButton.isHidden }
         set {

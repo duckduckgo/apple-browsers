@@ -21,9 +21,9 @@ import Foundation
 import PrivacyDashboard
 
 enum OmniBarAccessoryType {
-     case share
-     case chat
- }
+    case share
+    case chat
+}
 
 protocol OmniBar: AnyObject {
     var barView: any OmniBarView { get }

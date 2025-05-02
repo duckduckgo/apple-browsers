@@ -261,6 +261,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
         Pixel.fire(pixel: .settingsSyncOpen, withAdditionalParameters: [
             "is_enabled": isSyncEnabled ? "1" : "0"
         ])
+        startPairingIfNecessary()
     }
 
     func updateOptions() {
@@ -309,6 +310,15 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
         }.sorted(by: { lhs, _ in
             lhs.isThisDevice
         })
+    }
+
+    private func startPairingIfNecessary() {
+        if let pairingInfo {
+            Task {
+                await connectionController.startPairingMode(pairingInfo)
+            }
+            self.pairingInfo = nil
+        }
     }
 }
 

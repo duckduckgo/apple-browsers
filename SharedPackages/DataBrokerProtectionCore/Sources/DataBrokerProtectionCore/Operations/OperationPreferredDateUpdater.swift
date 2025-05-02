@@ -25,7 +25,7 @@ enum OperationPreferredDateUpdaterOrigin {
     case scan
 }
 
-protocol OperationPreferredDateUpdater {
+protocol OperationPreferredDateUpdating {
     var database: DataBrokerProtectionRepository { get }
 
     func updateOperationDataDates(origin: OperationPreferredDateUpdaterOrigin,
@@ -37,7 +37,7 @@ protocol OperationPreferredDateUpdater {
     func updateChildrenBrokerForParentBroker(_ parentBroker: DataBroker, profileQueryId: Int64) throws
 }
 
-struct OperationPreferredDateUpdaterUseCase: OperationPreferredDateUpdater {
+struct OperationPreferredDateUpdater: OperationPreferredDateUpdating {
 
     let database: DataBrokerProtectionRepository
     private let calculator = OperationPreferredDateCalculator()

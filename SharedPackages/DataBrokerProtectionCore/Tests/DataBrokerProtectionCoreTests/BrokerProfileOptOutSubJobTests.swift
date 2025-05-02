@@ -285,4 +285,19 @@ final class BrokerProfileOptOutSubJobTests: XCTestCase {
         }
     }
 
+    // MARK: - Update operation dates tests
+
+    func testWhenUpdatingDatesOnOptOutAndLastEventIsError_thenWeSetPreferredRunDateWithRetryErrorDate() throws {
+        let brokerId: Int64 = 1
+        let profileQueryId: Int64 = 1
+        let extractedProfileId: Int64 = 1
+        mockDatabase.lastHistoryEventToReturn = HistoryEvent(extractedProfileId: extractedProfileId, brokerId: brokerId, profileQueryId: profileQueryId, type: .error(error: .unknown("Test error")))
+        let schedulingConfig = DataBrokerScheduleConfig(retryError: 1, confirmOptOutScan: 0, maintenanceScan: 0, maxAttempts: -1)
+
+        try sut.updateOperationDataDates(origin: .scan, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId, schedulingConfig: schedulingConfig, database: mockDatabase)
+
+        XCTAssertTrue(mockDatabase.wasUpdatedPreferredRunDateForOptOutCalled)
+        XCTAssertTrue(areDatesEqualIgnoringSeconds(date1: mockDatabase.lastPreferredRunDateOnOptOut, date2: Date().addingTimeInterval(schedulingConfig.retryError.hoursToSeconds)))
+    }
+
 }

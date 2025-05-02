@@ -109,7 +109,7 @@ struct BrokerProfileOptOutSubJob {
             stageDurationCalculator.fireOptOutValidate()
             stageDurationCalculator.fireOptOutSubmitSuccess(tries: tries)
 
-            let updater = OperationPreferredDateUpdaterUseCase(database: dependencies.database)
+            let updater = OperationPreferredDateUpdater(database: dependencies.database)
             try updater.updateChildrenBrokerForParentBroker(brokerProfileQueryData.dataBroker, profileQueryId: profileQueryId)
 
             try dependencies.database.addAttempt(extractedProfileId: extractedProfileId,
@@ -206,7 +206,7 @@ struct BrokerProfileOptOutSubJob {
                                            extractedProfileId: Int64?,
                                            schedulingConfig: DataBrokerScheduleConfig,
                                            database: DataBrokerProtectionRepository) throws {
-        let dateUpdater = OperationPreferredDateUpdaterUseCase(database: database)
+        let dateUpdater = OperationPreferredDateUpdater(database: database)
         try dateUpdater.updateOperationDataDates(origin: origin,
                                                  brokerId: brokerId,
                                                  profileQueryId: profileQueryId,

@@ -314,7 +314,7 @@ struct BrokerProfileScanSubJob {
                                            extractedProfileId: Int64?,
                                            schedulingConfig: DataBrokerScheduleConfig,
                                            database: DataBrokerProtectionRepository) throws {
-        let dateUpdater = OperationPreferredDateUpdaterUseCase(database: database)
+        let dateUpdater = OperationPreferredDateUpdater(database: database)
         try dateUpdater.updateOperationDataDates(origin: origin,
                                                  brokerId: brokerId,
                                                  profileQueryId: profileQueryId,

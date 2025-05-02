@@ -307,7 +307,6 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
             lhs.isThisDevice
         })
     }
-
 }
 
 extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {

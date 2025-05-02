@@ -79,7 +79,6 @@ extension TabViewController {
 
         let reloadEntry = BrowsingMenuEntry.regular(name: UserText.actionRefresh, image: UIImage(named: "Reload-24")!, action: { [weak self] in
             guard let self = self else { return }
-            guard let menu = self.chromeDelegate?.omniBar.barView.menuButton else { return }
             // Pixel.fire(pixel: .browsingMenuReload)
             self.reload()
         })

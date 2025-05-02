@@ -316,8 +316,8 @@ struct DuckPlayerView: View {
                     }
 
                   BubbleView(
-                      arrowLength: 15, 
-                      arrowWidth: 25, 
+                      arrowLength: 15,
+                      arrowWidth: 25,
                       arrowPositionPercent: 1,
                       fillColor: Constants.uiElementsBackground,
                       paddingAmount: LayoutConstants.welcomeMessageInternalPadding

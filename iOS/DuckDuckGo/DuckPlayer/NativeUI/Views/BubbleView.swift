@@ -29,7 +29,7 @@ struct Bubble: InsettableShape {
     let arrowPositionPercent: CGFloat
     let cornerRadius: CGFloat
 
-    //swiftlint:disable:next cyclomatic_complexity
+    // swiftlint:disable:next cyclomatic_complexity
     func path(in rect: CGRect) -> Path {
 
         let radius = max(0, cornerRadius)
@@ -208,7 +208,7 @@ struct BubbleView<Content: View>: View {
         let effectivePercent = min(99.9, max(0.1, adjustedPercent)) / 100.0
         let targetFlatDistance = flatPerimeter * effectivePercent
 
-        if targetFlatDistance <= flatWidth { 
+        if targetFlatDistance <= flatWidth {
             return .top
         } else if targetFlatDistance <= flatWidth + flatHeight {
             return .right
@@ -297,14 +297,14 @@ struct BubbleView_Previews: PreviewProvider {
                  borderColor: .gray,
                  borderWidth: 1
              )
-             {
-                 Text("Short text.")
-                     .font(.caption)
-                     .foregroundColor(.black)
-             }
+            {
+                Text("Short text.")
+                    .font(.caption)
+                    .foregroundColor(.black)
+            }
         }
         .padding()
         .background(Color.gray.opacity(0.2))
     }
 }
-#endif 
+#endif

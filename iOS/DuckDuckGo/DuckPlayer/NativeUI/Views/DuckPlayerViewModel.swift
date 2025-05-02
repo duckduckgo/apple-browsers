@@ -95,9 +95,9 @@ final class DuckPlayerViewModel: ObservableObject {
     }
 
     var shouldShowWelcomeMessage: Bool {
-        !isLandscape && 
-        !duckPlayerSettings.welcomeMessageShown && 
-        duckPlayerSettings.variant == .nativeOptOut && 
+        !isLandscape &&
+        !duckPlayerSettings.welcomeMessageShown &&
+        duckPlayerSettings.variant == .nativeOptOut &&
         source == .youtube
     }
 
@@ -116,7 +116,7 @@ final class DuckPlayerViewModel: ObservableObject {
         didSet {
             duckPlayerSettings.nativeUIYoutubeMode = autoOpenOnYoutube ? .auto : .ask
         }
-    }    
+    }
 
     /// Current interface orientation state.
     /// - `true` when device is in landscape orientation
@@ -127,7 +127,7 @@ final class DuckPlayerViewModel: ObservableObject {
     private var timestampUpdateTimer: Timer?
     private var webView: WKWebView?
     private var coordinator: DuckPlayerWebView.Coordinator?
-    
+
 
     /// Creates a new DuckPlayerViewModel instance
     /// - Parameters:

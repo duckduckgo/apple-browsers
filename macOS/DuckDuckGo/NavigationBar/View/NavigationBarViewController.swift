@@ -267,6 +267,12 @@ final class NavigationBarViewController: NSViewController {
         updateNavigationBarForCurrentWidth()
     }
 
+    override func viewWillLayout() {
+        super.viewWillLayout()
+
+        updateNavigationBarForCurrentWidth()
+    }
+
     /**
      * Presents History View onboarding.
      *
@@ -1127,23 +1133,15 @@ final class NavigationBarViewController: NSViewController {
     }
 
     private func subscribeToNavigationBarWidthChanges() {
-        NotificationCenter.default.publisher(for: NSView.frameDidChangeNotification, object: view)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.updateNavigationBarForCurrentWidth()
-            }
-            .store(in: &cancellables)
-
-        // Listen for changes to the buttons inside the address bar (e.g. zoom or permissions)
-        NotificationCenter.default.publisher(for: .AddressBarButtonsChanged)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] notification in
-                if let self, let userInfo = notification.userInfo as? [String: Any],
-                   let buttonWidth = userInfo[AddressBarButtonsViewController.addressBarButtonsChangedNotificationWidthKey] as? CGFloat {
-                    let buttonContainerSpacing: CGFloat = buttonWidth > 0 ? 4 : 0
-                    addressBarButtonsAddedWidth = ( buttonWidth * 2 ) + buttonContainerSpacing // The address bar expands by twice the button width to center the displayed address
-                    updateNavigationBarForCurrentWidth()
+        addressBarViewController?.addressBarButtonsViewController?.$buttonsWidth
+            .sink { [weak self] totalWidth in
+                guard let self,
+                        let staticButton = addressBarViewController?.addressBarButtonsViewController?.privacyEntryPointButton else {
+                    return
                 }
+                let optionalButtonsWidth = totalWidth - staticButton.bounds.width
+                addressBarButtonsAddedWidth = optionalButtonsWidth * 2 // The address bar expands by twice the button width to center the displayed address
+                updateNavigationBarForCurrentWidth()
             }
             .store(in: &cancellables)
     }

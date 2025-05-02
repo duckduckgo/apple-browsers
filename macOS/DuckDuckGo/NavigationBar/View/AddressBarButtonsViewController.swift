@@ -181,8 +181,6 @@ final class AddressBarButtonsViewController: NSViewController {
     private let aiChatTabOpener: AIChatTabOpening
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
 
-    static let addressBarButtonsChangedNotificationWidthKey = "addressBar.visibleButtonsChanged.widthKey"
-
     init?(coder: NSCoder,
           tabCollectionViewModel: TabCollectionViewModel,
           accessibilityPreferences: AccessibilityPreferences = AccessibilityPreferences.shared,
@@ -783,17 +781,6 @@ final class AddressBarButtonsViewController: NSViewController {
                 self?.updateSeparator()
             }
             .store(in: &cancellables)
-
-        NotificationCenter.default.publisher(for: NSView.frameDidChangeNotification, object: view)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                guard let self else {
-                    return
-                }
-                let optionalButtonsContainerWidth = buttonsContainer.frame.width - privacyEntryPointButton.frame.width
-                notifyAddressBarWidthChange(optionalButtonsContainerWidth)
-            }
-            .store(in: &cancellables)
     }
 
     private func subscribeToAIChatPreferences() {
@@ -972,12 +959,6 @@ final class AddressBarButtonsViewController: NSViewController {
         separator.isShown = privacyEntryPointButton.isVisible && (
             (permissionButtons.subviews.contains(where: { $0.isVisible })) || zoomButton.isVisible
         )
-    }
-
-    private func notifyAddressBarWidthChange(_ newWidth: CGFloat) {
-        NotificationCenter.default.post(name: .AddressBarButtonsChanged, object: nil, userInfo: [
-            Self.addressBarButtonsChangedNotificationWidthKey: newWidth
-        ])
     }
 
     // MARK: Tracker Animation
@@ -1301,12 +1282,4 @@ extension URL {
         }
         return false
     }
-}
-
-// MARK: - NSNotification
-
-extension NSNotification.Name {
-
-    static let AddressBarButtonsChanged = NSNotification.Name("addressBar.visibleButtonsChanged")
-
 }

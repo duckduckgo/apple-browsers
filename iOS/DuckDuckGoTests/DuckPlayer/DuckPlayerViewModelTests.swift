@@ -87,7 +87,7 @@ final class DuckPlayerViewModelTests: XCTestCase {
         // Given
         mockSettings.welcomeMessageShown = false
         mockSettings.variant = .nativeOptOut
-        viewModel.source == .youtube
+        viewModel.source = .youtube
 
         // Then
         XCTAssertTrue(viewModel.shouldShowWelcomeMessage, "Welcome message should be shown under specific conditions")
@@ -98,7 +98,7 @@ final class DuckPlayerViewModelTests: XCTestCase {
         // Given   
         mockSettings.welcomeMessageShown = true
         mockSettings.variant = .nativeOptOut
-        viewModel.source == .youtube
+        viewModel.source = .youtube
 
         // Then
         XCTAssertFalse(viewModel.shouldShowWelcomeMessage, "Welcome message should not be shown if already shown")
@@ -109,7 +109,7 @@ final class DuckPlayerViewModelTests: XCTestCase {
         // Given
         mockSettings.welcomeMessageShown = false
         mockSettings.variant = .nativeOptIn
-        viewModel.source == .youtube
+        viewModel.source = .youtube
 
         // Then
         XCTAssertFalse(viewModel.shouldShowWelcomeMessage, "Welcome message should not be shown for non-native-opt-out variants")

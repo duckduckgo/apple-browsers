@@ -1085,36 +1085,23 @@ final class NavigationBarViewController: NSViewController {
 
     // MARK: - Overflow menu
 
-    private struct OverflowableItem: Hashable {
-        let navBarViews: [NSView]
-        let menuItem: NSMenuItem
-
-        var isVisibleInNavBar: Bool {
-            navBarViews.contains { !$0.isHidden }
-        }
-
-        var navBarWidth: CGFloat {
-            navBarViews.map( \.bounds.width ).reduce( 0, + )
-        }
-    }
-
     var pinnedViews: [PinnableView] {
         let allButtons: [PinnableView] = [.downloads, .autofill, .bookmarks, .networkProtection, .homeButton]
         return allButtons.filter(LocalPinningManager.shared.isPinned)
     }
 
-    private var visiblePinnedItems: [OverflowableItem] {
-        pinnedViews.map(overflowableItem).filter(\.isVisibleInNavBar)
+    private var visiblePinnedItems: [PinnableView] {
+        pinnedViews.filter { isVisibleInNavBar($0) }
+    }
+
+    private var overflowItems: [PinnableView] {
+        pinnedViews.filter { !isVisibleInNavBar($0) }
     }
 
     private var visiblePinnedViewsRequiredWidth: CGFloat {
-        let visiblePinnedViewsWidth = visiblePinnedItems.map(\.navBarWidth).reduce(0, +)
+        let visiblePinnedViewsWidth = visiblePinnedItems.map(navBarWidth).reduce(0, +)
         let overflowButtonWidth = overflowButton.isVisible ? overflowButton.bounds.width : 0
         return visiblePinnedViewsWidth + overflowButtonWidth
-    }
-
-    private var overflowItems: [OverflowableItem] {
-        pinnedViews.map(overflowableItem).filter { !$0.isVisibleInNavBar }
     }
 
     private var addressBarButtonsAddedWidth: CGFloat = 0
@@ -1162,7 +1149,7 @@ final class NavigationBarViewController: NSViewController {
         } else if !overflowItems.isEmpty {
             // Restore buttons into nav bar if possible
             while let itemToRestore = overflowItems.first {
-                let restorableButtonWidth = itemToRestore.navBarWidth
+                let restorableButtonWidth = navBarWidth(for: itemToRestore)
                 let newMaximumWidth = visiblePinnedViewsRequiredWidth + restorableButtonWidth
 
                 if newMaximumWidth < overflowThreshold {
@@ -1174,29 +1161,58 @@ final class NavigationBarViewController: NSViewController {
         }
     }
 
-    private func updateNavBarViews(with item: OverflowableItem, isHidden: Bool) {
-        for view in item.navBarViews {
+    /// Checks whether a pinned view is visible in the navigation bar
+    func isVisibleInNavBar(_ viewType: PinnableView) -> Bool {
+        navBarButtonViews(for: viewType).contains { !$0.isHidden }
+    }
+
+    /// Returns the width of any navigation bar views related to the provided pinned view
+    func navBarWidth(for viewType: PinnableView) -> CGFloat {
+        navBarButtonViews(for: viewType).map(\.bounds.width).reduce(0, +)
+    }
+
+    /// Moves the provided pinned view between the nav bar and overflow menu.
+    /// When `isHidden` is `true`, the view is moved from the nav bar to the overflow menu, and vice versa.
+    private func updateNavBarViews(with pinnedView: PinnableView, isHidden: Bool) {
+        for view in navBarButtonViews(for: pinnedView) {
             view.isHidden = isHidden
         }
         updateOverflowMenu()
     }
 
+    /// Updates the overflow menu with the expected menu items, and shows/hides the overflow button as needed.
     private func updateOverflowMenu() {
         overflowButton.menu?.removeAllItems()
         if overflowItems.isEmpty {
             overflowButton.isHidden = true
         } else {
             for item in overflowItems {
-                overflowButton.menu?.addItem(item.menuItem)
+                let menuItem = overflowMenuItem(for: item)
+                overflowButton.menu?.addItem(menuItem)
             }
             overflowButton.isHidden = false
         }
     }
 
-    private func overflowableItem(for pinnableView: PinnableView) -> OverflowableItem {
-        OverflowableItem(navBarViews: navBarButtonViews(for: pinnableView), menuItem: overflowMenuItem(for: pinnableView))
+    /// Provides the views to display in the navigation bar for a given pinned view.
+    private func navBarButtonViews(for view: PinnableView) -> [NSView] {
+        switch view {
+        case .autofill:
+            return [passwordManagementButton]
+        case .bookmarks:
+            return [bookmarkListButton]
+        case .downloads:
+            return [downloadsButton]
+        case .homeButton where Self.homeButtonPosition == .left:
+            return [homeButton, homeButtonSeparator]
+        case .homeButton:
+            return [homeButton]
+        case .networkProtection:
+            return [networkProtectionButton]
+        }
     }
 
+    /// Provides the menu items to display in the overflow menu for a given pinned view.
     private func overflowMenuItem(for view: PinnableView) -> NSMenuItem {
         switch view {
         case .autofill:
@@ -1222,8 +1238,10 @@ final class NavigationBarViewController: NSViewController {
         }
     }
 
-    private func makeSpaceInNavBarIfNeeded(for button: NSButton) {
-        guard visiblePinnedViewsRequiredWidth + button.frame.width > overflowThreshold else {
+    /// Moves the next pinned view into the overflow menu, to make space to show the provided pinned view.
+    /// This is used to ensure there is space to show a pinned view in the nav bar when it is selected from the overflow menu.
+    private func makeSpaceInNavBarIfNeeded(for view: PinnableView) {
+        guard visiblePinnedViewsRequiredWidth + navBarWidth(for: view) > overflowThreshold else {
             return
         }
 
@@ -1235,22 +1253,22 @@ final class NavigationBarViewController: NSViewController {
 
     @objc
     func overflowMenuRequestedLoginsPopover(_ menu: NSMenu) {
-        makeSpaceInNavBarIfNeeded(for: passwordManagementButton)
-        updateNavBarViews(with: overflowableItem(for: .autofill), isHidden: false)
+        makeSpaceInNavBarIfNeeded(for: .autofill)
+        updateNavBarViews(with: .autofill, isHidden: false)
         popovers.showPasswordManagementPopover(selectedCategory: nil, from: passwordManagementButton, withDelegate: self, source: .overflow)
     }
 
     @objc
     func overflowMenuRequestedBookmarkPopover(_ menu: NSMenu) {
-        makeSpaceInNavBarIfNeeded(for: bookmarkListButton)
-        updateNavBarViews(with: overflowableItem(for: .bookmarks), isHidden: false)
+        makeSpaceInNavBarIfNeeded(for: .bookmarks)
+        updateNavBarViews(with: .bookmarks, isHidden: false)
         popovers.showBookmarkListPopover(from: bookmarkListButton, withDelegate: self, forTab: tabCollectionViewModel.selectedTabViewModel?.tab)
     }
 
     @objc
     func overflowMenuRequestedNetworkProtectionPopover(_ menu: NSMenu) {
-        makeSpaceInNavBarIfNeeded(for: networkProtectionButton)
-        updateNavBarViews(with: overflowableItem(for: .networkProtection), isHidden: false)
+        makeSpaceInNavBarIfNeeded(for: .networkProtection)
+        updateNavBarViews(with: .networkProtection, isHidden: false)
         toggleNetworkProtectionPopover()
     }
 
@@ -1265,26 +1283,9 @@ final class NavigationBarViewController: NSViewController {
 
     @objc
     func overflowMenuRequestedDownloadsPopover(_ menu: NSMenu) {
-        makeSpaceInNavBarIfNeeded(for: downloadsButton)
-        updateNavBarViews(with: overflowableItem(for: .downloads), isHidden: false)
+        makeSpaceInNavBarIfNeeded(for: .downloads)
+        updateNavBarViews(with: .downloads, isHidden: false)
         toggleDownloadsPopover(keepButtonVisible: true)
-    }
-
-    private func navBarButtonViews(for view: PinnableView) -> [NSView] {
-        switch view {
-        case .autofill:
-            return [passwordManagementButton]
-        case .bookmarks:
-            return [bookmarkListButton]
-        case .downloads:
-            return [downloadsButton]
-        case .homeButton where Self.homeButtonPosition == .left:
-            return [homeButton, homeButtonSeparator]
-        case .homeButton:
-            return [homeButton]
-        case .networkProtection:
-            return [networkProtectionButton]
-        }
     }
 }
 

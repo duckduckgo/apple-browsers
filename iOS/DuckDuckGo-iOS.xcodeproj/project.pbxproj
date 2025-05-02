@@ -1087,7 +1087,6 @@
 		C158AC7B297AB5DC0008723A /* MockSecureVault.swift in Sources */ = {isa = PBXBuildFile; fileRef = C158AC7A297AB5DC0008723A /* MockSecureVault.swift */; };
 		C159DF072A430B60007834BB /* EmailSignupViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C159DF062A430B60007834BB /* EmailSignupViewController.swift */; };
 		C160544129D6044D00B715A1 /* AutofillInterfaceUsernameTruncator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C160544029D6044D00B715A1 /* AutofillInterfaceUsernameTruncator.swift */; };
-		C162A1B42D786D0E00C34BAB /* OnboardingPrivacyProPromoExperimentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C162A1B32D786D0E00C34BAB /* OnboardingPrivacyProPromoExperimentTests.swift */; };
 		C162A1B72D79F71500C34BAB /* SubscriptionPagesUseSubscriptionFeatureOnboardingPromotionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C162A1B62D79F71500C34BAB /* SubscriptionPagesUseSubscriptionFeatureOnboardingPromotionTests.swift */; };
 		C1641EAF2BC2F5140012607A /* ImportPasswordsViaSyncViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1641EAE2BC2F5140012607A /* ImportPasswordsViaSyncViewController.swift */; };
 		C1641EB12BC2F52B0012607A /* ImportPasswordsViaSyncView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1641EB02BC2F52B0012607A /* ImportPasswordsViaSyncView.swift */; };
@@ -1179,7 +1178,6 @@
 		C1CDA31E2AFBF811006D1476 /* AutofillNeverPromptWebsitesManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1CDA31D2AFBF811006D1476 /* AutofillNeverPromptWebsitesManagerTests.swift */; };
 		C1D21E2D293A5965006E5A05 /* AutofillLoginSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D21E2C293A5965006E5A05 /* AutofillLoginSession.swift */; };
 		C1D21E2F293A599C006E5A05 /* AutofillLoginSessionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D21E2E293A599C006E5A05 /* AutofillLoginSessionTests.swift */; };
-		C1D2C3632D6F319B00213E3B /* OnboardingPrivacyProPromoExperiment.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D2C3622D6F318500213E3B /* OnboardingPrivacyProPromoExperiment.swift */; };
 		C1D7F3F42D5F6D7B0029B213 /* BookmarksEmptyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D7F3F32D5F6D7B0029B213 /* BookmarksEmptyView.swift */; };
 		C1E2C2252D9ED1B60011C66C /* AutofillCreditCardListViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1E2C2242D9ED1B60011C66C /* AutofillCreditCardListViewModelTests.swift */; };
 		C1E2C2272D9F1D0F0011C66C /* AutofillCreditCardDetailsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1E2C2262D9F1D0F0011C66C /* AutofillCreditCardDetailsViewModelTests.swift */; };
@@ -3154,7 +3152,6 @@
 		C158AC7A297AB5DC0008723A /* MockSecureVault.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockSecureVault.swift; sourceTree = "<group>"; };
 		C159DF062A430B60007834BB /* EmailSignupViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailSignupViewController.swift; sourceTree = "<group>"; };
 		C160544029D6044D00B715A1 /* AutofillInterfaceUsernameTruncator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillInterfaceUsernameTruncator.swift; sourceTree = "<group>"; };
-		C162A1B32D786D0E00C34BAB /* OnboardingPrivacyProPromoExperimentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingPrivacyProPromoExperimentTests.swift; sourceTree = "<group>"; };
 		C162A1B62D79F71500C34BAB /* SubscriptionPagesUseSubscriptionFeatureOnboardingPromotionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPagesUseSubscriptionFeatureOnboardingPromotionTests.swift; sourceTree = "<group>"; };
 		C163677A2D08638C001D1094 /* nb */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = nb; path = nb.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C163677B2D08638C001D1094 /* nb */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = nb; path = nb.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -3264,7 +3261,6 @@
 		C1CDA31D2AFBF811006D1476 /* AutofillNeverPromptWebsitesManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillNeverPromptWebsitesManagerTests.swift; sourceTree = "<group>"; };
 		C1D21E2C293A5965006E5A05 /* AutofillLoginSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillLoginSession.swift; sourceTree = "<group>"; };
 		C1D21E2E293A599C006E5A05 /* AutofillLoginSessionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillLoginSessionTests.swift; sourceTree = "<group>"; };
-		C1D2C3622D6F318500213E3B /* OnboardingPrivacyProPromoExperiment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingPrivacyProPromoExperiment.swift; sourceTree = "<group>"; };
 		C1D7F3F32D5F6D7B0029B213 /* BookmarksEmptyView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksEmptyView.swift; sourceTree = "<group>"; };
 		C1DCF3502D0862330055F8B0 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C1DCF3512D0862330055F8B0 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = de.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -6279,22 +6275,6 @@
 			name = EmailProtection;
 			sourceTree = "<group>";
 		};
-		C162A1AF2D786CD300C34BAB /* Onboarding */ = {
-			isa = PBXGroup;
-			children = (
-				C162A1B02D786CDC00C34BAB /* PrivacyProPromotionExperiment */,
-			);
-			path = Onboarding;
-			sourceTree = "<group>";
-		};
-		C162A1B02D786CDC00C34BAB /* PrivacyProPromotionExperiment */ = {
-			isa = PBXGroup;
-			children = (
-				C162A1B32D786D0E00C34BAB /* OnboardingPrivacyProPromoExperimentTests.swift */,
-			);
-			path = PrivacyProPromotionExperiment;
-			sourceTree = "<group>";
-		};
 		C162A1B52D79F6EC00C34BAB /* OnboardingPromotionExperiment */ = {
 			isa = PBXGroup;
 			children = (
@@ -6592,14 +6572,6 @@
 				C13C076B2D00A6B7006386CF /* VaultCredentialManager.swift */,
 			);
 			path = Shared;
-			sourceTree = "<group>";
-		};
-		C1D2C3612D6F310B00213E3B /* PrivacyProPromotionExperiment */ = {
-			isa = PBXGroup;
-			children = (
-				C1D2C3622D6F318500213E3B /* OnboardingPrivacyProPromoExperiment.swift */,
-			);
-			path = PrivacyProPromotionExperiment;
 			sourceTree = "<group>";
 		};
 		C1E2C2232D9ED1910011C66C /* CreditCardManagement */ = {
@@ -7180,7 +7152,6 @@
 		F12790DD1EBBDDF3001D3AEC /* Tutorials */ = {
 			isa = PBXGroup;
 			children = (
-				C162A1AF2D786CD300C34BAB /* Onboarding */,
 				85C29705247BDCE60063A335 /* Dax */,
 				85C11E4D2090893900BFFEB4 /* HomeRow */,
 			);
@@ -7647,7 +7618,6 @@
 		F1BE54481E69DD5F00FCF649 /* Onboarding */ = {
 			isa = PBXGroup;
 			children = (
-				C1D2C3612D6F310B00213E3B /* PrivacyProPromotionExperiment */,
 				9F70B8542D6D941300199D4B /* CheckDefaultBrowser */,
 				56D060292C381AD1003BAEB5 /* OnboardingHelpers */,
 				9FF7E9802C22A19800902BE5 /* OnboardingExperiment */,
@@ -9345,7 +9315,6 @@
 				CBAD0F0C2CFF4EE1006267B8 /* AppDependencies.swift in Sources */,
 				989B337522D7EF2100437824 /* EmptyCollectionReusableView.swift in Sources */,
 				0283A1FE2C6E3E1B00508FBD /* BrokenSitePromptViewModel.swift in Sources */,
-				C1D2C3632D6F319B00213E3B /* OnboardingPrivacyProPromoExperiment.swift in Sources */,
 				851672CF2BED1F9500592F24 /* HistoryMessageManager.swift in Sources */,
 				EEC02C142B0519DE0045CE11 /* NetworkProtectionVPNLocationViewModel.swift in Sources */,
 				D63FF8962C1B67E9006DE24D /* YoutubeOverlayUserScript.swift in Sources */,
@@ -9771,7 +9740,6 @@
 				987130C4294AAB9F00AB05E0 /* FavoriteListViewModelTests.swift in Sources */,
 				CB3B4D542D648C44006DAD63 /* AuthenticationServiceTests.swift in Sources */,
 				8565A34D1FC8DFE400239327 /* LaunchTabNotificationTests.swift in Sources */,
-				C162A1B42D786D0E00C34BAB /* OnboardingPrivacyProPromoExperimentTests.swift in Sources */,
 				982995A22CE64DC1004126D2 /* WebViewWarmupHelper.swift in Sources */,
 				310E79BD2949CAA5007C49E8 /* FireButtonReferenceTests.swift in Sources */,
 				4B62C4BA25B930DD008912C6 /* AppConfigurationFetchTests.swift in Sources */,

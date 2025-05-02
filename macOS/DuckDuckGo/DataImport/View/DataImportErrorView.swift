@@ -24,6 +24,7 @@ struct DataImportErrorView: View {
 
     let source: DataImport.Source
     let dataType: DataImport.DataType
+    let error: (any DataImportError)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -40,6 +41,10 @@ struct DataImportErrorView: View {
 
             Text("Let’s try doing it manually. It won’t take long.",
                  comment: "Suggestion to switch to a Manual File Data Import when data import fails.")
+
+            if let error, Application.appDelegate.internalUserDecider.isInternalUser {
+                Text("Error: \(error.localizedDescription), UnderlyingError: \(error.underlyingError?.localizedDescription ?? "No underlying error")").foregroundColor(.red)
+            }
         }
     }
 

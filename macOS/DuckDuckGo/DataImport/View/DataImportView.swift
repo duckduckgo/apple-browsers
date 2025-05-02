@@ -220,8 +220,8 @@ struct DataImportView: ModalView {
                     DataImportNoDataView(source: model.importSource, dataType: dataType)
                         .padding(.bottom, 24)
                 // if browser importer failed - display error message
-                } else if model.error(for: dataType) != nil {
-                    DataImportErrorView(source: model.importSource, dataType: dataType)
+                } else if let error = model.error(for: dataType) {
+                    DataImportErrorView(source: model.importSource, dataType: dataType, error: error)
                         .padding(.bottom, 24)
                 }
 

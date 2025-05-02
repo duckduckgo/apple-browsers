@@ -204,7 +204,7 @@ struct SmallOmniBarState {
         let showBackButton = false
         let showForwardButton = false
         let showBookmarksButton = false
-        let showAccessoryButton = true
+        var showAccessoryButton: Bool { dependencies.isAIChatEnabledInSettings }
         let clearTextOnStart = false
         let allowsTrackersAnimation = true
         let showSearchLoupe = false

@@ -65,19 +65,19 @@ struct AIChatSettings: AIChatSettingsProvider {
     }
 
     var isAIChatBrowsingMenuUserSettingsEnabled: Bool {
-        userDefaults.showAIChatBrowsingMenu
+        userDefaults.showAIChatBrowsingMenu && isAIChatEnabled
     }
 
     var isAIChatAddressBarUserSettingsEnabled: Bool {
-        userDefaults.showAIChatAddressBar
+        userDefaults.showAIChatAddressBar && isAIChatEnabled
     }
 
     var isAIChatTabSwitcherUserSettingsEnabled: Bool {
-        userDefaults.showAIChatTabSwitcher
+        userDefaults.showAIChatTabSwitcher && isAIChatEnabled
     }
 
     var isAIChatVoiceSearchUserSettingsEnabled: Bool {
-        userDefaults.showAIChatVoiceSearch
+        userDefaults.showAIChatVoiceSearch && isAIChatEnabled
     }
 
     func enableAIChat(enable: Bool) {

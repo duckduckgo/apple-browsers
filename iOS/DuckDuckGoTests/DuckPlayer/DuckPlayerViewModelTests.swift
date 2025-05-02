@@ -84,7 +84,7 @@ final class DuckPlayerViewModelTests: XCTestCase {
 
     @MainActor
     func testShouldShowWelcomeMessage_WhenConditionsMet_ShouldBeTrue() {
-        // Given        
+        // Given
         mockSettings.welcomeMessageShown = false
         mockSettings.variant = .nativeOptOut
         viewModel.source == .youtube
@@ -98,7 +98,7 @@ final class DuckPlayerViewModelTests: XCTestCase {
         // Given   
         mockSettings.welcomeMessageShown = true
         mockSettings.variant = .nativeOptOut
-        viewModel.source == .youtube        
+        viewModel.source == .youtube
 
         // Then
         XCTAssertFalse(viewModel.shouldShowWelcomeMessage, "Welcome message should not be shown if already shown")
@@ -106,14 +106,14 @@ final class DuckPlayerViewModelTests: XCTestCase {
 
     @MainActor
     func testShouldShowWelcomeMessage_WhenNotNativeOptOutVariant_ShouldBeFalse() {
-        // Given        
+        // Given
         mockSettings.welcomeMessageShown = false
         mockSettings.variant = .nativeOptIn
-        viewModel.source == .youtube        
+        viewModel.source == .youtube
 
         // Then
         XCTAssertFalse(viewModel.shouldShowWelcomeMessage, "Welcome message should not be shown for non-native-opt-out variants")
-    }    
+    }
 
     @MainActor
     func testGetVideoURL_IncludesCorrectParametersAndTimestamp() {
@@ -142,7 +142,7 @@ final class DuckPlayerViewModelTests: XCTestCase {
         XCTAssertEqual(queryItems[DuckPlayerViewModel.Constants.autoplayParameter], DuckPlayerViewModel.Constants.enabled, "autoplay parameter should be enabled based on settings")
         XCTAssertEqual(queryItems[DuckPlayerViewModel.Constants.startParameter], String(Int(expectedTimestamp)), "start parameter should match the timestamp")
     }
-    
+
 
     // MARK: - Publisher Tests
 
@@ -269,7 +269,7 @@ final class DuckPlayerViewModelTests: XCTestCase {
         await MainActor.run {
              XCTAssertEqual(mockCoordinator.getCurrentTimestampCallCount, callCountBeforeStop, "getCurrentTimestamp should not be called after stopping observation")
         }
-        
+
         // Ensure timestamp didn't change further
         XCTAssertEqual(viewModel.timestamp, updatedTimestamp, "Timestamp should remain unchanged after stopping observation")
     }

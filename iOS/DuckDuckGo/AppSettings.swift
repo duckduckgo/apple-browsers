@@ -91,7 +91,7 @@ protocol AppSettings: AnyObject, OnboardingDebugAppSettings {
     var duckPlayerNativeUI: Bool { get set }
     var duckPlayerAutoplay: Bool { get set }
     var duckPlayerNativeUISERPEnabled: Bool { get set }
-    var duckPlayerNativeYoutubeMode: NativeDuckPlayerYoutubeMode { get set }    
+    var duckPlayerNativeYoutubeMode: NativeDuckPlayerYoutubeMode { get set }
     var duckPlayerNativeUIPrimingModalPresentationEventCount: Int { get set }
     var duckPlayerNativeUIPrimingModalLastPresentationTime: Int { get set }
     var duckPlayerPillDismissCount: Int { get set }

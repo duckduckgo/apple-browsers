@@ -80,7 +80,7 @@ final class DuckPlayerViewModel: ObservableObject {
     ]
 
     /// The referrer for the DuckPlayer
-    let source: DuckPlayer.VideoNavigationSource
+    var source: DuckPlayer.VideoNavigationSource
 
     /// Whether the "Watch in YouTube" button should be visible
     /// This is only shown for SERP videos as otherwise the video is already on YouTube    

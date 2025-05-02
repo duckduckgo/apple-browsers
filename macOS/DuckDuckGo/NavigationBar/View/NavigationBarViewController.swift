@@ -1121,9 +1121,9 @@ final class NavigationBarViewController: NSViewController {
 
     private var overflowThreshold: CGFloat {
         let availableWidth = view.bounds.width - 24 // account for leading and trailing space
-        let alwaysVisibleButtonsWidth = goBackButton.bounds.width + goForwardButton.bounds.width + refreshOrStopButton.bounds.width + optionsButton.bounds.width
+        let alwaysVisibleButtonsWidth = [goBackButton, goForwardButton, refreshOrStopButton, optionsButton].map(\.bounds.width).reduce(0, +)
         let addressBarMinWidth = addressBarMinWidthConstraint.constant + addressBarButtonsAddedWidth + 24 // account for leading and trailing space
-        return availableWidth - alwaysVisibleButtonsWidth - addressBarMinWidth - 3
+        return availableWidth - alwaysVisibleButtonsWidth - addressBarMinWidth
     }
 
     private func setupOverflowMenu() {

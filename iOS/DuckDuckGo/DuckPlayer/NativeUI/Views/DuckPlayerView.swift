@@ -21,7 +21,7 @@ import DesignResourcesKit
 import Foundation
 import SwiftUI
 
-struct DuckPlayerView: View {    
+struct DuckPlayerView: View {
     @Environment(\.dismiss) var dismiss
     @StateObject var viewModel: DuckPlayerViewModel
     var webView: DuckPlayerWebView
@@ -33,7 +33,7 @@ struct DuckPlayerView: View {
     @State private var hideToggleTask: DispatchWorkItem?
     @State private var showOpenInYoutubeToggle: Bool = true
 
-    enum Constants {        
+    enum Constants {
         static let daxLogo = "Home"
         static let duckPlayerImage: String = "DuckPlayer"
         static let duckPlayerSettingsImage: String = "DuckPlayerOpenSettings"
@@ -154,10 +154,10 @@ struct DuckPlayerView: View {
             } else {
                 viewModel.autoOpenOnYoutube = false
             }
-        }        
+        }
     }
 
-    
+
     @ViewBuilder
     private var autoOpenToggleView: some View {
         if viewModel.showAutoOpenOnYoutubeToggle && viewModel.source == .youtube && showOpenInYoutubeToggle {
@@ -214,8 +214,7 @@ struct DuckPlayerView: View {
             Spacer()
         }
     }
-    
-    
+
     @ViewBuilder
     private var header: some View {
         HStack(spacing: LayoutConstants.horizontalPadding) {
@@ -273,7 +272,7 @@ struct DuckPlayerView: View {
             .minimumScaleFactor(0.9)
             .fixedSize(horizontal: false, vertical: true)
             .multilineTextAlignment(.leading)
-        
+
         Text(verbatim: "To go back to YouTube, close Duck Player. Not for you? Turn it off below!")
             .daxBodyRegular()
             .foregroundColor(.white.opacity(0.8))
@@ -281,7 +280,7 @@ struct DuckPlayerView: View {
             .lineLimit(3)
             .fixedSize(horizontal: false, vertical: true)
             .padding(.top, 4)
-        
+
         // Toggle
         ZStack {
             RoundedRectangle(cornerRadius: 8)
@@ -315,7 +314,7 @@ struct DuckPlayerView: View {
                             .frame(width: LayoutConstants.duckPlayerLogoSize, height: LayoutConstants.duckPlayerLogoSize, alignment: .leading)
                             .padding(.leading, LayoutConstants.welcomeMessageInternalPadding)
                     }
-                    
+
                   BubbleView(
                       arrowLength: 15, 
                       arrowWidth: 25, 
@@ -338,7 +337,7 @@ struct DuckPlayerView: View {
                         Circle()
                             .fill(Color(white: 0.2, opacity: 1.0))
                             .frame(width: LayoutConstants.bubbleCloseButtonSize, height: LayoutConstants.bubbleCloseButtonSize)
-                        
+
                         Image(systemName: "xmark")
                             .font(.system(size: 14, weight: .bold))
                             .foregroundColor(.white)

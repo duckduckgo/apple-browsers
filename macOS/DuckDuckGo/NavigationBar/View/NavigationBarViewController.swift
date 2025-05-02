@@ -1104,6 +1104,7 @@ final class NavigationBarViewController: NSViewController {
         return visiblePinnedViewsWidth + overflowButtonWidth
     }
 
+    /// Width of displayed address bar buttons that add to the minimum width of the address bar (e.g. zoom, permissions)
     private var addressBarButtonsAddedWidth: CGFloat = 0
 
     private var overflowThreshold: CGFloat {

@@ -201,20 +201,20 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
 
     private var currentHomeSpec: HomeScreenSpec?
 
-    private let onboardingPrivacyProPromoExperiment: OnboardingPrivacyProPromoExperimenting
+    private let onboardingPrivacyProPromotionHelper: OnboardingPrivacyProPromotionHelping
 
     /// Use singleton accessor, this is only accessible for tests
     init(settings: DaxDialogsSettings = DefaultDaxDialogsSettings(),
          entityProviding: EntityProviding,
          variantManager: VariantManager = DefaultVariantManager(),
          launchOptionsHandler: LaunchOptionsHandler = LaunchOptionsHandler(),
-         onboardingPrivacyProPromoExperiment: OnboardingPrivacyProPromoExperimenting = OnboardingPrivacyProPromoExperiment()
+         onboardingPrivacyProPromotionHelper: OnboardingPrivacyProPromotionHelping = OnboardingPrivacyProPromotionHelper()
     ) {
         self.settings = settings
         self.entityProviding = entityProviding
         self.variantManager = variantManager
         self.launchOptionsHandler = launchOptionsHandler
-        self.onboardingPrivacyProPromoExperiment = onboardingPrivacyProPromoExperiment
+        self.onboardingPrivacyProPromotionHelper = onboardingPrivacyProPromotionHelper
     }
 
     private var firstBrowsingMessageSeen: Bool {
@@ -492,10 +492,7 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
         // If the user has already seen the end of journey dialog we don't want to show any other NTP Dax dialog.
         guard !finalDaxDialogSeen else {
 
-            // Privacy Pro Onboarding Promotion Experiment
-            // https://app.asana.com/0/1206488453854252/1208543866522488/f
-            let cohort = onboardingPrivacyProPromoExperiment.getCohortIfEnabled()
-            if .treatment == cohort && !privacyProPromotionDialogSeen {
+            if onboardingPrivacyProPromotionHelper.shouldDisplay && !privacyProPromotionDialogSeen {
                 return .privacyProPromotion
             }
 

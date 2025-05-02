@@ -77,6 +77,13 @@ extension TabViewController {
             self?.print()
         })
 
+        let reloadEntry = BrowsingMenuEntry.regular(name: UserText.actionRefresh, image: UIImage(named: "Reload-24")!, action: { [weak self] in
+            guard let self = self else { return }
+            guard let menu = self.chromeDelegate?.omniBar.barView.menuButton else { return }
+            // Pixel.fire(pixel: .browsingMenuReload)
+            self.reload()
+        })
+
         let chatEntry = BrowsingMenuEntry.regular(name: UserText.actionOpenAIChat, image: UIImage(named: "AIChat-24")!, action: { [weak self] in
             Pixel.fire(pixel: .browsingMenuAIChat,
                        withAdditionalParameters: self?.featureDiscovery.addToParams([:], forFeature: .aiChat) ?? [:])
@@ -86,10 +93,12 @@ extension TabViewController {
         if shouldShowAIChatInMenu {
             entries.append(newTabEntry)
             entries.append(chatEntry)
+            entries.append(reloadEntry)
             entries.append(shareEntry)
             entries.append(copyEntry)
         } else {
             entries.append(newTabEntry)
+            entries.append(reloadEntry)
             entries.append(shareEntry)
             entries.append(copyEntry)
             entries.append(printEntry)

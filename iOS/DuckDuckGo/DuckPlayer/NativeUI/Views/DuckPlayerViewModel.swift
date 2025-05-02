@@ -98,7 +98,7 @@ final class DuckPlayerViewModel: ObservableObject {
         !isLandscape && 
         !duckPlayerSettings.welcomeMessageShown && 
         duckPlayerSettings.variant == .nativeOptOut && 
-        !shouldShowAutoOpenToggle
+        source == .youtube
     }
 
     var cancellables = Set<AnyCancellable>()

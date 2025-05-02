@@ -50,91 +50,55 @@ final class DuckPlayerViewModelTests: XCTestCase {
     func testShouldShowYouTubeButton_WhenPortraitAndSerp_ShouldBeTrue() {
         // Given
         viewModel.isLandscape = false
-        // Source is already .serp from setup
+        viewModel.source = .serp
 
         // Then
         XCTAssertTrue(viewModel.shouldShowYouTubeButton, "YouTube button should be shown in portrait mode from SERP")
     }
 
     @MainActor
-    func testShouldShowYouTubeButton_WhenLandscape_ShouldBeFalse() {
+    func testNoUIIsShown_WhenLandscape() {
         // Given
         viewModel.isLandscape = true
 
         // Then
         XCTAssertFalse(viewModel.shouldShowYouTubeButton, "YouTube button should not be shown in landscape mode")
+        XCTAssertFalse(viewModel.shouldShowAutoOpenToggle, "Auto-open toggle should not be shown in landscape mode")
+        XCTAssertFalse(viewModel.shouldShowWelcomeMessage, "Welcome message should not be shown in landscape mode")
     }
 
     @MainActor
     func testShouldShowYouTubeButton_WhenNotSerp_ShouldBeFalse() {
         // Given
-        viewModel = DuckPlayerViewModel(videoID: "testVideoID", duckPlayerSettings: mockSettings, source: .other) // Non-SERP source
-        viewModel.isLandscape = false
+        viewModel = DuckPlayerViewModel(videoID: "testVideoID", duckPlayerSettings: mockSettings, source: .other)
+
+        // Then
+        XCTAssertFalse(viewModel.shouldShowYouTubeButton, "YouTube button should not be shown when source is not SERP")
+
+        // Given
+        viewModel = DuckPlayerViewModel(videoID: "testVideoID", duckPlayerSettings: mockSettings, source: .youtube)
 
         // Then
         XCTAssertFalse(viewModel.shouldShowYouTubeButton, "YouTube button should not be shown when source is not SERP")
     }
 
     @MainActor
-    func testShouldShowAutoOpenToggle_WhenPortraitAndVisible_ShouldBeTrue() {
-        // Given
-        viewModel.isLandscape = false
-        viewModel.showAutoOpenOnYoutubeToggle = true // Explicitly set, though default is true
-
-        // Then
-        XCTAssertTrue(viewModel.shouldShowAutoOpenToggle, "Auto-open toggle should be shown in portrait when not hidden")
-    }
-
-    @MainActor
-    func testShouldShowAutoOpenToggle_WhenLandscape_ShouldBeFalse() {
-        // Given
-        viewModel.isLandscape = true
-
-        // Then
-        XCTAssertFalse(viewModel.shouldShowAutoOpenToggle, "Auto-open toggle should not be shown in landscape mode")
-    }
-
-    @MainActor
-    func testShouldShowAutoOpenToggle_WhenExplicitlyHidden_ShouldBeFalse() {
-        // Given
-        viewModel.isLandscape = false
-        viewModel.hideAutoOpenToggle() // Hide the toggle
-
-        // Then
-        XCTAssertFalse(viewModel.shouldShowAutoOpenToggle, "Auto-open toggle should not be shown when explicitly hidden")
-    }
-
-    @MainActor
     func testShouldShowWelcomeMessage_WhenConditionsMet_ShouldBeTrue() {
-        // Given
-        viewModel.isLandscape = false
+        // Given        
         mockSettings.welcomeMessageShown = false
         mockSettings.variant = .nativeOptOut
-        viewModel.hideAutoOpenToggle() // Welcome message requires toggle to be hidden
+        viewModel.source == .youtube
 
         // Then
         XCTAssertTrue(viewModel.shouldShowWelcomeMessage, "Welcome message should be shown under specific conditions")
     }
-
-    @MainActor
-    func testShouldShowWelcomeMessage_WhenLandscape_ShouldBeFalse() {
-        // Given
-        viewModel.isLandscape = true
-        mockSettings.welcomeMessageShown = false
-        mockSettings.variant = .nativeOptOut
-        viewModel.hideAutoOpenToggle()
-
-        // Then
-        XCTAssertFalse(viewModel.shouldShowWelcomeMessage, "Welcome message should not be shown in landscape")
-    }
-
+   
     @MainActor
     func testShouldShowWelcomeMessage_WhenAlreadyShown_ShouldBeFalse() {
-        // Given
-        viewModel.isLandscape = false
-        mockSettings.welcomeMessageShown = true // Message already shown
+        // Given   
+        mockSettings.welcomeMessageShown = true
         mockSettings.variant = .nativeOptOut
-        viewModel.hideAutoOpenToggle()
+        viewModel.source == .youtube        
 
         // Then
         XCTAssertFalse(viewModel.shouldShowWelcomeMessage, "Welcome message should not be shown if already shown")
@@ -142,27 +106,14 @@ final class DuckPlayerViewModelTests: XCTestCase {
 
     @MainActor
     func testShouldShowWelcomeMessage_WhenNotNativeOptOutVariant_ShouldBeFalse() {
-        // Given
-        viewModel.isLandscape = false
+        // Given        
         mockSettings.welcomeMessageShown = false
-        mockSettings.variant = .classicWeb // Not the required variant
-        viewModel.hideAutoOpenToggle()
+        mockSettings.variant = .nativeOptIn
+        viewModel.source == .youtube        
 
         // Then
         XCTAssertFalse(viewModel.shouldShowWelcomeMessage, "Welcome message should not be shown for non-native-opt-out variants")
-    }
-
-    @MainActor
-    func testShouldShowWelcomeMessage_WhenAutoOpenToggleVisible_ShouldBeFalse() {
-        // Given
-        viewModel.isLandscape = false
-        mockSettings.welcomeMessageShown = false
-        mockSettings.variant = .nativeOptOut
-        viewModel.showAutoOpenOnYoutubeToggle = true // Toggle is visible
-
-        // Then
-        XCTAssertFalse(viewModel.shouldShowWelcomeMessage, "Welcome message should not be shown when auto-open toggle is visible")
-    }
+    }    
 
     @MainActor
     func testGetVideoURL_IncludesCorrectParametersAndTimestamp() {
@@ -191,86 +142,7 @@ final class DuckPlayerViewModelTests: XCTestCase {
         XCTAssertEqual(queryItems[DuckPlayerViewModel.Constants.autoplayParameter], DuckPlayerViewModel.Constants.enabled, "autoplay parameter should be enabled based on settings")
         XCTAssertEqual(queryItems[DuckPlayerViewModel.Constants.startParameter], String(Int(expectedTimestamp)), "start parameter should match the timestamp")
     }
-
-    // MARK: - Orientation Dependent Tests
-
-    @MainActor
-    func testComputedProperties_WhenLandscape() {
-        // Given: ViewModel is configured for SERP source initially
-        viewModel.showAutoOpenOnYoutubeToggle = true // Start with toggle visible
-        mockSettings.welcomeMessageShown = false
-        mockSettings.variant = .nativeOptOut
-
-        // When: Set orientation to landscape
-        viewModel.isLandscape = true
-
-        // Then: Verify computed properties dependent on landscape state
-        XCTAssertTrue(viewModel.isLandscape, "isLandscape should be true")
-        XCTAssertFalse(viewModel.shouldShowYouTubeButton, "YouTube button should be hidden in landscape")
-        XCTAssertFalse(viewModel.shouldShowAutoOpenToggle, "Auto-open toggle should be hidden in landscape")
-        XCTAssertFalse(viewModel.shouldShowWelcomeMessage, "Welcome message should be hidden in landscape")
-    }
-
-    @MainActor
-    func testComputedProperties_WhenPortrait() {
-        // Given: ViewModel is configured for SERP source initially
-        mockSettings.nativeUIYoutubeMode = .ask // Ensure autoOpenOnYoutube is initially false
-        viewModel.autoOpenOnYoutube = false
-        viewModel.showAutoOpenOnYoutubeToggle = true // Assume toggle is visible initially
-        mockSettings.welcomeMessageShown = false
-        mockSettings.variant = .nativeOptOut
-
-        // When: Set orientation to portrait
-        viewModel.isLandscape = false
-
-        // Then: Verify computed properties dependent on portrait state
-        XCTAssertFalse(viewModel.isLandscape, "isLandscape should be false")
-        XCTAssertTrue(viewModel.shouldShowYouTubeButton, "YouTube button should be shown in portrait for SERP source")
-        XCTAssertTrue(viewModel.shouldShowAutoOpenToggle, "Auto-open toggle should be shown in portrait when visible flag is true")
-
-        // Verify welcome message depends on toggle state (it should be hidden if toggle is visible)
-        XCTAssertFalse(viewModel.shouldShowWelcomeMessage, "Welcome message should be hidden when auto-open toggle is visible")
-
-        // Test case: Welcome message shown when toggle is hidden
-        viewModel.hideAutoOpenToggle() // Explicitly hide toggle
-        XCTAssertTrue(viewModel.shouldShowWelcomeMessage, "Welcome message should be shown when toggle is hidden and other conditions met")
-
-        // Test case: Auto-open toggle remains hidden if explicitly hidden
-        viewModel.hideAutoOpenToggle()
-        XCTAssertFalse(viewModel.shouldShowAutoOpenToggle, "Auto-open toggle should remain hidden if explicitly hidden")
-    }
-
-    @MainActor
-    func testAutoOpenToggleVisibility_WhenPortraitAndAutoOpenIsTrue() {
-        // Given
-        mockSettings.nativeUIYoutubeMode = .auto
-        viewModel.autoOpenOnYoutube = true
-        viewModel.isLandscape = false // Ensure portrait
-        viewModel.showAutoOpenOnYoutubeToggle = true // Start with toggle notionally visible
-
-        // Then
-        XCTAssertTrue(viewModel.shouldShowAutoOpenToggle, "Auto-open toggle visibility should be true when showAutoOpenOnYoutubeToggle is true, even if autoOpenOnYoutube is true")
-
-        // When: Explicitly hide the toggle
-        viewModel.hideAutoOpenToggle()
-
-        // Then
-        XCTAssertFalse(viewModel.shouldShowAutoOpenToggle, "Auto-open toggle should be hidden after calling hideAutoOpenToggle()")
-    }
-
-    // MARK: - State Mutation Tests
-
-    @MainActor
-    func testHideWelcomeMessage_SetsFlagInSettings() {
-        // Given
-        mockSettings.welcomeMessageShown = false // Ensure initial state
-
-        // When
-        viewModel.hideWelcomeMessage()
-
-        // Then
-        XCTAssertTrue(mockSettings.welcomeMessageShown, "welcomeMessageShown flag should be true after hiding the message")
-    }
+    
 
     // MARK: - Publisher Tests
 

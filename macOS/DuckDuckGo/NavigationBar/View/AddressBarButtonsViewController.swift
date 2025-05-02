@@ -280,7 +280,7 @@ final class AddressBarButtonsViewController: NSViewController {
         if view.window?.isPopUpWindow == false {
             updateTrackingAreaForHover()
         }
-        self.buttonsWidth = buttonsContainer.frame.size.width + 4.0
+        self.buttonsWidth = buttonsContainer.frame.size.width + 10.0
     }
 
     func updateTrackingAreaForHover() {
@@ -900,7 +900,7 @@ final class AddressBarButtonsViewController: NSViewController {
             bookmarkButton.mouseOverTintColor = nil
             bookmarkButton.image = visualStyleManager.style.addressBarIconsProvider.addBookmarkIcon
             bookmarkButton.contentTintColor = nil
-            bookmarkButton.toolTip = UserText.addBookmarkTooltip
+            bookmarkButton.toolTip = ShortcutTooltip.bookmarkThisPage.value
             bookmarkButton.setAccessibilityValue("Unbookmarked")
         }
     }
@@ -916,7 +916,7 @@ final class AddressBarButtonsViewController: NSViewController {
             imageButton.image = .web
         case .browsing:
             if let favicon = tabViewModel.favicon {
-                imageButton.image = tabViewModel.favicon
+                imageButton.image = favicon
             } else if isTextFieldEditorFirstResponder {
                 imageButton.image = .web
             }

@@ -90,6 +90,8 @@ public struct UserDefaultsWrapper<T> {
         case autofillCredentialsSavePromptShowAtLeastOnce = "com.duckduckgo.ios.autofillCredentialsSavePromptShowAtLeastOnce"
         case autofillCredentialsHasBeenEnabledAutomaticallyIfNecessary =
                 "com.duckduckgo.ios.autofillCredentialsHasBeenEnabledAutomaticallyIfNecessary"
+        case autofillCreditCardsHasBeenEnabledAutomaticallyIfNecessary =
+                "com.duckduckgo.ios.autofillCreditCardsHasBeenEnabledAutomaticallyIfNecessary"
         case autofillImportViaSyncStart = "com.duckduckgo.ios.autofillImportViaSyncStart"
         case autofillSearchDauDate = "com.duckduckgo.app.autofill.SearchDauDate"
         case autofillFillDate = "com.duckduckgo.app.autofill.FillDate"

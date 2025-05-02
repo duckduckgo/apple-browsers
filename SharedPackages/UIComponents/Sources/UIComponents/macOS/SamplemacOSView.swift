@@ -1,8 +1,7 @@
 //
-//  PasswordHider.swift
-//  DuckDuckGo
+//  SamplemacOSView.swift
 //
-//  Copyright © 2022 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,17 +16,15 @@
 //  limitations under the License.
 //
 
-import Foundation
+import SwiftUI
 
-public struct PasswordHider {
-    public let password: String
-    public var hiddenPassword: String {
-        let maximumPasswordDisplayCount = 22
-        let passwordCount = password.count > maximumPasswordDisplayCount ? maximumPasswordDisplayCount : password.count
-        return String(repeating: "•", count: passwordCount)
-    }
+#if os(macOS)
+public struct SamplemacOSView: View {
 
-    public init(password: String) {
-        self.password = password
+    public init() {}
+
+    public var body: some View {
+        Text("Hello, macOS!")
     }
 }
+#endif

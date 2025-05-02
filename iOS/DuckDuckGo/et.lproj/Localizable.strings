@@ -307,6 +307,93 @@
 /* No comment provided by engineer. */
 "autoconsent.info.header" = "Kui DuckDuckGo tuvastab külastatavatel veebisaitidel küpsiste nõusoleku hüpikaknad, saame proovida automaatselt seadistada sinu küpsise-eelistused selliselt, et minimeerida küpsised ja maksimeerida privaatsust, ning seejärel hüpikaknad sulgeda. Mõned saidid ei paku võimalust küpsise-eelistuste haldamiseks, seega saame sellised hüpikaknad ainult peita.";
 
+/* Toast message when a credit card item is deleted */
+"autofill.creditcard.deleted-message-no-title" = "Kaart kustutatud";
+
+/* Card name label for credit card details on autofill */
+"autofill.creditcard.details.card-name" = "Nimi kaardil";
+
+/* Card nickname label for credit card details on autofill */
+"autofill.creditcard.details.card-nickname" = "Kaardi hüüdnimi";
+
+/* Card number label for credit card details on autofill */
+"autofill.creditcard.details.card-number" = "Kaardi number";
+
+/* Card number label for credit card details on autofill when editing */
+"autofill.creditcard.details.card-number.required" = "Kaardi number";
+
+/* Title for toast when copying the credit card name */
+"autofill.creditcard.details.copy-toast.card-name-copied" = "Nimi kopeeritud";
+
+/* Title for toast when copying the credit card number */
+"autofill.creditcard.details.copy-toast.card-number-copied" = "Kaardi number kopeeritud";
+
+/* Title for toast when copying the credit card cvv (security code) */
+"autofill.creditcard.details.copy-toast.cvv-copied" = "CVV kopeeritud";
+
+/* Title for toast when copying the credit card expiration date */
+"autofill.creditcard.details.copy-toast.exp-date-copied" = "Aegumiskuupäev kopeeritud";
+
+/* CVV (security code) label for credit card details on autofill */
+"autofill.creditcard.details.cvv" = "CVV";
+
+/* Title for autofill credit card details */
+"autofill.creditcard.details.default-title" = "Kaart";
+
+/* Delete button when deleting an autofill credit card */
+"autofill.creditcard.details.delete" = "Kustuta kaart";
+
+/* Autofill alert button confirming delete credit card */
+"autofill.creditcard.details.delete-confirmation.button" = "Kustuta kaart";
+
+/* Autofill message confirming delete credit card */
+"autofill.creditcard.details.delete-confirmation.message" = "Kas oled kindel, et soovid selle kaardi kustutada?";
+
+/* Title when editing autofill credit card details */
+"autofill.creditcard.details.edit-title" = "Muuda kaarti";
+
+/* Placeholder for card number field on autofill credit card details */
+"autofill.creditcard.details.edit.card-number-placeholder" = "1234 5678 1234 5678";
+
+/* Placeholder for CVV security code field on autofill credit card details */
+"autofill.creditcard.details.edit.cvv-placeholder" = "Turvakood";
+
+/* Placeholder for expiration date field on autofill credit card details */
+"autofill.creditcard.details.edit.exp-date-placeholder" = "MM / AA";
+
+/* Expiration date label for credit card details on autofill */
+"autofill.creditcard.details.exp-date" = "Aegumiskuupäev";
+
+/* Title when adding new autofill credit card */
+"autofill.creditcard.details.new-title" = "Lisa kaart";
+
+/* Placeholder for card name field on autofill credit card details */
+"autofill.creditcard.edit.card-name-placeholder" = "Nimi kaardil";
+
+/* Placeholder for card nickname field on autofill credit card details */
+"autofill.creditcard.edit.card-nickname-placeholder" = "(nt. Töö)";
+
+/* Subtitle for view displayed when no autofill credit cards have been saved */
+"autofill.creditcard.empty-view.subtitle.first.paragraph" = "Krediitkaardid salvestatakse turvaliselt sinu seadmesse.";
+
+/* Title for view displayed when autofill has no credit cards saved */
+"autofill.creditcard.empty-view.title" = "Ühtegi krediitkaarti pole veel salvestatud";
+
+/* Reason for auth when opening credit card list */
+"autofill.creditcard.list.auth.reason" = "Krediitkaartidele juurde pääsemiseks ava seade";
+
+/* Credit card row label for credit card expiry date */
+"autofill.creditcard.list.item.expiry" = "Aegumiskuupäev:";
+
+/* Title for screen listing autofill credit cards */
+"autofill.creditcard.list.title" = "Krediitkaardid";
+
+/* Title for view displayed when autofill is locked on devices where a passcode has not been set */
+"autofill.creditcard.no-auth.subtitle" = "Sinu krediitkaartide kaitsmiseks on vaja pääsukoodi.";
+
+/* Title for view displayed when autofill is locked on devices where a passcode has not been set */
+"autofill.creditcard.no-auth.title" = "Kaitse oma seadet krediitkaartide salvestamiseks";
+
 /* Do not translate - stringsdict entry */
 "autofill.delete.all.passwords.completion" = "autofill.delete.all.passwords.completion";
 
@@ -327,6 +414,9 @@
 
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Luba Email Protection";
+
+/* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
+"autofill.hide-card-cvv" = "Peida CVV";
 
 /* Accessibility title for a Hide Password button replacing displayed password with ***** */
 "autofill.hide-password" = "Peida parool";
@@ -382,7 +472,7 @@
 /* Message displayed after updating an autofill login */
 "autofill.login-updated.toast" = "Parool uuendatud";
 
-/* Menu item text for copying autofill login details */
+/* Menu item text for copying autofill details */
 "autofill.logins.copy-prompt" = "Kopeeri %@";
 
 /* Title for toast when copying address */
@@ -516,6 +606,9 @@
 
 /* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
 "autofill.logins.list.settings.footer" = "Paroolid on krüpteeritud. Keegi peale sinu ei näe neid, isegi mitte meie.";
+
+/* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
+"autofill.logins.list.settings.passwords.cards.footer" = "Paroolid ja krediitkaardid on krüpteeritud. Keegi peale sinu ei näe neid, isegi mitte meie.";
 
 /* Section title for group of suggested saved logins */
 "autofill.logins.list.suggested" = "Soovitatud";
@@ -684,6 +777,9 @@
 
 /* Section header for the autofill settings screen */
 "autofill.settings.view.section-header" = "Kuva";
+
+/* Accessibility title for a Show CVV button displaying actual credit card CVV (security code) instead of *** */
+"autofill.show-card-cvv" = "Kuva CVV";
 
 /* Accessibility title for a Show Password button displaying actial password instead of ***** */
 "autofill.show-password" = "Kuva parool";

@@ -649,6 +649,11 @@ extension MainViewController {
             return false
         }
 
+        if event.keyCode == kVK_Tab, [.control, [.control, .shift]].contains(flags) {
+            NSApp.menu?.performKeyEquivalent(with: event)
+            return true
+        }
+
         // Handle browser tab/window actions
         if isWebViewFocused {
             switch (key, flags, flags.contains(.command)) {
@@ -659,12 +664,6 @@ extension MainViewController {
                  ("r", [.command], _):
                 NSApp.menu?.performKeyEquivalent(with: event)
                 return true
-
-            case ("\t", [.control], _),
-                 ("\t", [.control, .shift], _):
-                NSApp.menu?.performKeyEquivalent(with: event)
-                return true
-
             default:
                 break
             }

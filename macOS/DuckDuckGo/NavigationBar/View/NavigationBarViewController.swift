@@ -713,9 +713,9 @@ final class NavigationBarViewController: NSViewController {
 
         homeButton.sendAction(on: [.leftMouseUp, .otherMouseDown])
 
-        goBackButton.toolTip = UserText.navigateBackTooltip
-        goForwardButton.toolTip = UserText.navigateForwardTooltip
-        refreshOrStopButton.toolTip = UserText.refreshPageTooltip
+        goBackButton.toolTip = ShortcutTooltip.back.value
+        goForwardButton.toolTip = ShortcutTooltip.forward.value
+        refreshOrStopButton.toolTip = ShortcutTooltip.reload.value
     }
 
     private func setupNavigationButtonIcons() {
@@ -876,7 +876,7 @@ final class NavigationBarViewController: NSViewController {
         menu.addItem(withTitle: title, action: #selector(toggleAutofillPanelPinning), keyEquivalent: "")
 
         passwordManagementButton.menu = menu
-        passwordManagementButton.toolTip = UserText.autofillShortcutTooltip
+        passwordManagementButton.toolTip = UserText.passwordsShortcutTooltip
 
         let url = tabCollectionViewModel.selectedTabViewModel?.tab.content.userEditableUrl
 
@@ -909,7 +909,7 @@ final class NavigationBarViewController: NSViewController {
         let menu = NSMenu()
 
         homeButton.menu = menu
-        homeButton.toolTip = UserText.homeButtonTooltip
+        homeButton.toolTip = ShortcutTooltip.home.value
 
         if LocalPinningManager.shared.isPinned(.homeButton) {
             homeButton.isHidden = false
@@ -942,7 +942,7 @@ final class NavigationBarViewController: NSViewController {
                        action: #selector(toggleDownloadsPanelPinning(_:)),
                        keyEquivalent: "")
         }
-        downloadsButton.toolTip = UserText.downloadsShortcutTooltip
+        downloadsButton.toolTip = ShortcutTooltip.downloads.value
 
         if LocalPinningManager.shared.isPinned(.downloads) {
             downloadsButton.isShown = true
@@ -1090,7 +1090,7 @@ final class NavigationBarViewController: NSViewController {
             .removeDuplicates()
             .sink { [weak refreshOrStopButton] isLoading in
                 refreshOrStopButton?.image = isLoading ? .stop : .refresh
-                refreshOrStopButton?.toolTip = isLoading ? UserText.stopLoadingTooltip : UserText.refreshPageTooltip
+                refreshOrStopButton?.toolTip = isLoading ? ShortcutTooltip.stopLoading.value : ShortcutTooltip.reload.value
             }
             .store(in: &navigationButtonsCancellables)
     }

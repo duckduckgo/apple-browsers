@@ -307,6 +307,93 @@
 /* No comment provided by engineer. */
 "autoconsent.info.header" = "Kiedy DuckDuckGo wykrywa wyskakujące okienka z prośbą o zgodę na używanie plików cookie na odwiedzanych przez Ciebie stronach, może spróbować automatycznie ustawić Twoje preferencje dotyczące plików cookie w taki sposób, aby zminimalizować liczbę plików cookie i zmaksymalizować prywatność, a następnie zamknąć wyskakujące okienka. Niektóre witryny nie umożliwiają zarządzania preferencjami dotyczącymi plików cookie, dlatego możemy jedynie ukryć takie wyskakujące okienka.";
 
+/* Toast message when a credit card item is deleted */
+"autofill.creditcard.deleted-message-no-title" = "Usunięto dane karty";
+
+/* Card name label for credit card details on autofill */
+"autofill.creditcard.details.card-name" = "Imię i nazwisko na karcie";
+
+/* Card nickname label for credit card details on autofill */
+"autofill.creditcard.details.card-nickname" = "Nazwa karty";
+
+/* Card number label for credit card details on autofill */
+"autofill.creditcard.details.card-number" = "Numer karty";
+
+/* Card number label for credit card details on autofill when editing */
+"autofill.creditcard.details.card-number.required" = "Numer karty";
+
+/* Title for toast when copying the credit card name */
+"autofill.creditcard.details.copy-toast.card-name-copied" = "Skopiowano imię i nazwisko";
+
+/* Title for toast when copying the credit card number */
+"autofill.creditcard.details.copy-toast.card-number-copied" = "Skopiowano numer karty";
+
+/* Title for toast when copying the credit card cvv (security code) */
+"autofill.creditcard.details.copy-toast.cvv-copied" = "Skopiowano kod CVV";
+
+/* Title for toast when copying the credit card expiration date */
+"autofill.creditcard.details.copy-toast.exp-date-copied" = "Skopiowano datę ważności";
+
+/* CVV (security code) label for credit card details on autofill */
+"autofill.creditcard.details.cvv" = "CVV";
+
+/* Title for autofill credit card details */
+"autofill.creditcard.details.default-title" = "Karta";
+
+/* Delete button when deleting an autofill credit card */
+"autofill.creditcard.details.delete" = "Usuń kartę";
+
+/* Autofill alert button confirming delete credit card */
+"autofill.creditcard.details.delete-confirmation.button" = "Usuń kartę";
+
+/* Autofill message confirming delete credit card */
+"autofill.creditcard.details.delete-confirmation.message" = "Czy na pewno chcesz usunąć tę kartę?";
+
+/* Title when editing autofill credit card details */
+"autofill.creditcard.details.edit-title" = "Edytuj kartę";
+
+/* Placeholder for card number field on autofill credit card details */
+"autofill.creditcard.details.edit.card-number-placeholder" = "1234 5678 1234 5678";
+
+/* Placeholder for CVV security code field on autofill credit card details */
+"autofill.creditcard.details.edit.cvv-placeholder" = "Kod bezpieczeństwa";
+
+/* Placeholder for expiration date field on autofill credit card details */
+"autofill.creditcard.details.edit.exp-date-placeholder" = "MM / RR";
+
+/* Expiration date label for credit card details on autofill */
+"autofill.creditcard.details.exp-date" = "Data ważności";
+
+/* Title when adding new autofill credit card */
+"autofill.creditcard.details.new-title" = "Dodaj kartę";
+
+/* Placeholder for card name field on autofill credit card details */
+"autofill.creditcard.edit.card-name-placeholder" = "Imię i nazwisko na karcie";
+
+/* Placeholder for card nickname field on autofill credit card details */
+"autofill.creditcard.edit.card-nickname-placeholder" = "(np. Praca)";
+
+/* Subtitle for view displayed when no autofill credit cards have been saved */
+"autofill.creditcard.empty-view.subtitle.first.paragraph" = "Dane kart kredytowych są bezpiecznie przechowywane na Twoim urządzeniu.";
+
+/* Title for view displayed when autofill has no credit cards saved */
+"autofill.creditcard.empty-view.title" = "Jeszcze nie zapisano żadnych kart kredytowych";
+
+/* Reason for auth when opening credit card list */
+"autofill.creditcard.list.auth.reason" = "Odblokuj urządzenie, aby uzyskać dostęp do danych kart kredytowych";
+
+/* Credit card row label for credit card expiry date */
+"autofill.creditcard.list.item.expiry" = "Ważność:";
+
+/* Title for screen listing autofill credit cards */
+"autofill.creditcard.list.title" = "Karty kredytowe";
+
+/* Title for view displayed when autofill is locked on devices where a passcode has not been set */
+"autofill.creditcard.no-auth.subtitle" = "Do ochrony danych kart kredytowych wymagany jest kod dostępu.";
+
+/* Title for view displayed when autofill is locked on devices where a passcode has not been set */
+"autofill.creditcard.no-auth.title" = "Zabezpiecz urządzenie, aby zapisywać dane kart kredytowych";
+
 /* Do not translate - stringsdict entry */
 "autofill.delete.all.passwords.completion" = "autofill.delete.all.passwords.completion";
 
@@ -327,6 +414,9 @@
 
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Włącz ochronę poczty Email Protection";
+
+/* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
+"autofill.hide-card-cvv" = "Ukryj CVV";
 
 /* Accessibility title for a Hide Password button replacing displayed password with ***** */
 "autofill.hide-password" = "Ukryj hasło";
@@ -382,7 +472,7 @@
 /* Message displayed after updating an autofill login */
 "autofill.login-updated.toast" = "Zaktualizowano hasło";
 
-/* Menu item text for copying autofill login details */
+/* Menu item text for copying autofill details */
 "autofill.logins.copy-prompt" = "Kopiuj %@";
 
 /* Title for toast when copying address */
@@ -684,6 +774,9 @@
 
 /* Section header for the autofill settings screen */
 "autofill.settings.view.section-header" = "Wyświetl";
+
+/* Accessibility title for a Show CVV button displaying actual credit card CVV (security code) instead of *** */
+"autofill.show-card-cvv" = "Pokaż CVV";
 
 /* Accessibility title for a Show Password button displaying actial password instead of ***** */
 "autofill.show-password" = "Pokaż hasło";

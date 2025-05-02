@@ -1224,18 +1224,35 @@ final class NavigationBarViewController: NSViewController {
         }
     }
 
+    private func makeSpaceInNavBarIfNeeded(for button: NSButton) {
+        guard visiblePinnedViewsRequiredWidth + button.frame.width > overflowThreshold else {
+            return
+        }
+
+        guard let itemToOverflow = visiblePinnedItems.last else {
+            return
+        }
+        updateNavBarViews(with: itemToOverflow, isHidden: true)
+    }
+
     @objc
     func overflowMenuRequestedLoginsPopover(_ menu: NSMenu) {
+        makeSpaceInNavBarIfNeeded(for: passwordManagementButton)
+        updateNavBarViews(with: overflowableItem(for: .autofill), isHidden: false)
         popovers.showPasswordManagementPopover(selectedCategory: nil, from: passwordManagementButton, withDelegate: self, source: .overflow)
     }
 
     @objc
     func overflowMenuRequestedBookmarkPopover(_ menu: NSMenu) {
+        makeSpaceInNavBarIfNeeded(for: bookmarkListButton)
+        updateNavBarViews(with: overflowableItem(for: .bookmarks), isHidden: false)
         popovers.showBookmarkListPopover(from: bookmarkListButton, withDelegate: self, forTab: tabCollectionViewModel.selectedTabViewModel?.tab)
     }
 
     @objc
     func overflowMenuRequestedNetworkProtectionPopover(_ menu: NSMenu) {
+        makeSpaceInNavBarIfNeeded(for: networkProtectionButton)
+        updateNavBarViews(with: overflowableItem(for: .networkProtection), isHidden: false)
         toggleNetworkProtectionPopover()
     }
 
@@ -1250,6 +1267,8 @@ final class NavigationBarViewController: NSViewController {
 
     @objc
     func overflowMenuRequestedDownloadsPopover(_ menu: NSMenu) {
+        makeSpaceInNavBarIfNeeded(for: downloadsButton)
+        updateNavBarViews(with: overflowableItem(for: .downloads), isHidden: false)
         toggleDownloadsPopover(keepButtonVisible: true)
     }
 

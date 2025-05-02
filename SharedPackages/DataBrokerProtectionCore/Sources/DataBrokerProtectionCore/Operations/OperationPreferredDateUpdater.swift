@@ -79,8 +79,8 @@ struct OperationPreferredDateUpdater: OperationPreferredDateUpdating {
                 if let childBrokerId = childBroker.id {
                     let confirmOptOutScanDate = Date().addingTimeInterval(childBroker.schedulingConfig.confirmOptOutScan.hoursToSeconds)
                     try database.updatePreferredRunDate(confirmOptOutScanDate,
-                                                    brokerId: childBrokerId,
-                                                    profileQueryId: profileQueryId)
+                                                        brokerId: childBrokerId,
+                                                        profileQueryId: profileQueryId)
                 }
             }
         } catch {
@@ -159,10 +159,10 @@ struct OperationPreferredDateUpdater: OperationPreferredDateUpdating {
         return min(date1, date2)
     }
 
-    private func updatePreferredRunDate( _ date: Date?,
-                                         brokerId: Int64,
-                                         profileQueryId: Int64,
-                                         extractedProfileId: Int64?) throws {
+    private func updatePreferredRunDate(_ date: Date?,
+                                        brokerId: Int64,
+                                        profileQueryId: Int64,
+                                        extractedProfileId: Int64?) throws {
         do {
             if let extractedProfileId = extractedProfileId {
                 try database.updatePreferredRunDate(date, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)

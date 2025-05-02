@@ -776,6 +776,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
     public var wasAddHistoryEventCalled = false
     public var wasFetchLastHistoryEventCalled = false
 
+    public var fetchAllBrokerProfileQueryDataError: Error?
     public var lastHistoryEventToReturn: HistoryEvent?
     public var lastPreferredRunDateOnScan: Date?
     public var lastPreferredRunDateOnOptOut: Date?
@@ -862,8 +863,13 @@ public final class MockDatabase: DataBrokerProtectionRepository {
         }
     }
 
-    public func fetchAllBrokerProfileQueryData() -> [BrokerProfileQueryData] {
+    public func fetchAllBrokerProfileQueryData() throws -> [BrokerProfileQueryData] {
         wasFetchAllBrokerProfileQueryDataCalled = true
+        
+        if let fetchAllBrokerProfileQueryDataError {
+            throw fetchAllBrokerProfileQueryDataError
+        }
+
         return brokerProfileQueryDataToReturn
     }
 
@@ -1381,10 +1387,12 @@ public final class MockBrokerProfileJob: BrokerProfileJob, @unchecked Sendable {
 public final class MockBrokerProfileJobErrorDelegate: BrokerProfileJobErrorDelegate {
 
     public var operationErrors: [Error] = []
+    public var dataBrokerOperationDidErrorCalled = false
 
     public init() {}
 
     public func dataBrokerOperationDidError(_ error: any Error, withBrokerName brokerName: String?) {
+        dataBrokerOperationDidErrorCalled = true
         operationErrors.append(error)
     }
 }

@@ -51,6 +51,58 @@ final class BrokerProfileJobTests: XCTestCase {
         return mockNilPreferredRunDateQueryData + mockPastQueryData + mockFutureQueryData
     }()
 
+    // MARK: - Lifecycle Tests
+
+    func testWhenFetchingBrokerProfileQueryDataFails_ThenJobCompletesWithNoOutput() {
+        let delegate = MockBrokerProfileJobErrorDelegate()
+        let database = MockDatabase()
+        let mockDependencies = MockBrokerProfileJobDependencies()
+        mockDependencies.database = database
+
+        database.fetchAllBrokerProfileQueryDataError = NSError(domain: "pir.test.error", code: 0, userInfo: nil)
+
+        let job = BrokerProfileJob(dataBrokerID: 1,
+                                   jobType: .all,
+                                   showWebView: false,
+                                   errorDelegate: delegate,
+                                   jobDependencies: mockDependencies)
+
+        let finishedExpectation = expectation(for: NSPredicate(format: "isFinished == true"), evaluatedWith: job, handler: nil)
+        job.start()
+        wait(for: [finishedExpectation], timeout: 5.0)
+
+        XCTAssertTrue(job.isFinished, "Job should finish even when fetching fails")
+        XCTAssertTrue(database.scanEvents.isEmpty)
+        XCTAssertTrue(database.optOutEvents.isEmpty)
+    }
+
+    func testWhenScanDataIsPresent_ThenScanEventIsCreated() {
+        let delegate = MockBrokerProfileJobErrorDelegate()
+        let database = MockDatabase()
+        let mockDependencies = MockBrokerProfileJobDependencies()
+        mockDependencies.database = database
+
+        database.brokerProfileQueryDataToReturn = [
+            .init(dataBroker: .mock(withId: 1), profileQuery: .mock, scanJobData: .mock(withBrokerId: 1))
+        ]
+
+        let job = BrokerProfileJob(dataBrokerID: 1,
+                                   jobType: .all,
+                                   showWebView: false,
+                                   errorDelegate: delegate,
+                                   jobDependencies: mockDependencies)
+
+        let finishedExpectation = expectation(for: NSPredicate(format: "isFinished == true"), evaluatedWith: job, handler: nil)
+        job.start()
+        wait(for: [finishedExpectation], timeout: 5.0)
+
+        XCTAssertTrue(job.isFinished, "Job should finish even when fetching fails")
+        XCTAssertFalse(database.scanEvents.isEmpty)
+        XCTAssertTrue(database.optOutEvents.isEmpty)
+    }
+
+    // MARK: - Filtering Tests
+
     func testWhenFilteringOptOutOperationData_thenAllButFuturePreferredRunDateIsReturned() {
         let operationData1 = MockBrokerProfileJob.eligibleJobsSortedByPreferredRunOrder(brokerProfileQueriesData: mockOptOutQueryData, jobType: .optOut, priorityDate: nil)
         let operationData2 = MockBrokerProfileJob.eligibleJobsSortedByPreferredRunOrder(brokerProfileQueriesData: mockOptOutQueryData, jobType: .optOut, priorityDate: .now)
@@ -97,4 +149,5 @@ final class BrokerProfileJobTests: XCTestCase {
         XCTAssertEqual(operationData4.filter { $0 is OptOutJobData }.count, 30) // all jobs
         XCTAssertEqual(operationData4.count, 20+30)
     }
+
 }

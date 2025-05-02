@@ -24,6 +24,8 @@ import Core
 struct SettingsAIChatView: View {
     @EnvironmentObject var viewModel: SettingsViewModel
 
+    @State var isAIChatEnabled = true
+
     var body: some View {
         List {
 
@@ -45,17 +47,24 @@ struct SettingsAIChatView: View {
             .listRowBackground(Color.clear)
 
             Section {
-                SettingsCellView(label: UserText.aiChatSettingsEnableBrowsingMenuToggle,
-                                 accessory: .toggle(isOn: viewModel.aiChatBrowsingMenuEnabledBinding))
+                SettingsCellView(label: UserText.settingsEnableAiChat,
+                                 accessory: .toggle(isOn: $isAIChatEnabled))
+            }
 
-                SettingsCellView(label: UserText.aiChatSettingsEnableAddressBarToggle,
-                                 accessory: .toggle(isOn: viewModel.aiChatAddressBarEnabledBinding))
+            if isAIChatEnabled {
+                Section(header: Text(UserText.settingsAiChatShowIn)) {
+                    SettingsCellView(label: UserText.aiChatSettingsEnableBrowsingMenuToggle,
+                                     accessory: .toggle(isOn: viewModel.aiChatBrowsingMenuEnabledBinding))
 
-                SettingsCellView(label: UserText.aiChatSettingsEnableVoiceSearchToggle,
-                                 accessory: .toggle(isOn: viewModel.aiChatVoiceSearchEnabledBinding))
+                    SettingsCellView(label: UserText.aiChatSettingsEnableAddressBarToggle,
+                                     accessory: .toggle(isOn: viewModel.aiChatAddressBarEnabledBinding))
 
-                SettingsCellView(label: UserText.aiChatSettingsEnableTabSwitcherToggle,
-                                 accessory: .toggle(isOn: viewModel.aiChatTabSwitcherEnabledBinding))
+                    SettingsCellView(label: UserText.aiChatSettingsEnableVoiceSearchToggle,
+                                     accessory: .toggle(isOn: viewModel.aiChatVoiceSearchEnabledBinding))
+
+                    SettingsCellView(label: UserText.aiChatSettingsEnableTabSwitcherToggle,
+                                     accessory: .toggle(isOn: viewModel.aiChatTabSwitcherEnabledBinding))
+                }
             }
         }.applySettingsListModifiers(title: UserText.aiChatFeatureName,
                                      displayMode: .inline,

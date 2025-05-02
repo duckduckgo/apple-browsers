@@ -85,7 +85,7 @@ public class DataBrokerProtectionIOSManagerProvider {
 
         let fakeBroker = DataBrokerDebugFlagFakeBroker()
         let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName)
-        let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.bundleIdentifier!, databaseFileURL: databaseURL)
+        let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: nil, databaseFileURL: databaseURL)
 
         let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler)
 
@@ -167,6 +167,24 @@ public final class DataBrokerProtectionIOSManager {
         self.sharedPixelsHandler = sharedPixelsHandler
         self.privacyConfigManager = privacyConfigManager
         self.dataManager = dataManager
+
+        self.communicationLayer = DBPUICommunicationLayer(webURLSettings:
+                                                        DataBrokerProtectionWebUIURLSettings(UserDefaults.standard),
+                                                          privacyConfig: privacyConfigManager)
+
+        let cache = dataManager.cache
+        communicationLayer.delegate = cache
+
+        let year = Calendar(identifier: .gregorian).component(.year, from: Date())
+        let birthYear = year - 55
+        let profile = DataBrokerProtectionProfile(names: [.init(firstName: "Steve", lastName: "Smith")],
+                                                  addresses: [.init(city: "Dallas", state: "TX")],
+                                                  phones: [],
+                                                  birthYear: birthYear)
+        cache.profile = profile
+        Task { @MainActor in
+            _ = try await communicationLayer.saveProfile(params: [], original: WKScriptMessage())
+        }
     }
 
     public func start() {

@@ -67,6 +67,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
     var viewModel: SyncSettingsViewModel?
 
     var source: String?
+    var pairingInfo: PairingInfo?
 
     var onConfirmSyncDisable: (() -> Void)?
     var onConfirmAndDeleteAllData: (() -> Void)?
@@ -79,6 +80,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
         appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
         syncPausedStateManager: any SyncPausedStateManaging,
         source: String? = nil,
+        pairingInfo: PairingInfo? = nil,
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger
     ) {
         self.syncService = syncService
@@ -86,6 +88,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
         self.syncCredentialsAdapter = syncCredentialsAdapter
         self.syncPausedStateManager = syncPausedStateManager
         self.source = source
+        self.pairingInfo = pairingInfo
         self.featureFlagger = featureFlagger
 
         let viewModel = SyncSettingsViewModel(

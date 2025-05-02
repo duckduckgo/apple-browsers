@@ -146,7 +146,6 @@ struct Bubble: InsettableShape {
     enum Edge { case top, right, bottom, left }
 }
 
-
 // MARK: - Bubble View Definition
 
 /// A view that displays content within a bubble shape, automatically sizing to the content.
@@ -254,7 +253,6 @@ struct BubbleView<Content: View>: View {
      }
 }
 
-
 // MARK: - Preview
 
 #if DEBUG
@@ -296,8 +294,7 @@ struct BubbleView_Previews: PreviewProvider {
                  fillColor: Color(white: 0.9),
                  borderColor: .gray,
                  borderWidth: 1
-             )
-            {
+             ) {
                 Text("Short text.")
                     .font(.caption)
                     .foregroundColor(.black)

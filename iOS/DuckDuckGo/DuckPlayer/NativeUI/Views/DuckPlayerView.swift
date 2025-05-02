@@ -157,7 +157,6 @@ struct DuckPlayerView: View {
         }
     }
 
-
     @ViewBuilder
     private var autoOpenToggleView: some View {
         if viewModel.showAutoOpenOnYoutubeToggle && viewModel.source == .youtube && showOpenInYoutubeToggle {
@@ -261,7 +260,6 @@ struct DuckPlayerView: View {
         .padding(.horizontal, LayoutConstants.horizontalPadding)
     }
 
-  
    @ViewBuilder
   private var bubbleContent: some View {
     VStack(alignment: .leading, spacing: LayoutConstants.defaultSpacing) {

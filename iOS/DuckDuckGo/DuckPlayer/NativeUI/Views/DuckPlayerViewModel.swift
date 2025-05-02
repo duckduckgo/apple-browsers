@@ -128,14 +128,13 @@ final class DuckPlayerViewModel: ObservableObject {
     private var webView: WKWebView?
     private var coordinator: DuckPlayerWebView.Coordinator?
 
-
     /// Creates a new DuckPlayerViewModel instance
     /// - Parameters:
     ///   - videoID: The YouTube video ID to be played
     ///   - appSettings: App settings instance for accessing user preferences
-    init(videoID: String, 
-         timestamp: TimeInterval? = nil, 
-         duckPlayerSettings: DuckPlayerSettings = DuckPlayerSettingsDefault(), 
+    init(videoID: String,
+         timestamp: TimeInterval? = nil,
+         duckPlayerSettings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
          source: DuckPlayer.VideoNavigationSource = .other) {
         self.videoID = videoID
         self.duckPlayerSettings = duckPlayerSettings

@@ -123,7 +123,7 @@ enum DuckPlayerVariant: Equatable, Codable, CustomStringConvertible, CaseIterabl
     private static let classicAString = "Classic (Web)"
     private static let nativeBString = "Native (Opt-in)"
     private static let nativeCString = "Native (Opt-out)"
-    
+
     var stringValue: String {
         switch self {
         case .classicWeb:
@@ -308,7 +308,6 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
             }
         }
     }
-    
 
     /// Flag to allow the first video to play without redirection.
     var allowFirstVideo: Bool = false
@@ -452,7 +451,7 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
                     // Reset the welcome message shown flag
                     self.welcomeMessageShown = false
                 }
-                
+
             }
         }
     }

@@ -866,6 +866,7 @@
 		98F3A1D8217B37010011A0D4 /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98F3A1D7217B37010011A0D4 /* Theme.swift */; };
 		98F6EA472863124100720957 /* ContentBlockerRulesLists.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98F6EA462863124100720957 /* ContentBlockerRulesLists.swift */; };
 		98F78B8E22419093007CACF4 /* ThemableNavigationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98F78B8D22419093007CACF4 /* ThemableNavigationController.swift */; };
+		9D6891E72DAD2DF800819662 /* DataBrokerProtection-iOS in Frameworks */ = {isa = PBXBuildFile; productRef = 9D6891E62DAD2DF800819662 /* DataBrokerProtection-iOS */; };
 		9F06EB8A2D10560200905426 /* SettingsMaliciousProtectionSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F06EB892D10560200905426 /* SettingsMaliciousProtectionSectionView.swift */; };
 		9F06EB8C2D10578000905426 /* MaliciousSiteProtectionSettingsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F06EB8B2D10578000905426 /* MaliciousSiteProtectionSettingsViewModelTests.swift */; };
 		9F06EB922D10740500905426 /* MaliciousSiteProtectionPreferencesManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F06EB912D10740500905426 /* MaliciousSiteProtectionPreferencesManagerTests.swift */; };
@@ -1860,7 +1861,6 @@
 		4BD96E082C4DCDD2003BC32C /* VPNSnoozeActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNSnoozeActivityAttributes.swift; sourceTree = "<group>"; };
 		4BD96E0A2C4DCE55003BC32C /* VPNSnoozeLiveActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNSnoozeLiveActivityManager.swift; sourceTree = "<group>"; };
 		4BD96E0C2C4DCEAA003BC32C /* VPNSnoozeLiveActivityWidget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNSnoozeLiveActivityWidget.swift; sourceTree = "<group>"; };
-		4BE090E72D971D0700950117 /* DataBrokerProtectionCore */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = DataBrokerProtectionCore; path = ../SharedPackages/DataBrokerProtectionCore; sourceTree = SOURCE_ROOT; };
 		4BE27566272F878F006B20B0 /* URLRequestExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = URLRequestExtension.swift; path = ../DuckDuckGo/URLRequestExtension.swift; sourceTree = "<group>"; };
 		4BE4D0BB2D8D2DFC00D63840 /* BrowserServicesKit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = BrowserServicesKit; path = ../SharedPackages/BrowserServicesKit; sourceTree = SOURCE_ROOT; };
 		560E990E2BEE2CB800507CE0 /* SyncErrorMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncErrorMessage.swift; sourceTree = "<group>"; };
@@ -2900,6 +2900,8 @@
 		98F3A1D7217B37010011A0D4 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		98F6EA462863124100720957 /* ContentBlockerRulesLists.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ContentBlockerRulesLists.swift; sourceTree = "<group>"; };
 		98F78B8D22419093007CACF4 /* ThemableNavigationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemableNavigationController.swift; sourceTree = "<group>"; };
+		9D6891E52DAD25B600819662 /* DataBrokerProtection-iOS */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = "DataBrokerProtection-iOS"; sourceTree = "<group>"; };
+		9D87088B2DAD5075007E22D4 /* DataBrokerProtectionCore */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = DataBrokerProtectionCore; path = ../../SharedPackages/DataBrokerProtectionCore; sourceTree = "<group>"; };
 		9F06EB892D10560200905426 /* SettingsMaliciousProtectionSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsMaliciousProtectionSectionView.swift; sourceTree = "<group>"; };
 		9F06EB8B2D10578000905426 /* MaliciousSiteProtectionSettingsViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaliciousSiteProtectionSettingsViewModelTests.swift; sourceTree = "<group>"; };
 		9F06EB912D10740500905426 /* MaliciousSiteProtectionPreferencesManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaliciousSiteProtectionPreferencesManagerTests.swift; sourceTree = "<group>"; };
@@ -3600,6 +3602,7 @@
 				3760DFED299315EF0045A446 /* Waitlist in Frameworks */,
 				F1D43AFA2B99C1D300BAB743 /* BareBonesBrowserKit in Frameworks */,
 				7B2CCBA52D11ABBA00FE5852 /* VPNWidgetSupport in Frameworks */,
+				9D6891E72DAD2DF800819662 /* DataBrokerProtection-iOS in Frameworks */,
 				F143C2EB1E4A4CD400CFDE3A /* Core.framework in Frameworks */,
 				4BC95E792D7416A1002FAB32 /* Crashes in Frameworks */,
 				4BC95E7B2D7416AD002FAB32 /* Navigation in Frameworks */,
@@ -4308,8 +4311,9 @@
 		31E69A60280F4BAD00478327 /* LocalPackages */ = {
 			isa = PBXGroup;
 			children = (
-				4BE090E72D971D0700950117 /* DataBrokerProtectionCore */,
 				4BE4D0BB2D8D2DFC00D63840 /* BrowserServicesKit */,
+				9D87088B2DAD5075007E22D4 /* DataBrokerProtectionCore */,
+				9D6891E52DAD25B600819662 /* DataBrokerProtection-iOS */,
 				31794BFF2821DFB600F18633 /* DuckUI */,
 				4B94B79C2D4831700014AAB8 /* SyncUI-iOS */,
 				7B10FF282D11AA0D00F36BF2 /* VPNiOS */,
@@ -7865,6 +7869,7 @@
 				4BC95E7C2D7416B2002FAB32 /* Onboarding */,
 				4BC95E7E2D7416C1002FAB32 /* PrivacyDashboard */,
 				4BC95EC42D7418B2002FAB32 /* NetworkProtection */,
+				9D6891E62DAD2DF800819662 /* DataBrokerProtection-iOS */,
 			);
 			productName = DuckDuckGo;
 			productReference = 84E341921E2F7EFB00BDBA6F /* DuckDuckGo.app */;
@@ -13224,6 +13229,10 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 984249C42CED4F430071C7DB /* XCRemoteSwiftPackageReference "BrowserServicesKit" */;
 			productName = SubscriptionTestingUtilities;
+		};
+		9D6891E62DAD2DF800819662 /* DataBrokerProtection-iOS */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = "DataBrokerProtection-iOS";
 		};
 		9F254AF02CF8D5250063B308 /* MaliciousSiteProtection */ = {
 			isa = XCSwiftPackageProductDependency;

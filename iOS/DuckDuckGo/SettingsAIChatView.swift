@@ -24,8 +24,6 @@ import Core
 struct SettingsAIChatView: View {
     @EnvironmentObject var viewModel: SettingsViewModel
 
-    @State var isAIChatEnabled = true
-
     var body: some View {
         List {
 
@@ -48,10 +46,10 @@ struct SettingsAIChatView: View {
 
             Section {
                 SettingsCellView(label: UserText.settingsEnableAiChat,
-                                 accessory: .toggle(isOn: $isAIChatEnabled))
+                                 accessory: .toggle(isOn: viewModel.isAiChatEnabledBinding))
             }
 
-            if isAIChatEnabled {
+            if viewModel.isAiChatEnabledBinding.wrappedValue {
                 Section(header: Text(UserText.settingsAiChatShowIn)) {
                     SettingsCellView(label: UserText.aiChatSettingsEnableBrowsingMenuToggle,
                                      accessory: .toggle(isOn: viewModel.aiChatBrowsingMenuEnabledBinding))

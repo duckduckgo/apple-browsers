@@ -69,11 +69,30 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/0/72649045549333/1209633877674689/f
     case exchangeKeysToSyncWithAnotherDevice
 
+    // Demonstrative cases for default value. Remove once a real-world feature/subfeature is added
+    case failsafeExampleCrossPlatformFeature
+    case failsafeExamplePlatformSpecificSubfeature
+
     /// https://app.asana.com/0/72649045549333/1209793701087222/f
     case visualRefresh
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1209227311680179?focus=true
+    case tabCrashDebugging
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1209227311680179?focus=true
+    case tabCrashRecovery
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
+    public var defaultValue: Bool {
+        switch self {
+        case .failsafeExampleCrossPlatformFeature, .failsafeExamplePlatformSpecificSubfeature:
+            true
+        default:
+            false
+        }
+    }
+
     public var cohortType: (any FeatureFlagCohortDescribing.Type)? {
         switch self {
         case .popoverVsBannerExperiment:
@@ -105,7 +124,11 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .privacyProAuthV2,
                 .scamSiteProtection,
                 .exchangeKeysToSyncWithAnotherDevice,
-                .visualRefresh:
+                .failsafeExampleCrossPlatformFeature,
+                .failsafeExamplePlatformSpecificSubfeature,
+                .visualRefresh,
+                .tabCrashDebugging,
+                .tabCrashRecovery:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -165,8 +188,16 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
         case .exchangeKeysToSyncWithAnotherDevice:
             return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
+        case .failsafeExampleCrossPlatformFeature:
+            return .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests))
+        case .failsafeExamplePlatformSpecificSubfeature:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests))
         case .visualRefresh:
             return .remoteDevelopment(.feature(.experimentalBrowserTheming))
+        case .tabCrashDebugging:
+            return .disabled
+        case .tabCrashRecovery:
+            return .remoteReleasable(.feature(.tabCrashRecovery))
         }
     }
 }

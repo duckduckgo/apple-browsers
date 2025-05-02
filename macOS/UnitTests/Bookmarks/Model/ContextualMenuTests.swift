@@ -373,7 +373,7 @@ final class ContextualMenuTests: XCTestCase {
         _=menuItem.target!.perform(menuItem.action!, with: menuItem)
 
         // THEN
-        XCTAssertEqual((menu.windowControllersManager as! WindowControllersManagerMock).showCalled, .init(url: URL.duckDuckGo, source: .bookmark, newTab: true))
+        XCTAssertEqual((menu.windowControllersManager as! WindowControllersManagerMock).showCalled, .init(url: URL.duckDuckGo, source: .bookmark, newTab: true, selected: nil))
     }
 
     @MainActor
@@ -406,7 +406,8 @@ final class ContextualMenuTests: XCTestCase {
             return
         }
         let mainViewController = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])), autofillPopoverPresenter: DefaultAutofillPopoverPresenter())
-        (menu.windowControllersManager as! WindowControllersManagerMock).lastKeyMainWindowController = MainWindowController(mainViewController: mainViewController, popUp: false)
+        let window = MockWindow(isVisible: false)
+        (menu.windowControllersManager as! WindowControllersManagerMock).lastKeyMainWindowController = MainWindowController(window: window, mainViewController: mainViewController, popUp: false)
 
         // WHEN
         _=menuItem.target!.perform(menuItem.action!, with: menuItem)
@@ -433,7 +434,8 @@ final class ContextualMenuTests: XCTestCase {
             return
         }
         let mainViewController = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])), autofillPopoverPresenter: DefaultAutofillPopoverPresenter())
-        (menu.windowControllersManager as! WindowControllersManagerMock).lastKeyMainWindowController = MainWindowController(mainViewController: mainViewController, popUp: false)
+        let window = MockWindow(isVisible: false)
+        (menu.windowControllersManager as! WindowControllersManagerMock).lastKeyMainWindowController = MainWindowController(window: window, mainViewController: mainViewController, popUp: false)
 
         // WHEN
         _=menuItem.target!.perform(menuItem.action!, with: menuItem)

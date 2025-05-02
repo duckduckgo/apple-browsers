@@ -33,6 +33,8 @@ struct ExperimentalThemingManager {
         featureFlagger.isFeatureOn(for: FeatureFlag.experimentalBrowserTheming, allowOverride: true)
     }
 
+    let isRoundedCornersTreatmentEnabled = false
+
     func toggleExperimentalTheming() {
         featureFlagger.localOverrides?.toggleOverride(for: FeatureFlag.experimentalBrowserTheming)
 

@@ -28,7 +28,6 @@ extension Tab {
         case settings(pane: PreferencePaneIdentifier?)
         case bookmarks
         case history
-        case onboardingDeprecated
         case onboarding
         case none
         case dataBrokerProtection
@@ -116,8 +115,6 @@ extension TabContent {
         switch url {
         case URL.newtab, URL.Invalid.aboutNewtab, URL.Invalid.duckHome:
             return .newtab
-        case URL.welcome, URL.Invalid.aboutWelcome:
-            return .onboardingDeprecated
         case URL.onboarding:
             return .onboarding
         case URL.settings, URL.Invalid.aboutPreferences, URL.Invalid.aboutConfig, URL.Invalid.aboutSettings, URL.Invalid.duckConfig, URL.Invalid.duckPreferences:
@@ -221,7 +218,6 @@ extension TabContent {
         case .settings: return UserText.tabPreferencesTitle
         case .bookmarks: return UserText.tabBookmarksTitle
         case .history: return UserText.mainMenuHistory
-        case .onboardingDeprecated: return UserText.tabOnboardingTitle
         case .dataBrokerProtection: return UserText.tabDataBrokerProtectionTitle
         case .releaseNotes: return UserText.releaseNotesTitle
         case .subscription, .identityTheftRestoration: return nil
@@ -256,8 +252,6 @@ extension TabContent {
             return .bookmarks
         case .history:
             return .history
-        case .onboardingDeprecated:
-            return .welcome
         case .onboarding:
             return URL.onboarding
         case .dataBrokerProtection:
@@ -275,7 +269,7 @@ extension TabContent {
         switch self {
         case .url(_, _, source: let source):
             return source
-        case .newtab, .settings, .bookmarks, .history, .onboardingDeprecated, .onboarding, .releaseNotes, .dataBrokerProtection,
+        case .newtab, .settings, .bookmarks, .history, .onboarding, .releaseNotes, .dataBrokerProtection,
                 .subscription, .identityTheftRestoration, .webExtensionUrl, .none:
             return .ui
         }
@@ -344,7 +338,7 @@ extension TabContent {
 
     var canBeBookmarked: Bool {
         switch self {
-        case .newtab, .onboardingDeprecated, .onboarding, .bookmarks, .settings, .none:
+        case .newtab, .onboarding, .bookmarks, .settings, .none:
             return false
         case .url, .history, .subscription, .identityTheftRestoration, .dataBrokerProtection, .releaseNotes, .webExtensionUrl:
             return true

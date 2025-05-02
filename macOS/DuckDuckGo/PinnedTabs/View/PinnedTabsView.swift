@@ -19,18 +19,24 @@
 import SwiftUI
 
 struct PinnedTabsView: View {
+    private let tabStyleProvider: TabStyleProviding = NSApp.delegateTyped.visualStyleManager.style.tabStyleProvider
+
     @ObservedObject var model: PinnedTabsViewModel
     @State private var draggedTab: Tab?
 
     var body: some View {
         HStack(alignment: .bottom, spacing: 0) {
             ForEach(model.items) { item in
-                PinnedTabView(model: item, showsHover: draggedTab == nil)
+                PinnedTabView(width: tabStyleProvider.pinnedTabWidth,
+                              height: tabStyleProvider.pinnedTabHeight,
+                              model: item,
+                              showsHover: draggedTab == nil)
                     .environmentObject(model)
-                    .frame(maxWidth: PinnedTabView.Const.dimension, maxHeight: PinnedTabView.Const.dimension)
+                    .frame(maxWidth: tabStyleProvider.pinnedTabWidth,
+                           maxHeight: tabStyleProvider.pinnedTabHeight)
             }
         }
-        .frame(minHeight: PinnedTabView.Const.dimension)
+        .frame(minHeight: tabStyleProvider.pinnedTabHeight)
         .simultaneousGesture(dragGesture)
     }
 
@@ -63,7 +69,7 @@ struct PinnedTabsView: View {
     }
 
     private func itemIndex(for x: CGFloat) -> Int {
-        max(0, min(Int(x / CGFloat(PinnedTabView.Const.dimension)), model.items.count - 1))
+        max(0, min(Int(x / CGFloat(tabStyleProvider.pinnedTabWidth)), model.items.count - 1))
     }
 }
 
@@ -71,9 +77,9 @@ extension PinnedTabsView {
 
     func index(forItemAt point: CGPoint) -> Int? {
         guard !model.items.isEmpty,
-              (0..<PinnedTabView.Const.dimension).contains(point.y) else { return nil }
+              (0..<tabStyleProvider.pinnedTabWidth).contains(point.y) else { return nil }
 
-        let possibleItemIndex = min(model.items.count - 1, Int(point.x / PinnedTabView.Const.dimension))
+        let possibleItemIndex = min(model.items.count - 1, Int(point.x / tabStyleProvider.pinnedTabWidth))
         return model.items.index(model.items.startIndex, offsetBy: possibleItemIndex, limitedBy: model.items.endIndex)
     }
 

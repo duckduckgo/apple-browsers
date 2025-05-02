@@ -493,7 +493,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertNil(result)
 
         XCTAssertEqual(feature.transactionStatus, .idle)
-        XCTAssertEqual(feature.transactionError, .hasActiveSubscription)
+        XCTAssertEqual(feature.transactionError, .activeSubscriptionAlreadyPresent)
 
         await XCTAssertPrivacyPixelsFired([Pixel.Event.privacyProPurchaseAttempt.name + "_d",
                                            Pixel.Event.privacyProPurchaseAttempt.name + "_c",
@@ -516,7 +516,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertNil(result)
 
         XCTAssertEqual(feature.transactionStatus, .idle)
-        XCTAssertEqual(feature.transactionError, .hasActiveSubscription)
+        XCTAssertEqual(feature.transactionError, .activeSubscriptionAlreadyPresent)
 
         await XCTAssertPrivacyPixelsFired([Pixel.Event.privacyProPurchaseAttempt.name + "_d",
                                            Pixel.Event.privacyProPurchaseAttempt.name + "_c",
@@ -990,7 +990,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                 return
             }
 
-            XCTAssertEqual(error, .subscriptionExpired)
+            XCTAssertEqual(error, .restoreFailedDueToExpiredSubscription)
             XCTAssertFalse(accountManager.isUserAuthenticated)
 
             XCTAssertEqual(feature.transactionStatus, .idle)
@@ -1017,7 +1017,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                 return
             }
 
-            XCTAssertEqual(error, .subscriptionNotFound)
+            XCTAssertEqual(error, .restoreFailedDueToNoSubscription)
             XCTAssertFalse(accountManager.isUserAuthenticated)
 
             XCTAssertEqual(feature.transactionStatus, .idle)
@@ -1045,7 +1045,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                 return
             }
 
-            XCTAssertEqual(error, .failedToRestorePastPurchase)
+            XCTAssertEqual(error, .otherRestoreError)
             XCTAssertFalse(accountManager.isUserAuthenticated)
 
             XCTAssertEqual(feature.transactionStatus, .idle)

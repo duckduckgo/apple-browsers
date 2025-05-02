@@ -1,0 +1,19 @@
+<svg fill="none" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <path fill="#fff" d="M26 4a6 6 0 0 1 6 6v12a6 6 0 0 1-6 6H6a6 6 0 0 1-6-6V10a6 6 0 0 1 6-6z"/>
+  <path fill="#CCC" fill-rule="evenodd" d="M30 22V10a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v12a4 4 0 0 0 4 4h20a4 4 0 0 0 4-4m2-12a6 6 0 0 0-6-6H6a6 6 0 0 0-6 6v12a6 6 0 0 0 6 6h20a6 6 0 0 0 6-6z" clip-rule="evenodd"/>
+  <path fill="#201D1C" fill-rule="evenodd" d="M6.489 16.816c-.228.195-.518.28-.98.28h-.193v-2.322h.192c.463 0 .742.08.98.284a1.18 1.18 0 0 1 0 1.758m-.837-2.637H4.6v3.512h1.045c.557 0 .958-.127 1.31-.406.418-.332.666-.831.666-1.35 0-1.036-.81-1.756-1.97-1.756m2.3.001h.713v3.51h-.713zm2.465 1.345c-.43-.15-.556-.252-.556-.441 0-.22.225-.388.534-.388.214 0 .39.082.579.282l.372-.467a1.64 1.64 0 0 0-1.077-.39c-.65 0-1.145.432-1.145 1.004 0 .485.23.731.902.965.28.094.423.157.495.2a.41.41 0 0 1 .215.363c0 .285-.237.495-.556.495a.85.85 0 0 1-.781-.47l-.461.428c.33.463.725.67 1.27.67.742 0 1.266-.476 1.266-1.154 0-.559-.243-.812-1.057-1.097m1.281.411c0 1.032.847 1.833 1.938 1.833.307 0 .57-.058.895-.205v-.807c-.287.276-.538.385-.864.385-.72 0-1.23-.5-1.23-1.211a1.19 1.19 0 0 1 1.199-1.205c.34 0 .598.115.895.395v-.806a1.9 1.9 0 0 0-.88-.215c-1.085 0-1.953.816-1.953 1.836m8.631.601-.979-2.358h-.78l1.556 3.6h.384l1.585-3.6h-.774zm2.091 1.153h2.03v-.594h-1.314v-.948h1.263v-.595h-1.263v-.779h1.313v-.595h-2.03zm3.427-1.896h-.208v-1.062h.22c.446 0 .686.18.686.522 0 .351-.24.54-.698.54m1.435-.579c0-.657-.471-1.036-1.298-1.036H24.92v3.512h.718v-1.412h.093l.989 1.412h.88l-1.155-1.48c.54-.106.836-.458.836-.996" clip-rule="evenodd"/>
+  <path fill="url(#Credit-Card-Bank-Discover-Color-32_svg__a)" fill-rule="evenodd" d="M18.67 15.944c0 1.011-.856 1.83-1.913 1.83s-1.912-.819-1.912-1.83.856-1.83 1.912-1.83 1.913.819 1.913 1.83" clip-rule="evenodd"/>
+  <path fill="url(#Credit-Card-Bank-Discover-Color-32_svg__b)" fill-rule="evenodd" d="M18.67 15.944c0 1.011-.856 1.83-1.913 1.83s-1.912-.819-1.912-1.83.856-1.83 1.912-1.83 1.913.819 1.913 1.83" clip-rule="evenodd"/>
+  <defs>
+    <radialGradient id="Credit-Card-Bank-Discover-Color-32_svg__b" cx="0" cy="0" r="1" gradientTransform="rotate(-128.1 12.654 4.173) scale(2.51172 2.62473)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#EA9D2C" stop-opacity="0"/>
+      <stop offset=".328" stop-color="#DF7624" stop-opacity="0"/>
+      <stop offset=".76" stop-color="#BF4B23" stop-opacity=".75"/>
+      <stop offset="1" stop-color="#7D3017"/>
+    </radialGradient>
+    <linearGradient id="Credit-Card-Bank-Discover-Color-32_svg__a" x1="15.584" x2="17.965" y1="14.459" y2="17.334" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E6772F"/>
+      <stop offset="1" stop-color="#EA9D2C"/>
+    </linearGradient>
+  </defs>
+</svg>

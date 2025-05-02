@@ -47,6 +47,7 @@ final class AutofillSettingsViewController: UIViewController {
     
     weak var delegate: AutofillSettingsViewControllerDelegate?
     
+    private var viewModel: AutofillSettingsViewModel
     private let appSettings: AppSettings
     private let syncService: DDGSyncing
     private let syncDataProviders: SyncDataProviders
@@ -70,6 +71,7 @@ final class AutofillSettingsViewController: UIViewController {
         self.source = source
         self.bookmarksDatabase = bookmarksDatabase
         self.favoritesDisplayMode = favoritesDisplayMode
+        self.viewModel = AutofillSettingsViewModel(appSettings: appSettings, source: source)
         
         super.init(nibName: nil, bundle: nil)
     }
@@ -93,7 +95,6 @@ final class AutofillSettingsViewController: UIViewController {
     }
     
     private func setupView() {
-        let viewModel = AutofillSettingsViewModel(appSettings: appSettings, source: source)
         viewModel.delegate = self
         
         let controller = UIHostingController(rootView: AutofillSettingsView(viewModel: viewModel))
@@ -115,6 +116,12 @@ final class AutofillSettingsViewController: UIViewController {
             favoritesDisplayMode: favoritesDisplayMode
         )
         navigationController?.pushViewController(autofillLoginListViewController, animated: true)
+    }
+    
+    private func segueToCreditCards() {
+        let autofillCreditCardsViewController = AutofillCreditCardListViewController(
+            secureVault: viewModel.secureVault)
+        navigationController?.pushViewController(autofillCreditCardsViewController, animated: true)
     }
     
     private func segueToFileImport() {
@@ -167,6 +174,10 @@ extension AutofillSettingsViewController: AutofillSettingsViewModelDelegate {
     
     func navigateToPasswords(viewModel: AutofillSettingsViewModel) {
         segueToPasswords()
+    }
+    
+    func navigateToCreditCards(viewModel: AutofillSettingsViewModel) {
+        segueToCreditCards()
     }
     
 }

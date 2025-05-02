@@ -40,7 +40,7 @@ final class NewTabPageFavoritesClientTests: XCTestCase {
         favoritesModel = NewTabPageFavoritesModel(
             actionsHandler: actionsHandler,
             favoritesPublisher: Empty().eraseToAnyPublisher(),
-            contextMenuPresenter: contextMenuPresenter,
+            contextMenuPresenterProvider: { _ in self.contextMenuPresenter },
             settingsPersistor: UserDefaultsNewTabPageFavoritesSettingsPersistor(MockKeyValueStore(), getLegacySetting: nil)
         )
 
@@ -49,6 +49,15 @@ final class NewTabPageFavoritesClientTests: XCTestCase {
         userScript = NewTabPageUserScript()
         messageHelper = .init(userScript: userScript)
         client.registerMessageHandlers(for: userScript)
+    }
+
+    override func tearDown() {
+        contextMenuPresenter = nil
+        actionsHandler = nil
+        favoritesModel = nil
+        client = nil
+        userScript = nil
+        messageHelper = nil
     }
 
     // MARK: - add
@@ -142,9 +151,9 @@ final class NewTabPageFavoritesClientTests: XCTestCase {
             try await messageHelper.handleMessageExpectingNilResponse(named: .open, parameters: action)
         }
         XCTAssertEqual(actionsHandler.openCalls, [
-            .init(URL(string: "https://example.com")!, .current),
-            .init(URL(string: "https://example.com")!, .newTab),
-            .init(URL(string: "https://example.com")!, .newWindow)
+            .init(URL(string: "https://example.com")!, .userScript),
+            .init(URL(string: "https://example.com")!, .userScript),
+            .init(URL(string: "https://example.com")!, .userScript)
         ])
     }
 

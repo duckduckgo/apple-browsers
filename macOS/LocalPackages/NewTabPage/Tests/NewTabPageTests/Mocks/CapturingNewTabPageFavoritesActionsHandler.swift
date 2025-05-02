@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Foundation
 import NewTabPage
 
@@ -25,11 +26,11 @@ final class CapturingNewTabPageFavoritesActionsHandler: FavoritesActionsHandling
 
     struct OpenCall: Equatable {
         let url: URL
-        let target: LinkOpenTarget
+        let sender: LinkOpenSender
 
-        init(_ url: URL, _ target: LinkOpenTarget) {
+        init(_ url: URL, _ sender: LinkOpenSender) {
             self.url = url
-            self.target = target
+            self.sender = sender
         }
     }
 
@@ -52,15 +53,15 @@ final class CapturingNewTabPageFavoritesActionsHandler: FavoritesActionsHandling
     var deleteBookmarkCalls: [MockNewTabPageFavorite] = []
     var moveCalls: [MoveCall] = []
 
-    func open(_ url: URL, target: LinkOpenTarget) {
-        openCalls.append(.init(url, target))
+    func open(_ url: URL, sender: NewTabPage.LinkOpenSender, target: NewTabPage.LinkOpenTarget, in window: NSWindow?) {
+        openCalls.append(.init(url, sender))
     }
 
-    func addNewFavorite() {
+    func addNewFavorite(in window: NSWindow?) {
         addNewFavoriteCallCount += 1
     }
 
-    func edit(_ favorite: MockNewTabPageFavorite) {
+    func edit(_ favorite: MockNewTabPageFavorite, in window: NSWindow?) {
         editCalls.append(favorite)
     }
 

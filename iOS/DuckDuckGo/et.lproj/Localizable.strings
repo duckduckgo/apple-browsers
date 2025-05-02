@@ -241,6 +241,9 @@
 /* Description for unable to remove device error */
 "alert.unable-to-remove-device-description" = "Seda seadet ei saa sünkroonimisest ja varundamisest eemaldada.";
 
+/* Description for unable to scan qr code error */
+"alert.unable-to-scan-qr-code-description" = "Kahjuks on see kood kehtetu. Veenduge, et sisestatud või skaneeritud kood on õige.";
+
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Serveriga ei saa ühendust luua.";
 
@@ -304,6 +307,93 @@
 /* No comment provided by engineer. */
 "autoconsent.info.header" = "Kui DuckDuckGo tuvastab külastatavatel veebisaitidel küpsiste nõusoleku hüpikaknad, saame proovida automaatselt seadistada sinu küpsise-eelistused selliselt, et minimeerida küpsised ja maksimeerida privaatsust, ning seejärel hüpikaknad sulgeda. Mõned saidid ei paku võimalust küpsise-eelistuste haldamiseks, seega saame sellised hüpikaknad ainult peita.";
 
+/* Toast message when a credit card item is deleted */
+"autofill.creditcard.deleted-message-no-title" = "Kaart kustutatud";
+
+/* Card name label for credit card details on autofill */
+"autofill.creditcard.details.card-name" = "Nimi kaardil";
+
+/* Card nickname label for credit card details on autofill */
+"autofill.creditcard.details.card-nickname" = "Kaardi hüüdnimi";
+
+/* Card number label for credit card details on autofill */
+"autofill.creditcard.details.card-number" = "Kaardi number";
+
+/* Card number label for credit card details on autofill when editing */
+"autofill.creditcard.details.card-number.required" = "Kaardi number";
+
+/* Title for toast when copying the credit card name */
+"autofill.creditcard.details.copy-toast.card-name-copied" = "Nimi kopeeritud";
+
+/* Title for toast when copying the credit card number */
+"autofill.creditcard.details.copy-toast.card-number-copied" = "Kaardi number kopeeritud";
+
+/* Title for toast when copying the credit card cvv (security code) */
+"autofill.creditcard.details.copy-toast.cvv-copied" = "CVV kopeeritud";
+
+/* Title for toast when copying the credit card expiration date */
+"autofill.creditcard.details.copy-toast.exp-date-copied" = "Aegumiskuupäev kopeeritud";
+
+/* CVV (security code) label for credit card details on autofill */
+"autofill.creditcard.details.cvv" = "CVV";
+
+/* Title for autofill credit card details */
+"autofill.creditcard.details.default-title" = "Kaart";
+
+/* Delete button when deleting an autofill credit card */
+"autofill.creditcard.details.delete" = "Kustuta kaart";
+
+/* Autofill alert button confirming delete credit card */
+"autofill.creditcard.details.delete-confirmation.button" = "Kustuta kaart";
+
+/* Autofill message confirming delete credit card */
+"autofill.creditcard.details.delete-confirmation.message" = "Kas oled kindel, et soovid selle kaardi kustutada?";
+
+/* Title when editing autofill credit card details */
+"autofill.creditcard.details.edit-title" = "Muuda kaarti";
+
+/* Placeholder for card number field on autofill credit card details */
+"autofill.creditcard.details.edit.card-number-placeholder" = "1234 5678 1234 5678";
+
+/* Placeholder for CVV security code field on autofill credit card details */
+"autofill.creditcard.details.edit.cvv-placeholder" = "Turvakood";
+
+/* Placeholder for expiration date field on autofill credit card details */
+"autofill.creditcard.details.edit.exp-date-placeholder" = "MM / AA";
+
+/* Expiration date label for credit card details on autofill */
+"autofill.creditcard.details.exp-date" = "Aegumiskuupäev";
+
+/* Title when adding new autofill credit card */
+"autofill.creditcard.details.new-title" = "Lisa kaart";
+
+/* Placeholder for card name field on autofill credit card details */
+"autofill.creditcard.edit.card-name-placeholder" = "Nimi kaardil";
+
+/* Placeholder for card nickname field on autofill credit card details */
+"autofill.creditcard.edit.card-nickname-placeholder" = "(nt. Töö)";
+
+/* Subtitle for view displayed when no autofill credit cards have been saved */
+"autofill.creditcard.empty-view.subtitle.first.paragraph" = "Krediitkaardid salvestatakse turvaliselt sinu seadmesse.";
+
+/* Title for view displayed when autofill has no credit cards saved */
+"autofill.creditcard.empty-view.title" = "Ühtegi krediitkaarti pole veel salvestatud";
+
+/* Reason for auth when opening credit card list */
+"autofill.creditcard.list.auth.reason" = "Krediitkaartidele juurde pääsemiseks ava seade";
+
+/* Credit card row label for credit card expiry date */
+"autofill.creditcard.list.item.expiry" = "Aegumiskuupäev:";
+
+/* Title for screen listing autofill credit cards */
+"autofill.creditcard.list.title" = "Krediitkaardid";
+
+/* Title for view displayed when autofill is locked on devices where a passcode has not been set */
+"autofill.creditcard.no-auth.subtitle" = "Sinu krediitkaartide kaitsmiseks on vaja pääsukoodi.";
+
+/* Title for view displayed when autofill is locked on devices where a passcode has not been set */
+"autofill.creditcard.no-auth.title" = "Kaitse oma seadet krediitkaartide salvestamiseks";
+
 /* Do not translate - stringsdict entry */
 "autofill.delete.all.passwords.completion" = "autofill.delete.all.passwords.completion";
 
@@ -324,6 +414,9 @@
 
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Luba Email Protection";
+
+/* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
+"autofill.hide-card-cvv" = "Peida CVV";
 
 /* Accessibility title for a Hide Password button replacing displayed password with ***** */
 "autofill.hide-password" = "Peida parool";
@@ -379,7 +472,7 @@
 /* Message displayed after updating an autofill login */
 "autofill.login-updated.toast" = "Parool uuendatud";
 
-/* Menu item text for copying autofill login details */
+/* Menu item text for copying autofill details */
 "autofill.logins.copy-prompt" = "Kopeeri %@";
 
 /* Title for toast when copying address */
@@ -514,6 +607,9 @@
 /* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
 "autofill.logins.list.settings.footer" = "Paroolid on krüpteeritud. Keegi peale sinu ei näe neid, isegi mitte meie.";
 
+/* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
+"autofill.logins.list.settings.passwords.cards.footer" = "Paroolid ja krediitkaardid on krüpteeritud. Keegi peale sinu ei näe neid, isegi mitte meie.";
+
 /* Section title for group of suggested saved logins */
 "autofill.logins.list.suggested" = "Soovitatud";
 
@@ -556,9 +652,11 @@
 /* Do not translate - stringsdict entry */
 "autofill.number.of.passwords" = "autofill.number.of.passwords";
 
-/* Description of autofill onboarding prompt's secure storage feature
-   Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
-"autofill.onboarding.key-features.secure-storage.description" = "Paroolid on krüpteeritud, salvestatud seadmesse ja lukustatud %@ abil.";
+/* Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
+"autofill.onboarding.key-features.secure-storage.biometric.description" = "Paroolid on krüpteeritud, salvestatud seadmesse ja lukustatud %@ abil.";
+
+/* Description of autofill onboarding prompt's secure storage feature */
+"autofill.onboarding.key-features.secure-storage.description" = "Passwords are encrypted, stored on device, and locked with Face ID or passcode.";
 
 /* Parameter for the description of autofill onboarding prompt's secure storage feature describing Face ID biometry + passcode */
 "autofill.onboarding.key-features.secure-storage.description.parameter.face-id" = "Face ID või pääsukood";
@@ -679,6 +777,9 @@
 
 /* Section header for the autofill settings screen */
 "autofill.settings.view.section-header" = "Kuva";
+
+/* Accessibility title for a Show CVV button displaying actual credit card CVV (security code) instead of *** */
+"autofill.show-card-cvv" = "Kuva CVV";
 
 /* Accessibility title for a Show Password button displaying actial password instead of ***** */
 "autofill.show-password" = "Kuva parool";
@@ -931,6 +1032,9 @@
 
 /* Crash Report dialog title */
 "crash.report.dialog.title" = "Kas saata krahhiaruanded automaatselt?";
+
+/* No comment provided by engineer. */
+"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Impordi järjehoidjate fail...";
@@ -1199,15 +1303,6 @@
 /* Title for message explaining to the user that Duck Player is not available */
 "duck-player.contingency-title" = "Duck Player ei ole saadaval";
 
-/* Text for the toggle to autoplay videos */
-"duck-player.native-autoplay-videos" = "Autoplay Videos";
-
-/* Text for the button to watch a video on DuckPlayer */
-"duck-player.native-open-in-duckplayer" = "Duck Player";
-
-/* Text for the button to watch a video on YouTube */
-"duck-player.native-watch-on-youtube" = "Watch in Youtube";
-
 /* Button for the message explaining to the user that Duck Player is not available so the user can learn more */
 "duck-player.video-contingency-cta" = "Loe edasi";
 
@@ -1244,8 +1339,8 @@
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Mitte kunagi";
 
-/* Caption for Duck Player entry point */
-"duckplayer.pill.watch.without.ads" = "Tap to watch without targeted ads";
+/* Settings screen cell text for DuckPlayer settings */
+"duckplayer.open.video.settings.title" = "Duck Player";
 
 /* Body text for the modal feature explanation */
 "duckplayer.presentation.modal.body" = "Duck Player võimaldab sul DuckDuckGo-s YouTube'i vaadata ilma sihitud reklaamideta ja see, mida vaatad, ei mõjuta sinu soovitusi.";
@@ -1351,6 +1446,9 @@
 
 /* Empty search placeholder on bookmarks search */
 "empty.search" = "Ühtegi vastet ei leitud";
+
+/* No comment provided by engineer. */
+"Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
 "error.email-protection-sign-in.action" = "Sisselogimine";
@@ -2199,7 +2297,7 @@
 "onboarding.skip.cta.resumeOnboarding" = "Näita õpetust";
 
 /* The message of the skip onboarding dialog popup. */
-"onboarding.skip.message" = "Tuletame meelde, et nupu Fire Button 🔥 abil saate kustutada kõik oma vahekaardid, ajaloo ja sirvimisandmed kahe puudutusega.";
+"onboarding.skip.message" = "Tuletame meelde, et nupu Fire Button 🔥 abil saate kustutada kõik oma vahekaardid, ajaloo ja sirvimisandmed kahe puudutusega";
 
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Sain aru! Jätan muud näpunäited vahele.";
@@ -2233,6 +2331,9 @@
 
 /* No comment provided by engineer. */
 "onboardingWelcomeHeader" = "Tere tulemast DuckDuckGo kasutajaks!";
+
+/* No comment provided by engineer. */
+"Open tabs remain unaffected by this change.  Please close all tabs for this setting to take effect." = "Avatud vahekaardid jäävad sellest muudatusest mõjutamata.  Selle sätte jõustumiseks sulgege kõik vahekaardid.";
 
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Selle lingi avamiseks vajalikku rakendust ei leitud";
@@ -2306,6 +2407,9 @@
 /* Title for the Privacy Pro feedback form */
 "ppro.feedback-form.title" = "Saada tagasisidet";
 
+/* Description of incorrectly formatted data error when syncing. */
+"prefrences.sync.bad-request.description" = "Mõned järjehoidjad või paroolid on valesti vormindatud või liiga pikad ja neid ei sünkroonitud.";
+
 /* Button title for sync bookmarks limits exceeded warning to go to manage bookmarks */
 "prefrences.sync.bookmarks-limit-exceeded-action" = "Halda järjehoidjaid";
 
@@ -2318,13 +2422,14 @@
 /* Description for sync credentials limits exceeded warning */
 "prefrences.sync.credentials-limit-exceeded-description" = "Oled saavutanud maksimaalse paroolide arvu. Kustuta mõni, et jätkata sünkroonimisega.";
 
-/* Description invalid credentials error when syncing.
-   Description of incorrectly formatted data error when syncing.
-   Description of too many requests error when syncing. */
+/* Description invalid credentials error when syncing. */
 "prefrences.sync.invalid-login-description" = "Sünkroonimisel ilmnes tõrge. Proovi sellel seadmel sünkroonimine keelata ja seejärel loo uuesti ühendus, kasutades mõnda teist seadet või taastamiskoodi.";
 
 /* Title for sync limits exceeded warning */
 "prefrences.sync.limit-exceeded-title" = "Sünkroonimine peatatud";
+
+/* Description of too many requests error when syncing. */
+"prefrences.sync.too-many-requests.description" = "Sync & Backup pole ajutiselt saadaval.";
 
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "Veebisaidid kasutavad küpsiseid, et hoida sind sisse logitud. Kui teed saidi tulekindlaks, ei kustutata küpsiseid ja sa jääd sisse logituks isegi pärast tulenupu kasutamist. Me blokeerime endiselt kolmanda poole jälitajad, kelle me tulekindlatelt lehtedelt leiame.";
@@ -2366,6 +2471,9 @@
 "Primary / First Action" = "Esmane/esimene Tegevus";
 
 /* No comment provided by engineer. */
+"Priming Modal" = "Priming Modal";
+
+/* No comment provided by engineer. */
 "Privacy Protections" = "Privaatsuskaitsed";
 
 /* Privacy Icon accessibility title */
@@ -2391,6 +2499,12 @@
 
 /* No comment provided by engineer. */
 "Reset" = "Lähtesta";
+
+/* No comment provided by engineer. */
+"Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
+
+/* No comment provided by engineer. */
+"Reset Priming Modal State" = "Reset Priming Modal State";
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Otsi või sisesta aadress";
@@ -2440,8 +2554,7 @@
 /* Title for the settings VPN subsection where the user can learn how to add the VPN to their home screen */
 "settings.add.widget.vpn" = "Lisa DuckDuckGo VPN vidin oma avakuvale";
 
-/* Name of the settings subsection related to the address bar
-   Settings screen cell text for addess bar position */
+/* Name of the settings subsection related to the address bar */
 "settings.address.bar" = "Aadressiriba";
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
@@ -2452,6 +2565,9 @@
 
 /* Settings screen appearance section title */
 "settings.appearance" = "Välimus";
+
+/* Settings screen cell text for addess bar position */
+"settings.appearance.address.bar" = "Aadressiriba asukoht";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Ava lingid seotud rakendustes";
@@ -2498,8 +2614,7 @@
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Andmete kustutamine";
 
-/* Settings screen cell text for setting the app as default browser
-   The name of Settings category in Privacy Features related to configuration of the default browser */
+/* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Vaikebrauser";
 
 /* Label of a button disabling email protection */
@@ -2534,6 +2649,9 @@
 
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Üldine";
+
+/* Settings screen cell text for setting the app as default browser */
+"settings.general.default.browser" = "Määrake vaikebrauseriks";
 
 /* Settings screen cell text for GPC */
 "settings.gpc" = "Üleilmne privaatsuskontroll (Global Privacy Control (GPC))";
@@ -2676,15 +2794,8 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Veebijälgimise kaitse";
 
-/* Explanation in Settings how the vpn blocks risky sites (do not remove the link)
-   Explanation in Settings how the web tracking protection feature works */
-"settings.web.tracking.protection.explanation" = "Blokeerige 150 000+ domeeni, mis on märgistatud pahavara, andmepüügirünnakute ja võrgupettuste eest DNS-tasandi blokeerimisloendiga. [Lisateave](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
-
-/* Header of the vpn blocks risky sites feature settings */
-"settings.web.tracking.protection.header" = "Sisu blokeerimine ja filtreerimine";
-
-/* Title of the vpn blocks risky sites feature settings */
-"settings.web.tracking.protection.title" = "Riskantsete domeenide blokeerimine";
+/* Explanation in Settings how the web tracking protection feature works */
+"settings.web.tracking.protection.explanation" = "DuckDuckGo blokeerib automaatselt peidetud jälgijaid, kui sa veebis sirvid.\n[Lisateave](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Vali suvand, mis kirjeldab sinu probleemi kõige paremini.";
@@ -2722,23 +2833,8 @@
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Salvestatud hostinimi: %@";
 
-/* Subscription Activation Info */
-"subscription.activate..header.description" = "Pääsete oma Privacy Pro tellimusele selles seadmes ligi Apple'i konto või e-posti aadressi kaudu.";
-
-/* Button for adding email address to subscription */
-"subscription.activate.add.email.button" = "Lisa e-post";
-
-/* Apple Account option for activation */
-"subscription.activate.appleid" = "Apple'i konto";
-
-/* Button text for restoring purchase via Apple Account */
-"subscription.activate.appleid.button" = "Taasta ost";
-
-/* Description for Apple Account activation */
-"subscription.activate.appleid.description" = "Taasta oma ost, et aktiveerida oma tellimus sellel seadmel.";
-
-/* Subscription Activation Info */
-"subscription.activate.description" = "Teie tellimus on automaatselt saadaval DuckDuckGos igas seadmes, mis on teie Apple'i kontole sisse logitud.";
+/* Button for adding this subscription to another device */
+"subscription.activate.add.to.device.button" = "Lisa seadmele";
 
 /* Button for editing email address added to subscription */
 "subscription.activate.edit.email.button" = "Muuda e-posti";
@@ -2746,17 +2842,8 @@
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "Muuda e-posti";
 
-/* Email option for activation */
-"subscription.activate.email" = "E-post";
-
-/* Restore button title for Email */
-"subscription.activate.email.button" = "Sisesta e-posti aadress";
-
-/* Description for Email activation */
-"subscription.activate.email.description" = "Kasuta oma e-posti, et aktiveerida oma tellimus selles seadmes.";
-
-/* Activate subscription title */
-"subscription.activate.email.title" = "Aktiveeri püsitellimus";
+/* Header title for the subscription activation view */
+"subscription.activate.header.title" = "Lisa sellele seadmele oma Privacy Pro tellimus";
 
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "Tühista";
@@ -2764,11 +2851,26 @@
 /* Button title for confirming email deletion */
 "subscription.activate.manage.email.OK" = "OK";
 
-/* Restore button title for AppleID */
-"subscription.activate.restore.apple" = "Taasta ost";
+/* Button title for starting the process of adding subscription via Apple Account */
+"subscription.activate.via.apple.account.button" = "Taasta ost";
 
-/* Subscription Activation Title */
-"subscription.activate.title" = "Aktiveeri oma tellimus selles seadmes";
+/* Description for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.description" = "Taastage oma tellimus Apple'i seadmetes, kasutades oma Apple'i kontot.";
+
+/* Title for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.title" = "Lisa Apple'i konto kaudu";
+
+/* Button title for starting the process of adding subscription via email address */
+"subscription.activate.via.email.button" = "Alustage";
+
+/* Description for adding subscription via email address */
+"subscription.activate.via.email.description" = "Kasutage sellesse seadmesse Privacy Pro lisamiseks e-posti aadressi.";
+
+/* Title for adding subscription via email address */
+"subscription.activate.via.email.title" = "Lisa e-posti aadressi kaudu";
+
+/* View title for activating subscription */
+"subscription.activate.view.title" = "Mul on tellimus";
 
 /* Resend activation instructions button */
 "subscription.add.device.resend.instructions" = "Saada juhised uuesti";
@@ -2778,6 +2880,15 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "Lisa e-post";
+
+/* Header for section for activating subscription on other devices */
+"subscription.add.to.devices.header" = "Lisa Privacy Pro teistele seadmetele";
+
+/* Footer for section for activating subscription on other devices when email was not yet added */
+"subscription.add.to.devices.no.email.footer" = "Lisage Privacy Pro oma teistesse seadmetesse Apple ID kaudu või e-posti aadressi linkimise teel. **[Lisateave](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* Footer for section for activating subscription on other devices when email is added */
+"subscription.add.to.devices.with.email.footer" = "Kasutage seda e-posti aadressi, et lisada oma tellimus teistesse seadmetesse DuckDuckGo rakenduses. Avage jaotis Seaded > Privacy Pro > Mul on tellimus. **[Lisateave](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Subscription availability message on Apple devices */
 "subscription.available.apple" = "Privacy Pro on saadaval igas seadmes, mis on sisse logitud sama Apple'i kontoga.";
@@ -2799,15 +2910,6 @@
 
 /* Title for Confirm messages */
 "subscription.confirm.title" = "Oled sa kindel?";
-
-/* Header for section for activating subscription on other devices */
-"subscription.devices.header" = "Aktiveeri teistes seadmetes";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.devices.no.email.footer" = "Lisa oma tellimusele valikuline e-posti aadress, et pääseda Privacy Pro'le ligi teistes seadmetes. **[Lisateave](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.devices.with.email.footer" = "Kasuta seda e-kirja, et aktiveerida oma tellimus jaotises Seaded > Privacy Pro rakenduses DuckDuckGo oma teistes seadmetes. **[Lisateave](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Alert content for not found subscription */
 "subscription.email.inactive.alert.message" = "Selle e-posti aadressiga seotud tellimus ei ole enam aktiivne.";
@@ -2952,6 +3054,9 @@
 
 /* Unknown period subscription renewal info where parameter is renewal date. This reads as 'Your subscription renews on (date)' */
 "subscription.subscription.renewing.unknown.caption" = "Teie tellimus uueneb %@.";
+
+/* Unknown period subscription renewal info where parameter is renewal date. This reads as 'Your subscription renews on (date)' */
+"subscription.subscription.renewing.unknown.trial.caption" = "Teie tellimus uueneb %@.";
 
 /* Annual subscription renewal info where parameter is renewal date. This reads as 'Your annual subscription renews on (date)' */
 "subscription.subscription.renewing.yearly.caption" = "Teie aastane tellimus uueneb %@.";
@@ -3246,6 +3351,15 @@
 
 /* Title for the Apply button on the DNS Server setting screen */
 "vpn.settings.dns.server.apply.button.title" = "Rakenda";
+
+/* Explanation in Settings how the vpn blocks risky sites (do not remove the link) */
+"vpn.settings.dns.server.content.blocking.explanation" = "Blokeerige 150 000+ domeeni, mis on märgistatud pahavara, andmepüügirünnakute ja võrgupettuste eest DNS-tasandi blokeerimisloendiga. [Lisateave](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
+
+/* Header of the vpn blocks risky sites feature settings */
+"vpn.settings.dns.server.content.blocking.header" = "Sisu blokeerimine ja filtreerimine";
+
+/* Title of the vpn blocks risky sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Riskantsete domeenide blokeerimine";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";

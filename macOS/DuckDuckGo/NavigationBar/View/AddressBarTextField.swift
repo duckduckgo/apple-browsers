@@ -335,11 +335,30 @@ final class AddressBarTextField: NSTextField {
             switchTo(OpenTab(tabId: nil, title: title, url: url))
         } else if case .openTab(let title, url: let url, tabId: let tabId, _) = suggestion {
             switchTo(OpenTab(tabId: tabId, title: title, url: url))
-        } else if NSApp.isCommandPressed {
-            openNew(NSApp.isOptionPressed ? .window : .tab, selected: NSApp.isShiftPressed, suggestion: suggestion)
         } else {
-            hideSuggestionWindow()
-            updateTabUrl(suggestion: suggestion, downloadRequested: NSApp.isOptionPressed && !NSApp.isShiftPressed)
+            // Use LinkOpenBehavior to determine how to open the suggestion
+            let behavior = LinkOpenBehavior(
+                modifierFlags: NSEvent.modifierFlags,
+                switchToNewTabWhenOpenedPreference: TabsPreferences.shared.switchToNewTabWhenOpened,
+                canOpenLinkInCurrentTab: true
+            )
+
+            switch behavior {
+            case .currentTab:
+                // Open in current tab
+                hideSuggestionWindow()
+                // Check for option key for download (legacy behavior maintained)
+                let downloadRequested = NSApp.isOptionPressed && !NSApp.isShiftPressed
+                updateTabUrl(suggestion: suggestion, downloadRequested: downloadRequested)
+
+            case .newTab(let selected):
+                // Open in new tab
+                openNew(.tab, selected: selected, suggestion: suggestion)
+
+            case .newWindow(let selected):
+                // Open in new window
+                openNew(.window, selected: selected, suggestion: suggestion)
+            }
         }
 
         currentEditor()?.selectAll(self)
@@ -406,7 +425,7 @@ final class AddressBarTextField: NSTextField {
         makeUrl(suggestion: suggestion,
                 stringValueWithoutSuffix: stringValueWithoutSuffix,
                 completion: { [weak self] url, userEnteredValue, isUpgraded in
-            guard let url = url else { return }
+            guard let url else { return }
 
             if isUpgraded {
                 self?.updateTab(self?.tabCollectionViewModel.selectedTabViewModel?.tab, upgradedTo: url)
@@ -606,11 +625,6 @@ final class AddressBarTextField: NSTextField {
 
         window.addChildWindow(suggestionWindow, ordered: .above)
         layoutSuggestionWindow()
-        postSuggestionWindowOpenNotification()
-    }
-
-    private func postSuggestionWindowOpenNotification() {
-        NotificationCenter.default.post(name: .suggestionWindowOpen, object: nil)
     }
 
     func hideSuggestionWindow() {
@@ -712,20 +726,32 @@ extension AddressBarTextField {
     }
 
     override func performDragOperation(_ draggingInfo: NSDraggingInfo) -> Bool {
-        if let url = draggingInfo.draggingPasteboard.url {
-            tabCollectionViewModel.selectedTabViewModel?.tab.setUrl(url, source: .userEntered(draggingInfo.draggingPasteboard.string(forType: .string) ?? url.absoluteString))
+        guard isFirstResponder else {
+            // drop to inactive address bar requested (by MainViewController)
+            if let stringValue = draggingInfo.draggingPasteboard.string(forType: .string) {
+                // replace the value and activate
+                self.value = .init(stringValue: stringValue, userTyped: false)
+                clearUndoManager()
 
-        } else if let stringValue = draggingInfo.draggingPasteboard.string(forType: .string) {
-            self.value = .init(stringValue: stringValue, userTyped: false)
-            clearUndoManager()
+                window?.makeKeyAndOrderFront(self)
+                self.makeMeFirstResponder()
+                NSApp.activate(ignoringOtherApps: true)
 
-            window?.makeKeyAndOrderFront(self)
-            NSApp.activate(ignoringOtherApps: true)
-            self.makeMeFirstResponder()
-
-        } else {
+                return true
+            }
             return false
         }
+
+        // navigate to the dropped url when the home page is open
+        // if we‘re in url editing mode (non-empty), perform standard system text drag-drop
+        guard let url = draggingInfo.draggingPasteboard.url, self.stringValue.trimmingWhitespace().isEmpty else {
+            // activate our window when dropping text to the address bar
+            NSApp.activate(ignoringOtherApps: true)
+            window?.makeKeyAndOrderFront(self)
+
+            return false
+        }
+        tabCollectionViewModel.selectedTabViewModel?.tab.setUrl(url, source: .userEntered(draggingInfo.draggingPasteboard.string(forType: .string) ?? url.absoluteString))
 
         return true
     }
@@ -1205,10 +1231,6 @@ extension AddressBarTextField: SuggestionViewControllerDelegate {
         navigate(suggestion: suggestion)
     }
 
-}
-
-extension Notification.Name {
-    static let suggestionWindowOpen = Notification.Name("suggestionWindowOpen")
 }
 
 fileprivate extension NSStoryboard {

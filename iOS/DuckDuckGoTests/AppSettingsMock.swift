@@ -45,6 +45,8 @@ class AppSettingsMock: AppSettings {
 
     func setAutofillIsNewInstallForOnByDefault() { }
 
+    var autofillCreditCardsEnabled: Bool = false
+    
     var autocomplete: Bool = true
 
     var currentThemeStyle: DuckDuckGo.ThemeStyle = .systemDefault
@@ -106,5 +108,6 @@ class AppSettingsMock: AppSettings {
     var duckPlayerNativeUIPrimingModalPresentationEventCount: Int = 0
     var duckPlayerNativeUIPrimingModalLastPresentationTime: Int = 0
     var duckPlayerPillDismissCount: Int = 0
+    var duckPlayerVariant: DuckDuckGo.DuckPlayerVariant = .classicWeb
 
 }

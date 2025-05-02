@@ -30,34 +30,37 @@ struct AutofillSettingsView: View {
                 Button {
                     viewModel.navigateToPasswords()
                 } label: {
-                    HStack {
-                        Image(.key24)
-                            .foregroundColor(Color(designSystemColor: .textPrimary))
-                        Text(UserText.autofillLoginListTitle)
-                            .daxBodyRegular()
-                            .foregroundColor(Color(designSystemColor: .textPrimary))
-                        
-                        Spacer()
-                        
-                        if let passwordsCount = viewModel.passwordsCount {
-                            Text("\(passwordsCount)")
-                                .daxBodyRegular()
-                                .foregroundColor(Color(designSystemColor: .textSecondary))
-                        }
-                        
-                        Image(systemName: "chevron.forward")
-                            .font(Font.system(.footnote).weight(.bold))
-                            .foregroundColor(Color(UIColor.tertiaryLabel))
+                    CountRowView(viewModel: viewModel, autofillType: .passwords)
+                }
+                
+                if viewModel.showCreditCards {
+                    Button {
+                        viewModel.navigateToCreditCards()
+                    } label: {
+                        CountRowView(viewModel: viewModel, autofillType: .creditCards)
                     }
                 }
             }
-            
-            Section(footer: PasswordFooterView(viewModel: viewModel)) {
-                Toggle(UserText.autofillSettingsAskToSaveAndAutofill, isOn: $viewModel.savePasswordsEnabled)
-                    .toggleStyle(.switch)
-                    .tint(Color(designSystemColor: .accent))
-                    .foregroundColor(Color(designSystemColor: .textPrimary))
-                    .daxBodyRegular()
+            .listRowBackground(Color(designSystemColor: .surface))
+
+            if viewModel.showCreditCards {
+                Section(header: Text(UserText.autofillSettingsAskToSaveAndAutofill),
+                        footer: PasswordFooterView(viewModel: viewModel)) {
+                    ToggleRowView(toggleStatus: $viewModel.savePasswordsEnabled,
+                                  title: UserText.autofillLoginListTitle)
+
+                    if viewModel.showCreditCards {
+                        ToggleRowView(toggleStatus: $viewModel.saveCreditCardsEnabled,
+                                      title: UserText.autofillCreditCardListTitle)
+                    }
+                }
+                .listRowBackground(Color(designSystemColor: .surface))
+            } else {
+                Section(footer: PasswordFooterView(viewModel: viewModel)) {
+                    ToggleRowView(toggleStatus: $viewModel.savePasswordsEnabled,
+                                  title: UserText.autofillSettingsAskToSaveAndAutofill)
+                }
+                .listRowBackground(Color(designSystemColor: .surface))
             }
             
             Section(header: Text(UserText.autofillSettingsImportPasswordsSectionHeader).foregroundColor(.secondary)) {
@@ -86,7 +89,8 @@ struct AutofillSettingsView: View {
                     }
                 }
             }
-            
+            .listRowBackground(Color(designSystemColor: .surface))
+
             if viewModel.shouldShowNeverPromptReset() {
                 Section(header: Text(UserText.autofillSettingsOptionsSectionHeader).foregroundColor(.secondary)) {
                     Button {
@@ -115,7 +119,47 @@ struct AutofillSettingsView: View {
             Text(UserText.autofillResetNeverSavedActionTitle)
         }
         .onAppear {
-            viewModel.updatePasswordsCount()
+            viewModel.refreshCounts()
+        }
+    }
+
+    private struct CountRowView: View {
+        let viewModel: AutofillSettingsViewModel
+        let autofillType: AutofillSettingsViewModel.AutofillType
+        
+        var body: some View {
+            HStack {
+                autofillType.icon
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                Text(autofillType.title)
+                    .daxBodyRegular()
+                    .foregroundColor(Color(designSystemColor: .textPrimary))
+                
+                Spacer()
+                
+                if let count = autofillType == .passwords ? viewModel.passwordsCount : viewModel.creditCardsCount {
+                    Text("\(count)")
+                        .daxBodyRegular()
+                        .foregroundColor(Color(designSystemColor: .textSecondary))
+                }
+                
+                Image(systemName: "chevron.forward")
+                    .font(Font.system(.footnote).weight(.bold))
+                    .foregroundColor(Color(UIColor.tertiaryLabel))
+            }
+        }
+    }
+    
+    private struct ToggleRowView: View {
+        @Binding var toggleStatus: Bool
+        let title: String
+        
+        var body: some View {
+            return Toggle(title, isOn: $toggleStatus)
+                .toggleStyle(.switch)
+                .tint(Color(designSystemColor: .accent))
+                .foregroundColor(Color(designSystemColor: .textPrimary))
+                .daxBodyRegular()
         }
     }
     
@@ -125,7 +169,7 @@ struct AutofillSettingsView: View {
         var body: some View {
             return (Text(Image(.lockSolid16)).baselineOffset(-1.0).foregroundColor(.secondary)
                     + Text(verbatim: " ")
-                    + Text(UserText.autofillLoginListSettingsFooter).foregroundColor(.secondary)
+                    + Text(viewModel.showCreditCards ? UserText.autofillLoginListSettingsPasswordsAndCardsFooter : UserText.autofillLoginListSettingsFooter).foregroundColor(.secondary)
                     + Text(verbatim: " ")
                     + Text(viewModel.footerAttributedString())
             )

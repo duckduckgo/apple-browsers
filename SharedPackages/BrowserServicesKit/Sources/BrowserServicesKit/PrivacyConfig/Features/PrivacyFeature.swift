@@ -72,6 +72,11 @@ public enum PrivacyFeature: String {
     case setAsDefaultAndAddToDock
     case contentScopeExperiments
     case extendedOnboarding
+    case macOSBrowserConfig
+    case iOSBrowserConfig
+    // Demonstrative case for default value. Remove once a real-world feature is added
+    case intentionallyLocalOnlyFeatureForTests
+    case tabCrashRecovery
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -82,6 +87,24 @@ public protocol PrivacySubfeature: RawRepresentable where RawValue == String {
 }
 
 // MARK: Subfeature definitions
+
+public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature {
+        .macOSBrowserConfig
+    }
+
+    // Demonstrative case for default value. Remove once a real-world feature is added
+    case intentionallyLocalOnlySubfeatureForTests
+}
+
+public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature {
+        .iOSBrowserConfig
+    }
+
+    // Demonstrative case for default value. Remove once a real-world feature is added
+    case intentionallyLocalOnlySubfeatureForTests
+}
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature {
@@ -106,6 +129,8 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case unknownUsernameCategorization
     case credentialsImportPromotionForExistingUsers
     case partialFormSaves
+    case autofillCreditCards
+    case autofillCreditCardsOnByDefault
 }
 
 public enum DBPSubfeature: String, Equatable, PrivacySubfeature {

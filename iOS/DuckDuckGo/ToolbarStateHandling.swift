@@ -44,28 +44,16 @@ protocol ToolbarStateHandling {
 final class ToolbarHandler: ToolbarStateHandling {
     weak var toolbar: UIToolbar?
     private let featureFlagger: FeatureFlagger
-    let isExperimentalThemingEnabled = ExperimentalThemingManager().isExperimentalThemingEnabled
+    lazy var isExperimentalThemingEnabled = {
+        ExperimentalThemingManager(featureFlagger: featureFlagger).isExperimentalThemingEnabled
+    }()
 
     lazy var backButton = {
         let imageName = isExperimentalThemingEnabled ? "Arrow-Left-New-24" : "BrowsePrevious"
         return createBarButtonItem(title: UserText.keyCommandBrowserBack, imageName: imageName)
     }()
 
-    let fireButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setImage(UIImage(named: "Fire-New-24"), for: .normal)
-        button.tintColor = .label
-
-        button.frame = CGRect(x: 0, y: 0, width: 84, height: 44)
-        button.backgroundColor = UIColor(Color.shade(0.09))
-        button.layer.cornerRadius = 14
-
-        button.imageView?.contentMode = .scaleAspectFit
-        button.contentVerticalAlignment = .center
-        button.contentHorizontalAlignment = .center
-
-        return button
-    }()
+    private(set) lazy var fireButton = FireButton()
 
     lazy var fireBarButtonItem = {
         if isExperimentalThemingEnabled {
@@ -147,11 +135,23 @@ final class ToolbarHandler: ToolbarStateHandling {
     }
 
     private func createBarButtonItem(title: String, imageName: String) -> UIBarButtonItem {
-        return UIBarButtonItem(title: title, image: UIImage(named: imageName), primaryAction: nil)
+        if self.isExperimentalThemingEnabled {
+            let button = ToolbarButton(.primary)
+            button.setImage(UIImage(named: imageName))
+            button.frame = CGRect(x: 0, y: 0, width: 34, height: 44)
+
+            let barItem = UIBarButtonItem(customView: button)
+            barItem.title = title
+
+            return barItem
+        } else {
+            return UIBarButtonItem(title: title, image: UIImage(named: imageName), primaryAction: nil)
+        }
     }
 
     private func createPageLoadedButtons() -> [UIBarButtonItem] {
         return [
+            isExperimentalThemingEnabled ? .additionalFixedSpaceItem() : nil,
             backButton,
             .flexibleSpace(),
             forwardButton,
@@ -160,13 +160,15 @@ final class ToolbarHandler: ToolbarStateHandling {
             .flexibleSpace(),
             tabSwitcherButton,
             .flexibleSpace(),
-            browserMenuButton
-        ]
+            browserMenuButton,
+            isExperimentalThemingEnabled ? .additionalFixedSpaceItem() : nil
+        ].compactMap { $0 }
     }
 
     private func createNewTabButtons() -> [UIBarButtonItem] {
-        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+        if isExperimentalThemingEnabled {
             return [
+                .additionalFixedSpaceItem(),
                 passwordsButton,
                 .flexibleSpace(),
                 bookmarkButton,
@@ -175,7 +177,8 @@ final class ToolbarHandler: ToolbarStateHandling {
                 .flexibleSpace(),
                 tabSwitcherButton,
                 .flexibleSpace(),
-                browserMenuButton
+                browserMenuButton,
+                .additionalFixedSpaceItem()
             ]
         } else {
             return [
@@ -190,5 +193,13 @@ final class ToolbarHandler: ToolbarStateHandling {
                 browserMenuButton
             ]
         }
+    }
+}
+
+private extension UIBarButtonItem {
+    private static let additionalHorizontalSpace = 10.0
+
+    static func additionalFixedSpaceItem() -> UIBarButtonItem {
+        .fixedSpace(additionalHorizontalSpace)
     }
 }

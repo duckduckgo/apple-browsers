@@ -85,13 +85,13 @@ final class NewTabPageRecentActivityModelTests: XCTestCase {
 
     func testThatOpenForwardsTheCallToActionsHandler() async throws {
         let validURLString = "https://example.com"
-        await model.open(validURLString, target: .current)
-        XCTAssertEqual(actionsHandler.openCalls, [.init(url: try XCTUnwrap(URL(string: validURLString)), target: .current)])
+        await model.open(validURLString, sender: .userScript, target: .current, sourceWindow: nil)
+        XCTAssertEqual(actionsHandler.openCalls, [.init(url: try XCTUnwrap(URL(string: validURLString)), sender: .userScript, target: .current)])
     }
 
     func testWhenURLIsInvalidThenOpenDoesNotForwardTheCallToActionsHandler() async throws {
         let invalidURLString = "aaaa"
-        await model.open(invalidURLString, target: .current)
+        await model.open(invalidURLString, sender: .userScript, target: .current, sourceWindow: nil)
         XCTAssertEqual(actionsHandler.openCalls, [])
     }
 

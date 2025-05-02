@@ -29,22 +29,22 @@ import Foundation
 protocol HistoryViewTabOpening: AnyObject {
     var dialogPresenter: HistoryViewDialogPresenting? { get set }
 
-    @MainActor func open(_ url: URL) async
-    @MainActor func openInNewTab(_ urls: [URL]) async
-    @MainActor func openInNewWindow(_ urls: [URL]) async
-    @MainActor func openInNewFireWindow(_ urls: [URL]) async
+    @MainActor func open(_ url: URL, window: NSWindow?) async
+    @MainActor func openInNewTab(_ urls: [URL], sourceWindow: NSWindow?) async
+    @MainActor func openInNewWindow(_ urls: [URL], sourceWindow: NSWindow?) async
+    @MainActor func openInNewFireWindow(_ urls: [URL], sourceWindow: NSWindow?) async
 }
 
 /**
  * This protocol is used by `DefaultHistoryViewTabOpener` to abstract
  * actual opening tabs and remove the dependency on `WindowControllersManager`.
  */
-@MainActor
 protocol URLOpening: AnyObject {
-    func open(_ url: URL)
-    func openInNewTab(_ urls: [URL])
-    func openInNewWindow(_ urls: [URL])
-    func openInNewFireWindow(_ urls: [URL])
+    @MainActor func open(_ url: URL, source: Tab.TabContent.URLSource, target window: NSWindow?, event: NSEvent?)
+
+    @MainActor func openInNewTab(_ urls: [URL], sourceWindow: NSWindow?)
+    @MainActor func openInNewWindow(_ urls: [URL], sourceWindow: NSWindow?)
+    @MainActor func openInNewFireWindow(_ urls: [URL], sourceWindow: NSWindow?)
 }
 
 final class DefaultHistoryViewTabOpener: HistoryViewTabOpening {
@@ -54,44 +54,44 @@ final class DefaultHistoryViewTabOpener: HistoryViewTabOpening {
     }
 
     weak var dialogPresenter: HistoryViewDialogPresenting?
-    let urlOpener: () async -> URLOpening
+    let urlOpener: @MainActor () -> URLOpening
 
-    init(urlOpener: (() async -> URLOpening)? = nil) {
-        self.urlOpener = urlOpener ?? { await WindowControllersManager.shared }
+    init(urlOpener: (@MainActor () -> URLOpening)? = nil) {
+        self.urlOpener = urlOpener ?? { WindowControllersManager.shared }
     }
 
-    @MainActor func open(_ url: URL) async {
-        await urlOpener().open(url)
+    @MainActor func open(_ url: URL, window: NSWindow?) {
+        urlOpener().open(url, source: .historyEntry, target: window, event: NSApp.currentEvent)
     }
 
-    @MainActor func openInNewTab(_ urls: [URL]) async {
-        guard await confirmOpeningMultipleTabsIfNeeded(count: urls.count) else {
+    @MainActor func openInNewTab(_ urls: [URL], sourceWindow: NSWindow?) async {
+        guard await confirmOpeningMultipleTabsIfNeeded(count: urls.count, window: sourceWindow) else {
             return
         }
-        await urlOpener().openInNewTab(urls)
+        urlOpener().openInNewTab(urls, sourceWindow: sourceWindow)
     }
 
-    @MainActor func openInNewWindow(_ urls: [URL]) async {
-        guard await confirmOpeningMultipleTabsIfNeeded(count: urls.count) else {
+    @MainActor func openInNewWindow(_ urls: [URL], sourceWindow: NSWindow?) async {
+        guard await confirmOpeningMultipleTabsIfNeeded(count: urls.count, window: sourceWindow) else {
             return
         }
-        await urlOpener().openInNewWindow(urls)
+        urlOpener().openInNewWindow(urls, sourceWindow: sourceWindow)
     }
 
-    @MainActor func openInNewFireWindow(_ urls: [URL]) async {
-        guard await confirmOpeningMultipleTabsIfNeeded(count: urls.count) else {
+    @MainActor func openInNewFireWindow(_ urls: [URL], sourceWindow: NSWindow?) async {
+        guard await confirmOpeningMultipleTabsIfNeeded(count: urls.count, window: sourceWindow) else {
             return
         }
-        await urlOpener().openInNewFireWindow(urls)
+        urlOpener().openInNewFireWindow(urls, sourceWindow: sourceWindow)
     }
 
     // MARK: - Private
 
-    private func confirmOpeningMultipleTabsIfNeeded(count: Int) async -> Bool {
+    private func confirmOpeningMultipleTabsIfNeeded(count: Int, window: NSWindow?) async -> Bool {
         guard count >= Const.numberOfTabsToOpenForDisplayingWarning else {
             return true
         }
-        let response = await dialogPresenter?.showMultipleTabsDialog(for: count)
+        let response = await dialogPresenter?.showMultipleTabsDialog(for: count, in: window)
         return response == .open
     }
 }

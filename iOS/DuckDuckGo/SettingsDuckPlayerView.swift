@@ -110,9 +110,10 @@ struct SettingsDuckPlayerView: View {
                 }
 
                 Section("Experimental", content: {
-                    SettingsCellView(label: "Use Native UI",
-                                   accessory: .toggle(isOn: viewModel.duckPlayerNativeUI))
-                        .onChange(of: viewModel.state.duckPlayerNativeUI) { _ in
+                    SettingsPickerCellView(label: "Duck Player Variant",
+                                           options: DuckPlayerVariant.allCases,
+                                           selectedOption: viewModel.duckPlayerVariantBinding)
+                        .onChange(of: viewModel.appSettings.duckPlayerVariant) { _ in // Observe the source setting directly
                             showNewTabAlert = true
                         }
                 })
@@ -122,10 +123,14 @@ struct SettingsDuckPlayerView: View {
         .applySettingsListModifiers(title: UserText.duckPlayerFeatureName,
                                     displayMode: .inline,
                                     viewModel: viewModel)
-        .alert("Note to testers", isPresented: $showNewTabAlert) {
+        .onAppear {
+            DailyPixel.fireDailyAndCount(pixel: .duckPlayerSettingsOpen,
+                                         withAdditionalParameters: viewModel.featureDiscovery.addToParams([:], forFeature: .duckPlayer))
+        }
+        .alert("Important!", isPresented: $showNewTabAlert) {
             Button("OK", role: .cancel) { }
         } message: {
-            Text("Open tabs remain unaffected by this change.  Please close all tabs for this setting to take effect.")
+            Text("Please close all tabs for this setting to take effect.")
         }
     }
 }

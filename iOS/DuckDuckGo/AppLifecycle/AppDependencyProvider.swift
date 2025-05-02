@@ -113,11 +113,18 @@ final class AppDependencyProvider: DependencyProvider {
         let subscriptionUserDefaults = UserDefaults(suiteName: subscriptionAppGroup)!
         let subscriptionEnvironment = DefaultSubscriptionManager.getSavedOrDefaultEnvironment(userDefaults: subscriptionUserDefaults)
         var tokenHandler: any SubscriptionTokenHandling
-        var accessTokenProvider: () -> String?
+        var accessTokenProvider: () async -> String?
         var authenticationStateProvider: (any SubscriptionAuthenticationStateProvider)!
 
-        let tokenStorageV2 = SubscriptionTokenKeychainStorageV2(keychainType: .dataProtection(.named(subscriptionAppGroup))) { keychainType, error in
-            Pixel.fire(.privacyProKeychainAccessError, withAdditionalParameters: ["type": keychainType.rawValue, "error": error.errorDescription])
+        let tokenStorageV2 = SubscriptionTokenKeychainStorageV2(keychainType: .dataProtection(.named(subscriptionAppGroup))) { accessType, error in
+
+            let parameters = [PixelParameters.privacyProKeychainAccessType: accessType.rawValue,
+                              PixelParameters.privacyProKeychainError: error.localizedDescription,
+                              PixelParameters.source: KeychainErrorSource.browser.rawValue,
+                              PixelParameters.authVersion: KeychainErrorAuthVersion.v2.rawValue]
+            DailyPixel.fireDailyAndCount(pixel: .privacyProKeychainAccessError,
+                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
+                                         withAdditionalParameters: parameters)
         }
         self.isAuthV2Enabled = featureFlagger.isFeatureOn(.privacyProAuthV2)
         vpnSettings.isAuthV2Enabled = self.isAuthV2Enabled
@@ -139,7 +146,13 @@ final class AppDependencyProvider: DependencyProvider {
                                                        subscriptionEndpointService: subscriptionEndpointService,
                                                        authEndpointService: authService)
 
-            let storePurchaseManager = DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionFeatureMappingCache)
+            let internalUserDecider = featureFlagger.internalUserDecider
+            let subscriptionFeatureFlagger = SubscriptionFeatureFlagMapping(internalUserDecider: internalUserDecider,
+                                                                            subscriptionEnvironment: subscriptionEnvironment,
+                                                                            subscriptionUserDefaults: subscriptionUserDefaults)
+
+            let storePurchaseManager = DefaultStorePurchaseManager(subscriptionFeatureMappingCache: subscriptionFeatureMappingCache,
+                                                                   subscriptionFeatureFlagger: subscriptionFeatureFlagger)
 
             let subscriptionManager = DefaultSubscriptionManager(storePurchaseManager: storePurchaseManager,
                                                                  accountManager: accountManager,
@@ -194,7 +207,15 @@ final class AppDependencyProvider: DependencyProvider {
                     return tokenContainer.accessToken
                 }
             }
-            let storePurchaseManager = DefaultStorePurchaseManagerV2(subscriptionFeatureMappingCache: subscriptionEndpointService)
+
+
+            let internalUserDecider = featureFlagger.internalUserDecider
+            let subscriptionFeatureFlagger = SubscriptionFeatureFlagMapping(internalUserDecider: internalUserDecider,
+                                                                            subscriptionEnvironment: subscriptionEnvironment,
+                                                                            subscriptionUserDefaults: subscriptionUserDefaults)
+
+            let storePurchaseManager = DefaultStorePurchaseManagerV2(subscriptionFeatureMappingCache: subscriptionEndpointService,
+                                                                     subscriptionFeatureFlagger: subscriptionFeatureFlagger)
             let pixelHandler = AuthV2PixelHandler(source: .mainApp)
             let subscriptionManager = DefaultSubscriptionManagerV2(storePurchaseManager: storePurchaseManager,
                                                                    oAuthClient: authClient,
@@ -221,15 +242,7 @@ final class AppDependencyProvider: DependencyProvider {
             self.subscriptionManagerV2 = subscriptionManager
 
             accessTokenProvider = {
-                var token: String?
-                // extremely ugly hack, will be removed as soon auth v1 is removed
-                let semaphore = DispatchSemaphore(value: 0)
-                Task {
-                    token = try? await subscriptionManager.getTokenContainer(policy: .localValid).accessToken
-                    semaphore.signal()
-                }
-                semaphore.wait()
-                return { token }
+                { return try? await subscriptionManager.getTokenContainer(policy: .localValid).accessToken }
             }()
             tokenHandler = subscriptionManager
             authenticationStateProvider = subscriptionManager

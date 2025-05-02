@@ -16,12 +16,12 @@
 //  limitations under the License.
 //
 
+import Combine
 import Common
 import Foundation
-import Combine
 import History
-import PixelKit
 import os.log
+import PixelKit
 
 /**
  * The delegate callbacks are triggered for events related to unpinned tabs only.
@@ -358,14 +358,16 @@ final class TabCollectionViewModel: NSObject {
         }
     }
 
-    func append(tabs: [Tab]) {
+    func append(tabs: [Tab], andSelect shouldSelectLastTab: Bool) {
         guard changesEnabled else { return }
 
         tabs.forEach {
             tabCollection.append(tab: $0)
         }
-        let newSelectionIndex = tabCollection.tabs.count - 1
-        selectUnpinnedTab(at: newSelectionIndex)
+        if shouldSelectLastTab {
+            let newSelectionIndex = tabCollection.tabs.count - 1
+            selectUnpinnedTab(at: newSelectionIndex)
+        }
 
         delegate?.tabCollectionViewModelDidMultipleChanges(self)
     }

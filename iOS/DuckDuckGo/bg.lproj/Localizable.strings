@@ -241,6 +241,9 @@
 /* Description for unable to remove device error */
 "alert.unable-to-remove-device-description" = "Това устройство не може да бъде премахнато от Синхронизиране и архивиране.";
 
+/* Description for unable to scan qr code error */
+"alert.unable-to-scan-qr-code-description" = "Съжаляваме, този код е невалиден. Моля, уверете се, че сте въвели или сканирали правилния код.";
+
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Не може да се осъществи връзка със сървъра.";
 
@@ -304,6 +307,93 @@
 /* No comment provided by engineer. */
 "autoconsent.info.header" = "Когато DuckDuckGo открие изскачащи прозорци за съгласие за използване на бисквитки в сайтовете, които посещавате, можем да опитаме автоматично да настроим предпочитанията Ви за бисквитки, така че бисквитките да са сведени до минимум, а поверителността да е максимална, след което да затворим изскачащите прозорци. Някои сайтове не предоставят възможност за управление на предпочитанията за бисквитки, затова можем само да скрием техните изскачащи прозорци.";
 
+/* Toast message when a credit card item is deleted */
+"autofill.creditcard.deleted-message-no-title" = "Картата е изтрита";
+
+/* Card name label for credit card details on autofill */
+"autofill.creditcard.details.card-name" = "Име на картата";
+
+/* Card nickname label for credit card details on autofill */
+"autofill.creditcard.details.card-nickname" = "Псевдоним на картата";
+
+/* Card number label for credit card details on autofill */
+"autofill.creditcard.details.card-number" = "Номер на картата";
+
+/* Card number label for credit card details on autofill when editing */
+"autofill.creditcard.details.card-number.required" = "Номер на картата";
+
+/* Title for toast when copying the credit card name */
+"autofill.creditcard.details.copy-toast.card-name-copied" = "Името е копирано";
+
+/* Title for toast when copying the credit card number */
+"autofill.creditcard.details.copy-toast.card-number-copied" = "Номерът на картата е копиран";
+
+/* Title for toast when copying the credit card cvv (security code) */
+"autofill.creditcard.details.copy-toast.cvv-copied" = "CVV е копиран";
+
+/* Title for toast when copying the credit card expiration date */
+"autofill.creditcard.details.copy-toast.exp-date-copied" = "Срокът на валидност е копиран";
+
+/* CVV (security code) label for credit card details on autofill */
+"autofill.creditcard.details.cvv" = "CVV";
+
+/* Title for autofill credit card details */
+"autofill.creditcard.details.default-title" = "Карта";
+
+/* Delete button when deleting an autofill credit card */
+"autofill.creditcard.details.delete" = "Изтриване на карта";
+
+/* Autofill alert button confirming delete credit card */
+"autofill.creditcard.details.delete-confirmation.button" = "Изтриване на карта";
+
+/* Autofill message confirming delete credit card */
+"autofill.creditcard.details.delete-confirmation.message" = "Сигурни ли сте, че искате да изтриете тази карта?";
+
+/* Title when editing autofill credit card details */
+"autofill.creditcard.details.edit-title" = "Редактиране на карта";
+
+/* Placeholder for card number field on autofill credit card details */
+"autofill.creditcard.details.edit.card-number-placeholder" = "1234 5678 1234 5678";
+
+/* Placeholder for CVV security code field on autofill credit card details */
+"autofill.creditcard.details.edit.cvv-placeholder" = "Код за сигурност";
+
+/* Placeholder for expiration date field on autofill credit card details */
+"autofill.creditcard.details.edit.exp-date-placeholder" = "ММ / ГГ";
+
+/* Expiration date label for credit card details on autofill */
+"autofill.creditcard.details.exp-date" = "Срок на валидност";
+
+/* Title when adding new autofill credit card */
+"autofill.creditcard.details.new-title" = "Добавяне на карта";
+
+/* Placeholder for card name field on autofill credit card details */
+"autofill.creditcard.edit.card-name-placeholder" = "Име на картата";
+
+/* Placeholder for card nickname field on autofill credit card details */
+"autofill.creditcard.edit.card-nickname-placeholder" = "(напр. Служебна)";
+
+/* Subtitle for view displayed when no autofill credit cards have been saved */
+"autofill.creditcard.empty-view.subtitle.first.paragraph" = "Кредитните карти се съхраняват сигурно на Вашето устройство.";
+
+/* Title for view displayed when autofill has no credit cards saved */
+"autofill.creditcard.empty-view.title" = "Все още няма запазени кредитни карти";
+
+/* Reason for auth when opening credit card list */
+"autofill.creditcard.list.auth.reason" = "Отключете устройството, за да получите достъп до кредитните карти";
+
+/* Credit card row label for credit card expiry date */
+"autofill.creditcard.list.item.expiry" = "Срок на валидност:";
+
+/* Title for screen listing autofill credit cards */
+"autofill.creditcard.list.title" = "Кредитни карти";
+
+/* Title for view displayed when autofill is locked on devices where a passcode has not been set */
+"autofill.creditcard.no-auth.subtitle" = "За защита на кредитните карти се изисква парола.";
+
+/* Title for view displayed when autofill is locked on devices where a passcode has not been set */
+"autofill.creditcard.no-auth.title" = "Защитете устройството, за да можете да запазвате кредитни карти";
+
 /* Do not translate - stringsdict entry */
 "autofill.delete.all.passwords.completion" = "autofill.delete.all.passwords.completion";
 
@@ -324,6 +414,9 @@
 
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Активиране на Email Protection";
+
+/* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
+"autofill.hide-card-cvv" = "Скриване на CVV";
 
 /* Accessibility title for a Hide Password button replacing displayed password with ***** */
 "autofill.hide-password" = "Скриване на паролата";
@@ -379,7 +472,7 @@
 /* Message displayed after updating an autofill login */
 "autofill.login-updated.toast" = "Паролата е актуализирана";
 
-/* Menu item text for copying autofill login details */
+/* Menu item text for copying autofill details */
 "autofill.logins.copy-prompt" = "Копиране на %@";
 
 /* Title for toast when copying address */
@@ -514,6 +607,9 @@
 /* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
 "autofill.logins.list.settings.footer" = "Паролите са криптирани. Никой освен Вас не може да ги види, дори ние.";
 
+/* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
+"autofill.logins.list.settings.passwords.cards.footer" = "Паролите и кредитните карти са криптирани. Никой освен Вас не може да ги види, дори ние.";
+
 /* Section title for group of suggested saved logins */
 "autofill.logins.list.suggested" = "Предложения";
 
@@ -556,9 +652,11 @@
 /* Do not translate - stringsdict entry */
 "autofill.number.of.passwords" = "autofill.number.of.passwords";
 
-/* Description of autofill onboarding prompt's secure storage feature
-   Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
-"autofill.onboarding.key-features.secure-storage.description" = "Паролите се криптират, съхраняват се на устройството и се заключват с %@.";
+/* Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
+"autofill.onboarding.key-features.secure-storage.biometric.description" = "Паролите се криптират, съхраняват се на устройството и се заключват с %@.";
+
+/* Description of autofill onboarding prompt's secure storage feature */
+"autofill.onboarding.key-features.secure-storage.description" = "Паролите се криптират, съхраняват се на устройството и се заключват с Face ID или парола.";
 
 /* Parameter for the description of autofill onboarding prompt's secure storage feature describing Face ID biometry + passcode */
 "autofill.onboarding.key-features.secure-storage.description.parameter.face-id" = "Лицево разпознаване или код за достъп";
@@ -679,6 +777,9 @@
 
 /* Section header for the autofill settings screen */
 "autofill.settings.view.section-header" = "Преглед";
+
+/* Accessibility title for a Show CVV button displaying actual credit card CVV (security code) instead of *** */
+"autofill.show-card-cvv" = "Показване на CVV";
 
 /* Accessibility title for a Show Password button displaying actial password instead of ***** */
 "autofill.show-password" = "Показване на паролата";
@@ -931,6 +1032,9 @@
 
 /* Crash Report dialog title */
 "crash.report.dialog.title" = "Автоматично изпращане на доклади за сривове?";
+
+/* No comment provided by engineer. */
+"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Импортиране на файл с отметки...";
@@ -1199,15 +1303,6 @@
 /* Title for message explaining to the user that Duck Player is not available */
 "duck-player.contingency-title" = "Duck Player не е достъпен";
 
-/* Text for the toggle to autoplay videos */
-"duck-player.native-autoplay-videos" = "Autoplay Videos";
-
-/* Text for the button to watch a video on DuckPlayer */
-"duck-player.native-open-in-duckplayer" = "Duck Player";
-
-/* Text for the button to watch a video on YouTube */
-"duck-player.native-watch-on-youtube" = "Watch in Youtube";
-
 /* Button for the message explaining to the user that Duck Player is not available so the user can learn more */
 "duck-player.video-contingency-cta" = "Научете повече";
 
@@ -1244,8 +1339,8 @@
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Никога";
 
-/* Caption for Duck Player entry point */
-"duckplayer.pill.watch.without.ads" = "Tap to watch without targeted ads";
+/* Settings screen cell text for DuckPlayer settings */
+"duckplayer.open.video.settings.title" = "Duck Player";
 
 /* Body text for the modal feature explanation */
 "duckplayer.presentation.modal.body" = "С Duck Player на DuckDuckGo можете да гледате YouTube без насочени реклами и вече гледаните видеоклипове няма да повлияят на препоръчаните.";
@@ -1351,6 +1446,9 @@
 
 /* Empty search placeholder on bookmarks search */
 "empty.search" = "Няма намерени съвпадения";
+
+/* No comment provided by engineer. */
+"Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
 "error.email-protection-sign-in.action" = "Влизане";
@@ -2199,7 +2297,7 @@
 "onboarding.skip.cta.resumeOnboarding" = "Показване на указанията";
 
 /* The message of the skip onboarding dialog popup. */
-"onboarding.skip.message" = "Не забравяйте: можете да изтриете всички раздели, хронологията и данните от сърфиране с две докосвания на Fire Button 🔥";
+"onboarding.skip.message" = "Не забравяйте: можете да изтриете всички раздели, историята и данните от сърфирането с две докосвания на Fire Button 🔥";
 
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Разбрах! Ще пропусна другите съвети.";
@@ -2233,6 +2331,9 @@
 
 /* No comment provided by engineer. */
 "onboardingWelcomeHeader" = "Добре дошли в DuckDuckGo!";
+
+/* No comment provided by engineer. */
+"Open tabs remain unaffected by this change.  Please close all tabs for this setting to take effect." = "Тази промяна не засяга отворените раздели.  Моля, затворете всички раздели, за да влезе в сила тази настройка.";
 
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Не е намерено приложението, необходимо за отваряне на тази връзка";
@@ -2306,6 +2407,9 @@
 /* Title for the Privacy Pro feedback form */
 "ppro.feedback-form.title" = "Изпратете отзив";
 
+/* Description of incorrectly formatted data error when syncing. */
+"prefrences.sync.bad-request.description" = "Някои отметки или пароли са форматирани неправилно или са твърде дълги и не бяха синхронизирани.";
+
 /* Button title for sync bookmarks limits exceeded warning to go to manage bookmarks */
 "prefrences.sync.bookmarks-limit-exceeded-action" = "Управление на отметки";
 
@@ -2318,13 +2422,14 @@
 /* Description for sync credentials limits exceeded warning */
 "prefrences.sync.credentials-limit-exceeded-description" = "Достигнахте максималния брой пароли. Изтрийте някои от тях, за да възобновите синхронизирането.";
 
-/* Description invalid credentials error when syncing.
-   Description of incorrectly formatted data error when syncing.
-   Description of too many requests error when syncing. */
+/* Description invalid credentials error when syncing. */
 "prefrences.sync.invalid-login-description" = "Грешка при синхронизирането. Опитайте да деактивирате синхронизирането на това устройство и след това се свържете отново чрез друго устройство или със своя код за възстановяване.";
 
 /* Title for sync limits exceeded warning */
 "prefrences.sync.limit-exceeded-title" = "Синхронизирането е на пауза";
+
+/* Description of too many requests error when syncing. */
+"prefrences.sync.too-many-requests.description" = "Sync & Backup временно не е налична.";
 
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "Уеб сайтовете разчитат на бисквитки, за да поддържат сесията ви активна. Когато направите сайта огнеустойчив, бисквитките няма да бъдат изтрити и ще останете вписани, дори след като използвате огнения бутон. Ние все пак блокираме тракери на трети страни, които се намират на огнеустойчиви сайтове.";
@@ -2366,6 +2471,9 @@
 "Primary / First Action" = "Основно/първо действие";
 
 /* No comment provided by engineer. */
+"Priming Modal" = "Priming Modal";
+
+/* No comment provided by engineer. */
 "Privacy Protections" = "Защита на поверителността";
 
 /* Privacy Icon accessibility title */
@@ -2391,6 +2499,12 @@
 
 /* No comment provided by engineer. */
 "Reset" = "Нулиране";
+
+/* No comment provided by engineer. */
+"Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
+
+/* No comment provided by engineer. */
+"Reset Priming Modal State" = "Reset Priming Modal State";
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Търсене или въвеждане на адрес";
@@ -2440,8 +2554,7 @@
 /* Title for the settings VPN subsection where the user can learn how to add the VPN to their home screen */
 "settings.add.widget.vpn" = "Добавяне на приспособлението DuckDuckGo VPN към началния екран";
 
-/* Name of the settings subsection related to the address bar
-   Settings screen cell text for addess bar position */
+/* Name of the settings subsection related to the address bar */
 "settings.address.bar" = "Адресна лента";
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
@@ -2452,6 +2565,9 @@
 
 /* Settings screen appearance section title */
 "settings.appearance" = "Външен Вид";
+
+/* Settings screen cell text for addess bar position */
+"settings.appearance.address.bar" = "Позиция на адресната лента";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Отваряне на връзките в свързаните приложения";
@@ -2498,8 +2614,7 @@
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Изчистване на данни";
 
-/* Settings screen cell text for setting the app as default browser
-   The name of Settings category in Privacy Features related to configuration of the default browser */
+/* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Браузър по подразбиране";
 
 /* Label of a button disabling email protection */
@@ -2534,6 +2649,9 @@
 
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Общо";
+
+/* Settings screen cell text for setting the app as default browser */
+"settings.general.default.browser" = "Задаване като браузър по подразбиране";
 
 /* Settings screen cell text for GPC */
 "settings.gpc" = "Глобален контрол на поверителността (GPC)";
@@ -2676,15 +2794,8 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Защита от проследяване в мрежата";
 
-/* Explanation in Settings how the vpn blocks risky sites (do not remove the link)
-   Explanation in Settings how the web tracking protection feature works */
-"settings.web.tracking.protection.explanation" = "Блокиране на над 150 000 домейна, маркирани за хостинг на зловреден софтуер, фишинг атаки и онлайн измами чрез списък за блокиране на ниво DNS. [Научете повече](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
-
-/* Header of the vpn blocks risky sites feature settings */
-"settings.web.tracking.protection.header" = "Блокиране и филтриране на съдържание";
-
-/* Title of the vpn blocks risky sites feature settings */
-"settings.web.tracking.protection.title" = "Блокиране на рискови домейни";
+/* Explanation in Settings how the web tracking protection feature works */
+"settings.web.tracking.protection.explanation" = "DuckDuckGo автоматично блокира скритите тракери, докато сърфирате в мрежата.\n[Научете повече](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Изберете опцията, която най-добре описва възникналия проблем.";
@@ -2722,23 +2833,8 @@
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Запазено име на хост: %@";
 
-/* Subscription Activation Info */
-"subscription.activate..header.description" = "Използвайте абонамента си за Privacy Pro на това устройство чрез Apple акаунт или имейл адрес.";
-
-/* Button for adding email address to subscription */
-"subscription.activate.add.email.button" = "Добавяне на имейл";
-
-/* Apple Account option for activation */
-"subscription.activate.appleid" = "Apple акаунт";
-
-/* Button text for restoring purchase via Apple Account */
-"subscription.activate.appleid.button" = "Възстановяване на покупката";
-
-/* Description for Apple Account activation */
-"subscription.activate.appleid.description" = "Възстановете покупката си, за да активирате абонамента на това устройство.";
-
-/* Subscription Activation Info */
-"subscription.activate.description" = "Достъпът с абонамент става автоматично в DuckDuckGo на всяко устройство, което е вписано във Вашия Apple акаунт.";
+/* Button for adding this subscription to another device */
+"subscription.activate.add.to.device.button" = "Добавяне към устройството";
 
 /* Button for editing email address added to subscription */
 "subscription.activate.edit.email.button" = "Редактиране на имейл";
@@ -2746,17 +2842,8 @@
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "Редактиране на имейл";
 
-/* Email option for activation */
-"subscription.activate.email" = "Имейл";
-
-/* Restore button title for Email */
-"subscription.activate.email.button" = "Въведете имейл";
-
-/* Description for Email activation */
-"subscription.activate.email.description" = "Използвайте имейла си, за да активирате абонамента на това устройство.";
-
-/* Activate subscription title */
-"subscription.activate.email.title" = "Активиране на абонамент";
+/* Header title for the subscription activation view */
+"subscription.activate.header.title" = "Добавяне на абонамент за Privacy Pro към това устройство";
 
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "Отмени";
@@ -2764,11 +2851,26 @@
 /* Button title for confirming email deletion */
 "subscription.activate.manage.email.OK" = "ОК";
 
-/* Restore button title for AppleID */
-"subscription.activate.restore.apple" = "Възстановяване на покупката";
+/* Button title for starting the process of adding subscription via Apple Account */
+"subscription.activate.via.apple.account.button" = "Възстановяване на покупката";
 
-/* Subscription Activation Title */
-"subscription.activate.title" = "Активирайте абонамента си на това устройство";
+/* Description for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.description" = "Възстановете абонамента си за Apple устройства, като използвате своя Apple акаунт.";
+
+/* Title for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.title" = "Добавяне чрез Apple акаунт";
+
+/* Button title for starting the process of adding subscription via email address */
+"subscription.activate.via.email.button" = "Първи стъпки";
+
+/* Description for adding subscription via email address */
+"subscription.activate.via.email.description" = "Използвайте имейл адрес, за да добавите Privacy Pro към това устройство.";
+
+/* Title for adding subscription via email address */
+"subscription.activate.via.email.title" = "Добавяне чрез имейл адрес";
+
+/* View title for activating subscription */
+"subscription.activate.view.title" = "Имам абонамент";
 
 /* Resend activation instructions button */
 "subscription.add.device.resend.instructions" = "Повторно изпращане на инструкции";
@@ -2778,6 +2880,15 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "Добавяне на имейл";
+
+/* Header for section for activating subscription on other devices */
+"subscription.add.to.devices.header" = "Добавяне на Privacy Pro към други устройства";
+
+/* Footer for section for activating subscription on other devices when email was not yet added */
+"subscription.add.to.devices.no.email.footer" = "Добавете Privacy Pro към други устройства чрез Apple ID или чрез свързване с имейл адрес. **[Научете повече](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* Footer for section for activating subscription on other devices when email is added */
+"subscription.add.to.devices.with.email.footer" = "Използвайте този имейл, за да добавите абонамента си на други устройства в приложението DuckDuckGo. Отидете в Настройки > Privacy Pro > Имам абонамент. **[Научете повече](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Subscription availability message on Apple devices */
 "subscription.available.apple" = "Функцията Privacy Pro може да се използва на всяко устройство, което е вписано в същия Apple акаунт.";
@@ -2799,15 +2910,6 @@
 
 /* Title for Confirm messages */
 "subscription.confirm.title" = "Сигурни ли сте?";
-
-/* Header for section for activating subscription on other devices */
-"subscription.devices.header" = "Активиране на други устройства";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.devices.no.email.footer" = "Добавете допълнителен имейл към абонамента, за да получите достъп до Privacy Pro на други устройства. **[Научете повече](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.devices.with.email.footer" = "Използвайте този имейл, за да активирате абонамента от Настройки > Privacy Pro в приложението DuckDuckGo на други устройства. **[Научете повече](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Alert content for not found subscription */
 "subscription.email.inactive.alert.message" = "Абонаментът, свързан с този имейл, вече не е активен.";
@@ -2952,6 +3054,9 @@
 
 /* Unknown period subscription renewal info where parameter is renewal date. This reads as 'Your subscription renews on (date)' */
 "subscription.subscription.renewing.unknown.caption" = "Абонаментът ви се подновява на %@.";
+
+/* Unknown period subscription renewal info where parameter is renewal date. This reads as 'Your subscription renews on (date)' */
+"subscription.subscription.renewing.unknown.trial.caption" = "Абонаментът ви се подновява на %@.";
 
 /* Annual subscription renewal info where parameter is renewal date. This reads as 'Your annual subscription renews on (date)' */
 "subscription.subscription.renewing.yearly.caption" = "Годишният ви абонамент се подновява на %@.";
@@ -3246,6 +3351,15 @@
 
 /* Title for the Apply button on the DNS Server setting screen */
 "vpn.settings.dns.server.apply.button.title" = "Приложи";
+
+/* Explanation in Settings how the vpn blocks risky sites (do not remove the link) */
+"vpn.settings.dns.server.content.blocking.explanation" = "Блокиране на над 150 000 домейна, маркирани за хостинг на зловреден софтуер, фишинг атаки и онлайн измами чрез списък за блокиране на ниво DNS. [Научете повече](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
+
+/* Header of the vpn blocks risky sites feature settings */
+"vpn.settings.dns.server.content.blocking.header" = "Блокиране и филтриране на съдържание";
+
+/* Title of the vpn blocks risky sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Блокиране на рискови домейни";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";

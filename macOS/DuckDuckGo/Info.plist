@@ -523,7 +523,7 @@
 	<key>NSCameraUsageDescription</key>
 	<string>Lets websites ask permission to use your camera for video calls, recording and uploading videos, or taking and uploading photos.</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>Copyright © 2024 DuckDuckGo. All rights reserved.</string>
+	<string>Copyright © 2025 DuckDuckGo. All rights reserved.</string>
 	<key>NSLocationUsageDescription</key>
 	<string>Lets websites ask permission to use your location to improve search results, provide weather and directions, or show nearby map locations.</string>
 	<key>NSMicrophoneUsageDescription</key>

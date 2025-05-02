@@ -69,11 +69,11 @@ final class ExtensionConfigurationUpdater: ExtensionConfiguration {
 
     var isUsingSystemExtension: Bool {
         switch availableExtensionVariants {
-        case .both(appexBundleID: let appexBundleID, sysexBundleID: let sysexBundleID):
+        case .both:
             let isUsingSystemExtension = updateIsUsingSystemExtension()
             store.isUsingSystemExtension = isUsingSystemExtension
             return isUsingSystemExtension
-        case .sysex(sysexBundleID: let sysexBundleID):
+        case .sysex:
             store.isUsingSystemExtension = true
             return true
         }
@@ -100,11 +100,11 @@ final class ExtensionConfigurationReader: ExtensionConfiguration {
 
     var isUsingSystemExtension: Bool {
         switch availableExtensionVariants {
-        case .both(appexBundleID: let appexBundleID, sysexBundleID: let sysexBundleID):
+        case .both:
             let isUsingSystemExtension = updateIsUsingSystemExtension()
             store.isUsingSystemExtension = isUsingSystemExtension
             return isUsingSystemExtension
-        case .sysex(sysexBundleID: let sysexBundleID):
+        case .sysex:
             store.isUsingSystemExtension = true
             return true
         }

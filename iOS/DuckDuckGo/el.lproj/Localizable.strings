@@ -241,6 +241,9 @@
 /* Description for unable to remove device error */
 "alert.unable-to-remove-device-description" = "Δεν είναι δυνατή η κατάργηση αυτής της συσκευής από τη λειτουργία Συγχρονισμός και δημιουργία αντιγράφων ασφαλείας.";
 
+/* Description for unable to scan qr code error */
+"alert.unable-to-scan-qr-code-description" = "Δυστυχώς, αυτός ο κωδικός δεν είναι έγκυρος. Βεβαιωθείτε ότι ο σωστός κωδικός έχει εισαχθεί ή σαρωθεί.";
+
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Δεν είναι δυνατή η σύνδεση με τον διακομιστή.";
 
@@ -304,6 +307,93 @@
 /* No comment provided by engineer. */
 "autoconsent.info.header" = "Όταν το DuckDuckGo εντοπίζει αναδυόμενα παράθυρα συναίνεσης για cookies σε ιστότοπους που επισκέπτεστε, μπορούμε να προσπαθήσουμε να ρυθμίσουμε αυτόματα τις προτιμήσεις σας για τα cookies ώστε να ελαχιστοποιήσετε τα cookies και να μεγιστοποιήσετε το απόρρητο. Έπειτα μπορείτε να κλείσετε τα αναδυόμενα παράθυρα. Ορισμένοι ιστότοποι δεν παρέχουν επιλογή για διαχείριση των προτιμήσεων cookies, οπότε μπορούμε μόνο να αποκρύψουμε αναδυόμενα παράθυρα όπως αυτά.";
 
+/* Toast message when a credit card item is deleted */
+"autofill.creditcard.deleted-message-no-title" = "Η κάρτα διαγράφηκε";
+
+/* Card name label for credit card details on autofill */
+"autofill.creditcard.details.card-name" = "Όνομα στην κάρτα";
+
+/* Card nickname label for credit card details on autofill */
+"autofill.creditcard.details.card-nickname" = "Ψευδώνυμο κάρτας";
+
+/* Card number label for credit card details on autofill */
+"autofill.creditcard.details.card-number" = "Αριθμός κάρτας";
+
+/* Card number label for credit card details on autofill when editing */
+"autofill.creditcard.details.card-number.required" = "Αριθμός κάρτας";
+
+/* Title for toast when copying the credit card name */
+"autofill.creditcard.details.copy-toast.card-name-copied" = "Το όνομα αντιγράφηκε";
+
+/* Title for toast when copying the credit card number */
+"autofill.creditcard.details.copy-toast.card-number-copied" = "Ο αριθμός της κάρτας αντιγράφηκε";
+
+/* Title for toast when copying the credit card cvv (security code) */
+"autofill.creditcard.details.copy-toast.cvv-copied" = "Το CVV αντιγράφηκε";
+
+/* Title for toast when copying the credit card expiration date */
+"autofill.creditcard.details.copy-toast.exp-date-copied" = "Η ημερομηνία λήξης αντιγράφηκε";
+
+/* CVV (security code) label for credit card details on autofill */
+"autofill.creditcard.details.cvv" = "CVV";
+
+/* Title for autofill credit card details */
+"autofill.creditcard.details.default-title" = "Κάρτα";
+
+/* Delete button when deleting an autofill credit card */
+"autofill.creditcard.details.delete" = "Διαγραφή κάρτας";
+
+/* Autofill alert button confirming delete credit card */
+"autofill.creditcard.details.delete-confirmation.button" = "Διαγραφή κάρτας";
+
+/* Autofill message confirming delete credit card */
+"autofill.creditcard.details.delete-confirmation.message" = "Θέλετε σίγουρα να διαγράψετε αυτήν την κάρτα;";
+
+/* Title when editing autofill credit card details */
+"autofill.creditcard.details.edit-title" = "Επεξεργασία κάρτας";
+
+/* Placeholder for card number field on autofill credit card details */
+"autofill.creditcard.details.edit.card-number-placeholder" = "1234 5678 1234 5678";
+
+/* Placeholder for CVV security code field on autofill credit card details */
+"autofill.creditcard.details.edit.cvv-placeholder" = "Κωδικός ασφαλείας";
+
+/* Placeholder for expiration date field on autofill credit card details */
+"autofill.creditcard.details.edit.exp-date-placeholder" = "MM / YY";
+
+/* Expiration date label for credit card details on autofill */
+"autofill.creditcard.details.exp-date" = "Ημερομηνία λήξης";
+
+/* Title when adding new autofill credit card */
+"autofill.creditcard.details.new-title" = "Προσθήκη κάρτας";
+
+/* Placeholder for card name field on autofill credit card details */
+"autofill.creditcard.edit.card-name-placeholder" = "Όνομα στην κάρτα";
+
+/* Placeholder for card nickname field on autofill credit card details */
+"autofill.creditcard.edit.card-nickname-placeholder" = "(π.χ. Εργασία)";
+
+/* Subtitle for view displayed when no autofill credit cards have been saved */
+"autofill.creditcard.empty-view.subtitle.first.paragraph" = "Οι πιστωτικές κάρτες αποθηκεύονται με ασφάλεια στη συσκευή σας.";
+
+/* Title for view displayed when autofill has no credit cards saved */
+"autofill.creditcard.empty-view.title" = "Δεν έχουν αποθηκευτεί ακόμα πιστωτικές κάρτες";
+
+/* Reason for auth when opening credit card list */
+"autofill.creditcard.list.auth.reason" = "Ξεκλειδώστε τη συσκευή για πρόσβαση στις πιστωτικές κάρτες";
+
+/* Credit card row label for credit card expiry date */
+"autofill.creditcard.list.item.expiry" = "Λήξη:";
+
+/* Title for screen listing autofill credit cards */
+"autofill.creditcard.list.title" = "Πιστωτικές κάρτες";
+
+/* Title for view displayed when autofill is locked on devices where a passcode has not been set */
+"autofill.creditcard.no-auth.subtitle" = "Απαιτείται κωδικός πρόσβασης για προστασία των πιστωτικών καρτών σας.";
+
+/* Title for view displayed when autofill is locked on devices where a passcode has not been set */
+"autofill.creditcard.no-auth.title" = "Ασφαλίστε τη συσκευή σας για να αποθηκεύσετε πιστωτικές κάρτες";
+
 /* Do not translate - stringsdict entry */
 "autofill.delete.all.passwords.completion" = "autofill.delete.all.passwords.completion";
 
@@ -324,6 +414,9 @@
 
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Ενεργοποίηση Email Protection";
+
+/* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
+"autofill.hide-card-cvv" = "Απόκρυψη CVV";
 
 /* Accessibility title for a Hide Password button replacing displayed password with ***** */
 "autofill.hide-password" = "Απόκρυψη κωδικού πρόσβασης";
@@ -379,7 +472,7 @@
 /* Message displayed after updating an autofill login */
 "autofill.login-updated.toast" = "Ο κωδικός πρόσβασης ενημερώθηκε";
 
-/* Menu item text for copying autofill login details */
+/* Menu item text for copying autofill details */
 "autofill.logins.copy-prompt" = "Αντιγραφή %@";
 
 /* Title for toast when copying address */
@@ -514,6 +607,9 @@
 /* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
 "autofill.logins.list.settings.footer" = "Οι κωδικοί πρόσβασης είναι κρυπτογραφημένοι. Κανείς άλλος εκτός από εσάς δεν μπορεί να τους βλέπει, ούτε καν εμείς.";
 
+/* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
+"autofill.logins.list.settings.passwords.cards.footer" = "Οι κωδικοί πρόσβασης και οι πιστωτικές κάρτες είναι κρυπτογραφημένα. Κανείς άλλος εκτός από εσάς δεν μπορεί να τα βλέπει, ούτε καν εμείς.";
+
 /* Section title for group of suggested saved logins */
 "autofill.logins.list.suggested" = "Προτεινόμενο";
 
@@ -556,9 +652,11 @@
 /* Do not translate - stringsdict entry */
 "autofill.number.of.passwords" = "autofill.number.of.passwords";
 
-/* Description of autofill onboarding prompt's secure storage feature
-   Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
-"autofill.onboarding.key-features.secure-storage.description" = "Οι κωδικοί πρόσβασης κρυπτογραφούνται, αποθηκεύονται στη συσκευή και κλειδώνονται με %@.";
+/* Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
+"autofill.onboarding.key-features.secure-storage.biometric.description" = "Οι κωδικοί πρόσβασης κρυπτογραφούνται, αποθηκεύονται στη συσκευή και κλειδώνονται με %@.";
+
+/* Description of autofill onboarding prompt's secure storage feature */
+"autofill.onboarding.key-features.secure-storage.description" = "Passwords are encrypted, stored on device, and locked with Face ID or passcode.";
 
 /* Parameter for the description of autofill onboarding prompt's secure storage feature describing Face ID biometry + passcode */
 "autofill.onboarding.key-features.secure-storage.description.parameter.face-id" = "Face ID ή κωδικός πρόσβασης";
@@ -679,6 +777,9 @@
 
 /* Section header for the autofill settings screen */
 "autofill.settings.view.section-header" = "Προβολή";
+
+/* Accessibility title for a Show CVV button displaying actual credit card CVV (security code) instead of *** */
+"autofill.show-card-cvv" = "Εμφάνιση CVV";
 
 /* Accessibility title for a Show Password button displaying actial password instead of ***** */
 "autofill.show-password" = "Εμφάνιση κωδικού πρόσβασης";
@@ -931,6 +1032,9 @@
 
 /* Crash Report dialog title */
 "crash.report.dialog.title" = "Αυτόματη αποστολή αναφορών σφαλμάτων;";
+
+/* No comment provided by engineer. */
+"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
 
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Εισαγωγή αρχείου σελιδοδεικτών...";
@@ -1199,15 +1303,6 @@
 /* Title for message explaining to the user that Duck Player is not available */
 "duck-player.contingency-title" = "Το Duck Player δεν είναι διαθέσιμο";
 
-/* Text for the toggle to autoplay videos */
-"duck-player.native-autoplay-videos" = "Autoplay Videos";
-
-/* Text for the button to watch a video on DuckPlayer */
-"duck-player.native-open-in-duckplayer" = "Duck Player";
-
-/* Text for the button to watch a video on YouTube */
-"duck-player.native-watch-on-youtube" = "Watch in Youtube";
-
 /* Button for the message explaining to the user that Duck Player is not available so the user can learn more */
 "duck-player.video-contingency-cta" = "Μάθετε περισσότερα";
 
@@ -1244,8 +1339,8 @@
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Ποτέ";
 
-/* Caption for Duck Player entry point */
-"duckplayer.pill.watch.without.ads" = "Tap to watch without targeted ads";
+/* Settings screen cell text for DuckPlayer settings */
+"duckplayer.open.video.settings.title" = "Duck Player";
 
 /* Body text for the modal feature explanation */
 "duckplayer.presentation.modal.body" = "Το Duck Player σάς επιτρέπει να παρακολουθείτε YouTube χωρίς στοχευμένες διαφημίσεις στο DuckDuckGo, ενώ το περιεχόμενο που παρακολουθείτε δεν θα επηρεάσει τις συστάσεις που θα λαμβάνετε.";
@@ -1351,6 +1446,9 @@
 
 /* Empty search placeholder on bookmarks search */
 "empty.search" = "Δεν βρέθηκαν αντιστοιχίες";
+
+/* No comment provided by engineer. */
+"Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
 "error.email-protection-sign-in.action" = "Είσοδος";
@@ -2234,6 +2332,9 @@
 /* No comment provided by engineer. */
 "onboardingWelcomeHeader" = "Καλώς ορίσατε στον DuckDuckGo!";
 
+/* No comment provided by engineer. */
+"Open tabs remain unaffected by this change.  Please close all tabs for this setting to take effect." = "Οι ανοιχτές καρτέλες παραμένουν ανεπηρέαστες από την αλλαγή αυτή.  Κλείστε όλες τις καρτέλες για να τεθεί σε ισχύ η ρύθμιση αυτή.";
+
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Δεν είναι δυνατή η εύρεση της εφαρμογής που απαιτείται για άνοιγμα αυτού του συνδέσμου";
 
@@ -2306,6 +2407,9 @@
 /* Title for the Privacy Pro feedback form */
 "ppro.feedback-form.title" = "Αποστολή σχολίου";
 
+/* Description of incorrectly formatted data error when syncing. */
+"prefrences.sync.bad-request.description" = "Ορισμένοι σελιδοδείκτες ή κωδικοί πρόσβασης δεν έχουν μορφοποιηθεί σωστά ή είναι πολύ μεγάλοι και δεν συγχρονίστηκαν.";
+
 /* Button title for sync bookmarks limits exceeded warning to go to manage bookmarks */
 "prefrences.sync.bookmarks-limit-exceeded-action" = "Διαχείριση σελιδοδεικτών";
 
@@ -2318,13 +2422,14 @@
 /* Description for sync credentials limits exceeded warning */
 "prefrences.sync.credentials-limit-exceeded-description" = "Έχετε φτάσει στον μέγιστο αριθμό κωδικών πρόσβασης. Διαγράψτε ορισμένους για να συνεχίσετε τον συγχρονισμό.";
 
-/* Description invalid credentials error when syncing.
-   Description of incorrectly formatted data error when syncing.
-   Description of too many requests error when syncing. */
+/* Description invalid credentials error when syncing. */
 "prefrences.sync.invalid-login-description" = "Ο συγχρονισμός αντιμετώπισε σφάλμα. Δοκιμάστε να απενεργοποιήσετε τον συγχρονισμό στη συσκευή αυτή και έπειτα συνδεθείτε ξανά χρησιμοποιώντας άλλη συσκευή ή τον κωδικό ανάκτησής σας.";
 
 /* Title for sync limits exceeded warning */
 "prefrences.sync.limit-exceeded-title" = "Παύση συγχρονισμού";
+
+/* Description of too many requests error when syncing. */
+"prefrences.sync.too-many-requests.description" = "Το Sync & Backup είναι προσωρινά μη διαθέσιμο.";
 
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "Οι ιστότοποι βασίζονται σε cookies για να σας διατηρούν συνδεδεμένους. Όταν ενεργοποιείτε τη διαγραφή δραστηριότητας για έναν ιστότοπο, τα cookies δεν διαγράφονται και παραμένετε συνδεδεμένοι, ακόμα και μετά τη χρήση του Κουμπιού διαγραφής δραστηριότητας. Εξακολουθούμε να αποκλείουμε εφαρμογές παρακολούθησης από τρίτους που υπάρχουν σε ιστότοπους με διαγραφή δραστηριότητας.";
@@ -2366,6 +2471,9 @@
 "Primary / First Action" = "Πρωταρχική / Πρώτη ενέργεια";
 
 /* No comment provided by engineer. */
+"Priming Modal" = "Priming Modal";
+
+/* No comment provided by engineer. */
 "Privacy Protections" = "Προστασία προσωπικών δεδομένων";
 
 /* Privacy Icon accessibility title */
@@ -2391,6 +2499,12 @@
 
 /* No comment provided by engineer. */
 "Reset" = "Επαναφορά";
+
+/* No comment provided by engineer. */
+"Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
+
+/* No comment provided by engineer. */
+"Reset Priming Modal State" = "Reset Priming Modal State";
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Αναζήτηση ή εισαγωγή διεύθυνσης";
@@ -2440,8 +2554,7 @@
 /* Title for the settings VPN subsection where the user can learn how to add the VPN to their home screen */
 "settings.add.widget.vpn" = "Προσθέστε τη μικροεφαρμογή VPN DuckDuckGo στην αρχική οθόνη σας";
 
-/* Name of the settings subsection related to the address bar
-   Settings screen cell text for addess bar position */
+/* Name of the settings subsection related to the address bar */
 "settings.address.bar" = "Γραμμή διευθύνσεων";
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
@@ -2452,6 +2565,9 @@
 
 /* Settings screen appearance section title */
 "settings.appearance" = "Εμφάνιση";
+
+/* Settings screen cell text for addess bar position */
+"settings.appearance.address.bar" = "Θέση γραμμής διευθύνσεων";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Ανοίξτε τους συνδέσμους στις σχετικές εφαρμογές";
@@ -2498,8 +2614,7 @@
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Διαγραφή δεδομένων";
 
-/* Settings screen cell text for setting the app as default browser
-   The name of Settings category in Privacy Features related to configuration of the default browser */
+/* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Προεπιλεγμένο πρόγραμμα περιήγησης";
 
 /* Label of a button disabling email protection */
@@ -2534,6 +2649,9 @@
 
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Γενικά";
+
+/* Settings screen cell text for setting the app as default browser */
+"settings.general.default.browser" = "Ορισμός ως προεπιλεγμένο πρόγραμμα περιήγησης";
 
 /* Settings screen cell text for GPC */
 "settings.gpc" = "Παγκόσμιος έλεγχος απορρήτου (GPC)";
@@ -2676,15 +2794,8 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Προστασία παρακολούθησης ιστού";
 
-/* Explanation in Settings how the vpn blocks risky sites (do not remove the link)
-   Explanation in Settings how the web tracking protection feature works */
-"settings.web.tracking.protection.explanation" = "Αποκλείστε περισσότερους από 150.000 τομείς που έχουν επισημανθεί για φιλοξενία κακόβουλου λογισμικού, επιθέσεις ηλεκτρονικού ψαρέματος και διαδικτυακές απάτες, με μια λίστα αποκλεισμού σε επίπεδο DNS. [Μάθετε περισσότερα](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
-
-/* Header of the vpn blocks risky sites feature settings */
-"settings.web.tracking.protection.header" = "Αποκλεισμός και φιλτράρισμα περιεχομένου";
-
-/* Title of the vpn blocks risky sites feature settings */
-"settings.web.tracking.protection.title" = "Αποκλεισμός επικίνδυνων τομέων";
+/* Explanation in Settings how the web tracking protection feature works */
+"settings.web.tracking.protection.explanation" = "Το DuckDuckGo αποκλείει αυτόματα κρυφές εφαρμογές παρακολούθησης καθώς περιηγείστε στο διαδίκτυο.\n[Μάθετε περισσότερα](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Επιλέξτε αυτό που περιγράφει καλύτερα το πρόβλημα που αντιμετωπίσατε.";
@@ -2722,23 +2833,8 @@
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Αποθηκευμένο όνομα κεντρικού υπολογιστή: %@";
 
-/* Subscription Activation Info */
-"subscription.activate..header.description" = "Αποκτήστε πρόσβαση στη συνδρομή σας Privacy Pro σε αυτήν τη συσκευή μέσω Λογαριασμού Apple ή διεύθυνσης email.";
-
-/* Button for adding email address to subscription */
-"subscription.activate.add.email.button" = "Προσθήκη email";
-
-/* Apple Account option for activation */
-"subscription.activate.appleid" = "Λογαριασμός Apple";
-
-/* Button text for restoring purchase via Apple Account */
-"subscription.activate.appleid.button" = "Επαναφορά αγοράς";
-
-/* Description for Apple Account activation */
-"subscription.activate.appleid.description" = "Κάντε επαναφορά της αγοράς σας για να ενεργοποιήσετε τη συνδρομή σας σε αυτήν τη συσκευή.";
-
-/* Subscription Activation Info */
-"subscription.activate.description" = "Η συνδρομή σας είναι αυτόματα διαθέσιμη στο DuckDuckGo σε οποιαδήποτε συσκευή είναι συνδεδεμένη στον Λογαριασμό Apple που διαθέτετε.";
+/* Button for adding this subscription to another device */
+"subscription.activate.add.to.device.button" = "Προσθήκη σε συσκευή";
 
 /* Button for editing email address added to subscription */
 "subscription.activate.edit.email.button" = "Επεξεργασία email";
@@ -2746,17 +2842,8 @@
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "Επεξεργασία email";
 
-/* Email option for activation */
-"subscription.activate.email" = "ηλεκτρονικό ταχυδρομείο";
-
-/* Restore button title for Email */
-"subscription.activate.email.button" = "Εισαγωγή email";
-
-/* Description for Email activation */
-"subscription.activate.email.description" = "Χρησιμοποιήστε το email σας για να ενεργοποιήσετε τη συνδρομή σας στη συσκευή αυτή.";
-
-/* Activate subscription title */
-"subscription.activate.email.title" = "Ενεργοποίηση συνδρομής";
+/* Header title for the subscription activation view */
+"subscription.activate.header.title" = "Προσθέστε τη συνδρομή σας Privacy Pro σε αυτήν τη συσκευή";
 
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "Ακύρωση";
@@ -2764,11 +2851,26 @@
 /* Button title for confirming email deletion */
 "subscription.activate.manage.email.OK" = "Εντάξει";
 
-/* Restore button title for AppleID */
-"subscription.activate.restore.apple" = "Επαναφορά αγοράς";
+/* Button title for starting the process of adding subscription via Apple Account */
+"subscription.activate.via.apple.account.button" = "Επαναφορά αγοράς";
 
-/* Subscription Activation Title */
-"subscription.activate.title" = "Ενεργοποιήστε τη συνδρομή σας σε αυτήν τη συσκευή";
+/* Description for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.description" = "Κάντε επαναφορά της συνδρομής σας σε συσκευές Apple χρησιμοποιώντας τον λογαριασμό Apple που διαθέτετε.";
+
+/* Title for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.title" = "Προσθήκη μέσω λογαριασμού Apple";
+
+/* Button title for starting the process of adding subscription via email address */
+"subscription.activate.via.email.button" = "Ξεκινήστε";
+
+/* Description for adding subscription via email address */
+"subscription.activate.via.email.description" = "Χρησιμοποιήστε μια διεύθυνση email για να προσθέσετε το Privacy Pro σε αυτήν τη συσκευή.";
+
+/* Title for adding subscription via email address */
+"subscription.activate.via.email.title" = "Πρόσθεσε μέσω διεύθυνσης email";
+
+/* View title for activating subscription */
+"subscription.activate.view.title" = "Έχω συνδρομή";
 
 /* Resend activation instructions button */
 "subscription.add.device.resend.instructions" = "Εκ νέου αποστολή οδηγιών";
@@ -2778,6 +2880,15 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "Προσθήκη email";
+
+/* Header for section for activating subscription on other devices */
+"subscription.add.to.devices.header" = "Προσθήκη Privacy Pro σε άλλες συσκευές";
+
+/* Footer for section for activating subscription on other devices when email was not yet added */
+"subscription.add.to.devices.no.email.footer" = "Προσθέστε το Privacy Pro στις άλλες συσκευές σας μέσω Apple ID ή συνδέοντας μια διεύθυνση email. **[Μάθε περισσότερα](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* Footer for section for activating subscription on other devices when email is added */
+"subscription.add.to.devices.with.email.footer" = "Χρησιμοποιήστε αυτό το email για να προσθέσετε τη συνδρομή σας στις άλλες συσκευές σας στην εφαρμογή DuckDuckGo. Μεταβείτε στις Ρυθμίσεις > Privacy Pro > Έχω συνδρομή. **[Μάθε περισσότερα](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Subscription availability message on Apple devices */
 "subscription.available.apple" = "Το Privacy Pro είναι διαθέσιμο σε οποιαδήποτε συσκευή που είναι συνδεδεμένη στον ίδιο Λογαριασμό Apple.";
@@ -2799,15 +2910,6 @@
 
 /* Title for Confirm messages */
 "subscription.confirm.title" = "Είστε σίγουροι;";
-
-/* Header for section for activating subscription on other devices */
-"subscription.devices.header" = "Ενεργοποίηση σε άλλες συσκευές";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.devices.no.email.footer" = "Προσθέστε ένα προαιρετικό email στη συνδρομή σας για να αποκτήσετε πρόσβαση στο Privacy Pro από άλλες συσκευές. **[Μάθετε περισσότερα](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.devices.with.email.footer" = "Χρησιμοποιήστε αυτό το email για να ενεργοποιήσετε τη συνδρομή σας στις Ρυθμίσεις > Privacy Pro στην εφαρμογή DuckDuckGo στις άλλες συσκευές σας. **[Μάθε περισσότερα](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Alert content for not found subscription */
 "subscription.email.inactive.alert.message" = "Η συνδρομή που συνδέεται με αυτό το email δεν είναι πλέον ενεργή.";
@@ -2952,6 +3054,9 @@
 
 /* Unknown period subscription renewal info where parameter is renewal date. This reads as 'Your subscription renews on (date)' */
 "subscription.subscription.renewing.unknown.caption" = "Η συνδρομή σας ανανεώνεται %@.";
+
+/* Unknown period subscription renewal info where parameter is renewal date. This reads as 'Your subscription renews on (date)' */
+"subscription.subscription.renewing.unknown.trial.caption" = "Η συνδρομή σας ανανεώνεται %@.";
 
 /* Annual subscription renewal info where parameter is renewal date. This reads as 'Your annual subscription renews on (date)' */
 "subscription.subscription.renewing.yearly.caption" = "Η ετήσια συνδρομή σας ανανεώνεται %@.";
@@ -3246,6 +3351,15 @@
 
 /* Title for the Apply button on the DNS Server setting screen */
 "vpn.settings.dns.server.apply.button.title" = "Εφαρμογή";
+
+/* Explanation in Settings how the vpn blocks risky sites (do not remove the link) */
+"vpn.settings.dns.server.content.blocking.explanation" = "Αποκλείστε περισσότερους από 150.000 τομείς που έχουν επισημανθεί για φιλοξενία κακόβουλου λογισμικού, επιθέσεις ηλεκτρονικού ψαρέματος και διαδικτυακές απάτες, με μια λίστα αποκλεισμού σε επίπεδο DNS. [Μάθετε περισσότερα](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
+
+/* Header of the vpn blocks risky sites feature settings */
+"vpn.settings.dns.server.content.blocking.header" = "Αποκλεισμός και φιλτράρισμα περιεχομένου";
+
+/* Title of the vpn blocks risky sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Αποκλεισμός επικίνδυνων τομέων";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";

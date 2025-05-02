@@ -26,7 +26,7 @@ enum OmniBarAccessoryType {
  }
 
 protocol OmniBar: AnyObject {
-    var barView: OmniBarView { get }
+    var barView: any OmniBarView { get }
 
     var isBackButtonEnabled: Bool { get set }
     var isForwardButtonEnabled: Bool { get set }
@@ -47,6 +47,9 @@ protocol OmniBar: AnyObject {
     func hideSeparator()
     func moveSeparatorToTop()
     func moveSeparatorToBottom()
+
+    func useSmallTopSpacing()
+    func useRegularTopSpacing()
 
     func enterPhoneState()
     func enterPadState()
@@ -74,5 +77,17 @@ protocol OmniBar: AnyObject {
 
     func cancelAllAnimations()
     func completeAnimationForDaxDialog()
+}
 
+extension OmniBar {
+    func adjust(for position: AddressBarPosition) {
+        switch position {
+        case .bottom:
+            moveSeparatorToTop()
+            useSmallTopSpacing()
+        case .top:
+            moveSeparatorToBottom()
+            useRegularTopSpacing()
+        }
+    }
 }

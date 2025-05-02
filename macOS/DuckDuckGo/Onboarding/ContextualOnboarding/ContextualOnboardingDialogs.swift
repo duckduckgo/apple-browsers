@@ -32,9 +32,10 @@ struct OnboardingTrySearchDialog: View {
     let title = UserText.ContextualOnboarding.onboardingTryASearchTitle
     let message = NSAttributedString(string: UserText.ContextualOnboarding.onboardingTryASearchMessage)
     let viewModel: OnboardingSearchSuggestionsViewModel
+    let onManualDismiss: () -> Void
 
     var body: some View {
-        DaxDialogView(logoPosition: .left) {
+        DaxDialogView(logoPosition: .left, onManualDismiss: onManualDismiss) {
             ContextualDaxDialogContent(
                 orientation: .horizontalStack(alignment: .top),
                 title: title,
@@ -52,9 +53,10 @@ struct OnboardingTrySearchDialog: View {
 
 struct OnboardingTryVisitingSiteDialog: View {
     let viewModel: OnboardingSiteSuggestionsViewModel
+    let onManualDismiss: () -> Void
 
     var body: some View {
-        DaxDialogView(logoPosition: .left) {
+        DaxDialogView(logoPosition: .left, onManualDismiss: onManualDismiss) {
             OnboardingTryVisitingSiteDialogContent(viewModel: viewModel)
         }
         .padding()
@@ -82,9 +84,10 @@ struct OnboardingTryVisitingSiteDialogContent: View {
 
 struct OnboardingTryVisitingASiteDialog: View {
     let viewModel: OnboardingSiteSuggestionsViewModel
+    let onManualDismiss: () -> Void
 
     var body: some View {
-        DaxDialogView(logoPosition: .left) {
+        DaxDialogView(logoPosition: .left, onManualDismiss: onManualDismiss) {
             OnboardingTryVisitingSiteDialogContent(viewModel: viewModel)
         }
     }
@@ -100,9 +103,10 @@ struct OnboardingFirstSearchDoneDialog: View {
     let shouldFollowUp: Bool
     let viewModel: OnboardingSiteSuggestionsViewModel
     let gotItAction: () -> Void
+    let onManualDismiss: () -> Void
 
     var body: some View {
-        DaxDialogView(logoPosition: .left) {
+        DaxDialogView(logoPosition: .left, onManualDismiss: onManualDismiss) {
             VStack {
                 if showNextScreen {
                     OnboardingTryVisitingSiteDialogContent(viewModel: viewModel)
@@ -161,10 +165,6 @@ struct OnboardingFireButtonDialogContent: View {
     private var actionView: some View {
         VStack {
             OnboardingPrimaryCTAButton(title: UserText.ContextualOnboarding.onboardingTryFireButtonButton, action: viewModel.tryFireButton)
-            OnboardingSecondaryCTAButton(title: UserText.skip, action: {
-                showNextScreen = true
-                viewModel.skip()
-            })
         }
     }
 
@@ -173,9 +173,10 @@ struct OnboardingFireButtonDialogContent: View {
 struct OnboardingFireDialog: View {
     let viewModel: OnboardingFireButtonDialogViewModel
     @State private var showNextScreen: Bool = false
+    let onManualDismiss: () -> Void
 
     var body: some View {
-        DaxDialogView(logoPosition: .left) {
+        DaxDialogView(logoPosition: .left, onManualDismiss: onManualDismiss) {
             if showNextScreen {
                 OnboardingFinalDialogContent(highFiveAction: viewModel.highFive)
             } else {
@@ -196,9 +197,10 @@ struct OnboardingTrackersDoneDialog: View {
     let blockedTrackersCTAAction: () -> Void
 
     let viewModel: OnboardingFireButtonDialogViewModel
+    let onManualDismiss: () -> Void
 
     var body: some View {
-        DaxDialogView(logoPosition: .left) {
+        DaxDialogView(logoPosition: .left, onManualDismiss: onManualDismiss) {
             VStack {
                 if showNextScreen {
                     OnboardingFireButtonDialogContent(viewModel: viewModel)
@@ -248,9 +250,10 @@ struct OnboardingFinalDialog: View {
     let cta = UserText.ContextualOnboarding.onboardingFinalScreenButton
 
     let highFiveAction: () -> Void
+    let onManualDismiss: () -> Void
 
     var body: some View {
-        DaxDialogView(logoPosition: .left) {
+        DaxDialogView(logoPosition: .left, onManualDismiss: onManualDismiss) {
             OnboardingFinalDialogContent(highFiveAction: highFiveAction)
         }
     }
@@ -299,17 +302,17 @@ struct OnboardingSecondaryCTAButton: View {
 // MARK: - Preview
 
 #Preview("Try Search") {
-    OnboardingTrySearchDialog(viewModel: OnboardingSearchSuggestionsViewModel(suggestedSearchesProvider: OnboardingSuggestedSearchesProvider(), pixelReporter: OnboardingPixelReporter(onboardingStateProvider: ContextualOnboardingStateMachine())))
+    OnboardingTrySearchDialog(viewModel: OnboardingSearchSuggestionsViewModel(suggestedSearchesProvider: OnboardingSuggestedSearchesProvider()), onManualDismiss: {})
         .padding()
 }
 
 #Preview("Try Site") {
-    OnboardingTryVisitingSiteDialog(viewModel: OnboardingSiteSuggestionsViewModel(title: "", suggestedSitesProvider: OnboardingSuggestedSitesProvider(surpriseItemTitle: UserText.ContextualOnboarding.tryASearchOptionSurpriseMeTitle), pixelReporter: OnboardingPixelReporter(onboardingStateProvider: ContextualOnboardingStateMachine())))
+    OnboardingTryVisitingSiteDialog(viewModel: OnboardingSiteSuggestionsViewModel(title: "", suggestedSitesProvider: OnboardingSuggestedSitesProvider(surpriseItemTitle: UserText.ContextualOnboarding.tryASearchOptionSurpriseMeTitle)), onManualDismiss: {})
         .padding()
 }
 
 #Preview("First Search Dialog") {
-    OnboardingFirstSearchDoneDialog(shouldFollowUp: true, viewModel: OnboardingSiteSuggestionsViewModel(title: UserText.ContextualOnboarding.onboardingTryASiteTitle, suggestedSitesProvider: OnboardingSuggestedSitesProvider(surpriseItemTitle: UserText.ContextualOnboarding.tryASearchOptionSurpriseMeTitle), pixelReporter: OnboardingPixelReporter(onboardingStateProvider: ContextualOnboardingStateMachine())), gotItAction: {})
+    OnboardingFirstSearchDoneDialog(shouldFollowUp: true, viewModel: OnboardingSiteSuggestionsViewModel(title: UserText.ContextualOnboarding.onboardingTryASiteTitle, suggestedSitesProvider: OnboardingSuggestedSitesProvider(surpriseItemTitle: UserText.ContextualOnboarding.tryASearchOptionSurpriseMeTitle)), gotItAction: {}, onManualDismiss: {})
         .padding()
 }
 
@@ -325,6 +328,6 @@ struct OnboardingSecondaryCTAButton: View {
         let firstString = UserText.ContextualOnboarding.onboardingTryFireButtonMessage
         return NSMutableAttributedString(string: firstString)
     }()
-    return OnboardingTrackersDoneDialog(shouldFollowUp: true, message: message, blockedTrackersCTAAction: {}, viewModel: OnboardingFireButtonDialogViewModel(onDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {}))
+    OnboardingTrackersDoneDialog(shouldFollowUp: true, message: message, blockedTrackersCTAAction: {}, viewModel: OnboardingFireButtonDialogViewModel(onDismiss: {}, onGotItPressed: {}, onFireButtonPressed: {}), onManualDismiss: {})
         .padding()
 }

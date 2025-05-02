@@ -72,6 +72,7 @@ public class AppUserDefaults: AppSettings {
         static let currentFireButtonAnimationKey = "com.duckduckgo.app.currentFireButtonAnimationKey"
         
         static let autofillCredentialsEnabled = "com.duckduckgo.ios.autofillCredentialsEnabled"
+        static let autofillCreditCardsEnabled = "com.duckduckgo.ios.autofillCreditCardsEnabled"
         static let autofillIsNewInstallForOnByDefault = "com.duckduckgo.ios.autofillIsNewInstallForOnByDefault"
 
         static let favoritesDisplayMode = "com.duckduckgo.ios.favoritesDisplayMode"
@@ -88,6 +89,7 @@ public class AppUserDefaults: AppSettings {
         static let duckPlayerNativeUIPrimingModalPresentationEventCount = "com.duckduckgo.ios.duckPlayerNativeUIPrimingModalPresentationEventCount"
         static let duckPlayerNativeUIPrimingModalTimeSinceLastPresented = "com.duckduckgo.ios.duckPlayerNativeUIPrimingModalTimeSinceLastPresented"
         static let duckPlayerPillDismissCount = "com.duckduckgo.ios.duckPlayerPillDismissCount"
+        static let duckPlayerVariant = "com.duckduckgo.ios.duckPlayerVariant"
     }
 
     private struct DebugKeys {
@@ -228,7 +230,11 @@ public class AppUserDefaults: AppSettings {
 
     var currentAddressBarPosition: AddressBarPosition {
         get {
-            return AddressBarPosition(rawValue: addressBarPositionStorage?.lowercased()  ?? "") ?? .top
+            guard UIDevice.current.userInterfaceIdiom != .pad else {
+                return .top
+            }
+
+            return AddressBarPosition(rawValue: addressBarPositionStorage?.lowercased() ?? "") ?? .top
         }
 
         set {
@@ -333,6 +339,38 @@ public class AppUserDefaults: AppSettings {
     func clearAutofillImportViaSyncStart() {
         autofillImportViaSyncStart = nil
     }
+
+    private func setAutofillCreditCardsEnabledAutomaticallyIfNecessary() {
+        if autofillCreditCardsHasBeenEnabledAutomaticallyIfNecessary {
+            return
+        }
+
+        if autofillCredentialsEnabled, featureFlagger.isFeatureOn(.autofillCreditCardsOnByDefault) {
+            enableAutofillCreditCards()
+        }
+    }
+
+    private func enableAutofillCreditCards() {
+        autofillCreditCardsHasBeenEnabledAutomaticallyIfNecessary = true
+        autofillCreditCardsEnabled = true
+    }
+
+    var autofillCreditCardsEnabled: Bool {
+        get {
+            // setAutofillCreditCardsEnabledAutomaticallyIfNecessary() used here to automatically turn on autofill for people if:
+            // 1. They have autofill for credentials enabled
+            // 2. The feature flag is enabled
+            setAutofillCreditCardsEnabledAutomaticallyIfNecessary()
+            return userDefaults?.object(forKey: Keys.autofillCreditCardsEnabled) as? Bool ?? false
+        }
+
+        set {
+            userDefaults?.set(newValue, forKey: Keys.autofillCreditCardsEnabled)
+        }
+    }
+
+    @UserDefaultsWrapper(key: .autofillCreditCardsHasBeenEnabledAutomaticallyIfNecessary, defaultValue: false)
+    var autofillCreditCardsHasBeenEnabledAutomaticallyIfNecessary: Bool
 
     @UserDefaultsWrapper(key: .voiceSearchEnabled, defaultValue: false)
     var voiceSearchEnabled: Bool
@@ -533,6 +571,21 @@ public class AppUserDefaults: AppSettings {
         }
         set {
             userDefaults?.set(newValue.rawValue, forKey: DebugKeys.onboardingIsNewUserKey)
+        }
+    }
+
+   var duckPlayerVariant: DuckPlayerVariant {
+        get {
+            if let value = userDefaults?.string(forKey: Keys.duckPlayerVariant),
+               let mode = DuckPlayerVariant(stringValue: value) {
+                return mode
+            }
+            return .classicWeb
+        }
+        set {
+            userDefaults?.set(newValue.stringValue, forKey: Keys.duckPlayerVariant)
+            NotificationCenter.default.post(name: AppUserDefaults.Notifications.duckPlayerSettingsUpdated,
+                                            object: nil)
         }
     }
 }

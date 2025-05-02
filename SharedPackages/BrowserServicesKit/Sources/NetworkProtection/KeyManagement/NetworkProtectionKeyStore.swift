@@ -227,6 +227,7 @@ public final class NetworkProtectionKeychainKeyStore: NetworkProtectionKeyStore 
 
         guard let error = error as? NetworkProtectionKeychainStoreError else {
             assertionFailure("Failed to cast Network Protection Keychain store error")
+            Logger.networkProtection.fault("Failed to cast Network Protection Keychain store error")
             errorEvents?.fire(NetworkProtectionError.unhandledError(function: #function, line: #line, error: error))
             return
         }

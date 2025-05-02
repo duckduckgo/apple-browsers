@@ -195,12 +195,6 @@ protocol DuckPlayerSettings: AnyObject {
     /// Determines if the native UI should be used for Youtube
     var nativeUIYoutubeMode: NativeDuckPlayerYoutubeMode { get set }
 
-    /// Determines if the priming modal has been presented
-    var nativeUIPrimingModalPresentedCount: Int { get }
-
-    /// Determines the number of seconds since the last priming modal was presented
-    var duckPlayerNativeUIPrimingModalTimeSinceLastPresented: Int { get }
-
     /// Autoplay Videos when opening
     var autoplay: Bool { get set }
 
@@ -210,7 +204,14 @@ protocol DuckPlayerSettings: AnyObject {
     // Holds additional configuration for the custom error view
     var customErrorSettings: CustomErrorSettings? { get }
 
+    // Determines the variant of Duck Player
     var variant: DuckPlayerVariant { get set }
+
+    // Pill dismiss count
+    var pillDismissCount: Int { get set }
+
+    // Time since last priming modal was presented
+    var primingMessagePresented: Bool { get }
 
     /// Initializes a new instance with the provided app settings and privacy configuration manager.
     ///
@@ -370,12 +371,6 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
         }
     }
 
-    /// Determines if the priming modal has been presented
-    var nativeUIPrimingModalPresentedCount: Int { return appSettings.duckPlayerNativeUIPrimingModalPresentationEventCount }
-
-    /// Determines the number of seconds since the last priming modal was presented
-    var duckPlayerNativeUIPrimingModalTimeSinceLastPresented: Int { return appSettings.duckPlayerNativeUIPrimingModalLastPresentationTime }
-
     // Determines if we should use the native verion of DuckPlayer (Internal only)
     var autoplay: Bool {
         get {
@@ -408,6 +403,17 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
             }
         }
         return nil
+    }
+
+    // Priming message presented
+    var primingMessagePresented: Bool {
+        get {
+            return appSettings.duckPlayerPrimingMessagePresented
+        }
+        set {
+            appSettings.duckPlayerPrimingMessagePresented = newValue
+            triggerNotification()
+        }
     }
 
     var variant: DuckPlayerVariant {
@@ -449,6 +455,17 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
                 }
                 
             }
+        }
+    }
+
+    // Determines the number of times the pill has been dismissed
+    var pillDismissCount: Int {
+        get {
+            return appSettings.duckPlayerPillDismissCount
+        }
+        set {
+            appSettings.duckPlayerPillDismissCount = newValue
+            triggerNotification()
         }
     }
 

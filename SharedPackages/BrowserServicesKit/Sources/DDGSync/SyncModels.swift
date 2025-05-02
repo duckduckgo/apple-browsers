@@ -139,6 +139,53 @@ public struct ExchangeMessage: Codable, Sendable {
     public let deviceName: String
 }
 
+public struct PairingInfo {
+    public let base64Code: String
+    public let deviceName: String
+
+    public init?(url: URL) {
+        guard Self.isPairing(url: url) else {
+            return nil
+        }
+        guard let queryParameters = url.queryParameters(),
+              let encodedCode = queryParameters["code"],
+              let deviceName = queryParameters["deviceName"] else {
+            return nil
+        }
+        self.init(base64Code: Self.restoreBase64(from: encodedCode),
+                  deviceName: deviceName)
+    }
+
+    init(base64Code: String, deviceName: String) {
+        self.base64Code = base64Code
+        self.deviceName = deviceName
+    }
+
+    func toURL(baseURL: URL) -> URL {
+        let url = baseURL.appendingPathComponent("sync/pairing")
+        var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        urlComponents?.queryItems = [
+            .init(name: "code", value: base64URLCode),
+            .init(name: "deviceName", value: deviceName)
+        ]
+        return urlComponents?.url ?? url
+    }
+
+    private static func isPairing(url: URL) -> Bool {
+        url.pathComponents.contains("sync") && url.pathComponents.last == "pairing" && url.isPart(ofDomain: "duckduckgo.com")
+    }
+
+    private static func restoreBase64(from base64URLCode: String) -> String {
+        let paddingLength = 4 - (base64URLCode.count % 4)
+        let padding = String(repeating: "=", count: paddingLength)
+        return base64URLCode.replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/").appending(padding)
+    }
+
+    private var base64URLCode: String {
+        base64Code.replacingOccurrences(of: "+", with: "-").replacingOccurrences(of: "/", with: "_").replacingOccurrences(of: "=", with: "")
+    }
+}
+
 public struct SyncCode: Codable {
 
     public enum Base64Error: Error {

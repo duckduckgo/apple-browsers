@@ -865,7 +865,7 @@ public final class MockDatabase: DataBrokerProtectionRepository {
 
     public func fetchAllBrokerProfileQueryData() throws -> [BrokerProfileQueryData] {
         wasFetchAllBrokerProfileQueryDataCalled = true
-        
+
         if let fetchAllBrokerProfileQueryDataError {
             throw fetchAllBrokerProfileQueryDataError
         }

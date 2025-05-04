@@ -598,16 +598,17 @@ final class BrowserTabViewController: NSViewController {
                 }
                 return old == new
             })
-            .map { [weak self,tabViewModel] tabContent -> AnyPublisher<Void, Never> in
+            .map { [weak self, tabViewModel] tabContent -> AnyPublisher<Void, Never> in
                 // For non-URL tabs, just emit an event displaying the tab content
                 guard let tabViewModel, tabContent.isUrl else {
                     return Just(()).eraseToAnyPublisher()
                 }
 
-                // For URL tabs, we only want to show tab content (webView) when
-                // it has content to display (first navigation had been committed)
-                // or starts navigation.
-                if [URL.newtab, URL.settings, URL.bookmarks].contains(self?.lastURL) {
+                // If the current content is the native internal site, delay the webview presentation
+                // until a website renders (or edge cases) to avoid white flash
+                // Enabled for internal users for test
+                if [URL.newtab, URL.settings, URL.bookmarks].contains(self?.lastURL) &&
+                    self?.featureFlagger.isFeatureOn(.delayedWebviewPresentation) == true {
                     return Publishers.Merge5(
                         tabViewModel.tab.webViewDidReceiveRedirectPublisher,
                         tabViewModel.tab.webViewRenderingProgressDidChangePublisher,
@@ -619,6 +620,9 @@ final class BrowserTabViewController: NSViewController {
                     .prefix(1)
                     .eraseToAnyPublisher()
                 } else {
+                    // For URL tabs, we only want to show tab content (webView) when
+                    // it has content to display (first navigation had been committed)
+                    // or starts navigation.
                     return Publishers.Merge(
                         tabViewModel.tab.$hasCommittedContent
                             .filter { $0 == true }

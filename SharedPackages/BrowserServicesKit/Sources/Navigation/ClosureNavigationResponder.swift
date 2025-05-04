@@ -23,8 +23,8 @@ import WebKit
 public struct ClosureNavigationResponder: NavigationResponder {
 
     let renderingProgressDidChange: ((UInt) -> Void)?
-    public func renderingProgressDidChangeRaw(progressEventsRawValue: UInt) {
-        renderingProgressDidChange?(progressEventsRawValue)
+    public func renderingProgressDidChangeRaw(progressEvents: UInt) {
+        renderingProgressDidChange?(progressEvents)
     }
 
     let decidePolicy: ((_ navigationAction: NavigationAction, _ preferences: inout NavigationPreferences) async -> NavigationActionPolicy?)?

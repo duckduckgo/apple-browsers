@@ -932,12 +932,11 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
 
     @MainActor
     @objc(_webView:renderingProgressDidChange:)
-    public func webView(_ webView: WKWebView, renderingProgressDidChange progressEventsRawValue: UInt) {
+    public func webView(_ webView: WKWebView, renderingProgressDidChange progressEvents: UInt) {
         // Use raw bitmask directly
-        Logger.navigation.log("renderingProgressDidChange: \(progressEventsRawValue)")
+        Logger.navigation.log("renderingProgressDidChange: \(progressEvents)")
         for responder in responders {
-            // Forward raw value; responders should handle the bitmask if needed
-            responder.renderingProgressDidChangeRaw(progressEventsRawValue: progressEventsRawValue)
+            responder.renderingProgressDidChangeRaw(progressEventsRawValue: progressEvents)
         }
     }
 #endif

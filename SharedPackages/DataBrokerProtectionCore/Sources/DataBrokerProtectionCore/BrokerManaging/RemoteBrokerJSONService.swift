@@ -36,7 +36,7 @@ extension FileManager: ZipArchiveHandling {
 public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
     enum Error: Swift.Error {
         case missingAccessToken
-        case serverError
+        case serverError(httpCode: Int?)
         case clientError
     }
 
@@ -164,7 +164,9 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
                 return
             }
 
-            guard response.statusCode == 200, let newETag = response.etag else { throw Error.serverError }
+            guard response.statusCode == 200, let newETag = response.etag else {
+                throw Error.serverError(httpCode: response.statusCode)
+            }
 
             /// 4. Download, extract, and process changed broker JSONs
             try await checkForBrokerJSONUpdatesFromMainConfig(try JSONDecoder().decode(MainConfig.self, from: data), eTag: newETag)
@@ -230,7 +232,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
                         }
 
                         guard let response = response as? HTTPURLResponse, response.statusCode == 200 else {
-                            continuation.resume(throwing: Error.serverError)
+                            continuation.resume(throwing: Error.serverError(httpCode: (response as? HTTPURLResponse)?.statusCode))
                             return
                         }
 

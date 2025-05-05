@@ -1205,6 +1205,12 @@ final class NavigationBarViewController: NSViewController {
             return
         }
 
+        // Don't make changes while the address bar text field is active, unless we are on the home page.
+        // This allows the address bar to maintain its width when activating it at narrow widths.
+        guard let addressBarViewController, !addressBarViewController.isFirstResponder || addressBarViewController.isHomePage else {
+            return
+        }
+
         if visiblePinnedViewsRequiredWidth >= overflowThreshold {
             // Move buttons into overflow menu if needed
             while visiblePinnedViewsRequiredWidth >= overflowThreshold {

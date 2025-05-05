@@ -83,7 +83,7 @@ final class AddressBarViewController: NSViewController {
         }
     }
 
-    private var isFirstResponder = false {
+    private(set) var isFirstResponder = false {
         didSet {
             updateView()
             updateSwitchToTabBoxAppearance()
@@ -92,7 +92,7 @@ final class AddressBarViewController: NSViewController {
         }
     }
 
-    private var isHomePage = false {
+    private(set) var isHomePage = false {
         didSet {
             updateView()
             suggestionContainerViewModel.isHomePage = isHomePage

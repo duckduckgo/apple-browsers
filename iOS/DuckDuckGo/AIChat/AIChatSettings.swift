@@ -85,9 +85,9 @@ struct AIChatSettings: AIChatSettingsProvider {
         triggerSettingsChangedNotification()
 
         if enable {
-            // TODO Pixel
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsEnabled)
         } else {
-            // TODO Pixel
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsDisabled)
         }
     }
 

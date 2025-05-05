@@ -36,6 +36,7 @@ protocol VisualStyleProviding {
     var passwordManagerButtonImage: NSImage { get }
     var bookmarksButtonImage: NSImage { get }
     var moreOptionsbuttonImage: NSImage { get }
+    var overflowButtonImage: NSImage { get }
     var vpnNavigationIconsProvider: IconProvider { get }
     var fireButtonStyleProvider: FireButtonIconStyleProviding { get }
     var moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding { get }
@@ -74,6 +75,7 @@ struct VisualStyle: VisualStyleProviding {
     let passwordManagerButtonImage: NSImage
     let bookmarksButtonImage: NSImage
     let moreOptionsbuttonImage: NSImage
+    let overflowButtonImage: NSImage
     let vpnNavigationIconsProvider: IconProvider
     let fireButtonStyleProvider: FireButtonIconStyleProviding
     let moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding
@@ -123,6 +125,7 @@ struct VisualStyle: VisualStyleProviding {
                            passwordManagerButtonImage: .passwordManagement,
                            bookmarksButtonImage: .bookmarks,
                            moreOptionsbuttonImage: .settings,
+                           overflowButtonImage: .chevronDoubleRight16,
                            vpnNavigationIconsProvider: NavigationBarIconProvider(),
                            fireButtonStyleProvider: LegacyFireButtonIconStyleProvider(),
                            moreOptionsMenuIconsProvider: LegacyMoreOptionsMenuIcons(),
@@ -149,6 +152,7 @@ struct VisualStyle: VisualStyleProviding {
                            passwordManagerButtonImage: .passwordManagerNew,
                            bookmarksButtonImage: .bookmarksNew,
                            moreOptionsbuttonImage: .optionsNew,
+                           overflowButtonImage: .chevronDoubleRight16,
                            vpnNavigationIconsProvider: NewVPNNavigationBarIconProvider(),
                            fireButtonStyleProvider: NewFireButtonIconStyleProvider(),
                            moreOptionsMenuIconsProvider: NewMoreOptionsMenuIcons(),

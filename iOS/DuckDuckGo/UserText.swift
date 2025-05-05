@@ -1553,7 +1553,7 @@ Take back control of your personal information with the browser designed for dat
     static let duckPlayerContingencyMessageCTA = NSLocalizedString("duck-player.video-contingency-cta", value: "Learn More", comment: "Button for the message explaining to the user that Duck Player is not available so the user can learn more")
 
     // MARK: - AI Chat
-    public static let settingsEnableAiChat = NSLocalizedString("settings.enable.aichat", value: "Enable AI Chat", comment: "Settings screen cell text for enabling AI chat")
+    public static let settingsEnableAiChat = NSLocalizedString("settings.enable.aichat", value: "Enable Duck.ai", comment: "Settings screen cell text for enabling AI chat")
 
     public static let settingsAiChatShowIn = NSLocalizedString("settings.aichat.showin", value: "Show In", comment: "Settings screen text for showing AI Chat in various places in the app")
 

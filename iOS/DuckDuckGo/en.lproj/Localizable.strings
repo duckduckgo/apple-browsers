@@ -2523,7 +2523,7 @@ Take back control of your personal information with the browser designed for dat
 "settings.emailProtection.description" = "Block email trackers and hide your address";
 
 /* Settings screen cell text for enabling AI chat */
-"settings.enable.aichat" = "Enable AI Chat";
+"settings.enable.aichat" = "Enable Duck.ai";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Enable Email Protection";

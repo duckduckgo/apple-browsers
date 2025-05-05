@@ -123,7 +123,7 @@ enum DuckPlayerVariant: Equatable, Codable, CustomStringConvertible, CaseIterabl
     private static let classicAString = "Classic (Web)"
     private static let nativeBString = "Native (Opt-in)"
     private static let nativeCString = "Native (Opt-out)"
-    
+
     var stringValue: String {
         switch self {
         case .classicWeb:
@@ -206,6 +206,9 @@ protocol DuckPlayerSettings: AnyObject {
 
     // Determines the variant of Duck Player
     var variant: DuckPlayerVariant { get set }
+
+    // Determines if the welcome message has been shown
+    var welcomeMessageShown: Bool { get set }
 
     // Pill dismiss count
     var pillDismissCount: Int { get set }
@@ -306,7 +309,6 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
             }
         }
     }
-    
 
     /// Flag to allow the first video to play without redirection.
     var allowFirstVideo: Bool = false
@@ -449,10 +451,23 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
                     self.nativeUISERPEnabled = true
                     self.nativeUIYoutubeMode = .auto
                     self.autoplay = true
+                    // Reset the welcome message shown flag
+                    self.welcomeMessageShown = false
                     self.primingMessagePresented = true // Never present the priming message for nativeOptOut
                 }
 
             }
+        }
+    }
+
+    // Determines if we should show a custom view when YouTube returns an error
+    var welcomeMessageShown: Bool {
+        get {
+            return appSettings.duckPlayerWelcomeMessageShown
+        }
+        set {
+            appSettings.duckPlayerWelcomeMessageShown = newValue
+            triggerNotification()
         }
     }
 

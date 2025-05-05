@@ -39,9 +39,9 @@ final class NavigationBarViewController: NSViewController {
         static let dragOverFolderExpandDelay: TimeInterval = 0.3
     }
 
-    @IBOutlet weak var goBackButton: NSButton!
-    @IBOutlet weak var goForwardButton: NSButton!
-    @IBOutlet weak var refreshOrStopButton: NSButton!
+    @IBOutlet weak var goBackButton: MouseOverButton!
+    @IBOutlet weak var goForwardButton: MouseOverButton!
+    @IBOutlet weak var refreshOrStopButton: MouseOverButton!
     @IBOutlet weak var optionsButton: MouseOverButton!
     @IBOutlet weak var bookmarkListButton: MouseOverButton!
     @IBOutlet weak var passwordManagementButton: MouseOverButton!
@@ -64,6 +64,7 @@ final class NavigationBarViewController: NSViewController {
     @IBOutlet var navigationBarHeightConstraint: NSLayoutConstraint!
     @IBOutlet var buttonsTopConstraint: NSLayoutConstraint!
     @IBOutlet var logoWidthConstraint: NSLayoutConstraint!
+    @IBOutlet var backgroundColorView: ColorView!
 
     private let downloadListCoordinator: DownloadListCoordinator
 
@@ -114,7 +115,7 @@ final class NavigationBarViewController: NSViewController {
     private var cancellables = Set<AnyCancellable>()
     private let brokenSitePromptLimiter: BrokenSitePromptLimiter
     private let featureFlagger: FeatureFlagger
-    private let visualStyleManager: VisualStyleManagerProviding
+    private let visualStyle: VisualStyleProviding
 
     @UserDefaultsWrapper(key: .homeButtonPosition, defaultValue: .right)
     static private var homeButtonPosition: HomeButtonPosition
@@ -144,7 +145,7 @@ final class NavigationBarViewController: NSViewController {
                 autofillPopoverPresenter: autofillPopoverPresenter,
                 brokenSitePromptLimiter: brokenSitePromptLimiter,
                 featureFlagger: featureFlagger,
-                visualStyleManager: visualStyleManager
+                visualStyle: visualStyleManager.style
             )
         }!
     }
@@ -159,19 +160,19 @@ final class NavigationBarViewController: NSViewController {
         autofillPopoverPresenter: AutofillPopoverPresenter,
         brokenSitePromptLimiter: BrokenSitePromptLimiter,
         featureFlagger: FeatureFlagger,
-        visualStyleManager: VisualStyleManagerProviding
+        visualStyle: VisualStyleProviding
     ) {
 
         self.popovers = NavigationBarPopovers(networkProtectionPopoverManager: networkProtectionPopoverManager, autofillPopoverPresenter: autofillPopoverPresenter, isBurner: tabCollectionViewModel.isBurner)
         self.tabCollectionViewModel = tabCollectionViewModel
         self.networkProtectionButtonModel = NetworkProtectionNavBarButtonModel(popoverManager: networkProtectionPopoverManager,
                                                                                statusReporter: networkProtectionStatusReporter,
-                                                                               iconProvider: visualStyleManager.style.vpnNavigationIconsProvider)
+                                                                               iconProvider: visualStyle.vpnNavigationIconsProvider)
         self.downloadListCoordinator = downloadListCoordinator
         self.dragDropManager = dragDropManager
         self.brokenSitePromptLimiter = brokenSitePromptLimiter
         self.featureFlagger = featureFlagger
-        self.visualStyleManager = visualStyleManager
+        self.visualStyle = visualStyle
         goBackButtonMenuDelegate = NavigationButtonMenuDelegate(buttonType: .back, tabCollectionViewModel: tabCollectionViewModel)
         goForwardButtonMenuDelegate = NavigationButtonMenuDelegate(buttonType: .forward, tabCollectionViewModel: tabCollectionViewModel)
         super.init(coder: coder)
@@ -189,9 +190,12 @@ final class NavigationBarViewController: NSViewController {
         addressBarContainer.wantsLayer = true
         addressBarContainer.layer?.masksToBounds = false
 
+        backgroundColorView.backgroundColor = visualStyle.navigationBackgroundColor
+
         setupNavigationButtonsCornerRadius()
         setupNavigationButtonMenus()
         setupNavigationButtonIcons()
+        setupNavigationButtonColors()
         addContextMenu()
 
         optionsButton.sendAction(on: .leftMouseDown)
@@ -719,28 +723,39 @@ final class NavigationBarViewController: NSViewController {
     }
 
     private func setupNavigationButtonIcons() {
-        goBackButton.image = visualStyleManager.style.backButtonImage
-        goForwardButton.image = visualStyleManager.style.forwardButtonImage
-        refreshOrStopButton.image = visualStyleManager.style.reloadButtonImage
-        homeButton.image = visualStyleManager.style.homeButtonImage
+        goBackButton.image = visualStyle.backButtonImage
+        goForwardButton.image = visualStyle.forwardButtonImage
+        refreshOrStopButton.image = visualStyle.reloadButtonImage
+        homeButton.image = visualStyle.homeButtonImage
 
-        downloadsButton.image = visualStyleManager.style.downloadsButtonImage
-        passwordManagementButton.image = visualStyleManager.style.passwordManagerButtonImage
-        bookmarkListButton.image = visualStyleManager.style.bookmarksButtonImage
-        optionsButton.image = visualStyleManager.style.moreOptionsbuttonImage
+        downloadsButton.image = visualStyle.downloadsButtonImage
+        passwordManagementButton.image = visualStyle.passwordManagerButtonImage
+        bookmarkListButton.image = visualStyle.bookmarksButtonImage
+        optionsButton.image = visualStyle.moreOptionsbuttonImage
+    }
+
+    private func setupNavigationButtonColors() {
+        let allButtons: [MouseOverButton] = [
+            goBackButton, goForwardButton, refreshOrStopButton, homeButton,
+            downloadsButton, passwordManagementButton, bookmarkListButton, optionsButton]
+
+        allButtons.forEach { button in
+            button.normalTintColor = visualStyle.iconsColor
+            button.mouseOverColor = visualStyle.buttonMouseOverColor
+        }
     }
 
     private func setupNavigationButtonsCornerRadius() {
-        goBackButton.setCornerRadius(visualStyleManager.style.toolbarButtonsCornerRadius)
-        goForwardButton.setCornerRadius(visualStyleManager.style.toolbarButtonsCornerRadius)
-        refreshOrStopButton.setCornerRadius(visualStyleManager.style.toolbarButtonsCornerRadius)
-        homeButton.setCornerRadius(visualStyleManager.style.toolbarButtonsCornerRadius)
+        goBackButton.setCornerRadius(visualStyle.toolbarButtonsCornerRadius)
+        goForwardButton.setCornerRadius(visualStyle.toolbarButtonsCornerRadius)
+        refreshOrStopButton.setCornerRadius(visualStyle.toolbarButtonsCornerRadius)
+        homeButton.setCornerRadius(visualStyle.toolbarButtonsCornerRadius)
 
-        downloadsButton.setCornerRadius(visualStyleManager.style.toolbarButtonsCornerRadius)
-        passwordManagementButton.setCornerRadius(visualStyleManager.style.toolbarButtonsCornerRadius)
-        bookmarkListButton.setCornerRadius(visualStyleManager.style.toolbarButtonsCornerRadius)
-        networkProtectionButton.setCornerRadius(visualStyleManager.style.toolbarButtonsCornerRadius)
-        optionsButton.setCornerRadius(visualStyleManager.style.toolbarButtonsCornerRadius)
+        downloadsButton.setCornerRadius(visualStyle.toolbarButtonsCornerRadius)
+        passwordManagementButton.setCornerRadius(visualStyle.toolbarButtonsCornerRadius)
+        bookmarkListButton.setCornerRadius(visualStyle.toolbarButtonsCornerRadius)
+        networkProtectionButton.setCornerRadius(visualStyle.toolbarButtonsCornerRadius)
+        optionsButton.setCornerRadius(visualStyle.toolbarButtonsCornerRadius)
     }
 
     private func subscribeToSelectedTabViewModel() {
@@ -766,19 +781,19 @@ final class NavigationBarViewController: NSViewController {
         heightChangeAnimation?.cancel()
 
         daxLogo.alphaValue = !sizeClass.isLogoVisible ? 1 : 0 // initial value to animate from
-        daxLogo.isHidden = visualStyleManager.style.shouldShowLogoinInAddressBar
+        daxLogo.isHidden = visualStyle.shouldShowLogoinInAddressBar
 
         let performResize = { [weak self] in
             guard let self else { return }
 
             let height: NSLayoutConstraint = animated ? navigationBarHeightConstraint.animator() : navigationBarHeightConstraint
-            height.constant = visualStyleManager.style.addressBarHeight(for: sizeClass)
+            height.constant = visualStyle.addressBarHeight(for: sizeClass)
 
             let barTop: NSLayoutConstraint = animated ? addressBarTopConstraint.animator() : addressBarTopConstraint
-            barTop.constant = visualStyleManager.style.addressBarTopPadding(for: sizeClass)
+            barTop.constant = visualStyle.addressBarTopPadding(for: sizeClass)
 
             let bottom: NSLayoutConstraint = animated ? addressBarBottomConstraint.animator() : addressBarBottomConstraint
-            bottom.constant = visualStyleManager.style.addressBarBottomPadding(for: sizeClass)
+            bottom.constant = visualStyle.addressBarBottomPadding(for: sizeClass)
 
             let logoWidth: NSLayoutConstraint = animated ? logoWidthConstraint.animator() : logoWidthConstraint
             logoWidth.constant = sizeClass.logoWidth

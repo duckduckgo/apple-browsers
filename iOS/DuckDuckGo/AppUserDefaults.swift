@@ -86,8 +86,12 @@ public class AppUserDefaults: AppSettings {
 
         static let duckPlayerNativeYoutubeMode = "com.duckduckgo.ios.duckPlayerNativeYoutubeMode"
         static let duckPlayerNativeUISERPEnabled = "com.duckduckgo.ios.duckPlayerNativeUISERPEnabled"
+        static let duckPlayerNativeUIPrimingModalPresentationEventCount = "com.duckduckgo.ios.duckPlayerNativeUIPrimingModalPresentationEventCount"
+        static let duckPlayerNativeUIPrimingModalTimeSinceLastPresented = "com.duckduckgo.ios.duckPlayerNativeUIPrimingModalTimeSinceLastPresented"
+        static let duckPlayerPillDismissCount = "com.duckduckgo.ios.duckPlayerPillDismissCount"
         static let duckPlayerNativeUIPrimingModalPresentationEventCount = "com.duckduckgo.ios.duckPlayerNativeUIPrimingModalPresentationEventCount"        
         static let duckPlayerVariant = "com.duckduckgo.ios.duckPlayerVariant"
+        static let duckPlayerWelcomeMessageShown = "com.duckduckgo.ios.duckPlayerWelcomeMessageShown"
         static let duckPlayerPrimingMessagePresented = "com.duckduckgo.ios.duckPlayerPrimingMessagePresented"
         static let duckPlayerPillDismissCount = "com.duckduckgo.ios.duckPlayerPillDismissCount"
     }
@@ -499,6 +503,9 @@ public class AppUserDefaults: AppSettings {
     
     @UserDefaultsWrapper(key: .duckPlayerAutoplay, defaultValue: true)
     var duckPlayerAutoplay: Bool
+
+    @UserDefaultsWrapper(key: .duckPlayerWelcomeMessageShown, defaultValue: false)
+    var duckPlayerWelcomeMessageShown: Bool
 
     var duckPlayerNativeUISERPEnabled: Bool {
         get {

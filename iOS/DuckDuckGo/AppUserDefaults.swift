@@ -86,14 +86,11 @@ public class AppUserDefaults: AppSettings {
 
         static let duckPlayerNativeYoutubeMode = "com.duckduckgo.ios.duckPlayerNativeYoutubeMode"
         static let duckPlayerNativeUISERPEnabled = "com.duckduckgo.ios.duckPlayerNativeUISERPEnabled"
-        static let duckPlayerNativeUIPrimingModalPresentationEventCount = "com.duckduckgo.ios.duckPlayerNativeUIPrimingModalPresentationEventCount"
         static let duckPlayerNativeUIPrimingModalTimeSinceLastPresented = "com.duckduckgo.ios.duckPlayerNativeUIPrimingModalTimeSinceLastPresented"
         static let duckPlayerPillDismissCount = "com.duckduckgo.ios.duckPlayerPillDismissCount"
-        static let duckPlayerNativeUIPrimingModalPresentationEventCount = "com.duckduckgo.ios.duckPlayerNativeUIPrimingModalPresentationEventCount"        
         static let duckPlayerVariant = "com.duckduckgo.ios.duckPlayerVariant"
         static let duckPlayerWelcomeMessageShown = "com.duckduckgo.ios.duckPlayerWelcomeMessageShown"
         static let duckPlayerPrimingMessagePresented = "com.duckduckgo.ios.duckPlayerPrimingMessagePresented"
-        static let duckPlayerPillDismissCount = "com.duckduckgo.ios.duckPlayerPillDismissCount"
     }
 
     private struct DebugKeys {
@@ -537,17 +534,6 @@ public class AppUserDefaults: AppSettings {
                                             object: duckPlayerNativeYoutubeMode)
         }
     }
-
-    var duckPlayerNativeUIPrimingModalPresentationEventCount: Int {
-        get {
-            return userDefaults?.integer(forKey: Keys.duckPlayerNativeUIPrimingModalPresentationEventCount) ?? 0
-        }
-        set {
-            userDefaults?.setValue(newValue, forKey: Keys.duckPlayerNativeUIPrimingModalPresentationEventCount)
-            NotificationCenter.default.post(name: AppUserDefaults.Notifications.duckPlayerSettingsUpdated,
-                                          object: nil)
-        }
-    }        
 
     var duckPlayerPillDismissCount: Int {
         get {

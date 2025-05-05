@@ -469,6 +469,9 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
 
         postPillVisibilityNotification(isVisible: false)
 
+        // Check if this is a welcome pill being dismissed
+        let wasWelcomePill = !duckPlayerSettings.primingMessagePresented
+        
         // If was dismissed by the user, increment the dismiss count
         if !programatic {
             duckPlayerSettings.pillDismissCount += 1
@@ -482,13 +485,26 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         // Then dismiss the view model
         containerViewModel?.dismiss()
 
+        // Function to handle welcome pill transition
+        let handleWelcomePillTransition = { [weak self] in
+            guard let self = self, 
+                  wasWelcomePill, 
+                  let videoID = self.state.videoID, 
+                  let hostView = self.hostView else { return }
+            
+            self.appSettings.duckPlayerPrimingMessagePresented = true
+            self.presentPill(for: videoID, in: hostView, timestamp: self.state.timestamp)
+        }
+
         if animated {
             // Remove the view after the animation completes
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
                 self?.removePillContainer()
+                handleWelcomePillTransition()
             }
         } else {
             removePillContainer()
+            handleWelcomePillTransition()
         }
 
         if reset {

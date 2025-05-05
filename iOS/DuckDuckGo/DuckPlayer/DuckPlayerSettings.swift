@@ -439,21 +439,19 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
                     // Set Native B specific settings
                     self.nativeUI = true
                     self.nativeUISERPEnabled = true
-                    // mode remains unchanged (Only used in classicA)
                     self.nativeUIYoutubeMode = .ask
-                    // openInNewTab remains unchanged (Only used in classicA)
                     self.autoplay = true
+                    self.primingMessagePresented = false
 
                 case .nativeOptOut:
                     // Set Native C specific settings
                     self.nativeUI = true
                     self.nativeUISERPEnabled = true
-                    // mode remains unchanged (Only used in classicA)
                     self.nativeUIYoutubeMode = .auto
-                    // openInNewTab remains unchanged (Only used in classicA)
                     self.autoplay = true
+                    self.primingMessagePresented = true // Never present the priming message for nativeOptOut
                 }
-                
+
             }
         }
     }

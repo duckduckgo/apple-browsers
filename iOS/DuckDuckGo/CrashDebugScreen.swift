@@ -44,6 +44,16 @@ struct CrashDebugScreen: View {
                 SettingsCellView(label: "CPP Exception", action: {
                     throwTestCppException()
                 }, isButton: true)
+
+                SettingsCellView(label: "System Exception", action: {
+                    NSException(name: NSExceptionName(rawValue: "TestException"), reason: "Test", userInfo: nil).raise()
+                }, isButton: true)
+
+                SettingsCellView(label: "Fatal Error (Background Thread)", action: {
+                    Task.detached {
+                        fatalError(#function)
+                    }
+                }, isButton: true)
             }
 
             SettingsCellView(label: "Reset Crash Send Logs", action: {

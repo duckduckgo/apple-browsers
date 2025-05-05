@@ -1,6 +1,6 @@
 {
     "readme": "https://github.com/duckduckgo/privacy-configuration",
-    "version": 1745847640452,
+    "version": 1746438951882,
     "features": {
         "adAttributionReporting": {
             "state": "disabled",
@@ -585,6 +585,15 @@
                     "domain": "telekom.de"
                 },
                 {
+                    "domain": "caf.fr"
+                },
+                {
+                    "domain": "homeoffice.gov.uk"
+                },
+                {
+                    "domain": "riga-airport.com"
+                },
+                {
                     "domain": "marvel.com"
                 },
                 {
@@ -767,7 +776,7 @@
                     }
                 }
             },
-            "hash": "ced106cce895683250b83bfcf8744067"
+            "hash": "2c6c44c8eff16aa16eff6f0c074df878"
         },
         "autofillBreakageReporter": {
             "state": "enabled",
@@ -1822,6 +1831,9 @@
                     "rollout": {
                         "steps": [
                             {
+                                "percent": 25
+                            },
+                            {
                                 "percent": 50
                             }
                         ]
@@ -1838,7 +1850,7 @@
                     ]
                 }
             },
-            "hash": "645e2dc759d7289ca00ba713d9dc0b3e"
+            "hash": "9f9845d7fa2163a509d752946085fe3b"
         },
         "contextualOnboarding": {
             "exceptions": [],
@@ -3595,24 +3607,8 @@
                                 "type": "hide-empty"
                             },
                             {
-                                "selector": ".global-nav-view, .global-nav-view .global-nav-content",
-                                "type": "modify-style",
-                                "values": [
-                                    {
-                                        "property": "margin-top",
-                                        "value": "0px"
-                                    }
-                                ]
-                            },
-                            {
-                                "selector": ".search-subnav-slender-view, .search-slender-advanced-panel-view",
-                                "type": "modify-style",
-                                "values": [
-                                    {
-                                        "property": "top",
-                                        "value": "0px"
-                                    }
-                                ]
+                                "selector": "[class*='-ad-container']",
+                                "type": "override"
                             }
                         ]
                     },
@@ -5104,6 +5100,10 @@
                             {
                                 "selector": ".ad-area",
                                 "type": "hide-empty"
+                            },
+                            {
+                                "selector": "[data-qa='AdSlot-Container']",
+                                "type": "closest-empty"
                             }
                         ]
                     },
@@ -5943,7 +5943,7 @@
                 ]
             },
             "state": "enabled",
-            "hash": "86c95cf83c3e8a62102c8f3a0bf45f0a"
+            "hash": "149ede95a230337593852529edb79e43"
         },
         "exceptionHandler": {
             "exceptions": [
@@ -6371,10 +6371,12 @@
                     "globalprivacycontrol.org",
                     "washingtonpost.com",
                     "nytimes.com",
+                    "privacytests.org",
+                    "privacytests2.org",
                     "privacy-test-pages.site"
                 ]
             },
-            "hash": "08ccc28c266fd21b8f14844800bf483c"
+            "hash": "51b1a944db37d7510c33a27991f702c2"
         },
         "harmfulApis": {
             "settings": {
@@ -6887,7 +6889,7 @@
                     "minSupportedVersion": "7.164.0"
                 },
                 "privacyProFreeTrialJan25": {
-                    "state": "disabled",
+                    "state": "enabled",
                     "targets": [
                         {
                             "localeCountry": "US"
@@ -6900,7 +6902,7 @@
                         },
                         {
                             "name": "treatment",
-                            "weight": 0
+                            "weight": 1
                         }
                     ],
                     "minSupportedVersion": "7.157.0"
@@ -6925,7 +6927,7 @@
                     "minSupportedVersion": "7.163.0"
                 }
             },
-            "hash": "45b54779108395c8e9c03b92f059da40"
+            "hash": "21e4e86af35270a147531810d935b037"
         },
         "privacyProtectionsPopup": {
             "state": "disabled",
@@ -9163,6 +9165,12 @@
                                 "domains": [
                                     "<all>"
                                 ]
+                            },
+                            {
+                                "rule": "www.gstatic.com/flutter-canvaskit",
+                                "domains": [
+                                    "nimblerx.com"
+                                ]
                             }
                         ]
                     },
@@ -10894,7 +10902,8 @@
                             {
                                 "rule": "cdn.weglot.com/weglot.min.js",
                                 "domains": [
-                                    "cherrycreekschools.org"
+                                    "cherrycreekschools.org",
+                                    "myavista.com"
                                 ]
                             }
                         ]
@@ -11107,7 +11116,7 @@
                     "domain": "flexmls.com"
                 }
             ],
-            "hash": "ae26e764148dc9e5e81e282117db5cde"
+            "hash": "edfc7c48dc62af01166594c6a2227bd5"
         },
         "trackingCookies1p": {
             "settings": {

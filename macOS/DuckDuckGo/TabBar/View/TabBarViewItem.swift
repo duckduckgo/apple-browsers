@@ -83,6 +83,44 @@ protocol TabBarViewItemDelegate: AnyObject {
     @MainActor func tabBarViewItemCrashAction(_: TabBarViewItem)
     @MainActor func tabBarViewItemDidUpdateCrashInfoPopoverVisibility(_: TabBarViewItem, sender: NSButton, shouldShow: Bool)
 }
+
+final class RampView: NSView {
+
+    var rampWidth: CGFloat = 12.0
+    var rampHeight: CGFloat = 12.0
+    var isFlippedHorizontally: Bool = false
+
+    override func draw(_ dirtyRect: NSRect) {
+        super.draw(dirtyRect)
+
+        guard let context = NSGraphicsContext.current?.cgContext else { return }
+
+        context.saveGState()
+        if isFlippedHorizontally {
+            context.translateBy(x: bounds.width, y: 0)
+            context.scaleBy(x: -1, y: 1)
+        }
+
+        NSColor.navigationBackgroundColorNew.setFill()
+
+        let path = NSBezierPath()
+        path.move(to: NSPoint(x: rampWidth, y: 0))
+        path.line(to: NSPoint(x: 0, y: 0))
+        path.appendArc(
+            withCenter: NSPoint(x: rampWidth, y: rampHeight),
+            radius: rampWidth,
+            startAngle: 180,
+            endAngle: 270,
+            clockwise: false
+        )
+
+        path.close()
+        path.fill()
+
+        context.restoreGState()
+    }
+}
+
 final class TabBarItemCellView: NSView {
 
     enum WidthStage {
@@ -208,28 +246,17 @@ final class TabBarItemCellView: NSView {
 
     fileprivate let rightSeparatorView = ColorView(frame: .zero)
 
-    fileprivate lazy var borderLayer: CALayer = {
-        let layer = CALayer()
-        layer.borderWidth = TabShadowConfig.dividerSize
-        layer.opacity = TabShadowConfig.alpha
-        layer.maskedCorners = [.layerMaxXMaxYCorner, .layerMinXMaxYCorner]
-        layer.cornerRadius = 8
-        layer.mask = layerMask
-        return layer
+    fileprivate lazy var rightRampView: RampView = {
+        let view = RampView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
     }()
 
-    fileprivate lazy var leftEaseLayer: CALayer = {
-        let layer = CALayer()
-        layer.backgroundColor = NSColor.green.cgColor
-        layer.bounds = CGRect(origin: .zero, size: .init(width: 16, height: 16))
-        return layer
-    }()
-
-    fileprivate lazy var rightEaseLayer: CALayer = {
-        let layer = CALayer()
-        layer.backgroundColor = NSColor.red.cgColor
-        layer.bounds = CGRect(origin: .zero, size: .init(width: 16, height: 16))
-        return layer
+    fileprivate lazy var leftRampView: RampView = {
+        let view = RampView()
+        view.isFlippedHorizontally = true
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
     }()
 
     private lazy var layerMask: CALayer = {
@@ -273,9 +300,8 @@ final class TabBarItemCellView: NSView {
             .layerMinXMaxYCorner,
             .layerMaxXMaxYCorner
         ]
-        mouseOverView.layer?.addSublayer(borderLayer)
-        mouseOverView.layer?.addSublayer(leftEaseLayer)
-        mouseOverView.layer?.addSublayer(rightEaseLayer)
+        mouseOverView.addSubview(rightRampView)
+        mouseOverView.addSubview(leftRampView)
 
         titleTextField.textColor = visualStyle.textPrimaryColor
 
@@ -298,12 +324,11 @@ final class TabBarItemCellView: NSView {
         mouseOverView.frame = bounds
 
         withoutAnimation {
-            borderLayer.frame = bounds
-            leftEaseLayer.frame = CGRect(x: -8, y: 0, width: 8, height: 8)
-            rightEaseLayer.frame = CGRect(x: borderLayer.bounds.width, y: 0, width: 8, height: 8)
+            rightRampView.frame = CGRect(x: bounds.width, y: 0, width: 12, height: 12)
+            leftRampView.frame = CGRect(x: -12, y: 0, width: 12, height: 12)
             leftPixelMask.frame = CGRect(x: 0, y: 0, width: TabShadowConfig.dividerSize, height: TabShadowConfig.dividerSize)
-            rightPixelMask.frame = CGRect(x: borderLayer.bounds.width - TabShadowConfig.dividerSize, y: 0, width: TabShadowConfig.dividerSize, height: TabShadowConfig.dividerSize)
-            topContentLineMask.frame = CGRect(x: 0, y: TabShadowConfig.dividerSize, width: borderLayer.bounds.width, height: borderLayer.bounds.height - TabShadowConfig.dividerSize)
+            rightPixelMask.frame = CGRect(x: bounds.width - TabShadowConfig.dividerSize, y: 0, width: TabShadowConfig.dividerSize, height: TabShadowConfig.dividerSize)
+            topContentLineMask.frame = CGRect(x: 0, y: TabShadowConfig.dividerSize, width: bounds.width, height: bounds.height - TabShadowConfig.dividerSize)
         }
 
         switch widthStage {
@@ -395,13 +420,6 @@ final class TabBarItemCellView: NSView {
             x = closeButton.frame.maxX + spacing
         }
     }
-
-    override func updateLayer() {
-        NSAppearance.withAppAppearance {
-            borderLayer.borderColor = NSColor.tabShadowLine.cgColor
-        }
-    }
-
 }
 
 @MainActor
@@ -701,9 +719,8 @@ final class TabBarViewItem: NSCollectionViewItem {
                 cell.mouseOverView.mouseOverColor = .tabMouseOver
                 cell.mouseOverView.backgroundColor = nil
             }
-            cell.borderLayer.isHidden = !isSelected
-            cell.leftEaseLayer.isHidden = !isSelected
-            cell.rightEaseLayer.isHidden = !isSelected
+            cell.rightRampView.isHidden = !isSelected
+            cell.leftRampView.isHidden = !isSelected
         }
 
         let showCloseButton = (isMouseOver && (!widthStage.isCloseButtonHidden || NSApp.isCommandPressed)) || isSelected

@@ -810,9 +810,13 @@ final class NavigationBarViewController: NSViewController {
 
             let logoWidth: NSLayoutConstraint = animated ? logoWidthConstraint.animator() : logoWidthConstraint
             logoWidth.constant = sizeClass.logoWidth
+        }
+
+        let prepareNavigationBar = { [weak self] in
+            guard let self else { return }
 
             addressBarStack.spacing = visualStyleManager.style.addressBarStackSpacing(for: sizeClass)
-            addressBarMinWidthConstraint.constant = 180 + sizeClass.logoWidth + addressBarStack.spacing
+            daxLogoWidth = sizeClass.logoWidth + addressBarStack.spacing
         }
 
         let heightChange: () -> Void
@@ -820,6 +824,7 @@ final class NavigationBarViewController: NSViewController {
             heightChange = {
                 NSAnimationContext.runAnimationGroup { ctx in
                     ctx.duration = 0.1
+                    prepareNavigationBar()
                     performResize()
                 }
             }
@@ -835,6 +840,7 @@ final class NavigationBarViewController: NSViewController {
         } else {
             daxLogo.alphaValue = sizeClass.isLogoVisible ? 1 : 0
             heightChange = {
+                prepareNavigationBar()
                 performResize()
             }
         }
@@ -844,6 +850,7 @@ final class NavigationBarViewController: NSViewController {
             self.heightChangeAnimation = dispatchItem
         } else {
             // update synchronously for off-screen view
+            prepareNavigationBar()
             heightChange()
         }
     }
@@ -1149,11 +1156,13 @@ final class NavigationBarViewController: NSViewController {
     /// Width of displayed address bar buttons that add to the minimum width of the address bar (e.g. zoom, permissions)
     private var addressBarButtonsAddedWidth: CGFloat = 0
 
+    private var daxLogoWidth: CGFloat = 0
+
     private var overflowThreshold: CGFloat {
         let availableWidth = view.bounds.width - 24 // account for leading and trailing space
         let alwaysVisibleButtonsWidth = [goBackButton, goForwardButton, refreshOrStopButton, optionsButton].map(\.bounds.width).reduce(0, +)
         let addressBarMinWidth = addressBarMinWidthConstraint.constant + addressBarButtonsAddedWidth + 24 // account for leading and trailing space
-        return availableWidth - alwaysVisibleButtonsWidth - addressBarMinWidth
+        return availableWidth - alwaysVisibleButtonsWidth - addressBarMinWidth - daxLogoWidth
     }
 
     private func setupOverflowMenu() {

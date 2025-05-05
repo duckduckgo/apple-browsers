@@ -138,6 +138,19 @@ final class PreferencesSidebarModel: ObservableObject {
             .store(in: &cancellables)
     }
 
+    func shouldEnableItem(_ pane: PreferencePaneIdentifier) -> Bool {
+        switch pane {
+        case .vpn:
+            currentSubscriptionState.userEntitlements?.contains(.networkProtection) ?? false
+        case .personalInformationRemoval:
+            currentSubscriptionState.userEntitlements?.contains(.dataBrokerProtection) ?? false
+        case .identityTheftRestoration:
+            currentSubscriptionState.userEntitlements?.contains(.identityTheftRestoration) ?? false
+        default:
+            true
+        }
+    }
+
     func privacyProItemProtectionStatus(_ pane: PreferencePaneIdentifier) -> PrivacyProtectionStatus? {
         switch pane {
         case .vpn:

@@ -42,12 +42,14 @@ extension Preferences {
     struct PaneSidebarItem: View {
         let pane: PreferencePaneIdentifier
         let isSelected: Bool
+        let isEnabled: Bool
         let action: () -> Void
         @ObservedObject var protectionStatus: PrivacyProtectionStatus
 
-        init(pane: PreferencePaneIdentifier, isSelected: Bool, status: PrivacyProtectionStatus? = nil, action: @escaping () -> Void) {
+        init(pane: PreferencePaneIdentifier, isSelected: Bool, isEnabled: Bool = true, status: PrivacyProtectionStatus? = nil, action: @escaping () -> Void) {
             self.pane = pane
             self.isSelected = isSelected
+            self.isEnabled = isEnabled
             self.action = action
             self.protectionStatus = status ?? PrivacyProtectionStatus.status(for: pane)
         }
@@ -56,7 +58,15 @@ extension Preferences {
             Button(action: action) {
                 HStack(spacing: 6) {
                     Image(pane.preferenceIconName).frame(width: 16, height: 16)
+                        .if(!isEnabled) {
+                            $0.grayscale(1.0).opacity(0.5)
+                        }
+
+
                     Text(pane.displayName).font(PreferencesUI_macOS.Const.Fonts.sideBarItem)
+                        .if(!isEnabled) {
+                            $0.opacity(0.5)
+                        }
 
                     Spacer()
 
@@ -67,6 +77,7 @@ extension Preferences {
             }
             .buttonStyle(SidebarItemButtonStyle(isSelected: isSelected))
             .accessibilityIdentifier("PreferencesSidebar.\(pane.id.rawValue)Button")
+            .disabled(!isEnabled)
         }
     }
 
@@ -125,6 +136,7 @@ extension Preferences {
             ForEach(section.panes) { pane in
                 PaneSidebarItem(pane: pane,
                                 isSelected: model.selectedPane == pane,
+                                isEnabled: model.shouldEnableItem(pane),
                                 status: model.privacyProItemProtectionStatus(pane)) {
                     model.selectPane(pane)
                 }

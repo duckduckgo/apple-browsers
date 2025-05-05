@@ -392,6 +392,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         // If primingModalEventCount is 0, show the welcome pill for first-time users
         if !duckPlayerSettings.primingMessagePresented {
             pillType = .welcome
+            self.duckPlayerSettings.primingMessagePresented = true
         } else {
             // Logic for returning users
             pillType = state.hasBeenShown ? .reEntry : .entry
@@ -502,7 +503,6 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
                   let videoID = self.state.videoID, 
                   let hostView = self.hostView else { return }
             
-            self.duckPlayerSettings.primingMessagePresented = true
             self.presentPill(for: videoID, in: hostView, timestamp: self.state.timestamp)
         }
 

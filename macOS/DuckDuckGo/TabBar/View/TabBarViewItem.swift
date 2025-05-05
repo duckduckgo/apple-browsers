@@ -300,12 +300,12 @@ final class TabBarItemCellView: NSView {
             .layerMinXMaxYCorner,
             .layerMaxXMaxYCorner
         ]
-        mouseOverView.addSubview(rightRampView)
-        mouseOverView.addSubview(leftRampView)
 
         titleTextField.textColor = visualStyle.textPrimaryColor
 
         addSubview(mouseOverView)
+        addSubview(leftRampView)
+        addSubview(rightRampView)
         addSubview(faviconImageView)
         addSubview(crashIndicatorButton)
         addSubview(audioButton)
@@ -515,11 +515,6 @@ final class TabBarViewItem: NSCollectionViewItem {
         eventMonitor = nil
     }
 
-    override func prepareForReuse() {
-        super.prepareForReuse()
-        isDragged = false
-        isMouseOver = false
-    }
     deinit {
         if let eventMonitor {
             NSEvent.removeMonitor(eventMonitor)

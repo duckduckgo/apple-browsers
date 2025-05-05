@@ -125,7 +125,7 @@ extension Preferences {
             ForEach(section.panes) { pane in
                 PaneSidebarItem(pane: pane,
                                 isSelected: model.selectedPane == pane,
-                                status: pane == .vpn ? model.vpnProtectionStatus() : nil) {
+                                status: model.privacyProItemProtectionStatus(pane)) {
                     model.selectPane(pane)
                 }
             }

@@ -23,6 +23,7 @@ import DDGSync
 import SwiftUI
 import Subscription
 import NetworkProtectionIPC
+import LoginItems
 
 final class PreferencesSidebarModel: ObservableObject {
 
@@ -137,6 +138,19 @@ final class PreferencesSidebarModel: ObservableObject {
             .store(in: &cancellables)
     }
 
+    func privacyProItemProtectionStatus(_ pane: PreferencePaneIdentifier) -> PrivacyProtectionStatus? {
+        switch pane {
+        case .vpn:
+            vpnProtectionStatus()
+        case .personalInformationRemoval:
+            personalInformationRemovalProtectionStatus()
+        case .identityTheftRestoration:
+            identityTheftRestorationProtectionStatus()
+        default:
+            nil
+        }
+    }
+
     func vpnProtectionStatus() -> PrivacyProtectionStatus {
         let recentConnectionStatus = vpnTunnelIPCClient.connectionStatusObserver.recentValue
         let initialValue: Bool
@@ -157,6 +171,22 @@ final class PreferencesSidebarModel: ObservableObject {
                 return .off
             }
         }
+    }
+
+    func personalInformationRemovalProtectionStatus() -> PrivacyProtectionStatus {
+        return PrivacyProtectionStatus(statusIndicator: LoginItem.dbpBackgroundAgent.isRunning ? .on : .off)
+    }
+
+    func identityTheftRestorationProtectionStatus() -> PrivacyProtectionStatus {
+        let isActive: Bool
+
+        if let entitlements = currentSubscriptionState.userEntitlements {
+            isActive = entitlements.contains(.identityTheftRestoration) || entitlements.contains(.identityTheftRestorationGlobal)
+        } else {
+            isActive = false
+        }
+
+        return PrivacyProtectionStatus(statusIndicator: isActive ? .on : .off)
     }
 
     // MARK: - Refreshing logic

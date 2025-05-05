@@ -33,8 +33,7 @@ public struct PreferencesPersonalInformationRemovalView: View {
             VStack(alignment: .leading, spacing: 4) {
                 TextMenuTitle(UserText.preferencesPersonalInformationRemovalTitle)
 
-                // TODO: Status should be dynamically resolved if user is actually using PIR
-                StatusIndicatorView(status: .on, isLarge: true)
+                StatusIndicatorView(status: model.isActive ? .on : .off, isLarge: true)
             }
 
             openFeatureSection

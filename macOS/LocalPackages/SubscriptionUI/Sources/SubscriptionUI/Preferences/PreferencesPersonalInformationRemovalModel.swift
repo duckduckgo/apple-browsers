@@ -27,13 +27,16 @@ public final class PreferencesPersonalInformationRemovalModel: ObservableObject 
     }
     private let openURLHandler: (URL) -> Void
     public let userEventHandler: (PreferencesSubscriptionModel.UserEvent) -> Void
+    public let isActive: Bool
 
     public init(openURLHandler: @escaping (URL) -> Void,
                 userEventHandler: @escaping (PreferencesSubscriptionModel.UserEvent) -> Void,
-                subscriptionManager: SubscriptionManager) {
+                subscriptionManager: SubscriptionManager,
+                isActive: Bool) {
         self.subscriptionManager = subscriptionManager
         self.openURLHandler = openURLHandler
         self.userEventHandler = userEventHandler
+        self.isActive = isActive
     }
 
     deinit {

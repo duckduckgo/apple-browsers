@@ -45,13 +45,11 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     let expectedHeight: CGFloat = UpdatedOmniBarView.expectedHeight
     static let expectedHeight: CGFloat = Metrics.height
 
-    var accessoryType: OmniBarAccessoryType = .share {
+    var accessoryType: OmniBarAccessoryType = .chat {
         didSet {
             switch accessoryType {
             case .chat:
                 searchAreaView.accessoryButton.setImage(UIImage(resource: .aiChatNew24), for: .normal)
-            case .share:
-                searchAreaView.accessoryButton.setImage(UIImage(resource: .shareAppleNew24), for: .normal)
             }
             updateAccessoryAccessibility()
         }
@@ -528,9 +526,6 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         case .chat:
             accessoryButton.accessibilityLabel = "AI Chat"
             accessoryButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.AIChat"
-        case .share:
-            accessoryButton.accessibilityLabel = "Share"
-            accessoryButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.Share"
         }
         accessoryButton.accessibilityTraits = .button
     }

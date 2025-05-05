@@ -64,7 +64,7 @@ final class MockOmniBar: OmniBar {
     func completeAnimationForDaxDialog() { }
     
     final class MockOmniBarView: UIView, OmniBarView {
-        
+
         required init?(coder: NSCoder) {
             fatalError("init(coder:) has not been implemented")
         }
@@ -94,7 +94,8 @@ final class MockOmniBar: OmniBar {
         var leftIconContainerView: UIView! = UIView()
         var customIconView: UIImageView = UIImageView()
         var clearButton: UIButton! = UIButton()
-        
+        var shareButton: UIButton! = UIButton()
+
         func showSeparator() { }
         func hideSeparator() { }
         func moveSeparatorToTop() { }
@@ -121,7 +122,8 @@ final class MockOmniBar: OmniBar {
         var onDismissPressed: (() -> Void)?
         var onSettingsLongPress: (() -> Void)?
         var onAccessoryLongPress: (() -> Void)?
-        
+        var onSharePressed: (() -> Void)?
+
         static func create() -> Self {
             Self.init()
         }
@@ -140,6 +142,7 @@ final class MockOmniBar: OmniBar {
         var isAccessoryButtonHidden: Bool = true
         var isSearchLoupeHidden: Bool = true
         var isDismissButtonHidden: Bool = true
-        
+        var isShareButtonHidden: Bool = true
+
     }
 }

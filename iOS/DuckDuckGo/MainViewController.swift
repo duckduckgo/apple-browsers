@@ -2328,8 +2328,6 @@ extension MainViewController: OmniBarDelegate {
         switch accessoryType {
         case .chat:
             openAIChatFromAddressBar()
-        case .share:
-            shareCurrentURLFromAddressBar()
         }
     }
 

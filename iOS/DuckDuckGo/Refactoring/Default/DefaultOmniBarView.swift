@@ -100,13 +100,11 @@ final class DefaultOmniBarView: UIView {
     var onSettingsLongPress: (() -> Void)?
     var onAccessoryLongPress: (() -> Void)?
 
-    var accessoryType: OmniBarAccessoryType = .share {
+    var accessoryType: OmniBarAccessoryType = .chat {
         didSet {
             switch accessoryType {
             case .chat:
                 accessoryButton.setImage(UIImage(named: "AIChat-24"), for: .normal)
-            case .share:
-                accessoryButton.setImage(UIImage(named: "Share-24"), for: .normal)
             }
         }
     }

@@ -372,6 +372,7 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
         } else {
             // Strong reference while we use the omnibar
             let controller = OmniBarFactory.createOmniBarViewController(with: omnibarDependencies)
+            let url = tabsModel.safeGetTabAt(indexPath.row)?.link?.url
 
             coordinator.parentController?.addChild(controller)
 
@@ -380,12 +381,16 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
             cell.omniBar?.showSeparator()
             cell.omniBar?.adjust(for: appSettings.currentAddressBarPosition)
 
-            if let url = tabsModel.safeGetTabAt(indexPath.row)?.link?.url {
+            if let url {
                 cell.omniBar?.startBrowsing()
-                cell.omniBar?.refreshText(forUrl: url, forceFullURL: appSettings.showFullSiteAddress)
-                cell.omniBar?.resetPrivacyIcon(for: url)
                 cell.omniBar?.updateAccessoryType(omnibarAccessoryHandler.omnibarAccessory(for: url))
+            } else {
+                // It's always chat just now (this might change in the future) and this prevents a flash when on new tab
+                cell.omniBar?.updateAccessoryType(.chat)
             }
+
+            cell.omniBar?.resetPrivacyIcon(for: url)
+            cell.omniBar?.refreshText(forUrl: url, forceFullURL: appSettings.showFullSiteAddress)
 
             controller.didMove(toParent: coordinator.parentController)
         }

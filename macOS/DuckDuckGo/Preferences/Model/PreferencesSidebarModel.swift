@@ -41,6 +41,9 @@ final class PreferencesSidebarModel: ObservableObject {
     private let personalInformationRemovalSubject = PassthroughSubject<StatusIndicator, Never>()
     public let personalInformationRemovalUpdates: AnyPublisher<StatusIndicator, Never>
 
+    private let identityTheftRestorationSubject = PassthroughSubject<StatusIndicator, Never>()
+    public let identityTheftRestorationUpdates: AnyPublisher<StatusIndicator, Never>
+
 
     var selectedTabContent: AnyPublisher<Tab.TabContent, Never> {
         $selectedTabIndex.map { [tabSwitcherTabs] in tabSwitcherTabs[$0] }.eraseToAnyPublisher()
@@ -62,6 +65,7 @@ final class PreferencesSidebarModel: ObservableObject {
         self.vpnTunnelIPCClient = vpnTunnelIPCClient
 
         self.personalInformationRemovalUpdates = personalInformationRemovalSubject.eraseToAnyPublisher()
+        self.identityTheftRestorationUpdates = identityTheftRestorationSubject.eraseToAnyPublisher()
 
         resetTabSelectionIfNeeded()
 
@@ -165,7 +169,7 @@ final class PreferencesSidebarModel: ObservableObject {
         case .personalInformationRemoval:
             PrivacyProtectionStatus(statusIndicator: currentSubscriptionState.personalInformationRemovalStatus)
         case .identityTheftRestoration:
-            identityTheftRestorationProtectionStatus()
+            PrivacyProtectionStatus(statusIndicator: currentSubscriptionState.identityTheftRestorationStatus)
         default:
             nil
         }
@@ -191,12 +195,6 @@ final class PreferencesSidebarModel: ObservableObject {
                 return .off
             }
         }
-    }
-
-    func identityTheftRestorationProtectionStatus() -> PrivacyProtectionStatus {
-        let entitlements = currentSubscriptionState.userEntitlements
-        let isActive = entitlements.contains(.identityTheftRestoration) || entitlements.contains(.identityTheftRestorationGlobal)
-        return PrivacyProtectionStatus(statusIndicator: isActive ? .on : .off)
     }
 
     // MARK: - Refreshing logic
@@ -245,22 +243,33 @@ final class PreferencesSidebarModel: ObservableObject {
 
                 let currentPersonalInformationRemovalStatus = LoginItem.dbpBackgroundAgent.isRunning ? StatusIndicator.on : StatusIndicator.off
 
+                print(" ==== currentPersonalInformationRemovalStatus \(currentPersonalInformationRemovalStatus)")
+
+                let isIdentityTheftRestorationActive = currentUserEntitlements.contains(.identityTheftRestoration) || currentUserEntitlements.contains(.identityTheftRestorationGlobal)
+                let currentIdentityTheftRestorationStatus = isIdentityTheftRestorationActive ? StatusIndicator.on : StatusIndicator.off
+
                 updatedState = PreferencesSidebarSubscriptionState(hasSubscription: true,
                                                                    subscriptionFeatures: currentSubscriptionFeatures,
                                                                    userEntitlements: currentUserEntitlements,
                                                                    shouldHideSubscriptionPurchase: shouldHideSubscriptionPurchase,
-                                                                   personalInformationRemovalStatus: currentPersonalInformationRemovalStatus)
+                                                                   personalInformationRemovalStatus: currentPersonalInformationRemovalStatus,
+                                                                   identityTheftRestorationStatus: currentIdentityTheftRestorationStatus)
             } else {
                 updatedState = PreferencesSidebarSubscriptionState(hasSubscription: false,
                                                                    subscriptionFeatures: currentSubscriptionFeatures,
                                                                    userEntitlements: [],
                                                                    shouldHideSubscriptionPurchase: shouldHideSubscriptionPurchase,
-                                                                   personalInformationRemovalStatus: .off)
+                                                                   personalInformationRemovalStatus: .off,
+                                                                   identityTheftRestorationStatus: .off)
             }
 
             if self.currentSubscriptionState != updatedState {
                 if self.currentSubscriptionState.personalInformationRemovalStatus != updatedState.personalInformationRemovalStatus {
                     personalInformationRemovalSubject.send(updatedState.personalInformationRemovalStatus)
+                }
+
+                if self.currentSubscriptionState.identityTheftRestorationStatus != updatedState.identityTheftRestorationStatus {
+                    identityTheftRestorationSubject.send(updatedState.identityTheftRestorationStatus)
                 }
 
                 self.currentSubscriptionState = updatedState
@@ -322,12 +331,14 @@ struct PreferencesSidebarSubscriptionState: Equatable {
     let shouldHideSubscriptionPurchase: Bool
 
     let personalInformationRemovalStatus: StatusIndicator
+    let identityTheftRestorationStatus: StatusIndicator
 
     static var initial: Self {
         .init(hasSubscription: false,
               subscriptionFeatures: nil,
               userEntitlements: [],
               shouldHideSubscriptionPurchase: true,
-              personalInformationRemovalStatus: .off)
+              personalInformationRemovalStatus: .off,
+              identityTheftRestorationStatus: .off)
     }
 }

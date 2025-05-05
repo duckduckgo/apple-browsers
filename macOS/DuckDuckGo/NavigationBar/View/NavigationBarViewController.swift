@@ -812,6 +812,7 @@ final class NavigationBarViewController: NSViewController {
             logoWidth.constant = sizeClass.logoWidth
 
             addressBarStack.spacing = visualStyleManager.style.addressBarStackSpacing(for: sizeClass)
+            addressBarMinWidthConstraint.constant = 180 + sizeClass.logoWidth + addressBarStack.spacing
         }
 
         let heightChange: () -> Void

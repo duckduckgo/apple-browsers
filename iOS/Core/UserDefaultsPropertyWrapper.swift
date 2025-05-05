@@ -172,6 +172,7 @@ public struct UserDefaultsWrapper<T> {
         case duckPlayerNativeUIPrimingModalPresentationEventCount = "com.duckduckgo.ios.duckPlayerNativeUIPrimingModalPresentationEventCount"
         case duckPlayerNativeUIPrimingModalTimeSinceLastPresented = "com.duckduckgo.ios.duckPlayerduckPlayerNativeUIPrimingModalTimeSinceLastPresented"
         case duckPlayerPillDismissCount = "com.duckduckgo.ios.duckPlayerPillDismissCount"
+        case duckPlayerWelcomeMessageShown = "com.duckduckgo.ios.duckPlayerWelcomeMessageShown"
 
         case newTabPageSectionsSettings = "com.duckduckgo.ios.newTabPage.sections.settings"
         case newTabPageShortcutsSettings = "com.duckduckgo.ios.newTabPage.shortcuts.settings"

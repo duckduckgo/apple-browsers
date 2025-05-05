@@ -94,6 +94,7 @@ internal class MouseOverView: NSControl, Hoverable {
 
         isEnabled = true
         clipsToBounds = true
+        backgroundLayer(createIfNeeded: true)?.cornerCurve = .circular
     }
 
     required init?(coder: NSCoder) {
@@ -119,6 +120,7 @@ internal class MouseOverView: NSControl, Hoverable {
         self.wantsLayer = true
         assert(self.layer != nil)
 
+        layer?.masksToBounds = false
         return layer
     }
 

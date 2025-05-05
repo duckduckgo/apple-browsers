@@ -218,6 +218,20 @@ final class TabBarItemCellView: NSView {
         return layer
     }()
 
+    fileprivate lazy var leftEaseLayer: CALayer = {
+        let layer = CALayer()
+        layer.backgroundColor = NSColor.green.cgColor
+        layer.bounds = CGRect(origin: .zero, size: .init(width: 16, height: 16))
+        return layer
+    }()
+
+    fileprivate lazy var rightEaseLayer: CALayer = {
+        let layer = CALayer()
+        layer.backgroundColor = NSColor.red.cgColor
+        layer.bounds = CGRect(origin: .zero, size: .init(width: 16, height: 16))
+        return layer
+    }()
+
     private lazy var layerMask: CALayer = {
         let layer = CALayer()
         layer.addSublayer(leftPixelMask)
@@ -252,7 +266,7 @@ final class TabBarItemCellView: NSView {
         super.init(frame: frame)
         translatesAutoresizingMaskIntoConstraints = false
 
-        clipsToBounds = true
+        clipsToBounds = false
 
         mouseOverView.cornerRadius = 8
         mouseOverView.maskedCorners = [
@@ -260,6 +274,8 @@ final class TabBarItemCellView: NSView {
             .layerMaxXMaxYCorner
         ]
         mouseOverView.layer?.addSublayer(borderLayer)
+        mouseOverView.layer?.addSublayer(leftEaseLayer)
+        mouseOverView.layer?.addSublayer(rightEaseLayer)
 
         titleTextField.textColor = visualStyle.textPrimaryColor
 
@@ -283,6 +299,8 @@ final class TabBarItemCellView: NSView {
 
         withoutAnimation {
             borderLayer.frame = bounds
+            leftEaseLayer.frame = CGRect(x: -8, y: 0, width: 8, height: 8)
+            rightEaseLayer.frame = CGRect(x: borderLayer.bounds.width, y: 0, width: 8, height: 8)
             leftPixelMask.frame = CGRect(x: 0, y: 0, width: TabShadowConfig.dividerSize, height: TabShadowConfig.dividerSize)
             rightPixelMask.frame = CGRect(x: borderLayer.bounds.width - TabShadowConfig.dividerSize, y: 0, width: TabShadowConfig.dividerSize, height: TabShadowConfig.dividerSize)
             topContentLineMask.frame = CGRect(x: 0, y: TabShadowConfig.dividerSize, width: borderLayer.bounds.width, height: borderLayer.bounds.height - TabShadowConfig.dividerSize)
@@ -684,6 +702,8 @@ final class TabBarViewItem: NSCollectionViewItem {
                 cell.mouseOverView.backgroundColor = nil
             }
             cell.borderLayer.isHidden = !isSelected
+            cell.leftEaseLayer.isHidden = !isSelected
+            cell.rightEaseLayer.isHidden = !isSelected
         }
 
         let showCloseButton = (isMouseOver && (!widthStage.isCloseButtonHidden || NSApp.isCommandPressed)) || isSelected

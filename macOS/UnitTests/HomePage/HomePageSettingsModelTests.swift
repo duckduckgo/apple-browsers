@@ -52,7 +52,8 @@ final class NewTabPageCustomizationModelTests: XCTestCase {
                 self?.openFilePanelCallCount += 1
                 return self?.openFilePanel()
             },
-            showAddImageFailedAlert: { [weak self] in self?.showImageFailedAlertCallCount += 1 }
+            showAddImageFailedAlert: { [weak self] in self?.showImageFailedAlertCallCount += 1 },
+            visualStyle: VisualStyle.legacy
         )
     }
 

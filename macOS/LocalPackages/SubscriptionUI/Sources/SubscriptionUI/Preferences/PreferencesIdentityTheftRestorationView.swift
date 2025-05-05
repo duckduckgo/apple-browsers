@@ -33,7 +33,7 @@ public struct PreferencesIdentityTheftRestorationView: View {
             VStack(alignment: .leading, spacing: 4) {
                 TextMenuTitle(UserText.preferencesIdentityTheftRestorationTitle)
 
-                StatusIndicatorView(status: .on, isLarge: true)
+                StatusIndicatorView(status: model.status, isLarge: true)
             }
 
             openFeatureSection

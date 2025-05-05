@@ -312,7 +312,8 @@ enum Preferences {
 
             return PreferencesIdentityTheftRestorationModel(openURLHandler: openURL,
                                                             userEventHandler: handleUIEvent,
-                                                            subscriptionManager: subscriptionManager)
+                                                            subscriptionManager: subscriptionManager,
+                                                            status: model.identityTheftRestorationProtectionStatus().status ?? .off)
         }
 
         private func makeSubscriptionSettingsViewModel() -> PreferencesSubscriptionSettingsModel {

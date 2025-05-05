@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import PreferencesUI_macOS
 import Subscription
 
 public final class PreferencesIdentityTheftRestorationModel: ObservableObject {
@@ -27,13 +28,16 @@ public final class PreferencesIdentityTheftRestorationModel: ObservableObject {
     }
     private let openURLHandler: (URL) -> Void
     public let userEventHandler: (PreferencesSubscriptionModel.UserEvent) -> Void
+    public let status: StatusIndicator
 
     public init(openURLHandler: @escaping (URL) -> Void,
                 userEventHandler: @escaping (PreferencesSubscriptionModel.UserEvent) -> Void,
-                subscriptionManager: SubscriptionManager) {
+                subscriptionManager: SubscriptionManager,
+                status: StatusIndicator) {
         self.subscriptionManager = subscriptionManager
         self.openURLHandler = openURLHandler
         self.userEventHandler = userEventHandler
+        self.status = status
     }
 
     deinit {

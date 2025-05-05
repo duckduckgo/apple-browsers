@@ -365,13 +365,14 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
             fatalError("Not \(OmniBarCell.self)")
         }
 
-        removeControllerForCell(cell)
+        // TODO remove
+        // removeControllerForCell(cell)
 
         if !isEnabled || tabsModel.currentIndex == indexPath.row {
             cell.omniBar = coordinator.omniBar
         } else {
             // Strong reference while we use the omnibar
-            let controller = OmniBarFactory.createOmniBarViewController(with: omnibarDependencies)
+            let controller = cell.controller ?? OmniBarFactory.createOmniBarViewController(with: omnibarDependencies)
             let url = tabsModel.safeGetTabAt(indexPath.row)?.link?.url
 
             coordinator.parentController?.addChild(controller)
@@ -384,15 +385,17 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
             if let url {
                 cell.omniBar?.startBrowsing()
                 cell.omniBar?.updateAccessoryType(omnibarAccessoryHandler.omnibarAccessory(for: url))
+                cell.omniBar?.resetPrivacyIcon(for: url)
             } else {
+                cell.omniBar?.stopBrowsing()
                 // It's always chat just now (this might change in the future) and this prevents a flash when on new tab
                 cell.omniBar?.updateAccessoryType(.chat)
             }
 
-            cell.omniBar?.resetPrivacyIcon(for: url)
             cell.omniBar?.refreshText(forUrl: url, forceFullURL: appSettings.showFullSiteAddress)
 
             controller.didMove(toParent: coordinator.parentController)
+            cell.controller = controller
         }
 
         cell.setNeedsUpdateConstraints()
@@ -400,22 +403,23 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
         return cell
     }
 
-    private func removeControllerForCell(_ cell: OmniBarCell) {
-        guard let existingOmniBarView = cell.omniBar?.barView else { return }
-
-        // Only remove controller of a "fake" OmniBar
-        if coordinator.omniBar !== cell.omniBar,
-           let backingVC = coordinator.parentController?.children.first(where: { $0.view === existingOmniBarView }) {
-
-            backingVC.willMove(toParent: nil)
-            existingOmniBarView.removeFromSuperview()
-            cell.omniBar = nil
-            backingVC.removeFromParent()
-        } else { // For cell with real OmniBar just remove existing view
-            existingOmniBarView.removeFromSuperview()
-            cell.omniBar = nil
-        }
-    }
+    // TODO remove
+//    private func removeControllerForCell(_ cell: OmniBarCell) {
+//        guard let existingOmniBarView = cell.omniBar?.barView else { return }
+//
+//        // Only remove controller of a "fake" OmniBar
+//        if coordinator.omniBar !== cell.omniBar,
+//           let backingVC = coordinator.parentController?.children.first(where: { $0.view === existingOmniBarView }) {
+//
+//            backingVC.willMove(toParent: nil)
+//            existingOmniBarView.removeFromSuperview()
+//            cell.omniBar = nil
+//            backingVC.removeFromParent()
+//        } else { // For cell with real OmniBar just remove existing view
+//            existingOmniBarView.removeFromSuperview()
+//            cell.omniBar = nil
+//        }
+//    }
 
 }
 
@@ -423,6 +427,7 @@ class OmniBarCell: UICollectionViewCell {
 
     weak var coordinator: MainViewCoordinator?
     var roundCornersMaskView: RoundedCornersMaskView?
+    weak var controller: OmniBarViewController?
 
     weak var omniBar: OmniBar? {
         didSet {

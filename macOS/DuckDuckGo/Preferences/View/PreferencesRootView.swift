@@ -262,7 +262,7 @@ enum Preferences {
             return PreferencesPersonalInformationRemovalModel(openURLHandler: openURL,
                                                               userEventHandler: handleUIEvent,
                                                               subscriptionManager: subscriptionManager,
-                                                              isActive: model.personalInformationRemovalProtectionStatus().status == .on)
+                                                              status: model.personalInformationRemovalProtectionStatus().status ?? .off)
         }
 
         private func makeIdentityTheftRestorationViewModel() -> PreferencesIdentityTheftRestorationModel {

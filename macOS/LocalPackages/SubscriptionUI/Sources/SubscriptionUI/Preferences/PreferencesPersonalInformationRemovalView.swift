@@ -33,7 +33,7 @@ public struct PreferencesPersonalInformationRemovalView: View {
             VStack(alignment: .leading, spacing: 4) {
                 TextMenuTitle(UserText.preferencesPersonalInformationRemovalTitle)
 
-                StatusIndicatorView(status: model.isActive ? .on : .off, isLarge: true)
+                StatusIndicatorView(status: model.status, isLarge: true)
             }
 
             openFeatureSection

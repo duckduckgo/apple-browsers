@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import PreferencesUI_macOS
 import Subscription
 
 public final class PreferencesPersonalInformationRemovalModel: ObservableObject {
@@ -27,16 +28,16 @@ public final class PreferencesPersonalInformationRemovalModel: ObservableObject 
     }
     private let openURLHandler: (URL) -> Void
     public let userEventHandler: (PreferencesSubscriptionModel.UserEvent) -> Void
-    public let isActive: Bool
+    public let status: StatusIndicator
 
     public init(openURLHandler: @escaping (URL) -> Void,
                 userEventHandler: @escaping (PreferencesSubscriptionModel.UserEvent) -> Void,
                 subscriptionManager: SubscriptionManager,
-                isActive: Bool) {
+                status: StatusIndicator) {
         self.subscriptionManager = subscriptionManager
         self.openURLHandler = openURLHandler
         self.userEventHandler = userEventHandler
-        self.isActive = isActive
+        self.status = status
     }
 
     deinit {

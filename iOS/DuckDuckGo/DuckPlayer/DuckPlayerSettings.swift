@@ -211,7 +211,7 @@ protocol DuckPlayerSettings: AnyObject {
     var pillDismissCount: Int { get set }
 
     // Time since last priming modal was presented
-    var primingMessagePresented: Bool { get }
+    var primingMessagePresented: Bool { get set }
 
     /// Initializes a new instance with the provided app settings and privacy configuration manager.
     ///

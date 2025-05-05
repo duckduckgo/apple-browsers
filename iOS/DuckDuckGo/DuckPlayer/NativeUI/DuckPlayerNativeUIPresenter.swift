@@ -101,6 +101,9 @@ final class DuckPlayerNativeUIPresenter {
     @MainActor
     private var containerCancellables = Set<AnyCancellable>()
 
+    // Other cancellables
+    private var cancellables = Set<AnyCancellable>()
+
     /// Application Settings
     private var appSettings: AppSettings
 
@@ -120,7 +123,7 @@ final class DuckPlayerNativeUIPresenter {
     private let notificationCenter: NotificationCenter
 
     /// Determines if the priming modal should be shown
-    private var shouldShowPrimingModal: Bool {        
+    private var shouldShowPrimingModal: Bool {
         !duckPlayerSettings.primingMessagePresented
     }
 
@@ -154,14 +157,21 @@ final class DuckPlayerNativeUIPresenter {
             object: nil
         )
 
-         // Add observers for app settings changes
+        // Add observers for app settings changes
         notificationCenter.addObserver(
             self,
             selector: #selector(handleAppSettingsChange),
             name: AppUserDefaults.Notifications.duckPlayerSettingsUpdated,
             object: nil
         )
-
+        
+        // Subscribe to DuckPlayerSettings publisher        
+        duckPlayerSettings.duckPlayerSettingsPublisher
+            .sink { [weak self] _ in
+                // Update local duckPlayerSettings with latest values
+                self?.duckPlayerSettings = DuckPlayerSettingsDefault()
+            }
+            .store(in: &cancellables)
     }
 
     /// Updates the UI based on Ombibar Notification
@@ -492,7 +502,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
                   let videoID = self.state.videoID, 
                   let hostView = self.hostView else { return }
             
-            self.appSettings.duckPlayerPrimingMessagePresented = true
+            self.duckPlayerSettings.primingMessagePresented = true
             self.presentPill(for: videoID, in: hostView, timestamp: self.state.timestamp)
         }
 

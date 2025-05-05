@@ -1034,6 +1034,9 @@ extension TabBarViewController: NSCollectionViewDelegateFlowLayout {
         return NSSize(width: self.currentTabWidth(selected: isItemSelected), height: standardTabHeight)
     }
 
+    func collectionView(_ collectionView: NSCollectionView, layout collectionViewLayout: NSCollectionViewLayout, insetForSectionAt section: Int) -> NSEdgeInsets {
+        return NSEdgeInsets(top: 0, left: 12, bottom: 0, right: 0)
+    }
 }
 
 // MARK: - NSCollectionViewDataSource
@@ -1174,6 +1177,7 @@ extension TabBarViewController: NSCollectionViewDelegate {
         defer {
             TabDragAndDropManager.shared.clear()
         }
+
         if case .private = operation {
             // Perform the drag and drop between multiple windows
             TabDragAndDropManager.shared.performDragAndDropIfNeeded()

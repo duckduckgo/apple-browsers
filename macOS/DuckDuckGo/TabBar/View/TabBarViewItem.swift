@@ -515,6 +515,11 @@ final class TabBarViewItem: NSCollectionViewItem {
         eventMonitor = nil
     }
 
+    override func prepareForReuse() {
+        super.prepareForReuse()
+        isDragged = false
+        isMouseOver = false
+    }
     deinit {
         if let eventMonitor {
             NSEvent.removeMonitor(eventMonitor)
@@ -699,7 +704,7 @@ final class TabBarViewItem: NSCollectionViewItem {
         cell.needsLayout = true
     }
 
-    private var isDragged = false {
+    var isDragged = false {
         didSet {
             updateSubviews()
         }
@@ -719,8 +724,8 @@ final class TabBarViewItem: NSCollectionViewItem {
                 cell.mouseOverView.mouseOverColor = .tabMouseOver
                 cell.mouseOverView.backgroundColor = nil
             }
-            cell.rightRampView.isHidden = !isSelected
-            cell.leftRampView.isHidden = !isSelected
+            cell.rightRampView.isHidden = !(isSelected || isDragged)
+            cell.leftRampView.isHidden = !(isSelected || isDragged)
         }
 
         let showCloseButton = (isMouseOver && (!widthStage.isCloseButtonHidden || NSApp.isCommandPressed)) || isSelected

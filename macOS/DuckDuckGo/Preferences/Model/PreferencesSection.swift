@@ -74,8 +74,6 @@ struct PreferencesSection: Hashable, Identifiable {
     }
 
     private static func makeSubscriptionSection(subscriptionState: PreferencesSidebarSubscriptionState) -> PreferencesSection? {
-        guard !subscriptionState.shouldHideSubscriptionPurchase else { return nil }
-
         if subscriptionState.hasSubscription {
             var subscriptionPanes: [PreferencePaneIdentifier] = []
 
@@ -93,6 +91,9 @@ struct PreferencesSection: Hashable, Identifiable {
 
             subscriptionPanes.append(.subscriptionSettings)
             return PreferencesSection(id: .privacyPro, panes: subscriptionPanes)
+        } else if subscriptionState.shouldHideSubscriptionPurchase {
+            // No active subscription and no option to purchase
+            return nil
         } else {
             // No active subscription
             return PreferencesSection(id: .purchasePrivacyPro, panes: [.privacyPro])

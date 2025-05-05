@@ -51,6 +51,12 @@ extension Preferences {
             }
         }
 
+        private func setPinnedTabsMode(_ newMode: PinnedTabsMode) {
+            guard tabsModel.pinnedTabsMode != newMode else { return }
+            tabsModel.pinnedTabsMode = newMode
+            firePinnedTabsPixel(newMode)
+        }
+
         var body: some View {
             PreferencePane(UserText.general) {
 
@@ -142,12 +148,10 @@ extension Preferences {
                                             pendingSelection = newValue
                                             showWarningAlert = true
                                         } else {
-                                            tabsModel.pinnedTabsMode = newValue
-                                            firePinnedTabsPixel(newValue)
+                                            setPinnedTabsMode(newValue)
                                         }
                                     } else {
-                                        tabsModel.pinnedTabsMode = newValue
-                                        firePinnedTabsPixel(newValue)
+                                        setPinnedTabsMode(newValue)
                                     }
                                 }
                             )) {

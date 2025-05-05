@@ -24,6 +24,7 @@ import SwiftUI
 import Subscription
 import NetworkProtectionIPC
 import LoginItems
+import PreferencesUI_macOS
 
 final class PreferencesSidebarModel: ObservableObject {
 
@@ -35,7 +36,11 @@ final class PreferencesSidebarModel: ObservableObject {
     private let vpnGatekeeper: VPNFeatureGatekeeper
     let vpnTunnelIPCClient: VPNControllerXPCClient
 
-    var currentSubscriptionState: PreferencesSidebarSubscriptionState = .initial
+    private(set) var currentSubscriptionState: PreferencesSidebarSubscriptionState = .initial
+
+    private let personalInformationRemovalSubject = PassthroughSubject<StatusIndicator, Never>()
+    public let personalInformationRemovalUpdates: AnyPublisher<StatusIndicator, Never>
+
 
     var selectedTabContent: AnyPublisher<Tab.TabContent, Never> {
         $selectedTabIndex.map { [tabSwitcherTabs] in tabSwitcherTabs[$0] }.eraseToAnyPublisher()
@@ -55,6 +60,8 @@ final class PreferencesSidebarModel: ObservableObject {
         self.tabSwitcherTabs = tabSwitcherTabs
         self.vpnGatekeeper = vpnGatekeeper
         self.vpnTunnelIPCClient = vpnTunnelIPCClient
+
+        self.personalInformationRemovalUpdates = personalInformationRemovalSubject.eraseToAnyPublisher()
 
         resetTabSelectionIfNeeded()
 
@@ -141,11 +148,11 @@ final class PreferencesSidebarModel: ObservableObject {
     func shouldEnableItem(_ pane: PreferencePaneIdentifier) -> Bool {
         switch pane {
         case .vpn:
-            currentSubscriptionState.userEntitlements?.contains(.networkProtection) ?? false
+            currentSubscriptionState.userEntitlements.contains(.networkProtection)
         case .personalInformationRemoval:
-            currentSubscriptionState.userEntitlements?.contains(.dataBrokerProtection) ?? false
+            currentSubscriptionState.userEntitlements.contains(.dataBrokerProtection)
         case .identityTheftRestoration:
-            currentSubscriptionState.userEntitlements?.contains(.identityTheftRestoration) ?? false
+            currentSubscriptionState.userEntitlements.contains(.identityTheftRestoration)
         default:
             true
         }
@@ -156,7 +163,7 @@ final class PreferencesSidebarModel: ObservableObject {
         case .vpn:
             vpnProtectionStatus()
         case .personalInformationRemoval:
-            personalInformationRemovalProtectionStatus()
+            PrivacyProtectionStatus(statusIndicator: currentSubscriptionState.personalInformationRemovalStatus)
         case .identityTheftRestoration:
             identityTheftRestorationProtectionStatus()
         default:
@@ -186,19 +193,9 @@ final class PreferencesSidebarModel: ObservableObject {
         }
     }
 
-    func personalInformationRemovalProtectionStatus() -> PrivacyProtectionStatus {
-        return PrivacyProtectionStatus(statusIndicator: LoginItem.dbpBackgroundAgent.isRunning ? .on : .off)
-    }
-
     func identityTheftRestorationProtectionStatus() -> PrivacyProtectionStatus {
-        let isActive: Bool
-
-        if let entitlements = currentSubscriptionState.userEntitlements {
-            isActive = entitlements.contains(.identityTheftRestoration) || entitlements.contains(.identityTheftRestorationGlobal)
-        } else {
-            isActive = false
-        }
-
+        let entitlements = currentSubscriptionState.userEntitlements
+        let isActive = entitlements.contains(.identityTheftRestoration) || entitlements.contains(.identityTheftRestorationGlobal)
         return PrivacyProtectionStatus(statusIndicator: isActive ? .on : .off)
     }
 
@@ -216,11 +213,13 @@ final class PreferencesSidebarModel: ObservableObject {
     }
 
     private func subscriptionEventsPublisher() -> AnyPublisher<Void, Never> {
-        return Publishers.Merge(NotificationCenter.default.publisher(for: .accountDidSignIn),
-                                NotificationCenter.default.publisher(for: .accountDidSignOut))
-        .merge(with: NotificationCenter.default.publisher(for: .availableAppStoreProductsDidChange))
-        .merge(with: NotificationCenter.default.publisher(for: .subscriptionDidChange))
-        .merge(with: NotificationCenter.default.publisher(for: .entitlementsDidChange))
+        return Publishers.Merge7(NotificationCenter.default.publisher(for: .accountDidSignIn),
+                                 NotificationCenter.default.publisher(for: .accountDidSignOut),
+                                 NotificationCenter.default.publisher(for: .availableAppStoreProductsDidChange),
+                                 NotificationCenter.default.publisher(for: .subscriptionDidChange),
+                                 NotificationCenter.default.publisher(for: .entitlementsDidChange),
+                                 NotificationCenter.default.publisher(for: .dbpLoginItemEnabled),
+                                 NotificationCenter.default.publisher(for: .dbpLoginItemDisabled))
         .debounce(for: .seconds(0.5), scheduler: RunLoop.main)
         .asVoid()
         .eraseToAnyPublisher()
@@ -232,11 +231,38 @@ final class PreferencesSidebarModel: ObservableObject {
             let currentSubscriptionFeatures = await subscriptionManager.currentSubscriptionFeatures()
             let shouldHideSubscriptionPurchase = subscriptionManager.currentEnvironment.purchasePlatform == .appStore && subscriptionManager.canPurchase == false
 
-            let updatedState = PreferencesSidebarSubscriptionState(hasSubscription: subscriptionManager.isUserAuthenticated,
+            let updatedState: PreferencesSidebarSubscriptionState
+
+            if subscriptionManager.isUserAuthenticated {
+                var currentUserEntitlements: [Entitlement.ProductName] = []
+                let entitlements: [Entitlement.ProductName] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .identityTheftRestorationGlobal]
+
+                for entitlement in entitlements {
+                    if let hasEntitlement = try? await subscriptionManager.isEnabled(feature: entitlement), hasEntitlement {
+                        currentUserEntitlements.append(entitlement)
+                    }
+                }
+
+                let currentPersonalInformationRemovalStatus = LoginItem.dbpBackgroundAgent.isRunning ? StatusIndicator.on : StatusIndicator.off
+
+                updatedState = PreferencesSidebarSubscriptionState(hasSubscription: true,
                                                                    subscriptionFeatures: currentSubscriptionFeatures,
-                                                                   userEntitlements: nil, // TODO: provide user's entitlements
-                                                                   shouldHideSubscriptionPurchase: shouldHideSubscriptionPurchase)
+                                                                   userEntitlements: currentUserEntitlements,
+                                                                   shouldHideSubscriptionPurchase: shouldHideSubscriptionPurchase,
+                                                                   personalInformationRemovalStatus: currentPersonalInformationRemovalStatus)
+            } else {
+                updatedState = PreferencesSidebarSubscriptionState(hasSubscription: false,
+                                                                   subscriptionFeatures: currentSubscriptionFeatures,
+                                                                   userEntitlements: [],
+                                                                   shouldHideSubscriptionPurchase: shouldHideSubscriptionPurchase,
+                                                                   personalInformationRemovalStatus: .off)
+            }
+
             if self.currentSubscriptionState != updatedState {
+                if self.currentSubscriptionState.personalInformationRemovalStatus != updatedState.personalInformationRemovalStatus {
+                    personalInformationRemovalSubject.send(updatedState.personalInformationRemovalStatus)
+                }
+
                 self.currentSubscriptionState = updatedState
                 self.refreshSections()
             }
@@ -292,13 +318,16 @@ final class PreferencesSidebarModel: ObservableObject {
 struct PreferencesSidebarSubscriptionState: Equatable {
     let hasSubscription: Bool
     let subscriptionFeatures: [Entitlement.ProductName]?
-    let userEntitlements: [Entitlement.ProductName]?
+    let userEntitlements: [Entitlement.ProductName]
     let shouldHideSubscriptionPurchase: Bool
+
+    let personalInformationRemovalStatus: StatusIndicator
 
     static var initial: Self {
         .init(hasSubscription: false,
               subscriptionFeatures: nil,
-              userEntitlements: nil,
-              shouldHideSubscriptionPurchase: true)
+              userEntitlements: [],
+              shouldHideSubscriptionPurchase: true,
+              personalInformationRemovalStatus: .off)
     }
 }

@@ -209,7 +209,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .delayedWebviewPresentation:
             return .remoteReleasable(.feature(.delayedWebviewPresentation))
         case .dbpRemoteBrokerDelivery:
-            return .remoteReleasable(.subfeature(DBPSubfeature.remoteBrokerDelivery))
+            /// TODO: To be revert back to .remoteReleasable
+            return .enabled
         }
     }
 }

@@ -72,11 +72,11 @@ public enum DataBrokerProtectionQueueManagerDebugCommand {
 }
 
 public protocol DataBrokerProtectionQueueManager {
+    var delegate: DataBrokerProtectionQueueManagerDelegate? { get set }
 
     init(operationQueue: DataBrokerProtectionOperationQueue,
          operationsCreator: DataBrokerOperationsCreator,
          mismatchCalculator: MismatchCalculator,
-         brokerUpdater: BrokerJSONServiceProvider?,
          pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>)
 
     func startImmediateScanOperationsIfPermitted(showWebView: Bool,
@@ -96,12 +96,16 @@ public protocol DataBrokerProtectionQueueManager {
     var debugRunningStatusString: String { get }
 }
 
+public protocol DataBrokerProtectionQueueManagerDelegate: AnyObject {
+    func queueManagerWillEnqueueOperations(_ queueManager: DataBrokerProtectionQueueManager)
+}
+
 public final class DefaultDataBrokerProtectionQueueManager: DataBrokerProtectionQueueManager {
+    public weak var delegate: DataBrokerProtectionQueueManagerDelegate?
 
     private var operationQueue: DataBrokerProtectionOperationQueue
     private let operationsCreator: DataBrokerOperationsCreator
     private let mismatchCalculator: MismatchCalculator
-    private let brokerUpdater: BrokerJSONServiceProvider?
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
 
     private var mode = DataBrokerProtectionQueueMode.idle
@@ -120,13 +124,11 @@ public final class DefaultDataBrokerProtectionQueueManager: DataBrokerProtection
     public init(operationQueue: DataBrokerProtectionOperationQueue,
                 operationsCreator: DataBrokerOperationsCreator,
                 mismatchCalculator: MismatchCalculator,
-                brokerUpdater: BrokerJSONServiceProvider?,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>) {
 
         self.operationQueue = operationQueue
         self.operationsCreator = operationsCreator
         self.mismatchCalculator = mismatchCalculator
-        self.brokerUpdater = brokerUpdater
         self.pixelHandler = pixelHandler
     }
 
@@ -214,12 +216,15 @@ private extension DefaultDataBrokerProtectionQueueManager {
             return
         }
 
+        if delegate != nil {
+            operationQueue.addBarrierBlock1 { [weak self] in
+                guard let self, let delegate = self.delegate else { return }
+                delegate.queueManagerWillEnqueueOperations(self)
+            }
+        }
+
         cancelCurrentModeAndResetIfNeeded()
-
         mode = newMode
-
-        updateBrokerData()
-
         addOperations(withType: type,
                       priorityDate: mode.priorityDate,
                       showWebView: showWebView,
@@ -246,12 +251,6 @@ private extension DefaultDataBrokerProtectionQueueManager {
         mode = .idle
         if clearErrors {
             operationErrors = []
-        }
-    }
-
-    func updateBrokerData() {
-        Task {
-            try await brokerUpdater?.checkForUpdates()
         }
     }
 

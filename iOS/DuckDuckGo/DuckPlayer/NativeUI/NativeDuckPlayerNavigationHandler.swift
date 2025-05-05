@@ -379,8 +379,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
 
         // Present Duck Player Pill (Native entry point)
         if duckPlayer.settings.nativeUIYoutubeMode == .ask {
-            lastHandledVideoID = videoID
-            Task { await pauseVideoStart(webView: webView) }
+            lastHandledVideoID = videoID            
             presentDuckPlayerPill(for: videoID, timestamp: nil)
             return .handled(.duckPlayerEnabled)
         }

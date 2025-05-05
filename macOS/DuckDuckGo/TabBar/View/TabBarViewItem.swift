@@ -118,7 +118,7 @@ final class TabBarItemCellView: NSView {
         static let trailingSpaceWithPermissionAndButton: CGFloat = 40
     }
 
-    private var tabStyleProvider: TabStyleProviding = NSApp.delegateTyped.visualStyleManager.style.tabStyleProvider
+    private var visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager
 
     fileprivate let faviconImageView = {
         let faviconImageView = NSImageView()
@@ -160,7 +160,6 @@ final class TabBarItemCellView: NSView {
         titleTextField.drawsBackground = false
         titleTextField.isBordered = false
         titleTextField.font = NSFont.systemFont(ofSize: 13)
-        titleTextField.textColor = .labelColor
         titleTextField.lineBreakMode = .byClipping
         return titleTextField
     }()
@@ -262,6 +261,8 @@ final class TabBarItemCellView: NSView {
         ]
         mouseOverView.layer?.addSublayer(borderLayer)
 
+        titleTextField.textColor = visualStyleManager.style.textPrimaryColor
+
         addSubview(mouseOverView)
         addSubview(faviconImageView)
         addSubview(crashIndicatorButton)
@@ -294,6 +295,7 @@ final class TabBarItemCellView: NSView {
             layoutForCompactMode()
         }
 
+        let tabStyleProvider = visualStyleManager.style.tabStyleProvider
         rightSeparatorView.frame = NSRect(x: bounds.maxX.rounded() - 1, y: bounds.midY - (tabStyleProvider.separatorHeight / 2), width: 1, height: tabStyleProvider.separatorHeight)
         rightSeparatorView.backgroundColor = tabStyleProvider.separatorColor
     }
@@ -435,6 +437,8 @@ final class TabBarViewItem: NSCollectionViewItem {
         }
         return tabViewModel
     }
+
+    private var visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager
 
     private(set) var isMouseOver = false
 
@@ -674,7 +678,7 @@ final class TabBarViewItem: NSCollectionViewItem {
         withoutAnimation {
             if isSelected || isDragged {
                 cell.mouseOverView.mouseOverColor = nil
-                cell.mouseOverView.backgroundColor = .navigationBarBackground
+                cell.mouseOverView.backgroundColor = visualStyleManager.style.navigationBackgroundColor
             } else {
                 cell.mouseOverView.mouseOverColor = .tabMouseOver
                 cell.mouseOverView.backgroundColor = nil

@@ -362,6 +362,7 @@
                         <outlet property="addressBarProportionalWidthConstraint" destination="rqL-Vd-lnY" id="zxF-f6-8wE"/>
                         <outlet property="addressBarStack" destination="gIy-el-24l" id="vlT-AD-nDv"/>
                         <outlet property="addressBarTopConstraint" destination="km5-nE-hfK" id="dR8-qN-sMa"/>
+                        <outlet property="backgroundColorView" destination="hYV-nu-QIp" id="mpE-Mz-raC"/>
                         <outlet property="bookmarkListButton" destination="4sj-qN-UUY" id="Fjs-KE-Lfp"/>
                         <outlet property="daxLogo" destination="8Ha-or-PB2" id="Id4-3e-U4K"/>
                         <outlet property="downloadsButton" destination="l0L-Gq-8p3" id="ujH-qR-rUH"/>

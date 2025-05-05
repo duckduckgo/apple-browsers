@@ -28,8 +28,16 @@ class OmniBarViewController: UIViewController, OmniBar {
     // swiftlint:disable:next force_cast
     var barView: any OmniBarView { view as! OmniBarView }
 
-    var isBackButtonEnabled: Bool = false
-    var isForwardButtonEnabled: Bool = false
+    var isBackButtonEnabled: Bool {
+        get { barView.backButton.isEnabled }
+        set { barView.backButton.isEnabled = newValue }
+    }
+
+    var isForwardButtonEnabled: Bool {
+        get { barView.forwardButton.isEnabled }
+        set { barView.forwardButton.isEnabled = newValue }
+    }
+    
     var text: String? {
         get { textField.text }
         set { textField.text = newValue }
@@ -220,6 +228,14 @@ class OmniBarViewController: UIViewController, OmniBar {
 
     func moveSeparatorToBottom() {
         barView.moveSeparatorToBottom()
+    }
+
+    func useSmallTopSpacing() {
+        // no-op
+    }
+
+    func useRegularTopSpacing() {
+        // no-op
     }
 
     func startBrowsing() {

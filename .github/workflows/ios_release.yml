@@ -106,15 +106,20 @@ jobs:
         MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
       run: |
         app_version="$(cut -d ' ' -f 3 < Configuration/Version.xcconfig)"
-        echo "dsyms_path=${{ github.workspace }}/iOS/DuckDuckGo.app.dSYM.zip" >> $GITHUB_ENV
+        build_number="$(cut -d ' ' -f 3 < Configuration/BuildNumber.xcconfig)"
+        original_dsyms_path="${{ github.workspace }}/iOS/DuckDuckGo.app.dSYM.zip"
+        dsyms_path="${{ github.workspace }}/iOS/DuckDuckGo-${app_version}.${build_number}-dSYM.zip"
+        echo "dsyms_path=${dsyms_path}" >> $GITHUB_ENV
         echo "app_version=${app_version}" >> $GITHUB_ENV
+        echo "build_number=${build_number}" >> $GITHUB_ENV
         bundle exec fastlane release_${{ steps.destination.outputs.destination }}
+        mv -f "$original_dsyms_path" "$dsyms_path" 
 
     - name: Upload dSYMs artifact
       if: always()
       uses: actions/upload-artifact@v4
       with:
-        name: DuckDuckGo-${{ steps.destination.outputs.destination }}-dSYM-${{ env.app_version }}
+        name: DuckDuckGo-${{ steps.destination.outputs.destination }}-dSYM-${{ env.app_version }}.${{ env.build_number }}
         path: ${{ env.dsyms_path }}
 
     - name: Extract Asana Task ID
@@ -127,12 +132,9 @@ jobs:
         ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
       run: |
         if [[ -f ${{ env.dsyms_path }} ]]; then
-          asana_dsyms_path="${{ github.workspace }}/iOS/DuckDuckGo-${{ env.app_version }}-dSYM.zip"
-          mv -f "${{ env.dsyms_path }}" "$asana_dsyms_path"
-
           curl -s "https://app.asana.com/api/1.0/tasks/${{ steps.task-id.outputs.task_id }}/attachments" \
             -H "Authorization: Bearer ${{ secrets.ASANA_ACCESS_TOKEN }}" \
-            --form "file=@${asana_dsyms_path};type=application/zip"
+            --form "file=@${{ env.dsyms_path }};type=application/zip"
         fi
 
     - name: Upload debug symbols to S3

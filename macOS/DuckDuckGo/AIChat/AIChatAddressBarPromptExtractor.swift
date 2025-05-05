@@ -16,6 +16,8 @@
 //  limitations under the License.
 //
 
+import AIChat
+
 /// A protocol that defines a method for extracting a query string from a given value.
 protocol AIChatPromptExtracting {
     /// The type of value from which a query string can be extracted.
@@ -42,7 +44,7 @@ struct AIChatAddressBarPromptExtractor: AIChatPromptExtracting {
         case let .text(text, _):
             return text
         case let .url(_, url, _):
-            if url.isAIChatURL {
+            if url.isDuckAIURL {
                 /// We don't want the search query if the user is already on duck.ai
                 return nil
             } else {

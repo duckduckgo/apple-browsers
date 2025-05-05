@@ -44,11 +44,12 @@ public final class SubscriptionAccessViewModel {
 
     public func handleEmailAction() {
         actionHandlers.openActivateViaEmailURL()
+        actionHandlers.uiActionHandler(.activateSubscriptionViaEmailClick)
     }
 
     public func handleRestorePurchaseAction() {
         actionHandlers.restorePurchases()
-        actionHandlers.uiActionHandler(.restorePurchaseStoreClick)
+        actionHandlers.uiActionHandler(.activateSubscriptionViaRestoreAppStorePurchaseClick)
     }
 }
 

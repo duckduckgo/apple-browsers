@@ -49,6 +49,8 @@ final class SettingsViewModel: ObservableObject {
     let aiChatSettings: AIChatSettingsProvider
     let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
     let experimentalThemingManager: ExperimentalThemingManager
+    private let duckPlayerSettings: DuckPlayerSettings
+    let featureDiscovery: FeatureDiscovery
 
     // Subscription Dependencies
     let isAuthV2Enabled: Bool
@@ -375,6 +377,17 @@ final class SettingsViewModel: ObservableObject {
         )
     }
 
+    var duckPlayerVariantBinding: Binding<DuckPlayerVariant> {
+        Binding<DuckPlayerVariant>(
+            get: {
+                return self.duckPlayerSettings.variant
+            },
+            set: {
+                self.duckPlayerSettings.variant = $0
+            }
+        )
+    }
+
     func setVoiceSearchEnabled(to value: Bool) {
         if value {
             enableVoiceSearch { [weak self] result in
@@ -460,7 +473,9 @@ final class SettingsViewModel: ObservableObject {
          textZoomCoordinator: TextZoomCoordinating,
          aiChatSettings: AIChatSettingsProvider,
          maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
-         experimentalThemingManager: ExperimentalThemingManager
+         experimentalThemingManager: ExperimentalThemingManager,
+         duckPlayerSettings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
+         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()
     ) {
 
         self.state = SettingsState.defaults
@@ -479,6 +494,8 @@ final class SettingsViewModel: ObservableObject {
         self.aiChatSettings = aiChatSettings
         self.maliciousSiteProtectionPreferencesManager = maliciousSiteProtectionPreferencesManager
         self.experimentalThemingManager = experimentalThemingManager
+        self.duckPlayerSettings = duckPlayerSettings
+        self.featureDiscovery = featureDiscovery
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
     }
@@ -526,14 +543,22 @@ extension SettingsViewModel {
             sync: getSyncState(),
             syncSource: nil,
             duckPlayerEnabled: featureFlagger.isFeatureOn(.duckPlayer) || shouldDisplayDuckPlayerContingencyMessage,
-            duckPlayerMode: appSettings.duckPlayerMode,
-            duckPlayerOpenInNewTab: appSettings.duckPlayerOpenInNewTab,
+            duckPlayerMode: duckPlayerSettings.mode,
+            duckPlayerOpenInNewTab: duckPlayerSettings.openInNewTab,
             duckPlayerOpenInNewTabEnabled: featureFlagger.isFeatureOn(.duckPlayerOpenInNewTab),
-            duckPlayerNativeUI: appSettings.duckPlayerNativeUI,
-            duckPlayerAutoplay: appSettings.duckPlayerAutoplay,
-            duckPlayerNativeUISERPEnabled: appSettings.duckPlayerNativeUISERPEnabled,
-            duckPlayerNativeYoutubeMode: appSettings.duckPlayerNativeYoutubeMode
+            duckPlayerNativeUI: duckPlayerSettings.nativeUI,
+            duckPlayerAutoplay: duckPlayerSettings.autoplay,
+            duckPlayerNativeUISERPEnabled: duckPlayerSettings.nativeUISERPEnabled,
+            duckPlayerNativeYoutubeMode: duckPlayerSettings.nativeUIYoutubeMode
         )
+
+        // Subscribe to DuckPlayerSettings updates
+        duckPlayerSettings.duckPlayerSettingsPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateDuckPlayerState()
+            }
+            .store(in: &cancellables)
 
         updateRecentlyVisitedSitesVisibility()
         setupSubscribers()
@@ -594,6 +619,15 @@ extension SettingsViewModel {
         }
     }
     
+    // Function to update local state from DuckPlayerSettings
+    private func updateDuckPlayerState() {
+        state.duckPlayerMode = duckPlayerSettings.mode
+        state.duckPlayerOpenInNewTab = duckPlayerSettings.openInNewTab
+        state.duckPlayerNativeUI = duckPlayerSettings.nativeUI
+        state.duckPlayerAutoplay = duckPlayerSettings.autoplay
+        state.duckPlayerNativeUISERPEnabled = duckPlayerSettings.nativeUISERPEnabled
+        state.duckPlayerNativeYoutubeMode = duckPlayerSettings.nativeUIYoutubeMode
+    }
 }
 
 // MARK: Subscribers
@@ -969,12 +1003,29 @@ extension SettingsViewModel {
             }
             await self.setupSubscriptionEnvironment()
 
-        case .failure:
+        case .failure(let restoreFlowError):
             DispatchQueue.main.async {
                 self.state.subscription.isRestoring = false
                 self.state.subscription.shouldDisplayRestoreSubscriptionError = true
-                self.state.subscription.shouldDisplayRestoreSubscriptionError = false
 
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    self.state.subscription.shouldDisplayRestoreSubscriptionError = false
+                }
+            }
+
+            switch restoreFlowError {
+            case .missingAccountOrTransactions:
+                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorMissingAccountOrTransactions)
+            case .pastTransactionAuthenticationError:
+                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorPastTransactionAuthenticationError)
+            case .failedToObtainAccessToken:
+                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorFailedToObtainAccessToken)
+            case .failedToFetchAccountDetails:
+                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorFailedToFetchAccountDetails)
+            case .failedToFetchSubscriptionDetails:
+                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorFailedToFetchSubscriptionDetails)
+            case .subscriptionExpired:
+                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorSubscriptionExpired)
             }
         }
     }

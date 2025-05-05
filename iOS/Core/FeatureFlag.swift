@@ -33,6 +33,8 @@ public enum FeatureFlag: String {
     case autofillOnForExistingUsers
     case autofillUnknownUsernameCategorization
     case autofillPartialFormSaves
+    case autofillCreditCards
+    case autofillCreditCardsOnByDefault
     case incontextSignup
     case autoconsentOnByDefault
     case history
@@ -56,8 +58,7 @@ public enum FeatureFlag: String {
     case autocompleteTabs
     case textZoom
     case adAttributionReporting
-    case tabManagerMultiSelection
-    
+
     /// https://app.asana.com/0/1208592102886666/1208613627589762/f
     case crashReportOptInStatusResetting
 
@@ -95,9 +96,22 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/0/72649045549333/1209633877674689/f
     case exchangeKeysToSyncWithAnotherDevice
+
+    // Demonstrative cases for default value. Remove once a real-world feature/subfeature is added
+    case failsafeExampleCrossPlatformFeature
+    case failsafeExamplePlatformSpecificSubfeature
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
+    public var defaultValue: Bool {
+        switch self {
+        case .failsafeExampleCrossPlatformFeature, .failsafeExamplePlatformSpecificSubfeature:
+            true
+        default:
+            false
+        }
+    }
+    
     public var cohortType: (any FeatureFlagCohortDescribing.Type)? {
         switch self {
         case .privacyProFreeTrialJan25:
@@ -122,6 +136,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .privacyProAuthV2,
                 .scamSiteProtection,
                 .maliciousSiteProtection,
+                .autofillCreditCards,
+                .autofillCreditCardsOnByDefault,
                 .exchangeKeysToSyncWithAnotherDevice:
             return true
         case .onboardingSetAsDefaultBrowser:
@@ -161,6 +177,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(AutofillSubfeature.unknownUsernameCategorization))
         case .autofillPartialFormSaves:
             return .remoteReleasable(.subfeature(AutofillSubfeature.partialFormSaves))
+        case .autofillCreditCards:
+            return .disabled
+        case .autofillCreditCardsOnByDefault:
+            return .disabled
         case .incontextSignup:
             return .remoteReleasable(.feature(.incontextSignup))
         case .autoconsentOnByDefault:
@@ -197,8 +217,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .privacyProFreeTrialJan25:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProFreeTrialJan25))
-        case .tabManagerMultiSelection:
-            return .remoteReleasable(.subfeature(TabManagerSubfeature.multiSelection))
         case .webViewStateRestoration:
             return .remoteReleasable(.feature(.webViewStateRestoration))
         case .syncSeamlessAccountSwitching:
@@ -221,6 +239,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(OnboardingSubfeature.setAsDefaultBrowserExperiment))
         case .exchangeKeysToSyncWithAnotherDevice:
             return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
+        case .failsafeExampleCrossPlatformFeature:
+            return .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests))
+        case .failsafeExamplePlatformSpecificSubfeature:
+            return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests))
         }
     }
 }

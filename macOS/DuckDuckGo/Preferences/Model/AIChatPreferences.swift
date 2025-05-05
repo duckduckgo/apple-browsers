@@ -20,6 +20,7 @@ import Combine
 import Foundation
 import BrowserServicesKit
 import PixelKit
+import AIChat
 
 final class AIChatPreferences: ObservableObject {
     static let shared = AIChatPreferences()

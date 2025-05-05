@@ -17,6 +17,7 @@
 //
 
 import Cocoa
+import Common
 
 final class MainWindow: NSWindow {
 
@@ -46,6 +47,7 @@ final class MainWindow: NSWindow {
                    defer: true)
 
         setupWindow()
+        assert(AppVersion.runType != .unitTests, "MainWindow should not be created in unit tests")
     }
 
     // To avoid beep sounds, this keyDown method catches events that go through the

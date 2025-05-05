@@ -18,7 +18,7 @@
 
 import Cocoa
 
-internal class ColorView: NSView {
+internal class ColorView: DraggingDestinationView {
 
     required init?(coder: NSCoder) {
         super.init(coder: coder)
@@ -41,37 +41,53 @@ internal class ColorView: NSView {
 
     @IBInspectable var backgroundColor: NSColor? = NSColor.clear {
         didSet {
-            NSAppearance.withAppAppearance {
-                layer?.backgroundColor = backgroundColor?.cgColor
-            }
+            updateBackgroundColor()
+        }
+    }
+    private func updateBackgroundColor() {
+        NSAppearance.withAppAppearance {
+            layer?.backgroundColor = backgroundColor?.cgColor
         }
     }
 
     @IBInspectable var cornerRadius: CGFloat = 0 {
         didSet {
-            layer!.cornerRadius = cornerRadius
-            layer!.masksToBounds = true
+            updateCornerRadius()
         }
+    }
+    private func updateCornerRadius() {
+        layer?.cornerRadius = cornerRadius
+        layer?.masksToBounds = true
     }
 
     @IBInspectable var borderColor: NSColor? {
         didSet {
-            NSAppearance.withAppAppearance {
-                layer!.borderColor = borderColor?.cgColor
-            }
+            updateBorderColor()
+        }
+    }
+    private func updateBorderColor() {
+        NSAppearance.withAppAppearance {
+            layer?.borderColor = borderColor?.cgColor
         }
     }
 
     @IBInspectable var borderWidth: CGFloat = 0 {
         didSet {
-            layer?.borderWidth = borderWidth
+            updateBorderWidth()
         }
+    }
+    private func updateBorderWidth() {
+        layer?.borderWidth = borderWidth
     }
 
     @IBInspectable var interceptClickEvents: Bool = false
 
     func setupView() {
         self.wantsLayer = true
+        updateBackgroundColor()
+        updateCornerRadius()
+        updateBorderColor()
+        updateBorderWidth()
     }
 
     override func updateLayer() {

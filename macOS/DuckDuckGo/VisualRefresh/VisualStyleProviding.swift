@@ -26,7 +26,9 @@ protocol VisualStyleProviding {
     func addressBarTopPadding(for type: AddressBarSizeClass) -> CGFloat
     func addressBarBottomPadding(for type: AddressBarSizeClass) -> CGFloat
     func addressBarStackSpacing(for type: AddressBarSizeClass) -> CGFloat
+    func shouldShowOutlineBorder(isHomePage: Bool) -> Bool
 
+    var shouldShowLogoinInAddressBar: Bool { get }
     var toolbarButtonsCornerRadius: CGFloat { get }
 
     var backButtonImage: NSImage { get }
@@ -43,6 +45,7 @@ protocol VisualStyleProviding {
     var moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding { get }
     var privacyShieldStyleProvider: PrivacyShieldAddressBarStyleProviding { get }
     var addressBarIconsProvider: AddressBarIconsProviding { get }
+    var tabStyleProvider: TabStyleProviding { get }
 }
 
 protocol VisualStyleManagerProviding {
@@ -79,7 +82,9 @@ struct VisualStyle: VisualStyleProviding {
     private let addressBarBottomPaddingForDefault: CGFloat
     private let addressBarBottomPaddingForHomePage: CGFloat
     private let addressBarBottomPaddingForPopUpWindow: CGFloat
+    private let alwaysShowAddressBarOutline: Bool
 
+    let shouldShowLogoinInAddressBar: Bool
     let toolbarButtonsCornerRadius: CGFloat
 
     let backButtonImage: NSImage
@@ -96,6 +101,7 @@ struct VisualStyle: VisualStyleProviding {
     let moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding
     let privacyShieldStyleProvider: PrivacyShieldAddressBarStyleProviding
     let addressBarIconsProvider: AddressBarIconsProviding
+    let tabStyleProvider: TabStyleProviding
 
     func addressBarHeight(for type: AddressBarSizeClass) -> CGFloat {
         switch type {
@@ -128,6 +134,10 @@ struct VisualStyle: VisualStyleProviding {
         }
     }
 
+    func shouldShowOutlineBorder(isHomePage: Bool) -> Bool {
+        return alwaysShowAddressBarOutline || isHomePage
+    }
+
     static var legacy: VisualStyleProviding {
         return VisualStyle(addressBarHeightForDefault: 48,
                            addressBarHeightForHomePage: 52,
@@ -138,6 +148,8 @@ struct VisualStyle: VisualStyleProviding {
                            addressBarBottomPaddingForDefault: 6,
                            addressBarBottomPaddingForHomePage: 8,
                            addressBarBottomPaddingForPopUpWindow: 0,
+                           alwaysShowAddressBarOutline: false,
+                           shouldShowLogoinInAddressBar: false,
                            toolbarButtonsCornerRadius: 4,
                            backButtonImage: .back,
                            forwardButtonImage: .forward,
@@ -152,7 +164,8 @@ struct VisualStyle: VisualStyleProviding {
                            fireButtonStyleProvider: LegacyFireButtonIconStyleProvider(),
                            moreOptionsMenuIconsProvider: LegacyMoreOptionsMenuIcons(),
                            privacyShieldStyleProvider: LegacyPrivacyShieldAddressBarStyleProvider(),
-                           addressBarIconsProvider: LegacyAddressBarIconsProvider())
+                           addressBarIconsProvider: LegacyAddressBarIconsProvider(),
+                           tabStyleProvider: LegacyTabStyleProvider())
     }
 
     static var current: VisualStyleProviding {
@@ -165,6 +178,8 @@ struct VisualStyle: VisualStyleProviding {
                            addressBarBottomPaddingForDefault: 6,
                            addressBarBottomPaddingForHomePage: 6,
                            addressBarBottomPaddingForPopUpWindow: 6,
+                           alwaysShowAddressBarOutline: true,
+                           shouldShowLogoinInAddressBar: true,
                            toolbarButtonsCornerRadius: 9,
                            backButtonImage: .backNew,
                            forwardButtonImage: .forwardNew,
@@ -179,7 +194,8 @@ struct VisualStyle: VisualStyleProviding {
                            fireButtonStyleProvider: NewFireButtonIconStyleProvider(),
                            moreOptionsMenuIconsProvider: NewMoreOptionsMenuIcons(),
                            privacyShieldStyleProvider: NewPrivacyShieldAddressBarStyleProvider(),
-                           addressBarIconsProvider: NewAddressBarIconsProvider())
+                           addressBarIconsProvider: NewAddressBarIconsProvider(),
+                           tabStyleProvider: NewlineTabStyleProvider())
     }
 }
 

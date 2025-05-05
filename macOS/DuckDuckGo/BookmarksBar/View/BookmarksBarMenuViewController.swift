@@ -387,7 +387,7 @@ final class BookmarksBarMenuViewController: NSViewController {
                     // don‘t close on Cmd+click in other app
                     return false
                 }
-                guard let self,
+                guard let self, let window = view.window,
                       // always close on global event
                       let eventWindow = event.window else { return true /* close */}
                 // is showing submenu?
@@ -400,12 +400,8 @@ final class BookmarksBarMenuViewController: NSViewController {
                     return false
                 }
                 // go up from the clicked window to figure out if the click is in a submenu
-                for window in sequence(first: eventWindow, next: \.parent)
-                where window === self.view.window {
-                    // we found our window: the click was in the menu tree
-                    return false // don‘t close
-                }
-                return true // close
+                // close if the click was not in our window or submenu
+                return !eventWindow.isInHierarchy(of: window)
             }.asVoid()
         )
         .sink { [weak self] _ in

@@ -22,9 +22,11 @@ import SwiftUIExtensions
 
 struct PinnedTabView: View, DropDelegate {
     enum Const {
-        static let dimension: CGFloat = 34
         static let cornerRadius: CGFloat = 10
     }
+
+    let width: CGFloat
+    let height: CGFloat
 
     @ObservedObject var model: Tab
     @EnvironmentObject var collectionModel: PinnedTabsViewModel
@@ -42,10 +44,13 @@ struct PinnedTabView: View, DropDelegate {
                 }
             } label: {
                 PinnedTabInnerView(
+                    width: width,
+                    height: height,
                     foregroundColor: foregroundColor,
                     drawSeparator: !collectionModel.itemsWithoutSeparator.contains(model)
                 )
                 .environmentObject(model)
+                .environmentObject(model.crashIndicatorModel)
             }
             .buttonStyle(TouchDownButtonStyle())
             .cornerRadius(Const.cornerRadius, corners: [.topLeft, .topRight])
@@ -210,11 +215,14 @@ private struct BorderView: View {
 }
 
 struct PinnedTabInnerView: View {
+    let width: CGFloat
+    let height: CGFloat
     var foregroundColor: Color
     var drawSeparator: Bool = true
 
     @Environment(\.colorScheme) var colorScheme
     @EnvironmentObject var model: Tab
+    @EnvironmentObject var tabCrashIndicatorModel: TabCrashIndicatorModel
     @Environment(\.controlActiveState) private var controlActiveState
 
     var body: some View {
@@ -235,7 +243,7 @@ struct PinnedTabInnerView: View {
                 .frame(maxWidth: 16, maxHeight: 16)
                 .aspectRatio(contentMode: .fit)
         }
-        .frame(width: PinnedTabView.Const.dimension)
+        .frame(width: width)
     }
 
     @ViewBuilder
@@ -256,32 +264,79 @@ struct PinnedTabInnerView: View {
         }
     }
 
-    private func audioIndicator(isMuted: Bool) -> some View {
-        ZStack {
-            Circle()
-                .stroke(Color.gray.opacity(0.5), lineWidth: 0.5)
-                .background(Circle().foregroundColor(.pinnedTabMuteStateCircle))
-                .frame(width: 16, height: 16)
+    @ViewBuilder
+    var accessoryButton: some View {
+        if tabCrashIndicatorModel.isShowingIndicator {
+            crashIndicatorView
+        } else {
+            audioStateView
+        }
+    }
 
-            if isMuted {
-                Image(.audioMute)
-                    .resizable()
-                    .frame(width: 12, height: 12)
-            } else {
-                Image(.audio)
+    private func audioIndicator(isMuted: Bool) -> some View {
+        Button {
+            model.muteUnmuteTab()
+        } label: {
+            ZStack {
+                Circle()
+                    .stroke(Color.gray.opacity(0.5), lineWidth: 0.5)
+                    .background(Circle().foregroundColor(.pinnedTabMuteStateCircle))
+                    .frame(width: 16, height: 16)
+
+                if isMuted {
+                    Image(.audioMute)
+                        .resizable()
+                        .frame(width: 12, height: 12)
+                } else {
+                    Image(.audio)
+                        .resizable()
+                        .frame(width: 12, height: 12)
+                }
+            }
+        }
+        .buttonStyle(.plain)
+        .offset(x: 8, y: -8)
+    }
+
+    @ViewBuilder
+    var crashIndicatorView: some View {
+        Button {
+            tabCrashIndicatorModel.isShowingPopover.toggle()
+        } label: {
+            ZStack {
+                Circle()
+                    .stroke(Color.gray.opacity(0.5), lineWidth: 0.5)
+                    .background(Circle().foregroundColor(.pinnedTabMuteStateCircle))
+                    .frame(width: 16, height: 16)
+
+                Image(.tabCrash)
                     .resizable()
                     .frame(width: 12, height: 12)
             }
         }
-        .offset(x: 8, y: -8)
-        .onTapGesture {
-            model.muteUnmuteTab()
+        .buttonStyle(.plain)
+        .popover(isPresented: $tabCrashIndicatorModel.isShowingPopover, arrowEdge: .bottom) {
+            PopoverMessageView(
+                viewModel: .init(
+                    title: UserText.tabCrashPopoverTitle,
+                    message: UserText.tabCrashPopoverMessage,
+                    maxWidth: TabCrashIndicatorModel.Const.popoverWidth
+                ),
+                onClick: {
+                    tabCrashIndicatorModel.isShowingPopover = false
+                }, onClose: {
+                    tabCrashIndicatorModel.isShowingPopover = false
+                }
+            )
         }
+        .offset(x: 8, y: -8)
     }
 
     private var faviconImage: NSImage? {
         if let error = model.error, (error as NSError as? URLError)?.code == .serverCertificateUntrusted || (error as NSError as? MaliciousSiteError != nil) {
             return .redAlertCircle16
+        } else if model.error?.isWebContentProcessTerminated == true {
+            return .alertCircleColor16
         } else if let favicon = model.favicon {
             return favicon
         }
@@ -294,7 +349,7 @@ struct PinnedTabInnerView: View {
             ZStack(alignment: .topTrailing) {
                 Image(nsImage: favicon)
                     .resizable()
-                audioStateView
+                accessoryButton
             }
         } else if let domain = model.content.userEditableUrl?.host,
                   let eTLDplus1 = ContentBlocking.shared.tld.eTLDplus1(domain),
@@ -305,14 +360,14 @@ struct PinnedTabInnerView: View {
                 Text(firstLetter)
                     .font(.caption)
                     .foregroundColor(.white)
-                audioStateView
+                accessoryButton
             }
             .cornerRadius(4.0)
         } else {
             ZStack {
                 Image(nsImage: .web)
                     .resizable()
-                audioStateView
+                accessoryButton
             }
         }
     }

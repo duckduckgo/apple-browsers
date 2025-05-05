@@ -55,4 +55,14 @@ extension NSWindow {
         }
     }
 
+    /// Checks if the given window is part of a specific window parent-child hierarchy or is the window itself.
+    /// - Returns: A Boolean value indicating whether the window is part of the hierarchy.
+    func isInHierarchy(of window: NSWindow) -> Bool {
+        sequence(first: self) {
+            $0.parent ?? $0.sheetParent
+        }.contains {
+            $0 === window
+        }
+    }
+
 }

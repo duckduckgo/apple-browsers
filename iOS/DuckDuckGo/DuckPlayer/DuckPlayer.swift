@@ -148,7 +148,11 @@ protocol DuckPlayerControlling: AnyObject {
     ///   - settings: The Duck Player settings.
     ///   - featureFlagger: The feature flag manager.
     ///   - nativeUIPresenter: The native UI presenter.
-    init(settings: DuckPlayerSettings, featureFlagger: FeatureFlagger, nativeUIPresenter: DuckPlayerNativeUIPresenting)
+    ///   - featureDiscovery: Storage for saying this feature has been used.
+    init(settings: DuckPlayerSettings,
+         featureFlagger: FeatureFlagger,
+         nativeUIPresenter: DuckPlayerNativeUIPresenting,
+         featureDiscovery: FeatureDiscovery)
 
     /// Sets user values received from the web content.
     ///
@@ -325,6 +329,9 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     let nativeUIPresenter: DuckPlayerNativeUIPresenting
     private var nativeUIPresenterCancellables = Set<AnyCancellable>()
 
+    /// Used for recording discovery of a feature
+    let featureDiscovery: FeatureDiscovery
+
     /// Initializes a new instance of DuckPlayer with the provided settings and feature flagger.
     ///
     /// - Parameters:
@@ -333,12 +340,14 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     ///   - nativeUIPresenter: The native UI presenter.
     init(settings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         nativeUIPresenter: DuckPlayerNativeUIPresenting) {
+         nativeUIPresenter: DuckPlayerNativeUIPresenting,
+         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()) {
         self.settings = settings
         self.featureFlagger = featureFlagger
         self.youtubeNavigationRequest = PassthroughSubject<URL, Never>()
         self.playerDismissedPublisher = PassthroughSubject<Void, Never>()
         self.nativeUIPresenter = nativeUIPresenter
+        self.featureDiscovery = featureDiscovery
         super.init()
         setupSubscriptions()
 
@@ -429,9 +438,11 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
             }
         }
     }
-    // Loads a native DuckPlayerView
+
+    /// Loads a native DuckPlayerView and sets flag that DuckPlayer has been used.
     func loadNativeDuckPlayerVideo(videoID: String, source: VideoNavigationSource = .other, timestamp: TimeInterval? = nil) {
         guard let hostView = hostView else { return }
+        featureDiscovery.setWasUsedBefore(.duckPlayer)
 
         Task { @MainActor in
             let publishers = nativeUIPresenter.presentDuckPlayer(videoID: videoID, source: source, in: hostView, title: nil, timestamp: timestamp)
@@ -478,8 +489,8 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     ///
     /// - Parameter userValues: The user values to update settings with.
     private func updateSettings(userValues: UserValues) async {
-        settings.setMode(userValues.duckPlayerMode)
-        settings.setAskModeOverlayHidden(userValues.askModeOverlayHidden)
+        settings.mode = userValues.duckPlayerMode
+        settings.askModeOverlayHidden = userValues.askModeOverlayHidden
     }
 
     /// Registers an Nootification observer for orientation changes
@@ -565,7 +576,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         webView.load(URLRequest(url: url))
     }
 
-    /// Performs initial setup for the player.
+    /// Performs initial setup for the player and sets flag that DuckPlayer has been used.
     ///
     /// - Parameters:
     ///   - params: Parameters from the web content.
@@ -573,11 +584,12 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     /// - Returns: An optional `Encodable` response.
     @MainActor
     public func initialSetupPlayer(params: Any, message: WKScriptMessage) async -> Encodable? {
+        featureDiscovery.setWasUsedBefore(.duckPlayer)
         let webView = message.webView
         return await self.encodedPlayerSettings(with: webView)
     }
 
-    /// Performs initial setup for the overlay.
+    /// Performs initial setup for the overlay and sets flag that DuckPlayer has been used.
     ///
     /// - Parameters:
     ///   - params: Parameters from the web content.
@@ -585,6 +597,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     /// - Returns: An optional `Encodable` response.
     @MainActor
     public func initialSetupOverlay(params: Any, message: WKScriptMessage) async -> Encodable? {
+        featureDiscovery.setWasUsedBefore(.duckPlayer)
         let webView = message.webView
         return await self.encodedPlayerSettings(with: webView)
     }
@@ -760,13 +773,15 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         nativeUIPresenter.showBottomSheetForVisibleChrome()
     }
 
-    /// Presents a bottom sheet asking the user how they want to open the video
+    /// Presents a bottom sheet asking the user how they want to open the video and sets flag that DuckPlayer has been used.
     ///
     /// - Parameters:
     ///   - videoID: The YouTube video ID to be played
     ///   - timestamp: The timestamp of the video    
     func presentPill(for videoID: String, timestamp: TimeInterval?) {
         guard let hostView = hostView else { return }
+
+        featureDiscovery.setWasUsedBefore(.duckPlayer)
 
         Task { @MainActor in
             nativeUIPresenter.presentPill(for: videoID, in: hostView, timestamp: timestamp)

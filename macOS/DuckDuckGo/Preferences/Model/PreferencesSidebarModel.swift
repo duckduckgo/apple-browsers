@@ -243,8 +243,6 @@ final class PreferencesSidebarModel: ObservableObject {
 
                 let currentPersonalInformationRemovalStatus = LoginItem.dbpBackgroundAgent.isRunning ? StatusIndicator.on : StatusIndicator.off
 
-                print(" ==== currentPersonalInformationRemovalStatus \(currentPersonalInformationRemovalStatus)")
-
                 let isIdentityTheftRestorationActive = currentUserEntitlements.contains(.identityTheftRestoration) || currentUserEntitlements.contains(.identityTheftRestorationGlobal)
                 let currentIdentityTheftRestorationStatus = isIdentityTheftRestorationActive ? StatusIndicator.on : StatusIndicator.off
 

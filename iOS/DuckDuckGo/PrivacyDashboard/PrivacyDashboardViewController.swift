@@ -372,7 +372,8 @@ extension PrivacyDashboardViewController {
                                 variant: PixelExperiment.cohort?.rawValue ?? "",
                                 cookieConsentInfo: privacyInfo.cookieConsentManaged,
                                 debugFlags: privacyInfo.debugFlags,
-                                privacyExperiments: privacyExperimentCohorts)
+                                privacyExperiments: privacyExperimentCohorts,
+                                isPirEnabled: nil)
     }
 
 }

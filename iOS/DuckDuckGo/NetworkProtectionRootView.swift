@@ -48,7 +48,7 @@ struct NetworkProtectionRootView: View {
         NetworkProtectionStatusView(statusModel: statusViewModel, feedbackFormModel: feedbackFormModel)
             .navigationTitle(UserText.netPNavTitle)
             .onFirstAppear {
-                Pixel.fire(pixel: .privacyProVPNSettings)
+                Pixel.fire(pixel: .privacyProVPNSettings, withAdditionalParameters: self.statusViewModel.featureDiscovery.addToParams([:], forFeature: .vpn))
             }
     }
 }

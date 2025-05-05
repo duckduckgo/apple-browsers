@@ -473,8 +473,14 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
             // keychain storage
             let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
-            let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainType: .dataProtection(.named(subscriptionAppGroup))) { keychainType, error in
-                Pixel.fire(.privacyProKeychainAccessError, withAdditionalParameters: ["type": keychainType.rawValue, "error": error.errorDescription])
+            let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainType: .dataProtection(.named(subscriptionAppGroup))) { accessType, error in
+                let parameters = [PixelParameters.privacyProKeychainAccessType: accessType.rawValue,
+                                  PixelParameters.privacyProKeychainError: error.localizedDescription,
+                                  PixelParameters.source: KeychainErrorSource.vpn.rawValue,
+                                  PixelParameters.authVersion: KeychainErrorAuthVersion.v2.rawValue]
+                DailyPixel.fireDailyAndCount(pixel: .privacyProKeychainAccessError,
+                                             pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
+                                             withAdditionalParameters: parameters)
             }
             let legacyAccountStorage = SubscriptionTokenKeychainStorage(keychainType: .dataProtection(.named(subscriptionAppGroup)))
             let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
@@ -637,12 +643,17 @@ final class DefaultWireGuardInterface: WireGuardInterface {
 extension NetworkProtectionPacketTunnelProvider: AccountManagerKeychainAccessDelegate {
 
     public func accountManagerKeychainAccessFailed(accessType: AccountKeychainAccessType, error: any Error) {
-        let parameters = [
-            PixelParameters.privacyProKeychainAccessType: accessType.rawValue,
-            PixelParameters.privacyProKeychainError: error.localizedDescription,
-            PixelParameters.source: "vpn"
-        ]
 
+        guard let expectedError = error as? AccountKeychainAccessError else {
+            assertionFailure("Unexpected error type: \(error)")
+            Logger.networkProtection.fault("Unexpected error type: \(error)")
+            return
+        }
+
+        let parameters = [PixelParameters.privacyProKeychainAccessType: accessType.rawValue,
+                          PixelParameters.privacyProKeychainError: expectedError.errorDescription,
+                          PixelParameters.source: KeychainErrorSource.vpn.rawValue,
+                          PixelParameters.authVersion: KeychainErrorAuthVersion.v1.rawValue]
         DailyPixel.fireDailyAndCount(pixel: .privacyProKeychainAccessError,
                                      pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
                                      withAdditionalParameters: parameters)

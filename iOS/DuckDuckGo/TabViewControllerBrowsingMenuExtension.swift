@@ -78,7 +78,8 @@ extension TabViewController {
         })
 
         let chatEntry = BrowsingMenuEntry.regular(name: UserText.actionOpenAIChat, image: UIImage(named: "AIChat-24")!, action: { [weak self] in
-            Pixel.fire(pixel: .browsingMenuAIChat)
+            Pixel.fire(pixel: .browsingMenuAIChat,
+                       withAdditionalParameters: self?.featureDiscovery.addToParams([:], forFeature: .aiChat) ?? [:])
             self?.openAIChat()
         })
 
@@ -158,6 +159,8 @@ extension TabViewController {
                 entries.append(BrowsingMenuEntry.regular(name: UserText.actionAIChatNew,
                                                          image: UIImage(named: "AIChat-16")!,
                                                          action: { [weak self] in
+                    Pixel.fire(pixel: .browsingMenuListAIChat,
+                               withAdditionalParameters: self?.featureDiscovery.addToParams([:], forFeature: .aiChat) ?? [:])
                     self?.openAIChat()
                 }))
             }
@@ -488,6 +491,7 @@ extension TabViewController {
     }
     
     private func onBrowsingSettingsAction() {
+        Pixel.fire(pixel: .settingsPresentedFromMenu)
         delegate?.tabDidRequestSettings(tab: self)
     }
 

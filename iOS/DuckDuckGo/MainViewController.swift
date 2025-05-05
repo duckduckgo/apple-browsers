@@ -39,6 +39,7 @@ import os.log
 import PageRefreshMonitor
 import BrokenSitePrompt
 import AIChat
+import NetworkExtension
 
 class MainViewController: UIViewController {
 
@@ -179,6 +180,7 @@ class MainViewController: UIViewController {
         fatalError("Use init?(code:")
     }
 
+    let featureDiscovery: FeatureDiscovery
     let fireproofing: Fireproofing
     let websiteDataManager: WebsiteDataManaging
     let textZoomCoordinator: TextZoomCoordinating
@@ -239,7 +241,8 @@ class MainViewController: UIViewController {
         appDidFinishLaunchingStartTime: CFAbsoluteTime?,
         maliciousSiteProtectionManager: MaliciousSiteProtectionManaging,
         maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
-        aiChatSettings: AIChatSettingsProvider
+        aiChatSettings: AIChatSettingsProvider,
+        featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard)
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.bookmarksDatabaseCleaner = bookmarksDatabaseCleaner
@@ -252,6 +255,7 @@ class MainViewController: UIViewController {
         self.appSettings = appSettings
         self.aiChatSettings = aiChatSettings
         self.previewsSource = previewsSource
+        self.featureDiscovery = featureDiscovery
 
         let interactionStateSource = WebViewStateRestorationManager(featureFlagger: featureFlagger).isFeatureEnabled ? TabInteractionStateDiskSource() : nil
         self.tabManager = TabManager(model: tabsModel,
@@ -271,7 +275,8 @@ class MainViewController: UIViewController {
                                      websiteDataManager: websiteDataManager,
                                      fireproofing: fireproofing,
                                      maliciousSiteProtectionManager: maliciousSiteProtectionManager,
-                                     maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager)
+                                     maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager,
+                                     featureDiscovery: featureDiscovery)
         self.syncPausedStateManager = syncPausedStateManager
         self.privacyProDataReporter = privacyProDataReporter
         self.homeTabManager = NewTabPageManager()
@@ -675,7 +680,6 @@ class MainViewController: UIViewController {
         switch position {
         case .top:
             swipeTabsCoordinator?.addressBarPositionChanged(isTop: true)
-            viewCoordinator.omniBar.moveSeparatorToBottom()
             if ExperimentalThemingManager().isExperimentalThemingEnabled {
                 viewCoordinator.hideToolbarSeparator()
             } else {
@@ -685,13 +689,13 @@ class MainViewController: UIViewController {
                     
         case .bottom:
             swipeTabsCoordinator?.addressBarPositionChanged(isTop: false)
-            viewCoordinator.omniBar.moveSeparatorToTop()
             // If this is called before the toolbar has shown it will not re-add the separator when moving to the top position
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                 self.viewCoordinator.hideToolbarSeparator()
             }
         }
 
+        omniBar.adjust(for: position)
         adjustNewTabPageSafeAreaInsets(for: position)
         updateChromeForDuckPlayer()
     }
@@ -1400,7 +1404,7 @@ class MainViewController: UIViewController {
 
     private func applyWidthToTrayController() {
         if AppWidthObserver.shared.isLargeWidth {
-            self.suggestionTrayController?.float(under: self.viewCoordinator.omniBar.barView.searchContainer)
+            self.suggestionTrayController?.float(withWidth: self.viewCoordinator.omniBar.barView.searchContainerWidth)
         } else {
             self.suggestionTrayController?.fill()
         }
@@ -1723,6 +1727,14 @@ class MainViewController: UIViewController {
     }
 
     private func subscribeToNetworkProtectionEvents() {
+        if !featureDiscovery.wasUsedBefore(.vpn) {
+            // If the VPN was used before we don't care about this notification any more
+            NotificationCenter.default.publisher(for: .NEVPNStatusDidChange)
+                .sink { [weak self] notification in
+                    self?.onVPNStatusDidChange(notification)
+                }.store(in: &vpnCancellables)
+        }
+
         NotificationCenter.default.publisher(for: .accountDidSignIn)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] notification in
@@ -1783,6 +1795,14 @@ class MainViewController: UIViewController {
                                               presentationLocation: .withoutBottomBar)
                 }
             }
+    }
+
+    private func onVPNStatusDidChange(_ notification: Notification) {
+        guard let session = (notification.object as? NETunnelProviderSession),
+           session.status == .connected else {
+            return
+        }
+        self.featureDiscovery.setWasUsedBefore(.vpn)
     }
 
     private func onNetworkProtectionEntitlementMessagingChange() {
@@ -1897,6 +1917,7 @@ class MainViewController: UIViewController {
     }
 
     func openAIChat(_ query: String? = nil, autoSend: Bool = false, payload: Any? = nil) {
+        featureDiscovery.setWasUsedBefore(.aiChat)
         aiChatViewControllerManager.openAIChat(query, payload: payload, autoSend: autoSend, on: self)
     }
 }
@@ -2328,15 +2349,18 @@ extension MainViewController: OmniBarDelegate {
         } else {
             /// Check if the current tab's URL is a DuckDuckGo search page
             /// If it is, get the query item and open the chat with the query item's value
+            /// Do not auto-send if the user is on SERP
+            /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1210024262385459?focus=true
             if currentTab?.url?.isDuckDuckGoSearch == true {
                 let queryItem = currentTab?.url?.getQueryItems()?.filter { $0.name == "q" }.first
-                openAIChat(queryItem?.value, autoSend: true)
+                openAIChat(queryItem?.value, autoSend: false)
             } else {
                 openAIChat()
             }
         }
 
-        Pixel.fire(pixel: .openAIChatFromAddressBar)
+        Pixel.fire(pixel: .openAIChatFromAddressBar,
+                   withAdditionalParameters: featureDiscovery.addToParams([:], forFeature: .aiChat))
     }
 
     func onAccessoryLongPressed(accessoryType: OmniBarAccessoryType) {
@@ -2561,7 +2585,8 @@ extension MainViewController: TabDelegate {
                                               inheritedAttribution: inheritingAttribution)
         newTab.openedByPage = true
         newTab.openingTab = tab
-        
+        swipeTabsCoordinator?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
+
         newTabAnimation {
             guard self.tabManager.model.tabs.contains(newTab.tabModel) else { return }
 
@@ -2645,7 +2670,7 @@ extension MainViewController: TabDelegate {
     }
 
     func tabDidRequestAIChat(tab: TabViewController) {
-        Pixel.fire(pixel: .browsingMenuListAIChat)
+        // Pixel fired at point where this is triggered to avoid over firing
         openAIChat()
     }
 
@@ -2880,6 +2905,8 @@ extension MainViewController: TabSwitcherDelegate {
     }
 
     func tabSwitcherDidRequestAIChat(tabSwitcher: TabSwitcherViewController) {
+        Pixel.fire(pixel: .openAIChatFromTabManager,
+                   withAdditionalParameters: featureDiscovery.addToParams([:], forFeature: .aiChat))
         self.aiChatViewControllerManager.openAIChat(on: tabSwitcher)
     }
 

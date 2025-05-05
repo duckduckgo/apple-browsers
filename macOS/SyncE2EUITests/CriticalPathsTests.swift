@@ -157,6 +157,7 @@ final class CriticalPathsTests: XCTestCase {
         settingsWindow.buttons["Recover Synced Data"].click()
         sheetsQuery.buttons["Get Started"].click()
         sheetsQuery.buttons["Paste"].click()
+        sheetsQuery.buttons["Next"].click()
         sheetsQuery.buttons["Done"].click()
         XCTAssertTrue(syncEnabledElement.exists, "Sync Enabled text is not visible")
 
@@ -289,9 +290,7 @@ final class CriticalPathsTests: XCTestCase {
         let settingsSheetsQuery = settingsWindow.sheets
         settingsSheetsQuery.buttons["Enter Code"].click()
         settingsSheetsQuery.buttons["Paste"].click()
-        if settingsSheetsQuery.buttons["Next"].exists {
-            settingsSheetsQuery.buttons["Next"].click()
-        }
+        settingsSheetsQuery.buttons["Next"].click()
         settingsSheetsQuery.buttons["Done"].click()
         let secondDevice = settingsWindow.images["SyncedDeviceMobile"]
         XCTAssertTrue(secondDevice.exists, "Original Device not visible")

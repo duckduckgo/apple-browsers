@@ -1,7 +1,7 @@
 {
   "images" : [
     {
-      "filename" : "tabsToggleGrid-Light.pdf",
+      "filename" : "Grid-Light.svg",
       "idiom" : "universal"
     },
     {
@@ -11,7 +11,7 @@
           "value" : "dark"
         }
       ],
-      "filename" : "tabsToggleGrid-Dark.pdf",
+      "filename" : "Grid-Dark.svg",
       "idiom" : "universal"
     }
   ],

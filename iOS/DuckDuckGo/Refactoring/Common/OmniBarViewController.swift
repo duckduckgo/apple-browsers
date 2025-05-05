@@ -230,6 +230,14 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.moveSeparatorToBottom()
     }
 
+    func useSmallTopSpacing() {
+        // no-op
+    }
+
+    func useRegularTopSpacing() {
+        // no-op
+    }
+
     func startBrowsing() {
         refreshState(state.onBrowsingStartedState)
     }

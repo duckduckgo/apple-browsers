@@ -14,35 +14,9 @@
       },
       "shouldTranslate" : false
     },
-    "CFBundleName" : {
-      "comment" : "Bundle name",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "com.duckduckgo.macos.vpn.network-extension"
-          }
-        }
-      },
-      "shouldTranslate" : false
-    },
-    "NSHumanReadableCopyright" : {
-      "comment" : "Copyright (human-readable)",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Copyright © 2023 DuckDuckGo. All rights reserved."
-          }
-        }
-      },
-      "shouldTranslate" : false
-    },
     "NSSystemExtensionUsageDescription" : {
       "comment" : "Privacy - System Extension Usage Description",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

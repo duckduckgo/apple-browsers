@@ -95,7 +95,8 @@ final class TabManagerTests: XCTestCase {
                           websiteDataManager: MockWebsiteDataManager(),
                           fireproofing: MockFireproofing(),
                           maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager(),
-                          maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager())
+                          maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
+                          featureDiscovery: MockFeatureDiscovery())
     }
 
 }

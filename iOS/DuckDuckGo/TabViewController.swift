@@ -345,7 +345,8 @@ class TabViewController: UIViewController {
                                    websiteDataManager: WebsiteDataManaging,
                                    fireproofing: Fireproofing,
                                    tabInteractionStateSource: TabInteractionStateSource?,
-                                   specialErrorPageNavigationHandler: SpecialErrorPageManaging) -> TabViewController {
+                                   specialErrorPageNavigationHandler: SpecialErrorPageManaging,
+                                   featureDiscovery: FeatureDiscovery) -> TabViewController {
         let storyboard = UIStoryboard(name: "Tab", bundle: nil)
         let controller = storyboard.instantiateViewController(identifier: "TabViewController", creator: { coder in
             TabViewController(coder: coder,
@@ -365,7 +366,8 @@ class TabViewController: UIViewController {
                               fireproofing: fireproofing,
                               websiteDataManager: websiteDataManager,
                               tabInteractionStateSource: tabInteractionStateSource,
-                              specialErrorPageNavigationHandler: specialErrorPageNavigationHandler
+                              specialErrorPageNavigationHandler: specialErrorPageNavigationHandler,
+                              featureDiscovery: featureDiscovery
             )
         })
         return controller
@@ -408,6 +410,7 @@ class TabViewController: UIViewController {
     let fireproofing: Fireproofing
     let websiteDataManager: WebsiteDataManaging
     let specialErrorPageNavigationHandler: SpecialErrorPageManaging
+    let featureDiscovery: FeatureDiscovery
 
     required init?(coder aDecoder: NSCoder,
                    tabModel: Tab,
@@ -428,7 +431,8 @@ class TabViewController: UIViewController {
                    fireproofing: Fireproofing,
                    websiteDataManager: WebsiteDataManaging,
                    tabInteractionStateSource: TabInteractionStateSource?,
-                   specialErrorPageNavigationHandler: SpecialErrorPageManaging) {
+                   specialErrorPageNavigationHandler: SpecialErrorPageManaging,
+                   featureDiscovery: FeatureDiscovery) {
         self.tabModel = tabModel
         self.appSettings = appSettings
         self.bookmarksDatabase = bookmarksDatabase
@@ -448,6 +452,7 @@ class TabViewController: UIViewController {
         self.websiteDataManager = websiteDataManager
         self.tabInteractionStateSource = tabInteractionStateSource
         self.specialErrorPageNavigationHandler = specialErrorPageNavigationHandler
+        self.featureDiscovery = featureDiscovery
 
         self.tabURLInterceptor = TabURLInterceptorDefault(featureFlagger: featureFlagger) {
             return AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.canPurchase
@@ -728,6 +733,7 @@ class TabViewController: UIViewController {
         webView.addObserver(self, forKeyPath: #keyPath(WKWebView.canGoBack), options: .new, context: nil)
         webView.addObserver(self, forKeyPath: #keyPath(WKWebView.canGoForward), options: .new, context: nil)
         webView.addObserver(self, forKeyPath: #keyPath(WKWebView.title), options: .new, context: nil)
+        webView.addObserver(self, forKeyPath: #keyPath(WKWebView.isLoading), options: .new, context: nil)
     }
 
     private func configureRefreshControl(_ control: UIRefreshControl) {
@@ -844,7 +850,12 @@ class TabViewController: UIViewController {
               let webView = webView else { return }
 
         switch keyPath {
-            
+
+        case #keyPath(WKWebView.isLoading):
+            if webView.isLoading {
+                delegate?.showBars()
+            }
+
         case #keyPath(WKWebView.estimatedProgress):
             progressWorker.progressDidChange(webView.estimatedProgress)
             
@@ -1099,8 +1110,9 @@ class TabViewController: UIViewController {
     }
 
     func showPrivacyDashboard() {
-        Pixel.fire(pixel: .privacyDashboardOpened)
+        Pixel.fire(pixel: .privacyDashboardOpened, withAdditionalParameters: featureDiscovery.addToParams([:], forFeature: .privacyDashboard))
         performSegue(withIdentifier: "PrivacyDashboard", sender: self)
+        featureDiscovery.setWasUsedBefore(.privacyDashboard)
     }
 
     func setRefreshControlEnabled(_ isEnabled: Bool) {
@@ -1235,6 +1247,7 @@ class TabViewController: UIViewController {
         webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.canGoForward))
         webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.canGoBack))
         webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.title))
+        webView.removeObserver(self, forKeyPath: #keyPath(WKWebView.isLoading))
     }
 
     public func makeBreakageAdditionalInfo() -> PrivacyDashboardViewController.BreakageAdditionalInfo? {
@@ -1388,7 +1401,6 @@ extension TabViewController: WKNavigationDelegate {
         self.fireWoFollowUp = false
 
         self.httpsForced = httpsForced
-        delegate?.showBars()
 
         resetDashboardInfo()
 

@@ -61,7 +61,7 @@ final class NavigationBarViewController: NSViewController {
     @IBOutlet var navigationBarButtonsLeadingConstraint: NSLayoutConstraint!
     @IBOutlet var addressBarTopConstraint: NSLayoutConstraint!
     @IBOutlet var addressBarBottomConstraint: NSLayoutConstraint!
-    @IBOutlet var addressBarHeightConstraint: NSLayoutConstraint!
+    @IBOutlet var navigationBarHeightConstraint: NSLayoutConstraint!
     @IBOutlet var buttonsTopConstraint: NSLayoutConstraint!
     @IBOutlet var logoWidthConstraint: NSLayoutConstraint!
 
@@ -217,8 +217,8 @@ final class NavigationBarViewController: NSViewController {
 
 #if !APPSTORE && WEB_EXTENSIONS_ENABLED
         if #available(macOS 15.4, *), !burnerMode.isBurner {
-            WebExtensionManager.shared.toolbarButtons().enumerated().forEach { (index, button) in
-                menuButtons.insertArrangedSubview(button, at: index)
+            Task { @MainActor in
+                await WebExtensionNavigationBarUpdater(container: menuButtons).runUpdateLoop()
             }
         }
 #endif
@@ -374,7 +374,31 @@ final class NavigationBarViewController: NSViewController {
             Logger.navigation.error("Selected tab view model is nil")
             return
         }
-        selectedTabViewModel.tab.openHomePage()
+
+        let behavior = LinkOpenBehavior(
+            event: NSApp.currentEvent,
+            switchToNewTabWhenOpenedPreference: TabsPreferences.shared.switchToNewTabWhenOpened,
+            canOpenLinkInCurrentTab: true
+        )
+
+        let startupPreferences = StartupPreferences.shared
+        let tabContent: TabContent
+        if startupPreferences.launchToCustomHomePage,
+           let customURL = URL(string: startupPreferences.formattedCustomHomePageURL) {
+            tabContent = .contentFromURL(customURL, source: .ui)
+        } else {
+            tabContent = .newtab
+        }
+
+        lazy var tab = Tab(content: tabContent, parentTab: nil, shouldLoadInBackground: true, burnerMode: tabCollectionViewModel.burnerMode)
+        switch behavior {
+        case .currentTab:
+            selectedTabViewModel.tab.openHomePage()
+        case .newTab(let selected):
+            tabCollectionViewModel.insert(tab, selected: selected)
+        case .newWindow(let selected):
+            WindowsManager.openNewWindow(with: tab, showWindow: selected)
+        }
     }
 
     @IBAction func optionsButtonAction(_ sender: NSButton) {
@@ -687,9 +711,11 @@ final class NavigationBarViewController: NSViewController {
         goForwardButton.menu = forwardButtonMenu
         goForwardButton.sendAction(on: [.leftMouseUp, .otherMouseDown])
 
-        goBackButton.toolTip = UserText.navigateBackTooltip
-        goForwardButton.toolTip = UserText.navigateForwardTooltip
-        refreshOrStopButton.toolTip = UserText.refreshPageTooltip
+        homeButton.sendAction(on: [.leftMouseUp, .otherMouseDown])
+
+        goBackButton.toolTip = ShortcutTooltip.back.value
+        goForwardButton.toolTip = ShortcutTooltip.forward.value
+        refreshOrStopButton.toolTip = ShortcutTooltip.reload.value
     }
 
     private func setupNavigationButtonIcons() {
@@ -745,7 +771,7 @@ final class NavigationBarViewController: NSViewController {
         let performResize = { [weak self] in
             guard let self else { return }
 
-            let height: NSLayoutConstraint = animated ? addressBarHeightConstraint.animator() : addressBarHeightConstraint
+            let height: NSLayoutConstraint = animated ? navigationBarHeightConstraint.animator() : navigationBarHeightConstraint
             height.constant = visualStyleManager.style.addressBarHeight(for: sizeClass)
 
             let barTop: NSLayoutConstraint = animated ? addressBarTopConstraint.animator() : addressBarTopConstraint
@@ -850,7 +876,7 @@ final class NavigationBarViewController: NSViewController {
         menu.addItem(withTitle: title, action: #selector(toggleAutofillPanelPinning), keyEquivalent: "")
 
         passwordManagementButton.menu = menu
-        passwordManagementButton.toolTip = UserText.autofillShortcutTooltip
+        passwordManagementButton.toolTip = UserText.passwordsShortcutTooltip
 
         let url = tabCollectionViewModel.selectedTabViewModel?.tab.content.userEditableUrl
 
@@ -883,7 +909,7 @@ final class NavigationBarViewController: NSViewController {
         let menu = NSMenu()
 
         homeButton.menu = menu
-        homeButton.toolTip = UserText.homeButtonTooltip
+        homeButton.toolTip = ShortcutTooltip.home.value
 
         if LocalPinningManager.shared.isPinned(.homeButton) {
             homeButton.isHidden = false
@@ -916,7 +942,7 @@ final class NavigationBarViewController: NSViewController {
                        action: #selector(toggleDownloadsPanelPinning(_:)),
                        keyEquivalent: "")
         }
-        downloadsButton.toolTip = UserText.downloadsShortcutTooltip
+        downloadsButton.toolTip = ShortcutTooltip.downloads.value
 
         if LocalPinningManager.shared.isPinned(.downloads) {
             downloadsButton.isShown = true
@@ -1064,7 +1090,7 @@ final class NavigationBarViewController: NSViewController {
             .removeDuplicates()
             .sink { [weak refreshOrStopButton] isLoading in
                 refreshOrStopButton?.image = isLoading ? .stop : .refresh
-                refreshOrStopButton?.toolTip = isLoading ? UserText.stopLoadingTooltip : UserText.refreshPageTooltip
+                refreshOrStopButton?.toolTip = isLoading ? ShortcutTooltip.stopLoading.value : ShortcutTooltip.reload.value
             }
             .store(in: &navigationButtonsCancellables)
     }

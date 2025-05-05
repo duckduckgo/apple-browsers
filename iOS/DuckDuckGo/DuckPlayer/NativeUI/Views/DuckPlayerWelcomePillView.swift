@@ -85,7 +85,7 @@ struct DuckPlayerWelcomePillView: View {
         LottieView(
             lottieFile: Constants.primingImageName,
             loopMode: .mode(.playOnce),
-            isAnimating: $isAnimating,
+            isAnimating: $isAnimating
         )
         .frame(width: 70, height: 120)
         .background(Color.clear)

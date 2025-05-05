@@ -1367,9 +1367,9 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
         }
     }
 
-    func renderingProgressDidChangeRaw(progressEventsRawValue: UInt) {
+    func renderingProgressDidChangeRaw(progressEvents: UInt) {
         // Emit only after first paint event
-        if progressEventsRawValue >= 4 {
+        if progressEvents >= 4 {
             webViewRenderingProgressDidChangePublisher.send()
         }
     }

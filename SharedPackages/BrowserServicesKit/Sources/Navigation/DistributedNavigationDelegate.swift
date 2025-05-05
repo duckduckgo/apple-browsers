@@ -935,7 +935,7 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
     public func webView(_ webView: WKWebView, renderingProgressDidChange progressEvents: UInt) {
         Logger.navigation.log("renderingProgressDidChange: \(progressEvents)")
         for responder in responders {
-            responder.renderingProgressDidChangeRaw(progressEventsRawValue: progressEvents)
+            responder.renderingProgressDidChangeRaw(progressEvents: progressEvents)
         }
     }
 #endif

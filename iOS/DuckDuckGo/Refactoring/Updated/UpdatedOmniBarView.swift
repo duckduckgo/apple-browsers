@@ -112,7 +112,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
 
     var isShareButtonHidden: Bool {
         get { searchAreaView.shareButton.isHidden }
-        set { searchAreaView.shareButton.isHidden = true }
+        set { searchAreaView.shareButton.isHidden = newValue }
     }
 
     var isVoiceSearchButtonHidden: Bool {
@@ -406,6 +406,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         searchAreaView.voiceSearchButton.addTarget(self, action: #selector(voiceSearchButtonTap), for: .touchUpInside)
         searchAreaView.reloadButton.addTarget(self, action: #selector(reloadButtonTap), for: .touchUpInside)
         searchAreaView.clearButton.addTarget(self, action: #selector(clearButtonTap), for: .touchUpInside)
+        searchAreaView.shareButton.addTarget(self, action: #selector(shareButtonTap), for: .touchUpInside)
         searchAreaView.cancelButton.addTarget(self, action: #selector(cancelButtonTap), for: .touchUpInside)
         searchAreaView.accessoryButton.addTarget(self, action: #selector(accessoryButtonTap), for: .touchUpInside)
 
@@ -602,6 +603,10 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
 
     @objc private func clearButtonTap() {
         onClearButtonPressed?()
+    }
+
+    @objc private func shareButtonTap() {
+        onSharePressed?()
     }
 
     @objc private func cancelButtonTap() {

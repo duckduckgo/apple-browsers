@@ -48,7 +48,7 @@ final class AddressBarViewController: NSViewController {
 
     @IBOutlet var addressBarTextField: AddressBarTextField!
     @IBOutlet var passiveTextField: NSTextField!
-    @IBOutlet var inactiveBackgroundView: NSView!
+    @IBOutlet var inactiveBackgroundView: ColorView!
     @IBOutlet var activeBackgroundView: ColorView!
     @IBOutlet var activeOuterBorderView: ColorView!
     @IBOutlet var activeBackgroundViewWithSuggestions: ColorView!
@@ -73,7 +73,7 @@ final class AddressBarViewController: NSViewController {
     private let suggestionContainerViewModel: SuggestionContainerViewModel
     private let isBurner: Bool
     private let onboardingPixelReporter: OnboardingAddressBarReporting
-    private let visualStyleManager: VisualStyleManagerProviding
+    private let visualStyle: VisualStyleProviding
 
     private var aiChatSettings: AIChatPreferencesStorage
 
@@ -127,11 +127,11 @@ final class AddressBarViewController: NSViewController {
         self.suggestionContainerViewModel = SuggestionContainerViewModel(
             isHomePage: tabViewModel?.tab.content == .newtab,
             isBurner: burnerMode.isBurner,
-            suggestionContainer: SuggestionContainer(burnerMode: burnerMode, isUrlIgnored: { _ in false }))
+            suggestionContainer: SuggestionContainer(burnerMode: burnerMode, isUrlIgnored: { _ in false }), visualStyle: visualStyleManager.style)
         self.isBurner = burnerMode.isBurner
         self.onboardingPixelReporter = onboardingPixelReporter
         self.aiChatSettings = aiChatSettings
-        self.visualStyleManager = visualStyleManager
+        self.visualStyle = visualStyleManager.style
 
         super.init(coder: coder)
     }
@@ -152,7 +152,7 @@ final class AddressBarViewController: NSViewController {
         view.wantsLayer = true
         view.layer?.masksToBounds = false
 
-        addressBarTextField.placeholderString = UserText.addressBarPlaceholder
+        setupAddressBarPlaceHolder()
         addressBarTextField.setAccessibilityIdentifier("AddressBarViewController.addressBarTextField")
 
         switchToTabBox.isHidden = true
@@ -403,18 +403,32 @@ final class AddressBarViewController: NSViewController {
         let isPassiveTextFieldHidden = isFirstResponder || mode.isEditing
         addressBarTextField.isHidden = isPassiveTextFieldHidden ? false : true
         passiveTextField.isHidden = isPassiveTextFieldHidden ? true : false
+        passiveTextField.textColor = visualStyle.textPrimaryColor
 
         updateShadowViewPresence(isFirstResponder)
+        inactiveBackgroundView.backgroundColor = visualStyle.backgroundTertiaryColor
         inactiveBackgroundView.alphaValue = isFirstResponder ? 0 : 1
         activeBackgroundView.alphaValue = isFirstResponder ? 1 : 0
 
         let isKey = self.view.window?.isKeyWindow == true
 
-        activeOuterBorderView.alphaValue = isKey && isFirstResponder && visualStyleManager.style.shouldShowOutlineBorder(isHomePage: isHomePage) ? 1 : 0
-        activeOuterBorderView.backgroundColor = accentColor.withAlphaComponent(0.2)
-        activeBackgroundView.borderColor = accentColor.withAlphaComponent(0.8)
+        activeOuterBorderView.alphaValue = isKey && isFirstResponder && visualStyle.shouldShowOutlineBorder(isHomePage: isHomePage) ? 1 : 0
+        activeOuterBorderView.backgroundColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.2) : visualStyle.accentAlternateColor
+        activeBackgroundView.borderColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.2) : visualStyle.accentPrimaryColor
 
-        addressBarTextField.placeholderString = tabViewModel?.tab.content == .newtab ? UserText.addressBarPlaceholder : ""
+        setupAddressBarPlaceHolder()
+    }
+
+    private func setupAddressBarPlaceHolder() {
+        let isNewTab = tabViewModel?.tab.content == .newtab
+        let addressBarPlaceholder = isNewTab ? UserText.addressBarPlaceholder : ""
+
+        let font = NSFont.systemFont(ofSize: isNewTab ? visualStyle.newTabOrHomePageAddressBarFontSize : visualStyle.defaultAddressBarFontSize, weight: .regular)
+        let attributes: [NSAttributedString.Key: Any] = [
+            .foregroundColor: visualStyle.textSecondaryColor,
+            .font: font
+        ]
+        addressBarTextField.placeholderAttributedString = NSAttributedString(string: addressBarPlaceholder, attributes: attributes)
     }
 
     private func updateSwitchToTabBoxAppearance() {
@@ -487,20 +501,21 @@ final class AddressBarViewController: NSViewController {
         self.addressBarButtonsViewController?.updateButtons()
 
         guard let window = view.window, AppVersion.runType != .unitTests else { return }
+        let navigationBarBackgroundColor = visualStyle.navigationBackgroundColor
 
         NSAppearance.withAppAppearance {
             if window.isKeyWindow {
                 activeBackgroundView.borderWidth = 2.0
                 activeBackgroundView.borderColor = accentColor.withAlphaComponent(0.6)
                 activeBackgroundView.backgroundColor = NSColor.addressBarBackground
-                switchToTabBox.backgroundColor = NSColor.navigationBarBackground.blended(with: .addressBarBackground)
+                switchToTabBox.backgroundColor = navigationBarBackgroundColor.blended(with: .addressBarBackground)
 
-                activeOuterBorderView.isHidden = !visualStyleManager.style.shouldShowOutlineBorder(isHomePage: isHomePage)
+                activeOuterBorderView.isHidden = !visualStyle.shouldShowOutlineBorder(isHomePage: isHomePage)
             } else {
                 activeBackgroundView.borderWidth = 0
                 activeBackgroundView.borderColor = nil
                 activeBackgroundView.backgroundColor = NSColor.inactiveSearchBarBackground
-                switchToTabBox.backgroundColor = NSColor.navigationBarBackground.blended(with: .inactiveSearchBarBackground)
+                switchToTabBox.backgroundColor = navigationBarBackgroundColor.blended(with: .inactiveSearchBarBackground)
 
                 activeOuterBorderView.isHidden = true
             }

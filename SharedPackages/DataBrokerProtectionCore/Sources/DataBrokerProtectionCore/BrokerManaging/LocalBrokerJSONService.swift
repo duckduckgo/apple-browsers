@@ -47,7 +47,7 @@ public final class FileResources: ResourcesRepository {
         }
 
         guard let resourceURL = Bundle.module.resourceURL else {
-            Logger.dataBrokerProtection.fault("LocalBrokerJSONService: error FileResources fetchBrokerFromResourceFiles, error: Bundle.module.resourceURL is nil")
+            Logger.dataBrokerProtection.fault("🧩 LocalBrokerJSONService: error FileResources fetchBrokerFromResourceFiles, error: Bundle.module.resourceURL is nil")
             assertionFailure()
             throw FileResourcesError.bundleResourceURLNil
         }
@@ -75,7 +75,7 @@ public final class FileResources: ResourcesRepository {
             assertionFailure("Bundled JSON containing unsupported data: \(error.localizedDescription)")
             return nil
         } catch {
-            Logger.dataBrokerProtection.error("LocalBrokerJSONService: error FileResources error: fetchBrokerFromResourceFiles, error: \(error.localizedDescription, privacy: .public)")
+            Logger.dataBrokerProtection.error("🧩 LocalBrokerJSONService: error FileResources error: fetchBrokerFromResourceFiles, error: \(error.localizedDescription, privacy: .public)")
             throw error
         }
     }
@@ -144,7 +144,7 @@ public struct LocalBrokerJSONService: BrokerJSONFallbackProvider {
         do {
             brokers = try resources.fetchBrokerFromResourceFiles()
         } catch {
-            Logger.dataBrokerProtection.error("FallbackBrokerJSONService updateBrokers, error: \(error.localizedDescription, privacy: .public)")
+            Logger.dataBrokerProtection.error("🧩 FallbackBrokerJSONService updateBrokers, error: \(error.localizedDescription, privacy: .public)")
             pixelHandler.fire(.cocoaError(error: error, functionOccurredIn: "DataBrokerProtectionBrokerUpdater.updateBrokers"))
             return
         }
@@ -154,7 +154,7 @@ public struct LocalBrokerJSONService: BrokerJSONFallbackProvider {
             do {
                 try upsertBroker(broker)
             } catch {
-                Logger.dataBrokerProtection.log("Error updating broker: \(broker.name, privacy: .public), with version: \(broker.version, privacy: .public)")
+                Logger.dataBrokerProtection.log("🧩 Error updating broker: \(broker.name, privacy: .public), with version: \(broker.version, privacy: .public)")
                 pixelHandler.fire(.databaseError(error: error, functionOccurredIn: "DataBrokerProtectionBrokerUpdater.updateBrokers"))
             }
         }

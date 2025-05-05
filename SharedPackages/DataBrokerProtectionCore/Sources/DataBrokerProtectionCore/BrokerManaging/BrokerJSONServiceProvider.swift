@@ -80,20 +80,20 @@ public extension BrokerStoring {
         }
 
         guard Self.shouldUpdate(incoming: broker.version, storedVersion: savedBroker.version) else {
-            Logger.dataBrokerProtection.log("False positive (changed eTag but same version): \(broker.url, privacy: .public)")
+            Logger.dataBrokerProtection.log("🧩 False positive (changed eTag but same version): \(broker.url, privacy: .public)")
             return
         }
 
         guard let savedBrokerId = savedBroker.id else { return }
 
-        Logger.dataBrokerProtection.log("Updated broker found: \(broker.url, privacy: .public) (\(savedBroker.version, privacy: .public)->\(broker.version, privacy: .public))")
+        Logger.dataBrokerProtection.log("🧩 Updated broker found: \(broker.url, privacy: .public) (\(savedBroker.version, privacy: .public)->\(broker.version, privacy: .public))")
 
         try vault.update(broker, with: savedBrokerId)
         try updateAttemptCount(broker)
     }
 
     private func addBroker(_ broker: DataBroker) throws {
-        Logger.dataBrokerProtection.log("New broker found: \(broker.url, privacy: .public)")
+        Logger.dataBrokerProtection.log("🧩 New broker found: \(broker.url, privacy: .public)")
 
         /// 1. We save the broker into the database
         let brokerId = try vault.save(broker: broker)

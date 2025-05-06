@@ -71,7 +71,7 @@ final class PrivacyDashboardViewController: NSViewController {
     }
     var sizeDelegate: PrivacyDashboardViewControllerSizeDelegate?
     private weak var tabViewModel: TabViewModel?
-    let featureFlagger: FeatureFlagger
+    let featureFlagger: ContentScopeScriptExperimentsManager
 
     private let privacyDashboardEvents = EventMapping<PrivacyDashboardEvents> { event, _, parameters, _ in
         let domainEvent: NonStandardPixel
@@ -90,7 +90,7 @@ final class PrivacyDashboardViewController: NSViewController {
     init(privacyInfo: PrivacyInfo? = nil,
          entryPoint: PrivacyDashboardEntryPoint = .dashboard,
          privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
-         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger) {
+         featureFlagger: ContentScopeScriptExperimentsManager = Application.appDelegate.featureFlagger) {
         let toggleReportingConfiguration = ToggleReportingConfiguration(privacyConfigurationManager: privacyConfigurationManager)
         let toggleReportingFeature = ToggleReportingFeature(toggleReportingConfiguration: toggleReportingConfiguration)
         let toggleReportingManager = ToggleReportingManager(feature: toggleReportingFeature)
@@ -357,13 +357,13 @@ extension PrivacyDashboardViewController {
             statusCodes = [httpStatusCode]
         }
 
-        var privacyExperimentCohorts: [String: String] {
+        var privacyExperimentCohorts: String {
             var experiments: [String: String] = [:]
-            for feature in ContentScopeExperimentsFeatureFlag.allCases {
-                let cohort = featureFlagger.resolveCohort(for: feature)
-                experiments[feature.rawValue] = cohort?.rawValue
+            let features = featureFlagger.resolveContentScopeScriptActiveExperiments()
+            for feature in features {
+                experiments[feature.key] = feature.value.cohortID
             }
-            return experiments
+            return experiments.map { "\($0.key):\($0.value)" }.joined(separator: ",")
         }
 
         let isPirEnabled = await isPirEnabledAndUserHasProfile()

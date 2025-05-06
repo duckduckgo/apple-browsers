@@ -38,7 +38,7 @@ final class PrivacyDashboardViewController: UIViewController {
     private let contentBlockingManager: ContentBlockerRulesManager
     private var privacyDashboardDidTriggerDismiss: Bool = false
     private let entryPoint: PrivacyDashboardEntryPoint
-    private let featureFlagger: FeatureFlagger
+    private let featureFlagger: ContentScopeScriptExperimentsManager
 
     private let brokenSiteReporter: BrokenSiteReporter = {
         BrokenSiteReporter(pixelHandler: { parameters in
@@ -76,7 +76,7 @@ final class PrivacyDashboardViewController: UIViewController {
           privacyConfigurationManager: PrivacyConfigurationManaging,
           contentBlockingManager: ContentBlockerRulesManager,
           breakageAdditionalInfo: BreakageAdditionalInfo?,
-          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
+          featureFlagger: ContentScopeScriptExperimentsManager = AppDependencyProvider.shared.featureFlagger) {
 
         let toggleReportingConfiguration = ToggleReportingConfiguration(privacyConfigurationManager: privacyConfigurationManager)
         let toggleReportingFeature = ToggleReportingFeature(toggleReportingConfiguration: toggleReportingConfiguration)
@@ -335,13 +335,13 @@ extension PrivacyDashboardViewController {
             statusCodes = [httpStatusCode]
         }
 
-        var privacyExperimentCohorts: [String: String] {
+        var privacyExperimentCohorts: String {
             var experiments: [String: String] = [:]
-            for feature in ContentScopeExperimentsFeatureFlag.allCases {
-                let cohort = featureFlagger.resolveCohort(for: feature)
-                experiments[feature.rawValue] = cohort?.rawValue
+            let features = featureFlagger.resolveContentScopeScriptActiveExperiments()
+            for feature in features {
+                experiments[feature.key] = feature.value.cohortID
             }
-            return experiments
+            return experiments.map { "\($0.key):\($0.value)" }.joined(separator: ",")
         }
 
 

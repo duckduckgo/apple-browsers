@@ -70,7 +70,8 @@ final class UserScripts: UserScriptsProvider {
         let prefs = ContentScopeProperties(gpcEnabled: isGPCEnabled,
                                            sessionKey: sessionKey,
                                            messageSecret: messageSecret,
-                                           featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfig))
+                                           featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfig),
+                                           experimentManager: Application.appDelegate.featureFlagger as? ContentScopeScriptExperimentsManager)
         contentScopeUserScript = ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: Application.appDelegate.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
         contentScopeUserScriptIsolated = ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, isIsolated: true, privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: Application.appDelegate.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
 

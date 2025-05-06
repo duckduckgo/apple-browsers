@@ -369,7 +369,8 @@ extension ContentOverlayViewController: SecureVaultManagerDelegate {
         let properties = ContentScopeProperties(gpcEnabled: isGPCEnabled,
                                                 sessionKey: topAutofillUserScript?.sessionKey ?? "",
                                                 messageSecret: topAutofillUserScript?.messageSecret ?? "",
-                                                featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfigurationManager.privacyConfig))
+                                                featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfigurationManager.privacyConfig),
+                                                experimentManager: nil)
 
         let runtimeConfiguration = DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfigurationManager,
                                                                          properties: properties)

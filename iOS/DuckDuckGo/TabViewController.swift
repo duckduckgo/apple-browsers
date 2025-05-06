@@ -3084,7 +3084,8 @@ extension TabViewController: SecureVaultManagerDelegate {
         return ContentScopeProperties(gpcEnabled: appSettings.sendDoNotSell,
                                       sessionKey: autofillUserScript?.sessionKey ?? "",
                                       messageSecret: autofillUserScript?.messageSecret ?? "",
-                                      featureToggles: supportedFeatures)
+                                      featureToggles: supportedFeatures,
+                                      experimentManager: AppDependencyProvider.shared.featureFlagger as? ContentScopeScriptExperimentsManager)
     }
 
     func secureVaultManager(_: SecureVaultManager, didReceivePixel pixel: AutofillUserScript.JSPixel) {

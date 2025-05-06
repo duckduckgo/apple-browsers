@@ -31,6 +31,12 @@ public protocol UserScriptWithContentScope: UserScript {
     var delegate: ContentScopeUserScriptDelegate? { get set }
 }
 
+public struct ContentScopeExperimentData: Encodable {
+    public let feature: String
+    public let subfeature: String
+    public let cohort: String
+}
+
 public final class ContentScopeProperties: Encodable {
     public let globalPrivacyControlValue: Bool
     public let debug: Bool = false
@@ -39,15 +45,22 @@ public final class ContentScopeProperties: Encodable {
     public let languageCode: String
     public let platform = ContentScopePlatform()
     public let features: [String: ContentScopeFeature]
+    public var currentCohorts: [ContentScopeExperimentData]
 
-    public init(gpcEnabled: Bool, sessionKey: String, messageSecret: String, featureToggles: ContentScopeFeatureToggles) {
+    public init(gpcEnabled: Bool,
+                sessionKey: String,
+                messageSecret: String,
+                featureToggles: ContentScopeFeatureToggles,
+                experimentManager: ContentScopeScriptExperimentsManager?) {
         self.globalPrivacyControlValue = gpcEnabled
         self.sessionKey = sessionKey
         self.messageSecret = messageSecret
+        currentCohorts = []
         languageCode = Locale.current.languageCode ?? "en"
         features = [
             "autofill": ContentScopeFeature(featureToggles: featureToggles)
         ]
+        currentCohorts = setCurrentCohort(experimentManager: experimentManager)
     }
 
     enum CodingKeys: String, CodingKey {
@@ -60,7 +73,19 @@ public final class ContentScopeProperties: Encodable {
         case messageSecret
         case platform
         case features
+        case currentCohorts
+
     }
+
+    private func setCurrentCohort(experimentManager: ContentScopeScriptExperimentsManager?) -> [ContentScopeExperimentData] {
+        guard let experiments = experimentManager?.resolveContentScopeScriptActiveExperiments() else { return [] }
+        var data = [ContentScopeExperimentData]()
+        for experiment in experiments {
+            data.append(ContentScopeExperimentData(feature: experiment.value.parentID, subfeature: experiment.key, cohort: experiment.value.cohortID))
+        }
+        return data
+    }
+
 }
 
 public struct ContentScopeFeature: Encodable {
@@ -196,6 +221,11 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
               let jsonConfigString = String(data: jsonConfig, encoding: .utf8)
         else {
             return ""
+        }
+        if let jsonString = String(data: jsonProperties, encoding: .utf8) {
+            print("SABRINA \(jsonString)")
+        } else {
+            print("Failed to decode JSON data to string.")
         }
 
         let jsInclude = isolated ? "contentScopeIsolated" : "contentScope"

@@ -430,3 +430,28 @@ extension DefaultFeatureFlagger: CurrentExperimentCohortProviding {
         return handleCohortResolutionBasedOnSources(for: featureFlag, allowCohortAssignment: false)
     }
 }
+
+public protocol ContentScopeScriptExperimentsManager {
+    func resolveContentScopeScriptActiveExperiments() -> Experiments
+}
+
+extension DefaultFeatureFlagger: ContentScopeScriptExperimentsManager {
+    public func resolveContentScopeScriptActiveExperiments() -> Experiments {
+
+        enrollAllContentScopeExperiments()
+
+        return allActiveExperiments.filter { _, experimentData in
+            return experimentData.parentID == PrivacyFeature.contentScopeExperiments.rawValue
+        }
+    }
+
+    private func enrollAllContentScopeExperiments() {
+        let contentScopeExperimentID = PrivacyFeature.contentScopeExperiments.rawValue
+        guard let contentScopeExperiments = try? PrivacyConfigurationData(data: privacyConfigManager.currentConfig).features[contentScopeExperimentID] else { return }
+        for subfeature in contentScopeExperiments.features {
+            let cohorts = privacyConfigManager.privacyConfig.cohorts(subfeatureID: subfeature.key, parentFeatureID: contentScopeExperimentID) ?? []
+            let experimentSubfeature = ExperimentSubfeature(parentID: PrivacyFeature.contentScopeExperiments.rawValue, subfeatureID: subfeature.key, cohorts: cohorts)
+            _ = experimentManager?.resolveCohort(for: experimentSubfeature, allowCohortAssignment: true)
+        }
+    }
+}

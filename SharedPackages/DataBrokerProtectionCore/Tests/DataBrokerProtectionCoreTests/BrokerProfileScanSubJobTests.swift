@@ -72,7 +72,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
             let mockBrokerProfileQuery = BrokerProfileQueryData(dataBroker: mockDataBroker,
                                                                 profileQuery: mockProfileQuery,
                                                                 scanJobData: mockScanOperation,
-            optOutJobData: optOutData)
+                                                                optOutJobData: optOutData)
             mockDatabase.brokerProfileQueryDataToReturn = [mockBrokerProfileQuery]
 
             mockScanRunner.scanResults = []
@@ -117,7 +117,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
             let mockBrokerProfileQuery = BrokerProfileQueryData(dataBroker: mockDataBroker,
                                                                 profileQuery: mockProfileQuery,
                                                                 scanJobData: mockScanOperation,
-            optOutJobData: optOutData)
+                                                                optOutJobData: optOutData)
             mockDatabase.brokerProfileQueryDataToReturn = [mockBrokerProfileQuery]
 
             mockScanRunner.scanResults = [extractedProfileSaved1]
@@ -163,7 +163,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
             let mockBrokerProfileQuery = BrokerProfileQueryData(dataBroker: mockDataBroker,
                                                                 profileQuery: mockProfileQuery,
                                                                 scanJobData: mockScanOperation,
-            optOutJobData: optOutData)
+                                                                optOutJobData: optOutData)
             mockDatabase.brokerProfileQueryDataToReturn = [mockBrokerProfileQuery]
 
             mockScanRunner.scanResults = [extractedProfileSaved1, extractedProfileSaved2]

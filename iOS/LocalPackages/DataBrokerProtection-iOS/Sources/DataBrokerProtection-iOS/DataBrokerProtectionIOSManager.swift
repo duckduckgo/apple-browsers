@@ -218,14 +218,17 @@ public final class DataBrokerProtectionIOSManager {
                 Logger.dataBrokerProtection.log("Prerequisites are invalid during scheduling of background task")
                 return
             }
-
+            
             let request = BGProcessingTaskRequest(identifier: "com.duckduckgo.app.dbp.backgroundProcessing")
             request.requiresNetworkConnectivity = true
-
+            
+#if !targetEnvironment(simulator)
             do {
                 try BGTaskScheduler.shared.submit(request)
             } catch {
+                Logger.dataBrokerProtection.log("Scheduling background task failed with error: \(error)")
             }
+#endif
         }
     }
 

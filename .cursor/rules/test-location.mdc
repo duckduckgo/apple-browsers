@@ -1,6 +1,0 @@
----
-description: Use this when writing tests
-globs: 
-alwaysApply: false
----
-When writing tests in the main application (not in a package), add the to the @UnitTests/DuckDuckgo folder in the best possible location and around similar tests

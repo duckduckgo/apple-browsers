@@ -216,8 +216,8 @@ final class PreferencesSidebarModel: ObservableObject {
                                  NotificationCenter.default.publisher(for: .availableAppStoreProductsDidChange),
                                  NotificationCenter.default.publisher(for: .subscriptionDidChange),
                                  NotificationCenter.default.publisher(for: .entitlementsDidChange),
-                                 NotificationCenter.default.publisher(for: .dbpLoginItemEnabled),
-                                 NotificationCenter.default.publisher(for: .dbpLoginItemDisabled))
+                                 NotificationCenter.default.publisher(for: .dbpLoginItemEnabled).delay(for: 2, scheduler: RunLoop.main),
+                                 NotificationCenter.default.publisher(for: .dbpLoginItemDisabled).delay(for: 2, scheduler: RunLoop.main))
         .debounce(for: .seconds(0.5), scheduler: RunLoop.main)
         .asVoid()
         .eraseToAnyPublisher()

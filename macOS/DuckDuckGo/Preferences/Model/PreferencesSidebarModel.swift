@@ -226,6 +226,8 @@ final class PreferencesSidebarModel: ObservableObject {
         .eraseToAnyPublisher()
     }
 
+    private var hasLoadedInitialSubscriptionState: Bool = false
+
     private func refreshSubscriptionStateAndSectionsIfNeeded() {
         Task { @MainActor in
             let subscriptionManager = Application.appDelegate.subscriptionAuthV1toV2Bridge
@@ -265,6 +267,8 @@ final class PreferencesSidebarModel: ObservableObject {
             }
 
             if self.currentSubscriptionState != updatedState {
+                hasLoadedInitialSubscriptionState = true
+
                 if self.currentSubscriptionState.personalInformationRemovalStatus != updatedState.personalInformationRemovalStatus {
                     personalInformationRemovalSubject.send(updatedState.personalInformationRemovalStatus)
                 }
@@ -288,6 +292,12 @@ final class PreferencesSidebarModel: ObservableObject {
         let allPanes = sections.flatMap(\.panes)
 
         if !allPanes.contains(selectedPane) {
+
+            // Required to keep selection since subscription settings need to load its initial state
+            if selectedPane == .subscriptionSettings && !hasLoadedInitialSubscriptionState {
+                return
+            }
+
             // Adjust Privacy Pro selection when subscribed/unsubscribed state changes
             if selectedPane == .subscriptionSettings, allPanes.contains(.privacyPro) {
                 selectedPane = .privacyPro
@@ -316,6 +326,12 @@ final class PreferencesSidebarModel: ObservableObject {
             WindowControllersManager.shared.show(url: url,
                                                  source: .ui,
                                                  newTab: true)
+        }
+
+        // Required to keep selection since subscription settings need to load its initial state
+        if identifier == .subscriptionSettings && !hasLoadedInitialSubscriptionState {
+            selectedPane = identifier
+            return
         }
 
         if sections.flatMap(\.panes).contains(identifier), identifier != selectedPane {

@@ -39,10 +39,6 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         super.init(coder: coder)
     }
 
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-    }
-
     // MARK: Table View
 
     override func numberOfSections(in tableView: UITableView) -> Int {

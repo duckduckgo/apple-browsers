@@ -64,12 +64,6 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
     }
 
     @MainActor
-    func openLearnMore() {
-        let learnMoreURL = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email")!
-        openURLHandler(learnMoreURL)
-    }
-
-    @MainActor
     func openFAQ() {
         openURLHandler(subscriptionManager.url(for: .faq))
     }

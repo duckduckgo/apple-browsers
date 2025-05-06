@@ -22,7 +22,7 @@ import SwiftUIExtensions
 import BrowserServicesKit
 import DesignResourcesKit
 
-public struct PreferencesPurchaseSubscriptionViewV1: View {
+public struct PreferencesPurchaseSubscriptionView: View {
 
     @ObservedObject var model: PreferencesPurchaseSubscriptionModel
     @State private var showingActivateSubscriptionSheet = false
@@ -39,9 +39,9 @@ public struct PreferencesPurchaseSubscriptionViewV1: View {
                     SubscriptionAccessView(model: model.sheetModel)
                 }
 
-            unauthenticatedHeaderView
+            purchaseSection
 
-            featureRowsForNoSubscriptionView
+            featuresSection
 
             helpSection
         }
@@ -51,7 +51,7 @@ public struct PreferencesPurchaseSubscriptionViewV1: View {
     }
 
     @ViewBuilder
-    private var unauthenticatedHeaderView: some View {
+    private var purchaseSection: some View {
         HStack(alignment: .top) {
             Image(.privacyPro)
                 .padding(4)
@@ -87,7 +87,7 @@ public struct PreferencesPurchaseSubscriptionViewV1: View {
     }
 
     @ViewBuilder
-    private var featureRowsForNoSubscriptionView: some View {
+    private var featuresSection: some View {
         VStack {
             switch model.subscriptionStorefrontRegion {
             case .usa:

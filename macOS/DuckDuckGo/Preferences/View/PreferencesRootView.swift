@@ -112,7 +112,7 @@ enum Preferences {
                 case .dataClearing:
                     DataClearingView(model: DataClearingPreferences.shared)
                 case .privacyPro:
-                    SubscriptionUI.PreferencesPurchaseSubscriptionViewV1(model: purchaseSubscriptionModel!)
+                    SubscriptionUI.PreferencesPurchaseSubscriptionView(model: purchaseSubscriptionModel!)
                 case .vpn:
                     VPNView(model: VPNPreferencesModel(), status: model.vpnProtectionStatus())
                 case .personalInformationRemoval:
@@ -162,10 +162,10 @@ enum Preferences {
                     }
                 }, uiActionHandler: makeSubscriptionUserEventHandler())
 
-            return PreferencesPurchaseSubscriptionModel(openURLHandler: makeOpenURLHandler(),
+            return PreferencesPurchaseSubscriptionModel(subscriptionManager: subscriptionManager,
+                                                        openURLHandler: makeOpenURLHandler(),
                                                         userEventHandler: makeSubscriptionUserEventHandler(),
-                                                        sheetActionHandler: sheetActionHandler,
-                                                        subscriptionManager: subscriptionManager)
+                                                        sheetActionHandler: sheetActionHandler)
         }
 
         private func makePersonalInformationRemovalViewModel() -> PreferencesPersonalInformationRemovalModel {

@@ -46,8 +46,9 @@ struct PinnedTabView: View, DropDelegate {
                 PinnedTabInnerView(
                     width: width,
                     height: height,
+                    isSelected: isSelected,
                     foregroundColor: foregroundColor,
-                    drawSeparator: !collectionModel.itemsWithoutSeparator.contains(model)
+                    drawSeparator: false
                 )
                 .environmentObject(model)
                 .environmentObject(model.crashIndicatorModel)
@@ -59,10 +60,6 @@ struct PinnedTabView: View, DropDelegate {
                 NSPasteboard.PasteboardType.URL.rawValue,
                 NSPasteboard.PasteboardType.string.rawValue,
             ], delegate: self)
-
-            BorderView(isSelected: isSelected,
-                       cornerRadius: Const.cornerRadius,
-                       size: TabShadowConfig.dividerSize)
         }
 
         if controlActiveState == .key {
@@ -96,7 +93,7 @@ struct PinnedTabView: View, DropDelegate {
 
     private var foregroundColor: Color {
         if isSelected {
-            return .navigationBarBackground
+            return .navigationBackgroundColorNew
         }
         let isHovered = collectionModel.hoveredItem == model
         return showsHover && isHovered ? .tabMouseOver : Color.clear
@@ -215,8 +212,10 @@ private struct BorderView: View {
 }
 
 struct PinnedTabInnerView: View {
+    let rampSize: CGFloat = 10.0
     let width: CGFloat
     let height: CGFloat
+    var isSelected: Bool
     var foregroundColor: Color
     var drawSeparator: Bool = true
 
@@ -229,6 +228,8 @@ struct PinnedTabInnerView: View {
         ZStack {
             Rectangle()
                 .foregroundColor(foregroundColor)
+                .frame(width: width, height: height)
+
             if drawSeparator {
                 GeometryReader { proxy in
                     Rectangle()
@@ -242,8 +243,21 @@ struct PinnedTabInnerView: View {
                 .opacity(controlActiveState == .key ? 1.0 : 0.60)
                 .frame(maxWidth: 16, maxHeight: 16)
                 .aspectRatio(contentMode: .fit)
+
+            if isSelected {
+                SwiftUIRampView(rampWidth: rampSize,
+                                rampHeight: rampSize,
+                                foregroundColor: .navigationBackgroundColorNew)
+                .position(x: 2, y: height - (rampSize / 2))
+
+                SwiftUIRampView(rampWidth: rampSize,
+                                rampHeight: rampSize,
+                                isFlippedHorizontally: true,
+                                foregroundColor: .navigationBackgroundColorNew)
+                .position(x: width + rampSize + 2, y: height - (rampSize / 2))
+            }
         }
-        .frame(width: width)
+        .frame(width: width + rampSize + 4, height: height)
     }
 
     @ViewBuilder
@@ -370,5 +384,48 @@ struct PinnedTabInnerView: View {
                 accessoryButton
             }
         }
+    }
+}
+
+struct RampShape: Shape {
+    var rampWidth: CGFloat
+    var rampHeight: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.move(to: CGPoint(x: 0, y: rampHeight))
+        path.addLine(to: CGPoint(x: rampWidth, y: rampHeight))
+
+        path.addArc(
+            center: CGPoint(x: 0, y: 0),
+            radius: rampWidth,
+            startAngle: .degrees(0),
+            endAngle: .degrees(90),
+            clockwise: false
+        )
+
+        path.closeSubpath()
+        return path
+    }
+}
+
+struct SwiftUIRampView: View {
+    let rampWidth: CGFloat
+    let rampHeight: CGFloat
+    let isFlippedHorizontally: Bool
+    let foregroundColor: Color
+
+    init(rampWidth: CGFloat, rampHeight: CGFloat, isFlippedHorizontally: Bool = false, foregroundColor: Color) {
+        self.rampWidth = rampWidth
+        self.rampHeight = rampHeight
+        self.foregroundColor = foregroundColor
+        self.isFlippedHorizontally = isFlippedHorizontally
+    }
+
+    var body: some View {
+        RampShape(rampWidth: rampWidth, rampHeight: rampHeight)
+            .fill(foregroundColor)
+            .frame(width: rampWidth, height: rampHeight)
+            .scaleEffect(x: isFlippedHorizontally ? -1 : 1, y: 1)
     }
 }

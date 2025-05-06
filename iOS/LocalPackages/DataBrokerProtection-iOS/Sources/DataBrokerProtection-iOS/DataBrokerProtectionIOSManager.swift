@@ -98,7 +98,7 @@ public class DataBrokerProtectionIOSManagerProvider {
         }
 
         let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault)
-        let dataManager = DataBrokerProtectionDataManager(database: database)
+        // let dataManager = DataBrokerProtectionDataManager(database: database)
 
         let operationQueue = OperationQueue()
         let operationsBuilder = DefaultDataBrokerOperationsCreator()
@@ -139,8 +139,8 @@ public class DataBrokerProtectionIOSManagerProvider {
             queueManager: queueManager,
             operationDependencies: operationDependencies,
             sharedPixelsHandler: sharedPixelsHandler,
-            privacyConfigManager: privacyConfigurationManager,
-            dataManager: dataManager
+            privacyConfigManager: privacyConfigurationManager
+            // dataManager: dataManager
         )
     }
 }
@@ -151,7 +151,7 @@ public final class DataBrokerProtectionIOSManager {
     private let operationDependencies: DataBrokerOperationDependencies
     private let sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>
     private let privacyConfigManager: PrivacyConfigurationManaging
-    public let dataManager: DataBrokerProtectionDataManager
+    // public let dataManager: DataBrokerProtectionDataManager
 
     // Things that definitely shouldn't exist long term
     var communicationLayer: DBPUICommunicationLayer!
@@ -159,32 +159,17 @@ public final class DataBrokerProtectionIOSManager {
     init(queueManager: DataBrokerProtectionQueueManager,
          operationDependencies: DataBrokerOperationDependencies,
          sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-         privacyConfigManager: PrivacyConfigurationManaging,
-         dataManager: DataBrokerProtectionDataManager
+         privacyConfigManager: PrivacyConfigurationManaging
+         // dataManager: DataBrokerProtectionDataManager
     ) {
         self.queueManager = queueManager
         self.operationDependencies = operationDependencies
         self.sharedPixelsHandler = sharedPixelsHandler
         self.privacyConfigManager = privacyConfigManager
+        /*
         self.dataManager = dataManager
 
-        self.communicationLayer = DBPUICommunicationLayer(webURLSettings:
-                                                        DataBrokerProtectionWebUIURLSettings(UserDefaults.standard),
-                                                          privacyConfig: privacyConfigManager)
-
-        let cache = dataManager.cache
-        communicationLayer.delegate = cache
-
-        let year = Calendar(identifier: .gregorian).component(.year, from: Date())
-        let birthYear = year - 55
-        let profile = DataBrokerProtectionProfile(names: [.init(firstName: "Steve", lastName: "Smith")],
-                                                  addresses: [.init(city: "Dallas", state: "TX")],
-                                                  phones: [],
-                                                  birthYear: birthYear)
-        cache.profile = profile
-        Task { @MainActor in
-            _ = try await communicationLayer.saveProfile(params: [], original: WKScriptMessage())
-        }
+         */
     }
 
     public func start() {

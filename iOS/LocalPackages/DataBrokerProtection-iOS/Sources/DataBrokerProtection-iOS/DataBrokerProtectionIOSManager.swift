@@ -241,6 +241,7 @@ public final class DataBrokerProtectionIOSManager {
         Task {
             guard await validateRunPrerequisites() else {
                 Logger.dataBrokerProtection.log("Prerequisites are invalid during background task")
+                task.setTaskCompleted(success: false)
                 return
             }
             queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, operationDependencies: operationDependencies, errorHandler: nil) {

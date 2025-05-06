@@ -140,6 +140,7 @@ public class DataBrokerProtectionIOSManagerProvider {
         return DataBrokerProtectionIOSManager(
             queueManager: queueManager,
             operationDependencies: operationDependencies,
+            authenticationManager: authenticationManager,
             sharedPixelsHandler: sharedPixelsHandler,
             privacyConfigManager: privacyConfigurationManager,
             dataManager: dataManager
@@ -176,9 +177,7 @@ public final class DataBrokerProtectionIOSManager {
 
         self.dataManager = dataManager
 
-        Task {
-            await setUp()
-        }
+        registerBackgroundTaskHandler()
 
         /*
         self.communicationLayer = DBPUICommunicationLayer(webURLSettings:
@@ -199,33 +198,6 @@ public final class DataBrokerProtectionIOSManager {
             _ = try await communicationLayer.saveProfile(params: [], original: WKScriptMessage())
         }
          */
-    }
-
-    private func setUp() async {
-        guard await validateRunPrerequisites() else {
-            return
-        }
-
-        registerBackgroundTaskHandler()
-    }
-
-    private func validateRunPrerequisites() async -> Bool {
-
-        do {
-            let hasProfile = try dataManager.fetchProfile() != nil
-            let isAuthenticated = authenticationManager.isUserAuthenticated
-
-            if !hasProfile || !isAuthenticated {
-                Logger.dataBrokerProtection.log("Prerequisites are invalid")
-                return false
-            }
-
-            let hasValidEntitlement = try await authenticationManager.hasValidEntitlement()
-            return hasValidEntitlement
-        } catch {
-            Logger.dataBrokerProtection.error("Error validating prerequisites, error: \(error.localizedDescription, privacy: .public)")
-            return false
-        }
     }
 
     private func registerBackgroundTaskHandler() {
@@ -274,6 +246,25 @@ public final class DataBrokerProtectionIOSManager {
             queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, operationDependencies: operationDependencies, errorHandler: nil) {
                 task.setTaskCompleted(success: true)
             }
+        }
+    }
+
+    private func validateRunPrerequisites() async -> Bool {
+
+        do {
+            let hasProfile = try dataManager.fetchProfile() != nil
+            let isAuthenticated = authenticationManager.isUserAuthenticated
+
+            if !hasProfile || !isAuthenticated {
+                Logger.dataBrokerProtection.log("Prerequisites are invalid")
+                return false
+            }
+
+            let hasValidEntitlement = try await authenticationManager.hasValidEntitlement()
+            return hasValidEntitlement
+        } catch {
+            Logger.dataBrokerProtection.error("Error validating prerequisites, error: \(error.localizedDescription, privacy: .public)")
+            return false
         }
     }
 }

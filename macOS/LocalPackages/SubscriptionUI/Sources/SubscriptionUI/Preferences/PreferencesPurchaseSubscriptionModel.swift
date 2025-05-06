@@ -37,25 +37,15 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
         subscriptionManager.currentEnvironment.purchasePlatform == .stripe
     }
 
-    private let subscriptionManager: SubscriptionManager
-    private var accountManager: AccountManager {
-        subscriptionManager.accountManager
-    }
+    private let subscriptionManager: SubscriptionAuthV1toV2Bridge
     private let openURLHandler: (URL) -> Void
     public let userEventHandler: (PreferencesSubscriptionModel.UserEvent) -> Void
     private let sheetActionHandler: SubscriptionAccessActionHandlers
 
-    private var fetchSubscriptionDetailsTask: Task<(), Never>?
-
-    private var signInObserver: Any?
-    private var signOutObserver: Any?
-    private var entitlementsObserver: Any?
-    private var subscriptionChangeObserver: Any?
-
-    public init(openURLHandler: @escaping (URL) -> Void,
+    public init(subscriptionManager: SubscriptionAuthV1toV2Bridge,
+                openURLHandler: @escaping (URL) -> Void,
                 userEventHandler: @escaping (PreferencesSubscriptionModel.UserEvent) -> Void,
-                sheetActionHandler: SubscriptionAccessActionHandlers,
-                subscriptionManager: SubscriptionManager) {
+                sheetActionHandler: SubscriptionAccessActionHandlers) {
         self.subscriptionManager = subscriptionManager
         self.openURLHandler = openURLHandler
         self.userEventHandler = userEventHandler
@@ -95,7 +85,11 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
         switch currentPurchasePlatform {
         case .appStore:
             if #available(macOS 12.0, *) {
-                region = subscriptionManager.storePurchaseManager().currentStorefrontRegion
+                if let subscriptionManagerV1 = subscriptionManager as? SubscriptionManager {
+                    region = subscriptionManagerV1.storePurchaseManager().currentStorefrontRegion
+                } else if let subscriptionManagerV2 = subscriptionManager as? SubscriptionManagerV2 {
+                    region = subscriptionManagerV2.storePurchaseManager().currentStorefrontRegion
+                }
             }
         case .stripe:
             region = .usa

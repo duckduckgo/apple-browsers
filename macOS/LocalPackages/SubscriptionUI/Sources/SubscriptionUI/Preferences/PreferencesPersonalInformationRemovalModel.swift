@@ -23,20 +23,17 @@ import Combine
 
 public final class PreferencesPersonalInformationRemovalModel: ObservableObject {
 
-    private let subscriptionManager: SubscriptionManager
-    private var accountManager: AccountManager {
-        subscriptionManager.accountManager
-    }
+    private let subscriptionManager: SubscriptionAuthV1toV2Bridge
     private let openURLHandler: (URL) -> Void
-    public let userEventHandler: (PreferencesSubscriptionModel.UserEvent) -> Void
-    
+    private let userEventHandler: (PreferencesSubscriptionModel.UserEvent) -> Void
+
     @Published public var status: StatusIndicator = .off
 
     private var cancellables = Set<AnyCancellable>()
 
-    public init(openURLHandler: @escaping (URL) -> Void,
+    public init(subscriptionManager: SubscriptionAuthV1toV2Bridge,
+                openURLHandler: @escaping (URL) -> Void,
                 userEventHandler: @escaping (PreferencesSubscriptionModel.UserEvent) -> Void,
-                subscriptionManager: SubscriptionManager,
                 statusUpdates: AnyPublisher<StatusIndicator, Never>) {
         self.subscriptionManager = subscriptionManager
         self.openURLHandler = openURLHandler
@@ -45,10 +42,6 @@ public final class PreferencesPersonalInformationRemovalModel: ObservableObject 
         statusUpdates
             .assign(to: \.status, onWeaklyHeld: self)
             .store(in: &cancellables)
-    }
-
-    deinit {
-
     }
 
     @MainActor

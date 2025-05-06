@@ -185,6 +185,8 @@ final class MockDuckPlayerSettings: DuckPlayerSettings {
     var duckPlayerNativeUIPrimingModalTimeSinceLastPresented: Int = 0
     var variant: DuckDuckGo.DuckPlayerVariant = .classicWeb
     var welcomeMessageShown: Bool = false
+    var pillDismissCount: Int = 0
+    var primingMessagePresented: Bool = false
 
     init(appSettings: any DuckDuckGo.AppSettings, privacyConfigManager: any BrowserServicesKit.PrivacyConfigurationManaging, internalUserDecider: any BrowserServicesKit.InternalUserDecider) {}
 

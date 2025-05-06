@@ -110,5 +110,6 @@ class AppSettingsMock: AppSettings {
     var duckPlayerPillDismissCount: Int = 0
     var duckPlayerVariant: DuckDuckGo.DuckPlayerVariant = .classicWeb
     var duckPlayerWelcomeMessageShown: Bool = false
+    var duckPlayerPrimingMessagePresented: Bool = false
 
 }

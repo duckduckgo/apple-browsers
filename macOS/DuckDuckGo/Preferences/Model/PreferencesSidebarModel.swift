@@ -70,7 +70,6 @@ final class PreferencesSidebarModel: ObservableObject {
         resetTabSelectionIfNeeded()
 
         refreshSections()
-        refreshSubscriptionStateAndSectionsIfNeeded()
 
         subscribeToFeatureFlagChanges(syncService: syncService,
                                       privacyConfigurationManager: privacyConfigurationManager)
@@ -106,6 +105,10 @@ final class PreferencesSidebarModel: ObservableObject {
                   privacyConfigurationManager: privacyConfigurationManager,
                   syncService: syncService,
                   vpnGatekeeper: vpnGatekeeper)
+    }
+
+    public func onAppear() {
+        refreshSubscriptionStateAndSectionsIfNeeded()
     }
 
     // MARK: - Setup

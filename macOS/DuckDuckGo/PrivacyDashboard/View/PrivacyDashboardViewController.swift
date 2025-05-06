@@ -71,7 +71,7 @@ final class PrivacyDashboardViewController: NSViewController {
     }
     var sizeDelegate: PrivacyDashboardViewControllerSizeDelegate?
     private weak var tabViewModel: TabViewModel?
-    let featureFlagger: ContentScopeScriptExperimentsManager
+    let featureFlagger: ContentScopeExperimentsManaging
 
     private let privacyDashboardEvents = EventMapping<PrivacyDashboardEvents> { event, _, parameters, _ in
         let domainEvent: NonStandardPixel
@@ -90,7 +90,7 @@ final class PrivacyDashboardViewController: NSViewController {
     init(privacyInfo: PrivacyInfo? = nil,
          entryPoint: PrivacyDashboardEntryPoint = .dashboard,
          privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
-         featureFlagger: ContentScopeScriptExperimentsManager = Application.appDelegate.featureFlagger) {
+         featureFlagger: ContentScopeExperimentsManaging = Application.appDelegate.featureFlagger) {
         let toggleReportingConfiguration = ToggleReportingConfiguration(privacyConfigurationManager: privacyConfigurationManager)
         let toggleReportingFeature = ToggleReportingFeature(toggleReportingConfiguration: toggleReportingConfiguration)
         let toggleReportingManager = ToggleReportingManager(feature: toggleReportingFeature)

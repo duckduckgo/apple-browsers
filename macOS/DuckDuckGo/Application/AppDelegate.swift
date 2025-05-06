@@ -88,7 +88,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var grammarFeaturesManager = GrammarFeaturesManager()
     let internalUserDecider: InternalUserDecider
     private var isInternalUserSharingCancellable: AnyCancellable?
-    let featureFlagger: FeatureFlagger & ContentScopeScriptExperimentsManager
+    let featureFlagger: FeatureFlagger & ContentScopeExperimentsManaging
     let featureFlagOverridesPublishingHandler = FeatureFlagOverridesPublishingHandler<FeatureFlag>()
     private var appIconChanger: AppIconChanger!
     private var autoClearHandler: AutoClearHandler!

@@ -38,7 +38,7 @@ final class PrivacyDashboardViewController: UIViewController {
     private let contentBlockingManager: ContentBlockerRulesManager
     private var privacyDashboardDidTriggerDismiss: Bool = false
     private let entryPoint: PrivacyDashboardEntryPoint
-    private let featureFlagger: ContentScopeScriptExperimentsManager
+    private let featureFlagger: ContentScopeExperimentsManaging
 
     private let brokenSiteReporter: BrokenSiteReporter = {
         BrokenSiteReporter(pixelHandler: { parameters in
@@ -76,7 +76,7 @@ final class PrivacyDashboardViewController: UIViewController {
           privacyConfigurationManager: PrivacyConfigurationManaging,
           contentBlockingManager: ContentBlockerRulesManager,
           breakageAdditionalInfo: BreakageAdditionalInfo?,
-          featureFlagger: ContentScopeScriptExperimentsManager = AppDependencyProvider.shared.featureFlagger) {
+          featureFlagger: ContentScopeExperimentsManaging = AppDependencyProvider.shared.featureFlagger) {
 
         let toggleReportingConfiguration = ToggleReportingConfiguration(privacyConfigurationManager: privacyConfigurationManager)
         let toggleReportingFeature = ToggleReportingFeature(toggleReportingConfiguration: toggleReportingConfiguration)

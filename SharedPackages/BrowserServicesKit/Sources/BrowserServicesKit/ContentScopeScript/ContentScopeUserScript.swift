@@ -51,7 +51,7 @@ public final class ContentScopeProperties: Encodable {
                 sessionKey: String,
                 messageSecret: String,
                 featureToggles: ContentScopeFeatureToggles,
-                experimentManager: ContentScopeScriptExperimentsManager?) {
+                experimentManager: ContentScopeExperimentsManaging?) {
         self.globalPrivacyControlValue = gpcEnabled
         self.sessionKey = sessionKey
         self.messageSecret = messageSecret
@@ -77,7 +77,7 @@ public final class ContentScopeProperties: Encodable {
 
     }
 
-    private func setCurrentCohort(experimentManager: ContentScopeScriptExperimentsManager?) -> [ContentScopeExperimentData] {
+    private func setCurrentCohort(experimentManager: ContentScopeExperimentsManaging?) -> [ContentScopeExperimentData] {
         guard let experiments = experimentManager?.resolveContentScopeScriptActiveExperiments() else { return [] }
         var data = [ContentScopeExperimentData]()
         for experiment in experiments {

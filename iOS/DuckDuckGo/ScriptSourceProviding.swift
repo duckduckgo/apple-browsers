@@ -73,7 +73,7 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
                                                         sessionKey: sessionKey,
                                                         messageSecret: messageSecret,
                                                         featureToggles: ContentScopeFeatureToggles.supportedFeaturesOniOS,
-                                                        experimentManager: AppDependencyProvider.shared.featureFlagger as? ContentScopeScriptExperimentsManager)
+                                                        experimentManager: AppDependencyProvider.shared.featureFlagger as? ContentScopeExperimentsManaging)
         autofillSourceProvider = Self.makeAutofillSource(privacyConfigurationManager: privacyConfigurationManager,
                                                          properties: contentScopeProperties)
     }

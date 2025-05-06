@@ -82,7 +82,7 @@ final class FeatureFlaggerExperimentsTests: XCTestCase {
     var experimentManager: ExperimentCohortsManager!
     var manager: PrivacyConfigurationManager!
     var locale: Locale!
-    var featureFlagger: FeatureFlagger!
+    var featureFlagger: (FeatureFlagger & ContentScopeExperimentsManaging)!
 
     let subfeatureName = "credentialsSaving"
 
@@ -1233,6 +1233,67 @@ final class FeatureFlaggerExperimentsTests: XCTestCase {
 
         activeExperiments = featureFlagger.allActiveExperiments
         XCTAssertTrue(activeExperiments.isEmpty)
+    }
+
+    func testContentScopeExperimentsEnrolledOnResolveContentScopeScriptActiveExperiments() {
+        featureJson = """
+        {
+          "features": {
+            "contentScopeExperiments": {
+              "state": "enabled",
+              "exceptions": [],
+              "features": {
+                "experiment1": {
+                  "state": "enabled",
+                  "cohorts": [
+                    {
+                      "name": "control",
+                      "weight": 1
+                    },
+                    {
+                      "name": "blue",
+                      "weight": 0
+                    }
+                  ]
+                },
+                "experiment2": {
+                  "state": "enabled",
+                  "cohorts": [
+                    {
+                      "name": "control",
+                      "weight": 0
+                    },
+                    {
+                      "name": "blue",
+                      "weight": 1
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+        """.data(using: .utf8)!
+
+
+        manager.reload(etag: "", data: featureJson)
+
+        // we haven't called resolveContentScopeScriptActiveExperiments yet, so cohorts should not be yet assigned
+        XCTAssertNil(mockStore.experiments)
+        XCTAssertNil(experimentManager.cohort(for: "experiment1"))
+        XCTAssertNil(experimentManager.cohort(for: "experiment2"))
+
+        // we call resolveContentScopeScriptActiveExperiments(), then we should assign cohort
+        let experiments = featureFlagger.resolveContentScopeScriptActiveExperiments()
+
+        print(experiments)
+        XCTAssertFalse(mockStore.experiments?.isEmpty ?? true)
+        XCTAssertEqual(experiments["experiment1"]?.cohortID, "control")
+        XCTAssertEqual(experiments["experiment2"]?.cohortID, "blue")
+        XCTAssertEqual(experiments["experiment1"]?.parentID, "contentScopeExperiments")
+        XCTAssertEqual(experiments["experiment2"]?.parentID, "contentScopeExperiments")
+        XCTAssertEqual(experimentManager.cohort(for: "experiment1"), "control")
+        XCTAssertEqual(experimentManager.cohort(for: "experiment2"), "blue")
     }
 
 }

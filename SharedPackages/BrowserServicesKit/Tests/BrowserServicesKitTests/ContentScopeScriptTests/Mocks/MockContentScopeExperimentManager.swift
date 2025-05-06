@@ -19,7 +19,7 @@
 import Foundation
 @testable import BrowserServicesKit
 
-class MockContentScopeExperimentManager: ContentScopeScriptExperimentsManager {
+class MockContentScopeExperimentManager: ContentScopeExperimentsManaging {
     var experiments: Experiments = [:]
 
     func resolveContentScopeScriptActiveExperiments() -> Experiments {

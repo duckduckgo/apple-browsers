@@ -3085,7 +3085,7 @@ extension TabViewController: SecureVaultManagerDelegate {
                                       sessionKey: autofillUserScript?.sessionKey ?? "",
                                       messageSecret: autofillUserScript?.messageSecret ?? "",
                                       featureToggles: supportedFeatures,
-                                      experimentManager: AppDependencyProvider.shared.featureFlagger as? ContentScopeScriptExperimentsManager)
+                                      experimentManager: AppDependencyProvider.shared.featureFlagger as? ContentScopeExperimentsManaging)
     }
 
     func secureVaultManager(_: SecureVaultManager, didReceivePixel pixel: AutofillUserScript.JSPixel) {

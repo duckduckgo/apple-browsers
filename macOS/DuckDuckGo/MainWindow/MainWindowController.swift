@@ -47,46 +47,8 @@ final class MainWindowController: NSWindowController {
          fireWindowSession: FireWindowSession? = nil,
          fireViewModel: FireViewModel? = nil) {
 
-        // Size the window
-        // Handle ultra‑wide monitors: cap size and center like Windows team approach
-        let workArea = NSScreen.main?.visibleFrame
-            ?? NSRect(origin: .zero, size: NSSize(width: 1024, height: 790))
-        let monitorTopLeft = CGPoint(x: workArea.minX, y: workArea.minY)
-        let monitorSize = CGSize(width: workArea.width, height: workArea.height)
-
-        // Minimum logical size
-        let minWidth: CGFloat = 300
-        let minHeight: CGFloat = 300
-
-        // Calculate 90% of the work area
-        var desiredWidth  = monitorSize.width  * 0.90
-        var desiredHeight = monitorSize.height * 0.90
-
-        // Enforce minimums
-        desiredWidth  = max(desiredWidth, minWidth)
-        desiredHeight = max(desiredHeight, minHeight)
-
-        // Cap aspect ratio at 16:9
-        let maxAspectRatio: CGFloat = 16.0 / 9.0
-        if desiredWidth / desiredHeight > maxAspectRatio {
-            desiredWidth = desiredHeight * maxAspectRatio
-        }
-
-        // Cap to maximum size
-        let maxInitialWidth: CGFloat = 1920
-        let maxInitialHeight: CGFloat = 1080
-        desiredWidth = min(desiredWidth, maxInitialWidth)
-        desiredHeight = min(desiredHeight, maxInitialHeight)
-
-        let finalSize = NSSize(width: desiredWidth, height: desiredHeight)
-
-        // Center within the work area
-        let calcLeft = max((monitorSize.width - finalSize.width) / 2 + monitorTopLeft.x,
-                           monitorTopLeft.x)
-        let calcBottom = max((monitorSize.height - finalSize.height) / 2 + monitorTopLeft.y,
-                             monitorTopLeft.y)
-        let frame = NSRect(origin: CGPoint(x: calcLeft, y: calcBottom),
-                           size: finalSize)
+        // Compute initial window frame
+        let frame = InitialWindowFrameProvider.initialFrame()
 
         assert(window == nil || [.unitTests, .integrationTests].contains(AppVersion.runType),
                "Window should not be set in non-test environment")

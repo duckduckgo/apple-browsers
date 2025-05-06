@@ -169,10 +169,7 @@ public final class DataBrokerProtectionIOSManager {
         self.operationDependencies = operationDependencies
         self.sharedPixelsHandler = sharedPixelsHandler
         self.privacyConfigManager = privacyConfigManager
-        /*
         self.dataManager = dataManager
-
-         */
     }
 
     public func start() {

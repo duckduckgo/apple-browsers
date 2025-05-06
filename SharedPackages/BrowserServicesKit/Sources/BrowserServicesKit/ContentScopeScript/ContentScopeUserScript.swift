@@ -222,6 +222,8 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
         else {
             return ""
         }
+
+        // TO REMOVE
         if let jsonString = String(data: jsonProperties, encoding: .utf8) {
             print("SABRINA \(jsonString)")
         } else {

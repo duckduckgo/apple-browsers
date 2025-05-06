@@ -50,7 +50,7 @@ class EmailManagerTests: XCTestCase {
                                                            properties: ContentScopeProperties(gpcEnabled: false,
                                                                                               sessionKey: "1234",
                                                                                               messageSecret: "1234",
-                                                                                              featureToggles: ContentScopeFeatureToggles.allTogglesOn),
+                                                                                              featureToggles: ContentScopeFeatureToggles.allTogglesOn, experimentManager: nil),
                                                            isDebug: false)
         let userScript = AutofillUserScript(scriptSourceProvider: sourceProvider)
         return userScript

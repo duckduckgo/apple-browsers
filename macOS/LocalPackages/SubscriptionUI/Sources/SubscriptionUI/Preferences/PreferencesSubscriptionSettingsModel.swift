@@ -20,6 +20,7 @@ import AppKit
 import Subscription
 import struct Combine.AnyPublisher
 import enum Combine.Publishers
+import class Combine.AnyCancellable
 import BrowserServicesKit
 import os.log
 
@@ -27,14 +28,6 @@ public final class PreferencesSubscriptionSettingsModel: ObservableObject {
 
     @Published var subscriptionDetails: String?
     @Published var subscriptionStatus: PrivacyProSubscription.Status?
-
-    @Published var shouldShowVPN: Bool = false
-    @Published var shouldShowDBP: Bool = false
-    @Published var shouldShowITR: Bool = false
-
-    @Published var hasAccessToVPN: Bool = false
-    @Published var hasAccessToDBP: Bool = false
-    @Published var hasAccessToITR: Bool = false
 
     @Published var email: String?
     var hasEmail: Bool { !(email?.isEmpty ?? true) }
@@ -50,8 +43,11 @@ public final class PreferencesSubscriptionSettingsModel: ObservableObject {
     public let userEventHandler: (PreferencesSubscriptionModel.UserEvent) -> Void
     private var fetchSubscriptionDetailsTask: Task<(), Never>?
 
-    private var entitlementsObserver: Any?
     private var subscriptionChangeObserver: Any?
+
+    @Published public var settingsState: PreferencesSubscriptionSettingsState = .subscriptionPendingActivation
+
+    private var cancellables = Set<AnyCancellable>()
 
     public enum UserEvent {
         case openVPN,
@@ -68,40 +64,17 @@ public final class PreferencesSubscriptionSettingsModel: ObservableObject {
              removeSubscriptionClick
     }
 
-    lazy var statePublisher: AnyPublisher<PreferencesSubscriptionSettingsState, Never> = {
-        let isSubscriptionActivePublisher: AnyPublisher<Bool?, Never> = $subscriptionStatus.map {
-            guard let status = $0 else { return nil}
-            return status != .expired && status != .inactive
-        }.eraseToAnyPublisher()
-
-        let hasAnyEntitlementPublisher = Publishers.CombineLatest3($hasAccessToVPN, $hasAccessToDBP, $hasAccessToITR).map {
-            return $0 || $1 || $2
-        }.eraseToAnyPublisher()
-
-        return Publishers.CombineLatest(isSubscriptionActivePublisher, hasAnyEntitlementPublisher)
-            .map { isSubscriptionActive, hasAnyEntitlement in
-                switch (isSubscriptionActive, hasAnyEntitlement) {
-                case (.some(false), _): return PreferencesSubscriptionSettingsState.subscriptionExpired
-                case (nil, _): return PreferencesSubscriptionSettingsState.subscriptionPendingActivation
-                case (.some(true), false): return PreferencesSubscriptionSettingsState.subscriptionPendingActivation
-                case (.some(true), true): return PreferencesSubscriptionSettingsState.subscriptionActive
-                }
-            }
-            .removeDuplicates()
-            .eraseToAnyPublisher()
-    }()
-
     public init(openURLHandler: @escaping (URL) -> Void,
                 userEventHandler: @escaping (PreferencesSubscriptionModel.UserEvent) -> Void,
-                subscriptionManager: SubscriptionManager) {
+                subscriptionManager: SubscriptionManager,
+                subscriptionStateUpdate: AnyPublisher<PreferencesSidebarSubscriptionState, Never>
+    ) {
         self.subscriptionManager = subscriptionManager
         self.openURLHandler = openURLHandler
         self.userEventHandler = userEventHandler
 
         Task {
             await self.updateSubscription(cachePolicy: .returnCacheDataElseLoad)
-            await self.updateAvailableSubscriptionFeatures()
-            await self.loadCachedEntitlements()
         }
 
         self.email = accountManager.email
@@ -114,26 +87,33 @@ public final class PreferencesSubscriptionSettingsModel: ObservableObject {
                     self?.fetchSubscriptionDetailsTask = nil
                 }
 
-                await self?.fetchEmailAndRemoteEntitlements()
+                await self?.fetchEmail()
                 await self?.updateSubscription(cachePolicy: .returnCacheDataDontLoad)
             }
         }
 
-        entitlementsObserver = NotificationCenter.default.addObserver(forName: .entitlementsDidChange, object: nil, queue: .main) { [weak self] _ in
-            Logger.general.debug("EntitlementsDidChange notification received")
-            Task { [weak self] in
-                await self?.updateAvailableSubscriptionFeatures()
+        Publishers.CombineLatest($subscriptionStatus, subscriptionStateUpdate)
+            .map { status, state in
+                let isSubscriptionActive: Bool? = {
+                    guard let status else { return nil }
+                    return status != .expired && status != .inactive
+                }()
+                let hasAnyEntitlement = !state.userEntitlements.isEmpty
+
+                switch (isSubscriptionActive, hasAnyEntitlement) {
+                case (.some(false), _): return PreferencesSubscriptionSettingsState.subscriptionExpired
+                case (nil, _): return PreferencesSubscriptionSettingsState.subscriptionPendingActivation
+                case (.some(true), false): return PreferencesSubscriptionSettingsState.subscriptionPendingActivation
+                case (.some(true), true): return PreferencesSubscriptionSettingsState.subscriptionActive
+                }
             }
-        }
+            .assign(to: \.settingsState, onWeaklyHeld: self)
+            .store(in: &cancellables)
     }
 
     deinit {
         if let subscriptionChangeObserver {
             NotificationCenter.default.removeObserver(subscriptionChangeObserver)
-        }
-
-        if let entitlementsObserver {
-            NotificationCenter.default.removeObserver(entitlementsObserver)
         }
     }
 
@@ -317,69 +297,19 @@ public final class PreferencesSubscriptionSettingsModel: ObservableObject {
                 self?.fetchSubscriptionDetailsTask = nil
             }
 
-            await self?.fetchEmailAndRemoteEntitlements()
+            await self?.fetchEmail()
             await self?.updateSubscription(cachePolicy: .reloadIgnoringLocalCacheData)
         }
     }
 
-    @MainActor
-    private func updateAvailableSubscriptionFeatures() async {
-        let features = await subscriptionManager.currentSubscriptionFeatures()
-
-        shouldShowVPN = features.contains(.networkProtection)
-        shouldShowDBP = features.contains(.dataBrokerProtection)
-        shouldShowITR = features.contains(.identityTheftRestoration) || features.contains(.identityTheftRestorationGlobal)
-    }
-
-    @MainActor
-    private func loadCachedEntitlements() async {
-        switch await self.accountManager.hasEntitlement(forProductName: .networkProtection, cachePolicy: .returnCacheDataDontLoad) {
-        case let .success(result):
-            hasAccessToVPN = result
-        case .failure:
-            hasAccessToVPN = false
-        }
-
-        switch await self.accountManager.hasEntitlement(forProductName: .dataBrokerProtection, cachePolicy: .returnCacheDataDontLoad) {
-        case let .success(result):
-            hasAccessToDBP = result
-        case .failure:
-            hasAccessToDBP = false
-        }
-
-        var hasITR = false
-        switch await self.accountManager.hasEntitlement(forProductName: .identityTheftRestoration, cachePolicy: .returnCacheDataDontLoad) {
-        case let .success(result):
-            hasITR = result
-        case .failure:
-            hasITR = false
-        }
-
-        var hasITRGlobal = false
-        switch await self.accountManager.hasEntitlement(forProductName: .identityTheftRestorationGlobal, cachePolicy: .returnCacheDataDontLoad) {
-        case let .success(result):
-            hasITRGlobal = result
-        case .failure:
-            hasITRGlobal = false
-        }
-
-        hasAccessToITR = hasITR || hasITRGlobal
-    }
-
-    @MainActor func fetchEmailAndRemoteEntitlements() async {
+    @MainActor func fetchEmail() async {
         guard let accessToken = accountManager.accessToken else { return }
 
         if case let .success(response) = await subscriptionManager.authEndpointService.validateToken(accessToken: accessToken) {
+            email = response.account.email
             if accountManager.email != response.account.email {
-                email = response.account.email
                 accountManager.storeAccount(token: accessToken, email: response.account.email, externalID: response.account.externalID)
             }
-
-            let entitlements = response.account.entitlements.compactMap { $0.product }
-            hasAccessToVPN = entitlements.contains(.networkProtection)
-            hasAccessToDBP = entitlements.contains(.dataBrokerProtection)
-            hasAccessToITR = entitlements.contains(.identityTheftRestoration) || entitlements.contains(.identityTheftRestorationGlobal)
-            accountManager.updateCache(with: response.account.entitlements)
         }
     }
 
@@ -423,6 +353,6 @@ public final class PreferencesSubscriptionSettingsModel: ObservableObject {
     }()
 }
 
-enum PreferencesSubscriptionSettingsState: String {
+public enum PreferencesSubscriptionSettingsState: String {
     case subscriptionPendingActivation, subscriptionActive, subscriptionExpired
 }

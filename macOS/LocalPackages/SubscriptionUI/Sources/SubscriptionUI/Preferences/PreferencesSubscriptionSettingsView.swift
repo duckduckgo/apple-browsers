@@ -24,8 +24,6 @@ import DesignResourcesKit
 
 public struct PreferencesSubscriptionSettingsViewV1: View {
 
-    @State private var state: PreferencesSubscriptionSettingsState = .subscriptionPendingActivation
-
     @ObservedObject var model: PreferencesSubscriptionSettingsModel
     @State private var showingRemoveConfirmationDialog = false
 
@@ -41,7 +39,7 @@ public struct PreferencesSubscriptionSettingsViewV1: View {
             VStack(alignment: .leading, spacing: 4) {
                 TextMenuTitle(UserText.preferencesSubscriptionSettingsTitle)
 
-                switch state {
+                switch model.settingsState {
                 case .subscriptionActive:
                     StatusIndicatorView(status: .custom(UserText.subscribedStatusIndicator, Color(designSystemColor: .alertGreen)), isLarge: true)
                 case .subscriptionExpired:
@@ -53,7 +51,7 @@ public struct PreferencesSubscriptionSettingsViewV1: View {
             .padding(.bottom, 16)
 
             // Sections
-            switch state {
+            switch model.settingsState {
             case .subscriptionActive:
                 activateSection
                 settingsSection
@@ -81,11 +79,6 @@ public struct PreferencesSubscriptionSettingsViewV1: View {
         .onAppear(perform: {
             model.didAppear()
         })
-        .onReceive(model.statePublisher, perform: updateState(state:))
-    }
-
-    private func updateState(state: PreferencesSubscriptionSettingsState) {
-        self.state = state
     }
 
     @ViewBuilder
@@ -181,7 +174,7 @@ public struct PreferencesSubscriptionSettingsViewV1: View {
             VStack(alignment: .leading, spacing: 14) {
                 TextButton(UserText.viewFaqsButton, weight: .semibold) { model.openFAQ() }
 
-                if state == .subscriptionActive {
+                if model.settingsState == .subscriptionActive {
                     TextButton(UserText.preferencesSubscriptionFeedbackButton, weight: .semibold) { model.openUnifiedFeedbackForm() }
                 }
 

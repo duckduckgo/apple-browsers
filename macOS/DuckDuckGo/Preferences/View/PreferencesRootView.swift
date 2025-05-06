@@ -185,7 +185,8 @@ enum Preferences {
         private func makeSubscriptionSettingsViewModel() -> PreferencesSubscriptionSettingsModel {
             return PreferencesSubscriptionSettingsModel(openURLHandler: makeOpenURLHandler(),
                                                         userEventHandler: makeSubscriptionUserEventHandler(),
-                                                        subscriptionManager: subscriptionManager)
+                                                        subscriptionManager: subscriptionManager,
+                                                        subscriptionStateUpdate: model.$currentSubscriptionState.eraseToAnyPublisher())
         }
 
         private func makeOpenURLHandler() -> ((URL) -> Void) {

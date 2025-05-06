@@ -120,4 +120,3 @@ struct ColumnData: Identifiable {
     var columnName: String
     var items: [String]
 }
-

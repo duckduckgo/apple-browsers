@@ -682,7 +682,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         if !Self.isAuthV2Enabled {
             // Auth V2 cleanup in case of rollback
             Logger.subscription.debug("Cleaning up Auth V2 token")
-            tokenStorageV2.tokenContainer = nil
+            try? tokenStorageV2.saveTokenContainer(nil)
         }
     }
 

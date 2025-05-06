@@ -72,6 +72,12 @@ final class MainWindowController: NSWindowController {
             desiredWidth = desiredHeight * maxAspectRatio
         }
 
+        // Cap to maximum size
+        let maxInitialWidth: CGFloat = 1920
+        let maxInitialHeight: CGFloat = 1080
+        desiredWidth = min(desiredWidth, maxInitialWidth)
+        desiredHeight = min(desiredHeight, maxInitialHeight)
+
         let finalSize = NSSize(width: desiredWidth, height: desiredHeight)
 
         // Center within the work area

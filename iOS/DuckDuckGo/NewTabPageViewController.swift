@@ -45,6 +45,7 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
 
     init(tab: Tab,
          isNewTabPageCustomizationEnabled: Bool,
+         isExperimentalAppearanceEnabled: Bool,
          interactionModel: FavoritesListInteracting,
          homePageMessagesConfiguration: HomePageMessagesConfiguration,
          privacyProDataReporting: PrivacyProDataReporting? = nil,
@@ -66,6 +67,7 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
         shortcutsSettingsModel = NewTabPageShortcutsSettingsModel()
         sectionsSettingsModel = NewTabPageSectionsSettingsModel()
         favoritesModel = FavoritesViewModel(isNewTabPageCustomizationEnabled: isNewTabPageCustomizationEnabled,
+                                            isExperimentalAppearanceEnabled: isExperimentalAppearanceEnabled,
                                             favoriteDataSource: FavoritesListInteractingAdapter(favoritesListInteracting: interactionModel),
                                             faviconLoader: faviconLoader)
         shortcutsModel = ShortcutsModel()

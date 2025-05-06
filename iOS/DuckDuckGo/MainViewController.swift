@@ -212,6 +212,7 @@ class MainViewController: UIViewController {
     let isAuthV2Enabled: Bool
 
     private var duckPlayerEntryPointVisible = false
+    private lazy var isExperimentalAppearanceEnabled = ExperimentalThemingManager().isExperimentalThemingEnabled
 
     init(
         bookmarksDatabase: CoreDataDatabase,
@@ -590,7 +591,7 @@ class MainViewController: UIViewController {
         viewCoordinator.toolbarBookmarksButton.setCustomItemAction(on: self, action: #selector(onToolbarBookmarksPressed))
         viewCoordinator.menuToolbarButton.setCustomItemAction(on: self, action: #selector(onMenuPressed))
 
-        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+        if isExperimentalAppearanceEnabled {
             viewCoordinator.toolbarFireButton.addTarget(self, action: #selector(onFirePressed), for: .touchUpInside)
         } else {
             viewCoordinator.toolbarFireBarButtonItem.action = #selector(onFirePressed)
@@ -680,7 +681,7 @@ class MainViewController: UIViewController {
         switch position {
         case .top:
             swipeTabsCoordinator?.addressBarPositionChanged(isTop: true)
-            if ExperimentalThemingManager().isExperimentalThemingEnabled {
+            if isExperimentalAppearanceEnabled {
                 viewCoordinator.hideToolbarSeparator()
             } else {
                 viewCoordinator.showToolbarSeparator()
@@ -784,7 +785,7 @@ class MainViewController: UIViewController {
     }
 
     private func initTabButton() {
-        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+        if isExperimentalAppearanceEnabled {
             let button = ToolbarButton()
             button.frame = CGRect(x: 0, y: 0, width: 34, height: 44)
 
@@ -813,7 +814,7 @@ class MainViewController: UIViewController {
     }
 
     private func initMenuButton() {
-        guard !ExperimentalThemingManager().isExperimentalThemingEnabled else {
+        guard !isExperimentalAppearanceEnabled else {
             // For experimental appearance, this is set up in the ToolbarStateHandling
             return
         }
@@ -954,6 +955,7 @@ class MainViewController: UIViewController {
         let newTabDaxDialogFactory = NewTabDaxDialogFactory(delegate: self, daxDialogsFlowCoordinator: DaxDialogs.shared, onboardingPixelReporter: contextualOnboardingPixelReporter)
         let controller = NewTabPageViewController(tab: tabModel,
                                                   isNewTabPageCustomizationEnabled: homeTabManager.isNewTabPageSectionsEnabled,
+                                                  isExperimentalAppearanceEnabled: isExperimentalAppearanceEnabled,
                                                   interactionModel: favoritesViewModel,
                                                   homePageMessagesConfiguration: homePageConfiguration,
                                                   privacyProDataReporting: privacyProDataReporter,
@@ -1261,7 +1263,7 @@ class MainViewController: UIViewController {
     }
 
     private func refreshTabIcon() {
-        if !ExperimentalThemingManager().isExperimentalThemingEnabled {
+        if !isExperimentalAppearanceEnabled {
             viewCoordinator.toolbarTabSwitcherButton.accessibilityHint = UserText.numberOfTabs(tabManager.count)
             tabSwitcherButton.tabCount = tabManager.count
             tabSwitcherButton.hasUnread = tabManager.hasUnread
@@ -1374,7 +1376,7 @@ class MainViewController: UIViewController {
             // Do this on the next UI thread pass so we definitely have the right width
             self.applyWidthToTrayController()
 
-            if !ExperimentalThemingManager().isExperimentalThemingEnabled {
+            if !self.isExperimentalAppearanceEnabled {
                 self.refreshMenuButtonState()
             }
         }
@@ -2158,7 +2160,7 @@ extension MainViewController: OmniBarDelegate {
                                                                 menuEntries: menuEntries)
 
         controller.modalPresentationStyle = .custom
-        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+        if isExperimentalAppearanceEnabled {
             controller.onDismiss = {
                 self.viewCoordinator.menuToolbarButton.isEnabled = true
             }

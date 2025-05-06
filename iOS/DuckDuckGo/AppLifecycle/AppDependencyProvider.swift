@@ -94,7 +94,9 @@ final class AppDependencyProvider: DependencyProvider {
     let networkProtectionKeychainTokenStore: NetworkProtectionKeychainTokenStore
     let networkProtectionTunnelController: NetworkProtectionTunnelController
 
+#if DEBUG
     var dbpIOSManager: DataBrokerProtectionIOSManager?
+#endif
 
     let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
 
@@ -267,12 +269,14 @@ final class AppDependencyProvider: DependencyProvider {
                                                                               persistentPixel: persistentPixel,
                                                                               settings: vpnSettings)
 
+#if DEBUG
         let dbpSubscriptionManager = DataBrokerProtectionSubscriptionManager(subscriptionManager: subscriptionAuthV1toV2Bridge,
                                                                           runTypeProvider: dbpSettings,
                                                                           isAuthV2Enabled: isAuthV2Enabled)
         let authManager = DataBrokerProtectionAuthenticationManager(subscriptionManager: dbpSubscriptionManager)
         dbpIOSManager = DataBrokerProtectionIOSManagerProvider.iOSManager(authenticationManager: authManager,
                                                                           privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager)
+#endif
     }
 
 }

@@ -34,6 +34,8 @@ final class DBPService: NSObject {
         self.dbpIOSManager = DataBrokerProtectionIOSManagerProvider.iOSManager(authenticationManager: authManager,
                                                                           privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager)
         DataBrokerProtectionIOSManager.shared = self.dbpIOSManager
+#else
+        self.dbpIOSManager = nil
 #endif
         super.init()
     }

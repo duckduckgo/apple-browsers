@@ -153,6 +153,7 @@ public final class DataBrokerProtectionIOSManager {
 
     private let queueManager: DataBrokerProtectionQueueManager
     private let operationDependencies: DataBrokerOperationDependencies
+    private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>
     private let privacyConfigManager: PrivacyConfigurationManaging
     public let dataManager: DataBrokerProtectionDataManager
@@ -162,19 +163,69 @@ public final class DataBrokerProtectionIOSManager {
 
     init(queueManager: DataBrokerProtectionQueueManager,
          operationDependencies: DataBrokerOperationDependencies,
+         authenticationManager: DataBrokerProtectionAuthenticationManaging,
          sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>,
          privacyConfigManager: PrivacyConfigurationManaging,
          dataManager: DataBrokerProtectionDataManager
     ) {
         self.queueManager = queueManager
         self.operationDependencies = operationDependencies
+        self.authenticationManager = authenticationManager
         self.sharedPixelsHandler = sharedPixelsHandler
         self.privacyConfigManager = privacyConfigManager
-        /*
+
         self.dataManager = dataManager
 
+        Task {
+            await setUp()
+        }
+
+        /*
+        self.communicationLayer = DBPUICommunicationLayer(webURLSettings:
+                                                            DataBrokerProtectionWebUIURLSettings(UserDefaults.standard),
+                                                          privacyConfig: privacyConfigManager)
+
+        let cache = dataManager.cache
+        communicationLayer.delegate = cache
+
+        let year = Calendar(identifier: .gregorian).component(.year, from: Date())
+        let birthYear = year - 58
+        let profile = DataBrokerProtectionProfile(names: [.init(firstName: "Steve", lastName: "Smith")],
+                                                  addresses: [.init(city: "Dallas", state: "TX")],
+                                                  phones: [],
+                                                  birthYear: birthYear)
+        cache.profile = profile
+        Task { @MainActor in
+            _ = try await communicationLayer.saveProfile(params: [], original: WKScriptMessage())
+        }
          */
+    }
+
+    private func setUp() async {
+        guard await validateRunPrerequisites() else {
+            return
+        }
+
         registerBackgroundTaskHandler()
+    }
+
+    private func validateRunPrerequisites() async -> Bool {
+
+        do {
+            let hasProfile = try dataManager.fetchProfile() != nil
+            let isAuthenticated = authenticationManager.isUserAuthenticated
+
+            if !hasProfile || !isAuthenticated {
+                Logger.dataBrokerProtection.log("Prerequisites are invalid")
+                return false
+            }
+
+            let hasValidEntitlement = try await authenticationManager.hasValidEntitlement()
+            return hasValidEntitlement
+        } catch {
+            Logger.dataBrokerProtection.error("Error validating prerequisites, error: \(error.localizedDescription, privacy: .public)")
+            return false
+        }
     }
 
     private func registerBackgroundTaskHandler() {

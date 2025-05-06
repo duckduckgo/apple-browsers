@@ -70,11 +70,7 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     private var cancellables = Set<AnyCancellable>()
 
     /// isDuckPlayerPresented is true when the DuckPlayer is presented
-    private var isDuckPlayerPillPresented = false {
-        didSet {
-            print("🔔 isDuckPlayerPillPresented: \(isDuckPlayerPillPresented)")
-        }
-    }
+    private var isDuckPlayerPillPresented = false
     private var isDuckPlayerPresented = false
     
     private struct Constants {

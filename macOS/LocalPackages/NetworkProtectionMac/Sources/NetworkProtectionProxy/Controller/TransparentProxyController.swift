@@ -24,7 +24,7 @@ import os.log
 import PixelKit
 import SystemExtensions
 import VPNAppState
-import VPNExtensionManagement
+//import VPNExtensionManagement
 
 /// Controller for ``TransparentProxyProvider``
 ///

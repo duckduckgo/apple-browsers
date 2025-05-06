@@ -36,7 +36,7 @@ import Subscription
 import SwiftUICore
 import VPNAppLauncher
 import VPNAppState
-import VPNExtensionManagement
+//import VPNExtensionManagement
 
 @objc(Application)
 final class DuckDuckGoVPNApplication: NSApplication {
@@ -300,6 +300,13 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     private lazy var statusReporter: NetworkProtectionStatusReporter = {
+        let vpnEnabledObserver = VPNEnabledObserverThroughSession(
+            tunnelSessionProvider: tunnelController,
+            extensionResolver: tunnelController.extensionResolver,
+            platformSnoozeTimingStore: NetworkProtectionSnoozeTimingStore(userDefaults: .netP),
+            platformNotificationCenter: NSWorkspace.shared.notificationCenter,
+            platformDidWakeNotification: NSWorkspace.didWakeNotification)
+
         let errorObserver = ConnectionErrorObserverThroughSession(
             tunnelSessionProvider: tunnelController,
             platformNotificationCenter: NSWorkspace.shared.notificationCenter,
@@ -316,6 +323,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
             platformDidWakeNotification: NSWorkspace.didWakeNotification)
 
         return DefaultNetworkProtectionStatusReporter(
+            vpnEnabledObserver: vpnEnabledObserver,
             statusObserver: statusObserver,
             serverInfoObserver: serverInfoObserver,
             connectionErrorObserver: errorObserver,

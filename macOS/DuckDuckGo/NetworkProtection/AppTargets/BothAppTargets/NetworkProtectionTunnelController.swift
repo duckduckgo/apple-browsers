@@ -32,7 +32,7 @@ import os.log
 import Subscription
 import SystemExtensionManager
 import SystemExtensions
-import VPNExtensionManagement
+//import VPNExtensionManagement
 import VPNAppState
 
 typealias NetworkProtectionStatusChangeHandler = (NetworkProtection.ConnectionStatus) -> Void
@@ -206,7 +206,8 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
             switch session.status {
             case .connected:
-                try await enableOnDemand(tunnelManager: manager)
+                //try await enableOnDemand(tunnelManager: manager)
+                break
             case .invalid:
                 clearInternalManager()
             default:
@@ -395,6 +396,10 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         await session
     }
 
+    public func cachedSession() -> NETunnelProviderSession? {
+        internalManager?.connection as? NETunnelProviderSession
+    }
+
     public var session: NETunnelProviderSession? {
         get async {
             guard let manager = await manager,
@@ -509,6 +514,8 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         case connectionAlreadyStarted
         case simulateControllerFailureError
         case startTunnelFailure(_ error: Error)
+        case startTunnelDisconnectedSilently
+        case startTunnelTimedOut
 
         var errorDescription: String? {
             switch self {
@@ -533,6 +540,18 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                 return "Simulated a controller error as requested"
             case .startTunnelFailure(let error):
                 return error.localizedDescription
+            case .startTunnelDisconnectedSilently:
+#if DEBUG
+                return "[DEBUG] The connection attempt failed silently, please try again"
+#else
+                return "An unexpected error occurred, please try again"
+#endif
+            case .startTunnelTimedOut:
+#if DEBUG
+                return "[DEBUG] The connection attempt timed out, please try again"
+#else
+                return "An unexpected error occurred, please try again"
+#endif
             }
         }
 
@@ -546,6 +565,8 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             case .simulateControllerFailureError: return 4
                 // MARK: Actual connection attempt issues
             case .startTunnelFailure: return 100
+            case .startTunnelDisconnectedSilently: return 101
+            case .startTunnelTimedOut: return 102
             }
         }
 
@@ -555,7 +576,9 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                     .noAuthToken,
                     .connectionStatusInvalid,
                     .connectionAlreadyStarted,
-                    .simulateControllerFailureError:
+                    .simulateControllerFailureError,
+                    .startTunnelDisconnectedSilently,
+                    .startTunnelTimedOut:
                 return [:]
             case .startTunnelFailure(let error):
                 return [NSUnderlyingErrorKey: error]
@@ -729,6 +752,10 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             throw StartError.startTunnelFailure(error)
         }
 
+        if #available(macOS 12, *) {
+            try await waitForStartSuccess(tunnelManager)
+        }
+
         PixelKit.fire(
             NetworkProtectionPixelEvent.networkProtectionNewUser,
             frequency: .uniqueByName,
@@ -736,6 +763,43 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                 guard let self, error == nil, fired else { return }
                 self.defaults.vpnFirstEnabled = PixelKit.pixelLastFireDate(event: NetworkProtectionPixelEvent.networkProtectionNewUser)
             }
+    }
+
+    @available(macOS 12, *)
+    func waitForStartSuccess(_ tunnelManager: NETunnelProviderManager, timeout: TimeInterval = 10) async throws {
+        let deadline = Date().addingTimeInterval(timeout)
+        let notificationCenter = NotificationCenter.default
+        let statusChange = NSNotification.Name.NEVPNStatusDidChange
+
+        if tunnelManager.connection.status == .connected {
+            try await enableOnDemand(tunnelManager: tunnelManager)
+            return
+        }
+
+        // Create an async stream for status change notifications
+        for await notification in notificationCenter.notifications(named: statusChange) {
+
+            if Date() >= deadline {
+                throw StartError.startTunnelTimedOut
+            }
+
+            guard let connection = notification.object as? NEVPNConnection else {
+                continue
+            }
+            let status = connection.status
+
+            switch status {
+            case .connected:
+                try await enableOnDemand(tunnelManager: tunnelManager)
+                return
+            case .disconnecting:
+                // We check the disconnecting status because "disconnected" is a valid initial status
+                // and results in false negatives.
+                throw StartError.startTunnelDisconnectedSilently
+            default:
+                continue
+            }
+        }
     }
 
     public func ensureRiskyDomainsEnabledIfNeeded(){

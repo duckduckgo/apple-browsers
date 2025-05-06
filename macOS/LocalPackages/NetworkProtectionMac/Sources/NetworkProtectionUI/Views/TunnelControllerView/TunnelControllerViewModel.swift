@@ -39,7 +39,11 @@ public final class TunnelControllerViewModel: ObservableObject {
     /// Whether the VPN is enabled
     /// This is determined based on the connection status, same as the iOS version
     ///
-    public var isVPNEnabled: Bool {
+    @MainActor
+    @Published
+    public var isVPNEnabled: Bool
+    /*
+     public var isVPNEnabled: Bool {
         get {
             switch connectionStatus {
             case .connected, .connecting:
@@ -48,7 +52,7 @@ public final class TunnelControllerViewModel: ObservableObject {
                 return false
             }
         }
-    }
+    }*/
 
     public var exclusionsFeatureEnabled: Bool {
         vpnAppState.isUsingSystemExtension
@@ -122,6 +126,8 @@ public final class TunnelControllerViewModel: ObservableObject {
         formattedDataVolume = statusReporter.dataVolumeObserver.recentValue.formatted(using: Self.byteCountFormatter)
         internalServerAddress = statusReporter.serverInfoObserver.recentValue.serverAddress
         internalServerAttributes = statusReporter.serverInfoObserver.recentValue.serverLocation
+        isVPNEnabled = statusReporter.vpnEnabledObserver.isVPNEnabled
+
         internalServerLocation = internalServerAttributes?.serverLocation
 
         // Particularly useful when unit testing with an initial status of our choosing.
@@ -131,9 +137,23 @@ public final class TunnelControllerViewModel: ObservableObject {
         subscribeToStatusChanges()
         subscribeToServerInfoChanges()
         subscribeToDataVolumeUpdates()
+        subscribeToVPNEnabledChanges()
 
         vpnSettings.dnsSettingsPublisher
             .assign(to: \.dnsSettings, onWeaklyHeld: self)
+            .store(in: &cancellables)
+
+        $isToggleDisabled
+            .filter { $0 }
+            .debounce(for: .seconds(2), scheduler: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self,
+                      isToggleDisabled else {
+                    return
+                }
+
+                isToggleDisabled = false
+            }
             .store(in: &cancellables)
     }
 
@@ -182,6 +202,13 @@ public final class TunnelControllerViewModel: ObservableObject {
             .map { $0.formatted(using: Self.byteCountFormatter) }
             .receive(on: DispatchQueue.main)
             .assign(to: \.formattedDataVolume, onWeaklyHeld: self)
+            .store(in: &cancellables)
+    }
+
+    private func subscribeToVPNEnabledChanges() {
+        statusReporter.vpnEnabledObserver.publisher
+            .removeDuplicates()
+            .assign(to: \.isVPNEnabled, onWeaklyHeld: self)
             .store(in: &cancellables)
     }
 
@@ -264,11 +291,11 @@ public final class TunnelControllerViewModel: ObservableObject {
                 return false
             }
 
-            return self.internalIsRunning
+            return self.isVPNEnabled
         } set: { [weak self] newValue in
             guard let self else { return }
 
-            guard newValue != self.internalIsRunning else {
+            guard newValue != self.isVPNEnabled else {
                 return
             }
 
@@ -280,7 +307,8 @@ public final class TunnelControllerViewModel: ObservableObject {
                     return
                 }
 
-                self.internalIsRunning = newValue
+                //self.isVPNEnabled = newValue
+                //self.internalIsRunning = newValue
 
                 if newValue {
                     self.startNetworkProtection()
@@ -318,17 +346,17 @@ public final class TunnelControllerViewModel: ObservableObject {
             // When the toggle transition is idle, if the status changes to connecting or disconnecting
             // it means the tunnel is being controlled from elsewhere.
             if connectionStatus == .connecting {
-                toggleTransition = .switchingOn(locallyInitiated: false)
+                //toggleTransition = .switchingOn(locallyInitiated: false)
             } else if connectionStatus == .disconnecting {
-                toggleTransition = .switchingOff(locallyInitiated: false)
+                //toggleTransition = .switchingOff(locallyInitiated: false)
             }
         case .switchingOn, .switchingOff:
             if connectionStatus == .connecting {
-                toggleTransition = .switchingOn(locallyInitiated: false)
+                //toggleTransition = .switchingOn(locallyInitiated: false)
             } else if connectionStatus == .disconnecting {
-                toggleTransition = .switchingOff(locallyInitiated: false)
+                //toggleTransition = .switchingOff(locallyInitiated: false)
             } else {
-                toggleTransition = .idle
+                //toggleTransition = .idle
             }
         }
     }
@@ -346,15 +374,18 @@ public final class TunnelControllerViewModel: ObservableObject {
     @Published
     private(set) var toggleTransition = ToggleTransition.idle
 
+    @Published
+    private(set) var isToggleDisabled: Bool = false
+
     /// The toggle is disabled while transitioning due to user interaction.
     ///
-    var isToggleDisabled: Bool {
-        if case .idle = toggleTransition {
-            return false
-        }
-
-        return true
-    }
+//    var isToggleDisabled: Bool {
+//        if case .idle = toggleTransition {
+//            return false
+//        }
+//
+//        return true
+//    }
 
     // MARK: - Connection Status: Timer
 
@@ -522,14 +553,20 @@ public final class TunnelControllerViewModel: ObservableObject {
 
     // MARK: - Toggling VPN
 
+    private var vpnControlTask: Task<Void, Never>?
+
     /// Start the VPN.
     ///
     func startNetworkProtection() {
-        if shouldFlipToggle {
-            toggleTransition = .switchingOn(locallyInitiated: true)
-        }
+        vpnControlTask?.cancel()
 
-        Task { @MainActor in
+        vpnControlTask = Task { @MainActor in
+            if shouldFlipToggle {
+                isToggleDisabled = true
+                toggleTransition = .switchingOn(locallyInitiated: true)
+            }
+
+            defer { toggleTransition = .idle }
             await tunnelController.start()
             refreshInternalIsRunning()
         }
@@ -538,9 +575,12 @@ public final class TunnelControllerViewModel: ObservableObject {
     /// Stop the VPN.
     ///
     func stopNetworkProtection() {
-        toggleTransition = .switchingOff(locallyInitiated: true)
+        vpnControlTask?.cancel()
 
-        Task { @MainActor in
+        vpnControlTask = Task { @MainActor in
+            toggleTransition = .switchingOff(locallyInitiated: true)
+            defer { toggleTransition = .idle }
+
             await tunnelController.stop()
             refreshInternalIsRunning()
         }

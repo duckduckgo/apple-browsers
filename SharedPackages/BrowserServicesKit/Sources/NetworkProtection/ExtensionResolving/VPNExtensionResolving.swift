@@ -15,7 +15,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
-/*
+
 public protocol VPNExtensionResolving {
     var activeExtensionBundleID: String { get async }
-}*/
+}

@@ -49,4 +49,5 @@ public protocol TunnelController {
 ///
 public protocol TunnelSessionProvider {
     func activeSession() async -> NETunnelProviderSession?
+    func cachedSession() -> NETunnelProviderSession?
 }

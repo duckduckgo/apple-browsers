@@ -75,6 +75,10 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         await session
     }
 
+    public func cachedSession() -> NETunnelProviderSession? {
+        internalManager?.connection as? NETunnelProviderSession
+    }
+
     public var session: NETunnelProviderSession? {
         get async {
             guard let manager = await tunnelManager, let session = manager.connection as? NETunnelProviderSession else {

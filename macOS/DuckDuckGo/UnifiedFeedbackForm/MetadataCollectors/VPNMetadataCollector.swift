@@ -137,6 +137,7 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
         self.defaults = defaults
 
         self.statusReporter = DefaultNetworkProtectionStatusReporter(
+            vpnEnabledObserver: ipcClient.vpnEnabledObserver,
             statusObserver: ipcClient.connectionStatusObserver,
             serverInfoObserver: ipcClient.serverInfoObserver,
             connectionErrorObserver: ipcClient.connectionErrorObserver,

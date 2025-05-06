@@ -191,6 +191,20 @@ extension VPNControllerXPCServer: XPCClientInterface {
             client.knownFailureUpdated(payload: payload)
         }
     }
+
+    public func vpnEnableChanged(_ enabled: Bool) {
+        let payload: Data
+
+        do {
+            payload = try JSONEncoder().encode(enabled)
+        } catch {
+            return
+        }
+
+        xpc.forEachClient { client in
+            client.vpnEnabledChanged(payload: payload)
+        }
+    }
 }
 
 // MARK: - Incoming communication from a client

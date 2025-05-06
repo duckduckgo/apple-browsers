@@ -1,5 +1,5 @@
 //
-//  VPNExtensionResolving.swift
+//  VPNEnabledObserverThroughIPC.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -15,7 +15,26 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
-/*
-public protocol VPNExtensionResolving {
-    var activeExtensionBundleID: String { get async }
-}*/
+
+import Combine
+import Foundation
+import NetworkProtection
+
+public final class VPNEnabledObserverThroughIPC: VPNEnabledObserver {
+
+    private let subject = CurrentValueSubject<Bool, Never>(false)
+
+    // MARK: - ConnectionStatusObserver
+
+    public lazy var publisher = subject.eraseToAnyPublisher()
+
+    public var isVPNEnabled: Bool {
+        subject.value
+    }
+
+    // MARK: - Publishing Updates
+
+    func publish(_ isVPNEnabled: Bool) {
+        subject.send(isVPNEnabled)
+    }
+}

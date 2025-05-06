@@ -96,6 +96,7 @@ final class TunnelControllerIPCService {
         subscribeToServerChanges()
         subscribeToKnownFailureUpdates()
         subscribeToDataVolumeUpdates()
+        subscribeToVPNEnabledChanges()
 
         server.serverDelegate = self
     }
@@ -165,6 +166,15 @@ final class TunnelControllerIPCService {
             .subscribe(on: DispatchQueue.main)
             .sink { [weak self] dataVolume in
                 self?.server.dataVolumeUpdated(dataVolume)
+            }
+            .store(in: &cancellables)
+    }
+
+    private func subscribeToVPNEnabledChanges() {
+        statusReporter.vpnEnabledObserver.publisher
+            .subscribe(on: DispatchQueue.main)
+            .sink { [weak self] isEnabled in
+                self?.server.vpnEnableChanged(isEnabled)
             }
             .store(in: &cancellables)
     }

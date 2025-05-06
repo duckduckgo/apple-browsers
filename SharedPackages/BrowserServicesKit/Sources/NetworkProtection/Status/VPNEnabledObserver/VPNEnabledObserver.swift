@@ -1,5 +1,5 @@
 //
-//  VPNExtensionResolving.swift
+//  VPNEnabledObserver.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -15,7 +15,12 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
-/*
-public protocol VPNExtensionResolving {
-    var activeExtensionBundleID: String { get async }
-}*/
+
+import Combine
+import Foundation
+import NetworkExtension
+
+public protocol VPNEnabledObserver {
+    var isVPNEnabled: Bool { get }
+    var publisher: AnyPublisher<Bool, Never> { get }
+}

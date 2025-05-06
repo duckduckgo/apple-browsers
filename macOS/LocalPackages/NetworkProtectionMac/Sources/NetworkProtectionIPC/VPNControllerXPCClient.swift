@@ -28,6 +28,7 @@ public protocol XPCClientInterface: AnyObject {
     func statusChanged(_ status: ConnectionStatus)
     func dataVolumeUpdated(_ dataVolume: DataVolume)
     func knownFailureUpdated(_ failure: KnownFailure?)
+    func vpnEnableChanged(_ enabled: Bool)
 }
 
 /// This is the XPC interface with parameters that can be packed properly
@@ -38,6 +39,7 @@ protocol XPCClientInterfaceObjC {
     func statusChanged(payload: Data)
     func dataVolumeUpdated(payload: Data)
     func knownFailureUpdated(payload: Data)
+    func vpnEnabledChanged(payload: Data)
 }
 
 public final class VPNControllerXPCClient {
@@ -48,6 +50,7 @@ public final class VPNControllerXPCClient {
 
     // MARK: - Observers offered
 
+    public var vpnEnabledObserver = VPNEnabledObserverThroughIPC()
     public var serverInfoObserver = ConnectionServerInfoObserverThroughIPC()
     public var connectionErrorObserver = ConnectionErrorObserverThroughIPC()
     public var connectionStatusObserver = ConnectionStatusObserverThroughIPC()
@@ -67,14 +70,15 @@ public final class VPNControllerXPCClient {
     public init(machServiceName: String) {
         let clientInterface = NSXPCInterface(with: XPCClientInterfaceObjC.self)
         let serverInterface = NSXPCInterface(with: XPCServerInterfaceObjC.self)
+
         self.xpcDelegate = TunnelControllerXPCClientDelegate(
             clientDelegate: self.clientDelegate,
             serverInfoObserver: self.serverInfoObserver,
             connectionErrorObserver: self.connectionErrorObserver,
             connectionStatusObserver: self.connectionStatusObserver,
             dataVolumeObserver: self.dataVolumeObserver,
-            knownFailureObserver: self.knownFailureObserver
-        )
+            knownFailureObserver: self.knownFailureObserver,
+            vpnEnabledObserver: self.vpnEnabledObserver)
 
         xpc = XPCClient(
             machServiceName: machServiceName,
@@ -117,19 +121,23 @@ private final class TunnelControllerXPCClientDelegate: XPCClientInterfaceObjC {
     let connectionStatusObserver: ConnectionStatusObserverThroughIPC
     let dataVolumeObserver: DataVolumeObserverThroughIPC
     let knownFailureObserver: KnownFailureObserverThroughIPC
+    let vpnEnabledObserver: VPNEnabledObserverThroughIPC
 
     init(clientDelegate: XPCClientInterface?,
          serverInfoObserver: ConnectionServerInfoObserverThroughIPC,
          connectionErrorObserver: ConnectionErrorObserverThroughIPC,
          connectionStatusObserver: ConnectionStatusObserverThroughIPC,
          dataVolumeObserver: DataVolumeObserverThroughIPC,
-         knownFailureObserver: KnownFailureObserverThroughIPC) {
+         knownFailureObserver: KnownFailureObserverThroughIPC,
+         vpnEnabledObserver: VPNEnabledObserverThroughIPC) {
+
         self.clientDelegate = clientDelegate
         self.serverInfoObserver = serverInfoObserver
         self.connectionErrorObserver = connectionErrorObserver
         self.connectionStatusObserver = connectionStatusObserver
         self.dataVolumeObserver = dataVolumeObserver
         self.knownFailureObserver = knownFailureObserver
+        self.vpnEnabledObserver = vpnEnabledObserver
     }
 
     func errorChanged(error: String?) {
@@ -179,6 +187,19 @@ private final class TunnelControllerXPCClientDelegate: XPCClientInterfaceObjC {
     func knownFailureUpdated(failure: KnownFailure?) {
         knownFailureObserver.publish(failure)
         clientDelegate?.knownFailureUpdated(failure)
+    }
+
+    func vpnEnabledChanged(payload: Data) {
+        guard let enabled = try? JSONDecoder().decode(Bool.self, from: payload) else {
+            return
+        }
+
+        vpnEnabledChanged(enabled: enabled)
+    }
+
+    func vpnEnabledChanged(enabled: Bool) {
+        vpnEnabledObserver.publish(enabled)
+        clientDelegate?.vpnEnableChanged(enabled)
     }
 }
 

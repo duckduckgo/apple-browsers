@@ -39,6 +39,7 @@ protocol NetworkProtectionIPCClient {
     var ipcServerInfoObserver: ConnectionServerInfoObserver { get }
     var ipcConnectionErrorObserver: ConnectionErrorObserver { get }
     var ipcDataVolumeObserver: DataVolumeObserver { get }
+    var ipcVPNEnabledObserver: VPNEnabledObserver { get }
 
     func start(completion: @escaping (Error?) -> Void)
     func stop(completion: @escaping (Error?) -> Void)
@@ -50,6 +51,7 @@ extension VPNControllerXPCClient: NetworkProtectionIPCClient {
     public var ipcServerInfoObserver: any NetworkProtection.ConnectionServerInfoObserver { serverInfoObserver }
     public var ipcConnectionErrorObserver: any NetworkProtection.ConnectionErrorObserver { connectionErrorObserver }
     public var ipcDataVolumeObserver: any NetworkProtection.DataVolumeObserver { dataVolumeObserver }
+    public var ipcVPNEnabledObserver: any NetworkProtection.VPNEnabledObserver { vpnEnabledObserver }
 }
 
 @MainActor
@@ -190,6 +192,7 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
             let controller = NetworkProtectionIPCTunnelController(ipcClient: ipcClient)
 
             let statusReporter = DefaultNetworkProtectionStatusReporter(
+                vpnEnabledObserver: ipcClient.ipcVPNEnabledObserver,
                 statusObserver: ipcClient.ipcStatusObserver,
                 serverInfoObserver: ipcClient.ipcServerInfoObserver,
                 connectionErrorObserver: ipcClient.ipcConnectionErrorObserver,

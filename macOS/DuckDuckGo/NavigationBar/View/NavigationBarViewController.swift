@@ -1196,7 +1196,7 @@ final class NavigationBarViewController: NSViewController {
                     return
                 }
                 let optionalButtonsWidth = totalWidth - staticButton.bounds.width
-                addressBarButtonsAddedWidth = optionalButtonsWidth * 2 // The address bar expands by twice the button width to center the displayed address
+                addressBarButtonsAddedWidth = optionalButtonsWidth
                 updateNavigationBarForCurrentWidth()
             }
             .store(in: &cancellables)

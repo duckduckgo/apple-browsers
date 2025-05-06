@@ -61,7 +61,7 @@ protocol DependencyProvider {
     var isAuthV2Enabled: Bool { get }
 
     // DBP
-    var dbpIOSManager: DataBrokerProtectionIOSManager? { get }
+    var dbpSettings: DataBrokerProtectionSettings { get }
 }
 
 /// Provides dependencies for objects that are not directly instantiated
@@ -93,8 +93,6 @@ final class AppDependencyProvider: DependencyProvider {
     let vpnFeatureVisibility: DefaultNetworkProtectionVisibility
     let networkProtectionKeychainTokenStore: NetworkProtectionKeychainTokenStore
     let networkProtectionTunnelController: NetworkProtectionTunnelController
-
-    var dbpIOSManager: DataBrokerProtectionIOSManager?
 
     let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
 
@@ -266,15 +264,6 @@ final class AppDependencyProvider: DependencyProvider {
                                                                               featureFlagger: featureFlagger,
                                                                               persistentPixel: persistentPixel,
                                                                               settings: vpnSettings)
-
-#if DEBUG
-        let dbpSubscriptionManager = DataBrokerProtectionSubscriptionManager(subscriptionManager: subscriptionAuthV1toV2Bridge,
-                                                                          runTypeProvider: dbpSettings,
-                                                                          isAuthV2Enabled: isAuthV2Enabled)
-        let authManager = DataBrokerProtectionAuthenticationManager(subscriptionManager: dbpSubscriptionManager)
-        dbpIOSManager = DataBrokerProtectionIOSManagerProvider.iOSManager(authenticationManager: authManager,
-                                                                          privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager)
-#endif
     }
 
 }

@@ -23,6 +23,7 @@ import RemoteMessaging
 import UIKit
 
 struct HomeMessageViewModel {
+
     enum ButtonAction {
         case close
         case action(isShare: Bool) // a generic action that is specific to the type of message
@@ -118,6 +119,7 @@ struct HomeMessageViewModel {
         }
     }
     
+    let navigator: MessageNavigator
     let onDidClose: (ButtonAction?) async -> Void
     let onDidAppear: () -> Void
     let onAttachAdditionalParameters: ((_ useCase: PrivacyProDataReportingUseCase, _ params: [String: String]) -> [String: String])?
@@ -151,6 +153,12 @@ struct HomeMessageViewModel {
             }
         case .dismiss:
             return { @MainActor in
+                await onDidClose(buttonAction)
+            }
+
+        case .navigation(let target):
+            return { @MainActor in
+                navigator.navigateTo(target)
                 await onDidClose(buttonAction)
             }
         }

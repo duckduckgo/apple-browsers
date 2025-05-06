@@ -102,6 +102,7 @@ public enum RemoteMessageResponse {
         case appStore = "appstore"
         case dismiss
         case survey = "survey"
+        case navigation
     }
 
     enum JsonPlaceholder: String, CaseIterable {

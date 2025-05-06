@@ -102,12 +102,18 @@ public enum RemoteMessageModelType: Codable, Equatable {
                            actionText: String, action: RemoteAction)
 }
 
+public enum NavigationTarget: String, Codable, Equatable {
+    case duckAISettings = "duckai.settings"
+    case settings
+}
+
 public enum RemoteAction: Codable, Equatable {
     case share(value: String, title: String?)
     case url(value: String)
     case survey(value: String)
     case appStore
     case dismiss
+    case navigation(value: NavigationTarget)
 }
 
 public enum RemotePlaceholder: String, Codable {

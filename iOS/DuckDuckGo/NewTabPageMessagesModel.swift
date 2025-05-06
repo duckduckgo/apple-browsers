@@ -77,7 +77,7 @@ final class NewTabPageMessagesModel: ObservableObject {
     private func homeMessageViewModel(for message: HomeMessage) -> HomeMessageViewModel? {
         switch message {
         case .placeholder:
-            return HomeMessageViewModel(messageId: "", sendPixels: false, modelType: .small(titleText: "", descriptionText: "")) { [weak self] _ in
+            return HomeMessageViewModel(messageId: "", sendPixels: false, modelType: .small(titleText: "", descriptionText: ""), navigator: DefaultMessageNavigator()) { [weak self] _ in
                 await self?.dismissHomeMessage(message)
             } onDidAppear: {
                 // no-op
@@ -90,7 +90,7 @@ final class NewTabPageMessagesModel: ObservableObject {
             // as a result of refreshing a config while the user was on a new tab page already.
             didAppear(message)
 
-            return HomeMessageViewModelBuilder.build(for: remoteMessage, with: privacyProDataReporter) { @MainActor [weak self] action in
+            return HomeMessageViewModelBuilder.build(for: remoteMessage, with: privacyProDataReporter, navigator: DefaultMessageNavigator()) { @MainActor [weak self] action in
                 guard let action,
                       let self else { return }
 

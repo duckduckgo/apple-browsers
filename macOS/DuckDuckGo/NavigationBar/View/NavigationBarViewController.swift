@@ -1214,18 +1214,7 @@ final class NavigationBarViewController: NSViewController {
         }
 
         if visiblePinnedViewsRequiredWidth >= overflowThreshold {
-            // Move buttons into overflow menu if needed
-            while visiblePinnedViewsRequiredWidth >= overflowThreshold {
-                guard visiblePinnedItems.count > 1 else {
-                    // Leave at least one visible pinned item, but hide AI chat button if needed
-                    toggleAIChatButtonVisibility(isHidden: true)
-                    break
-                }
-                guard let itemToOverflow = visiblePinnedItems.last else {
-                    break
-                }
-                updateNavBarViews(with: itemToOverflow, isHidden: true)
-            }
+            moveButtonsToOverflowMenuIfNeeded()
         } else if isAIChatButtonInOverflowMenu {
             // Restore AI chat button first, if needed
             let newMaximumWidth = visiblePinnedViewsRequiredWidth + 39
@@ -1233,17 +1222,33 @@ final class NavigationBarViewController: NSViewController {
                 toggleAIChatButtonVisibility(isHidden: false)
             }
         } else if !overflowItems.isEmpty {
+            removeButtonsFromOverflowMenuIfPossible()
+        }
+    }
 
-            // Restore buttons into nav bar if possible
-            while let itemToRestore = overflowItems.first {
-                let restorableButtonWidth = navBarWidth(for: itemToRestore)
-                let newMaximumWidth = visiblePinnedViewsRequiredWidth + restorableButtonWidth
+    private func moveButtonsToOverflowMenuIfNeeded() {
+        while visiblePinnedViewsRequiredWidth >= overflowThreshold {
+            guard visiblePinnedItems.count > 1 else {
+                // Leave at least one visible pinned item, but hide AI chat button if needed
+                toggleAIChatButtonVisibility(isHidden: true)
+                break
+            }
+            guard let itemToOverflow = visiblePinnedItems.last else {
+                break
+            }
+            updateNavBarViews(with: itemToOverflow, isHidden: true)
+        }
+    }
 
-                if newMaximumWidth < overflowThreshold {
-                    updateNavBarViews(with: itemToRestore, isHidden: false)
-                } else {
-                    break
-                }
+    private func removeButtonsFromOverflowMenuIfPossible() {
+        while let itemToRestore = overflowItems.first {
+            let restorableButtonWidth = navBarWidth(for: itemToRestore)
+            let newMaximumWidth = visiblePinnedViewsRequiredWidth + restorableButtonWidth
+
+            if newMaximumWidth < overflowThreshold {
+                updateNavBarViews(with: itemToRestore, isHidden: false)
+            } else {
+                break
             }
         }
     }

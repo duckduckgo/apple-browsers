@@ -424,14 +424,14 @@
             <objects>
                 <viewController storyboardIdentifier="AddressBarViewController" id="H4f-bE-T92" customClass="AddressBarViewController" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" wantsLayer="YES" id="wj6-L2-5rJ" customClass="DraggingDestinationView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
-                        <rect key="frame" x="0.0" y="0.0" width="734" height="32"/>
+                        <rect key="frame" x="0.0" y="0.0" width="655" height="32"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <customView translatesAutoresizingMaskIntoConstraints="NO" id="ENV-0H-Fcc" userLabel="Inactive Background View with Progress" customClass="ColorView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
-                                <rect key="frame" x="2" y="2" width="730" height="28"/>
+                                <rect key="frame" x="2" y="2" width="651" height="28"/>
                                 <subviews>
                                     <customView translatesAutoresizingMaskIntoConstraints="NO" id="4x6-Xn-fNv" customClass="LoadingProgressView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
-                                        <rect key="frame" x="0.0" y="0.0" width="730" height="2"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="651" height="2"/>
                                         <constraints>
                                             <constraint firstAttribute="height" constant="2" id="phH-XL-CIq"/>
                                         </constraints>
@@ -452,7 +452,7 @@
                                 </userDefinedRuntimeAttributes>
                             </customView>
                             <customView translatesAutoresizingMaskIntoConstraints="NO" id="Zjk-bE-Xft" customClass="ColorView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
-                                <rect key="frame" x="-3" y="-3" width="740" height="38"/>
+                                <rect key="frame" x="-3" y="-3" width="661" height="38"/>
                                 <userDefinedRuntimeAttributes>
                                     <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
                                         <real key="value" value="10"/>
@@ -463,7 +463,7 @@
                                 </userDefinedRuntimeAttributes>
                             </customView>
                             <customView translatesAutoresizingMaskIntoConstraints="NO" id="e0p-7S-Gan" customClass="ColorView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="0.0" width="734" height="32"/>
+                                <rect key="frame" x="0.0" y="0.0" width="655" height="32"/>
                                 <userDefinedRuntimeAttributes>
                                     <userDefinedRuntimeAttribute type="color" keyPath="backgroundColor">
                                         <color key="value" name="AddressBarBackgroundColor"/>
@@ -480,10 +480,10 @@
                                 </userDefinedRuntimeAttributes>
                             </customView>
                             <customView translatesAutoresizingMaskIntoConstraints="NO" id="Ij9-fc-CLI" customClass="ColorView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="-28" width="734" height="60"/>
+                                <rect key="frame" x="0.0" y="-28" width="655" height="60"/>
                                 <subviews>
                                     <customView translatesAutoresizingMaskIntoConstraints="NO" id="INL-zs-eEh" userLabel="Inner Border View" customClass="ColorView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
-                                        <rect key="frame" x="1" y="1" width="732" height="58"/>
+                                        <rect key="frame" x="1" y="1" width="653" height="58"/>
                                         <userDefinedRuntimeAttributes>
                                             <userDefinedRuntimeAttribute type="color" keyPath="borderColor">
                                                 <color key="value" name="AddressBarInnerBorderColor"/>
@@ -520,7 +520,7 @@
                                 </userDefinedRuntimeAttributes>
                             </customView>
                             <textField focusRingType="none" horizontalHuggingPriority="750" verticalHuggingPriority="750" horizontalCompressionResistancePriority="250" translatesAutoresizingMaskIntoConstraints="NO" id="le0-Hn-ZAC">
-                                <rect key="frame" x="328" y="8" width="79" height="16"/>
+                                <rect key="frame" x="288" y="8" width="79" height="16"/>
                                 <constraints>
                                     <constraint firstAttribute="width" relation="greaterThanOrEqual" constant="75" id="wcb-Gz-fOc"/>
                                 </constraints>
@@ -531,7 +531,7 @@
                                 </textFieldCell>
                             </textField>
                             <textField focusRingType="none" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="zaX-wZ-E3D" customClass="AddressBarTextField" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
-                                <rect key="frame" x="38" y="8" width="653" height="16"/>
+                                <rect key="frame" x="38" y="8" width="574" height="16"/>
                                 <textFieldCell key="cell" lineBreakMode="truncatingTail" selectable="YES" editable="YES" sendsActionOnEndEditing="YES" focusRingType="none" tag="5" placeholderString="Search or enter address" usesSingleLineMode="YES" id="1ah-Qg-8lr" customClass="AddressBarTextFieldCell" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
                                     <font key="font" metaFont="system"/>
                                     <color key="textColor" name="controlTextColor" catalog="System" colorSpace="catalog"/>
@@ -539,13 +539,13 @@
                                 </textFieldCell>
                             </textField>
                             <containerView translatesAutoresizingMaskIntoConstraints="NO" id="bOl-8Z-hTh">
-                                <rect key="frame" x="2" y="3" width="730" height="26"/>
+                                <rect key="frame" x="2" y="3" width="651" height="26"/>
                                 <connections>
                                     <segue destination="mcr-nj-GmC" kind="embed" identifier="" destinationCreationSelector="createAddressBarButtonsViewController:" id="zZO-zH-MBi"/>
                                 </connections>
                             </containerView>
                             <customView horizontalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="JKb-5c-xaF" customClass="ColorView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
-                                <rect key="frame" x="550" y="8" width="118" height="16"/>
+                                <rect key="frame" x="508" y="8" width="118" height="16"/>
                                 <subviews>
                                     <customView horizontalCompressionResistancePriority="1000" translatesAutoresizingMaskIntoConstraints="NO" id="JKb-5c-xaD" userLabel="Rounded Corners View" customClass="ColorView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
                                         <rect key="frame" x="8" y="-3" width="110" height="22"/>
@@ -628,7 +628,6 @@
                             <constraint firstItem="zaX-wZ-E3D" firstAttribute="height" relation="lessThanOrEqual" secondItem="wj6-L2-5rJ" secondAttribute="height" multiplier="0.55" id="E0Q-AU-qRQ"/>
                             <constraint firstItem="e0p-7S-Gan" firstAttribute="leading" secondItem="wj6-L2-5rJ" secondAttribute="leading" id="E5D-iA-uu3"/>
                             <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="JKb-5c-xaF" secondAttribute="trailing" constant="29" id="F0b-NX-BKL"/>
-                            <constraint firstItem="le0-Hn-ZAC" firstAttribute="centerX" secondItem="wj6-L2-5rJ" secondAttribute="centerX" id="GIk-xf-3Bn"/>
                             <constraint firstItem="ENV-0H-Fcc" firstAttribute="top" secondItem="wj6-L2-5rJ" secondAttribute="top" constant="2" id="HfA-Q8-0Uz"/>
                             <constraint firstItem="zaX-wZ-E3D" firstAttribute="centerY" secondItem="wj6-L2-5rJ" secondAttribute="centerY" id="M2U-b3-Z0t"/>
                             <constraint firstItem="bOl-8Z-hTh" firstAttribute="leading" secondItem="wj6-L2-5rJ" secondAttribute="leading" constant="2" id="OSv-yy-Yz5"/>
@@ -644,6 +643,7 @@
                             <constraint firstAttribute="trailing" secondItem="Zjk-bE-Xft" secondAttribute="trailing" constant="-3" id="ctZ-aw-6Ck"/>
                             <constraint firstItem="le0-Hn-ZAC" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="wj6-L2-5rJ" secondAttribute="leading" constant="37" id="eJI-rp-ptx"/>
                             <constraint firstAttribute="bottom" secondItem="Zjk-bE-Xft" secondAttribute="bottom" constant="-3" id="ic3-He-fz0"/>
+                            <constraint firstItem="le0-Hn-ZAC" firstAttribute="centerX" secondItem="wj6-L2-5rJ" secondAttribute="centerX" priority="250" id="jND-q4-SK7"/>
                             <constraint firstAttribute="bottom" secondItem="ENV-0H-Fcc" secondAttribute="bottom" constant="2" id="jNf-6E-eDn"/>
                             <constraint firstItem="Ij9-fc-CLI" firstAttribute="leading" secondItem="wj6-L2-5rJ" secondAttribute="leading" id="mPy-45-VDH"/>
                             <constraint firstAttribute="trailing" secondItem="zaX-wZ-E3D" secondAttribute="trailing" priority="900" id="mhA-CM-51H"/>
@@ -651,7 +651,7 @@
                             <constraint firstAttribute="bottom" secondItem="e0p-7S-Gan" secondAttribute="bottom" priority="300" id="nuB-My-vJR"/>
                             <constraint firstItem="JKb-5c-xaF" firstAttribute="centerY" secondItem="wj6-L2-5rJ" secondAttribute="centerY" id="opE-0E-iRf"/>
                             <constraint firstItem="le0-Hn-ZAC" firstAttribute="centerY" secondItem="wj6-L2-5rJ" secondAttribute="centerY" id="wEn-eS-Lat"/>
-                            <constraint firstItem="ktI-g4-Uk6" firstAttribute="leading" relation="lessThanOrEqual" secondItem="le0-Hn-ZAC" secondAttribute="trailing" constant="45" id="yYJ-7M-8iq"/>
+                            <constraint firstAttribute="trailing" relation="greaterThanOrEqual" secondItem="le0-Hn-ZAC" secondAttribute="trailing" constant="45" id="yYJ-7M-8iq"/>
                         </constraints>
                     </view>
                     <connections>
@@ -659,7 +659,6 @@
                         <outlet property="activeBackgroundViewWithSuggestions" destination="Ij9-fc-CLI" id="JWC-g2-hrM"/>
                         <outlet property="activeOuterBorderView" destination="Zjk-bE-Xft" id="u6o-fc-V76"/>
                         <outlet property="activeTextFieldMinXConstraint" destination="bY3-LA-cuF" id="Sln-8O-mrq"/>
-                        <outlet property="addressBarPassiveTextCenterXConstraint" destination="GIk-xf-3Bn" id="R7K-GQ-6Nm"/>
                         <outlet property="addressBarTextField" destination="zaX-wZ-E3D" id="pfO-d4-i46"/>
                         <outlet property="addressBarTextTrailingConstraint" destination="3qw-n4-evE" id="Hgt-4m-g06"/>
                         <outlet property="buttonsContainerView" destination="bOl-8Z-hTh" id="UHc-27-JaK"/>
@@ -667,6 +666,7 @@
                         <outlet property="innerBorderView" destination="INL-zs-eEh" id="7aF-qt-wCX"/>
                         <outlet property="passiveTextField" destination="le0-Hn-ZAC" id="npL-R1-gmH"/>
                         <outlet property="passiveTextFieldMinXConstraint" destination="eJI-rp-ptx" id="HNu-7v-JQy"/>
+                        <outlet property="passiveTextFieldTrailingConstraint" destination="yYJ-7M-8iq" id="KeG-V4-gBQ"/>
                         <outlet property="progressIndicator" destination="4x6-Xn-fNv" id="Ydu-ob-RJz"/>
                         <outlet property="shadowView" destination="ktI-g4-Uk6" id="v81-tf-DGJ"/>
                         <outlet property="switchToTabBox" destination="JKb-5c-xaF" id="mhx-BL-hG3"/>

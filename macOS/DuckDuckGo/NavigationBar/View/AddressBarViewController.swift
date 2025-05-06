@@ -62,8 +62,8 @@ final class AddressBarViewController: NSViewController {
     @IBOutlet var switchToTabBoxMinXConstraint: NSLayoutConstraint!
     @IBOutlet var passiveTextFieldMinXConstraint: NSLayoutConstraint!
     @IBOutlet var activeTextFieldMinXConstraint: NSLayoutConstraint!
-    @IBOutlet var addressBarPassiveTextCenterXConstraint: NSLayoutConstraint!
     @IBOutlet var addressBarTextTrailingConstraint: NSLayoutConstraint!
+    @IBOutlet var passiveTextFieldTrailingConstraint: NSLayoutConstraint!
 
     private let popovers: NavigationBarPopovers?
     private(set) var addressBarButtonsViewController: AddressBarButtonsViewController?
@@ -656,18 +656,20 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
 
     func addressBarButtonsViewController(_ controller: AddressBarButtonsViewController, didUpdateAIChatButtonVisibility isVisible: Bool) {
         let isClearButtonVisible = addressBarButtonsViewController?.clearButton.isShown == true
-        let isBookmarkButtonVisible = addressBarButtonsViewController?.bookmarkButton.isShown == true
-        switch (isVisible, isClearButtonVisible || isBookmarkButtonVisible) {
+        switch (isVisible, isClearButtonVisible) {
         case (true, true):
             addressBarTextTrailingConstraint.constant = 80
+            passiveTextFieldTrailingConstraint.constant = 80
         case (true, false):
             addressBarTextTrailingConstraint.constant = 35
+            passiveTextFieldTrailingConstraint.constant = 80
         case (false, true):
             addressBarTextTrailingConstraint.constant = 45
+            passiveTextFieldTrailingConstraint.constant = 45
         case (false, false):
             addressBarTextTrailingConstraint.constant = 8
+            passiveTextFieldTrailingConstraint.constant = 45
         }
-        addressBarPassiveTextCenterXConstraint.constant = isVisible ? -20 : 0
     }
 
     func addressBarButtonsViewControllerClearButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {

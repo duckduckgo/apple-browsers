@@ -94,9 +94,7 @@ final class AppDependencyProvider: DependencyProvider {
     let networkProtectionKeychainTokenStore: NetworkProtectionKeychainTokenStore
     let networkProtectionTunnelController: NetworkProtectionTunnelController
 
-#if DEBUG
     var dbpIOSManager: DataBrokerProtectionIOSManager?
-#endif
 
     let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
 

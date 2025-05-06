@@ -162,7 +162,7 @@ final class OAuthClientTests: XCTestCase {
             _ = try await oAuthClient.getTokens(policy: .localForceRefresh)
             XCTFail("Error expected")
         } catch {
-            XCTAssertEqual(error as? Networking.OAuthClientError, .missingRefreshToken)
+            XCTAssertEqual(error as? Networking.OAuthClientError, .missingTokenContainer)
         }
     }
 

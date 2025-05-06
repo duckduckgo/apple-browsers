@@ -145,8 +145,7 @@ public protocol SubscriptionManagerV2: SubscriptionTokenProvider, SubscriptionAu
 
     func adopt(accessToken: String, refreshToken: String) async throws
 
-    /// Used only from the Mac Packet Tunnel Provider when a token is received during configuration
-    func adopt(tokenContainer: TokenContainer)
+    func adopt(tokenContainer: TokenContainer) async throws
 
     /// Remove the stored token container and the legacy token
     func removeLocalAccount()
@@ -421,7 +420,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             return resultTokenContainer
         } catch {
             switch error {
-            case OAuthClientError.missingTokens: // Expected when no tokens are available
+            case OAuthClientError.missingTokenContainer: // Expected when no tokens are available
                 throw SubscriptionManagerError.tokenUnavailable(error: error)
             case OAuthClientError.refreshTokenExpired, OAuthClientError.invalidTokenRequest:
                 pixelHandler.handle(pixelType: .getTokensError(policy, error))
@@ -438,7 +437,6 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     }
 
     func attemptTokenRecovery() async throws -> TokenContainer {
-
         guard let tokenRecoveryHandler else {
             throw SubscriptionManagerError.tokenUnavailable(error: nil)
         }
@@ -459,13 +457,18 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     }
 
     public func adopt(accessToken: String, refreshToken: String) async throws {
+        Logger.subscription.log("Adopting and decoding token container")
         let tokenContainer = try await oAuthClient.decode(accessToken: accessToken, refreshToken: refreshToken)
-        oAuthClient.adopt(tokenContainer: tokenContainer)
-        NotificationCenter.default.post(name: .accountDidSignIn, object: self, userInfo: nil)
+        try await adopt(tokenContainer: tokenContainer)
     }
 
-    public func adopt(tokenContainer: TokenContainer) {
+    public func adopt(tokenContainer: TokenContainer) async throws {
+        Logger.subscription.log("Adopting token container")
         oAuthClient.adopt(tokenContainer: tokenContainer)
+        // It’s important to force refresh the token to immediately branch from the one received.
+        // See discussion https://app.asana.com/0/1199230911884351/1208785842165508/f
+        _ = try await oAuthClient.getTokens(policy: .localForceRefresh)
+        NotificationCenter.default.post(name: .accountDidSignIn, object: self, userInfo: nil)
     }
 
     public func removeLocalAccount() {

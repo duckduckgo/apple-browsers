@@ -21,8 +21,7 @@ import os.log
 
 public enum OAuthClientError: Error, LocalizedError, Equatable {
     case internalError(String)
-    case missingTokens
-    case missingRefreshToken
+    case missingTokenContainer
     case unauthenticated
     /// When both access token and refresh token are expired
     case refreshTokenExpired
@@ -33,10 +32,8 @@ public enum OAuthClientError: Error, LocalizedError, Equatable {
         switch self {
         case .internalError(let error):
             return "Internal error: \(error)"
-        case .missingTokens:
-            return "No token available"
-        case .missingRefreshToken:
-            return "No refresh token available, please re-authenticate"
+        case .missingTokenContainer:
+            return "No tokens available"
         case .unauthenticated:
             return "The account is not authenticated, please re-authenticate"
         case .refreshTokenExpired:
@@ -225,11 +222,10 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         }
 
         switch policy {
-
         case .local:
             guard let localTokenContainer else {
                 Logger.OAuthClient.log("Tokens not found")
-                throw OAuthClientError.missingTokens
+                throw OAuthClientError.missingTokenContainer
             }
             Logger.OAuthClient.log("Local tokens found, expiry: \(localTokenContainer.decodedAccessToken.exp.value, privacy: .public)")
             return localTokenContainer
@@ -237,7 +233,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         case .localValid:
             guard let localTokenContainer else {
                 Logger.OAuthClient.log("Tokens not found")
-                throw OAuthClientError.missingTokens
+                throw OAuthClientError.missingTokenContainer
             }
             let tokenExpiryDate = localTokenContainer.decodedAccessToken.exp.value
             Logger.OAuthClient.log("Local tokens found, expiry: \(tokenExpiryDate, privacy: .public)")
@@ -256,15 +252,15 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
             }
 
         case .localForceRefresh:
-            guard let refreshToken = localTokenContainer?.refreshToken else {
-                Logger.OAuthClient.log("Refresh token not found")
-                throw OAuthClientError.missingRefreshToken
+            guard let localTokenContainer else {
+                Logger.OAuthClient.log("Tokens not found")
+                throw OAuthClientError.missingTokenContainer
             }
             do {
-                let refreshTokenResponse = try await authService.refreshAccessToken(clientID: Constants.clientID, refreshToken: refreshToken)
+                let refreshTokenResponse = try await authService.refreshAccessToken(clientID: Constants.clientID, refreshToken: localTokenContainer.refreshToken)
                 let refreshedTokens = try await decode(accessToken: refreshTokenResponse.accessToken, refreshToken: refreshTokenResponse.refreshToken)
                 Logger.OAuthClient.log("Tokens refreshed, expiry: \(refreshedTokens.decodedAccessToken.exp.value.description, privacy: .public)")
-                tokenStorage.tokenContainer = refreshedTokens
+                try tokenStorage.saveTokenContainer(refreshedTokens)
                 return refreshedTokens
             } catch OAuthServiceError.authAPIError(let code) where code == OAuthRequest.BodyErrorCode.invalidTokenRequest {
                 Logger.OAuthClient.error("Failed to refresh token: invalidTokenRequest")

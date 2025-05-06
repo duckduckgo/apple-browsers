@@ -1120,7 +1120,7 @@ struct UserText {
 
     // MARK: - Tooltips
 
-    static let autofillShortcutTooltip = NSLocalizedString("tooltip.autofill.shortcut", value: "Autofill", comment: "Tooltip for the autofill shortcut")
+    static let passwordsShortcutTooltip = NSLocalizedString("tooltip.passwords.shortcut", value: "Passwords", comment: "Tooltip for the passwords shortcut")
 
     static let homeButtonTooltip = NSLocalizedString("tooltip.home.button", value: "Home", comment: "Tooltip for the home button")
 
@@ -1153,8 +1153,12 @@ struct UserText {
 
     static let newTabTooltip = NSLocalizedString("tooltip.tab.new-tab", value: "Open a new tab", comment: "Tooltip for the New Tab button")
     static let clearBrowsingHistoryTooltip = NSLocalizedString("tooltip.fire.clear-browsing-history", value: "Clear browsing history", comment: "Tooltip for the Fire button")
-    static let navigateBackTooltip = NSLocalizedString("tooltip.navigation.back", value: "Show the previous page\nHold to show history", comment: "Tooltip for the Back button")
-    static let navigateForwardTooltip = NSLocalizedString("tooltip.navigation.forward", value: "Show the next page\nHold to show history", comment: "Tooltip for the Forward button")
+    static let navigateBackTooltipHeader = NSLocalizedString("tooltip.navigation.back.header", value: "Show the previous page", comment: "Tooltip for the Back button header")
+    static let navigateBackTooltipFooter = NSLocalizedString("tooltip.navigation.back.footer", value: "Click and hold to show history", comment: "Tooltip for the Back button footer")
+
+    static let navigateForwardTooltipHeader = NSLocalizedString("tooltip.navigation.forward.header", value: "Show the next page", comment: "Tooltip for the Forward button header")
+    static let navigateForwardTooltipFooter = NSLocalizedString("tooltip.navigation.forward.footer", value: "Click and hold to show history", comment: "Tooltip for the Forward button footer")
+
     static let refreshPageTooltip = NSLocalizedString("tooltip.navigation.refresh", value: "Reload this page", comment: "Tooltip for the Refresh button")
     static let stopLoadingTooltip = NSLocalizedString("tooltip.navigation.stop", value: "Stop loading this page", comment: "Tooltip for the Stop Navigation button")
     static let applicationMenuTooltip = NSLocalizedString("tooltip.application-menu.show", value: "Open application menu", comment: "Tooltip for the Application Menu button")
@@ -1547,4 +1551,31 @@ struct UserText {
     static let removeSuggestionTooltip = NSLocalizedString("remove.suggestion.tooltip", value: "Remove from browsing history", comment: "Tooltip for the button which removes the history entry from the history")
 
     static let switchToTab = NSLocalizedString("switch.to.tab", value: "Switch to Tab", comment: "Suggestion to switch to an open tab button title")
+
+    // MARK: - Storage Access
+
+    static let storageAccessPromptAllow = NSLocalizedString("storage.access.prompt.allow", value: "Allow", comment: "Allow sharing data between sites")
+    static let storageAccessPromptDontAllow = NSLocalizedString("storage.access.prompt.dont.allow", value: "Don't Allow", comment: "Don't allow sharing data between sites")
+    static let storageAccessPromptHeader = NSLocalizedString("storage.access.prompt.header", value: "Share data like login info between two sites?", comment: "Header of an alert asking users whether to share data between websites")
+    static let storageAccessPromptQuirkDomainsHeader = NSLocalizedString("storage.access.prompt.quirk.domains.header", value: "Share site data like login info between related sites?", comment: "Header of an alert asking users whether to share data between websites")
+
+    static func storageAccessPromptLabel1(currentDomain: String, requestingDomain: String) -> String {
+        let localized = NSLocalizedString("storage.access.prompt.label.1",
+                                          value: "%@ wants to use cookies and data from %@.",
+                                          comment: "Part 1 of an alert asking users whether to share cookies: [requestingdomain.com] wants to use cookies and data from [currentdomain.com].")
+        return String(format: localized, requestingDomain, currentDomain)
+    }
+    static func storageAccessPromptQuirkDomainsLabel1(requestingDomain: String) -> String {
+        let localized = NSLocalizedString("storage.access.prompt.quirk.domains.label.1",
+                                          value: "%@ wants to use cookies and data across sites they own, including:",
+                                          comment: "Part 1 of an alert for quirk domains asking users whether to share cookies: requestingDomain wants to use cookies and data across sites they own, including:")
+        return String(format: localized, requestingDomain)
+    }
+    static func storageAccessPromptLabel2(entity: String) -> String {
+        let localized = NSLocalizedString("storage.access.prompt.quirk.domains.label.2",
+                                          value: "If you pick “Don’t Allow” some site features may not work as expected, but it will reduce tracking by %@.",
+                                          comment: "Part 2 of an alert asking users whether to share cookies: If you pick “Don’t Allow” some site features may not work as expected, but it will reduce tracking by [requestingdomain].")
+        return String(format: localized, entity)
+    }
+    static let storageAccessPromptLabel3 = NSLocalizedString("storage.access.prompt.label.3", value: "DuckDuckGo protections still apply either way.", comment: "Part 3 of an alert asking users whether to share cookies: DuckDuckGo protections still apply either way.")
 }

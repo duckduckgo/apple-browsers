@@ -106,6 +106,7 @@ Fully automated native experience for seamless playback.
 - Full SERP integration
 - Automatic YouTube mode handling
 - Streamlined playback experience
+- The first time DuckPlayer is used, a welcome message is presented
 
 **Key Settings:**
 - Native UI: Enabled

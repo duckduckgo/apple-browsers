@@ -38,7 +38,7 @@ final class AddressBarButtonsViewController: NSViewController {
     weak var delegate: AddressBarButtonsViewControllerDelegate?
 
     private let accessibilityPreferences: AccessibilityPreferences
-    private let visualStyleManager: VisualStyleManagerProviding
+    private let visualStyle: VisualStyleProviding
 
     private var permissionAuthorizationPopover: PermissionAuthorizationPopover?
     private func permissionAuthorizationPopoverCreatingIfNeeded() -> PermissionAuthorizationPopover {
@@ -161,7 +161,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     var shouldShowDaxLogInAddressBar: Bool {
-        self.tabViewModel?.tab.content == .newtab && visualStyleManager.style.shouldShowLogoinInAddressBar
+        self.tabViewModel?.tab.content == .newtab && visualStyle.shouldShowLogoinInAddressBar
     }
 
     private var cancellables = Set<AnyCancellable>()
@@ -200,7 +200,7 @@ final class AddressBarButtonsViewController: NSViewController {
         self.onboardingPixelReporter = onboardingPixelReporter
         self.aiChatTabOpener = aiChatTabOpener
         self.aiChatMenuConfig = aiChatMenuConfig
-        self.visualStyleManager = visualStyleManager
+        self.visualStyle = visualStyleManager.style
         super.init(coder: coder)
     }
 
@@ -220,6 +220,8 @@ final class AddressBarButtonsViewController: NSViewController {
         setupDaxLogo()
 
         bookmarkButton.sendAction(on: .leftMouseDown)
+        bookmarkButton.normalTintColor = visualStyle.iconsColor
+        zoomButton.normalTintColor = visualStyle.iconsColor
         configureAIChatButton()
         privacyEntryPointButton.toolTip = UserText.privacyDashboardTooltip
     }
@@ -280,7 +282,7 @@ final class AddressBarButtonsViewController: NSViewController {
         if view.window?.isPopUpWindow == false {
             updateTrackingAreaForHover()
         }
-        self.buttonsWidth = buttonsContainer.frame.size.width + 4.0
+        self.buttonsWidth = buttonsContainer.frame.size.width + 10.0
     }
 
     func updateTrackingAreaForHover() {
@@ -706,7 +708,7 @@ final class AddressBarButtonsViewController: NSViewController {
         }
 
         let isAquaMode = NSApp.effectiveAppearance.name == .aqua
-        let style = visualStyleManager.style.privacyShieldStyleProvider
+        let style = visualStyle.privacyShieldStyleProvider
 
         trackerAnimationView1 = addAndLayoutAnimationViewIfNeeded(animationView: trackerAnimationView1,
                                                                   animationName: isAquaMode ? "trackers-1" : "dark-trackers-1",
@@ -837,6 +839,8 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func configureAIChatButton() {
+        aiChatButton.mouseOverColor = visualStyle.buttonMouseOverColor
+        aiChatButton.normalTintColor = visualStyle.iconsColor
         aiChatButton.setAccessibilityIdentifier("AddressBarButtonsViewController.aiChatButton")
         aiChatButton.menu = NSMenu {
             NSMenuItem(title: UserText.aiChatAddressBarHideButton,
@@ -892,15 +896,15 @@ final class AddressBarButtonsViewController: NSViewController {
         if let url = tabViewModel?.tab.content.userEditableUrl,
            isUrlBookmarked || bookmarkManager.isAnyUrlVariantBookmarked(url: url)
         {
-            bookmarkButton.image = visualStyleManager.style.addressBarIconsProvider.bookmarkFilledIcon
+            bookmarkButton.image = visualStyle.addressBarIconsProvider.bookmarkFilledIcon
             bookmarkButton.mouseOverTintColor = NSColor.bookmarkFilledTint
             bookmarkButton.toolTip = UserText.editBookmarkTooltip
             bookmarkButton.setAccessibilityValue("Bookmarked")
         } else {
             bookmarkButton.mouseOverTintColor = nil
-            bookmarkButton.image = visualStyleManager.style.addressBarIconsProvider.addBookmarkIcon
+            bookmarkButton.image = visualStyle.addressBarIconsProvider.addBookmarkIcon
             bookmarkButton.contentTintColor = nil
-            bookmarkButton.toolTip = UserText.addBookmarkTooltip
+            bookmarkButton.toolTip = ShortcutTooltip.bookmarkThisPage.value
             bookmarkButton.setAccessibilityValue("Unbookmarked")
         }
     }
@@ -916,7 +920,7 @@ final class AddressBarButtonsViewController: NSViewController {
             imageButton.image = .web
         case .browsing:
             if let favicon = tabViewModel.favicon {
-                imageButton.image = tabViewModel.favicon
+                imageButton.image = favicon
             } else if isTextFieldEditorFirstResponder {
                 imageButton.image = .web
             }
@@ -963,7 +967,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func updatePrivacyEntryPointIcon() {
-        let privacyShieldStyle = visualStyleManager.style.privacyShieldStyleProvider
+        let privacyShieldStyle = visualStyle.privacyShieldStyleProvider
         guard AppVersion.runType.requiresEnvironment else { return }
         privacyEntryPointButton.image = nil
 

@@ -146,10 +146,6 @@ final class DefaultVPNMetadataCollector: VPNMetadataCollector {
             knownFailureObserver: KnownFailureObserverThroughDistributedNotifications()
         )
 
-        // Force refresh just in case. A refresh is requested when the IPC client is created, but distributed notifications don't guarantee delivery
-        // so we'll play it safe and add one more attempt.
-        self.statusReporter.forceRefresh()
-
         self.settings = VPNSettings(defaults: defaults)
         updateSettings()
     }

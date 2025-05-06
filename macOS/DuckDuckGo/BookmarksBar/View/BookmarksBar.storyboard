@@ -154,6 +154,7 @@
                         </userDefinedRuntimeAttributes>
                     </view>
                     <connections>
+                        <outlet property="backgroundColorView" destination="R54-3G-cms" id="6vA-l4-sG5"/>
                         <outlet property="bookmarksBarCollectionView" destination="vwg-NL-UPk" id="1LG-QE-Dgd"/>
                         <outlet property="clippedItemsIndicator" destination="Mgr-xJ-Pl5" id="4ww-Po-dNb"/>
                         <outlet property="importBookmarksButton" destination="YdB-zl-3Cf" id="phi-lN-qHs"/>

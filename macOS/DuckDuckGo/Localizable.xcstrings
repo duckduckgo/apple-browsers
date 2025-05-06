@@ -1540,10 +1540,58 @@
       "comment" : "Button to hide duck.ai shortcut in address bar",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Duck.ai-Shortcut ausblenden"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Hide Duck.ai Shortcut"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar acceso directo a Duck.ai"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Masquer le raccourci Duck.ai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nascondi scorciatoia Duck.ai"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Snelkoppeling voor Duck.ai verbergen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ukryj skrót Duck.ai"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ocultar atalho do Duck.ai"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Скрыть ярлык Duck.ai"
           }
         }
       }
@@ -6981,7 +7029,56 @@
       }
     },
     "BETA" : {
-
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beta"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beta"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beta"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beta"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beta"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wersja beta"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beta"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Бета"
+          }
+        }
+      }
     },
     "Birthday" : {
       "comment" : "Title of the section of the Identities manager where the user can add/modify a date of birth",
@@ -13102,10 +13199,58 @@
       "comment" : "Description of a button which copies version to clipboard when clicked",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zum Kopieren der Version anklicken"
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Click to copy version"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Haz clic para copiar versión"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cliquer pour copier la version"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clicca per copiare la versione"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klik om versie te kopiëren"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kliknij, aby skopiować wersję"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clica para copiar a versão"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нажмите, чтобы скопировать версию"
           }
         }
       }
@@ -65894,6 +66039,102 @@
         }
       }
     },
+    "storage.access.prompt.allow" : {
+      "comment" : "Allow sharing data between sites",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Allow"
+          }
+        }
+      }
+    },
+    "storage.access.prompt.dont.allow" : {
+      "comment" : "Don't allow sharing data between sites",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Don't Allow"
+          }
+        }
+      }
+    },
+    "storage.access.prompt.header" : {
+      "comment" : "Header of an alert asking users whether to share data between websites",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Share data like login info between two sites?"
+          }
+        }
+      }
+    },
+    "storage.access.prompt.label.1" : {
+      "comment" : "Part 1 of an alert asking users whether to share cookies: [requestingdomain.com] wants to use cookies and data from [currentdomain.com].",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ wants to use cookies and data from %2$@."
+          }
+        }
+      }
+    },
+    "storage.access.prompt.label.3" : {
+      "comment" : "Part 3 of an alert asking users whether to share cookies: DuckDuckGo protections still apply either way.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo protections still apply either way."
+          }
+        }
+      }
+    },
+    "storage.access.prompt.quirk.domains.header" : {
+      "comment" : "Header of an alert asking users whether to share data between websites",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Share site data like login info between related sites?"
+          }
+        }
+      }
+    },
+    "storage.access.prompt.quirk.domains.label.1" : {
+      "comment" : "Part 1 of an alert for quirk domains asking users whether to share cookies: requestingDomain wants to use cookies and data across sites they own, including:",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%@ wants to use cookies and data across sites they own, including:"
+          }
+        }
+      }
+    },
+    "storage.access.prompt.quirk.domains.label.2" : {
+      "comment" : "Part 2 of an alert asking users whether to share cookies: If you pick “Don’t Allow” some site features may not work as expected, but it will reduce tracking by [requestingdomain].",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "If you pick “Don’t Allow” some site features may not work as expected, but it will reduce tracking by %@."
+          }
+        }
+      }
+    },
     "submit" : {
       "comment" : "Submit button",
       "extractionState" : "extracted_with_value",
@@ -67961,7 +68202,7 @@
     },
     "tooltip.autofill.shortcut" : {
       "comment" : "Tooltip for the autofill shortcut",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -69161,7 +69402,7 @@
     },
     "tooltip.navigation.back" : {
       "comment" : "Tooltip for the Back button",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -69219,9 +69460,129 @@
         }
       }
     },
+    "tooltip.navigation.back.footer" : {
+      "comment" : "Tooltip for the Back button footer",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klicken und halten, um den Verlauf anzuzeigen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Click and hold to show history"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Haz clic y mantén pulsado para mostrar el historial"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cliquer longuement pour afficher l'historique"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clicca e tieni premuto per mostrare la cronologia"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klik en houd vast om de geschiedenis te tonen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kliknij i przytrzymaj, aby wyświetlić historię"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clicar e segurar para mostrar o histórico"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Удерживайте нажатие, чтобы увидеть историю"
+          }
+        }
+      }
+    },
+    "tooltip.navigation.back.header" : {
+      "comment" : "Tooltip for the Back button header",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vorherige Seite anzeigen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show the previous page"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar la página anterior"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher la page précédente"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra la pagina precedente"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vorige pagina tonen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokaż poprzednią stronę"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar a página anterior"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показать предыдущую страницу"
+          }
+        }
+      }
+    },
     "tooltip.navigation.forward" : {
       "comment" : "Tooltip for the Forward button",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -69275,6 +69636,126 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Показать следующую страницу\nУдерживайте эту кнопку для просмотра истории"
+          }
+        }
+      }
+    },
+    "tooltip.navigation.forward.footer" : {
+      "comment" : "Tooltip for the Forward button footer",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klicken und halten, um den Verlauf anzuzeigen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Click and hold to show history"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Haz clic y mantén pulsado para mostrar el historial"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cliquer longuement pour afficher l'historique"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clicca e tieni premuto per mostrare la cronologia"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Klik en houd vast om de geschiedenis te tonen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Kliknij i przytrzymaj, aby wyświetlić historię"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Clicar e segurar para mostrar o histórico"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нажмите и удерживайте, чтобы увидеть историю"
+          }
+        }
+      }
+    },
+    "tooltip.navigation.forward.header" : {
+      "comment" : "Tooltip for the Forward button header",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nächste Seite anzeigen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show the next page"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Muestra la página siguiente"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afficher la page suivante"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostra la prossima pagina"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Volgende pagina tonen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pokaż następną stronę"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mostrar a página seguinte"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Показать следующую страницу"
           }
         }
       }
@@ -69395,6 +69876,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Остановить загрузку страницы"
+          }
+        }
+      }
+    },
+    "tooltip.passwords.shortcut" : {
+      "comment" : "Tooltip for the passwords shortcut",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Passwörter"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Passwords"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Contraseñas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mots de passe"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Password"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wachtwoorden"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hasła"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Palavras-passe"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Пароли"
           }
         }
       }

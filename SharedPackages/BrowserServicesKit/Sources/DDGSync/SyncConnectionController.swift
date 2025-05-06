@@ -96,6 +96,7 @@ public actor SyncConnectionController: SyncConnectionControlling {
 
     private var exchanger: RemoteKeyExchanging?
     private var connector: RemoteConnecting?
+    private var isCodeHandlingInFlight: Bool = false
 
     private var recoveryCode: String {
         guard let code = syncService.account?.recoveryCode else {
@@ -140,6 +141,13 @@ public actor SyncConnectionController: SyncConnectionControlling {
 
     @discardableResult
     public func syncCodeEntered(code: String) async -> Bool {
+        guard !isCodeHandlingInFlight else {
+            return false
+        }
+        isCodeHandlingInFlight = true
+        defer {
+            isCodeHandlingInFlight = false
+        }
         let syncCode: SyncCode
         do {
             syncCode = try SyncCode.decodeBase64String(code)

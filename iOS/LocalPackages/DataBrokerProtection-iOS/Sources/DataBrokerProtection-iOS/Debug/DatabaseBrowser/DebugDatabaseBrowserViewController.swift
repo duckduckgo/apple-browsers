@@ -19,14 +19,15 @@
 
 import Foundation
 import SwiftUI
+import DataBrokerProtectionCore
 
 public final class DebugDatabaseBrowserViewController: UIHostingController<DebugDatabaseBrowserView> {
 
-    let dataManager: DataBrokerProtectionDataManager
+    let database: DataBrokerProtectionRepository
 
-    public init(dataManager: DataBrokerProtectionDataManager) {
-        self.dataManager = dataManager
-        let viewModel = DebugDatabaseBrowserViewModel(dataManager: self.dataManager)
+    public init(database: DataBrokerProtectionRepository) {
+        self.database = database
+        let viewModel = DebugDatabaseBrowserViewModel(database: self.database)
         let contentView = DebugDatabaseBrowserView(viewModel: viewModel)
         super.init(rootView: contentView)
     }

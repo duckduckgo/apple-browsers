@@ -25,16 +25,16 @@ import PixelKit
 final class DebugDatabaseBrowserViewModel: ObservableObject {
     @Published var selectedTable: DataBrokerDatabaseBrowserData.Table?
     @Published var tables: [DataBrokerDatabaseBrowserData.Table]
-    private let dataManager: DataBrokerProtectionDataManager?
+    private let database: DataBrokerProtectionRepository?
 
-    internal init(dataManager: DataBrokerProtectionDataManager, tables: [DataBrokerDatabaseBrowserData.Table]? = nil) {
+    internal init(database: DataBrokerProtectionRepository, tables: [DataBrokerDatabaseBrowserData.Table]? = nil) {
 
         if let tables = tables {
             self.tables = tables
             self.selectedTable = tables.first
-            self.dataManager = nil
+            self.database = nil
         } else {
-            self.dataManager = dataManager
+            self.database = database
             self.tables = [DataBrokerDatabaseBrowserData.Table]()
             self.selectedTable = nil
             updateTables()
@@ -48,11 +48,11 @@ final class DebugDatabaseBrowserViewModel: ObservableObject {
     }
 
     private func updateTables() {
-        guard let dataManager = self.dataManager else { return }
+        guard let database = self.database else { return }
 
         Task {
-            guard let data = try? dataManager.fetchBrokerProfileQueryData(ignoresCache: true),
-                  let attempts = try? dataManager.fetchAllOptOutAttempts() else {
+            guard let data = try? database.fetchAllBrokerProfileQueryData(),
+                  let attempts = try? database.fetchAllAttempts() else {
                 assertionFailure("DataManager error during DataBrokerDatavaseBrowserViewModel.updateTables")
                 return
             }
@@ -140,12 +140,6 @@ struct DataBrokerDatabaseBrowserData {
         }
     }
 
-}
-
-extension DataBrokerProtectionDataManager {
-    func fetchAllOptOutAttempts() throws -> [AttemptInformation] {
-        try database.fetchAllAttempts()
-    }
 }
 
 extension AttemptInformation: Comparable {

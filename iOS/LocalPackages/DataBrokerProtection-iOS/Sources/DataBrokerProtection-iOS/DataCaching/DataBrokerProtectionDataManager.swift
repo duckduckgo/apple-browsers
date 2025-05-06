@@ -68,7 +68,7 @@ public class DataBrokerProtectionDataManager: DataBrokerProtectionDataManaging {
 
     public weak var delegate: DataBrokerProtectionDataManagerDelegate?
 
-    internal let database: DataBrokerProtectionRepository
+    public let database: DataBrokerProtectionRepository
 
     required public init(database: DataBrokerProtectionRepository,
                          profileSavedNotifier: DBPProfileSavedNotifier? = nil) {

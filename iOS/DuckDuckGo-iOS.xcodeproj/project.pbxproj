@@ -1088,6 +1088,7 @@
 		C159DF072A430B60007834BB /* EmailSignupViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C159DF062A430B60007834BB /* EmailSignupViewController.swift */; };
 		C160544129D6044D00B715A1 /* AutofillInterfaceUsernameTruncator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C160544029D6044D00B715A1 /* AutofillInterfaceUsernameTruncator.swift */; };
 		C162A1B72D79F71500C34BAB /* SubscriptionPagesUseSubscriptionFeatureOnboardingPromotionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C162A1B62D79F71500C34BAB /* SubscriptionPagesUseSubscriptionFeatureOnboardingPromotionTests.swift */; };
+		C163DC962DC92FDC0026852D /* OnboardingPrivacyProPromotionHelpingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C163DC952DC92FDC0026852D /* OnboardingPrivacyProPromotionHelpingTests.swift */; };
 		C1641EAF2BC2F5140012607A /* ImportPasswordsViaSyncViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1641EAE2BC2F5140012607A /* ImportPasswordsViaSyncViewController.swift */; };
 		C1641EB12BC2F52B0012607A /* ImportPasswordsViaSyncView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1641EB02BC2F52B0012607A /* ImportPasswordsViaSyncView.swift */; };
 		C1641EB32BC2F53C0012607A /* ImportPasswordsViaSyncViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1641EB22BC2F53C0012607A /* ImportPasswordsViaSyncViewModel.swift */; };
@@ -3156,6 +3157,7 @@
 		C162A1B62D79F71500C34BAB /* SubscriptionPagesUseSubscriptionFeatureOnboardingPromotionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPagesUseSubscriptionFeatureOnboardingPromotionTests.swift; sourceTree = "<group>"; };
 		C163677A2D08638C001D1094 /* nb */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = nb; path = nb.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C163677B2D08638C001D1094 /* nb */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = nb; path = nb.lproj/Localizable.strings; sourceTree = "<group>"; };
+		C163DC952DC92FDC0026852D /* OnboardingPrivacyProPromotionHelpingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingPrivacyProPromotionHelpingTests.swift; sourceTree = "<group>"; };
 		C1641EAE2BC2F5140012607A /* ImportPasswordsViaSyncViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportPasswordsViaSyncViewController.swift; sourceTree = "<group>"; };
 		C1641EB02BC2F52B0012607A /* ImportPasswordsViaSyncView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportPasswordsViaSyncView.swift; sourceTree = "<group>"; };
 		C1641EB22BC2F53C0012607A /* ImportPasswordsViaSyncViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportPasswordsViaSyncViewModel.swift; sourceTree = "<group>"; };
@@ -6286,6 +6288,14 @@
 			path = OnboardingPromotionExperiment;
 			sourceTree = "<group>";
 		};
+		C163DC922DC92F880026852D /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				C163DC952DC92FDC0026852D /* OnboardingPrivacyProPromotionHelpingTests.swift */,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
 		C1641EAD2BC2F46C0012607A /* ImportViaSync */ = {
 			isa = PBXGroup;
 			children = (
@@ -7155,6 +7165,7 @@
 		F12790DD1EBBDDF3001D3AEC /* Tutorials */ = {
 			isa = PBXGroup;
 			children = (
+				C163DC922DC92F880026852D /* Onboarding */,
 				85C29705247BDCE60063A335 /* Dax */,
 				85C11E4D2090893900BFFEB4 /* HomeRow */,
 			);
@@ -9781,6 +9792,7 @@
 				9F7CFF7D2C89B69A0012833E /* AppIconPickerViewModelTests.swift in Sources */,
 				B6AD9E3A28D456820019CDE9 /* PrivacyConfigurationManagerMock.swift in Sources */,
 				F189AED71F18F6DE001EBAE1 /* TabTests.swift in Sources */,
+				C163DC962DC92FDC0026852D /* OnboardingPrivacyProPromotionHelpingTests.swift in Sources */,
 				6FABAA692C6116FD003762EC /* NewTabPageShortcutsSettingsStorageTests.swift in Sources */,
 				9F5E5AB22C3E606D00165F54 /* ContextualOnboardingPresenterTests.swift in Sources */,
 				9F4CC5172C48B8D4006A96EB /* TabViewControllerDaxDialogTests.swift in Sources */,

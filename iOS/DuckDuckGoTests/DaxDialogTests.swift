@@ -899,7 +899,7 @@ final class DaxDialog: XCTestCase {
         settings.browsingFinalDialogShown = true
         settings.privacyProPromotionDialogShown = false
         let mockOnboardingPromotionHelper = MockOnboardingPrivacyProPromotionHelper()
-        mockOnboardingPromotionHelper._shouldDisplay = true
+        mockOnboardingPromotionHelper.shouldDisplayValue = true
         let sut = makeSUT(settings: settings, onboardingPrivacyProPromotionHelper: mockOnboardingPromotionHelper)
 
         // WHEN
@@ -915,7 +915,7 @@ final class DaxDialog: XCTestCase {
         settings.browsingFinalDialogShown = true
         settings.privacyProPromotionDialogShown = false
         let mockOnboardingPromotionHelper = MockOnboardingPrivacyProPromotionHelper()
-        mockOnboardingPromotionHelper._shouldDisplay = false
+        mockOnboardingPromotionHelper.shouldDisplayValue = false
         let sut = makeSUT(settings: settings, onboardingPrivacyProPromotionHelper: mockOnboardingPromotionHelper)
 
         // WHEN
@@ -931,7 +931,7 @@ final class DaxDialog: XCTestCase {
         settings.browsingFinalDialogShown = true
         settings.privacyProPromotionDialogShown = true
         let mockOnboardingPromotionHelper = MockOnboardingPrivacyProPromotionHelper()
-        mockOnboardingPromotionHelper._shouldDisplay = true
+        mockOnboardingPromotionHelper.shouldDisplayValue = true
         let sut = makeSUT(settings: settings, onboardingPrivacyProPromotionHelper: mockOnboardingPromotionHelper)
 
         // WHEN
@@ -947,7 +947,7 @@ final class DaxDialog: XCTestCase {
         settings.browsingFinalDialogShown = false
         settings.privacyProPromotionDialogShown = false
         let mockOnboardingPromotionHelper = MockOnboardingPrivacyProPromotionHelper()
-        mockOnboardingPromotionHelper._shouldDisplay = true
+        mockOnboardingPromotionHelper.shouldDisplayValue = true
         let sut = makeSUT(settings: settings, onboardingPrivacyProPromotionHelper: mockOnboardingPromotionHelper)
 
         // WHEN
@@ -989,7 +989,7 @@ final class DaxDialog: XCTestCase {
         settings.browsingFinalDialogShown = true
         settings.privacyProPromotionDialogShown = false
         let mockOnboardingPromotionHelper = MockOnboardingPrivacyProPromotionHelper()
-        mockOnboardingPromotionHelper._shouldDisplay = true
+        mockOnboardingPromotionHelper.shouldDisplayValue = true
         let sut = makeSUT(settings: settings, onboardingPrivacyProPromotionHelper: mockOnboardingPromotionHelper)
 
         // WHEN
@@ -1144,10 +1144,10 @@ final class DaxDialog: XCTestCase {
 
 final class MockOnboardingPrivacyProPromotionHelper: OnboardingPrivacyProPromotionHelping {
 
-    var _shouldDisplay: Bool = false
+    var shouldDisplayValue: Bool = false
 
     var shouldDisplay: Bool {
-        _shouldDisplay
+        shouldDisplayValue
     }
 
     func redirectURLComponents() -> URLComponents? {

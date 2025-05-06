@@ -57,22 +57,22 @@ public protocol SyncConnectionControlling {
     /**
      Returns a device ID, public key and secret key ready for display and allows callers attempt to fetch the transmitted public key
      */
-    func startExchangeMode() throws -> String
+    func startExchangeMode() async throws -> String
 
     /**
      Stops polling for transmitted public key
      */
-    func stopExchangeMode()
+    func stopExchangeMode() async
 
     /**
      Returns a device id and temporary secret key ready for display and allows callers attempt to fetch the transmitted recovery key.
      */
-    func startConnectMode() throws -> String
+    func startConnectMode() async throws -> String
 
     /**
      Stops polling for transmitted recovery key
      */
-    func stopConnectMode()
+    func stopConnectMode() async
 
     /**
      Handles a scanned or pasted key and starts excange, recovery or connect flow
@@ -86,7 +86,7 @@ public protocol SyncConnectionControlling {
     func loginAndShowDeviceConnected(recoveryKey: SyncCode.RecoveryKey, isRecovery: Bool) async throws
 }
 
-final public class SyncConnectionController: SyncConnectionControlling {
+public actor SyncConnectionController: SyncConnectionControlling {
     private let deviceName: String
     private let deviceType: String
     private let syncService: DDGSyncing
@@ -185,7 +185,7 @@ final public class SyncConnectionController: SyncConnectionControlling {
                 }
                 exchangeMessage = message
             } catch {
-                delegate?.controllerDidError(.failedToFetchPublicKey, underlyingError: error)
+                await delegate?.controllerDidError(.failedToFetchPublicKey, underlyingError: error)
                 return
             }
 
@@ -193,11 +193,11 @@ final public class SyncConnectionController: SyncConnectionControlling {
             do {
                 try await syncService.transmitExchangeRecoveryKey(for: exchangeMessage)
             } catch {
-                delegate?.controllerDidError(.failedToTransmitExchangeRecoveryKey, underlyingError: error)
+                await delegate?.controllerDidError(.failedToTransmitExchangeRecoveryKey, underlyingError: error)
             }
 
-            delegate?.controllerDidFinishTransmittingRecoveryKey()
-            exchanger?.stopPolling()
+            await delegate?.controllerDidFinishTransmittingRecoveryKey()
+            await exchanger?.stopPolling()
         }
     }
 
@@ -211,16 +211,16 @@ final public class SyncConnectionController: SyncConnectionControlling {
                 }
                 recoveryKey = key
             } catch {
-                delegate?.controllerDidError(.failedToFetchConnectRecoveryKey, underlyingError: error)
+                await delegate?.controllerDidError(.failedToFetchConnectRecoveryKey, underlyingError: error)
                 return
             }
 
-            delegate?.controllerDidReceiveRecoveryKey()
+            await delegate?.controllerDidReceiveRecoveryKey()
 
             do {
                 try await loginAndShowDeviceConnected(recoveryKey: recoveryKey, isRecovery: false)
             } catch {
-                delegate?.controllerDidError(.failedToLogIn, underlyingError: error)
+                await delegate?.controllerDidError(.failedToLogIn, underlyingError: error)
             }
         }
     }

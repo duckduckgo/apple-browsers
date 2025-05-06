@@ -420,10 +420,10 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
         onEndFlow = { [weak self] in
             self?.connector?.stopPolling()
             self?.connector = nil
-            self?.connectionController.stopConnectMode()
-            self?.connectionController.stopExchangeMode()
 
             Task { @MainActor in
+                await self?.connectionController.stopConnectMode()
+                await self?.connectionController.stopExchangeMode()
                 guard let window = syncWindowController.window, let sheetParent = window.sheetParent else {
                     assertionFailure("window or sheet parent not present")
                     return
@@ -568,7 +568,7 @@ extension SyncPreferences: ManagementDialogModelDelegate {
     private func newStartPollingForRecoveryKey(isRecovery: Bool) {
         Task { @MainActor in
             do {
-                self.codeToDisplay = try connectionController.startConnectMode()
+                self.codeToDisplay = try await connectionController.startConnectMode()
                 if isRecovery {
                     self.presentDialog(for: .enterRecoveryCode(code: codeToDisplay ?? ""))
                 } else {
@@ -883,7 +883,7 @@ extension SyncPreferences: ManagementDialogModelDelegate {
     private func startPollingForPublicKey() {
         Task { @MainActor in
             do {
-                self.codeToDisplay = try connectionController.startExchangeMode()
+                self.codeToDisplay = try await connectionController.startExchangeMode()
                 self.presentDialog(for: .syncWithAnotherDevice(code: codeToDisplay ?? ""))
             } catch {
                 managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToOtherDevice, description: error.localizedDescription)

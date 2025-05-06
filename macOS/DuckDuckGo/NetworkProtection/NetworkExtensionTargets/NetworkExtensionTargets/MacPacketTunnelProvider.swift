@@ -465,7 +465,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                                               apiService: APIServiceFactory.makeAPIServiceForAuthV2())
         let tokenStoreV2 = NetworkProtectionKeychainTokenStoreV2(keychainType: Bundle.keychainType,
                                                                  serviceName: Self.tokenContainerServiceName,
-                                                                 errorEvents: debugEvents)
+                                                                 errorPixelHandler: debugEvents)
         let authClient = DefaultOAuthClient(tokensStorage: tokenStoreV2,
                                             legacyTokenStorage: nil,
                                             authService: authService)

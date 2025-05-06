@@ -99,7 +99,7 @@ public class DataBrokerProtectionIOSManagerProvider {
         }
 
         let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault)
-        // let dataManager = DataBrokerProtectionDataManager(database: database)
+        let dataManager = DataBrokerProtectionDataManager(database: database)
 
         let operationQueue = OperationQueue()
         let operationsBuilder = DefaultDataBrokerOperationsCreator()
@@ -140,19 +140,21 @@ public class DataBrokerProtectionIOSManagerProvider {
             queueManager: queueManager,
             operationDependencies: operationDependencies,
             sharedPixelsHandler: sharedPixelsHandler,
-            privacyConfigManager: privacyConfigurationManager
-            // dataManager: dataManager
+            privacyConfigManager: privacyConfigurationManager,
+            dataManager: dataManager
         )
     }
 }
 
 public final class DataBrokerProtectionIOSManager {
 
+    public static var shared: DataBrokerProtectionIOSManager?
+
     private let queueManager: DataBrokerProtectionQueueManager
     private let operationDependencies: DataBrokerOperationDependencies
     private let sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>
     private let privacyConfigManager: PrivacyConfigurationManaging
-    // public let dataManager: DataBrokerProtectionDataManager
+    public let dataManager: DataBrokerProtectionDataManager
 
     // Things that definitely shouldn't exist long term
     var communicationLayer: DBPUICommunicationLayer!
@@ -160,8 +162,8 @@ public final class DataBrokerProtectionIOSManager {
     init(queueManager: DataBrokerProtectionQueueManager,
          operationDependencies: DataBrokerOperationDependencies,
          sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-         privacyConfigManager: PrivacyConfigurationManaging
-         // dataManager: DataBrokerProtectionDataManager
+         privacyConfigManager: PrivacyConfigurationManaging,
+         dataManager: DataBrokerProtectionDataManager
     ) {
         self.queueManager = queueManager
         self.operationDependencies = operationDependencies

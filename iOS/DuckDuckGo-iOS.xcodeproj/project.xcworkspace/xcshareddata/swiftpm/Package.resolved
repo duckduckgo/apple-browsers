@@ -60,7 +60,7 @@
       "location" : "https://github.com/duckduckgo/duckduckgo-autofill.git",
       "state" : {
         "branch" : "dbajpeyi/fix/ios-prompt-cc-once-and-icons",
-        "revision" : "ba960c7c60062ff2994a13ca962fa612e8e5141f"
+        "revision" : "0d0d804f375703722b20ec86e12eb0087c9eeb35"
       }
     },
     {

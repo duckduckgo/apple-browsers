@@ -28,6 +28,7 @@ import Subscription
 import UserNotifications
 import DataBrokerProtectionCore
 import WebKit
+import BackgroundTasks
 
 public class DefaultOperationEventsHandler: EventMapping<OperationEvent> {
 
@@ -173,11 +174,40 @@ public final class DataBrokerProtectionIOSManager {
         self.dataManager = dataManager
 
          */
+        registerBackgroundTaskHandler()
+    }
+
+    private func registerBackgroundTaskHandler() {
+        BGTaskScheduler.shared.register(forTaskWithIdentifier: "com.duckduckgo.app.dbp.backgroundProcessing", using: nil) { task in
+            self.handleBGProcessingTask(task: task)
+        }
     }
 
     public func start() {
         queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, operationDependencies: operationDependencies, errorHandler: nil) { [self] in
             queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, operationDependencies: operationDependencies, errorHandler: nil, completion: nil)
         }
+    }
+
+    public func scheduleBGProcessingTask() {
+        let request = BGProcessingTaskRequest(identifier: "com.duckduckgo.app.dbp.backgroundProcessing")
+        request.requiresNetworkConnectivity = true
+
+        do {
+            try BGTaskScheduler.shared.submit(request)
+        } catch {
+        }
+    }
+
+    func handleBGProcessingTask(task: BGTask) {
+        // let startTime = Date.now
+
+        task.expirationHandler = {
+            // let timeTaken = Date.now.timeIntervalSince(startTime)
+            self.scheduleBGProcessingTask()
+            task.setTaskCompleted(success: false)
+        }
+
+        queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, operationDependencies: operationDependencies, errorHandler: nil, completion: nil)
     }
 }

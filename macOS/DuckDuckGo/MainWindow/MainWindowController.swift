@@ -59,8 +59,8 @@ final class MainWindowController: NSWindowController {
         let minHeight: CGFloat = 300
 
         // Calculate 95% of the work area
-        var desiredWidth  = monitorSize.width  * 0.95
-        var desiredHeight = monitorSize.height * 0.95
+        var desiredWidth  = monitorSize.width  * 0.90
+        var desiredHeight = monitorSize.height * 0.90
 
         // Enforce minimums
         desiredWidth  = max(desiredWidth, minWidth)

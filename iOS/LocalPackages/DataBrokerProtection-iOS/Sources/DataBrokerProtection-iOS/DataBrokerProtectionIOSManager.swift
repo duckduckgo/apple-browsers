@@ -207,6 +207,7 @@ public final class DataBrokerProtectionIOSManager {
         }
 
         registerBackgroundTaskHandler()
+        start()
     }
 
     private func validateRunPrerequisites() async -> Bool {

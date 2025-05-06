@@ -1392,7 +1392,7 @@ final class NavigationBarViewController: NSViewController {
 
     @objc
     func overflowMenuRequestedAIChat(_ menu: NSMenu) {
-        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab()
+        addressBarViewController?.addressBarButtonsViewController?.aiChatButtonAction(menu)
     }
 }
 

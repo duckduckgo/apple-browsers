@@ -28,8 +28,6 @@ public final class PreferencesSubscriptionSettingsModel: ObservableObject {
     @Published var subscriptionDetails: String?
     @Published var subscriptionStatus: PrivacyProSubscription.Status?
 
-    @Published var subscriptionStorefrontRegion: SubscriptionRegion = .usa
-
     @Published var shouldShowVPN: Bool = false
     @Published var shouldShowDBP: Bool = false
     @Published var shouldShowITR: Bool = false
@@ -44,17 +42,12 @@ public final class PreferencesSubscriptionSettingsModel: ObservableObject {
     private var subscriptionPlatform: PrivacyProSubscription.Platform?
     var currentPurchasePlatform: SubscriptionEnvironment.PurchasePlatform { subscriptionManager.currentEnvironment.purchasePlatform }
 
-    lazy var sheetModel = SubscriptionAccessViewModel(actionHandlers: sheetActionHandler,
-                                                      purchasePlatform: subscriptionManager.currentEnvironment.purchasePlatform)
-
     private let subscriptionManager: SubscriptionManager
     private var accountManager: AccountManager {
         subscriptionManager.accountManager
     }
     private let openURLHandler: (URL) -> Void
     public let userEventHandler: (PreferencesSubscriptionModel.UserEvent) -> Void
-    private let sheetActionHandler: SubscriptionAccessActionHandlers
-
     private var fetchSubscriptionDetailsTask: Task<(), Never>?
 
     private var entitlementsObserver: Any?
@@ -100,13 +93,10 @@ public final class PreferencesSubscriptionSettingsModel: ObservableObject {
 
     public init(openURLHandler: @escaping (URL) -> Void,
                 userEventHandler: @escaping (PreferencesSubscriptionModel.UserEvent) -> Void,
-                sheetActionHandler: SubscriptionAccessActionHandlers,
                 subscriptionManager: SubscriptionManager) {
         self.subscriptionManager = subscriptionManager
         self.openURLHandler = openURLHandler
         self.userEventHandler = userEventHandler
-        self.sheetActionHandler = sheetActionHandler
-        self.subscriptionStorefrontRegion = currentStorefrontRegion()
 
         Task {
             await self.updateSubscription(cachePolicy: .returnCacheDataElseLoad)
@@ -217,21 +207,6 @@ public final class PreferencesSubscriptionSettingsModel: ObservableObject {
     }
 
     @MainActor
-    func openVPN() {
-        userEventHandler(.openVPN)
-    }
-
-    @MainActor
-    func openPersonalInformationRemoval() {
-        userEventHandler(.openDB)
-    }
-
-    @MainActor
-    func openIdentityTheftRestoration() {
-        userEventHandler(.openITR)
-    }
-
-    @MainActor
     func openLearnMore() {
         let learnMoreURL = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email")!
         openURLHandler(learnMoreURL)
@@ -312,7 +287,7 @@ public final class PreferencesSubscriptionSettingsModel: ObservableObject {
 
     @MainActor
     func openPrivacyPolicy() {
-        openURLHandler(URL(string: "https://duckduckgo.com/pro/privacy-terms")!)
+        openURLHandler(subscriptionManager.url(for: .privacyPolicy))
     }
 
     @MainActor
@@ -345,21 +320,6 @@ public final class PreferencesSubscriptionSettingsModel: ObservableObject {
             await self?.fetchEmailAndRemoteEntitlements()
             await self?.updateSubscription(cachePolicy: .reloadIgnoringLocalCacheData)
         }
-    }
-
-    private func currentStorefrontRegion() -> SubscriptionRegion {
-        var region: SubscriptionRegion?
-
-        switch currentPurchasePlatform {
-        case .appStore:
-            if #available(macOS 12.0, *) {
-                region = subscriptionManager.storePurchaseManager().currentStorefrontRegion
-            }
-        case .stripe:
-            region = .usa
-        }
-
-        return region ?? .usa
     }
 
     @MainActor

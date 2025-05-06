@@ -27,7 +27,6 @@ public struct PreferencesSubscriptionSettingsViewV1: View {
     @State private var state: PreferencesSubscriptionSettingsState = .subscriptionPendingActivation
 
     @ObservedObject var model: PreferencesSubscriptionSettingsModel
-    @State private var showingActivateSubscriptionSheet = false
     @State private var showingRemoveConfirmationDialog = false
 
     @State private var manageSubscriptionSheet: ManageSubscriptionSheet?
@@ -51,20 +50,6 @@ public struct PreferencesSubscriptionSettingsViewV1: View {
                     pendingActivationHeaderView
                 }
             }
-            .sheet(isPresented: $showingActivateSubscriptionSheet) {
-                SubscriptionAccessView(model: model.sheetModel)
-            }
-            .sheet(isPresented: $showingRemoveConfirmationDialog) {
-                removeConfirmationDialog
-            }
-            .sheet(item: $manageSubscriptionSheet) { sheet in
-                switch sheet {
-                case .apple:
-                    manageSubscriptionAppStoreDialog
-                case .google:
-                    manageSubscriptionGooglePlayDialog
-                }
-            }
             .padding(.bottom, 16)
 
             // Sections
@@ -80,6 +65,17 @@ public struct PreferencesSubscriptionSettingsViewV1: View {
 
             case .subscriptionPendingActivation:
                 helpSection
+            }
+        }
+        .sheet(isPresented: $showingRemoveConfirmationDialog) {
+            removeConfirmationDialog
+        }
+        .sheet(item: $manageSubscriptionSheet) { sheet in
+            switch sheet {
+            case .apple:
+                manageSubscriptionAppStoreDialog
+            case .google:
+                manageSubscriptionGooglePlayDialog
             }
         }
         .onAppear(perform: {

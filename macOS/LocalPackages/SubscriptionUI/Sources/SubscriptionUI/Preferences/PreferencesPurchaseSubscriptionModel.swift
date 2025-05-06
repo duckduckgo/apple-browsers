@@ -70,7 +70,7 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
 
     @MainActor
     func openPrivacyPolicy() {
-        openURLHandler(URL(string: "https://duckduckgo.com/pro/privacy-terms")!)
+        openURLHandler(subscriptionManager.url(for: .privacyPolicy))
     }
 
     private func currentStorefrontRegion() -> SubscriptionRegion {

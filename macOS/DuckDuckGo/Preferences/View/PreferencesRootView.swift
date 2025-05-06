@@ -183,37 +183,8 @@ enum Preferences {
         }
 
         private func makeSubscriptionSettingsViewModel() -> PreferencesSubscriptionSettingsModel {
-            let openURL: (URL) -> Void = { url in
-                DispatchQueue.main.async {
-                    WindowControllersManager.shared.showTab(with: .subscription(url.appendingParameter(name: AttributionParameter.origin, value: SubscriptionFunnelOrigin.appSettings.rawValue)))
-                }
-            }
-
-            let userEventHandler = makeSubscriptionUserEventHandler()
-
-            let sheetActionHandler = SubscriptionAccessActionHandlers(
-                openActivateViaEmailURL: {
-                    let url = subscriptionManager.url(for: .activationFlow)
-                    WindowControllersManager.shared.showTab(with: .subscription(url))
-                }, restorePurchases: {
-                    if #available(macOS 12.0, *) {
-                        Task {
-                            let appStoreRestoreFlow = DefaultAppStoreRestoreFlow(accountManager: subscriptionManager.accountManager,
-                                                                                 storePurchaseManager: subscriptionManager.storePurchaseManager(),
-                                                                                 subscriptionEndpointService: subscriptionManager.subscriptionEndpointService,
-                                                                                 authEndpointService: subscriptionManager.authEndpointService)
-                            let subscriptionAppStoreRestorer = DefaultSubscriptionAppStoreRestorer(
-                                subscriptionManager: subscriptionManager,
-                                appStoreRestoreFlow: appStoreRestoreFlow,
-                                uiHandler: subscriptionUIHandler)
-                            await subscriptionAppStoreRestorer.restoreAppStoreSubscription()
-                        }
-                    }
-                }, uiActionHandler: userEventHandler)
-
-            return PreferencesSubscriptionSettingsModel(openURLHandler: openURL,
-                                                        userEventHandler: userEventHandler,
-                                                        sheetActionHandler: sheetActionHandler,
+            return PreferencesSubscriptionSettingsModel(openURLHandler: makeOpenURLHandler(),
+                                                        userEventHandler: makeSubscriptionUserEventHandler(),
                                                         subscriptionManager: subscriptionManager)
         }
 

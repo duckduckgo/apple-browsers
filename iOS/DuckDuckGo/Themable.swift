@@ -35,14 +35,25 @@ extension UIViewController {
 
         navigationController?.navigationBar.standardAppearance = appearance
         navigationController?.navigationBar.scrollEdgeAppearance = appearance
+        navigationController?.navigationBar.compactAppearance = appearance
+        navigationController?.navigationBar.compactScrollEdgeAppearance = appearance
     }
     
     func decorateToolbar(with theme: Theme = ThemeManager.shared.currentTheme) {
-        navigationController?.toolbar.barTintColor = theme.barBackgroundColor
-        navigationController?.toolbar.backgroundColor = theme.barBackgroundColor
+
+        guard let appearance = navigationController?.toolbar.standardAppearance else {
+            return
+        }
+
+        appearance.backgroundColor = theme.barBackgroundColor
+        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+            appearance.shadowColor = .clear
+        }
+
+        navigationController?.toolbar.standardAppearance = appearance
+        navigationController?.toolbar.compactAppearance = appearance
         navigationController?.toolbar.tintColor = theme.barTintColor
-        
-        let appearance = navigationController?.toolbar.standardAppearance
+
         navigationController?.toolbar.scrollEdgeAppearance = appearance
     }
 }

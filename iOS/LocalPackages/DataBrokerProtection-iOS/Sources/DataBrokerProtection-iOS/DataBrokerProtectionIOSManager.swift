@@ -207,7 +207,6 @@ public final class DataBrokerProtectionIOSManager {
         }
 
         registerBackgroundTaskHandler()
-        start()
     }
 
     private func validateRunPrerequisites() async -> Bool {
@@ -235,19 +234,26 @@ public final class DataBrokerProtectionIOSManager {
         }
     }
 
-    public func start() {
+    public func startAllOperations() {
         queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, operationDependencies: operationDependencies, errorHandler: nil) { [self] in
             queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, operationDependencies: operationDependencies, errorHandler: nil, completion: nil)
         }
     }
 
     public func scheduleBGProcessingTask() {
-        let request = BGProcessingTaskRequest(identifier: "com.duckduckgo.app.dbp.backgroundProcessing")
-        request.requiresNetworkConnectivity = true
+        Task {
+            guard await validateRunPrerequisites() else {
+                Logger.dataBrokerProtection.log("Prerequisites are invalid during scheduling of background task")
+                return
+            }
 
-        do {
-            try BGTaskScheduler.shared.submit(request)
-        } catch {
+            let request = BGProcessingTaskRequest(identifier: "com.duckduckgo.app.dbp.backgroundProcessing")
+            request.requiresNetworkConnectivity = true
+
+            do {
+                try BGTaskScheduler.shared.submit(request)
+            } catch {
+            }
         }
     }
 
@@ -260,6 +266,14 @@ public final class DataBrokerProtectionIOSManager {
             task.setTaskCompleted(success: false)
         }
 
-        queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, operationDependencies: operationDependencies, errorHandler: nil, completion: nil)
+        Task {
+            guard await validateRunPrerequisites() else {
+                Logger.dataBrokerProtection.log("Prerequisites are invalid during background task")
+                return
+            }
+            queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, operationDependencies: operationDependencies, errorHandler: nil) {
+                task.setTaskCompleted(success: true)
+            }
+        }
     }
 }

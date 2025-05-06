@@ -1162,6 +1162,8 @@ final class NavigationBarViewController: NSViewController {
         pinnedViews.filter { !isVisibleInNavBar($0) }
     }
 
+    private var isAIChatButtonInOverflowMenu: Bool = false
+
     private var visiblePinnedViewsRequiredWidth: CGFloat {
         let visiblePinnedViewsWidth = visiblePinnedItems.map(navBarWidth).reduce(0, +)
         let overflowButtonWidth = overflowButton.isVisible ? overflowButton.bounds.width : 0
@@ -1214,12 +1216,24 @@ final class NavigationBarViewController: NSViewController {
         if visiblePinnedViewsRequiredWidth >= overflowThreshold {
             // Move buttons into overflow menu if needed
             while visiblePinnedViewsRequiredWidth >= overflowThreshold {
+                guard visiblePinnedItems.count > 1 else {
+                    // Leave at least one visible pinned item, but hide AI chat button if needed
+                    toggleAIChatButtonVisibility(isHidden: true)
+                    break
+                }
                 guard let itemToOverflow = visiblePinnedItems.last else {
                     break
                 }
                 updateNavBarViews(with: itemToOverflow, isHidden: true)
             }
+        } else if isAIChatButtonInOverflowMenu {
+            // Restore AI chat button first, if needed
+            let newMaximumWidth = visiblePinnedViewsRequiredWidth + 39
+            if newMaximumWidth < overflowThreshold {
+                toggleAIChatButtonVisibility(isHidden: false)
+            }
         } else if !overflowItems.isEmpty {
+
             // Restore buttons into nav bar if possible
             while let itemToRestore = overflowItems.first {
                 let restorableButtonWidth = navBarWidth(for: itemToRestore)
@@ -1253,6 +1267,15 @@ final class NavigationBarViewController: NSViewController {
         updateOverflowMenu()
     }
 
+    private func toggleAIChatButtonVisibility(isHidden: Bool) {
+        guard let addressBarButtonsViewController = addressBarViewController?.addressBarButtonsViewController, isAIChatButtonInOverflowMenu != isHidden else {
+            return
+        }
+        addressBarButtonsViewController.updateAIChatButtonVisibility(isHidden: isHidden)
+        isAIChatButtonInOverflowMenu = isHidden
+        updateOverflowMenu()
+    }
+
     /// Updates the overflow menu with the expected menu items, and shows/hides the overflow button as needed.
     private func updateOverflowMenu() {
         overflowButton.menu?.removeAllItems()
@@ -1262,6 +1285,12 @@ final class NavigationBarViewController: NSViewController {
             for item in overflowItems {
                 let menuItem = overflowMenuItem(for: item)
                 overflowButton.menu?.addItem(menuItem)
+            }
+            if isAIChatButtonInOverflowMenu {
+                let aiChatItem = NSMenuItem(title: UserText.aiChatAddressBarTooltip, action: #selector(overflowMenuRequestedAIChat), keyEquivalent: "")
+                    .targetting(self)
+                    .withImage(.aiChat)
+                overflowButton.menu?.addItem(aiChatItem)
             }
             overflowButton.isHidden = false
         }
@@ -1359,6 +1388,11 @@ final class NavigationBarViewController: NSViewController {
         makeSpaceInNavBarIfNeeded(for: .downloads)
         updateNavBarViews(with: .downloads, isHidden: false)
         toggleDownloadsPopover(keepButtonVisible: true)
+    }
+
+    @objc
+    func overflowMenuRequestedAIChat(_ menu: NSMenu) {
+        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab()
     }
 }
 

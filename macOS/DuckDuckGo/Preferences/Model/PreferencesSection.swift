@@ -19,6 +19,7 @@
 import Foundation
 import SwiftUI
 import Subscription
+import SubscriptionUI
 import BrowserServicesKit
 
 struct PreferencesSection: Hashable, Identifiable {

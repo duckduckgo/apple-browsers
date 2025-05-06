@@ -221,7 +221,7 @@ enum Preferences {
                     case .activateSubscriptionViaRestoreAppStorePurchaseClick:
                         PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreStart, frequency: .legacyDailyAndCount)
                     case .manageEmailClick:
-                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementEmail, frequency: .uniqueByName)
+                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementEmail, frequency: .legacyDailyAndCount)
                     case .addToDeviceActivationFlow:
                         // Handled on web
                         break

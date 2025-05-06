@@ -25,6 +25,7 @@ import Subscription
 import NetworkProtectionIPC
 import LoginItems
 import PreferencesUI_macOS
+import SubscriptionUI
 
 final class PreferencesSidebarModel: ObservableObject {
 
@@ -36,14 +37,13 @@ final class PreferencesSidebarModel: ObservableObject {
     private let vpnGatekeeper: VPNFeatureGatekeeper
     let vpnTunnelIPCClient: VPNControllerXPCClient
 
-    private(set) var currentSubscriptionState: PreferencesSidebarSubscriptionState = .initial
+    @Published private(set) var currentSubscriptionState: PreferencesSidebarSubscriptionState = .initial
 
     private let personalInformationRemovalSubject = PassthroughSubject<StatusIndicator, Never>()
     public let personalInformationRemovalUpdates: AnyPublisher<StatusIndicator, Never>
 
     private let identityTheftRestorationSubject = PassthroughSubject<StatusIndicator, Never>()
     public let identityTheftRestorationUpdates: AnyPublisher<StatusIndicator, Never>
-
 
     var selectedTabContent: AnyPublisher<Tab.TabContent, Never> {
         $selectedTabIndex.map { [tabSwitcherTabs] in tabSwitcherTabs[$0] }.eraseToAnyPublisher()
@@ -349,23 +349,4 @@ final class PreferencesSidebarModel: ObservableObject {
 
     private let loadSections: (PreferencesSidebarSubscriptionState) -> [PreferencesSection]
     private var cancellables = Set<AnyCancellable>()
-}
-
-struct PreferencesSidebarSubscriptionState: Equatable {
-    let hasSubscription: Bool
-    let subscriptionFeatures: [Entitlement.ProductName]?
-    let userEntitlements: [Entitlement.ProductName]
-    let shouldHideSubscriptionPurchase: Bool
-
-    let personalInformationRemovalStatus: StatusIndicator
-    let identityTheftRestorationStatus: StatusIndicator
-
-    static var initial: Self {
-        .init(hasSubscription: false,
-              subscriptionFeatures: nil,
-              userEntitlements: [],
-              shouldHideSubscriptionPurchase: true,
-              personalInformationRemovalStatus: .off,
-              identityTheftRestorationStatus: .off)
-    }
 }

@@ -285,6 +285,7 @@ final class PreferencesSidebarModel: ObservableObject {
         let allPanes = sections.flatMap(\.panes)
 
         if !allPanes.contains(selectedPane) {
+            // Adjust Privacy Pro selection when subscribed/unsubscribed state changes
             if selectedPane == .subscriptionSettings, allPanes.contains(.privacyPro) {
                 selectedPane = .privacyPro
             } else if selectedPane == .privacyPro, allPanes.contains(.subscriptionSettings) {
@@ -292,6 +293,15 @@ final class PreferencesSidebarModel: ObservableObject {
             } else if let firstPane = sections.first?.panes.first {
                 selectedPane = firstPane
             }
+        }
+
+        // Adjust Privacy Pro selection for missing entitlements
+        let entitlements = currentSubscriptionState.userEntitlements
+        if (selectedPane == .vpn && !entitlements.contains(.networkProtection)) ||
+            (selectedPane == .personalInformationRemoval && !entitlements.contains(.dataBrokerProtection)) ||
+            (selectedPane == .identityTheftRestoration && !(entitlements.contains(.identityTheftRestoration) || entitlements.contains(.identityTheftRestorationGlobal))) {
+
+            selectedPane = currentSubscriptionState.hasSubscription ? .subscriptionSettings : .privacyPro
         }
     }
 

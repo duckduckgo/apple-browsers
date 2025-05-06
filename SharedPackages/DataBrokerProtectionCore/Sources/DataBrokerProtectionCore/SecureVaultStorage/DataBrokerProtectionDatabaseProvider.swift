@@ -37,8 +37,6 @@ public protocol DataBrokerProtectionDatabaseProvider: SecureStorageDatabaseProvi
     func fetchBroker(with url: String) throws -> BrokerDB?
     func fetchAllBrokers() throws -> [BrokerDB]
 
-    func deleteAllBrokers() throws
-
     func save(_ profileQuery: ProfileQueryDB) throws -> Int64
     func delete(_ profileQuery: ProfileQueryDB) throws
     func update(_ profileQuery: ProfileQueryDB) throws -> Int64
@@ -259,12 +257,6 @@ public final class DefaultDataBrokerProtectionDatabaseProvider: GRDBSecureStorag
     public func fetchAllBrokers() throws -> [BrokerDB] {
         try db.read { db in
             return try BrokerDB.fetchAll(db)
-        }
-    }
-
-    public func deleteAllBrokers() throws {
-        _ = try db.write { db in
-            try BrokerDB.deleteAll(db)
         }
     }
 

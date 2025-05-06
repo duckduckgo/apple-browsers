@@ -47,9 +47,6 @@ public protocol DataBrokerProtectionSecureVault: SecureVault {
     func fetchAllBrokers() throws -> [DataBroker]
     func fetchChildBrokers(for parentBroker: String) throws -> [DataBroker]
 
-    @available(*, deprecated, message: "For testing custom service root for DBP APIs only. Please don't use this in production")
-    func deleteAllBrokers() throws
-
     func save(profileQuery: ProfileQuery, profileId: Int64) throws -> Int64
     func delete(profileQuery: ProfileQuery, profileId: Int64) throws
     func update(_ profileQuery: ProfileQuery, brokerIDs: [Int64], profileId: Int64) throws -> Int64
@@ -186,10 +183,6 @@ public final class DefaultDataBrokerProtectionSecureVault<T: DataBrokerProtectio
         let brokers = try self.providers.database.fetchAllBrokers().map(mapper.mapToModel(_:))
 
         return brokers.filter { $0.parent == parentBroker }
-    }
-
-    public func deleteAllBrokers() throws {
-        try self.providers.database.deleteAllBrokers()
     }
 
     public func save(profileQuery: ProfileQuery, profileId: Int64) throws -> Int64 {

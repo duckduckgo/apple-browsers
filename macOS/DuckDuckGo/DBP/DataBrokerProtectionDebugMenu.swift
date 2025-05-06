@@ -144,6 +144,8 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
                     .targetting(self)
 
                 customServiceRootLabelMenuItem
+
+                NSMenuItem(title: "⚠️ Please reopen PIR and trigger a new scan for the changes to show up", action: nil, target: nil)
             }
 
             NSMenuItem.separator()
@@ -217,20 +219,18 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
             self.settings.serviceRoot = value
 
-            let pixelHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: PixelKit.shared!, platform: .macOS)
-            let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: pixelHandler)
-            let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
-            let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
-            let vault = try! vaultFactory.makeVault(reporter: reporter)
-            let database = DataBrokerProtectionDatabase(fakeBrokerFlag: DataBrokerDebugFlagFakeBroker(),
-                                                        pixelHandler: pixelHandler,
-                                                        vault: vault,
-                                                        localBrokerService: self.brokerUpdater)
-            let dataManager = DataBrokerProtectionDataManager(database: database)
-            try! dataManager.removeAllData()
-
             if removeBrokers {
-                try! vault.deleteAllBrokers()
+                let pixelHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: PixelKit.shared!, platform: .macOS)
+                let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: pixelHandler)
+                let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
+                let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
+                let vault = try! vaultFactory.makeVault(reporter: reporter)
+                let database = DataBrokerProtectionDatabase(fakeBrokerFlag: DataBrokerDebugFlagFakeBroker(),
+                                                            pixelHandler: pixelHandler,
+                                                            vault: vault,
+                                                            localBrokerService: self.brokerUpdater)
+                let dataManager = DataBrokerProtectionDataManager(database: database)
+                try! dataManager.removeAllData()
             }
 
             self.forceBrokerJSONFilesUpdate()

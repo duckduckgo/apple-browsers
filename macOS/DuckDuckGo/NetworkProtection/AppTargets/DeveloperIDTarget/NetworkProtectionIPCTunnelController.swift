@@ -108,11 +108,15 @@ extension NetworkProtectionIPCTunnelController: TunnelController {
 
             knownFailureStore.reset()
 
-            ipcClient.start { [pixelKit] error in
-                if let error {
-                    handleFailure(error)
-                } else {
-                    pixelKit?.fire(StartAttempt.success, frequency: .legacyDailyAndCount)
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                ipcClient.start { [pixelKit] error in
+                    if let error {
+                        //handleFailure(error)
+                        continuation.resume(throwing: error)
+                    } else {
+                        pixelKit?.fire(StartAttempt.success, frequency: .legacyDailyAndCount)
+                        continuation.resume()
+                    }
                 }
             }
         } catch {
@@ -132,11 +136,15 @@ extension NetworkProtectionIPCTunnelController: TunnelController {
         do {
             try await enableLoginItems()
 
-            ipcClient.stop { [pixelKit] error in
-                if let error {
-                    handleFailure(error)
-                } else {
-                    pixelKit?.fire(StopAttempt.success, frequency: .legacyDailyAndCount)
+            try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+                ipcClient.stop { [pixelKit] error in
+                    if let error {
+                        //handleFailure(error)
+                        continuation.resume(throwing: error)
+                    } else {
+                        pixelKit?.fire(StopAttempt.success, frequency: .legacyDailyAndCount)
+                        continuation.resume()
+                    }
                 }
             }
         } catch {

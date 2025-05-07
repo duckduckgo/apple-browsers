@@ -202,24 +202,16 @@ extension TunnelControllerIPCService: XPCServerInterface {
 
     func start(completion: @escaping (Error?) -> Void) {
         Task {
+            defer { completion(nil) }
             await tunnelController.start()
         }
-
-        // For IPC requests, completion means the IPC request was processed, and NOT
-        // that the requested operation was executed fully.  Failure to complete the
-        // operation will be handled entirely within the tunnel controller.
-        completion(nil)
     }
 
     func stop(completion: @escaping (Error?) -> Void) {
         Task {
+            defer { completion(nil) }
             await tunnelController.stop()
         }
-
-        // For IPC requests, completion means the IPC request was processed, and NOT
-        // that the requested operation was executed fully.  Failure to complete the
-        // operation will be handled entirely within the tunnel controller.
-        completion(nil)
     }
 
     func fetchLastError(completion: @escaping (Error?) -> Void) {

@@ -3454,6 +3454,8 @@
 		F18826932BC0105900D9AC4F /* PixelDataStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6DA44012616B28300DD1EC2 /* PixelDataStore.swift */; };
 		F198C71E2BD18D88000BF24D /* SwiftLintTool in Frameworks */ = {isa = PBXBuildFile; productRef = F198C71D2BD18D88000BF24D /* SwiftLintTool */; };
 		F198C7202BD18D92000BF24D /* SwiftLintTool in Frameworks */ = {isa = PBXBuildFile; productRef = F198C71F2BD18D92000BF24D /* SwiftLintTool */; };
+		F1A2E11F2DCB9FB00086F538 /* LogExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2E11D2DCB9FB00086F538 /* LogExporter.swift */; };
+		F1A2E1202DCB9FB00086F538 /* LogExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1A2E11D2DCB9FB00086F538 /* LogExporter.swift */; };
 		F1AFDBD22C231B7A00710F2C /* SubscriptionAppStoreRestorerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1AFDBD12C231B7A00710F2C /* SubscriptionAppStoreRestorerTests.swift */; };
 		F1AFDBD42C231B9700710F2C /* SubscriptionErrorReporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1AFDBD32C231B9700710F2C /* SubscriptionErrorReporterTests.swift */; };
 		F1AFDBD72C23221700710F2C /* SubscriptionErrorReporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1AFDBD32C231B9700710F2C /* SubscriptionErrorReporterTests.swift */; };
@@ -5388,6 +5390,7 @@
 		F188267B2BBEB3AA00D9AC4F /* GeneralPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralPixel.swift; sourceTree = "<group>"; };
 		F188267F2BBEB58100D9AC4F /* PrivacyProPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyProPixel.swift; sourceTree = "<group>"; };
 		F18826832BBEE31700D9AC4F /* PixelKit+Assertion.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "PixelKit+Assertion.swift"; sourceTree = "<group>"; };
+		F1A2E11D2DCB9FB00086F538 /* LogExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogExporter.swift; sourceTree = "<group>"; };
 		F1AFDBD12C231B7A00710F2C /* SubscriptionAppStoreRestorerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionAppStoreRestorerTests.swift; sourceTree = "<group>"; };
 		F1AFDBD32C231B9700710F2C /* SubscriptionErrorReporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionErrorReporterTests.swift; sourceTree = "<group>"; };
 		F1B33DF12BAD929D001128B3 /* SubscriptionAppStoreRestorer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionAppStoreRestorer.swift; sourceTree = "<group>"; };
@@ -8612,6 +8615,7 @@
 		AA585D80248FD31100E9A3E2 /* DuckDuckGo */ = {
 			isa = PBXGroup;
 			children = (
+				F1A2E11E2DCB9FB00086F538 /* LogExporter */,
 				BB4EC6902D9B5C6400660600 /* VisualRefresh */,
 				BBDE001A2D6DE66100109F88 /* DefaultBrowserAndAddToDockPrompts */,
 				CBECDB822CDA812A005B8B87 /* BrokenSitePrompt */,
@@ -10556,6 +10560,14 @@
 			path = Mocks;
 			sourceTree = "<group>";
 		};
+		F1A2E11E2DCB9FB00086F538 /* LogExporter */ = {
+			isa = PBXGroup;
+			children = (
+				F1A2E11D2DCB9FB00086F538 /* LogExporter.swift */,
+			);
+			path = LogExporter;
+			sourceTree = "<group>";
+		};
 		F1B33DF92BAD9C83001128B3 /* Subscription */ = {
 			isa = PBXGroup;
 			children = (
@@ -12259,6 +12271,7 @@
 				B6BCC5242AFCDABB002C5499 /* DataImportSourceViewModel.swift in Sources */,
 				37E307AF2D07483400599500 /* NewTabPagePixel.swift in Sources */,
 				B6F1B02B2BCE675C005E863C /* NetworkProtectionControllerTabExtension.swift in Sources */,
+				F1A2E11F2DCB9FB00086F538 /* LogExporter.swift in Sources */,
 				3706FEBC293F6EFF00E42796 /* BWResponse.swift in Sources */,
 				B65C7DFC2B886CF0001E2D5C /* WKPDFHUDViewWrapper.swift in Sources */,
 				3706FAF4293F65D500E42796 /* SafariBookmarksReader.swift in Sources */,
@@ -14754,6 +14767,7 @@
 				EEE50C292C38249C003DD7FF /* OptionalExtension.swift in Sources */,
 				AABEE69C24A902BB0043105B /* SuggestionContainer.swift in Sources */,
 				1D68604F2D36BD28006FC53E /* WebExtensionsDebugMenu.swift in Sources */,
+				F1A2E1202DCB9FB00086F538 /* LogExporter.swift in Sources */,
 				B6C00ECD292F89D9009C73A6 /* FindInPageTabExtension.swift in Sources */,
 				85589E8327BBB8630038AD11 /* BurnerHomePageViewController.swift in Sources */,
 				F17114852C7C9D28009836C1 /* Logger+Fire.swift in Sources */,

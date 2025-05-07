@@ -36,7 +36,6 @@ import Subscription
 import SwiftUICore
 import VPNAppLauncher
 import VPNAppState
-//import VPNExtensionManagement
 
 @objc(Application)
 final class DuckDuckGoVPNApplication: NSApplication {

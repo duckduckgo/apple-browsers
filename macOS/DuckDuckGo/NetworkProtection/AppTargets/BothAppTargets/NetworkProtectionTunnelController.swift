@@ -32,7 +32,6 @@ import os.log
 import Subscription
 import SystemExtensionManager
 import SystemExtensions
-//import VPNExtensionManagement
 import VPNAppState
 
 typealias NetworkProtectionStatusChangeHandler = (NetworkProtection.ConnectionStatus) -> Void

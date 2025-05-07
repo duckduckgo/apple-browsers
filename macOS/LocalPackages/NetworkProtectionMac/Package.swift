@@ -32,7 +32,6 @@ let package = Package(
         .library(name: "NetworkProtectionUI", targets: ["NetworkProtectionUI"]),
         .library(name: "VPNAppLauncher", targets: ["VPNAppLauncher"]),
         .library(name: "VPNAppState", targets: ["VPNAppState"]),
-        .library(name: "VPNExtensionManagement", targets: ["VPNExtensionManagement"]),
     ],
     dependencies: [
         .package(url: "https://github.com/airbnb/lottie-spm", exact: "4.5.1"),
@@ -48,12 +47,6 @@ let package = Package(
 
         .target(
             name: "VPNAppState",
-            swiftSettings: [
-                .define("DEBUG", .when(configuration: .debug))
-            ]),
-
-        .target(
-            name: "VPNExtensionManagement",
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
             ]),
@@ -80,7 +73,6 @@ let package = Package(
             dependencies: [
                 "AppInfoRetriever",
                 "VPNAppState",
-                "VPNExtensionManagement",
                 .product(name: "NetworkProtection", package: "BrowserServicesKit"),
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
             ],

@@ -22,7 +22,6 @@ import Foundation
 import NetworkProtection
 import NetworkProtectionUI
 import VPNAppState
-//import VPNExtensionManagement
 
 final class VPNExtensionResolver {
 

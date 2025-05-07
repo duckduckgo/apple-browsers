@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -eo pipefail
+
 #
 # Creates or restacks branches for Sparkle update testing:
 # 1. outdated: Changes appcast URL to point to your test server

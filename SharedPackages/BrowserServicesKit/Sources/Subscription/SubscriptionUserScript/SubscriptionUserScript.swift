@@ -42,6 +42,8 @@ public struct SubscriptionDetails: Codable, Equatable {
     public let paymentPlatform: String?
     public let status: String?
 
+    static let unsubscribed: Self = .init(isSubscribed: false, billingPeriod: nil, startedAt: nil, expiresOrRenewsAt: nil, paymentPlatform: nil, status: nil)
+
     public init(isSubscribed: Bool, billingPeriod: String?, startedAt: Int?, expiresOrRenewsAt: Int?, paymentPlatform: String?, status: String?) {
         self.isSubscribed = isSubscribed
         self.billingPeriod = billingPeriod
@@ -53,8 +55,39 @@ public struct SubscriptionDetails: Codable, Equatable {
 }
 
 public protocol SubscriptionUserScriptHandling {
-    func handshake(params: Any, message: UserScriptMessage) async -> HandshakeResponse
-    func subscriptionDetails(params: Any, message: UserScriptMessage) async -> SubscriptionDetails
+    func handshake(params: Any, message: UserScriptMessage) async throws -> HandshakeResponse
+    func subscriptionDetails(params: Any, message: UserScriptMessage) async throws -> SubscriptionDetails
+}
+
+public final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
+    let platform: HandshakeResponse.Platform
+    let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+
+    public init(platform: HandshakeResponse.Platform, subscriptionManager: any SubscriptionAuthV1toV2Bridge) {
+        self.platform = platform
+        self.subscriptionManager = subscriptionManager
+    }
+
+    public func handshake(params: Any, message: any UserScriptMessage) async throws -> HandshakeResponse {
+        .init(availableMessages: [.subscriptionDetails], platform: platform)
+    }
+
+    public func subscriptionDetails(params: Any, message: any UserScriptMessage) async throws -> SubscriptionDetails {
+        let subscription = try await subscriptionManager.getSubscription(cachePolicy: .returnCacheDataElseLoad)
+
+        guard subscription.isActive else {
+            return .unsubscribed
+        }
+
+        return SubscriptionDetails(
+            isSubscribed: true,
+            billingPeriod: subscription.billingPeriod.rawValue,
+            startedAt: Int(subscription.startedAt.timeIntervalSince1970),
+            expiresOrRenewsAt: Int(subscription.expiresOrRenewsAt.timeIntervalSince1970),
+            paymentPlatform: subscription.platform.rawValue,
+            status: subscription.status.rawValue
+        )
+    }
 }
 
 public final class SubscriptionUserScript: NSObject, Subfeature {

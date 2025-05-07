@@ -1555,7 +1555,7 @@ Take back control of your personal information with the browser designed for dat
     // MARK: - AI Chat
     public static let settingsEnableAiChat = NSLocalizedString("settings.enable.aichat", value: "Enable Duck.ai", comment: "Settings screen cell text for enabling AI chat")
 
-    public static let settingsAiChatShowIn = NSLocalizedString("settings.aichat.showin", value: "Show In", comment: "Settings screen text for showing AI Chat in various places in the app")
+    public static let settingsAiChatShortcuts = NSLocalizedString("settings.aichat.shortcuts", value: "Shortcuts", comment: "Settings screen text for showing AI Chat in various places in the app")
 
     public static let voiceSearchToggleSearch = NSLocalizedString("voice-search-toggle-serp-option", value: "Search", comment: "Voice search toggle option for searching on the web")
     public static let voiceSearchToggleAIChat = NotLocalizedString("voice-search-toggle-aichat-option", value: "Duck.ai", comment: "Voice search toggle option for searching on the AI Chat. Feature name. Not translated")

@@ -50,7 +50,7 @@ struct SettingsAIChatView: View {
             }
 
             if viewModel.isAiChatEnabledBinding.wrappedValue {
-                Section(header: Text(UserText.settingsAiChatShowIn)) {
+                Section(header: Text(UserText.settingsAiChatShortcuts)) {
                     SettingsCellView(label: UserText.aiChatSettingsEnableBrowsingMenuToggle,
                                      accessory: .toggle(isOn: viewModel.aiChatBrowsingMenuEnabledBinding))
 

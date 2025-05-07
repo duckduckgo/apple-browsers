@@ -2448,7 +2448,7 @@ Take back control of your personal information with the browser designed for dat
 "settings.address.full.url" = "Show Full Site Address";
 
 /* Settings screen text for showing AI Chat in various places in the app */
-"settings.aichat.showin" = "Show In";
+"settings.aichat.shortcuts" = "Shortcuts";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Always On";

@@ -40,7 +40,7 @@ public final class MockNetworkProtectionStatusReporter: NetworkProtectionStatusR
 
     // MARK: - Init & deinit
 
-    public init(vpnEnabledObserver: VPNEnabledObserver,
+    public init(vpnEnabledObserver: VPNEnabledObserver = MockVPNEnabledObserver(),
                 statusObserver: ConnectionStatusObserver = MockConnectionStatusObserver(),
                 serverInfoObserver: ConnectionServerInfoObserver = MockConnectionServerInfoObserver(),
                 connectionErrorObserver: ConnectionErrorObserver = MockConnectionErrorObserver(),

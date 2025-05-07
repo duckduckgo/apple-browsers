@@ -19,7 +19,6 @@
 import Foundation
 import PixelKit
 import Common
-import Configuration
 
 public enum ErrorCategory: Equatable {
     case networkError
@@ -153,7 +152,6 @@ public enum DataBrokerProtectionSharedPixels {
     case initialScanPreStartDuration(duration: Double)
 
     // Configuration
-    case invalidPayload(Configuration)
     case errorLoadingCachedConfig(Error)
     case failedToParsePrivacyConfig(Error)
 
@@ -244,7 +242,6 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .dataBrokerMetricsMonthlyStats: return "dbp_databroker_monthly_stats"
 
             // Configuration
-        case .invalidPayload(let configuration): return "dbp_\(configuration.rawValue)_invalid_payload".lowercased()
         case .errorLoadingCachedConfig: return "dbp_configuration_error_loading_cached_config"
         case .failedToParsePrivacyConfig: return "dbp_configuration_failed_to_parse"
 
@@ -339,7 +336,6 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                 .secureVaultKeyStoreReadError,
                 .secureVaultKeyStoreUpdateError,
                 .secureVaultError,
-                .invalidPayload,
                 .failedToParsePrivacyConfig:
             return [:]
         case .scanSuccess(let dataBroker, let matchesFound, let duration, let tries, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus):
@@ -490,7 +486,6 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .globalMetricsMonthlyStats,
                     .dataBrokerMetricsWeeklyStats,
                     .dataBrokerMetricsMonthlyStats,
-                    .invalidPayload,
                     .customDataBrokerStatsOptoutSubmit,
                     .customGlobalStatsOptoutSubmit,
                     .weeklyChildBrokerOrphanedOptOuts:

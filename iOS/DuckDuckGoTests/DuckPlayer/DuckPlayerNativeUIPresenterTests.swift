@@ -80,7 +80,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         mockInternalUserDecider = MockDuckPlayerInternalUserDecider()
         mockDuckPlayerSettings = MockDuckPlayerSettings(
             appSettings: mockAppSettings,
-            privacyConfigManager: mockPrivacyConfig, 
+            privacyConfigManager: mockPrivacyConfig,
             internalUserDecider: mockInternalUserDecider
         )
 

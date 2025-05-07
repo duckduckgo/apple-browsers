@@ -3277,11 +3277,11 @@ extension MainViewController {
         
         let backMenu = historyMenu(with: currentTab.webView.backForwardList.backList.reversed())
         viewCoordinator.omniBar.barView.backButton.menu = backMenu
-        viewCoordinator.toolbarBackButton.menu = backMenu
+        viewCoordinator.toolbarBackButton.setCustomItemMenu(backMenu)
 
         let forwardMenu = historyMenu(with: currentTab.webView.backForwardList.forwardList)
         viewCoordinator.omniBar.barView.forwardButton.menu = forwardMenu
-        viewCoordinator.toolbarForwardButton.menu = forwardMenu
+        viewCoordinator.toolbarForwardButton.setCustomItemMenu(forwardMenu)
     }
 
     private func historyMenu(with backForwardList: [WKBackForwardListItem]) -> UIMenu {
@@ -3351,6 +3351,14 @@ private extension UIBarButtonItem {
             customControl.addTarget(target, action: action, for: .touchUpInside)
         } else {
             self.action = action
+        }
+    }
+
+    func setCustomItemMenu(_ menu: UIMenu) {
+        if let customControl = customView as? UIButton {
+            customControl.menu = menu
+        } else {
+            self.menu = menu
         }
     }
 }

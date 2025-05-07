@@ -109,7 +109,7 @@ struct DuckPlayerView: View {
                 
                 Spacer(minLength: LayoutConstants.controlsSpacing)
 
-                // Controls Container - Now positioned at the bottom with zero spacing
+                // Controls Container
                 VStack(spacing: 4) {
                     if controlsVisibility {
                         // Show only if the source is youtube and the toggle should be visible

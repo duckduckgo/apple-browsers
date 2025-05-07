@@ -42,6 +42,7 @@ struct DuckPlayerView: View {
         static let dragGestureThreshold: CGFloat = 100
         static let uiElementsBackground: Color = Color.gray.opacity(0.2)
         static let uiElementRadius: CGFloat = 8
+        static let chevronUpIcon: String = "chevron.up"
     }
 
     enum LayoutConstants {
@@ -68,6 +69,11 @@ struct DuckPlayerView: View {
         static let closeButtonSize: CGFloat = 44
         static let bubbleCloseButtonSize: CGFloat = 32
         static let controlsSpacing: CGFloat = 8
+        static let controlButtonSize: CGFloat = 30
+        static let controlIconSize: CGFloat = 10
+        static let controlButtonBottomPadding: CGFloat = 10
+        static let animationResponseTime: Double = 0.4
+        static let animationDampingFraction: Double = 0.8
     }
 
     var body: some View {
@@ -121,9 +127,9 @@ struct DuckPlayerView: View {
                             .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
                 }
-                .animation(.spring(response: 0.4, dampingFraction: 0.8), value: controlsVisibility)
+                .animation(.spring(response: LayoutConstants.animationResponseTime, dampingFraction: LayoutConstants.animationDampingFraction), value: controlsVisibility)
                 .frame(minWidth: 0, maxWidth: .infinity)
-                .padding(.bottom, controlsVisibility ? 8 : 0)
+                .padding(.bottom, controlsVisibility ?  LayoutConstants.controlsSpacing: 0)
 
                 // Show the welcome message if needed
                 welcomeMessage
@@ -133,21 +139,21 @@ struct DuckPlayerView: View {
                     ZStack {
                         Circle()
                             .fill(Color.gray.opacity(0.5))
-                            .frame(width: 30, height: 30)
+                            .frame(width: LayoutConstants.controlButtonSize, height: LayoutConstants.controlButtonSize)
                         
                         Button(action: {
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
+                            withAnimation(.spring(response: LayoutConstants.animationResponseTime, dampingFraction: LayoutConstants.animationDampingFraction)) {
                                 controlsVisibility.toggle()
                             }
                         }) {
-                            Image(systemName: "chevron.up")
-                                .font(.system(size: 10, weight: .bold))
+                            Image(systemName: Constants.chevronUpIcon)
+                                .font(.system(size: LayoutConstants.controlIconSize, weight: .bold))
                                 .foregroundColor(.white)
-                                .frame(width: 30, height: 30)
+                                .frame(width: LayoutConstants.controlButtonSize, height: LayoutConstants.controlButtonSize)
                                 .rotationEffect(Angle(degrees: controlsVisibility ? 180 : 0))
                         }
                     }
-                    .padding(.bottom, 10)
+                    .padding(.bottom, LayoutConstants.controlButtonBottomPadding)
                 }
             }
         }
@@ -162,14 +168,14 @@ struct DuckPlayerView: View {
         )
         .onFirstAppear {
             viewModel.onFirstAppear()
-            autoOpenOnYoutube = viewModel.autoOpenOnYoutube            
+            autoOpenOnYoutube = viewModel.autoOpenOnYoutube
         }
         .onAppear {
             viewModel.onAppear()
         }
         .onDisappear {
             viewModel.onDisappear()
-        }        
+        }
     }
 
     @ViewBuilder
@@ -191,7 +197,7 @@ struct DuckPlayerView: View {
             }
             .frame(height: LayoutConstants.bottomButtonHeight)
             .padding(.horizontal, LayoutConstants.horizontalPadding)
-            .padding(.bottom, 8)
+            .padding(.bottom, LayoutConstants.controlsSpacing)
             .transition(.opacity)
             .animation(.easeInOut, value: showOpenInYoutubeToggle)
         }

@@ -37,7 +37,6 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
 
     private let subscriptionManager: SubscriptionManagerV2
 
-    private let openURLHandler: (URL) -> Void
     private let userEventHandler: (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void
     private var fetchSubscriptionDetailsTask: Task<(), Never>?
 
@@ -49,6 +48,9 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
 
     public enum UserEvent {
         case openFeedback,
+             openURL(SubscriptionURL),
+             openManageSubscriptionsInAppStore,
+             openCustomerPortalURL(URL),
              didClickManageEmail,
              didClickAddToDevice,
              didOpenSubscriptionSettings,
@@ -56,13 +58,11 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
              didClickRemoveSubscription
     }
 
-    public init(openURLHandler: @escaping (URL) -> Void,
-                userEventHandler: @escaping (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void,
+    public init(userEventHandler: @escaping (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void,
                 subscriptionManager: SubscriptionManagerV2,
                 subscriptionStateUpdate: AnyPublisher<PreferencesSidebarSubscriptionState, Never>
     ) {
         self.subscriptionManager = subscriptionManager
-        self.openURLHandler = openURLHandler
         self.userEventHandler = userEventHandler
 
         Task {
@@ -128,7 +128,7 @@ hasAnyEntitlement: \(hasAnyEntitlement)
 
     @MainActor
     func purchaseAction() {
-        openURLHandler(subscriptionManager.url(for: .purchase))
+        userEventHandler(.openURL(.purchase))
     }
 
     enum ChangePlanOrBillingAction {
@@ -164,12 +164,12 @@ hasAnyEntitlement: \(hasAnyEntitlement)
     private func changePlanOrBilling(for environment: SubscriptionEnvironment.PurchasePlatform) {
         switch environment {
         case .appStore:
-            NSWorkspace.shared.open(subscriptionManager.url(for: .manageSubscriptionsInAppStore))
+            userEventHandler(.openManageSubscriptionsInAppStore)
         case .stripe:
             Task {
                 do {
-                    let customerPortalURL = try await subscriptionManager.getCustomerPortalURL()
-                    openURLHandler(customerPortalURL)
+                    let url = try await subscriptionManager.getCustomerPortalURL()
+                    userEventHandler(.openCustomerPortalURL(url))
                 } catch {
                     Logger.general.log("Error getting customer portal URL: \(error, privacy: .public)")
                 }
@@ -193,8 +193,7 @@ hasAnyEntitlement: \(hasAnyEntitlement)
 
     @MainActor
     func openLearnMore() {
-        let learnMoreURL = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email")!
-        openURLHandler(learnMoreURL)
+        userEventHandler(.openURL(.helpPagesAddingEmail))
     }
 
     @MainActor
@@ -220,26 +219,26 @@ hasAnyEntitlement: \(hasAnyEntitlement)
 
     private func handleEmailAction(type: SubscriptionEmailActionType) {
         let eventType: PreferencesSubscriptionSettingsModelV2.UserEvent
-        let url: URL
+        let url: SubscriptionURL
 
         switch type {
         case .activationFlow:
             eventType = .didClickAddToDevice
-            url = subscriptionManager.url(for: .activationFlow)
+            url = .activationFlow
         case .activationFlowAddEmailStep:
             eventType = .didClickAddToDevice
-            url = subscriptionManager.url(for: .activationFlowAddEmailStep)
+            url = .activationFlowAddEmailStep
         case .activationFlowLinkViaEmailStep:
             eventType = .didClickAddToDevice
-            url = subscriptionManager.url(for: .activationFlowLinkViaEmailStep)
+            url = .activationFlowLinkViaEmailStep
         case .editEmail:
             eventType = .didClickManageEmail
-            url = subscriptionManager.url(for: .manageEmail)
+            url = .manageEmail
         }
 
         Task { @MainActor in
             userEventHandler(eventType)
-            openURLHandler(url)
+            userEventHandler(.openURL(url))
         }
     }
 
@@ -253,7 +252,7 @@ hasAnyEntitlement: \(hasAnyEntitlement)
 
     @MainActor
     func openFAQ() {
-        openURLHandler(subscriptionManager.url(for: .faq))
+        userEventHandler(.openURL(.faq))
     }
 
     @MainActor
@@ -263,7 +262,7 @@ hasAnyEntitlement: \(hasAnyEntitlement)
 
     @MainActor
     func openPrivacyPolicy() {
-        openURLHandler(subscriptionManager.url(for: .privacyPolicy))
+        userEventHandler(.openURL(.privacyPolicy))
     }
 
     @MainActor
@@ -317,20 +316,6 @@ hasAnyEntitlement: \(hasAnyEntitlement)
                 subscriptionStatus = .unknown
             }
         }
-
-//        guard let token = accountManager.accessToken else {
-//            subscriptionManager.subscriptionEndpointService.signOut()
-//            return
-//        }
-//
-//        switch await subscriptionManager.subscriptionEndpointService.getSubscription(accessToken: token, cachePolicy: cachePolicy) {
-//        case .success(let subscription):
-//            updateDescription(for: subscription.expiresOrRenewsAt, status: subscription.status, period: subscription.billingPeriod)
-//            subscriptionPlatform = subscription.platform
-//            subscriptionStatus = subscription.status
-//        case .failure:
-//            break
-//        }
     }
 
     @MainActor

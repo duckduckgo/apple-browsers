@@ -27,6 +27,7 @@ public enum SubscriptionURL {
     case welcome
     case faq
     case privacyPolicy
+    case helpPagesAddingEmail
     case activationFlow
     case activationFlowAddEmailStep
     case activationFlowLinkViaEmailStep
@@ -40,6 +41,7 @@ public enum SubscriptionURL {
         static let manageSubscriptionsInMacAppStoreURL = URL(string: "macappstores://apps.apple.com/account/subscriptions")!
         static let helpPagesURL = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/")!
         static let privacyPolicyURL = URL(string: "https://duckduckgo.com/pro/privacy-terms/")!
+        static let helpPagesAddingEmailURL = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email")!
     }
 
     public func subscriptionURL(withCustomBaseURL baseURL: URL = StaticURLs.defaultBaseSubscriptionURL, environment: SubscriptionEnvironment.ServiceEnvironment) -> URL {
@@ -55,6 +57,8 @@ public enum SubscriptionURL {
                 StaticURLs.helpPagesURL
             case .privacyPolicy:
                 StaticURLs.privacyPolicyURL
+            case .helpPagesAddingEmail:
+                StaticURLs.helpPagesAddingEmailURL
             case .activationFlow:
                 baseURL.appendingPathComponent("activation-flow")
             case .activationFlowAddEmailStep:
@@ -81,7 +85,7 @@ public enum SubscriptionURL {
 
     private var hasStagingVariant: Bool {
         switch self {
-        case .faq, .manageSubscriptionsInAppStore:
+        case .faq, .privacyPolicy, .helpPagesAddingEmail, .manageSubscriptionsInAppStore:
             false
         default:
             true

@@ -39,7 +39,6 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
     private var accountManager: AccountManager {
         subscriptionManager.accountManager
     }
-    private let openURLHandler: (URL) -> Void
     private let userEventHandler: (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void
     private var fetchSubscriptionDetailsTask: Task<(), Never>?
 
@@ -49,13 +48,10 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
 
     private var cancellables = Set<AnyCancellable>()
 
-    public init(openURLHandler: @escaping (URL) -> Void,
-                userEventHandler: @escaping (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void,
+    public init(userEventHandler: @escaping (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void,
                 subscriptionManager: SubscriptionManager,
-                subscriptionStateUpdate: AnyPublisher<PreferencesSidebarSubscriptionState, Never>
-    ) {
+                subscriptionStateUpdate: AnyPublisher<PreferencesSidebarSubscriptionState, Never>) {
         self.subscriptionManager = subscriptionManager
-        self.openURLHandler = openURLHandler
         self.userEventHandler = userEventHandler
 
         Task {
@@ -110,7 +106,7 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
 
     @MainActor
     func purchaseAction() {
-        openURLHandler(subscriptionManager.url(for: .purchase))
+        userEventHandler(.openURL(.purchase))
     }
 
     enum ChangePlanOrBillingAction {
@@ -146,14 +142,14 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
     private func changePlanOrBilling(for environment: SubscriptionEnvironment.PurchasePlatform) {
         switch environment {
         case .appStore:
-            NSWorkspace.shared.open(subscriptionManager.url(for: .manageSubscriptionsInAppStore))
+            userEventHandler(.openManageSubscriptionsInAppStore)
         case .stripe:
             Task {
                 guard let accessToken = accountManager.accessToken, let externalID = accountManager.externalID,
                       case let .success(response) = await subscriptionManager.subscriptionEndpointService.getCustomerPortalURL(accessToken: accessToken, externalID: externalID) else { return }
-                guard let customerPortalURL = URL(string: response.customerPortalUrl) else { return }
+                guard let url = URL(string: response.customerPortalUrl) else { return }
 
-                openURLHandler(customerPortalURL)
+                userEventHandler(.openCustomerPortalURL(url))
             }
         }
     }
@@ -174,8 +170,7 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
 
     @MainActor
     func openLearnMore() {
-        let learnMoreURL = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email")!
-        openURLHandler(learnMoreURL)
+        userEventHandler(.openURL(.helpPagesAddingEmail))
     }
 
     @MainActor
@@ -201,21 +196,21 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
 
     private func handleEmailAction(type: SubscriptionEmailActionType) {
         let eventType: PreferencesSubscriptionSettingsModelV2.UserEvent
-        let url: URL
+        let url: SubscriptionURL
 
         switch type {
         case .activationFlow:
             eventType = .didClickAddToDevice
-            url = subscriptionManager.url(for: .activationFlow)
+            url = .activationFlow
         case .activationFlowAddEmailStep:
             eventType = .didClickAddToDevice
-            url = subscriptionManager.url(for: .activationFlowAddEmailStep)
+            url = .activationFlowAddEmailStep
         case .activationFlowLinkViaEmailStep:
             eventType = .didClickAddToDevice
-            url = subscriptionManager.url(for: .activationFlowLinkViaEmailStep)
+            url = .activationFlowLinkViaEmailStep
         case .editEmail:
             eventType = .didClickManageEmail
-            url = subscriptionManager.url(for: .manageEmail)
+            url = .manageEmail
         }
 
         Task {
@@ -230,7 +225,7 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
 
             Task { @MainActor in
                 userEventHandler(eventType)
-                openURLHandler(url)
+                userEventHandler(.openURL(url))
             }
         }
     }
@@ -243,7 +238,7 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
 
     @MainActor
     func openFAQ() {
-        openURLHandler(subscriptionManager.url(for: .faq))
+        userEventHandler(.openURL(.faq))
     }
 
     @MainActor
@@ -253,7 +248,7 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
 
     @MainActor
     func openPrivacyPolicy() {
-        openURLHandler(subscriptionManager.url(for: .privacyPolicy))
+        userEventHandler(.openURL(.privacyPolicy))
     }
 
     @MainActor

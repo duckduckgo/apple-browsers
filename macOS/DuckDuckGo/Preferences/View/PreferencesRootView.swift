@@ -232,6 +232,12 @@ enum Preferences {
                         NotificationCenter.default.post(name: .OpenUnifiedFeedbackForm,
                                                         object: self,
                                                         userInfo: UnifiedFeedbackSource.userInfo(source: .ppro))
+                    case .openURL(let url):
+                        openURL(subscriptionURL: url)
+                    case .openManageSubscriptionsInAppStore:
+                        NSWorkspace.shared.open(subscriptionManager.url(for: .manageSubscriptionsInAppStore))
+                    case .openCustomerPortalURL(let url):
+                        WindowControllersManager.shared.showTab(with: .url(url, source: .ui))
                     case .didClickManageEmail:
                         PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementEmail, frequency: .legacyDailyAndCount)
                     case .didClickAddToDevice:
@@ -248,8 +254,7 @@ enum Preferences {
                 }
             }
 
-            return PreferencesSubscriptionSettingsModelV1(openURLHandler: makeOpenURLHandler(),
-                                                          userEventHandler: userEventHandler,
+            return PreferencesSubscriptionSettingsModelV1(userEventHandler: userEventHandler,
                                                           subscriptionManager: subscriptionManager,
                                                           subscriptionStateUpdate: model.$currentSubscriptionState.eraseToAnyPublisher())
         }
@@ -473,6 +478,12 @@ enum Preferences {
                         NotificationCenter.default.post(name: .OpenUnifiedFeedbackForm,
                                                         object: self,
                                                         userInfo: UnifiedFeedbackSource.userInfo(source: .ppro))
+                    case .openURL(let url):
+                        openURL(subscriptionURL: url)
+                    case .openManageSubscriptionsInAppStore:
+                        NSWorkspace.shared.open(subscriptionManager.url(for: .manageSubscriptionsInAppStore))
+                    case .openCustomerPortalURL(let url):
+                        WindowControllersManager.shared.showTab(with: .url(url, source: .ui))
                     case .didClickManageEmail:
                         PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementEmail, frequency: .legacyDailyAndCount)
                     case .didClickAddToDevice:
@@ -489,8 +500,7 @@ enum Preferences {
                 }
             }
 
-            return PreferencesSubscriptionSettingsModelV2(openURLHandler: makeOpenURLHandler(),
-                                                          userEventHandler: userEventHandler,
+            return PreferencesSubscriptionSettingsModelV2(userEventHandler: userEventHandler,
                                                           subscriptionManager: subscriptionManager,
                                                           subscriptionStateUpdate: model.$currentSubscriptionState.eraseToAnyPublisher())
         }

@@ -87,7 +87,7 @@ final class DuckPlayerNativeUIPresenter {
     /// References to the host view and source
     private(set) weak var hostView: DuckPlayerHosting?
     private(set) var source: DuckPlayer.VideoNavigationSource?
-    private(set) var state: DuckPlayerState
+    internal var state: DuckPlayerState
 
     /// The DuckPlayer instance
     private weak var duckPlayer: DuckPlayerControlling?
@@ -571,6 +571,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
                 guard let self = self else { return }
                 guard let videoID = self.state.videoID, let hostView = self.hostView else { return }
                 self.state.timestamp = timestamp
+                duckPlayerSettings.welcomeMessageShown = true
                 self.presentPill(for: videoID, in: hostView, timestamp: timestamp)
                 self.containerViewModel?.show()
             }

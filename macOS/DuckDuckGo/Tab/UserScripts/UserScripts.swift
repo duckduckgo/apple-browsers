@@ -52,7 +52,7 @@ final class UserScripts: UserScriptsProvider {
     let releaseNotesUserScript: ReleaseNotesUserScript?
 #endif
     let aiChatUserScript: AIChatUserScript?
-    let subscriptionUserScript: SubscriptionsUserScript?
+    let subscriptionUserScript: SubscriptionUserScript?
     let historyViewUserScript: HistoryViewUserScript?
     let faviconScript = FaviconUserScript()
 
@@ -63,7 +63,7 @@ final class UserScripts: UserScriptsProvider {
         surrogatesScript = SurrogatesUserScript(configuration: sourceProvider.surrogatesConfig!)
         aiChatUserScript = AIChatUserScript(handler: AIChatUserScriptHandler(storage: DefaultAIChatPreferencesStorage()),
                                             urlSettings: AIChatDebugURLSettings())
-        subscriptionUserScript = SubscriptionsUserScript(handler: SubscriptionsUserScriptHandler())
+        subscriptionUserScript = SubscriptionUserScript(handler: SubscriptionUserScriptHandler())
 
         let isGPCEnabled = WebTrackingProtectionPreferences.shared.isGPCEnabled
         let privacyConfig = sourceProvider.privacyConfigurationManager.privacyConfig

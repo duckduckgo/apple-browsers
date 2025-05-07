@@ -21,7 +21,6 @@ import Foundation
 import Combine
 import Common
 import BrowserServicesKit
-import Configuration
 import PixelKit
 import os.log
 import Subscription

@@ -962,7 +962,8 @@ class MainViewController: UIViewController {
                                                   variantManager: variantManager,
                                                   newTabDialogFactory: newTabDaxDialogFactory,
                                                   newTabDialogTypeProvider: DaxDialogs.shared,
-                                                  faviconLoader: faviconLoader)
+                                                  faviconLoader: faviconLoader,
+                                                  messageNavigationDelegate: self)
 
         controller.delegate = self
         controller.shortcutsDelegate = self
@@ -3370,3 +3371,6 @@ private extension UIBarButtonItem {
         }
     }
 }
+
+/// This extension allows delegating from the RMF action button when the action type is 'navigation'.  It shadows existing functions.
+extension MainViewController: MessageNavigationDelegate { }

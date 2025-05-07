@@ -26,21 +26,28 @@ protocol MessageNavigator {
 
 }
 
+protocol MessageNavigationDelegate: AnyObject {
+
+    func segueToSettingsAIChat()
+    func segueToSettings()
+
+}
+
 class DefaultMessageNavigator: MessageNavigator {
 
-    weak var mainViewController: MainViewController?
+    weak var delegate: MessageNavigationDelegate?
 
-    init(mainViewController: MainViewController? = UIApplication.shared.window?.rootViewController as? MainViewController) {
-        assert(mainViewController != nil)
-        self.mainViewController = mainViewController
+    init(delegate: MessageNavigationDelegate?) {
+        self.delegate = delegate
     }
 
     func navigateTo(_ target: NavigationTarget) {
+        assert(delegate != nil)
         switch target {
         case .duckAISettings:
-            mainViewController?.segueToSettingsAIChat()
+            delegate?.segueToSettingsAIChat()
         case .settings:
-            mainViewController?.segueToSettings()
+            delegate?.segueToSettings()
         }
     }
 

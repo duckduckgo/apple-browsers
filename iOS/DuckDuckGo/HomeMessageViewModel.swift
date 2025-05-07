@@ -34,6 +34,7 @@ struct HomeMessageViewModel {
     let messageId: String
     let sendPixels: Bool
     let modelType: RemoteMessageModelType
+    let navigator: MessageNavigator
 
     var image: String? {
         switch modelType {
@@ -119,7 +120,6 @@ struct HomeMessageViewModel {
         }
     }
     
-    let navigator: MessageNavigator
     let onDidClose: (ButtonAction?) async -> Void
     let onDidAppear: () -> Void
     let onAttachAdditionalParameters: ((_ useCase: PrivacyProDataReportingUseCase, _ params: [String: String]) -> [String: String])?

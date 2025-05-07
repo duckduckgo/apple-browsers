@@ -43,7 +43,7 @@ struct HomeMessageViewModelBuilder {
             messageId: remoteMessage.id,
             sendPixels: remoteMessage.isMetricsEnabled,
             modelType: content,
-            navigator: DefaultMessageNavigator(),
+            navigator: navigator,
             onDidClose: onDidClose,
             onDidAppear: onDidAppear,
             onAttachAdditionalParameters: { useCase, params in

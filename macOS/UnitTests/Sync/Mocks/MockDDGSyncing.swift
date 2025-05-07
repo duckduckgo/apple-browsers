@@ -119,18 +119,15 @@ class MockDDGSyncing: DDGSyncing {
 }
 
 final class MockSyncConnectionControlling: SyncConnectionControlling {
+    func cancel() async {
+    }
+
     func startExchangeMode() throws -> String {
         ""
     }
 
-    func stopExchangeMode() {
-    }
-
     func startConnectMode() throws -> String {
         ""
-    }
-
-    func stopConnectMode() {
     }
 
     func syncCodeEntered(code: String) async -> Bool {

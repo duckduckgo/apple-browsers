@@ -231,16 +231,17 @@ enum Preferences {
                         NotificationCenter.default.post(name: .OpenUnifiedFeedbackForm,
                                                         object: self,
                                                         userInfo: UnifiedFeedbackSource.userInfo(source: .ppro))
-                    case .manageEmailClick:
+                    case .didClickManageEmail:
                         PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementEmail, frequency: .legacyDailyAndCount)
-                    case .addToDeviceActivationFlow:
+                    case .didClickAddToDevice:
                         // Handled on web
+                        // TODO: Fire new pixel
                         break
-                    case .openSubscriptionSettingsClick:
+                    case .didOpenSubscriptionSettings:
                         PixelKit.fire(PrivacyProPixel.privacyProSubscriptionSettings)
-                    case .changePlanOrBillingClick:
+                    case .didClickChangePlanOrBilling:
                         PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementPlanBilling)
-                    case .removeSubscriptionClick:
+                    case .didClickRemoveSubscription:
                         PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementRemoval)
                     }
                 }
@@ -461,16 +462,17 @@ enum Preferences {
                         NotificationCenter.default.post(name: .OpenUnifiedFeedbackForm,
                                                         object: self,
                                                         userInfo: UnifiedFeedbackSource.userInfo(source: .ppro))
-                    case .manageEmailClick:
+                    case .didClickManageEmail:
                         PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementEmail, frequency: .legacyDailyAndCount)
-                    case .addToDeviceActivationFlow:
+                    case .didClickAddToDevice:
                         // Handled on web
+                        // TODO: Fire new pixel
                         break
-                    case .openSubscriptionSettingsClick:
+                    case .didOpenSubscriptionSettings:
                         PixelKit.fire(PrivacyProPixel.privacyProSubscriptionSettings)
-                    case .changePlanOrBillingClick:
+                    case .didClickChangePlanOrBilling:
                         PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementPlanBilling)
-                    case .removeSubscriptionClick:
+                    case .didClickRemoveSubscription:
                         PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementRemoval)
                     }
                 }

@@ -49,11 +49,11 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
 
     public enum UserEvent {
         case openFeedback,
-             manageEmailClick,
-             addToDeviceActivationFlow,
-             openSubscriptionSettingsClick,
-             changePlanOrBillingClick,
-             removeSubscriptionClick
+             didClickManageEmail,
+             didClickAddToDevice,
+             didOpenSubscriptionSettings,
+             didClickChangePlanOrBilling,
+             didClickRemoveSubscription
     }
 
     public init(openURLHandler: @escaping (URL) -> Void,
@@ -122,7 +122,7 @@ hasAnyEntitlement: \(hasAnyEntitlement)
 
     @MainActor
     func didAppear() {
-        userEventHandler(.openSubscriptionSettingsClick)
+        userEventHandler(.didOpenSubscriptionSettings)
         fetchAndUpdateSubscriptionDetails()
     }
 
@@ -138,7 +138,7 @@ hasAnyEntitlement: \(hasAnyEntitlement)
 
     @MainActor
     func changePlanOrBillingAction() async -> ChangePlanOrBillingAction {
-        userEventHandler(.changePlanOrBillingClick)
+        userEventHandler(.didClickChangePlanOrBilling)
 
         switch subscriptionPlatform {
         case .apple:
@@ -224,16 +224,16 @@ hasAnyEntitlement: \(hasAnyEntitlement)
 
         switch type {
         case .activationFlow:
-            eventType = .addToDeviceActivationFlow
+            eventType = .didClickAddToDevice
             url = subscriptionManager.url(for: .activationFlow)
         case .activationFlowAddEmailStep:
-            eventType = .addToDeviceActivationFlow
+            eventType = .didClickAddToDevice
             url = subscriptionManager.url(for: .activationFlowAddEmailStep)
         case .activationFlowLinkViaEmailStep:
-            eventType = .addToDeviceActivationFlow
+            eventType = .didClickAddToDevice
             url = subscriptionManager.url(for: .activationFlowLinkViaEmailStep)
         case .editEmail:
-            eventType = .manageEmailClick
+            eventType = .didClickManageEmail
             url = subscriptionManager.url(for: .manageEmail)
         }
 
@@ -245,7 +245,7 @@ hasAnyEntitlement: \(hasAnyEntitlement)
 
     @MainActor
     func removeFromThisDeviceAction() {
-        userEventHandler(.removeSubscriptionClick)
+        userEventHandler(.didClickRemoveSubscription)
         Task {
             await subscriptionManager.signOut(notifyUI: true)
         }

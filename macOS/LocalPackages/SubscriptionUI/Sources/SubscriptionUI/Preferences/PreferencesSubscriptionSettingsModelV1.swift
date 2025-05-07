@@ -40,7 +40,7 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
         subscriptionManager.accountManager
     }
     private let openURLHandler: (URL) -> Void
-    public let userEventHandler: (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void
+    private let userEventHandler: (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void
     private var fetchSubscriptionDetailsTask: Task<(), Never>?
 
     private var subscriptionChangeObserver: Any?
@@ -48,21 +48,6 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
     @Published public var settingsState: PreferencesSubscriptionSettingsState = .subscriptionPendingActivation
 
     private var cancellables = Set<AnyCancellable>()
-
-    public enum UserEvent {
-        case openVPN,
-             openDB,
-             openITR,
-             openFeedback,
-             iHaveASubscriptionClick,
-             activateSubscriptionViaEmailClick,
-             activateSubscriptionViaRestoreAppStorePurchaseClick,
-             manageEmailClick,
-             addToDeviceActivationFlow,
-             openSubscriptionSettingsClick,
-             changePlanOrBillingClick,
-             removeSubscriptionClick
-    }
 
     public init(openURLHandler: @escaping (URL) -> Void,
                 userEventHandler: @escaping (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void,
@@ -119,7 +104,7 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
 
     @MainActor
     func didAppear() {
-        userEventHandler(.openSubscriptionSettingsClick)
+        userEventHandler(.didOpenSubscriptionSettings)
         fetchAndUpdateSubscriptionDetails()
     }
 
@@ -135,6 +120,7 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
 
     @MainActor
     func changePlanOrBillingAction() async -> ChangePlanOrBillingAction {
+        userEventHandler(.didClickChangePlanOrBilling)
 
         switch subscriptionPlatform {
         case .apple:
@@ -219,16 +205,16 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
 
         switch type {
         case .activationFlow:
-            eventType = .addToDeviceActivationFlow
+            eventType = .didClickAddToDevice
             url = subscriptionManager.url(for: .activationFlow)
         case .activationFlowAddEmailStep:
-            eventType = .addToDeviceActivationFlow
+            eventType = .didClickAddToDevice
             url = subscriptionManager.url(for: .activationFlowAddEmailStep)
         case .activationFlowLinkViaEmailStep:
-            eventType = .addToDeviceActivationFlow
+            eventType = .didClickAddToDevice
             url = subscriptionManager.url(for: .activationFlowLinkViaEmailStep)
         case .editEmail:
-            eventType = .manageEmailClick
+            eventType = .didClickManageEmail
             url = subscriptionManager.url(for: .manageEmail)
         }
 
@@ -251,7 +237,7 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
 
     @MainActor
     func removeFromThisDeviceAction() {
-        userEventHandler(.removeSubscriptionClick)
+        userEventHandler(.didClickRemoveSubscription)
         accountManager.signOut()
     }
 

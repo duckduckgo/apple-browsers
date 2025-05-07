@@ -146,7 +146,6 @@ public struct PreferencesSubscriptionSettingsViewV1: View {
 
             VStack(alignment: .leading, spacing: 14) {
                 TextButton(UserText.updatePlanOrCancelButton, weight: .semibold) {
-                    model.userEventHandler(.changePlanOrBillingClick)
                     Task {
                         switch await model.changePlanOrBillingAction() {
                         case .presentSheet(let sheet):

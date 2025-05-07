@@ -186,6 +186,8 @@ public final class TunnelControllerViewModel: ObservableObject {
             .store(in: &cancellables)
     }
 
+    /// Subscribes to toggle disable changes, and re-enables the toggle after 2 seconds.
+    ///
     private func subscribeToToggleDisableChanges() {
         $isToggleDisabled
             .filter { $0 }

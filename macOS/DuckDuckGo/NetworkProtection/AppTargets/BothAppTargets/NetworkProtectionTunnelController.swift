@@ -208,7 +208,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                 if #unavailable(macOS 12) {
                     try await enableOnDemand(tunnelManager: manager)
                 }
-                break
             case .invalid:
                 clearInternalManager()
             default:

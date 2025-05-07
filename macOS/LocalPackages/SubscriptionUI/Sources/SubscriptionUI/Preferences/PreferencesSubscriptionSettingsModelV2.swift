@@ -142,12 +142,8 @@ hasAnyEntitlement: \(hasAnyEntitlement)
 
         switch subscriptionPlatform {
         case .apple:
-            if await confirmIfSignedInToSameAccount() {
-                return .navigateToManageSubscription { [weak self] in
-                    self?.changePlanOrBilling(for: .appStore)
-                }
-            } else {
-                return .presentSheet(.apple)
+            return .navigateToManageSubscription { [weak self] in
+                self?.changePlanOrBilling(for: .appStore)
             }
         case .google:
             return .presentSheet(.google)
@@ -175,20 +171,6 @@ hasAnyEntitlement: \(hasAnyEntitlement)
                 }
             }
         }
-    }
-
-    private func confirmIfSignedInToSameAccount() async -> Bool {
-//        if #available(macOS 12.0, *) {
-//            guard let lastTransactionJWSRepresentation = await subscriptionManager.storePurchaseManager().mostRecentTransaction() else { return false }
-//            switch await subscriptionManager.authEndpointService.storeLogin(signature: lastTransactionJWSRepresentation) {
-//            case .success(let response):
-//                return response.externalID == accountManager.externalID
-//            case .failure:
-//                return false
-//            }
-//        }
-
-        return false
     }
 
     @MainActor

@@ -41,7 +41,6 @@ let package = Package(
             dependencies: [
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
-                .product(name: "Configuration", package: "BrowserServicesKit"),
                 .product(name: "Persistence", package: "BrowserServicesKit"),
             ],
             resources: [.copy("BundleResources")],
@@ -55,7 +54,6 @@ let package = Package(
                 "DataBrokerProtectionCore",
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
-                .product(name: "Configuration", package: "BrowserServicesKit"),
                 .product(name: "Persistence", package: "BrowserServicesKit"),
             ],
             swiftSettings: [

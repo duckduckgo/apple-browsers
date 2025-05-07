@@ -38,7 +38,7 @@ public enum AccountKeychainAccessError: Error, LocalizedError {
     case keychainDeleteFailure(OSStatus)
     case keychainLookupFailure(OSStatus)
 
-    public var errorDescription: String {
+    public var errorDescription: String? {
         switch self {
         case .failedToDecodeKeychainData: return "failedToDecodeKeychainData"
         case .failedToDecodeKeychainValueAsData: return "failedToDecodeKeychainValueAsData"
@@ -50,7 +50,7 @@ public enum AccountKeychainAccessError: Error, LocalizedError {
     }
 
     public var localizedDescription: String {
-        errorDescription
+        errorDescription ?? "Unknown"
     }
 }
 

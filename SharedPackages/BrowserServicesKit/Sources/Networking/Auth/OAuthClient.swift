@@ -44,6 +44,10 @@ public enum OAuthClientError: Error, LocalizedError, Equatable {
             return "Auth migration not needed"
         }
     }
+
+    public var localizedDescription: String {
+        errorDescription ?? "Unknown"
+    }
 }
 
 /// Provides the locally stored tokens container

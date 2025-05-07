@@ -179,7 +179,7 @@ public final class DataBrokerProtectionIOSManager {
 
         registerBackgroundTaskHandler()
 
-        /*
+#if DEBUG || ALPHA
         self.communicationLayer = DBPUICommunicationLayer(webURLSettings:
                                                             DataBrokerProtectionWebUIURLSettings(UserDefaults.standard),
                                                           privacyConfig: privacyConfigManager)
@@ -197,7 +197,7 @@ public final class DataBrokerProtectionIOSManager {
         Task { @MainActor in
             _ = try await communicationLayer.saveProfile(params: [], original: WKScriptMessage())
         }
-         */
+#endif
     }
 
     private func registerBackgroundTaskHandler() {

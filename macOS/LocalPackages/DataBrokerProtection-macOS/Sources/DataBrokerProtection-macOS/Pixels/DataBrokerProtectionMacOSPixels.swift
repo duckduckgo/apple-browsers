@@ -144,8 +144,8 @@ extension DataBrokerProtectionMacOSPixels: PixelKitEvent {
 
             // Configuration
         case .invalidPayload(let configuration): return "m_mac_dbp_\(configuration.rawValue)_invalid_payload".lowercased()
-        case .errorLoadingCachedConfig: return "dbp_configuration_error_loading_cached_config"
-        case .failedToParsePrivacyConfig: return "dbp_configuration_failed_to_parse"
+        case .errorLoadingCachedConfig: return "m_mac_dbp_configuration_error_loading_cached_config"
+        case .failedToParsePrivacyConfig: return "m_mac_dbp_configuration_failed_to_parse"
 
         }
     }

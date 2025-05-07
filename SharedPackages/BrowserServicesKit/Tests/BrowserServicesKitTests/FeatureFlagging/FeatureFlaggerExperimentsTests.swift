@@ -1286,7 +1286,7 @@ final class FeatureFlaggerExperimentsTests: XCTestCase {
         // we call resolveContentScopeScriptActiveExperiments(), then we should assign cohort
         let experiments = featureFlagger.resolveContentScopeScriptActiveExperiments()
 
-        print(experiments)
+        // Check cohorts are assigned
         XCTAssertFalse(mockStore.experiments?.isEmpty ?? true)
         XCTAssertEqual(experiments["experiment1"]?.cohortID, "control")
         XCTAssertEqual(experiments["experiment2"]?.cohortID, "blue")

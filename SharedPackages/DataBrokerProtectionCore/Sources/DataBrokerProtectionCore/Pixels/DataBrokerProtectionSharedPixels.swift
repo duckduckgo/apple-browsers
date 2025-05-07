@@ -151,10 +151,6 @@ public enum DataBrokerProtectionSharedPixels {
     case initialScanPostLoadingDuration(duration: Double, hasError: Bool, brokerURL: String)
     case initialScanPreStartDuration(duration: Double)
 
-    // Configuration
-    case errorLoadingCachedConfig(Error)
-    case failedToParsePrivacyConfig(Error)
-
     // Measure success/failure rate of Personal Information Removal Pixels
     // https://app.asana.com/0/1204006570077678/1206889724879222/f
     case globalMetricsWeeklyStats(profilesFound: Int, optOutsInProgress: Int, successfulOptOuts: Int, failedOptOuts: Int, durationOfFirstOptOut: Int, numberOfNewRecordsFound: Int)
@@ -240,10 +236,6 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .globalMetricsMonthlyStats: return "dbp_monthly_stats"
         case .dataBrokerMetricsWeeklyStats: return "dbp_databroker_weekly_stats"
         case .dataBrokerMetricsMonthlyStats: return "dbp_databroker_monthly_stats"
-
-            // Configuration
-        case .errorLoadingCachedConfig: return "dbp_configuration_error_loading_cached_config"
-        case .failedToParsePrivacyConfig: return "dbp_configuration_failed_to_parse"
 
             // Various monitoring pixels
         case .customDataBrokerStatsOptoutSubmit: return "dbp_databroker_custom_stats_optoutsubmit"
@@ -335,8 +327,7 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                 .secureVaultInitError,
                 .secureVaultKeyStoreReadError,
                 .secureVaultKeyStoreUpdateError,
-                .secureVaultError,
-                .failedToParsePrivacyConfig:
+                .secureVaultError:
             return [:]
         case .scanSuccess(let dataBroker, let matchesFound, let duration, let tries, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus):
             return [Consts.dataBrokerParamKey: dataBroker, Consts.matchesFoundKey: String(matchesFound), Consts.durationParamKey: String(duration), Consts.triesKey: String(tries), Consts.isImmediateOperation: isImmediateOperation.description, Consts.vpnConnectionStateParamKey: vpnConnectionState, Consts.vpnBypassStatusParamKey: vpnBypassStatus]
@@ -387,8 +378,6 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                            Consts.durationOfFirstOptOut: String(durationOfFirstOptOut),
                            Consts.numberOfNewRecordsFound: String(numberOfNewRecordsFound),
                            Consts.numberOfReappereances: String(numberOfReappereances)]
-        case .errorLoadingCachedConfig(let error):
-            return [Consts.errorDomainKey: (error as NSError).domain]
         case .customDataBrokerStatsOptoutSubmit(let dataBrokerName, let optOutSubmitSuccessRate):
             return [Consts.dataBrokerParamKey: dataBrokerName,
                     Consts.optOutSubmitSuccessRate: String(optOutSubmitSuccessRate)]
@@ -439,13 +428,10 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .cocoaError(let error, _),
                     .miscError(let error, _):
                 self.pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
-            case .errorLoadingCachedConfig(let error):
-                self.pixelKit.fire(DebugEvent(event, error: error), withNamePrefix: platform.pixelNamePrefix)
             case .secureVaultInitError(let error),
                     .secureVaultError(let error),
                     .secureVaultKeyStoreReadError(let error),
-                    .secureVaultKeyStoreUpdateError(let error),
-                    .failedToParsePrivacyConfig(let error):
+                    .secureVaultKeyStoreUpdateError(let error):
                 self.pixelKit.fire(DebugEvent(event, error: error), withNamePrefix: platform.pixelNamePrefix)
             case .parentChildMatches,
                     .optOutStart,

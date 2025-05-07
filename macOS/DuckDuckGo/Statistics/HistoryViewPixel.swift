@@ -74,22 +74,6 @@ enum HistoryViewPixel: PixelKitEventV2 {
      */
     case multipleItemsDeleted(DeletedBatchKind, burn: Bool)
 
-    // MARK: - Temporary Pixels
-    /**
-     * Event Trigger: History View onboarding dialog was shown.
-     */
-    case onboardingDialogShown
-
-    /**
-     * Event Trigger: History View onboarding dialog was dismissed.
-     */
-    case onboardingDialogDismissed
-
-    /**
-     * Event Trigger: History View onboarding dialog was accepted.
-     */
-    case onboardingDialogAccepted
-
     // MARK: -
 
     enum HistoryPageSource: String {
@@ -152,9 +136,6 @@ enum HistoryViewPixel: PixelKitEventV2 {
         case .delete: return "history-page_any-delete"
         case .singleItemDeleted: return "history-page_item-deleted"
         case .multipleItemsDeleted: return "history-page_items-deleted"
-        case .onboardingDialogShown: return "history-page_intro_dialog_shown"
-        case .onboardingDialogDismissed: return "history-page_intro_dialog_not_now"
-        case .onboardingDialogAccepted: return "history-page_intro_dialog_view_history"
         }
     }
 
@@ -176,12 +157,6 @@ enum HistoryViewPixel: PixelKitEventV2 {
             return nil
         case .multipleItemsDeleted(let batchKind, let burn):
             return [Parameters.filter: batchKind.rawValue, Parameters.type: burn ? "burn" : "delete"]
-        case .onboardingDialogShown:
-            return nil
-        case .onboardingDialogDismissed:
-            return nil
-        case .onboardingDialogAccepted:
-            return nil
         }
     }
 

@@ -36,6 +36,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     private let standardTabHeight: CGFloat
 
     @IBOutlet weak var visualEffectBackgroundView: NSVisualEffectView!
+    @IBOutlet weak var backgroundColorView: ColorView!
     @IBOutlet weak var pinnedTabsContainerView: NSView!
     @IBOutlet private weak var collectionView: TabBarCollectionView!
     @IBOutlet private weak var scrollView: TabBarScrollView!
@@ -164,6 +165,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     override func viewDidLoad() {
+        backgroundColorView.backgroundColor = visualStyleManager.style.baseBackgroundColor
         scrollView.updateScrollElasticity(with: tabMode)
         observeToScrollNotifications()
         subscribeToSelectionIndex()

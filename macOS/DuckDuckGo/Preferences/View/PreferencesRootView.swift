@@ -259,14 +259,6 @@ enum Preferences {
                                                           subscriptionStateUpdate: model.$currentSubscriptionState.eraseToAnyPublisher())
         }
 
-        private func makeOpenURLHandler() -> ((URL) -> Void) {
-            { url in
-                DispatchQueue.main.async {
-                    WindowControllersManager.shared.showTab(with: .subscription(url.appendingParameter(name: AttributionParameter.origin, value: SubscriptionFunnelOrigin.appSettings.rawValue)))
-                }
-            }
-        }
-
         private func makeSubscriptionUserEventHandler() -> ((PreferencesSubscriptionModel.UserEvent) -> Void) {
             { event in
                 DispatchQueue.main.async {
@@ -503,14 +495,6 @@ enum Preferences {
             return PreferencesSubscriptionSettingsModelV2(userEventHandler: userEventHandler,
                                                           subscriptionManager: subscriptionManager,
                                                           subscriptionStateUpdate: model.$currentSubscriptionState.eraseToAnyPublisher())
-        }
-
-        private func makeOpenURLHandler() -> ((URL) -> Void) {
-            { url in
-                DispatchQueue.main.async {
-                    WindowControllersManager.shared.showTab(with: .subscription(url.appendingParameter(name: AttributionParameter.origin, value: SubscriptionFunnelOrigin.appSettings.rawValue)))
-                }
-            }
         }
 
         private func makeSubscriptionUserEventHandler() -> ((PreferencesSubscriptionModel.UserEvent) -> Void) {

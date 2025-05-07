@@ -62,7 +62,6 @@ extension Preferences {
                             $0.grayscale(1.0).opacity(0.5)
                         }
 
-
                     Text(pane.displayName).font(PreferencesUI_macOS.Const.Fonts.sideBarItem)
                         .if(!isEnabled) {
                             $0.opacity(0.5)

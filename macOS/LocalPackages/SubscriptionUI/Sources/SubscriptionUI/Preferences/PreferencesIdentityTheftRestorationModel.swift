@@ -25,25 +25,19 @@ public final class PreferencesIdentityTheftRestorationModel: ObservableObject {
 
     public enum UserEvent {
         case openITR,
+             openURL(SubscriptionURL),
              didOpenITRPreferencePane
     }
 
-    private let subscriptionManager: SubscriptionAuthV1toV2Bridge
-    private let openURLHandler: (URL) -> Void
     private let userEventHandler: (PreferencesIdentityTheftRestorationModel.UserEvent) -> Void
 
     @Published public var status: StatusIndicator = .off
 
     private var cancellables = Set<AnyCancellable>()
 
-    public init(subscriptionManager: SubscriptionAuthV1toV2Bridge,
-                openURLHandler: @escaping (URL) -> Void,
-                userEventHandler: @escaping (PreferencesIdentityTheftRestorationModel.UserEvent) -> Void,
+    public init(userEventHandler: @escaping (PreferencesIdentityTheftRestorationModel.UserEvent) -> Void,
                 statusUpdates: AnyPublisher<StatusIndicator, Never>) {
-        self.subscriptionManager = subscriptionManager
-        self.openURLHandler = openURLHandler
         self.userEventHandler = userEventHandler
-
         statusUpdates
             .assign(to: \.status, onWeaklyHeld: self)
             .store(in: &cancellables)
@@ -61,6 +55,6 @@ public final class PreferencesIdentityTheftRestorationModel: ObservableObject {
 
     @MainActor
     func openFAQ() {
-        openURLHandler(subscriptionManager.url(for: .faq))
+        userEventHandler(.openURL(.faq))
     }
 }

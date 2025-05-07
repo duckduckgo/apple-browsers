@@ -209,6 +209,8 @@ enum Preferences {
                         PixelKit.fire(PrivacyProPixel.privacyProIdentityRestorationSettings)
                         let url = subscriptionManager.url(for: .identityTheftRestoration)
                         WindowControllersManager.shared.showTab(with: .identityTheftRestoration(url))
+                    case .openURL(let url):
+                        openURL(subscriptionURL: url)
                     case .didOpenITRPreferencePane:
                         // TODO: Fire new pixel
                         print("TODO: Fire new pixel")
@@ -217,9 +219,7 @@ enum Preferences {
                 }
             }
 
-            return PreferencesIdentityTheftRestorationModel(subscriptionManager: subscriptionManager,
-                                                            openURLHandler: makeOpenURLHandler(),
-                                                            userEventHandler: userEventHandler,
+            return PreferencesIdentityTheftRestorationModel(userEventHandler: userEventHandler,
                                                             statusUpdates: model.identityTheftRestorationUpdates)
         }
 
@@ -270,6 +270,15 @@ enum Preferences {
                         NotificationCenter.default.post(name: .ToggleNetworkProtectionInMainWindow, object: self, userInfo: nil)
                     }
                 }
+            }
+        }
+
+        private func openURL(subscriptionURL: SubscriptionURL) {
+            DispatchQueue.main.async {
+                let url = subscriptionManager.url(for: subscriptionURL)
+                    .appendingParameter(name: AttributionParameter.origin,
+                                        value: SubscriptionFunnelOrigin.appSettings.rawValue)
+                WindowControllersManager.shared.showTab(with: .subscription(url))
             }
         }
     }
@@ -440,6 +449,8 @@ enum Preferences {
                         PixelKit.fire(PrivacyProPixel.privacyProIdentityRestorationSettings)
                         let url = subscriptionManager.url(for: .identityTheftRestoration)
                         WindowControllersManager.shared.showTab(with: .identityTheftRestoration(url))
+                    case .openURL(let url):
+                        openURL(subscriptionURL: url)
                     case .didOpenITRPreferencePane:
                         // TODO: Fire new pixel
                         print("TODO: Fire new pixel")
@@ -448,9 +459,7 @@ enum Preferences {
                 }
             }
 
-            return PreferencesIdentityTheftRestorationModel(subscriptionManager: subscriptionManager,
-                                                            openURLHandler: makeOpenURLHandler(),
-                                                            userEventHandler: userEventHandler,
+            return PreferencesIdentityTheftRestorationModel(userEventHandler: userEventHandler,
                                                             statusUpdates: model.identityTheftRestorationUpdates)
         }
 
@@ -501,6 +510,15 @@ enum Preferences {
                         NotificationCenter.default.post(name: .ToggleNetworkProtectionInMainWindow, object: self, userInfo: nil)
                     }
                 }
+            }
+        }
+
+        private func openURL(subscriptionURL: SubscriptionURL) {
+            DispatchQueue.main.async {
+                let url = subscriptionManager.url(for: subscriptionURL)
+                    .appendingParameter(name: AttributionParameter.origin,
+                                        value: SubscriptionFunnelOrigin.appSettings.rawValue)
+                WindowControllersManager.shared.showTab(with: .subscription(url))
             }
         }
     }

@@ -49,7 +49,7 @@ final class DefaultHistoryViewTabOpenerTests: XCTestCase {
     var dialogPresenter: CapturingHistoryViewDeleteDialogPresenter!
 
     override func setUp() async throws {
-        urlOpener = await CapturingURLOpener()
+        urlOpener = CapturingURLOpener()
         dialogPresenter = CapturingHistoryViewDeleteDialogPresenter()
         tabOpener = DefaultHistoryViewTabOpener(urlOpener: { self.urlOpener })
         tabOpener.dialogPresenter = dialogPresenter
@@ -60,7 +60,7 @@ final class DefaultHistoryViewTabOpenerTests: XCTestCase {
     @MainActor
     func testThatOpenCallsURLOpener() async throws {
         let url = try XCTUnwrap("https://example.com".url)
-        await tabOpener.open(url)
+        tabOpener.open(url)
         XCTAssertEqual(urlOpener.openCalls, [url])
     }
 

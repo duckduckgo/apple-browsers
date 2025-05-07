@@ -26,11 +26,18 @@ public extension NewTabPageDataModel {
         public let theme: Theme?
         public let userColor: Background?
         public let userImages: [UserImage]
+        public let defaultStyles: DefaultStyles?
 
-        public init(background: Background, theme: Theme?, userColor: NSColor?, userImages: [UserImage]) {
+        public init(background: Background,
+                    theme: Theme?,
+                    userColor: NSColor?,
+                    userImages: [UserImage],
+                    defaultStyles: DefaultStyles?) {
             self.background = background
             self.theme = theme
             self.userImages = userImages
+            self.defaultStyles = defaultStyles
+
             if let hex = userColor?.hex() {
                 self.userColor = Background.hexColor(hex)
             } else {
@@ -43,6 +50,7 @@ public extension NewTabPageDataModel {
             case theme
             case userColor
             case userImages
+            case defaultStyles
         }
 
         public func encode(to encoder: any Encoder) throws {
@@ -51,6 +59,7 @@ public extension NewTabPageDataModel {
             try container.encode(self.theme?.rawValue ?? "system", forKey: CodingKeys.theme)
             try container.encode(self.userColor, forKey: CodingKeys.userColor)
             try container.encode(self.userImages, forKey: CodingKeys.userImages)
+            try container.encode(self.defaultStyles, forKey: CodingKeys.defaultStyles)
         }
     }
 
@@ -175,6 +184,16 @@ public extension NewTabPageDataModel {
             self.id = id
             self.src = src
             self.thumb = thumb
+        }
+    }
+
+    struct DefaultStyles: Encodable, Equatable {
+        public let lightBackgroundColor: String
+        public let darkBackgroundColor: String
+
+        public init(lightBackgroundColor: String, darkBackgroundColor: String) {
+            self.lightBackgroundColor = lightBackgroundColor
+            self.darkBackgroundColor = darkBackgroundColor
         }
     }
 }

@@ -90,6 +90,8 @@ public struct UserDefaultsWrapper<T> {
         case autofillCredentialsSavePromptShowAtLeastOnce = "com.duckduckgo.ios.autofillCredentialsSavePromptShowAtLeastOnce"
         case autofillCredentialsHasBeenEnabledAutomaticallyIfNecessary =
                 "com.duckduckgo.ios.autofillCredentialsHasBeenEnabledAutomaticallyIfNecessary"
+        case autofillCreditCardsHasBeenEnabledAutomaticallyIfNecessary =
+                "com.duckduckgo.ios.autofillCreditCardsHasBeenEnabledAutomaticallyIfNecessary"
         case autofillImportViaSyncStart = "com.duckduckgo.ios.autofillImportViaSyncStart"
         case autofillSearchDauDate = "com.duckduckgo.app.autofill.SearchDauDate"
         case autofillFillDate = "com.duckduckgo.app.autofill.FillDate"
@@ -170,6 +172,7 @@ public struct UserDefaultsWrapper<T> {
         case duckPlayerNativeUIPrimingModalPresentationEventCount = "com.duckduckgo.ios.duckPlayerNativeUIPrimingModalPresentationEventCount"
         case duckPlayerNativeUIPrimingModalTimeSinceLastPresented = "com.duckduckgo.ios.duckPlayerduckPlayerNativeUIPrimingModalTimeSinceLastPresented"
         case duckPlayerPillDismissCount = "com.duckduckgo.ios.duckPlayerPillDismissCount"
+        case duckPlayerWelcomeMessageShown = "com.duckduckgo.ios.duckPlayerWelcomeMessageShown"
 
         case newTabPageSectionsSettings = "com.duckduckgo.ios.newTabPage.sections.settings"
         case newTabPageShortcutsSettings = "com.duckduckgo.ios.newTabPage.shortcuts.settings"

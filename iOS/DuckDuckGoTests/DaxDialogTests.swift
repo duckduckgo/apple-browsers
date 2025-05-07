@@ -152,7 +152,6 @@ final class DaxDialog: XCTestCase {
 
         // THEN
         XCTAssertEqual(result.type, .withOneTracker)
-        XCTAssertFalse(result.highlightAddressBar)
     }
 
     func testWhenBrowsingSpecIsWithMultipleTrackerThenHighlightAddressBarIsFalse() throws {
@@ -169,7 +168,6 @@ final class DaxDialog: XCTestCase {
 
         // THEN
         XCTAssertEqual(result.type, .withMultipleTrackers)
-        XCTAssertFalse(result.highlightAddressBar)
     }
 
     func testWhenURLIsDuckDuckGoSearchAndSearchDialogHasNotBeenSeenThenReturnSpecTypeAfterSearch() {

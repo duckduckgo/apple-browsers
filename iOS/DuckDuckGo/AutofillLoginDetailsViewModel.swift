@@ -167,8 +167,8 @@ final class AutofillLoginDetailsViewModel: ObservableObject {
     }
     
     var userVisiblePassword: String {
-        let passwordHider = PasswordHider(password: password)
-        return isPasswordHidden ? passwordHider.hiddenPassword : passwordHider.password
+        let textMasker = TextMasker(text: password)
+        return isPasswordHidden ? textMasker.maskedText : textMasker.originalText
     }
 
     var usernameDisplayString: String {

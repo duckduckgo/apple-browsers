@@ -31,6 +31,7 @@ final class BookmarksBarViewController: NSViewController {
     @IBOutlet private var bookmarksBarCollectionView: NSCollectionView!
     @IBOutlet private var clippedItemsIndicator: MouseOverButton!
     @IBOutlet private var promptAnchor: NSView!
+    @IBOutlet var backgroundColorView: ColorView!
 
     private var bookmarkMenuPopover: BookmarksBarMenuPopover?
 
@@ -39,6 +40,7 @@ final class BookmarksBarViewController: NSViewController {
     private let viewModel: BookmarksBarViewModel
     private let tabCollectionViewModel: TabCollectionViewModel
     private let appereancePreferences: AppearancePreferencesPersistor
+    private let visualStyleManager: VisualStyleManagerProviding
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -63,11 +65,13 @@ final class BookmarksBarViewController: NSViewController {
     init?(coder: NSCoder, tabCollectionViewModel: TabCollectionViewModel,
           bookmarkManager: BookmarkManager = LocalBookmarkManager.shared,
           dragDropManager: BookmarkDragDropManager = BookmarkDragDropManager.shared,
-          appereancePreferences: AppearancePreferencesPersistor = AppearancePreferencesUserDefaultsPersistor()
+          appereancePreferences: AppearancePreferencesPersistor = AppearancePreferencesUserDefaultsPersistor(),
+          visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager
     ) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
         self.appereancePreferences = appereancePreferences
+        self.visualStyleManager = visualStyleManager
 
         self.tabCollectionViewModel = tabCollectionViewModel
         self.viewModel = BookmarksBarViewModel(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, tabCollectionViewModel: tabCollectionViewModel)
@@ -90,11 +94,14 @@ final class BookmarksBarViewController: NSViewController {
 
         viewModel.delegate = self
 
+        backgroundColorView.backgroundColor = visualStyleManager.style.navigationBackgroundColor
+
         let nib = NSNib(nibNamed: "BookmarksBarCollectionViewItem", bundle: .main)
         bookmarksBarCollectionView.setDraggingSourceOperationMask([.copy, .move], forLocal: true)
         bookmarksBarCollectionView.register(nib, forItemWithIdentifier: BookmarksBarCollectionViewItem.identifier)
 
         bookmarksBarCollectionView.registerForDraggedTypes(BookmarkDragDropManager.draggedTypes)
+        bookmarksBarCollectionView.backgroundColors = [visualStyleManager.style.navigationBackgroundColor]
 
         clippedItemsIndicator.registerForDraggedTypes(BookmarkDragDropManager.draggedTypes)
         clippedItemsIndicator.delegate = self

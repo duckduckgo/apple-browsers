@@ -1,6 +1,6 @@
 {
     "readme": "https://github.com/duckduckgo/privacy-configuration",
-    "version": 1745328842087,
+    "version": 1746438951882,
     "features": {
         "adAttributionReporting": {
             "state": "disabled",
@@ -570,6 +570,21 @@
                     "domain": "kerknet.be"
                 },
                 {
+                    "domain": "medscape.com"
+                },
+                {
+                    "domain": "telekom.de"
+                },
+                {
+                    "domain": "caf.fr"
+                },
+                {
+                    "domain": "homeoffice.gov.uk"
+                },
+                {
+                    "domain": "riga-airport.com"
+                },
+                {
                     "domain": "marvel.com"
                 },
                 {
@@ -584,7 +599,8 @@
             ],
             "settings": {
                 "disabledCMPs": [
-                    "healthline-media"
+                    "healthline-media",
+                    "paypal-us"
                 ],
                 "filterlistExceptions": [
                     "google.ae",
@@ -737,7 +753,7 @@
                     "state": "disabled"
                 }
             },
-            "hash": "6a5ef71f3f72a3795c4e020031d6cf4c"
+            "hash": "a0c0168a977266d50ddecb95e18187f6"
         },
         "autofillBreakageReporter": {
             "state": "disabled",
@@ -1702,6 +1718,36 @@
             },
             "hash": "5fc4eb8ffcdc72d26ec601f7354ebcf6"
         },
+        "contentScopeExperiments": {
+            "state": "enabled",
+            "exceptions": [],
+            "features": {
+                "fingerprintingCanvas": {
+                    "state": "enabled",
+                    "rollout": {
+                        "steps": [
+                            {
+                                "percent": 25
+                            },
+                            {
+                                "percent": 100
+                            }
+                        ]
+                    },
+                    "cohorts": [
+                        {
+                            "name": "control",
+                            "weight": 1
+                        },
+                        {
+                            "name": "treatment",
+                            "weight": 1
+                        }
+                    ]
+                }
+            },
+            "hash": "933995b88b904ab6070a76c259001a6c"
+        },
         "contextualOnboarding": {
             "exceptions": [],
             "state": "enabled",
@@ -1877,6 +1923,10 @@
                     {
                         "domain": "ihg.com",
                         "reason": "https://github.com/duckduckgo/privacy-configuration/pull/2872"
+                    },
+                    {
+                        "domain": "routenote.com",
+                        "reason": "https://github.com/duckduckgo/privacy-configuration/pull/3055"
                     }
                 ],
                 "webViewDefault": [
@@ -1896,7 +1946,7 @@
             },
             "exceptions": [],
             "state": "enabled",
-            "hash": "663bc161529b959e8f74047818899fb5"
+            "hash": "c66ed3232c7c619b86d36754e1a6795f"
         },
         "dbp": {
             "state": "enabled",
@@ -2336,6 +2386,10 @@
                     },
                     {
                         "selector": ".ad-current",
+                        "type": "hide-empty"
+                    },
+                    {
+                        "selector": ".ad-frame",
                         "type": "hide-empty"
                     },
                     {
@@ -3524,24 +3578,8 @@
                                 "type": "hide-empty"
                             },
                             {
-                                "selector": ".global-nav-view, .global-nav-view .global-nav-content",
-                                "type": "modify-style",
-                                "values": [
-                                    {
-                                        "property": "margin-top",
-                                        "value": "0px"
-                                    }
-                                ]
-                            },
-                            {
-                                "selector": ".search-subnav-slender-view, .search-slender-advanced-panel-view",
-                                "type": "modify-style",
-                                "values": [
-                                    {
-                                        "property": "top",
-                                        "value": "0px"
-                                    }
-                                ]
+                                "selector": "[class*='-ad-container']",
+                                "type": "override"
                             }
                         ]
                     },
@@ -5033,6 +5071,10 @@
                             {
                                 "selector": ".ad-area",
                                 "type": "hide-empty"
+                            },
+                            {
+                                "selector": "[data-qa='AdSlot-Container']",
+                                "type": "closest-empty"
                             }
                         ]
                     },
@@ -5872,7 +5914,7 @@
                 ]
             },
             "state": "enabled",
-            "hash": "b774e7e3e873c9e2f8ff787bec0ea11d"
+            "hash": "ad6bcadd6f0b2a42e041d469540d9b19"
         },
         "exceptionHandler": {
             "exceptions": [
@@ -6323,10 +6365,12 @@
                     "globalprivacycontrol.org",
                     "washingtonpost.com",
                     "nytimes.com",
+                    "privacytests.org",
+                    "privacytests2.org",
                     "privacy-test-pages.site"
                 ]
             },
-            "hash": "08ccc28c266fd21b8f14844800bf483c"
+            "hash": "51b1a944db37d7510c33a27991f702c2"
         },
         "harmfulApis": {
             "settings": {
@@ -6874,11 +6918,20 @@
                         ]
                     },
                     "minSupportedVersion": "1.116.0"
+                },
+                "privacyProAuthV2": {
+                    "state": "internal",
+                    "minSupportedVersion": "1.133.0"
                 }
             },
-            "hash": "9738cff7f6a81e78fa9a0dfbd1dc99d6"
+            "hash": "a4343dad6dd63ad1069af95283c5190d"
         },
         "privacyProtectionsPopup": {
+            "state": "disabled",
+            "exceptions": [],
+            "hash": "c292bb627849854515cebbded288ef5a"
+        },
+        "quickNavTldLookup": {
             "state": "disabled",
             "exceptions": [],
             "hash": "c292bb627849854515cebbded288ef5a"
@@ -7076,6 +7129,12 @@
             "exceptions": [],
             "minSupportedVersion": "1.70.0",
             "hash": "003c4c59d4fb6697038dc43f2ec718b3"
+        },
+        "tabCrashRecovery": {
+            "state": "enabled",
+            "exceptions": [],
+            "minSupportedVersion": "1.137.0",
+            "hash": "c38c449ed89cf483a61da23acace65ec"
         },
         "tabManager": {
             "exceptions": [],
@@ -7436,6 +7495,12 @@
                                 "rule": "aax.amazon-adsystem.com/e/dtb/bid",
                                 "domains": [
                                     "cleveland.com"
+                                ]
+                            },
+                            {
+                                "rule": "client.aps.amazon-adsystem.com/publisher.js",
+                                "domains": [
+                                    "ign.com"
                                 ]
                             }
                         ]
@@ -7859,6 +7924,16 @@
                                 "rule": "convertexperiments.com",
                                 "domains": [
                                     "ground.news"
+                                ]
+                            }
+                        ]
+                    },
+                    "convertkit.com": {
+                        "rules": [
+                            {
+                                "rule": "convertkit.com",
+                                "domains": [
+                                    "kit.com"
                                 ]
                             }
                         ]
@@ -8295,6 +8370,7 @@
                                 "rule": "pubads.g.doubleclick.net/gampad/ads",
                                 "domains": [
                                     "crunchyroll.com",
+                                    "iheart.com",
                                     "nhl.com",
                                     "pch.com",
                                     "rocketnews24.com",
@@ -9149,6 +9225,12 @@
                                 "domains": [
                                     "<all>"
                                 ]
+                            },
+                            {
+                                "rule": "www.gstatic.com/flutter-canvaskit",
+                                "domains": [
+                                    "nimblerx.com"
+                                ]
                             }
                         ]
                     },
@@ -9249,6 +9331,16 @@
                                 "domains": [
                                     "cox.com",
                                     "cox.net"
+                                ]
+                            }
+                        ]
+                    },
+                    "improvedigital.com": {
+                        "rules": [
+                            {
+                                "rule": "hb.improvedigital.com/pbw/prebid/prebid-idhb-v8.51a.min.js",
+                                "domains": [
+                                    "chicagotribune.com"
                                 ]
                             }
                         ]
@@ -10870,7 +10962,8 @@
                             {
                                 "rule": "cdn.weglot.com/weglot.min.js",
                                 "domains": [
-                                    "cherrycreekschools.org"
+                                    "cherrycreekschools.org",
+                                    "myavista.com"
                                 ]
                             }
                         ]
@@ -11083,7 +11176,7 @@
                     "domain": "flexmls.com"
                 }
             ],
-            "hash": "e5f8336c548cf4f8f47054f19d0523be"
+            "hash": "40d82e4c970f35509f7ab81b9222ea14"
         },
         "trackingCookies1p": {
             "settings": {

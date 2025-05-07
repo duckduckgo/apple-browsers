@@ -195,7 +195,7 @@ public class DataBrokerOperation: Operation, @unchecked Sendable {
                 continue
             }
             do {
-                Logger.dataBrokerProtection.log("Running operation: \(String(describing: operationData), privacy: .public)")
+                Logger.dataBrokerProtection.log("Running operation: \(String(describing: operationData))")
 
                 try await DataBrokerProfileQueryOperationManager(vpnBypassService: operationDependencies.vpnBypassService).runOperation(operationData: operationData,
                                                                                 brokerProfileQueryData: brokerProfileData,

@@ -25,6 +25,7 @@ import BrowserServicesKit
 import SwiftUI
 
 @testable import DuckDuckGo
+@testable import Core
 
 class MockWKNavigationDelegate: NSObject, WKNavigationDelegate {
     var didFinishNavigation: ((WKWebView, WKNavigation?) -> Void)?
@@ -182,6 +183,8 @@ final class MockDuckPlayerSettings: DuckPlayerSettings {
     var nativeUIYoutubeMode: DuckDuckGo.NativeDuckPlayerYoutubeMode = .allCases.first!
     var nativeUIPrimingModalPresentedCount: Int = 0
     var duckPlayerNativeUIPrimingModalTimeSinceLastPresented: Int = 0
+    var variant: DuckDuckGo.DuckPlayerVariant = .classicWeb
+    var welcomeMessageShown: Bool = false
 
     init(appSettings: any DuckDuckGo.AppSettings, privacyConfigManager: any BrowserServicesKit.PrivacyConfigurationManaging, internalUserDecider: any BrowserServicesKit.InternalUserDecider) {}
 
@@ -268,7 +271,7 @@ final class MockDuckPlayer: DuckPlayerControlling {
     private var nativeUIPresenter: DuckPlayerNativeUIPresenting
 
     // MARK: - Initialization
-    init(settings: DuckPlayerSettings, featureFlagger: FeatureFlagger, nativeUIPresenter: DuckPlayerNativeUIPresenting = MockDuckPlayerNativeUIPresenting()) {
+    init(settings: DuckPlayerSettings, featureFlagger: FeatureFlagger, nativeUIPresenter: DuckPlayerNativeUIPresenting = MockDuckPlayerNativeUIPresenting(), featureDiscovery: FeatureDiscovery = MockFeatureDiscovery()) {
         self.settings = settings
         self.featureFlagger = featureFlagger
         self.nativeUIPresenter = nativeUIPresenter
@@ -466,6 +469,18 @@ class MockDelayHandler: DuckPlayerDelayHandling {
 
     func completeDelay() {
         delaySubject.send()
+    }
+}
+
+// Testable Coordinator subclass for timestamp testing
+@MainActor
+class TestableDuckPlayerWebViewCoordinator: DuckPlayerWebView.Coordinator {
+    var mockTimestamp: TimeInterval = 0.0
+    var getCurrentTimestampCallCount = 0
+
+    override func getCurrentTimestamp(_ webView: WKWebView) async -> TimeInterval {
+        getCurrentTimestampCallCount += 1
+        return mockTimestamp
     }
 }
 

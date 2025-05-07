@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="23094" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" initialViewController="JFF-Nj-8om">
+<document type="com.apple.InterfaceBuilder3.Cocoa.Storyboard.XIB" version="3.0" toolsVersion="23504" targetRuntime="MacOSX.Cocoa" propertyAccessControl="none" useAutolayout="YES" initialViewController="JFF-Nj-8om">
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23094"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.CocoaPlugin" version="23504"/>
         <capability name="Image references" minToolsVersion="12.0"/>
         <capability name="Named colors" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
@@ -12,49 +12,52 @@
             <objects>
                 <viewController id="JFF-Nj-8om" customClass="BookmarksBarViewController" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target" sceneMemberID="viewController">
                     <view key="view" id="R54-3G-cms" customClass="ColorView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
-                        <rect key="frame" x="0.0" y="0.0" width="676" height="56"/>
+                        <rect key="frame" x="0.0" y="0.0" width="676" height="28"/>
                         <autoresizingMask key="autoresizingMask"/>
                         <subviews>
                             <customView translatesAutoresizingMaskIntoConstraints="NO" id="cjE-4p-vxI">
-                                <rect key="frame" x="328" y="18" width="20" height="20"/>
+                                <rect key="frame" x="328" y="4" width="20" height="20"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="20" id="GSP-kG-54V"/>
                                     <constraint firstAttribute="width" constant="20" id="yib-Jv-zJp"/>
                                 </constraints>
                             </customView>
                             <scrollView wantsLayer="YES" borderType="none" autohidesScrollers="YES" horizontalLineScroll="0.0" horizontalPageScroll="0.0" verticalLineScroll="0.0" verticalPageScroll="0.0" hasHorizontalScroller="NO" usesPredominantAxisScrolling="NO" horizontalScrollElasticity="none" verticalScrollElasticity="none" translatesAutoresizingMaskIntoConstraints="NO" id="D39-Of-BIh">
-                                <rect key="frame" x="12" y="2" width="664" height="52"/>
+                                <rect key="frame" x="12" y="4" width="664" height="24"/>
                                 <clipView key="contentView" drawsBackground="NO" id="yvk-6W-sd0">
-                                    <rect key="frame" x="0.0" y="0.0" width="664" height="52"/>
+                                    <rect key="frame" x="0.0" y="0.0" width="664" height="24"/>
                                     <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                     <subviews>
                                         <collectionView selectable="YES" id="vwg-NL-UPk" customClass="ItemCachingCollectionView" customModule="DuckDuckGo_Privacy_Browser">
-                                            <rect key="frame" x="0.0" y="0.0" width="664" height="52"/>
+                                            <rect key="frame" x="0.0" y="0.0" width="664" height="24"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES"/>
                                             <collectionViewLayout key="collectionViewLayout" id="YNm-eM-CbC"/>
                                             <color key="primaryBackgroundColor" name="NavigationBarBackgroundColor"/>
                                         </collectionView>
                                     </subviews>
-                                    <color key="backgroundColor" name="AddressBarFocusedBackgroundColor"/>
+                                    <color key="backgroundColor" red="1" green="1" blue="1" alpha="0.0" colorSpace="custom" customColorSpace="sRGB"/>
                                 </clipView>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="24" id="CRl-5P-hI8"/>
+                                </constraints>
                                 <scroller key="horizontalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="YES" id="78T-h6-lHw">
                                     <rect key="frame" x="-100" y="-100" width="644" height="16"/>
                                     <autoresizingMask key="autoresizingMask"/>
                                 </scroller>
                                 <scroller key="verticalScroller" hidden="YES" wantsLayer="YES" verticalHuggingPriority="750" horizontal="NO" id="p2h-o7-49x">
-                                    <rect key="frame" x="660" y="0.0" width="16" height="52"/>
+                                    <rect key="frame" x="648" y="0.0" width="16" height="24"/>
                                     <autoresizingMask key="autoresizingMask"/>
                                 </scroller>
                             </scrollView>
                             <button verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="Mgr-xJ-Pl5" customClass="MouseOverButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
-                                <rect key="frame" x="640" y="15" width="28" height="28"/>
+                                <rect key="frame" x="640" y="4" width="28" height="24"/>
                                 <buttonCell key="cell" type="bevel" bezelStyle="rounded" image="Chevron-Double-Right-16" imagePosition="overlaps" alignment="center" imageScaling="proportionallyDown" inset="2" id="6BV-bJ-0Kw">
                                     <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                     <font key="font" metaFont="system"/>
                                 </buttonCell>
                                 <constraints>
                                     <constraint firstAttribute="width" constant="28" id="fBB-tP-0oM"/>
-                                    <constraint firstAttribute="height" constant="28" id="sTT-Tl-GeS"/>
+                                    <constraint firstAttribute="height" constant="24" id="sTT-Tl-GeS"/>
                                 </constraints>
                                 <userDefinedRuntimeAttributes>
                                     <userDefinedRuntimeAttribute type="color" keyPath="mouseOverColor">
@@ -75,10 +78,10 @@
                                 <rect key="frame" x="0.0" y="-2" width="676" height="5"/>
                             </box>
                             <customView verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="YdB-zl-3Cf">
-                                <rect key="frame" x="10" y="26" width="65" height="28"/>
+                                <rect key="frame" x="10" y="4" width="65" height="24"/>
                                 <subviews>
                                     <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="gwe-JW-nZ6">
-                                        <rect key="frame" x="4" y="3" width="16" height="24"/>
+                                        <rect key="frame" x="4" y="1" width="16.5" height="24"/>
                                         <constraints>
                                             <constraint firstAttribute="width" constant="16" id="TNn-Xg-utS"/>
                                             <constraint firstAttribute="height" constant="16" id="ZuD-h5-gbG"/>
@@ -88,7 +91,7 @@
                                         </imageCell>
                                     </imageView>
                                     <textField focusRingType="none" horizontalHuggingPriority="251" verticalHuggingPriority="750" translatesAutoresizingMaskIntoConstraints="NO" id="jeg-Iv-FxB">
-                                        <rect key="frame" x="22" y="7" width="37" height="15"/>
+                                        <rect key="frame" x="22" y="5" width="37" height="15"/>
                                         <constraints>
                                             <constraint firstAttribute="height" constant="15" id="L4P-aC-UPW"/>
                                         </constraints>
@@ -99,7 +102,7 @@
                                         </textFieldCell>
                                     </textField>
                                     <customView translatesAutoresizingMaskIntoConstraints="NO" id="Nr2-47-6rU" customClass="MouseOverView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
-                                        <rect key="frame" x="0.0" y="0.0" width="65" height="28"/>
+                                        <rect key="frame" x="0.0" y="0.0" width="65" height="24"/>
                                         <userDefinedRuntimeAttributes>
                                             <userDefinedRuntimeAttribute type="color" keyPath="mouseOverColor">
                                                 <color key="value" name="ButtonMouseOverColor"/>
@@ -121,7 +124,7 @@
                                     <constraint firstItem="gwe-JW-nZ6" firstAttribute="centerY" secondItem="YdB-zl-3Cf" secondAttribute="centerY" id="4th-lJ-sVJ"/>
                                     <constraint firstAttribute="trailing" secondItem="Nr2-47-6rU" secondAttribute="trailing" id="68B-Qb-2Cy"/>
                                     <constraint firstItem="jeg-Iv-FxB" firstAttribute="leading" secondItem="gwe-JW-nZ6" secondAttribute="trailing" constant="4" id="Hte-Hn-pTm"/>
-                                    <constraint firstAttribute="height" constant="28" id="IWa-7p-Qsd"/>
+                                    <constraint firstAttribute="height" constant="24" id="IWa-7p-Qsd"/>
                                     <constraint firstAttribute="trailing" secondItem="jeg-Iv-FxB" secondAttribute="trailing" constant="8" id="d8s-mn-8EF"/>
                                     <constraint firstItem="Nr2-47-6rU" firstAttribute="top" secondItem="YdB-zl-3Cf" secondAttribute="top" id="e7t-is-nFh"/>
                                     <constraint firstItem="jeg-Iv-FxB" firstAttribute="centerY" secondItem="YdB-zl-3Cf" secondAttribute="centerY" id="eKI-2A-AvJ"/>
@@ -133,13 +136,12 @@
                         <constraints>
                             <constraint firstItem="X6g-3K-JDi" firstAttribute="leading" secondItem="R54-3G-cms" secondAttribute="leading" id="0AB-Ps-M7N"/>
                             <constraint firstItem="YdB-zl-3Cf" firstAttribute="top" secondItem="vwg-NL-UPk" secondAttribute="top" id="0gz-SM-ZOO"/>
-                            <constraint firstItem="D39-Of-BIh" firstAttribute="top" secondItem="R54-3G-cms" secondAttribute="top" constant="2" id="1I1-kg-gBo"/>
-                            <constraint firstAttribute="bottom" secondItem="D39-Of-BIh" secondAttribute="bottom" constant="2" id="1fG-Jn-HEl"/>
+                            <constraint firstItem="D39-Of-BIh" firstAttribute="top" secondItem="R54-3G-cms" secondAttribute="top" id="1I1-kg-gBo"/>
                             <constraint firstAttribute="trailing" secondItem="D39-Of-BIh" secondAttribute="trailing" id="Cvo-oT-HF2"/>
+                            <constraint firstItem="Mgr-xJ-Pl5" firstAttribute="top" secondItem="R54-3G-cms" secondAttribute="top" id="HZx-3d-A1I"/>
                             <constraint firstItem="cjE-4p-vxI" firstAttribute="centerX" secondItem="R54-3G-cms" secondAttribute="centerX" id="T6z-7g-NZA"/>
                             <constraint firstAttribute="trailing" secondItem="Mgr-xJ-Pl5" secondAttribute="trailing" constant="8" id="UCG-Ww-dsY"/>
                             <constraint firstAttribute="trailing" secondItem="X6g-3K-JDi" secondAttribute="trailing" id="ZaK-nU-eHk"/>
-                            <constraint firstItem="Mgr-xJ-Pl5" firstAttribute="centerY" secondItem="R54-3G-cms" secondAttribute="centerY" constant="-1" id="eoh-hW-GcD"/>
                             <constraint firstItem="D39-Of-BIh" firstAttribute="leading" secondItem="R54-3G-cms" secondAttribute="leading" constant="12" id="hOd-Bz-o5j"/>
                             <constraint firstAttribute="bottom" secondItem="X6g-3K-JDi" secondAttribute="bottom" id="iWj-iC-9gW"/>
                             <constraint firstItem="cjE-4p-vxI" firstAttribute="centerY" secondItem="R54-3G-cms" secondAttribute="centerY" id="s3N-bi-7Hr"/>
@@ -152,6 +154,7 @@
                         </userDefinedRuntimeAttributes>
                     </view>
                     <connections>
+                        <outlet property="backgroundColorView" destination="R54-3G-cms" id="6vA-l4-sG5"/>
                         <outlet property="bookmarksBarCollectionView" destination="vwg-NL-UPk" id="1LG-QE-Dgd"/>
                         <outlet property="clippedItemsIndicator" destination="Mgr-xJ-Pl5" id="4ww-Po-dNb"/>
                         <outlet property="importBookmarksButton" destination="YdB-zl-3Cf" id="phi-lN-qHs"/>
@@ -168,10 +171,7 @@
     </scenes>
     <resources>
         <image name="Chevron-Double-Right-16" width="16" height="16"/>
-        <image name="square.and.arrow.down" catalog="system" width="16" height="17"/>
-        <namedColor name="AddressBarFocusedBackgroundColor">
-            <color red="1" green="1" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
-        </namedColor>
+        <image name="square.and.arrow.down" catalog="system" width="15" height="17"/>
         <namedColor name="BookmarkBarBackgroundColor">
             <color red="0.98039215686274506" green="0.98039215686274506" blue="0.98039215686274506" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>

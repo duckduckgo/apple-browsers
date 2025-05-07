@@ -57,7 +57,6 @@ public enum SubscriptionManagerError: Error, Equatable, LocalizedError {
 
 public enum SubscriptionPixelType {
     case invalidRefreshToken
-    case migrationStarted
     case migrationSucceeded
     case migrationFailed(Error)
     case subscriptionIsActive
@@ -239,17 +238,19 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
     func migrateAuthV1toAuthV2IfNeeded() async {
 
-        guard v1MigrationNeeded else {
+        guard v1MigrationNeeded, // stops multiple attempts in a session, even in case of unrecoverable failures
+        oAuthClient.currentTokenContainer == nil else { // Already migrated
             return
         }
 
         // Attempting V1 token migration
         do {
-            pixelHandler.handle(pixelType: .migrationStarted)
-            if (try await oAuthClient.migrateV1Token()) != nil {
-                pixelHandler.handle(pixelType: .migrationSucceeded)
-            }
+            try await oAuthClient.migrateV1Token()
+            pixelHandler.handle(pixelType: .migrationSucceeded)
             v1MigrationNeeded = false
+            Logger.subscription.log("V1 token migration completed")
+        } catch OAuthClientError.authMigrationNotPerformed {
+            Logger.subscription.log("V1 token migration not needed")
         } catch {
             Logger.subscription.error("Failed to migrate V1 token: \(error, privacy: .public)")
             pixelHandler.handle(pixelType: .migrationFailed(error))
@@ -376,20 +377,12 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
     // MARK: - User
     public var isUserAuthenticated: Bool {
-        var tokenContainer: TokenContainer?
-        // extremely ugly hack, will be replaced by `func isUserAuthenticated()` as soon auth v1 is removed
-        let semaphore = DispatchSemaphore(value: 0)
-        Task {
-            tokenContainer = try? await getTokenContainer(policy: .localValid)
-            semaphore.signal()
-        }
-        semaphore.wait()
-        return tokenContainer != nil
+        return oAuthClient.currentTokenContainer?.accessToken != nil
     }
 
     private func isUserAuthenticated() async -> Bool {
-        let token = try? await getTokenContainer(policy: .local)
-        return token != nil
+        let tokenContainer = try? await getTokenContainer(policy: .local)
+        return tokenContainer != nil
     }
 
     public var userEmail: String? {

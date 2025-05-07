@@ -91,6 +91,10 @@ public struct PreferencesSubscriptionSettingsViewV2: View {
             TextButton(UserText.restorePurchaseButton, weight: .semibold) {
                 model.refreshSubscriptionPendingState()
             }
+
+            TextButton(UserText.removeFromThisDeviceButton, weight: .semibold) {
+                showingRemoveConfirmationDialog.toggle()
+            }
         }
     }
 

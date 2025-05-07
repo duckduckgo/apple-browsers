@@ -29,6 +29,8 @@ struct PinnedTabsView: View {
             ForEach(model.items) { item in
                 PinnedTabView(width: tabStyleProvider.pinnedTabWidth,
                               height: tabStyleProvider.pinnedTabHeight,
+                              showSShaped: tabStyleProvider.shouldShowSShapedTab,
+                              foregroundColorWhenSelected: tabStyleProvider.selectedTabColor,
                               model: item,
                               showsHover: draggedTab == nil)
                     .environmentObject(model)

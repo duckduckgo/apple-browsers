@@ -27,6 +27,8 @@ struct PinnedTabView: View, DropDelegate {
 
     let width: CGFloat
     let height: CGFloat
+    let showSShaped: Bool
+    let foregroundColorWhenSelected: NSColor
 
     @ObservedObject var model: Tab
     @EnvironmentObject var collectionModel: PinnedTabsViewModel
@@ -48,7 +50,8 @@ struct PinnedTabView: View, DropDelegate {
                     height: height,
                     isSelected: isSelected,
                     foregroundColor: foregroundColor,
-                    drawSeparator: false
+                    drawSeparator: false,
+                    showSShaped: showSShaped
                 )
                 .environmentObject(model)
                 .environmentObject(model.crashIndicatorModel)
@@ -60,6 +63,12 @@ struct PinnedTabView: View, DropDelegate {
                 NSPasteboard.PasteboardType.URL.rawValue,
                 NSPasteboard.PasteboardType.string.rawValue,
             ], delegate: self)
+
+            if !showSShaped {
+                BorderView(isSelected: isSelected,
+                           cornerRadius: Const.cornerRadius,
+                           size: TabShadowConfig.dividerSize)
+            }
         }
 
         if controlActiveState == .key {
@@ -93,7 +102,7 @@ struct PinnedTabView: View, DropDelegate {
 
     private var foregroundColor: Color {
         if isSelected {
-            return .navigationBackgroundColorNew
+            return Color(foregroundColorWhenSelected)
         }
         let isHovered = collectionModel.hoveredItem == model
         return showsHover && isHovered ? .tabMouseOver : Color.clear
@@ -218,6 +227,7 @@ struct PinnedTabInnerView: View {
     var isSelected: Bool
     var foregroundColor: Color
     var drawSeparator: Bool = true
+    var showSShaped: Bool
 
     @Environment(\.colorScheme) var colorScheme
     @EnvironmentObject var model: Tab
@@ -244,7 +254,7 @@ struct PinnedTabInnerView: View {
                 .frame(maxWidth: 16, maxHeight: 16)
                 .aspectRatio(contentMode: .fit)
 
-            if isSelected {
+            if isSelected && showSShaped {
                 SwiftUIRampView(rampWidth: rampSize,
                                 rampHeight: rampSize,
                                 foregroundColor: .navigationBackgroundColorNew)
@@ -257,7 +267,10 @@ struct PinnedTabInnerView: View {
                 .position(x: width + rampSize + 2, y: height - (rampSize / 2))
             }
         }
-        .frame(width: width + rampSize + 4, height: height)
+        .frame(
+            width: showSShaped ? width + rampSize + 4 : width,
+            height: height
+        )
     }
 
     @ViewBuilder

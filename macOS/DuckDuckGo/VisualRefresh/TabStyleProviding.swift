@@ -23,6 +23,10 @@ protocol TabStyleProviding {
     var standardTabHeight: CGFloat { get }
     var pinnedTabHeight: CGFloat { get }
     var pinnedTabWidth: CGFloat { get }
+
+    var shouldShowSShapedTab: Bool { get }
+
+    var selectedTabColor: NSColor { get }
 }
 
 final class LegacyTabStyleProvider: TabStyleProviding {
@@ -31,6 +35,8 @@ final class LegacyTabStyleProvider: TabStyleProviding {
     let standardTabHeight: CGFloat = 34
     let pinnedTabWidth: CGFloat = 34
     let pinnedTabHeight: CGFloat = 34
+    let shouldShowSShapedTab = false
+    let selectedTabColor: NSColor = .navigationBarBackground
 }
 
 final class NewlineTabStyleProvider: TabStyleProviding {
@@ -39,4 +45,6 @@ final class NewlineTabStyleProvider: TabStyleProviding {
     let standardTabHeight: CGFloat = 38
     let pinnedTabWidth: CGFloat = 34
     let pinnedTabHeight: CGFloat = 36
+    let shouldShowSShapedTab = true
+    let selectedTabColor: NSColor = .navigationBackgroundColorNew
 }

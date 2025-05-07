@@ -71,7 +71,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     private let bookmarkManager: BookmarkManager = LocalBookmarkManager.shared
-    private let visualStyleManager: VisualStyleManagerProviding
+    private let visualStyle: VisualStyleProviding
     private var pinnedTabsViewModel: PinnedTabsViewModel?
     private var pinnedTabsView: PinnedTabsView?
     private var pinnedTabsHostingView: PinnedTabsHostingView?
@@ -146,7 +146,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         let tabBarActiveRemoteMessageModel = TabBarActiveRemoteMessage(activeRemoteMessageModel: activeRemoteMessageModel)
         self.tabBarRemoteMessageViewModel = TabBarRemoteMessageViewModel(activeRemoteMessageModel: tabBarActiveRemoteMessageModel,
                                                                          isFireWindow: tabCollectionViewModel.isBurner)
-        self.visualStyleManager = visualStyleManager
+        self.visualStyle = visualStyleManager.style
         if !tabCollectionViewModel.isBurner, let pinnedTabCollection = tabCollectionViewModel.pinnedTabsManager?.tabCollection {
             let pinnedTabsViewModel = PinnedTabsViewModel(collection: pinnedTabCollection)
             let pinnedTabsView = PinnedTabsView(model: pinnedTabsViewModel)
@@ -165,8 +165,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     override func viewDidLoad() {
-        shadowView.isHidden = true
-        backgroundColorView.backgroundColor = visualStyleManager.style.baseBackgroundColor
+        shadowView.isHidden = visualStyle.tabStyleProvider.shouldShowSShapedTab
+        backgroundColorView.backgroundColor = visualStyle.baseBackgroundColor
         scrollView.updateScrollElasticity(with: tabMode)
         observeToScrollNotifications()
         subscribeToSelectionIndex()
@@ -261,10 +261,10 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     private func setupFireButton() {
-        fireButton.image = visualStyleManager.style.fireButtonStyleProvider.icon
+        fireButton.image = visualStyle.fireButtonStyleProvider.icon
         fireButton.toolTip = UserText.clearBrowsingHistoryTooltip
-        fireButton.animationNames = MouseOverAnimationButton.AnimationNames(aqua: visualStyleManager.style.fireButtonStyleProvider.lightAnimation,
-                                                                            dark: visualStyleManager.style.fireButtonStyleProvider.darkAnimation)
+        fireButton.animationNames = MouseOverAnimationButton.AnimationNames(aqua: visualStyle.fireButtonStyleProvider.lightAnimation,
+                                                                            dark: visualStyle.fireButtonStyleProvider.darkAnimation)
         fireButton.sendAction(on: .leftMouseDown)
         fireButtonMouseOverCancellable = fireButton.publisher(for: \.isMouseOver)
             .first(where: { $0 }) // only interested when mouse is over
@@ -305,11 +305,13 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         pinnedTabsHostingView.translatesAutoresizingMaskIntoConstraints = false
         pinnedTabsContainerView.addSubview(pinnedTabsHostingView)
 
+        let trailingConstant: CGFloat = visualStyle.tabStyleProvider.shouldShowSShapedTab ? 12 : 0
+
         NSLayoutConstraint.activate([
             pinnedTabsHostingView.leadingAnchor.constraint(equalTo: pinnedTabsContainerView.leadingAnchor),
             pinnedTabsHostingView.topAnchor.constraint(lessThanOrEqualTo: pinnedTabsContainerView.topAnchor),
             pinnedTabsHostingView.bottomAnchor.constraint(equalTo: pinnedTabsContainerView.bottomAnchor),
-            pinnedTabsHostingView.trailingAnchor.constraint(equalTo: pinnedTabsContainerView.trailingAnchor, constant: 12)
+            pinnedTabsHostingView.trailingAnchor.constraint(equalTo: pinnedTabsContainerView.trailingAnchor, constant: trailingConstant)
         ])
     }
 
@@ -773,7 +775,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             return
         }
 
-        let pinnedTabWidth = visualStyleManager.style.tabStyleProvider.pinnedTabWidth
+        let pinnedTabWidth = visualStyle.tabStyleProvider.pinnedTabWidth
         let position = pinnedTabsContainerView.frame.minX + pinnedTabWidth * CGFloat(index)
         showTabPreview(for: tabViewModel, from: position)
     }
@@ -1039,7 +1041,11 @@ extension TabBarViewController: NSCollectionViewDelegateFlowLayout {
     }
 
     func collectionView(_ collectionView: NSCollectionView, layout collectionViewLayout: NSCollectionViewLayout, insetForSectionAt section: Int) -> NSEdgeInsets {
-        return NSEdgeInsets(top: 0, left: 12, bottom: 0, right: 0)
+        if visualStyle.tabStyleProvider.shouldShowSShapedTab {
+            return NSEdgeInsets(top: 0, left: 12, bottom: 0, right: 0)
+        } else {
+            return NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
+        }
     }
 }
 
@@ -1330,7 +1336,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
             self.pinnedTabsDiscoveryPopover = popover
 
             guard let view = self.pinnedTabsHostingView else { return }
-            let pinnedTabWidth = visualStyleManager.style.tabStyleProvider.pinnedTabWidth
+            let pinnedTabWidth = visualStyle.tabStyleProvider.pinnedTabWidth
             popover.show(relativeTo: NSRect(x: view.bounds.maxX - pinnedTabWidth,
                                             y: view.bounds.minY,
                                             width: pinnedTabWidth,

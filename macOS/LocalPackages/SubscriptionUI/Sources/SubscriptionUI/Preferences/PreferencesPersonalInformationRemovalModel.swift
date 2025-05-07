@@ -23,9 +23,14 @@ import Combine
 
 public final class PreferencesPersonalInformationRemovalModel: ObservableObject {
 
+    public enum UserEvent {
+        case openPIR,
+             didOpenPIRPreferencePane
+    }
+
     private let subscriptionManager: SubscriptionAuthV1toV2Bridge
     private let openURLHandler: (URL) -> Void
-    private let userEventHandler: (PreferencesSubscriptionModel.UserEvent) -> Void
+    private let userEventHandler: (PreferencesPersonalInformationRemovalModel.UserEvent) -> Void
 
     @Published public var status: StatusIndicator = .off
 
@@ -33,7 +38,7 @@ public final class PreferencesPersonalInformationRemovalModel: ObservableObject 
 
     public init(subscriptionManager: SubscriptionAuthV1toV2Bridge,
                 openURLHandler: @escaping (URL) -> Void,
-                userEventHandler: @escaping (PreferencesSubscriptionModel.UserEvent) -> Void,
+                userEventHandler: @escaping (PreferencesPersonalInformationRemovalModel.UserEvent) -> Void,
                 statusUpdates: AnyPublisher<StatusIndicator, Never>) {
         self.subscriptionManager = subscriptionManager
         self.openURLHandler = openURLHandler
@@ -46,13 +51,12 @@ public final class PreferencesPersonalInformationRemovalModel: ObservableObject 
 
     @MainActor
     func didAppear() {
-        // TODO: should register opening settings?
-//        userEventHandler(.openSubscriptionSettingsClick)
+        userEventHandler(.didOpenPIRPreferencePane)
     }
 
     @MainActor
     func openPersonalInformationRemoval() {
-        userEventHandler(.openDB)
+        userEventHandler(.openPIR)
     }
 
     @MainActor

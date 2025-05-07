@@ -22,8 +22,6 @@ public final class PreferencesSubscriptionModel: ObservableObject {
 
     public enum UserEvent {
         case openVPN,
-             openDB,
-             openITR,
              openFeedback,
              iHaveASubscriptionClick,
              activateSubscriptionViaEmailClick,

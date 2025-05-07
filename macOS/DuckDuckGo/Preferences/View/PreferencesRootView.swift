@@ -169,16 +169,45 @@ enum Preferences {
         }
 
         private func makePersonalInformationRemovalViewModel() -> PreferencesPersonalInformationRemovalModel {
+            let userEventHandler: (PreferencesPersonalInformationRemovalModel.UserEvent) -> Void = { event in
+                DispatchQueue.main.async {
+                    switch event {
+                    case .openPIR:
+                        PixelKit.fire(PrivacyProPixel.privacyProPersonalInformationRemovalSettings)
+                        WindowControllersManager.shared.showTab(with: .dataBrokerProtection)
+                    case .didOpenPIRPreferencePane:
+                        // TODO: Fire new pixel
+                        print("TODO: Fire new pixel")
+//                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionSettings)
+                    }
+                }
+            }
+
             return PreferencesPersonalInformationRemovalModel(subscriptionManager: subscriptionManager,
                                                               openURLHandler: makeOpenURLHandler(),
-                                                              userEventHandler: makeSubscriptionUserEventHandler(),
+                                                              userEventHandler: userEventHandler,
                                                               statusUpdates: model.personalInformationRemovalUpdates)
         }
 
         private func makeIdentityTheftRestorationViewModel() -> PreferencesIdentityTheftRestorationModel {
+            let userEventHandler: (PreferencesIdentityTheftRestorationModel.UserEvent) -> Void = { event in
+                DispatchQueue.main.async {
+                    switch event {
+                    case .openITR:
+                        PixelKit.fire(PrivacyProPixel.privacyProIdentityRestorationSettings)
+                        let url = subscriptionManager.url(for: .identityTheftRestoration)
+                        WindowControllersManager.shared.showTab(with: .identityTheftRestoration(url))
+                    case .didOpenITRPreferencePane:
+                        // TODO: Fire new pixel
+                        print("TODO: Fire new pixel")
+//                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionSettings)
+                    }
+                }
+            }
+
             return PreferencesIdentityTheftRestorationModel(subscriptionManager: subscriptionManager,
                                                             openURLHandler: makeOpenURLHandler(),
-                                                            userEventHandler: makeSubscriptionUserEventHandler(),
+                                                            userEventHandler: userEventHandler,
                                                             statusUpdates: model.identityTheftRestorationUpdates)
         }
 
@@ -208,13 +237,6 @@ enum Preferences {
                         NotificationCenter.default.post(name: .OpenUnifiedFeedbackForm,
                                                         object: self,
                                                         userInfo: UnifiedFeedbackSource.userInfo(source: .ppro))
-                    case .openDB:
-                        PixelKit.fire(PrivacyProPixel.privacyProPersonalInformationRemovalSettings)
-                        WindowControllersManager.shared.showTab(with: .dataBrokerProtection)
-                    case .openITR:
-                        PixelKit.fire(PrivacyProPixel.privacyProIdentityRestorationSettings)
-                        let url = subscriptionManager.url(for: .identityTheftRestoration)
-                        WindowControllersManager.shared.showTab(with: .identityTheftRestoration(url))
                     case .iHaveASubscriptionClick:
                         PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseClick)
                     case .activateSubscriptionViaEmailClick:
@@ -364,24 +386,53 @@ enum Preferences {
         }
 
         private func makePersonalInformationRemovalViewModel() -> PreferencesPersonalInformationRemovalModel {
+            let userEventHandler: (PreferencesPersonalInformationRemovalModel.UserEvent) -> Void = { event in
+                DispatchQueue.main.async {
+                    switch event {
+                    case .openPIR:
+                        PixelKit.fire(PrivacyProPixel.privacyProPersonalInformationRemovalSettings)
+                        WindowControllersManager.shared.showTab(with: .dataBrokerProtection)
+                    case .didOpenPIRPreferencePane:
+                        // TODO: Fire new pixel
+                        print("TODO: Fire new pixel")
+//                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionSettings)
+                    }
+                }
+            }
+
             return PreferencesPersonalInformationRemovalModel(subscriptionManager: subscriptionManager,
                                                               openURLHandler: makeOpenURLHandler(),
-                                                              userEventHandler: makeSubscriptionUserEventHandler(),
+                                                              userEventHandler: userEventHandler,
                                                               statusUpdates: model.personalInformationRemovalUpdates)
         }
 
         private func makeIdentityTheftRestorationViewModel() -> PreferencesIdentityTheftRestorationModel {
+            let userEventHandler: (PreferencesIdentityTheftRestorationModel.UserEvent) -> Void = { event in
+                DispatchQueue.main.async {
+                    switch event {
+                    case .openITR:
+                        PixelKit.fire(PrivacyProPixel.privacyProIdentityRestorationSettings)
+                        let url = subscriptionManager.url(for: .identityTheftRestoration)
+                        WindowControllersManager.shared.showTab(with: .identityTheftRestoration(url))
+                    case .didOpenITRPreferencePane:
+                        // TODO: Fire new pixel
+                        print("TODO: Fire new pixel")
+//                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionSettings)
+                    }
+                }
+            }
+
             return PreferencesIdentityTheftRestorationModel(subscriptionManager: subscriptionManager,
                                                             openURLHandler: makeOpenURLHandler(),
-                                                            userEventHandler: makeSubscriptionUserEventHandler(),
+                                                            userEventHandler: userEventHandler,
                                                             statusUpdates: model.identityTheftRestorationUpdates)
         }
 
         private func makeSubscriptionSettingsViewModel() -> PreferencesSubscriptionSettingsModelV2 {
             return PreferencesSubscriptionSettingsModelV2(openURLHandler: makeOpenURLHandler(),
-                                                        userEventHandler: makeSubscriptionUserEventHandler(),
-                                                        subscriptionManager: subscriptionManager,
-                                                        subscriptionStateUpdate: model.$currentSubscriptionState.eraseToAnyPublisher())
+                                                          userEventHandler: makeSubscriptionUserEventHandler(),
+                                                          subscriptionManager: subscriptionManager,
+                                                          subscriptionStateUpdate: model.$currentSubscriptionState.eraseToAnyPublisher())
         }
 
         private func makeOpenURLHandler() -> ((URL) -> Void) {
@@ -403,13 +454,6 @@ enum Preferences {
                         NotificationCenter.default.post(name: .OpenUnifiedFeedbackForm,
                                                         object: self,
                                                         userInfo: UnifiedFeedbackSource.userInfo(source: .ppro))
-                    case .openDB:
-                        PixelKit.fire(PrivacyProPixel.privacyProPersonalInformationRemovalSettings)
-                        WindowControllersManager.shared.showTab(with: .dataBrokerProtection)
-                    case .openITR:
-                        PixelKit.fire(PrivacyProPixel.privacyProIdentityRestorationSettings)
-                        let url = subscriptionManager.url(for: .identityTheftRestoration)
-                        WindowControllersManager.shared.showTab(with: .identityTheftRestoration(url))
                     case .iHaveASubscriptionClick:
                         PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseClick)
                     case .activateSubscriptionViaEmailClick:

@@ -16,81 +16,96 @@
 //  limitations under the License.
 //
 
-/*
-
- */
-
 import Foundation
+import os.log
+import Common
 
-func useit() {
-    
-}
+struct LogExporter {
 
-struct LogFilter {
-    var keyWords: [String]
-    var destinationFileName: String
-}
-
-func exportFilteredLogsToDesktop(minutesBack: Int = 10, logFilters: [LogFilter]) async throws -> URL {
-    let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-    try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
-
-    for filter in logFilters {
-        let logFileURL = tempDir.appendingPathComponent("ddg.log")
+    struct LogFilter {
+        var predicate: String
+        var destinationFileName: String
     }
 
+    static func useIt() {
+        Logger.general.log("Exporting logs...")
+        // Source: https://app.asana.com/1/137249556945/project/1202500774821704/task/1209989420331708?focus=true
+        let allDDG = LogFilter(predicate: #"process CONTAINS "duckduckgo" OR process CONTAINS "DuckDuckGo""#,
+                               destinationFileName: "duckduckgo.log")
 
+        // Source: https://app.asana.com/1/137249556945/project/1202500774821704/task/1209066578041976?focus=true
+        let sparkle = LogFilter(predicate: #"(process == "org.sparkle-project.Sparkle" OR processImagePath CONTAINS "Sparkle") OR (subsystem == "Updates") OR (process == "Autoupdate")"#,
+                                destinationFileName: "updater.log")
 
-    let predicate = #"process CONTAINS "duckduckgo" OR process CONTAINS "DuckDuckGo""#
-    let timeRange = "\(minutesBack)m"
+        // Source: https://app.asana.com/1/137249556945/project/1205842948507349/task/1205648962129689?focus=true
+        let vpnExtensionKit = LogFilter(predicate: #"subsystem == "com.apple.extensionkit" && category == "NSExtension""#,
+                                        destinationFileName: "extensionkit_nsextension.log")
+        let vpnNetworkextension = LogFilter(predicate: #"subsystem == "com.apple.networkextension"#,
+                                            destinationFileName: "networkextension.log")
+        let networkProtection = LogFilter(predicate: #"subsystem == "Network protection""#,
+                                          destinationFileName: "network_protection.log")
 
-    let process = Process()
-    process.executableURL = URL(fileURLWithPath: "/usr/bin/log")
-    process.arguments = [
-        "show",
-        "--info",
-        "--debug",
-        "--signpost",
-        "--predicate", predicate,
-        "--style", "compact",
-        "--last", timeRange
-    ]
-
-    let outputPipe = Pipe()
-    process.standardOutput = outputPipe
-    process.standardError = Pipe()
-
-    try process.run()
-
-    return try await withCheckedThrowingContinuation { continuation in
-        process.terminationHandler = { _ in
-            let data = outputPipe.fileHandleForReading.readDataToEndOfFile()
-            guard let output = String(data: data, encoding: .utf8) else {
-                continuation.resume(throwing: NSError(domain: "LogExportError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to read filtered logs."]))
-                return
-            }
-
+        Task {
             do {
-                try output.write(to: logFileURL, atomically: true, encoding: .utf8)
-
-                // Create ZIP archive on Desktop
-                let desktopURL = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Desktop")
-                let zipURL = desktopURL.appendingPathComponent("ddg_logs.zip")
-
-                let zipProcess = Process()
-                zipProcess.executableURL = URL(fileURLWithPath: "/usr/bin/zip")
-                zipProcess.arguments = ["-j", zipURL.path, logFileURL.path]
-
-                try zipProcess.run()
-                zipProcess.waitUntilExit()
-
-                // Clean up temp dir
-                try FileManager.default.removeItem(at: tempDir)
-
-                continuation.resume(returning: zipURL)
+                try await exportFilteredLogsToDesktop(minutesBack: 5, logFilters: [allDDG,
+                                                                                   sparkle,
+                                                                                   vpnExtensionKit,
+                                                                                   vpnNetworkextension,
+                                                                                   networkProtection])
             } catch {
-                continuation.resume(throwing: error)
+                Logger.general.error("Failed to export logs: \(error.localizedDescription)")
             }
         }
+    }
+
+    static func exportFilteredLogsToDesktop(minutesBack: Int, logFilters: [LogFilter]) async throws {
+        let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
+
+        let timeRange = "\(minutesBack)m"
+
+        for filter in logFilters {
+            let logFileURL = tempDir.appendingPathComponent(filter.destinationFileName)
+            let predicate = filter.predicate
+
+            let logProcess = Process()
+            logProcess.executableURL = URL(fileURLWithPath: "/usr/bin/log")
+            logProcess.arguments = [
+                "show",
+                "--info",
+                "--debug",
+                "--signpost",
+                "--predicate", predicate,
+                "--style", "compact",
+                "--last", timeRange
+            ]
+
+            let outputPipe = Pipe()
+            logProcess.standardOutput = outputPipe
+            logProcess.standardError = Pipe()
+
+            try logProcess.run()
+            logProcess.waitUntilExit()
+
+            guard let data = try outputPipe.fileHandleForReading.readToEnd(),
+                  let output = String(data: data, encoding: .utf8) else {
+                throw NSError(domain: "LogExportError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to read filtered logs."])
+            }
+            try output.write(to: logFileURL, atomically: true, encoding: .utf8)
+        }
+
+        // Create ZIP archive on Desktop
+        let desktopURL = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Desktop")
+        let zipURL = desktopURL.appendingPathComponent("ddg_logs.zip")
+
+        let zipProcess = Process()
+        zipProcess.executableURL = URL(fileURLWithPath: "/usr/bin/zip")
+        zipProcess.arguments = ["-j", zipURL.path, "\(tempDir.path)/*.log"]
+
+        try zipProcess.run()
+        zipProcess.waitUntilExit()
+
+        // Clean up temp dir
+        try FileManager.default.removeItem(at: tempDir)
     }
 }

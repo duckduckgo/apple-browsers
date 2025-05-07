@@ -654,7 +654,7 @@ final class MainMenu: NSMenu {
         let debugMenu = NSMenu(title: "Debug") {
             NSMenuItem(title: "Feature Flag Overrides")
                 .submenu(FeatureFlagOverridesMenu(featureFlagOverrides: NSApp.delegateTyped.featureFlagger))
-            NSMenuItem(title: "Export Logs", action: #selector())
+            NSMenuItem(title: "Export Logs", action: #selector(exportLogs))
             NSMenuItem(title: "Open Vanilla Browser", action: #selector(MainViewController.openVanillaBrowser)).withAccessibilityIdentifier("MainMenu.openVanillaBrowser")
             NSMenuItem(title: "Skip Onboarding", action: #selector(MainViewController.skipOnboarding))
             NSMenuItem(title: "New Tab Page") {
@@ -798,6 +798,10 @@ final class MainMenu: NSMenu {
         debugMenu.autoenablesItems = false
         return debugMenu
     }
+
+//    @objc func exportLogs(_ sender: Any?) {
+//        LogExporter.useIt()
+//    }
 
     private func setupLoggingMenu() -> NSMenu {
         let menu = NSMenu(title: "")

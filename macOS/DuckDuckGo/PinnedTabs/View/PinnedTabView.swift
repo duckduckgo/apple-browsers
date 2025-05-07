@@ -25,10 +25,7 @@ struct PinnedTabView: View, DropDelegate {
         static let cornerRadius: CGFloat = 10
     }
 
-    let width: CGFloat
-    let height: CGFloat
-    let showSShaped: Bool
-    let foregroundColorWhenSelected: NSColor
+    let tabStyleProvider: TabStyleProviding
 
     @ObservedObject var model: Tab
     @EnvironmentObject var collectionModel: PinnedTabsViewModel
@@ -46,12 +43,12 @@ struct PinnedTabView: View, DropDelegate {
                 }
             } label: {
                 PinnedTabInnerView(
-                    width: width,
-                    height: height,
+                    width: tabStyleProvider.pinnedTabWidth,
+                    height: tabStyleProvider.pinnedTabHeight,
                     isSelected: isSelected,
                     foregroundColor: foregroundColor,
                     drawSeparator: false,
-                    showSShaped: showSShaped
+                    showSShaped: tabStyleProvider.shouldShowSShapedTab
                 )
                 .environmentObject(model)
                 .environmentObject(model.crashIndicatorModel)
@@ -64,7 +61,7 @@ struct PinnedTabView: View, DropDelegate {
                 NSPasteboard.PasteboardType.string.rawValue,
             ], delegate: self)
 
-            if !showSShaped {
+            if !tabStyleProvider.shouldShowSShapedTab {
                 BorderView(isSelected: isSelected,
                            cornerRadius: Const.cornerRadius,
                            size: TabShadowConfig.dividerSize)
@@ -102,7 +99,7 @@ struct PinnedTabView: View, DropDelegate {
 
     private var foregroundColor: Color {
         if isSelected {
-            return Color(foregroundColorWhenSelected)
+            return Color(tabStyleProvider.selectedTabColor)
         }
         let isHovered = collectionModel.hoveredItem == model
         return showsHover && isHovered ? .tabMouseOver : Color.clear

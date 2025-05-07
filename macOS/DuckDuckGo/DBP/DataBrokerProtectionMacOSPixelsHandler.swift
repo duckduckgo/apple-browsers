@@ -43,6 +43,9 @@ public class DataBrokerProtectionMacOSPixelsHandler: EventMapping<DataBrokerProt
                     .ipcServerAppLaunchedScheduledScansInterrupted,
                     .ipcServerAppLaunchedScheduledScansFinishedWithoutError:
                 PixelKit.fire(event, frequency: .legacyDailyAndCount, includeAppVersionParameter: true)
+            case .errorLoadingCachedConfig(let error),
+                    .failedToParsePrivacyConfig(let error):
+                PixelKit.fire(DebugEvent(event, error: error))
             case .backgroundAgentStarted,
                     .backgroundAgentStartedStoppingDueToAnotherInstanceRunning,
                     .dataBrokerProtectionNotificationSentFirstScanComplete,

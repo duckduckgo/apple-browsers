@@ -78,6 +78,8 @@ public enum DataBrokerProtectionMacOSPixels {
 
     // Configuration
     case invalidPayload(Configuration)
+    case errorLoadingCachedConfig(Error)
+    case failedToParsePrivacyConfig(Error)
 }
 
 extension DataBrokerProtectionMacOSPixels: PixelKitEvent {
@@ -142,6 +144,8 @@ extension DataBrokerProtectionMacOSPixels: PixelKitEvent {
 
             // Configuration
         case .invalidPayload(let configuration): return "m_mac_dbp_\(configuration.rawValue)_invalid_payload".lowercased()
+        case .errorLoadingCachedConfig: return "dbp_configuration_error_loading_cached_config"
+        case .failedToParsePrivacyConfig: return "dbp_configuration_failed_to_parse"
 
         }
     }
@@ -182,7 +186,8 @@ extension DataBrokerProtectionMacOSPixels: PixelKitEvent {
                 .entitlementCheckInvalid,
                 .entitlementCheckError,
 
-                .invalidPayload:
+                .invalidPayload,
+                .failedToParsePrivacyConfig:
             return [:]
         case .ipcServerProfileSavedCalledByApp,
                 .ipcServerProfileSavedReceivedByAgent,
@@ -198,6 +203,8 @@ extension DataBrokerProtectionMacOSPixels: PixelKitEvent {
                 .ipcServerAppLaunchedScheduledScansFinishedWithoutError,
                 .ipcServerAppLaunchedScheduledScansFinishedWithError:
             return [DataBrokerProtectionSharedPixels.Consts.bundleIDParamKey: Bundle.main.bundleIdentifier ?? "nil"]
+        case .errorLoadingCachedConfig(let error):
+            return [DataBrokerProtectionSharedPixels.Consts.errorDomainKey: (error as NSError).domain]
         }
     }
 }
@@ -215,6 +222,9 @@ public class DataBrokerProtectionMacOSPixelsHandler: EventMapping<DataBrokerProt
                     .ipcServerAppLaunchedXPCError(error: let error),
                     .ipcServerAppLaunchedScheduledScansFinishedWithError(error: let error):
                 PixelKit.fire(DebugEvent(event, error: error), frequency: .legacyDailyAndCount, includeAppVersionParameter: true)
+            case .errorLoadingCachedConfig(let error),
+                    .failedToParsePrivacyConfig(let error):
+                PixelKit.fire(DebugEvent(event, error: error))
             case .ipcServerProfileSavedCalledByApp,
                     .ipcServerProfileSavedReceivedByAgent,
                     .ipcServerImmediateScansInterrupted,

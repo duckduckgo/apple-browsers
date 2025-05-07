@@ -124,22 +124,10 @@ public final class TunnelControllerViewModel: ObservableObject {
         subscribeToServerInfoChanges()
         subscribeToDataVolumeUpdates()
         subscribeToVPNEnabledChanges()
+        subscribeToToggleDisableChanges()
 
         vpnSettings.dnsSettingsPublisher
             .assign(to: \.dnsSettings, onWeaklyHeld: self)
-            .store(in: &cancellables)
-
-        $isToggleDisabled
-            .filter { $0 }
-            .debounce(for: .seconds(2), scheduler: DispatchQueue.main)
-            .sink { [weak self] _ in
-                guard let self,
-                      isToggleDisabled else {
-                    return
-                }
-
-                isToggleDisabled = false
-            }
             .store(in: &cancellables)
     }
 
@@ -195,6 +183,21 @@ public final class TunnelControllerViewModel: ObservableObject {
         statusReporter.vpnEnabledObserver.publisher
             .removeDuplicates()
             .assign(to: \.isVPNEnabled, onWeaklyHeld: self)
+            .store(in: &cancellables)
+    }
+
+    private func subscribeToToggleDisableChanges() {
+        $isToggleDisabled
+            .filter { $0 }
+            .debounce(for: .seconds(2), scheduler: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self,
+                      isToggleDisabled else {
+                    return
+                }
+
+                isToggleDisabled = false
+            }
             .store(in: &cancellables)
     }
 

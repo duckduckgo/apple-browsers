@@ -191,9 +191,7 @@ enum Preferences {
                     case .openURL(let url):
                         openURL(subscriptionURL: url)
                     case .didOpenPIRPreferencePane:
-                        // TODO: Fire new pixel
-                        print("TODO: Fire new pixel")
-//                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionSettings)
+                        PixelKit.fire(PrivacyProPixel.privacyProPersonalInformationRemovalSettingsImpression)
                     }
                 }
             }
@@ -213,9 +211,7 @@ enum Preferences {
                     case .openURL(let url):
                         openURL(subscriptionURL: url)
                     case .didOpenITRPreferencePane:
-                        // TODO: Fire new pixel
-                        print("TODO: Fire new pixel")
-//                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionSettings)
+                        PixelKit.fire(PrivacyProPixel.privacyProIdentityRestorationSettingsImpression)
                     }
                 }
             }
@@ -241,9 +237,7 @@ enum Preferences {
                     case .didClickManageEmail:
                         PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementEmail, frequency: .legacyDailyAndCount)
                     case .didClickAddToDevice:
-                        // Handled on web
-                        // TODO: Fire new pixel
-                        break
+                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionAddToDevice)
                     case .didOpenSubscriptionSettings:
                         PixelKit.fire(PrivacyProPixel.privacyProSubscriptionSettings)
                     case .didClickChangePlanOrBilling:
@@ -417,9 +411,7 @@ enum Preferences {
                     case .openURL(let url):
                         openURL(subscriptionURL: url)
                     case .didOpenPIRPreferencePane:
-                        // TODO: Fire new pixel
-                        print("TODO: Fire new pixel")
-                        //                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionSettings)
+                        PixelKit.fire(PrivacyProPixel.privacyProPersonalInformationRemovalSettingsImpression)
                     }
                 }
             }
@@ -439,9 +431,7 @@ enum Preferences {
                     case .openURL(let url):
                         openURL(subscriptionURL: url)
                     case .didOpenITRPreferencePane:
-                        // TODO: Fire new pixel
-                        print("TODO: Fire new pixel")
-                        //                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionSettings)
+                        PixelKit.fire(PrivacyProPixel.privacyProIdentityRestorationSettingsImpression)
                     }
                 }
             }
@@ -467,9 +457,7 @@ enum Preferences {
                     case .didClickManageEmail:
                         PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementEmail, frequency: .legacyDailyAndCount)
                     case .didClickAddToDevice:
-                        // Handled on web
-                        // TODO: Fire new pixel
-                        break
+                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionAddToDevice)
                     case .didOpenSubscriptionSettings:
                         PixelKit.fire(PrivacyProPixel.privacyProSubscriptionSettings)
                     case .didClickChangePlanOrBilling:

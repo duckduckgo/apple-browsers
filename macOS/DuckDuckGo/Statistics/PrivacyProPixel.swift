@@ -57,7 +57,10 @@ enum PrivacyProPixel: PixelKitEventV2 {
     case privacyProSubscriptionSettings
     case privacyProVPNSettings
     case privacyProPersonalInformationRemovalSettings
+    case privacyProPersonalInformationRemovalSettingsImpression
     case privacyProIdentityRestorationSettings
+    case privacyProIdentityRestorationSettingsImpression
+    case privacyProSubscriptionAddToDevice
     case privacyProSubscriptionManagementEmail
     case privacyProSubscriptionManagementPlanBilling
     case privacyProSubscriptionManagementRemoval
@@ -104,7 +107,10 @@ enum PrivacyProPixel: PixelKitEventV2 {
         case .privacyProSubscriptionSettings: return "m_mac_\(appDistribution)_privacy-pro_settings_screen_impression"
         case .privacyProVPNSettings: return "m_mac_\(appDistribution)_privacy-pro_settings_vpn_click"
         case .privacyProPersonalInformationRemovalSettings: return "m_mac_\(appDistribution)_privacy-pro_settings_personal-information-removal_click"
+        case .privacyProPersonalInformationRemovalSettingsImpression: return "m_mac_\(appDistribution)_privacy-pro_settings_personal-information-removal_impression"
         case .privacyProIdentityRestorationSettings: return "m_mac_\(appDistribution)_privacy-pro_settings_identity-theft-restoration_click"
+        case .privacyProIdentityRestorationSettingsImpression: return "m_mac_\(appDistribution)_privacy-pro_settings_identity-theft-restoration_impression"
+        case .privacyProSubscriptionAddToDevice: return "m_mac_\(appDistribution)_privacy-pro_settings_add-to-device_click"
         case .privacyProSubscriptionManagementEmail: return "m_mac_\(appDistribution)_privacy-pro_manage-email_edit_click"
         case .privacyProSubscriptionManagementPlanBilling: return "m_mac_\(appDistribution)_privacy-pro_settings_change-plan-or-billing_click"
         case .privacyProSubscriptionManagementRemoval: return "m_mac_\(appDistribution)_privacy-pro_settings_remove-from-device_click"

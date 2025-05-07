@@ -32,7 +32,6 @@ public class MockOAuthClient: OAuthClient {
         _currentTokenContainer = tokenContainer
     }
 
-
     public var getTokensResponse: Result<Networking.TokenContainer, Error>!
     public func getTokens(policy: Networking.AuthTokensCachePolicy) async throws -> Networking.TokenContainer {
         switch getTokensResponse! {

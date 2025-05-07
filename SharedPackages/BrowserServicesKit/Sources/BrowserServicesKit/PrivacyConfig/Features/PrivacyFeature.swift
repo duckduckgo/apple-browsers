@@ -77,6 +77,7 @@ public enum PrivacyFeature: String {
     // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlyFeatureForTests
     case tabCrashRecovery
+    case delayedWebviewPresentation
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.

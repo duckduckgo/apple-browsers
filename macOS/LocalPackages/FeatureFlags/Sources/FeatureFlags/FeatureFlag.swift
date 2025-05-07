@@ -203,7 +203,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .tabCrashRecovery:
             return .remoteReleasable(.feature(.tabCrashRecovery))
         case .delayedWebviewPresentation:
-            return .internalOnly()
+            return .remoteReleasable(.feature(.delayedWebviewPresentation))
         }
     }
 }

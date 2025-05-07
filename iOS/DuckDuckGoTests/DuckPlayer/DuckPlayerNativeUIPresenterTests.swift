@@ -90,7 +90,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
             state: DuckPlayerState(),
             notificationCenter: testNotificationCenter
         )
-        
+
         // Subscribe to constraint updates
         cancellables = []
         sut.constraintUpdates.sink { [weak self] update in
@@ -567,46 +567,46 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         if let notification = visibilityNotifications.first {
             XCTAssertEqual(notification.userInfo?[DuckPlayerNativeUIPresenter.NotificationKeys.isVisible] as? Bool, false, "Should indicate pill is hidden")
         }
-        
+
         // Verify user interaction is disabled
         XCTAssertFalse(sut.containerViewController?.view.isUserInteractionEnabled ?? true, "User interaction should be disabled")
     }
-    
+
     @MainActor
     func testShowBottomSheetForVisibleChrome_EnablesPillAndUpdatesConstraints() {
         // Given
         let videoID = "test123"
         mockDuckPlayerSettings.welcomeMessageShown = true
-        
+
         // Present pill and hide it
         sut.presentPill(for: videoID, in: mockHostViewController, timestamp: nil)
         sut.hideBottomSheetForHiddenChrome()
-        
+
         // Clear existing notifications and constraint updates
         testNotificationCenter.postedNotifications.removeAll()
         constraintUpdates.removeAll()
-        
+
         // When
         sut.showBottomSheetForVisibleChrome()
-        
+
         // Then
         // Check visibility notification
         let visibilityNotifications = testNotificationCenter.postedNotifications.filter { notification in
             notification.name == DuckPlayerNativeUIPresenter.Notifications.duckPlayerPillUpdated
         }
-        
+
         XCTAssertEqual(visibilityNotifications.count, 1, "Should post 1 visibility notification")
-        
+
         if let notification = visibilityNotifications.first {
             XCTAssertEqual(notification.userInfo?[DuckPlayerNativeUIPresenter.NotificationKeys.isVisible] as? Bool, true, "Should indicate pill is visible")
         }
-        
+
         // Verify user interaction is enabled
         XCTAssertTrue(sut.containerViewController?.view.isUserInteractionEnabled ?? false, "User interaction should be enabled")
     }
-    
+
     // MARK: - Constraint Updates Tests
-    
+
     @MainActor
     func testConstraintUpdates_PublishesCorrectUpdates() {
         // Given
@@ -627,11 +627,11 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         
         // Then - Should get showPill update
         XCTAssertFalse(receivedUpdates.isEmpty, "Should have received constraint updates")
-        
+
         // When - Hide
         receivedUpdates.removeAll()
         sut.hideBottomSheetForHiddenChrome()
-        
+
         // Then - Should get reset update
         XCTAssertFalse(receivedUpdates.isEmpty, "Should have received constraint updates")
         for update in receivedUpdates {

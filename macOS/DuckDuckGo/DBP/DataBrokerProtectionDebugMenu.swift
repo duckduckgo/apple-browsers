@@ -213,6 +213,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
         }
     }
 
+    // swiftlint:disable force_try
     @objc private func setCustomServiceRoot() {
         showCustomServiceRootAlert { [weak self] value, removeBrokers in
             guard let value, let self else { return false }
@@ -238,6 +239,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
             return true
         }
     }
+    // swiftlint:enable force_try
 
     @objc private func startScheduledOperations(_ sender: NSMenuItem) {
         Logger.dataBrokerProtection.log("Running queued operations...")

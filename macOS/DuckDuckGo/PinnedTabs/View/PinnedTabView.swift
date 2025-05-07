@@ -56,7 +56,6 @@ struct PinnedTabView: View, DropDelegate {
                 .environmentObject(model.crashIndicatorModel)
             }
             .buttonStyle(TouchDownButtonStyle())
-            .cornerRadius(Const.cornerRadius, corners: [.topLeft, .topRight])
             .contextMenu { contextMenu }
             .onDrop(of: [
                 NSPasteboard.PasteboardType.URL.rawValue,
@@ -240,6 +239,7 @@ struct PinnedTabInnerView: View {
             Rectangle()
                 .foregroundColor(foregroundColor)
                 .frame(width: width, height: height)
+                .cornerRadius(PinnedTabView.Const.cornerRadius, corners: [.topLeft, .topRight])
 
             if drawSeparator {
                 GeometryReader { proxy in

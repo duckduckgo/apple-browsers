@@ -60,19 +60,14 @@ public protocol SyncConnectionControlling {
     func startExchangeMode() async throws -> String
 
     /**
-     Stops polling for transmitted public key
-     */
-    func stopExchangeMode() async
-
-    /**
      Returns a device id and temporary secret key ready for display and allows callers attempt to fetch the transmitted recovery key.
      */
     func startConnectMode() async throws -> String
 
     /**
-     Stops polling for transmitted recovery key
+     Cancels any in-flight connection flows
      */
-    func stopConnectMode() async
+    func cancel() async
 
     /**
      Handles a scanned or pasted key and starts excange, recovery or connect flow
@@ -121,11 +116,6 @@ public actor SyncConnectionController: SyncConnectionControlling {
         return exchanger.code
     }
 
-    public func stopExchangeMode() {
-        exchanger?.stopPolling()
-        exchanger = nil
-    }
-
     public func startConnectMode() throws -> String {
         let connector = try remoteConnect()
         self.connector = connector
@@ -134,9 +124,10 @@ public actor SyncConnectionController: SyncConnectionControlling {
         return connector.code
     }
 
-    public func stopConnectMode() {
-        self.connector?.stopPolling()
-        self.connector = nil
+    public func cancel() {
+        isCodeHandlingInFlight = false
+        stopConnectMode()
+        stopExchangeMode()
     }
 
     @discardableResult
@@ -291,6 +282,16 @@ public actor SyncConnectionController: SyncConnectionControlling {
         }
 
         return true
+    }
+
+    private func stopConnectMode() {
+        self.connector?.stopPolling()
+        self.connector = nil
+    }
+
+    private func stopExchangeMode() {
+        exchanger?.stopPolling()
+        exchanger = nil
     }
 
     private func handleRecoveryCodeLoginError(recoveryKey: SyncCode.RecoveryKey, error: Error) async {

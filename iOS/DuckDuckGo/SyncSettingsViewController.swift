@@ -320,8 +320,7 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
         connector?.stopPolling()
         connector = nil
         Task {
-            await connectionController.stopConnectMode()
-            await connectionController.stopExchangeMode()
+            await connectionController.cancel()
         }
     }
 

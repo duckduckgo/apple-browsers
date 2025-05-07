@@ -422,8 +422,7 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
             self?.connector = nil
 
             Task { @MainActor in
-                await self?.connectionController.stopConnectMode()
-                await self?.connectionController.stopExchangeMode()
+                await self?.connectionController.cancel()
                 guard let window = syncWindowController.window, let sheetParent = window.sheetParent else {
                     assertionFailure("window or sheet parent not present")
                     return

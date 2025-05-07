@@ -44,6 +44,15 @@ public struct SubscriptionDetails: Codable, Equatable {
 
     static let unsubscribed: Self = .init(isSubscribed: false, billingPeriod: nil, startedAt: nil, expiresOrRenewsAt: nil, paymentPlatform: nil, status: nil)
 
+    public init(_ subscription: PrivacyProSubscription) {
+        isSubscribed = subscription.isActive
+        billingPeriod = subscription.billingPeriod.rawValue
+        startedAt = Int(subscription.startedAt.timeIntervalSince1970 * 1000)
+        expiresOrRenewsAt = Int(subscription.expiresOrRenewsAt.timeIntervalSince1970 * 1000)
+        paymentPlatform = subscription.platform.rawValue
+        status = subscription.status.rawValue
+    }
+
     public init(isSubscribed: Bool, billingPeriod: String?, startedAt: Int?, expiresOrRenewsAt: Int?, paymentPlatform: String?, status: String?) {
         self.isSubscribed = isSubscribed
         self.billingPeriod = billingPeriod
@@ -73,20 +82,11 @@ public final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling
     }
 
     public func subscriptionDetails(params: Any, message: any UserScriptMessage) async throws -> SubscriptionDetails {
-        let subscription = try await subscriptionManager.getSubscription(cachePolicy: .returnCacheDataElseLoad)
-
-        guard subscription.isActive else {
+        guard let subscription = try? await subscriptionManager.getSubscription(cachePolicy: .returnCacheDataElseLoad), subscription.isActive else {
             return .unsubscribed
         }
 
-        return SubscriptionDetails(
-            isSubscribed: true,
-            billingPeriod: subscription.billingPeriod.rawValue,
-            startedAt: Int(subscription.startedAt.timeIntervalSince1970),
-            expiresOrRenewsAt: Int(subscription.expiresOrRenewsAt.timeIntervalSince1970),
-            paymentPlatform: subscription.platform.rawValue,
-            status: subscription.status.rawValue
-        )
+        return SubscriptionDetails(subscription)
     }
 }
 

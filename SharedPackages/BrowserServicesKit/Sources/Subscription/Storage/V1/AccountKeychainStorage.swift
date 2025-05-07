@@ -48,6 +48,10 @@ public enum AccountKeychainAccessError: Error, LocalizedError {
         case .keychainLookupFailure(let status): return "keychainLookupFailure(\(status))"
         }
     }
+
+    public var localizedDescription: String {
+        errorDescription
+    }
 }
 
 public final class AccountKeychainStorage: AccountStoring {

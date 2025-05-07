@@ -32,7 +32,7 @@ enum Preferences {
         static var sidebarWidth: CGFloat {
             switch Locale.current.languageCode {
             case "en":
-                return 310
+                return 315
             default:
                 return 355
             }

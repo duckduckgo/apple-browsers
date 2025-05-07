@@ -655,21 +655,9 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
     }
 
     func addressBarButtonsViewController(_ controller: AddressBarButtonsViewController, didUpdateAIChatButtonVisibility isVisible: Bool) {
-        let isClearButtonVisible = addressBarButtonsViewController?.clearButton.isShown == true
-        switch (isVisible, isClearButtonVisible) {
-        case (true, true):
-            addressBarTextTrailingConstraint.constant = 80
-            passiveTextFieldTrailingConstraint.constant = 80
-        case (true, false):
-            addressBarTextTrailingConstraint.constant = 35
-            passiveTextFieldTrailingConstraint.constant = 80
-        case (false, true):
-            addressBarTextTrailingConstraint.constant = 45
-            passiveTextFieldTrailingConstraint.constant = 45
-        case (false, false):
-            addressBarTextTrailingConstraint.constant = 8
-            passiveTextFieldTrailingConstraint.constant = 45
-        }
+        let trailingConstant: CGFloat = isVisible ? 80 : 45
+        addressBarTextTrailingConstraint.constant = trailingConstant
+        passiveTextFieldTrailingConstraint.constant = trailingConstant
     }
 
     func addressBarButtonsViewControllerClearButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {

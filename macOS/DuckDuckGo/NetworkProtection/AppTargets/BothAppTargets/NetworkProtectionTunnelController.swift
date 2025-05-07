@@ -510,8 +510,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         case connectionAlreadyStarted
         case simulateControllerFailureError
         case startTunnelFailure(_ error: Error)
-        case startTunnelDisconnectedSilently
-        case startTunnelTimedOut
 
         var errorDescription: String? {
             switch self {
@@ -536,18 +534,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                 return "Simulated a controller error as requested"
             case .startTunnelFailure(let error):
                 return error.localizedDescription
-            case .startTunnelDisconnectedSilently:
-#if DEBUG
-                return "[DEBUG] The connection attempt failed silently, please try again"
-#else
-                return "An unexpected error occurred, please try again"
-#endif
-            case .startTunnelTimedOut:
-#if DEBUG
-                return "[DEBUG] The connection attempt timed out, please try again"
-#else
-                return "An unexpected error occurred, please try again"
-#endif
             }
         }
 
@@ -561,8 +547,6 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             case .simulateControllerFailureError: return 4
                 // MARK: Actual connection attempt issues
             case .startTunnelFailure: return 100
-            case .startTunnelDisconnectedSilently: return 101
-            case .startTunnelTimedOut: return 102
             }
         }
 
@@ -572,9 +556,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                     .noAuthToken,
                     .connectionStatusInvalid,
                     .connectionAlreadyStarted,
-                    .simulateControllerFailureError,
-                    .startTunnelDisconnectedSilently,
-                    .startTunnelTimedOut:
+                    .simulateControllerFailureError:
                 return [:]
             case .startTunnelFailure(let error):
                 return [NSUnderlyingErrorKey: error]
@@ -743,13 +725,13 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         do {
             Logger.networkProtection.log("🚀 Starting NetworkProtectionTunnelController, options: \(options, privacy: .public)")
             try tunnelManager.connection.startVPNTunnel(options: options)
+
+            if #available(macOS 12, *) {
+                try await waitForStartSuccess(tunnelManager)
+            }
         } catch {
             Logger.networkProtection.fault("🔴 Failed to start VPN tunnel: \(error, privacy: .public)")
             throw StartError.startTunnelFailure(error)
-        }
-
-        if #available(macOS 12, *) {
-            try await waitForStartSuccess(tunnelManager)
         }
 
         PixelKit.fire(
@@ -759,6 +741,39 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
                 guard let self, error == nil, fired else { return }
                 self.defaults.vpnFirstEnabled = PixelKit.pixelLastFireDate(event: NetworkProtectionPixelEvent.networkProtectionNewUser)
             }
+    }
+
+    enum StartMonitoringError: Error, CustomNSError {
+        case startTunnelDisconnectedSilently
+        case startTunnelTimedOut
+
+        var errorDescription: String? {
+            switch self {
+            case .startTunnelDisconnectedSilently:
+#if DEBUG
+                return "[DEBUG] The connection attempt failed silently, please try again"
+#else
+                return "An unexpected error occurred, please try again"
+#endif
+            case .startTunnelTimedOut:
+#if DEBUG
+                return "[DEBUG] The connection attempt timed out, please try again"
+#else
+                return "An unexpected error occurred, please try again"
+#endif
+            }
+        }
+
+        var errorCode: Int {
+            switch self {
+            case .startTunnelDisconnectedSilently: return 1
+            case .startTunnelTimedOut: return 2
+            }
+        }
+
+        var errorUserInfo: [String: Any] {
+            return [:]
+        }
     }
 
     @available(macOS 12, *)
@@ -776,7 +791,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
         for await notification in notificationCenter.notifications(named: statusChange) {
 
             if Date() >= deadline {
-                throw StartError.startTunnelTimedOut
+                throw StartMonitoringError.startTunnelTimedOut
             }
 
             guard let connection = notification.object as? NEVPNConnection else {
@@ -791,7 +806,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             case .disconnecting:
                 // We check the disconnecting status because "disconnected" is a valid initial status
                 // and results in false negatives.
-                throw StartError.startTunnelDisconnectedSilently
+                throw StartMonitoringError.startTunnelDisconnectedSilently
             default:
                 continue
             }

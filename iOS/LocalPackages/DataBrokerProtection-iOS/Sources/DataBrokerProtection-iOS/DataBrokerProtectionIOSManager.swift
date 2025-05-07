@@ -225,6 +225,7 @@ public final class DataBrokerProtectionIOSManager {
 #if !targetEnvironment(simulator)
             do {
                 try BGTaskScheduler.shared.submit(request)
+                Logger.dataBrokerProtection.log("Scheduling background task successful")
             } catch {
                 Logger.dataBrokerProtection.log("Scheduling background task failed with error: \(error)")
             }
@@ -233,11 +234,13 @@ public final class DataBrokerProtectionIOSManager {
     }
 
     func handleBGProcessingTask(task: BGTask) {
-        // let startTime = Date.now
+        Logger.dataBrokerProtection.log("Background task started")
+        let startTime = Date.now
 
         task.expirationHandler = {
-            // let timeTaken = Date.now.timeIntervalSince(startTime)
+            let timeTaken = Date.now.timeIntervalSince(startTime)
             self.scheduleBGProcessingTask()
+            Logger.dataBrokerProtection.log("Background task expired with time taken: \(timeTaken)")
             task.setTaskCompleted(success: false)
         }
 
@@ -248,6 +251,7 @@ public final class DataBrokerProtectionIOSManager {
                 return
             }
             queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, operationDependencies: operationDependencies, errorHandler: nil) {
+                Logger.dataBrokerProtection.log("All operations completed in background task")
                 task.setTaskCompleted(success: true)
             }
         }

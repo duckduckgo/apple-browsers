@@ -21,15 +21,6 @@ import Foundation
 public final class PreferencesSubscriptionModel: ObservableObject {
 
     public enum UserEvent {
-        case openVPN,
-             openFeedback,
-             iHaveASubscriptionClick,
-             activateSubscriptionViaEmailClick,
-             activateSubscriptionViaRestoreAppStorePurchaseClick,
-             manageEmailClick,
-             addToDeviceActivationFlow,
-             openSubscriptionSettingsClick,
-             changePlanOrBillingClick,
-             removeSubscriptionClick
+        case openVPN
     }
 }

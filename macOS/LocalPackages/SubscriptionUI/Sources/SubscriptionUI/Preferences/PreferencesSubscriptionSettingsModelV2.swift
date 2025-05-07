@@ -38,7 +38,7 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
     private let subscriptionManager: SubscriptionManagerV2
 
     private let openURLHandler: (URL) -> Void
-    public let userEventHandler: (PreferencesSubscriptionModel.UserEvent) -> Void
+    private let userEventHandler: (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void
     private var fetchSubscriptionDetailsTask: Task<(), Never>?
 
     private var subscriptionChangeObserver: Any?
@@ -49,9 +49,6 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
 
     public enum UserEvent {
         case openFeedback,
-//             iHaveASubscriptionClick,
-//             activateSubscriptionViaEmailClick,
-//             activateSubscriptionViaRestoreAppStorePurchaseClick,
              manageEmailClick,
              addToDeviceActivationFlow,
              openSubscriptionSettingsClick,
@@ -60,7 +57,7 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
     }
 
     public init(openURLHandler: @escaping (URL) -> Void,
-                userEventHandler: @escaping (PreferencesSubscriptionModel.UserEvent) -> Void,
+                userEventHandler: @escaping (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void,
                 subscriptionManager: SubscriptionManagerV2,
                 subscriptionStateUpdate: AnyPublisher<PreferencesSidebarSubscriptionState, Never>
     ) {
@@ -141,6 +138,7 @@ hasAnyEntitlement: \(hasAnyEntitlement)
 
     @MainActor
     func changePlanOrBillingAction() async -> ChangePlanOrBillingAction {
+        userEventHandler(.changePlanOrBillingClick)
 
         switch subscriptionPlatform {
         case .apple:
@@ -221,7 +219,7 @@ hasAnyEntitlement: \(hasAnyEntitlement)
     }
 
     private func handleEmailAction(type: SubscriptionEmailActionType) {
-        let eventType: PreferencesSubscriptionModel.UserEvent
+        let eventType: PreferencesSubscriptionSettingsModelV2.UserEvent
         let url: URL
 
         switch type {

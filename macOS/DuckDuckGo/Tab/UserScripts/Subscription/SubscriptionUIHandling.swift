@@ -63,5 +63,4 @@ typealias SubscriptionAccessActionHandlingEvent = PreferencesSubscriptionModel.U
 protocol SubscriptionAccessActionHandling {
     func subscriptionAccessActionRestorePurchases(message: WKScriptMessage)
     func subscriptionAccessActionOpenURLHandler(url: URL)
-    func subscriptionAccessActionHandleAction(event: SubscriptionAccessActionHandlingEvent)
 }

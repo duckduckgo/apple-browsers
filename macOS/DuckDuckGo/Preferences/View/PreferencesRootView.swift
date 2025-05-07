@@ -224,8 +224,30 @@ enum Preferences {
         }
 
         private func makeSubscriptionSettingsViewModel() -> PreferencesSubscriptionSettingsModelV1 {
+            let userEventHandler: (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void = { event in
+                DispatchQueue.main.async {
+                    switch event {
+                    case .openFeedback:
+                        NotificationCenter.default.post(name: .OpenUnifiedFeedbackForm,
+                                                        object: self,
+                                                        userInfo: UnifiedFeedbackSource.userInfo(source: .ppro))
+                    case .manageEmailClick:
+                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementEmail, frequency: .legacyDailyAndCount)
+                    case .addToDeviceActivationFlow:
+                        // Handled on web
+                        break
+                    case .openSubscriptionSettingsClick:
+                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionSettings)
+                    case .changePlanOrBillingClick:
+                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementPlanBilling)
+                    case .removeSubscriptionClick:
+                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementRemoval)
+                    }
+                }
+            }
+
             return PreferencesSubscriptionSettingsModelV1(openURLHandler: makeOpenURLHandler(),
-                                                          userEventHandler: makeSubscriptionUserEventHandler(),
+                                                          userEventHandler: userEventHandler,
                                                           subscriptionManager: subscriptionManager,
                                                           subscriptionStateUpdate: model.$currentSubscriptionState.eraseToAnyPublisher())
         }
@@ -245,33 +267,6 @@ enum Preferences {
                     case .openVPN:
                         PixelKit.fire(PrivacyProPixel.privacyProVPNSettings)
                         NotificationCenter.default.post(name: .ToggleNetworkProtectionInMainWindow, object: self, userInfo: nil)
-                    case .openFeedback:
-                        NotificationCenter.default.post(name: .OpenUnifiedFeedbackForm,
-                                                        object: self,
-                                                        userInfo: UnifiedFeedbackSource.userInfo(source: .ppro))
-
-                    case .iHaveASubscriptionClick:
-                        // TO BE DELETED
-                        PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseClick)
-                    case .activateSubscriptionViaEmailClick:
-                        // TO BE DELETED
-                        PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
-                    case .activateSubscriptionViaRestoreAppStorePurchaseClick:
-                        // TO BE DELETED
-                        PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreStart, frequency: .legacyDailyAndCount)
-
-
-                    case .manageEmailClick:
-                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementEmail, frequency: .legacyDailyAndCount)
-                    case .addToDeviceActivationFlow:
-                        // Handled on web
-                        break
-                    case .openSubscriptionSettingsClick:
-                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionSettings)
-                    case .changePlanOrBillingClick:
-                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementPlanBilling)
-                    case .removeSubscriptionClick:
-                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementRemoval)
                     }
                 }
             }
@@ -398,7 +393,7 @@ enum Preferences {
                     if #available(macOS 12.0, *) {
                         Task {
                             let appStoreRestoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager,
-                                                                                 storePurchaseManager: subscriptionManager.storePurchaseManager())
+                                                                                   storePurchaseManager: subscriptionManager.storePurchaseManager())
                             let subscriptionAppStoreRestorer = DefaultSubscriptionAppStoreRestorerV2(subscriptionManager: subscriptionManager,
                                                                                                      appStoreRestoreFlow: appStoreRestoreFlow,
                                                                                                      uiHandler: subscriptionUIHandler)
@@ -425,7 +420,7 @@ enum Preferences {
                     case .didOpenPIRPreferencePane:
                         // TODO: Fire new pixel
                         print("TODO: Fire new pixel")
-//                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionSettings)
+                        //                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionSettings)
                     }
                 }
             }
@@ -447,7 +442,7 @@ enum Preferences {
                     case .didOpenITRPreferencePane:
                         // TODO: Fire new pixel
                         print("TODO: Fire new pixel")
-//                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionSettings)
+                        //                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionSettings)
                     }
                 }
             }
@@ -459,8 +454,30 @@ enum Preferences {
         }
 
         private func makeSubscriptionSettingsViewModel() -> PreferencesSubscriptionSettingsModelV2 {
+            let userEventHandler: (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void = { event in
+                DispatchQueue.main.async {
+                    switch event {
+                    case .openFeedback:
+                        NotificationCenter.default.post(name: .OpenUnifiedFeedbackForm,
+                                                        object: self,
+                                                        userInfo: UnifiedFeedbackSource.userInfo(source: .ppro))
+                    case .manageEmailClick:
+                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementEmail, frequency: .legacyDailyAndCount)
+                    case .addToDeviceActivationFlow:
+                        // Handled on web
+                        break
+                    case .openSubscriptionSettingsClick:
+                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionSettings)
+                    case .changePlanOrBillingClick:
+                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementPlanBilling)
+                    case .removeSubscriptionClick:
+                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementRemoval)
+                    }
+                }
+            }
+
             return PreferencesSubscriptionSettingsModelV2(openURLHandler: makeOpenURLHandler(),
-                                                          userEventHandler: makeSubscriptionUserEventHandler(),
+                                                          userEventHandler: userEventHandler,
                                                           subscriptionManager: subscriptionManager,
                                                           subscriptionStateUpdate: model.$currentSubscriptionState.eraseToAnyPublisher())
         }
@@ -480,31 +497,9 @@ enum Preferences {
                     case .openVPN:
                         PixelKit.fire(PrivacyProPixel.privacyProVPNSettings)
                         NotificationCenter.default.post(name: .ToggleNetworkProtectionInMainWindow, object: self, userInfo: nil)
-                    case .openFeedback:
-                        NotificationCenter.default.post(name: .OpenUnifiedFeedbackForm,
-                                                        object: self,
-                                                        userInfo: UnifiedFeedbackSource.userInfo(source: .ppro))
-                    case .iHaveASubscriptionClick:
-                        PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseClick)
-                    case .activateSubscriptionViaEmailClick:
-                        PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
-                    case .activateSubscriptionViaRestoreAppStorePurchaseClick:
-                        PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreStart, frequency: .legacyDailyAndCount)
-                    case .manageEmailClick:
-                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementEmail, frequency: .legacyDailyAndCount)
-                    case .addToDeviceActivationFlow:
-                        // Handled on web
-                        break
-                    case .openSubscriptionSettingsClick:
-                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionSettings)
-                    case .changePlanOrBillingClick:
-                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementPlanBilling)
-                    case .removeSubscriptionClick:
-                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementRemoval)
                     }
                 }
             }
         }
     }
-
 }

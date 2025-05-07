@@ -40,7 +40,7 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
         subscriptionManager.accountManager
     }
     private let openURLHandler: (URL) -> Void
-    public let userEventHandler: (PreferencesSubscriptionModel.UserEvent) -> Void
+    public let userEventHandler: (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void
     private var fetchSubscriptionDetailsTask: Task<(), Never>?
 
     private var subscriptionChangeObserver: Any?
@@ -65,7 +65,7 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
     }
 
     public init(openURLHandler: @escaping (URL) -> Void,
-                userEventHandler: @escaping (PreferencesSubscriptionModel.UserEvent) -> Void,
+                userEventHandler: @escaping (PreferencesSubscriptionSettingsModelV2.UserEvent) -> Void,
                 subscriptionManager: SubscriptionManager,
                 subscriptionStateUpdate: AnyPublisher<PreferencesSidebarSubscriptionState, Never>
     ) {
@@ -214,7 +214,7 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
     }
 
     private func handleEmailAction(type: SubscriptionEmailActionType) {
-        let eventType: PreferencesSubscriptionModel.UserEvent
+        let eventType: PreferencesSubscriptionSettingsModelV2.UserEvent
         let url: URL
 
         switch type {

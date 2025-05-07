@@ -788,12 +788,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             providerEvents.fire(.tunnelStartAttempt(.failure(error)))
             throw error
         }
-
-        /* 🔴🔴🔴🔴🔴🔴🔴🔴🔴🔴 Committing this disabled to stay on the safe side.
-        Task {
-            try await Task.sleep(interval: .seconds(5))
-            await cancelTunnel(with: NSError(domain: "test", code: 1))
-        }*/
     }
 
     var currentServerSelectionMethod: NetworkProtectionServerSelectionMethod {

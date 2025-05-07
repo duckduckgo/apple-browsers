@@ -206,7 +206,9 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
             switch session.status {
             case .connected:
-                //try await enableOnDemand(tunnelManager: manager)
+                if #unavailable(macOS 12) {
+                    try await enableOnDemand(tunnelManager: manager)
+                }
                 break
             case .invalid:
                 clearInternalManager()

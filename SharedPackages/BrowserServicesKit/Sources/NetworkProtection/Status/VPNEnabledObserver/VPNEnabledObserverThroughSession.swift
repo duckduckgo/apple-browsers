@@ -59,20 +59,23 @@ public class VPNEnabledObserverThroughSession: VPNEnabledObserver {
         self.platformDidWakeNotification = platformDidWakeNotification
         self.tunnelSessionProvider = tunnelSessionProvider
 
+        // Unfortunately we can't set the initial value from real data without making the init
+        // async, so for now we'll be content to allow this to be false and spawn a task to
+        // update it.
         subject = CurrentValueSubject<Bool, Never>(false)
+
+        Task { [tunnelSessionProvider] in
+            guard let activeSession = await tunnelSessionProvider.activeSession() else {
+                return
+            }
+
+            updateSubject(with: activeSession)
+        }
 
         start()
     }
 
     // MARK: - VPN-Enabled Status Calculations
-/*
-    private static func isVPNEnabled(in tunnelSessionProvider: TunnelSessionProvider) async -> Bool {
-        guard let cachedSession = await tunnelSessionProvider.activeSession() else {
-            return false
-        }
-
-        return isVPNEnabled(in: cachedSession)
-    }*/
 
     private static func isVPNEnabled(status: NEVPNStatus, isOnDemandEnabled: Bool) -> Bool {
         print("🤌 isOnDemandEnabled: \(isOnDemandEnabled), status: \(status)")

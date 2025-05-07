@@ -55,7 +55,8 @@ public class DataBrokerProtectionMacOSPixelsHandler: EventMapping<DataBrokerProt
                     .dataBrokerProtectionNotificationOpenedAllRecordsRemoved,
                     .webUILoadingFailed,
                     .webUILoadingStarted,
-                    .webUILoadingSuccess:
+                    .webUILoadingSuccess,
+                    .invalidPayload:
 
                 PixelKit.fire(event)
 

@@ -75,6 +75,9 @@ public enum DataBrokerProtectionMacOSPixels {
     case entitlementCheckValid
     case entitlementCheckInvalid
     case entitlementCheckError
+
+    // Configuration
+    case invalidPayload(Configuration)
 }
 
 extension DataBrokerProtectionMacOSPixels: PixelKitEvent {
@@ -137,6 +140,9 @@ extension DataBrokerProtectionMacOSPixels: PixelKitEvent {
         case .entitlementCheckInvalid: return "m_mac_dbp_macos_entitlement_invalid"
         case .entitlementCheckError: return "m_mac_dbp_macos_entitlement_error"
 
+            // Configuration
+        case .invalidPayload(let configuration): return "m_mac_dbp_\(configuration.rawValue)_invalid_payload".lowercased()
+
         }
     }
 
@@ -171,9 +177,12 @@ extension DataBrokerProtectionMacOSPixels: PixelKitEvent {
                 .homeViewShowBadPathError,
                 .homeViewCTAMoveApplicationClicked,
                 .homeViewCTAGrantPermissionClicked,
+
                 .entitlementCheckValid,
                 .entitlementCheckInvalid,
-                .entitlementCheckError:
+                .entitlementCheckError,
+
+                .invalidPayload:
             return [:]
         case .ipcServerProfileSavedCalledByApp,
                 .ipcServerProfileSavedReceivedByAgent,
@@ -228,7 +237,8 @@ public class DataBrokerProtectionMacOSPixelsHandler: EventMapping<DataBrokerProt
                     .dataBrokerProtectionNotificationOpenedAllRecordsRemoved,
                     .webUILoadingFailed,
                     .webUILoadingStarted,
-                    .webUILoadingSuccess:
+                    .webUILoadingSuccess,
+                    .invalidPayload:
                 PixelKit.fire(event)
 
             case .homeViewShowNoPermissionError,

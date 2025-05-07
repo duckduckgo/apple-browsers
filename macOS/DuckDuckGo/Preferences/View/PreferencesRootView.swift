@@ -259,18 +259,6 @@ enum Preferences {
                                                           subscriptionStateUpdate: model.$currentSubscriptionState.eraseToAnyPublisher())
         }
 
-        private func makeSubscriptionUserEventHandler() -> ((PreferencesSubscriptionModel.UserEvent) -> Void) {
-            { event in
-                DispatchQueue.main.async {
-                    switch event {
-                    case .openVPN:
-                        PixelKit.fire(PrivacyProPixel.privacyProVPNSettings)
-                        NotificationCenter.default.post(name: .ToggleNetworkProtectionInMainWindow, object: self, userInfo: nil)
-                    }
-                }
-            }
-        }
-
         private func openURL(subscriptionURL: SubscriptionURL) {
             DispatchQueue.main.async {
                 let url = subscriptionManager.url(for: subscriptionURL)
@@ -495,18 +483,6 @@ enum Preferences {
             return PreferencesSubscriptionSettingsModelV2(userEventHandler: userEventHandler,
                                                           subscriptionManager: subscriptionManager,
                                                           subscriptionStateUpdate: model.$currentSubscriptionState.eraseToAnyPublisher())
-        }
-
-        private func makeSubscriptionUserEventHandler() -> ((PreferencesSubscriptionModel.UserEvent) -> Void) {
-            { event in
-                DispatchQueue.main.async {
-                    switch event {
-                    case .openVPN:
-                        PixelKit.fire(PrivacyProPixel.privacyProVPNSettings)
-                        NotificationCenter.default.post(name: .ToggleNetworkProtectionInMainWindow, object: self, userInfo: nil)
-                    }
-                }
-            }
         }
 
         private func openURL(subscriptionURL: SubscriptionURL) {

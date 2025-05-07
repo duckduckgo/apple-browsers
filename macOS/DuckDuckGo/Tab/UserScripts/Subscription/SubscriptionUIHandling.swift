@@ -58,8 +58,6 @@ enum SubscriptionAlertType {
     case appleIDSyncFailed
 }
 
-typealias SubscriptionAccessActionHandlingEvent = PreferencesSubscriptionModel.UserEvent
-
 protocol SubscriptionAccessActionHandling {
     func subscriptionAccessActionRestorePurchases(message: WKScriptMessage)
     func subscriptionAccessActionOpenURLHandler(url: URL)

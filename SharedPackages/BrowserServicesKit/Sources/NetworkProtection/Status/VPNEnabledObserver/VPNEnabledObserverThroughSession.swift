@@ -72,14 +72,12 @@ public class VPNEnabledObserverThroughSession: VPNEnabledObserver {
             updateSubject(with: activeSession)
         }
 
-        start()
+        startObservingChanges()
     }
 
     // MARK: - VPN-Enabled Status Calculations
 
     private static func isVPNEnabled(status: NEVPNStatus, isOnDemandEnabled: Bool) -> Bool {
-        print("🤌 isOnDemandEnabled: \(isOnDemandEnabled), status: \(status)")
-
         // If the VPN has not been configured it's certainly not on, and won't have on-demand
         // enabled.  We need to capture this here though because `isOnDemandEnabled` keeps
         // returning true the last known value when the VPN configuration has been deleted.
@@ -95,11 +93,7 @@ public class VPNEnabledObserverThroughSession: VPNEnabledObserver {
 
     // MARK: - Observing VPN status and configuration
 
-    private func start() {
-        startObservers()
-    }
-
-    private func startObservers() {
+    private func startObservingChanges() {
         let statusPublisher = notificationCenter.publisher(for: .NEVPNStatusDidChange)
             .compactMap { notification -> NEVPNConnection? in
                 notification.object as? NEVPNConnection
@@ -139,7 +133,6 @@ public class VPNEnabledObserverThroughSession: VPNEnabledObserver {
                 Self.isVPNEnabled(status: status, isOnDemandEnabled: isOnDemandEnabled)
             }
             .sink { [subject] isVPNEnabled in
-                print("🤌 isVPNEnabled: \(isVPNEnabled)")
                 subject.send(isVPNEnabled)
             }
             .store(in: &cancellables)
@@ -184,10 +177,7 @@ public class VPNEnabledObserverThroughSession: VPNEnabledObserver {
             try Task.checkCancellation()
 
             if isVPNEnabled != subject.value {
-                //print("🤌 VPN status changed to \(isVPNEnabled)")
                 subject.send(isVPNEnabled)
-            } else {
-                //print("🤌 IGNORED VPN status changed to \(isVPNEnabled)")
             }
         }
     }

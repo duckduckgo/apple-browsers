@@ -187,6 +187,8 @@ enum Preferences {
                     case .openPIR:
                         PixelKit.fire(PrivacyProPixel.privacyProPersonalInformationRemovalSettings)
                         WindowControllersManager.shared.showTab(with: .dataBrokerProtection)
+                    case .openURL(let url):
+                        openURL(subscriptionURL: url)
                     case .didOpenPIRPreferencePane:
                         // TODO: Fire new pixel
                         print("TODO: Fire new pixel")
@@ -195,9 +197,7 @@ enum Preferences {
                 }
             }
 
-            return PreferencesPersonalInformationRemovalModel(subscriptionManager: subscriptionManager,
-                                                              openURLHandler: makeOpenURLHandler(),
-                                                              userEventHandler: userEventHandler,
+            return PreferencesPersonalInformationRemovalModel(userEventHandler: userEventHandler,
                                                               statusUpdates: model.personalInformationRemovalUpdates)
         }
 
@@ -427,6 +427,8 @@ enum Preferences {
                     case .openPIR:
                         PixelKit.fire(PrivacyProPixel.privacyProPersonalInformationRemovalSettings)
                         WindowControllersManager.shared.showTab(with: .dataBrokerProtection)
+                    case .openURL(let url):
+                        openURL(subscriptionURL: url)
                     case .didOpenPIRPreferencePane:
                         // TODO: Fire new pixel
                         print("TODO: Fire new pixel")
@@ -435,9 +437,7 @@ enum Preferences {
                 }
             }
 
-            return PreferencesPersonalInformationRemovalModel(subscriptionManager: subscriptionManager,
-                                                              openURLHandler: makeOpenURLHandler(),
-                                                              userEventHandler: userEventHandler,
+            return PreferencesPersonalInformationRemovalModel(userEventHandler: userEventHandler,
                                                               statusUpdates: model.personalInformationRemovalUpdates)
         }
 

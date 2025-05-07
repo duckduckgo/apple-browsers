@@ -29,15 +29,15 @@ public final class PreferencesIdentityTheftRestorationModel: ObservableObject {
              didOpenITRPreferencePane
     }
 
-    private let userEventHandler: (PreferencesIdentityTheftRestorationModel.UserEvent) -> Void
-
     @Published public var status: StatusIndicator = .off
 
+    private let userEventHandler: (PreferencesIdentityTheftRestorationModel.UserEvent) -> Void
     private var cancellables = Set<AnyCancellable>()
 
     public init(userEventHandler: @escaping (PreferencesIdentityTheftRestorationModel.UserEvent) -> Void,
                 statusUpdates: AnyPublisher<StatusIndicator, Never>) {
         self.userEventHandler = userEventHandler
+
         statusUpdates
             .assign(to: \.status, onWeaklyHeld: self)
             .store(in: &cancellables)

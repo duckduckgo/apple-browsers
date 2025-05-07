@@ -25,23 +25,17 @@ public final class PreferencesPersonalInformationRemovalModel: ObservableObject 
 
     public enum UserEvent {
         case openPIR,
+             openURL(SubscriptionURL),
              didOpenPIRPreferencePane
     }
 
-    private let subscriptionManager: SubscriptionAuthV1toV2Bridge
-    private let openURLHandler: (URL) -> Void
-    private let userEventHandler: (PreferencesPersonalInformationRemovalModel.UserEvent) -> Void
-
     @Published public var status: StatusIndicator = .off
 
+    private let userEventHandler: (PreferencesPersonalInformationRemovalModel.UserEvent) -> Void
     private var cancellables = Set<AnyCancellable>()
 
-    public init(subscriptionManager: SubscriptionAuthV1toV2Bridge,
-                openURLHandler: @escaping (URL) -> Void,
-                userEventHandler: @escaping (PreferencesPersonalInformationRemovalModel.UserEvent) -> Void,
+    public init(userEventHandler: @escaping (PreferencesPersonalInformationRemovalModel.UserEvent) -> Void,
                 statusUpdates: AnyPublisher<StatusIndicator, Never>) {
-        self.subscriptionManager = subscriptionManager
-        self.openURLHandler = openURLHandler
         self.userEventHandler = userEventHandler
 
         statusUpdates
@@ -61,6 +55,6 @@ public final class PreferencesPersonalInformationRemovalModel: ObservableObject 
 
     @MainActor
     func openFAQ() {
-        openURLHandler(subscriptionManager.url(for: .faq))
+        userEventHandler(.openURL(.faq))
     }
 }

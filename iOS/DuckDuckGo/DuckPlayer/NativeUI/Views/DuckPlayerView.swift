@@ -162,40 +162,19 @@ struct DuckPlayerView: View {
         )
         .onFirstAppear {
             viewModel.onFirstAppear()
-            autoOpenOnYoutube = viewModel.autoOpenOnYoutube
-            showOpenInYoutubeToggle = !viewModel.autoOpenOnYoutube
+            autoOpenOnYoutube = viewModel.autoOpenOnYoutube            
         }
         .onAppear {
             viewModel.onAppear()
         }
         .onDisappear {
             viewModel.onDisappear()
-        }
-        .onChange(of: autoOpenOnYoutube) { newValue in
-            // Create a new task to hide the toggle after 2 seconds
-            hideToggleTask?.cancel()
-
-            if newValue {
-
-                let task = DispatchWorkItem {
-                    withAnimation {
-                        showOpenInYoutubeToggle = false
-                        viewModel.autoOpenOnYoutube = true
-                        viewModel.hideAutoOpenToggle()
-                    }
-                }
-
-                hideToggleTask = task
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0, execute: task)
-            } else {
-                viewModel.autoOpenOnYoutube = false
-            }
-        }
+        }        
     }
 
     @ViewBuilder
     private var autoOpenToggleView: some View {
-        if viewModel.showAutoOpenOnYoutubeToggle && viewModel.source == .youtube && showOpenInYoutubeToggle {
+        if viewModel.showAutoOpenOnYoutubeToggle && viewModel.source == .youtube {
             ZStack {
                 RoundedRectangle(cornerRadius: Constants.uiElementRadius)
                     .fill(Constants.uiElementsBackground)

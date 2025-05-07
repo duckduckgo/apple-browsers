@@ -34,7 +34,6 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../BrowserServicesKit"),
-        .package(path: "../FeatureFlags"),
         .package(url: "https://github.com/weichsel/ZIPFoundation.git", exact: "0.9.19"),
     ],
     targets: [

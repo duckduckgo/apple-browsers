@@ -47,7 +47,9 @@ struct PinnedTabView: View, DropDelegate {
                     height: tabStyleProvider.pinnedTabHeight,
                     isSelected: isSelected,
                     foregroundColor: foregroundColor,
-                    drawSeparator: false,
+                    separatorColor: Color(tabStyleProvider.separatorColor),
+                    separatorHeight: tabStyleProvider.separatorHeight,
+                    drawSeparator: !collectionModel.itemsWithoutSeparator.contains(model),
                     showSShaped: tabStyleProvider.shouldShowSShapedTab
                 )
                 .environmentObject(model)
@@ -223,6 +225,8 @@ struct PinnedTabInnerView: View {
     let height: CGFloat
     var isSelected: Bool
     var foregroundColor: Color
+    var separatorColor: Color
+    var separatorHeight: CGFloat
     var drawSeparator: Bool = true
     var showSShaped: Bool
 
@@ -240,9 +244,11 @@ struct PinnedTabInnerView: View {
             if drawSeparator {
                 GeometryReader { proxy in
                     Rectangle()
-                        .foregroundColor(.separator)
-                        .frame(width: 1, height: 20)
-                        .offset(x: proxy.size.width-1, y: 6)
+                        .foregroundColor(separatorColor)
+                        .frame(width: 1, height: separatorHeight)
+                        .offset(
+                            x: showSShaped ? proxy.size.width - rampSize + 2 : proxy.size.width-1,
+                            y: showSShaped ? 10 : 6)
                 }
             }
             favicon

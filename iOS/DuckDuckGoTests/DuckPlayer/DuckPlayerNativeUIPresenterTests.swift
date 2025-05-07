@@ -651,7 +651,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         let videoID = "test123"
         let timestamp: TimeInterval? = 30
         let source: DuckPlayer.VideoNavigationSource = .youtube
-        mockDuckPlayerSettings.welcomeMessageShown = false        
+        mockDuckPlayerSettings.welcomeMessageShown = false
         mockDuckPlayerSettings.variant = .nativeOptOut
       
         // Present pill
@@ -667,7 +667,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         )
 
         // Simulate dismiss
-        _ = sut.playerViewModel?.dismissPublisher.send(Date().timeIntervalSince1970)        
+        _ = sut.playerViewModel?.dismissPublisher.send(Date().timeIntervalSince1970)
 
         // Then
         XCTAssertTrue(mockDuckPlayerSettings.welcomeMessageShown)

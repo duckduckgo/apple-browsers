@@ -74,6 +74,7 @@ public struct AIChatNativeConfigValues: Codable {
     public let supportsClosingAIChat: Bool
     public let supportsOpeningSettings: Bool
     public let supportsNativePrompt: Bool
+    public let supportsNativeChatInput: Bool
 
     public static var defaultValues: AIChatNativeConfigValues {
 #if os(iOS)
@@ -81,7 +82,8 @@ public struct AIChatNativeConfigValues: Codable {
                                         platform: Platform.name,
                                         supportsClosingAIChat: true,
                                         supportsOpeningSettings: true,
-                                        supportsNativePrompt: false)
+                                        supportsNativePrompt: false,
+                                        supportsNativeChatInput: true)
 #endif
 
 #if os(macOS)
@@ -89,7 +91,8 @@ public struct AIChatNativeConfigValues: Codable {
                                         platform: Platform.name,
                                         supportsClosingAIChat: true,
                                         supportsOpeningSettings: true,
-                                        supportsNativePrompt: true)
+                                        supportsNativePrompt: true,
+                                        supportsNativeChatInput: false)
 #endif
     }
 }

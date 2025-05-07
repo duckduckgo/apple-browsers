@@ -1,5 +1,5 @@
 //
-//  PreferencesSubscriptionSettingsView.swift
+//  PreferencesSubscriptionSettingsViewV2.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -22,14 +22,14 @@ import SwiftUIExtensions
 import BrowserServicesKit
 import DesignResourcesKit
 
-public struct PreferencesSubscriptionSettingsViewV1: View {
+public struct PreferencesSubscriptionSettingsViewV2: View {
 
-    @ObservedObject var model: PreferencesSubscriptionSettingsModel
+    @ObservedObject var model: PreferencesSubscriptionSettingsModelV2
     @State private var showingRemoveConfirmationDialog = false
 
     @State private var manageSubscriptionSheet: ManageSubscriptionSheet?
 
-    public init(model: PreferencesSubscriptionSettingsModel) {
+    public init(model: PreferencesSubscriptionSettingsModelV2) {
         self.model = model
     }
 

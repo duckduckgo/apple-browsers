@@ -1,5 +1,5 @@
 //
-//  PreferencesSubscriptionSettingsModel.swift
+//  PreferencesSubscriptionSettingsModelV1.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -24,7 +24,7 @@ import class Combine.AnyCancellable
 import BrowserServicesKit
 import os.log
 
-public final class PreferencesSubscriptionSettingsModel: ObservableObject {
+public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
 
     @Published var subscriptionDetails: String?
     @Published var subscriptionStatus: PrivacyProSubscription.Status?

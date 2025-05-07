@@ -32,6 +32,7 @@ struct DuckPlayerView: View {
     // Local state & Task for hiding the auto open on Youtube toggle after 2 seconds
     @State private var hideToggleTask: DispatchWorkItem?
     @State private var showOpenInYoutubeToggle: Bool = true
+    @State private var controlsVisibility: Bool = false
 
     enum Constants {
         static let daxLogo = "Home"
@@ -66,6 +67,7 @@ struct DuckPlayerView: View {
         static let settingsButtonSize: CGFloat = 20
         static let closeButtonSize: CGFloat = 44
         static let bubbleCloseButtonSize: CGFloat = 32
+        static let controlsSpacing: CGFloat = 8
     }
 
     var body: some View {
@@ -90,7 +92,6 @@ struct DuckPlayerView: View {
                 }
 
                 // Video Container
-                Spacer()
                 GeometryReader { geometry in
                     ZStack {
                         webView
@@ -104,15 +105,50 @@ struct DuckPlayerView: View {
                         y: geometry.size.height / 2
                     )
                 }
+                .layoutPriority(1)
+                
+                Spacer(minLength: LayoutConstants.controlsSpacing)
 
-                // Show only if the source is youtube and the toggle should be visible
-                autoOpenToggleView
+                // Controls Container - Now positioned at the bottom with zero spacing
+                VStack(spacing: 4) {
+                    if controlsVisibility {
+                        // Show only if the source is youtube and the toggle should be visible
+                        autoOpenToggleView
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
 
-                // Show the youtube button if needed
-                youtubeButtonView
+                        // Show the youtube button if needed
+                        youtubeButtonView
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+                }
+                .animation(.spring(response: 0.4, dampingFraction: 0.8), value: controlsVisibility)
+                .frame(minWidth: 0, maxWidth: .infinity)
+                .padding(.bottom, controlsVisibility ? 8 : 0)
 
                 // Show the welcome message if needed
                 welcomeMessage
+
+                if !viewModel.shouldShowWelcomeMessage {
+                    // Toggle Controls Button
+                    ZStack {
+                        Circle()
+                            .fill(Color.gray.opacity(0.5))
+                            .frame(width: 30, height: 30)
+                        
+                        Button(action: {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
+                                controlsVisibility.toggle()
+                            }
+                        }) {
+                            Image(systemName: "chevron.up")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(width: 30, height: 30)
+                                .rotationEffect(Angle(degrees: controlsVisibility ? 180 : 0))
+                        }
+                    }
+                    .padding(.bottom, 10)
+                }
             }
         }
         .gesture(
@@ -176,8 +212,7 @@ struct DuckPlayerView: View {
             }
             .frame(height: LayoutConstants.bottomButtonHeight)
             .padding(.horizontal, LayoutConstants.horizontalPadding)
-            .padding(.bottom, LayoutConstants.horizontalPadding)
-            .padding(.top, LayoutConstants.videoContainerPadding)
+            .padding(.bottom, 8)
             .transition(.opacity)
             .animation(.easeInOut, value: showOpenInYoutubeToggle)
         }
@@ -207,10 +242,9 @@ struct DuckPlayerView: View {
             }
             .frame(height: LayoutConstants.bottomButtonHeight)
             .padding(.horizontal, LayoutConstants.horizontalPadding)
-            .padding(.bottom, LayoutConstants.horizontalPadding)
-            .padding(.top, LayoutConstants.videoContainerPadding)
+            .padding(.bottom, 8)
         } else {
-            Spacer()
+            EmptyView()
         }
     }
 

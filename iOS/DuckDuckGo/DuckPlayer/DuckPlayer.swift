@@ -596,7 +596,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     ///   - message: The script message containing the parameters.
     /// - Returns: An optional `Encodable` response.
     @MainActor
-    public func initialSetupOverlay(params: Any, message: WKScriptMessage) async -> Encodable? {        
+    public func initialSetupOverlay(params: Any, message: WKScriptMessage) async -> Encodable? {
         let webView = message.webView
         return await self.encodedPlayerSettings(with: webView)
     }

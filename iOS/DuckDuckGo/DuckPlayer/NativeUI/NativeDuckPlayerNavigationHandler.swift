@@ -72,7 +72,7 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     /// isDuckPlayerPresented is true when the DuckPlayer is presented
     private var isDuckPlayerPillPresented = false
     private var isDuckPlayerPresented = false
-    
+
     private struct Constants {
         static let duckPlayerScheme = URL.NavigationalScheme.duck.rawValue
         static let serpNotifyEnabled = "enabled"
@@ -289,7 +289,7 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     ///   - reset: Whether to reset the DuckPlayer state
     ///   - animated: Whether to animate the dismissal
     ///   - programatic: Whether the dismissal is programmatic
-    private func dismissDuckPlayerPill(reset: Bool, animated: Bool, programatic: Bool) {        
+    private func dismissDuckPlayerPill(reset: Bool, animated: Bool, programatic: Bool) {
         isDuckPlayerPillPresented = false
         Task { @MainActor in
             duckPlayer.dismissPill(reset: reset, animated: animated, programatic: programatic)
@@ -322,7 +322,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     func handleURLChange(webView: WKWebView, previousURL: URL?, newURL: URL?) -> DuckPlayerNavigationHandlerURLChangeResult {
 
         guard featureFlagger.isFeatureOn(.duckPlayer) else { return .notHandled(.featureOff) }
-        
+
         // Reset the DuckPlayer Presentation State
         resetDuckPlayerPresentation()
 
@@ -375,7 +375,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
 
         // Present Duck Player Pill (Native entry point)
         if duckPlayer.settings.nativeUIYoutubeMode == .ask {
-            lastHandledVideoID = videoID            
+            lastHandledVideoID = videoID
             presentDuckPlayerPill(for: videoID, timestamp: nil)
             return .handled(.duckPlayerEnabled)
         }

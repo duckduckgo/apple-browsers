@@ -55,7 +55,7 @@ final class DuckPlayerNativeUIPresenter {
     }
 
     /// The types of the pill available
-    enum PillType {        
+    enum PillType {
         case entry
         case reEntry
         case welcome
@@ -70,7 +70,7 @@ final class DuckPlayerNativeUIPresenter {
 
         // A presentation event is defined as a single instance of the priming modal being shown or duck
         // This define the logic for how many times the modal can be shown
-        static let primingModalEventCountThreshold: Int = 1        
+        static let primingModalEventCountThreshold: Int = 1
 
         static let bottomPadding: CGFloat = 100
         static let height: CGFloat = 50
@@ -164,7 +164,7 @@ final class DuckPlayerNativeUIPresenter {
             name: AppUserDefaults.Notifications.duckPlayerSettingsUpdated,
             object: nil
         )
-        
+
         // Subscribe to DuckPlayerSettings publisher        
         duckPlayerSettings.duckPlayerSettingsPublisher
             .sink { [weak self] _ in
@@ -204,7 +204,7 @@ final class DuckPlayerNativeUIPresenter {
             let welcomePillViewModel = DuckPlayerWelcomePillViewModel { [weak self] in
                 self?.videoPlaybackRequest.send((videoID, timestamp))
             }
-            
+
             // Create the container view with the welcome pill
             return DuckPlayerContainer.Container(
                 viewModel: containerViewModel,
@@ -384,11 +384,11 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         if state.videoID != videoID {
             state.hasBeenShown = false
             state.videoID = videoID
-        }        
+        }
 
         // Determine the pill type
         let pillType: PillType
-        
+
         // If primingModalEventCount is 0, show the welcome pill for first-time users
         if !duckPlayerSettings.primingMessagePresented {
             pillType = .welcome
@@ -482,7 +482,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
 
         // Check if this is a welcome pill being dismissed
         let wasWelcomePill = !duckPlayerSettings.primingMessagePresented
-        
+
         // If was dismissed by the user, increment the dismiss count
         if !programatic {
             duckPlayerSettings.pillDismissCount += 1
@@ -498,11 +498,11 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
 
         // Function to handle welcome pill transition
         let handleWelcomePillTransition = { [weak self] in
-            guard let self = self, 
-                  wasWelcomePill, 
-                  let videoID = self.state.videoID, 
+            guard let self = self,
+                  wasWelcomePill,
+                  let videoID = self.state.videoID,
                   let hostView = self.hostView else { return }
-            
+
             self.presentPill(for: videoID, in: hostView, timestamp: self.state.timestamp)
         }
 
@@ -526,7 +526,6 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
     func presentDuckPlayer(
         videoID: String, source: DuckPlayer.VideoNavigationSource, in hostViewController: DuckPlayerHosting, title: String?, timestamp: TimeInterval?
     ) -> (navigation: PassthroughSubject<URL, Never>, settings: PassthroughSubject<Void, Never>) {
-        
 
         // Reset the dismiss count if toast not already presented
         if duckPlayerSettings.pillDismissCount < 3 {

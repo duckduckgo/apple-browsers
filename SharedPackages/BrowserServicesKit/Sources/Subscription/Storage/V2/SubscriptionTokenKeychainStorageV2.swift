@@ -36,12 +36,12 @@ public enum KeychainErrorAuthVersion: String {
 public final class SubscriptionTokenKeychainStorageV2: AuthTokenStoring {
 
     private let keychainType: KeychainType
-    private let errorPixelHandler: (AccountKeychainAccessType, AccountKeychainAccessError) -> Void
+    private let errorEventsHandler: (AccountKeychainAccessType, AccountKeychainAccessError) -> Void
 
     public init(keychainType: KeychainType = .dataProtection(.unspecified),
-                errorPixelHandler: @escaping (AccountKeychainAccessType, AccountKeychainAccessError) -> Void) {
+                errorEventsHandler: @escaping (AccountKeychainAccessType, AccountKeychainAccessError) -> Void) {
         self.keychainType = keychainType
-        self.errorPixelHandler = errorPixelHandler
+        self.errorEventsHandler = errorEventsHandler
     }
 
     public func getTokenContainer() throws -> Networking.TokenContainer? {
@@ -53,7 +53,7 @@ public final class SubscriptionTokenKeychainStorageV2: AuthTokenStoring {
             return CodableHelper.decode(jsonData: data)
         } catch {
             if let error = error as? AccountKeychainAccessError {
-                errorPixelHandler(AccountKeychainAccessType.getAuthToken, error)
+                errorEventsHandler(AccountKeychainAccessType.getAuthToken, error)
             } else {
                 assertionFailure("Unexpected error: \(error)")
                 Logger.subscriptionKeychain.fault("Unexpected error: \(error, privacy: .public)")
@@ -78,7 +78,7 @@ public final class SubscriptionTokenKeychainStorageV2: AuthTokenStoring {
         } catch {
             Logger.subscriptionKeychain.fault("Failed to set TokenContainer: \(error, privacy: .public)")
             if let error = error as? AccountKeychainAccessError {
-                errorPixelHandler(AccountKeychainAccessType.storeAuthToken, error)
+                errorEventsHandler(AccountKeychainAccessType.storeAuthToken, error)
             } else {
                 assertionFailure("Unexpected error: \(error)")
                 Logger.subscriptionKeychain.fault("Unexpected error: \(error, privacy: .public)")

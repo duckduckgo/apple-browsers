@@ -167,7 +167,7 @@ public final class NetworkProtectionKeychainTokenStore: NetworkProtectionTokenSt
 /// Writing a new auth token will replace the old one.
 public final class NetworkProtectionKeychainTokenStoreV2: AuthTokenStoring {
     private let keychainStore: NetworkProtectionKeychainStore
-    private let errorPixelHandler: EventMapping<NetworkProtectionError>?
+    private let errorEventsHandler: EventMapping<NetworkProtectionError>?
 
     public struct Defaults {
         static let bundleID = Bundle.main.bundleIdentifier ?? "com.duckduckgo.networkprotection"
@@ -180,12 +180,12 @@ public final class NetworkProtectionKeychainTokenStoreV2: AuthTokenStoring {
     /// - accessTokenProvider: Defines how to actually retrieve the subscription access token
     public init(keychainType: KeychainType,
                 serviceName: String = Defaults.tokenStoreService,
-                errorPixelHandler: EventMapping<NetworkProtectionError>?
+                errorEventsHandler: EventMapping<NetworkProtectionError>?
     ) {
         keychainStore = NetworkProtectionKeychainStore(label: Defaults.tokenStoreEntryLabel,
                                                        serviceName: serviceName,
                                                        keychainType: keychainType)
-        self.errorPixelHandler = errorPixelHandler
+        self.errorEventsHandler = errorEventsHandler
     }
 
     public func getTokenContainer() throws -> Networking.TokenContainer? {
@@ -220,11 +220,11 @@ public final class NetworkProtectionKeychainTokenStoreV2: AuthTokenStoring {
         guard let error = error as? NetworkProtectionKeychainStoreError else {
             assertionFailure("Failed to cast Network Protection Token store error")
             Logger.networkProtection.fault("Failed to cast Network Protection Keychain store error")
-            errorPixelHandler?.fire(NetworkProtectionError.unhandledError(function: #function, line: #line, error: error))
+            errorEventsHandler?.fire(NetworkProtectionError.unhandledError(function: #function, line: #line, error: error))
             return
         }
 
-        errorPixelHandler?.fire(error.networkProtectionError)
+        errorEventsHandler?.fire(error.networkProtectionError)
     }
 }
 

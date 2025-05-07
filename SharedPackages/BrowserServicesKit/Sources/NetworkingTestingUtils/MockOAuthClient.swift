@@ -23,7 +23,15 @@ public class MockOAuthClient: OAuthClient {
 
     public init() {}
     public var isUserAuthenticated: Bool = false
-    public var currentTokenContainer: Networking.TokenContainer?
+    public var _currentTokenContainer: Networking.TokenContainer?
+    public func currentTokenContainer() throws -> TokenContainer? {
+        _currentTokenContainer
+    }
+
+    public func setCurrentTokenContainer(_ tokenContainer: TokenContainer?) throws {
+        _currentTokenContainer = tokenContainer
+    }
+
 
     public var getTokensResponse: Result<Networking.TokenContainer, Error>!
     public func getTokens(policy: Networking.AuthTokensCachePolicy) async throws -> Networking.TokenContainer {
@@ -43,7 +51,7 @@ public class MockOAuthClient: OAuthClient {
     }
 
     public func adopt(tokenContainer: Networking.TokenContainer) {
-        currentTokenContainer = tokenContainer
+        _currentTokenContainer = tokenContainer
     }
 
     public var createAccountResponse: Result<Networking.TokenContainer, Error>!

@@ -85,7 +85,9 @@ public protocol OAuthClient {
 
     var isUserAuthenticated: Bool { get }
 
-    var currentTokenContainer: TokenContainer? { get set }
+    func currentTokenContainer() throws -> TokenContainer?
+
+    func setCurrentTokenContainer(_ tokenContainer: TokenContainer?) throws
 
     /// Returns a tokens container based on the policy
     /// - `.local`: Returns what's in the storage, as it is, throws an error if no token is available
@@ -204,13 +206,12 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         return tokenContainer != nil
     }
 
-    public var currentTokenContainer: TokenContainer? {
-        get  {
-            try? tokenStorage.getTokenContainer()
-        }
-        set {
-            try? tokenStorage.saveTokenContainer(newValue)
-        }
+    public func currentTokenContainer() throws -> TokenContainer? {
+        try tokenStorage.getTokenContainer()
+    }
+
+    public func setCurrentTokenContainer(_ tokenContainer: TokenContainer?) throws {
+        try tokenStorage.saveTokenContainer(tokenContainer)
     }
 
     public func getTokens(policy: AuthTokensCachePolicy) async throws -> TokenContainer {

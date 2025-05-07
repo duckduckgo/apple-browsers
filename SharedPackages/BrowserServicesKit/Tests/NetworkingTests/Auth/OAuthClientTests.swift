@@ -58,10 +58,10 @@ final class OAuthClientTests: XCTestCase {
     }
 
     func testCurrentTokenContainer() async throws {
-        var currentToken = await oAuthClient.currentTokenContainer
+        var currentToken = try await oAuthClient.currentTokenContainer()
         XCTAssertNil(currentToken)
         try tokenStorage.saveTokenContainer(OAuthTokensFactory.makeValidTokenContainer())
-        currentToken = await oAuthClient.currentTokenContainer
+        currentToken = try await oAuthClient.currentTokenContainer()
         XCTAssertNotNil(currentToken)
     }
 

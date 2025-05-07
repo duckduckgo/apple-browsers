@@ -58,6 +58,7 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
             privacyConfigManager: mockPrivacyConfig,
             internalUserDecider: mockInternalUserDecider
         )
+        playerSettings.variant = .nativeOptIn
 
         mockFeatureFlagger = MockDuckPlayerFeatureFlagger()
         mockNativeUIPresenter = MockDuckPlayerNativeUIPresenting()

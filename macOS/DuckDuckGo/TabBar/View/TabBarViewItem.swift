@@ -118,7 +118,7 @@ final class TabBarItemCellView: NSView {
         static let trailingSpaceWithPermissionAndButton: CGFloat = 40
     }
 
-    private var visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager
+    private var visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyleManager.style
 
     fileprivate let faviconImageView = {
         let faviconImageView = NSImageView()
@@ -261,7 +261,7 @@ final class TabBarItemCellView: NSView {
         ]
         mouseOverView.layer?.addSublayer(borderLayer)
 
-        titleTextField.textColor = visualStyleManager.style.textPrimaryColor
+        titleTextField.textColor = visualStyle.textPrimaryColor
 
         addSubview(mouseOverView)
         addSubview(faviconImageView)
@@ -295,7 +295,7 @@ final class TabBarItemCellView: NSView {
             layoutForCompactMode()
         }
 
-        let tabStyleProvider = visualStyleManager.style.tabStyleProvider
+        let tabStyleProvider = visualStyle.tabStyleProvider
         rightSeparatorView.frame = NSRect(x: bounds.maxX.rounded() - 1, y: bounds.midY - (tabStyleProvider.separatorHeight / 2), width: 1, height: tabStyleProvider.separatorHeight)
         rightSeparatorView.backgroundColor = tabStyleProvider.separatorColor
     }

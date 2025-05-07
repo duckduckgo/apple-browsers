@@ -242,7 +242,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     }
 
     init() {
-        super.init(frame: CGRect(x: 0, y: 0, width: 300, height: 68))
+        super.init(frame: CGRect(x: 0, y: 0, width: 300, height: Metrics.height))
 
         setUpSubviews()
         setUpConstraints()

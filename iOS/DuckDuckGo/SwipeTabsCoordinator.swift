@@ -365,9 +365,6 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
             fatalError("Not \(OmniBarCell.self)")
         }
 
-        // TODO remove
-        // removeControllerForCell(cell)
-
         if !isEnabled || tabsModel.currentIndex == indexPath.row {
             cell.omniBar = coordinator.omniBar
         } else {
@@ -382,7 +379,7 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
             cell.omniBar?.showSeparator()
             cell.omniBar?.adjust(for: appSettings.currentAddressBarPosition)
 
-            if let url {
+            if let url = tabsModel.safeGetTabAt(indexPath.row)?.link?.url {
                 cell.omniBar?.startBrowsing()
                 cell.omniBar?.updateAccessoryType(omnibarAccessoryHandler.omnibarAccessory(for: url))
                 cell.omniBar?.resetPrivacyIcon(for: url)
@@ -402,24 +399,6 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
 
         return cell
     }
-
-    // TODO remove
-//    private func removeControllerForCell(_ cell: OmniBarCell) {
-//        guard let existingOmniBarView = cell.omniBar?.barView else { return }
-//
-//        // Only remove controller of a "fake" OmniBar
-//        if coordinator.omniBar !== cell.omniBar,
-//           let backingVC = coordinator.parentController?.children.first(where: { $0.view === existingOmniBarView }) {
-//
-//            backingVC.willMove(toParent: nil)
-//            existingOmniBarView.removeFromSuperview()
-//            cell.omniBar = nil
-//            backingVC.removeFromParent()
-//        } else { // For cell with real OmniBar just remove existing view
-//            existingOmniBarView.removeFromSuperview()
-//            cell.omniBar = nil
-//        }
-//    }
 
 }
 
@@ -472,9 +451,7 @@ class OmniBarCell: UICollectionViewCell {
     }
 
     deinit {
-        if let controller {
-            controller.removeFromParent()
-        }
+        controller?.removeFromParent()
         controller = nil
     }
 }

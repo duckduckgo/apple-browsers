@@ -529,6 +529,7 @@ extension AutofillUserScript {
         case cardSecurityCode
         case expirationMonth
         case expirationYear
+        case expiration
     }
 
     // https://github.com/duckduckgo/duckduckgo-autofill/blob/main/src/deviceApiCalls/schemas/getAutofillData.params.json

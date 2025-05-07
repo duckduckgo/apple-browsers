@@ -406,7 +406,7 @@ class OmniBarCell: UICollectionViewCell {
 
     weak var coordinator: MainViewCoordinator?
     var roundCornersMaskView: RoundedCornersMaskView?
-    weak var controller: OmniBarViewController?
+    var controller: OmniBarViewController?
 
     weak var omniBar: OmniBar? {
         didSet {
@@ -448,6 +448,11 @@ class OmniBarCell: UICollectionViewCell {
             bringSubviewToFront(maskView)
                 
         }
+    }
+
+    deinit {
+        controller?.removeFromParent()
+        controller = nil
     }
 }
 

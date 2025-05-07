@@ -654,7 +654,6 @@ final class MainMenu: NSMenu {
         let debugMenu = NSMenu(title: "Debug") {
             NSMenuItem(title: "Feature Flag Overrides")
                 .submenu(FeatureFlagOverridesMenu(featureFlagOverrides: NSApp.delegateTyped.featureFlagger))
-            NSMenuItem(title: "Export Logs", action: #selector(exportLogs))
             NSMenuItem(title: "Open Vanilla Browser", action: #selector(MainViewController.openVanillaBrowser)).withAccessibilityIdentifier("MainMenu.openVanillaBrowser")
             NSMenuItem(title: "Skip Onboarding", action: #selector(MainViewController.skipOnboarding))
             NSMenuItem(title: "New Tab Page") {
@@ -799,22 +798,13 @@ final class MainMenu: NSMenu {
         return debugMenu
     }
 
-//    @objc func exportLogs(_ sender: Any?) {
-//        LogExporter.useIt()
-//    }
-
     private func setupLoggingMenu() -> NSMenu {
         let menu = NSMenu(title: "")
-
         menu.addItem(autofillDebugScriptMenuItem
             .targetting(self))
-
         menu.addItem(.separator())
-
-        if #available(macOS 12.0, *) {
-            let exportLogsMenuItem = NSMenuItem(title: "Save Logs…", action: #selector(exportLogs), target: self)
-            menu.addItem(exportLogsMenuItem)
-        }
+        let exportLogsMenuItem = NSMenuItem(title: "Export Logs…", action: #selector(exportLogs), target: self)
+        menu.addItem(exportLogsMenuItem)
 
         self.loggingMenu = menu
         return menu
@@ -863,34 +853,8 @@ final class MainMenu: NSMenu {
         updateAutofillDebugScriptMenuItem()
     }
 
-    @available(macOS 12.0, *)
     @objc private func exportLogs(_ sender: NSMenuItem) {
-        let displayName = Bundle.main.displayName!.replacingOccurrences(of: " ", with: "")
-
-        let launchDate = ISO8601DateFormatter().string(from: NSRunningApplication.current.launchDate ?? Date()).replacingOccurrences(of: ":", with: "_")
-        let savePanel = NSSavePanel.savePanelWithFileTypeChooser(fileTypes: [.log, .text], suggestedFilename: "\(displayName)_\(launchDate)")
-        guard case .OK = savePanel.runModal(),
-              let url = savePanel.url else { return }
-
-        do {
-            let formatter = DateFormatter()
-            formatter.locale = Locale(identifier: "en_US_POSIX")
-            formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
-
-            let logStore = try OSLogStore(scope: .currentProcessIdentifier)
-            try logStore.getEntries()
-                .compactMap {
-                    guard let entry = $0 as? OSLogEntryLog else { return nil }
-                    return "\(formatter.string(from: entry.date)) [\(entry.category)] \(entry.composedMessage)"
-                }
-                .joined(separator: "\n")
-                .utf8data
-                .write(to: url)
-
-            NSWorkspace.shared.activateFileViewerSelecting([url])
-        } catch {
-            NSAlert(error: error).runModal()
-        }
+        LogExporter.export()
     }
 }
 

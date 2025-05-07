@@ -17,95 +17,144 @@
 //
 
 import Foundation
-import os.log
-import Common
+import OSLog
+import AppKit
 
+@available(macOS 10.15, *)
 struct LogExporter {
 
     struct LogFilter {
-        var predicate: String
+        var predicate: NSPredicate
         var destinationFileName: String
     }
 
-    static func useIt() {
+    static func export() {
         Logger.general.log("Exporting logs...")
-        // Source: https://app.asana.com/1/137249556945/project/1202500774821704/task/1209989420331708?focus=true
-        let allDDG = LogFilter(predicate: #"process CONTAINS "duckduckgo" OR process CONTAINS "DuckDuckGo""#,
-                               destinationFileName: "duckduckgo.log")
 
-        // Source: https://app.asana.com/1/137249556945/project/1202500774821704/task/1209066578041976?focus=true
-        let sparkle = LogFilter(predicate: #"(process == "org.sparkle-project.Sparkle" OR processImagePath CONTAINS "Sparkle") OR (subsystem == "Updates") OR (process == "Autoupdate")"#,
-                                destinationFileName: "updater.log")
+        let allDDG = LogFilter(
+            predicate: NSPredicate(format: "process CONTAINS[c] %@", "duckduckgo"),
+            destinationFileName: "duckduckgo.log"
+        )
 
-        // Source: https://app.asana.com/1/137249556945/project/1205842948507349/task/1205648962129689?focus=true
-        let vpnExtensionKit = LogFilter(predicate: #"subsystem == "com.apple.extensionkit" && category == "NSExtension""#,
-                                        destinationFileName: "extensionkit_nsextension.log")
-        let vpnNetworkextension = LogFilter(predicate: #"subsystem == "com.apple.networkextension"#,
-                                            destinationFileName: "networkextension.log")
-        let networkProtection = LogFilter(predicate: #"subsystem == "Network protection""#,
-                                          destinationFileName: "network_protection.log")
+        let sparkle = LogFilter(
+            predicate: NSPredicate(format: """
+                (process == "org.sparkle-project.Sparkle" OR processImagePath CONTAINS[c] "Sparkle") \
+                OR (subsystem == "Updates") OR (process == "Autoupdate")
+            """),
+            destinationFileName: "updater.log"
+        )
+
+        let vpnExtensionKit = LogFilter(
+            predicate: NSPredicate(format: "subsystem == %@ AND category == %@", "com.apple.extensionkit", "NSExtension"),
+            destinationFileName: "extensionkit_nsextension.log"
+        )
+
+        let vpnNetworkExtension = LogFilter(
+            predicate: NSPredicate(format: "subsystem == %@", "com.apple.networkextension"),
+            destinationFileName: "networkextension.log"
+        )
+
+        let networkProtection = LogFilter(
+            predicate: NSPredicate(format: "subsystem == %@", "Network protection"),
+            destinationFileName: "network_protection.log"
+        )
+
+        let alert = NSAlert()
+        alert.messageText = "Exporting logs on your Desktop..."
 
         Task {
+            Task { @MainActor in
+                if let window = NSApp.mainWindow {
+                    alert.beginSheetModal(for: window)
+                }
+            }
+
             do {
-                try await exportFilteredLogsToDesktop(minutesBack: 5, logFilters: [allDDG,
-                                                                                   sparkle,
-                                                                                   vpnExtensionKit,
-                                                                                   vpnNetworkextension,
-                                                                                   networkProtection])
+                try await exportFilteredLogsToDesktop(
+                    minutesBack: 5,
+                    logFilters: [
+                        allDDG,
+                        sparkle,
+                        vpnExtensionKit,
+                        vpnNetworkExtension,
+                        networkProtection
+                    ]
+                )
+                Task { @MainActor in
+                    alert.window.orderOut(nil)
+                }
             } catch {
                 Logger.general.error("Failed to export logs: \(error.localizedDescription)")
+                Task { @MainActor in
+                    alert.window.orderOut(nil)
+                    NSAlert(error: error).runModal()
+                }
             }
         }
     }
 
     static func exportFilteredLogsToDesktop(minutesBack: Int, logFilters: [LogFilter]) async throws {
+        let store = try OSLogStore.local()
+        let endDate = Date()
+        let startDate = endDate.addingTimeInterval(TimeInterval(-minutesBack * 60))
+        let position = store.position(date: startDate)
+
         let tempDir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: tempDir, withIntermediateDirectories: true)
 
-        let timeRange = "\(minutesBack)m"
-
         for filter in logFilters {
-            let logFileURL = tempDir.appendingPathComponent(filter.destinationFileName)
-            let predicate = filter.predicate
+            let entries = try store.getEntries(at: position, matching: filter.predicate)
+            let logs = entries.compactMap { $0 as? OSLogEntryLog }
 
-            let logProcess = Process()
-            logProcess.executableURL = URL(fileURLWithPath: "/usr/bin/log")
-            logProcess.arguments = [
-                "show",
-                "--info",
-                "--debug",
-                "--signpost",
-                "--predicate", predicate,
-                "--style", "compact",
-                "--last", timeRange
-            ]
+            guard !logs.isEmpty else { continue }
 
-            let outputPipe = Pipe()
-            logProcess.standardOutput = outputPipe
-            logProcess.standardError = Pipe()
+            let formatted: String = logs.map { entry in
+                let timestamp = ISO8601DateFormatter().string(from: entry.date)
+                let level = entry.level.description != nil ? entry.level.description!+"\t" : ""
+                return "\(level)[\(timestamp)]\t[\(entry.process)]\t[\(entry.subsystem)]\t[\(entry.category)]\t\(entry.composedMessage)"
+            }.joined(separator: "\n")
 
-            try logProcess.run()
-            logProcess.waitUntilExit()
-
-            guard let data = try outputPipe.fileHandleForReading.readToEnd(),
-                  let output = String(data: data, encoding: .utf8) else {
-                throw NSError(domain: "LogExportError", code: 1, userInfo: [NSLocalizedDescriptionKey: "Failed to read filtered logs."])
-            }
-            try output.write(to: logFileURL, atomically: true, encoding: .utf8)
+            let fileURL = tempDir.appendingPathComponent(filter.destinationFileName)
+            try formatted.write(to: fileURL, atomically: true, encoding: .utf8)
         }
 
-        // Create ZIP archive on Desktop
+        // Zip all .log files to Desktop
         let desktopURL = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Desktop")
-        let zipURL = desktopURL.appendingPathComponent("ddg_logs.zip")
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "yyyy-MM-dd-HH:mm:ss"
+        let zipURL = desktopURL.appendingPathComponent("ddg_logs_\(formatter.string(from: Date())).zip")
 
         let zipProcess = Process()
         zipProcess.executableURL = URL(fileURLWithPath: "/usr/bin/zip")
-        zipProcess.arguments = ["-j", zipURL.path, "\(tempDir.path)/*.log"]
+        zipProcess.arguments = ["-j", zipURL.path] + (try FileManager.default.contentsOfDirectory(atPath: tempDir.path)).map {
+            tempDir.appendingPathComponent($0).path
+        }
 
         try zipProcess.run()
         zipProcess.waitUntilExit()
 
-        // Clean up temp dir
         try FileManager.default.removeItem(at: tempDir)
+    }
+}
+
+extension OSLogEntryLog.Level {
+    var description: String? {
+        switch self {
+        case .undefined:
+            return "undefined"
+        case .debug:
+            return "debug"
+        case .info:
+            return "info"
+        case .notice:
+            return "notice"
+        case .error:
+            return "error"
+        case .fault:
+            return "fault"
+        @unknown default:
+            return nil
+        }
     }
 }

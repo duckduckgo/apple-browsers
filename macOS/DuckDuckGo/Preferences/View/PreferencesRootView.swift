@@ -147,6 +147,8 @@ enum Preferences {
                     switch event {
                     case .didClickIHaveASubscription:
                         PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseClick)
+                    case .openURL(let url):
+                        openURL(subscriptionURL: url)
                     }
                 }
             }
@@ -175,7 +177,6 @@ enum Preferences {
                 })
 
             return PreferencesPurchaseSubscriptionModel(subscriptionManager: subscriptionManager,
-                                                        openURLHandler: makeOpenURLHandler(),
                                                         userEventHandler: userEventHandler,
                                                         sheetActionHandler: sheetActionHandler)
         }
@@ -390,6 +391,8 @@ enum Preferences {
                     switch event {
                     case .didClickIHaveASubscription:
                         PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseClick)
+                    case .openURL(let url):
+                        openURL(subscriptionURL: url)
                     }
                 }
             }
@@ -415,7 +418,6 @@ enum Preferences {
                 })
 
             return PreferencesPurchaseSubscriptionModel(subscriptionManager: subscriptionManager,
-                                                        openURLHandler: makeOpenURLHandler(),
                                                         userEventHandler: userEventHandler,
                                                         sheetActionHandler: sheetActionHandler)
         }

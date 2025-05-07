@@ -38,20 +38,18 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
     }
 
     private let subscriptionManager: SubscriptionAuthV1toV2Bridge
-    private let openURLHandler: (URL) -> Void
     public let userEventHandler: (PreferencesPurchaseSubscriptionModel.UserEvent) -> Void
     private let sheetActionHandler: SubscriptionAccessActionHandlers
 
     public enum UserEvent {
-        case didClickIHaveASubscription
+        case didClickIHaveASubscription,
+             openURL(SubscriptionURL)
     }
 
     public init(subscriptionManager: SubscriptionAuthV1toV2Bridge,
-                openURLHandler: @escaping (URL) -> Void,
                 userEventHandler: @escaping (PreferencesPurchaseSubscriptionModel.UserEvent) -> Void,
                 sheetActionHandler: SubscriptionAccessActionHandlers) {
         self.subscriptionManager = subscriptionManager
-        self.openURLHandler = openURLHandler
         self.userEventHandler = userEventHandler
         self.sheetActionHandler = sheetActionHandler
         self.subscriptionStorefrontRegion = currentStorefrontRegion()
@@ -64,17 +62,17 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
 
     @MainActor
     func purchaseAction() {
-        openURLHandler(subscriptionManager.url(for: .purchase))
+        userEventHandler(.openURL(.purchase))
     }
 
     @MainActor
     func openFAQ() {
-        openURLHandler(subscriptionManager.url(for: .faq))
+        userEventHandler(.openURL(.faq))
     }
 
     @MainActor
     func openPrivacyPolicy() {
-        openURLHandler(subscriptionManager.url(for: .privacyPolicy))
+        userEventHandler(.openURL(.privacyPolicy))
     }
 
     private func currentStorefrontRegion() -> SubscriptionRegion {

@@ -63,13 +63,26 @@ class CreditCardPromptViewController: UIViewController {
 extension CreditCardPromptViewController: CreditCardPromptViewModelDelegate {
     
     func creditCardPromptViewModel(_ viewModel: CreditCardPromptViewModel, didSelectCreditCard creditCard: SecureVaultModels.CreditCard) {
+        
+        if AppDependencyProvider.shared.autofillLoginSession.isSessionValid {
+            dismiss(animated: true) { [weak self] in
+                self?.completion?(creditCard)
+            }
+            return
+        }
+        
         authenticator.authenticate { [weak self] error in
-            if let error = error {
+            if let _ = error {
+                AppDependencyProvider.shared.autofillLoginSession.endSession()
+                self?.dismiss(animated: true) {
+                    self?.completion?(nil)
+                }
                 return
             }
             
             self?.dismiss(animated: true) {
                 self?.completion?(creditCard)
+                AppDependencyProvider.shared.autofillLoginSession.startSession()
             }
         }
     }

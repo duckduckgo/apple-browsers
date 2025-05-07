@@ -177,6 +177,9 @@ class TabViewController: UIViewController {
     // Stored in memory on TabViewController for privacy reasons
     private var domainSaveLoginPromptLastShownOn: String?
     private var domainSaveCreditCardPromptLastShownOn: String?
+    // Required to allow grace period between authentication prompts when autofilling credit cards
+    // where forms are split into multiple iframes, requiring multiple prompts
+    private var domainFillCreditCardPromptLastShownOn: String?
     // Required to prevent fireproof prompt presenting before autofill save login prompt
     private var saveLoginPromptLastDismissed: Date?
     private var saveLoginPromptIsPresenting: Bool = false
@@ -509,6 +512,7 @@ class TabViewController: UIViewController {
 
         unregisterFromResignActive()
         tabInteractionStateSource?.saveState(webView.interactionState, for: tabModel)
+        domainFillCreditCardPromptLastShownOn = nil
     }
 
     private func registerForAddressBarLocationNotifications() {
@@ -1193,6 +1197,7 @@ class TabViewController: UIViewController {
     
     func didLaunchBrowsingMenu() {
         DaxDialogs.shared.resumeRegularFlow()
+        domainFillCreditCardPromptLastShownOn = nil
     }
 
     private func openExternally(url: URL) {
@@ -2999,6 +3004,11 @@ extension TabViewController: SecureVaultManagerDelegate {
         }
 
         if creditCards.count > 0 {
+            if domainFillCreditCardPromptLastShownOn != url?.host {
+                AppDependencyProvider.shared.autofillLoginSession.endSession()
+                self.domainFillCreditCardPromptLastShownOn = self.url?.host
+            }
+
             presentAutofillPromptViewController(creditCards: creditCards, trigger: trigger) { creditCard in
                 completionHandler(creditCard)
             }

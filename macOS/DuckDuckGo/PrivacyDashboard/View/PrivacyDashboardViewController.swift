@@ -132,9 +132,11 @@ final class PrivacyDashboardViewController: NSViewController {
     public func updateTabViewModel(_ tabViewModel: TabViewModel) {
         self.tabViewModel = tabViewModel
         privacyDashboardController.updatePrivacyInfo(tabViewModel.tab.privacyInfo)
+        guard AppVersion.runType != .unitTests else { return }
         rulesUpdateObserver.updateTabViewModel(tabViewModel, onPendingUpdates: { [weak self] in
             self?.sendPendingUpdates()
         })
+        
         permissionHandler.updateTabViewModel(tabViewModel) { [weak self] allowedPermissions in
             self?.privacyDashboardController.allowedPermissions = allowedPermissions
         }
@@ -362,8 +364,8 @@ extension PrivacyDashboardViewController {
         }
         let blockedTrackerDomains = currentTab.privacyInfo?.trackerInfo.trackersBlocked.compactMap { $0.domain } ?? []
         let installedSurrogates = currentTab.privacyInfo?.trackerInfo.installedSurrogates.map {$0} ?? []
-        let ampURL = currentTab.linkProtection.lastAMPURLString ?? ""
-        let urlParametersRemoved = currentTab.linkProtection.urlParametersRemoved
+        let ampURL = currentTab.linkProtection?.lastAMPURLString ?? ""
+        let urlParametersRemoved = currentTab.linkProtection?.urlParametersRemoved ?? false
 
         // current domain's protection status
         let configuration = ContentBlocking.shared.privacyConfigurationManager.privacyConfig

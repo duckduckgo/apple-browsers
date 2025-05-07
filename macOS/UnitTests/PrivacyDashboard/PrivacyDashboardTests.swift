@@ -28,7 +28,8 @@ final class PrivacyDashboardTests: XCTestCase {
     var capturedPixelParameters: [String: String] = [:]
 
     @MainActor
-    func testPrivacy() async {
+    func testPrivacyDashboardSendExperimentsCohortInBreakageReport() async {
+        // GIVEN
         let expectation = XCTestExpectation()
         let configManager = MockPrivacyConfigurationManaging()
         let testExperimentData = ExperimentData(
@@ -45,17 +46,18 @@ final class PrivacyDashboardTests: XCTestCase {
             expectation.fulfill()
         })
         let tab = Tab(content: .url(URL.duckDuckGo, source: .ui))
-        vc.updateTabViewModel(TabViewModel(tab: tab))
-
+        let tabViewModel = TabViewModel(tab: tab)
+        vc.updateTabViewModel(tabViewModel)
         let privacyDashboardController = PrivacyDashboardController(privacyInfo: nil, entryPoint: .dashboard, toggleReportingManager: ToggleReportingManagerMock(), eventMapping: EventMapping<PrivacyDashboardEvents> { _, _, _, _ in })
 
+        // WHEN
         vc.privacyDashboardController(privacyDashboardController, didRequestSubmitBrokenSiteReportWithCategory: "SomeCategory", description: "SomeDescription")
 
+        // THEN
         await fulfillment(of: [expectation], timeout: 3)
-
-        XCTAssertEqual(capturedPixelEvent?.name, "")
+        XCTAssertEqual(capturedPixelEvent?.name, "epbf_macos_desktop")
+        XCTAssertEqual(capturedPixelParameters["contentScopeExperiments"], "test:aCohort")
     }
-
 
 }
 

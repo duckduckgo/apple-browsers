@@ -48,13 +48,10 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
 
     public enum UserEvent {
-        case openVPN,
-             openDB,
-             openITR,
-             openFeedback,
-             iHaveASubscriptionClick,
-             activateSubscriptionViaEmailClick,
-             activateSubscriptionViaRestoreAppStorePurchaseClick,
+        case openFeedback,
+//             iHaveASubscriptionClick,
+//             activateSubscriptionViaEmailClick,
+//             activateSubscriptionViaRestoreAppStorePurchaseClick,
              manageEmailClick,
              addToDeviceActivationFlow,
              openSubscriptionSettingsClick,

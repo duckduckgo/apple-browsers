@@ -142,10 +142,20 @@ enum Preferences {
         }
 
         private func makePurchaseSubscriptionViewModel() -> PreferencesPurchaseSubscriptionModel {
+            let userEventHandler: (PreferencesPurchaseSubscriptionModel.UserEvent) -> Void = { event in
+                DispatchQueue.main.async {
+                    switch event {
+                    case .didClickIHaveASubscription:
+                        PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseClick)
+                    }
+                }
+            }
+
             let sheetActionHandler = SubscriptionAccessActionHandlers(
                 openActivateViaEmailURL: {
                     let url = subscriptionManager.url(for: .activationFlow)
                     WindowControllersManager.shared.showTab(with: .subscription(url))
+                    PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
                 }, restorePurchases: {
                     if #available(macOS 12.0, *) {
                         Task {
@@ -158,13 +168,15 @@ enum Preferences {
                                 appStoreRestoreFlow: appStoreRestoreFlow,
                                 uiHandler: subscriptionUIHandler)
                             await subscriptionAppStoreRestorer.restoreAppStoreSubscription()
+
+                            PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreStart, frequency: .legacyDailyAndCount)
                         }
                     }
-                }, uiActionHandler: makeSubscriptionUserEventHandler())
+                })
 
             return PreferencesPurchaseSubscriptionModel(subscriptionManager: subscriptionManager,
                                                         openURLHandler: makeOpenURLHandler(),
-                                                        userEventHandler: makeSubscriptionUserEventHandler(),
+                                                        userEventHandler: userEventHandler,
                                                         sheetActionHandler: sheetActionHandler)
         }
 
@@ -237,12 +249,18 @@ enum Preferences {
                         NotificationCenter.default.post(name: .OpenUnifiedFeedbackForm,
                                                         object: self,
                                                         userInfo: UnifiedFeedbackSource.userInfo(source: .ppro))
+
                     case .iHaveASubscriptionClick:
+                        // TO BE DELETED
                         PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseClick)
                     case .activateSubscriptionViaEmailClick:
+                        // TO BE DELETED
                         PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
                     case .activateSubscriptionViaRestoreAppStorePurchaseClick:
+                        // TO BE DELETED
                         PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreStart, frequency: .legacyDailyAndCount)
+
+
                     case .manageEmailClick:
                         PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementEmail, frequency: .legacyDailyAndCount)
                     case .addToDeviceActivationFlow:
@@ -362,10 +380,20 @@ enum Preferences {
         }
 
         private func makePurchaseSubscriptionViewModel() -> PreferencesPurchaseSubscriptionModel {
+            let userEventHandler: (PreferencesPurchaseSubscriptionModel.UserEvent) -> Void = { event in
+                DispatchQueue.main.async {
+                    switch event {
+                    case .didClickIHaveASubscription:
+                        PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseClick)
+                    }
+                }
+            }
+
             let sheetActionHandler = SubscriptionAccessActionHandlers(
                 openActivateViaEmailURL: {
                     let url = subscriptionManager.url(for: .activationFlow)
                     WindowControllersManager.shared.showTab(with: .subscription(url))
+                    PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
                 }, restorePurchases: {
                     if #available(macOS 12.0, *) {
                         Task {
@@ -375,13 +403,15 @@ enum Preferences {
                                                                                                      appStoreRestoreFlow: appStoreRestoreFlow,
                                                                                                      uiHandler: subscriptionUIHandler)
                             await subscriptionAppStoreRestorer.restoreAppStoreSubscription()
+
+                            PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreStart, frequency: .legacyDailyAndCount)
                         }
                     }
-                }, uiActionHandler: makeSubscriptionUserEventHandler())
+                })
 
             return PreferencesPurchaseSubscriptionModel(subscriptionManager: subscriptionManager,
                                                         openURLHandler: makeOpenURLHandler(),
-                                                        userEventHandler: makeSubscriptionUserEventHandler(),
+                                                        userEventHandler: userEventHandler,
                                                         sheetActionHandler: sheetActionHandler)
         }
 

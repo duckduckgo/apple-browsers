@@ -39,12 +39,16 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
 
     private let subscriptionManager: SubscriptionAuthV1toV2Bridge
     private let openURLHandler: (URL) -> Void
-    public let userEventHandler: (PreferencesSubscriptionModel.UserEvent) -> Void
+    public let userEventHandler: (PreferencesPurchaseSubscriptionModel.UserEvent) -> Void
     private let sheetActionHandler: SubscriptionAccessActionHandlers
+
+    public enum UserEvent {
+        case didClickIHaveASubscription
+    }
 
     public init(subscriptionManager: SubscriptionAuthV1toV2Bridge,
                 openURLHandler: @escaping (URL) -> Void,
-                userEventHandler: @escaping (PreferencesSubscriptionModel.UserEvent) -> Void,
+                userEventHandler: @escaping (PreferencesPurchaseSubscriptionModel.UserEvent) -> Void,
                 sheetActionHandler: SubscriptionAccessActionHandlers) {
         self.subscriptionManager = subscriptionManager
         self.openURLHandler = openURLHandler

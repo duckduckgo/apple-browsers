@@ -535,6 +535,7 @@ extension SubscriptionPagesUseSubscriptionFeature: SubscriptionAccessActionHandl
         }
     }
 
+    // TODO: To be removed?
     func subscriptionAccessActionHandleAction(event: SubscriptionAccessActionHandlingEvent) {
         switch event {
         case .activateSubscriptionViaEmailClick:

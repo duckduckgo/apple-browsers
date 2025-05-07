@@ -72,7 +72,7 @@ public struct PreferencesPurchaseSubscriptionView: View {
                             showingActivateSubscriptionSheet.toggle()
                         }
 
-                        model.userEventHandler(.iHaveASubscriptionClick)
+                        model.userEventHandler(.didClickIHaveASubscription)
                     }
                     .buttonStyle(DismissActionButtonStyle())
                 }

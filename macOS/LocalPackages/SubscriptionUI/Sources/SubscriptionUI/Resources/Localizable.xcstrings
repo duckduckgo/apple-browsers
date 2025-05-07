@@ -4493,60 +4493,60 @@
       }
     },
     "subscription.preferences.subscription.expired.caption" : {
-      "comment" : "Caption for the subscription preferences pane when the subscription activation is pending\nCaption for the subscription preferences pane when the subscription has expired. The parameter is date of expiry.",
+      "comment" : "Caption for the subscription preferences pane when the subscription has expired. The parameter is date of expiry.",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Abonniere erneut, um Privacy Pro weiter zu nutzen."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Subscribe again to continue using Privacy Pro."
+            "value" : "Your Privacy Pro subscription expired on %@"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Suscríbete de nuevo para seguir usando Privacy Pro."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Abonnez-vous à nouveau pour continuer à utiliser Privacy Pro."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Iscriviti di nuovo per continuare a usare Privacy Pro."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Abonneer je opnieuw om Privacy Pro te blijven gebruiken."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Wznów subskrypcję, aby nadal korzystać z Privacy Pro."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Subscreve novamente para continuares a utilizar o Privacy Pro."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Чтобы пользоваться возможностями Privacy Pro, оформите подписку заново."
           }
         }
@@ -4974,7 +4974,7 @@
     },
     "subscription.preferences.subscription.pending.header" : {
       "comment" : "Header for the subscription preferences pane when the subscription activation is pending",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -5118,7 +5118,7 @@
     },
     "subscription.preferences.title" : {
       "comment" : "Title for the preferences pane for the subscription",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

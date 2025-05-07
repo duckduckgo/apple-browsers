@@ -360,3 +360,11 @@ hasAnyEntitlement: \(hasAnyEntitlement)
         return dateFormatter
     }()
 }
+
+enum ManageSubscriptionSheet: Identifiable {
+    case apple, google
+
+    var id: Self {
+        return self
+    }
+}

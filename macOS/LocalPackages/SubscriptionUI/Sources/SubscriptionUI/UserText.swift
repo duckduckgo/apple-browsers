@@ -24,9 +24,6 @@ enum UserText {
     // MARK: Preferences - Purchase Subscription
     static let preferencesPurchaseSubscriptionTitle = NSLocalizedString("subscription.preferences.purchase.subscription.title", bundle: Bundle.module, value: "Privacy Pro", comment: "Title of the preferences pane for purchase subscription")
 
-    // TODO: To be removed
-    static let preferencesTitle = NSLocalizedString("subscription.preferences.title", bundle: Bundle.module, value: "Privacy Pro", comment: "Title for the preferences pane for the subscription")
-
     static let vpnServiceTitle = NSLocalizedString("subscription.preferences.services.vpn.title", bundle: Bundle.module, value: "VPN", comment: "Title for the VPN service listed in the subscription preferences pane")
     static let vpnServiceDescription = NSLocalizedString("subscription.preferences.services.vpn.description", bundle: Bundle.module, value: "Full-device protection with the VPN built for speed and security.", comment: "Description for the VPN service listed in the subscription preferences pane")
     static let vpnServiceButtonTitle = NSLocalizedString("subscription.preferences.services.vpn.button.title", bundle: Bundle.module, value: "Open", comment: "Title for the VPN service button to open its settings")
@@ -167,13 +164,9 @@ enum UserText {
 
     // MARK: Preferences when subscription activation is pending
 
-    //TODO: To be removed
-    static let preferencesSubscriptionPendingHeader = NSLocalizedString("subscription.preferences.subscription.pending.header", bundle: Bundle.module, value: "Your subscription is being activated", comment: "Header for the subscription preferences pane when the subscription activation is pending")
     static let preferencesSubscriptionPendingCaption = NSLocalizedString("subscription.preferences.subscription.pending.caption", bundle: Bundle.module, value: "This is taking longer than usual. Please check back later.", comment: "Caption for the subscription preferences pane when the subscription activation is pending")
 
     // MARK: Preferences when subscription is expired
-    // TODO: To be removed
-    static let preferencesSubscriptionExpiredCaption = NSLocalizedString("subscription.preferences.subscription.expired.caption", bundle: Bundle.module, value: "Subscribe again to continue using Privacy Pro.", comment: "Caption for the subscription preferences pane when the subscription activation is pending")
 
     static let viewPlansExpiredButtonTitle = NSLocalizedString("subscription.preferences.button.view.plans", bundle: Bundle.module, value: "View Plans", comment: "Button for viewing subscription plans on expired subscription")
 

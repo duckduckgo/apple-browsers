@@ -3899,66 +3899,6 @@
         }
       }
     },
-    "subscription.preferences.subscription.expired.invitation.caption" : {
-      "comment" : "Caption for the subscription preferences pane when the subscription activation is pending",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Abonniere erneut, um Privacy Pro weiter zu nutzen."
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Subscribe again to continue using Privacy Pro."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Suscríbete de nuevo para seguir usando Privacy Pro."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Abonnez-vous à nouveau pour continuer à utiliser Privacy Pro."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Iscriviti di nuovo per continuare a usare Privacy Pro."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Abonneer je opnieuw om Privacy Pro te blijven gebruiken."
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Wznów subskrypcję, aby nadal korzystać z Privacy Pro."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Subscreve novamente para continuares a utilizar o Privacy Pro."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Чтобы пользоваться возможностями Privacy Pro, оформите подписку заново."
-          }
-        }
-      }
-    },
     "subscription.preferences.subscription.footer.title" : {
       "comment" : "Title for the subscription preferences pane footer",
       "extractionState" : "extracted_with_value",
@@ -4319,66 +4259,6 @@
         }
       }
     },
-    "subscription.preferences.subscription.pending.header" : {
-      "comment" : "Header for the subscription preferences pane when the subscription activation is pending",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dein Abonnement wird aktiviert"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Your subscription is being activated"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Se está activando tu suscripción"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Votre abonnement est en cours d’activation"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Il tuo abbonamento è in fase di attivazione"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Je abonnement wordt geactiveerd"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Twoja subskrypcja jest aktywowana"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A tua subscrição está a ser ativada"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ваша подписка активируется"
-          }
-        }
-      }
-    },
     "subscription.preferences.subscription.settings.activating" : {
       "comment" : "Title for the status indicator informing that user's subscription is still activating",
       "extractionState" : "extracted_with_value",
@@ -4459,66 +4339,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Настройки подписки"
-          }
-        }
-      }
-    },
-    "subscription.preferences.title" : {
-      "comment" : "Title for the preferences pane for the subscription",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Privacy Pro"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Privacy Pro"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Privacy Pro"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Privacy Pro"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Privacy Pro"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Privacy Pro"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Privacy Pro"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Privacy Pro"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Privacy Pro"
           }
         }
       }

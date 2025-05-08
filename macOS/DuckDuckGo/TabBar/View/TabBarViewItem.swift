@@ -267,7 +267,7 @@ final class TabBarItemCellView: NSView {
         ]
         mouseOverView.layer?.addSublayer(borderLayer)
 
-        titleTextField.textColor = visualStyle.textPrimaryColor
+        titleTextField.textColor = visualStyle.colorsProvider.textPrimaryColor
 
         addSubview(mouseOverView)
         if visualStyle.tabStyleProvider.isRoundedBackgroundPresentOnHover {
@@ -696,12 +696,12 @@ final class TabBarViewItem: NSCollectionViewItem {
         withoutAnimation {
             if isSelected || isDragged {
                 cell.mouseOverView.mouseOverColor = nil
-                cell.mouseOverView.backgroundColor = visualStyleManager.style.navigationBackgroundColor
+                cell.mouseOverView.backgroundColor = visualStyleManager.style.colorsProvider.navigationBackgroundColor
             } else {
                 if tabVisualProvider.isRoundedBackgroundPresentOnHover {
                     cell.mouseOverView.mouseOverColor = nil
-                    cell.mouseOverView.backgroundColor = visualStyleManager.style.baseBackgroundColor
-                    cell.roundedBackgroundColorView.backgroundColor = visualStyleManager.style.navigationBackgroundColor
+                    cell.mouseOverView.backgroundColor = visualStyleManager.style.colorsProvider.baseBackgroundColor
+                    cell.roundedBackgroundColorView.backgroundColor = visualStyleManager.style.colorsProvider.navigationBackgroundColor
                     cell.roundedBackgroundColorView.isHidden = !isMouseOver || isSelected
                 } else {
                     cell.mouseOverView.mouseOverColor = .tabMouseOver

@@ -404,18 +404,18 @@ final class AddressBarViewController: NSViewController {
         let isPassiveTextFieldHidden = isFirstResponder || mode.isEditing
         addressBarTextField.isHidden = isPassiveTextFieldHidden ? false : true
         passiveTextField.isHidden = isPassiveTextFieldHidden ? true : false
-        passiveTextField.textColor = visualStyle.textPrimaryColor
+        passiveTextField.textColor = visualStyle.colorsProvider.textPrimaryColor
 
         updateShadowViewPresence(isFirstResponder)
-        inactiveBackgroundView.backgroundColor = visualStyle.backgroundTertiaryColor
+        inactiveBackgroundView.backgroundColor = visualStyle.colorsProvider.backgroundTertiaryColor
         inactiveBackgroundView.alphaValue = isFirstResponder ? 0 : 1
         activeBackgroundView.alphaValue = isFirstResponder ? 1 : 0
 
         let isKey = self.view.window?.isKeyWindow == true
 
         activeOuterBorderView.alphaValue = isKey && isFirstResponder && visualStyle.shouldShowOutlineBorder(isHomePage: isHomePage) ? 1 : 0
-        activeOuterBorderView.backgroundColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.2) : visualStyle.accentAlternateColor
-        activeBackgroundView.borderColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.2) : visualStyle.accentPrimaryColor
+        activeOuterBorderView.backgroundColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.2) : visualStyle.colorsProvider.accentAlternateColor
+        activeBackgroundView.borderColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.2) : visualStyle.colorsProvider.accentPrimaryColor
 
         setupAddressBarPlaceHolder()
     }
@@ -426,7 +426,7 @@ final class AddressBarViewController: NSViewController {
 
         let font = NSFont.systemFont(ofSize: isNewTab ? visualStyle.newTabOrHomePageAddressBarFontSize : visualStyle.defaultAddressBarFontSize, weight: .regular)
         let attributes: [NSAttributedString.Key: Any] = [
-            .foregroundColor: visualStyle.textSecondaryColor,
+            .foregroundColor: visualStyle.colorsProvider.textSecondaryColor,
             .font: font
         ]
         addressBarTextField.placeholderAttributedString = NSAttributedString(string: addressBarPlaceholder, attributes: attributes)
@@ -503,7 +503,7 @@ final class AddressBarViewController: NSViewController {
         self.addressBarButtonsViewController?.updateButtons()
 
         guard let window = view.window, AppVersion.runType != .unitTests else { return }
-        let navigationBarBackgroundColor = visualStyle.navigationBackgroundColor
+        let navigationBarBackgroundColor = visualStyle.colorsProvider.navigationBackgroundColor
 
         NSAppearance.withAppAppearance {
             if window.isKeyWindow {

@@ -50,9 +50,9 @@ struct LogExporterView: View {
             VStack(alignment: .leading) {
                 Text("File Types:")
                     .font(.headline)
-                Toggle("All DDG", isOn: $includeAllDDG)
-                Toggle("Network protection", isOn: $includeNetworkProtection)
-                Toggle("Sparkle", isOn: $includeSparkle)
+                Toggle("All DDG", isOn: $includeAllDDG).padding(.leading)
+                Toggle("Network protection", isOn: $includeNetworkProtection).padding(.leading)
+                Toggle("Sparkle", isOn: $includeSparkle).padding(.leading)
             }
 
             Spacer()
@@ -81,6 +81,6 @@ struct LogExporterView: View {
             }
         }
         .padding()
-        .frame(minWidth: 350, minHeight: 250)
+        .frame(minWidth: 250, minHeight: 200)
     }
 }

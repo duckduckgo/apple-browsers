@@ -41,9 +41,11 @@ public struct PreparingToSyncView: View {
                     .multilineTextAlignment(.center)
             }
             .padding(.horizontal, 20)
+            .foregroundStyle(Color(designSystemColor: .textPrimary))
         } foregroundContent: {
             Text(UserText.preparingToSyncSheetFooter)
                 .foregroundColor(Color(designSystemColor: .textSecondary))
         }
+        .background(Color(designSystemColor: .background))
     }
 }

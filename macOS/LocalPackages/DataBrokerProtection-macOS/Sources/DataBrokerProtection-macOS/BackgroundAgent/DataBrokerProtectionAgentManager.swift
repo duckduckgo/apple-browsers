@@ -37,7 +37,11 @@ public class DataBrokerProtectionAgentManagerProvider {
 
     private let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
 
-    public static func agentManager(authenticationManager: DataBrokerProtectionAuthenticationManaging, vpnBypassService: VPNBypassFeatureProvider) -> DataBrokerProtectionAgentManager? {
+    public static func agentManager(authenticationManager: DataBrokerProtectionAuthenticationManaging,
+                                    configurationManager: DefaultConfigurationManager,
+                                    privacyConfigurationManager: DBPPrivacyConfigurationManager,
+                                    remoteBrokerDeliveryFeatureFlagger: RemoteBrokerDeliveryFeatureFlagging,
+                                    vpnBypassService: VPNBypassFeatureProvider) -> DataBrokerProtectionAgentManager? {
         guard let pixelKit = PixelKit.shared else {
             assertionFailure("PixelKit not set up")
             return nil
@@ -52,13 +56,6 @@ public class DataBrokerProtectionAgentManagerProvider {
         let notificationService = DefaultDataBrokerProtectionUserNotificationService(pixelHandler: pixelHandler, userNotificationCenter: UNUserNotificationCenter.current(), authenticationManager: authenticationManager)
         let eventsHandler = DefaultOperationEventsHandler(userNotificationService: notificationService)
 
-        Configuration.setURLProvider(DBPAgentConfigurationURLProvider())
-        let configStore = ConfigurationStore()
-        let privacyConfigurationManager = DBPPrivacyConfigurationManager()
-        let configurationManager = ConfigurationManager(privacyConfigManager: privacyConfigurationManager, store: configStore)
-        configurationManager.start()
-        // Load cached config (if any)
-        privacyConfigurationManager.reload(etag: configStore.loadEtag(for: .privacyConfiguration), data: configStore.loadData(for: .privacyConfiguration))
         let ipcServer = DefaultDataBrokerProtectionIPCServer(machServiceName: Bundle.main.bundleIdentifier!)
 
         let features = ContentScopeFeatureToggles(emailProtection: false,
@@ -92,18 +89,8 @@ public class DataBrokerProtectionAgentManagerProvider {
             return nil
         }
 
-        let featureFlagger = DefaultFeatureFlagger(
-            internalUserDecider: privacyConfigurationManager.internalUserDecider,
-            privacyConfigManager: privacyConfigurationManager,
-            localOverrides: FeatureFlagLocalOverrides(
-                keyValueStore: UserDefaults.config,
-                actionHandler: featureFlagOverridesPublishingHandler
-            ),
-            experimentManager: nil,
-            for: FeatureFlag.self
-        )
         let localBrokerService = LocalBrokerJSONService(vault: vault, pixelHandler: sharedPixelsHandler)
-        let brokerUpdater = RemoteBrokerJSONService(featureFlagger: featureFlagger,
+        let brokerUpdater = RemoteBrokerJSONService(featureFlagger: remoteBrokerDeliveryFeatureFlagger,
                                                     settings: dbpSettings,
                                                     vault: vault,
                                                     authenticationManager: authenticationManager,

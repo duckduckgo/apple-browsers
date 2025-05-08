@@ -22,7 +22,6 @@ import ZIPFoundation
 import Common
 import os.log
 import BrowserServicesKit
-import FeatureFlags
 
 public protocol ZipArchiveHandling: FileManager, Sendable {
     func unzipArchive(at sourceURL: URL, to destinationURL: URL) throws
@@ -33,6 +32,10 @@ extension FileManager: ZipArchiveHandling {
     @objc public func unzipArchive(at sourceURL: URL, to destinationURL: URL) throws {
         try unzipItem(at: sourceURL, to: destinationURL, skipCRC32: false, allowUncontainedSymlinks: false, progress: nil, pathEncoding: nil)
     }
+}
+
+public protocol RemoteBrokerDeliveryFeatureFlagging {
+    var isRemoteBrokerDeliveryFeatureOn: Bool { get }
 }
 
 public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
@@ -100,7 +103,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
 
     private static let updateCheckInterval = TimeInterval.hours(1)
 
-    private let featureFlagger: FeatureFlagger
+    private let featureFlagger: RemoteBrokerDeliveryFeatureFlagging
     private let settings: DataBrokerProtectionSettings
     public let vault: any DataBrokerProtectionSecureVault
     private let fileManager: ZipArchiveHandling
@@ -109,7 +112,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
     private let localBrokerProvider: BrokerJSONFallbackProvider?
 
-    public init(featureFlagger: FeatureFlagger,
+    public init(featureFlagger: RemoteBrokerDeliveryFeatureFlagging,
                 settings: DataBrokerProtectionSettings,
                 vault: any DataBrokerProtectionSecureVault,
                 fileManager: ZipArchiveHandling = FileManager.default,
@@ -140,7 +143,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
     }
 
     public func checkForUpdates(skipsLimiter: Bool) async throws {
-        if !featureFlagger.isFeatureOn(.dbpRemoteBrokerDelivery) {
+        if !featureFlagger.isRemoteBrokerDeliveryFeatureOn {
             Logger.dataBrokerProtection.log("Remote broker delivery not enabled, skip to local fallback")
             try? await localBrokerProvider?.checkForUpdates()
             return

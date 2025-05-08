@@ -20,7 +20,6 @@ import XCTest
 import Foundation
 import SecureStorage
 import BrowserServicesKit
-import FeatureFlags
 @testable import DataBrokerProtectionCore
 import DataBrokerProtectionCoreTestsUtils
 
@@ -236,20 +235,6 @@ extension HTTPURLResponse {
                                             headerFields: ["ETag": "something"])!
 }
 
-final class MockFeatureFlagger: FeatureFlagger {
-    var internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: MockInternalUserStoring())
-    var localOverrides: FeatureFlagLocalOverriding?
-    var allActiveExperiments: Experiments = [:]
-
-    func isFeatureOn<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> Bool {
-        true
-    }
-
-    func resolveCohort<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? {
-        nil
-    }
-}
-
-final class MockInternalUserStoring: InternalUserStoring {
-    var isInternalUser: Bool = false
+private class MockFeatureFlagger: RemoteBrokerDeliveryFeatureFlagging {
+    var isRemoteBrokerDeliveryFeatureOn: Bool { true }
 }

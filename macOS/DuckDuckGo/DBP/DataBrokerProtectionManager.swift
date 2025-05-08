@@ -89,8 +89,9 @@ public final class DataBrokerProtectionManager {
     lazy var brokerUpdater: BrokerJSONServiceProvider? = {
         guard let vault, let sharedPixelsHandler else { return nil }
 
+        let featureFlagger = DBPFeatureFlagger(featureFlagger: Application.appDelegate.featureFlagger)
         let localBrokerService = LocalBrokerJSONService(vault: vault, pixelHandler: sharedPixelsHandler)
-        let brokerUpdater = RemoteBrokerJSONService(featureFlagger: Application.appDelegate.featureFlagger,
+        let brokerUpdater = RemoteBrokerJSONService(featureFlagger: featureFlagger,
                                                     settings: DataBrokerProtectionSettings(defaults: .dbp),
                                                     vault: vault,
                                                     authenticationManager: authenticationManager,

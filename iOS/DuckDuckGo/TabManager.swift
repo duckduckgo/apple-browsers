@@ -43,7 +43,7 @@ class TabManager {
     private let contextualOnboardingPresenter: ContextualOnboardingPresenting
     private let contextualOnboardingLogic: ContextualOnboardingLogic
     private let onboardingPixelReporter: OnboardingPixelReporting
-    private let featureFlagger: FeatureFlagger
+    private let featureFlagger: FeatureFlagger & ContentScopeExperimentsManaging
     private let textZoomCoordinator: TextZoomCoordinating
     private let fireproofing: Fireproofing
     private let websiteDataManager: WebsiteDataManaging
@@ -70,7 +70,7 @@ class TabManager {
          contextualOnboardingPresenter: ContextualOnboardingPresenting,
          contextualOnboardingLogic: ContextualOnboardingLogic,
          onboardingPixelReporter: OnboardingPixelReporting,
-         featureFlagger: FeatureFlagger,
+         featureFlagger: FeatureFlagger & ContentScopeExperimentsManaging,
          subscriptionCookieManager: SubscriptionCookieManaging,
          appSettings: AppSettings,
          textZoomCoordinator: TextZoomCoordinating,

@@ -284,10 +284,6 @@ public struct BrokenSiteReport {
             result["jsPerformance"] = perf
         }
 
-//        for (key, value) in privacyExperiments {
-//            result[key] = value
-//        }
-
         if isPirEnabled == true {
             result["isPirEnabled"] = "true"
         }

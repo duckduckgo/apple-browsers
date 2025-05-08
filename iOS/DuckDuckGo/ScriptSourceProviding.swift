@@ -51,17 +51,20 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
     let privacyConfigurationManager: PrivacyConfigurationManaging
     let contentBlockingManager: ContentBlockerRulesManagerProtocol
     let fireproofing: Fireproofing
+    let contentScopeExperimentsManager: ContentScopeExperimentsManaging
 
     init(appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
          contentBlockingManager: ContentBlockerRulesManagerProtocol = ContentBlocking.shared.contentBlockingManager,
-         fireproofing: Fireproofing) {
+         fireproofing: Fireproofing,
+         contentScopeExperimentsManager: ContentScopeExperimentsManaging = AppDependencyProvider.shared.featureFlagger) {
 
         sendDoNotSell = appSettings.sendDoNotSell
         
         self.privacyConfigurationManager = privacyConfigurationManager
         self.contentBlockingManager = contentBlockingManager
         self.fireproofing = fireproofing
+        self.contentScopeExperimentsManager = contentScopeExperimentsManager
 
         contentBlockerRulesConfig = Self.buildContentBlockerRulesConfig(contentBlockingManager: contentBlockingManager,
                                                                         privacyConfigurationManager: privacyConfigurationManager)
@@ -73,7 +76,7 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
                                                         sessionKey: sessionKey,
                                                         messageSecret: messageSecret,
                                                         featureToggles: ContentScopeFeatureToggles.supportedFeaturesOniOS,
-                                                        experimentManager: AppDependencyProvider.shared.featureFlagger as? ContentScopeExperimentsManaging)
+                                                        experimentManager: contentScopeExperimentsManager)
         autofillSourceProvider = Self.makeAutofillSource(privacyConfigurationManager: privacyConfigurationManager,
                                                          properties: contentScopeProperties)
     }

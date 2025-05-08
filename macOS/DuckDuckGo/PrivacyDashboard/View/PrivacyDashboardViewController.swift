@@ -63,7 +63,7 @@ final class PrivacyDashboardViewController: NSViewController {
     }
     var sizeDelegate: PrivacyDashboardViewControllerSizeDelegate?
     private weak var tabViewModel: TabViewModel?
-    let featureFlagger: ContentScopeExperimentsManaging
+    let contentScopeExperimentManager: ContentScopeExperimentsManaging
     private let pixelFiring: (
         _ event: PixelKitEvent,
         _ withAdditionalParameters: [String: String]?,
@@ -87,7 +87,7 @@ final class PrivacyDashboardViewController: NSViewController {
     init(privacyInfo: PrivacyInfo? = nil,
          entryPoint: PrivacyDashboardEntryPoint = .dashboard,
          privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
-         featureFlagger: ContentScopeExperimentsManaging = Application.appDelegate.featureFlagger,
+         contentScopeExperimentManager: ContentScopeExperimentsManaging,
          pixelFiring: @escaping (
             _ event: PixelKitEvent,
             _ withAdditionalParameters: [String: String]?,
@@ -103,7 +103,7 @@ final class PrivacyDashboardViewController: NSViewController {
         let toggleReportingConfiguration = ToggleReportingConfiguration(privacyConfigurationManager: privacyConfigurationManager)
         let toggleReportingFeature = ToggleReportingFeature(toggleReportingConfiguration: toggleReportingConfiguration)
         let toggleReportingManager = ToggleReportingManager(feature: toggleReportingFeature)
-        self.featureFlagger = featureFlagger
+        self.contentScopeExperimentManager = contentScopeExperimentManager
         self.pixelFiring = pixelFiring
         self.privacyDashboardController = PrivacyDashboardController(privacyInfo: privacyInfo,
                                                                      entryPoint: entryPoint,
@@ -384,7 +384,7 @@ extension PrivacyDashboardViewController {
 
         var privacyExperimentCohorts: String {
             var experiments: [String: String] = [:]
-            let features = featureFlagger.resolveContentScopeScriptActiveExperiments()
+            let features = contentScopeExperimentManager.resolveContentScopeScriptActiveExperiments()
             for feature in features {
                 experiments[feature.key] = feature.value.cohortID
             }

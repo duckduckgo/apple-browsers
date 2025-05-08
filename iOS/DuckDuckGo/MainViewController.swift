@@ -233,7 +233,7 @@ class MainViewController: UIViewController {
         statisticsStore: StatisticsStore = StatisticsUserDefaults(),
         subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
         voiceSearchHelper: VoiceSearchHelperProtocol,
-        featureFlagger: FeatureFlagger,
+        featureFlagger: FeatureFlagger & ContentScopeExperimentsManaging,
         fireproofing: Fireproofing,
         subscriptionCookieManager: SubscriptionCookieManaging,
         textZoomCoordinator: TextZoomCoordinating,

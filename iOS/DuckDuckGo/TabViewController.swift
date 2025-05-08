@@ -119,7 +119,7 @@ class TabViewController: UIViewController {
     private var storageCache: StorageCache = AppDependencyProvider.shared.storageCache
     let appSettings: AppSettings
 
-    var featureFlagger: FeatureFlagger
+    var featureFlagger: FeatureFlagger & ContentScopeExperimentsManaging
     let subscriptionCookieManager: SubscriptionCookieManaging
     private lazy var internalUserDecider = AppDependencyProvider.shared.internalUserDecider
 
@@ -339,7 +339,7 @@ class TabViewController: UIViewController {
                                    contextualOnboardingPresenter: ContextualOnboardingPresenting,
                                    contextualOnboardingLogic: ContextualOnboardingLogic,
                                    onboardingPixelReporter: OnboardingCustomInteractionPixelReporting,
-                                   featureFlagger: FeatureFlagger,
+                                   featureFlagger: FeatureFlagger & ContentScopeExperimentsManaging,
                                    subscriptionCookieManager: SubscriptionCookieManaging,
                                    textZoomCoordinator: TextZoomCoordinating,
                                    websiteDataManager: WebsiteDataManaging,
@@ -425,7 +425,7 @@ class TabViewController: UIViewController {
                    contextualOnboardingLogic: ContextualOnboardingLogic,
                    onboardingPixelReporter: OnboardingCustomInteractionPixelReporting,
                    urlCredentialCreator: URLCredentialCreating = URLCredentialCreator(),
-                   featureFlagger: FeatureFlagger,
+                   featureFlagger: FeatureFlagger & ContentScopeExperimentsManaging,
                    subscriptionCookieManager: SubscriptionCookieManaging,
                    textZoomCoordinator: TextZoomCoordinating,
                    fireproofing: Fireproofing,
@@ -1063,7 +1063,8 @@ class TabViewController: UIViewController {
                                        entryPoint: .dashboard,
                                        privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
                                        contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
-                                       breakageAdditionalInfo: makeBreakageAdditionalInfo())
+                                              breakageAdditionalInfo: makeBreakageAdditionalInfo(),
+                                              contentScopeExperimentsManager: featureFlagger)
     }
     
     private func addTextZoomObserver() {
@@ -3085,7 +3086,7 @@ extension TabViewController: SecureVaultManagerDelegate {
                                       sessionKey: autofillUserScript?.sessionKey ?? "",
                                       messageSecret: autofillUserScript?.messageSecret ?? "",
                                       featureToggles: supportedFeatures,
-                                      experimentManager: AppDependencyProvider.shared.featureFlagger as? ContentScopeExperimentsManaging)
+                                      experimentManager: featureFlagger)
     }
 
     func secureVaultManager(_: SecureVaultManager, didReceivePixel pixel: AutofillUserScript.JSPixel) {

@@ -1275,7 +1275,6 @@ final class FeatureFlaggerExperimentsTests: XCTestCase {
         }
         """.data(using: .utf8)!
 
-
         manager.reload(etag: "", data: featureJson)
 
         // we haven't called resolveContentScopeScriptActiveExperiments yet, so cohorts should not be yet assigned

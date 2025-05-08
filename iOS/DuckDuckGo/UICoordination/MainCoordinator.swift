@@ -52,7 +52,7 @@ final class MainCoordinator {
          variantManager: DefaultVariantManager,
          subscriptionService: SubscriptionService,
          voiceSearchHelper: VoiceSearchHelper,
-         featureFlagger: FeatureFlagger,
+         featureFlagger: FeatureFlagger & ContentScopeExperimentsManaging,
          aiChatSettings: AIChatSettings,
          fireproofing: Fireproofing,
          subscriptionManager: any SubscriptionAuthV1toV2Bridge = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,

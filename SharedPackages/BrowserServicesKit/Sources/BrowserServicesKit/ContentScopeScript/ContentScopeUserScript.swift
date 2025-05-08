@@ -45,7 +45,7 @@ public final class ContentScopeProperties: Encodable {
     public let languageCode: String
     public let platform = ContentScopePlatform()
     public let features: [String: ContentScopeFeature]
-    public var currentCohorts: [ContentScopeExperimentData]
+    public var currentCohorts: [ContentScopeExperimentData] = []
 
     public init(gpcEnabled: Bool,
                 sessionKey: String,
@@ -55,7 +55,6 @@ public final class ContentScopeProperties: Encodable {
         self.globalPrivacyControlValue = gpcEnabled
         self.sessionKey = sessionKey
         self.messageSecret = messageSecret
-        currentCohorts = []
         languageCode = Locale.current.languageCode ?? "en"
         features = [
             "autofill": ContentScopeFeature(featureToggles: featureToggles)
@@ -221,13 +220,6 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
               let jsonConfigString = String(data: jsonConfig, encoding: .utf8)
         else {
             return ""
-        }
-
-        // TO REMOVE
-        if let jsonString = String(data: jsonProperties, encoding: .utf8) {
-            print("SABRINA \(jsonString)")
-        } else {
-            print("Failed to decode JSON data to string.")
         }
 
         let jsInclude = isolated ? "contentScopeIsolated" : "contentScope"

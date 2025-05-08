@@ -38,7 +38,7 @@ final class PrivacyDashboardViewController: UIViewController {
     private let contentBlockingManager: ContentBlockerRulesManager
     private var privacyDashboardDidTriggerDismiss: Bool = false
     private let entryPoint: PrivacyDashboardEntryPoint
-    private let featureFlagger: ContentScopeExperimentsManaging
+    private let contentScopeExperimentsManager: ContentScopeExperimentsManaging
 
     private let brokenSiteReporter: BrokenSiteReporter = {
         BrokenSiteReporter(pixelHandler: { parameters in
@@ -76,7 +76,7 @@ final class PrivacyDashboardViewController: UIViewController {
           privacyConfigurationManager: PrivacyConfigurationManaging,
           contentBlockingManager: ContentBlockerRulesManager,
           breakageAdditionalInfo: BreakageAdditionalInfo?,
-          featureFlagger: ContentScopeExperimentsManaging = AppDependencyProvider.shared.featureFlagger) {
+          contentScopeExperimentsManager: ContentScopeExperimentsManaging) {
 
         let toggleReportingConfiguration = ToggleReportingConfiguration(privacyConfigurationManager: privacyConfigurationManager)
         let toggleReportingFeature = ToggleReportingFeature(toggleReportingConfiguration: toggleReportingConfiguration)
@@ -89,7 +89,7 @@ final class PrivacyDashboardViewController: UIViewController {
         self.contentBlockingManager = contentBlockingManager
         self.breakageAdditionalInfo = breakageAdditionalInfo
         self.entryPoint = entryPoint
-        self.featureFlagger = featureFlagger
+        self.contentScopeExperimentsManager = contentScopeExperimentsManager
         super.init(coder: coder)
         
         privacyDashboardController.delegate = self
@@ -337,7 +337,7 @@ extension PrivacyDashboardViewController {
 
         var privacyExperimentCohorts: String {
             var experiments: [String: String] = [:]
-            let features = featureFlagger.resolveContentScopeScriptActiveExperiments()
+            let features = contentScopeExperimentsManager.resolveContentScopeScriptActiveExperiments()
             for feature in features {
                 experiments[feature.key] = feature.value.cohortID
             }

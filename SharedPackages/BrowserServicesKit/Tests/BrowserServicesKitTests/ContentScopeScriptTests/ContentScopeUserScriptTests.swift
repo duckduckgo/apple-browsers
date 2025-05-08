@@ -133,7 +133,6 @@ final class ContentScopeUserScriptTests: XCTestCase {
     func testSourceContainsExperimentProperties() {
         let source = ContentScopeUserScript.generateSource(mockPrivacyConfigurationManager, properties: properties, isolated: false, config: WebkitMessagingConfig(webkitMessageHandlerNames: [], secret: "", hasModernWebkitAPI: true), privacyConfigurationJSONGenerator: configGenerator)
 
-
         XCTAssertTrue(source.contains("currentCohorts"))
         XCTAssertTrue(source.contains(testExperimentData.cohortID))
         XCTAssertTrue(source.contains(testExperimentData.parentID))

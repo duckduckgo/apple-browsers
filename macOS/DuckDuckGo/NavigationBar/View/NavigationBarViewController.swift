@@ -130,7 +130,7 @@ final class NavigationBarViewController: NSViewController {
                        networkProtectionStatusReporter: NetworkProtectionStatusReporter,
                        autofillPopoverPresenter: AutofillPopoverPresenter,
                        brokenSitePromptLimiter: BrokenSitePromptLimiter,
-                       featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+                       featureFlagger: FeatureFlagger & ContentScopeExperimentsManaging = NSApp.delegateTyped.featureFlagger,
                        visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager
     ) -> NavigationBarViewController {
         NSStoryboard(name: "NavigationBar", bundle: nil).instantiateInitialController { coder in
@@ -158,11 +158,11 @@ final class NavigationBarViewController: NSViewController {
         networkProtectionStatusReporter: NetworkProtectionStatusReporter,
         autofillPopoverPresenter: AutofillPopoverPresenter,
         brokenSitePromptLimiter: BrokenSitePromptLimiter,
-        featureFlagger: FeatureFlagger,
+        featureFlagger: FeatureFlagger & ContentScopeExperimentsManaging,
         visualStyleManager: VisualStyleManagerProviding
     ) {
 
-        self.popovers = NavigationBarPopovers(networkProtectionPopoverManager: networkProtectionPopoverManager, autofillPopoverPresenter: autofillPopoverPresenter, isBurner: tabCollectionViewModel.isBurner)
+        self.popovers = NavigationBarPopovers(networkProtectionPopoverManager: networkProtectionPopoverManager, autofillPopoverPresenter: autofillPopoverPresenter, isBurner: tabCollectionViewModel.isBurner, contentScopeExperimentsManager: featureFlagger)
         self.tabCollectionViewModel = tabCollectionViewModel
         self.networkProtectionButtonModel = NetworkProtectionNavBarButtonModel(popoverManager: networkProtectionPopoverManager,
                                                                                statusReporter: networkProtectionStatusReporter,

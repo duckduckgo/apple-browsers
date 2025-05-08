@@ -177,9 +177,7 @@ public struct PreferencesSubscriptionSettingsViewV2: View {
             VStack(alignment: .leading, spacing: 14) {
                 TextButton(UserText.viewFaqsButton, weight: .semibold) { model.openFAQ() }
 
-                if model.settingsState == .subscriptionActive {
-                    TextButton(UserText.preferencesSubscriptionFeedbackButton, weight: .semibold) { model.openUnifiedFeedbackForm() }
-                }
+                TextButton(UserText.preferencesSubscriptionFeedbackButton, weight: .semibold) { model.openUnifiedFeedbackForm() }
 
                 TextButton(UserText.preferencesPrivacyPolicyButton, weight: .semibold) { model.openPrivacyPolicy() }
             }

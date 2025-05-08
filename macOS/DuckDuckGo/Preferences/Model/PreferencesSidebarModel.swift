@@ -237,40 +237,7 @@ final class PreferencesSidebarModel: ObservableObject {
 
     private func refreshSubscriptionStateAndSectionsIfNeeded() {
         Task { @MainActor in
-            let currentSubscriptionFeatures = await subscriptionManager.currentSubscriptionFeatures()
-            let shouldHideSubscriptionPurchase = subscriptionManager.currentEnvironment.purchasePlatform == .appStore && subscriptionManager.canPurchase == false
-
-            let updatedState: PreferencesSidebarSubscriptionState
-
-            if subscriptionManager.isUserAuthenticated {
-                var currentUserEntitlements: [Entitlement.ProductName] = []
-                let entitlements: [Entitlement.ProductName] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .identityTheftRestorationGlobal]
-
-                for entitlement in entitlements {
-                    if let hasEntitlement = try? await subscriptionManager.isEnabled(feature: entitlement), hasEntitlement {
-                        currentUserEntitlements.append(entitlement)
-                    }
-                }
-
-                let currentPersonalInformationRemovalStatus = LoginItem.dbpBackgroundAgent.isRunning ? StatusIndicator.on : StatusIndicator.off
-
-                let isIdentityTheftRestorationActive = currentUserEntitlements.contains(.identityTheftRestoration) || currentUserEntitlements.contains(.identityTheftRestorationGlobal)
-                let currentIdentityTheftRestorationStatus = isIdentityTheftRestorationActive ? StatusIndicator.on : StatusIndicator.off
-
-                updatedState = PreferencesSidebarSubscriptionState(hasSubscription: true,
-                                                                   subscriptionFeatures: currentSubscriptionFeatures,
-                                                                   userEntitlements: currentUserEntitlements,
-                                                                   shouldHideSubscriptionPurchase: shouldHideSubscriptionPurchase,
-                                                                   personalInformationRemovalStatus: currentPersonalInformationRemovalStatus,
-                                                                   identityTheftRestorationStatus: currentIdentityTheftRestorationStatus)
-            } else {
-                updatedState = PreferencesSidebarSubscriptionState(hasSubscription: false,
-                                                                   subscriptionFeatures: currentSubscriptionFeatures,
-                                                                   userEntitlements: [],
-                                                                   shouldHideSubscriptionPurchase: shouldHideSubscriptionPurchase,
-                                                                   personalInformationRemovalStatus: .off,
-                                                                   identityTheftRestorationStatus: .off)
-            }
+            let updatedState = await makeSubscriptionState()
 
             if self.currentSubscriptionState != updatedState {
                 hasLoadedInitialSubscriptionState = true
@@ -286,6 +253,44 @@ final class PreferencesSidebarModel: ObservableObject {
                 self.currentSubscriptionState = updatedState
                 self.refreshSections()
             }
+        }
+    }
+
+    private func makeSubscriptionState() async -> PreferencesSidebarSubscriptionState {
+        let currentSubscriptionFeatures = await subscriptionManager.currentSubscriptionFeatures()
+        let shouldHideSubscriptionPurchase = subscriptionManager.currentEnvironment.purchasePlatform == .appStore && subscriptionManager.canPurchase == false
+
+        if subscriptionManager.isUserAuthenticated {
+            // Calculate current user entitlements
+            var currentUserEntitlements: [Entitlement.ProductName] = []
+            let entitlements: [Entitlement.ProductName] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .identityTheftRestorationGlobal]
+
+            for entitlement in entitlements {
+                if let hasEntitlement = try? await subscriptionManager.isEnabled(feature: entitlement), hasEntitlement {
+                    currentUserEntitlements.append(entitlement)
+                }
+            }
+
+            // Calculate PIR protection status
+            let currentPersonalInformationRemovalStatus = LoginItem.dbpBackgroundAgent.isRunning ? StatusIndicator.on : StatusIndicator.off
+
+            // Calculate ITR protection status
+            let isIdentityTheftRestorationActive = currentUserEntitlements.contains(.identityTheftRestoration) || currentUserEntitlements.contains(.identityTheftRestorationGlobal)
+            let currentIdentityTheftRestorationStatus = isIdentityTheftRestorationActive ? StatusIndicator.on : StatusIndicator.off
+
+            return PreferencesSidebarSubscriptionState(hasSubscription: true,
+                                                       subscriptionFeatures: currentSubscriptionFeatures,
+                                                       userEntitlements: currentUserEntitlements,
+                                                       shouldHideSubscriptionPurchase: shouldHideSubscriptionPurchase,
+                                                       personalInformationRemovalStatus: currentPersonalInformationRemovalStatus,
+                                                       identityTheftRestorationStatus: currentIdentityTheftRestorationStatus)
+        } else {
+            return PreferencesSidebarSubscriptionState(hasSubscription: false,
+                                                       subscriptionFeatures: currentSubscriptionFeatures,
+                                                       userEntitlements: [],
+                                                       shouldHideSubscriptionPurchase: shouldHideSubscriptionPurchase,
+                                                       personalInformationRemovalStatus: .off,
+                                                       identityTheftRestorationStatus: .off)
         }
     }
 

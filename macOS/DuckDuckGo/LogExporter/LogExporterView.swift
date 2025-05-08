@@ -39,12 +39,11 @@ struct LogExporterView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             // Time Interval Input
-            VStack(alignment: .leading) {
+            HStack {
                 Text("Time Interval:")
                     .font(.headline)
                 TextField("Enter time interval in minutes (e.g., 30)", text: $timeIntervalString)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .frame(width: 200)
             }
 
             // Checkboxes

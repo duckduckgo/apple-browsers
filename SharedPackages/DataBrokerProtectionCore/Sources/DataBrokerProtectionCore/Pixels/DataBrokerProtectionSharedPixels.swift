@@ -167,38 +167,38 @@ public enum DataBrokerProtectionSharedPixels {
 extension DataBrokerProtectionSharedPixels: PixelKitEvent {
     public var name: String {
         switch self {
-        case .parentChildMatches: return "parent-child-broker-matches"
+        case .parentChildMatches: return "dbp_parent-child-broker-matches"
             // SLO and SLI Pixels: https://app.asana.com/0/1203581873609357/1205337273100857/f
             // Stage Pixels
-        case .optOutStart: return "optout_stage_start"
-        case .optOutEmailGenerate: return "optout_stage_email-generate"
-        case .optOutCaptchaParse: return "optout_stage_captcha-parse"
-        case .optOutCaptchaSend: return "optout_stage_captcha-send"
-        case .optOutCaptchaSolve: return "optout_stage_captcha-solve"
-        case .optOutSubmit: return "optout_stage_submit"
-        case .optOutEmailReceive: return "optout_stage_email-receive"
-        case .optOutEmailConfirm: return "optout_stage_email-confirm"
-        case .optOutValidate: return "optout_stage_validate"
-        case .optOutFinish: return "optout_stage_finish"
-        case .optOutFillForm: return "optout_stage_fill-form"
+        case .optOutStart: return "dbp_optout_stage_start"
+        case .optOutEmailGenerate: return "dbp_optout_stage_email-generate"
+        case .optOutCaptchaParse: return "dbp_optout_stage_captcha-parse"
+        case .optOutCaptchaSend: return "dbp_optout_stage_captcha-send"
+        case .optOutCaptchaSolve: return "dbp_optout_stage_captcha-solve"
+        case .optOutSubmit: return "dbp_optout_stage_submit"
+        case .optOutEmailReceive: return "dbp_optout_stage_email-receive"
+        case .optOutEmailConfirm: return "dbp_optout_stage_email-confirm"
+        case .optOutValidate: return "dbp_optout_stage_validate"
+        case .optOutFinish: return "dbp_optout_stage_finish"
+        case .optOutFillForm: return "dbp_optout_stage_fill-form"
 
             // Process Pixels
-        case .optOutSubmitSuccess: return "optout_process_submit-success"
-        case .optOutSuccess: return "optout_process_success"
-        case .optOutFailure: return "optout_process_failure"
+        case .optOutSubmitSuccess: return "dbp_optout_process_submit-success"
+        case .optOutSuccess: return "dbp_optout_process_success"
+        case .optOutFailure: return "dbp_optout_process_failure"
 
             // Scan/Search pixels: https://app.asana.com/0/1203581873609357/1205337273100855/f
-        case .scanSuccess: return "search_stage_main_status_success"
-        case .scanFailed: return "search_stage_main_status_failure"
-        case .scanError: return "search_stage_main_status_error"
+        case .scanSuccess: return "dbp_search_stage_main_status_success"
+        case .scanFailed: return "dbp_search_stage_main_status_failure"
+        case .scanError: return "dbp_search_stage_main_status_error"
 
             // Debug Pixels
-        case .httpError: return "data_broker_http_error"
-        case .actionFailedError: return "data_broker_action-failed_error"
-        case .otherError: return "data_broker_other_error"
-        case .databaseError: return "data_broker_database_error"
-        case .cocoaError: return "data_broker_cocoa_error"
-        case .miscError: return "data_broker_misc_client_error"
+        case .httpError: return "dbp_data_broker_http_error"
+        case .actionFailedError: return "dbp_data_broker_action-failed_error"
+        case .otherError: return "dbp_data_broker_other_error"
+        case .databaseError: return "dbp_data_broker_database_error"
+        case .cocoaError: return "dbp_data_broker_cocoa_error"
+        case .miscError: return "dbp_data_broker_misc_client_error"
         case .secureVaultInitError: return "dbp_secure_vault_init_error"
         case .secureVaultKeyStoreReadError: return "dbp_secure_vault_keystore_read_error"
         case .secureVaultKeyStoreUpdateError: return "dbp_secure_vault_keystore_update_error"

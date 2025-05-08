@@ -18,14 +18,19 @@
 
 import XCTest
 import Combine
+import Subscription
+import SubscriptionTestingUtilities
 @testable import DuckDuckGo_Privacy_Browser
 
 final class PreferencesSidebarModelTests: XCTestCase {
+
+    private var mockSubscriptionManager: SubscriptionAuthV1toV2BridgeMock!
 
     var cancellables = Set<AnyCancellable>()
 
     override func setUpWithError() throws {
         try super.setUpWithError()
+        mockSubscriptionManager = SubscriptionAuthV1toV2BridgeMock()
         cancellables.removeAll()
     }
 
@@ -35,7 +40,8 @@ final class PreferencesSidebarModelTests: XCTestCase {
             loadSections: { _ in loadSections ?? PreferencesSection.defaultSections(includingDuckPlayer: false, includingSync: false, includingAIChat: false, subscriptionState: .initial) },
             tabSwitcherTabs: tabSwitcherTabs,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false)
+            syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false),
+            subscriptionManager: mockSubscriptionManager
         )
     }
 

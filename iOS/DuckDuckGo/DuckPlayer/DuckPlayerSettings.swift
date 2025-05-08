@@ -123,7 +123,7 @@ enum DuckPlayerVariant: Equatable, Codable, CustomStringConvertible, CaseIterabl
     private static let classicAString = "Classic (Web)"
     private static let nativeBString = "Native (Opt-in)"
     private static let nativeCString = "Native (Opt-out)"
-    
+
     var stringValue: String {
         switch self {
         case .classicWeb:
@@ -195,12 +195,6 @@ protocol DuckPlayerSettings: AnyObject {
     /// Determines if the native UI should be used for Youtube
     var nativeUIYoutubeMode: NativeDuckPlayerYoutubeMode { get set }
 
-    /// Determines if the priming modal has been presented
-    var nativeUIPrimingModalPresentedCount: Int { get }
-
-    /// Determines the number of seconds since the last priming modal was presented
-    var duckPlayerNativeUIPrimingModalTimeSinceLastPresented: Int { get }
-
     /// Autoplay Videos when opening
     var autoplay: Bool { get set }
 
@@ -210,7 +204,17 @@ protocol DuckPlayerSettings: AnyObject {
     // Holds additional configuration for the custom error view
     var customErrorSettings: CustomErrorSettings? { get }
 
+    // Determines the variant of Duck Player
     var variant: DuckPlayerVariant { get set }
+
+    // Determines if the welcome message has been shown
+    var welcomeMessageShown: Bool { get set }
+
+    // Pill dismiss count
+    var pillDismissCount: Int { get set }
+
+    // Time since last priming modal was presented
+    var primingMessagePresented: Bool { get set }
 
     /// Initializes a new instance with the provided app settings and privacy configuration manager.
     ///
@@ -305,7 +309,6 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
             }
         }
     }
-    
 
     /// Flag to allow the first video to play without redirection.
     var allowFirstVideo: Bool = false
@@ -370,12 +373,6 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
         }
     }
 
-    /// Determines if the priming modal has been presented
-    var nativeUIPrimingModalPresentedCount: Int { return appSettings.duckPlayerNativeUIPrimingModalPresentationEventCount }
-
-    /// Determines the number of seconds since the last priming modal was presented
-    var duckPlayerNativeUIPrimingModalTimeSinceLastPresented: Int { return appSettings.duckPlayerNativeUIPrimingModalLastPresentationTime }
-
     // Determines if we should use the native verion of DuckPlayer (Internal only)
     var autoplay: Bool {
         get {
@@ -410,6 +407,17 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
         return nil
     }
 
+    // Priming message presented
+    var primingMessagePresented: Bool {
+        get {
+            return appSettings.duckPlayerPrimingMessagePresented
+        }
+        set {
+            appSettings.duckPlayerPrimingMessagePresented = newValue
+            triggerNotification()
+        }
+    }
+
     var variant: DuckPlayerVariant {
         get {
             return appSettings.duckPlayerVariant
@@ -433,22 +441,44 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
                     // Set Native B specific settings
                     self.nativeUI = true
                     self.nativeUISERPEnabled = true
-                    // mode remains unchanged (Only used in classicA)
                     self.nativeUIYoutubeMode = .ask
-                    // openInNewTab remains unchanged (Only used in classicA)
                     self.autoplay = true
+                    self.primingMessagePresented = false
 
                 case .nativeOptOut:
                     // Set Native C specific settings
                     self.nativeUI = true
                     self.nativeUISERPEnabled = true
-                    // mode remains unchanged (Only used in classicA)
                     self.nativeUIYoutubeMode = .auto
-                    // openInNewTab remains unchanged (Only used in classicA)
                     self.autoplay = true
+                    // Reset the welcome message shown flag
+                    self.welcomeMessageShown = false
+                    self.primingMessagePresented = true // Never present the priming message for nativeOptOut
                 }
-                
+
             }
+        }
+    }
+
+    // Determines if we should show a custom view when YouTube returns an error
+    var welcomeMessageShown: Bool {
+        get {
+            return appSettings.duckPlayerWelcomeMessageShown
+        }
+        set {
+            appSettings.duckPlayerWelcomeMessageShown = newValue
+            triggerNotification()
+        }
+    }
+
+    // Determines the number of times the pill has been dismissed
+    var pillDismissCount: Int {
+        get {
+            return appSettings.duckPlayerPillDismissCount
+        }
+        set {
+            appSettings.duckPlayerPillDismissCount = newValue
+            triggerNotification()
         }
     }
 

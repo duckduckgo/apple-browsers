@@ -20,16 +20,22 @@ import Cocoa
 import Common
 import Suggestions
 
-struct SuggestionViewModel: Equatable {
-
+struct SuggestionViewModel {
     let isHomePage: Bool
     let suggestion: Suggestion
     let userStringValue: String
 
-    init(isHomePage: Bool, suggestion: Suggestion, userStringValue: String) {
+    init(isHomePage: Bool,
+         suggestion: Suggestion,
+         userStringValue: String,
+         visualStyle: VisualStyleProviding) {
         self.isHomePage = isHomePage
         self.suggestion = suggestion
         self.userStringValue = userStringValue
+
+        let fontSize = isHomePage ? visualStyle.newTabOrHomePageAddressBarFontSize : visualStyle.defaultAddressBarFontSize
+        self.tableRowViewStandardAttributes = Self.rowViewStandardAttributes(size: fontSize, isBold: false)
+        self.tableRowViewBoldAttributes = Self.rowViewStandardAttributes(size: fontSize, isBold: true)
     }
 
     // MARK: - Attributed Strings
@@ -40,33 +46,22 @@ struct SuggestionViewModel: Equatable {
         return style
     }()
 
-    private static let homePageTableRowViewStandardAttributes: [NSAttributedString.Key: Any] = [
-        .font: NSFont.systemFont(ofSize: 15, weight: .regular),
-        .paragraphStyle: Self.paragraphStyle
-    ]
-
-    private static let regularTableRowViewStandardAttributes: [NSAttributedString.Key: Any] = [
-        .font: NSFont.systemFont(ofSize: 13, weight: .regular),
-        .paragraphStyle: Self.paragraphStyle
-    ]
-
-    private static let homePageTableRowViewBoldAttributes: [NSAttributedString.Key: Any] = [
-        NSAttributedString.Key.font: NSFont.systemFont(ofSize: 15, weight: .bold),
-        .paragraphStyle: Self.paragraphStyle
-    ]
-
-    private static let regularTableRowViewBoldAttributes: [NSAttributedString.Key: Any] = [
-        NSAttributedString.Key.font: NSFont.systemFont(ofSize: 13, weight: .bold),
-        .paragraphStyle: Self.paragraphStyle
-    ]
-
-    var tableRowViewStandardAttributes: [NSAttributedString.Key: Any] {
-        isHomePage ? Self.homePageTableRowViewStandardAttributes : Self.regularTableRowViewStandardAttributes
+    private static func rowViewStandardAttributes(size: CGFloat, isBold: Bool) -> [NSAttributedString.Key: Any] {
+        if isBold {
+            return [
+                NSAttributedString.Key.font: NSFont.systemFont(ofSize: size, weight: .bold),
+                .paragraphStyle: Self.paragraphStyle
+            ]
+        } else {
+            return [
+                .font: NSFont.systemFont(ofSize: size, weight: .regular),
+                .paragraphStyle: Self.paragraphStyle
+            ]
+        }
     }
 
-    var tableRowViewBoldAttributes: [NSAttributedString.Key: Any] {
-        isHomePage ? Self.homePageTableRowViewBoldAttributes : Self.regularTableRowViewBoldAttributes
-    }
+    var tableRowViewStandardAttributes: [NSAttributedString.Key: Any]
+    var tableRowViewBoldAttributes: [NSAttributedString.Key: Any]
 
     var tableCellViewAttributedString: NSAttributedString {
         var firstPart = ""
@@ -201,4 +196,10 @@ struct SuggestionViewModel: Equatable {
         }
     }
 
+}
+
+extension SuggestionViewModel: Equatable {
+    static func == (lhs: SuggestionViewModel, rhs: SuggestionViewModel) -> Bool {
+        return lhs.isHomePage == rhs.isHomePage && lhs.suggestion == rhs.suggestion && lhs.userStringValue == rhs.userStringValue
+    }
 }

@@ -51,6 +51,8 @@ final class AddressBarTextField: NSTextField {
         tabCollectionViewModel.isBurner
     }
 
+    var visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyleManager.style
+
     private var suggestionResultCancellable: AnyCancellable?
     private var selectedSuggestionViewModelCancellable: AnyCancellable?
     private var selectedTabViewModelCancellable: AnyCancellable?
@@ -123,7 +125,11 @@ final class AddressBarTextField: NSTextField {
     private func subscribeToContentType(selectedTabViewModel: TabViewModel) {
         contentTypeCancellable = selectedTabViewModel.tab.$content
             .sink { [weak self] contentType in
-                self?.font = .systemFont(ofSize: contentType == .newtab ? 15 : 13)
+                guard let self else { return }
+
+                let newTabFontSize = visualStyle.newTabOrHomePageAddressBarFontSize
+                let defaultFontSize = visualStyle.defaultAddressBarFontSize
+                self.font = .systemFont(ofSize: contentType == .newtab ? newTabFontSize : defaultFontSize)
             }
     }
 
@@ -188,7 +194,10 @@ final class AddressBarTextField: NSTextField {
 
     private func updateAttributedStringValue() {
         withUndoDisabled {
-            if let attributedString = value.toAttributedString(isHomePage: isHomePage, isBurner: isBurner) {
+            let newTabFontSize = visualStyle.newTabOrHomePageAddressBarFontSize
+            let defaultFontSize = visualStyle.defaultAddressBarFontSize
+
+            if let attributedString = value.toAttributedString(size: isHomePage ? newTabFontSize : defaultFontSize, isBurner: isBurner) {
                 self.attributedStringValue = attributedString
             } else {
                 self.stringValue = value.string
@@ -569,7 +578,8 @@ final class AddressBarTextField: NSTextField {
         NSStoryboard.suggestion.instantiateController(identifier: "SuggestionViewController") { coder in
             let suggestionViewController = SuggestionViewController(coder: coder,
                                                                     suggestionContainerViewModel: self.suggestionContainerViewModel!,
-                                                                    isBurner: self.isBurner)
+                                                                    isBurner: self.isBurner,
+                                                                    visualStyle: self.visualStyle)
             suggestionViewController?.delegate = self
             return suggestionViewController
         }
@@ -830,9 +840,8 @@ extension AddressBarTextField {
             self.suggestion != nil
         }
 
-        func toAttributedString(isHomePage: Bool, isBurner: Bool) -> NSAttributedString? {
+        func toAttributedString(size: CGFloat, isBurner: Bool) -> NSAttributedString? {
             var attributes: [NSAttributedString.Key: Any] {
-                let size: CGFloat = isHomePage ? 15 : 13
                 return [
                     .font: NSFont.systemFont(ofSize: size, weight: .regular),
                     .foregroundColor: NSColor.textColor,
@@ -843,7 +852,7 @@ extension AddressBarTextField {
             guard let suffix else { return nil }
 
             let attributedString = NSMutableAttributedString(string: self.string, attributes: attributes)
-            attributedString.append(suffix.toAttributedString(size: isHomePage ? 15 : 13, isBurner: isBurner))
+            attributedString.append(suffix.toAttributedString(size: size, isBurner: isBurner))
 
             return attributedString
         }
@@ -977,7 +986,7 @@ extension AddressBarTextField: NSTextFieldDelegate {
         // don't blink and keep the Suggestion displayed
         if case .userAppendingTextToTheEnd = currentTextDidChangeEvent,
            let suggestion = autocompleteSuggestionBeingTypedOverByUser(with: stringValueWithoutSuffix) {
-            self.value = .suggestion(SuggestionViewModel(isHomePage: isHomePage, suggestion: suggestion.suggestion, userStringValue: stringValueWithoutSuffix))
+            self.value = .suggestion(SuggestionViewModel(isHomePage: isHomePage, suggestion: suggestion.suggestion, userStringValue: stringValueWithoutSuffix, visualStyle: visualStyle))
 
         } else {
             suggestionContainerViewModel?.clearSelection()

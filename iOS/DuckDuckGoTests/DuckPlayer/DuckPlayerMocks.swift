@@ -181,9 +181,10 @@ final class MockDuckPlayerSettings: DuckPlayerSettings {
     var customErrorSettings: DuckDuckGo.CustomErrorSettings? = CustomErrorSettings(signInRequiredSelector: "")
     var nativeUISERPEnabled: Bool = true
     var nativeUIYoutubeMode: DuckDuckGo.NativeDuckPlayerYoutubeMode = .allCases.first!
-    var nativeUIPrimingModalPresentedCount: Int = 0
-    var duckPlayerNativeUIPrimingModalTimeSinceLastPresented: Int = 0
     var variant: DuckDuckGo.DuckPlayerVariant = .classicWeb
+    var welcomeMessageShown: Bool = false
+    var pillDismissCount: Int = 0
+    var primingMessagePresented: Bool = false
 
     init(appSettings: any DuckDuckGo.AppSettings, privacyConfigManager: any BrowserServicesKit.PrivacyConfigurationManaging, internalUserDecider: any BrowserServicesKit.InternalUserDecider) {}
 
@@ -468,6 +469,18 @@ class MockDelayHandler: DuckPlayerDelayHandling {
 
     func completeDelay() {
         delaySubject.send()
+    }
+}
+
+// Testable Coordinator subclass for timestamp testing
+@MainActor
+class TestableDuckPlayerWebViewCoordinator: DuckPlayerWebView.Coordinator {
+    var mockTimestamp: TimeInterval = 0.0
+    var getCurrentTimestampCallCount = 0
+
+    override func getCurrentTimestamp(_ webView: WKWebView) async -> TimeInterval {
+        getCurrentTimestampCallCount += 1
+        return mockTimestamp
     }
 }
 

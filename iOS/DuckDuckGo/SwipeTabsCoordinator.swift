@@ -365,13 +365,12 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
             fatalError("Not \(OmniBarCell.self)")
         }
 
-        removeControllerForCell(cell)
-
         if !isEnabled || tabsModel.currentIndex == indexPath.row {
             cell.omniBar = coordinator.omniBar
         } else {
             // Strong reference while we use the omnibar
-            let controller = OmniBarFactory.createOmniBarViewController(with: omnibarDependencies)
+            let controller = cell.controller ?? OmniBarFactory.createOmniBarViewController(with: omnibarDependencies)
+            let url = tabsModel.safeGetTabAt(indexPath.row)?.link?.url
 
             coordinator.parentController?.addChild(controller)
 
@@ -382,28 +381,23 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
 
             if let url = tabsModel.safeGetTabAt(indexPath.row)?.link?.url {
                 cell.omniBar?.startBrowsing()
-                cell.omniBar?.refreshText(forUrl: url, forceFullURL: appSettings.showFullSiteAddress)
-                cell.omniBar?.resetPrivacyIcon(for: url)
                 cell.omniBar?.updateAccessoryType(omnibarAccessoryHandler.omnibarAccessory(for: url))
+                cell.omniBar?.resetPrivacyIcon(for: url)
+            } else {
+                cell.omniBar?.stopBrowsing()
+                // It's always chat just now (this might change in the future) and this prevents a flash when on new tab
+                cell.omniBar?.updateAccessoryType(.chat)
             }
 
+            cell.omniBar?.refreshText(forUrl: url, forceFullURL: appSettings.showFullSiteAddress)
+
             controller.didMove(toParent: coordinator.parentController)
+            cell.controller = controller
         }
 
         cell.setNeedsUpdateConstraints()
 
         return cell
-    }
-
-    private func removeControllerForCell(_ cell: OmniBarCell) {
-        if let existingOmniBarView = cell.omniBar?.barView,
-           let backingVC = coordinator.parentController?.children.first(where: { $0.view === existingOmniBarView }) {
-
-            backingVC.willMove(toParent: nil)
-            existingOmniBarView.removeFromSuperview()
-            cell.omniBar = nil
-            backingVC.removeFromParent()
-        }
     }
 
 }
@@ -412,6 +406,7 @@ class OmniBarCell: UICollectionViewCell {
 
     weak var coordinator: MainViewCoordinator?
     var roundCornersMaskView: RoundedCornersMaskView?
+    var controller: OmniBarViewController?
 
     weak var omniBar: OmniBar? {
         didSet {
@@ -453,6 +448,11 @@ class OmniBarCell: UICollectionViewCell {
             bringSubviewToFront(maskView)
                 
         }
+    }
+
+    deinit {
+        controller?.removeFromParent()
+        controller = nil
     }
 }
 

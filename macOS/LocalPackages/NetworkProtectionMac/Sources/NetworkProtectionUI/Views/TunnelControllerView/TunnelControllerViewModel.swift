@@ -405,10 +405,8 @@ public final class TunnelControllerViewModel: ObservableObject {
         }
     }
 
-    // TODO: TESTING SUPPORT!!! Remove before merging
     private var timerDateOverride: Date?
 
-    // TODO: TESTING SUPPORT!!! Remove before merging
     func overrideConnectionStartDate() {
         timerDateOverride = Date().addingTimeInterval(-TimeInterval.day.advanced(by: -10))
     }

@@ -92,9 +92,8 @@ protocol AppSettings: AnyObject, OnboardingDebugAppSettings {
     var duckPlayerAutoplay: Bool { get set }
     var duckPlayerNativeUISERPEnabled: Bool { get set }
     var duckPlayerNativeYoutubeMode: NativeDuckPlayerYoutubeMode { get set }
-    var duckPlayerNativeUIPrimingModalPresentationEventCount: Int { get set }
-    var duckPlayerNativeUIPrimingModalLastPresentationTime: Int { get set }
     var duckPlayerPillDismissCount: Int { get set }
+    var duckPlayerPrimingMessagePresented: Bool { get set }
     var duckPlayerVariant: DuckPlayerVariant { get set }
     var duckPlayerWelcomeMessageShown: Bool { get set }
 }

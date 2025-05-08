@@ -76,6 +76,7 @@ final class NewTabPageControllerPixelTests: XCTestCase {
     private func createSUT() -> NewTabPageViewController {
         NewTabPageViewController(tab: Tab(),
                                  isNewTabPageCustomizationEnabled: false,
+                                 isExperimentalAppearanceEnabled: false,
                                  interactionModel: MockFavoritesListInteracting(),
                                  homePageMessagesConfiguration: HomePageMessagesConfigurationMock(homeMessages: []),
                                  variantManager: MockVariantManager(),

@@ -47,6 +47,7 @@ struct Background: BackgroundHandling {
         Logger.lifecycle.info("\(type(of: self)): \(#function)")
 
         services.keyValueFileStoreTestService.onBackground()
+        services.dbpService.onBackground()
         services.vpnService.suspend()
         services.authenticationService.suspend()
         services.autoClearService.suspend()

@@ -66,6 +66,15 @@ jobs:
       - name: Run tests
         run: set -o pipefail && swift test | tee -a build-log.txt | xcbeautify --report junit --report-path . --junit-report-filename package-tests.xml
 
+      - name: Upload JUnit XML as artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bsk-macos-unittests.xml
+          path: |
+            SharedPackages/BrowserServicesKit/package-tests.xml
+          retention-days: 7
+
       - name: Publish Unit Tests Report
         uses: mikepenz/action-junit-report@v4
         if: always()
@@ -166,6 +175,15 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             | tee -a ios-build-log.txt \
             | xcbeautify --report junit --report-path . --junit-report-filename bsk-ios-unittests.xml
+
+      - name: Upload JUnit XML as artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bsk-ios-unittests.xml
+          path: |
+            SharedPackages/BrowserServicesKit/bsk-ios-unittests.xml
+          retention-days: 7
 
       - name: Publish Unit Tests Report
         uses: mikepenz/action-junit-report@v4

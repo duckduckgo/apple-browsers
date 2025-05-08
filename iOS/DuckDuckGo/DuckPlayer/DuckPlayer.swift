@@ -573,6 +573,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     ///   - webView: The web view to load the video in.
     @MainActor
     public func openVideoInDuckPlayer(url: URL, webView: WKWebView) {
+        featureDiscovery.setWasUsedBefore(.duckPlayer)
         webView.load(URLRequest(url: url))
     }
 
@@ -584,7 +585,6 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     /// - Returns: An optional `Encodable` response.
     @MainActor
     public func initialSetupPlayer(params: Any, message: WKScriptMessage) async -> Encodable? {
-        featureDiscovery.setWasUsedBefore(.duckPlayer)
         let webView = message.webView
         return await self.encodedPlayerSettings(with: webView)
     }
@@ -597,7 +597,6 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     /// - Returns: An optional `Encodable` response.
     @MainActor
     public func initialSetupOverlay(params: Any, message: WKScriptMessage) async -> Encodable? {
-        featureDiscovery.setWasUsedBefore(.duckPlayer)
         let webView = message.webView
         return await self.encodedPlayerSettings(with: webView)
     }
@@ -726,10 +725,6 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     @MainActor
     private func firePixels(message: WKScriptMessage, userValues: UserValues) {
 
-        guard let messageData: WKMessageData = DecodableHelper.decode(from: message.body) else {
-            assertionFailure("DuckPlayer: expected JSON representation of Message")
-            return
-        }
         // Get the webView URL
         guard let webView = message.webView, let url = webView.url else {
             return
@@ -781,10 +776,10 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     func presentPill(for videoID: String, timestamp: TimeInterval?) {
         guard let hostView = hostView else { return }
 
-        featureDiscovery.setWasUsedBefore(.duckPlayer)
-
         Task { @MainActor in
-            nativeUIPresenter.presentPill(for: videoID, in: hostView, timestamp: timestamp)
+            if hostView.url?.isYoutubeWatch ?? false {
+                nativeUIPresenter.presentPill(for: videoID, in: hostView, timestamp: timestamp)
+            }
         }
 
         nativeUIPresenter.videoPlaybackRequest

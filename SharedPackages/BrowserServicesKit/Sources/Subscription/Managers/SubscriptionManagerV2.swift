@@ -25,13 +25,10 @@ public enum SubscriptionManagerError: Error, Equatable, LocalizedError {
     case tokenUnavailable(error: Error?)
     case confirmationHasInvalidSubscription
     case noProductsFound
-    case tokenRefreshFailed(error: Error?)
 
     public static func == (lhs: SubscriptionManagerError, rhs: SubscriptionManagerError) -> Bool {
         switch (lhs, rhs) {
         case (.tokenUnavailable(let lhsError), .tokenUnavailable(let rhsError)):
-            return lhsError?.localizedDescription == rhsError?.localizedDescription
-        case (.tokenRefreshFailed(let lhsError), .tokenRefreshFailed(let rhsError)):
             return lhsError?.localizedDescription == rhsError?.localizedDescription
         case (.confirmationHasInvalidSubscription, .confirmationHasInvalidSubscription),
             (.noProductsFound, .noProductsFound):
@@ -49,8 +46,6 @@ public enum SubscriptionManagerError: Error, Equatable, LocalizedError {
             "Confirmation has an invalid subscription"
         case .noProductsFound:
             "No products found"
-        case .tokenRefreshFailed(error: let error):
-            "Token is not refreshable: \(String(describing: error))"
         }
     }
 }
@@ -419,19 +414,26 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             }
 
             return resultTokenContainer
+        } catch OAuthClientError.missingTokens {
+            // Expected when no tokens are available
+            throw SubscriptionManagerError.tokenUnavailable(error: OAuthClientError.missingTokens)
         } catch {
+
+            pixelHandler.handle(pixelType: .getTokensError(policy, error))
+
             switch error {
-            case OAuthClientError.missingTokens: // Expected when no tokens are available
-                throw SubscriptionManagerError.tokenUnavailable(error: error)
-            case OAuthClientError.refreshTokenExpired, OAuthClientError.invalidTokenRequest:
-                pixelHandler.handle(pixelType: .getTokensError(policy, error))
+            case OAuthClientError.refreshTokenExpired,
+                OAuthClientError.invalidTokenRequest:
                 do {
                     return try await attemptTokenRecovery()
                 } catch {
-                    throw error
+                    throw SubscriptionManagerError.tokenUnavailable(error: error)
                 }
+            case OAuthClientError.unknownAccount:
+                Logger.subscription.error("Refresh failed, the account is unknown. Logging out...")
+                await signOut(notifyUI: true)
+                throw SubscriptionManagerError.tokenUnavailable(error: error)
             default:
-                pixelHandler.handle(pixelType: .getTokensError(policy, error))
                 throw SubscriptionManagerError.tokenUnavailable(error: error)
             }
         }

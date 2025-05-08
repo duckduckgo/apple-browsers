@@ -28,6 +28,7 @@ public enum OAuthClientError: Error, LocalizedError, Equatable {
     case refreshTokenExpired
     case invalidTokenRequest
     case authMigrationNotPerformed
+    case unknownAccount
 
     public var errorDescription: String? {
         switch self {
@@ -45,6 +46,8 @@ public enum OAuthClientError: Error, LocalizedError, Equatable {
             return "Invalid token request"
         case .authMigrationNotPerformed:
             return "Auth migration not needed"
+        case .unknownAccount:
+            return "Unknown account"
         }
     }
 }
@@ -266,12 +269,15 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
                 Logger.OAuthClient.log("Tokens refreshed, expiry: \(refreshedTokens.decodedAccessToken.exp.value.description, privacy: .public)")
                 tokenStorage.tokenContainer = refreshedTokens
                 return refreshedTokens
-            } catch OAuthServiceError.authAPIError(let code) where code == OAuthRequest.BodyErrorCode.invalidTokenRequest {
+            } catch OAuthServiceError.authAPIError(let code) where code == .invalidTokenRequest {
                 Logger.OAuthClient.error("Failed to refresh token: invalidTokenRequest")
                 throw OAuthClientError.invalidTokenRequest
-            } catch OAuthServiceError.authAPIError(let code) {
-                Logger.OAuthClient.error("Failed to refresh token: \(code.rawValue, privacy: .public), \(code.description, privacy: .public)")
-                throw OAuthServiceError.authAPIError(code: code)
+            } catch OAuthServiceError.authAPIError(let code) where code == .unknownAccount {
+                Logger.OAuthClient.error("Failed to refresh token: unknownAccount")
+                throw OAuthClientError.unknownAccount
+            } catch {
+                Logger.OAuthClient.error("Failed to refresh token: \(error.localizedDescription, privacy: .public)")
+                throw error
             }
 
         case .createIfNeeded:

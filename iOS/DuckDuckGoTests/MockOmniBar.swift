@@ -43,6 +43,8 @@ final class MockOmniBar: OmniBar {
     func moveSeparatorToBottom() { }
     func useSmallTopSpacing() { }
     func useRegularTopSpacing() { }
+    func allowShadowsOutsideBounds() { }
+    func preventShadowsOutsideBounds() { }
     func enterPhoneState() { }
     func enterPadState() { }
     func startBrowsing() { }

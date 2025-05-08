@@ -79,10 +79,10 @@ final class UserScripts: UserScriptsProvider {
         let aiChatScriptHandler = AIChatUserScriptHandler(featureFlagger: featureFlagger)
         aiChatUserScript = AIChatUserScript(handler: aiChatScriptHandler,
                                             debugSettings: aiChatDebugSettings)
-        subscriptionUserScript = SubscriptionUserScript(handler: SubscriptionUserScriptHandler(
+        subscriptionUserScript = SubscriptionUserScript(
             platform: .ios,
             subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
-        ))
+        )
         contentScopeUserScriptIsolated.registerSubfeature(delegate: aiChatUserScript)
         contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
 

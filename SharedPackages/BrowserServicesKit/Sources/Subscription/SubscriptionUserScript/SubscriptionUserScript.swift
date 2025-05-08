@@ -20,76 +20,44 @@ import Common
 import UserScript
 import WebKit
 
-public struct HandshakeResponse: Codable, Equatable {
-    public let availableMessages: [SubscriptionUserScript.MessageName]
-    public let platform: Platform
+///
+/// This protocol describes the interface for `SubscriptionUserScript` message handler
+///
+protocol SubscriptionUserScriptHandling {
 
-    public init(availableMessages: [SubscriptionUserScript.MessageName], platform: Platform) {
-        self.availableMessages = availableMessages
-        self.platform = platform
-    }
+    /// Returns a handshake message reporting capabilities of the app.
+    func handshake(params: Any, message: UserScriptMessage) async throws -> SubscriptionUserScript.DataModel.HandshakeResponse
 
-    public enum Platform: String, Codable {
-        case ios, macos
-    }
+    /// Returns the details of Privacy Pro subscription.
+    func subscriptionDetails(params: Any, message: UserScriptMessage) async throws -> SubscriptionUserScript.DataModel.SubscriptionDetails
 }
 
-public struct SubscriptionDetails: Codable, Equatable {
-    public let isSubscribed: Bool
-    public let billingPeriod: String?
-    public let startedAt: Int?
-    public let expiresOrRenewsAt: Int?
-    public let paymentPlatform: String?
-    public let status: String?
+final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
+    typealias DataModel = SubscriptionUserScript.DataModel
 
-    static let unsubscribed: Self = .init(isSubscribed: false, billingPeriod: nil, startedAt: nil, expiresOrRenewsAt: nil, paymentPlatform: nil, status: nil)
-
-    public init(_ subscription: PrivacyProSubscription) {
-        isSubscribed = subscription.isActive
-        billingPeriod = subscription.billingPeriod.rawValue
-        startedAt = Int(subscription.startedAt.timeIntervalSince1970 * 1000)
-        expiresOrRenewsAt = Int(subscription.expiresOrRenewsAt.timeIntervalSince1970 * 1000)
-        paymentPlatform = subscription.platform.rawValue
-        status = subscription.status.rawValue
-    }
-
-    public init(isSubscribed: Bool, billingPeriod: String?, startedAt: Int?, expiresOrRenewsAt: Int?, paymentPlatform: String?, status: String?) {
-        self.isSubscribed = isSubscribed
-        self.billingPeriod = billingPeriod
-        self.startedAt = startedAt
-        self.expiresOrRenewsAt = expiresOrRenewsAt
-        self.paymentPlatform = paymentPlatform
-        self.status = status
-    }
-}
-
-public protocol SubscriptionUserScriptHandling {
-    func handshake(params: Any, message: UserScriptMessage) async throws -> HandshakeResponse
-    func subscriptionDetails(params: Any, message: UserScriptMessage) async throws -> SubscriptionDetails
-}
-
-public final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
-    let platform: HandshakeResponse.Platform
+    let platform: DataModel.Platform
     let subscriptionManager: any SubscriptionAuthV1toV2Bridge
 
-    public init(platform: HandshakeResponse.Platform, subscriptionManager: any SubscriptionAuthV1toV2Bridge) {
+    init(platform: DataModel.Platform, subscriptionManager: any SubscriptionAuthV1toV2Bridge) {
         self.platform = platform
         self.subscriptionManager = subscriptionManager
     }
 
-    public func handshake(params: Any, message: any UserScriptMessage) async throws -> HandshakeResponse {
+    func handshake(params: Any, message: any UserScriptMessage) async throws -> DataModel.HandshakeResponse {
         .init(availableMessages: [.subscriptionDetails], platform: platform)
     }
 
-    public func subscriptionDetails(params: Any, message: any UserScriptMessage) async throws -> SubscriptionDetails {
+    func subscriptionDetails(params: Any, message: any UserScriptMessage) async throws -> DataModel.SubscriptionDetails {
         guard let subscription = try? await subscriptionManager.getSubscription(cachePolicy: .returnCacheDataElseLoad), subscription.isActive else {
-            return .unsubscribed
+            return .notSubscribed
         }
-
-        return SubscriptionDetails(subscription)
+        return .init(subscription)
     }
 }
 
+///
+/// This user script is responsible for providing Privacy Pro subscription data to the calling website.
+///
 public final class SubscriptionUserScript: NSObject, Subfeature {
 
     public enum MessageName: String, CaseIterable, Codable {
@@ -98,21 +66,8 @@ public final class SubscriptionUserScript: NSObject, Subfeature {
     }
 
     public let featureName: String = "subscriptions"
-
+    public let messageOriginPolicy: MessageOriginPolicy = .only(rules: [.exact(hostname: "duckduckgo.com")])
     public weak var broker: UserScriptMessageBroker?
-    public private(set) var messageOriginPolicy: MessageOriginPolicy
-    private let handler: SubscriptionUserScriptHandling
-
-    public init(handler: SubscriptionUserScriptHandling) {
-        self.handler = handler
-        var rules = [HostnameMatchingRule]()
-
-        /// Default rule for DuckDuckGo Subscriptions
-        rules.append(.exact(hostname: "duckduckgo.com"))
-        rules.append(.exact(hostname: "abrown.duckduckgo.com"))
-
-        self.messageOriginPolicy = .only(rules: rules)
-    }
 
     public func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
         switch MessageName(rawValue: methodName) {
@@ -122,6 +77,68 @@ public final class SubscriptionUserScript: NSObject, Subfeature {
             return handler.subscriptionDetails
         default:
             return nil
+        }
+    }
+
+    public convenience init(platform: DataModel.Platform, subscriptionManager: any SubscriptionAuthV1toV2Bridge) {
+        self.init(handler: SubscriptionUserScriptHandler(platform: platform, subscriptionManager: subscriptionManager))
+    }
+
+    init(handler: SubscriptionUserScriptHandling) {
+        self.handler = handler
+    }
+
+    private let handler: SubscriptionUserScriptHandling
+}
+
+extension SubscriptionUserScript {
+    public enum DataModel {
+
+        /// Describes the platform to be reported to the user script.
+        /// This needs to be public as it's provided by the client app.
+        public enum Platform: String, Codable {
+            case ios, macos
+        }
+
+        /// This struct is returned in response to the `handshake` message
+        struct HandshakeResponse: Codable, Equatable {
+            let availableMessages: [SubscriptionUserScript.MessageName]
+            let platform: Platform
+
+            init(availableMessages: [SubscriptionUserScript.MessageName], platform: Platform) {
+                self.availableMessages = availableMessages
+                self.platform = platform
+            }
+        }
+
+        /// This struct is returned in response to the `subscriptionDetails` message
+        struct SubscriptionDetails: Codable, Equatable {
+            let isSubscribed: Bool
+            let billingPeriod: String?
+            let startedAt: Int?
+            let expiresOrRenewsAt: Int?
+            let paymentPlatform: String?
+            let status: String?
+
+            static let notSubscribed: Self = .init(isSubscribed: false, billingPeriod: nil, startedAt: nil, expiresOrRenewsAt: nil, paymentPlatform: nil, status: nil)
+
+            init(_ subscription: PrivacyProSubscription) {
+                isSubscribed = subscription.isActive
+                billingPeriod = subscription.billingPeriod.rawValue
+                startedAt = Int(subscription.startedAt.timeIntervalSince1970 * 1000)
+                expiresOrRenewsAt = Int(subscription.expiresOrRenewsAt.timeIntervalSince1970 * 1000)
+                paymentPlatform = subscription.platform.rawValue
+                status = subscription.status.rawValue
+            }
+
+            init(isSubscribed: Bool, billingPeriod: String?, startedAt: Int?, expiresOrRenewsAt: Int?, paymentPlatform: String?, status: String?) {
+                self.isSubscribed = isSubscribed
+                self.billingPeriod = billingPeriod
+                self.startedAt = startedAt
+                self.expiresOrRenewsAt = expiresOrRenewsAt
+                self.paymentPlatform = paymentPlatform
+                self.status = status
+            }
         }
     }
 }

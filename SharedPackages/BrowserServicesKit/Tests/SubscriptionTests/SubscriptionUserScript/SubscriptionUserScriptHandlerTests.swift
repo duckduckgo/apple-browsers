@@ -1,6 +1,5 @@
 //
 //  SubscriptionUserScriptHandlerTests.swift
-//  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -106,4 +105,3 @@ private extension PrivacyProSubscription {
         self.init(productId: "test", name: "test", billingPeriod: .monthly, startedAt: Date(), expiresOrRenewsAt: Date(), platform: .apple, status: status, activeOffers: [])
     }
 }
-

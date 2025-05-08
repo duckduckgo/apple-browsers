@@ -55,17 +55,6 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     private let settings = DataBrokerProtectionSettings(defaults: .dbp)
 
     private lazy var brokerUpdater: BrokerJSONServiceProvider = {
-        Configuration.setURLProvider(DBPAgentConfigurationURLProvider())
-        let configStore = ConfigurationStore()
-        let privacyConfigurationManager = DBPPrivacyConfigurationManager()
-        let configurationManager = DataBrokerProtection_macOS.ConfigurationManager(privacyConfigManager: privacyConfigurationManager, store: configStore)
-        configurationManager.start()
-
-        privacyConfigurationManager.reload(etag: configStore.loadEtag(for: .privacyConfiguration), data: configStore.loadData(for: .privacyConfiguration))
-
-        let featureFlagger = DBPFeatureFlagger(configurationManager: configurationManager,
-                                               privacyConfigurationManager: privacyConfigurationManager)
-
         let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
         let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
         guard let vault = try? vaultFactory.makeVault(reporter: nil) else {
@@ -73,6 +62,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
         }
         let authenticationManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(
             subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge)
+        let featureFlagger = DBPFeatureFlagger(featureFlagger: Application.appDelegate.featureFlagger)
 
         return RemoteBrokerJSONService(featureFlagger: featureFlagger,
                                        settings: DataBrokerProtectionSettings(defaults: .dbp),

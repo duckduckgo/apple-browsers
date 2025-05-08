@@ -19,7 +19,6 @@
 import BrowserServicesKit
 import Combine
 import Common
-import Configuration
 import Foundation
 import GRDB
 import SecureStorage

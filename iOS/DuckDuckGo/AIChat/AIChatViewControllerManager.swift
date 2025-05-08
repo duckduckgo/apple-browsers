@@ -23,6 +23,7 @@ import Foundation
 import BrowserServicesKit
 import WebKit
 import Core
+import SwiftUI
 
 protocol AIChatViewControllerManagerDelegate: AnyObject {
     func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didRequestToLoad url: URL)
@@ -31,68 +32,120 @@ protocol AIChatViewControllerManagerDelegate: AnyObject {
 }
 
 final class AIChatViewControllerManager {
+
+    // MARK: - Public Properties
+
     weak var delegate: AIChatViewControllerManagerDelegate?
+
+    // MARK: - Private Properties
+
+    private weak var chatViewController: AIChatViewController?
+    private weak var userContentController: UserContentController?
+
     private var aiChatUserScript: AIChatUserScript?
     private var payloadHandler = AIChatPayloadHandler()
+    private var inputBoxHandler: AIChatInputBoxHandling?
+    private var inputBoxViewModel: AIChatInputBoxViewModel?
+
     private let privacyConfigurationManager: PrivacyConfigurationManaging
-    private weak var userContentController: UserContentController?
     private let downloadsDirectoryHandler: DownloadsDirectoryHandling
-    private weak var chatViewController: AIChatViewController?
     private let userAgentManager: AIChatUserAgentProviding
+    private let featureFlagger: FeatureFlagger
+
+    // MARK: - Initialization
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
          downloadsDirectoryHandler: DownloadsDirectoryHandling = DownloadsDirectoryHandler(),
-         userAgentManager: UserAgentManager = DefaultUserAgentManager.shared) {
+         userAgentManager: UserAgentManager = DefaultUserAgentManager.shared,
+         featureFlagger: FeatureFlagger) {
+
         self.privacyConfigurationManager = privacyConfigurationManager
         self.downloadsDirectoryHandler = downloadsDirectoryHandler
         self.userAgentManager = AIChatUserAgentHandler(userAgentManager: userAgentManager)
+        self.featureFlagger = featureFlagger
     }
+
+    // MARK: - Public Methods
 
     @MainActor
     func openAIChat(_ query: String? = nil, payload: Any? = nil, autoSend: Bool = false, on viewController: UIViewController) {
-        let settings = AIChatSettings(privacyConfigurationManager: privacyConfigurationManager)
-
-        let inspectableWebView: Bool
-#if DEBUG
-        inspectableWebView = true
-#else
-        inspectableWebView = AppUserDefaults().inspectableWebViewEnabled
-#endif
-
-        let webviewConfiguration = WKWebViewConfiguration.persistent()
-        let userContentController = UserContentController()
-        userContentController.delegate = self
-
         downloadsDirectoryHandler.createDownloadsDirectoryIfNeeded()
 
-        webviewConfiguration.userContentController = userContentController
-        self.userContentController = userContentController
-
-        let aiChatViewController = AIChatViewController(settings: settings,
-                                                        webViewConfiguration: webviewConfiguration,
-                                                        requestAuthHandler: AIChatRequestAuthorizationHandler(debugSettings: AIChatDebugSettings()),
-                                                        inspectableWebView: inspectableWebView,
-                                                        downloadsPath: downloadsDirectoryHandler.downloadsDirectory,
-                                                        userAgentManager: userAgentManager)
-        aiChatViewController.delegate = self
+        let aiChatViewController = createAIChatViewController()
+        setupChatViewController(aiChatViewController, query: query, payload: payload, autoSend: autoSend)
 
         let roundedPageSheet = RoundedPageSheetContainerViewController(
             contentViewController: aiChatViewController,
-            allowedOrientation: .portrait)
-
+            allowedOrientation: .portrait
+        )
         roundedPageSheet.delegate = self
 
+        viewController.present(roundedPageSheet, animated: true)
+        chatViewController = aiChatViewController
+    }
+
+    // MARK: - Private Helper Methods
+
+    @MainActor
+    private func createAIChatViewController() -> AIChatViewController {
+        let settings = AIChatSettings(privacyConfigurationManager: privacyConfigurationManager)
+        let webViewConfiguration = createWebViewConfiguration()
+        let inspectableWebView = isInspectableWebViewEnabled()
+        let chatInputBox = setupChatInputBoxIfNeeded()
+
+        let aiChatViewController = AIChatViewController(
+            settings: settings,
+            webViewConfiguration: webViewConfiguration,
+            requestAuthHandler: AIChatRequestAuthorizationHandler(debugSettings: AIChatDebugSettings()),
+            inspectableWebView: inspectableWebView,
+            downloadsPath: downloadsDirectoryHandler.downloadsDirectory,
+            userAgentManager: userAgentManager,
+            chatInputBox: chatInputBox
+        )
+
+        aiChatViewController.delegate = self
+        return aiChatViewController
+    }
+
+    @MainActor
+    private func createWebViewConfiguration() -> WKWebViewConfiguration {
+        let configuration = WKWebViewConfiguration.persistent()
+        let userContentController = UserContentController()
+        userContentController.delegate = self
+        configuration.userContentController = userContentController
+        self.userContentController = userContentController
+        return configuration
+    }
+
+    private func setupChatViewController(_ aiChatViewController: AIChatViewController, query: String?, payload: Any?, autoSend: Bool) {
         if let query = query {
             aiChatViewController.loadQuery(query, autoSend: autoSend)
         }
 
-        // Force a reload to trigger the user script getUserValues
         if let payload = payload as? AIChatPayload {
             payloadHandler.setData(payload)
             aiChatViewController.reload()
         }
-        viewController.present(roundedPageSheet, animated: true, completion: nil)
-        chatViewController = aiChatViewController
+    }
+
+    private func isInspectableWebViewEnabled() -> Bool {
+#if DEBUG
+        return true
+#else
+        return AppUserDefaults().inspectableWebViewEnabled
+#endif
+    }
+
+    private func setupChatInputBoxIfNeeded() -> AnyView? {
+        guard featureFlagger.isFeatureOn(.aiChatNativePrompt) else { return nil }
+
+        let viewModel = AIChatInputBoxViewModel()
+        let handler = AIChatInputBoxHandler(inputBoxViewModel: viewModel)
+
+        inputBoxViewModel = viewModel
+        inputBoxHandler = handler
+
+        return AnyView(AIChatInputBox(viewModel: viewModel))
     }
 
     private func cleanUpUserContent() {
@@ -103,6 +156,8 @@ final class AIChatViewControllerManager {
     }
 }
 
+// MARK: - UserContentControllerDelegate
+
 extension AIChatViewControllerManager: UserContentControllerDelegate {
     @MainActor
     func userContentController(_ userContentController: UserContentController,
@@ -110,14 +165,20 @@ extension AIChatViewControllerManager: UserContentControllerDelegate {
                                userScripts: UserScriptsProvider,
                                updateEvent: ContentBlockerRulesManager.UpdateEvent) {
 
-        guard let userScripts = userScripts as? UserScripts else { fatalError("Unexpected UserScripts") }
-        self.aiChatUserScript = userScripts.aiChatUserScript
-        self.aiChatUserScript?.delegate = self
-        self.aiChatUserScript?.setPayloadHandler(self.payloadHandler)
+        guard let userScripts = userScripts as? UserScripts else {
+            fatalError("Unexpected UserScripts")
+        }
+
+        aiChatUserScript = userScripts.aiChatUserScript
+        aiChatUserScript?.delegate = self
+        aiChatUserScript?.setPayloadHandler(payloadHandler)
+        aiChatUserScript?.webView = chatViewController?.webView
+        aiChatUserScript?.inputBoxHandler = inputBoxHandler
     }
 }
 
 // MARK: - AIChatViewControllerDelegate
+
 extension AIChatViewControllerManager: AIChatViewControllerDelegate {
     func aiChatViewController(_ viewController: AIChatViewController, didRequestToLoad url: URL) {
         delegate?.aiChatViewControllerManager(self, didRequestToLoad: url)
@@ -137,16 +198,16 @@ extension AIChatViewControllerManager: AIChatViewControllerDelegate {
 }
 
 // MARK: - RoundedPageSheetContainerViewControllerDelegate
+
 extension AIChatViewControllerManager: RoundedPageSheetContainerViewControllerDelegate {
     func roundedPageSheetContainerViewControllerDidDisappear(_ controller: RoundedPageSheetContainerViewController) {
         cleanUpUserContent()
     }
 }
 
-// MARK: AIChatUserScriptDelegate
+// MARK: - AIChatUserScriptDelegate
 
 extension AIChatViewControllerManager: AIChatUserScriptDelegate {
-
     func aiChatUserScript(_ userScript: AIChatUserScript, didReceiveMessage message: AIChatUserScriptMessages) {
         switch message {
         case .openAIChatSettings:

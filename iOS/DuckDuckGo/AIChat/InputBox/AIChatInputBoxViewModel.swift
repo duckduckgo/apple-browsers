@@ -1,5 +1,6 @@
 //
-//  AIChatUserScriptMessages.swift
+//  AIChatInputBoxViewModel.swift
+//  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,12 +17,25 @@
 //  limitations under the License.
 //
 
-public enum AIChatUserScriptMessages: String, CaseIterable {
-    case openAIChatSettings
-    case getAIChatNativeConfigValues
-    case closeAIChat
-    case getAIChatNativePrompt
-    case openAIChat
-    case getAIChatNativeHandoffData
-    case responseState
+import Combine
+
+final class AIChatInputBoxViewModel: ObservableObject {
+
+    // MARK: - Publishers
+    let didPressFireButton = PassthroughSubject<Void, Never>()
+    let didPressNewChatButton = PassthroughSubject<Void, Never>()
+    let didSubmitText = PassthroughSubject<String, Never>()
+
+    // MARK: - Public Methods
+    func fireButtonPressed() {
+        didPressFireButton.send()
+    }
+
+    func newChatButtonPressed() {
+        didPressNewChatButton.send()
+    }
+
+    func submitText(_ text: String) {
+        didSubmitText.send(text)
+    }
 }

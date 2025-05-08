@@ -160,7 +160,6 @@ final class NavigationBarViewController: NSViewController {
         autofillPopoverPresenter: AutofillPopoverPresenter,
         brokenSitePromptLimiter: BrokenSitePromptLimiter,
         featureFlagger: FeatureFlagger & ContentScopeExperimentsManaging,
-        featureFlagger: FeatureFlagger,
         visualStyle: VisualStyleProviding
     ) {
 

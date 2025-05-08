@@ -51,6 +51,9 @@ protocol OmniBar: AnyObject {
     func useSmallTopSpacing()
     func useRegularTopSpacing()
 
+    func allowShadowsOutsideBounds()
+    func preventShadowsOutsideBounds()
+
     func enterPhoneState()
     func enterPadState()
 
@@ -85,9 +88,15 @@ extension OmniBar {
         case .bottom:
             moveSeparatorToTop()
             useSmallTopSpacing()
+
+            // [1] We want OmniBar shadows bleed down to the toolbar...
+            allowShadowsOutsideBounds()
         case .top:
             moveSeparatorToBottom()
             useRegularTopSpacing()
+
+            // [1] ... but not to the webpage
+            preventShadowsOutsideBounds()
         }
     }
 }

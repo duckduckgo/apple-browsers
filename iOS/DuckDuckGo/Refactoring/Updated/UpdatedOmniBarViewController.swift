@@ -107,4 +107,12 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
     override func useRegularTopSpacing() {
         omniBarView.isUsingSmallTopSpacing = false
     }
+
+    override func allowShadowsOutsideBounds() {
+        omniBarView.clipsToBounds = false
+    }
+
+    override func preventShadowsOutsideBounds() {
+        omniBarView.clipsToBounds = true
+    }
 }

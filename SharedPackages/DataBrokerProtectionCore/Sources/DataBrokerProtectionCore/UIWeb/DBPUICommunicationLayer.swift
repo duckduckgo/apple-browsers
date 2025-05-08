@@ -155,7 +155,7 @@ public struct DBPUICommunicationLayer: Subfeature {
         return DBPUIHandshakeResponse(version: Constants.version, success: true, userdata: userData)
     }
 
-    func saveProfile(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+    public func saveProfile(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         Logger.dataBrokerProtection.log("Web UI requested to save the profile")
 
         do {

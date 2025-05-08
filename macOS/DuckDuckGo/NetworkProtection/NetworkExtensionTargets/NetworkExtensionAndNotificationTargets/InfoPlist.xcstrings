@@ -21,7 +21,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "com.duckduckgo.mobile.ios.vpn.agent.network-extension"
+            "value" : "com.duckduckgo.macos.vpn.network-extension"
           }
         }
       },

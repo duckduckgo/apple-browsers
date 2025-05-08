@@ -204,7 +204,7 @@ final class DuckPlayerViewModel: ObservableObject {
             if newIsLandscape {
                 // Hide toggle in landscape mode
                 showAutoOpenOnYoutubeToggle = false
-            } else if !showAutoOpenOnYoutubeToggle && !autoOpenOnYoutube {
+            } else if !showAutoOpenOnYoutubeToggle {
                 // Restore toggle visibility in portrait mode if it wasn't explicitly hidden
                 // and auto-open is not enabled
                 showAutoOpenOnYoutubeToggle = true
@@ -245,11 +245,6 @@ final class DuckPlayerViewModel: ObservableObject {
     }
 
     // MARK: - Public Methods
-
-    /// Hides the auto-open toggle UI element
-    func hideAutoOpenToggle() {
-        showAutoOpenOnYoutubeToggle = false
-    }
 
     /// Hides the welcome message
     func hideWelcomeMessage() {

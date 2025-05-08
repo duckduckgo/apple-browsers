@@ -43,7 +43,7 @@ final class ConfigurationManager: DefaultConfigurationManager {
     }
 
     static let configurationDebugEvents = EventMapping<ConfigurationDebugEvents> { event, error, _, _ in
-        let domainEvent: DataBrokerProtectionSharedPixels
+        let domainEvent: DataBrokerProtectionMacOSPixels
         switch event {
         case .invalidPayload(let configuration):
             domainEvent = .invalidPayload(configuration)

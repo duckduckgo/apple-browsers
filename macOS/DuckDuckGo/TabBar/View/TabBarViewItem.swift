@@ -557,6 +557,13 @@ final class TabBarViewItem: NSCollectionViewItem {
             if isSelected {
                 isDragged = false
             }
+
+            /// This fixes a bug where the hover state of the non-selected tab
+            /// will be drawn above the selected tab, which messes with the s-shaped
+            /// given that is drawn out of bounds
+            view.wantsLayer = true
+            view.layer?.zPosition = isSelected ? 1 : 0
+
             updateSubviews()
             updateUsedPermissions()
         }

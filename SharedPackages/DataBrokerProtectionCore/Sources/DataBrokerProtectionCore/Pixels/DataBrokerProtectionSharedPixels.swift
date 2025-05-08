@@ -19,7 +19,6 @@
 import Foundation
 import PixelKit
 import Common
-import Configuration
 
 public enum ErrorCategory: Equatable {
     case networkError
@@ -152,11 +151,6 @@ public enum DataBrokerProtectionSharedPixels {
     case initialScanPostLoadingDuration(duration: Double, hasError: Bool, brokerURL: String)
     case initialScanPreStartDuration(duration: Double)
 
-    // Configuration
-    case invalidPayload(Configuration)
-    case errorLoadingCachedConfig(Error)
-    case failedToParsePrivacyConfig(Error)
-
     // Measure success/failure rate of Personal Information Removal Pixels
     // https://app.asana.com/0/1204006570077678/1206889724879222/f
     case globalMetricsWeeklyStats(profilesFound: Int, optOutsInProgress: Int, successfulOptOuts: Int, failedOptOuts: Int, durationOfFirstOptOut: Int, numberOfNewRecordsFound: Int)
@@ -173,38 +167,38 @@ public enum DataBrokerProtectionSharedPixels {
 extension DataBrokerProtectionSharedPixels: PixelKitEvent {
     public var name: String {
         switch self {
-        case .parentChildMatches: return "parent-child-broker-matches"
+        case .parentChildMatches: return "dbp_parent-child-broker-matches"
             // SLO and SLI Pixels: https://app.asana.com/0/1203581873609357/1205337273100857/f
             // Stage Pixels
-        case .optOutStart: return "optout_stage_start"
-        case .optOutEmailGenerate: return "optout_stage_email-generate"
-        case .optOutCaptchaParse: return "optout_stage_captcha-parse"
-        case .optOutCaptchaSend: return "optout_stage_captcha-send"
-        case .optOutCaptchaSolve: return "optout_stage_captcha-solve"
-        case .optOutSubmit: return "optout_stage_submit"
-        case .optOutEmailReceive: return "optout_stage_email-receive"
-        case .optOutEmailConfirm: return "optout_stage_email-confirm"
-        case .optOutValidate: return "optout_stage_validate"
-        case .optOutFinish: return "optout_stage_finish"
-        case .optOutFillForm: return "optout_stage_fill-form"
+        case .optOutStart: return "dbp_optout_stage_start"
+        case .optOutEmailGenerate: return "dbp_optout_stage_email-generate"
+        case .optOutCaptchaParse: return "dbp_optout_stage_captcha-parse"
+        case .optOutCaptchaSend: return "dbp_optout_stage_captcha-send"
+        case .optOutCaptchaSolve: return "dbp_optout_stage_captcha-solve"
+        case .optOutSubmit: return "dbp_optout_stage_submit"
+        case .optOutEmailReceive: return "dbp_optout_stage_email-receive"
+        case .optOutEmailConfirm: return "dbp_optout_stage_email-confirm"
+        case .optOutValidate: return "dbp_optout_stage_validate"
+        case .optOutFinish: return "dbp_optout_stage_finish"
+        case .optOutFillForm: return "dbp_optout_stage_fill-form"
 
             // Process Pixels
-        case .optOutSubmitSuccess: return "optout_process_submit-success"
-        case .optOutSuccess: return "optout_process_success"
-        case .optOutFailure: return "optout_process_failure"
+        case .optOutSubmitSuccess: return "dbp_optout_process_submit-success"
+        case .optOutSuccess: return "dbp_optout_process_success"
+        case .optOutFailure: return "dbp_optout_process_failure"
 
             // Scan/Search pixels: https://app.asana.com/0/1203581873609357/1205337273100855/f
-        case .scanSuccess: return "search_stage_main_status_success"
-        case .scanFailed: return "search_stage_main_status_failure"
-        case .scanError: return "search_stage_main_status_error"
+        case .scanSuccess: return "dbp_search_stage_main_status_success"
+        case .scanFailed: return "dbp_search_stage_main_status_failure"
+        case .scanError: return "dbp_search_stage_main_status_error"
 
             // Debug Pixels
-        case .httpError: return "data_broker_http_error"
-        case .actionFailedError: return "data_broker_action-failed_error"
-        case .otherError: return "data_broker_other_error"
-        case .databaseError: return "data_broker_database_error"
-        case .cocoaError: return "data_broker_cocoa_error"
-        case .miscError: return "data_broker_misc_client_error"
+        case .httpError: return "dbp_data_broker_http_error"
+        case .actionFailedError: return "dbp_data_broker_action-failed_error"
+        case .otherError: return "dbp_data_broker_other_error"
+        case .databaseError: return "dbp_data_broker_database_error"
+        case .cocoaError: return "dbp_data_broker_cocoa_error"
+        case .miscError: return "dbp_data_broker_misc_client_error"
         case .secureVaultInitError: return "dbp_secure_vault_init_error"
         case .secureVaultKeyStoreReadError: return "dbp_secure_vault_keystore_read_error"
         case .secureVaultKeyStoreUpdateError: return "dbp_secure_vault_keystore_update_error"
@@ -242,11 +236,6 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .globalMetricsMonthlyStats: return "dbp_monthly_stats"
         case .dataBrokerMetricsWeeklyStats: return "dbp_databroker_weekly_stats"
         case .dataBrokerMetricsMonthlyStats: return "dbp_databroker_monthly_stats"
-
-            // Configuration
-        case .invalidPayload(let configuration): return "dbp_\(configuration.rawValue)_invalid_payload".lowercased()
-        case .errorLoadingCachedConfig: return "dbp_configuration_error_loading_cached_config"
-        case .failedToParsePrivacyConfig: return "dbp_configuration_failed_to_parse"
 
             // Various monitoring pixels
         case .customDataBrokerStatsOptoutSubmit: return "dbp_databroker_custom_stats_optoutsubmit"
@@ -338,9 +327,7 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                 .secureVaultInitError,
                 .secureVaultKeyStoreReadError,
                 .secureVaultKeyStoreUpdateError,
-                .secureVaultError,
-                .invalidPayload,
-                .failedToParsePrivacyConfig:
+                .secureVaultError:
             return [:]
         case .scanSuccess(let dataBroker, let matchesFound, let duration, let tries, let isImmediateOperation, let vpnConnectionState, let vpnBypassStatus):
             return [Consts.dataBrokerParamKey: dataBroker, Consts.matchesFoundKey: String(matchesFound), Consts.durationParamKey: String(duration), Consts.triesKey: String(tries), Consts.isImmediateOperation: isImmediateOperation.description, Consts.vpnConnectionStateParamKey: vpnConnectionState, Consts.vpnBypassStatusParamKey: vpnBypassStatus]
@@ -391,8 +378,6 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                            Consts.durationOfFirstOptOut: String(durationOfFirstOptOut),
                            Consts.numberOfNewRecordsFound: String(numberOfNewRecordsFound),
                            Consts.numberOfReappereances: String(numberOfReappereances)]
-        case .errorLoadingCachedConfig(let error):
-            return [Consts.errorDomainKey: (error as NSError).domain]
         case .customDataBrokerStatsOptoutSubmit(let dataBrokerName, let optOutSubmitSuccessRate):
             return [Consts.dataBrokerParamKey: dataBrokerName,
                     Consts.optOutSubmitSuccessRate: String(optOutSubmitSuccessRate)]
@@ -443,13 +428,10 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .cocoaError(let error, _),
                     .miscError(let error, _):
                 self.pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
-            case .errorLoadingCachedConfig(let error):
-                self.pixelKit.fire(DebugEvent(event, error: error), withNamePrefix: platform.pixelNamePrefix)
             case .secureVaultInitError(let error),
                     .secureVaultError(let error),
                     .secureVaultKeyStoreReadError(let error),
-                    .secureVaultKeyStoreUpdateError(let error),
-                    .failedToParsePrivacyConfig(let error):
+                    .secureVaultKeyStoreUpdateError(let error):
                 self.pixelKit.fire(DebugEvent(event, error: error), withNamePrefix: platform.pixelNamePrefix)
             case .parentChildMatches,
                     .optOutStart,
@@ -490,7 +472,6 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .globalMetricsMonthlyStats,
                     .dataBrokerMetricsWeeklyStats,
                     .dataBrokerMetricsMonthlyStats,
-                    .invalidPayload,
                     .customDataBrokerStatsOptoutSubmit,
                     .customGlobalStatsOptoutSubmit,
                     .weeklyChildBrokerOrphanedOptOuts:

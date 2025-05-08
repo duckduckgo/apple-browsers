@@ -40,6 +40,7 @@ public class DefaultOperationEventsHandler: EventMapping<OperationEvent> {
         }
     }
 
+    @available(*, unavailable)
     override init(mapping: @escaping EventMapping<OperationEvent>.Mapping) {
         fatalError("Use init()")
     }

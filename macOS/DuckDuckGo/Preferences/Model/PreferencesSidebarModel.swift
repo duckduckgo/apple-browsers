@@ -36,6 +36,7 @@ final class PreferencesSidebarModel: ObservableObject {
     @Published private(set) var selectedPane: PreferencePaneIdentifier = .defaultBrowser
 
     let vpnTunnelIPCClient: VPNControllerXPCClient
+    let subscriptionManager: any SubscriptionAuthV1toV2Bridge
 
     @Published private(set) var currentSubscriptionState: PreferencesSidebarSubscriptionState = .initial
 
@@ -56,11 +57,13 @@ final class PreferencesSidebarModel: ObservableObject {
         tabSwitcherTabs: [Tab.TabContent],
         privacyConfigurationManager: PrivacyConfigurationManaging,
         syncService: DDGSyncing,
-        vpnTunnelIPCClient: VPNControllerXPCClient = .shared
+        vpnTunnelIPCClient: VPNControllerXPCClient = .shared,
+        subscriptionManager: any SubscriptionAuthV1toV2Bridge
     ) {
         self.loadSections = loadSections
         self.tabSwitcherTabs = tabSwitcherTabs
         self.vpnTunnelIPCClient = vpnTunnelIPCClient
+        self.subscriptionManager = subscriptionManager
 
         self.personalInformationRemovalUpdates = personalInformationRemovalSubject.eraseToAnyPublisher()
         self.identityTheftRestorationUpdates = identityTheftRestorationSubject.eraseToAnyPublisher()
@@ -82,7 +85,8 @@ final class PreferencesSidebarModel: ObservableObject {
         vpnGatekeeper: VPNFeatureGatekeeper,
         includeDuckPlayer: Bool,
         includeAIChat: Bool,
-        userDefaults: UserDefaults = .netP
+        userDefaults: UserDefaults = .netP,
+        subscriptionManager: any SubscriptionAuthV1toV2Bridge
     ) {
         let loadSections = { currentSubscriptionFeatures in
             return PreferencesSection.defaultSections(
@@ -96,7 +100,8 @@ final class PreferencesSidebarModel: ObservableObject {
         self.init(loadSections: loadSections,
                   tabSwitcherTabs: tabSwitcherTabs,
                   privacyConfigurationManager: privacyConfigurationManager,
-                  syncService: syncService)
+                  syncService: syncService,
+                  subscriptionManager: subscriptionManager)
     }
 
     public func onAppear() {
@@ -232,7 +237,6 @@ final class PreferencesSidebarModel: ObservableObject {
 
     private func refreshSubscriptionStateAndSectionsIfNeeded() {
         Task { @MainActor in
-            let subscriptionManager = Application.appDelegate.subscriptionAuthV1toV2Bridge
             let currentSubscriptionFeatures = await subscriptionManager.currentSubscriptionFeatures()
             let shouldHideSubscriptionPurchase = subscriptionManager.currentEnvironment.purchasePlatform == .appStore && subscriptionManager.canPurchase == false
 

@@ -27,7 +27,7 @@ final class DecodableHelperTests: XCTestCase {
     func testWhenDecodingDictionary_ThenValueIsReturned() {
         let dictionary = ["name": "dax"]
         let person: Person? = DecodableHelper.decode(from: dictionary)
-        XCTAssertEqual("dax", person?.name)
+        XCTAssertEqual("dax2", person?.name)
     }
 
     func testWhenDecodingAny_ThenValueIsReturned() {

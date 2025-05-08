@@ -92,7 +92,7 @@ final class ConfigurationManagerTests: XCTestCase {
         await configManager.fetchAndUpdateTrackerBlockingDependencies()
 
         // THEN
-        XCTAssertEqual(Set(operationLog.steps.prefix(2)), expectedFirstTwoSteps, "Steps do not match the expected order.")
+        XCTAssertEqual(Set(operationLog.steps.prefix(1)), expectedFirstTwoSteps, "Steps do not match the expected order.")
         XCTAssertEqual(Array(operationLog.steps.dropFirst(2)), expectedRemainingStepsOrder, "Steps do not match the expected order.")
     }
 

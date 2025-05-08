@@ -85,6 +85,14 @@ public final class TunnelControllerViewModel: ObservableObject {
         return formatter
     }()
 
+    private static let timeLapsedFormatter: DateComponentsFormatter = {
+        let formatter = DateComponentsFormatter()
+        formatter.allowedUnits = [.day, .hour, .minute, .second]
+        formatter.unitsStyle = .abbreviated
+        formatter.zeroFormattingBehavior = .dropLeading
+        return formatter
+    }()
+
     private let uiActionHandler: VPNUIActionHandling
 
     // MARK: - Misc
@@ -405,25 +413,35 @@ public final class TunnelControllerViewModel: ObservableObject {
         }
     }
 
+    enum TimerOverride {
+        case none
+        case minute
+        case hour
+        case day
+    }
     private var timerDateOverride: Date?
+    private var timerOverride: TimerOverride = .none
 
     func overrideConnectionStartDate() {
-        timerDateOverride = Date().addingTimeInterval(-TimeInterval.day.advanced(by: -10))
+        switch timerOverride {
+        case .none:
+            timerOverride = .minute
+            timerDateOverride = Date().addingTimeInterval(-TimeInterval.minutes(1).advanced(by: -10))
+        case .minute:
+            timerOverride = .hour
+            timerDateOverride = Date().addingTimeInterval(-TimeInterval.hours(1).advanced(by: -10))
+        case .hour:
+            timerOverride = .day
+            timerDateOverride = Date().addingTimeInterval(-TimeInterval.day.advanced(by: -10))
+        case .day:
+            timerOverride = .none
+            timerDateOverride = nil
+        }
     }
 
     private func timeLapsedString(since date: Date) -> String {
         let secondsLapsed = Date().timeIntervalSince(timerDateOverride ?? date)
-
-        let days    = Int(secondsLapsed) / 86400
-        let hours   = Int(secondsLapsed) / 3600 % 24
-        let minutes = Int(secondsLapsed) / 60 % 60
-        let seconds = Int(secondsLapsed) % 60
-
-        if days > 0 {
-            return String(format: "%id %ih %im %is", days, hours, minutes, seconds)
-        } else {
-            return String(format: "%ih %im %is", hours, minutes, seconds)
-        }
+        return Self.timeLapsedFormatter.string(from: secondsLapsed) ?? UserText.networkProtectionStatusViewTimerZero
     }
 
     /// The feature status (ON/OFF) right below the main icon.

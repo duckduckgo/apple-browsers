@@ -23,12 +23,30 @@ import DataBrokerProtectionCore
 import DataBrokerProtection_iOS
 
 final class DataBrokerProtectionDebugViewController: UITableViewController {
-    private let titles = [
-        Sections.databaseBrowser: "Database Browser",
-    ]
 
     enum Sections: Int, CaseIterable {
+        case database
+
+        var title: String {
+            switch self {
+            case .database:
+                return "Database"
+            }
+        }
+    }
+
+    enum DatabaseRows: Int, CaseIterable {
         case databaseBrowser
+        case saveProfile
+
+        var title: String {
+            switch self {
+            case .databaseBrowser:
+                return "Database Browser"
+            case .saveProfile:
+                return "Save Profile"
+            }
+        }
     }
 
     // MARK: Properties
@@ -47,7 +65,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
 
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         guard let section = Sections(rawValue: section) else { return nil }
-        return titles[section]
+        return section.title
     }
 
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -59,8 +77,9 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
 
         switch Sections(rawValue: indexPath.section) {
 
-        case .databaseBrowser:
-            configure(cell, forDebugFeatureAtRow: indexPath.row)
+        case .database:
+            let row = DatabaseRows(rawValue: indexPath.row)
+            cell.textLabel?.text = row?.title
 
         case .none:
             break
@@ -71,7 +90,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch Sections(rawValue: section) {
-        case .databaseBrowser: return 1
+        case .database: return DatabaseRows.allCases.count
         case .none: return 0
 
         }
@@ -79,8 +98,8 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         switch Sections(rawValue: indexPath.section) {
-        case .databaseBrowser:
-            didSelectDatabaseBrowser(at: indexPath)
+        case .database:
+            didSelectDatabase(at: indexPath)
         case .none:
             break
         }
@@ -88,22 +107,24 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         tableView.deselectRow(at: indexPath, animated: true)
     }
 
-    private func configure(_ cell: UITableViewCell, forDebugFeatureAtRow row: Int) {
-        switch row {
-        case 0:
-            cell.textLabel?.text = "Database browser"
-        default:
-            break
-        }
-    }
-
-    private func didSelectDatabaseBrowser(at indexPath: IndexPath) {
+    private func didSelectDatabase(at indexPath: IndexPath) {
         guard let dbpManager = DataBrokerProtectionIOSManager.shared else {
             assertionFailure("DataBrokerProtectionIOSManager not initialized")
             return
         }
-        let dbBrowser = DebugDatabaseBrowserViewController(database: dbpManager.dataManager.database)
 
-        self.navigationController?.pushViewController(dbBrowser, animated: true)
+        switch DatabaseRows(rawValue: indexPath.row) {
+        case .databaseBrowser:
+            let dbBrowser = DebugDatabaseBrowserViewController(database: dbpManager.database)
+            self.navigationController?.pushViewController(dbBrowser, animated: true)
+
+        case .saveProfile:
+            let saveProfileViewController = DebugSaveProfileViewController(database: dbpManager.database)
+            self.navigationController?.pushViewController(saveProfileViewController, animated: true)
+
+
+        case .none:
+            return
+        }
     }
 }

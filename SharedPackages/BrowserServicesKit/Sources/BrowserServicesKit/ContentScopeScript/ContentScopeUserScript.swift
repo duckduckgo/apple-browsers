@@ -220,7 +220,7 @@ extension ContentScopeUserScript: WKScriptMessageHandlerWithReply {
     public func userContentController(_ userContentController: WKUserContentController,
                                       didReceive message: WKScriptMessage) async -> (Any?, String?) {
         propagateDebugFlag(message)
-        // Don't propagate the message for ContentScopeScript non isolated context
+        // Don't propagate the message for ContentScopeScript non isolated context, unless it's for DuckPlayerNative
         if message.name == MessageName.contentScopeScripts.rawValue {
             guard let dict = message.messageBody as? [String: Any],
                   let featureName = dict["featureName"] as? String,

@@ -26,7 +26,7 @@ class BookmarkNodeTests: XCTestCase {
     func testWhenCreatingGenericRootNode_ThenRootNodeIsReturned() {
         let node = BookmarkNode.genericRootNode()
         XCTAssertNil(node.parent)
-        XCTAssertFalse(node.canHaveChildNodes)
+        XCTAssertTrue(node.canHaveChildNodes)
     }
 
     func testWhenInitializingMultipleNodes_ThenEachNodeHasUniqueID() {

@@ -119,7 +119,7 @@ final class UserScripts: UserScriptsProvider {
             } else {
                 if duckPlayerNativeUserScript == nil {
                     duckPlayerNativeUserScript = DuckPlayerNativeUserScript(duckPlayer: duckPlayer)
-                    duckPlayerNativeUserScript.map { contentScopeUserScriptIsolated.registerSubfeature(delegate: $0) }
+                    duckPlayerNativeUserScript.map { contentScopeUserScript.registerSubfeature(delegate: $0) }
                 }
             }
         }

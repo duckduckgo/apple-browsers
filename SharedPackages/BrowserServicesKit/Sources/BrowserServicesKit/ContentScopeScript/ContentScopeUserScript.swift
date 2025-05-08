@@ -222,7 +222,12 @@ extension ContentScopeUserScript: WKScriptMessageHandlerWithReply {
         propagateDebugFlag(message)
         // Don't propagate the message for ContentScopeScript non isolated context
         if message.name == MessageName.contentScopeScripts.rawValue {
-            return (nil, nil)
+            guard let dict = message.messageBody as? [String: Any],
+                  let featureName = dict["featureName"] as? String,
+                  featureName == "duckPlayerNative"
+            else {
+                return (nil, nil)
+            }
         }
         // Propagate the message for ContentScopeScriptIsolated and other context like "dbpui"
         let action = broker.messageHandlerFor(message)

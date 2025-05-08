@@ -120,7 +120,7 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
         privacyConfigurationManager.reload(etag: configStore.loadEtag(for: .privacyConfiguration), data: configStore.loadData(for: .privacyConfiguration))
 
         let authenticationManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(subscriptionManager: subscriptionManager)
-        
+
         manager = DataBrokerProtectionAgentManagerProvider.agentManager(
             authenticationManager: authenticationManager,
             configurationManager: configurationManager,

@@ -1,0 +1,66 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "letsmove.alert.message" : {
+      "comment" : "Message of the alert shown if the app is launched not from the /Applications folder – suggesting to move it there",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "The DuckDuckGo app needs to be in the Applications folder for some features to work properly."
+          }
+        }
+      }
+    },
+    "letsmove.alert.title" : {
+      "comment" : "Title of the alert shown if the app is launched not from the /Applications folder – suggesting to move it there",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You‘re almost there"
+          }
+        }
+      }
+    },
+    "letsmove.could.not.move" : {
+      "comment" : "Error message when moving the app to the /Applications folder failed",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Could not move to Applications folder"
+          }
+        }
+      }
+    },
+    "letsmove.dont.move.button" : {
+      "comment" : "Do Not Move to the /Applications folder button title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Do Not Move"
+          }
+        }
+      }
+    },
+    "letsmove.move.button" : {
+      "comment" : "Move the /Applications folder button title",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Move to Applications Folder"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

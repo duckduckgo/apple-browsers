@@ -1981,6 +1981,7 @@
 		7B2DDCFB2A93B25F0039D884 /* KeychainType+ClientDefault.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BD3AF5C2A8E7AF1006F9F56 /* KeychainType+ClientDefault.swift */; };
 		7B2E36602D6DEFBB00A08CB7 /* NetworkExtension.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 4B4D603E2A0B290200BCD287 /* NetworkExtension.framework */; };
 		7B2E52252A5FEC09000C6D39 /* NetworkProtectionAgentNotificationsPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B2E52242A5FEC09000C6D39 /* NetworkProtectionAgentNotificationsPresenter.swift */; };
+		7B307A752DCCE19100A07FB0 /* AppStore.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 7B307A712DCCE16200A07FB0 /* AppStore.xcstrings */; };
 		7B31FD8C2AD125620086AA24 /* NetworkProtectionIPC in Frameworks */ = {isa = PBXBuildFile; productRef = 7B31FD8B2AD125620086AA24 /* NetworkProtectionIPC */; };
 		7B3618C22ADE75C8000D6154 /* NetworkProtectionNavBarPopoverManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B3618C12ADE75C8000D6154 /* NetworkProtectionNavBarPopoverManager.swift */; };
 		7B3A16422D4B7A9600D4C869 /* AppInfoRetriever in Frameworks */ = {isa = PBXBuildFile; productRef = 7B3A16412D4B7A9600D4C869 /* AppInfoRetriever */; };
@@ -2133,6 +2134,7 @@
 		7BDBAD232CBFF97E000379B7 /* TipKitDebugOptionsUIActionHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BDBAD132CBFF633000379B7 /* TipKitDebugOptionsUIActionHandling.swift */; };
 		7BE146072A6A83C700C313B8 /* NetworkProtectionDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE146062A6A83C700C313B8 /* NetworkProtectionDebugMenu.swift */; };
 		7BE146082A6A83C700C313B8 /* NetworkProtectionDebugMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE146062A6A83C700C313B8 /* NetworkProtectionDebugMenu.swift */; };
+		7BE2073A2DCCC4230037394C /* DeveloperID.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 7BE207382DCCC4230037394C /* DeveloperID.xcstrings */; };
 		7BE33DCD2DC12C4E00A96502 /* WebExtensionNavigationBarUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE33DCC2DC12C0300A96502 /* WebExtensionNavigationBarUpdater.swift */; };
 		7BEB70772DB0F44E00B42176 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 7BEB70762DB0F44E00B42176 /* InfoPlist.xcstrings */; };
 		7BEB70782DB0F44E00B42176 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 7BEB70762DB0F44E00B42176 /* InfoPlist.xcstrings */; };
@@ -4522,6 +4524,7 @@
 		7B2E365F2D6DEFBB00A08CB7 /* com.duckduckgo.mobile.ios.vpn.agent.network-extension.debug.systemextension */ = {isa = PBXFileReference; explicitFileType = "wrapper.system-extension"; includeInIndex = 0; path = "com.duckduckgo.mobile.ios.vpn.agent.network-extension.debug.systemextension"; sourceTree = BUILT_PRODUCTS_DIR; };
 		7B2E36722D6DF04000A08CB7 /* DuckDuckGoVPNSysexAppStore.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = DuckDuckGoVPNSysexAppStore.xcconfig; sourceTree = "<group>"; };
 		7B2E52242A5FEC09000C6D39 /* NetworkProtectionAgentNotificationsPresenter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NetworkProtectionAgentNotificationsPresenter.swift; sourceTree = "<group>"; };
+		7B307A712DCCE16200A07FB0 /* AppStore.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = AppStore.xcstrings; sourceTree = "<group>"; };
 		7B3618C12ADE75C8000D6154 /* NetworkProtectionNavBarPopoverManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionNavBarPopoverManager.swift; sourceTree = "<group>"; };
 		7B3A16402D4B798000D4C869 /* AppInfoRetriever */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = AppInfoRetriever; sourceTree = "<group>"; };
 		7B430EA02A71411A00BAC4A1 /* NetworkProtectionSimulateFailureMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionSimulateFailureMenu.swift; sourceTree = "<group>"; };
@@ -4587,6 +4590,7 @@
 		7BDBAD122CBFF633000379B7 /* TipKitController+ConvenienceInitializers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "TipKitController+ConvenienceInitializers.swift"; sourceTree = "<group>"; };
 		7BDBAD132CBFF633000379B7 /* TipKitDebugOptionsUIActionHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TipKitDebugOptionsUIActionHandling.swift; sourceTree = "<group>"; };
 		7BE146062A6A83C700C313B8 /* NetworkProtectionDebugMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionDebugMenu.swift; sourceTree = "<group>"; };
+		7BE207382DCCC4230037394C /* DeveloperID.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = DeveloperID.xcstrings; sourceTree = "<group>"; };
 		7BE33DCC2DC12C0300A96502 /* WebExtensionNavigationBarUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebExtensionNavigationBarUpdater.swift; sourceTree = "<group>"; };
 		7BEB70762DB0F44E00B42176 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; name = InfoPlist.xcstrings; path = DuckDuckGo/NetworkProtection/NetworkExtensionTargets/NetworkExtensionAndNotificationTargets/InfoPlist.xcstrings; sourceTree = SOURCE_ROOT; };
 		7BEC182D2AD5D89C00D30536 /* SystemExtensionManager */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = SystemExtensionManager; sourceTree = "<group>"; };
@@ -7931,6 +7935,16 @@
 			path = TipKit;
 			sourceTree = "<group>";
 		};
+		7BE207372DCCC3EF0037394C /* Localization */ = {
+			isa = PBXGroup;
+			children = (
+				7B307A712DCCE16200A07FB0 /* AppStore.xcstrings */,
+				7BE207382DCCC4230037394C /* DeveloperID.xcstrings */,
+				B658BAB52B0F845D00D1F2C7 /* Localizable.xcstrings */,
+			);
+			path = Localization;
+			sourceTree = "<group>";
+		};
 		84524C052D79E6A100F723D6 /* Fire */ = {
 			isa = PBXGroup;
 			children = (
@@ -8654,7 +8668,7 @@
 				56CEE9092B7A66C500CF10AA /* Info.plist */,
 				56CEE90D2B7A6DE100CF10AA /* InfoPlist.xcstrings */,
 				1D36E651298A84F600AA485D /* InternalUserDecider */,
-				B658BAB52B0F845D00D1F2C7 /* Localizable.xcstrings */,
+				7BE207372DCCC3EF0037394C /* Localization */,
 				9D03F5A22AA74829001A50E8 /* LoginItems */,
 				AA585DB02490E6FA00E9A3E2 /* MainWindow */,
 				CDE248A22C821FD500F9399D /* MaliciousSiteProtection */,
@@ -11410,6 +11424,7 @@
 				37EE56022D5F197300D53C7C /* dark-shield.json in Resources */,
 				37EE56032D5F197300D53C7C /* dark-shield-dot.json in Resources */,
 				567311292D71DDDB002DAF62 /* scamFilterSet.json in Resources */,
+				7B307A752DCCE19100A07FB0 /* AppStore.xcstrings in Resources */,
 				5673112A2D71DDDB002DAF62 /* scamHashPrefixes.json in Resources */,
 				37EE56042D5F197300D53C7C /* dark-shield-dot-mouse-over.json in Resources */,
 				BB0DA4D52DB1630000AB9C29 /* shield-gray-dot-hover.json in Resources */,
@@ -11639,6 +11654,7 @@
 				37EE55DE2D5F197300D53C7C /* dark-trackers-2.json in Resources */,
 				37EE55DF2D5F197300D53C7C /* dark-trackers-3.json in Resources */,
 				37EE55E02D5F197300D53C7C /* flame-mouse-over.json in Resources */,
+				7BE2073A2DCCC4230037394C /* DeveloperID.xcstrings in Resources */,
 				37EE55E12D5F197300D53C7C /* shield.json in Resources */,
 				37EE55E22D5F197300D53C7C /* shield-dot.json in Resources */,
 				37EE55E32D5F197300D53C7C /* shield-dot-mouse-over.json in Resources */,
@@ -15553,6 +15569,11 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 378B58CD295ECA75002C0CC0 /* DuckDuckGo.xcconfig */;
 			buildSettings = {
+				LOCALIZED_STRING_MACRO_NAMES = (
+					NSLocalizedString,
+					CFCopyLocalizedString,
+					"\" NSLocalizedStringWithDefaultValue\"",
+				);
 			};
 			name = CI;
 		};
@@ -15929,6 +15950,11 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 378B58CD295ECA75002C0CC0 /* DuckDuckGo.xcconfig */;
 			buildSettings = {
+				LOCALIZED_STRING_MACRO_NAMES = (
+					NSLocalizedString,
+					CFCopyLocalizedString,
+					"\" NSLocalizedStringWithDefaultValue\"",
+				);
 			};
 			name = Debug;
 		};
@@ -15936,6 +15962,11 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 378B58CD295ECA75002C0CC0 /* DuckDuckGo.xcconfig */;
 			buildSettings = {
+				LOCALIZED_STRING_MACRO_NAMES = (
+					NSLocalizedString,
+					CFCopyLocalizedString,
+					"\" NSLocalizedStringWithDefaultValue\"",
+				);
 			};
 			name = Release;
 		};
@@ -15964,6 +15995,11 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 378B58CD295ECA75002C0CC0 /* DuckDuckGo.xcconfig */;
 			buildSettings = {
+				LOCALIZED_STRING_MACRO_NAMES = (
+					NSLocalizedString,
+					CFCopyLocalizedString,
+					"\" NSLocalizedStringWithDefaultValue\"",
+				);
 			};
 			name = Review;
 		};

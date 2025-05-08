@@ -1048,8 +1048,10 @@ extension TabBarViewController: NSCollectionViewDelegateFlowLayout {
     func collectionView(_ collectionView: NSCollectionView, layout collectionViewLayout: NSCollectionViewLayout, insetForSectionAt section: Int) -> NSEdgeInsets {
         if visualStyle.tabStyleProvider.shouldShowSShapedTab {
             return NSEdgeInsets(top: 0, left: 12, bottom: 0, right: 0)
+        } else if let flowLayout = collectionViewLayout as? NSCollectionViewFlowLayout {
+            return flowLayout.sectionInset
         } else {
-            return NSEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
+            return NSEdgeInsetsZero
         }
     }
 }

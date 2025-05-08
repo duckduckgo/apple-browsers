@@ -803,7 +803,7 @@ final class MainMenu: NSMenu {
         menu.addItem(autofillDebugScriptMenuItem
             .targetting(self))
         menu.addItem(.separator())
-        let exportLogsMenuItem = NSMenuItem(title: "Export Logs…", action: #selector(exportLogs), target: self)
+        let exportLogsMenuItem = NSMenuItem(title: "Export Logs…", action: #selector(MainViewController.exportLogs))
         menu.addItem(exportLogsMenuItem)
 
         self.loggingMenu = menu
@@ -851,10 +851,6 @@ final class MainMenu: NSMenu {
         AutofillPreferences().debugScriptEnabled = !AutofillPreferences().debugScriptEnabled
         NotificationCenter.default.post(name: .autofillScriptDebugSettingsDidChange, object: nil)
         updateAutofillDebugScriptMenuItem()
-    }
-
-    @objc private func exportLogs(_ sender: NSMenuItem) {
-        LogExporter.export()
     }
 }
 

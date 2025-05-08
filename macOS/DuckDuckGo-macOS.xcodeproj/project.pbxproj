@@ -3437,6 +3437,10 @@
 		F17114832C7C98FB009836C1 /* Logger+Favicons.swift in Sources */ = {isa = PBXBuildFile; fileRef = F17114812C7C98FB009836C1 /* Logger+Favicons.swift */; };
 		F17114852C7C9D28009836C1 /* Logger+Fire.swift in Sources */ = {isa = PBXBuildFile; fileRef = F17114842C7C9D28009836C1 /* Logger+Fire.swift */; };
 		F17114862C7C9D28009836C1 /* Logger+Fire.swift in Sources */ = {isa = PBXBuildFile; fileRef = F17114842C7C9D28009836C1 /* Logger+Fire.swift */; };
+		F17E63322DCCD8310072B3BC /* LogExporterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F17E63312DCCD8310072B3BC /* LogExporterView.swift */; };
+		F17E63332DCCD8310072B3BC /* LogExporterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F17E63312DCCD8310072B3BC /* LogExporterView.swift */; };
+		F17E63352DCCDB150072B3BC /* MainViewController+LogExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F17E63342DCCDB150072B3BC /* MainViewController+LogExporter.swift */; };
+		F17E63362DCCDB150072B3BC /* MainViewController+LogExporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F17E63342DCCDB150072B3BC /* MainViewController+LogExporter.swift */; };
 		F17E7DDC2C7C7F8100907A84 /* Logger+DBPBackgroundAgent.swift in Sources */ = {isa = PBXBuildFile; fileRef = F17E7DDB2C7C7F8100907A84 /* Logger+DBPBackgroundAgent.swift */; };
 		F17E7DDE2C7C83E500907A84 /* Logger+FileDownload.swift in Sources */ = {isa = PBXBuildFile; fileRef = F17E7DDD2C7C83E500907A84 /* Logger+FileDownload.swift */; };
 		F17E7DDF2C7C83E500907A84 /* Logger+FileDownload.swift in Sources */ = {isa = PBXBuildFile; fileRef = F17E7DDD2C7C83E500907A84 /* Logger+FileDownload.swift */; };
@@ -5385,6 +5389,8 @@
 		F1664A672D708EC60034CCB8 /* SubscriptionPagesUseSubscriptionFeatureV2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPagesUseSubscriptionFeatureV2.swift; sourceTree = "<group>"; };
 		F17114812C7C98FB009836C1 /* Logger+Favicons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+Favicons.swift"; sourceTree = "<group>"; };
 		F17114842C7C9D28009836C1 /* Logger+Fire.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+Fire.swift"; sourceTree = "<group>"; };
+		F17E63312DCCD8310072B3BC /* LogExporterView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LogExporterView.swift; sourceTree = "<group>"; };
+		F17E63342DCCDB150072B3BC /* MainViewController+LogExporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MainViewController+LogExporter.swift"; sourceTree = "<group>"; };
 		F17E7DDB2C7C7F8100907A84 /* Logger+DBPBackgroundAgent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+DBPBackgroundAgent.swift"; sourceTree = "<group>"; };
 		F17E7DDD2C7C83E500907A84 /* Logger+FileDownload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+FileDownload.swift"; sourceTree = "<group>"; };
 		F188267B2BBEB3AA00D9AC4F /* GeneralPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeneralPixel.swift; sourceTree = "<group>"; };
@@ -10564,6 +10570,8 @@
 			isa = PBXGroup;
 			children = (
 				F1A2E11D2DCB9FB00086F538 /* LogExporter.swift */,
+				F17E63312DCCD8310072B3BC /* LogExporterView.swift */,
+				F17E63342DCCDB150072B3BC /* MainViewController+LogExporter.swift */,
 			);
 			path = LogExporter;
 			sourceTree = "<group>";
@@ -12625,6 +12633,7 @@
 				379857F12D721DA0008773F6 /* HistoryViewOnboardingView.swift in Sources */,
 				3706FBBA293F65D500E42796 /* Cryptography.swift in Sources */,
 				3706FBBC293F65D500E42796 /* NSViewExtension.swift in Sources */,
+				F17E63362DCCDB150072B3BC /* MainViewController+LogExporter.swift in Sources */,
 				3706FBBE293F65D500E42796 /* DownloadListViewModel.swift in Sources */,
 				3706FBBF293F65D500E42796 /* BookmarkManagementDetailViewController.swift in Sources */,
 				7BB4BC642C5BC13D00E06FC8 /* ActiveSiteInfoPublisher.swift in Sources */,
@@ -12751,6 +12760,7 @@
 				B6080BC62B21E78100B418EF /* DataImportErrorView.swift in Sources */,
 				3706FC01293F65D500E42796 /* ChromiumBookmarksReader.swift in Sources */,
 				BBC7BDAD2D5BB0890037A4AE /* BannerView.swift in Sources */,
+				F17E63332DCCD8310072B3BC /* LogExporterView.swift in Sources */,
 				379857FF2D725672008773F6 /* OpenMultipleTabsWarningDialog.swift in Sources */,
 				3706FC02293F65D500E42796 /* Downloads.xcdatamodeld in Sources */,
 				37FC2A192CF903080048E226 /* MockPrivacyStats.swift in Sources */,
@@ -14189,6 +14199,7 @@
 				37D23785287F4E6500BCE03B /* PinnedTabsHostingView.swift in Sources */,
 				4BB99CFE26FE191E001E4761 /* FirefoxBookmarksReader.swift in Sources */,
 				F1DA518C2BF607D200CF29FA /* SubscriptionRedirectManager.swift in Sources */,
+				F17E63352DCCDB150072B3BC /* MainViewController+LogExporter.swift in Sources */,
 				4BBC16A227C485BC00E00A38 /* DeviceIdleStateDetector.swift in Sources */,
 				319FCFF32CC81D54004F9288 /* AIChatRemoteSettings.swift in Sources */,
 				84CE00172DAE41F100852AA2 /* ResizablePreviewView.swift in Sources */,
@@ -14799,6 +14810,7 @@
 				1D2DC0072901679C008083A1 /* BWError.swift in Sources */,
 				853014D625E671A000FB8205 /* PageObserverUserScript.swift in Sources */,
 				B677FC4F2B06376B0099EB04 /* ReportFeedbackView.swift in Sources */,
+				F17E63322DCCD8310072B3BC /* LogExporterView.swift in Sources */,
 				B642738227B65BAC0005DFD1 /* SecureVaultReporter.swift in Sources */,
 				9F9C4A012BC7F36D0099738D /* BookmarkAllTabsDialogCoordinatorViewModel.swift in Sources */,
 				4B139AFD26B60BD800894F82 /* NSImageExtensions.swift in Sources */,

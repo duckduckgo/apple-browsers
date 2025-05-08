@@ -28,69 +28,47 @@ struct LogExporter {
         var destinationFileName: String
     }
 
-    static func export() {
+    static func export(configuration: LogExporterConfiguration) async throws {
         Logger.general.log("Exporting logs...")
 
-        let allDDG = LogFilter(
-            predicate: NSPredicate(format: "process CONTAINS[c] %@", "duckduckgo"),
-            destinationFileName: "duckduckgo.log"
-        )
+        var filters = [LogFilter]()
 
-        let sparkle = LogFilter(
-            predicate: NSPredicate(format: """
+        if configuration.includeAllDDG {
+            filters.append(
+                LogFilter(predicate: NSPredicate(format: "process CONTAINS[c] %@", "duckduckgo"),
+                          destinationFileName: "duckduckgo.log"
+                         ))
+        }
+
+        if configuration.includeSparkle {
+            filters.append(
+                LogFilter(predicate: NSPredicate(format: """
                 (process == "org.sparkle-project.Sparkle" OR processImagePath CONTAINS[c] "Sparkle") \
                 OR (subsystem == "Updates") OR (process == "Autoupdate")
             """),
-            destinationFileName: "updater.log"
-        )
-
-        let vpnExtensionKit = LogFilter(
-            predicate: NSPredicate(format: "subsystem == %@ AND category == %@", "com.apple.extensionkit", "NSExtension"),
-            destinationFileName: "extensionkit_nsextension.log"
-        )
-
-        let vpnNetworkExtension = LogFilter(
-            predicate: NSPredicate(format: "subsystem == %@", "com.apple.networkextension"),
-            destinationFileName: "networkextension.log"
-        )
-
-        let networkProtection = LogFilter(
-            predicate: NSPredicate(format: "subsystem == %@", "Network protection"),
-            destinationFileName: "network_protection.log"
-        )
-
-        let alert = NSAlert()
-        alert.messageText = "Exporting logs on your Desktop..."
-
-        Task {
-            Task { @MainActor in
-                if let window = NSApp.mainWindow {
-                    alert.beginSheetModal(for: window)
-                }
-            }
-
-            do {
-                try await exportFilteredLogsToDesktop(
-                    minutesBack: 5,
-                    logFilters: [
-                        allDDG,
-                        sparkle,
-                        vpnExtensionKit,
-                        vpnNetworkExtension,
-                        networkProtection
-                    ]
-                )
-                Task { @MainActor in
-                    alert.window.orderOut(nil)
-                }
-            } catch {
-                Logger.general.error("Failed to export logs: \(error.localizedDescription)")
-                Task { @MainActor in
-                    alert.window.orderOut(nil)
-                    NSAlert(error: error).runModal()
-                }
-            }
+                          destinationFileName: "updater.log"
+                ))
         }
+
+        if configuration.includeNetworkProtection {
+            filters.append(
+                LogFilter(predicate: NSPredicate(format: "subsystem == %@ AND category == %@", "com.apple.extensionkit", "NSExtension"),
+                          destinationFileName: "extensionkit_nsextension.log"
+                         ))
+            filters.append(
+                LogFilter(
+                    predicate: NSPredicate(format: "subsystem == %@", "com.apple.networkextension"),
+                    destinationFileName: "networkextension.log"
+                ))
+
+            filters.append(
+                LogFilter(
+                    predicate: NSPredicate(format: "subsystem == %@", "Network protection"),
+                    destinationFileName: "network_protection.log"
+                ))
+        }
+
+        try await exportFilteredLogsToDesktop(minutesBack: configuration.timeInterval, logFilters: filters)
     }
 
     static func exportFilteredLogsToDesktop(minutesBack: Int, logFilters: [LogFilter]) async throws {

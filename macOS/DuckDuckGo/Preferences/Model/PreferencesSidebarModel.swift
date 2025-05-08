@@ -34,7 +34,7 @@ final class PreferencesSidebarModel: ObservableObject {
     @Published private(set) var sections: [PreferencesSection] = []
     @Published var selectedTabIndex: Int = 0
     @Published private(set) var selectedPane: PreferencePaneIdentifier = .defaultBrowser
-    private let vpnGatekeeper: VPNFeatureGatekeeper
+
     let vpnTunnelIPCClient: VPNControllerXPCClient
 
     @Published private(set) var currentSubscriptionState: PreferencesSidebarSubscriptionState = .initial
@@ -56,12 +56,10 @@ final class PreferencesSidebarModel: ObservableObject {
         tabSwitcherTabs: [Tab.TabContent],
         privacyConfigurationManager: PrivacyConfigurationManaging,
         syncService: DDGSyncing,
-        vpnGatekeeper: VPNFeatureGatekeeper = DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge),
         vpnTunnelIPCClient: VPNControllerXPCClient = .shared
     ) {
         self.loadSections = loadSections
         self.tabSwitcherTabs = tabSwitcherTabs
-        self.vpnGatekeeper = vpnGatekeeper
         self.vpnTunnelIPCClient = vpnTunnelIPCClient
 
         self.personalInformationRemovalUpdates = personalInformationRemovalSubject.eraseToAnyPublisher()
@@ -74,8 +72,6 @@ final class PreferencesSidebarModel: ObservableObject {
         subscribeToFeatureFlagChanges(syncService: syncService,
                                       privacyConfigurationManager: privacyConfigurationManager)
         subscribeToSubscriptionChanges()
-
-        setupVPNPaneVisibility()
     }
 
     @MainActor
@@ -89,12 +85,9 @@ final class PreferencesSidebarModel: ObservableObject {
         userDefaults: UserDefaults = .netP
     ) {
         let loadSections = { currentSubscriptionFeatures in
-            let includingVPN = vpnGatekeeper.isInstalled
-
             return PreferencesSection.defaultSections(
                 includingDuckPlayer: includeDuckPlayer,
                 includingSync: syncService.featureFlags.contains(.userInterface),
-                includingVPN: includingVPN,
                 includingAIChat: includeAIChat,
                 subscriptionState: currentSubscriptionFeatures
             )
@@ -103,8 +96,7 @@ final class PreferencesSidebarModel: ObservableObject {
         self.init(loadSections: loadSections,
                   tabSwitcherTabs: tabSwitcherTabs,
                   privacyConfigurationManager: privacyConfigurationManager,
-                  syncService: syncService,
-                  vpnGatekeeper: vpnGatekeeper)
+                  syncService: syncService)
     }
 
     public func onAppear() {
@@ -137,17 +129,6 @@ final class PreferencesSidebarModel: ObservableObject {
             .sink { [weak self] _ in
                 guard let self else { return }
                 self.refreshSubscriptionStateAndSectionsIfNeeded()
-            }
-            .store(in: &cancellables)
-    }
-
-    private func setupVPNPaneVisibility() {
-        vpnGatekeeper.onboardStatusPublisher
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                guard let self else { return }
-
-                self.refreshSections()
             }
             .store(in: &cancellables)
     }

@@ -29,7 +29,6 @@ struct PreferencesSection: Hashable, Identifiable {
     @MainActor
     static func defaultSections(includingDuckPlayer: Bool,
                                 includingSync: Bool,
-                                includingVPN: Bool,
                                 includingAIChat: Bool,
                                 subscriptionState: PreferencesSidebarSubscriptionState) -> [PreferencesSection] {
         let privacyPanes: [PreferencePaneIdentifier] = [
@@ -79,7 +78,7 @@ struct PreferencesSection: Hashable, Identifiable {
             var subscriptionPanes: [PreferencePaneIdentifier] = []
 
             if let currentSubscriptionFeatures = subscriptionState.subscriptionFeatures {
-                if currentSubscriptionFeatures.contains(.networkProtection) { //  && includingVPN {
+                if currentSubscriptionFeatures.contains(.networkProtection) {
                     subscriptionPanes.append(.vpn)
                 }
                 if currentSubscriptionFeatures.contains(.dataBrokerProtection) {

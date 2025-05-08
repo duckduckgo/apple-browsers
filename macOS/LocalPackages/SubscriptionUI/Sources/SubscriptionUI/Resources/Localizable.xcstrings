@@ -4271,6 +4271,18 @@
         }
       }
     },
+    "subscription.preferences.subscription.settings.section.title" : {
+      "comment" : "Title for the subscription preferences settings section",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Subscription Settings"
+          }
+        }
+      }
+    },
     "subscription.preferences.subscription.settings.subscribed" : {
       "comment" : "Title for the status indicator informing that user is currently subscribed",
       "extractionState" : "extracted_with_value",
@@ -4284,7 +4296,7 @@
       }
     },
     "subscription.preferences.subscription.settings.title" : {
-      "comment" : "Title for the subscription preferences settings section\nTitle of the preferences pane for subscription settings",
+      "comment" : "Title of the preferences pane for subscription settings",
       "extractionState" : "extracted_with_value",
       "localizations" : {
         "de" : {

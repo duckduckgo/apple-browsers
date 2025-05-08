@@ -25,10 +25,13 @@ public enum SubscriptionManagerError: Error, Equatable, LocalizedError {
     case tokenUnavailable(error: Error?)
     case confirmationHasInvalidSubscription
     case noProductsFound
+    case tokenRefreshFailed(error: Error?)
 
     public static func == (lhs: SubscriptionManagerError, rhs: SubscriptionManagerError) -> Bool {
         switch (lhs, rhs) {
         case (.tokenUnavailable(let lhsError), .tokenUnavailable(let rhsError)):
+            return lhsError?.localizedDescription == rhsError?.localizedDescription
+        case (.tokenRefreshFailed(let lhsError), .tokenRefreshFailed(let rhsError)):
             return lhsError?.localizedDescription == rhsError?.localizedDescription
         case (.confirmationHasInvalidSubscription, .confirmationHasInvalidSubscription),
             (.noProductsFound, .noProductsFound):
@@ -46,6 +49,8 @@ public enum SubscriptionManagerError: Error, Equatable, LocalizedError {
             "Confirmation has an invalid subscription"
         case .noProductsFound:
             "No products found"
+        case .tokenRefreshFailed(error: let error):
+            "Token is not refreshable: \(String(describing: error))"
         }
     }
 }

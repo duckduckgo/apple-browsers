@@ -217,6 +217,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         }
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     public func getTokens(policy: AuthTokensCachePolicy) async throws -> TokenContainer {
         let localTokenContainer = tokenStorage.tokenContainer
 
@@ -283,16 +284,19 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         case .createIfNeeded:
             do {
                 return try await getTokens(policy: .localValid)
-            } catch {
+            } catch OAuthClientError.missingTokens {
                 Logger.OAuthClient.log("Local token not found, creating a new account")
                 do {
                     let tokens = try await createAccount()
                     tokenStorage.tokenContainer = tokens
                     return tokens
                 } catch {
-                    Logger.OAuthClient.fault("Failed to create account: \(error, privacy: .public)")
+                    Logger.OAuthClient.fault("Failed to create account: \(error.localizedDescription, privacy: .public)")
                     throw error
                 }
+            } catch {
+                Logger.OAuthClient.error("Failed to create account: \(error.localizedDescription, privacy: .public)")
+                throw error
             }
         }
     }

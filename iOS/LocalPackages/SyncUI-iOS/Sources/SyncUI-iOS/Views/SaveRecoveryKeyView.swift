@@ -125,10 +125,10 @@ public struct SaveRecoveryKeyView: View {
             Text(UserText.saveRecoveryCodeSheetFooter)
                 .daxCaption()
                 .multilineTextAlignment(.center)
-                .foregroundColor(.primary.opacity(0.6))
         }
         .padding(.top, isCompact ? 0 : 56)
         .padding(.horizontal, 30)
+        .foregroundStyle(Color(designSystemColor: .textPrimary))
     }
 
     @ViewBuilder
@@ -152,6 +152,7 @@ public struct SaveRecoveryKeyView: View {
         } foregroundContent: {
             nextButton()
         }
+        .background(Color(designSystemColor: .background))
     }
 
 }

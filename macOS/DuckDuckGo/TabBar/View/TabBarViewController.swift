@@ -291,10 +291,6 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         subscribeToPinnedTabsViewModelOutputs()
         subscribeToPinnedTabsViewModelInputs()
         subscribeToPinnedTabsHostingView()
-
-        pinnedTabsContainerView.wantsLayer = true
-        pinnedTabsContainerView.layer?.masksToBounds = false
-        pinnedTabsHostingView?.layer?.masksToBounds = false
     }
 
     private func layoutPinnedTabsView() {

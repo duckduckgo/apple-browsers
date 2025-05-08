@@ -27,7 +27,7 @@ import Cocoa
  and size are fully configurable. It is typically added as a subview to the tab cell view and is only
  visible for selected (active) tabs when the S-shaped style is enabled.
 
- The logic and parameters are kept consistent with the SwiftUI `SwiftUIRampView` for maintainability.
+ The logic and parameters are kept consistent with the SwiftUI `PinnedTabRampView` for maintainability.
  */
 final class RampView: NSView {
 

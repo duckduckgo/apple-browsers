@@ -1,5 +1,5 @@
 //
-//  SwiftUIRampView.swift
+//  PinnedTabRampView.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -18,11 +18,11 @@
 import SwiftUI
 
 /**
- `SwiftUIRampView` and its supporting `RampShape` are used to render the distinctive S-shaped corners
+ `PinnedTabRampView` and its supporting `RampShape` are used to render the distinctive S-shaped corners
  for pinned tabs in the tab bar. This visual effect is achieved by drawing a quarter-circle "ramp"
  on either side of the tab, which visually connects the tab to the tab bar background in a smooth, modern way.
 
- The `SwiftUIRampView` can be horizontally flipped to support both left and right corners, and its color
+ The `PinnedTabRampView` can be horizontally flipped to support both left and right corners, and its color
  and size are fully configurable. This view is typically used inside a `ZStack` alongside the main tab
  content, and is only visible for selected (active) pinned tabs when the S-shaped style is enabled.
 
@@ -50,7 +50,7 @@ struct RampShape: Shape {
     }
 }
 
-struct SwiftUIRampView: View {
+struct PinnedTabRampView: View {
     let rampWidth: CGFloat
     let rampHeight: CGFloat
     let isFlippedHorizontally: Bool

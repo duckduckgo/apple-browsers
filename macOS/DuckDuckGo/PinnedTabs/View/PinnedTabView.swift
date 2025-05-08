@@ -258,12 +258,12 @@ struct PinnedTabInnerView: View {
                 .aspectRatio(contentMode: .fit)
 
             if isSelected && showSShaped {
-                SwiftUIRampView(rampWidth: rampSize,
+                PinnedTabRampView(rampWidth: rampSize,
                                 rampHeight: rampSize,
                                 foregroundColor: .navigationBackgroundColorNew)
                 .position(x: 2, y: height - (rampSize / 2))
 
-                SwiftUIRampView(rampWidth: rampSize,
+                PinnedTabRampView(rampWidth: rampSize,
                                 rampHeight: rampSize,
                                 isFlippedHorizontally: true,
                                 foregroundColor: .navigationBackgroundColorNew)

@@ -84,43 +84,6 @@ protocol TabBarViewItemDelegate: AnyObject {
     @MainActor func tabBarViewItemDidUpdateCrashInfoPopoverVisibility(_: TabBarViewItem, sender: NSButton, shouldShow: Bool)
 }
 
-final class RampView: NSView {
-
-    var rampWidth: CGFloat = 12.0
-    var rampHeight: CGFloat = 12.0
-    var isFlippedHorizontally: Bool = false
-
-    override func draw(_ dirtyRect: NSRect) {
-        super.draw(dirtyRect)
-
-        guard let context = NSGraphicsContext.current?.cgContext else { return }
-
-        context.saveGState()
-        if isFlippedHorizontally {
-            context.translateBy(x: bounds.width, y: 0)
-            context.scaleBy(x: -1, y: 1)
-        }
-
-        NSColor.navigationBackgroundColorNew.setFill()
-
-        let path = NSBezierPath()
-        path.move(to: NSPoint(x: rampWidth, y: 0))
-        path.line(to: NSPoint(x: 0, y: 0))
-        path.appendArc(
-            withCenter: NSPoint(x: rampWidth, y: rampHeight),
-            radius: rampWidth,
-            startAngle: 180,
-            endAngle: 270,
-            clockwise: false
-        )
-
-        path.close()
-        path.fill()
-
-        context.restoreGState()
-    }
-}
-
 final class TabBarItemCellView: NSView {
 
     enum WidthStage {

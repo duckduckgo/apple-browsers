@@ -293,10 +293,6 @@ hasAnyEntitlement: \(hasAnyEntitlement)
             }
         } catch {
             Logger.subscription.error("Error getting subscription: \(error, privacy: .public)")
-            Task { @MainActor in
-                subscriptionPlatform = .unknown
-                subscriptionStatus = .unknown
-            }
         }
     }
 

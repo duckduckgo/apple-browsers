@@ -240,7 +240,7 @@ jobs:
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: macos-unittests.xml
+        name: macos-${{ matrix.flavor }}-unittests.xml
         path: macOS/${{ matrix.flavor }}*.xml
         retention-days: 7
 

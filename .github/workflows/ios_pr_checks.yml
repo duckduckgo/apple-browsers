@@ -130,7 +130,7 @@ jobs:
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: unittests.xml
+        name: ios-unittests.xml
         path: |
           iOS/unittests.xml
         retention-days: 7

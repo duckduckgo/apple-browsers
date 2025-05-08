@@ -55,23 +55,6 @@ extension Preferences {
                 }
                 .padding(.bottom, 12)
 
-                if model.showLegacyExclusionsFeature {
-                    // SECTION: Excluded Sites
-
-                    PreferencePaneSection(UserText.vpnExcludedSitesTitle, spacing: 4) {
-                        Text(UserText.vpnExcludedDomainsDescription)
-                            .foregroundColor(.secondary)
-                            .padding(.bottom, 18)
-
-                        PreferencePaneSubSection {
-                            Button(UserText.vpnExcludedDomainsManageButtonTitle) {
-                                model.manageExcludedSites()
-                            }
-                        }
-                    }
-                    .padding(.bottom, 12)
-                }
-
                 // SECTION: General
 
                 PreferencePaneSection(UserText.vpnGeneralTitle) {
@@ -112,7 +95,7 @@ extension Preferences {
                 }
                 .padding(.bottom, 12)
 
-                if model.showNewExclusionsFeature {
+                if model.showExclusionsFeature {
                     // SECTION: Exclusions
 
                     PreferencePaneSection {

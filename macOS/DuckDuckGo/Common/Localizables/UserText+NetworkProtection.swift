@@ -261,10 +261,6 @@ extension UserText {
 
     // MARK: - Excluded Domains
 
-    static let vpnExcludedDomainsDescription = NSLocalizedString("vpn.setting.excluded.domains.description", value: "Excluded websites will bypass the VPN.", comment: "Excluded Sites description")
-
-    static let vpnExcludedDomainsManageButtonTitle = NSLocalizedString("vpn.setting.excluded.domains.manage.button.title", value: "Manage Excluded Websites…", comment: "Excluded Sites management button title")
-
     static let vpnExcludedDomainsAddDomain = NSLocalizedString("vpn.excluded.domains.add.domain", value: "Add Website", comment: "Add Domain button for the excluded sites view")
 
     static let vpnExcludedDomainsTitle = NSLocalizedString("vpn.excluded.domains.title", value: "Excluded Websites", comment: "Title for the excluded sites view")

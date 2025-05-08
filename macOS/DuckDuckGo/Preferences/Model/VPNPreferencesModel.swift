@@ -69,32 +69,18 @@ final class VPNPreferencesModel: ObservableObject {
         }
     }
 
-    private var isAppExclusionsFeatureEnabled: Bool {
-        featureFlagger.isFeatureOn(.networkProtectionAppExclusions)
-    }
-
     var isRiskySitesProtectionFeatureEnabled: Bool {
         featureFlagger.isFeatureOn(.networkProtectionRiskyDomainsProtection)
     }
 
-    private var isExclusionsFeatureAvailableInBuild: Bool {
+    /// Whether new app exclusions should be shown
+    ///
+    var showExclusionsFeature: Bool {
 #if APPSTORE
         vpnAppState.isUsingSystemExtension
 #else
         true
 #endif
-    }
-
-    /// Whether legacy app exclusions should be shown
-    ///
-    var showLegacyExclusionsFeature: Bool {
-        isExclusionsFeatureAvailableInBuild && !isAppExclusionsFeatureEnabled
-    }
-
-    /// Whether new app exclusions should be shown
-    ///
-    var showNewExclusionsFeature: Bool {
-        isExclusionsFeatureAvailableInBuild && isAppExclusionsFeatureEnabled
     }
 
     @Published

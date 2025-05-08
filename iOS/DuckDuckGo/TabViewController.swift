@@ -572,6 +572,7 @@ class TabViewController: UIViewController {
         duckPlayerNavigationHandler.updateDuckPlayerForWebViewAppearance(self)
         
         updateRoundedCorners()
+        fireWebViewDebugPixels()
     }
 
     override func buildActivities() -> [UIActivity] {
@@ -617,6 +618,21 @@ class TabViewController: UIViewController {
         if ExperimentalThemingManager().isRoundedCornersTreatmentEnabled {
             webViewContainer.clipsToBounds = true
             webViewContainer.layer.cornerRadius = isPortrait ? 12 : 0
+        }
+    }
+
+    private func fireWebViewDebugPixels() {
+        if !webView.isDescendant(of: view) {
+            DailyPixel.fireDailyAndCount(pixel: .debugWebViewNotInVisibleTabHierarchy)
+        }
+        if webView.window == nil {
+            DailyPixel.fireDailyAndCount(pixel: .debugWebViewNotAttachedToWindow)
+        }
+        if webView.isHidden {
+            DailyPixel.fireDailyAndCount(pixel: .debugWebViewInVisibleTabHidden)
+        }
+        if webView.frame == .zero {
+            DailyPixel.fireDailyAndCount(pixel: .debugWebViewHasZeroFrameSize)
         }
     }
 
@@ -765,7 +781,7 @@ class TabViewController: UIViewController {
             doLoad()
         }
     }
-    
+
     public func executeBookmarklet(url: URL) {
         if let js = url.toDecodedBookmarklet() {
             webView.evaluateJavaScript(js)

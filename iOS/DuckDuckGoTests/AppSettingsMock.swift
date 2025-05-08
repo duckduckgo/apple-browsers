@@ -108,6 +108,8 @@ class AppSettingsMock: AppSettings {
     var duckPlayerNativeUIPrimingModalPresentationEventCount: Int = 0
     var duckPlayerNativeUIPrimingModalLastPresentationTime: Int = 0
     var duckPlayerPillDismissCount: Int = 0
+    var duckPlayerWelcomeMessageShown: Bool = false
     var duckPlayerVariant: DuckDuckGo.DuckPlayerVariant = .classicWeb
+    var duckPlayerPrimingMessagePresented: Bool = false
 
 }

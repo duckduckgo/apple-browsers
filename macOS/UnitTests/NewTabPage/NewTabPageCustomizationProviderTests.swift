@@ -46,7 +46,8 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
                 self.openFilePanelCalls += 1
                 return nil
             },
-            showAddImageFailedAlert: {}
+            showAddImageFailedAlert: {},
+            visualStyle: VisualStyle.legacy
         )
 
         provider = NewTabPageCustomizationProvider(customizationModel: customizationModel, appearancePreferences: appearancePreferences)
@@ -118,7 +119,8 @@ final class NewTabPageCustomizationProviderTests: XCTestCase {
                 background: .solidColor("color05"),
                 theme: .light,
                 userColor: .init(hex: "#123abc"),
-                userImages: userBackgroundImagesManager.availableImages.map(NewTabPageDataModel.UserImage.init)
+                userImages: userBackgroundImagesManager.availableImages.map(NewTabPageDataModel.UserImage.init),
+                defaultStyles: .init(lightBackgroundColor: "#FAFAFA", darkBackgroundColor: "#333333")
             )
         )
     }

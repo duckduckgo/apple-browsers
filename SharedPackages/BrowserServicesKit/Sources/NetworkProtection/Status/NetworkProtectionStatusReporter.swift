@@ -30,8 +30,6 @@ public protocol NetworkProtectionStatusReporter {
     var controllerErrorMessageObserver: ControllerErrorMesssageObserver { get }
     var dataVolumeObserver: DataVolumeObserver { get }
     var knownFailureObserver: KnownFailureObserver { get }
-
-    func forceRefresh()
 }
 
 /// Convenience struct used to relay server info updates through a reporter.
@@ -92,20 +90,6 @@ public final class DefaultNetworkProtectionStatusReporter: NetworkProtectionStat
         self.dataVolumeObserver = dataVolumeObserver
         self.knownFailureObserver = knownFailureObserver
         self.distributedNotificationCenter = distributedNotificationCenter
-
-        start()
-    }
-
-    // MARK: - Starting & Stopping
-
-    private func start() {
-        forceRefresh()
-    }
-
-    // MARK: - Forcing Refreshes
-
-    public func forceRefresh() {
-        distributedNotificationCenter.post(.requestStatusUpdate)
     }
 }
 

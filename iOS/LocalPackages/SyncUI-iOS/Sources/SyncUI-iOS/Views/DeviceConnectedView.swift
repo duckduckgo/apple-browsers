@@ -43,6 +43,7 @@ public struct DeviceConnectedView: View {
             }
             .padding(.horizontal, 20)
             .padding(.top, 56)
+            .foregroundStyle(Color(designSystemColor: .textPrimary))
         } foregroundContent: {
             VStack {
                 Button {
@@ -69,6 +70,7 @@ public struct DeviceConnectedView: View {
             .padding(.horizontal, 30)
         }
         .padding(.bottom)
+        .background(Color(designSystemColor: .background))
     }
 
     public var body: some View {

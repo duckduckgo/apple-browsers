@@ -27,6 +27,7 @@ import Subscription
 import UserNotifications
 import DataBrokerProtectionCore
 import WebKit
+import BackgroundTasks
 
 public class DefaultOperationEventsHandler: EventMapping<OperationEvent> {
 
@@ -138,6 +139,7 @@ public class DataBrokerProtectionIOSManagerProvider {
         return DataBrokerProtectionIOSManager(
             queueManager: queueManager,
             operationDependencies: operationDependencies,
+            authenticationManager: authenticationManager,
             sharedPixelsHandler: sharedPixelsHandler,
             privacyConfigManager: privacyConfigurationManager,
             dataManager: dataManager
@@ -151,6 +153,7 @@ public final class DataBrokerProtectionIOSManager {
 
     private let queueManager: DataBrokerProtectionQueueManager
     private let operationDependencies: DataBrokerOperationDependencies
+    private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>
     private let privacyConfigManager: PrivacyConfigurationManaging
     public let dataManager: DataBrokerProtectionDataManager
@@ -160,20 +163,115 @@ public final class DataBrokerProtectionIOSManager {
 
     init(queueManager: DataBrokerProtectionQueueManager,
          operationDependencies: DataBrokerOperationDependencies,
+         authenticationManager: DataBrokerProtectionAuthenticationManaging,
          sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>,
          privacyConfigManager: PrivacyConfigurationManaging,
          dataManager: DataBrokerProtectionDataManager
     ) {
         self.queueManager = queueManager
         self.operationDependencies = operationDependencies
+        self.authenticationManager = authenticationManager
         self.sharedPixelsHandler = sharedPixelsHandler
         self.privacyConfigManager = privacyConfigManager
+
         self.dataManager = dataManager
+
+        registerBackgroundTaskHandler()
+
+#if DEBUG || ALPHA
+        self.communicationLayer = DBPUICommunicationLayer(webURLSettings:
+                                                            DataBrokerProtectionWebUIURLSettings(UserDefaults.standard),
+                                                          privacyConfig: privacyConfigManager)
+
+        let cache = dataManager.cache
+        communicationLayer.delegate = cache
+
+        let year = Calendar(identifier: .gregorian).component(.year, from: Date())
+        let birthYear = year - 58
+        let profile = DataBrokerProtectionProfile(names: [.init(firstName: "Steve", lastName: "Smith")],
+                                                  addresses: [.init(city: "Dallas", state: "TX")],
+                                                  phones: [],
+                                                  birthYear: birthYear)
+        cache.profile = profile
+        Task { @MainActor in
+            _ = try await communicationLayer.saveProfile(params: [], original: WKScriptMessage())
+        }
+#endif
     }
 
-    public func start() {
+    private func registerBackgroundTaskHandler() {
+        BGTaskScheduler.shared.register(forTaskWithIdentifier: "com.duckduckgo.app.dbp.backgroundProcessing", using: nil) { task in
+            self.handleBGProcessingTask(task: task)
+        }
+    }
+
+    public func startAllOperations() {
         queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, operationDependencies: operationDependencies, errorHandler: nil) { [self] in
             queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, operationDependencies: operationDependencies, errorHandler: nil, completion: nil)
+        }
+    }
+
+    public func scheduleBGProcessingTask() {
+        Task {
+            guard await validateRunPrerequisites() else {
+                Logger.dataBrokerProtection.log("Prerequisites are invalid during scheduling of background task")
+                return
+            }
+            
+            let request = BGProcessingTaskRequest(identifier: "com.duckduckgo.app.dbp.backgroundProcessing")
+            request.requiresNetworkConnectivity = true
+            
+#if !targetEnvironment(simulator)
+            do {
+                try BGTaskScheduler.shared.submit(request)
+                Logger.dataBrokerProtection.log("Scheduling background task successful")
+            } catch {
+                Logger.dataBrokerProtection.log("Scheduling background task failed with error: \(error)")
+            }
+#endif
+        }
+    }
+
+    func handleBGProcessingTask(task: BGTask) {
+        Logger.dataBrokerProtection.log("Background task started")
+        let startTime = Date.now
+
+        task.expirationHandler = {
+            let timeTaken = Date.now.timeIntervalSince(startTime)
+            self.scheduleBGProcessingTask()
+            Logger.dataBrokerProtection.log("Background task expired with time taken: \(timeTaken)")
+            task.setTaskCompleted(success: false)
+        }
+
+        Task {
+            guard await validateRunPrerequisites() else {
+                Logger.dataBrokerProtection.log("Prerequisites are invalid during background task")
+                task.setTaskCompleted(success: false)
+                return
+            }
+            queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, operationDependencies: operationDependencies, errorHandler: nil) {
+                Logger.dataBrokerProtection.log("All operations completed in background task")
+                task.setTaskCompleted(success: true)
+            }
+        }
+    }
+
+    private func validateRunPrerequisites() async -> Bool {
+
+        do {
+            let hasProfile = try dataManager.fetchProfile() != nil
+            let isAuthenticated = authenticationManager.isUserAuthenticated
+
+            if !hasProfile || !isAuthenticated {
+                Logger.dataBrokerProtection.log("Prerequisites are invalid")
+                return false
+            }
+
+            let hasValidEntitlement = try await authenticationManager.hasValidEntitlement()
+            return hasValidEntitlement
+        } catch {
+            Logger.dataBrokerProtection.error("Error validating prerequisites, error: \(error.localizedDescription, privacy: .public)")
+            return false
         }
     }
 }

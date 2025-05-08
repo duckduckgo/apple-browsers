@@ -68,6 +68,8 @@ struct Launching: LaunchingHandling {
         // This approach aims to optimize performance and ensure critical functionalities are ready ASAP
 
         let autofillService = AutofillService()
+
+        let dbpService = DBPService(appDependencies: AppDependencyProvider.shared)
         let configurationService = RemoteConfigurationService()
         let crashCollectionService = CrashCollectionService()
         let statisticsService = StatisticsService()
@@ -126,6 +128,7 @@ struct Launching: LaunchingHandling {
                                authenticationService: authenticationService,
                                syncService: syncService,
                                vpnService: vpnService,
+                               dbpService: dbpService,
                                autofillService: autofillService,
                                remoteMessagingService: remoteMessagingService,
                                configurationService: configurationService,

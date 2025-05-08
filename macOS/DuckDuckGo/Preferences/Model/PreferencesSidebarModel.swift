@@ -140,7 +140,8 @@ final class PreferencesSidebarModel: ObservableObject {
         case .personalInformationRemoval:
             currentSubscriptionState.userEntitlements.contains(.dataBrokerProtection)
         case .identityTheftRestoration:
-            currentSubscriptionState.userEntitlements.contains(.identityTheftRestoration)
+            currentSubscriptionState.userEntitlements.contains(.identityTheftRestoration) ||
+            currentSubscriptionState.userEntitlements.contains(.identityTheftRestorationGlobal)
         default:
             true
         }

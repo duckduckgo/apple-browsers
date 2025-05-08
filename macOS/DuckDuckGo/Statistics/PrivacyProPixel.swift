@@ -72,7 +72,6 @@ enum PrivacyProPixel: PixelKitEventV2 {
     case privacyProInvalidRefreshTokenDetected(AuthV2PixelHandler.Source)
     case privacyProInvalidRefreshTokenSignedOut
     case privacyProInvalidRefreshTokenRecovered
-    case privacyProAuthV2MigrationStarted(AuthV2PixelHandler.Source)
     case privacyProAuthV2MigrationFailed(AuthV2PixelHandler.Source, Error)
     case privacyProAuthV2MigrationSucceeded(AuthV2PixelHandler.Source)
     case privacyProAuthV2GetTokensError(AuthTokensCachePolicy, AuthV2PixelHandler.Source, Error)
@@ -120,7 +119,6 @@ enum PrivacyProPixel: PixelKitEventV2 {
         case .privacyProInvalidRefreshTokenDetected: return "m_mac_\(appDistribution)_privacy-pro_auth_invalid_refresh_token_detected"
         case .privacyProInvalidRefreshTokenSignedOut: return "m_mac_\(appDistribution)_privacy-pro_auth_invalid_refresh_token_signed_out"
         case .privacyProInvalidRefreshTokenRecovered: return "m_mac_\(appDistribution)_privacy-pro_auth_invalid_refresh_token_recovered"
-        case .privacyProAuthV2MigrationStarted: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_migration_started"
         case .privacyProAuthV2MigrationFailed: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_migration_failure"
         case .privacyProAuthV2MigrationSucceeded: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_migration_success"
         case .privacyProAuthV2GetTokensError: return "m_mac_\(appDistribution)_privacy-pro_auth_v2_get_tokens_error"
@@ -140,7 +138,6 @@ enum PrivacyProPixel: PixelKitEventV2 {
     var parameters: [String: String]? {
         switch self {
         case .privacyProInvalidRefreshTokenDetected(let source),
-                .privacyProAuthV2MigrationStarted(let source),
                 .privacyProAuthV2MigrationSucceeded(let source):
             return [PrivacyProPixelsDefaults.sourceKey: source.description]
         case .privacyProAuthV2GetTokensError(let policy, let source, let error):
@@ -158,7 +155,10 @@ enum PrivacyProPixel: PixelKitEventV2 {
 
 enum PrivacyProErrorPixel: PixelKitEventV2 {
 
-    case privacyProKeychainAccessError(accessType: AccountKeychainAccessType, accessError: any Error)
+    case privacyProKeychainAccessError(accessType: AccountKeychainAccessType,
+                                       accessError: AccountKeychainAccessError,
+                                       source: KeychainErrorSource,
+                                       authVersion: KeychainErrorAuthVersion )
 
     var name: String {
         switch self {
@@ -168,10 +168,12 @@ enum PrivacyProErrorPixel: PixelKitEventV2 {
 
     var parameters: [String: String]? {
         switch self {
-        case .privacyProKeychainAccessError(let accessType, let accessError):
+        case .privacyProKeychainAccessError(let accessType, let accessError, let source, let authVersion):
             return [
-                "type": accessType.rawValue,
-                "error": accessError.localizedDescription
+                "access_type": accessType.rawValue,
+                "error": accessError.errorDescription,
+                "source": source.rawValue,
+                "authVersion": authVersion.rawValue
             ]
         }
     }

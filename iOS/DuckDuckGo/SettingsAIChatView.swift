@@ -61,7 +61,8 @@ struct SettingsAIChatView: View {
                                      displayMode: .inline,
                                      viewModel: viewModel)
         .onAppear {
-            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsDisplayed)
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsDisplayed,
+                                         withAdditionalParameters: viewModel.featureDiscovery.addToParams([:], forFeature: .aiChat))
         }
     }
 }

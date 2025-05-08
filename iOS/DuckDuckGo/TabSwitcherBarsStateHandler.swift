@@ -38,7 +38,7 @@ class TabSwitcherBarsStateHandler {
     private(set) var topBarLeftButtonItems = [UIBarButtonItem]()
     private(set) var topBarRightButtonItems = [UIBarButtonItem]()
 
-    private(set) var interfaceMode: TabSwitcherViewController.InterfaceMode = .singleSelectNormal
+    private(set) var interfaceMode: TabSwitcherViewController.InterfaceMode = .regularSize
     private(set) var selectedTabsCount: Int = 0
     private(set) var totalTabsCount: Int = 0
     private(set) var containsWebPages = false
@@ -83,20 +83,27 @@ class TabSwitcherBarsStateHandler {
 
     func updateBottomBar() {
         switch interfaceMode {
-        case .singleSelectNormal,
-                .multiSelectAvailableNormal:
+        case .regularSize:
+
             bottomBarItems = [
-                doneButton,
-                UIBarButtonItem.flexibleSpace(),
+                tabSwitcherStyleButton,
+
+                .flexibleSpace(),
+                .fixedSpace(11),
+                .flexibleSpace(),
+
                 fireButton,
-                UIBarButtonItem.flexibleSpace(),
-                showAIChatButton ? duckChatButton : nil,
-                showAIChatButton ? UIBarButtonItem.fixedSpace(24) : nil,
+
+                .flexibleSpace(),
+                showAIChatButton ? duckChatButton : .fixedSpace(34),
+                .flexibleSpace(),
+
                 plusButton,
             ].compactMap { $0 }
+
             isBottomBarHidden = false
 
-        case .multiSelectEditingNormal:
+        case .editingRegularSize:
             bottomBarItems = [
                 closeTabsButton,
                 UIBarButtonItem.flexibleSpace(),
@@ -104,9 +111,8 @@ class TabSwitcherBarsStateHandler {
             ]
             isBottomBarHidden = false
 
-        case .multiSelectedEditingLarge,
-                .multiSelectAvailableLarge,
-                .singleSelectLarge:
+        case .editingLargeSize,
+                .largeSize:
             bottomBarItems = []
             isBottomBarHidden = true
         }
@@ -115,34 +121,24 @@ class TabSwitcherBarsStateHandler {
     func updateTopLeftButtons() {
 
         switch interfaceMode {
-        case .singleSelectNormal:
-            topBarLeftButtonItems = [
-                addAllBookmarksButton,
-            ]
 
-        case .singleSelectLarge:
+        case .regularSize:
             topBarLeftButtonItems = [
-                addAllBookmarksButton,
-                tabSwitcherStyleButton,
-            ]
+                canShowEditButton ? editButton : nil,
+            ].compactMap { $0 }
 
-        case .multiSelectAvailableNormal:
-            topBarLeftButtonItems = [
-                tabSwitcherStyleButton,
-            ]
-
-        case .multiSelectAvailableLarge:
+        case .largeSize:
             topBarLeftButtonItems = [
                 canShowEditButton ? editButton : nil,
                 tabSwitcherStyleButton,
             ].compactMap { $0 }
 
-        case .multiSelectEditingNormal:
+        case .editingRegularSize:
             topBarLeftButtonItems = [
-                selectedTabsCount == totalTabsCount ? deselectAllButton : selectAllButton,
+                doneButton
             ]
 
-        case .multiSelectedEditingLarge:
+        case .editingLargeSize:
             topBarLeftButtonItems = [
                 doneButton,
             ]
@@ -153,12 +149,8 @@ class TabSwitcherBarsStateHandler {
     func updateTopRightButtons() {
 
         switch interfaceMode {
-        case .singleSelectNormal:
-            topBarRightButtonItems = [
-                tabSwitcherStyleButton,
-            ].compactMap { $0 }
 
-        case .singleSelectLarge, .multiSelectAvailableLarge:
+        case .largeSize:
             topBarRightButtonItems = [
                 doneButton,
                 fireButton,
@@ -166,17 +158,17 @@ class TabSwitcherBarsStateHandler {
                 showAIChatButton ? duckChatButton : nil,
             ].compactMap { $0 }
 
-        case .multiSelectAvailableNormal:
+        case .regularSize:
             topBarRightButtonItems = [
-                canShowEditButton ? editButton : nil,
-            ].compactMap { $0 }
-
-        case .multiSelectEditingNormal:
-            topBarRightButtonItems = [
-                doneButton,
+                doneButton
             ]
 
-        case .multiSelectedEditingLarge:
+        case .editingRegularSize:
+            topBarRightButtonItems = [
+                selectedTabsCount == totalTabsCount ? deselectAllButton : selectAllButton,
+            ]
+
+        case .editingLargeSize:
             topBarRightButtonItems = [
                 menuButton,
             ]

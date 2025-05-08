@@ -255,7 +255,9 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        Pixel.fire(pixel: .settingsSyncOpen)
+        Pixel.fire(pixel: .settingsSyncOpen, withAdditionalParameters: [
+            "is_enabled": isSyncEnabled ? "1" : "0"
+        ])
     }
 
     func updateOptions() {
@@ -499,11 +501,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         mapDevices(registeredDevices)
         Pixel.fire(pixel: .syncLogin, includedParameters: [.appVersion])
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            if isRecovery {
-                self.dismissPresentedViewController()
-            } else {
-                self.dismissVCAndShowRecoveryPDF()
-            }
+            self.dismissVCAndShowRecoveryPDF()
         }
     }
     
@@ -525,15 +523,7 @@ extension SyncSettingsViewController {
         let theme = ThemeManager.shared.currentTheme
         view.backgroundColor = theme.backgroundColor
 
-        navigationController?.navigationBar.barTintColor = theme.barBackgroundColor
-        navigationController?.navigationBar.tintColor = theme.navigationBarTintColor
-
-        let appearance = UINavigationBarAppearance()
-        appearance.shadowColor = .clear
-        appearance.backgroundColor = theme.backgroundColor
-
-        navigationController?.navigationBar.standardAppearance = appearance
-        navigationController?.navigationBar.scrollEdgeAppearance = appearance
+        decorateNavigationBar()
 
     }
 

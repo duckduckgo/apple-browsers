@@ -48,7 +48,7 @@ final class AddressBarViewController: NSViewController {
 
     @IBOutlet var addressBarTextField: AddressBarTextField!
     @IBOutlet var passiveTextField: NSTextField!
-    @IBOutlet var inactiveBackgroundView: NSView!
+    @IBOutlet var inactiveBackgroundView: ColorView!
     @IBOutlet var activeBackgroundView: ColorView!
     @IBOutlet var activeOuterBorderView: ColorView!
     @IBOutlet var activeBackgroundViewWithSuggestions: ColorView!
@@ -73,7 +73,7 @@ final class AddressBarViewController: NSViewController {
     private let suggestionContainerViewModel: SuggestionContainerViewModel
     private let isBurner: Bool
     private let onboardingPixelReporter: OnboardingAddressBarReporting
-    private let visualStyleManager: VisualStyleManagerProviding
+    private let visualStyle: VisualStyleProviding
 
     private var aiChatSettings: AIChatPreferencesStorage
 
@@ -127,11 +127,11 @@ final class AddressBarViewController: NSViewController {
         self.suggestionContainerViewModel = SuggestionContainerViewModel(
             isHomePage: tabViewModel?.tab.content == .newtab,
             isBurner: burnerMode.isBurner,
-            suggestionContainer: SuggestionContainer(burnerMode: burnerMode, isUrlIgnored: { _ in false }))
+            suggestionContainer: SuggestionContainer(burnerMode: burnerMode, isUrlIgnored: { _ in false }), visualStyle: visualStyleManager.style)
         self.isBurner = burnerMode.isBurner
         self.onboardingPixelReporter = onboardingPixelReporter
         self.aiChatSettings = aiChatSettings
-        self.visualStyleManager = visualStyleManager
+        self.visualStyle = visualStyleManager.style
 
         super.init(coder: coder)
     }
@@ -152,7 +152,7 @@ final class AddressBarViewController: NSViewController {
         view.wantsLayer = true
         view.layer?.masksToBounds = false
 
-        addressBarTextField.placeholderString = UserText.addressBarPlaceholder
+        setupAddressBarPlaceHolder()
         addressBarTextField.setAccessibilityIdentifier("AddressBarViewController.addressBarTextField")
 
         switchToTabBox.isHidden = true
@@ -163,6 +163,12 @@ final class AddressBarViewController: NSViewController {
         activeTextFieldMinXConstraint.isActive = false
         addressBarTextField.tabCollectionViewModel = tabCollectionViewModel
         addressBarTextField.onboardingDelegate = onboardingPixelReporter
+
+        // allow dropping text to inactive address bar
+        inactiveBackgroundView.registerForDraggedTypes( [.string] )
+
+        // disallow dragging window by the background view
+        activeBackgroundView.interceptClickEvents = true
     }
 
     override func viewWillAppear() {
@@ -395,20 +401,34 @@ final class AddressBarViewController: NSViewController {
 
     private func updateView() {
         let isPassiveTextFieldHidden = isFirstResponder || mode.isEditing
-        addressBarTextField.alphaValue = isPassiveTextFieldHidden ? 1 : 0
-        passiveTextField.alphaValue = isPassiveTextFieldHidden ? 0 : 1
+        addressBarTextField.isHidden = isPassiveTextFieldHidden ? false : true
+        passiveTextField.isHidden = isPassiveTextFieldHidden ? true : false
+        passiveTextField.textColor = visualStyle.textPrimaryColor
 
         updateShadowViewPresence(isFirstResponder)
+        inactiveBackgroundView.backgroundColor = visualStyle.backgroundTertiaryColor
         inactiveBackgroundView.alphaValue = isFirstResponder ? 0 : 1
         activeBackgroundView.alphaValue = isFirstResponder ? 1 : 0
 
         let isKey = self.view.window?.isKeyWindow == true
 
-        activeOuterBorderView.alphaValue = isKey && isFirstResponder && visualStyleManager.style.shouldShowOutlineBorder(isHomePage: isHomePage) ? 1 : 0
-        activeOuterBorderView.backgroundColor = accentColor.withAlphaComponent(0.2)
-        activeBackgroundView.borderColor = accentColor.withAlphaComponent(0.8)
+        activeOuterBorderView.alphaValue = isKey && isFirstResponder && visualStyle.shouldShowOutlineBorder(isHomePage: isHomePage) ? 1 : 0
+        activeOuterBorderView.backgroundColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.2) : visualStyle.accentAlternateColor
+        activeBackgroundView.borderColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.2) : visualStyle.accentPrimaryColor
 
-        addressBarTextField.placeholderString = tabViewModel?.tab.content == .newtab ? UserText.addressBarPlaceholder : ""
+        setupAddressBarPlaceHolder()
+    }
+
+    private func setupAddressBarPlaceHolder() {
+        let isNewTab = tabViewModel?.tab.content == .newtab
+        let addressBarPlaceholder = isNewTab ? UserText.addressBarPlaceholder : ""
+
+        let font = NSFont.systemFont(ofSize: isNewTab ? visualStyle.newTabOrHomePageAddressBarFontSize : visualStyle.defaultAddressBarFontSize, weight: .regular)
+        let attributes: [NSAttributedString.Key: Any] = [
+            .foregroundColor: visualStyle.textSecondaryColor,
+            .font: font
+        ]
+        addressBarTextField.placeholderAttributedString = NSAttributedString(string: addressBarPlaceholder, attributes: attributes)
     }
 
     private func updateSwitchToTabBoxAppearance() {
@@ -481,20 +501,21 @@ final class AddressBarViewController: NSViewController {
         self.addressBarButtonsViewController?.updateButtons()
 
         guard let window = view.window, AppVersion.runType != .unitTests else { return }
+        let navigationBarBackgroundColor = visualStyle.navigationBackgroundColor
 
         NSAppearance.withAppAppearance {
             if window.isKeyWindow {
                 activeBackgroundView.borderWidth = 2.0
                 activeBackgroundView.borderColor = accentColor.withAlphaComponent(0.6)
                 activeBackgroundView.backgroundColor = NSColor.addressBarBackground
-                switchToTabBox.backgroundColor = NSColor.navigationBarBackground.blended(with: .addressBarBackground)
+                switchToTabBox.backgroundColor = navigationBarBackgroundColor.blended(with: .addressBarBackground)
 
-                activeOuterBorderView.isHidden = !visualStyleManager.style.shouldShowOutlineBorder(isHomePage: isHomePage)
+                activeOuterBorderView.isHidden = !visualStyle.shouldShowOutlineBorder(isHomePage: isHomePage)
             } else {
                 activeBackgroundView.borderWidth = 0
                 activeBackgroundView.borderColor = nil
                 activeBackgroundView.backgroundColor = NSColor.inactiveSearchBarBackground
-                switchToTabBox.backgroundColor = NSColor.navigationBarBackground.blended(with: .inactiveSearchBarBackground)
+                switchToTabBox.backgroundColor = navigationBarBackgroundColor.blended(with: .inactiveSearchBarBackground)
 
                 activeOuterBorderView.isHidden = true
             }
@@ -562,6 +583,10 @@ final class AddressBarViewController: NSViewController {
     func mouseDown(with event: NSEvent) -> NSEvent? {
         self.clickPoint = nil
         guard let window = self.view.window, event.window === window, window.sheets.isEmpty else { return event }
+
+        if beginDraggingSessionIfNeeded(with: event, in: window) {
+            return nil
+        }
 
         if let point = self.view.mouseLocationInsideBounds(event.locationInWindow) {
             guard self.view.window?.firstResponder !== addressBarTextField.currentEditor(),
@@ -634,6 +659,121 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
 
     func addressBarButtonsViewControllerClearButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
         addressBarTextField.clearValue()
+    }
+}
+
+// MARK: - NSDraggingSource
+extension AddressBarViewController: NSDraggingSource, NSPasteboardItemDataProvider {
+
+    private func beginDraggingSessionIfNeeded(with event: NSEvent, in window: NSWindow) -> Bool {
+        var isMouseDownOnPassiveTextField: Bool {
+            tabViewModel?.tab.content.userEditableUrl != nil
+            && passiveTextField.isVisible
+            && passiveTextField.withMouseLocationInViewCoordinates(convert: {
+                passiveTextField.bounds.insetBy(dx: -2, dy: -2).contains($0)
+            }) == true
+        }
+        var isMouseDownOnActiveTextFieldFavicon: Bool {
+            guard let addressBarButtonsViewController else { return false }
+            return addressBarTextField.isFirstResponder
+            && addressBarButtonsViewController.imageButtonWrapper.withMouseLocationInViewCoordinates(convert: {
+                addressBarButtonsViewController.imageButtonWrapper.bounds.insetBy(dx: -2, dy: -2).contains($0)
+            }) == true
+        }
+        var draggedView: NSView? {
+            if isMouseDownOnPassiveTextField {
+                passiveTextField
+            } else if isMouseDownOnActiveTextFieldFavicon {
+                addressBarButtonsViewController?.imageButtonWrapper
+            } else {
+                nil
+            }
+        }
+        guard let draggedView else { return false }
+
+        let initialLocation = event.locationInWindow
+        while let nextEvent = window.nextEvent(matching: [.leftMouseUp, .leftMouseDragged], until: Date.distantFuture, inMode: .default, dequeue: true) {
+            // Let the superclass handle the event if it's not a drag
+            guard nextEvent.type == .leftMouseDragged else {
+                DispatchQueue.main.async { [weak window] in
+                    guard let event = event.makeMouseUpEvent() else { return }
+                    // post new event to unblock waiting for nextEvent
+                    window?.postEvent(event, atStart: true)
+                }
+                break
+            }
+            // If the mouse hasn't moved significantly, don't start dragging
+            guard nextEvent.locationInWindow.distance(to: initialLocation) > 3 else { continue }
+
+            let pasteboardItem = NSPasteboardItem()
+            pasteboardItem.setDataProvider(self, forTypes: [.string, .URL])
+
+            let draggingItem = NSDraggingItem(pasteboardWriter: pasteboardItem)
+            draggingItem.draggingFrame = passiveTextField.bounds
+
+            draggedView.beginDraggingSession(with: [draggingItem], event: event, source: self)
+            return true
+        }
+        return false
+    }
+
+    func pasteboard(_ pasteboard: NSPasteboard?, item: NSPasteboardItem, provideDataForType type: NSPasteboard.PasteboardType) {
+        if let url = tabViewModel?.tab.content.userEditableUrl {
+            pasteboard?.setString(url.absoluteString, forType: .string)
+        }
+    }
+
+    func draggingSession(_ session: NSDraggingSession, willBeginAt screenPoint: NSPoint) {
+        guard let url = tabViewModel?.tab.url else { return }
+
+        // Set URL and title in pasteboard
+        session.draggingPasteboard.setString(url.absoluteString, forType: .URL)
+        if let title = tabViewModel?.title, !title.isEmpty {
+            session.draggingPasteboard.setString(title, forType: .urlName)
+        }
+
+        // Create dragging image
+        let favicon: NSImage
+        if let tabFavicon = tabViewModel?.tab.favicon {
+            favicon = tabFavicon
+        } else {
+            favicon = .web
+        }
+
+        session.draggingFormation = .none
+        session.setPreviewProvider(URLDragPreviewProvider(url: url, favicon: favicon))
+    }
+
+    func draggingSession(_ session: NSDraggingSession, sourceOperationMaskFor context: NSDraggingContext) -> NSDragOperation {
+        return .copy
+    }
+}
+
+// MARK: - NSDraggingDestination
+extension AddressBarViewController: NSDraggingDestination {
+
+    func draggingEntered(_ draggingInfo: NSDraggingInfo) -> NSDragOperation {
+        return draggingUpdated(draggingInfo)
+    }
+
+    func draggingUpdated(_ draggingInfo: NSDraggingInfo) -> NSDragOperation {
+        // disable dropping url on the same address bar where it came from
+        if draggingInfo.draggingSource as? Self === self {
+            return .none
+        }
+        return .copy
+    }
+
+    func performDragOperation(_ draggingInfo: NSDraggingInfo) -> Bool {
+        // navigate to dragged url (if available)
+        if let url = draggingInfo.draggingPasteboard.url {
+            tabCollectionViewModel.selectedTabViewModel?.tab.setUrl(url, source: .userEntered(draggingInfo.draggingPasteboard.string(forType: .string) ?? url.absoluteString))
+            return true
+
+        } else {
+            // activate the address bar and replace its string value
+            return addressBarTextField.performDragOperation(draggingInfo)
+        }
     }
 }
 

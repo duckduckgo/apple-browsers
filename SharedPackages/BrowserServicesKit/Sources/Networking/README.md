@@ -99,7 +99,11 @@ decoder.dateDecodingStrategy = .iso8601 // Example: Customize date decoding
 let model: MyDecodableType = try response.decodeBody(decoder: decoder)
 ```
 
-**Authentication**: The library supports automatic token refresh when receiving 401 Unauthorized responses, provided the request was initially authenticated (`authToken` was set in `HeadersV2`):
+### Authentication 
+
+[Authentication V2 (AuthV2) documentation can be found here.](Auth/README.md)
+
+`OAuthClient` supports automatic token refresh when receiving 401 Unauthorized responses, provided the request was initially authenticated (`authToken` was set in `HeadersV2`):
 ```swift
 apiService.authorizationRefresherCallback = { request in
     // Logic to refresh authentication token

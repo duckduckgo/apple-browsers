@@ -197,7 +197,7 @@ final class ToolbarHandler: ToolbarStateHandling {
 }
 
 private extension UIBarButtonItem {
-    private static let additionalHorizontalSpace = 10.0
+    private static let additionalHorizontalSpace = 14.0
 
     static func additionalFixedSpaceItem() -> UIBarButtonItem {
         .fixedSpace(additionalHorizontalSpace)

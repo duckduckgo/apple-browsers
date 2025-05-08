@@ -121,7 +121,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     let privacyStats: PrivacyStatsCollecting
     let activeRemoteMessageModel: ActiveRemoteMessageModel
-    let newTabPageCustomizationModel = NewTabPageCustomizationModel()
+    let newTabPageCustomizationModel: NewTabPageCustomizationModel
     let remoteMessagingClient: RemoteMessagingClient!
     let onboardingContextualDialogsManager: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater
     let defaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPresenter
@@ -285,6 +285,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         defaultBrowserAndDockPromptPresenter = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, featureFlagger: featureFlagger)
 
         visualStyleManager = VisualStyleManager(featureFlagger: featureFlagger)
+        newTabPageCustomizationModel = NewTabPageCustomizationModel(visualStyleManager: visualStyleManager)
 
         onboardingContextualDialogsManager = ContextualDialogsManager()
 
@@ -417,7 +418,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #if !APPSTORE && WEB_EXTENSIONS_ENABLED
         if #available(macOS 15.4, *) {
             Task { @MainActor in
-                await WebExtensionManager.shared.loadWebExtensions()
+                await WebExtensionManager.shared.loadInstalledExtensions()
             }
         }
 #endif

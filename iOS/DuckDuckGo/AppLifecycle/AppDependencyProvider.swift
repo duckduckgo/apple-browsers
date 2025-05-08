@@ -25,6 +25,8 @@ import Bookmarks
 import Subscription
 import Common
 import NetworkProtection
+import DataBrokerProtectionCore
+import DataBrokerProtection_iOS
 import RemoteMessaging
 import PageRefreshMonitor
 import PixelKit
@@ -57,6 +59,9 @@ protocol DependencyProvider {
     var subscriptionManager: (any SubscriptionManager)? { get }
     var subscriptionManagerV2: (any SubscriptionManagerV2)? { get }
     var isAuthV2Enabled: Bool { get }
+
+    // DBP
+    var dbpSettings: DataBrokerProtectionSettings { get }
 }
 
 /// Provides dependencies for objects that are not directly instantiated
@@ -94,6 +99,7 @@ final class AppDependencyProvider: DependencyProvider {
     let connectionObserver: ConnectionStatusObserver = ConnectionStatusObserverThroughSession()
     let serverInfoObserver: ConnectionServerInfoObserver = ConnectionServerInfoObserverThroughSession()
     let vpnSettings = VPNSettings(defaults: .networkProtectionGroupDefaults)
+    let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
     let persistentPixel: PersistentPixelFiring = PersistentPixel()
 
     private init() {
@@ -116,15 +122,24 @@ final class AppDependencyProvider: DependencyProvider {
         var accessTokenProvider: () async -> String?
         var authenticationStateProvider: (any SubscriptionAuthenticationStateProvider)!
 
-        let tokenStorageV2 = SubscriptionTokenKeychainStorageV2(keychainType: .dataProtection(.named(subscriptionAppGroup))) { keychainType, error in
-            Pixel.fire(.privacyProKeychainAccessError, withAdditionalParameters: ["type": keychainType.rawValue, "error": error.errorDescription])
+        let tokenStorageV2 = SubscriptionTokenKeychainStorageV2(keychainType: .dataProtection(.named(subscriptionAppGroup))) { accessType, error in
+
+            let parameters = [PixelParameters.privacyProKeychainAccessType: accessType.rawValue,
+                              PixelParameters.privacyProKeychainError: error.localizedDescription,
+                              PixelParameters.source: KeychainErrorSource.browser.rawValue,
+                              PixelParameters.authVersion: KeychainErrorAuthVersion.v2.rawValue]
+            DailyPixel.fireDailyAndCount(pixel: .privacyProKeychainAccessError,
+                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
+                                         withAdditionalParameters: parameters)
         }
         self.isAuthV2Enabled = featureFlagger.isFeatureOn(.privacyProAuthV2)
         vpnSettings.isAuthV2Enabled = self.isAuthV2Enabled
+        dbpSettings.isAuthV2Enabled = self.isAuthV2Enabled
         if !isAuthV2Enabled {
             // V1
             Logger.subscription.debug("Configuring Subscription V1")
             vpnSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
+            dbpSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
 
             let entitlementsCache = UserDefaultsCache<[Entitlement]>(userDefaults: subscriptionUserDefaults,
                                                                      key: UserDefaultsCacheKey.subscriptionEntitlements,
@@ -174,6 +189,7 @@ final class AppDependencyProvider: DependencyProvider {
             // V2
             Logger.subscription.debug("Configuring Subscription V2")
             vpnSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
+            dbpSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
 
             let authEnvironment: OAuthEnvironment = subscriptionEnvironment.serviceEnvironment == .production ? .production : .staging
             let authService = DefaultOAuthService(baseURL: authEnvironment.url, apiService: APIServiceFactory.makeAPIServiceForAuthV2())
@@ -248,7 +264,6 @@ final class AppDependencyProvider: DependencyProvider {
                                                                               featureFlagger: featureFlagger,
                                                                               persistentPixel: persistentPixel,
                                                                               settings: vpnSettings)
-
     }
 
 }

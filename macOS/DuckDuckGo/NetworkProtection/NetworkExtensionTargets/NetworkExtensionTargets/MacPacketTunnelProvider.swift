@@ -40,17 +40,6 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         isAppex ? Bundle.main.appGroup(bundle: .subs) : nil
     }
 
-    // MARK: - Additional Status Info
-
-    /// Holds the date when the status was last changed so we can send it out as additional information
-    /// in our status-change notifications.
-    ///
-    private var lastStatusChangeDate = Date()
-
-    // MARK: - Notifications: Observation Tokens
-
-    private var cancellables = Set<AnyCancellable>()
-
     // MARK: - Error Reporting
 
     private static func networkProtectionDebugEvents(controllerErrorStore: NetworkProtectionTunnelErrorStore) -> EventMapping<NetworkProtectionError> {
@@ -529,92 +518,11 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
         setupPixels()
         accountManager.delegate = self
-        observeServerChanges()
-        observeStatusUpdateRequests()
         Logger.networkProtection.log("[+] MacPacketTunnelProvider Initialised")
     }
 
     deinit {
         Logger.networkProtectionMemory.log("[-] MacPacketTunnelProvider")
-    }
-
-    // MARK: - Observing Changes & Requests
-
-    /// Observe connection status changes to broadcast those changes through distributed notifications.
-    ///
-    public override func handleConnectionStatusChange(old: ConnectionStatus, new: ConnectionStatus) {
-        super.handleConnectionStatusChange(old: old, new: new)
-
-        lastStatusChangeDate = Date()
-        broadcast(new)
-    }
-
-    /// Observe server changes to broadcast those changes through distributed notifications.
-    ///
-    @MainActor
-    private func observeServerChanges() {
-        lastSelectedServerInfoPublisher.sink { [weak self] server in
-            self?.lastStatusChangeDate = Date()
-            self?.broadcast(server)
-        }
-        .store(in: &cancellables)
-
-        broadcastLastSelectedServerInfo()
-    }
-
-    /// Observe status update requests to broadcast connection status
-    ///
-    private func observeStatusUpdateRequests() {
-        notificationCenter.publisher(for: .requestStatusUpdate).sink { [weak self] _ in
-            guard let self else { return }
-
-            Task { @MainActor in
-                self.broadcastConnectionStatus()
-                self.broadcastLastSelectedServerInfo()
-            }
-        }
-        .store(in: &cancellables)
-    }
-
-    // MARK: - Broadcasting Status and Information
-
-    /// Broadcasts the current connection status.
-    ///
-    @MainActor
-    private func broadcastConnectionStatus() {
-        broadcast(connectionStatus)
-    }
-
-    /// Broadcasts the specified connection status.
-    ///
-    private func broadcast(_ connectionStatus: ConnectionStatus) {
-        let lastStatusChange = ConnectionStatusChange(status: connectionStatus, on: lastStatusChangeDate)
-        let payload = ConnectionStatusChangeEncoder().encode(lastStatusChange)
-
-        notificationCenter.post(.statusDidChange, object: payload)
-    }
-
-    /// Broadcasts the current server information.
-    ///
-    @MainActor
-    private func broadcastLastSelectedServerInfo() {
-        broadcast(lastSelectedServerInfo)
-    }
-
-    /// Broadcasts the specified server information.
-    ///
-    private func broadcast(_ serverInfo: NetworkProtectionServerInfo?) {
-        guard let serverInfo else {
-            return
-        }
-
-        let serverStatusInfo = NetworkProtectionStatusServerInfo(
-            serverLocation: serverInfo.attributes,
-            serverAddress: serverInfo.endpoint?.host.hostWithoutPort
-        )
-        let payload = ServerSelectedNotificationObjectEncoder().encode(serverStatusInfo)
-
-        notificationCenter.post(.serverSelected, object: payload)
     }
 
     // MARK: - NEPacketTunnelProvider
@@ -758,7 +666,17 @@ final class DefaultWireGuardInterface: WireGuardInterface {
 extension MacPacketTunnelProvider: AccountManagerKeychainAccessDelegate {
 
     public func accountManagerKeychainAccessFailed(accessType: AccountKeychainAccessType, error: any Error) {
-        PixelKit.fire(PrivacyProErrorPixel.privacyProKeychainAccessError(accessType: accessType, accessError: error),
+
+        guard let expectedError = error as? AccountKeychainAccessError else {
+            assertionFailure("Unexpected error type: \(error)")
+            Logger.networkProtection.fault("Unexpected error type: \(error)")
+            return
+        }
+
+        PixelKit.fire(PrivacyProErrorPixel.privacyProKeychainAccessError(accessType: accessType,
+                                                                         accessError: expectedError,
+                                                                         source: KeychainErrorSource.vpn,
+                                                                         authVersion: KeychainErrorAuthVersion.v1),
                       frequency: .legacyDailyAndCount)
     }
 }

@@ -136,6 +136,20 @@ final class BookmarksBarCollectionViewItem: NSCollectionViewItem {
         delegate?.bookmarksBarCollectionViewItemClicked(self)
     }
 
+    deinit {
+        // Sometimes the ItemCachingCollectionView doesn‘t remove the cell views
+        // when the BookmarksBarCollectionViewItem is deallocated
+        // Steps to reproduce:
+        // 1. Create 1 folder and 4 bookmarks on the bookmarks bar
+        // 2. Open new window
+        // 3. Drag all the bookmarks to the folder on the bookmarks bar
+        // 4. Open the folder and drag the bookmarks back to the bookmarks bar
+        // Result: some cell views stay on the bookmarks bar messing with actual bookmarks
+        if isViewLoaded {
+            view.removeFromSuperview()
+        }
+    }
+
 }
 // MARK: - BookmarksContextMenuDelegate
 extension BookmarksBarCollectionViewItem: BookmarksContextMenuDelegate {

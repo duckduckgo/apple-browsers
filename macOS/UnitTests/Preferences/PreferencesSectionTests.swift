@@ -167,7 +167,6 @@ final class PreferencesSectionTests: XCTestCase {
         XCTAssertFalse(sections.contains { $0.id ==  .purchasePrivacyPro })
         XCTAssertTrue(sections.contains { $0.id ==  .privacyPro })
 
-
         let purchasePrivacyProSection = sections.first { $0.id ==  .privacyPro }!
         XCTAssertEqual(purchasePrivacyProSection.panes, [.vpn, .personalInformationRemoval, .identityTheftRestoration, .subscriptionSettings])
     }
@@ -191,7 +190,6 @@ final class PreferencesSectionTests: XCTestCase {
         // Then
         XCTAssertFalse(sections.contains { $0.id ==  .purchasePrivacyPro })
         XCTAssertTrue(sections.contains { $0.id ==  .privacyPro })
-
 
         let purchasePrivacyProSection = sections.first { $0.id ==  .privacyPro }!
         XCTAssertEqual(purchasePrivacyProSection.panes, [.subscriptionSettings])

@@ -244,8 +244,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
     }
 
     func testModelReloadsSectionsOnNotificationForEntitlementsDidChange() async throws {
-        let userInfo: [UserDefaultsCacheKey : [Entitlement]] = [UserDefaultsCacheKey.subscriptionEntitlements: []]
-        try await testModelReloadsSections(on: .entitlementsDidChange, userInfo: userInfo, timeout: .seconds(1))
+        try await testModelReloadsSections(on: .entitlementsDidChange, timeout: .seconds(1))
     }
 
     func testModelReloadsSectionsOnNotificationForDBPLoginItemEnabled() async throws {
@@ -256,7 +255,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
         try await testModelReloadsSections(on: .dbpLoginItemDisabled, timeout: .seconds(3))
     }
 
-    private func testModelReloadsSections(on notification: Notification.Name, userInfo aUserInfo: [AnyHashable : Any]? = nil, timeout: TimeInterval) async throws {
+    private func testModelReloadsSections(on notification: Notification.Name, timeout: TimeInterval) async throws {
         // Given
         var startProcessingFulfilment = false
         let expectation = expectation(description: "Load sections called")
@@ -274,7 +273,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
 
         // When
         mockSubscriptionManager.accessTokenResult = .success("state_change_is_required_to_trigger_refresh")
-        testNotificationCenter.post(name: notification, object: self, userInfo: aUserInfo)
+        testNotificationCenter.post(name: notification, object: self, userInfo: nil)
 
         // Then
         await fulfillment(of: [expectation], timeout: timeout)

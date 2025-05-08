@@ -55,7 +55,7 @@ public final class AIChatViewController: UIViewController {
     public var webView: WKWebView? {
         webViewController?.webView
     }
-    
+
     private lazy var titleBarView: TitleBarView = {
         let title = UserText.aiChatTitle
 

@@ -27,7 +27,7 @@ protocol AIChatUserScriptHandling {
     func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable?
     func openAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
     func setPayloadHandler(_ payloadHandler: (any AIChatConsumableDataHandling)?)
-    func getResponseState(params: Any, message: UserScriptMessage) -> Encodable? 
+    func getResponseState(params: Any, message: UserScriptMessage) -> Encodable?
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
@@ -64,10 +64,10 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     public func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable? {
         if featureFlagger.isFeatureOn(.aiChatNativePrompt) {
             AIChatNativeConfigValues(isAIChatHandoffEnabled: true,
-                                            supportsClosingAIChat: true,
-                                            supportsOpeningSettings: true,
-                                            supportsNativePrompt: false,
-                                            supportsNativeChatInput: true)
+                                     supportsClosingAIChat: true,
+                                     supportsOpeningSettings: true,
+                                     supportsNativePrompt: false,
+                                     supportsNativeChatInput: true)
         } else {
             AIChatNativeConfigValues.defaultValues
         }

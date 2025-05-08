@@ -33,6 +33,7 @@ struct PinnedTabsView: View {
                     .environmentObject(model)
                     .frame(maxWidth: tabStyleProvider.pinnedTabWidth,
                            maxHeight: tabStyleProvider.pinnedTabHeight)
+                    .zIndex(model.selectedItem == item ? 1 : 0)
             }
         }
         .frame(minHeight: tabStyleProvider.pinnedTabHeight)

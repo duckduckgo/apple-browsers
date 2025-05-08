@@ -46,6 +46,8 @@ final class PreferencesSidebarModel: ObservableObject {
     private let identityTheftRestorationSubject = PassthroughSubject<StatusIndicator, Never>()
     public let identityTheftRestorationUpdates: AnyPublisher<StatusIndicator, Never>
 
+    private let notificationCenter: NotificationCenter
+
     var selectedTabContent: AnyPublisher<Tab.TabContent, Never> {
         $selectedTabIndex.map { [tabSwitcherTabs] in tabSwitcherTabs[$0] }.eraseToAnyPublisher()
     }
@@ -58,12 +60,14 @@ final class PreferencesSidebarModel: ObservableObject {
         privacyConfigurationManager: PrivacyConfigurationManaging,
         syncService: DDGSyncing,
         vpnTunnelIPCClient: VPNControllerXPCClient = .shared,
-        subscriptionManager: any SubscriptionAuthV1toV2Bridge
+        subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+        notificationCenter: NotificationCenter = .default
     ) {
         self.loadSections = loadSections
         self.tabSwitcherTabs = tabSwitcherTabs
         self.vpnTunnelIPCClient = vpnTunnelIPCClient
         self.subscriptionManager = subscriptionManager
+        self.notificationCenter = notificationCenter
 
         self.personalInformationRemovalUpdates = personalInformationRemovalSubject.eraseToAnyPublisher()
         self.identityTheftRestorationUpdates = identityTheftRestorationSubject.eraseToAnyPublisher()
@@ -168,8 +172,8 @@ final class PreferencesSidebarModel: ObservableObject {
             }
         case .emailProtection:
             let publisher = Publishers.Merge(
-                NotificationCenter.default.publisher(for: .emailDidSignIn),
-                NotificationCenter.default.publisher(for: .emailDidSignOut)
+                notificationCenter.publisher(for: .emailDidSignIn),
+                notificationCenter.publisher(for: .emailDidSignOut)
             )
             return PrivacyProtectionStatus(statusPublisher: publisher, initialValue: EmailManager().isSignedIn ? .on : .off) { _ in
                 EmailManager().isSignedIn ? .on : .off
@@ -221,13 +225,13 @@ final class PreferencesSidebarModel: ObservableObject {
     }
 
     private func subscriptionEventsPublisher() -> AnyPublisher<Void, Never> {
-        return Publishers.Merge7(NotificationCenter.default.publisher(for: .accountDidSignIn),
-                                 NotificationCenter.default.publisher(for: .accountDidSignOut),
-                                 NotificationCenter.default.publisher(for: .availableAppStoreProductsDidChange),
-                                 NotificationCenter.default.publisher(for: .subscriptionDidChange),
-                                 NotificationCenter.default.publisher(for: .entitlementsDidChange),
-                                 NotificationCenter.default.publisher(for: .dbpLoginItemEnabled).delay(for: 2, scheduler: RunLoop.main),
-                                 NotificationCenter.default.publisher(for: .dbpLoginItemDisabled).delay(for: 2, scheduler: RunLoop.main))
+        return Publishers.Merge7(notificationCenter.publisher(for: .accountDidSignIn),
+                                 notificationCenter.publisher(for: .accountDidSignOut),
+                                 notificationCenter.publisher(for: .availableAppStoreProductsDidChange),
+                                 notificationCenter.publisher(for: .subscriptionDidChange),
+                                 notificationCenter.publisher(for: .entitlementsDidChange),
+                                 notificationCenter.publisher(for: .dbpLoginItemEnabled).delay(for: 2, scheduler: RunLoop.main),
+                                 notificationCenter.publisher(for: .dbpLoginItemDisabled).delay(for: 2, scheduler: RunLoop.main))
         .debounce(for: .seconds(0.5), scheduler: RunLoop.main)
         .asVoid()
         .eraseToAnyPublisher()

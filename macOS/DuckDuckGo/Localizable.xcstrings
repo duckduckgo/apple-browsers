@@ -74418,66 +74418,6 @@
         }
       }
     },
-    "vpn.setting.excluded.domains.manage.button.title" : {
-      "comment" : "Excluded Sites management button title",
-      "extractionState" : "stale",
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ausgeschlossene Websites verwalten …"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Manage Excluded Websites…"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Administrar sitios web excluidos..."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gérer les sites Web exclus…"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Gestisci i siti esclusi..."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Uitgesloten websites beheren…"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zarządzaj wykluczonymi witrynami…"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Websites excluídos…"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Управление исключенными сайтами…"
-          }
-        }
-      }
-    },
     "vpn.setting.exclusions.description" : {
       "comment" : "The description shown for the exclusions section in VPN settings",
       "extractionState" : "extracted_with_value",

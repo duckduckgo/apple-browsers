@@ -24,7 +24,7 @@ import os.log
 final class DataBrokerTests: XCTestCase {
 
     func testInitValidBroker() throws {
-        let jsonURL = Bundle.module.url(forResource: "valid-broker", withExtension: "json", subdirectory: "Resources")!
+        let jsonURL = Bundle.module.url(forResource: "valid-broker", withExtension: "json", subdirectory: "BundleResources")!
         let broker = try DataBroker.initFromResource(jsonURL)
 
         XCTAssertEqual(broker.name, "DDG Fake Broker")
@@ -47,7 +47,7 @@ final class DataBrokerTests: XCTestCase {
     }
 
     func testInitInvalidBrokerWithUnsupportedStep() throws {
-        let jsonURL = Bundle.module.url(forResource: "invalid-broker-with-unsupported-step", withExtension: "json", subdirectory: "Resources")!
+        let jsonURL = Bundle.module.url(forResource: "invalid-broker-with-unsupported-step", withExtension: "json", subdirectory: "BundleResources")!
         let expectation = XCTestExpectation(description: "Unsupported step type")
         do {
             let broker = try DataBroker.initFromResource(jsonURL)
@@ -59,7 +59,7 @@ final class DataBrokerTests: XCTestCase {
     }
 
     func testInitInvalidBrokerWithUnsupportedAction() throws {
-        let jsonURL = Bundle.module.url(forResource: "invalid-broker-with-unsupported-action", withExtension: "json", subdirectory: "Resources")!
+        let jsonURL = Bundle.module.url(forResource: "invalid-broker-with-unsupported-action", withExtension: "json", subdirectory: "BundleResources")!
         let expectation = XCTestExpectation(description: "Unsupported action type")
         do {
             let broker = try DataBroker.initFromResource(jsonURL)

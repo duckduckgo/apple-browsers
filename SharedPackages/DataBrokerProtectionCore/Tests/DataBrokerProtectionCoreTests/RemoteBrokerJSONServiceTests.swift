@@ -19,6 +19,8 @@
 import XCTest
 import Foundation
 import SecureStorage
+import BrowserServicesKit
+import FeatureFlags
 @testable import DataBrokerProtectionCore
 import DataBrokerProtectionCoreTestsUtils
 
@@ -53,7 +55,8 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
 
         let defaults = UserDefaults(suiteName: "com.dbp.tests.\(UUID().uuidString)")!
         settings = DataBrokerProtectionSettings(defaults: defaults)
-        remoteBrokerJSONService = RemoteBrokerJSONService(settings: settings,
+        remoteBrokerJSONService = RemoteBrokerJSONService(featureFlagger: MockFeatureFlagger(),
+                                                          settings: settings,
                                                           vault: vault,
                                                           fileManager: fileManager,
                                                           urlSession: urlSession,
@@ -231,4 +234,22 @@ extension HTTPURLResponse {
                                             statusCode: 200,
                                             httpVersion: nil,
                                             headerFields: ["ETag": "something"])!
+}
+
+final class MockFeatureFlagger: FeatureFlagger {
+    var internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: MockInternalUserStoring())
+    var localOverrides: FeatureFlagLocalOverriding?
+    var allActiveExperiments: Experiments = [:]
+
+    func isFeatureOn<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> Bool {
+        true
+    }
+
+    func resolveCohort<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? {
+        nil
+    }
+}
+
+final class MockInternalUserStoring: InternalUserStoring {
+    var isInternalUser: Bool = false
 }

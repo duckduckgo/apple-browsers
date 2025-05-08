@@ -90,7 +90,7 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
                 let hasAnyEntitlement = !state.userEntitlements.isEmpty
 
                 Logger.subscription.debug("""
-//Update subscription state:
+Update subscription state:
 subscriptionStatus: \(status.rawValue)
 hasAnyEntitlement: \(hasAnyEntitlement)
 """)

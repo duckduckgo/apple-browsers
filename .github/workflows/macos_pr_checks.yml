@@ -236,6 +236,14 @@ jobs:
           fi
         fi
 
+    - name: Upload JUnit XML as artifact
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: macos-unittests.xml
+        path: macOS/${{ matrix.flavor }}*.xml
+        retention-days: 7
+
     - name: Publish unit tests report
       uses: mikepenz/action-junit-report@v4
       if: always() # always run even if the previous step fails

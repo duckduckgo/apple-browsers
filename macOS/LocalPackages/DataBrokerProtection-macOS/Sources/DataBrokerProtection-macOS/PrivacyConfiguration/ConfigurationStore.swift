@@ -77,7 +77,7 @@ final class ConfigurationStore: ConfigurationStoring {
                 let nserror = error as NSError
 
                 if nserror.domain != NSCocoaErrorDomain || nserror.code != NSFileReadNoSuchFileError {
-                    PixelKit.fire(DebugEvent(DataBrokerProtectionSharedPixels.errorLoadingCachedConfig(error)))
+                    PixelKit.fire(DebugEvent(DataBrokerProtectionMacOSPixels.errorLoadingCachedConfig(error)))
                 }
             }
         }

@@ -21,38 +21,25 @@
 import PackageDescription
 
 let package = Package(
-    name: "DataBrokerProtectionCore",
+    name: "DataBrokerProtection-iOS",
     platforms: [
-        .iOS("15.0"),
-        .macOS("11.4")
+        .iOS(.v15)
     ],
     products: [
         .library(
-            name: "DataBrokerProtectionCore",
-            targets: ["DataBrokerProtectionCore"]),
-        .library(name: "DataBrokerProtectionCoreTestsUtils", targets: ["DataBrokerProtectionCoreTestsUtils"]),
+            name: "DataBrokerProtection-iOS",
+            targets: ["DataBrokerProtection-iOS"])
     ],
     dependencies: [
-        .package(path: "../BrowserServicesKit"),
+        .package(path: "../../SharedPackages/BrowserServicesKit"),
+        .package(path: "../../SharedPackages/DataBrokerProtectionCore"),
     ],
     targets: [
         .target(
-            name: "DataBrokerProtectionCore",
+            name: "DataBrokerProtection-iOS",
             dependencies: [
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
-                .product(name: "PixelKit", package: "BrowserServicesKit"),
-                .product(name: "Persistence", package: "BrowserServicesKit"),
-            ],
-            resources: [.copy("BundleResources")],
-            swiftSettings: [
-                .define("DEBUG", .when(configuration: .debug))
-            ]
-        ),
-        .target(
-            name: "DataBrokerProtectionCoreTestsUtils",
-            dependencies: [
-                "DataBrokerProtectionCore",
-                .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
+                .product(name: "DataBrokerProtectionCore", package: "DataBrokerProtectionCore"),
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
                 .product(name: "Persistence", package: "BrowserServicesKit"),
             ],
@@ -61,16 +48,13 @@ let package = Package(
             ]
         ),
         .testTarget(
-            name: "DataBrokerProtectionCoreTests",
+            name: "DataBrokerProtection-iOSTests",
             dependencies: [
+                "DataBrokerProtection-iOS",
                 "DataBrokerProtectionCore",
-                "DataBrokerProtectionCoreTestsUtils",
                 "BrowserServicesKit",
                 .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit"),
                 .product(name: "SubscriptionTestingUtilities", package: "BrowserServicesKit"),
-            ],
-            resources: [
-                .copy("BundleResources")
             ]
         )
     ]

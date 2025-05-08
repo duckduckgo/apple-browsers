@@ -53,8 +53,8 @@ public enum StatusIndicator: Equatable {
 }
 
 public struct StatusIndicatorView: View {
-    var status: StatusIndicator
-    var isLarge: Bool = false
+    private var status: StatusIndicator
+    private var isLarge: Bool = false
 
     private var fontSize: CGFloat {
         isLarge ? 13 : 10

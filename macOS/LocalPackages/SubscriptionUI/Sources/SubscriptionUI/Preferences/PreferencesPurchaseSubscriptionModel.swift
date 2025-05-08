@@ -38,7 +38,7 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
     }
 
     private let subscriptionManager: SubscriptionAuthV1toV2Bridge
-    public let userEventHandler: (PreferencesPurchaseSubscriptionModel.UserEvent) -> Void
+    private let userEventHandler: (PreferencesPurchaseSubscriptionModel.UserEvent) -> Void
     private let sheetActionHandler: SubscriptionAccessActionHandlers
 
     public enum UserEvent {
@@ -63,6 +63,11 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
     @MainActor
     func purchaseAction() {
         userEventHandler(.openURL(.purchase))
+    }
+
+    @MainActor
+    func didClickIHaveASubscription() {
+        userEventHandler(.didClickIHaveASubscription)
     }
 
     @MainActor

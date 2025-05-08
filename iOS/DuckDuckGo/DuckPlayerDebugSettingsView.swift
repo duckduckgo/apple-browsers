@@ -59,8 +59,7 @@ struct DuckPlayerDebugSettingsView: View {
     }
     
     private func resetPrimingModalSettings() {
-        appSettings.duckPlayerNativeUIPrimingModalPresentationEventCount = 0
-        appSettings.duckPlayerNativeUIPrimingModalLastPresentationTime = 0
+        appSettings.duckPlayerPrimingMessagePresented = false
     }
 
     private func resetEntryPillSettings() {

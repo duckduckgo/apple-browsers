@@ -142,7 +142,7 @@ class MainViewController: UIViewController {
     }()
 
     weak var tabSwitcherController: TabSwitcherViewController?
-    var tabSwitcherButton: TabSwitcherButton!
+    var tabSwitcherButton: TabSwitcherButton?
 
     /// Do not reference directly, use `presentedMenuButton`
     let menuButton = MenuButton()
@@ -798,9 +798,11 @@ class MainViewController: UIViewController {
 
             viewCoordinator.toolbarTabSwitcherButton.customView = button
         } else {
+            assert(tabSwitcherButton == nil)
             tabSwitcherButton = TabSwitcherButton()
-            tabSwitcherButton.delegate = self
+            tabSwitcherButton?.delegate = self
             viewCoordinator.toolbarTabSwitcherButton.customView = tabSwitcherButton
+            assert(tabSwitcherButton != nil)
         }
         viewCoordinator.toolbarTabSwitcherButton.isAccessibilityElement = true
         viewCoordinator.toolbarTabSwitcherButton.accessibilityTraits = .button
@@ -1265,8 +1267,9 @@ class MainViewController: UIViewController {
     private func refreshTabIcon() {
         if !isExperimentalAppearanceEnabled {
             viewCoordinator.toolbarTabSwitcherButton.accessibilityHint = UserText.numberOfTabs(tabManager.count)
-            tabSwitcherButton.tabCount = tabManager.count
-            tabSwitcherButton.hasUnread = tabManager.hasUnread
+            assert(tabSwitcherButton != nil)
+            tabSwitcherButton?.tabCount = tabManager.count
+            tabSwitcherButton?.hasUnread = tabManager.hasUnread
         }
     }
 

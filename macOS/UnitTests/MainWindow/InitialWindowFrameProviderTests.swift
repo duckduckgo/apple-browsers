@@ -52,11 +52,11 @@ final class InitialWindowFrameProviderTests: XCTestCase {
         let visibleFrame = NSRect(x: 0, y: 0, width: 5000, height: 3000)
         let frame = InitialWindowFrameProvider.initialFrame(visibleFrame: visibleFrame)
 
-        XCTAssertEqual(frame.size.width, 1920)
-        XCTAssertEqual(frame.size.height, 1080)
+        XCTAssertEqual(frame.size.width, 1600)
+        XCTAssertEqual(frame.size.height, 1200)
 
-        let expectedX: CGFloat = (5000 - 1920) / 2
-        let expectedY: CGFloat = (3000 - 1080) / 2
+        let expectedX: CGFloat = (5000 - 1600) / 2
+        let expectedY: CGFloat = (3000 - 1200) / 2
         XCTAssertEqual(frame.origin.x, expectedX)
         XCTAssertEqual(frame.origin.y, expectedY)
     }

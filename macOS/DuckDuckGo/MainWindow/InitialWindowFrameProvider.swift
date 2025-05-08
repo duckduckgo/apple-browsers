@@ -46,9 +46,9 @@ struct InitialWindowFrameProvider {
             width = height * maxAspectRatio
         }
 
-        // Clamp to maximum 1920×1080
-        width = min(width, 1920)
-        height = min(height, 1080)
+        // Clamp to maximum 1600×1200
+        width = min(width, 1600)
+        height = min(height, 1200)
 
         // Center within work area
         let originX = max((size.width - width) / 2 + topLeft.x, topLeft.x)

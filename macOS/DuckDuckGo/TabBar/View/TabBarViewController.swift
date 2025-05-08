@@ -120,6 +120,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     @IBOutlet weak var shadowView: TabShadowView!
 
+    @IBOutlet weak var leftSideStackLeadingConstraint: NSLayoutConstraint!
     @IBOutlet weak var rightSideStackView: NSStackView!
     var footerCurrentWidthDimension: CGFloat {
         if tabMode == .overflow {
@@ -678,6 +679,14 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         rightShadowImageView.isHidden = scrollViewsAreHidden
         leftShadowImageView.isHidden = scrollViewsAreHidden
         addTabButton.isHidden = scrollViewsAreHidden
+
+        /// When we need to show the s-shaped tabs, given that the pinned tabs view is moved 12 points to the left
+        /// we needd to do the same with the left side scroll view (when on overflow), if not the pinned tabs container
+        /// will overlap the arrow button.
+        leftSideStackLeadingConstraint.constant =
+            visualStyle.tabStyleProvider.shouldShowSShapedTab
+            && !leftScrollButton.isHidden
+            && (pinnedTabsViewModel?.items.isEmpty == false) ? 12 : 0
     }
 
     /// Adjust the right edge scroll position to keep Selected Tab visible when resizing (or bring it into view expanding the right edge when it‘s behind the edge)

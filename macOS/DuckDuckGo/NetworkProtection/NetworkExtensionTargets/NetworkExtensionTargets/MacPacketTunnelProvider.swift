@@ -26,7 +26,6 @@ import PixelKit
 import Subscription
 import os.log
 import WireGuard
-
 final class MacPacketTunnelProvider: PacketTunnelProvider {
 
     static var isAppex: Bool {
@@ -40,17 +39,6 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
     static var subscriptionsAppGroup: String? {
         isAppex ? Bundle.main.appGroup(bundle: .subs) : nil
     }
-
-    // MARK: - Additional Status Info
-
-    /// Holds the date when the status was last changed so we can send it out as additional information
-    /// in our status-change notifications.
-    ///
-    private var lastStatusChangeDate = Date()
-
-    // MARK: - Notifications: Observation Tokens
-
-    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - Error Reporting
 
@@ -462,12 +450,8 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         self.tokenStoreV1 = tokenStore
 
         // MARK: - V2
-        let configuration = URLSessionConfiguration.default
-        configuration.httpCookieStorage = nil
-        configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
-        let urlSession = URLSession(configuration: configuration, delegate: SessionDelegate(), delegateQueue: nil)
-        let apiService = DefaultAPIService(urlSession: urlSession)
-        let authService = DefaultOAuthService(baseURL: subscriptionEnvironment.authEnvironment.url, apiService: apiService)
+        let authService = DefaultOAuthService(baseURL: subscriptionEnvironment.authEnvironment.url,
+                                              apiService: APIServiceFactory.makeAPIServiceForAuthV2())
         let tokenStoreV2 = NetworkProtectionKeychainTokenStoreV2(keychainType: Bundle.keychainType,
                                                                  serviceName: Self.tokenContainerServiceName,
                                                                  errorEvents: debugEvents)
@@ -475,28 +459,15 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                                             legacyTokenStorage: nil,
                                             authService: authService)
 
-        let subscriptionEndpointServiceV2 = DefaultSubscriptionEndpointServiceV2(apiService: apiService,
+        let subscriptionEndpointServiceV2 = DefaultSubscriptionEndpointServiceV2(apiService: APIServiceFactory.makeAPIServiceForSubscription(),
                                                                                baseURL: subscriptionEnvironment.serviceEnvironment.url)
-        let pixelHandler: SubscriptionManagerV2.PixelHandler = { type in
-            // The SysExt handles only dead token pixels
-            switch type {
-            case .deadToken:
-                PixelKit.fire(PrivacyProPixel.privacyProDeadTokenDetected)
-            case .subscriptionIsActive: // handled by the main app only
-                break
-            case .v1MigrationFailed:
-                PixelKit.fire(PrivacyProPixel.authV1MigrationFailed)
-            case .v1MigrationSuccessful:
-                PixelKit.fire(PrivacyProPixel.authV1MigrationSucceeded)
-            }
-        }
-
+        let pixelHandler = AuthV2PixelHandler(source: .systemExtension)
         let subscriptionManager = DefaultSubscriptionManagerV2(oAuthClient: authClient,
-                                                             subscriptionEndpointService: subscriptionEndpointServiceV2,
-                                                             subscriptionEnvironment: subscriptionEnvironment,
-                                                             pixelHandler: pixelHandler,
-                                                             tokenRecoveryHandler: nil,
-                                                             initForPurchase: false)
+                                                               subscriptionEndpointService: subscriptionEndpointServiceV2,
+                                                               subscriptionEnvironment: subscriptionEnvironment,
+                                                               pixelHandler: pixelHandler,
+                                                               tokenRecoveryHandler: nil,
+                                                               initForPurchase: false)
 
         let entitlementsCheck: (() async -> Result<Bool, Error>) = {
             Logger.networkProtection.log("Subscription Entitlements check...")
@@ -547,92 +518,11 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
         setupPixels()
         accountManager.delegate = self
-        observeServerChanges()
-        observeStatusUpdateRequests()
         Logger.networkProtection.log("[+] MacPacketTunnelProvider Initialised")
     }
 
     deinit {
         Logger.networkProtectionMemory.log("[-] MacPacketTunnelProvider")
-    }
-
-    // MARK: - Observing Changes & Requests
-
-    /// Observe connection status changes to broadcast those changes through distributed notifications.
-    ///
-    public override func handleConnectionStatusChange(old: ConnectionStatus, new: ConnectionStatus) {
-        super.handleConnectionStatusChange(old: old, new: new)
-
-        lastStatusChangeDate = Date()
-        broadcast(new)
-    }
-
-    /// Observe server changes to broadcast those changes through distributed notifications.
-    ///
-    @MainActor
-    private func observeServerChanges() {
-        lastSelectedServerInfoPublisher.sink { [weak self] server in
-            self?.lastStatusChangeDate = Date()
-            self?.broadcast(server)
-        }
-        .store(in: &cancellables)
-
-        broadcastLastSelectedServerInfo()
-    }
-
-    /// Observe status update requests to broadcast connection status
-    ///
-    private func observeStatusUpdateRequests() {
-        notificationCenter.publisher(for: .requestStatusUpdate).sink { [weak self] _ in
-            guard let self else { return }
-
-            Task { @MainActor in
-                self.broadcastConnectionStatus()
-                self.broadcastLastSelectedServerInfo()
-            }
-        }
-        .store(in: &cancellables)
-    }
-
-    // MARK: - Broadcasting Status and Information
-
-    /// Broadcasts the current connection status.
-    ///
-    @MainActor
-    private func broadcastConnectionStatus() {
-        broadcast(connectionStatus)
-    }
-
-    /// Broadcasts the specified connection status.
-    ///
-    private func broadcast(_ connectionStatus: ConnectionStatus) {
-        let lastStatusChange = ConnectionStatusChange(status: connectionStatus, on: lastStatusChangeDate)
-        let payload = ConnectionStatusChangeEncoder().encode(lastStatusChange)
-
-        notificationCenter.post(.statusDidChange, object: payload)
-    }
-
-    /// Broadcasts the current server information.
-    ///
-    @MainActor
-    private func broadcastLastSelectedServerInfo() {
-        broadcast(lastSelectedServerInfo)
-    }
-
-    /// Broadcasts the specified server information.
-    ///
-    private func broadcast(_ serverInfo: NetworkProtectionServerInfo?) {
-        guard let serverInfo else {
-            return
-        }
-
-        let serverStatusInfo = NetworkProtectionStatusServerInfo(
-            serverLocation: serverInfo.attributes,
-            serverAddress: serverInfo.endpoint?.host.hostWithoutPort
-        )
-        let payload = ServerSelectedNotificationObjectEncoder().encode(serverStatusInfo)
-
-        notificationCenter.post(.serverSelected, object: payload)
     }
 
     // MARK: - NEPacketTunnelProvider
@@ -776,7 +666,17 @@ final class DefaultWireGuardInterface: WireGuardInterface {
 extension MacPacketTunnelProvider: AccountManagerKeychainAccessDelegate {
 
     public func accountManagerKeychainAccessFailed(accessType: AccountKeychainAccessType, error: any Error) {
-        PixelKit.fire(PrivacyProErrorPixel.privacyProKeychainAccessError(accessType: accessType, accessError: error),
+
+        guard let expectedError = error as? AccountKeychainAccessError else {
+            assertionFailure("Unexpected error type: \(error)")
+            Logger.networkProtection.fault("Unexpected error type: \(error)")
+            return
+        }
+
+        PixelKit.fire(PrivacyProErrorPixel.privacyProKeychainAccessError(accessType: accessType,
+                                                                         accessError: expectedError,
+                                                                         source: KeychainErrorSource.vpn,
+                                                                         authVersion: KeychainErrorAuthVersion.v1),
                       frequency: .legacyDailyAndCount)
     }
 }

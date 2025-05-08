@@ -19,6 +19,7 @@
 import XCTest
 @testable import BrowserServicesKit
 @testable import UserScript
+import WebKit
 
 final class ContentScopeUserScriptTests: XCTestCase {
 
@@ -27,6 +28,14 @@ final class ContentScopeUserScriptTests: XCTestCase {
     let properties = ContentScopeProperties(gpcEnabled: false, sessionKey: "", messageSecret: "", featureToggles: ContentScopeFeatureToggles(emailProtection: false, emailProtectionIncontextSignup: false, credentialsAutofill: false, identitiesAutofill: false, creditCardsAutofill: false, credentialsSaving: false, passwordGeneration: false, inlineIconCredentials: false, thirdPartyCredentialsProvider: false, unknownUsernameCategorization: false, partialFormSaves: false))
     var configGenerator: MockCSSPrivacyConfigGenerator!
     var mockPrivacyConfigurationManager: MockPrivacyConfigurationManager!
+    let mockMessageBody: [String: Any] = [
+        "featureName": "ContentScopeScript",
+        "context": "mainFrame",
+        "method": "debugFlag",
+        "params": [
+            "flag": "debug-flag-enabled"
+        ]
+    ]
 
     override func setUp() {
         super.setUp()
@@ -62,11 +71,68 @@ final class ContentScopeUserScriptTests: XCTestCase {
         // THEN
         XCTAssertFalse(source.contains(generatorConfig))
     }
+
+    func testThatForIsolatedContext_debugFlagsAreCaptured_and_messageIsRoutedToTheBroker() async {
+        // GIVEN
+        let contentScopeScript = ContentScopeUserScript(mockPrivacyConfigurationManager, properties: properties, isIsolated: true, privacyConfigurationJSONGenerator: configGenerator)
+        let capturingContentScopeUserScriptDelegate = CapturingContentScopeUserScriptDelegate()
+        contentScopeScript.delegate = capturingContentScopeUserScriptDelegate
+        let message = await MockWKScriptMessage(name: ContentScopeUserScript.MessageName.contentScopeScriptsIsolated.rawValue, body: mockMessageBody)
+
+        // WHEN
+        let result = await contentScopeScript.userContentController(WKUserContentController(),
+                                    didReceive: message)
+
+        // THEN
+        XCTAssertEqual(capturingContentScopeUserScriptDelegate.debugFlagReceived, "debug-flag-enabled")
+        // If an error is thrown means the message has been passed to the broker
+        XCTAssertNotNil(result.1)
+    }
+
+    func testThatForNonIsolatedContentScopeContext_debugFlagsAreCaptured_and_messageIsNotRoutedToTheBroker() async {
+        // GIVEN
+        let contentScopeScript = ContentScopeUserScript(mockPrivacyConfigurationManager, properties: properties, isIsolated: false, privacyConfigurationJSONGenerator: configGenerator)
+        let capturingContentScopeUserScriptDelegate = CapturingContentScopeUserScriptDelegate()
+        contentScopeScript.delegate = capturingContentScopeUserScriptDelegate
+        let message = await MockWKScriptMessage(name: ContentScopeUserScript.MessageName.contentScopeScripts.rawValue, body: mockMessageBody)
+
+        // WHEN
+        let result = await contentScopeScript.userContentController(WKUserContentController(),
+                                    didReceive: message)
+
+        // THEN
+        XCTAssertEqual(capturingContentScopeUserScriptDelegate.debugFlagReceived, "debug-flag-enabled")
+        XCTAssertNil(result.0)
+        XCTAssertNil(result.1)
+    }
+
+    func testThatForNonIsolatedContext_andNotContentScopeScriptContext_messageIsToTheBroker() async {
+        // GIVEN
+        let contentScopeScript = ContentScopeUserScript(mockPrivacyConfigurationManager, properties: properties, isIsolated: false, privacyConfigurationJSONGenerator: configGenerator)
+        let capturingContentScopeUserScriptDelegate = CapturingContentScopeUserScriptDelegate()
+        contentScopeScript.delegate = capturingContentScopeUserScriptDelegate
+        let message = await MockWKScriptMessage(name: "dbpui", body: mockMessageBody)
+
+        // WHEN
+        let result = await contentScopeScript.userContentController(WKUserContentController(),
+                                    didReceive: message)
+
+        // THEN
+        XCTAssertNotNil(result.1)
+    }
 }
 
 class MockCSSPrivacyConfigGenerator: CustomisedPrivacyConfigurationJSONGenerating {
     var config: String?
     var privacyConfiguration: Data? {
         config?.data(using: .utf8)
+    }
+}
+
+class CapturingContentScopeUserScriptDelegate: ContentScopeUserScriptDelegate {
+    var debugFlagReceived: String?
+
+    func contentScopeUserScript(_ script: BrowserServicesKit.ContentScopeUserScript, didReceiveDebugFlag debugFlag: String) {
+        debugFlagReceived = debugFlag
     }
 }

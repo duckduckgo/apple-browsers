@@ -20,6 +20,7 @@
 import UIKit
 import Core
 import DesignResourcesKit
+import BrowserServicesKit
 
 class ThemeManager {
     enum ImageSet {
@@ -39,17 +40,19 @@ class ThemeManager {
     public static let shared = ThemeManager()
 
     private var appSettings: AppSettings
+    private let featureFlagger: FeatureFlagger
 
     private(set) var currentTheme: Theme = DefaultTheme()
 
-    init(settings: AppSettings = AppUserDefaults()) {
+    init(settings: AppSettings = AppUserDefaults(), featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         appSettings = settings
+        self.featureFlagger = featureFlagger
 
         updateColorScheme()
     }
 
     public func updateColorScheme() {
-        if !ExperimentalThemingManager().isExperimentalThemingEnabled {
+        if !ExperimentalThemingManager(featureFlagger: featureFlagger).isExperimentalThemingEnabled {
             DesignSystemPalette.current = .default
         } else {
             DesignSystemPalette.current = .experimental

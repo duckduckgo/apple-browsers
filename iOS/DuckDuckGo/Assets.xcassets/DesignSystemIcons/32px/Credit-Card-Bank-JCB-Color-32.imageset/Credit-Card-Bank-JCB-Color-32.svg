@@ -1,0 +1,48 @@
+<svg fill="none" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+  <path fill="#008EED" d="M26 4a6 6 0 0 1 6 6v12a6 6 0 0 1-6 6H6a6 6 0 0 1-6-6V10a6 6 0 0 1 6-6z"/>
+  <path fill="#000" fill-opacity=".18" fill-rule="evenodd" d="M30 22V10a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v12a4 4 0 0 0 4 4h20a4 4 0 0 0 4-4m2-12a6 6 0 0 0-6-6H6a6 6 0 0 0-6 6v12a6 6 0 0 0 6 6h20a6 6 0 0 0 6-6z" clip-rule="evenodd"/>
+  <g clip-path="url(#Credit-Card-Bank-JCB-Color-32_svg__a)">
+    <path fill="#fff" d="M25 20.009a2.79 2.79 0 0 1-2.788 2.787H7.044V11.755a2.79 2.79 0 0 1 2.788-2.788H25z"/>
+    <path fill="url(#Credit-Card-Bank-JCB-Color-32_svg__b)" d="M20.061 17.177h1.152c.033 0 .11-.011.143-.011a.514.514 0 0 0 .406-.516.53.53 0 0 0-.406-.516c-.033-.01-.099-.01-.143-.01h-1.152z"/>
+    <path fill="url(#Credit-Card-Bank-JCB-Color-32_svg__c)" d="M21.082 9.9a2 2 0 0 0-1.998 1.998v2.074h2.82c.067 0 .144 0 .198.01.637.034 1.109.363 1.109.934 0 .45-.318.834-.91.91v.023c.647.044 1.14.406 1.14.966 0 .603-.548.998-1.273.998h-3.095v4.061h2.93a2 2 0 0 0 1.998-1.997V9.9z"/>
+    <path fill="url(#Credit-Card-Bank-JCB-Color-32_svg__d)" d="M21.62 15.048a.467.467 0 0 0-.407-.472c-.021 0-.076-.011-.11-.011h-1.042v.965h1.043c.033 0 .099 0 .11-.01a.467.467 0 0 0 .406-.473"/>
+    <path fill="url(#Credit-Card-Bank-JCB-Color-32_svg__e)" d="M10.04 9.9a2 2 0 0 0-1.997 1.998v4.928c.56.274 1.141.45 1.723.45.691 0 1.065-.418 1.065-.988V13.96h1.712v2.316c0 .9-.56 1.635-2.459 1.635-1.152 0-2.052-.252-2.052-.252v4.203h2.93a2 2 0 0 0 1.998-1.997V9.9z"/>
+    <path fill="url(#Credit-Card-Bank-JCB-Color-32_svg__f)" d="M15.561 9.9a2 2 0 0 0-1.998 1.998v2.612c.505-.428 1.383-.703 2.8-.637.757.033 1.569.242 1.569.242v.845a3.8 3.8 0 0 0-1.515-.44c-1.076-.076-1.723.45-1.723 1.373 0 .933.647 1.46 1.723 1.372.626-.044 1.109-.242 1.515-.44v.846s-.801.208-1.57.241c-1.416.066-2.294-.208-2.798-.636v4.61h2.93a2 2 0 0 0 1.997-1.998V9.9z"/>
+  </g>
+  <defs>
+    <linearGradient id="Credit-Card-Bank-JCB-Color-32_svg__b" x1="19.082" x2="24.015" y1="16.651" y2="16.651" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#007940"/>
+      <stop offset=".229" stop-color="#00873F"/>
+      <stop offset=".743" stop-color="#40A737"/>
+      <stop offset="1" stop-color="#5CB531"/>
+    </linearGradient>
+    <linearGradient id="Credit-Card-Bank-JCB-Color-32_svg__c" x1="19.082" x2="24.015" y1="15.882" y2="15.882" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#007940"/>
+      <stop offset=".229" stop-color="#00873F"/>
+      <stop offset=".743" stop-color="#40A737"/>
+      <stop offset="1" stop-color="#5CB531"/>
+    </linearGradient>
+    <linearGradient id="Credit-Card-Bank-JCB-Color-32_svg__d" x1="19.082" x2="24.014" y1="15.046" y2="15.046" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#007940"/>
+      <stop offset=".229" stop-color="#00873F"/>
+      <stop offset=".743" stop-color="#40A737"/>
+      <stop offset="1" stop-color="#5CB531"/>
+    </linearGradient>
+    <linearGradient id="Credit-Card-Bank-JCB-Color-32_svg__e" x1="8.04" x2="13.049" y1="15.882" y2="15.882" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1F286F"/>
+      <stop offset=".475" stop-color="#004E94"/>
+      <stop offset=".826" stop-color="#0066B1"/>
+      <stop offset="1" stop-color="#006FBC"/>
+    </linearGradient>
+    <linearGradient id="Credit-Card-Bank-JCB-Color-32_svg__f" x1="13.535" x2="18.399" y1="15.882" y2="15.882" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6C2C2F"/>
+      <stop offset=".173" stop-color="#882730"/>
+      <stop offset=".573" stop-color="#BE1833"/>
+      <stop offset=".859" stop-color="#DC0436"/>
+      <stop offset="1" stop-color="#E60039"/>
+    </linearGradient>
+    <clipPath id="Credit-Card-Bank-JCB-Color-32_svg__a">
+      <path fill="#fff" d="M7 9h18v13.829H7z"/>
+    </clipPath>
+  </defs>
+</svg>

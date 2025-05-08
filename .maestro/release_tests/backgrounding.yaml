@@ -17,6 +17,8 @@ tags:
 - inputText: "https://privacy-test-pages.site"
 - pressKey: Enter
 
+- assertVisible: ".*Privacy Test Pages.*"
+
 # Go home and hover there a bit
 - pressKey: Home
 - swipe:  

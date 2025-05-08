@@ -26,7 +26,7 @@ import Combine
 import DataBrokerProtectionCore
 
 final public class DataBrokerProtectionViewController: NSViewController {
-    private let dataManager: DataBrokerProtectionDataManaging
+    private let dataManager: DataBrokerProtectionDataManaging?
     private let vpnBypassService: VPNBypassFeatureProvider
     private var webView: WKWebView?
     private var loader: NSProgressIndicator!
@@ -40,7 +40,7 @@ final public class DataBrokerProtectionViewController: NSViewController {
 
     public init(agentInterface: DataBrokerProtectionAppToAgentInterface,
                 vpnBypassService: VPNBypassFeatureProvider,
-                dataManager: DataBrokerProtectionDataManaging,
+                dataManager: DataBrokerProtectionDataManaging?,
                 privacyConfig: PrivacyConfigurationManaging? = nil,
                 prefs: ContentScopeProperties? = nil,
                 webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
@@ -68,7 +68,7 @@ final public class DataBrokerProtectionViewController: NSViewController {
         // Prepare the profile cache to avoid stuttering later
         // It's in a task to avoid stuttering now
         Task {
-            try? dataManager.prepareProfileCache()
+            try? dataManager?.prepareProfileCache()
         }
 
         super.init(nibName: nil, bundle: nil)

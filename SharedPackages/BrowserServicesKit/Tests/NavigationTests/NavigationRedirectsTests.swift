@@ -35,9 +35,9 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         server.middleware = [{ [data] request in
             counter += 1
             if counter == 1 {
-                return .ok(.html(data.clientRedirectData.string()!))
+                return .ok(.html(data.clientRedirectData.utf8String()!))
             } else {
-                return .ok(.html(data.html.string()!))
+                return .ok(.html(data.html.utf8String()!))
             }
         }]
         try server.start(8084)
@@ -475,10 +475,10 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
 
         server.middleware = [{ [data] request in
             guard request.path == "/" else { return nil }
-            return .ok(.html(data.clientRedirectData.string()!))
+            return .ok(.html(data.clientRedirectData.utf8String()!))
         }, { [urls, data] request in
             guard request.path == urls.local3.path else { return nil }
-            return .ok(.html(data.clientRedirectData2.string()!))
+            return .ok(.html(data.clientRedirectData2.utf8String()!))
         }, { [data] request in
             return .ok(.data(data.html))
         }]
@@ -530,7 +530,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
 
         server.middleware = [{ [data] request in
             guard request.path == "/" else { return nil }
-            return .ok(.html(data.delayedMetaRedirect.string()!))
+            return .ok(.html(data.delayedMetaRedirect.utf8String()!))
         }, { [data] request in
             return .ok(.data(data.html))
         }]
@@ -573,7 +573,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
 
         server.middleware = [{ [data] request in
             guard request.path == "/" else { return nil }
-            return .ok(.html(data.clientRedirectData.string()!))
+            return .ok(.html(data.clientRedirectData.utf8String()!))
         }, { [data] request in
             return .ok(.data(data.html))
         }]
@@ -1018,7 +1018,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
                 try! writer.write(data.empty)
             }
         }, { [data] request in
-            return .ok(.html(data.html.string()!))
+            return .ok(.html(data.html.utf8String()!))
         }]
         try server.start(8084)
 
@@ -1062,7 +1062,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
         server.middleware = [{ [data] request in
             lock.lock()
             lock.unlock()
-            return .ok(.html(data.html.string()!))
+            return .ok(.html(data.html.utf8String()!))
         }]
         try server.start(8084)
 
@@ -1277,7 +1277,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
             case urls.local2.path:
                 return .ok(.data(data.html))
             default:
-                return .ok(.html(data.htmlWithIframe3.string()!))
+                return .ok(.html(data.htmlWithIframe3.utf8String()!))
             }
         }]
         try server.start(8084)
@@ -1353,7 +1353,7 @@ class NavigationRedirectsTests: DistributedNavigationDelegateTestsBase {
 
         server.middleware = [{ [data] request in
             guard request.path == "/" else { return nil }
-            return .ok(.html(data.clientRedirectData.string()!))
+            return .ok(.html(data.clientRedirectData.utf8String()!))
         }, { [data] request in
             return .ok(.data(data.html))
         }]

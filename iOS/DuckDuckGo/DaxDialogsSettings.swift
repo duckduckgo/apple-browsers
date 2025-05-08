@@ -48,10 +48,6 @@ protocol DaxDialogsSettings: AnyObject {
 
     var browsingFinalDialogShown: Bool { get set }
 
-    var lastVisitedOnboardingWebsiteURLPath: String? { get set }
-
-    var lastShownContextualOnboardingDialogType: String? { get set }
-
     var privacyProPromotionDialogShown: Bool { get set }
 }
 
@@ -95,12 +91,6 @@ class DefaultDaxDialogsSettings: DaxDialogsSettings {
 
     @UserDefaultsWrapper(key: .daxBrowsingFinalDialogShown, defaultValue: false)
     var browsingFinalDialogShown: Bool
-
-    @UserDefaultsWrapper(key: .daxLastVisitedOnboardingWebsite, defaultValue: nil)
-    var lastVisitedOnboardingWebsiteURLPath: String?
-
-    @UserDefaultsWrapper(key: .daxLastShownContextualOnboardingDialogType, defaultValue: nil)
-    var lastShownContextualOnboardingDialogType: String?
 
     @UserDefaultsWrapper(key: .daxPrivacyProPromotionDialogShown, defaultValue: false)
     var privacyProPromotionDialogShown: Bool

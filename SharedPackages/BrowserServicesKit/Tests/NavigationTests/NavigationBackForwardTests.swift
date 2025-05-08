@@ -32,7 +32,7 @@ class NavigationBackForwardTests: DistributedNavigationDelegateTestsBase {
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
 
         server.middleware = [{ [data] request in
-            return .ok(.html(data.html.string()!))
+            return .ok(.html(data.html.utf8String()!))
         }]
         try server.start(8084)
 
@@ -99,7 +99,7 @@ class NavigationBackForwardTests: DistributedNavigationDelegateTestsBase {
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
 
         server.middleware = [{ [data] request in
-            return .ok(.html(data.html.string()!))
+            return .ok(.html(data.html.utf8String()!))
         }]
         try server.start(8084)
 
@@ -166,7 +166,7 @@ class NavigationBackForwardTests: DistributedNavigationDelegateTestsBase {
         navigationDelegate.setResponders(.strong(NavigationResponderMock(defaultHandler: { _ in })))
 
         server.middleware = [{ [data] request in
-            return .ok(.html(data.html.string()!))
+            return .ok(.html(data.html.utf8String()!))
         }]
         try server.start(8084)
 
@@ -217,9 +217,9 @@ class NavigationBackForwardTests: DistributedNavigationDelegateTestsBase {
 
         server.middleware = [{ [data] request in
             guard request.path == "/" else { return nil }
-            return .ok(.html(data.htmlWithIframe3.string()!))
+            return .ok(.html(data.htmlWithIframe3.utf8String()!))
         }, { [data] request in
-            return .ok(.html(data.html.string()!))
+            return .ok(.html(data.html.utf8String()!))
         }]
         try server.start(8084)
 
@@ -299,9 +299,9 @@ class NavigationBackForwardTests: DistributedNavigationDelegateTestsBase {
 
         server.middleware = [{ [data] request in
             guard request.path == "/" else { return nil }
-            return .ok(.html(data.htmlWithIframe3.string()!))
+            return .ok(.html(data.htmlWithIframe3.utf8String()!))
         }, { [data] request in
-            return .ok(.html(data.html.string()!))
+            return .ok(.html(data.html.utf8String()!))
         }]
         try server.start(8084)
 

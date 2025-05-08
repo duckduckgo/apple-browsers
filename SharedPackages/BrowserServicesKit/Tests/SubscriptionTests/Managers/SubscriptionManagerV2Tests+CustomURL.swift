@@ -37,7 +37,7 @@ extension SubscriptionManagerV2Tests {
             oAuthClient: mockOAuthClient,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: subscriptionEnvironment,
-            pixelHandler: { _ in },
+            pixelHandler: MockPixelHandler(),
             isInternalUserEnabled: isInternalUserEnabled
         )
 
@@ -62,7 +62,7 @@ extension SubscriptionManagerV2Tests {
             oAuthClient: mockOAuthClient,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: subscriptionEnvironment,
-            pixelHandler: { _ in },
+            pixelHandler: MockPixelHandler(),
             isInternalUserEnabled: isInternalUserEnabled
         )
 
@@ -85,7 +85,7 @@ extension SubscriptionManagerV2Tests {
             oAuthClient: mockOAuthClient,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: subscriptionEnvironment,
-            pixelHandler: { _ in },
+            pixelHandler: MockPixelHandler(),
             isInternalUserEnabled: isInternalUserEnabled
         )
 

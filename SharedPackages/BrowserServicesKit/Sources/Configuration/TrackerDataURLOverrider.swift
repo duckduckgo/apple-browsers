@@ -109,6 +109,10 @@ public enum TDSExperimentType: String, CaseIterable {
 }
 
 extension TDSExperimentType: FeatureFlagDescribing {
+    public var defaultValue: Bool {
+        return false
+    }
+
     public var supportsLocalOverriding: Bool {
         return false
     }

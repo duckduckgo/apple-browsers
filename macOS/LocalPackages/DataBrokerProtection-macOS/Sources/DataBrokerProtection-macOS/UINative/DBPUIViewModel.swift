@@ -30,7 +30,7 @@ protocol DBPUIScanOps: AnyObject {
 }
 
 public final class DBPUIViewModel {
-    private let dataManager: DataBrokerProtectionDataManaging
+    private let dataManager: DataBrokerProtectionDataManaging?
     private let agentInterface: DataBrokerProtectionAppToAgentInterface
     private let vpnBypassService: VPNBypassServiceProvider?
 
@@ -41,7 +41,7 @@ public final class DBPUIViewModel {
     private let webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
 
-    public init(dataManager: DataBrokerProtectionDataManaging,
+    public init(dataManager: DataBrokerProtectionDataManaging?,
                 agentInterface: DataBrokerProtectionAppToAgentInterface,
                 vpnBypassService: VPNBypassServiceProvider? = nil,
                 webUISettings: DataBrokerProtectionWebUIURLSettingsRepresentable,
@@ -62,14 +62,15 @@ public final class DBPUIViewModel {
     @MainActor func setupCommunicationLayer() -> WKWebViewConfiguration? {
         guard let privacyConfig = privacyConfig else { return nil }
         guard let prefs = prefs else { return nil }
+        guard let dataManager = dataManager else { return nil }
 
         let configuration = WKWebViewConfiguration()
         configuration.applyDBPUIConfiguration(privacyConfig: privacyConfig,
                                               prefs: prefs,
-                                              delegate: dataManager.cache,
+                                              delegate: dataManager.communicator,
                                               webUISettings: webUISettings,
                                               vpnBypassService: vpnBypassService)
-        dataManager.cache.scanDelegate = self
+        dataManager.communicator.scanDelegate = self
         configuration.preferences.setValue(true, forKey: "developerExtrasEnabled")
 
         if let dbpUIContentController = configuration.userContentController as? DBPUIUserContentController {
@@ -87,7 +88,7 @@ extension DBPUIViewModel: DBPUIScanOps {
 
     func updateCacheWithCurrentScans() async {
         do {
-            try dataManager.prepareBrokerProfileQueryDataCache()
+            try dataManager?.prepareBrokerProfileQueryDataCache()
         } catch {
             Logger.dataBrokerProtection.error("DBPUIViewModel error: updateCacheWithCurrentScans, error: \(error.localizedDescription, privacy: .public)")
             pixelHandler.fire(.databaseError(error: error, functionOccurredIn: "DBPUIViewModel.updateCacheWithCurrentScans"))

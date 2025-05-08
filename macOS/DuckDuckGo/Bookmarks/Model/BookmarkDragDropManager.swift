@@ -54,6 +54,10 @@ final class BookmarkDragDropManager {
         default:
             guard destination is BookmarkFolder || destination is PseudoFolder else { return .none }
 
+            if let url = info.draggingPasteboard.url {
+                return bookmarkManager.isUrlBookmarked(url: url) ? .none : .copy
+            }
+
             if info.draggingPasteboard.availableType(from: [.URL]) != nil {
                 return .copy
             }

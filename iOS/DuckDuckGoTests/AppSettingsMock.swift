@@ -45,6 +45,8 @@ class AppSettingsMock: AppSettings {
 
     func setAutofillIsNewInstallForOnByDefault() { }
 
+    var autofillCreditCardsEnabled: Bool = false
+    
     var autocomplete: Bool = true
 
     var currentThemeStyle: DuckDuckGo.ThemeStyle = .systemDefault
@@ -99,13 +101,15 @@ class AppSettingsMock: AppSettings {
     var newTabPageIntroMessageEnabled: Bool?
     var newTabPageIntroMessageSeenCount: Int = 0
 
-    var onboardingHighlightsEnabled: Bool = false
-    var onboardingAddToDockState: OnboardingAddToDockState = .disabled
-    
+    var onboardingUserType: OnboardingUserType = .notSet
+
     var duckPlayerNativeUISERPEnabled: Bool = true
     var duckPlayerNativeYoutubeMode: DuckDuckGo.NativeDuckPlayerYoutubeMode = .allCases.first!
     var duckPlayerNativeUIPrimingModalPresentationEventCount: Int = 0
-    var duckPlayerNativeUIPrimingModalTimeSinceLastPresented: Int = 0
+    var duckPlayerNativeUIPrimingModalLastPresentationTime: Int = 0
     var duckPlayerPillDismissCount: Int = 0
+    var duckPlayerWelcomeMessageShown: Bool = false
+    var duckPlayerVariant: DuckDuckGo.DuckPlayerVariant = .classicWeb
+    var duckPlayerPrimingMessagePresented: Bool = false
 
 }

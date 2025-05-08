@@ -40,24 +40,20 @@ final class ContextualDaxDialogFactoryIntegrationTests: XCTestCase {
     @MainActor func testWhenMakeViewForTryFireButtonThenOnboardingTryFireButtonDialogViewCreatedAndOnActionExpectedActionOccurs() throws {
         // GIVEN
         var onDismissRun = false
-        var onGotItPressedRun = false
         let dialogType = ContextualDialogType.tryFireButton
         let onDismiss = { onDismissRun = true }
-        let onGotItPressed = { onGotItPressedRun = true }
 
         // WHEN
-        let result = factory.makeView(for: dialogType, delegate: delegate, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: {})
+        let result = factory.makeView(for: dialogType, delegate: delegate, onDismiss: onDismiss, onGotItPressed: {}, onFireButtonPressed: {})
 
         // THEN
         let view = try XCTUnwrap(find(OnboardingFireDialog.self, in: result))
 
         // WHEN
-        view.viewModel.skip()
         view.viewModel.tryFireButton()
 
         // THEN
-        XCTAssertFalse(onDismissRun)
-        XCTAssertTrue(onGotItPressedRun)
+        XCTAssertTrue(onDismissRun)
         let expectation = self.expectation(description: "Wait for FirePopover to appear")
         self.waitForPopoverToAppear(expectation: expectation)
         wait(for: [expectation], timeout: 3.0)

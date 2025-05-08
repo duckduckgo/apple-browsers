@@ -61,6 +61,13 @@ final class BookmarkManagementSplitViewController: NSSplitViewController {
         detailViewController.delegate = self
     }
 
+    /// If search bar is focused, make it so that clicking outside of it
+    /// and not in any other view, resigns first responder.
+    override func mouseDown(with event: NSEvent) {
+        if detailViewController.searchBar.isFirstResponder {
+            view.window?.makeFirstResponder(nil)
+        }
+    }
 }
 
 extension BookmarkManagementSplitViewController: BookmarkManagementSidebarViewControllerDelegate {

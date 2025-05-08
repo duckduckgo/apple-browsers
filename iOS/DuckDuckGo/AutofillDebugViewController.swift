@@ -35,6 +35,7 @@ class AutofillDebugViewController: UITableViewController {
         case resetAutofillBrokenReports = 206
         case resetAutofillSurveys = 207
         case viewAllCredentials = 208
+        case addAutofillCreditCardData = 209
     }
 
     let defaults = AppUserDefaults()
@@ -54,6 +55,7 @@ class AutofillDebugViewController: UITableViewController {
     @UserDefaultsWrapper(key: .autofillFirstTimeUser, defaultValue: true)
     private var autofillFirstTimeUser: Bool
 
+    // swiftlint:disable:next cyclomatic_complexity
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         tableView.deselectRow(at: indexPath, animated: true)
 
@@ -97,6 +99,21 @@ class AutofillDebugViewController: UITableViewController {
                 ActionMessageView.present(message: "Autofill Surveys reset")
             } else if cell.tag == Row.viewAllCredentials.rawValue {
                 tableView.deselectRow(at: indexPath, animated: true)
+            } else if cell.tag == Row.addAutofillCreditCardData.rawValue {
+                let amexCC = SecureVaultModels.CreditCard(cardNumber: "378282246310005", cardholderName: "Dax Duckling", cardSecurityCode: "123", expirationMonth: 12, expirationYear: 2025)
+                let visaCC = SecureVaultModels.CreditCard(cardNumber: "4222222222222", cardholderName: "Dax Duckling", cardSecurityCode: "123", expirationMonth: 1, expirationYear: 2026)
+                let mastercardCC = SecureVaultModels.CreditCard(cardNumber: "5555555555554444", cardholderName: "Dax Duckling", cardSecurityCode: "123", expirationMonth: nil, expirationYear: nil)
+                let invalidCardTypeCC = SecureVaultModels.CreditCard(cardNumber: "123456789", cardholderName: "Dax Duckling", cardSecurityCode: "", expirationMonth: nil, expirationYear: nil)
+
+                for creditCard in [amexCC, visaCC, mastercardCC, invalidCardTypeCC] {
+                    do {
+                        let secureVault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter())
+                        _ = try secureVault?.storeCreditCard(creditCard)
+                    } catch let error {
+                        Logger.general.error("Error inserting credit card: \(error.localizedDescription, privacy: .public)")
+                    }
+                }
+                ActionMessageView.present(message: "Credit Cards added")
             }
         }
     }

@@ -16,9 +16,9 @@
 //  limitations under the License.
 //
 
+import AppKit
 import Foundation
 import Navigation
-
 final class NavigationHotkeyHandler {
 
     private var onNewWindow: ((WKNavigationAction?) -> NavigationDecision)?
@@ -56,20 +56,32 @@ extension NavigationHotkeyHandler: NavigationResponder {
             return isLinkActivated && self.isTabPinned() && isNavigatingToAnotherDomain && navigationAction.isForMainFrame
         }()
 
-        // to be modularized later on, see https://app.asana.com/0/1201037661562251/1203487090719153/f
-        let isRequestingNewTab = (isLinkActivated && NSApp.isCommandPressed) || navigationAction.navigationType.isMiddleButtonClick || isNavigatingAwayFromPinnedTab
-        if isRequestingNewTab {
-            let shouldSelectNewTab = NSApp.isShiftPressed || (isNavigatingAwayFromPinnedTab && !navigationAction.navigationType.isMiddleButtonClick && !NSApp.isCommandPressed)
-            let isBurner = isBurner
+        // Don‘t interrupt Navigation Actions already targeting a new window as it will cause extra empty tabs opening
+        guard isLinkActivated || isNavigatingAwayFromPinnedTab else { return .next }
 
-            self.onNewWindow = { _ in
-                return .allow(.tab(selected: shouldSelectNewTab, burner: isBurner))
+        // Get the open behavior with canOpenLinkInCurrentTab=false for pinned tabs
+        let canOpenLinkInCurrentTab = !isNavigatingAwayFromPinnedTab
+        let button: NSEvent.Button = navigationAction.navigationType.isMiddleButtonClick ? .middle : .left
+        let switchToNewTabWhenOpened = TabsPreferences.shared.switchToNewTabWhenOpened
+
+        let linkOpenBehavior = LinkOpenBehavior(button: button, modifierFlags: NSApp.currentEvent?.modifierFlags ?? [], switchToNewTabWhenOpenedPreference: switchToNewTabWhenOpened, canOpenLinkInCurrentTab: canOpenLinkInCurrentTab)
+
+        // Handle behavior for navigation
+        switch linkOpenBehavior {
+        case .currentTab:
+            return .next
+
+        case .newTab(let selected), .newWindow(let selected):
+            self.onNewWindow = { [isBurner] _ in
+                if case .newWindow = linkOpenBehavior {
+                    return .allow(.window(active: selected, burner: isBurner))
+                } else {
+                    return .allow(.tab(selected: selected, burner: isBurner))
+                }
             }
             targetFrame.webView?.loadInNewWindow(navigationAction.url)
             return .cancel
         }
-
-        return .next
     }
 
 }

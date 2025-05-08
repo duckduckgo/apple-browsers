@@ -48,6 +48,9 @@ protocol OnboardingIntroImpressionReporting {
 }
 
 protocol OnboardingIntroPixelReporting: OnboardingIntroImpressionReporting {
+    func measureSkipOnboardingCTAAction()
+    func measureConfirmSkipOnboardingCTAAction()
+    func measureResumeOnboardingCTAAction()
     func measureBrowserComparisonImpression()
     func measureChooseBrowserCTAAction()
     func measureChooseAppIconImpression()
@@ -65,6 +68,15 @@ protocol OnboardingCustomInteractionPixelReporting {
 
 protocol OnboardingDaxDialogsReporting {
     func measureScreenImpression(event: Pixel.Event)
+    func measureTrySearchDialogNewTabDismissButtonTapped()
+    func measureSearchResultDialogDismissButtonTapped()
+    func measureTryVisitSiteDialogNewTabDismissButtonTapped()
+    func measureTryVisitSiteDialogDismissButtonTapped()
+    func measureTrackersDialogDismissButtonTapped()
+    func measureFireDialogDismissButtonTapped()
+    func measureEndOfJourneyDialogNewTabDismissButtonTapped()
+    func measureEndOfJourneyDialogDismissButtonTapped()
+    func measurePrivacyPromoDialogNewTabDismissButtonTapped()
     func measureEndOfJourneyDialogCTAAction()
 }
 
@@ -81,7 +93,7 @@ protocol OnboardingSetAsDefaultBrowserExperimentReporting {
 }
 
 typealias LinearOnboardingPixelReporting = OnboardingIntroPixelReporting & OnboardingAddToDockReporting & OnboardingSetAsDefaultBrowserExperimentReporting
-typealias OnboardingPixelReporting = LinearOnboardingPixelReporting & OnboardingSearchSuggestionsPixelReporting & OnboardingSiteSuggestionsPixelReporting & OnboardingCustomInteractionPixelReporting & OnboardingDaxDialogsReporting
+typealias OnboardingPixelReporting = LinearOnboardingPixelReporting & OnboardingCustomInteractionPixelReporting & OnboardingDaxDialogsReporting
 
 // MARK: - Implementation
 
@@ -156,6 +168,18 @@ extension OnboardingPixelReporter {
 
 extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
 
+    func measureSkipOnboardingCTAAction() {
+        fire(event: .onboardingIntroSkipOnboardingCTAPressed, unique: false)
+    }
+
+    func measureConfirmSkipOnboardingCTAAction() {
+        fire(event: .onboardingIntroConfirmSkipOnboardingCTAPressed, unique: false)
+    }
+
+    func measureResumeOnboardingCTAAction() {
+        fire(event: .onboardingIntroResumeOnboardingCTAPressed, unique: false)
+    }
+
     func measureOnboardingIntroImpression() {
         fire(event: .onboardingIntroShownUnique, unique: true)
     }
@@ -182,24 +206,6 @@ extension OnboardingPixelReporter: OnboardingIntroPixelReporting {
 
     func measureChooseBottomAddressBarPosition() {
         fire(event: .onboardingIntroBottomAddressBarSelected, unique: false)
-    }
-
-}
-
-// MARK: - OnboardingPixelReporter + List
-
-extension OnboardingPixelReporter: OnboardingSearchSuggestionsPixelReporting {
-    
-    func measureSearchSuggetionOptionTapped() {
-        // Left empty on purpose. These were temporary pixels in iOS. macOS will still use them.
-    }
-
-}
-
-extension OnboardingPixelReporter: OnboardingSiteSuggestionsPixelReporting {
-    
-    func measureSiteSuggetionOptionTapped() {
-        // Left empty on purpose. These were temporary pixels in iOS. macOS will still use them.
     }
 
 }
@@ -241,6 +247,42 @@ extension OnboardingPixelReporter: OnboardingDaxDialogsReporting {
     
     func measureScreenImpression(event: Pixel.Event) {
         fire(event: event, unique: true)
+    }
+
+    func measureTrySearchDialogNewTabDismissButtonTapped() {
+        fire(event: .onboardingTrySearchDialogNewTabDismissButtonTapped, unique: false)
+    }
+
+    func measureSearchResultDialogDismissButtonTapped() {
+        fire(event: .onboardingSearchResultDialogDismissButtonTapped, unique: false)
+    }
+
+    func measureTryVisitSiteDialogNewTabDismissButtonTapped() {
+        fire(event: .onboardingTryVisitSiteDialogNewTabDismissButtonTapped, unique: false)
+    }
+
+    func measureTryVisitSiteDialogDismissButtonTapped() {
+        fire(event: .onboardingTryVisitSiteDialogDismissButtonTapped, unique: false)
+    }
+
+    func measureTrackersDialogDismissButtonTapped() {
+        fire(event: .onboardingTrackersDialogDismissButtonTapped, unique: false)
+    }
+
+    func measureFireDialogDismissButtonTapped() {
+        fire(event: .onboardingFireDialogDismissButtonTapped, unique: false)
+    }
+
+    func measureEndOfJourneyDialogNewTabDismissButtonTapped() {
+        fire(event: .onboardingEndOfJourneyDialogNewTabDismissButtonTapped, unique: false)
+    }
+
+    func measureEndOfJourneyDialogDismissButtonTapped() {
+        fire(event: .onboardingEndOfJourneyDialogDismissButtonTapped, unique: false)
+    }
+
+    func measurePrivacyPromoDialogNewTabDismissButtonTapped() {
+        fire(event: .onboardingPrivacyPromoDialogDismissButtonTapped, unique: false)
     }
 
     func measureEndOfJourneyDialogCTAAction() {

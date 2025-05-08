@@ -102,7 +102,7 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
                                                                environment: subscriptionEnvironment,
                                                                userDefaults: subscriptionUserDefaults,
                                                                canPerformAuthMigration: false,
-                                                               canHandlePixels: false)
+                                                               pixelHandlingSource: .dbp)
         }
     }
 

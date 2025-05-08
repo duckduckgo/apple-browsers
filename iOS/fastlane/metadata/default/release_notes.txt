@@ -1,2 +1,1 @@
-• We partnered with cybersecurity leader Netcraft to expand our browser's existing phishing and malware protections. If you accidentally click a link to a scam website, you’ll now see a warning so you can safely navigate away. Unlike similar solutions in other browsers, our protections don't require an account or rely on your browsing data.
-• We also made some improvements and fixed a handful bugs, including one that prevented Duck.ai chats from downloading.
+• Bug fixes and other improvements.

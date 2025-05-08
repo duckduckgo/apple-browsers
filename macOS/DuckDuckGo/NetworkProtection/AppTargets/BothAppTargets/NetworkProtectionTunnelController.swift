@@ -679,7 +679,7 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
             let tokenContainer = try await fetchTokenContainer()
             options[NetworkProtectionOptionKey.tokenContainer] = tokenContainer.data
 
-            // Important: Here we force the token refresh in order to immediately branch the one used by the main app from the system extension one.
+            // It’s important to force refresh the token here to immediately branch the token used by the main app from the one sent to the system extension.
             // See discussion https://app.asana.com/0/1199230911884351/1208785842165508/f
             try await subscriptionManagerV2.getTokenContainer(policy: .localForceRefresh)
         }
@@ -689,11 +689,10 @@ final class NetworkProtectionTunnelController: TunnelController, TunnelSessionPr
 
         options[NetworkProtectionOptionKey.excludeLocalNetworks] = NSNumber(value: settings.excludeLocalNetworks)
 
-#if NETP_SYSTEM_EXTENSION
         if let data = try? JSONEncoder().encode(settings.selectedLocation) {
             options[NetworkProtectionOptionKey.selectedLocation] = NSData(data: data)
         }
-#endif
+
         ensureRiskyDomainsEnabledIfNeeded()
         var dnsSettings = settings.dnsSettings
         if settings.dnsSettings == .ddg(blockRiskyDomains: true) && !featureFlagger.isFeatureOn(.networkProtectionRiskyDomainsProtection) {

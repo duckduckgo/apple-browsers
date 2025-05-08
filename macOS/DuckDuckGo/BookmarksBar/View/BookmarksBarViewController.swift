@@ -31,6 +31,7 @@ final class BookmarksBarViewController: NSViewController {
     @IBOutlet private var bookmarksBarCollectionView: NSCollectionView!
     @IBOutlet private var clippedItemsIndicator: MouseOverButton!
     @IBOutlet private var promptAnchor: NSView!
+    @IBOutlet var backgroundColorView: ColorView!
 
     private var bookmarkMenuPopover: BookmarksBarMenuPopover?
 
@@ -39,6 +40,7 @@ final class BookmarksBarViewController: NSViewController {
     private let viewModel: BookmarksBarViewModel
     private let tabCollectionViewModel: TabCollectionViewModel
     private let appereancePreferences: AppearancePreferencesPersistor
+    private let visualStyleManager: VisualStyleManagerProviding
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -63,11 +65,13 @@ final class BookmarksBarViewController: NSViewController {
     init?(coder: NSCoder, tabCollectionViewModel: TabCollectionViewModel,
           bookmarkManager: BookmarkManager = LocalBookmarkManager.shared,
           dragDropManager: BookmarkDragDropManager = BookmarkDragDropManager.shared,
-          appereancePreferences: AppearancePreferencesPersistor = AppearancePreferencesUserDefaultsPersistor()
+          appereancePreferences: AppearancePreferencesPersistor = AppearancePreferencesUserDefaultsPersistor(),
+          visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager
     ) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
         self.appereancePreferences = appereancePreferences
+        self.visualStyleManager = visualStyleManager
 
         self.tabCollectionViewModel = tabCollectionViewModel
         self.viewModel = BookmarksBarViewModel(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, tabCollectionViewModel: tabCollectionViewModel)
@@ -90,11 +94,14 @@ final class BookmarksBarViewController: NSViewController {
 
         viewModel.delegate = self
 
+        backgroundColorView.backgroundColor = visualStyleManager.style.navigationBackgroundColor
+
         let nib = NSNib(nibNamed: "BookmarksBarCollectionViewItem", bundle: .main)
         bookmarksBarCollectionView.setDraggingSourceOperationMask([.copy, .move], forLocal: true)
         bookmarksBarCollectionView.register(nib, forItemWithIdentifier: BookmarksBarCollectionViewItem.identifier)
 
         bookmarksBarCollectionView.registerForDraggedTypes(BookmarkDragDropManager.draggedTypes)
+        bookmarksBarCollectionView.backgroundColors = [visualStyleManager.style.navigationBackgroundColor]
 
         clippedItemsIndicator.registerForDraggedTypes(BookmarkDragDropManager.draggedTypes)
         clippedItemsIndicator.delegate = self
@@ -262,7 +269,7 @@ final class BookmarksBarViewController: NSViewController {
     }
 
     @IBAction func importBookmarksClicked(_ sender: Any) {
-        DataImportView().show()
+        DataImportView().show(in: view.window)
     }
 
     @IBAction private func clippedItemsIndicatorClicked(_ sender: NSButton) {
@@ -271,20 +278,6 @@ final class BookmarksBarViewController: NSViewController {
 
     private func clippedItemsBookmarkFolder() -> BookmarkFolder {
         BookmarkFolder(id: PseudoFolder.bookmarks.id, title: PseudoFolder.bookmarks.name, children: viewModel.clippedItems.map(\.entity))
-    }
-
-    @IBAction func mouseClickViewMouseUp(_ sender: MouseClickView) {
-        // when collection view reloaded we may receive mouseUp event from a wrong bookmarks bar item
-        // get actual item based on the event coordinates
-        guard let indexPath = bookmarksBarCollectionView.withMouseLocationInViewCoordinates(convert: { point in
-            self.bookmarksBarCollectionView.indexPathForItem(at: point)
-        }),
-              let item = bookmarksBarCollectionView.item(at: indexPath.item) as? BookmarksBarCollectionViewItem else {
-            Logger.bookmarks.error("Item at mouseUp point not found.")
-            return
-        }
-
-        viewModel.bookmarksBarCollectionViewItemClicked(item)
     }
 
 }
@@ -304,8 +297,7 @@ extension BookmarksBarViewController: BookmarksBarViewModelDelegate {
 
         switch entity {
         case let bookmark as Bookmark:
-            WindowControllersManager.shared.open(bookmark: bookmark)
-            PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
+            WindowControllersManager.shared.open(bookmark, with: NSApp.currentEvent)
         case let folder as BookmarkFolder:
             showSubmenu(for: folder, from: item.view)
         default:
@@ -448,6 +440,7 @@ private extension BookmarksBarViewController {
             self.bookmarkMenuPopover = bookmarkMenuPopover
         }
 
+        view.window?.makeKeyAndOrderFront(nil)
         bookmarkMenuPopover.show(positionedBelow: view)
 
         if view === clippedItemsIndicator {

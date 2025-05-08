@@ -61,10 +61,6 @@ final class ContextualOnboardingPresenter: ContextualOnboardingPresenting {
 
 private extension ContextualOnboardingPresenter {
 
-    func presentControlContextualOnboarding(for spec: DaxDialogs.BrowsingSpec, in vc: TabViewOnboardingDelegate) {
-        vc.performSegue(withIdentifier: "DaxDialog", sender: spec)
-    }
-
     func presentExperimentContextualOnboarding(for spec: DaxDialogs.BrowsingSpec, in vc: TabViewOnboardingDelegate) {
 
         // Before presenting a new dialog, remove any existing ones.

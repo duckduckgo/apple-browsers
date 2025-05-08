@@ -48,6 +48,7 @@ import RemoteMessaging
 import os.log
 import Freemium
 import VPNAppState
+import AIChat
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
 
@@ -112,13 +113,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         privacyStats: privacyStats,
         freemiumDBPPromotionViewCoordinator: freemiumDBPPromotionViewCoordinator
     )
+
+    private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(
+        promptHandler: AIChatPromptHandler.shared,
+        addressBarQueryExtractor: AIChatAddressBarPromptExtractor()
+    )
+
     let privacyStats: PrivacyStatsCollecting
     let activeRemoteMessageModel: ActiveRemoteMessageModel
-    let newTabPageCustomizationModel = NewTabPageCustomizationModel()
+    let newTabPageCustomizationModel: NewTabPageCustomizationModel
     let remoteMessagingClient: RemoteMessagingClient!
-    let onboardingStateMachine: ContextualOnboardingStateMachine & ContextualOnboardingStateUpdater
+    let onboardingContextualDialogsManager: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater
     let defaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPresenter
-    let visualStyleConfigurable: VisualStyleConfigurable
+    let visualStyleManager: VisualStyleManagerProviding
 
     let isAuthV2Enabled: Bool
     var subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge
@@ -277,9 +284,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let coordinator =  DefaultBrowserAndDockPromptCoordinator(featureFlagger: featureFlagger)
         defaultBrowserAndDockPromptPresenter = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, featureFlagger: featureFlagger)
 
-        visualStyleConfigurable = VisualStyleManager(featureFlagger: featureFlagger)
+        visualStyleManager = VisualStyleManager(featureFlagger: featureFlagger)
+        newTabPageCustomizationModel = NewTabPageCustomizationModel(visualStyleManager: visualStyleManager)
 
-        onboardingStateMachine = ContextualOnboardingStateMachine()
+        onboardingContextualDialogsManager = ContextualDialogsManager()
 
         // MARK: - Subscription configuration
 
@@ -309,17 +317,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                    featureFlagger: featureFlagger,
                                                                    userDefaults: subscriptionUserDefaults,
                                                                    canPerformAuthMigration: true,
-                                                                   canHandlePixels: true)
+                                                                   pixelHandlingSource: .mainApp)
 
             // Expired refresh token recovery
             if #available(iOS 15.0, macOS 12.0, *) {
                 let restoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager, storePurchaseManager: subscriptionManager.storePurchaseManager())
                 subscriptionManager.tokenRecoveryHandler = {
-                    try await DeadTokenRecoverer.attemptRecoveryFromPastPurchase(subscriptionManager: subscriptionManager, restoreFlow: restoreFlow)
+                    do {
+                        try await DeadTokenRecoverer.attemptRecoveryFromPastPurchase(subscriptionManager: subscriptionManager, restoreFlow: restoreFlow)
+                        PixelKit.fire(PrivacyProPixel.privacyProInvalidRefreshTokenRecovered, frequency: .dailyAndCount)
+                    } catch {
+                        PixelKit.fire(PrivacyProPixel.privacyProInvalidRefreshTokenSignedOut, frequency: .dailyAndCount)
+                    }
                 }
             } else {
                 subscriptionManager.tokenRecoveryHandler = {
                     try await DeadTokenRecoverer.reportDeadRefreshToken()
+                    PixelKit.fire(PrivacyProPixel.privacyProInvalidRefreshTokenSignedOut, frequency: .dailyAndCount)
                 }
             }
 
@@ -404,7 +418,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #if !APPSTORE && WEB_EXTENSIONS_ENABLED
         if #available(macOS 15.4, *) {
             Task { @MainActor in
-                await WebExtensionManager.shared.loadWebExtensions()
+                await WebExtensionManager.shared.loadInstalledExtensions()
             }
         }
 #endif
@@ -437,7 +451,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Freemium DBP
         freemiumDBPFeature.subscribeToDependencyUpdates()
 
+        // ignore popovers shown from a view not in view hierarchy
+        // https://app.asana.com/0/1201037661562251/1206407295280737/f
         _ = NSPopover.swizzleShowRelativeToRectOnce
+        // disable macOS system-wide window tabbing
+        NSWindow.allowsAutomaticWindowTabbing = false
+        // Fix SwifUI context menus and its owner View leaking
+        SwiftUIContextMenuRetainCycleFix.setUp()
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -471,8 +491,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         if LocalStatisticsStore().atb == nil {
             AppDelegate.firstLaunchDate = Date()
-            // MARK: Enable pixel experiments here
-            PixelExperiment.install()
         }
         AtbAndVariantCleanup.cleanup()
         DefaultVariantManager().assignVariantIfNeeded { _ in
@@ -611,10 +629,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidBecomeActive(_ notification: Notification) {
         guard didFinishLaunching else { return }
 
-        PixelExperiment.fireOnboardingTestPixels()
         initializeSync()
-
-        vpnAppEventsHandler.applicationDidBecomeActive()
 
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
         let pirGatekeeper = DefaultDataBrokerProtectionFeatureGatekeeper(subscriptionManager: subscriptionAuthV1toV2Bridge,

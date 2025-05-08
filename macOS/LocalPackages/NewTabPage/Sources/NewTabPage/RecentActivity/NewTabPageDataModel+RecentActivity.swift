@@ -94,8 +94,8 @@ extension NewTabPageDataModel {
 
     struct ActivityOpenAction: Codable, Equatable {
         let id: String?
-        let target: OpenTarget
         let url: String
+        let target: OpenTarget
 
         enum OpenTarget: String, Codable {
             case sameTab = "same-tab"

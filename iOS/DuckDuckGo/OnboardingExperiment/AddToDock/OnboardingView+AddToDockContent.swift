@@ -71,6 +71,7 @@ extension OnboardingView {
             VStack {
                 OnboardingCTAButton(
                     title: UserText.AddToDockOnboarding.Buttons.tutorial,
+                    buttonStyle: .primary(compact: false),
                     action: {
                         showTutorialAction()
                         isSkipped.wrappedValue = false

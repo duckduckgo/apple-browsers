@@ -7,11 +7,11 @@
 /* Class = "UIButton"; accessibilityLabel = "Browse forward"; ObjectID = "aXg-p3-oeq"; */
 "aXg-p3-oeq.accessibilityLabel" = "Naršyti pirmyn";
 
-/* Class = "UIButton"; accessibilityLabel = "Clear Text"; ObjectID = "Dt8-We-5tV"; */
+/* Class = "UIButton"; accessibilityLabel = "Clear text"; ObjectID = "Dt8-We-5tV"; */
 "Dt8-We-5tV.accessibilityLabel" = "Valyti tekstą";
 
-/* Class = "UIButton"; accessibilityLabel = "Clear Text"; ObjectID = "gb5-wL-4OW"; */
-"gb5-wL-4OW.accessibilityLabel" = "Valyti tekstą";
+/* Class = "UIButton"; accessibilityLabel = "Stop Loading"; ObjectID = "gb5-wL-4OW"; */
+"gb5-wL-4OW.accessibilityLabel" = "Sustabdyti įkėlimą";
 
 /* Class = "UIButton"; accessibilityLabel = "Share"; ObjectID = "hor-Jd-3kw"; */
 "hor-Jd-3kw.accessibilityLabel" = "Bendrinti";

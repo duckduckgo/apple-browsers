@@ -67,7 +67,7 @@ final class PullToRefreshViewAdapter: NSObject {
         return min(max(calculatedThreshold, Constant.minimumTriggerThreshold), Constant.maximumTriggerThreshold)
     }
 
-    private var fakeScrollView: UIScrollView!
+    private let fakeScrollView = UIScrollView()
     private let refreshControl = UIRefreshControl()
     private var panGestureRecognizer: UIPanGestureRecognizer?
 
@@ -79,6 +79,23 @@ final class PullToRefreshViewAdapter: NSObject {
     private weak var scrollView: UIScrollView?
     private weak var pullableView: UIView?
     private let onRefresh: () -> Void
+
+    var backgroundColor: UIColor? {
+        didSet {
+            fakeScrollView.backgroundColor = backgroundColor ?? UIColor(designSystemColor: .background)
+            // Set refresh control tint color based on background brightness
+            refreshControl.tintColor = determineRefreshControlTintColor(for: backgroundColor)
+        }
+    }
+
+    private func determineRefreshControlTintColor(for backgroundColor: UIColor?) -> UIColor {
+        guard let backgroundColor = backgroundColor else {
+            return UIColor(designSystemColor: .iconsSecondary)
+        }
+
+        let userInterfaceStyle: UIUserInterfaceStyle = backgroundColor.brightnessPercentage < 50 ? .dark : .light
+        return UIColor(designSystemColor: .iconsSecondary).resolvedColor(with: .init(userInterfaceStyle: userInterfaceStyle))
+    }
 
     /**
      * Initializes the pull-to-refresh logic with the necessary components.
@@ -108,8 +125,8 @@ final class PullToRefreshViewAdapter: NSObject {
     }
 
     private func setupBackgroundScrollView(basedOn view: UIView) {
-        // Create the background scroll view that will be visible when pulling down
-        fakeScrollView = UIScrollView()
+        // Set up the background scroll view that will be visible when pulling down
+        fakeScrollView.backgroundColor = .clear
         fakeScrollView.translatesAutoresizingMaskIntoConstraints = false
         fakeScrollView.isScrollEnabled = true // Enable scrolling for refresh control
 
@@ -120,7 +137,7 @@ final class PullToRefreshViewAdapter: NSObject {
             fakeScrollView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             fakeScrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             fakeScrollView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            fakeScrollView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+            fakeScrollView.bottomAnchor.constraint(equalTo: view.centerYAnchor)
         ])
 
         let fakeContentView = UIView()

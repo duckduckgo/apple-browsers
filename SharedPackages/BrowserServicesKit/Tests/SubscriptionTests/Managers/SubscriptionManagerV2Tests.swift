@@ -49,7 +49,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
             oAuthClient: mockOAuthClient,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: SubscriptionEnvironment(serviceEnvironment: .production, purchasePlatform: .appStore),
-            pixelHandler: { _ in }
+            pixelHandler: MockPixelHandler()
         )
 
         subscriptionManager.tokenRecoveryHandler = {
@@ -138,7 +138,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
             oAuthClient: mockOAuthClient,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: environment,
-            pixelHandler: { _ in }
+            pixelHandler: MockPixelHandler()
         )
 
         let helpURL = subscriptionManager.url(for: .purchase)
@@ -151,7 +151,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
         let testSignature = "invalidSignature"
         mockSubscriptionEndpointService.confirmPurchaseResult = .failure(APIRequestV2.Error.invalidResponse)
         mockOAuthClient.getTokensResponse = .success(OAuthTokensFactory.makeValidTokenContainer())
-        mockOAuthClient.migrateV1TokenResponse = nil
+        mockOAuthClient.migrateV1TokenResponseError = OAuthClientError.authMigrationNotPerformed
         do {
             _ = try await subscriptionManager.confirmPurchase(signature: testSignature, additionalParams: nil)
             XCTFail("Error expected")
@@ -196,7 +196,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
             oAuthClient: mockOAuthClient,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: productionEnvironment,
-            pixelHandler: { _ in }
+            pixelHandler: MockPixelHandler()
         )
 
         // When
@@ -215,7 +215,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
             oAuthClient: mockOAuthClient,
             subscriptionEndpointService: mockSubscriptionEndpointService,
             subscriptionEnvironment: stagingEnvironment,
-            pixelHandler: { _ in }
+            pixelHandler: MockPixelHandler()
         )
 
         // When

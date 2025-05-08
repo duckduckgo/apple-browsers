@@ -29,7 +29,7 @@ struct OmniBarNotification: View {
     @State var textWidth: CGFloat = 0
     
     @State var opacity: Double = 0
-    
+
     var body: some View {
         HStack {
             HStack(spacing: 0) {
@@ -38,10 +38,10 @@ struct OmniBarNotification: View {
                 text
             }
             .background(
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(cornerRadius: cornerRadius)
                     .foregroundColor(Constants.Colors.background)
                     .offset(x: textOffset)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius))
             )
             
             Spacer()
@@ -77,6 +77,13 @@ struct OmniBarNotification: View {
                 textWidth = $0.width
                 textOffset = -textWidth
             }
+    }
+
+    private var cornerRadius: CGFloat {
+        switch viewModel.style {
+        case .default: return 8
+        case .experimental: return 12
+        }
     }
 }
 

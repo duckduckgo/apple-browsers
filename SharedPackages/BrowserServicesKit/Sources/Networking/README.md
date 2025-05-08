@@ -1,64 +1,136 @@
 #  Networking
 
 This is the preferred Networking library for iOS and macOS DuckDuckGo apps.
-If the library lacks the required features, please improve it. 
+If the library lacks the required features, please improve it.
 
 ## v2
 
-### Usage
+### Configuration:
 
-#### Configuration:
+```swift
+// Initialize API service with optional auth refresh callback
+
+let configuration = URLSessionConfiguration.ephemeral
+configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
+configuration.httpCookieStorage = nil
+let urlSession = URLSession(configuration: configuration, delegate: SessionDelegate(), delegateQueue: nil)
+let apiService = DefaultAPIService(urlSession: urlSession
+                                   authorizationRefresherCallback: { request in
+                                        // Refresh and return new token
+                                        return "new_token"
+                                   })
 ```
-let request = APIRequestV2(url: HTTPURLResponse.testUrl,
-                           method: .post,
-                           queryItems: ["Query,Item1%Name": "Query,Item1%Value"],
-                           headers: APIRequestV2.HeadersV2(userAgent: "UserAgent"),
-                           body: Data(),
-                           timeoutInterval: TimeInterval(20),
-                           cachePolicy: .reloadIgnoringLocalAndRemoteCacheData,
-                           responseConstraints: [.allowHTTPNotModified,
-                                                 .requireETagHeader,
-                                                 .requireUserAgent],
-                           allowedQueryReservedCharacters: CharacterSet(charactersIn: ","))
-let apiService = DefaultAPIService(urlSession: URLSession.shared)
+
+### API request creation
+
+Create an `APIRequestV2`
+```swift
+let request = APIRequestV2(url: url,
+                          method: .post,
+                          queryItems: ["param1": "value1"],
+                          headers: APIRequestV2.HeadersV2(
+                              userAgent: "UserAgent",
+                              contentType: .json,
+                              authToken: "token"
+                          ),
+                          body: jsonData,
+                          timeoutInterval: 20.0,
+                          retryPolicy: APIRequestV2.RetryPolicy(maxRetries: 3, delay: .exponential(baseDelay: 2.0)),
+                          responseConstraints: [.requireETagHeader, .allowHTTPNotModified])
+```
+
+#### Headers
+The library supports various content types and header configurations:
+```swift
+let headers = APIRequestV2.HeadersV2(
+    userAgent: "UserAgent",
+    etag: "etag-value",
+    cookies: [/* HTTPCookie array */],
+    authToken: "Bearer token",
+    contentType: .json,  // Supports multiple types: json, xml, formURLEncoded, etc.
+    additionalHeaders: ["Custom-Header": "Value"]
+)
+```
+
+#### Retry Policies
+
+The library supports three types of retry policies for network errors (not API errors like 4xx or 5xx).
+
+```swift
+// Fixed
+let fixedPolicy = APIRequestV2.RetryPolicy(maxRetries: 3, delay: .fixed(2.0))
+
+// Exponential
+let exponentialPolicy = APIRequestV2.RetryPolicy(maxRetries: 3, delay: .exponential(baseDelay: 2.0))
+
+// Jitter
+let jitterPolicy = APIRequestV2.RetryPolicy(maxRetries: 3, delay: .jitter(backoff: 8.0))
+```
+
+#### Response Constraints
+You can enforce specific requirements for responses:
+```swift
+let constraints: [APIResponseConstraints] = [
+    .requireETagHeader,        // Requires ETag header in response
+    .allowHTTPNotModified,     // Allows 304 Not Modified responses (otherwise throws error)
+    .requireUserAgent          // Requires User-Agent in response header
+]
 ```
 
 #### Fetching
 
-The library provides a primary function for fetching requests:
+The library provides functions for fetching requests:
 
-**Raw Response Fetching**: This function returns an `APIResponseV2`, which is a tuple containing the raw data and the HTTP response.
-   
-   ```swift
-   let result = try await apiService.fetch(request: request)
-   ```
-   
-   The `APIResponseV2` is defined as:
-   
-   ```swift
-   typealias APIResponseV2 = (data: Data?, httpResponse: HTTPURLResponse)
-   ```
+**Raw Response Fetching**: Returns an `APIResponseV2` containing the raw data and HTTP response.
 
-**Response body decoding**: `APIResponseV2` provides a utility function for decoding the request body `Data` in the inferred `Decodable` type.
-
-```
-let response = try await apiService.fetch(request: request.apiRequest)
-let decodedModel: MyDecodableModelType = try response.decodeBody()
+```swift
+let response: APIResponseV2 = try await apiService.fetch(request: request)
 ```
 
+**Response Decoding**: Automatically decode the response body into a `Decodable` type:
 
-**Concurrency Considerations**: This library is designed to be agnostic concerning concurrency models. It maintains a stateless architecture, and the URLSession instance is injected by the user, thereby delegating all concurrency management decisions to the user. The library facilitates task cancellation by frequently invoking `try Task.checkCancellation()`, ensuring responsive and cooperative cancellation handling.
+```swift
+let response = try await apiService.fetch(request: request)
+let model: MyDecodableType = try response.decodeBody()
+
+// Custom decoder configuration
+let decoder = JSONDecoder()
+decoder.dateDecodingStrategy = .iso8601 // Example: Customize date decoding
+let model: MyDecodableType = try response.decodeBody(decoder: decoder)
+```
+
+### Authentication 
+
+[Authentication V2 (AuthV2) documentation can be found here.](Auth/README.md)
+
+`OAuthClient` supports automatic token refresh when receiving 401 Unauthorized responses, provided the request was initially authenticated (`authToken` was set in `HeadersV2`):
+```swift
+apiService.authorizationRefresherCallback = { request in
+    // Logic to refresh authentication token
+    let newAuthToken = try await refreshToken()
+    // Return the new token as a String
+    return newAuthToken
+}
+```
+
+### Concurrency Considerations
+This library is designed to be agnostic concerning concurrency models. It maintains a stateless architecture, and the `URLSession` instance is injected by the user, thereby delegating all concurrency management decisions to the user. The library facilitates task cancellation by frequently invoking `try Task.checkCancellation()`, ensuring responsive and cooperative cancellation handling.
 
 ### Mock
 
-The `MockPIService` implementing `APIService` can be found in `BSK/TestUtils`
+The `MockAPIService` implementing `APIService` can be found in `NetworkingTestingUtils`
 
-```
-let apiResponse = (Data(), HTTPURLResponse(url: HTTPURLResponse.testUrl,
-                                           statusCode: 200,
-                                           httpVersion: nil,
-                                           headerFields: nil)!)
-let mockedAPIService = MockAPIService(apiResponse: Result.success(apiResponse))
+```swift
+let mockData = Data("{}".utf8)
+let mockResponse = HTTPURLResponse(url: URL(string: "https://example.com")!,
+                                   statusCode: 200,
+                                   httpVersion: nil,
+                                   headerFields: ["ETag": "some-etag"])!
+let mockAPIResponse = APIResponseV2(data: mockData, httpResponse: mockResponse)
+let mockedAPIService = MockAPIService(apiResponse: .success(mockAPIResponse))
+
+// Example usage with mock service
+let myDecodedObject: MyDecodableType = try await mockedAPIService.fetch(request: someRequest).decodeBody()
 ```
 
 ## v1 (Legacy)

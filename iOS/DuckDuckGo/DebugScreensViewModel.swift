@@ -104,20 +104,6 @@ class DebugScreensViewModel: ObservableObject {
         }
     }
 
-    func navigateToLegacyDebugController() {
-        let storyboard = UIStoryboard(name: "Debug", bundle: nil)
-        let controller = storyboard.instantiateViewController(identifier: "DebugMenu") { coder in
-            let d = self.dependencies
-            return RootDebugViewController(coder: coder,
-                                    sync: d.syncService,
-                                    bookmarksDatabase: d.bookmarksDatabase,
-                                    internalUserDecider: d.internalUserDecider,
-                                    tabManager: d.tabManager,
-                                    fireproofing: d.fireproofing)
-        }
-        pushController?(controller)
-    }
-
     func executeAction(_ screen: DebugScreen) {
         switch screen {
         case .action(_, let action):

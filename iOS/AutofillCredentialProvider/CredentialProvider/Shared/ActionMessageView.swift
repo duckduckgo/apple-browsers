@@ -24,7 +24,7 @@ extension ActionMessageView: NibLoading {}
 class ActionMessageView: UIView {
 
     enum PresentationLocation {
-        case withBottomBar(andAddressBarBottom: Bool)
+        case withBottomBar(andAddressBarBottom: Bool, barHeight: CGFloat)
         case withoutBottomBar
     }
     
@@ -47,7 +47,7 @@ class ActionMessageView: UIView {
         }
 
         static var windowBottomPaddingWithAddressBar: CGFloat {
-            return windowBottomPaddingWithBottomBar + 52
+            return windowBottomPaddingWithBottomBar
         }
 
         static var windowBottomPaddingWithoutBottomBar: CGFloat {
@@ -58,8 +58,8 @@ class ActionMessageView: UIView {
     
     private static func bottomPadding(for location: PresentationLocation) -> CGFloat {
         switch location {
-        case .withBottomBar(let isAddressBarBottom):
-            return isAddressBarBottom ? Constants.windowBottomPaddingWithAddressBar : Constants.windowBottomPaddingWithBottomBar
+        case .withBottomBar(let isAddressBarBottom, let barHeight):
+            return isAddressBarBottom ? Constants.windowBottomPaddingWithAddressBar + barHeight : Constants.windowBottomPaddingWithBottomBar
         case .withoutBottomBar:
             return Constants.windowBottomPaddingWithoutBottomBar
         }
@@ -89,7 +89,7 @@ class ActionMessageView: UIView {
     static func present(message: NSAttributedString,
                         numberOfLines: Int = 0,
                         actionTitle: String? = nil,
-                        presentationLocation: PresentationLocation = .withBottomBar(andAddressBarBottom: false),
+                        presentationLocation: PresentationLocation = .withBottomBar(andAddressBarBottom: false, barHeight: 5252),
                         duration: TimeInterval = Constants.duration,
                         onAction: @escaping () -> Void = {},
                         onDidDismiss: @escaping () -> Void = {},
@@ -109,7 +109,7 @@ class ActionMessageView: UIView {
     
     static func present(message: String,
                         actionTitle: String? = nil,
-                        presentationLocation: PresentationLocation = .withBottomBar(andAddressBarBottom: false),
+                        presentationLocation: PresentationLocation = .withBottomBar(andAddressBarBottom: false, barHeight: 52),
                         duration: TimeInterval = Constants.duration,
                         onAction: @escaping () -> Void = {},
                         onDidDismiss: @escaping () -> Void = {},
@@ -129,7 +129,7 @@ class ActionMessageView: UIView {
     private static func present(messageView: ActionMessageView,
                                 message: String,
                                 actionTitle: String? = nil,
-                                presentationLocation: PresentationLocation = .withBottomBar(andAddressBarBottom: false),
+                                presentationLocation: PresentationLocation = .withBottomBar(andAddressBarBottom: false, barHeight: 52),
                                 duration: TimeInterval = Constants.duration,
                                 onAction: @escaping () -> Void = {},
                                 onDidDismiss: @escaping () -> Void = {},

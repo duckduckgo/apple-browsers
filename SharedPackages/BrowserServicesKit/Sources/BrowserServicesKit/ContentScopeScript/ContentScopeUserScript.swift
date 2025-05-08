@@ -23,6 +23,14 @@ import ContentScopeScripts
 import UserScript
 import Common
 
+public protocol ContentScopeUserScriptDelegate: AnyObject {
+    func contentScopeUserScript(_ script: ContentScopeUserScript, didReceiveDebugFlag debugFlag: String)
+}
+
+public protocol UserScriptWithContentScope: UserScript {
+    var delegate: ContentScopeUserScriptDelegate? { get set }
+}
+
 public final class ContentScopeProperties: Encodable {
     public let globalPrivacyControlValue: Bool
     public let debug: Bool = false
@@ -139,11 +147,17 @@ public struct ContentScopePlatform: Encodable {
     #endif
 }
 
-public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessaging {
+public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessaging, UserScriptWithContentScope {
 
     public var broker: UserScriptMessageBroker
     public let isIsolated: Bool
     public var messageNames: [String] = []
+    public weak var delegate: ContentScopeUserScriptDelegate?
+
+    enum MessageName: String {
+        case contentScopeScriptsIsolated
+        case contentScopeScripts
+    }
 
     public init(_ privacyConfigManager: PrivacyConfigurationManaging,
                 properties: ContentScopeProperties,
@@ -151,12 +165,11 @@ public final class ContentScopeUserScript: NSObject, UserScript, UserScriptMessa
                 privacyConfigurationJSONGenerator: CustomisedPrivacyConfigurationJSONGenerating?
     ) {
         self.isIsolated = isIsolated
-        let contextName = self.isIsolated ? "contentScopeScriptsIsolated" : "contentScopeScripts"
+        let contextName = self.isIsolated ? MessageName.contentScopeScriptsIsolated.rawValue : MessageName.contentScopeScripts.rawValue
 
         broker = UserScriptMessageBroker(context: contextName)
 
-        // dont register any handlers at all if we're not in the isolated context
-        messageNames = isIsolated ? [contextName] : []
+        messageNames = [contextName]
 
         source = ContentScopeUserScript.generateSource(
                 privacyConfigManager,
@@ -206,6 +219,12 @@ extension ContentScopeUserScript: WKScriptMessageHandlerWithReply {
     @MainActor
     public func userContentController(_ userContentController: WKUserContentController,
                                       didReceive message: WKScriptMessage) async -> (Any?, String?) {
+        propagateDebugFlag(message)
+        // Don't propagate the message for ContentScopeScript non isolated context
+        if message.name == MessageName.contentScopeScripts.rawValue {
+            return (nil, nil)
+        }
+        // Propagate the message for ContentScopeScriptIsolated and other context like "dbpui"
         let action = broker.messageHandlerFor(message)
         do {
             let json = try await broker.execute(action: action, original: message)
@@ -213,6 +232,15 @@ extension ContentScopeUserScript: WKScriptMessageHandlerWithReply {
         } catch {
             // forward uncaught errors to the client
             return (nil, error.localizedDescription)
+        }
+    }
+
+    @MainActor
+    private func propagateDebugFlag(_ message: WKScriptMessage) {
+        if let messageDictionary = message.body as? [String: Any],
+           let parameters = messageDictionary["params"] as? [String: String],
+           let flag = parameters["flag"] {
+            delegate?.contentScopeUserScript(self, didReceiveDebugFlag: flag)
         }
     }
 }

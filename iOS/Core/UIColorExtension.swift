@@ -101,4 +101,30 @@ extension UIColor {
         )
     }
 
+    /// Adjusts the brightness of the color by the specified amount
+    /// - Parameter amount: Value between -1.0 and 1.0. Positive values make the color brighter, negative values make it darker
+    /// - Returns: A new UIColor with adjusted brightness
+    func adjustBrightness(by amount: CGFloat) -> UIColor {
+        var hue: CGFloat = 0
+        var saturation: CGFloat = 0
+        var brightness: CGFloat = 0
+        var alpha: CGFloat = 0
+
+        // Convert to HSB color space
+        if self.getHue(&hue, saturation: &saturation, brightness: &brightness, alpha: &alpha) {
+            // Adjust brightness, keeping it within 0-1 range
+            let newBrightness = max(0, min(1, brightness + amount))
+            return UIColor(hue: hue, saturation: saturation, brightness: newBrightness, alpha: alpha)
+        }
+
+        // Fallback for colors that can't be converted to HSB
+        return self
+    }
+
+    var brightnessPercentage: CGFloat {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        getRed(&r, green: &g, blue: &b, alpha: &a)
+        return (r * 299 + g * 587 + b * 114) / 1000 * 100
+    }
+
 }

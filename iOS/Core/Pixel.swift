@@ -85,6 +85,7 @@ public struct PixelParameters {
 
     public static let count = "count"
     public static let source = "source"
+    public static let authVersion = "authVersion"
 
     // Text size is the legacy name
     public static let textZoomInitial = "text_size_initial"

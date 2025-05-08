@@ -31,24 +31,6 @@ enum ContextualOnboardingPixel: PixelKitEventV2 {
      * Event Trigger: User types into the address bar when the search suggestions dialog is shown during the contextual onboarding
      *
      * Anomaly Investigation:
-     * It is triggered in  OnboardingSearchSuggestionsViewModel when one of the search suggestion button in the list is pressed (listItemPressed) in the contextual onboarding
-     * Check code in that area and in OnboardingPixelReporter to check it behaves as expected
-     */
-    case siteSuggetionOptionTapped
-
-    /**
-     * Event Trigger: User types into the address bar when the search suggestions dialog is shown during the contextual onboarding
-     *
-     * Anomaly Investigation:
-     * It is triggered in  OnboardingSiteSuggestionsViewModel when one of the site suggestion button in the list is pressed (listItemPressed) in the contextual onboarding
-     * Check code in that area and in OnboardingPixelReporter to check it behaves as expected
-     */
-    case searchSuggetionOptionTapped
-
-    /**
-     * Event Trigger: User types into the address bar when the search suggestions dialog is shown during the contextual onboarding
-     *
-     * Anomaly Investigation:
      * It is triggered in  AddressBarTextField on  controlTextDidChange.
      * The OnboardingPixelReporter then sends a pixel if this happens when try a search onboarding dialog is on
      * Check code in that area and in OnboardingPixelReporter to check it behaves as expected
@@ -64,15 +46,6 @@ enum ContextualOnboardingPixel: PixelKitEventV2 {
      * Check code in that area and in OnboardingPixelReporter to check it behaves as expected
      */
     case onboardingVisitSiteCustom
-
-    /**
-     * Event Trigger: The “skip” button on the Fire Button dialog during the contextual onboarding
-     *
-     * Anomaly Investigation:
-     * It is triggered on skip in the OnboardingFireButtonDialogViewModel.
-     * Check code in that area  to check it behaves as expected
-     */
-    case onboardingFireButtonPromptSkipPressed
 
     /**
      * Event Trigger: The “skip” button on the Fire Button dialog during the contextual onboarding
@@ -98,7 +71,7 @@ enum ContextualOnboardingPixel: PixelKitEventV2 {
      *
      * Anomaly Investigation:
      * It is triggered on fireButtonAction on MainMenuActions
-     * the OnboardingPixelProvider sends it only if the state non e' onboardingComleted
+     * the OnboardingPixelProvider sends it only if the state is not onboardingCompleted
      * Check code in that area  to check it behaves as expected
      */
     case onboardingFireButtonPressed
@@ -108,7 +81,7 @@ enum ContextualOnboardingPixel: PixelKitEventV2 {
      *
      * Anomaly Investigation:
      * It is triggered on privacyEntryPointButtonAction on AddressBarButtonViewController
-     * the OnboardingPixelProvider sends it only if the state non e' onboardingComleted
+     * the OnboardingPixelProvider sends it only if the state is not onboardingCompleted
      * Check code in that area  to check it behaves as expected
      */
     case onboardingPrivacyDashboardOpened
@@ -121,14 +94,42 @@ enum ContextualOnboardingPixel: PixelKitEventV2 {
      */
     case secondSiteVisited
 
+    /**
+     * Event Trigger: The try search dialog in the contextual onboarding is dismissed
+     */
+    case trySearchDismissed
+
+    /**
+     * Event Trigger: The search result dialog in the contextual onboarding is dismissed
+     */
+    case searchResultDismissed
+
+    /**
+     * Event Trigger: The try visit site dialog in the contextual onboarding is dismissed
+     */
+    case tryVisitSiteDismissed
+
+    /**
+     * Event Trigger: The trackers blocked dialog in the contextual onboarding is dismissed
+     */
+    case trackersBlockedDismissed
+
+    /**
+     * Event Trigger: The try fire button dialog in the contextual onboarding is dismissed
+     */
+    case tryFireButtonDismissed
+
+    /**
+     * Event Trigger: The final dialog in the contextual onboarding is dismissed
+     */
+    case finalDialogDismissed
+
     var name: String {
         switch self {
         case .onboardingSearchCustom:
             return "m_mac_onboarding_search_custom_u"
         case .onboardingVisitSiteCustom:
             return "m_mac_onboarding_visit_site_custom_u"
-        case .onboardingFireButtonPromptSkipPressed:
-            return "m_mac_onboarding_fire_button_prompt_skip_pressed_u"
         case .onboardingFinished:
             return "m_mac_onboarding_finished_u"
         case .onboardingFireButtonPressed:
@@ -137,12 +138,20 @@ enum ContextualOnboardingPixel: PixelKitEventV2 {
             return "m_mac_onboarding_privacy_dashboard_opened_u"
         case .secondSiteVisited:
             return "m_mac_second_site_visit_u"
-        case .searchSuggetionOptionTapped:
-            return "m_mac_onboarding_search_option_tapped_u"
-        case .siteSuggetionOptionTapped:
-            return "m_mac_onboarding_visit_site_option_tapped_u"
         case .onboardingFireButtonTryItPressed:
             return "m_mac_onboarding_fire_button_try_it_pressed_u"
+        case .trySearchDismissed:
+            return "m_mac_onboarding_try_search_dialog_dismiss_button_tapped_u"
+        case .searchResultDismissed:
+            return "m_mac_onboarding_search-result-dialog_dismiss-button-tapped_u"
+        case .tryVisitSiteDismissed:
+            return "m_mac_onboarding_try_visit_site_dialog_dismiss_button_tapped_u"
+        case .trackersBlockedDismissed:
+            return "m_mac_onboarding_trackers_dialog_dismiss_button_tapped_u"
+        case .tryFireButtonDismissed:
+            return "m_mac_onboarding_fire_dialog_dismiss_button_tapped_u"
+        case .finalDialogDismissed:
+            return "m_mac_onboarding_end_dialog_dismiss_button_tapped_u"
         }
     }
 

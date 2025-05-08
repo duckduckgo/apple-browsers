@@ -68,8 +68,8 @@ extension AppDelegate {
 
     @objc func newAIChat(_ sender: Any?) {
         DispatchQueue.main.async {
-            AIChatTabOpener.openAIChatTab()
-            PixelKit.fire(GeneralPixel.aichatApplicationMenuFileClicked, includeAppVersionParameter: true)
+            NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(nil, target: .newTabSelected)
+            PixelKit.fire(AIChatPixel.aichatApplicationMenuFileClicked, frequency: .dailyAndCount, includeAppVersionParameter: true)
         }
     }
 
@@ -102,15 +102,15 @@ extension AppDelegate {
     @objc func recentlyClosedAction(_ sender: Any?) {
         guard let menuItem = sender as? NSMenuItem,
               let cacheItem = menuItem.representedObject as? RecentlyClosedCacheItem else {
-                  assertionFailure("Wrong represented object for recentlyClosedAction()")
-                  return
-              }
+            assertionFailure("Wrong represented object for recentlyClosedAction()")
+            return
+        }
         DispatchQueue.main.async {
             RecentlyClosedCoordinator.shared.reopenItem(cacheItem)
         }
     }
 
-    @objc func openVisit(_ sender: NSMenuItem) {
+    @objc func openHistoryEntryVisit(_ sender: NSMenuItem) {
         guard let visit = sender.representedObject as? Visit,
               let url = visit.historyEntry?.url else {
             assertionFailure("Wrong represented object")
@@ -182,7 +182,7 @@ extension AppDelegate {
         WindowControllersManager.shared.showTab(with: .url(.updates, source: .ui))
     }
 
-    #if FEEDBACK
+#if FEEDBACK
 
     @objc func openFeedback(_ sender: Any?) {
         DispatchQueue.main.async {
@@ -221,6 +221,11 @@ extension AppDelegate {
         WindowControllersManager.shared.showShareFeedbackModal(source: .settings)
     }
 
+    @MainActor
+    @objc func copyVersion(_ sender: Any?) {
+        NSPasteboard.general.copy(AppVersion().versionAndBuildNumber)
+    }
+
     #endif
 
     @objc func navigateToBookmark(_ sender: Any?) {
@@ -230,7 +235,7 @@ extension AppDelegate {
         }
 
         guard let bookmark = menuItem.representedObject as? Bookmark,
-        let url = bookmark.urlObject else {
+              let url = bookmark.urlObject else {
             assertionFailure("Unexpected type of menuItem.representedObject: \(type(of: menuItem.representedObject))")
             return
         }
@@ -258,12 +263,8 @@ extension AppDelegate {
     }
 
     @objc func openAbout(_ sender: Any?) {
-#if APPSTORE
-        let options = [NSApplication.AboutPanelOptionKey.applicationName: UserText.duckDuckGoForMacAppStore]
-#else
-        let options: [NSApplication.AboutPanelOptionKey: Any] = [:]
-#endif
-        NSApp.orderFrontStandardAboutPanel(options: options)
+        let aboutController = AboutPanelController(internalUserDecider: internalUserDecider)
+        aboutController.show()
     }
 
     @objc func openImportBrowserDataWindow(_ sender: Any?) {
@@ -363,6 +364,7 @@ extension AppDelegate {
     @objc func resetNewTabPageCustomization(_ sender: Any?) {
         newTabPageCustomizationModel.resetAllCustomizations()
     }
+
 }
 
 extension MainViewController {
@@ -528,10 +530,6 @@ extension MainViewController {
         LocalPinningManager.shared.togglePinning(for: .networkProtection)
     }
 
-    @objc func toggleAIChatShortcut(_ sender: Any) {
-        LocalPinningManager.shared.togglePinning(for: .aiChat)
-    }
-
     // MARK: - History
 
     @objc func back(_ sender: Any?) {
@@ -555,16 +553,16 @@ extension MainViewController {
         tab.openHomePage()
     }
 
-    @objc func openVisit(_ sender: NSMenuItem) {
+    @objc func openHistoryEntryVisit(_ sender: NSMenuItem) {
         guard let visit = sender.representedObject as? Visit,
-              let url = visit.historyEntry?.url else {
+              let historyEntry = visit.historyEntry else {
             assertionFailure("Wrong represented object")
             return
         }
 
         makeKeyIfNeeded()
-        getActiveTabAndIndex()?.tab.setContent(.contentFromURL(url, source: .historyEntry))
-        adjustFirstResponder()
+
+        WindowControllersManager.shared.open(historyEntry, with: NSApp.currentEvent)
     }
 
     @objc func clearAllHistory(_ sender: NSMenuItem) {
@@ -575,7 +573,7 @@ extension MainViewController {
                 let visitsCount = await historyViewDataProvider.countVisibleVisits(matching: .rangeFilter(.all))
 
                 let presenter = DefaultHistoryViewDialogPresenter()
-                switch await presenter.showDeleteDialog(for: visitsCount, deleteMode: .all) {
+                switch await presenter.showDeleteDialog(for: visitsCount, deleteMode: .all, in: nil) {
                 case .burn:
                     FireCoordinator.fireViewModel.fire.burnAll()
                 case .delete:
@@ -613,7 +611,7 @@ extension MainViewController {
 
             Task {
                 let presenter = DefaultHistoryViewDialogPresenter()
-                switch await presenter.showDeleteDialog(for: visits.count, deleteMode: deleteMode) {
+                switch await presenter.showDeleteDialog(for: visits.count, deleteMode: deleteMode, in: nil) {
                 case .burn:
                     FireCoordinator.fireViewModel.fire.burnVisits(visits,
                                                                   except: FireproofDomains.shared,
@@ -685,7 +683,7 @@ extension MainViewController {
         guard let bookmark = menuItem.representedObject as? Bookmark else { return }
         makeKeyIfNeeded()
 
-        WindowControllersManager.shared.open(bookmark: bookmark)
+        WindowControllersManager.shared.open(bookmark, with: NSApp.currentEvent)
     }
 
     @objc func openAllInTabs(_ sender: Any?) {
@@ -703,8 +701,7 @@ extension MainViewController {
                 shouldLoadInBackground: true,
                 burnerMode: tabCollectionViewModel.burnerMode)
         }
-        tabCollectionViewModel.append(tabs: tabs)
-        PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
+        tabCollectionViewModel.append(tabs: tabs, andSelect: true)
     }
 
     @objc func showManageBookmarks(_ sender: Any?) {
@@ -807,7 +804,7 @@ extension MainViewController {
 
         WindowsManager.closeWindows(except: excludedWindowControllers.compactMap(\.window))
 
-        tabCollectionViewModel.append(tabs: otherTabs)
+        tabCollectionViewModel.append(tabs: otherTabs, andSelect: false)
         tabCollectionViewModel.tabCollection.localHistoryOfRemovedTabs += otherLocalHistoryOfRemovedTabs
     }
 
@@ -946,7 +943,7 @@ extension MainViewController {
 
     @objc func skipOnboarding(_ sender: Any?) {
         UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.onboardingFinished.rawValue)
-        Application.appDelegate.onboardingStateMachine.state = .onboardingCompleted
+        Application.appDelegate.onboardingContextualDialogsManager.state = .onboardingCompleted
         WindowControllersManager.shared.updatePreventUserInteraction(prevent: false)
         WindowControllersManager.shared.replaceTabWith(Tab(content: .newtab))
     }
@@ -960,7 +957,7 @@ extension MainViewController {
     }
 
     @objc func resetContextualOnboarding(_ sender: Any?) {
-        Application.appDelegate.onboardingStateMachine.state = .notStarted
+        Application.appDelegate.onboardingContextualDialogsManager.state = .notStarted
     }
 
     @objc func resetDuckPlayerPreferences(_ sender: Any?) {

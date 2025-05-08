@@ -91,7 +91,22 @@ extension Preferences {
         private var rightColumnContent: some View {
             Group {
                 #if APPSTORE
-                Text(UserText.duckDuckGoForMacAppStore).font(.companyName)
+                HStack(spacing: 8) {
+                    Text(UserText.duckDuckGoForMacAppStore)
+                        .font(.companyName)
+                    if model.isInternalUser {
+                        Text("BETA")
+                            .font(.caption2)
+                            .fontWeight(.bold)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 4)
+                            .background(
+                                RoundedRectangle(cornerRadius: 4)
+                                    .fill(Color.betaLabelBackground)
+                            )
+                            .foregroundColor(Color.betaLabelForeground)
+                    }
+                }
 
                 Text(UserText.duckduckgoTagline).font(.privacySimplified)
                     .fixedSize(horizontal: false, vertical: true)
@@ -104,7 +119,22 @@ extension Preferences {
                         })
                     }))
                 #else
-                Text(UserText.duckDuckGo).font(.companyName)
+                HStack(spacing: 8) {
+                    Text(UserText.duckDuckGo)
+                        .font(.companyName)
+                    if model.isInternalUser {
+                        Text("BETA")
+                            .font(.caption2)
+                            .fontWeight(.bold)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 4)
+                            .background(
+                                RoundedRectangle(cornerRadius: 4)
+                                    .fill(Color.betaLabelBackground)
+                            )
+                            .foregroundColor(Color.betaLabelForeground)
+                    }
+                }
 
                 Text(UserText.duckduckgoTagline).font(.privacySimplified)
                     .fixedSize(horizontal: false, vertical: true)
@@ -162,7 +192,7 @@ extension Preferences {
                 Text(UserText.versionLabel(version: model.appVersion.versionNumber, build: model.appVersion.buildNumber))
                     .contextMenu(ContextMenu(menuItems: {
                         Button(UserText.copy, action: {
-                            model.copy(UserText .versionLabel(version: model.appVersion.versionNumber, build: model.appVersion.buildNumber))
+                            model.copy(UserText.versionLabel(version: model.appVersion.versionNumber, build: model.appVersion.buildNumber))
                         })
                     }))
 #if SPARKLE

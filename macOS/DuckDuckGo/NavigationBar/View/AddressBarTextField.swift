@@ -51,6 +51,8 @@ final class AddressBarTextField: NSTextField {
         tabCollectionViewModel.isBurner
     }
 
+    var visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyleManager.style
+
     private var suggestionResultCancellable: AnyCancellable?
     private var selectedSuggestionViewModelCancellable: AnyCancellable?
     private var selectedTabViewModelCancellable: AnyCancellable?
@@ -123,7 +125,11 @@ final class AddressBarTextField: NSTextField {
     private func subscribeToContentType(selectedTabViewModel: TabViewModel) {
         contentTypeCancellable = selectedTabViewModel.tab.$content
             .sink { [weak self] contentType in
-                self?.font = .systemFont(ofSize: contentType == .newtab ? 15 : 13)
+                guard let self else { return }
+
+                let newTabFontSize = visualStyle.newTabOrHomePageAddressBarFontSize
+                let defaultFontSize = visualStyle.defaultAddressBarFontSize
+                self.font = .systemFont(ofSize: contentType == .newtab ? newTabFontSize : defaultFontSize)
             }
     }
 
@@ -188,7 +194,10 @@ final class AddressBarTextField: NSTextField {
 
     private func updateAttributedStringValue() {
         withUndoDisabled {
-            if let attributedString = value.toAttributedString(isHomePage: isHomePage, isBurner: isBurner) {
+            let newTabFontSize = visualStyle.newTabOrHomePageAddressBarFontSize
+            let defaultFontSize = visualStyle.defaultAddressBarFontSize
+
+            if let attributedString = value.toAttributedString(size: isHomePage ? newTabFontSize : defaultFontSize, isBurner: isBurner) {
                 self.attributedStringValue = attributedString
             } else {
                 self.stringValue = value.string
@@ -297,6 +306,12 @@ final class AddressBarTextField: NSTextField {
         hideSuggestionWindow()
     }
 
+    func aiChatQueryEnterPressed() {
+        suggestionContainerViewModel?.clearUserStringValue()
+        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(value, target: .sameTab)
+        hideSuggestionWindow()
+    }
+
     private func navigate(suggestion: Suggestion?) {
         let autocompletePixel: GeneralPixel? = {
             switch suggestion {
@@ -323,17 +338,36 @@ final class AddressBarTextField: NSTextField {
             PixelKit.fire(autocompletePixel)
         }
 
-        if case .internalPage(title: let title, url: let url) = suggestion,
+        if case .internalPage(title: let title, url: let url, _) = suggestion,
            url == .bookmarks || url.isSettingsURL {
             // when choosing an internal page suggestion prefer already open tab
             switchTo(OpenTab(tabId: nil, title: title, url: url))
-        } else if case .openTab(let title, url: let url, tabId: let tabId) = suggestion {
+        } else if case .openTab(let title, url: let url, tabId: let tabId, _) = suggestion {
             switchTo(OpenTab(tabId: tabId, title: title, url: url))
-        } else if NSApp.isCommandPressed {
-            openNew(NSApp.isOptionPressed ? .window : .tab, selected: NSApp.isShiftPressed, suggestion: suggestion)
         } else {
-            hideSuggestionWindow()
-            updateTabUrl(suggestion: suggestion, downloadRequested: NSApp.isOptionPressed && !NSApp.isShiftPressed)
+            // Use LinkOpenBehavior to determine how to open the suggestion
+            let behavior = LinkOpenBehavior(
+                modifierFlags: NSEvent.modifierFlags,
+                switchToNewTabWhenOpenedPreference: TabsPreferences.shared.switchToNewTabWhenOpened,
+                canOpenLinkInCurrentTab: true
+            )
+
+            switch behavior {
+            case .currentTab:
+                // Open in current tab
+                hideSuggestionWindow()
+                // Check for option key for download (legacy behavior maintained)
+                let downloadRequested = NSApp.isOptionPressed && !NSApp.isShiftPressed
+                updateTabUrl(suggestion: suggestion, downloadRequested: downloadRequested)
+
+            case .newTab(let selected):
+                // Open in new tab
+                openNew(.tab, selected: selected, suggestion: suggestion)
+
+            case .newWindow(let selected):
+                // Open in new window
+                openNew(.window, selected: selected, suggestion: suggestion)
+            }
         }
 
         currentEditor()?.selectAll(self)
@@ -400,7 +434,7 @@ final class AddressBarTextField: NSTextField {
         makeUrl(suggestion: suggestion,
                 stringValueWithoutSuffix: stringValueWithoutSuffix,
                 completion: { [weak self] url, userEnteredValue, isUpgraded in
-            guard let url = url else { return }
+            guard let url else { return }
 
             if isUpgraded {
                 self?.updateTab(self?.tabCollectionViewModel.selectedTabViewModel?.tab, upgradedTo: url)
@@ -454,11 +488,11 @@ final class AddressBarTextField: NSTextField {
         let finalUrl: URL?
         let userEnteredValue: String
         switch suggestion {
-        case .bookmark(title: _, url: let url, isFavorite: _, allowedInTopHits: _),
-             .historyEntry(title: _, url: let url, allowedInTopHits: _),
+        case .bookmark(title: _, url: let url, isFavorite: _, _),
+             .historyEntry(title: _, url: let url, _),
              .website(url: let url),
-             .internalPage(title: _, url: let url),
-             .openTab(title: _, url: let url, _):
+             .internalPage(title: _, url: let url, _),
+             .openTab(title: _, url: let url, _, _):
             finalUrl = url
             userEnteredValue = url.absoluteString
         case .phrase(phrase: let phrase),
@@ -544,7 +578,8 @@ final class AddressBarTextField: NSTextField {
         NSStoryboard.suggestion.instantiateController(identifier: "SuggestionViewController") { coder in
             let suggestionViewController = SuggestionViewController(coder: coder,
                                                                     suggestionContainerViewModel: self.suggestionContainerViewModel!,
-                                                                    isBurner: self.isBurner)
+                                                                    isBurner: self.isBurner,
+                                                                    visualStyle: self.visualStyle)
             suggestionViewController?.delegate = self
             return suggestionViewController
         }
@@ -571,7 +606,7 @@ final class AddressBarTextField: NSTextField {
     private func suggestionsContainLocalItems() -> SuggestionListChacteristics {
         var characteristics = SuggestionListChacteristics(hasBookmark: false, hasFavorite: false, hasHistoryEntry: false)
         for suggestion in self.suggestionContainerViewModel?.suggestionContainer.result?.all ?? [] {
-            if case .bookmark(title: _, url: _, isFavorite: let isFavorite, allowedInTopHits: _) = suggestion {
+            if case .bookmark(title: _, url: _, isFavorite: let isFavorite, _) = suggestion {
                 if isFavorite {
                     characteristics.hasFavorite = true
                 } else {
@@ -600,11 +635,6 @@ final class AddressBarTextField: NSTextField {
 
         window.addChildWindow(suggestionWindow, ordered: .above)
         layoutSuggestionWindow()
-        postSuggestionWindowOpenNotification()
-    }
-
-    private func postSuggestionWindowOpenNotification() {
-        NotificationCenter.default.post(name: .suggestionWindowOpen, object: nil)
     }
 
     func hideSuggestionWindow() {
@@ -684,6 +714,14 @@ final class AddressBarTextField: NSTextField {
         menuItem.state = shouldShowFullURL ? .on : .off
     }
 
+    @objc func toggleAIChatAddress(_ menuItem: NSMenuItem) {
+        let preferences = AIChatPreferences()
+        preferences.showShortcutInAddressBar.toggle()
+
+        let shouldShowFullURL = preferences.showShortcutInAddressBar
+        menuItem.state = shouldShowFullURL ? .on : .off
+    }
+
 }
 
 // MARK: - NSDraggingDestination
@@ -698,20 +736,32 @@ extension AddressBarTextField {
     }
 
     override func performDragOperation(_ draggingInfo: NSDraggingInfo) -> Bool {
-        if let url = draggingInfo.draggingPasteboard.url {
-            tabCollectionViewModel.selectedTabViewModel?.tab.setUrl(url, source: .userEntered(draggingInfo.draggingPasteboard.string(forType: .string) ?? url.absoluteString))
+        guard isFirstResponder else {
+            // drop to inactive address bar requested (by MainViewController)
+            if let stringValue = draggingInfo.draggingPasteboard.string(forType: .string) {
+                // replace the value and activate
+                self.value = .init(stringValue: stringValue, userTyped: false)
+                clearUndoManager()
 
-        } else if let stringValue = draggingInfo.draggingPasteboard.string(forType: .string) {
-            self.value = .init(stringValue: stringValue, userTyped: false)
-            clearUndoManager()
+                window?.makeKeyAndOrderFront(self)
+                self.makeMeFirstResponder()
+                NSApp.activate(ignoringOtherApps: true)
 
-            window?.makeKeyAndOrderFront(self)
-            NSApp.activate(ignoringOtherApps: true)
-            self.makeMeFirstResponder()
-
-        } else {
+                return true
+            }
             return false
         }
+
+        // navigate to the dropped url when the home page is open
+        // if we‘re in url editing mode (non-empty), perform standard system text drag-drop
+        guard let url = draggingInfo.draggingPasteboard.url, self.stringValue.trimmingWhitespace().isEmpty else {
+            // activate our window when dropping text to the address bar
+            NSApp.activate(ignoringOtherApps: true)
+            window?.makeKeyAndOrderFront(self)
+
+            return false
+        }
+        tabCollectionViewModel.selectedTabViewModel?.tab.setUrl(url, source: .userEntered(draggingInfo.draggingPasteboard.string(forType: .string) ?? url.absoluteString))
 
         return true
     }
@@ -790,9 +840,8 @@ extension AddressBarTextField {
             self.suggestion != nil
         }
 
-        func toAttributedString(isHomePage: Bool, isBurner: Bool) -> NSAttributedString? {
+        func toAttributedString(size: CGFloat, isBurner: Bool) -> NSAttributedString? {
             var attributes: [NSAttributedString.Key: Any] {
-                let size: CGFloat = isHomePage ? 15 : 13
                 return [
                     .font: NSFont.systemFont(ofSize: size, weight: .regular),
                     .foregroundColor: NSColor.textColor,
@@ -803,7 +852,7 @@ extension AddressBarTextField {
             guard let suffix else { return nil }
 
             let attributedString = NSMutableAttributedString(string: self.string, attributes: attributes)
-            attributedString.append(suffix.toAttributedString(size: isHomePage ? 15 : 13, isBurner: isBurner))
+            attributedString.append(suffix.toAttributedString(size: size, isBurner: isBurner))
 
             return attributedString
         }
@@ -838,9 +887,9 @@ extension AddressBarTextField {
                 }
                 self = Suffix.visit(host: host)
 
-            case .bookmark(title: _, url: let url, isFavorite: _, allowedInTopHits: _),
-                 .historyEntry(title: _, url: let url, allowedInTopHits: _),
-                 .internalPage(title: _, url: let url):
+            case .bookmark(title: _, url: let url, isFavorite: _, _),
+                 .historyEntry(title: _, url: let url, _),
+                 .internalPage(title: _, url: let url, _):
                 if let title = suggestionViewModel.title,
                    !title.isEmpty,
                    suggestionViewModel.autocompletionString != title {
@@ -850,7 +899,7 @@ extension AddressBarTextField {
                 } else {
                     self = .url(url)
                 }
-            case .openTab(title: _, url: let url, _):
+            case .openTab(title: _, url: let url, _, _):
                 self = .openTab(url)
             case .unknown:
                 self = Suffix.search
@@ -937,7 +986,7 @@ extension AddressBarTextField: NSTextFieldDelegate {
         // don't blink and keep the Suggestion displayed
         if case .userAppendingTextToTheEnd = currentTextDidChangeEvent,
            let suggestion = autocompleteSuggestionBeingTypedOverByUser(with: stringValueWithoutSuffix) {
-            self.value = .suggestion(SuggestionViewModel(isHomePage: isHomePage, suggestion: suggestion.suggestion, userStringValue: stringValueWithoutSuffix))
+            self.value = .suggestion(SuggestionViewModel(isHomePage: isHomePage, suggestion: suggestion.suggestion, userStringValue: stringValueWithoutSuffix, visualStyle: visualStyle))
 
         } else {
             suggestionContainerViewModel?.clearSelection()
@@ -1065,6 +1114,7 @@ extension AddressBarTextField: NSTextViewDelegate {
         let additionalMenuItems: [NSMenuItem] = [
             .toggleAutocompleteSuggestionsMenuItem,
             .toggleFullWebsiteAddressMenuItem,
+            .toggleAIChatAddressMenuItem,
             .separator()
         ]
         let insertionPoint = menuItemInsertionPoint(within: menu)
@@ -1140,6 +1190,18 @@ private extension NSMenuItem {
         return menuItem
     }
 
+    static var toggleAIChatAddressMenuItem: NSMenuItem {
+        let menuItem = NSMenuItem(
+            title: UserText.showAIChatInAddress,
+            action: #selector(AddressBarTextField.toggleAIChatAddress(_:)),
+            keyEquivalent: ""
+        )
+
+        menuItem.state = AIChatPreferences().showShortcutInAddressBar ? .on : .off
+
+        return menuItem
+    }
+
     private static var pasteAndGoMenuItem: NSMenuItem {
         NSMenuItem(
             title: UserText.pasteAndGo,
@@ -1178,10 +1240,6 @@ extension AddressBarTextField: SuggestionViewControllerDelegate {
         navigate(suggestion: suggestion)
     }
 
-}
-
-extension Notification.Name {
-    static let suggestionWindowOpen = Notification.Name("suggestionWindowOpen")
 }
 
 fileprivate extension NSStoryboard {

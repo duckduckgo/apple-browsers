@@ -48,7 +48,7 @@ class PixelTests: XCTestCase {
         let date = Date(timeIntervalSince1970: 0)
         let now = Date(timeIntervalSince1970: 1)
 
-        stub(condition: isHost(host) && isPath("/t/ml_ios_phone")) { request -> HTTPStubsResponse in
+        stub(condition: isHost(host) && (isPath("/t/ml_ios_phone") || isPath("/t/ml_ios_tablet"))) { request -> HTTPStubsResponse in
             XCTAssertEqual("1.0", request.url?.getParameter(named: "dur"))
 
             expectation.fulfill()

@@ -23,33 +23,6 @@ import PreferencesUI_macOS
 
 final class PrivacyProtectionStatus: ObservableObject {
 
-    static func status(for preferencePane: PreferencePaneIdentifier) -> PrivacyProtectionStatus {
-        switch preferencePane {
-        case .defaultBrowser:
-            return PrivacyProtectionStatus(statusPublisher: DefaultBrowserPreferences.shared.$isDefault) { isDefault in
-                isDefault ? .on : .off
-            }
-        case .privateSearch:
-            return PrivacyProtectionStatus(statusIndicator: .on)
-        case .webTrackingProtection:
-            return PrivacyProtectionStatus(statusIndicator: .on)
-        case .cookiePopupProtection:
-            return PrivacyProtectionStatus(statusPublisher: CookiePopupProtectionPreferences.shared.$isAutoconsentEnabled) { isAutoconsentEnabled in
-                isAutoconsentEnabled ? .on : .off
-            }
-        case .emailProtection:
-            let publisher = Publishers.Merge(
-                NotificationCenter.default.publisher(for: .emailDidSignIn),
-                NotificationCenter.default.publisher(for: .emailDidSignOut)
-            )
-            return PrivacyProtectionStatus(statusPublisher: publisher, initialValue: EmailManager().isSignedIn ? .on : .off) { _ in
-                EmailManager().isSignedIn ? .on : .off
-            }
-        default:
-            return PrivacyProtectionStatus()
-        }
-    }
-
     var statusSubscription: AnyCancellable?
     @Published var status: StatusIndicator?
 

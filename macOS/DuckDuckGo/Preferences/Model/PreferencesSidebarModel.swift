@@ -152,7 +152,7 @@ final class PreferencesSidebarModel: ObservableObject {
             .store(in: &cancellables)
     }
 
-    func shouldEnableItem(_ pane: PreferencePaneIdentifier) -> Bool {
+    func isSidebarItemEnabled(for pane: PreferencePaneIdentifier) -> Bool {
         switch pane {
         case .vpn:
             currentSubscriptionState.userEntitlements.contains(.networkProtection)
@@ -165,16 +165,36 @@ final class PreferencesSidebarModel: ObservableObject {
         }
     }
 
-    func privacyProItemProtectionStatus(_ pane: PreferencePaneIdentifier) -> PrivacyProtectionStatus? {
+    func protectionStatus(for pane: PreferencePaneIdentifier) -> PrivacyProtectionStatus? {
         switch pane {
+        case .defaultBrowser:
+            return PrivacyProtectionStatus(statusPublisher: DefaultBrowserPreferences.shared.$isDefault) { isDefault in
+                isDefault ? .on : .off
+            }
+        case .privateSearch:
+            return PrivacyProtectionStatus(statusIndicator: .on)
+        case .webTrackingProtection:
+            return PrivacyProtectionStatus(statusIndicator: .on)
+        case .cookiePopupProtection:
+            return  PrivacyProtectionStatus(statusPublisher: CookiePopupProtectionPreferences.shared.$isAutoconsentEnabled) { isAutoconsentEnabled in
+                isAutoconsentEnabled ? .on : .off
+            }
+        case .emailProtection:
+            let publisher = Publishers.Merge(
+                NotificationCenter.default.publisher(for: .emailDidSignIn),
+                NotificationCenter.default.publisher(for: .emailDidSignOut)
+            )
+            return PrivacyProtectionStatus(statusPublisher: publisher, initialValue: EmailManager().isSignedIn ? .on : .off) { _ in
+                EmailManager().isSignedIn ? .on : .off
+            }
         case .vpn:
-            vpnProtectionStatus()
+            return vpnProtectionStatus()
         case .personalInformationRemoval:
-            PrivacyProtectionStatus(statusIndicator: currentSubscriptionState.personalInformationRemovalStatus)
+            return PrivacyProtectionStatus(statusIndicator: currentSubscriptionState.personalInformationRemovalStatus)
         case .identityTheftRestoration:
-            PrivacyProtectionStatus(statusIndicator: currentSubscriptionState.identityTheftRestorationStatus)
+            return PrivacyProtectionStatus(statusIndicator: currentSubscriptionState.identityTheftRestorationStatus)
         default:
-            nil
+            return nil
         }
     }
 

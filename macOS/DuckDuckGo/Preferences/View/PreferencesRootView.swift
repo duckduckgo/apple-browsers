@@ -88,7 +88,7 @@ enum Preferences {
                 case .defaultBrowser:
                     DefaultBrowserView(defaultBrowserModel: DefaultBrowserPreferences.shared,
                                        dockCustomizer: DockCustomizer(),
-                                       status: PrivacyProtectionStatus.status(for: .defaultBrowser))
+                                       protectionStatus: model.protectionStatus(for: .defaultBrowser))
                 case .privateSearch:
                     PrivateSearchView(model: SearchPreferences.shared)
                 case .webTrackingProtection:
@@ -96,7 +96,8 @@ enum Preferences {
                 case .cookiePopupProtection:
                     CookiePopupProtectionView(model: CookiePopupProtectionPreferences.shared)
                 case .emailProtection:
-                    EmailProtectionView(emailManager: EmailManager())
+                    EmailProtectionView(emailManager: EmailManager(),
+                                        protectionStatus: model.protectionStatus(for: .emailProtection))
                 case .general:
                     GeneralView(startupModel: StartupPreferences.shared,
                                 downloadsModel: DownloadsPreferences.shared,
@@ -311,7 +312,7 @@ enum Preferences {
                 case .defaultBrowser:
                     DefaultBrowserView(defaultBrowserModel: DefaultBrowserPreferences.shared,
                                        dockCustomizer: DockCustomizer(),
-                                       status: PrivacyProtectionStatus.status(for: .defaultBrowser))
+                                       protectionStatus: model.protectionStatus(for: .defaultBrowser))
                 case .privateSearch:
                     PrivateSearchView(model: SearchPreferences.shared)
                 case .webTrackingProtection:
@@ -319,7 +320,8 @@ enum Preferences {
                 case .cookiePopupProtection:
                     CookiePopupProtectionView(model: CookiePopupProtectionPreferences.shared)
                 case .emailProtection:
-                    EmailProtectionView(emailManager: EmailManager())
+                    EmailProtectionView(emailManager: EmailManager(),
+                                        protectionStatus: model.protectionStatus(for: .emailProtection))
                 case .general:
                     GeneralView(startupModel: StartupPreferences.shared,
                                 downloadsModel: DownloadsPreferences.shared,

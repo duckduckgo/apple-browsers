@@ -88,7 +88,7 @@ public final class SubscriptionUserScript: NSObject, Subfeature {
         self.handler = handler
     }
 
-    private let handler: SubscriptionUserScriptHandling
+    let handler: SubscriptionUserScriptHandling
 }
 
 extension SubscriptionUserScript {

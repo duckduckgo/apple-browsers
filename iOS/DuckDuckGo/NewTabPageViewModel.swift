@@ -28,14 +28,18 @@ final class NewTabPageViewModel: ObservableObject {
     @Published private(set) var isOnboarding: Bool
     @Published var isShowingSettings: Bool
 
+    let isExperimentalAppearanceEnabled: Bool
+
     private(set) var isDragging: Bool = false
 
     private var introDataStorage: NewTabPageIntroDataStoring
     private let pixelFiring: PixelFiring.Type
 
     init(introDataStorage: NewTabPageIntroDataStoring = NewTabPageIntroDataUserDefaultsStorage(),
+         isExperimentalAppearanceEnabled: Bool = false,
          pixelFiring: PixelFiring.Type = Pixel.self) {
         self.introDataStorage = introDataStorage
+        self.isExperimentalAppearanceEnabled = isExperimentalAppearanceEnabled
         self.pixelFiring = pixelFiring
 
         isIntroMessageVisible = introDataStorage.newTabPageIntroMessageEnabled ?? false

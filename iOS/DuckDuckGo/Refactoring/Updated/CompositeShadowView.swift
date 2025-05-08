@@ -33,6 +33,7 @@ class CompositeShadowView: UIView {
         super.init(frame: .zero)
 
         self.shadows = shadows
+        clipsToBounds = false
 
         setUpShadows()
     }

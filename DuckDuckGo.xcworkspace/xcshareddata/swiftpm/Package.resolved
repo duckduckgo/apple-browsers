@@ -50,8 +50,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/DesignResourcesKit",
       "state" : {
-        "revision" : "f07a285c6edb5265b3a256c87124135ebcedee6f",
-        "version" : "4.3.0"
+        "branch" : "mariusz/update-colors",
+        "revision" : "2e45cbe21cc1d3f5dffa775c5c7c9f96f17399a8"
       }
     },
     {

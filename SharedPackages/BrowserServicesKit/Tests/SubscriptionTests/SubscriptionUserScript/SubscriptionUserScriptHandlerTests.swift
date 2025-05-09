@@ -50,20 +50,6 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
         XCTAssertEqual(handshake.availableMessages, [.subscriptionDetails])
     }
 
-    func testWhenSubscriptionIsInactiveThenSubscriptionDetailsReturnsNotSubscribedState() async throws {
-        subscriptionManager.returnSubscription = .success(PrivacyProSubscription(status: .inactive))
-        handler = .init(platform: .ios, subscriptionManager: subscriptionManager)
-        let subscriptionDetails = try await handler.subscriptionDetails(params: [], message: WKScriptMessage())
-        XCTAssertEqual(subscriptionDetails, .init(isSubscribed: false, billingPeriod: nil, startedAt: nil, expiresOrRenewsAt: nil, paymentPlatform: nil, status: nil))
-    }
-
-    func testWhenSubscriptionIsExpiredThenSubscriptionDetailsReturnsNotSubscribedState() async throws {
-        subscriptionManager.returnSubscription = .success(PrivacyProSubscription(status: .expired))
-        handler = .init(platform: .ios, subscriptionManager: subscriptionManager)
-        let subscriptionDetails = try await handler.subscriptionDetails(params: [], message: WKScriptMessage())
-        XCTAssertEqual(subscriptionDetails, .init(isSubscribed: false, billingPeriod: nil, startedAt: nil, expiresOrRenewsAt: nil, paymentPlatform: nil, status: nil))
-    }
-
     func testWhenSubscriptionFailsToBeFetchedThenSubscriptionDetailsReturnsNotSubscribedState() async throws {
         struct SampleError: Error {}
         subscriptionManager.returnSubscription = .failure(SampleError())

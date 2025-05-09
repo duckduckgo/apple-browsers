@@ -44,11 +44,16 @@ public enum OAuthClientError: Error, LocalizedError, Equatable {
             return "Auth migration not needed"
         }
     }
+
+    public var localizedDescription: String {
+        errorDescription ?? "Unknown"
+    }
 }
 
 /// Provides the locally stored tokens container
 public protocol AuthTokenStoring {
-    var tokenContainer: TokenContainer? { get set }
+    func getTokenContainer() throws -> TokenContainer?
+    func saveTokenContainer(_ tokenContainer: TokenContainer?) throws
 }
 
 /// Provides the legacy AuthToken V1
@@ -84,7 +89,9 @@ public protocol OAuthClient {
 
     var isUserAuthenticated: Bool { get }
 
-    var currentTokenContainer: TokenContainer? { get set }
+    func currentTokenContainer() throws -> TokenContainer?
+
+    func setCurrentTokenContainer(_ tokenContainer: TokenContainer?) throws
 
     /// Returns a tokens container based on the policy
     /// - `.local`: Returns what's in the storage, as it is, throws an error if no token is available
@@ -199,20 +206,20 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
     // MARK: - Public
 
     public var isUserAuthenticated: Bool {
-        tokenStorage.tokenContainer != nil
+        let tokenContainer = try? tokenStorage.getTokenContainer()
+        return tokenContainer != nil
     }
 
-    public var currentTokenContainer: TokenContainer? {
-        get  {
-            tokenStorage.tokenContainer
-        }
-        set {
-            tokenStorage.tokenContainer = newValue
-        }
+    public func currentTokenContainer() throws -> TokenContainer? {
+        try tokenStorage.getTokenContainer()
+    }
+
+    public func setCurrentTokenContainer(_ tokenContainer: TokenContainer?) throws {
+        try tokenStorage.saveTokenContainer(tokenContainer)
     }
 
     public func getTokens(policy: AuthTokensCachePolicy) async throws -> TokenContainer {
-        let localTokenContainer = tokenStorage.tokenContainer
+        let localTokenContainer = try tokenStorage.getTokenContainer()
 
         if policy != .local,
            let localTokenContainer,
@@ -260,7 +267,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
                 let refreshTokenResponse = try await authService.refreshAccessToken(clientID: Constants.clientID, refreshToken: localTokenContainer.refreshToken)
                 let refreshedTokens = try await decode(accessToken: refreshTokenResponse.accessToken, refreshToken: refreshTokenResponse.refreshToken)
                 Logger.OAuthClient.log("Tokens refreshed, expiry: \(refreshedTokens.decodedAccessToken.exp.value.description, privacy: .public)")
-                tokenStorage.tokenContainer = refreshedTokens
+                try tokenStorage.saveTokenContainer(refreshedTokens)
                 return refreshedTokens
             } catch OAuthServiceError.authAPIError(let code) where code == OAuthRequest.BodyErrorCode.invalidTokenRequest {
                 Logger.OAuthClient.error("Failed to refresh token: invalidTokenRequest")
@@ -276,9 +283,9 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
             } catch {
                 Logger.OAuthClient.log("Local token not found, creating a new account")
                 do {
-                    let tokens = try await createAccount()
-                    tokenStorage.tokenContainer = tokens
-                    return tokens
+                    let tokenContainer = try await createAccount()
+                    try tokenStorage.saveTokenContainer(tokenContainer)
+                    return tokenContainer
                 } catch {
                     Logger.OAuthClient.fault("Failed to create account: \(error, privacy: .public)")
                     throw error
@@ -314,7 +321,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
 
     public func adopt(tokenContainer: TokenContainer) {
         Logger.OAuthClient.log("Adopting TokenContainer")
-        tokenStorage.tokenContainer = tokenContainer
+        try? tokenStorage.saveTokenContainer(tokenContainer)
     }
 
     // MARK: Create
@@ -335,10 +342,10 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         let (codeVerifier, codeChallenge) = try await getVerificationCodes()
         let authSessionID = try await authService.authorize(codeChallenge: codeChallenge)
         let authCode = try await authService.login(withSignature: signature, authSessionID: authSessionID)
-        let tokens = try await getTokens(authCode: authCode, codeVerifier: codeVerifier)
-        tokenStorage.tokenContainer = tokens
+        let tokenContainer = try await getTokens(authCode: authCode, codeVerifier: codeVerifier)
+        try tokenStorage.saveTokenContainer(tokenContainer)
         Logger.OAuthClient.log("Activation completed")
-        return tokens
+        return tokenContainer
     }
 
     // MARK: Exchange V1 to V2 token
@@ -349,14 +356,14 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         let authSessionID = try await authService.authorize(codeChallenge: codeChallenge)
         let authCode = try await authService.exchangeToken(accessTokenV1: accessTokenV1, authSessionID: authSessionID)
         let tokenContainer = try await getTokens(authCode: authCode, codeVerifier: codeVerifier)
-        tokenStorage.tokenContainer = tokenContainer
+        try tokenStorage.saveTokenContainer(tokenContainer)
         return tokenContainer
     }
 
     // MARK: Logout
 
     public func logout() async throws {
-        let existingToken = tokenStorage.tokenContainer?.accessToken
+        let existingToken = try tokenStorage.getTokenContainer()?.accessToken
         removeLocalAccount()
 
         // Also removing V1
@@ -373,6 +380,6 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
 
     public func removeLocalAccount() {
         Logger.OAuthClient.log("Removing local account")
-        tokenStorage.tokenContainer = nil
+        try? tokenStorage.saveTokenContainer(nil)
     }
 }

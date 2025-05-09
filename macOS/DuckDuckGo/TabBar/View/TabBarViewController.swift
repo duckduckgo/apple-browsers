@@ -274,6 +274,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     private func setupAsBurnerWindowIfNeeded() {
         if tabCollectionViewModel.isBurner {
+            burnerWindowBackgroundView.image = visualStyleManager.style.fireWindowGraphic
             burnerWindowBackgroundView.isHidden = false
             fireButton.isAnimationEnabled = false
             fireButton.backgroundColor = NSColor.fireButtonRedBackground

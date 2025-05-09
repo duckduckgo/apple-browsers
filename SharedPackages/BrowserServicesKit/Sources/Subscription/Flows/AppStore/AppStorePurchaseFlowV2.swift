@@ -139,7 +139,7 @@ public final class DefaultAppStorePurchaseFlowV2: AppStorePurchaseFlowV2 {
         case .success(let transactionJWS):
             return .success(transactionJWS)
         case .failure(let error):
-            Logger.subscriptionAppStorePurchaseFlow.error("purchaseSubscription error: \(String(reflecting: error), privacy: .public)")
+            Logger.subscriptionAppStorePurchaseFlow.error("purchaseSubscription error: \(error.localizedDescription, privacy: .public)")
 
             await subscriptionManager.signOut(notifyUI: false) // TBD see if true is needed
 

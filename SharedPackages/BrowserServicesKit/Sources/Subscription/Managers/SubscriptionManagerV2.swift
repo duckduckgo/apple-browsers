@@ -238,7 +238,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     func migrateAuthV1toAuthV2IfNeeded() async {
 
         guard v1MigrationNeeded, // stops multiple attempts in a session, even in case of unrecoverable failures
-        oAuthClient.currentTokenContainer == nil else { // Already migrated
+        isUserAuthenticated == false else { // Already migrated
             return
         }
 
@@ -376,7 +376,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
     // MARK: - User
     public var isUserAuthenticated: Bool {
-        return oAuthClient.currentTokenContainer?.accessToken != nil
+        return (try? oAuthClient.currentTokenContainer())?.accessToken != nil
     }
 
     private func isUserAuthenticated() async -> Bool {
@@ -385,7 +385,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
     }
 
     public var userEmail: String? {
-        return oAuthClient.currentTokenContainer?.decodedAccessToken.email
+        return (try? oAuthClient.currentTokenContainer())?.decodedAccessToken.email
     }
 
     // MARK: -
@@ -394,7 +394,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         Logger.subscription.debug("Get tokens \(policy.description, privacy: .public)")
 
         do {
-            let currentCachedTokenContainer = oAuthClient.currentTokenContainer
+            let currentCachedTokenContainer = try oAuthClient.currentTokenContainer()
             let currentCachedEntitlements = currentCachedTokenContainer?.decodedAccessToken.subscriptionEntitlements
 
             await migrateAuthV1toAuthV2IfNeeded()

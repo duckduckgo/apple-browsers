@@ -21,7 +21,7 @@ import Common
 
 final class MainWindow: NSWindow {
 
-    static let minWindowWidth: CGFloat = 600
+    static let minWindowWidth: CGFloat = 544
     static let firstResponderDidChangeNotification = Notification.Name("firstResponderDidChange")
 
     override var canBecomeKey: Bool {

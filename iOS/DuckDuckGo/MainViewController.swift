@@ -198,7 +198,7 @@ class MainViewController: UIViewController {
     }()
 
     private lazy var aiChatViewControllerManager: AIChatViewControllerManager = {
-        let manager = AIChatViewControllerManager()
+        let manager = AIChatViewControllerManager(featureFlagger: featureFlagger)
         manager.delegate = self
         return manager
     }()
@@ -2914,7 +2914,6 @@ extension MainViewController: TabSwitcherDelegate {
                    withAdditionalParameters: featureDiscovery.addToParams([:], forFeature: .aiChat))
         self.aiChatViewControllerManager.openAIChat(on: tabSwitcher)
     }
-
 }
 
 extension MainViewController: BookmarksDelegate {

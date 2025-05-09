@@ -107,4 +107,12 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
     override func useRegularTopSpacing() {
         omniBarView.isUsingSmallTopSpacing = false
     }
+
+    override func preventShadowsOnTop() {
+        omniBarView.updateMaskLayer(maskTop: true)
+    }
+
+    override func preventShadowsOnBottom() {
+        omniBarView.updateMaskLayer(maskTop: false)
+    }
 }

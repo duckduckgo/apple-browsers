@@ -391,6 +391,13 @@ final class AddressBarButtonsViewController: NSViewController {
         zoomButton.isHidden = !shouldShowZoom
     }
 
+    // Temporarily hide/display AI chat button (does not persist)
+    func updateAIChatButtonVisibility(isHidden: Bool) {
+        aiChatButton.isHidden = isHidden
+        updateAIChatDividerVisibility()
+        delegate?.addressBarButtonsViewController(self, didUpdateAIChatButtonVisibility: aiChatButton.isShown)
+    }
+
     private func updateAIChatButtonVisibility() {
         aiChatButton.toolTip = isTextFieldEditorFirstResponder ? UserText.aiChatAddressBarShortcutTooltip : UserText.aiChatAddressBarTooltip
 

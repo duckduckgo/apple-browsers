@@ -73,15 +73,22 @@ private extension SimpleNewTabPageView {
     @ViewBuilder
     private var sectionsView: some View {
         GeometryReader { proxy in
-            ScrollView {
+            let shadowColor = viewModel.isExperimentalAppearanceEnabled ? Color(designSystemColor: .shadowPrimary) : .clear
+            NewTabPageShadowScrollView(shadowColor: shadowColor,
+                                       overflowOffset: 50,
+                                       setUpScrollView: { scrollView in
+                scrollView.backgroundColor = .clear
+                scrollView.keyboardDismissMode = .onDrag
+            }) {
                 VStack(spacing: Metrics.sectionSpacing) {
-
+                    
                     messagesSectionView
                         .padding(.top, Metrics.nonGridSectionTopPadding)
-
+                    
                     favoritesSectionView(proxy: proxy)
                 }
                 .padding(sectionsViewPadding(in: proxy))
+                .background(Color(designSystemColor: .background))
             }
             .withScrollKeyboardDismiss()
         }

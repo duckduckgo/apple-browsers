@@ -26,6 +26,7 @@ protocol VisualStyleProviding {
     func addressBarHeight(for type: AddressBarSizeClass) -> CGFloat
     func addressBarTopPadding(for type: AddressBarSizeClass) -> CGFloat
     func addressBarBottomPadding(for type: AddressBarSizeClass) -> CGFloat
+    func addressBarStackSpacing(for type: AddressBarSizeClass) -> CGFloat
     func shouldShowOutlineBorder(isHomePage: Bool) -> Bool
     var addressBarSuffixTextColor: NSColor { get }
     var addressBarTextFieldColor: NSColor { get }
@@ -44,8 +45,10 @@ protocol VisualStyleProviding {
     var passwordManagerButtonImage: NSImage { get }
     var bookmarksButtonImage: NSImage { get }
     var moreOptionsbuttonImage: NSImage { get }
+    var overflowButtonImage: NSImage { get }
     var toolbarButtonsCornerRadius: CGFloat { get }
     var navigationBackgroundColor: NSColor { get }
+    var fireWindowGraphic: NSImage { get }
 
     /// General colors
     var baseBackgroundColor: NSColor { get }
@@ -115,6 +118,7 @@ struct VisualStyle: VisualStyleProviding {
     let passwordManagerButtonImage: NSImage
     let bookmarksButtonImage: NSImage
     let moreOptionsbuttonImage: NSImage
+    let overflowButtonImage: NSImage
     let vpnNavigationIconsProvider: IconProvider
     let fireButtonStyleProvider: FireButtonIconStyleProviding
     let moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding
@@ -122,6 +126,7 @@ struct VisualStyle: VisualStyleProviding {
     let addressBarIconsProvider: AddressBarIconsProviding
     let tabStyleProvider: TabStyleProviding
     let navigationBackgroundColor: NSColor
+    let fireWindowGraphic: NSImage
     let baseBackgroundColor: NSColor
     let textPrimaryColor: NSColor
     let textSecondaryColor: NSColor
@@ -163,6 +168,13 @@ struct VisualStyle: VisualStyleProviding {
         }
     }
 
+    func addressBarStackSpacing(for type: AddressBarSizeClass) -> CGFloat {
+        switch type.isLogoVisible {
+        case true: return 16
+        case false: return 0
+        }
+    }
+
     func shouldShowOutlineBorder(isHomePage: Bool) -> Bool {
         return alwaysShowAddressBarOutline || isHomePage
     }
@@ -188,6 +200,7 @@ struct VisualStyle: VisualStyleProviding {
                            passwordManagerButtonImage: .passwordManagement,
                            bookmarksButtonImage: .bookmarks,
                            moreOptionsbuttonImage: .settings,
+                           overflowButtonImage: .chevronDoubleRight16,
                            vpnNavigationIconsProvider: NavigationBarIconProvider(),
                            fireButtonStyleProvider: LegacyFireButtonIconStyleProvider(),
                            moreOptionsMenuIconsProvider: LegacyMoreOptionsMenuIcons(),
@@ -195,6 +208,7 @@ struct VisualStyle: VisualStyleProviding {
                            addressBarIconsProvider: LegacyAddressBarIconsProvider(),
                            tabStyleProvider: LegacyTabStyleProvider(),
                            navigationBackgroundColor: .navigationBarBackground,
+                           fireWindowGraphic: .burnerWindowGraphic,
                            baseBackgroundColor: .windowBackground,
                            textPrimaryColor: .labelColor,
                            textSecondaryColor: .secondaryLabelColor,
@@ -232,6 +246,7 @@ struct VisualStyle: VisualStyleProviding {
                            passwordManagerButtonImage: .passwordManagerNew,
                            bookmarksButtonImage: .bookmarksNew,
                            moreOptionsbuttonImage: .optionsNew,
+                           overflowButtonImage: .chevronDoubleRight16,
                            vpnNavigationIconsProvider: NewVPNNavigationBarIconProvider(),
                            fireButtonStyleProvider: NewFireButtonIconStyleProvider(),
                            moreOptionsMenuIconsProvider: NewMoreOptionsMenuIcons(),
@@ -239,6 +254,7 @@ struct VisualStyle: VisualStyleProviding {
                            addressBarIconsProvider: NewAddressBarIconsProvider(),
                            tabStyleProvider: NewlineTabStyleProvider(),
                            navigationBackgroundColor: .navigationBackgroundColorNew,
+                           fireWindowGraphic: .burnerWindowGraphicNew,
                            baseBackgroundColor: .backgroundBaseColorNew,
                            textPrimaryColor: .primaryTextColorNew,
                            textSecondaryColor: .secondaryTextColorNew,

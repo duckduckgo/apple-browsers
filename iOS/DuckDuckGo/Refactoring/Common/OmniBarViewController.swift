@@ -231,11 +231,19 @@ class OmniBarViewController: UIViewController, OmniBar {
     }
 
     func useSmallTopSpacing() {
-        // no-op
+        // no-op - implemented in subclass
     }
 
     func useRegularTopSpacing() {
-        // no-op
+        // no-op - implemented in subclass
+    }
+
+    func preventShadowsOnTop() {
+        // no-op - implemented in subclass
+    }
+
+    func preventShadowsOnBottom() {
+        // no-op - implemented in subclass
     }
 
     func startBrowsing() {

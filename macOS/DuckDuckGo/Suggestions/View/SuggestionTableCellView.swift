@@ -97,7 +97,8 @@ final class SuggestionTableCellView: NSTableCellView {
             suffixTextField.stringValue = ""
         }
         setRemoveButtonHidden(true)
-        if case .openTab = suggestionViewModel.suggestion {
+        if case .openTab = suggestionViewModel.suggestion,
+           frame.size.width > 272 {
             switchToTabBox.isHidden = false
         } else {
             switchToTabBox.isHidden = true

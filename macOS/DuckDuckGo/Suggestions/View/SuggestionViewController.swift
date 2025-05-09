@@ -101,6 +101,7 @@ final class SuggestionViewController: NSViewController {
         tableView.sizeToFit()
         let column = tableView.tableColumns.first
         column?.width = tableView.frame.width
+        tableView.reloadData()
     }
 
     private func setupTableView() {

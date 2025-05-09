@@ -89,6 +89,16 @@ public class DataBrokerProtectionAgentManagerProvider {
             return nil
         }
 
+        let featureFlagger = DefaultFeatureFlagger(
+            internalUserDecider: privacyConfigurationManager.internalUserDecider,
+            privacyConfigManager: privacyConfigurationManager,
+            localOverrides: FeatureFlagLocalOverrides(
+                keyValueStore: UserDefaults.config,
+                actionHandler: featureFlagOverridesPublishingHandler
+            ),
+            experimentManager: nil,
+            for: FeatureFlag.self
+        )
         let localBrokerService = LocalBrokerJSONService(vault: vault, pixelHandler: sharedPixelsHandler)
         let brokerUpdater = RemoteBrokerJSONService(featureFlagger: remoteBrokerDeliveryFeatureFlagger,
                                                     settings: dbpSettings,

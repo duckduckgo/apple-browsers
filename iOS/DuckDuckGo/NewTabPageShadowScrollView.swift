@@ -45,8 +45,9 @@ struct NewTabPageShadowScrollView<Content: View>: UIViewRepresentable {
 
         let hostingController = UIHostingController(rootView: content)
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
-        
+
         scrollView.addSubview(hostingController.view)
+        scrollView.clipsToBounds = false
 
         let hostingView = hostingController.view!
 
@@ -68,14 +69,17 @@ struct NewTabPageShadowScrollView<Content: View>: UIViewRepresentable {
         bottomShadowView.translatesAutoresizingMaskIntoConstraints = false
         hostingView.addSubview(bottomShadowView)
 
+        // Added to make shadows extend beyond scrollView horizontally (visible on landscape).
+        let additionalOffset: CGFloat = 100
+
         NSLayoutConstraint.activate([
-            topShadowView.leadingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.leadingAnchor),
-            topShadowView.trailingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.trailingAnchor),
+            topShadowView.leadingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.leadingAnchor, constant: -additionalOffset),
+            topShadowView.trailingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.trailingAnchor, constant: additionalOffset),
             topShadowView.bottomAnchor.constraint(equalTo: scrollView.frameLayoutGuide.topAnchor),
             topShadowView.heightAnchor.constraint(equalToConstant: ShadowScrollViewMetrics.shadowViewHeight),
 
-            bottomShadowView.leadingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.leadingAnchor),
-            bottomShadowView.trailingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.trailingAnchor),
+            bottomShadowView.leadingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.leadingAnchor, constant: -additionalOffset),
+            bottomShadowView.trailingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.trailingAnchor, constant: additionalOffset),
             bottomShadowView.topAnchor.constraint(equalTo: scrollView.frameLayoutGuide.bottomAnchor),
             bottomShadowView.heightAnchor.constraint(equalToConstant: ShadowScrollViewMetrics.shadowViewHeight)
         ])
@@ -89,6 +93,7 @@ struct NewTabPageShadowScrollView<Content: View>: UIViewRepresentable {
     }
     
     func updateUIView(_ uiView: UIScrollView, context: Context) {
+        uiView.layoutIfNeeded()
         context.coordinator.updateShadowVisibility(scrollView: uiView)
     }
 

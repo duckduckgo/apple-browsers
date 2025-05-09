@@ -136,10 +136,10 @@ public final class BrokerProfileJobQueueManager: BrokerProfileJobQueueManaging {
                                                         completion: (() -> Void)?) {
 
         let newMode = BrokerProfileJobQueueMode.immediate(errorHandler: errorHandler, completion: completion)
-        startOperationsIfPermitted(forNewMode: newMode,
-                                   type: .manualScan,
-                                   showWebView: showWebView,
-                                   jobDependencies: jobDependencies) { [weak self] errors in
+        startJobsIfPermitted(forNewMode: newMode,
+                             type: .manualScan,
+                             showWebView: showWebView,
+                             jobDependencies: jobDependencies) { [weak self] errors in
             self?.mismatchCalculator.calculateMismatches()
             errorHandler?(errors)
         } completion: {
@@ -151,22 +151,22 @@ public final class BrokerProfileJobQueueManager: BrokerProfileJobQueueManaging {
                                                        jobDependencies: BrokerProfileJobDependencyProviding,
                                                        errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                                                        completion: (() -> Void)?) {
-        startScheduleOperationsIfPermitted(for: .all,
-                                           showWebView: showWebView,
-                                           jobDependencies: jobDependencies,
-                                           errorHandler: errorHandler,
-                                           completion: completion)
+        startScheduledJobsIfPermitted(for: .all,
+                                      showWebView: showWebView,
+                                      jobDependencies: jobDependencies,
+                                      errorHandler: errorHandler,
+                                      completion: completion)
     }
 
     public func startScheduledScanOperationsIfPermitted(showWebView: Bool,
                                                         jobDependencies: BrokerProfileJobDependencyProviding,
                                                         errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
                                                         completion: (() -> Void)?) {
-        startScheduleOperationsIfPermitted(for: .scheduledScan,
-                                           showWebView: showWebView,
-                                           jobDependencies: jobDependencies,
-                                           errorHandler: errorHandler,
-                                           completion: completion)
+        startScheduledJobsIfPermitted(for: .scheduledScan,
+                                      showWebView: showWebView,
+                                      jobDependencies: jobDependencies,
+                                      errorHandler: errorHandler,
+                                      completion: completion)
     }
 
     public func execute(_ command: DataBrokerProtectionQueueManagerDebugCommand) {
@@ -175,7 +175,7 @@ public final class BrokerProfileJobQueueManager: BrokerProfileJobQueueManaging {
                                           let errorHandler,
                                           let completion) = command else { return }
 
-        addOperations(for: .optOut,
+        addJobs(for: .optOut,
                       showWebView: showWebView,
                       jobDependencies: operationDependencies,
                       errorHandler: errorHandler,
@@ -185,26 +185,26 @@ public final class BrokerProfileJobQueueManager: BrokerProfileJobQueueManaging {
 
 private extension BrokerProfileJobQueueManager {
 
-    func startScheduleOperationsIfPermitted(for jobType: JobType,
-                                            showWebView: Bool,
-                                            jobDependencies: BrokerProfileJobDependencyProviding,
-                                            errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
-                                            completion: (() -> Void)?) {
+    func startScheduledJobsIfPermitted(for jobType: JobType,
+                                       showWebView: Bool,
+                                       jobDependencies: BrokerProfileJobDependencyProviding,
+                                       errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
+                                       completion: (() -> Void)?) {
         let newMode = BrokerProfileJobQueueMode.scheduled(errorHandler: errorHandler, completion: completion)
-        startOperationsIfPermitted(forNewMode: newMode,
-                                   type: jobType,
-                                   showWebView: showWebView,
-                                   jobDependencies: jobDependencies,
-                                   errorHandler: errorHandler,
-                                   completion: completion)
+        startJobsIfPermitted(forNewMode: newMode,
+                             type: jobType,
+                             showWebView: showWebView,
+                             jobDependencies: jobDependencies,
+                             errorHandler: errorHandler,
+                             completion: completion)
     }
 
-    func startOperationsIfPermitted(forNewMode newMode: BrokerProfileJobQueueMode,
-                                    type: JobType,
-                                    showWebView: Bool,
-                                    jobDependencies: BrokerProfileJobDependencyProviding,
-                                    errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
-                                    completion: (() -> Void)?) {
+    func startJobsIfPermitted(forNewMode newMode: BrokerProfileJobQueueMode,
+                              type: JobType,
+                              showWebView: Bool,
+                              jobDependencies: BrokerProfileJobDependencyProviding,
+                              errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
+                              completion: (() -> Void)?) {
 
         guard mode.canBeInterruptedBy(newMode: newMode) else {
             let error = BrokerProfileJobQueueError.cannotInterrupt
@@ -220,12 +220,12 @@ private extension BrokerProfileJobQueueManager {
 
         updateBrokerData()
 
-        addOperations(for: type,
-                      priorityDate: mode.priorityDate,
-                      showWebView: showWebView,
-                      jobDependencies: jobDependencies,
-                      errorHandler: errorHandler,
-                      completion: completion)
+        addJobs(for:type,
+                priorityDate: mode.priorityDate,
+                showWebView: showWebView,
+                jobDependencies: jobDependencies,
+                errorHandler: errorHandler,
+                completion: completion)
     }
 
     func cancelCurrentModeAndResetIfNeeded() {
@@ -254,16 +254,15 @@ private extension BrokerProfileJobQueueManager {
         brokerUpdater?.checkForUpdatesInBrokerJSONFiles()
     }
 
-    func addOperations(for jobType: JobType,
-                       priorityDate: Date? = nil,
-                       showWebView: Bool,
-                       jobDependencies: BrokerProfileJobDependencyProviding,
-                       errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
-                       completion: (() -> Void)?) {
+    func addJobs(for jobType: JobType,
+                 priorityDate: Date? = nil,
+                 showWebView: Bool,
+                 jobDependencies: BrokerProfileJobDependencyProviding,
+                 errorHandler: ((DataBrokerProtectionJobsErrorCollection?) -> Void)?,
+                 completion: (() -> Void)?) {
 
         jobQueue.maxConcurrentOperationCount = jobDependencies.executionConfig.concurrentJobsFor(jobType)
 
-        // Use builder to build operations
         let jobs: [BrokerProfileJob]
         do {
             jobs = try jobProvider.createJobs(with: jobType,

@@ -341,7 +341,10 @@ extension PrivacyDashboardViewController {
             for feature in features {
                 experiments[feature.key] = feature.value.cohortID
             }
-            return experiments.map { "\($0.key):\($0.value)" }.joined(separator: ",")
+            return experiments
+                .sorted { $0.key < $1.key }
+                .map { "\($0.key):\($0.value)" }
+                .joined(separator: ",")
         }
 
 

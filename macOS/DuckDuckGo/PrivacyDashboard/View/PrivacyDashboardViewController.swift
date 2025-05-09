@@ -381,14 +381,17 @@ extension PrivacyDashboardViewController {
         if let httpStatusCode = currentTab.brokenSiteInfo?.lastHttpStatusCode {
             statusCodes = [httpStatusCode]
         }
-
+        
         var privacyExperimentCohorts: String {
             var experiments: [String: String] = [:]
             let features = contentScopeExperimentManager.resolveContentScopeScriptActiveExperiments()
             for feature in features {
                 experiments[feature.key] = feature.value.cohortID
             }
-            return experiments.map { "\($0.key):\($0.value)" }.joined(separator: ",")
+            return experiments
+                .sorted { $0.key < $1.key }
+                .map { "\($0.key):\($0.value)" }
+                .joined(separator: ",")
         }
 
         let isPirEnabled = await isPirEnabledAndUserHasProfile()

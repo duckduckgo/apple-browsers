@@ -215,6 +215,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
 
     var searchContainerWidth: CGFloat { searchAreaView.frame.width }
 
+    private var masksTop: Bool = true
     private let omniBarProgressView = OmniBarProgressView()
     var progressView: ProgressView? { omniBarProgressView.progressView }
 
@@ -251,6 +252,12 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+
+        updateMaskLayer()
     }
 
     private func setUpSubviews() {
@@ -669,6 +676,12 @@ extension UpdatedOmniBarView {
 
     // Used to mask shadows going outside of bounds to prevent them covering other content
     func updateMaskLayer(maskTop: Bool) {
+        self.masksTop = maskTop
+
+        updateMaskLayer()
+    }
+
+    private func updateMaskLayer() {
         let maskLayer = CALayer()
 
         let clippingOffset = 100.0
@@ -677,7 +690,7 @@ extension UpdatedOmniBarView {
         // Make the frame uniformly larger along each axis and offset to top or bottom
         let maskFrame = layer.bounds
             .insetBy(dx: -inset, dy: -inset)
-            .offsetBy(dx: 0, dy: maskTop ? clippingOffset : -clippingOffset)
+            .offsetBy(dx: 0, dy: masksTop ? clippingOffset : -clippingOffset)
 
         maskLayer.frame = maskFrame
         maskLayer.backgroundColor = UIColor.black.cgColor

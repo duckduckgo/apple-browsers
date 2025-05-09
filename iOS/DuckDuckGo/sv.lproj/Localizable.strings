@@ -1150,41 +1150,8 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Igår";
 
-/* No comment provided by engineer. */
-"dax.hide.button" = "Dölj tipsen för alltid";
-
-/* No comment provided by engineer. */
-"dax.hide.cancel" = "Avbryt";
-
-/* Subtitle in Hide Dax dialog */
-"dax.hide.message" = "Det finns bara några få, och vi försökte göra dem informativa.";
-
-/* Title in Hide Dax dialog */
-"dax.hide.title" = "Dölj återstående tips?";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search" = "Dina DuckDuckGo-sökningar är anonyma. Alltid. 🙌";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search.cta" = "Puh!";
-
-/* First parameter is a count of additional trackers, second and third are names of the tracker networks (strings) */
-"dax.onboarding.browsing.multiple.trackers" = "dax.onboarding.browsing.multiple.trackers";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.multiple.trackers.cta" = "High Five!";
-
-/* Parameter is domain name (string) */
-"dax.onboarding.browsing.one.tracker" = "*%1$@* försökte spåra dig här.\n\nJag blockerade det!\n\n☝️ Du kan kontrollera adressfältet för att se vem som försöker spåra dig när du besöker en ny webbplats.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.one.tracker.cta" = "High Five!";
-
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Bra att veta! Jag kan inte hindra %1$@ från att se din aktivitet på %2$@.\n\nMen om du surfar med hjälp av mig kan jag se till att %1$@ får veta mindre om dig genom att blockera deras spårare på många andra webbplatser.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.site.is.major.tracker.cta" = "Jag fattar";
 
 /* Parameters are domain names (strings) */
 "dax.onboarding.browsing.site.owned.by.major.tracker" = "Bra att veta! Eftersom %2$@ äger %1$@ kan jag inte hindra dem från att se din aktivitet här.\n\nMen om du surfar med hjälp av mig kan jag se till att %2$@ får veta mindre om dig genom att blockera deras spårare på många andra webbplatser.";
@@ -1195,29 +1162,8 @@
 /* No comment provided by engineer. */
 "dax.onboarding.browsing.without.trackers" = "Medan du pekar och bläddrar kommer jag att blockera irriterande spårare.\n\nFortsätt – surfa vidare!";
 
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.without.trackers.cta" = "Jag fattar";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button" = "Personuppgifter kan samlas i din webbläsare. Usch. Använd brännarknappen för att bränna alltihopa. Prova nu! 👇";
-
-/* Cancel action */
-"dax.onboarding.fire.button.cancelAction" = "Avbryt";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button.confirmAction" = "Stäng flikar och rensa data";
-
 /* Encourage user to add favorite site using the browsing menu. */
 "dax.onboarding.home.add.favorite" = "Besök dina favoritsidor på ett ögonblick!\n\nGå till en webbplats du gillar. Tryck sedan på ikonen \"⋯\" och välj *Lägg till i favoriter*.";
-
-/* Accessible version of dax.onboarding.home.add.favorite */
-"dax.onboarding.home.add.favorite.accessible" = "Besök dina favoritsidor på ett ögonblick! Besök en av dina favoritwebbplatser. Tryck sedan på knappen för att öppna menyn och välj Lägg till i favoriter.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.home.initial" = "Prova sedan att besöka en av dina favoritwebbplatser!\n\nJag blockerar spårare så att de inte kan spionera på dig. Jag uppgraderar också säkerheten för din uppkoppling om det är möjligt. 🔒";
-
-/* ad = advertisment */
-"dax.onboarding.home.subsequent" = "Du klarar det här!\n\nKom ihåg: varje gång du surfar med mig förlorar en läskig annons sina vingar. 👍";
 
 /* No comment provided by engineer. */
 "Debug" = "Felsökning";
@@ -1313,16 +1259,16 @@
 "duckai.preferences.text.markdown" = "Duck.ai är en valfri funktion som låter dig chatta anonymt med populära AI-chattmodeller från tredje part. Dina chattar används inte för att träna AI.\n[Mer information](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
-"duckai.settings.enable.address-bar-toggle" = "Visa Duck.ai i adressfältet";
+"duckai.settings.enable.address-bar-toggle" = "Adressfält";
 
 /* Toggle text to enable/disable AI Chat in the browsing menu */
-"duckai.settings.enable.browsing-menu-toggle" = "Visa Duck.ai i webbläsarmenyn";
+"duckai.settings.enable.browsing-menu-toggle" = "Webbläsarmeny";
 
 /* Toggle text to enable/disable Duck.ai in tab manager */
-"duckai.settings.enable.tab-switcher-toggle" = "Visa Duck.ai på fliken Flikar";
+"duckai.settings.enable.tab-switcher-toggle" = "Skärmen Flikar";
 
 /* Toggle text to enable/disable Duck.ai in voice search */
-"duckai.settings.enable.voice-search-toggle" = "Visa Duck.ai i röstsökning";
+"duckai.settings.enable.voice-search-toggle" = "Röstsökning";
 
 /* Settings screen cell text for AI Chat settings */
 "duckai.settings.title" = "Duck.ai";
@@ -2332,11 +2278,11 @@
 /* No comment provided by engineer. */
 "onboardingWelcomeHeader" = "Välkommen till DuckDuckGo!";
 
-/* No comment provided by engineer. */
-"Open tabs remain unaffected by this change.  Please close all tabs for this setting to take effect." = "Öppna flikar påverkas inte av den här ändringen.  Stäng alla flikar för att inställningen ska börja gälla.";
-
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Kan inte hitta appen som krävs för att öppna den här länken";
+
+/* No comment provided by engineer. */
+"Please close all tabs for this setting to take effect." = "Stäng alla flikar för att inställningen ska börja gälla.";
 
 /* Activate button */
 "pm.activate" = "Återaktivera";
@@ -2560,6 +2506,9 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Visa hela webbplatsadressen";
 
+/* Settings screen text for showing AI Chat in various places in the app */
+"settings.aichat.shortcuts" = "Genvägar";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Alltid på";
 
@@ -2631,6 +2580,9 @@
 
 /* Settings cell for Email Protection */
 "settings.emailProtection.description" = "Blockera e-postspårare och dölj din adress";
+
+/* Settings screen cell text for enabling AI chat */
+"settings.enable.aichat" = "Aktivera Duck.ai";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Aktivera Email Protection";

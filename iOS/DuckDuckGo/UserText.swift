@@ -1553,6 +1553,9 @@ Take back control of your personal information with the browser designed for dat
     static let duckPlayerContingencyMessageCTA = NSLocalizedString("duck-player.video-contingency-cta", value: "Learn More", comment: "Button for the message explaining to the user that Duck Player is not available so the user can learn more")
 
     // MARK: - AI Chat
+    public static let settingsEnableAiChat = NSLocalizedString("settings.enable.aichat", value: "Enable Duck.ai", comment: "Settings screen cell text for enabling AI chat")
+
+    public static let settingsAiChatShortcuts = NSLocalizedString("settings.aichat.shortcuts", value: "Shortcuts", comment: "Settings screen text for showing AI Chat in various places in the app")
 
     public static let voiceSearchToggleSearch = NSLocalizedString("voice-search-toggle-serp-option", value: "Search", comment: "Voice search toggle option for searching on the web")
     public static let voiceSearchToggleAIChat = NotLocalizedString("voice-search-toggle-aichat-option", value: "Duck.ai", comment: "Voice search toggle option for searching on the AI Chat. Feature name. Not translated")
@@ -1563,13 +1566,13 @@ Take back control of your personal information with the browser designed for dat
 Duck.ai is an optional feature that lets you chat anonymously with popular 3rd-party Al chat models. Your chats are not used to train AI.
 [Learn More](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)
 """, comment: "Ai Chat preferences explanation with a markdown link. Do not translate what's inside [] and ()")
-    public static let aiChatSettingsEnableBrowsingMenuToggle = NSLocalizedString("duckai.settings.enable.browsing-menu-toggle", value: "Show Duck.ai in Browser Menu", comment: "Toggle text to enable/disable AI Chat in the browsing menu")
+    public static let aiChatSettingsEnableBrowsingMenuToggle = NSLocalizedString("duckai.settings.enable.browsing-menu-toggle", value: "Browser Menu", comment: "Toggle text to enable/disable AI Chat in the browsing menu")
 
-    public static let aiChatSettingsEnableAddressBarToggle = NSLocalizedString("duckai.settings.enable.address-bar-toggle", value: "Show Duck.ai in Address Bar", comment: "Toggle text to enable/disable Duck.ai in the address bar")
+    public static let aiChatSettingsEnableAddressBarToggle = NSLocalizedString("duckai.settings.enable.address-bar-toggle", value: "Address Bar", comment: "Toggle text to enable/disable Duck.ai in the address bar")
 
-    public static let aiChatSettingsEnableVoiceSearchToggle = NSLocalizedString("duckai.settings.enable.voice-search-toggle", value: "Show Duck.ai in Voice Search", comment: "Toggle text to enable/disable Duck.ai in voice search")
+    public static let aiChatSettingsEnableVoiceSearchToggle = NSLocalizedString("duckai.settings.enable.voice-search-toggle", value: "Voice Search", comment: "Toggle text to enable/disable Duck.ai in voice search")
 
-    public static let aiChatSettingsEnableTabSwitcherToggle = NSLocalizedString("duckai.settings.enable.tab-switcher-toggle", value: "Show Duck.ai on the Tabs Screen", comment: "Toggle text to enable/disable Duck.ai in tab manager")
+    public static let aiChatSettingsEnableTabSwitcherToggle = NSLocalizedString("duckai.settings.enable.tab-switcher-toggle", value: "Tabs Screen", comment: "Toggle text to enable/disable Duck.ai in tab manager")
 
     public enum MaliciousSiteProtectionSettings {
         public static let header = NSLocalizedString("malicious-site-protection.settings.header", value: "Site Safety Warnings", comment: "Header text for Malicious Site Protection settings")

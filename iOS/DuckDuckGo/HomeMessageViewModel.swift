@@ -23,6 +23,7 @@ import RemoteMessaging
 import UIKit
 
 struct HomeMessageViewModel {
+
     enum ButtonAction {
         case close
         case action(isShare: Bool) // a generic action that is specific to the type of message
@@ -33,6 +34,7 @@ struct HomeMessageViewModel {
     let messageId: String
     let sendPixels: Bool
     let modelType: RemoteMessageModelType
+    let navigator: MessageNavigator
 
     var image: String? {
         switch modelType {
@@ -151,6 +153,12 @@ struct HomeMessageViewModel {
             }
         case .dismiss:
             return { @MainActor in
+                await onDidClose(buttonAction)
+            }
+
+        case .navigation(let target):
+            return { @MainActor in
+                navigator.navigateTo(target)
                 await onDidClose(buttonAction)
             }
         }

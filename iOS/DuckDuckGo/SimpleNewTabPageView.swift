@@ -162,7 +162,8 @@ private struct Metrics {
         messagesModel: NewTabPageMessagesModel(
             homePageMessagesConfiguration: PreviewMessagesConfiguration(
                 homeMessages: []
-            )
+            ),
+            navigator: DefaultMessageNavigator(delegate: nil)
         ),
         favoritesViewModel: FavoritesPreviewModel()
     )
@@ -184,7 +185,8 @@ private struct Metrics {
                         )
                     )
                 ]
-            )
+            ),
+            navigator: DefaultMessageNavigator(delegate: nil)
         ),
         favoritesViewModel: FavoritesPreviewModel()
     )
@@ -196,7 +198,8 @@ private struct Metrics {
         messagesModel: NewTabPageMessagesModel(
             homePageMessagesConfiguration: PreviewMessagesConfiguration(
                 homeMessages: []
-            )
+            ),
+            navigator: DefaultMessageNavigator(delegate: nil)
         ),
         favoritesViewModel: FavoritesPreviewModel(favorites: [])
     )
@@ -208,7 +211,8 @@ private struct Metrics {
         messagesModel: NewTabPageMessagesModel(
             homePageMessagesConfiguration: PreviewMessagesConfiguration(
                 homeMessages: []
-            )
+            ),
+            navigator: DefaultMessageNavigator(delegate: nil)
         ),
         favoritesViewModel: FavoritesPreviewModel()
     )

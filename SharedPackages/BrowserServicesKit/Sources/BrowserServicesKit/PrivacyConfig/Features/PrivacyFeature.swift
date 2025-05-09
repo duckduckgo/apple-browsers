@@ -227,8 +227,8 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case useUnifiedFeedback
     case setAccessTokenCookieForSubscriptionDomains
     case privacyProFreeTrialJan25
-    case privacyProOnboardingCTAMarch25
     case privacyProAuthV2
+    case privacyProOnboardingPromotion
 }
 
 public enum SslCertificatesSubfeature: String, PrivacySubfeature {

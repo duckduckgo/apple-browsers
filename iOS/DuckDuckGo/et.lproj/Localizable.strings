@@ -1150,41 +1150,8 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Eile";
 
-/* No comment provided by engineer. */
-"dax.hide.button" = "Peida näpunäited igaveseks";
-
-/* No comment provided by engineer. */
-"dax.hide.cancel" = "Tühista";
-
-/* Subtitle in Hide Dax dialog */
-"dax.hide.message" = "Neid on üsna vähe ja püüdsime muuta need informatiivseks.";
-
-/* Title in Hide Dax dialog */
-"dax.hide.title" = "Kas peita allesjäänud näpunäited?";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search" = "Sinu DuckDuckGo otsingud on anonüümsed. Alati. 🙌";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search.cta" = "Huh!";
-
-/* First parameter is a count of additional trackers, second and third are names of the tracker networks (strings) */
-"dax.onboarding.browsing.multiple.trackers" = "dax.onboarding.browsing.multiple.trackers";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.multiple.trackers.cta" = "Viska viis!";
-
-/* Parameter is domain name (string) */
-"dax.onboarding.browsing.one.tracker" = "*%1$@* üritas sind siin jälitada.\n\nMa blokeerisin nad!\n\n☝️ Võid vaadata aadressiriba, et näha, kes üritab sind jälitada, kui külastad uut saiti.️";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.one.tracker.cta" = "Viska viis!";
-
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Ettevaatust! Ma ei saa takistada %1$@ nägemast sinu tegevust %2$@.\n\nKuid sirvi koos minuga ja ma saan vähendada seda, mida %1$@ sinust üldiselt teab, blokeerides tema jälitajad paljudel teistel lehtedel.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.site.is.major.tracker.cta" = "Sain aru";
 
 /* Parameters are domain names (strings) */
 "dax.onboarding.browsing.site.owned.by.major.tracker" = "Ettevaatust! Kuna %2$@ on %1$@ omanik, ei saa ma takistada teda jälgimast sinu tegevust siin.\n\nKuid sirvi koos minuga ja ma saan vähendada seda, mida %2$@ sinust üldiselt teab, blokeerides tema jälgijad paljudel teistel lehtedel.";
@@ -1195,29 +1162,8 @@
 /* No comment provided by engineer. */
 "dax.onboarding.browsing.without.trackers" = "Kui puudutad ja kerid, siis mina blokeerin tüütud jälgijad.\n\nHakka sirvima!";
 
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.without.trackers.cta" = "Sain aru";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button" = "Sinu brauserisse võivad koguneda isikuandmed. Õudne. Kasuta tule nuppu, et see kõik ära põletada. Proovi kohe! 👇";
-
-/* Cancel action */
-"dax.onboarding.fire.button.cancelAction" = "Tühista";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button.confirmAction" = "Sulge vahekaardid ja kustuta andmed";
-
 /* Encourage user to add favorite site using the browsing menu. */
 "dax.onboarding.home.add.favorite" = "Külasta oma lemmiksaite hetkega!\n\nMine saidile, mis sulle meeldib. Seejärel puuduta ikooni „⋯“ ja vali *Lisa lemmikutesse*.";
-
-/* Accessible version of dax.onboarding.home.add.favorite */
-"dax.onboarding.home.add.favorite.accessible" = "Külasta oma lemmiksaite hetkega! Külasta ühte oma lemmiksaitidest. Seejärel puuduta menüünuppu ja vali Lisa lemmikutesse.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.home.initial" = "Järgmisena proovi külastada ühte oma lemmiksaitidest!\n\nMina aga blokeerin jälgijaid, et nad ei saaks sind luurata. Võimaluse korral parandan ka sinu ühenduse turvalisust. 🔒";
-
-/* ad = advertisment */
-"dax.onboarding.home.subsequent" = "Said selle!\n\nPea meeles: iga kord, kui minuga sirvid, kaotab jube reklaam tiivad. 👍";
 
 /* No comment provided by engineer. */
 "Debug" = "Silumine";
@@ -1313,16 +1259,16 @@
 "duckai.preferences.text.markdown" = "Duck.ai on valikuline funktsioon, mis võimaldab anonüümselt vestelda populaarsete kolmanda poole AI vestlusmudelitega. Teie vestlusi ei kasutata tehisintellekti treenimiseks.\n[Lisateave](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
-"duckai.settings.enable.address-bar-toggle" = "Kuva Duck.ai aadressiribal";
+"duckai.settings.enable.address-bar-toggle" = "Aadressiriba";
 
 /* Toggle text to enable/disable AI Chat in the browsing menu */
-"duckai.settings.enable.browsing-menu-toggle" = "Kuva Duck.ai brauseri menüüs";
+"duckai.settings.enable.browsing-menu-toggle" = "Brauseri menüü";
 
 /* Toggle text to enable/disable Duck.ai in tab manager */
-"duckai.settings.enable.tab-switcher-toggle" = "Kuva Duck.ai vahelehtede ekraanil";
+"duckai.settings.enable.tab-switcher-toggle" = "Vahekaartide ekraan";
 
 /* Toggle text to enable/disable Duck.ai in voice search */
-"duckai.settings.enable.voice-search-toggle" = "Kuva Duck.ai häälotsingus";
+"duckai.settings.enable.voice-search-toggle" = "Häälotsing";
 
 /* Settings screen cell text for AI Chat settings */
 "duckai.settings.title" = "Duck.ai";
@@ -2332,11 +2278,11 @@
 /* No comment provided by engineer. */
 "onboardingWelcomeHeader" = "Tere tulemast DuckDuckGo kasutajaks!";
 
-/* No comment provided by engineer. */
-"Open tabs remain unaffected by this change.  Please close all tabs for this setting to take effect." = "Avatud vahekaardid jäävad sellest muudatusest mõjutamata.  Selle sätte jõustumiseks sulgege kõik vahekaardid.";
-
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Selle lingi avamiseks vajalikku rakendust ei leitud";
+
+/* No comment provided by engineer. */
+"Please close all tabs for this setting to take effect." = "Selle sätte jõustumiseks sulgege kõik vahekaardid.";
 
 /* Activate button */
 "pm.activate" = "Aktiveeri uuesti";
@@ -2560,6 +2506,9 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Näita kogu saidi aadressi";
 
+/* Settings screen text for showing AI Chat in various places in the app */
+"settings.aichat.shortcuts" = "Otseteed";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Alati sisse lülitatud";
 
@@ -2631,6 +2580,9 @@
 
 /* Settings cell for Email Protection */
 "settings.emailProtection.description" = "Blokeeri meilijälgurid ja peida oma aadress";
+
+/* Settings screen cell text for enabling AI chat */
+"settings.enable.aichat" = "Luba Duck.ai";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Luba Email Protection";

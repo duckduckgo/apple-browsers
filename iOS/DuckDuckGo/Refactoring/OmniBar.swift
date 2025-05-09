@@ -20,10 +20,10 @@
 import Foundation
 import PrivacyDashboard
 
+// We only support chat for now.  More options will be added in a future customisation project.
 enum OmniBarAccessoryType {
-     case share
-     case chat
- }
+    case chat
+}
 
 protocol OmniBar: AnyObject {
     var barView: any OmniBarView { get }

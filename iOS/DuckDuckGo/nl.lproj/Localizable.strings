@@ -1150,41 +1150,8 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Gisteren";
 
-/* No comment provided by engineer. */
-"dax.hide.button" = "Tips voor altijd verbergen";
-
-/* No comment provided by engineer. */
-"dax.hide.cancel" = "Annuleren";
-
-/* Subtitle in Hide Dax dialog */
-"dax.hide.message" = "Het zijn er maar een paar en we hebben geprobeerd ze informatief te maken.";
-
-/* Title in Hide Dax dialog */
-"dax.hide.title" = "Resterende tips verbergen?";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search" = "Je DuckDuckGo zoekopdrachten zijn anoniem. Altijd. 🙌";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search.cta" = "Opluchting!";
-
-/* First parameter is a count of additional trackers, second and third are names of the tracker networks (strings) */
-"dax.onboarding.browsing.multiple.trackers" = "dax.onboarding.browsing.multiple.trackers";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.multiple.trackers.cta" = "High five!";
-
-/* Parameter is domain name (string) */
-"dax.onboarding.browsing.one.tracker" = "*%1$@* probeerde je hier te volgen.\n\nDat heb ik geblokkeerd!\n\n☝️ Check de adresbalk om te zien wie je probeert te volgen als je een nieuwe site bezoekt.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.one.tracker.cta" = "High five!";
-
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Opgelet! Ik kan niet voorkomen dat %1$@ jouw activiteit op %2$@ kan zien.\n\nMaar als je met mij surft, kan ik ervoor zorgen dat %1$@ minder over je te weten komt door hun trackers op veel andere sites te blokkeren.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.site.is.major.tracker.cta" = "Ik snap het";
 
 /* Parameters are domain names (strings) */
 "dax.onboarding.browsing.site.owned.by.major.tracker" = "Opgelet! Omdat %2$@ eigenaar is van %1$@ kan ik niet voorkomen dat ze jouw activiteit hier kunnen zien.\n\nMaar als je met mij surft, kan ik ervoor zorgen dat %2$@ minder over je te weten komt door hun trackers op veel andere sites te blokkeren.";
@@ -1195,29 +1162,8 @@
 /* No comment provided by engineer. */
 "dax.onboarding.browsing.without.trackers" = "Terwijl je tikt en scrolt, blokkeer ik vervelende trackers.\n\nGa je gang, blijf browsen!";
 
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.without.trackers.cta" = "Ik snap het";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button" = "Persoonlijke gegevens kunnen zich ophopen in je browser. Bah. Gebruik de vuurknop om alles te verbranden. Probeer het maar! 👇";
-
-/* Cancel action */
-"dax.onboarding.fire.button.cancelAction" = "Annuleren";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button.confirmAction" = "Tabbladen sluiten en gegevens wissen";
-
 /* Encourage user to add favorite site using the browsing menu. */
 "dax.onboarding.home.add.favorite" = "Bezoek je favoriete websites in een oogwenk!\n\nGa naar een van je favoriete sites, tik op het pictogram '⋯' en selecteer *Toevoegen aan favorieten*.";
-
-/* Accessible version of dax.onboarding.home.add.favorite */
-"dax.onboarding.home.add.favorite.accessible" = "Bezoek je favoriete websites in een oogwenk! Ga naar een van je favoriete sites, tik op de knop om het menu te openen en selecteer Toevoegen aan favorieten.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.home.initial" = "Probeer vervolgens een van je favoriete sites te bezoeken!\n\nIk blokkeer trackers zodat ze je niet kunnen bespioneren. Indien mogelijk upgrade ik ook de beveiliging van je verbinding. 🔒";
-
-/* ad = advertisment */
-"dax.onboarding.home.subsequent" = "Je kunt het!\n\nDenk eraan: elke keer als je met mij browset, verliest een enge advertentie zijn vleugels. 👍";
 
 /* No comment provided by engineer. */
 "Debug" = "Fouten opsporen";
@@ -1313,16 +1259,16 @@
 "duckai.preferences.text.markdown" = "Duck.ai is een optionele functie waarmee je anoniem kunt chatten met populaire AI-chatmodellen van derden. Je chats worden niet gebruikt om AI te trainen.\n[Meer informatie](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
-"duckai.settings.enable.address-bar-toggle" = "Duck.ai weergeven in de adresbalk";
+"duckai.settings.enable.address-bar-toggle" = "Adresbalk";
 
 /* Toggle text to enable/disable AI Chat in the browsing menu */
-"duckai.settings.enable.browsing-menu-toggle" = "Duck.ai weergeven in browsermenu";
+"duckai.settings.enable.browsing-menu-toggle" = "Browsermenu";
 
 /* Toggle text to enable/disable Duck.ai in tab manager */
-"duckai.settings.enable.tab-switcher-toggle" = "Duck.ai weergeven op het tabbladenscherm";
+"duckai.settings.enable.tab-switcher-toggle" = "Tabbladenscherm";
 
 /* Toggle text to enable/disable Duck.ai in voice search */
-"duckai.settings.enable.voice-search-toggle" = "Duck.ai weergeven in spraakopdrachten";
+"duckai.settings.enable.voice-search-toggle" = "Zoeken via spraak";
 
 /* Settings screen cell text for AI Chat settings */
 "duckai.settings.title" = "Duck.ai";
@@ -2332,11 +2278,11 @@
 /* No comment provided by engineer. */
 "onboardingWelcomeHeader" = "Welkom bij DuckDuckGo!";
 
-/* No comment provided by engineer. */
-"Open tabs remain unaffected by this change.  Please close all tabs for this setting to take effect." = "Deze wijziging wordt niet toegepast op geopende tabbladen.  Sluit alle tabbladen om deze instelling van kracht te laten worden.";
-
 /* ’Link’ is link on a website */
 "open.externally.failed" = "De app die nodig is om die link te openen, is niet gevonden";
+
+/* No comment provided by engineer. */
+"Please close all tabs for this setting to take effect." = "Sluit alle tabbladen om deze instelling van kracht te laten worden.";
 
 /* Activate button */
 "pm.activate" = "Opnieuw activeren";
@@ -2560,6 +2506,9 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Volledig siteadres weergeven";
 
+/* Settings screen text for showing AI Chat in various places in the app */
+"settings.aichat.shortcuts" = "Sneltoetsen";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Altijd aan";
 
@@ -2631,6 +2580,9 @@
 
 /* Settings cell for Email Protection */
 "settings.emailProtection.description" = "Blokkeer e-mailtrackers en verberg je adres";
+
+/* Settings screen cell text for enabling AI chat */
+"settings.enable.aichat" = "Duck.ai inschakelen";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "E-mailbeveiliging inschakelen";

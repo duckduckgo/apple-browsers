@@ -33,7 +33,7 @@ final class DaxDialogsNewTabTests: XCTestCase {
             settings: settings,
             entityProviding: MockEntityProvider(),
             variantManager: mockVariantManager,
-            onboardingPrivacyProPromoExperiment: MockOnboardingPrivacyProPromoExperimenting(cohort: .none)
+            onboardingPrivacyProPromotionHelper: MockOnboardingPrivacyProPromotionHelper()
         )
     }
 

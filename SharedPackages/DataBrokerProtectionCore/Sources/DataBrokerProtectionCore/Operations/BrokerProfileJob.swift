@@ -107,7 +107,7 @@ public class BrokerProfileJob: Operation, @unchecked Sendable {
         case .manualScan, .scheduledScan:
             jobsData = brokerProfileQueriesData.filter { $0.profileQuery.deprecated == false }.compactMap { $0.scanJobData }
         case .all:
-            jobsData = brokerProfileQueriesData.flatMap { $0.operationsData }
+            jobsData = brokerProfileQueriesData.flatMap { $0.jobsData }
         }
 
         let filteredAndSortedJobData: [BrokerJobData]

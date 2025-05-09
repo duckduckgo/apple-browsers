@@ -318,6 +318,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     ///
     /// - Parameter webView: The `WKWebView` whose URL has changed.
     /// - Returns: A result indicating whether the URL change was handled.
+    // swiftlint:disable:next cyclomatic_complexity
     @MainActor
     func handleURLChange(webView: WKWebView, previousURL: URL?, newURL: URL?) -> DuckPlayerNavigationHandlerURLChangeResult {
 

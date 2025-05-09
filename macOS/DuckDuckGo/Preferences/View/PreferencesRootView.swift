@@ -237,8 +237,6 @@ enum Preferences {
                         WindowControllersManager.shared.showTab(with: .url(url, source: .ui))
                     case .didClickManageEmail:
                         PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementEmail, frequency: .legacyDailyAndCount)
-                    case .didClickAddToDevice:
-                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionAddToDevice)
                     case .didOpenSubscriptionSettings:
                         PixelKit.fire(PrivacyProPixel.privacyProSubscriptionSettings)
                     case .didClickChangePlanOrBilling:
@@ -458,8 +456,6 @@ enum Preferences {
                         WindowControllersManager.shared.showTab(with: .url(url, source: .ui))
                     case .didClickManageEmail:
                         PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementEmail, frequency: .legacyDailyAndCount)
-                    case .didClickAddToDevice:
-                        PixelKit.fire(PrivacyProPixel.privacyProSubscriptionAddToDevice)
                     case .didOpenSubscriptionSettings:
                         PixelKit.fire(PrivacyProPixel.privacyProSubscriptionSettings)
                     case .didClickChangePlanOrBilling:

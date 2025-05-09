@@ -195,24 +195,6 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
     }
 
     private func handleEmailAction(type: SubscriptionEmailActionType) {
-        let eventType: PreferencesSubscriptionSettingsModelV2.UserEvent
-        let url: SubscriptionURL
-
-        switch type {
-        case .activationFlow:
-            eventType = .didClickAddToDevice
-            url = .activationFlow
-        case .activationFlowAddEmailStep:
-            eventType = .didClickAddToDevice
-            url = .activationFlowAddEmailStep
-        case .activationFlowLinkViaEmailStep:
-            eventType = .didClickAddToDevice
-            url = .activationFlowLinkViaEmailStep
-        case .editEmail:
-            eventType = .didClickManageEmail
-            url = .manageEmail
-        }
-
         Task {
             if subscriptionPlatform == .apple && currentPurchasePlatform == .appStore {
                 if #available(macOS 12.0, iOS 15.0, *) {
@@ -224,8 +206,17 @@ public final class PreferencesSubscriptionSettingsModelV1: ObservableObject {
             }
 
             Task { @MainActor in
-                userEventHandler(eventType)
-                userEventHandler(.openURL(url))
+                switch type {
+                case .activationFlow:
+                    userEventHandler(.openURL(.activationFlow))
+                case .activationFlowAddEmailStep:
+                    userEventHandler(.openURL(.activationFlowAddEmailStep))
+                case .activationFlowLinkViaEmailStep:
+                    userEventHandler(.openURL(.activationFlowLinkViaEmailStep))
+                case .editEmail:
+                    userEventHandler(.didClickManageEmail)
+                    userEventHandler(.openURL(.manageEmail))
+                }
             }
         }
     }

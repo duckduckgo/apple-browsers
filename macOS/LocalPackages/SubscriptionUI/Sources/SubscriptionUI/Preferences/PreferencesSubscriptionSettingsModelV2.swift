@@ -52,7 +52,6 @@ public final class PreferencesSubscriptionSettingsModelV2: ObservableObject {
              openManageSubscriptionsInAppStore,
              openCustomerPortalURL(URL),
              didClickManageEmail,
-             didClickAddToDevice,
              didOpenSubscriptionSettings,
              didClickChangePlanOrBilling,
              didClickRemoveSubscription
@@ -200,27 +199,18 @@ hasAnyEntitlement: \(hasAnyEntitlement)
     }
 
     private func handleEmailAction(type: SubscriptionEmailActionType) {
-        let eventType: PreferencesSubscriptionSettingsModelV2.UserEvent
-        let url: SubscriptionURL
-
-        switch type {
-        case .activationFlow:
-            eventType = .didClickAddToDevice
-            url = .activationFlow
-        case .activationFlowAddEmailStep:
-            eventType = .didClickAddToDevice
-            url = .activationFlowAddEmailStep
-        case .activationFlowLinkViaEmailStep:
-            eventType = .didClickAddToDevice
-            url = .activationFlowLinkViaEmailStep
-        case .editEmail:
-            eventType = .didClickManageEmail
-            url = .manageEmail
-        }
-
         Task { @MainActor in
-            userEventHandler(eventType)
-            userEventHandler(.openURL(url))
+            switch type {
+            case .activationFlow:
+                userEventHandler(.openURL(.activationFlow))
+            case .activationFlowAddEmailStep:
+                userEventHandler(.openURL(.activationFlowAddEmailStep))
+            case .activationFlowLinkViaEmailStep:
+                userEventHandler(.openURL(.activationFlowLinkViaEmailStep))
+            case .editEmail:
+                userEventHandler(.didClickManageEmail)
+                userEventHandler(.openURL(.manageEmail))
+            }
         }
     }
 
@@ -249,6 +239,7 @@ hasAnyEntitlement: \(hasAnyEntitlement)
 
     @MainActor
     func refreshSubscriptionPendingState() {
+        
         if subscriptionManager.currentEnvironment.purchasePlatform == .appStore {
             if #available(macOS 12.0, *) {
                 Task {

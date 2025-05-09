@@ -1039,6 +1039,7 @@
 		BD10B8AA2C7629740033115D /* Logger+Subscription.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD10B8A92C7629740033115D /* Logger+Subscription.swift */; };
 		BD15DB852B959CFD00821457 /* BundleExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD15DB842B959CFD00821457 /* BundleExtension.swift */; };
 		BD2F39EB2C19F955005B19E7 /* NetworkProtectionDNSSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD2F39EA2C19F955005B19E7 /* NetworkProtectionDNSSettingsView.swift */; };
+		BD408CED2DCDB17900265476 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = BD408CEC2DCDB17900265476 /* ZIPFoundation */; };
 		BD862E092B30F63E0073E2EE /* VPNMetadataCollector.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD862E082B30F63E0073E2EE /* VPNMetadataCollector.swift */; };
 		BDC234F72B27F51100D3C798 /* UniquePixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BDC234F62B27F51100D3C798 /* UniquePixel.swift */; };
 		BDD3B3552B8EF8DB005857A8 /* NetworkProtectionUNNotificationPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE3766DD2AC5945500AAB575 /* NetworkProtectionUNNotificationPresenter.swift */; };
@@ -3688,6 +3689,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F486D3362506A037002D07D7 /* OHHTTPStubs in Frameworks */,
+				BD408CED2DCDB17900265476 /* ZIPFoundation in Frameworks */,
 				F486D3382506A225002D07D7 /* OHHTTPStubsSwift in Frameworks */,
 				4BC95EA92D741794002FAB32 /* NetworkProtectionTestUtils in Frameworks */,
 				4BC95EAF2D7417A8002FAB32 /* SubscriptionTestingUtilities in Frameworks */,
@@ -8087,6 +8089,7 @@
 				4BC95EAE2D7417A8002FAB32 /* SubscriptionTestingUtilities */,
 				84EFBCCB2D817CB500706739 /* InlineSnapshotTesting */,
 				84EFBCCD2D817CB500706739 /* SnapshotTesting */,
+				BD408CEC2DCDB17900265476 /* ZIPFoundation */,
 			);
 			productName = DuckDuckGoTests;
 			productReference = 84E341A61E2F7EFB00BDBA6F /* UnitTests.xctest */;
@@ -13471,6 +13474,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = B6F997C22B8F374300476735 /* XCRemoteSwiftPackageReference "apple-toolbox" */;
 			productName = SwiftLintTool;
+		};
+		BD408CEC2DCDB17900265476 /* ZIPFoundation */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 854007E52B57FB020001BD98 /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
+			productName = ZIPFoundation;
 		};
 		C14882EC27F211A000D59F0C /* SwiftSoup */ = {
 			isa = XCSwiftPackageProductDependency;

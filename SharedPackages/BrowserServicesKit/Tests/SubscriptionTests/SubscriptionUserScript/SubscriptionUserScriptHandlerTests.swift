@@ -84,6 +84,24 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
             status: subscription.status.rawValue
         ))
     }
+
+    func testWhenSubscriptionIsExpiredThenSubscriptionDetailsReturnsSubscriptionData() async throws {
+        let subscription = PrivacyProSubscription(status: .expired)
+
+        subscriptionManager.returnSubscription = .success(subscription)
+        handler = .init(platform: .ios, subscriptionManager: subscriptionManager)
+        let subscriptionDetails = try await handler.subscriptionDetails(params: [], message: WKScriptMessage())
+        XCTAssertTrue(subscriptionDetails.isSubscribed)
+    }
+
+    func testWhenSubscriptionIsInactiveThenSubscriptionDetailsReturnsSubscriptionData() async throws {
+        let subscription = PrivacyProSubscription(status: .inactive)
+
+        subscriptionManager.returnSubscription = .success(subscription)
+        handler = .init(platform: .ios, subscriptionManager: subscriptionManager)
+        let subscriptionDetails = try await handler.subscriptionDetails(params: [], message: WKScriptMessage())
+        XCTAssertTrue(subscriptionDetails.isSubscribed)
+    }
 }
 
 private extension PrivacyProSubscription {

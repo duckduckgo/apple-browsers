@@ -414,10 +414,8 @@ extension TabViewCell: UIGestureRecognizerDelegate {
 final class HitTestStackView: UIStackView {
 
     override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
-        for subview in arrangedSubviews {
-            if subview.point(inside: point, with: event) {
-                return true
-            }
+        for subview in arrangedSubviews where subview.point(inside: point, with: event) {
+            return true
         }
         return super.point(inside: point, with: event)
     }

@@ -21,7 +21,8 @@ import BrowserServicesKit
 import Core
 
 final class MockFeatureFlagger: FeatureFlagger, ContentScopeExperimentsManaging {
-    
+    var allActiveContentScopeExperiments: Experiments = [:]
+
     private(set) var didCallResolveCohort: Bool = false
 
     var internalUserDecider: InternalUserDecider
@@ -63,6 +64,6 @@ final class MockFeatureFlagger: FeatureFlagger, ContentScopeExperimentsManaging 
     }
 
     func resolveContentScopeScriptActiveExperiments() -> Experiments {
-        return [:]
+        return allActiveContentScopeExperiments
     }
 }

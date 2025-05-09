@@ -39,8 +39,8 @@ final class PrivacyDashboardTests: XCTestCase {
         )
 
         let experimentManager = MockContentScopeExperimentManager()
-        experimentManager.experiments = ["test": testExperimentData]
-        let vc = PrivacyDashboardViewController(contentScopeExperimentManager: experimentManager, pixelFiring: {event, parameters, _ in
+        experimentManager.allActiveContentScopeExperiments = ["test": testExperimentData]
+        let vc = PrivacyDashboardViewController(contentScopeExperimentsManager: experimentManager, pixelFiring: {event, parameters, _ in
             self.capturedPixelEvent = event
             self.capturedPixelParameters = parameters ?? [:]
             expectation.fulfill()
@@ -62,10 +62,10 @@ final class PrivacyDashboardTests: XCTestCase {
 }
 
 class MockContentScopeExperimentManager: ContentScopeExperimentsManaging {
-    var experiments: Experiments = [:]
+    var allActiveContentScopeExperiments: Experiments = [:]
 
     func resolveContentScopeScriptActiveExperiments() -> Experiments {
-        return experiments
+        return allActiveContentScopeExperiments
     }
 }
 

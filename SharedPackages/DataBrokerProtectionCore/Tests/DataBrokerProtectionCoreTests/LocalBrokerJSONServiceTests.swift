@@ -1,5 +1,5 @@
 //
-//  DataBrokerProtectionUpdaterTests.swift
+//  LocalBrokerJSONServiceTests.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -22,7 +22,7 @@ import SecureStorage
 @testable import DataBrokerProtectionCore
 import DataBrokerProtectionCoreTestsUtils
 
-final class DataBrokerProtectionUpdaterTests: XCTestCase {
+final class LocalBrokerJSONServiceTests: XCTestCase {
 
     let repository = BrokerUpdaterRepositoryMock()
     let resources = ResourcesRepositoryMock()

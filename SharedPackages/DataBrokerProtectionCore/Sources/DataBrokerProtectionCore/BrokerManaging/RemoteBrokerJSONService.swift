@@ -307,13 +307,13 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
     }
 }
 
-struct MainConfig: Decodable {
+struct MainConfig: Codable {
     let mainConfigETag: String
     let activeDataBrokers: [String]
     let jsonETags: JSONETagPayload
     let testDataBrokers: [String]
 
-    struct JSONETagPayload: Decodable {
+    struct JSONETagPayload: Codable {
         let current: [String: String]
     }
 

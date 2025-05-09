@@ -1529,6 +1529,29 @@ public struct MockLocalBrokerJSONService: LocalBrokerJSONServiceProvider {
     }
 }
 
+public final class MockFileManager: FileManager {
+    public var hasUnzippedContent = false
+
+    let fileNames = ["valid-broker", "invalid-broker-with-unsupported-type", "invalid-broker-with-unsupported-action"]
+    lazy var fileURLs = fileNames.compactMap { Bundle.module.url(forResource: $0, withExtension: "json", subdirectory: "Resources") }
+
+    public override func fileExists(atPath path: String, isDirectory: UnsafeMutablePointer<ObjCBool>?) -> Bool {
+        hasUnzippedContent
+    }
+
+    public override func contentsOfDirectory(at url: URL, includingPropertiesForKeys keys: [URLResourceKey]?, options mask: FileManager.DirectoryEnumerationOptions = []) throws -> [URL] {
+        hasUnzippedContent ? fileURLs : []
+    }
+
+    public override func removeItem(at URL: URL) throws {
+        hasUnzippedContent = false
+    }
+
+    public override func unzipArchive(at sourceURL: URL, to destinationURL: URL) throws {
+        hasUnzippedContent = true
+    }
+}
+
 public final class MockAuthenticationManager: DataBrokerProtectionAuthenticationManaging {
 
     public init() { }

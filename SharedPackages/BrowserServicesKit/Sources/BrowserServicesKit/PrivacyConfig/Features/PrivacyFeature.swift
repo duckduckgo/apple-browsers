@@ -142,6 +142,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case waitlist
     case waitlistBetaActive
     case freemium
+    case remoteBrokerDelivery
 }
 
 public enum ContentScopeExperimentsSubfeatures: String, Equatable, PrivacySubfeature {

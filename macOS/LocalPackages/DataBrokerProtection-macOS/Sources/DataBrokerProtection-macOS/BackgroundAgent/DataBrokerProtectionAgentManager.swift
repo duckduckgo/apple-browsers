@@ -28,9 +28,12 @@ import Freemium
 import Subscription
 import UserNotifications
 import DataBrokerProtectionCore
+import FeatureFlags
 
 // This is to avoid exposing all the dependancies outside of the DBP package
 public class DataBrokerProtectionAgentManagerProvider {
+
+    static let featureFlagOverridesPublishingHandler = FeatureFlagOverridesPublishingHandler<FeatureFlag>()
 
     private let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
 
@@ -89,8 +92,19 @@ public class DataBrokerProtectionAgentManagerProvider {
             return nil
         }
 
+        let featureFlagger = DefaultFeatureFlagger(
+            internalUserDecider: privacyConfigurationManager.internalUserDecider,
+            privacyConfigManager: privacyConfigurationManager,
+            localOverrides: FeatureFlagLocalOverrides(
+                keyValueStore: UserDefaults.config,
+                actionHandler: featureFlagOverridesPublishingHandler
+            ),
+            experimentManager: nil,
+            for: FeatureFlag.self
+        )
         let localBrokerService = LocalBrokerJSONService(vault: vault, pixelHandler: sharedPixelsHandler)
-        let brokerUpdater = RemoteBrokerJSONService(settings: dbpSettings,
+        let brokerUpdater = RemoteBrokerJSONService(featureFlagger: featureFlagger,
+                                                    settings: dbpSettings,
                                                     vault: vault,
                                                     authenticationManager: authenticationManager,
                                                     pixelHandler: sharedPixelsHandler,

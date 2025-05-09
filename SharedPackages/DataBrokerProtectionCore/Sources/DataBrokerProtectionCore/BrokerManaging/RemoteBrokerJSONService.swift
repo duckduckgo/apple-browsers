@@ -21,6 +21,8 @@ import Subscription
 import ZIPFoundation
 import Common
 import os.log
+import BrowserServicesKit
+import FeatureFlags
 
 public protocol ZipArchiveHandling: FileManager, Sendable {
     func unzipArchive(at sourceURL: URL, to destinationURL: URL) throws
@@ -98,6 +100,7 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
 
     private static let updateCheckInterval = TimeInterval.hours(1)
 
+    private let featureFlagger: FeatureFlagger
     private let settings: DataBrokerProtectionSettings
     public let vault: any DataBrokerProtectionSecureVault
     private let fileManager: ZipArchiveHandling
@@ -106,13 +109,15 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>?
     private let localBrokerProvider: BrokerJSONFallbackProvider?
 
-    public init(settings: DataBrokerProtectionSettings,
+    public init(featureFlagger: FeatureFlagger,
+                settings: DataBrokerProtectionSettings,
                 vault: any DataBrokerProtectionSecureVault,
                 fileManager: ZipArchiveHandling = FileManager.default,
                 urlSession: URLSession = .shared,
                 authenticationManager: DataBrokerProtectionAuthenticationManaging,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>? = nil,
                 localBrokerProvider: BrokerJSONFallbackProvider?) {
+        self.featureFlagger = featureFlagger
         self.settings = settings
         self.vault = vault
         self.fileManager = fileManager
@@ -135,6 +140,12 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
     }
 
     public func checkForUpdates(skipsLimiter: Bool) async throws {
+        if !featureFlagger.isFeatureOn(.dbpRemoteBrokerDelivery) {
+            Logger.dataBrokerProtection.log("Remote broker delivery not enabled, skip to local fallback")
+            try? await localBrokerProvider?.checkForUpdates()
+            return
+        }
+
         do {
             /// 1. Ensure we're due for an update
             let lastBrokerJSONUpdateCheck = Date(timeIntervalSince1970: settings.lastBrokerJSONUpdateCheckTimestamp)

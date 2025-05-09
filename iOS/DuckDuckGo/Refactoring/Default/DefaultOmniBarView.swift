@@ -51,6 +51,7 @@ final class DefaultOmniBarView: UIView {
     @IBOutlet weak var separatorView: UIView!
     @IBOutlet weak var cancelButton: UIButton!
     @IBOutlet weak var refreshButton: UIButton!
+    @IBOutlet weak var shareButton: UIButton!
     @IBOutlet weak var voiceSearchButton: UIButton!
     @IBOutlet weak var abortButton: UIButton!
 
@@ -90,6 +91,7 @@ final class DefaultOmniBarView: UIView {
     var onSettingsButtonPressed: (() -> Void)?
     var onCancelPressed: (() -> Void)?
     var onRefreshPressed: (() -> Void)?
+    var onSharePressed: (() -> Void)?
     var onBackPressed: (() -> Void)?
     var onForwardPressed: (() -> Void)?
     var onBookmarksPressed: (() -> Void)?
@@ -98,13 +100,11 @@ final class DefaultOmniBarView: UIView {
     var onSettingsLongPress: (() -> Void)?
     var onAccessoryLongPress: (() -> Void)?
 
-    var accessoryType: OmniBarAccessoryType = .share {
+    var accessoryType: OmniBarAccessoryType = .chat {
         didSet {
             switch accessoryType {
             case .chat:
                 accessoryButton.setImage(UIImage(named: "AIChat-24"), for: .normal)
-            case .share:
-                accessoryButton.setImage(UIImage(named: "Share-24"), for: .normal)
             }
         }
     }
@@ -250,6 +250,10 @@ final class DefaultOmniBarView: UIView {
         onDismissPressed?()
     }
 
+    @IBAction private func onSharePressed(_ sender: Any) {
+        onSharePressed?()
+    }
+
     override func layoutSubviews() {
         super.layoutSubviews()
         NotificationCenter.default.post(name: DefaultOmniBarView.didLayoutNotification, object: self)
@@ -331,6 +335,11 @@ extension DefaultOmniBarView {
     var isRefreshButtonHidden: Bool {
         get { refreshButton.isHidden }
         set { setVisibility(refreshButton, hidden: newValue) }
+    }
+
+    var isShareButtonHidden: Bool {
+        get { shareButton.isHidden }
+        set { setVisibility(shareButton, hidden: newValue) }
     }
 
     var isVoiceSearchButtonHidden: Bool {

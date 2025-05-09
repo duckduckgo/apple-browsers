@@ -929,6 +929,15 @@ extension DistributedNavigationDelegate: WKNavigationDelegate {
             responder.didFailProvisionalLoad(with: request, in: frame, with: error)
         }
     }
+
+    @MainActor
+    @objc(_webView:renderingProgressDidChange:)
+    public func webView(_ webView: WKWebView, renderingProgressDidChange progressEvents: UInt) {
+        Logger.navigation.log("renderingProgressDidChange: \(progressEvents)")
+        for responder in responders {
+            responder.renderingProgressDidChange(progressEvents: progressEvents)
+        }
+    }
 #endif
 
     // MARK: Downloads

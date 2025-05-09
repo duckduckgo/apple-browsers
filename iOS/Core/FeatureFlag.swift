@@ -85,9 +85,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/0/1206226850447395/1209291055975934
     case experimentalBrowserTheming
 
-    /// https://app.asana.com/0/1206488453854252/1208706841336530
-    case privacyProOnboardingCTAMarch25
-
     /// https://app.asana.com/0/72649045549333/1207991044706236/f
     case privacyProAuthV2
 
@@ -100,6 +97,10 @@ public enum FeatureFlag: String {
     // Demonstrative cases for default value. Remove once a real-world feature/subfeature is added
     case failsafeExampleCrossPlatformFeature
     case failsafeExamplePlatformSpecificSubfeature
+
+    case aiChatNativePrompt
+
+    case privacyProOnboardingPromotion
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -116,8 +117,6 @@ extension FeatureFlag: FeatureFlagDescribing {
         switch self {
         case .privacyProFreeTrialJan25:
             PrivacyProFreeTrialExperimentCohort.self
-        case .privacyProOnboardingCTAMarch25:
-            PrivacyProOnboardingCTAMarch25Cohort.self
         case .onboardingSetAsDefaultBrowser:
             OnboardingSetAsDefaultBrowserCohort.self
         default:
@@ -131,14 +130,14 @@ extension FeatureFlag: FeatureFlagDescribing {
         switch self {
         case .textZoom,
                 .experimentalBrowserTheming,
-                .privacyProOnboardingCTAMarch25,
                 .networkProtectionRiskyDomainsProtection,
                 .privacyProAuthV2,
                 .scamSiteProtection,
                 .maliciousSiteProtection,
                 .autofillCreditCards,
                 .autofillCreditCardsOnByDefault,
-                .exchangeKeysToSyncWithAnotherDevice:
+                .exchangeKeysToSyncWithAnotherDevice,
+                .privacyProOnboardingPromotion:
             return true
         case .onboardingSetAsDefaultBrowser:
             if #available(iOS 18.3, *) {
@@ -229,12 +228,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return  .remoteReleasable(.subfeature(NetworkProtectionSubfeature.riskyDomainsProtection))
         case .experimentalBrowserTheming:
             return .remoteDevelopment(.feature(.experimentalBrowserTheming))
-        case .privacyProOnboardingCTAMarch25:
-            return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProOnboardingCTAMarch25))
-
         case .privacyProAuthV2:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
-
         case .onboardingSetAsDefaultBrowser:
             return .remoteReleasable(.subfeature(OnboardingSubfeature.setAsDefaultBrowserExperiment))
         case .exchangeKeysToSyncWithAnotherDevice:
@@ -243,6 +238,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests))
         case .failsafeExamplePlatformSpecificSubfeature:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests))
+        case .aiChatNativePrompt:
+            return .disabled
+        case .privacyProOnboardingPromotion:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProOnboardingPromotion))
         }
     }
 }
@@ -254,13 +253,6 @@ extension FeatureFlagger {
 }
 
 public enum PrivacyProFreeTrialExperimentCohort: String, FeatureFlagCohortDescribing {
-    /// Control cohort with no changes applied.
-    case control
-    /// Treatment cohort where the experiment modifications are applied.
-    case treatment
-}
-
-public enum PrivacyProOnboardingCTAMarch25Cohort: String, FeatureFlagCohortDescribing {
     /// Control cohort with no changes applied.
     case control
     /// Treatment cohort where the experiment modifications are applied.

@@ -1040,6 +1040,18 @@ extension NSNotification.Name {
 // MARK: - AI Chat
 extension SettingsViewModel {
 
+    var isAiChatEnabledBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.aiChatSettings.isAIChatEnabled },
+            set: { newValue in
+                withAnimation {
+                    self.objectWillChange.send()
+                    self.aiChatSettings.enableAIChat(enable: newValue)
+                }
+            }
+        )
+    }
+
     var aiChatBrowsingMenuEnabledBinding: Binding<Bool> {
         Binding<Bool>(
             get: { self.aiChatSettings.isAIChatBrowsingMenuUserSettingsEnabled },

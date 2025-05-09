@@ -29,7 +29,7 @@ import DataBrokerProtectionCore
 import WebKit
 import BackgroundTasks
 
-public class DefaultOperationEventsHandler: EventMapping<OperationEvent> {
+public class DefaultOperationEventsHandler: EventMapping<JobEvent> {
 
     public init() {
         super.init { event, _, _, _ in
@@ -41,7 +41,7 @@ public class DefaultOperationEventsHandler: EventMapping<OperationEvent> {
     }
 
     @available(*, unavailable)
-    override init(mapping: @escaping EventMapping<OperationEvent>.Mapping) {
+    override init(mapping: @escaping EventMapping<JobEvent>.Mapping) {
         fatalError("Use init()")
     }
 }
@@ -103,16 +103,16 @@ public class DataBrokerProtectionIOSManagerProvider {
         let dataManager = DataBrokerProtectionDataManager(database: database)
 
         let operationQueue = OperationQueue()
-        let operationsBuilder = DefaultDataBrokerOperationsCreator()
+        let jobProvider = BrokerProfileJobProvider()
         let mismatchCalculator = DefaultMismatchCalculator(database: database,
                                                            pixelHandler: sharedPixelsHandler)
 
         let brokerUpdater = DefaultDataBrokerProtectionBrokerUpdater(vault: vault, pixelHandler: sharedPixelsHandler)
-        let queueManager =  DefaultDataBrokerProtectionQueueManager(operationQueue: operationQueue,
-                                                                    operationsCreator: operationsBuilder,
-                                                                    mismatchCalculator: mismatchCalculator,
-                                                                    brokerUpdater: brokerUpdater,
-                                                                    pixelHandler: sharedPixelsHandler)
+        let queueManager =  BrokerProfileJobQueueManager(jobQueue: operationQueue,
+                                                         jobProvider: jobProvider,
+                                                         mismatchCalculator: mismatchCalculator,
+                                                         brokerUpdater: brokerUpdater,
+                                                         pixelHandler: sharedPixelsHandler)
 
         let backendServicePixels = DefaultDataBrokerProtectionBackendServicePixels(pixelHandler: sharedPixelsHandler,
                                                                                    settings: dbpSettings)
@@ -120,26 +120,23 @@ public class DataBrokerProtectionIOSManagerProvider {
                                         settings: dbpSettings,
                                         servicePixel: backendServicePixels)
         let captchaService = CaptchaService(authenticationManager: authenticationManager, settings: dbpSettings, servicePixel: backendServicePixels)
-        let runnerProvider = DataBrokerJobRunnerProvider(privacyConfigManager: privacyConfigurationManager,
-                                                         contentScopeProperties: contentScopeProperties,
-                                                         emailService: emailService,
-                                                         captchaService: captchaService)
-
-
-        let executionConfig = DataBrokerExecutionConfig()
-        let operationDependencies = DefaultDataBrokerOperationDependencies(
+        let executionConfig = BrokerJobExecutionConfig()
+        let jobDependencies = BrokerProfileJobDependencies(
             database: database,
-            config: executionConfig,
-            runnerProvider: runnerProvider,
+            contentScopeProperties: contentScopeProperties,
+            privacyConfig: privacyConfigurationManager,
+            executionConfig: executionConfig,
             notificationCenter: NotificationCenter.default,
             pixelHandler: sharedPixelsHandler,
             eventsHandler: eventsHandler,
             dataBrokerProtectionSettings: dbpSettings,
+            emailService: emailService,
+            captchaService: captchaService,
             vpnBypassService: nil)
 
         return DataBrokerProtectionIOSManager(
             queueManager: queueManager,
-            operationDependencies: operationDependencies,
+            jobDependencies: jobDependencies,
             authenticationManager: authenticationManager,
             sharedPixelsHandler: sharedPixelsHandler,
             privacyConfigManager: privacyConfigurationManager,
@@ -152,8 +149,8 @@ public final class DataBrokerProtectionIOSManager {
 
     public static var shared: DataBrokerProtectionIOSManager?
 
-    private let queueManager: DataBrokerProtectionQueueManager
-    private let operationDependencies: DataBrokerOperationDependencies
+    private let queueManager: BrokerProfileJobQueueManager
+    private let jobDependencies: BrokerProfileJobDependencies
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>
     private let privacyConfigManager: PrivacyConfigurationManaging
@@ -162,15 +159,15 @@ public final class DataBrokerProtectionIOSManager {
     // Things that definitely shouldn't exist long term
     var communicationLayer: DBPUICommunicationLayer!
 
-    init(queueManager: DataBrokerProtectionQueueManager,
-         operationDependencies: DataBrokerOperationDependencies,
+    init(queueManager: BrokerProfileJobQueueManager,
+         jobDependencies: BrokerProfileJobDependencies,
          authenticationManager: DataBrokerProtectionAuthenticationManaging,
          sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>,
          privacyConfigManager: PrivacyConfigurationManaging,
          dataManager: DataBrokerProtectionDataManager
     ) {
         self.queueManager = queueManager
-        self.operationDependencies = operationDependencies
+        self.jobDependencies = jobDependencies
         self.authenticationManager = authenticationManager
         self.sharedPixelsHandler = sharedPixelsHandler
         self.privacyConfigManager = privacyConfigManager
@@ -207,8 +204,14 @@ public final class DataBrokerProtectionIOSManager {
     }
 
     public func startAllOperations() {
-        queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, operationDependencies: operationDependencies, errorHandler: nil) { [self] in
-            queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, operationDependencies: operationDependencies, errorHandler: nil, completion: nil)
+        queueManager.startScheduledAllOperationsIfPermitted(showWebView: false,
+                                                            jobDependencies: jobDependencies,
+                                                            errorHandler: nil
+        ) { [self] in
+            queueManager.startScheduledAllOperationsIfPermitted(showWebView: false,
+                                                                jobDependencies: jobDependencies,
+                                                                errorHandler: nil,
+                                                                completion: nil)
         }
     }
 
@@ -250,7 +253,9 @@ public final class DataBrokerProtectionIOSManager {
                 task.setTaskCompleted(success: false)
                 return
             }
-            queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, operationDependencies: operationDependencies, errorHandler: nil) {
+            queueManager.startScheduledAllOperationsIfPermitted(showWebView: false,
+                                                                jobDependencies: jobDependencies,
+                                                                errorHandler: nil) {
                 Logger.dataBrokerProtection.log("All operations completed in background task")
                 task.setTaskCompleted(success: true)
             }

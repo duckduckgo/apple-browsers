@@ -13123,8 +13123,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/duckduckgo/DesignResourcesKit";
 			requirement = {
-				branch = "mariusz/update-colors";
-				kind = branch;
+				kind = exactVersion;
+				version = 4.4.0;
 			};
 		};
 		F486D2EF25069482002D07D7 /* XCRemoteSwiftPackageReference "Kingfisher" */ = {

@@ -29,7 +29,6 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
     private var mockDatabase: MockDatabase!
     private var mockPixelHandler: MockPixelHandler!
     private var mockMismatchCalculator: MockMismatchCalculator!
-    private var mockUpdater: MockBrokerJSONService!
     private var mockSchedulerConfig = DataBrokerExecutionConfig()
     private var mockRunnerProvider: MockRunnerProvider!
     private var mockEventsHandler: MockOperationEventsHandler!
@@ -42,7 +41,6 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
         mockDatabase = MockDatabase()
         mockPixelHandler = MockPixelHandler()
         mockMismatchCalculator = MockMismatchCalculator(database: mockDatabase, pixelHandler: mockPixelHandler)
-        mockUpdater = MockBrokerJSONService()
         mockRunnerProvider = MockRunnerProvider()
         mockEventsHandler = MockOperationEventsHandler()
 
@@ -60,7 +58,6 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
         sut = DefaultDataBrokerProtectionQueueManager(operationQueue: mockQueue,
                                                       operationsCreator: mockOperationsCreator,
                                                       mismatchCalculator: mockMismatchCalculator,
-                                                      brokerUpdater: mockUpdater,
                                                       pixelHandler: mockPixelHandler)
 
         // When
@@ -78,7 +75,6 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
         sut = DefaultDataBrokerProtectionQueueManager(operationQueue: mockQueue,
                                                       operationsCreator: mockOperationsCreator,
                                                       mismatchCalculator: mockMismatchCalculator,
-                                                      brokerUpdater: mockUpdater,
                                                       pixelHandler: mockPixelHandler)
 
         // When
@@ -96,7 +92,6 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
         sut = DefaultDataBrokerProtectionQueueManager(operationQueue: mockQueue,
                                                       operationsCreator: mockOperationsCreator,
                                                       mismatchCalculator: mockMismatchCalculator,
-                                                      brokerUpdater: mockUpdater,
                                                       pixelHandler: mockPixelHandler)
 
         // When
@@ -114,7 +109,6 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
         sut = DefaultDataBrokerProtectionQueueManager(operationQueue: mockQueue,
                                                       operationsCreator: mockOperationsCreator,
                                                       mismatchCalculator: mockMismatchCalculator,
-                                                      brokerUpdater: mockUpdater,
                                                       pixelHandler: mockPixelHandler)
         let mockOperation = MockDataBrokerOperation(id: 1, operationType: .manualScan, errorDelegate: sut)
         let mockOperationWithError = MockDataBrokerOperation(id: 2, operationType: .manualScan, errorDelegate: sut, shouldError: true)
@@ -148,7 +142,6 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
         sut = DefaultDataBrokerProtectionQueueManager(operationQueue: mockQueue,
                                                       operationsCreator: mockOperationsCreator,
                                                       mismatchCalculator: mockMismatchCalculator,
-                                                      brokerUpdater: mockUpdater,
                                                       pixelHandler: mockPixelHandler)
         let mockOperation = MockDataBrokerOperation(id: 1, operationType: .all, errorDelegate: sut)
         let mockOperationWithError = MockDataBrokerOperation(id: 2, operationType: .all, errorDelegate: sut, shouldError: true)
@@ -182,7 +175,6 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
         sut = DefaultDataBrokerProtectionQueueManager(operationQueue: mockQueue,
                                                       operationsCreator: mockOperationsCreator,
                                                       mismatchCalculator: mockMismatchCalculator,
-                                                      brokerUpdater: mockUpdater,
                                                       pixelHandler: mockPixelHandler)
         let mockOperation = MockDataBrokerOperation(id: 1, operationType: .scheduledScan, errorDelegate: sut)
         let mockOperationWithError = MockDataBrokerOperation(id: 2, operationType: .scheduledScan, errorDelegate: sut, shouldError: true)
@@ -216,7 +208,6 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
         sut = DefaultDataBrokerProtectionQueueManager(operationQueue: mockQueue,
                                                       operationsCreator: mockOperationsCreator,
                                                       mismatchCalculator: mockMismatchCalculator,
-                                                      brokerUpdater: mockUpdater,
                                                       pixelHandler: mockPixelHandler)
         let mockOperationsWithError = (1...2).map { MockDataBrokerOperation(id: $0, operationType: .manualScan, errorDelegate: sut, shouldError: true) }
         var mockOperations = (3...4).map { MockDataBrokerOperation(id: $0, operationType: .manualScan, errorDelegate: sut) }
@@ -259,7 +250,6 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
         sut = DefaultDataBrokerProtectionQueueManager(operationQueue: mockQueue,
                                                       operationsCreator: mockOperationsCreator,
                                                       mismatchCalculator: mockMismatchCalculator,
-                                                      brokerUpdater: mockUpdater,
                                                       pixelHandler: mockPixelHandler)
         let mockOperationsWithError = (1...2).map { MockDataBrokerOperation(id: $0, operationType: .manualScan, errorDelegate: sut, shouldError: true) }
         var mockOperations = (3...4).map { MockDataBrokerOperation(id: $0, operationType: .manualScan, errorDelegate: sut) }
@@ -302,7 +292,6 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
         sut = DefaultDataBrokerProtectionQueueManager(operationQueue: mockQueue,
                                                       operationsCreator: mockOperationsCreator,
                                                       mismatchCalculator: mockMismatchCalculator,
-                                                      brokerUpdater: mockUpdater,
                                                       pixelHandler: mockPixelHandler)
         var mockOperationsWithError = (1...2).map { MockDataBrokerOperation(id: $0, operationType: .manualScan, errorDelegate: sut, shouldError: true) }
         var mockOperations = (3...4).map { MockDataBrokerOperation(id: $0, operationType: .manualScan, errorDelegate: sut) }
@@ -347,7 +336,6 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
         sut = DefaultDataBrokerProtectionQueueManager(operationQueue: mockQueue,
                                                       operationsCreator: mockOperationsCreator,
                                                       mismatchCalculator: mockMismatchCalculator,
-                                                      brokerUpdater: mockUpdater,
                                                       pixelHandler: mockPixelHandler)
         var mockOperations = (1...5).map { MockDataBrokerOperation(id: $0, operationType: .manualScan, errorDelegate: sut) }
         var mockOperationsWithError = (6...10).map { MockDataBrokerOperation(id: $0,
@@ -397,7 +385,6 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
         sut = DefaultDataBrokerProtectionQueueManager(operationQueue: mockQueue,
                                                       operationsCreator: mockOperationsCreator,
                                                       mismatchCalculator: mockMismatchCalculator,
-                                                      brokerUpdater: mockUpdater,
                                                       pixelHandler: mockPixelHandler)
         var mockOperations = (1...5).map { MockDataBrokerOperation(id: $0, operationType: .manualScan, errorDelegate: sut) }
         var mockOperationsWithError = (6...10).map { MockDataBrokerOperation(id: $0,
@@ -446,7 +433,6 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
         sut = DefaultDataBrokerProtectionQueueManager(operationQueue: mockQueue,
                                                       operationsCreator: mockOperationsCreator,
                                                       mismatchCalculator: mockMismatchCalculator,
-                                                      brokerUpdater: mockUpdater,
                                                       pixelHandler: mockPixelHandler)
         let expectation = expectation(description: "Expected completion to be called")
         var errorCollection: DataBrokerProtectionJobsErrorCollection!
@@ -469,7 +455,6 @@ final class DataBrokerProtectionQueueManagerTests: XCTestCase {
         sut = DefaultDataBrokerProtectionQueueManager(operationQueue: mockQueue,
                                                       operationsCreator: mockOperationsCreator,
                                                       mismatchCalculator: mockMismatchCalculator,
-                                                      brokerUpdater: mockUpdater,
                                                       pixelHandler: mockPixelHandler)
         let expectedConcurrentOperations = DataBrokerExecutionConfig().concurrentOperationsFor(.optOut)
         XCTAssert(mockOperationsCreator.createdType == .manualScan)

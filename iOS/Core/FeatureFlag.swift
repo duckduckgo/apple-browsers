@@ -100,6 +100,8 @@ public enum FeatureFlag: String {
     // Demonstrative cases for default value. Remove once a real-world feature/subfeature is added
     case failsafeExampleCrossPlatformFeature
     case failsafeExamplePlatformSpecificSubfeature
+
+    case aiChatNativePrompt
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -243,6 +245,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests))
         case .failsafeExamplePlatformSpecificSubfeature:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests))
+        case .aiChatNativePrompt:
+            return .disabled
         }
     }
 }

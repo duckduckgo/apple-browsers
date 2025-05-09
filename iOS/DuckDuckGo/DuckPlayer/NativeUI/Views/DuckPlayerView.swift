@@ -32,6 +32,7 @@ struct DuckPlayerView: View {
     // Local state & Task for hiding the auto open on Youtube toggle after 2 seconds
     @State private var hideToggleTask: DispatchWorkItem?
     @State private var showOpenInYoutubeToggle: Bool = true
+    @State private var controlsVisibility: Bool = false
 
     enum Constants {
         static let daxLogo = "Home"
@@ -41,6 +42,7 @@ struct DuckPlayerView: View {
         static let dragGestureThreshold: CGFloat = 100
         static let uiElementsBackground: Color = Color.gray.opacity(0.2)
         static let uiElementRadius: CGFloat = 8
+        static let chevronUpIcon: String = "chevron.up"
     }
 
     enum LayoutConstants {
@@ -66,6 +68,12 @@ struct DuckPlayerView: View {
         static let settingsButtonSize: CGFloat = 20
         static let closeButtonSize: CGFloat = 44
         static let bubbleCloseButtonSize: CGFloat = 32
+        static let controlsSpacing: CGFloat = 8
+        static let controlButtonSize: CGFloat = 30
+        static let controlIconSize: CGFloat = 10
+        static let controlButtonBottomPadding: CGFloat = 10
+        static let animationResponseTime: Double = 0.4
+        static let animationDampingFraction: Double = 0.8
     }
 
     var body: some View {
@@ -90,7 +98,6 @@ struct DuckPlayerView: View {
                 }
 
                 // Video Container
-                Spacer()
                 GeometryReader { geometry in
                     ZStack {
                         webView
@@ -104,15 +111,50 @@ struct DuckPlayerView: View {
                         y: geometry.size.height / 2
                     )
                 }
+                .layoutPriority(1)
+                
+                Spacer(minLength: LayoutConstants.controlsSpacing)
 
-                // Show only if the source is youtube and the toggle should be visible
-                autoOpenToggleView
+                // Controls Container
+                VStack(spacing: 4) {
+                    if controlsVisibility {
+                        // Show only if the source is youtube and the toggle should be visible
+                        autoOpenToggleView
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
 
-                // Show the youtube button if needed
-                youtubeButtonView
+                        // Show the youtube button if needed
+                        youtubeButtonView
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+                }
+                .animation(.spring(response: LayoutConstants.animationResponseTime, dampingFraction: LayoutConstants.animationDampingFraction), value: controlsVisibility)
+                .frame(minWidth: 0, maxWidth: .infinity)
+                .padding(.bottom, controlsVisibility ?  LayoutConstants.controlsSpacing: 0)
 
                 // Show the welcome message if needed
                 welcomeMessage
+
+                if !viewModel.shouldShowWelcomeMessage {
+                    // Toggle Controls Button
+                    ZStack {
+                        Circle()
+                            .fill(Color.gray.opacity(0.5))
+                            .frame(width: LayoutConstants.controlButtonSize, height: LayoutConstants.controlButtonSize)
+                        
+                        Button(action: {
+                            withAnimation(.spring(response: LayoutConstants.animationResponseTime, dampingFraction: LayoutConstants.animationDampingFraction)) {
+                                controlsVisibility.toggle()
+                            }
+                        }) {
+                            Image(systemName: Constants.chevronUpIcon)
+                                .font(.system(size: LayoutConstants.controlIconSize, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(width: LayoutConstants.controlButtonSize, height: LayoutConstants.controlButtonSize)
+                                .rotationEffect(Angle(degrees: controlsVisibility ? 180 : 0))
+                        }
+                    }
+                    .padding(.bottom, LayoutConstants.controlButtonBottomPadding)
+                }
             }
         }
         .gesture(
@@ -127,7 +169,6 @@ struct DuckPlayerView: View {
         .onFirstAppear {
             viewModel.onFirstAppear()
             autoOpenOnYoutube = viewModel.autoOpenOnYoutube
-            showOpenInYoutubeToggle = !viewModel.autoOpenOnYoutube
         }
         .onAppear {
             viewModel.onAppear()
@@ -135,31 +176,11 @@ struct DuckPlayerView: View {
         .onDisappear {
             viewModel.onDisappear()
         }
-        .onChange(of: autoOpenOnYoutube) { newValue in
-            // Create a new task to hide the toggle after 2 seconds
-            hideToggleTask?.cancel()
-
-            if newValue {
-
-                let task = DispatchWorkItem {
-                    withAnimation {
-                        showOpenInYoutubeToggle = false
-                        viewModel.autoOpenOnYoutube = true
-                        viewModel.hideAutoOpenToggle()
-                    }
-                }
-
-                hideToggleTask = task
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0, execute: task)
-            } else {
-                viewModel.autoOpenOnYoutube = false
-            }
-        }
     }
 
     @ViewBuilder
     private var autoOpenToggleView: some View {
-        if viewModel.showAutoOpenOnYoutubeToggle && viewModel.source == .youtube && showOpenInYoutubeToggle {
+        if viewModel.showAutoOpenOnYoutubeToggle && viewModel.source == .youtube {
             ZStack {
                 RoundedRectangle(cornerRadius: Constants.uiElementRadius)
                     .fill(Constants.uiElementsBackground)
@@ -176,8 +197,7 @@ struct DuckPlayerView: View {
             }
             .frame(height: LayoutConstants.bottomButtonHeight)
             .padding(.horizontal, LayoutConstants.horizontalPadding)
-            .padding(.bottom, LayoutConstants.horizontalPadding)
-            .padding(.top, LayoutConstants.videoContainerPadding)
+            .padding(.bottom, LayoutConstants.controlsSpacing)
             .transition(.opacity)
             .animation(.easeInOut, value: showOpenInYoutubeToggle)
         }
@@ -207,10 +227,9 @@ struct DuckPlayerView: View {
             }
             .frame(height: LayoutConstants.bottomButtonHeight)
             .padding(.horizontal, LayoutConstants.horizontalPadding)
-            .padding(.bottom, LayoutConstants.horizontalPadding)
-            .padding(.top, LayoutConstants.videoContainerPadding)
+            .padding(.bottom, 8)
         } else {
-            Spacer()
+            EmptyView()
         }
     }
 

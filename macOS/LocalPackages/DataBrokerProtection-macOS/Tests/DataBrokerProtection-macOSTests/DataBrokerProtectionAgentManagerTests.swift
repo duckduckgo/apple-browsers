@@ -42,6 +42,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
     private var mockPrivacyConfigurationManager: DBPPrivacyConfigurationManager!
     private var mockAuthenticationManager: MockAuthenticationManager!
     private var mockFreemiumDBPUserStateManager: MockFreemiumDBPUserStateManager!
+    private var mockBrokerUpdater: MockBrokerJSONService!
 
     override func setUpWithError() throws {
 
@@ -54,6 +55,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
         mockAgentStopper = MockAgentStopper()
         mockConfigurationManager = MockConfigurationManager()
         mockPrivacyConfigurationManager = DBPPrivacyConfigurationManager()
+        mockBrokerUpdater = MockBrokerJSONService()
 
         let mockDatabase = MockDatabase()
         let mockMismatchCalculator = MockMismatchCalculator(database: mockDatabase, pixelHandler: mockSharedPixelsHandler)
@@ -61,7 +63,6 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             operationQueue: MockDataBrokerProtectionOperationQueue(),
             operationsCreator: MockDataBrokerOperationsCreator(),
             mismatchCalculator: mockMismatchCalculator,
-            brokerUpdater: MockBrokerJSONService(),
             pixelHandler: mockSharedPixelsHandler)
 
         mockIPCServer = MockIPCServer(machServiceName: "")
@@ -98,6 +99,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
+            brokerUpdater: mockBrokerUpdater,
             privacyConfigurationManager: mockPrivacyConfigurationManager,
             authenticationManager: mockAuthenticationManager,
             freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
@@ -142,6 +144,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
+            brokerUpdater: mockBrokerUpdater,
             privacyConfigurationManager: mockPrivacyConfigurationManager,
             authenticationManager: mockAuthenticationManager,
             freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
@@ -191,6 +194,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             pixelHandler: mockPixelHandler,
             agentStopper: agentStopper,
             configurationManager: mockConfigurationManager,
+            brokerUpdater: mockBrokerUpdater,
             privacyConfigurationManager: mockPrivacyConfigurationManager,
             authenticationManager: mockAuthenticationManager,
             freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
@@ -229,6 +233,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
+            brokerUpdater: mockBrokerUpdater,
             privacyConfigurationManager: mockPrivacyConfigurationManager,
             authenticationManager: mockAuthenticationManager,
             freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
@@ -271,6 +276,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
+            brokerUpdater: mockBrokerUpdater,
             privacyConfigurationManager: mockPrivacyConfigurationManager,
             authenticationManager: mockAuthenticationManager,
             freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
@@ -304,6 +310,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
+            brokerUpdater: mockBrokerUpdater,
             privacyConfigurationManager: mockPrivacyConfigurationManager,
             authenticationManager: mockAuthenticationManager,
             freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
@@ -336,6 +343,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
+            brokerUpdater: mockBrokerUpdater,
             privacyConfigurationManager: mockPrivacyConfigurationManager,
             authenticationManager: mockAuthenticationManager,
             freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
@@ -368,6 +376,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
+            brokerUpdater: mockBrokerUpdater,
             privacyConfigurationManager: mockPrivacyConfigurationManager,
             authenticationManager: mockAuthenticationManager,
             freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
@@ -400,6 +409,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
+            brokerUpdater: mockBrokerUpdater,
             privacyConfigurationManager: mockPrivacyConfigurationManager,
             authenticationManager: mockAuthenticationManager,
             freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
@@ -426,6 +436,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
+            brokerUpdater: mockBrokerUpdater,
             privacyConfigurationManager: mockPrivacyConfigurationManager,
             authenticationManager: mockAuthenticationManager,
             freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
@@ -452,6 +463,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
+            brokerUpdater: mockBrokerUpdater,
             privacyConfigurationManager: mockPrivacyConfigurationManager,
             authenticationManager: mockAuthenticationManager,
             freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
@@ -479,6 +491,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
+            brokerUpdater: mockBrokerUpdater,
             privacyConfigurationManager: mockPrivacyConfigurationManager,
             authenticationManager: mockAuthenticationManager,
             freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
@@ -506,6 +519,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
+            brokerUpdater: mockBrokerUpdater,
             privacyConfigurationManager: mockPrivacyConfigurationManager,
             authenticationManager: mockAuthenticationManager,
             freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
@@ -533,6 +547,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
+            brokerUpdater: mockBrokerUpdater,
             privacyConfigurationManager: mockPrivacyConfigurationManager,
             authenticationManager: mockAuthenticationManager,
             freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
@@ -565,6 +580,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
+            brokerUpdater: mockBrokerUpdater,
             privacyConfigurationManager: mockPrivacyConfigurationManager,
             authenticationManager: mockAuthenticationManager,
             freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
@@ -596,6 +612,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
+            brokerUpdater: mockBrokerUpdater,
             privacyConfigurationManager: mockPrivacyConfigurationManager,
             authenticationManager: mockAuthenticationManager,
             freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)
@@ -623,6 +640,7 @@ final class DataBrokerProtectionAgentManagerTests: XCTestCase {
             pixelHandler: mockPixelHandler,
             agentStopper: mockAgentStopper,
             configurationManager: mockConfigurationManager,
+            brokerUpdater: mockBrokerUpdater,
             privacyConfigurationManager: mockPrivacyConfigurationManager,
             authenticationManager: mockAuthenticationManager,
             freemiumDBPUserStateManager: mockFreemiumDBPUserStateManager)

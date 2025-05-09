@@ -190,7 +190,7 @@ public final class DataBrokerProtectionAgentManager {
          pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>,
          agentStopper: DataBrokerProtectionAgentStopper,
          configurationManager: DefaultConfigurationManager,
-         brokerUpdater: RemoteBrokerJSONService,
+         brokerUpdater: BrokerJSONServiceProvider,
          privacyConfigurationManager: DBPPrivacyConfigurationManager,
          authenticationManager: DataBrokerProtectionAuthenticationManaging,
          freemiumDBPUserStateManager: FreemiumDBPUserStateManager

@@ -323,6 +323,15 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
 
         guard featureFlagger.isFeatureOn(.duckPlayer) else { return .notHandled(.featureOff) }
 
+        // Skip if the new URL is a YouTube watch page with a hashtag
+        // This is a special case where YouTube navigates to/from intenal UI (Search, setttings, etc)        
+        if let previousID = previousURL?.youtubeVideoParams?.0, 
+           let newID = newURL?.youtubeVideoParams?.0, 
+           previousID == newID, 
+           (newURL?.isYoutubeWatchWithHashtag == true || previousURL?.isYoutubeWatchWithHashtag == true) {
+            return .notHandled(.isYoutubeInternalNavigation)
+        }
+
         // Reset the DuckPlayer Presentation State
         resetDuckPlayerPresentation()
 

@@ -48,7 +48,7 @@ final class SubscriptionUserScriptHandler: SubscriptionUserScriptHandling {
     }
 
     func subscriptionDetails(params: Any, message: any UserScriptMessage) async throws -> DataModel.SubscriptionDetails {
-        guard let subscription = try? await subscriptionManager.getSubscription(cachePolicy: .returnCacheDataElseLoad), subscription.isActive else {
+        guard let subscription = try? await subscriptionManager.getSubscription(cachePolicy: .returnCacheDataElseLoad) else {
             return .notSubscribed
         }
         return .init(subscription)
@@ -123,7 +123,7 @@ extension SubscriptionUserScript {
             static let notSubscribed: Self = .init(isSubscribed: false, billingPeriod: nil, startedAt: nil, expiresOrRenewsAt: nil, paymentPlatform: nil, status: nil)
 
             init(_ subscription: PrivacyProSubscription) {
-                isSubscribed = subscription.isActive
+                isSubscribed = true
                 billingPeriod = subscription.billingPeriod.rawValue
                 startedAt = Int(subscription.startedAt.timeIntervalSince1970 * 1000)
                 expiresOrRenewsAt = Int(subscription.expiresOrRenewsAt.timeIntervalSince1970 * 1000)

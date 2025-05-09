@@ -111,17 +111,19 @@ struct AIChatInputBox: View {
             }
             .fixedSize()
 
-            Text(text.isEmpty ? "Enter message..." : text)
-                .foregroundColor(text.isEmpty ? .secondary : .primary)
-                .lineLimit(1)
-                .truncationMode(.tail)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .layoutPriority(1)
-                .onTapGesture {
-                    withAnimation(.spring()) {
-                        isFocused = true
-                    }
+            ZStack(alignment: .leading) {
+                Text(text.isEmpty ? "Enter message..." : text)
+                    .foregroundColor(text.isEmpty ? .secondary : .primary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                withAnimation(.spring()) {
+                    isFocused = true
                 }
+            }
 
             Button(action: newChatPressed) {
                 Image(systemName: "plus.circle.fill")

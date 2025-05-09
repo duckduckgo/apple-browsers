@@ -41,6 +41,8 @@ final class BookmarkOutlineCellView: NSTableCellView {
         static let minUrlLabelWidth: CGFloat = 42
         static let minWidth: CGFloat = 75
         static let extraWidth: CGFloat = 6
+        static let faviconWidth: CGFloat = 16
+        static let menuWidth: CGFloat = 28
     }
 
     private lazy var faviconImageView = NSImageView()
@@ -51,6 +53,7 @@ final class BookmarkOutlineCellView: NSTableCellView {
     private lazy var favoriteImageView = NSImageView()
 
     private var leadingConstraint = NSLayoutConstraint()
+    private var faviconImageWidthConstraint = NSLayoutConstraint()
 
     var highlight = false {
         didSet {
@@ -148,10 +151,11 @@ final class BookmarkOutlineCellView: NSTableCellView {
 
     private func setupLayout() {
         leadingConstraint = faviconImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 5)
+        faviconImageWidthConstraint = faviconImageView.widthAnchor.constraint(equalToConstant: Constants.faviconWidth)
 
         NSLayoutConstraint.activate([
             faviconImageView.heightAnchor.constraint(equalToConstant: 16),
-            faviconImageView.widthAnchor.constraint(equalToConstant: 16),
+            faviconImageWidthConstraint,
             leadingConstraint,
             faviconImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
 
@@ -175,7 +179,7 @@ final class BookmarkOutlineCellView: NSTableCellView {
             menuButton.trailingAnchor.constraint(equalTo: trailingAnchor),
             menuButton.topAnchor.constraint(equalTo: topAnchor),
             menuButton.bottomAnchor.constraint(equalTo: bottomAnchor),
-            menuButton.widthAnchor.constraint(equalToConstant: 28),
+            menuButton.widthAnchor.constraint(equalToConstant: Constants.menuWidth),
 
             favoriteImageView.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
             favoriteImageView.trailingAnchor.constraint(equalTo: menuButton.trailingAnchor),
@@ -213,7 +217,7 @@ final class BookmarkOutlineCellView: NSTableCellView {
             titleLabel.setContentCompressionResistancePriority(.init(300), for: .horizontal)
             titleLabel.setContentHuggingPriority(.init(301), for: .vertical)
             urlLabel.setContentCompressionResistancePriority(.init(200), for: .horizontal)
-            countLabel.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+            countLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
         } else {
             faviconImageView.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -251,6 +255,21 @@ final class BookmarkOutlineCellView: NSTableCellView {
             titleLabel.textColor = .controlTextColor
             urlLabel.textColor = .secondaryLabelColor
         }
+        updateUIAtNarrowWidths()
+    }
+
+    private func updateUIAtNarrowWidths() {
+        // Hide cell contents if menu button is visible
+        // and cell is too small to show at least menu and favicon without overlap
+        if frame.width < Constants.menuWidth + Constants.faviconWidth {
+            faviconImageWidthConstraint.constant = menuButton.isShown ? 0 : Constants.faviconWidth
+            titleLabel.widthAnchor.constraint(equalToConstant: 0)
+                .autoDeactivatedWhenViewIsHidden(menuButton)
+            urlLabel.widthAnchor.constraint(equalToConstant: 0)
+                .autoDeactivatedWhenViewIsHidden(menuButton)
+            countLabel.widthAnchor.constraint(equalToConstant: 0)
+                .autoDeactivatedWhenViewIsHidden(menuButton)
+        }
     }
 
     override func layout() {
@@ -261,6 +280,8 @@ final class BookmarkOutlineCellView: NSTableCellView {
             urlLabel.stringValue = ""
             urlLabel.isHidden = true
         }
+
+        updateUIAtNarrowWidths()
     }
 
     @objc private func cellMenuButtonClicked() {

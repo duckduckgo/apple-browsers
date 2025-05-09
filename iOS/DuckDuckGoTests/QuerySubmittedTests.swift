@@ -163,4 +163,6 @@ final class MockOmniBarDelegate: OmniBarDelegate {
     func onDidBeginEditing() { }
 
     func onDidEndEditing() { }
+
+    func onSharePressed() { }
 }

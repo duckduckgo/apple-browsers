@@ -651,7 +651,7 @@ extension NetworkProtectionPacketTunnelProvider: AccountManagerKeychainAccessDel
         }
 
         let parameters = [PixelParameters.privacyProKeychainAccessType: accessType.rawValue,
-                          PixelParameters.privacyProKeychainError: expectedError.errorDescription,
+                          PixelParameters.privacyProKeychainError: expectedError.errorDescription ?? "Unknown",
                           PixelParameters.source: KeychainErrorSource.vpn.rawValue,
                           PixelParameters.authVersion: KeychainErrorAuthVersion.v1.rawValue]
         DailyPixel.fireDailyAndCount(pixel: .privacyProKeychainAccessError,

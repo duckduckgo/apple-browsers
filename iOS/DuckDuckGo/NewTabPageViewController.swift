@@ -40,6 +40,7 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
     private var hostingController: UIHostingController<AnyView>?
 
     private let pixelFiring: PixelFiring.Type
+    private let messageNavigationDelegate: MessageNavigationDelegate
 
     private var privacyProPromotionCoordinating: PrivacyProPromotionCoordinating
 
@@ -54,7 +55,8 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
          newTabDialogTypeProvider: NewTabDialogSpecProvider,
          privacyProPromotionCoordinating: PrivacyProPromotionCoordinating = DaxDialogs.shared,
          faviconLoader: FavoritesFaviconLoading,
-         pixelFiring: PixelFiring.Type = Pixel.self) {
+         pixelFiring: PixelFiring.Type = Pixel.self,
+         messageNavigationDelegate: MessageNavigationDelegate) {
 
         self.associatedTab = tab
         self.variantManager = variantManager
@@ -62,8 +64,9 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
         self.newTabDialogTypeProvider = newTabDialogTypeProvider
         self.privacyProPromotionCoordinating = privacyProPromotionCoordinating
         self.pixelFiring = pixelFiring
+        self.messageNavigationDelegate = messageNavigationDelegate
 
-        newTabPageViewModel = NewTabPageViewModel()
+        newTabPageViewModel = NewTabPageViewModel(isExperimentalAppearanceEnabled: isExperimentalAppearanceEnabled)
         shortcutsSettingsModel = NewTabPageShortcutsSettingsModel()
         sectionsSettingsModel = NewTabPageSectionsSettingsModel()
         favoritesModel = FavoritesViewModel(isNewTabPageCustomizationEnabled: isNewTabPageCustomizationEnabled,
@@ -71,7 +74,9 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
                                             favoriteDataSource: FavoritesListInteractingAdapter(favoritesListInteracting: interactionModel),
                                             faviconLoader: faviconLoader)
         shortcutsModel = ShortcutsModel()
-        messagesModel = NewTabPageMessagesModel(homePageMessagesConfiguration: homePageMessagesConfiguration, privacyProDataReporter: privacyProDataReporting)
+        messagesModel = NewTabPageMessagesModel(homePageMessagesConfiguration: homePageMessagesConfiguration,
+                                                privacyProDataReporter: privacyProDataReporting,
+                                                navigator: DefaultMessageNavigator(delegate: messageNavigationDelegate))
 
         if isNewTabPageCustomizationEnabled {
             super.init(rootView: AnyView(NewTabPageView(viewModel: self.newTabPageViewModel,

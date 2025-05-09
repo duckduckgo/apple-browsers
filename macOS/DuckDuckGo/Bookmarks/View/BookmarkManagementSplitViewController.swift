@@ -43,12 +43,15 @@ final class BookmarkManagementSplitViewController: NSSplitViewController {
         splitView.setValue(NSColor.divider, forKey: #keyPath(NSSplitView.dividerColor))
 
         let sidebarViewItem = NSSplitViewItem(contentListWithViewController: sidebarViewController)
-        sidebarViewItem.minimumThickness = 256
+        sidebarViewItem.minimumThickness = 128
         sidebarViewItem.maximumThickness = 256
+        sidebarViewItem.holdingPriority = .defaultLow
 
         addSplitViewItem(sidebarViewItem)
 
         let detailViewItem = NSSplitViewItem(viewController: detailViewController)
+        detailViewItem.minimumThickness = 415
+        detailViewItem.holdingPriority = .dragThatCannotResizeWindow
         addSplitViewItem(detailViewItem)
 
         view = splitView
@@ -78,6 +81,15 @@ extension BookmarkManagementSplitViewController: BookmarkManagementSidebarViewCo
 
     func sidebarSelectedTabContentDidChange(_ content: Tab.TabContent) {
         delegate?.selectedTabContent(content)
+    }
+
+    override func splitView(_ splitView: NSSplitView,
+                            effectiveRect proposedEffectiveRect: NSRect,
+                            forDrawnRect drawnRect: NSRect,
+                            ofDividerAt dividerIndex: Int) -> NSRect {
+        // Prevent drag cursor from appearing on split view divider
+        // From: https://stackoverflow.com/a/9571348
+        return NSRect.zero
     }
 
 }

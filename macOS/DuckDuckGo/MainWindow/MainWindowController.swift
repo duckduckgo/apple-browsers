@@ -40,16 +40,23 @@ final class MainWindowController: NSWindowController {
         return window?.standardWindowButton(.closeButton)?.superview
     }
 
-    init(window: NSWindow? = nil, mainViewController: MainViewController, popUp: Bool, fireWindowSession: FireWindowSession? = nil, fireViewModel: FireViewModel? = nil) {
-        let size = mainViewController.view.frame.size
-        let moveToCenter = CGAffineTransform(translationX: ((NSScreen.main?.frame.width ?? 1024) - size.width) / 2,
-                                             y: ((NSScreen.main?.frame.height ?? 790) - size.height) / 2)
-        let frame = NSRect(origin: (NSScreen.main?.frame.origin ?? .zero).applying(moveToCenter),
-                           size: size)
+    @MainActor
+    init(window: NSWindow? = nil,
+         mainViewController: MainViewController,
+         popUp: Bool,
+         fireWindowSession: FireWindowSession? = nil,
+         fireViewModel: FireViewModel? = nil) {
 
-        assert(window == nil || [.unitTests, .integrationTests].contains(AppVersion.runType), "Window should not be set in non-test environment")
-        let window = window ?? (popUp ? PopUpWindow(frame: frame) : MainWindow(frame: frame))
+        // Compute initial window frame
+        let frame = InitialWindowFrameProvider.initialFrame()
+
+        assert(window == nil || [.unitTests, .integrationTests].contains(AppVersion.runType),
+               "Window should not be set in non-test environment")
+        let window = window ?? (popUp
+            ? PopUpWindow(frame: frame)
+            : MainWindow(frame: frame))
         window.contentViewController = mainViewController
+        window.setContentSize(frame.size)
         self.fireViewModel = fireViewModel ?? FireCoordinator.fireViewModel
 
         assert(!mainViewController.isBurner || fireWindowSession != nil)
@@ -494,6 +501,7 @@ fileprivate extension NavigationBarViewController {
     var controlsForUserPrevention: [NSControl?] {
         return [homeButton,
                 optionsButton,
+                overflowButton,
                 bookmarkListButton,
                 passwordManagementButton,
                 addressBarViewController?.addressBarTextField,

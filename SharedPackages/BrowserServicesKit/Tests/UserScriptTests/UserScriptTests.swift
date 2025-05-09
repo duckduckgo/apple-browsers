@@ -43,6 +43,7 @@ class UserScriptTests: XCTestCase {
         }
     }
 
+    @MainActor
     func testWhenWKUserScriptCreatedValuesInitializedCorrectly() async {
         let src = "var val = 'Test';\n"
         let us = TestUserScript(val: "Test", injectionTime: .atDocumentStart, forMainFrameOnly: true, messageNames: [])
@@ -52,6 +53,7 @@ class UserScriptTests: XCTestCase {
         XCTAssertEqual(script.isForMainFrameOnly, true)
     }
 
+    @MainActor
     func testWhenWKUserScriptCreatedValuesInitializedCorrectly2() async {
         let src = "var val = 'test2';\n"
         let us = TestUserScript(val: "test2", injectionTime: .atDocumentEnd, forMainFrameOnly: false, messageNames: [])

@@ -144,6 +144,7 @@ final class BookmarkManagementSidebarViewController: NSViewController {
         tabSwitcherButton.heightAnchor.constraint(equalToConstant: 60).isActive = true
         tabSwitcherButton.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 23).isActive = true
         view.trailingAnchor.constraint(equalTo: tabSwitcherButton.trailingAnchor, constant: 23).isActive = true
+        tabSwitcherButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
         scrollView.topAnchor.constraint(equalTo: tabSwitcherButton.bottomAnchor, constant: 12).isActive = true
         view.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor, constant: 12).isActive = true

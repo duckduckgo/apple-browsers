@@ -17,14 +17,15 @@
 //  limitations under the License.
 //
 
-import Foundation
-import Core
+import AIChat
 import BrowserServicesKit
+import Core
+import Foundation
+import SpecialErrorPages
+import Subscription
 import TrackerRadarKit
 import UserScript
 import WebKit
-import SpecialErrorPages
-import AIChat
 
 final class UserScripts: UserScriptsProvider {
 
@@ -36,6 +37,7 @@ final class UserScripts: UserScriptsProvider {
     let contentScopeUserScriptIsolated: ContentScopeUserScript
     let autoconsentUserScript: AutoconsentUserScript
     let aiChatUserScript: AIChatUserScript
+    let subscriptionUserScript: SubscriptionUserScript
 
     var specialPages: SpecialPagesUserScript?
     var duckPlayer: DuckPlayerControlling? {
@@ -77,7 +79,12 @@ final class UserScripts: UserScriptsProvider {
         let aiChatScriptHandler = AIChatUserScriptHandler(featureFlagger: featureFlagger)
         aiChatUserScript = AIChatUserScript(handler: aiChatScriptHandler,
                                             debugSettings: aiChatDebugSettings)
+        subscriptionUserScript = SubscriptionUserScript(
+            platform: .ios,
+            subscriptionManager: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge
+        )
         contentScopeUserScriptIsolated.registerSubfeature(delegate: aiChatUserScript)
+        contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
 
         // Special pages - Such as Duck Player
         specialPages = SpecialPagesUserScript()

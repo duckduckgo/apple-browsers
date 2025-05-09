@@ -666,4 +666,22 @@ extension UpdatedOmniBarView {
     func moveSeparatorToBottom() {
         // no-op
     }
+
+    // Used to mask shadows going outside of bounds to prevent them covering other content
+    func updateMaskLayer(maskTop: Bool) {
+        let maskLayer = CALayer()
+
+        let clippingOffset = 100.0
+        let inset = clippingOffset * 2
+
+        // Make the frame uniformly larger along each axis and offset to top or bottom
+        let maskFrame = layer.bounds
+            .insetBy(dx: -inset, dy: -inset)
+            .offsetBy(dx: 0, dy: maskTop ? clippingOffset : -clippingOffset)
+
+        maskLayer.frame = maskFrame
+        maskLayer.backgroundColor = UIColor.black.cgColor
+
+        layer.mask = maskLayer
+    }
 }

@@ -238,11 +238,11 @@ class OmniBarViewController: UIViewController, OmniBar {
         // no-op - implemented in subclass
     }
 
-    func allowShadowsOutsideBounds() {
+    func preventShadowsOnTop() {
         // no-op - implemented in subclass
     }
 
-    func preventShadowsOutsideBounds() {
+    func preventShadowsOnBottom() {
         // no-op - implemented in subclass
     }
 

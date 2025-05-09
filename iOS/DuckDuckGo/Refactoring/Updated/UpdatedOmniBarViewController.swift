@@ -108,11 +108,11 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
         omniBarView.isUsingSmallTopSpacing = false
     }
 
-    override func allowShadowsOutsideBounds() {
-        omniBarView.clipsToBounds = false
+    override func preventShadowsOnTop() {
+        omniBarView.updateMaskLayer(maskTop: true)
     }
 
-    override func preventShadowsOutsideBounds() {
-        omniBarView.clipsToBounds = true
+    override func preventShadowsOnBottom() {
+        omniBarView.updateMaskLayer(maskTop: false)
     }
 }

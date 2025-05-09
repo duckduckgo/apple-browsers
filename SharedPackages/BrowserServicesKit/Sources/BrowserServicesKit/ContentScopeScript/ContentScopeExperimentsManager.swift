@@ -36,9 +36,8 @@ extension DefaultFeatureFlagger: ContentScopeExperimentsManaging {
         let contentScopeExperimentID = PrivacyFeature.contentScopeExperiments.rawValue
         guard let contentScopeExperiments = try? PrivacyConfigurationData(data: privacyConfigManager.currentConfig).features[contentScopeExperimentID] else { return }
         for subfeature in contentScopeExperiments.features {
-            let cohorts = privacyConfigManager.privacyConfig.cohorts(subfeatureID: subfeature.key, parentFeatureID: contentScopeExperimentID) ?? []
-            let experimentSubfeature = ExperimentSubfeature(parentID: PrivacyFeature.contentScopeExperiments.rawValue, subfeatureID: subfeature.key, cohorts: cohorts)
-            _ = experimentManager?.resolveCohort(for: experimentSubfeature, allowCohortAssignment: true)
+            _ = resolveCohort(subfeature.key, parentID: PrivacyFeature.contentScopeExperiments.rawValue)
         }
     }
+
 }

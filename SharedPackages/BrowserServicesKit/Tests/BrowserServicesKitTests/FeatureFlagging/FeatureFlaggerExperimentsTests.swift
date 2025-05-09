@@ -1295,4 +1295,118 @@ final class FeatureFlaggerExperimentsTests: XCTestCase {
         XCTAssertEqual(experimentManager.cohort(for: "experiment2"), "blue")
     }
 
+    func testContentScopeExperimentsDoesNotEnrolDisabledExperiments() {
+        featureJson = """
+        {
+          "features": {
+            "contentScopeExperiments": {
+              "state": "enabled",
+              "exceptions": [],
+              "features": {
+                "experiment1": {
+                  "state": "enabled",
+                  "cohorts": [
+                    {
+                      "name": "control",
+                      "weight": 1
+                    },
+                    {
+                      "name": "blue",
+                      "weight": 0
+                    }
+                  ]
+                },
+                "experiment2": {
+                  "state": "disabled",
+                  "cohorts": [
+                    {
+                      "name": "control",
+                      "weight": 0
+                    },
+                    {
+                      "name": "blue",
+                      "weight": 1
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+        """.data(using: .utf8)!
+
+        manager.reload(etag: "", data: featureJson)
+
+        // we haven't called resolveContentScopeScriptActiveExperiments yet, so cohorts should not be yet assigned
+        XCTAssertNil(mockStore.experiments)
+        XCTAssertNil(experimentManager.cohort(for: "experiment1"))
+        XCTAssertNil(experimentManager.cohort(for: "experiment2"))
+
+        // we call resolveContentScopeScriptActiveExperiments(), then we should assign cohort
+        let experiments = featureFlagger.resolveContentScopeScriptActiveExperiments()
+
+        // Check cohorts are assigned
+        XCTAssertFalse(mockStore.experiments?.isEmpty ?? true)
+        XCTAssertEqual(experiments["experiment1"]?.cohortID, "control")
+        XCTAssertNil(experiments["experiment2"])
+        XCTAssertEqual(experiments["experiment1"]?.parentID, "contentScopeExperiments")
+        XCTAssertEqual(experimentManager.cohort(for: "experiment1"), "control")
+    }
+
+    func testContentScopeExperimentsDoesNotEnrollAnyExperimentWhenParentFeatureDisabled() {
+        featureJson = """
+        {
+          "features": {
+            "contentScopeExperiments": {
+              "state": "disabled",
+              "exceptions": [],
+              "features": {
+                "experiment1": {
+                  "state": "enabled",
+                  "cohorts": [
+                    {
+                      "name": "control",
+                      "weight": 1
+                    },
+                    {
+                      "name": "blue",
+                      "weight": 0
+                    }
+                  ]
+                },
+                "experiment2": {
+                  "state": "enabled",
+                  "cohorts": [
+                    {
+                      "name": "control",
+                      "weight": 0
+                    },
+                    {
+                      "name": "blue",
+                      "weight": 1
+                    }
+                  ]
+                }
+              }
+            }
+          }
+        }
+        """.data(using: .utf8)!
+
+        manager.reload(etag: "", data: featureJson)
+
+        // we haven't called resolveContentScopeScriptActiveExperiments yet, so cohorts should not be yet assigned
+        XCTAssertNil(mockStore.experiments)
+        XCTAssertNil(experimentManager.cohort(for: "experiment1"))
+        XCTAssertNil(experimentManager.cohort(for: "experiment2"))
+
+        // we call resolveContentScopeScriptActiveExperiments(), then we should try to assign cohorts
+        let experiments = featureFlagger.resolveContentScopeScriptActiveExperiments()
+
+        // Check cohorts are assigned
+        XCTAssertTrue(mockStore.experiments?.isEmpty ?? true)
+        XCTAssertNil(experiments["experiment1"])
+        XCTAssertNil(experiments["experiment2"])
+    }
+
 }

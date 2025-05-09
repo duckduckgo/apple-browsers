@@ -298,7 +298,7 @@ public class DefaultFeatureFlagger: FeatureFlagger {
 
     public let internalUserDecider: InternalUserDecider
     public let privacyConfigManager: PrivacyConfigurationManaging
-    let experimentManager: ExperimentCohortsManaging?
+    private let experimentManager: ExperimentCohortsManaging?
     public let localOverrides: FeatureFlagLocalOverriding?
 
     public init(
@@ -390,7 +390,7 @@ public class DefaultFeatureFlagger: FeatureFlagger {
         case .remoteReleasable(let featureType),
                 .remoteDevelopment(let featureType) where internalUserDecider.isInternalUser:
             if case .subfeature(let subfeature) = featureType {
-                if let resolvedCohortID = resolveCohort(subfeature, allowCohortAssignment: allowCohortAssignment) {
+                if let resolvedCohortID = resolveCohort(subfeature.rawValue, parentID: subfeature.parent.rawValue, allowCohortAssignment: allowCohortAssignment) {
                     return featureFlag.cohortType?.cohort(for: resolvedCohortID)
                 }
             }
@@ -400,11 +400,11 @@ public class DefaultFeatureFlagger: FeatureFlagger {
         }
     }
 
-    private func resolveCohort(_ subfeature: any PrivacySubfeature, allowCohortAssignment: Bool = true) -> CohortID? {
+    func resolveCohort(_ subfeatureID: SubfeatureID, parentID: ParentFeatureID, allowCohortAssignment: Bool = true) -> CohortID? {
         let config = privacyConfigManager.privacyConfig
-        let featureState = config.stateFor(subfeature)
-        let cohorts = config.cohorts(for: subfeature)
-        let experiment = ExperimentSubfeature(parentID: subfeature.parent.rawValue, subfeatureID: subfeature.rawValue, cohorts: cohorts ?? [])
+        let featureState = config.stateFor(subfeatureID: subfeatureID, parentFeatureID: parentID)
+        let cohorts = config.cohorts(subfeatureID: subfeatureID, parentFeatureID: parentID)
+        let experiment = ExperimentSubfeature(parentID: parentID, subfeatureID: subfeatureID, cohorts: cohorts ?? [])
         switch featureState {
         case .enabled:
             return experimentManager?.resolveCohort(for: experiment, allowCohortAssignment: allowCohortAssignment)

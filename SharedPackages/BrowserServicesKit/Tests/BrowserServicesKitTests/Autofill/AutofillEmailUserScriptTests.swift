@@ -37,7 +37,7 @@ class AutofillEmailUserScriptTests: XCTestCase {
         }
         """.data(using: .utf8)!
         let privacyConfig = AutofillTestHelper.preparePrivacyConfig(embeddedConfig: embeddedConfig)
-        let properties = ContentScopeProperties(gpcEnabled: false, sessionKey: "1234", messageSecret: "1234", featureToggles: ContentScopeFeatureToggles.allTogglesOn, experimentManager: nil)
+        let properties = ContentScopeProperties(gpcEnabled: false, sessionKey: "1234", messageSecret: "1234", featureToggles: ContentScopeFeatureToggles.allTogglesOn)
         let sourceProvider = DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfig,
                                                                            properties: properties)
             .withJSLoading()

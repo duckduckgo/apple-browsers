@@ -267,8 +267,7 @@ public extension ContentScopeProperties {
             gpcEnabled: false,
             sessionKey: "sessionKey",
             messageSecret: "messageSecret",
-            featureToggles: ContentScopeFeatureToggles.mock,
-            experimentManager: nil
+            featureToggles: ContentScopeFeatureToggles.mock
         )
     }
 }

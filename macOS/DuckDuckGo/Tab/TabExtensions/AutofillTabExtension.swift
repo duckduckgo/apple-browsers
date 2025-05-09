@@ -212,8 +212,7 @@ extension AutofillTabExtension: SecureVaultManagerDelegate {
         return ContentScopeProperties(gpcEnabled: WebTrackingProtectionPreferences.shared.isGPCEnabled,
                                       sessionKey: autofillScript?.sessionKey ?? "",
                                       messageSecret: autofillScript?.messageSecret ?? "",
-                                      featureToggles: supportedFeatures,
-                                      experimentManager: nil)
+                                      featureToggles: supportedFeatures)
     }
 }
 

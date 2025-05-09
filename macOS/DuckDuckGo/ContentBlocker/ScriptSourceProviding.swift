@@ -95,8 +95,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
                                                      properties: ContentScopeProperties(gpcEnabled: webTrakcingProtectionPreferences.isGPCEnabled,
                                                                                         sessionKey: self.sessionKey ?? "",
                                                                                         messageSecret: self.messageSecret ?? "",
-                                                                                        featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfig),
-                                                                                        experimentManager: nil),
+                                                                                        featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfig)),
                                                      isDebug: AutofillPreferences().debugScriptEnabled)
                 .withJSLoading()
                 .build()

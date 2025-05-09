@@ -177,8 +177,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         let contentScopeProperties = ContentScopeProperties(gpcEnabled: false,
                                                             sessionKey: sessionKey,
                                                             messageSecret: messageSecret,
-                                                            featureToggles: features,
-                                                            experimentManager: nil)
+                                                            featureToggles: features)
 
         let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
         let backendServicePixels = DefaultDataBrokerProtectionBackendServicePixels(pixelHandler: fakePixelHandler,

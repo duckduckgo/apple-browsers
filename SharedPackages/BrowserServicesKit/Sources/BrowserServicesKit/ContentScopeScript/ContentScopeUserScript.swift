@@ -51,7 +51,7 @@ public final class ContentScopeProperties: Encodable {
                 sessionKey: String,
                 messageSecret: String,
                 featureToggles: ContentScopeFeatureToggles,
-                experimentManager: ContentScopeExperimentsManaging?) {
+                experimentManager: ContentScopeExperimentsManaging? = nil) {
         self.globalPrivacyControlValue = gpcEnabled
         self.sessionKey = sessionKey
         self.messageSecret = messageSecret

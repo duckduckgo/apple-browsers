@@ -19,19 +19,22 @@
 import Foundation
 
 public protocol ContentScopeExperimentsManaging {
+    var allActiveContentScopeExperiments: Experiments { get }
     func resolveContentScopeScriptActiveExperiments() -> Experiments
 }
 
 extension DefaultFeatureFlagger: ContentScopeExperimentsManaging {
-    public func resolveContentScopeScriptActiveExperiments() -> Experiments {
-
-        enrollAllContentScopeExperiments()
-
-        return allActiveExperiments.filter { _, experimentData in
-            return experimentData.parentID == PrivacyFeature.contentScopeExperiments.rawValue
+    public var allActiveContentScopeExperiments: Experiments {
+        allActiveExperiments.filter {
+            $0.value.parentID == PrivacyFeature.contentScopeExperiments.rawValue
         }
     }
-
+    
+    public func resolveContentScopeScriptActiveExperiments() -> Experiments {
+        enrollAllContentScopeExperiments()
+        return allActiveContentScopeExperiments
+    }
+    
     private func enrollAllContentScopeExperiments() {
         let contentScopeExperimentID = PrivacyFeature.contentScopeExperiments.rawValue
         guard let contentScopeExperiments = try? PrivacyConfigurationData(data: privacyConfigManager.currentConfig).features[contentScopeExperimentID] else { return }
@@ -39,5 +42,5 @@ extension DefaultFeatureFlagger: ContentScopeExperimentsManaging {
             _ = resolveCohort(subfeature.key, parentID: PrivacyFeature.contentScopeExperiments.rawValue)
         }
     }
-
+    
 }

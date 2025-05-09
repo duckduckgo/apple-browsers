@@ -316,7 +316,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     func openPrivacyDashboard(for tabViewModel: TabViewModel, from button: MouseOverButton, entryPoint: PrivacyDashboardEntryPoint) {
         guard closeTransientPopovers() else { return }
 
-        let popover = PrivacyDashboardPopover(entryPoint: entryPoint, contentScopeExperimentManager: contentScopeExperimentsManager)
+        let popover = PrivacyDashboardPopover(entryPoint: entryPoint, contentScopeExperimentsManager: contentScopeExperimentsManager)
         popover.delegate = self
         self.privacyDashboardPopover = popover
         self.subscribePrivacyDashboardPendingUpdates(for: popover)

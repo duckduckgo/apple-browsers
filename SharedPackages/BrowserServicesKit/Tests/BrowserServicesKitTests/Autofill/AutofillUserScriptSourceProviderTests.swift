@@ -88,7 +88,7 @@ final class AutofillUserScriptSourceProviderTests: XCTestCase {
     }
     """.data(using: .utf8)!
     lazy var privacyConfig = AutofillTestHelper.preparePrivacyConfig(embeddedConfig: embeddedConfig)
-    let properties = ContentScopeProperties(gpcEnabled: false, sessionKey: "1234", messageSecret: "1234", featureToggles: ContentScopeFeatureToggles.allTogglesOn, experimentManager: nil)
+    let properties = ContentScopeProperties(gpcEnabled: false, sessionKey: "1234", messageSecret: "1234", featureToggles: ContentScopeFeatureToggles.allTogglesOn)
 
     func testWhenBuildWithLoadJSThenSourceStrIsBuilt() {
         let autofillSourceProvider = DefaultAutofillSourceProvider.Builder(privacyConfigurationManager: privacyConfig,

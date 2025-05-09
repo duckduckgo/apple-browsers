@@ -83,8 +83,7 @@ public class DataBrokerProtectionIOSManagerProvider {
         let contentScopeProperties = ContentScopeProperties(gpcEnabled: false,
                                                             sessionKey: UUID().uuidString,
                                                             messageSecret: UUID().uuidString,
-                                                            featureToggles: features,
-                                                            experimentManager: nil)
+                                                            featureToggles: features)
 
         let fakeBroker = DataBrokerDebugFlagFakeBroker()
         let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName)

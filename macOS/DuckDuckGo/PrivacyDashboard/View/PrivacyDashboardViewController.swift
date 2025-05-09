@@ -63,7 +63,7 @@ final class PrivacyDashboardViewController: NSViewController {
     }
     var sizeDelegate: PrivacyDashboardViewControllerSizeDelegate?
     private weak var tabViewModel: TabViewModel?
-    let contentScopeExperimentManager: ContentScopeExperimentsManaging
+    private let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     private let pixelFiring: (
         _ event: PixelKitEvent,
         _ withAdditionalParameters: [String: String]?,
@@ -87,7 +87,7 @@ final class PrivacyDashboardViewController: NSViewController {
     init(privacyInfo: PrivacyInfo? = nil,
          entryPoint: PrivacyDashboardEntryPoint = .dashboard,
          privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
-         contentScopeExperimentManager: ContentScopeExperimentsManaging,
+         contentScopeExperimentsManager: ContentScopeExperimentsManaging,
          pixelFiring: @escaping (
             _ event: PixelKitEvent,
             _ withAdditionalParameters: [String: String]?,
@@ -103,7 +103,7 @@ final class PrivacyDashboardViewController: NSViewController {
         let toggleReportingConfiguration = ToggleReportingConfiguration(privacyConfigurationManager: privacyConfigurationManager)
         let toggleReportingFeature = ToggleReportingFeature(toggleReportingConfiguration: toggleReportingConfiguration)
         let toggleReportingManager = ToggleReportingManager(feature: toggleReportingFeature)
-        self.contentScopeExperimentManager = contentScopeExperimentManager
+        self.contentScopeExperimentsManager = contentScopeExperimentsManager
         self.pixelFiring = pixelFiring
         self.privacyDashboardController = PrivacyDashboardController(privacyInfo: privacyInfo,
                                                                      entryPoint: entryPoint,
@@ -381,11 +381,10 @@ extension PrivacyDashboardViewController {
         if let httpStatusCode = currentTab.brokenSiteInfo?.lastHttpStatusCode {
             statusCodes = [httpStatusCode]
         }
-        
+
         var privacyExperimentCohorts: String {
             var experiments: [String: String] = [:]
-            let features = contentScopeExperimentManager.resolveContentScopeScriptActiveExperiments()
-            for feature in features {
+            for feature in contentScopeExperimentsManager.allActiveContentScopeExperiments {
                 experiments[feature.key] = feature.value.cohortID
             }
             return experiments

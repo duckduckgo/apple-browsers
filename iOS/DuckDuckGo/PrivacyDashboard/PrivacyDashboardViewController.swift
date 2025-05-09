@@ -337,8 +337,7 @@ extension PrivacyDashboardViewController {
 
         var privacyExperimentCohorts: String {
             var experiments: [String: String] = [:]
-            let features = contentScopeExperimentsManager.resolveContentScopeScriptActiveExperiments()
-            for feature in features {
+            for feature in contentScopeExperimentsManager.allActiveContentScopeExperiments {
                 experiments[feature.key] = feature.value.cohortID
             }
             return experiments

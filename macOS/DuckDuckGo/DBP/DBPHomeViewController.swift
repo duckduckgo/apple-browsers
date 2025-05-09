@@ -63,8 +63,7 @@ final class DBPHomeViewController: NSViewController {
         let prefs = ContentScopeProperties(gpcEnabled: isGPCEnabled,
                                            sessionKey: sessionKey,
                                            messageSecret: messageSecret,
-                                           featureToggles: features,
-                                           experimentManager: nil)
+                                           featureToggles: features)
 
         return DataBrokerProtectionViewController(
             agentInterface: dataBrokerProtectionManager.loginItemInterface,

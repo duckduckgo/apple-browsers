@@ -29,12 +29,12 @@ extension DefaultFeatureFlagger: ContentScopeExperimentsManaging {
             $0.value.parentID == PrivacyFeature.contentScopeExperiments.rawValue
         }
     }
-    
+
     public func resolveContentScopeScriptActiveExperiments() -> Experiments {
         enrollAllContentScopeExperiments()
         return allActiveContentScopeExperiments
     }
-    
+
     private func enrollAllContentScopeExperiments() {
         let contentScopeExperimentID = PrivacyFeature.contentScopeExperiments.rawValue
         guard let contentScopeExperiments = try? PrivacyConfigurationData(data: privacyConfigManager.currentConfig).features[contentScopeExperimentID] else { return }
@@ -42,5 +42,5 @@ extension DefaultFeatureFlagger: ContentScopeExperimentsManaging {
             _ = resolveCohort(subfeature.key, parentID: PrivacyFeature.contentScopeExperiments.rawValue)
         }
     }
-    
+
 }

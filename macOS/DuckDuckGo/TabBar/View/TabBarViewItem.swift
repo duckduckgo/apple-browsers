@@ -267,12 +267,13 @@ final class TabBarItemCellView: NSView {
         ]
         mouseOverView.layer?.addSublayer(borderLayer)
 
-        roundedBackgroundColorView.cornerRadius = 6
-
         titleTextField.textColor = visualStyle.textPrimaryColor
 
         addSubview(mouseOverView)
-        addSubview(roundedBackgroundColorView)
+        if visualStyle.tabStyleProvider.isRoundedBackgroundPresentOnHover {
+            roundedBackgroundColorView.cornerRadius = 6
+            addSubview(roundedBackgroundColorView)
+        }
         addSubview(faviconImageView)
         addSubview(crashIndicatorButton)
         addSubview(audioButton)
@@ -289,10 +290,12 @@ final class TabBarItemCellView: NSView {
     override func layout() {
         super.layout()
         mouseOverView.frame = bounds
-        roundedBackgroundColorView.frame = NSRect(x: bounds.origin.x + 4,
-                                                  y: bounds.origin.y + 6,
-                                                  width: bounds.width - 8,
-                                                  height: bounds.height - 8)
+        if visualStyle.tabStyleProvider.isRoundedBackgroundPresentOnHover {
+            roundedBackgroundColorView.frame = NSRect(x: bounds.origin.x + 4,
+                                                      y: bounds.origin.y + 6,
+                                                      width: bounds.width - 8,
+                                                      height: bounds.height - 8)
+        }
 
         withoutAnimation {
             borderLayer.frame = bounds
@@ -703,7 +706,6 @@ final class TabBarViewItem: NSCollectionViewItem {
                 } else {
                     cell.mouseOverView.mouseOverColor = .tabMouseOver
                     cell.mouseOverView.backgroundColor = nil
-                    cell.roundedBackgroundColorView.isHidden = true
                 }
 
             }

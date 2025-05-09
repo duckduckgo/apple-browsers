@@ -1241,6 +1241,8 @@ public extension DataBroker {
 }
 
 public final class MockDataBrokerProtectionOperationQueueManager: DataBrokerProtectionQueueManager {
+    public var delegate: DataBrokerProtectionQueueManagerDelegate?
+
     public var debugRunningStatusString: String { return "" }
 
     public var startImmediateScanOperationsIfPermittedCompletionError: DataBrokerProtectionJobsErrorCollection?
@@ -1251,7 +1253,7 @@ public final class MockDataBrokerProtectionOperationQueueManager: DataBrokerProt
     public var startScheduledAllOperationsIfPermittedCalledCompletion: (() -> Void)?
     public var startScheduledScanOperationsIfPermittedCalledCompletion: (() -> Void)?
 
-    public init(operationQueue: DataBrokerProtectionOperationQueue, operationsCreator: DataBrokerOperationsCreator, mismatchCalculator: MismatchCalculator, brokerUpdater: BrokerJSONServiceProvider?, pixelHandler: Common.EventMapping<DataBrokerProtectionSharedPixels>) {
+    public init(operationQueue: DataBrokerProtectionOperationQueue, operationsCreator: DataBrokerOperationsCreator, mismatchCalculator: MismatchCalculator, pixelHandler: Common.EventMapping<DataBrokerProtectionSharedPixels>) {
 
     }
 

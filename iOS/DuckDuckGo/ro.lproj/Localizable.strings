@@ -1150,41 +1150,8 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Ieri";
 
-/* No comment provided by engineer. */
-"dax.hide.button" = "Ascunde sfaturile definitiv";
-
-/* No comment provided by engineer. */
-"dax.hide.cancel" = "Renunță";
-
-/* Subtitle in Hide Dax dialog */
-"dax.hide.message" = "Sunt doar câteva, iar noi am încercat să le facem informative.";
-
-/* Title in Hide Dax dialog */
-"dax.hide.title" = "Ascunzi sfaturile rămase?";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search" = "Căutările DuckDuckGo sunt anonime. Întotdeauna. 🙌";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search.cta" = "Pfiu!";
-
-/* First parameter is a count of additional trackers, second and third are names of the tracker networks (strings) */
-"dax.onboarding.browsing.multiple.trackers" = "dax.onboarding.browsing.multiple.trackers";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.multiple.trackers.cta" = "Bate palma!";
-
-/* Parameter is domain name (string) */
-"dax.onboarding.browsing.one.tracker" = "*%1$@* încercau să te urmărească aici.\n\nI-am blocat!\n\n☝️ Poți verifica bara de adrese pentru a vedea cine încearcă să te urmărească atunci când vizitezi un nou site.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.one.tracker.cta" = "Bate palma!";
-
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Atenție! Nu pot împiedica %1$@ să îți vadă activitatea pe %2$@.\n\nDar navighează cu mine și pot reduce ceea ce %1$@ cunoaște despre tine în general, blocând instrumentele lor de urmărire pe o mulțime de alte site-uri.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.site.is.major.tracker.cta" = "Am înțeles";
 
 /* Parameters are domain names (strings) */
 "dax.onboarding.browsing.site.owned.by.major.tracker" = "Atenție! Deoarece %2$@ deține %1$@, nu îi pot împiedica să îți vadă activitatea aici.\n\nDar navighează cu mine și pot reduce ceea ce %2$@ cunoaște despre tine în general, blocând instrumentele lor de urmărire pe o mulțime de alte site-uri.";
@@ -1195,29 +1162,8 @@
 /* No comment provided by engineer. */
 "dax.onboarding.browsing.without.trackers" = "În timp ce atingi și derulezi, voi bloca urmăritorii pisălogi.\n\nDă-i bătaie - continuă să navighezi!";
 
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.without.trackers.cta" = "Am înțeles";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button" = "În browserul tău se pot acumula date personale. Bleah. Utilizează butonul Ștergere activitate și istoric pentru a șterge totul. Încearcă acum! 👇";
-
-/* Cancel action */
-"dax.onboarding.fire.button.cancelAction" = "Renunță";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button.confirmAction" = "Închide filele și șterge datele";
-
 /* Encourage user to add favorite site using the browsing menu. */
 "dax.onboarding.home.add.favorite" = "Vizitează site-urile preferate într-o clipă!\n\nAccesează un site care îți place. Apoi atinge pictograma „⋯” și selectează *Adaugă la preferințe*.";
-
-/* Accessible version of dax.onboarding.home.add.favorite */
-"dax.onboarding.home.add.favorite.accessible" = "Vizitează site-urile preferate într-o clipă! Vizitează unul dintre site-urile preferate. Apoi atinge butonul meniului de deschidere și selectează Adaugă la preferințe.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.home.initial" = "Apoi, încearcă să vizitezi unul din site-urile tale preferate!\n\nVoi bloca instrumentele de urmărire ca să nu te mai spioneze. Voi îmbunătăți, de asemenea, securitatea conexiunii tale, dacă este posibil. 🔒";
-
-/* ad = advertisment */
-"dax.onboarding.home.subsequent" = "Ai ghicit!\n\nReține: de fiecare dată când navighezi cu mine, o reclamă terifiantă își pierde aripile. 👍";
 
 /* No comment provided by engineer. */
 "Debug" = "Depanează";
@@ -1313,16 +1259,16 @@
 "duckai.preferences.text.markdown" = "Duck.ai este o caracteristică opțională care îți permite să discuți anonim cu modele populare de chat AI de la terțe părți. Chaturile tale nu sunt folosite pentru a antrena AI.\n[Află mai multe](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
-"duckai.settings.enable.address-bar-toggle" = "Afișează Duck.ai în bara de adrese";
+"duckai.settings.enable.address-bar-toggle" = "Bara de adrese";
 
 /* Toggle text to enable/disable AI Chat in the browsing menu */
-"duckai.settings.enable.browsing-menu-toggle" = "Afișează Duck.ai în meniul browserului";
+"duckai.settings.enable.browsing-menu-toggle" = "Meniu browser";
 
 /* Toggle text to enable/disable Duck.ai in tab manager */
-"duckai.settings.enable.tab-switcher-toggle" = "Afișează Duck.ai în ecranul File";
+"duckai.settings.enable.tab-switcher-toggle" = "Ecranul cu file";
 
 /* Toggle text to enable/disable Duck.ai in voice search */
-"duckai.settings.enable.voice-search-toggle" = "Afișează Duck.ai în căutarea vocală";
+"duckai.settings.enable.voice-search-toggle" = "Căutare vocală";
 
 /* Settings screen cell text for AI Chat settings */
 "duckai.settings.title" = "Duck.ai";
@@ -2332,11 +2278,11 @@
 /* No comment provided by engineer. */
 "onboardingWelcomeHeader" = "Bine ai venit la DuckDuckGo!";
 
-/* No comment provided by engineer. */
-"Open tabs remain unaffected by this change.  Please close all tabs for this setting to take effect." = "Filele deschise nu sunt afectate de această schimbare.  Închide toate filele pentru ca această setare să intre în vigoare.";
-
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Aplicația necesară pentru a deschide acel link nu poate fi găsită";
+
+/* No comment provided by engineer. */
+"Please close all tabs for this setting to take effect." = "Închide toate filele pentru ca această setare să intre în vigoare.";
 
 /* Activate button */
 "pm.activate" = "Reactivează";
@@ -2560,6 +2506,9 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Afișați adresa completă a site-ului";
 
+/* Settings screen text for showing AI Chat in various places in the app */
+"settings.aichat.shortcuts" = "Scurtături";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Întotdeauna activat";
 
@@ -2631,6 +2580,9 @@
 
 /* Settings cell for Email Protection */
 "settings.emailProtection.description" = "Blochează tehnologiile de urmărire prin e-mail și ascunde-ți adresa";
+
+/* Settings screen cell text for enabling AI chat */
+"settings.enable.aichat" = "Activează Duck.ai";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Activează Email Protection";

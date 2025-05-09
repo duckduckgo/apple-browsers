@@ -136,46 +136,46 @@ extension Preferences {
                                 }
                             }
                         }
-                        HStack {
-                            Picker(UserText.pinnedTabs, selection: Binding(
-                                get: { tabsModel.pinnedTabsMode },
-                                set: { newValue in
-                                    if newValue == .shared {
-                                        // Attempting to switch to the shared mode that requires warning in case
-                                        // the app is going to combine existing pinned tabs
-                                        if pinnedTabsManagerProvider.areDifferentPinnedTabsPresent {
-                                            pendingSelection = newValue
-                                            showWarningAlert = true
-                                        } else {
-                                            setPinnedTabsMode(newValue)
-                                        }
-                                    } else {
-                                        setPinnedTabsMode(newValue)
-                                    }
-                                }
-                            )) {
-                                ForEach(PinnedTabsMode.allCases, id: \.self) { mode in
-                                    Text(UserText.pinnedTabsMode(for: mode)).tag(mode)
-                                }
-                            }
-                        }
-                        .alert(isPresented: $showWarningAlert) {
-                            Alert(
-                                title: Text(UserText.pinnedTabsWarningTitle),
-                                message: Text(UserText.pinnedTabsWarningMessage),
-                                primaryButton: .default(Text(UserText.ok)) {
-                                    // Apply the change only if confirmed
-                                    if let selection = pendingSelection {
-                                        tabsModel.pinnedTabsMode = selection
-
-                                        firePinnedTabsPixel(selection)
-                                    }
-                                },
-                                secondaryButton: .cancel {
-                                    pendingSelection = nil
-                                }
-                            )
-                        }
+//                        HStack {
+//                            Picker(UserText.pinnedTabs, selection: Binding(
+//                                get: { tabsModel.pinnedTabsMode },
+//                                set: { newValue in
+//                                    if newValue == .shared {
+//                                        // Attempting to switch to the shared mode that requires warning in case
+//                                        // the app is going to combine existing pinned tabs
+//                                        if pinnedTabsManagerProvider.areDifferentPinnedTabsPresent {
+//                                            pendingSelection = newValue
+//                                            showWarningAlert = true
+//                                        } else {
+//                                            setPinnedTabsMode(newValue)
+//                                        }
+//                                    } else {
+//                                        setPinnedTabsMode(newValue)
+//                                    }
+//                                }
+//                            )) {
+//                                ForEach(PinnedTabsMode.allCases, id: \.self) { mode in
+//                                    Text(UserText.pinnedTabsMode(for: mode)).tag(mode)
+//                                }
+//                            }
+//                        }
+//                        .alert(isPresented: $showWarningAlert) {
+//                            Alert(
+//                                title: Text(UserText.pinnedTabsWarningTitle),
+//                                message: Text(UserText.pinnedTabsWarningMessage),
+//                                primaryButton: .default(Text(UserText.ok)) {
+//                                    // Apply the change only if confirmed
+//                                    if let selection = pendingSelection {
+//                                        tabsModel.pinnedTabsMode = selection
+//
+//                                        firePinnedTabsPixel(selection)
+//                                    }
+//                                },
+//                                secondaryButton: .cancel {
+//                                    pendingSelection = nil
+//                                }
+//                            )
+//                        }
                     }
                 }
 

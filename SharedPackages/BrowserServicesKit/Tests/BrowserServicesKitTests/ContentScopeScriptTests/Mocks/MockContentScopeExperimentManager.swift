@@ -20,9 +20,9 @@ import Foundation
 @testable import BrowserServicesKit
 
 class MockContentScopeExperimentManager: ContentScopeExperimentsManaging {
-    var experiments: Experiments = [:]
+    var allActiveContentScopeExperiments: Experiments = [:]
 
     func resolveContentScopeScriptActiveExperiments() -> Experiments {
-        return experiments
+        return allActiveContentScopeExperiments
     }
 }

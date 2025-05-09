@@ -29,7 +29,7 @@ class ContentScopePropertiesTests: XCTestCase {
         )
 
         let experimentManager = MockContentScopeExperimentManager()
-        experimentManager.experiments = ["test": testExperimentData]
+        experimentManager.allActiveContentScopeExperiments = ["test": testExperimentData]
 
         let properties = ContentScopeProperties(
             gpcEnabled: true,

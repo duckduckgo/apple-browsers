@@ -250,8 +250,8 @@ struct JsonToRemoteMessageModelMapper {
             return .newForMacAndWindows
         case .privacyShield:
             return .privacyShield
-        case .duckAi:
-            return .duckAi
+        case .aiChat:
+            return .aiChat
         case .none:
             return .announce
         }

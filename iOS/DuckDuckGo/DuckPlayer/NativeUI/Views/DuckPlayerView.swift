@@ -134,7 +134,7 @@ struct DuckPlayerView: View {
                 // Show the welcome message if needed
                 welcomeMessage
 
-                if !viewModel.shouldShowWelcomeMessage {
+                if !viewModel.shouldShowWelcomeMessage && !viewModel.isLandscape {
                     // Toggle Controls Button
                     ZStack {
                         Circle()
@@ -321,7 +321,7 @@ struct DuckPlayerView: View {
 
     @ViewBuilder
     private var welcomeMessage: some View {
-        if viewModel.shouldShowWelcomeMessage {
+        if viewModel.shouldShowWelcomeMessage && !viewModel.isLandscape {
             ZStack(alignment: .topTrailing) {
                 VStack(alignment: .leading) {
                     HStack {

@@ -123,7 +123,7 @@ extension SubscriptionUserScript {
             static let notSubscribed: Self = .init(isSubscribed: false, billingPeriod: nil, startedAt: nil, expiresOrRenewsAt: nil, paymentPlatform: nil, status: nil)
 
             init(_ subscription: PrivacyProSubscription) {
-                isSubscribed = subscription.isActive
+                isSubscribed = true
                 billingPeriod = subscription.billingPeriod.rawValue
                 startedAt = Int(subscription.startedAt.timeIntervalSince1970 * 1000)
                 expiresOrRenewsAt = Int(subscription.expiresOrRenewsAt.timeIntervalSince1970 * 1000)

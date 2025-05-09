@@ -193,7 +193,6 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
                 break
             }
         }
-        clearSubscriptionCache()
     }
 
     public var canPurchase: Bool {
@@ -267,7 +266,6 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
     public func loadInitialData() async {
         Logger.subscription.log("Loading initial data...")
-
         do {
             let subscription = try await getSubscription(cachePolicy: .reloadIgnoringLocalCacheData)
             Logger.subscription.log("Subscription is \(subscription.isActive ? "active" : "not active", privacy: .public)")

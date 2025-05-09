@@ -193,6 +193,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
                 break
             }
         }
+        clearSubscriptionCache()
     }
 
     public var canPurchase: Bool {
@@ -268,8 +269,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         Logger.subscription.log("Loading initial data...")
 
         do {
-            _ = try await currentSubscriptionFeatures(forceRefresh: true)
-            let subscription = try await getSubscription(cachePolicy: .returnCacheDataDontLoad)
+            let subscription = try await getSubscription(cachePolicy: .reloadIgnoringLocalCacheData)
             Logger.subscription.log("Subscription is \(subscription.isActive ? "active" : "not active", privacy: .public)")
         } catch SubscriptionEndpointServiceError.noData {
             Logger.subscription.log("No Subscription available")

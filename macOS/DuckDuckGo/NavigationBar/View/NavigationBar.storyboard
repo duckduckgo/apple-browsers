@@ -13,19 +13,8 @@
                     <view key="view" translatesAutoresizingMaskIntoConstraints="NO" id="hYV-nu-QIp" customClass="ColorView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
                         <rect key="frame" x="0.0" y="0.0" width="1675" height="68"/>
                         <subviews>
-                            <customView translatesAutoresizingMaskIntoConstraints="NO" id="bSB-ca-LaM" customClass="ColorView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
+                            <customView translatesAutoresizingMaskIntoConstraints="NO" id="bSB-ca-LaM" customClass="MouseOverView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="0.0" width="1675" height="68"/>
-                                <userDefinedRuntimeAttributes>
-                                    <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
-                                        <integer key="value" value="10"/>
-                                    </userDefinedRuntimeAttribute>
-                                </userDefinedRuntimeAttributes>
-                            </customView>
-                            <customView translatesAutoresizingMaskIntoConstraints="NO" id="hKO-rk-YAq" customClass="ColorView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
-                                <rect key="frame" x="0.0" y="0.0" width="1675" height="10"/>
-                                <constraints>
-                                    <constraint firstAttribute="height" constant="10" id="mrM-DW-5ph"/>
-                                </constraints>
                             </customView>
                             <customView translatesAutoresizingMaskIntoConstraints="NO" id="EQw-GG-GMA" customClass="WindowDraggingView" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
                                 <rect key="frame" x="0.0" y="0.0" width="1675" height="68"/>
@@ -380,10 +369,8 @@
                         </subviews>
                         <constraints>
                             <constraint firstAttribute="bottom" secondItem="EQw-GG-GMA" secondAttribute="bottom" id="4ye-CO-dDp"/>
-                            <constraint firstItem="hKO-rk-YAq" firstAttribute="leading" secondItem="hYV-nu-QIp" secondAttribute="leading" id="5vh-ed-cb2"/>
                             <constraint firstAttribute="trailing" secondItem="bSB-ca-LaM" secondAttribute="trailing" id="7kW-CR-HTQ"/>
                             <constraint firstItem="aWu-Jm-Oaz" firstAttribute="centerY" secondItem="hYV-nu-QIp" secondAttribute="centerY" id="8Jg-mH-CHM"/>
-                            <constraint firstAttribute="trailing" secondItem="hKO-rk-YAq" secondAttribute="trailing" id="AgA-8K-e9T"/>
                             <constraint firstAttribute="bottom" secondItem="bSB-ca-LaM" secondAttribute="bottom" id="Exa-XS-C2I"/>
                             <constraint firstAttribute="height" constant="68" id="KjG-nj-hqf"/>
                             <constraint firstItem="eEh-kf-smR" firstAttribute="leading" secondItem="hYV-nu-QIp" secondAttribute="leading" constant="12" id="MQ7-vv-adb"/>
@@ -395,7 +382,6 @@
                             <constraint firstItem="eEh-kf-smR" firstAttribute="centerY" secondItem="Wba-nA-FYj" secondAttribute="centerY" id="fcj-rV-KVD"/>
                             <constraint firstItem="EQw-GG-GMA" firstAttribute="leading" secondItem="hYV-nu-QIp" secondAttribute="leading" id="hpe-5Y-XTJ"/>
                             <constraint firstItem="gIy-el-24l" firstAttribute="top" secondItem="hYV-nu-QIp" secondAttribute="top" constant="6" id="km5-nE-hfK"/>
-                            <constraint firstAttribute="bottom" secondItem="hKO-rk-YAq" secondAttribute="bottom" id="nJL-e3-dtP"/>
                             <constraint firstAttribute="trailing" secondItem="EQw-GG-GMA" secondAttribute="trailing" id="oYK-XH-0iN"/>
                             <constraint firstItem="gIy-el-24l" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="eEh-kf-smR" secondAttribute="trailing" constant="12" id="rfA-3F-QAf"/>
                             <constraint firstItem="gIy-el-24l" firstAttribute="width" secondItem="hYV-nu-QIp" secondAttribute="width" multiplier="0.6" priority="250" id="rqL-Vd-lnY"/>
@@ -429,7 +415,6 @@
                         <outlet property="optionsButton" destination="iIF-Ky-unr" id="vvZ-mm-idv"/>
                         <outlet property="overflowButton" destination="NvC-7a-4eG" id="uvf-br-tuC"/>
                         <outlet property="passwordManagementButton" destination="1nW-I1-nut" id="wDs-oE-b7d"/>
-                        <outlet property="radiusCornerCoverColorView" destination="hKO-rk-YAq" id="pWe-PJ-TS4"/>
                         <outlet property="refreshOrStopButton" destination="B2U-XM-Vo0" id="EaI-Kz-Qwi"/>
                     </connections>
                 </viewController>

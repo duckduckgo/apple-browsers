@@ -66,9 +66,8 @@ final class NavigationBarViewController: NSViewController {
     @IBOutlet var buttonsTopConstraint: NSLayoutConstraint!
     @IBOutlet var addressBarMinWidthConstraint: NSLayoutConstraint!
     @IBOutlet var logoWidthConstraint: NSLayoutConstraint!
-    @IBOutlet var backgroundColorView: ColorView!
+    @IBOutlet var backgroundColorView: MouseOverView!
     @IBOutlet var backgroundBaseColorView: ColorView!
-    @IBOutlet var radiusCornerCoverColorView: ColorView!
 
     private let downloadListCoordinator: DownloadListCoordinator
 
@@ -777,11 +776,14 @@ final class NavigationBarViewController: NSViewController {
         if visualStyle.areNavigationBarCornersRound {
             backgroundBaseColorView.backgroundColor = visualStyle.baseBackgroundColor
             backgroundColorView.backgroundColor = visualStyle.navigationBackgroundColor
-            radiusCornerCoverColorView.backgroundColor = visualStyle.navigationBackgroundColor
+            backgroundColorView.cornerRadius = 10
+            backgroundColorView.maskedCorners = [
+                .layerMinXMaxYCorner,
+                .layerMaxXMaxYCorner
+            ]
         } else {
             backgroundBaseColorView.backgroundColor = visualStyle.navigationBackgroundColor
             backgroundColorView.isHidden = true
-            radiusCornerCoverColorView.isHidden = true
         }
     }
 

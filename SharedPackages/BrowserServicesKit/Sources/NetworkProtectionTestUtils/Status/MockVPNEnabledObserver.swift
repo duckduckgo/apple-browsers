@@ -20,7 +20,7 @@ import Combine
 import Foundation
 import NetworkProtection
 
-public final class MockVPNEnabledObserver: VPNEnabledObserver {    
+public final class MockVPNEnabledObserver: VPNEnabledObserver {
     public init() {}
     public let subject = CurrentValueSubject<Bool, Never>(false)
     lazy public var publisher = subject.eraseToAnyPublisher()

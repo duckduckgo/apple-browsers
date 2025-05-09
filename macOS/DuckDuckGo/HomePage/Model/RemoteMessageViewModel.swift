@@ -149,7 +149,7 @@ private extension RemoteMessageModelType {
                 return .remoteMessageAppUpdate
             case .privacyShield:
                 return .remoteMessagePrivacyShield
-            case .duckAi:
+            case .aiChat:
                 return .remoteMessageDuckAi
             case .macComputer, .newForMacAndWindows:
                 return nil

@@ -103,7 +103,6 @@ public class DataBrokerProtectionIOSManagerProvider {
         let localBrokerService = LocalBrokerJSONService(vault: vault, pixelHandler: sharedPixelsHandler)
 
         let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault, localBrokerService: localBrokerService)
-        let dataManager = DataBrokerProtectionDataManager(database: database)
 
         let operationQueue = OperationQueue()
         let operationsBuilder = DefaultDataBrokerOperationsCreator()

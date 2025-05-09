@@ -58,18 +58,12 @@ struct NewTabPageShadowScrollView<Content: View>: UIViewRepresentable {
             hostingView.widthAnchor.constraint(equalTo: scrollView.widthAnchor)
         ])
 
-        let topShadowView = CompositeShadowView(shadows: [
-            .init(color: shadowColor, radius: 12, offset: CGSize(width: 0, height: 4)),
-            .init(color: shadowColor, radius: 48, offset: CGSize(width: 0, height: 16))
-        ])
+        let topShadowView = makeShadowView(isTop: true)
         topShadowView.backgroundColor = .white
         topShadowView.translatesAutoresizingMaskIntoConstraints = false
         hostingView.addSubview(topShadowView)
 
-        let bottomShadowView = CompositeShadowView(shadows: [
-            .init(color: shadowColor, radius: 12, offset: CGSize(width: 0, height: -4)),
-            .init(color: shadowColor, radius: 48, offset: CGSize(width: 0, height: -16))
-        ])
+        let bottomShadowView = makeShadowView(isTop: false)
         bottomShadowView.backgroundColor = .white
         bottomShadowView.translatesAutoresizingMaskIntoConstraints = false
         hostingView.addSubview(bottomShadowView)
@@ -78,12 +72,12 @@ struct NewTabPageShadowScrollView<Content: View>: UIViewRepresentable {
             topShadowView.leadingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.leadingAnchor),
             topShadowView.trailingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.trailingAnchor),
             topShadowView.bottomAnchor.constraint(equalTo: scrollView.frameLayoutGuide.topAnchor),
-            topShadowView.heightAnchor.constraint(equalToConstant: 44),
+            topShadowView.heightAnchor.constraint(equalToConstant: ShadowScrollViewMetrics.shadowViewHeight),
 
             bottomShadowView.leadingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.leadingAnchor),
             bottomShadowView.trailingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.trailingAnchor),
             bottomShadowView.topAnchor.constraint(equalTo: scrollView.frameLayoutGuide.bottomAnchor),
-            bottomShadowView.heightAnchor.constraint(equalToConstant: 44)
+            bottomShadowView.heightAnchor.constraint(equalToConstant: ShadowScrollViewMetrics.shadowViewHeight)
         ])
 
         context.coordinator.topShadowView = topShadowView
@@ -96,6 +90,21 @@ struct NewTabPageShadowScrollView<Content: View>: UIViewRepresentable {
     
     func updateUIView(_ uiView: UIScrollView, context: Context) {
         context.coordinator.updateShadowVisibility(scrollView: uiView)
+    }
+
+    private func makeShadowView(isTop: Bool) -> UIView {
+
+        let offsetMultiplier: CGFloat = isTop ? 1 : -1
+
+        let shadowView = CompositeShadowView(shadows: [
+            .init(color: shadowColor,
+                  radius: ShadowScrollViewMetrics.ShadowLayer1.radius,
+                  offset: CGSize(width: 0, height: offsetMultiplier * ShadowScrollViewMetrics.ShadowLayer1.yOffset)),
+            .init(color: shadowColor, radius: ShadowScrollViewMetrics.ShadowLayer2.radius,
+                  offset: CGSize(width: 0, height: offsetMultiplier * ShadowScrollViewMetrics.ShadowLayer2.yOffset))
+        ])
+
+        return shadowView
     }
 
     func makeCoordinator() -> Coordinator {
@@ -131,5 +140,20 @@ struct NewTabPageShadowScrollView<Content: View>: UIViewRepresentable {
 
             bottomShadowView?.alpha = bottomOpacity
         }
+    }
+}
+
+// Defined outside because generic type does not support static stored properties
+private struct ShadowScrollViewMetrics {
+    static let shadowViewHeight: CGFloat = 44
+
+    struct ShadowLayer1 {
+        static let radius: CGFloat = 12
+        static let yOffset: CGFloat = 4
+    }
+
+    struct ShadowLayer2 {
+        static let radius: CGFloat = 48
+        static let yOffset: CGFloat = 16
     }
 }

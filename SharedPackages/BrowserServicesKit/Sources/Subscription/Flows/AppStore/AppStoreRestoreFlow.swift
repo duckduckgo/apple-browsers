@@ -20,13 +20,34 @@ import Foundation
 import StoreKit
 import os.log
 
-public enum AppStoreRestoreFlowError: Swift.Error, Equatable {
+public enum AppStoreRestoreFlowError: Swift.Error, Equatable, LocalizedError {
     case missingAccountOrTransactions
     case pastTransactionAuthenticationError
     case failedToObtainAccessToken
     case failedToFetchAccountDetails
     case failedToFetchSubscriptionDetails
     case subscriptionExpired(accountDetails: RestoredAccountDetails)
+
+    public var errorDescription: String? {
+        switch self {
+        case .missingAccountOrTransactions:
+            return "No Apple ID or transactions found."
+        case .pastTransactionAuthenticationError:
+            return "Failed to authenticate with Apple ID."
+        case .failedToObtainAccessToken:
+            return "Failed to obtain access token."
+        case .failedToFetchAccountDetails:
+            return "Failed to fetch account details."
+        case .failedToFetchSubscriptionDetails:
+            return "Failed to fetch subscription details."
+        case .subscriptionExpired(accountDetails: let accountDetails):
+            return "Subscription expired for \(accountDetails.email ?? "unknown email")"
+        }
+    }
+
+    public var localizedDescription: String {
+        errorDescription ?? "Unknown"
+    }
 }
 
 public struct RestoredAccountDetails: Equatable {

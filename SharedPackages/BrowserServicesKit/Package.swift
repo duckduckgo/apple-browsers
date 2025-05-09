@@ -375,7 +375,8 @@ let package = Package(
             name: "Subscription",
             dependencies: [
                 "Common",
-                "Networking"
+                "Networking",
+                "UserScript"
             ],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))

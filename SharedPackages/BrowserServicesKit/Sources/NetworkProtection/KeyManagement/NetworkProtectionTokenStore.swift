@@ -167,47 +167,50 @@ public final class NetworkProtectionKeychainTokenStore: NetworkProtectionTokenSt
 /// Writing a new auth token will replace the old one.
 public final class NetworkProtectionKeychainTokenStoreV2: AuthTokenStoring {
     private let keychainStore: NetworkProtectionKeychainStore
-    private let errorEvents: EventMapping<NetworkProtectionError>?
+    private let errorEventsHandler: EventMapping<NetworkProtectionError>?
 
     public struct Defaults {
+        static let bundleID = Bundle.main.bundleIdentifier ?? "com.duckduckgo.networkprotection"
         static let tokenStoreEntryLabel = "DuckDuckGo Network Protection Auth Token Container"
-        public static let tokenStoreService = "com.duckduckgo.networkprotection.authTokenContainer"
-        static let tokenStoreName = "com.duckduckgo.networkprotection.tokenContainer"
+        public static let tokenStoreService = "\(bundleID).authTokenContainer"
+        static let tokenStoreName = "\(bundleID).tokenContainer"
     }
 
     /// - isSubscriptionEnabled: Controls whether the subscription access token is used to authenticate with the NetP backend
     /// - accessTokenProvider: Defines how to actually retrieve the subscription access token
     public init(keychainType: KeychainType,
                 serviceName: String = Defaults.tokenStoreService,
-                errorEvents: EventMapping<NetworkProtectionError>?
+                errorEventsHandler: EventMapping<NetworkProtectionError>?
     ) {
         keychainStore = NetworkProtectionKeychainStore(label: Defaults.tokenStoreEntryLabel,
                                                        serviceName: serviceName,
                                                        keychainType: keychainType)
-        self.errorEvents = errorEvents
+        self.errorEventsHandler = errorEventsHandler
     }
 
-    public var tokenContainer: Networking.TokenContainer? {
-        get {
-            do {
-                if let data = try keychainStore.readData(named: Defaults.tokenStoreName) as? NSData {
-                    return try TokenContainer(with: data)
-                }
-            } catch {
-                handle(error)
+    public func getTokenContainer() throws -> Networking.TokenContainer? {
+        do {
+            if let data = try keychainStore.readData(named: Defaults.tokenStoreName) as? NSData {
+                return try TokenContainer(with: data)
             }
-            return nil
+        } catch {
+            handle(error)
+            throw error
         }
-        set(newValue) {
-            do {
-                if newValue == nil {
-                    try keychainStore.deleteData(named: Defaults.tokenStoreName)
-                } else if let data = newValue?.data as? Data {
-                    try keychainStore.writeData(data, named: Defaults.tokenStoreName)
-                }
-            } catch {
-                handle(error)
+        return nil
+    }
+
+    public func saveTokenContainer(_ tokenContainer: Networking.TokenContainer?) throws {
+        do {
+            guard let tokenContainer,
+                  let data = tokenContainer.data as? Data else {
+                try keychainStore.deleteData(named: Defaults.tokenStoreName)
+                return
             }
+            try keychainStore.writeData(data, named: Defaults.tokenStoreName)
+        } catch {
+            handle(error)
+            throw error
         }
     }
 
@@ -217,11 +220,11 @@ public final class NetworkProtectionKeychainTokenStoreV2: AuthTokenStoring {
         guard let error = error as? NetworkProtectionKeychainStoreError else {
             assertionFailure("Failed to cast Network Protection Token store error")
             Logger.networkProtection.fault("Failed to cast Network Protection Keychain store error")
-            errorEvents?.fire(NetworkProtectionError.unhandledError(function: #function, line: #line, error: error))
+            errorEventsHandler?.fire(NetworkProtectionError.unhandledError(function: #function, line: #line, error: error))
             return
         }
 
-        errorEvents?.fire(error.networkProtectionError)
+        errorEventsHandler?.fire(error.networkProtectionError)
     }
 }
 

@@ -177,6 +177,8 @@
 		317DF60B2D01E7D600DE0145 /* RoundedPageSheetPresentationAnimator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 317DF60A2D01E7D600DE0145 /* RoundedPageSheetPresentationAnimator.swift */; };
 		317F5F982C94A9EB0081666F /* MarketplaceAdPostbackStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 317F5F972C94A9EB0081666F /* MarketplaceAdPostbackStorage.swift */; };
 		31860A5B2C57ED2D005561F5 /* DuckPlayerStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31860A5A2C57ED2D005561F5 /* DuckPlayerStorage.swift */; };
+		319082EE2DCCCAA700721BD0 /* AIChatInputBoxHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 319082ED2DCCCAA700721BD0 /* AIChatInputBoxHandler.swift */; };
+		319082F12DCCCAD100721BD0 /* AIChatInputBoxViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 319082F02DCCCAD100721BD0 /* AIChatInputBoxViewModel.swift */; };
 		31951E8E2823003200CAF535 /* AutofillLoginDetailsHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31951E8D2823003200CAF535 /* AutofillLoginDetailsHeaderView.swift */; };
 		319A37152829A55F0079FBCE /* AutofillListItemTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 319A37142829A55F0079FBCE /* AutofillListItemTableViewCell.swift */; };
 		319A37172829C8AD0079FBCE /* UITableViewExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 319A37162829C8AD0079FBCE /* UITableViewExtension.swift */; };
@@ -201,6 +203,7 @@
 		31C3149F2D2EEB44009A412A /* AIChatUserScript.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C3149C2D2EEB44009A412A /* AIChatUserScript.swift */; };
 		31C314A02D2EEB44009A412A /* AIChatUserScriptHandling.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C3149D2D2EEB44009A412A /* AIChatUserScriptHandling.swift */; };
 		31C314A22D2EF614009A412A /* AIChatViewControllerManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C314A12D2EF60A009A412A /* AIChatViewControllerManager.swift */; };
+		31C5603C2DCBB6290094B0F8 /* AIChatInputBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C5603B2DCBB6290094B0F8 /* AIChatInputBox.swift */; };
 		31C70B5528045E3500FB6AD1 /* SecureVaultReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C70B5428045E3500FB6AD1 /* SecureVaultReporter.swift */; };
 		31C70B5B2804C61000FB6AD1 /* SaveAutofillLoginManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C70B5A2804C61000FB6AD1 /* SaveAutofillLoginManager.swift */; };
 		31C7D71C27515A6300A95D0A /* MockVoiceSearchHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31C7D71B27515A6300A95D0A /* MockVoiceSearchHelper.swift */; };
@@ -1806,6 +1809,8 @@
 		317DF60A2D01E7D600DE0145 /* RoundedPageSheetPresentationAnimator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoundedPageSheetPresentationAnimator.swift; sourceTree = "<group>"; };
 		317F5F972C94A9EB0081666F /* MarketplaceAdPostbackStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarketplaceAdPostbackStorage.swift; sourceTree = "<group>"; };
 		31860A5A2C57ED2D005561F5 /* DuckPlayerStorage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DuckPlayerStorage.swift; sourceTree = "<group>"; };
+		319082ED2DCCCAA700721BD0 /* AIChatInputBoxHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatInputBoxHandler.swift; sourceTree = "<group>"; };
+		319082F02DCCCAD100721BD0 /* AIChatInputBoxViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatInputBoxViewModel.swift; sourceTree = "<group>"; };
 		31951E8D2823003200CAF535 /* AutofillLoginDetailsHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillLoginDetailsHeaderView.swift; sourceTree = "<group>"; };
 		319A37142829A55F0079FBCE /* AutofillListItemTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillListItemTableViewCell.swift; sourceTree = "<group>"; };
 		319A37162829C8AD0079FBCE /* UITableViewExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UITableViewExtension.swift; sourceTree = "<group>"; };
@@ -1828,6 +1833,7 @@
 		31C3149C2D2EEB44009A412A /* AIChatUserScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatUserScript.swift; sourceTree = "<group>"; };
 		31C3149D2D2EEB44009A412A /* AIChatUserScriptHandling.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatUserScriptHandling.swift; sourceTree = "<group>"; };
 		31C314A12D2EF60A009A412A /* AIChatViewControllerManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatViewControllerManager.swift; sourceTree = "<group>"; };
+		31C5603B2DCBB6290094B0F8 /* AIChatInputBox.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatInputBox.swift; sourceTree = "<group>"; };
 		31C70B5428045E3500FB6AD1 /* SecureVaultReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecureVaultReporter.swift; sourceTree = "<group>"; };
 		31C70B5A2804C61000FB6AD1 /* SaveAutofillLoginManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveAutofillLoginManager.swift; sourceTree = "<group>"; };
 		31C7D71B27515A6300A95D0A /* MockVoiceSearchHelper.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MockVoiceSearchHelper.swift; sourceTree = "<group>"; };
@@ -4155,6 +4161,7 @@
 		311C79E22CF790270021196A /* AIChat */ = {
 			isa = PBXGroup;
 			children = (
+				319082EF2DCCCAAC00721BD0 /* InputBox */,
 				31D2D2A32D40F98800549D12 /* WidgetSourceType.swift */,
 				31C314A32D2EF9DF009A412A /* UserScript */,
 				31D2D2A12D40F7E900549D12 /* AIChatDeepLinkHandler.swift */,
@@ -4257,6 +4264,16 @@
 				317DF6072D01E7B900DE0145 /* RoundedPageSheetContainerViewController.swift */,
 			);
 			path = RoundedPageContainer;
+			sourceTree = "<group>";
+		};
+		319082EF2DCCCAAC00721BD0 /* InputBox */ = {
+			isa = PBXGroup;
+			children = (
+				319082F02DCCCAD100721BD0 /* AIChatInputBoxViewModel.swift */,
+				31C5603B2DCBB6290094B0F8 /* AIChatInputBox.swift */,
+				319082ED2DCCCAA700721BD0 /* AIChatInputBoxHandler.swift */,
+			);
+			path = InputBox;
 			sourceTree = "<group>";
 		};
 		31951E9328230D8900CAF535 /* Shared */ = {
@@ -9057,6 +9074,7 @@
 				F1849C6B2D6E3C98000589A4 /* DebugScreen.swift in Sources */,
 				F1849C6C2D6E3C98000589A4 /* DebugScreensViewModel.swift in Sources */,
 				F1849C6D2D6E3C98000589A4 /* DebugScreensViewController.swift in Sources */,
+				319082F12DCCCAD100721BD0 /* AIChatInputBoxViewModel.swift in Sources */,
 				F1849C6E2D6E3C98000589A4 /* DebugScreensViewModel+Screens.swift in Sources */,
 				65BD16392D8DA439000795DE /* DuckPlayerDebugSettingsView.swift in Sources */,
 				F4D9C4FA25117A0F00814B71 /* HomeMessageStorage.swift in Sources */,
@@ -9278,6 +9296,7 @@
 				65A6848B2D6F904A0029FE9E /* DuckPlayerContainer.swift in Sources */,
 				56D060262C359D2E003BAEB5 /* ContextualOnboardingDialogs.swift in Sources */,
 				9F8E0F382CCFAA8A001EA7C5 /* AddToDockPromoView.swift in Sources */,
+				31C5603C2DCBB6290094B0F8 /* AIChatInputBox.swift in Sources */,
 				9F254B032CF9FB2E0063B308 /* SpecialErrorPageNavigationDelegate.swift in Sources */,
 				C160544129D6044D00B715A1 /* AutofillInterfaceUsernameTruncator.swift in Sources */,
 				31C70B5528045E3500FB6AD1 /* SecureVaultReporter.swift in Sources */,
@@ -9481,6 +9500,7 @@
 				C13F3F6A2B7F883A0083BE40 /* AuthConfirmationPromptViewController.swift in Sources */,
 				851624C72B96389D002D5CD7 /* HistoryDebugViewController.swift in Sources */,
 				8540BBA22440857A00017FE4 /* FireproofingWorking.swift in Sources */,
+				319082EE2DCCCAA700721BD0 /* AIChatInputBoxHandler.swift in Sources */,
 				0283A2012C6E46E300508FBD /* BrokenSitePromptLimiterStore.swift in Sources */,
 				85DFEDF924CF3D0E00973FE7 /* TabsBarCell.swift in Sources */,
 				851672D32BED23FE00592F24 /* AutocompleteViewModel.swift in Sources */,

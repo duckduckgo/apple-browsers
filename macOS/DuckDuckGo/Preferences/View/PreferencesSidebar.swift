@@ -71,8 +71,12 @@ extension Preferences {
 
                     if let status = protectionStatus.status {
                         StatusIndicatorView(status: status)
+                            .frame(minWidth: 0, alignment: .trailing)
+                            .layoutPriority(-1)
                     }
                 }
+                .lineLimit(1)
+                .truncationMode(.tail)
             }
             .buttonStyle(SidebarItemButtonStyle(isSelected: isSelected))
             .accessibilityIdentifier("PreferencesSidebar.\(pane.id.rawValue)Button")
@@ -89,6 +93,7 @@ extension Preferences {
                 button.font = PreferencesUI_macOS.Const.Fonts.popUpButton
                 button.setButtonType(.momentaryLight)
                 button.isBordered = false
+                button.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
                 for (index, type) in model.tabSwitcherTabs.enumerated() {
                     guard let tabTitle = type.title else {

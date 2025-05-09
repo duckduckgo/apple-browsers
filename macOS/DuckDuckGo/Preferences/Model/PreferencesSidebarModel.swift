@@ -21,6 +21,7 @@ import Common
 import Combine
 import DDGSync
 import SwiftUI
+import Networking
 import Subscription
 import NetworkProtectionIPC
 import LoginItems
@@ -266,12 +267,21 @@ final class PreferencesSidebarModel: ObservableObject {
 
         if subscriptionManager.isUserAuthenticated {
             // Calculate current user entitlements
-            var currentUserEntitlements: [Entitlement.ProductName] = []
-            let entitlements: [Entitlement.ProductName] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .identityTheftRestorationGlobal]
+            var currentUserEntitlements: [SubscriptionEntitlement] = []
+            let entitlements: [SubscriptionEntitlement] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .identityTheftRestorationGlobal]
 
-            for entitlement in entitlements {
-                if let hasEntitlement = try? await subscriptionManager.isEnabled(feature: entitlement), hasEntitlement {
+            if let subscriptionManagerV2 = subscriptionManager as? SubscriptionManagerV2,
+               let tokenContainer = try? await subscriptionManagerV2.getTokenContainer(policy: .localValid) {
+
+                for entitlement in entitlements where tokenContainer.decodedAccessToken.hasEntitlement(entitlement) {
                     currentUserEntitlements.append(entitlement)
+
+                }
+            } else {
+                for entitlement in entitlements {
+                    if let hasEntitlement = try? await subscriptionManager.isEnabled(feature: entitlement.product), hasEntitlement == true {
+                        currentUserEntitlements.append(entitlement)
+                    }
                 }
             }
 

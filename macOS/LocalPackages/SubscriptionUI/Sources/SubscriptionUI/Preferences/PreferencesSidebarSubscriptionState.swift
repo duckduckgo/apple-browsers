@@ -18,12 +18,13 @@
 
 import Foundation
 import Subscription
+import Networking
 import PreferencesUI_macOS
 
 public struct PreferencesSidebarSubscriptionState: Equatable {
     public let hasSubscription: Bool
     public let subscriptionFeatures: [Entitlement.ProductName]?
-    public let userEntitlements: [Entitlement.ProductName]
+    public let userEntitlements: [SubscriptionEntitlement]
     public let shouldHideSubscriptionPurchase: Bool
 
     public let personalInformationRemovalStatus: StatusIndicator
@@ -31,7 +32,7 @@ public struct PreferencesSidebarSubscriptionState: Equatable {
 
     public init(hasSubscription: Bool,
                 subscriptionFeatures: [Entitlement.ProductName]?,
-                userEntitlements: [Entitlement.ProductName],
+                userEntitlements: [SubscriptionEntitlement],
                 shouldHideSubscriptionPurchase: Bool,
                 personalInformationRemovalStatus: StatusIndicator,
                 identityTheftRestorationStatus: StatusIndicator) {

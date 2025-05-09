@@ -239,7 +239,7 @@ hasAnyEntitlement: \(hasAnyEntitlement)
 
     @MainActor
     func refreshSubscriptionPendingState() {
-        
+
         if subscriptionManager.currentEnvironment.purchasePlatform == .appStore {
             if #available(macOS 12.0, *) {
                 Task {

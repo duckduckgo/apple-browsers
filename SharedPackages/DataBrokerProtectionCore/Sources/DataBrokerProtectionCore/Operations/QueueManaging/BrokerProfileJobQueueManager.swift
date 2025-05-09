@@ -220,7 +220,7 @@ private extension BrokerProfileJobQueueManager {
 
         updateBrokerData()
 
-        addJobs(for:type,
+        addJobs(for: type,
                 priorityDate: mode.priorityDate,
                 showWebView: showWebView,
                 jobDependencies: jobDependencies,

@@ -360,7 +360,7 @@ struct BrokerProfileScanSubJob {
             Logger.dataBrokerProtection.log("Can't update operation date after error")
         }
 
-        Logger.dataBrokerProtection.error("Error on operation : \(error.localizedDescription, privacy: .public)")
+        Logger.dataBrokerProtection.error("Error on operation: \(error.localizedDescription, privacy: .public)")
     }
 
 }

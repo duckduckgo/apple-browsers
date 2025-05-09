@@ -88,13 +88,13 @@ extension URL {
         guard isYoutubeWatch, let fragment = fragment, !fragment.isEmpty else {
             return false
         }
-        
+
         // Ensure the URL has a video ID parameter
         guard let components = URLComponents(url: self, resolvingAgainstBaseURL: false),
               components.queryItems?.contains(where: { $0.name == "v" }) == true else {
             return false
         }
-        
+
         return true
     }
 

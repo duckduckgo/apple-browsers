@@ -112,7 +112,7 @@ struct DuckPlayerView: View {
                     )
                 }
                 .layoutPriority(1)
-                
+
                 Spacer(minLength: LayoutConstants.controlsSpacing)
 
                 // Controls Container
@@ -140,7 +140,7 @@ struct DuckPlayerView: View {
                         Circle()
                             .fill(Color.gray.opacity(0.5))
                             .frame(width: LayoutConstants.controlButtonSize, height: LayoutConstants.controlButtonSize)
-                        
+
                         Button(action: {
                             withAnimation(.spring(response: LayoutConstants.animationResponseTime, dampingFraction: LayoutConstants.animationDampingFraction)) {
                                 controlsVisibility.toggle()

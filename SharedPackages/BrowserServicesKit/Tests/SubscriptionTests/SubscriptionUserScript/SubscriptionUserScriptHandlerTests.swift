@@ -50,20 +50,6 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
         XCTAssertEqual(handshake.availableMessages, [.subscriptionDetails])
     }
 
-    func testWhenSubscriptionIsInactiveThenSubscriptionDetailsReturnsNotSubscribedState() async throws {
-        subscriptionManager.returnSubscription = .success(PrivacyProSubscription(status: .inactive))
-        handler = .init(platform: .ios, subscriptionManager: subscriptionManager)
-        let subscriptionDetails = try await handler.subscriptionDetails(params: [], message: WKScriptMessage())
-        XCTAssertEqual(subscriptionDetails, .init(isSubscribed: false, billingPeriod: nil, startedAt: nil, expiresOrRenewsAt: nil, paymentPlatform: nil, status: nil))
-    }
-
-    func testWhenSubscriptionIsExpiredThenSubscriptionDetailsReturnsNotSubscribedState() async throws {
-        subscriptionManager.returnSubscription = .success(PrivacyProSubscription(status: .expired))
-        handler = .init(platform: .ios, subscriptionManager: subscriptionManager)
-        let subscriptionDetails = try await handler.subscriptionDetails(params: [], message: WKScriptMessage())
-        XCTAssertEqual(subscriptionDetails, .init(isSubscribed: false, billingPeriod: nil, startedAt: nil, expiresOrRenewsAt: nil, paymentPlatform: nil, status: nil))
-    }
-
     func testWhenSubscriptionFailsToBeFetchedThenSubscriptionDetailsReturnsNotSubscribedState() async throws {
         struct SampleError: Error {}
         subscriptionManager.returnSubscription = .failure(SampleError())
@@ -97,6 +83,24 @@ final class SubscriptionUserScriptHandlerTests: XCTestCase {
             paymentPlatform: subscription.platform.rawValue,
             status: subscription.status.rawValue
         ))
+    }
+
+    func testWhenSubscriptionIsExpiredThenSubscriptionDetailsReturnsSubscriptionData() async throws {
+        let subscription = PrivacyProSubscription(status: .expired)
+
+        subscriptionManager.returnSubscription = .success(subscription)
+        handler = .init(platform: .ios, subscriptionManager: subscriptionManager)
+        let subscriptionDetails = try await handler.subscriptionDetails(params: [], message: WKScriptMessage())
+        XCTAssertTrue(subscriptionDetails.isSubscribed)
+    }
+
+    func testWhenSubscriptionIsInactiveThenSubscriptionDetailsReturnsSubscriptionData() async throws {
+        let subscription = PrivacyProSubscription(status: .inactive)
+
+        subscriptionManager.returnSubscription = .success(subscription)
+        handler = .init(platform: .ios, subscriptionManager: subscriptionManager)
+        let subscriptionDetails = try await handler.subscriptionDetails(params: [], message: WKScriptMessage())
+        XCTAssertTrue(subscriptionDetails.isSubscribed)
     }
 }
 

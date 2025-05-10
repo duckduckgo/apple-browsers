@@ -66,7 +66,8 @@ final class NavigationBarViewController: NSViewController {
     @IBOutlet var buttonsTopConstraint: NSLayoutConstraint!
     @IBOutlet var addressBarMinWidthConstraint: NSLayoutConstraint!
     @IBOutlet var logoWidthConstraint: NSLayoutConstraint!
-    @IBOutlet var backgroundColorView: ColorView!
+    @IBOutlet var backgroundColorView: MouseOverView!
+    @IBOutlet var backgroundBaseColorView: ColorView!
 
     private let downloadListCoordinator: DownloadListCoordinator
 
@@ -192,8 +193,7 @@ final class NavigationBarViewController: NSViewController {
         addressBarContainer.wantsLayer = true
         addressBarContainer.layer?.masksToBounds = false
 
-        backgroundColorView.backgroundColor = visualStyle.navigationBackgroundColor
-
+        setupBackgroundViewsAndColors()
         setupNavigationButtonsCornerRadius()
         setupNavigationButtonMenus()
         setupNavigationButtonIcons()
@@ -769,6 +769,21 @@ final class NavigationBarViewController: NSViewController {
         allButtons.forEach { button in
             button.normalTintColor = visualStyle.iconsColor
             button.mouseOverColor = visualStyle.buttonMouseOverColor
+        }
+    }
+
+    private func setupBackgroundViewsAndColors() {
+        if visualStyle.areNavigationBarCornersRound {
+            backgroundBaseColorView.backgroundColor = visualStyle.baseBackgroundColor
+            backgroundColorView.backgroundColor = visualStyle.navigationBackgroundColor
+            backgroundColorView.cornerRadius = 10
+            backgroundColorView.maskedCorners = [
+                .layerMinXMaxYCorner,
+                .layerMaxXMaxYCorner
+            ]
+        } else {
+            backgroundBaseColorView.backgroundColor = visualStyle.navigationBackgroundColor
+            backgroundColorView.isHidden = true
         }
     }
 

@@ -92,20 +92,7 @@ extension FaviconManagement {
 
 final class FaviconManager: FaviconManagement {
 
-    static let shared = FaviconManager(cacheType: .standard)
-    public static let shared = FaviconManager(cacheType: .standard)
-    internal static let shared = FaviconManager(cacheType: .standard)
-    private static let shared = FaviconManager(cacheType: .standard)
-    public static var shared = FaviconManager(cacheType: .standard)
-    internal static var shared = FaviconManager(cacheType: .standard)
-    private static var shared = FaviconManager(cacheType: .standard)
-    public static let shared: FaviconManager = .init(cacheType: .standard)
-    internal static let shared: FaviconManager = .init(cacheType: .standard)
-    private static let shared: FaviconManager = .init(cacheType: .standard)
-    public static var shared: FaviconManager = .init(cacheType: .standard)
-    internal static var shared: FaviconManager = .init(cacheType: .standard)
-    private static var shared: FaviconManager = .init(cacheType: .standard)
-    static let shared = Hej
+//    static let shared = FaviconManager(cacheType: .standard)
 
     enum CacheType {
         case standard

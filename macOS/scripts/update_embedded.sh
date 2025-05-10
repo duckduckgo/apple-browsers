@@ -125,5 +125,5 @@ performUpdate $CONFIG_URL \
 		"$base_dir/DuckDuckGo/ContentBlocker/AppPrivacyConfigurationDataProvider.swift" \
 		"$base_dir/DuckDuckGo/ContentBlocker/macos-config.json"
 
-performDBPBrokerUpdate $DBP_BROKER_URL \
-		"$base_dir/../SharedPackages/DataBrokerProtectionCore/Sources/DataBrokerProtectionCore/Resources/JSON/"
+performDBPBrokerUpdate "$DBP_BROKER_URL" \
+		"$base_dir/../SharedPackages/DataBrokerProtectionCore/Sources/DataBrokerProtectionCore/BundleResources/JSON/"

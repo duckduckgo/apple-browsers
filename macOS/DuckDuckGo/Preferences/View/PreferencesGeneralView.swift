@@ -135,7 +135,6 @@ extension Preferences {
                                     Text(UserText.newTabPositionMode(for: position)).tag(position)
                                 }
                             }
-                            .fixedSize()
                         }
                         HStack {
                             Picker(UserText.pinnedTabs, selection: Binding(
@@ -159,7 +158,6 @@ extension Preferences {
                                     Text(UserText.pinnedTabsMode(for: mode)).tag(mode)
                                 }
                             }
-                            .fixedSize()
                         }
                         .alert(isPresented: $showWarningAlert) {
                             Alert(
@@ -214,7 +212,6 @@ extension Preferences {
                                     Text(UserText.homeButtonMode(for: position)).tag(position)
                                 }
                             }
-                            .fixedSize()
                             .onChange(of: startupModel.homeButtonPosition) { _ in
                                 startupModel.updateHomeButton()
                             }

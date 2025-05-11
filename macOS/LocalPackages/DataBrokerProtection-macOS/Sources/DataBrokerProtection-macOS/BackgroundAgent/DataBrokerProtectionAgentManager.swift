@@ -28,13 +28,20 @@ import Freemium
 import Subscription
 import UserNotifications
 import DataBrokerProtectionCore
+import FeatureFlags
 
 // This is to avoid exposing all the dependancies outside of the DBP package
 public class DataBrokerProtectionAgentManagerProvider {
 
+    static let featureFlagOverridesPublishingHandler = FeatureFlagOverridesPublishingHandler<FeatureFlag>()
+
     private let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
 
-    public static func agentManager(authenticationManager: DataBrokerProtectionAuthenticationManaging, vpnBypassService: VPNBypassFeatureProvider) -> DataBrokerProtectionAgentManager? {
+    public static func agentManager(authenticationManager: DataBrokerProtectionAuthenticationManaging,
+                                    configurationManager: DefaultConfigurationManager,
+                                    privacyConfigurationManager: DBPPrivacyConfigurationManager,
+                                    remoteBrokerDeliveryFeatureFlagger: RemoteBrokerDeliveryFeatureFlagging,
+                                    vpnBypassService: VPNBypassFeatureProvider) -> DataBrokerProtectionAgentManager? {
         guard let pixelKit = PixelKit.shared else {
             assertionFailure("PixelKit not set up")
             return nil
@@ -49,13 +56,6 @@ public class DataBrokerProtectionAgentManagerProvider {
         let notificationService = DefaultDataBrokerProtectionUserNotificationService(pixelHandler: pixelHandler, userNotificationCenter: UNUserNotificationCenter.current(), authenticationManager: authenticationManager)
         let eventsHandler = BrokerProfileJobEventsHandler(userNotificationService: notificationService)
 
-        Configuration.setURLProvider(DBPAgentConfigurationURLProvider())
-        let configStore = ConfigurationStore()
-        let privacyConfigurationManager = DBPPrivacyConfigurationManager()
-        let configurationManager = ConfigurationManager(privacyConfigManager: privacyConfigurationManager, store: configStore)
-        configurationManager.start()
-        // Load cached config (if any)
-        privacyConfigurationManager.reload(etag: configStore.loadEtag(for: .privacyConfiguration), data: configStore.loadData(for: .privacyConfiguration))
         let ipcServer = DefaultDataBrokerProtectionIPCServer(machServiceName: Bundle.main.bundleIdentifier!)
 
         let features = ContentScopeFeatureToggles(emailProtection: false,
@@ -89,7 +89,15 @@ public class DataBrokerProtectionAgentManagerProvider {
             return nil
         }
 
-        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault)
+        let localBrokerService = LocalBrokerJSONService(vault: vault, pixelHandler: sharedPixelsHandler)
+        let brokerUpdater = RemoteBrokerJSONService(featureFlagger: remoteBrokerDeliveryFeatureFlagger,
+                                                    settings: dbpSettings,
+                                                    vault: vault,
+                                                    authenticationManager: authenticationManager,
+                                                    pixelHandler: sharedPixelsHandler,
+                                                    localBrokerProvider: localBrokerService)
+
+        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault, localBrokerService: brokerUpdater)
         let dataManager = DataBrokerProtectionDataManager(database: database)
 
         let jobQueue = OperationQueue()
@@ -97,11 +105,9 @@ public class DataBrokerProtectionAgentManagerProvider {
         let mismatchCalculator = DefaultMismatchCalculator(database: dataManager.database,
                                                            pixelHandler: sharedPixelsHandler)
 
-        let brokerUpdater = DefaultDataBrokerProtectionBrokerUpdater(vault: vault, pixelHandler: sharedPixelsHandler)
         let queueManager =  BrokerProfileJobQueueManager(jobQueue: jobQueue,
                                                          jobProvider: jobProvider,
                                                          mismatchCalculator: mismatchCalculator,
-                                                         brokerUpdater: brokerUpdater,
                                                          pixelHandler: sharedPixelsHandler)
 
         let backendServicePixels = DefaultDataBrokerProtectionBackendServicePixels(pixelHandler: sharedPixelsHandler,
@@ -142,6 +148,7 @@ public class DataBrokerProtectionAgentManagerProvider {
             pixelHandler: pixelHandler,
             agentStopper: agentstopper,
             configurationManager: configurationManager,
+            brokerUpdater: brokerUpdater,
             privacyConfigurationManager: privacyConfigurationManager,
             authenticationManager: authenticationManager,
             freemiumDBPUserStateManager: freemiumDBPUserStateManager)
@@ -153,6 +160,7 @@ public final class DataBrokerProtectionAgentManager {
     private let eventsHandler: EventMapping<JobEvent>
     private var activityScheduler: DataBrokerProtectionBackgroundActivityScheduler
     private var ipcServer: DataBrokerProtectionIPCServer
+    private var queueManager: DataBrokerProtectionQueueManager
     private let queueManager: BrokerProfileJobQueueManaging
     private let dataManager: DataBrokerProtectionDataManaging
     private let jobDependencies: BrokerProfileJobDependencyProviding
@@ -160,6 +168,7 @@ public final class DataBrokerProtectionAgentManager {
     private let pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>
     private let agentStopper: DataBrokerProtectionAgentStopper
     private let configurationManger: DefaultConfigurationManager
+    private let brokerUpdater: BrokerJSONServiceProvider
     private let privacyConfigurationManager: DBPPrivacyConfigurationManager
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let freemiumDBPUserStateManager: FreemiumDBPUserStateManager
@@ -179,6 +188,7 @@ public final class DataBrokerProtectionAgentManager {
          pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels>,
          agentStopper: DataBrokerProtectionAgentStopper,
          configurationManager: DefaultConfigurationManager,
+         brokerUpdater: BrokerJSONServiceProvider,
          privacyConfigurationManager: DBPPrivacyConfigurationManager,
          authenticationManager: DataBrokerProtectionAuthenticationManaging,
          freemiumDBPUserStateManager: FreemiumDBPUserStateManager
@@ -193,11 +203,13 @@ public final class DataBrokerProtectionAgentManager {
         self.pixelHandler = pixelHandler
         self.agentStopper = agentStopper
         self.configurationManger = configurationManager
+        self.brokerUpdater = brokerUpdater
         self.privacyConfigurationManager = privacyConfigurationManager
         self.authenticationManager = authenticationManager
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
 
         self.activityScheduler.delegate = self
+        self.queueManager.delegate = self
         self.ipcServer.serverDelegate = self
         self.ipcServer.activate()
     }
@@ -281,6 +293,18 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionBackgroundActivi
             completion?()
         }
     }
+}
+
+extension DataBrokerProtectionAgentManager: DataBrokerProtectionQueueManagerDelegate {
+
+    public func queueManagerWillEnqueueOperations(_ queueManager: DataBrokerProtectionQueueManager) {
+        Task {
+            do {
+                try await brokerUpdater.checkForUpdates()
+            }
+        }
+    }
+
 }
 
 extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {

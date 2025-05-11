@@ -1150,41 +1150,8 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Včera";
 
-/* No comment provided by engineer. */
-"dax.hide.button" = "Navždy skrýt tipy";
-
-/* No comment provided by engineer. */
-"dax.hide.cancel" = "Zrušit";
-
-/* Subtitle in Hide Dax dialog */
-"dax.hide.message" = "Je jich jen pár a snažili jsme se udělat je informativní.";
-
-/* Title in Hide Dax dialog */
-"dax.hide.title" = "Skrýt zbývající tipy?";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search" = "Tvoje vyhledávání v DuckDuckGo je anonymní. Vždycky. 🙌";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search.cta" = "Pche!";
-
-/* First parameter is a count of additional trackers, second and third are names of the tracker networks (strings) */
-"dax.onboarding.browsing.multiple.trackers" = "dax.onboarding.browsing.multiple.trackers";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.multiple.trackers.cta" = "Plácnutí!";
-
-/* Parameter is domain name (string) */
-"dax.onboarding.browsing.one.tracker" = "*%1$@* se vás snažili tady vysledovat.\n\nZablokovali jsme je!\n\n☝️ Můžete zkontrolovat panel s adresou a zjistit, kdo se vás snaží sledovat, když navštívíte novou webovou stránku. ️";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.one.tracker.cta" = "Plácnutí!";
-
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Upozornění! Nedokážeme zabránit, aby %1$@ viděli vaši aktivitu na %2$@.\n\nAle procházejte s námi a budeme moci omezit, co o vás celkově %1$@ ví zablokováním jejich trackerů na mnoha jiných stránkách.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.site.is.major.tracker.cta" = "Mám to";
 
 /* Parameters are domain names (strings) */
 "dax.onboarding.browsing.site.owned.by.major.tracker" = "Upozornění! Vzhledem k tomu, že %2$@ vlastní %1$@, nemůžeme jim zabránit, aby tady viděli vaši aktivitu.\n\nAle projděte se se mnou a společně omezíme, co o vás celkově %2$@ ví zablokováním jejich trackerů na mnoha jiných stránkách.";
@@ -1195,29 +1162,8 @@
 /* No comment provided by engineer. */
 "dax.onboarding.browsing.without.trackers" = "Zatímco poklepete a přejedete, my budeme blokovat otravné trackery.\n\nDo toho — pokračujte v prohlížení!";
 
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.without.trackers.cta" = "Mám to";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button" = "Osobní údaje se mohou vytvářet ve vašem prohlížeči. Fuj. Použijte tlačítko pro mazání a všechno smažte. Vyzkoušejte to hned teď! 👇";
-
-/* Cancel action */
-"dax.onboarding.fire.button.cancelAction" = "Zrušit";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button.confirmAction" = "Zavřít karty a vymazat data";
-
 /* Encourage user to add favorite site using the browsing menu. */
 "dax.onboarding.home.add.favorite" = "Navštivte v mžiku své oblíbené stránky!\n\nPřejděte na stránky, které máte rádi. Pak klepněte na ikonu „⋯“ a zvolte *Přidat do oblíbených*.";
-
-/* Accessible version of dax.onboarding.home.add.favorite */
-"dax.onboarding.home.add.favorite.accessible" = "Navštivte v mžiku své oblíbené stránky! Navštivte jedny z vašich oblíbených stránek. Pak klepněte na tlačítko otevřené nabídky a zvolte Přidat do oblíbených.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.home.initial" = "Dále zkuste navštívit jednu z vašich oblíbených stránek!\n\nZablokujeme trackery, aby vás nemohli špehovat. Pokud to bude možné, upgradujeme také zabezpečení vašeho připojení. 🔒";
-
-/* ad = advertisment */
-"dax.onboarding.home.subsequent" = "Máte to!\n\nPamatujte: Pokaždé, když internet procházíte s námi, příšerným reklamám přistřihneme křídla. 👍";
 
 /* No comment provided by engineer. */
 "Debug" = "Ladění";
@@ -1313,16 +1259,16 @@
 "duckai.preferences.text.markdown" = "Duck.ai je volitelná funkce, která umožňuje anonymně chatovat s populárními AI chatovacími modely třetích stran. Tvoje chaty se nepoužívají k trénování AI.\n[Další informace](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
-"duckai.settings.enable.address-bar-toggle" = "Zobrazit Duck.ai v adresním řádku";
+"duckai.settings.enable.address-bar-toggle" = "Adresní řádek";
 
 /* Toggle text to enable/disable AI Chat in the browsing menu */
-"duckai.settings.enable.browsing-menu-toggle" = "Zobrazit Duck.ai v nabídce prohlížeče";
+"duckai.settings.enable.browsing-menu-toggle" = "Menu prohlížeče";
 
 /* Toggle text to enable/disable Duck.ai in tab manager */
-"duckai.settings.enable.tab-switcher-toggle" = "Zobrazit Duck.ai na obrazovce Karty";
+"duckai.settings.enable.tab-switcher-toggle" = "Obrazovka s kartami";
 
 /* Toggle text to enable/disable Duck.ai in voice search */
-"duckai.settings.enable.voice-search-toggle" = "Zobrazit Duck.ai v hlasovém vyhledávání";
+"duckai.settings.enable.voice-search-toggle" = "Hlasové vyhledávání";
 
 /* Settings screen cell text for AI Chat settings */
 "duckai.settings.title" = "Duck.ai";
@@ -2332,11 +2278,11 @@
 /* No comment provided by engineer. */
 "onboardingWelcomeHeader" = "Vítejte v DuckDuckGo!";
 
-/* No comment provided by engineer. */
-"Open tabs remain unaffected by this change.  Please close all tabs for this setting to take effect." = "Otevřené panely tahle změna neovlivní.  Nastavení se projeví po zavření všech panelů.";
-
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Aplikaci nutnou k otevření tohoto odkazu nelze nalézt";
+
+/* No comment provided by engineer. */
+"Please close all tabs for this setting to take effect." = "Nastavení se projeví po zavření všech panelů.";
 
 /* Activate button */
 "pm.activate" = "Znovu aktivovat";
@@ -2560,6 +2506,9 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Zobrazovat celou adresu webu";
 
+/* Settings screen text for showing AI Chat in various places in the app */
+"settings.aichat.shortcuts" = "Zkratky";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Vždycky zapnuté";
 
@@ -2631,6 +2580,9 @@
 
 /* Settings cell for Email Protection */
 "settings.emailProtection.description" = "Blokování trackerů v e-mailu a skrytí adresy";
+
+/* Settings screen cell text for enabling AI chat */
+"settings.enable.aichat" = "Povolit službu Duck.ai";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Povol funkci Email Protection";

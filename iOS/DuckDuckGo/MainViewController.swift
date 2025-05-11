@@ -964,7 +964,8 @@ class MainViewController: UIViewController {
                                                   variantManager: variantManager,
                                                   newTabDialogFactory: newTabDaxDialogFactory,
                                                   newTabDialogTypeProvider: DaxDialogs.shared,
-                                                  faviconLoader: faviconLoader)
+                                                  faviconLoader: faviconLoader,
+                                                  messageNavigationDelegate: self)
 
         controller.delegate = self
         controller.shortcutsDelegate = self
@@ -2073,6 +2074,10 @@ extension MainViewController: BrowserChromeDelegate {
 
 extension MainViewController: OmniBarDelegate {
 
+    func onSharePressed() {
+        shareCurrentURLFromAddressBar()
+    }
+
     func selectedSuggestion() -> Suggestion? {
         return suggestionTrayController?.selectedSuggestion
     }
@@ -2329,11 +2334,13 @@ extension MainViewController: OmniBarDelegate {
         switch accessoryType {
         case .chat:
             openAIChatFromAddressBar()
-        case .share:
-            guard let link = currentTab?.link else { return }
-            Pixel.fire(pixel: .addressBarShare)
-            currentTab?.onShareAction(forLink: link, fromView: viewCoordinator.omniBar.barView.accessoryButton)
         }
+    }
+
+    private func shareCurrentURLFromAddressBar() {
+        Pixel.fire(pixel: .addressBarShare)
+        guard let link = currentTab?.link else { return }
+        currentTab?.onShareAction(forLink: link, fromView: viewCoordinator.omniBar.barView.accessoryButton)
     }
 
     private func openAIChatFromAddressBar() {
@@ -3366,3 +3373,6 @@ private extension UIBarButtonItem {
         }
     }
 }
+
+/// This extension allows delegating from the RMF action button when the action type is 'navigation'.  It shadows existing functions.
+extension MainViewController: MessageNavigationDelegate { }

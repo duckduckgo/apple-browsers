@@ -31,15 +31,18 @@ final class NewTabPageMessagesModel: ObservableObject {
     private let notificationCenter: NotificationCenter
     private let pixelFiring: PixelFiring.Type
     private let privacyProDataReporter: PrivacyProDataReporting?
+    private let navigator: MessageNavigator
 
     init(homePageMessagesConfiguration: HomePageMessagesConfiguration,
          notificationCenter: NotificationCenter = .default,
          pixelFiring: PixelFiring.Type = Pixel.self,
-         privacyProDataReporter: PrivacyProDataReporting? = nil) {
+         privacyProDataReporter: PrivacyProDataReporting? = nil,
+         navigator: MessageNavigator) {
         self.homePageMessagesConfiguration = homePageMessagesConfiguration
         self.notificationCenter = notificationCenter
         self.pixelFiring = pixelFiring
         self.privacyProDataReporter = privacyProDataReporter
+        self.navigator = navigator
     }
 
     func load() {
@@ -77,7 +80,7 @@ final class NewTabPageMessagesModel: ObservableObject {
     private func homeMessageViewModel(for message: HomeMessage) -> HomeMessageViewModel? {
         switch message {
         case .placeholder:
-            return HomeMessageViewModel(messageId: "", sendPixels: false, modelType: .small(titleText: "", descriptionText: "")) { [weak self] _ in
+            return HomeMessageViewModel(messageId: "", sendPixels: false, modelType: .small(titleText: "", descriptionText: ""), navigator: navigator) { [weak self] _ in
                 await self?.dismissHomeMessage(message)
             } onDidAppear: {
                 // no-op
@@ -90,7 +93,7 @@ final class NewTabPageMessagesModel: ObservableObject {
             // as a result of refreshing a config while the user was on a new tab page already.
             didAppear(message)
 
-            return HomeMessageViewModelBuilder.build(for: remoteMessage, with: privacyProDataReporter) { @MainActor [weak self] action in
+            return HomeMessageViewModelBuilder.build(for: remoteMessage, with: privacyProDataReporter, navigator: navigator) { @MainActor [weak self] action in
                 guard let action,
                       let self else { return }
 

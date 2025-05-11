@@ -58,7 +58,8 @@ public class DataBrokerProtectionIOSManagerProvider {
     private let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName)
 
     public static func iOSManager(authenticationManager: DataBrokerProtectionAuthenticationManaging,
-                                  privacyConfigurationManager: PrivacyConfigurationManaging) -> DataBrokerProtectionIOSManager? {
+                                  privacyConfigurationManager: PrivacyConfigurationManaging,
+                                  featureFlagger: RemoteBrokerDeliveryFeatureFlagging) -> DataBrokerProtectionIOSManager? {
         guard let pixelKit = PixelKit.shared else {
             assertionFailure("PixelKit not set up")
             return nil
@@ -99,19 +100,18 @@ public class DataBrokerProtectionIOSManagerProvider {
             return nil
         }
 
-        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault)
-        let dataManager = DataBrokerProtectionDataManager(database: database)
+        let localBrokerService = LocalBrokerJSONService(vault: vault, pixelHandler: sharedPixelsHandler)
+
+        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault, localBrokerService: localBrokerService)
 
         let operationQueue = OperationQueue()
         let jobProvider = BrokerProfileJobProvider()
         let mismatchCalculator = DefaultMismatchCalculator(database: database,
                                                            pixelHandler: sharedPixelsHandler)
 
-        let brokerUpdater = DefaultDataBrokerProtectionBrokerUpdater(vault: vault, pixelHandler: sharedPixelsHandler)
         let queueManager =  BrokerProfileJobQueueManager(jobQueue: operationQueue,
                                                          jobProvider: jobProvider,
                                                          mismatchCalculator: mismatchCalculator,
-                                                         brokerUpdater: brokerUpdater,
                                                          pixelHandler: sharedPixelsHandler)
 
         let backendServicePixels = DefaultDataBrokerProtectionBackendServicePixels(pixelHandler: sharedPixelsHandler,
@@ -140,7 +140,7 @@ public class DataBrokerProtectionIOSManagerProvider {
             authenticationManager: authenticationManager,
             sharedPixelsHandler: sharedPixelsHandler,
             privacyConfigManager: privacyConfigurationManager,
-            dataManager: dataManager
+            database: database
         )
     }
 }
@@ -154,17 +154,14 @@ public final class DataBrokerProtectionIOSManager {
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>
     private let privacyConfigManager: PrivacyConfigurationManaging
-    public let dataManager: DataBrokerProtectionDataManager
-
-    // Things that definitely shouldn't exist long term
-    var communicationLayer: DBPUICommunicationLayer!
+    public let database: DataBrokerProtectionRepository
 
     init(queueManager: BrokerProfileJobQueueManager,
          jobDependencies: BrokerProfileJobDependencies,
          authenticationManager: DataBrokerProtectionAuthenticationManaging,
          sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>,
          privacyConfigManager: PrivacyConfigurationManaging,
-         dataManager: DataBrokerProtectionDataManager
+         database: DataBrokerProtectionRepository
     ) {
         self.queueManager = queueManager
         self.jobDependencies = jobDependencies
@@ -172,29 +169,9 @@ public final class DataBrokerProtectionIOSManager {
         self.sharedPixelsHandler = sharedPixelsHandler
         self.privacyConfigManager = privacyConfigManager
 
-        self.dataManager = dataManager
+        self.database = database
 
         registerBackgroundTaskHandler()
-
-#if DEBUG || ALPHA
-        self.communicationLayer = DBPUICommunicationLayer(webURLSettings:
-                                                            DataBrokerProtectionWebUIURLSettings(UserDefaults.standard),
-                                                          privacyConfig: privacyConfigManager)
-
-        let cache = dataManager.cache
-        communicationLayer.delegate = cache
-
-        let year = Calendar(identifier: .gregorian).component(.year, from: Date())
-        let birthYear = year - 58
-        let profile = DataBrokerProtectionProfile(names: [.init(firstName: "Steve", lastName: "Smith")],
-                                                  addresses: [.init(city: "Dallas", state: "TX")],
-                                                  phones: [],
-                                                  birthYear: birthYear)
-        cache.profile = profile
-        Task { @MainActor in
-            _ = try await communicationLayer.saveProfile(params: [], original: WKScriptMessage())
-        }
-#endif
     }
 
     private func registerBackgroundTaskHandler() {
@@ -265,7 +242,7 @@ public final class DataBrokerProtectionIOSManager {
     private func validateRunPrerequisites() async -> Bool {
 
         do {
-            let hasProfile = try dataManager.fetchProfile() != nil
+            let hasProfile = try database.fetchProfile() != nil
             let isAuthenticated = authenticationManager.isUserAuthenticated
 
             if !hasProfile || !isAuthenticated {

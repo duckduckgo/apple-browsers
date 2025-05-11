@@ -1150,41 +1150,8 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Vakar";
 
-/* No comment provided by engineer. */
-"dax.hide.button" = "Paslēpt padomus uz visiem laikiem";
-
-/* No comment provided by engineer. */
-"dax.hide.cancel" = "Atcelt";
-
-/* Subtitle in Hide Dax dialog */
-"dax.hide.message" = "Tie ir tikai daži, un mēs centāmies tos padarīt informatīvus.";
-
-/* Title in Hide Dax dialog */
-"dax.hide.title" = "Vai paslēpt pārējos padomus?";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search" = "Tavi DuckDuckGo meklējumi ir anonīmi. Vienmēr. 🙌";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search.cta" = "Pē!";
-
-/* First parameter is a count of additional trackers, second and third are names of the tracker networks (strings) */
-"dax.onboarding.browsing.multiple.trackers" = "dax.onboarding.browsing.multiple.trackers";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.multiple.trackers.cta" = "Dod pieci!";
-
-/* Parameter is domain name (string) */
-"dax.onboarding.browsing.one.tracker" = "*%1$@* mēģināja tevi šeit izsekot.\n\nEs to nobloķēju!\n\n☝️ Tu vari pārbaudīt adreses joslu, lai redzētu, kas tevi mēģina izsekot, kad tu apmeklē jaunu vietni.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.one.tracker.cta" = "Dod pieci!";
-
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Mazs brīdinājums! Es nevaru liegt %1$@ skatīt tavas darbības domēnā %2$@.\n\nTaču pārlūko kopā ar mani, jo es varu ierobežot to, ko %1$@ zina par tevi kopumā, bloķējot viņu izsekotājus daudzās citās vietnēs.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.site.is.major.tracker.cta" = "Sapratu";
 
 /* Parameters are domain names (strings) */
 "dax.onboarding.browsing.site.owned.by.major.tracker" = "Mazs brīdinājums! Tā kā %2$@ pieder %1$@, es nevaru viņiem liegt šeit skatīt tavas darbības.\n\nTaču pārlūko kopā ar mani, jo es varu ierobežot to, ko %2$@ zina par tevi kopumā, bloķējot viņu izsekotājus daudzās citās vietnēs.";
@@ -1195,29 +1162,8 @@
 /* No comment provided by engineer. */
 "dax.onboarding.browsing.without.trackers" = "Tev pieskaroties un ritinot, es bloķēšu uzmācīgos izsekotājus.\n\nAiziet! Turpini pārlūkot!";
 
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.without.trackers.cta" = "Sapratu";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button" = "Personas dati var uzkrāties tavā pārlūkā. Pē! Izmanto Uguns pogu, lai tos visus nodedzinātu. Pamēģini tagad! 👇";
-
-/* Cancel action */
-"dax.onboarding.fire.button.cancelAction" = "Atcelt";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button.confirmAction" = "Aizvērt cilnes un notīrīt datus";
-
 /* Encourage user to add favorite site using the browsing menu. */
 "dax.onboarding.home.add.favorite" = "Atver savas iecienītākās vietnes zibens ātrumā!\n\nEj uz savu mīļāko vietni. Pēc tam pieskaries ikonai “⋯” un atlasi *Pievienot izlasei*.";
-
-/* Accessible version of dax.onboarding.home.add.favorite */
-"dax.onboarding.home.add.favorite.accessible" = "Atver savas iecienītākās vietnes zibens ātrumā! Atver kādu no savām mīļākajām vietnēm. Pēc tam pieskaries izvēlnes atvēršanas pogai un atlasi opciju “Pievienot izlasei”.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.home.initial" = "Tagad pamēģini atvērt kādu no savām mīļākajām vietnēm!\n\nEs nobloķēšu izsekotājus, lai tie nevarētu tevi izspiegot. Ja iespējams, uzlabošu arī tava savienojuma drošību. 🔒";
-
-/* ad = advertisment */
-"dax.onboarding.home.subsequent" = "Izdevās!\n\nAtceries: katru reizi, kad pārlūkosi kopā ar mani, kaitinošās reklāmas zaudēs savu spēku! 👍";
 
 /* No comment provided by engineer. */
 "Debug" = "Atkļūdošana";
@@ -1313,16 +1259,16 @@
 "duckai.preferences.text.markdown" = "Duck.ai ir papildu līdzeklis, kas ļauj anonīmi tērzēt ar populāriem trešo pušu Ml tērzēšanas modeļiem. Tavas tērzēšanas sarunas netiek izmantotas MI apmācībai.\n[Uzzini vairāk](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
-"duckai.settings.enable.address-bar-toggle" = "Rādīt Duck.ai adrešu joslā";
+"duckai.settings.enable.address-bar-toggle" = "Adreses josla";
 
 /* Toggle text to enable/disable AI Chat in the browsing menu */
-"duckai.settings.enable.browsing-menu-toggle" = "Rādīt Duck.ai pārlūka izvēlnē";
+"duckai.settings.enable.browsing-menu-toggle" = "Pārlūka izvēlne";
 
 /* Toggle text to enable/disable Duck.ai in tab manager */
-"duckai.settings.enable.tab-switcher-toggle" = "Rādīt Duck.ai cilņu ekrānā";
+"duckai.settings.enable.tab-switcher-toggle" = "Cilņu ekrāns";
 
 /* Toggle text to enable/disable Duck.ai in voice search */
-"duckai.settings.enable.voice-search-toggle" = "Rādīt Duck.ai balss meklēšanā";
+"duckai.settings.enable.voice-search-toggle" = "Balss meklēšana";
 
 /* Settings screen cell text for AI Chat settings */
 "duckai.settings.title" = "Duck.ai";
@@ -2332,11 +2278,11 @@
 /* No comment provided by engineer. */
 "onboardingWelcomeHeader" = "Laipni lūdzam DuckDuckGo!";
 
-/* No comment provided by engineer. */
-"Open tabs remain unaffected by this change.  Please close all tabs for this setting to take effect." = "Šīs izmaiņas neietekmē atvērtās cilnes.  Lūdzu, aizver visas cilnes, lai šis iestatījums stātos spēkā.";
-
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Nevar atrast lietotni, kas nepieciešama šīs saites atvēršanai";
+
+/* No comment provided by engineer. */
+"Please close all tabs for this setting to take effect." = "Lūdzu, aizver visas cilnes, lai šis iestatījums stātos spēkā.";
 
 /* Activate button */
 "pm.activate" = "Atkārtoti aktivizēt";
@@ -2560,6 +2506,9 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Rādīt pilnu vietnes adresi";
 
+/* Settings screen text for showing AI Chat in various places in the app */
+"settings.aichat.shortcuts" = "Saīsnes";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Vienmēr ieslēgts";
 
@@ -2631,6 +2580,9 @@
 
 /* Settings cell for Email Protection */
 "settings.emailProtection.description" = "Bloķē e-pasta izsekotājus un paslēp savu adresi";
+
+/* Settings screen cell text for enabling AI chat */
+"settings.enable.aichat" = "Iespējot Duck.ai";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Iespējo e-pasta aizsardzību";

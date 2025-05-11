@@ -320,30 +320,41 @@ struct HomeMessageView_Previews: PreviewProvider {
             HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Small",
                                                             sendPixels: false,
                                                             modelType: small,
+                                                            navigator: DefaultMessageNavigator(delegate: nil),
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
 
             HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Critical",
                                                             sendPixels: false,
                                                             modelType: critical,
+                                                            navigator: DefaultMessageNavigator(delegate: nil),
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
 
             HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Big Single",
                                                             sendPixels: false,
                                                             modelType: bigSingle,
+                                                            navigator: DefaultMessageNavigator(delegate: nil),
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
 
             HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Big Two",
                                                             sendPixels: false,
                                                             modelType: bigTwo,
+                                                            navigator: DefaultMessageNavigator(delegate: nil),
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
 
             HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Promo",
                                                             sendPixels: false,
                                                             modelType: promo,
+                                                            navigator: DefaultMessageNavigator(delegate: nil),
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
         }
         .frame(height: 200)
         .padding(.horizontal)
 
+    }
+
+    struct PreviewNavigator: MessageNavigator {
+        func navigateTo(_ target: RemoteMessaging.NavigationTarget) {
+            // no-op
+        }
     }
 }

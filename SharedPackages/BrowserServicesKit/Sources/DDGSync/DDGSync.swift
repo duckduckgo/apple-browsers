@@ -239,6 +239,7 @@ public class DDGSync: DDGSyncing {
         .assign(to: \.featureFlags, onWeaklyHeld: self)
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     public func initializeIfNeeded() {
         guard authState == .initializing else { return }
 
@@ -335,7 +336,6 @@ public class DDGSync: DDGSyncing {
         }
 
         authState = account.state
-
 
         syncQueueCancellable = syncQueue.isSyncInProgressPublisher
             .handleEvents(receiveCancel: { [weak self] in

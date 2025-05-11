@@ -94,9 +94,12 @@ public class SyncErrorHandler: EventMapping<SyncError> {
         self.dateProvider = dateProvider
         super.init { event, error, _, _ in
             switch event {
+            case .migratedToFileStore:
+                Pixel.fire(pixel: .syncMigratedToFileStore)
             case .failedToMigrateToFileStore:
-                // FIXME
-                Pixel.fire(pixel: .syncFailedToMigrate, error: error)
+                Pixel.fire(pixel: .syncFailedToMigrateToFileStore, error: error)
+            case .failedToInitFileStore:
+                Pixel.fire(pixel: .syncFailedToInitFileStore, error: error)
             case .failedToLoadAccount:
                 Pixel.fire(pixel: .syncFailedToLoadAccount, error: error)
             case .failedToSetupEngine:

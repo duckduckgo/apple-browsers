@@ -36,7 +36,7 @@ public enum SyncError: Error, Equatable {
     case failedToMigrateToFileStore
     case failedToInitFileStore
 
-    case failedToLoadAccount //used
+    case failedToLoadAccount
     case failedToSetupEngine
     case failedToRemoveAccount
 

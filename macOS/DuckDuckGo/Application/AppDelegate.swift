@@ -207,7 +207,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         do {
             keyValueStore = try KeyValueFileStore(location: URL.sandboxApplicationSupportURL, name: "AppKeyValueStore")
         } catch {
-            // TODO
+            PixelKit.fire(DebugEvent(GeneralPixel.keyValueFileStoreInitError, error: error))
             Thread.sleep(forTimeInterval: 1)
             fatalError("Could not prepare key value store: \(error.localizedDescription)")
         }

@@ -39,6 +39,6 @@ struct AppServices {
     let crashCollectionService: CrashCollectionService
     let maliciousSiteProtectionService: MaliciousSiteProtectionService
     let statisticsService: StatisticsService
-    let keyValueFileStoreTestService: KeyValueFileStoreTestService
+    let keyValueFileStoreService: AppKeyValueFileStoreService
 
 }

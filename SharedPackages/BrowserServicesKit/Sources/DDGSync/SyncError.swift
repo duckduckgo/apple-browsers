@@ -32,8 +32,11 @@ public enum SyncError: Error, Equatable {
 
     case noToken
 
-    case failedToMigrate
-    case failedToLoadAccount
+    case migratedToFileStore
+    case failedToMigrateToFileStore
+    case failedToInitFileStore
+
+    case failedToLoadAccount //used
     case failedToSetupEngine
     case failedToRemoveAccount
 
@@ -95,8 +98,12 @@ public enum SyncError: Error, Equatable {
         switch self {
         case .noToken:
             return [syncErrorString: "noToken"]
-        case .failedToMigrate:
-            return [syncErrorString: "failedToMigrate"]
+        case .migratedToFileStore:
+            return [syncErrorString: "migratedToFileStore"]
+        case .failedToInitFileStore:
+            return [syncErrorString: "failedToInitFileStore"]
+        case .failedToMigrateToFileStore:
+            return [syncErrorString: "failedToMigrateToFileStore"]
         case .failedToLoadAccount:
             return [syncErrorString: "failedToLoadAccount"]
         case .failedToSetupEngine:
@@ -172,7 +179,9 @@ extension SyncError: CustomNSError {
         switch self {
         case .noToken: return 13
 
-        case .failedToMigrate: return 14
+        case .failedToMigrateToFileStore: return 32
+        case .migratedToFileStore: return 33
+        case .failedToInitFileStore: return 34
         case .failedToLoadAccount: return 15
         case .failedToSetupEngine: return 16
 

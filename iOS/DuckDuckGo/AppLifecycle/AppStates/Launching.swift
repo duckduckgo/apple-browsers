@@ -67,12 +67,14 @@ struct Launching: LaunchingHandling {
         // 2. To potentially complete their tasks before the app becomes visible to the user
         // This approach aims to optimize performance and ensure critical functionalities are ready ASAP
 
+        let appKeyValueFileStoreService = try AppKeyValueFileStoreService()
         let autofillService = AutofillService()
         let configurationService = RemoteConfigurationService()
         let crashCollectionService = CrashCollectionService()
         let statisticsService = StatisticsService()
         let reportingService = ReportingService(fireproofing: fireproofing)
-        let syncService = SyncService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase)
+        let syncService = SyncService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
+                                      keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
         reportingService.syncService = syncService
         autofillService.syncService = syncService
         let remoteMessagingService = RemoteMessagingService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
@@ -135,7 +137,7 @@ struct Launching: LaunchingHandling {
                                crashCollectionService: crashCollectionService,
                                maliciousSiteProtectionService: maliciousSiteProtectionService,
                                statisticsService: statisticsService,
-                               keyValueFileStoreTestService: KeyValueFileStoreTestService())
+                               keyValueFileStoreService: appKeyValueFileStoreService)
 
         // MARK: - Final Configuration
         // Complete the configuration process and set up the main window

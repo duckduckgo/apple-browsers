@@ -109,9 +109,16 @@ public class DataBrokerProtectionIOSManagerProvider {
         let mismatchCalculator = DefaultMismatchCalculator(database: database,
                                                            pixelHandler: sharedPixelsHandler)
 
+        let brokerUpdater = RemoteBrokerJSONService(featureFlagger: featureFlagger,
+                                                    settings: dbpSettings,
+                                                    vault: vault,
+                                                    authenticationManager: authenticationManager,
+                                                    pixelHandler: sharedPixelsHandler,
+                                                    localBrokerProvider: localBrokerService)
         let queueManager =  BrokerProfileJobQueueManager(jobQueue: operationQueue,
                                                          jobProvider: jobProvider,
                                                          mismatchCalculator: mismatchCalculator,
+                                                         brokerUpdater: brokerUpdater,
                                                          pixelHandler: sharedPixelsHandler)
 
         let backendServicePixels = DefaultDataBrokerProtectionBackendServicePixels(pixelHandler: sharedPixelsHandler,

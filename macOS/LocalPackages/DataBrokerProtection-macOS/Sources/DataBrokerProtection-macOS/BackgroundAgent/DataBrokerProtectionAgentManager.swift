@@ -108,6 +108,7 @@ public class DataBrokerProtectionAgentManagerProvider {
         let queueManager =  BrokerProfileJobQueueManager(jobQueue: jobQueue,
                                                          jobProvider: jobProvider,
                                                          mismatchCalculator: mismatchCalculator,
+                                                         brokerUpdater: brokerUpdater,
                                                          pixelHandler: sharedPixelsHandler)
 
         let backendServicePixels = DefaultDataBrokerProtectionBackendServicePixels(pixelHandler: sharedPixelsHandler,
@@ -160,8 +161,7 @@ public final class DataBrokerProtectionAgentManager {
     private let eventsHandler: EventMapping<JobEvent>
     private var activityScheduler: DataBrokerProtectionBackgroundActivityScheduler
     private var ipcServer: DataBrokerProtectionIPCServer
-    private var queueManager: DataBrokerProtectionQueueManager
-    private let queueManager: BrokerProfileJobQueueManaging
+    private var queueManager: BrokerProfileJobQueueManaging
     private let dataManager: DataBrokerProtectionDataManaging
     private let jobDependencies: BrokerProfileJobDependencyProviding
     private let sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>
@@ -209,7 +209,6 @@ public final class DataBrokerProtectionAgentManager {
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
 
         self.activityScheduler.delegate = self
-        self.queueManager.delegate = self
         self.ipcServer.serverDelegate = self
         self.ipcServer.activate()
     }
@@ -293,18 +292,6 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionBackgroundActivi
             completion?()
         }
     }
-}
-
-extension DataBrokerProtectionAgentManager: DataBrokerProtectionQueueManagerDelegate {
-
-    public func queueManagerWillEnqueueOperations(_ queueManager: DataBrokerProtectionQueueManager) {
-        Task {
-            do {
-                try await brokerUpdater.checkForUpdates()
-            }
-        }
-    }
-
 }
 
 extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {

@@ -76,7 +76,7 @@ public protocol BrokerProfileJobQueueManaging {
     init(jobQueue: BrokerProfileJobQueue,
          jobProvider: BrokerProfileJobProviding,
          mismatchCalculator: MismatchCalculator,
-         brokerUpdater: DataBrokerProtectionBrokerUpdater?,
+         brokerUpdater: BrokerJSONServiceProvider?,
          pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>)
 
     func startImmediateScanOperationsIfPermitted(showWebView: Bool,
@@ -101,7 +101,7 @@ public final class BrokerProfileJobQueueManager: BrokerProfileJobQueueManaging {
     private var jobQueue: BrokerProfileJobQueue
     private let jobProvider: BrokerProfileJobProviding
     private let mismatchCalculator: MismatchCalculator
-    private let brokerUpdater: DataBrokerProtectionBrokerUpdater?
+    private let brokerUpdater: BrokerJSONServiceProvider?
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
 
     private var mode = BrokerProfileJobQueueMode.idle
@@ -120,7 +120,7 @@ public final class BrokerProfileJobQueueManager: BrokerProfileJobQueueManaging {
     public init(jobQueue: BrokerProfileJobQueue,
                 jobProvider: BrokerProfileJobProviding,
                 mismatchCalculator: MismatchCalculator,
-                brokerUpdater: DataBrokerProtectionBrokerUpdater?,
+                brokerUpdater: BrokerJSONServiceProvider?,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>) {
 
         self.jobQueue = jobQueue
@@ -250,8 +250,9 @@ private extension BrokerProfileJobQueueManager {
     }
 
     func updateBrokerData() {
-        // Update broker files if applicable
-        brokerUpdater?.checkForUpdatesInBrokerJSONFiles()
+        Task {
+            try await brokerUpdater?.checkForUpdates()
+        }
     }
 
     func addJobs(for jobType: JobType,
@@ -296,18 +297,18 @@ private extension BrokerProfileJobQueueManager {
 }
 
 extension BrokerProfileJobQueueManager: BrokerProfileJobErrorDelegate {
-    public func dataBrokerOperationDidError(_ error: any Error, withBrokerName brokerName: String?) {
+    public func dataBrokerOperationDidError(_ error: any Error, withBrokerName brokerName: String?, version: String?) {
         operationErrors.append(error)
 
-        guard let error = error as? DataBrokerProtectionError, let brokerName else { return }
+        guard let error = error as? DataBrokerProtectionError, let brokerName, let version else { return }
 
         switch error {
         case .httpError(let code):
-            pixelHandler.fire(.httpError(error: error, code: code, dataBroker: brokerName))
+            pixelHandler.fire(.httpError(error: error, code: code, dataBroker: brokerName, version: version))
         case .actionFailed(let actionId, let message):
-            pixelHandler.fire(.actionFailedError(error: error, actionId: actionId, message: message, dataBroker: brokerName))
+            pixelHandler.fire(.actionFailedError(error: error, actionId: actionId, message: message, dataBroker: brokerName, version: version))
         default:
-            pixelHandler.fire(.otherError(error: error, dataBroker: brokerName))
+            pixelHandler.fire(.otherError(error: error, dataBroker: brokerName, version: version))
         }
     }
 }

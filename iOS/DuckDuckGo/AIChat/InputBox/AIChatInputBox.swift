@@ -156,10 +156,11 @@ private struct ExpandingTextView: UIViewRepresentable {
     @Binding var text: String
     @Binding var height: CGFloat
     @Binding var isFirstResponder: Bool
+    private let maxTextHeight: CGFloat = 70
 
     func makeUIView(context: Context) -> UITextView {
         let textView = UITextView()
-        textView.isScrollEnabled = false
+        textView.isScrollEnabled = true
         textView.font = .preferredFont(forTextStyle: .body)
         textView.backgroundColor = .clear
         textView.delegate = context.coordinator
@@ -198,7 +199,7 @@ private struct ExpandingTextView: UIViewRepresentable {
         let newSize = view.sizeThatFits(CGSize(width: fixedWidth, height: .greatestFiniteMagnitude))
         if height != newSize.height {
             DispatchQueue.main.async {
-                height = newSize.height
+                height = min(newSize.height, maxTextHeight)
             }
         }
     }
@@ -218,13 +219,6 @@ private struct ExpandingTextView: UIViewRepresentable {
 
         func textViewDidChange(_ textView: UITextView) {
             text = textView.text
-            let fixedWidth = textView.frame.width
-            let newSize = textView.sizeThatFits(CGSize(width: fixedWidth, height: .greatestFiniteMagnitude))
-            if height != newSize.height {
-                DispatchQueue.main.async {
-                    self.height = newSize.height
-                }
-            }
         }
     }
 }

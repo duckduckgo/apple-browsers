@@ -118,7 +118,7 @@ jobs:
           - cache-key: sandbox-
             flavor: Sandbox
 
-    runs-on: macos-15-xlarge
+    runs-on: macos-15
     timeout-minutes: 30
 
     outputs:
@@ -179,6 +179,7 @@ jobs:
       uses: ./.github/actions/select-xcode-version
 
     - name: Build and run unit tests
+      id: run-unit-tests
       run: |
         echo "Runner ${RUNNER_NAME} (${RUNNER_TRACKING_ID})"
         export OS_ACTIVITY_MODE=debug
@@ -196,6 +197,7 @@ jobs:
           || { mv "$(grep -m 1 '.*\.xcresult' ${{ matrix.flavor }}-unittests-xcodebuild.log | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')" ./${{ matrix.flavor }}-unittests.xcresult && exit 1; }
 
     - name: Run integration tests
+      id: run-integration-tests
       run: |
         set -o pipefail && xcodebuild test \
           -scheme "${{ matrix.scheme }}" \
@@ -236,6 +238,14 @@ jobs:
           fi
         fi
 
+    - name: Upload JUnit XML as artifact
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: macos-${{ matrix.flavor }}-unittests.xml
+        path: macOS/${{ matrix.flavor }}*.xml
+        retention-days: 7
+
     - name: Publish unit tests report
       uses: mikepenz/action-junit-report@v4
       if: always() # always run even if the previous step fails
@@ -245,7 +255,7 @@ jobs:
         check_retries: true
 
     - name: Update Asana with failed unit tests
-      if: always() # always run even if the previous step fails
+      if: always() && (steps.run-unit-tests.outcome == 'failure' || steps.run-integration-tests.outcome == 'failure')
       env:
         ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
         WORKFLOW_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}

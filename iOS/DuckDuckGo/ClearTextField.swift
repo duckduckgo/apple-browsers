@@ -26,20 +26,30 @@ struct ClearTextField: View {
     var disableAutoCorrection = true
     var keyboardType: UIKeyboardType = .default
     var secure = false
+    var characterLimit: Int?
 
+    @FocusState private var isFieldFocused: Bool
+    @State private var shouldBeMonospaced: Bool = false
     @State private var closeButtonVisible = false
-
+    
     var body: some View {
         HStack {
-            TextField(placeholderText, text: $text) { editing in
-                closeButtonVisible = editing
-            } onCommit: {
-                closeButtonVisible = false
-            }
-            .autocapitalization(autoCapitalizationType)
-            .disableAutocorrection(disableAutoCorrection)
-            .keyboardType(keyboardType)
-            .label4Style(design: secure && text.count > 0 ? .monospaced : .default)
+            TextField(placeholderText, text: $text)
+                .autocapitalization(autoCapitalizationType)
+                .disableAutocorrection(disableAutoCorrection)
+                .keyboardType(keyboardType)
+                .label4Style(design: shouldBeMonospaced ? .monospaced : .default)
+                .focused($isFieldFocused)
+                .onChange(of: isFieldFocused) { focused in
+                    shouldBeMonospaced = secure && text.count > 0
+                    closeButtonVisible = focused
+                }
+                .onChange(of: text) { _ in
+                    shouldBeMonospaced = secure && text.count > 0
+                    if let limit = characterLimit, text.count > limit {
+                        text = String(text.prefix(limit))
+                    }
+                }
 
             Spacer()
             Image("Clear-16")
@@ -47,7 +57,7 @@ struct ClearTextField: View {
                 .onTapGesture { self.text = "" }
         }
     }
-
+    
     private var closeButtonOpacity: Double {
         if text == "" || !closeButtonVisible {
             return 0

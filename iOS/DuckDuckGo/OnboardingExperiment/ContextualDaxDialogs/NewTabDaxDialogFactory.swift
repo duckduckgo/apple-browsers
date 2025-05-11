@@ -44,18 +44,18 @@ final class NewTabDaxDialogFactory: NewTabDaxDialogProvider {
     private var delegate: OnboardingNavigationDelegate?
     private var daxDialogsFlowCoordinator: DaxDialogsFlowCoordinator
     private let onboardingPixelReporter: OnboardingPixelReporting
-    private let onboardingPrivacyProPromoExperiment: any OnboardingPrivacyProPromoExperimenting
+    private let onboardingPrivacyProPromotionHelper: OnboardingPrivacyProPromotionHelping
 
     init(
         delegate: OnboardingNavigationDelegate?,
         daxDialogsFlowCoordinator: DaxDialogsFlowCoordinator,
         onboardingPixelReporter: OnboardingPixelReporting,
-        onboardingPrivacyProPromoExperiment: OnboardingPrivacyProPromoExperimenting = OnboardingPrivacyProPromoExperiment()
+        onboardingPrivacyProPromotionHelper: OnboardingPrivacyProPromotionHelping = OnboardingPrivacyProPromotionHelper()
     ) {
         self.delegate = delegate
         self.daxDialogsFlowCoordinator = daxDialogsFlowCoordinator
         self.onboardingPixelReporter = onboardingPixelReporter
-        self.onboardingPrivacyProPromoExperiment = onboardingPrivacyProPromoExperiment
+        self.onboardingPrivacyProPromotionHelper = onboardingPrivacyProPromotionHelper
     }
 
     @ViewBuilder
@@ -169,8 +169,8 @@ private extension NewTabDaxDialogFactory {
                 proceedText: UserText.PrivacyProPromotionOnboarding.Buttons.learnMore,
                 dismissText: UserText.PrivacyProPromotionOnboarding.Buttons.skip,
                 proceedAction: { [weak self] in
-                    self?.onboardingPrivacyProPromoExperiment.fireTapPixel()
-                    let urlComponents = OnboardingPrivacyProPromoExperiment().redirectURLComponents()
+                    self?.onboardingPrivacyProPromotionHelper.fireTapPixel()
+                    let urlComponents = self?.onboardingPrivacyProPromotionHelper.redirectURLComponents()
                     NotificationCenter.default.post(
                         name: .settingsDeepLinkNotification,
                         object: SettingsViewModel.SettingsDeepLinkSection.subscriptionFlow(redirectURLComponents: urlComponents),
@@ -179,7 +179,7 @@ private extension NewTabDaxDialogFactory {
                     onDismiss(false)
                 },
                 onManualDismiss: { [weak self] in
-                    self?.onboardingPrivacyProPromoExperiment.fireDismissPixel()
+                    self?.onboardingPrivacyProPromotionHelper.fireDismissPixel()
                     self?.onboardingPixelReporter.measurePrivacyPromoDialogNewTabDismissButtonTapped()
                     onDismiss(true)
                 }
@@ -188,7 +188,7 @@ private extension NewTabDaxDialogFactory {
         }
         .onboardingContextualBackgroundStyle(background: .illustratedGradient)
         .onFirstAppear { [weak self] in
-            self?.onboardingPrivacyProPromoExperiment.fireImpressionPixel()
+            self?.onboardingPrivacyProPromotionHelper.fireImpressionPixel()
             self?.daxDialogsFlowCoordinator.privacyProPromotionDialogSeen = true
         }
     }

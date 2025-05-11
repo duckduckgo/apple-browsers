@@ -27,6 +27,7 @@ import PixelKit
 import Networking
 import Subscription
 import os.log
+import Configuration
 
 @objc(Application)
 final class DuckDuckGoDBPBackgroundAgentApplication: NSApplication {
@@ -110,8 +111,24 @@ final class DuckDuckGoDBPBackgroundAgentAppDelegate: NSObject, NSApplicationDele
     func applicationDidFinishLaunching(_ aNotification: Notification) {
         Logger.dbpBackgroundAgent.log("DuckDuckGoAgent started")
 
+        Configuration.setURLProvider(DBPAgentConfigurationURLProvider())
+        let configStore = ConfigurationStore()
+        let privacyConfigurationManager = DBPPrivacyConfigurationManager()
+        let configurationManager = ConfigurationManager(privacyConfigManager: privacyConfigurationManager, store: configStore)
+        configurationManager.start()
+        // Load cached config (if any)
+        privacyConfigurationManager.reload(etag: configStore.loadEtag(for: .privacyConfiguration), data: configStore.loadData(for: .privacyConfiguration))
+
         let authenticationManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(subscriptionManager: subscriptionManager)
-        manager = DataBrokerProtectionAgentManagerProvider.agentManager(authenticationManager: authenticationManager, vpnBypassService: VPNBypassService())
+
+        manager = DataBrokerProtectionAgentManagerProvider.agentManager(
+            authenticationManager: authenticationManager,
+            configurationManager: configurationManager,
+            privacyConfigurationManager: privacyConfigurationManager,
+            remoteBrokerDeliveryFeatureFlagger: DBPFeatureFlagger(configurationManager: configurationManager,
+                                                                  privacyConfigurationManager: privacyConfigurationManager),
+            vpnBypassService: VPNBypassService()
+        )
         manager?.agentFinishedLaunching()
 
         setupStatusBarMenu()

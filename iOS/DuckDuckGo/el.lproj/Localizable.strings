@@ -1,7 +1,4 @@
 /* No comment provided by engineer. */
-" " = " ";
-
-/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -310,6 +307,93 @@
 /* No comment provided by engineer. */
 "autoconsent.info.header" = "Όταν το DuckDuckGo εντοπίζει αναδυόμενα παράθυρα συναίνεσης για cookies σε ιστότοπους που επισκέπτεστε, μπορούμε να προσπαθήσουμε να ρυθμίσουμε αυτόματα τις προτιμήσεις σας για τα cookies ώστε να ελαχιστοποιήσετε τα cookies και να μεγιστοποιήσετε το απόρρητο. Έπειτα μπορείτε να κλείσετε τα αναδυόμενα παράθυρα. Ορισμένοι ιστότοποι δεν παρέχουν επιλογή για διαχείριση των προτιμήσεων cookies, οπότε μπορούμε μόνο να αποκρύψουμε αναδυόμενα παράθυρα όπως αυτά.";
 
+/* Toast message when a credit card item is deleted */
+"autofill.creditcard.deleted-message-no-title" = "Η κάρτα διαγράφηκε";
+
+/* Card name label for credit card details on autofill */
+"autofill.creditcard.details.card-name" = "Όνομα στην κάρτα";
+
+/* Card nickname label for credit card details on autofill */
+"autofill.creditcard.details.card-nickname" = "Ψευδώνυμο κάρτας";
+
+/* Card number label for credit card details on autofill */
+"autofill.creditcard.details.card-number" = "Αριθμός κάρτας";
+
+/* Card number label for credit card details on autofill when editing */
+"autofill.creditcard.details.card-number.required" = "Αριθμός κάρτας";
+
+/* Title for toast when copying the credit card name */
+"autofill.creditcard.details.copy-toast.card-name-copied" = "Το όνομα αντιγράφηκε";
+
+/* Title for toast when copying the credit card number */
+"autofill.creditcard.details.copy-toast.card-number-copied" = "Ο αριθμός της κάρτας αντιγράφηκε";
+
+/* Title for toast when copying the credit card cvv (security code) */
+"autofill.creditcard.details.copy-toast.cvv-copied" = "Το CVV αντιγράφηκε";
+
+/* Title for toast when copying the credit card expiration date */
+"autofill.creditcard.details.copy-toast.exp-date-copied" = "Η ημερομηνία λήξης αντιγράφηκε";
+
+/* CVV (security code) label for credit card details on autofill */
+"autofill.creditcard.details.cvv" = "CVV";
+
+/* Title for autofill credit card details */
+"autofill.creditcard.details.default-title" = "Κάρτα";
+
+/* Delete button when deleting an autofill credit card */
+"autofill.creditcard.details.delete" = "Διαγραφή κάρτας";
+
+/* Autofill alert button confirming delete credit card */
+"autofill.creditcard.details.delete-confirmation.button" = "Διαγραφή κάρτας";
+
+/* Autofill message confirming delete credit card */
+"autofill.creditcard.details.delete-confirmation.message" = "Θέλετε σίγουρα να διαγράψετε αυτήν την κάρτα;";
+
+/* Title when editing autofill credit card details */
+"autofill.creditcard.details.edit-title" = "Επεξεργασία κάρτας";
+
+/* Placeholder for card number field on autofill credit card details */
+"autofill.creditcard.details.edit.card-number-placeholder" = "1234 5678 1234 5678";
+
+/* Placeholder for CVV security code field on autofill credit card details */
+"autofill.creditcard.details.edit.cvv-placeholder" = "Κωδικός ασφαλείας";
+
+/* Placeholder for expiration date field on autofill credit card details */
+"autofill.creditcard.details.edit.exp-date-placeholder" = "MM / YY";
+
+/* Expiration date label for credit card details on autofill */
+"autofill.creditcard.details.exp-date" = "Ημερομηνία λήξης";
+
+/* Title when adding new autofill credit card */
+"autofill.creditcard.details.new-title" = "Προσθήκη κάρτας";
+
+/* Placeholder for card name field on autofill credit card details */
+"autofill.creditcard.edit.card-name-placeholder" = "Όνομα στην κάρτα";
+
+/* Placeholder for card nickname field on autofill credit card details */
+"autofill.creditcard.edit.card-nickname-placeholder" = "(π.χ. Εργασία)";
+
+/* Subtitle for view displayed when no autofill credit cards have been saved */
+"autofill.creditcard.empty-view.subtitle.first.paragraph" = "Οι πιστωτικές κάρτες αποθηκεύονται με ασφάλεια στη συσκευή σας.";
+
+/* Title for view displayed when autofill has no credit cards saved */
+"autofill.creditcard.empty-view.title" = "Δεν έχουν αποθηκευτεί ακόμα πιστωτικές κάρτες";
+
+/* Reason for auth when opening credit card list */
+"autofill.creditcard.list.auth.reason" = "Ξεκλειδώστε τη συσκευή για πρόσβαση στις πιστωτικές κάρτες";
+
+/* Credit card row label for credit card expiry date */
+"autofill.creditcard.list.item.expiry" = "Λήξη:";
+
+/* Title for screen listing autofill credit cards */
+"autofill.creditcard.list.title" = "Πιστωτικές κάρτες";
+
+/* Title for view displayed when autofill is locked on devices where a passcode has not been set */
+"autofill.creditcard.no-auth.subtitle" = "Απαιτείται κωδικός πρόσβασης για προστασία των πιστωτικών καρτών σας.";
+
+/* Title for view displayed when autofill is locked on devices where a passcode has not been set */
+"autofill.creditcard.no-auth.title" = "Ασφαλίστε τη συσκευή σας για να αποθηκεύσετε πιστωτικές κάρτες";
+
 /* Do not translate - stringsdict entry */
 "autofill.delete.all.passwords.completion" = "autofill.delete.all.passwords.completion";
 
@@ -330,6 +414,9 @@
 
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Ενεργοποίηση Email Protection";
+
+/* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
+"autofill.hide-card-cvv" = "Απόκρυψη CVV";
 
 /* Accessibility title for a Hide Password button replacing displayed password with ***** */
 "autofill.hide-password" = "Απόκρυψη κωδικού πρόσβασης";
@@ -385,7 +472,7 @@
 /* Message displayed after updating an autofill login */
 "autofill.login-updated.toast" = "Ο κωδικός πρόσβασης ενημερώθηκε";
 
-/* Menu item text for copying autofill login details */
+/* Menu item text for copying autofill details */
 "autofill.logins.copy-prompt" = "Αντιγραφή %@";
 
 /* Title for toast when copying address */
@@ -519,6 +606,9 @@
 
 /* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
 "autofill.logins.list.settings.footer" = "Οι κωδικοί πρόσβασης είναι κρυπτογραφημένοι. Κανείς άλλος εκτός από εσάς δεν μπορεί να τους βλέπει, ούτε καν εμείς.";
+
+/* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
+"autofill.logins.list.settings.passwords.cards.footer" = "Οι κωδικοί πρόσβασης και οι πιστωτικές κάρτες είναι κρυπτογραφημένα. Κανείς άλλος εκτός από εσάς δεν μπορεί να τα βλέπει, ούτε καν εμείς.";
 
 /* Section title for group of suggested saved logins */
 "autofill.logins.list.suggested" = "Προτεινόμενο";
@@ -687,6 +777,9 @@
 
 /* Section header for the autofill settings screen */
 "autofill.settings.view.section-header" = "Προβολή";
+
+/* Accessibility title for a Show CVV button displaying actual credit card CVV (security code) instead of *** */
+"autofill.show-card-cvv" = "Εμφάνιση CVV";
 
 /* Accessibility title for a Show Password button displaying actial password instead of ***** */
 "autofill.show-password" = "Εμφάνιση κωδικού πρόσβασης";
@@ -1057,41 +1150,8 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Χθες";
 
-/* No comment provided by engineer. */
-"dax.hide.button" = "Απόκρυψη συμβουλών για πάντα";
-
-/* No comment provided by engineer. */
-"dax.hide.cancel" = "Ακύρωση";
-
-/* Subtitle in Hide Dax dialog */
-"dax.hide.message" = "Υπάρχουν λίγες μόνο και προσπαθήσαμε να τις καταστήσουμε ενημερωτικές.";
-
-/* Title in Hide Dax dialog */
-"dax.hide.title" = "Απόκρυψη συμβουλών που απομένουν;";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search" = "Οι αναζητήσεις σας στο DuckDuckGo είναι ανώνυμες. Πάντα. 🙌";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search.cta" = "Φιου!";
-
-/* First parameter is a count of additional trackers, second and third are names of the tracker networks (strings) */
-"dax.onboarding.browsing.multiple.trackers" = "dax.onboarding.browsing.multiple.trackers";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.multiple.trackers.cta" = "Κόλλα πέντε!";
-
-/* Parameter is domain name (string) */
-"dax.onboarding.browsing.one.tracker" = "Το *%1$@* προσπαθούσε να σας παρακολουθήσει εδώ.\n\nΤους εμπόδισα!\n\n☝️ Μπορείτε να ελέγξετε τη γραμμή διευθύνσεων για να δείτε ποιος προσπαθεί να σας παρακολουθήσει ενώ επισκέπτεστε έναν νέο ιστότοπο.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.one.tracker.cta" = "Κόλλα πέντε!";
-
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Προσοχή! Δεν μπορώ να εμποδίσω το δίκτυο %1$@ από το να δει τη δραστηριότητά σας στο %2$@.\n\nΑλλά περιηγηθείτε μαζί μου και θα μπορώ να περιορίσω το τι θα γνωρίζει το δίκτυο %1$@ για σας συνολικά, αποκλείοντας τις εφαρμογές παρακολούθησης σε πλήθος άλλων ιστότοπων.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.site.is.major.tracker.cta" = "Το έπιασα";
 
 /* Parameters are domain names (strings) */
 "dax.onboarding.browsing.site.owned.by.major.tracker" = "Προσοχή! Καθώς το %2$@ έχει στην κατοχή του το %1$@, δεν μπορώ να τους εμποδίσω από το να δουν τη δραστηριότητά σας εδώ.\n\nΑλλά περιηγηθείτε μαζί μου και θα μπορώ να περιορίσω το τι θα γνωρίζει το %2$@ για σας συνολικά, αποκλείοντας τις εφαρμογές παρακολούθησης σε πλήθος άλλων ιστότοπων.";
@@ -1102,29 +1162,8 @@
 /* No comment provided by engineer. */
 "dax.onboarding.browsing.without.trackers" = "Καθώς πατάτε στην οθόνη και κάνετε κύλιση, θα μπλοκάρω ενοχλητικές εφαρμογές παρακολούθησης. \n\nΜη σταματάτε - συνεχίστε την περιήγηση!";
 
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.without.trackers.cta" = "Το κατάλαβα";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button" = "Τα προσωπικά δεδομένα μπορούν να αυξηθούν σταδιακά στο πρόγραμμα περιήγησής σας. Απαίσιο. Χρησιμοποιήστε το κουμπί φωτιάς για να τα κάψετε όλα. Δοκιμάστε το τώρα! 👇";
-
-/* Cancel action */
-"dax.onboarding.fire.button.cancelAction" = "Ακύρωση";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button.confirmAction" = "Κλείσιμο καρτελών και εκκαθάριση δεδομένων";
-
 /* Encourage user to add favorite site using the browsing menu. */
 "dax.onboarding.home.add.favorite" = "Επισκεφθείτε τους αγαπημένους σας ιστότοπους στη στιγμή! \n\nΜεταβείτε σε έναν ιστότοπο που αγαπάτε. Έπειτα, πατήστε το εικονίδιο \"⋯\" και επιλέξτε *Προσθήκη στα αγαπημένα*.";
-
-/* Accessible version of dax.onboarding.home.add.favorite */
-"dax.onboarding.home.add.favorite.accessible" = "Επισκεφθείτε τους αγαπημένους σας ιστότοπους στη στιγμή! Επισκεφθείτε έναν από τους αγαπημένους σας ιστότοπους. Έπειτα, πατήστε το κουμπί Άνοιγμα μενού και επιλέξτε Προσθήκη στα αγαπημένα.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.home.initial" = "Στη συνέχεια, δοκιμάστε να επισκεφτείτε έναν από τους αγαπημένους σας ιστότοπους!\n\nΘα εμποδίσω τις εφαρμογές παρακολούθησης ώστε να μην μπορούν να σας κατασκοπεύουν. Επίσης, θα αναβαθμίσω την ασφάλεια της σύνδεσής σας, εάν είναι εφικτό. 🔒";
-
-/* ad = advertisment */
-"dax.onboarding.home.subsequent" = "Το έχετε!\n\nΝα θυμάστε: κάθε φορά που περιηγείστε μαζί μου μια ανατριχιαστική διαφήμιση χάνει τα φτερά της. 👍";
 
 /* No comment provided by engineer. */
 "Debug" = "Επανόρθωση σφαλμάτων";
@@ -1210,21 +1249,6 @@
 /* Title for message explaining to the user that Duck Player is not available */
 "duck-player.contingency-title" = "Το Duck Player δεν είναι διαθέσιμο";
 
-/* Text for the toggle to autoplay videos */
-"duck-player.native-autoplay-videos" = "Autoplay Videos";
-
-/* Text for the description about autoplay videos */
-"duck-player.native-autoplay-videos.description" = "Videos opened in Duck Player will automatically begin playback. Turn this off if you would like to manually start playback of videos opened in Duck Player.";
-
-/* Text for the button to watch a video on DuckPlayer */
-"duck-player.native-open-in-duckplayer" = "Play this video in Duck Player";
-
-/* Text for the button to resume watching a video on DuckPlayer */
-"duck-player.native-resume-in-duckplayer" = "Resume in Duck Player";
-
-/* Text for the button to watch a video on YouTube */
-"duck-player.native-watch-on-youtube" = "Watch in Youtube";
-
 /* Button for the message explaining to the user that Duck Player is not available so the user can learn more */
 "duck-player.video-contingency-cta" = "Μάθετε περισσότερα";
 
@@ -1235,16 +1259,16 @@
 "duckai.preferences.text.markdown" = "Το Duck.ai αποτελεί προαιρετική λειτουργία που σας επιτρέπει να συνομιλείτε ανώνυμα με δημοφιλή μοντέλα τρίτων για συνομιλία μέσω τεχνητής νοημοσύνης. Οι συνομιλίες σας δεν χρησιμοποιούνται για την εκπαίδευση τεχνητής νοημοσύνης.\n[Μάθετε περισσότερα](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
-"duckai.settings.enable.address-bar-toggle" = "Εμφάνιση του Duck.ai στη γραμμή διευθύνσεων";
+"duckai.settings.enable.address-bar-toggle" = "Γραμμή διευθύνσεων";
 
 /* Toggle text to enable/disable AI Chat in the browsing menu */
-"duckai.settings.enable.browsing-menu-toggle" = "Εμφάνιση του Duck.ai στο μενού του προγράμματος περιήγησης";
+"duckai.settings.enable.browsing-menu-toggle" = "Μενού προγράμματος περιήγησης";
 
 /* Toggle text to enable/disable Duck.ai in tab manager */
-"duckai.settings.enable.tab-switcher-toggle" = "Εμφάνιση του Duck.ai στην οθόνη καρτελών";
+"duckai.settings.enable.tab-switcher-toggle" = "Οθόνη καρτελών";
 
 /* Toggle text to enable/disable Duck.ai in voice search */
-"duckai.settings.enable.voice-search-toggle" = "Εμφάνιση του Duck.ai στη φωνητική αναζήτηση";
+"duckai.settings.enable.voice-search-toggle" = "Φωνητική αναζήτηση";
 
 /* Settings screen cell text for AI Chat settings */
 "duckai.settings.title" = "Duck.ai";
@@ -1261,14 +1285,8 @@
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Ποτέ";
 
-/* Toast message for the Duck Player entry pill dismiss count */
-"duckPlayer.pill.dismiss.count.toast.message" = "Want to turn off Duck Player appearing on Youtube?";
-
-/* Button on Toast message for the Duck Player entry pill dismiss count */
-"duckPlayer.pill.dismiss.count.toast.message.button" = "Άνοιγμα ρυθμίσεων";
-
-/* Caption for Duck Player entry point */
-"duckplayer.pill.watch.without.ads" = "No targeted ads, always private";
+/* Settings screen cell text for DuckPlayer settings */
+"duckplayer.open.video.settings.title" = "Duck Player";
 
 /* Body text for the modal feature explanation */
 "duckplayer.presentation.modal.body" = "Το Duck Player σάς επιτρέπει να παρακολουθείτε YouTube χωρίς στοχευμένες διαφημίσεις στο DuckDuckGo, ενώ το περιεχόμενο που παρακολουθείτε δεν θα επηρεάσει τις συστάσεις που θα λαμβάνετε.";
@@ -1299,39 +1317,6 @@
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.title" = "Duck Player";
-
-/* Text displayed when DuckPlayer is in 'Ask' mode for Youtube. */
-"duckPlayerNative.ask.label" = "Θα ήθελα να επιλέξω";
-
-/* Text displayed when DuckPlayer is automatically enabled for Youtube */
-"duckPlayerNative.auto.label" = "Αυτόματα";
-
-/* Label for the automatic youtube video opening */
-"duckPlayerNative.auto.open.label" = "Αυτόματο άνοιγμα του Duck Player στο YouTube";
-
-/* CTA for DuckPlayer priming modal */
-"duckPlayerNative.modal.cta" = "Watch Now Privately";
-
-/* Description for DuckPlayer priming modal */
-"duckPlayerNative.modal.description" = "Plus, what you watch in Duck Player won’t influence your YouTube recommendations.";
-
-/* Title for DuckPlayer priming modal */
-"duckPlayerNative.modal.title" = "Play this video in Duck Player to watch without targeted ads!";
-
-/* Text displayed when DuckPlayer is in off for youtube. */
-"duckPlayerNative.never.label" = "Να μην εμφανίζεται";
-
-/* Label for the use DuckPlayer on Youtube toggle footer */
-"duckPlayerNative.use.on.serp.footer" = "Clicking on YouTube videos in DuckDuckGo search results will open in Duck Player.";
-
-/* Label for the use DuckPlayer on SERP toggle */
-"duckPlayerNative.use.on.serp.label" = "DuckDuckGo Search Results";
-
-/* Label for the use DuckPlayer on Youtube toggle footer */
-"duckPlayerNative.use.on.youtube.footer" = "Choose how you would like Duck Player to handle YouTube videos when navigating from the YouTube website.";
-
-/* Label for the use DuckPlayer on Youtube toggle */
-"duckPlayerNative.use.on.youtube.label" = "Χρήση στο Youtube.com";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Προστασία email";
@@ -2293,11 +2278,11 @@
 /* No comment provided by engineer. */
 "onboardingWelcomeHeader" = "Καλώς ορίσατε στον DuckDuckGo!";
 
-/* No comment provided by engineer. */
-"Open tabs remain unaffected by this change.  Please close all tabs for this setting to take effect." = "Οι ανοιχτές καρτέλες παραμένουν ανεπηρέαστες από την αλλαγή αυτή.  Κλείστε όλες τις καρτέλες για να τεθεί σε ισχύ η ρύθμιση αυτή.";
-
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Δεν είναι δυνατή η εύρεση της εφαρμογής που απαιτείται για άνοιγμα αυτού του συνδέσμου";
+
+/* No comment provided by engineer. */
+"Please close all tabs for this setting to take effect." = "Κλείστε όλες τις καρτέλες για να τεθεί σε ισχύ η ρύθμιση αυτή.";
 
 /* Activate button */
 "pm.activate" = "Ενεργοποίηση";
@@ -2521,6 +2506,9 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Εμφάνιση πλήρους διεύθυνσης ιστότοπου";
 
+/* Settings screen text for showing AI Chat in various places in the app */
+"settings.aichat.shortcuts" = "Συντομευσεις";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Πάντα σε λειτουργία";
 
@@ -2592,6 +2580,9 @@
 
 /* Settings cell for Email Protection */
 "settings.emailProtection.description" = "Αποκλείστε εφαρμογές παρακολούθησης email και αποκρύψτε τη διεύθυνσή σας";
+
+/* Settings screen cell text for enabling AI chat */
+"settings.enable.aichat" = "Ενεργοποίηση του Duck.ai";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Ενεργοποίηση Email Protection";
@@ -2793,9 +2784,6 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Αποθηκευμένο όνομα κεντρικού υπολογιστή: %@";
-
-/* Button for adding email address to subscription */
-"subscription.activate.add.email.button" = "Προσθήκη email";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Προσθήκη σε συσκευή";
@@ -3018,6 +3006,9 @@
 
 /* Unknown period subscription renewal info where parameter is renewal date. This reads as 'Your subscription renews on (date)' */
 "subscription.subscription.renewing.unknown.caption" = "Η συνδρομή σας ανανεώνεται %@.";
+
+/* Unknown period subscription renewal info where parameter is renewal date. This reads as 'Your subscription renews on (date)' */
+"subscription.subscription.renewing.unknown.trial.caption" = "Η συνδρομή σας ανανεώνεται %@.";
 
 /* Annual subscription renewal info where parameter is renewal date. This reads as 'Your annual subscription renews on (date)' */
 "subscription.subscription.renewing.yearly.caption" = "Η ετήσια συνδρομή σας ανανεώνεται %@.";

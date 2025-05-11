@@ -33,6 +33,7 @@ class CompositeShadowView: UIView {
         super.init(frame: .zero)
 
         self.shadows = shadows
+        clipsToBounds = false
 
         setUpShadows()
     }
@@ -73,6 +74,7 @@ class CompositeShadowView: UIView {
             shadowView.frame = bounds
             shadowView.backgroundColor = backgroundColor
             shadowView.layer.cornerRadius = layer.cornerRadius
+            shadowView.layer.cornerCurve = layer.cornerCurve
 
             shadowView.layer.applyShadowProperties(shadow)
 
@@ -128,6 +130,15 @@ class CompositeShadowView: UIView {
             }
         }
 
+        override var cornerCurve: CALayerCornerCurve {
+            didSet {
+                // Iterate only through our own layers, otherwise we raise an exception.
+                shadowLayers.forEach {
+                    $0.cornerCurve = cornerCurve
+                }
+            }
+        }
+
         override var backgroundColor: CGColor? {
             didSet {
                 // Iterate only through our own layers, otherwise we raise an exception.
@@ -145,6 +156,5 @@ private extension CALayer {
         shadowOpacity = shadow.opacity
         shadowRadius = shadow.radius
         shadowOffset = shadow.offset
-        cornerRadius = shadow.radius
     }
 }

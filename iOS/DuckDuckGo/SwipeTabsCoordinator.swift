@@ -118,7 +118,7 @@ class SwipeTabsCoordinator: NSObject {
     }
 
     private func updateLayout() {
-        let omniBarHeight: CGFloat = ExperimentalThemingManager().isExperimentalThemingEnabled ? 68 : 52
+        let omniBarHeight: CGFloat = ExperimentalThemingManager().isExperimentalThemingEnabled ? UpdatedOmniBarView.expectedHeight : DefaultOmniBarView.expectedHeight
         let layout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout
         layout?.itemSize = CGSize(width: coordinator.superview.frame.size.width, height: omniBarHeight)
         layout?.minimumLineSpacing = 0
@@ -369,46 +369,51 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
             cell.omniBar = coordinator.omniBar
         } else {
             // Strong reference while we use the omnibar
-            let controller = OmniBarFactory.createOmniBarViewController(with: omnibarDependencies)
+            let controller = cell.controller ?? OmniBarFactory.createOmniBarViewController(with: omnibarDependencies)
+            let url = tabsModel.safeGetTabAt(indexPath.row)?.link?.url
 
             coordinator.parentController?.addChild(controller)
 
             cell.omniBar = controller
 
             cell.omniBar?.showSeparator()
-            if self.appSettings.currentAddressBarPosition.isBottom {
-                cell.omniBar?.moveSeparatorToTop()
-            } else {
-                cell.omniBar?.moveSeparatorToBottom()
-            }
+            cell.omniBar?.adjust(for: appSettings.currentAddressBarPosition)
 
             if let url = tabsModel.safeGetTabAt(indexPath.row)?.link?.url {
                 cell.omniBar?.startBrowsing()
-                cell.omniBar?.refreshText(forUrl: url, forceFullURL: appSettings.showFullSiteAddress)
-                cell.omniBar?.resetPrivacyIcon(for: url)
                 cell.omniBar?.updateAccessoryType(omnibarAccessoryHandler.omnibarAccessory(for: url))
+                cell.omniBar?.resetPrivacyIcon(for: url)
+            } else {
+                cell.omniBar?.stopBrowsing()
+                // It's always chat just now (this might change in the future) and this prevents a flash when on new tab
+                cell.omniBar?.updateAccessoryType(.chat)
             }
 
+            cell.omniBar?.refreshText(forUrl: url, forceFullURL: appSettings.showFullSiteAddress)
+
             controller.didMove(toParent: coordinator.parentController)
+            cell.controller = controller
         }
 
         cell.setNeedsUpdateConstraints()
 
         return cell
     }
-    
+
 }
 
 class OmniBarCell: UICollectionViewCell {
 
     weak var coordinator: MainViewCoordinator?
     var roundCornersMaskView: RoundedCornersMaskView?
+    var controller: OmniBarViewController?
 
     weak var omniBar: OmniBar? {
+        willSet {
+            omniBar?.barView.removeFromSuperview()
+        }
         didSet {
             guard let omniBarView = omniBar?.barView else { return }
-
-            subviews.forEach { $0.removeFromSuperview() }
 
             omniBarView.translatesAutoresizingMaskIntoConstraints = false
             addSubview(omniBarView)
@@ -446,6 +451,11 @@ class OmniBarCell: UICollectionViewCell {
             bringSubviewToFront(maskView)
                 
         }
+    }
+
+    deinit {
+        controller?.removeFromParent()
+        controller = nil
     }
 }
 

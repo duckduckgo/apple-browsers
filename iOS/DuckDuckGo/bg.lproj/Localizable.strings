@@ -1,7 +1,4 @@
 /* No comment provided by engineer. */
-" " = " ";
-
-/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -310,6 +307,93 @@
 /* No comment provided by engineer. */
 "autoconsent.info.header" = "Когато DuckDuckGo открие изскачащи прозорци за съгласие за използване на бисквитки в сайтовете, които посещавате, можем да опитаме автоматично да настроим предпочитанията Ви за бисквитки, така че бисквитките да са сведени до минимум, а поверителността да е максимална, след което да затворим изскачащите прозорци. Някои сайтове не предоставят възможност за управление на предпочитанията за бисквитки, затова можем само да скрием техните изскачащи прозорци.";
 
+/* Toast message when a credit card item is deleted */
+"autofill.creditcard.deleted-message-no-title" = "Картата е изтрита";
+
+/* Card name label for credit card details on autofill */
+"autofill.creditcard.details.card-name" = "Име на картата";
+
+/* Card nickname label for credit card details on autofill */
+"autofill.creditcard.details.card-nickname" = "Псевдоним на картата";
+
+/* Card number label for credit card details on autofill */
+"autofill.creditcard.details.card-number" = "Номер на картата";
+
+/* Card number label for credit card details on autofill when editing */
+"autofill.creditcard.details.card-number.required" = "Номер на картата";
+
+/* Title for toast when copying the credit card name */
+"autofill.creditcard.details.copy-toast.card-name-copied" = "Името е копирано";
+
+/* Title for toast when copying the credit card number */
+"autofill.creditcard.details.copy-toast.card-number-copied" = "Номерът на картата е копиран";
+
+/* Title for toast when copying the credit card cvv (security code) */
+"autofill.creditcard.details.copy-toast.cvv-copied" = "CVV е копиран";
+
+/* Title for toast when copying the credit card expiration date */
+"autofill.creditcard.details.copy-toast.exp-date-copied" = "Срокът на валидност е копиран";
+
+/* CVV (security code) label for credit card details on autofill */
+"autofill.creditcard.details.cvv" = "CVV";
+
+/* Title for autofill credit card details */
+"autofill.creditcard.details.default-title" = "Карта";
+
+/* Delete button when deleting an autofill credit card */
+"autofill.creditcard.details.delete" = "Изтриване на карта";
+
+/* Autofill alert button confirming delete credit card */
+"autofill.creditcard.details.delete-confirmation.button" = "Изтриване на карта";
+
+/* Autofill message confirming delete credit card */
+"autofill.creditcard.details.delete-confirmation.message" = "Сигурни ли сте, че искате да изтриете тази карта?";
+
+/* Title when editing autofill credit card details */
+"autofill.creditcard.details.edit-title" = "Редактиране на карта";
+
+/* Placeholder for card number field on autofill credit card details */
+"autofill.creditcard.details.edit.card-number-placeholder" = "1234 5678 1234 5678";
+
+/* Placeholder for CVV security code field on autofill credit card details */
+"autofill.creditcard.details.edit.cvv-placeholder" = "Код за сигурност";
+
+/* Placeholder for expiration date field on autofill credit card details */
+"autofill.creditcard.details.edit.exp-date-placeholder" = "ММ / ГГ";
+
+/* Expiration date label for credit card details on autofill */
+"autofill.creditcard.details.exp-date" = "Срок на валидност";
+
+/* Title when adding new autofill credit card */
+"autofill.creditcard.details.new-title" = "Добавяне на карта";
+
+/* Placeholder for card name field on autofill credit card details */
+"autofill.creditcard.edit.card-name-placeholder" = "Име на картата";
+
+/* Placeholder for card nickname field on autofill credit card details */
+"autofill.creditcard.edit.card-nickname-placeholder" = "(напр. Служебна)";
+
+/* Subtitle for view displayed when no autofill credit cards have been saved */
+"autofill.creditcard.empty-view.subtitle.first.paragraph" = "Кредитните карти се съхраняват сигурно на Вашето устройство.";
+
+/* Title for view displayed when autofill has no credit cards saved */
+"autofill.creditcard.empty-view.title" = "Все още няма запазени кредитни карти";
+
+/* Reason for auth when opening credit card list */
+"autofill.creditcard.list.auth.reason" = "Отключете устройството, за да получите достъп до кредитните карти";
+
+/* Credit card row label for credit card expiry date */
+"autofill.creditcard.list.item.expiry" = "Срок на валидност:";
+
+/* Title for screen listing autofill credit cards */
+"autofill.creditcard.list.title" = "Кредитни карти";
+
+/* Title for view displayed when autofill is locked on devices where a passcode has not been set */
+"autofill.creditcard.no-auth.subtitle" = "За защита на кредитните карти се изисква парола.";
+
+/* Title for view displayed when autofill is locked on devices where a passcode has not been set */
+"autofill.creditcard.no-auth.title" = "Защитете устройството, за да можете да запазвате кредитни карти";
+
 /* Do not translate - stringsdict entry */
 "autofill.delete.all.passwords.completion" = "autofill.delete.all.passwords.completion";
 
@@ -330,6 +414,9 @@
 
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Активиране на Email Protection";
+
+/* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
+"autofill.hide-card-cvv" = "Скриване на CVV";
 
 /* Accessibility title for a Hide Password button replacing displayed password with ***** */
 "autofill.hide-password" = "Скриване на паролата";
@@ -385,7 +472,7 @@
 /* Message displayed after updating an autofill login */
 "autofill.login-updated.toast" = "Паролата е актуализирана";
 
-/* Menu item text for copying autofill login details */
+/* Menu item text for copying autofill details */
 "autofill.logins.copy-prompt" = "Копиране на %@";
 
 /* Title for toast when copying address */
@@ -519,6 +606,9 @@
 
 /* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
 "autofill.logins.list.settings.footer" = "Паролите са криптирани. Никой освен Вас не може да ги види, дори ние.";
+
+/* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
+"autofill.logins.list.settings.passwords.cards.footer" = "Паролите и кредитните карти са криптирани. Никой освен Вас не може да ги види, дори ние.";
 
 /* Section title for group of suggested saved logins */
 "autofill.logins.list.suggested" = "Предложения";
@@ -687,6 +777,9 @@
 
 /* Section header for the autofill settings screen */
 "autofill.settings.view.section-header" = "Преглед";
+
+/* Accessibility title for a Show CVV button displaying actual credit card CVV (security code) instead of *** */
+"autofill.show-card-cvv" = "Показване на CVV";
 
 /* Accessibility title for a Show Password button displaying actial password instead of ***** */
 "autofill.show-password" = "Показване на паролата";
@@ -1057,41 +1150,8 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Вчера";
 
-/* No comment provided by engineer. */
-"dax.hide.button" = "Скрий съветите за постоянно";
-
-/* No comment provided by engineer. */
-"dax.hide.cancel" = "Отмени";
-
-/* Subtitle in Hide Dax dialog */
-"dax.hide.message" = "Само няколко са и се постарахме да са информативни.";
-
-/* Title in Hide Dax dialog */
-"dax.hide.title" = "Скрий оставащите съвети?";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search" = "Търсенето в DuckDuckGo е анонимно. Винаги. 🙌";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search.cta" = "Слава Богу!";
-
-/* First parameter is a count of additional trackers, second and third are names of the tracker networks (strings) */
-"dax.onboarding.browsing.multiple.trackers" = "dax.onboarding.browsing.multiple.trackers";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.multiple.trackers.cta" = "Дай пет!";
-
-/* Parameter is domain name (string) */
-"dax.onboarding.browsing.one.tracker" = "*%1$@* се опитва да ви проследи тук.\n\nБлокирах ги!\n\n☝️ Вижте адресната лента, за да разберете кой се опитва да ви проследи, когато посещавате нов сайт.️";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.one.tracker.cta" = "Дай пет!";
-
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Внимание! Не мога да направя така, че %1$@ да не вижда вашата активност на %2$@.\n\nНо ако сърфирате с мен, като цяло мога да намаля информацията, която %1$@ научава за вас, като блокирам неговите тракери на много други сайтове.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.site.is.major.tracker.cta" = "Разбрах";
 
 /* Parameters are domain names (strings) */
 "dax.onboarding.browsing.site.owned.by.major.tracker" = "Внимание! Тъй като %2$@ притежава %1$@, той вижда какво правите тук.\n\nНо ако сърфирате с мен, като цяло мога да намаля информацията, която %2$@ научава за вас, като блокирам неговите тракери на много други сайтове.";
@@ -1102,29 +1162,8 @@
 /* No comment provided by engineer. */
 "dax.onboarding.browsing.without.trackers" = "Докато докосвате и превъртате, аз ще блокирам досадните тракери.\n\nПродължавайте да сърфирате спокойно!";
 
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.without.trackers.cta" = "Разбрах";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button" = "Личните данни могат да се натрупват в браузъра. Много неприятно. Използвайте огнения бутон, за да изгорите всичко. Опитайте сега! 👇";
-
-/* Cancel action */
-"dax.onboarding.fire.button.cancelAction" = "Отмени";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button.confirmAction" = "Затваряне на разделите и изчистване на данните";
-
 /* Encourage user to add favorite site using the browsing menu. */
 "dax.onboarding.home.add.favorite" = "Отварянето на любимите ви сайтове става светкавично!\n\nОтворете сайт, който харесвате. След това докоснете иконата \"⋯\" и изберете *Добавяне към любими*.";
-
-/* Accessible version of dax.onboarding.home.add.favorite */
-"dax.onboarding.home.add.favorite.accessible" = "Отварянето на любимите ви сайтове става светкавично! Посетете някой от любимите си сайтове. След това докоснете бутона за отваряне на меню и изберете \"Добавяне към любими\".";
-
-/* No comment provided by engineer. */
-"dax.onboarding.home.initial" = "Сега опитайте да отворите някой от любимите си сайтове!\n\nЩе блокирам тракерите, за да не ви шпионират. Освен това ще подобря сигурността на вашата връзка, ако това е възможно. 🔒";
-
-/* ad = advertisment */
-"dax.onboarding.home.subsequent" = "Нали разбрахте!\n\nЗапомнете: Всеки път, когато сърфирате с мен, аз подрязвам крилцата на някоя досадна реклама. 👍";
 
 /* No comment provided by engineer. */
 "Debug" = "Отстраняване на грешки";
@@ -1210,21 +1249,6 @@
 /* Title for message explaining to the user that Duck Player is not available */
 "duck-player.contingency-title" = "Duck Player не е достъпен";
 
-/* Text for the toggle to autoplay videos */
-"duck-player.native-autoplay-videos" = "Autoplay Videos";
-
-/* Text for the description about autoplay videos */
-"duck-player.native-autoplay-videos.description" = "Videos opened in Duck Player will automatically begin playback. Turn this off if you would like to manually start playback of videos opened in Duck Player.";
-
-/* Text for the button to watch a video on DuckPlayer */
-"duck-player.native-open-in-duckplayer" = "Play this video in Duck Player";
-
-/* Text for the button to resume watching a video on DuckPlayer */
-"duck-player.native-resume-in-duckplayer" = "Resume in Duck Player";
-
-/* Text for the button to watch a video on YouTube */
-"duck-player.native-watch-on-youtube" = "Watch in Youtube";
-
 /* Button for the message explaining to the user that Duck Player is not available so the user can learn more */
 "duck-player.video-contingency-cta" = "Научете повече";
 
@@ -1235,16 +1259,16 @@
 "duckai.preferences.text.markdown" = "Duck.ai е незадължителна функция, чрез която можете да разговаряте анонимно с популярни AI чат модели от трети страни. Чатовете не се използват за обучение на AI.\n[Научете повече](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
-"duckai.settings.enable.address-bar-toggle" = "Показване на Duck.ai в адресната лента";
+"duckai.settings.enable.address-bar-toggle" = "Адресна лента";
 
 /* Toggle text to enable/disable AI Chat in the browsing menu */
-"duckai.settings.enable.browsing-menu-toggle" = "Показване на Duck.ai в менюто на браузъра";
+"duckai.settings.enable.browsing-menu-toggle" = "Меню на браузъра";
 
 /* Toggle text to enable/disable Duck.ai in tab manager */
-"duckai.settings.enable.tab-switcher-toggle" = "Показване на Duck.ai на екрана с раздели";
+"duckai.settings.enable.tab-switcher-toggle" = "Екран с раздели";
 
 /* Toggle text to enable/disable Duck.ai in voice search */
-"duckai.settings.enable.voice-search-toggle" = "Показване на Duck.ai в гласовото търсене";
+"duckai.settings.enable.voice-search-toggle" = "Гласово търсене";
 
 /* Settings screen cell text for AI Chat settings */
 "duckai.settings.title" = "Duck.ai";
@@ -1261,14 +1285,8 @@
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Никога";
 
-/* Toast message for the Duck Player entry pill dismiss count */
-"duckPlayer.pill.dismiss.count.toast.message" = "Want to turn off Duck Player appearing on Youtube?";
-
-/* Button on Toast message for the Duck Player entry pill dismiss count */
-"duckPlayer.pill.dismiss.count.toast.message.button" = "Отваряне на настройки";
-
-/* Caption for Duck Player entry point */
-"duckplayer.pill.watch.without.ads" = "No targeted ads, always private";
+/* Settings screen cell text for DuckPlayer settings */
+"duckplayer.open.video.settings.title" = "Duck Player";
 
 /* Body text for the modal feature explanation */
 "duckplayer.presentation.modal.body" = "С Duck Player на DuckDuckGo можете да гледате YouTube без насочени реклами и вече гледаните видеоклипове няма да повлияят на препоръчаните.";
@@ -1299,39 +1317,6 @@
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.title" = "Duck Player";
-
-/* Text displayed when DuckPlayer is in 'Ask' mode for Youtube. */
-"duckPlayerNative.ask.label" = "Нека да избера";
-
-/* Text displayed when DuckPlayer is automatically enabled for Youtube */
-"duckPlayerNative.auto.label" = "Автоматично";
-
-/* Label for the automatic youtube video opening */
-"duckPlayerNative.auto.open.label" = "Автоматично отваряне на Duck Player в YouTube";
-
-/* CTA for DuckPlayer priming modal */
-"duckPlayerNative.modal.cta" = "Watch Now Privately";
-
-/* Description for DuckPlayer priming modal */
-"duckPlayerNative.modal.description" = "Plus, what you watch in Duck Player won’t influence your YouTube recommendations.";
-
-/* Title for DuckPlayer priming modal */
-"duckPlayerNative.modal.title" = "Play this video in Duck Player to watch without targeted ads!";
-
-/* Text displayed when DuckPlayer is in off for youtube. */
-"duckPlayerNative.never.label" = "Не показвай";
-
-/* Label for the use DuckPlayer on Youtube toggle footer */
-"duckPlayerNative.use.on.serp.footer" = "Clicking on YouTube videos in DuckDuckGo search results will open in Duck Player.";
-
-/* Label for the use DuckPlayer on SERP toggle */
-"duckPlayerNative.use.on.serp.label" = "DuckDuckGo Search Results";
-
-/* Label for the use DuckPlayer on Youtube toggle footer */
-"duckPlayerNative.use.on.youtube.footer" = "Choose how you would like Duck Player to handle YouTube videos when navigating from the YouTube website.";
-
-/* Label for the use DuckPlayer on Youtube toggle */
-"duckPlayerNative.use.on.youtube.label" = "Използване в Youtube.com";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Защита на имейл";
@@ -2258,7 +2243,7 @@
 "onboarding.skip.cta.resumeOnboarding" = "Показване на указанията";
 
 /* The message of the skip onboarding dialog popup. */
-"onboarding.skip.message" = "Не забравяйте: можете да изтриете всички раздели, хронологията и данните от сърфиране с две докосвания на Fire Button 🔥";
+"onboarding.skip.message" = "Не забравяйте: можете да изтриете всички раздели, историята и данните от сърфирането с две докосвания на Fire Button 🔥";
 
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Разбрах! Ще пропусна другите съвети.";
@@ -2293,11 +2278,11 @@
 /* No comment provided by engineer. */
 "onboardingWelcomeHeader" = "Добре дошли в DuckDuckGo!";
 
-/* No comment provided by engineer. */
-"Open tabs remain unaffected by this change.  Please close all tabs for this setting to take effect." = "Тази промяна не засяга отворените раздели.  Моля, затворете всички раздели, за да влезе в сила тази настройка.";
-
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Не е намерено приложението, необходимо за отваряне на тази връзка";
+
+/* No comment provided by engineer. */
+"Please close all tabs for this setting to take effect." = "Моля, затворете всички раздели, за да влезе в сила тази настройка.";
 
 /* Activate button */
 "pm.activate" = "Повторно активиране";
@@ -2521,6 +2506,9 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Показване на пълния адрес на сайта";
 
+/* Settings screen text for showing AI Chat in various places in the app */
+"settings.aichat.shortcuts" = "Бързи Връзки";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Винаги включено";
 
@@ -2592,6 +2580,9 @@
 
 /* Settings cell for Email Protection */
 "settings.emailProtection.description" = "Блокирайте имейл тракерите и скрийте своя адрес";
+
+/* Settings screen cell text for enabling AI chat */
+"settings.enable.aichat" = "Активиране на Duck.ai";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Активиране на Email Protection";
@@ -2793,9 +2784,6 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Запазено име на хост: %@";
-
-/* Button for adding email address to subscription */
-"subscription.activate.add.email.button" = "Добавяне на имейл";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Добавяне към устройството";
@@ -3018,6 +3006,9 @@
 
 /* Unknown period subscription renewal info where parameter is renewal date. This reads as 'Your subscription renews on (date)' */
 "subscription.subscription.renewing.unknown.caption" = "Абонаментът ви се подновява на %@.";
+
+/* Unknown period subscription renewal info where parameter is renewal date. This reads as 'Your subscription renews on (date)' */
+"subscription.subscription.renewing.unknown.trial.caption" = "Абонаментът ви се подновява на %@.";
 
 /* Annual subscription renewal info where parameter is renewal date. This reads as 'Your annual subscription renews on (date)' */
 "subscription.subscription.renewing.yearly.caption" = "Годишният ви абонамент се подновява на %@.";

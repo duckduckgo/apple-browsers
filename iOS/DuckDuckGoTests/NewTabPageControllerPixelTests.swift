@@ -76,13 +76,15 @@ final class NewTabPageControllerPixelTests: XCTestCase {
     private func createSUT() -> NewTabPageViewController {
         NewTabPageViewController(tab: Tab(),
                                  isNewTabPageCustomizationEnabled: false,
+                                 isExperimentalAppearanceEnabled: false,
                                  interactionModel: MockFavoritesListInteracting(),
                                  homePageMessagesConfiguration: HomePageMessagesConfigurationMock(homeMessages: []),
                                  variantManager: MockVariantManager(),
                                  newTabDialogFactory: MockDaxDialogFactory(),
                                  newTabDialogTypeProvider: MockNewTabDialogSpecProvider(),
                                  faviconLoader: EmptyFaviconLoading(),
-                                 pixelFiring: PixelFiringMock.self)
+                                 pixelFiring: PixelFiringMock.self,
+                                 messageNavigationDelegate: MockMessageNavigationDelegate())
     }
 }
 

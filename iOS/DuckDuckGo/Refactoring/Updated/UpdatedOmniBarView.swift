@@ -39,26 +39,26 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     var accessoryButton: UIButton! { searchAreaView.accessoryButton }
     var menuButton: UIButton! { menuButtonView }
     var refreshButton: UIButton! { searchAreaView.reloadButton }
+    var shareButton: UIButton! { searchAreaView.shareButton }
     var privacyIconView: UIView? { privacyInfoContainer.privacyIcon }
     var searchContainer: UIView! { searchAreaContainerView }
-    let expectedHeight: CGFloat = Metrics.height
+    let expectedHeight: CGFloat = UpdatedOmniBarView.expectedHeight
+    static let expectedHeight: CGFloat = Metrics.height
 
-    var accessoryType: OmniBarAccessoryType = .share {
+    var accessoryType: OmniBarAccessoryType = .chat {
         didSet {
             switch accessoryType {
             case .chat:
                 searchAreaView.accessoryButton.setImage(UIImage(resource: .aiChatNew24), for: .normal)
-            case .share:
-                searchAreaView.accessoryButton.setImage(UIImage(resource: .shareAppleNew24), for: .normal)
             }
             updateAccessoryAccessibility()
         }
     }
 
-    private var searchAreaTopPaddingConstraint: NSLayoutConstraint?
-    private var searchAreaBottomPaddingConstraint: NSLayoutConstraint?
     private var readableSearchAreaWidthConstraint: NSLayoutConstraint?
     private var largeSizeSpacingConstraint: NSLayoutConstraint?
+    private var textAreaTopPaddingConstraint: NSLayoutConstraint?
+    private var textAreaBottomPaddingConstraint: NSLayoutConstraint?
 
     // iPad elements
 
@@ -105,8 +105,14 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     }
     var isRefreshButtonHidden: Bool {
         get { searchAreaView.reloadButton.isHidden }
-        set { searchAreaView.reloadButton.isHidden = newValue }
+        set { searchAreaView.reloadButton.isHidden = true }
     }
+
+    var isShareButtonHidden: Bool {
+        get { searchAreaView.shareButton.isHidden }
+        set { searchAreaView.shareButton.isHidden = newValue }
+    }
+
     var isVoiceSearchButtonHidden: Bool {
         get { searchAreaView.voiceSearchButton.isHidden }
         set {
@@ -151,6 +157,12 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         }
     }
 
+    var isUsingSmallTopSpacing: Bool = false {
+        didSet {
+            updateVerticalSpacing()
+        }
+    }
+
     var isShowingSeparator: Bool = false {
         didSet {
             searchAreaView.separatorView.isHidden = !isShowingSeparator
@@ -173,6 +185,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     var onSettingsButtonPressed: (() -> Void)?
     var onCancelPressed: (() -> Void)?
     var onRefreshPressed: (() -> Void)?
+    var onSharePressed: (() -> Void)?
     var onBackPressed: (() -> Void)?
     var onForwardPressed: (() -> Void)?
     var onBookmarksPressed: (() -> Void)?
@@ -208,6 +221,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
 
     var searchContainerWidth: CGFloat { searchAreaView.frame.width }
 
+    private var masksTop: Bool = true
     private let omniBarProgressView = OmniBarProgressView()
     var progressView: ProgressView? { omniBarProgressView.progressView }
 
@@ -229,7 +243,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     }
 
     init() {
-        super.init(frame: CGRect(x: 0, y: 0, width: 300, height: 68))
+        super.init(frame: CGRect(x: 0, y: 0, width: 300, height: Metrics.height))
 
         setUpSubviews()
         setUpConstraints()
@@ -238,11 +252,18 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         setUpAccessibility()
 
         updateActiveState()
+        updateVerticalSpacing()
     }
 
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+
+        updateMaskLayer()
     }
 
     private func setUpSubviews() {
@@ -278,17 +299,17 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         let searchAreaCenterXConstraint = searchAreaContainerView.centerXAnchor.constraint(equalTo: centerXAnchor)
         searchAreaCenterXConstraint.priority = .defaultHigh
 
-        let searchAreaTopPadding = stackView.topAnchor.constraint(equalTo: topAnchor, constant: Metrics.textAreaTopPadding)
-        let searchAreaBottomPadding = stackView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Metrics.textAreaBottomPadding)
-
         let largeSizeSpacing = leadingSpacer.widthAnchor.constraint(equalTo: trailingSpacer.widthAnchor)
         largeSizeSpacing.priority = .init(700)
         largeSizeSpacing.isActive = false
 
-        searchAreaTopPaddingConstraint = searchAreaTopPadding
-        searchAreaBottomPaddingConstraint = searchAreaBottomPadding
+        let textAreaTopPaddingConstraint = stackView.topAnchor.constraint(equalTo: topAnchor, constant: Metrics.textAreaVerticalPaddingRegularSpacing)
+        let textAreaBottomPaddingConstraint = stackView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Metrics.textAreaVerticalPaddingRegularSpacing)
+
         readableSearchAreaWidthConstraint = readableSearchAreaWidth
         largeSizeSpacingConstraint = largeSizeSpacing
+        self.textAreaTopPaddingConstraint = textAreaTopPaddingConstraint
+        self.textAreaBottomPaddingConstraint = textAreaBottomPaddingConstraint
 
         omniBarProgressView.translatesAutoresizingMaskIntoConstraints = false
         activeOutlineView.translatesAutoresizingMaskIntoConstraints = false
@@ -298,8 +319,8 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         NSLayoutConstraint.activate([
             stackView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: Metrics.textAreaHorizontalPadding),
             stackView.trailingAnchor.constraint(equalTo: safeAreaLayoutGuide.trailingAnchor, constant: -Metrics.textAreaHorizontalPadding),
-            searchAreaTopPadding,
-            searchAreaBottomPadding,
+            textAreaTopPaddingConstraint,
+            textAreaBottomPaddingConstraint,
 
             searchAreaView.topAnchor.constraint(greaterThanOrEqualTo: searchAreaContainerView.topAnchor),
             searchAreaView.bottomAnchor.constraint(lessThanOrEqualTo: searchAreaContainerView.bottomAnchor),
@@ -310,10 +331,10 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
             searchAreaCenterXConstraint,
             readableSearchAreaWidth,
 
-            activeOutlineView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor, constant: -Metrics.activeBorderWidth/2),
-            activeOutlineView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor, constant: Metrics.activeBorderWidth/2),
-            activeOutlineView.topAnchor.constraint(equalTo: searchAreaContainerView.topAnchor, constant: -Metrics.activeBorderWidth/2),
-            activeOutlineView.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor, constant: Metrics.activeBorderWidth/2),
+            activeOutlineView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor, constant: -Metrics.activeBorderWidth),
+            activeOutlineView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor, constant: Metrics.activeBorderWidth),
+            activeOutlineView.topAnchor.constraint(equalTo: searchAreaContainerView.topAnchor, constant: -Metrics.activeBorderWidth),
+            activeOutlineView.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor, constant: Metrics.activeBorderWidth),
 
             omniBarProgressView.topAnchor.constraint(equalTo: searchAreaContainerView.topAnchor),
             omniBarProgressView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
@@ -342,13 +363,17 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
 
         searchAreaContainerView.backgroundColor = UIColor(designSystemColor: .urlBar)
         searchAreaContainerView.layer.cornerRadius = Metrics.cornerRadius
+        searchAreaContainerView.layer.cornerCurve = .continuous
 
         searchAreaView.layer.cornerRadius = Metrics.cornerRadius
+        searchAreaView.layer.cornerCurve = .continuous
 
         activeOutlineView.isUserInteractionEnabled = false
         activeOutlineView.translatesAutoresizingMaskIntoConstraints = false
         activeOutlineView.layer.borderColor = UIColor(Color(designSystemColor: .accent)).cgColor
         activeOutlineView.layer.borderWidth = Metrics.activeBorderWidth
+        activeOutlineView.layer.cornerRadius = Metrics.activeBorderRadius
+        activeOutlineView.layer.cornerCurve = .continuous
         activeOutlineView.backgroundColor = .clear
 
         stackView.axis = .horizontal
@@ -386,6 +411,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         searchAreaView.voiceSearchButton.addTarget(self, action: #selector(voiceSearchButtonTap), for: .touchUpInside)
         searchAreaView.reloadButton.addTarget(self, action: #selector(reloadButtonTap), for: .touchUpInside)
         searchAreaView.clearButton.addTarget(self, action: #selector(clearButtonTap), for: .touchUpInside)
+        searchAreaView.shareButton.addTarget(self, action: #selector(shareButtonTap), for: .touchUpInside)
         searchAreaView.cancelButton.addTarget(self, action: #selector(cancelButtonTap), for: .touchUpInside)
         searchAreaView.accessoryButton.addTarget(self, action: #selector(accessoryButtonTap), for: .touchUpInside)
 
@@ -402,19 +428,48 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     }
 
     private func updateShadows() {
-        let color = UIColor(designSystemColor: .shadowPrimary)
+        let inactiveColor = UIColor(designSystemColor: .shadowPrimary)
+        let activeColor = UIColor(designSystemColor: .shadowSecondary)
 
-        let shadow1 = CompositeShadowView.Shadow(id: "shadow1", color: color, opacity: 1, radius: 6.0, offset: CGSize(width: 0, height: 2))
-        // These two have the same name so we can update the existing shadow
-        let shadow2Inactive = CompositeShadowView.Shadow(id: "shadow2", color: color, opacity: 0, radius: 24.0, offset: CGSize(width: 0, height: 16))
-        let shadow2Active = CompositeShadowView.Shadow(id: "shadow2", color: color, opacity: 1, radius: 24.0, offset: CGSize(width: 0, height: 16))
+        // The following two have the same id so we can update the existing shadow
+        let shadow1Inactive = CompositeShadowView.Shadow(
+            id: "shadow1",
+            color: inactiveColor,
+            opacity: 1,
+            radius: 12.0,
+            offset: CGSize(width: 0, height: 4)
+        )
+        let shadow1Active = CompositeShadowView.Shadow(
+            id: "shadow1",
+            color: activeColor,
+            opacity: 1,
+            radius: 12.0,
+            offset: CGSize(width: 0, height: 2)
+        )
 
+        // The following two have the same id so we can update the existing shadow
+        let shadow2Inactive = CompositeShadowView.Shadow(
+            id: "shadow2",
+            color: inactiveColor,
+            opacity: 0,
+            radius: 48.0,
+            offset: CGSize(width: 0, height: 16)
+        )
+        let shadow2Active = CompositeShadowView.Shadow(
+            id: "shadow2",
+            color: activeColor,
+            opacity: 1,
+            radius: 32,
+            offset: CGSize(width: 0, height: 16)
+        )
+
+        let primaryShadow = isActiveState ? shadow1Active : shadow1Inactive
         let secondaryShadow = isActiveState ? shadow2Active : shadow2Inactive
 
         if searchAreaContainerView.shadows.isEmpty {
-            let shadows = [shadow1, secondaryShadow].compactMap { $0 }
-            searchAreaContainerView.shadows = shadows
+            searchAreaContainerView.shadows = [primaryShadow, secondaryShadow]
         } else {
+            searchAreaContainerView.updateShadow(primaryShadow)
             searchAreaContainerView.updateShadow(secondaryShadow)
         }
     }
@@ -478,27 +533,24 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         case .chat:
             accessoryButton.accessibilityLabel = "AI Chat"
             accessoryButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.AIChat"
-        case .share:
-            accessoryButton.accessibilityLabel = "Share"
-            accessoryButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.Share"
         }
         accessoryButton.accessibilityTraits = .button
     }
 
     private func updateActiveState() {
-        searchAreaTopPaddingConstraint?.constant = isActiveState ? Metrics.activeTextAreaTopPadding : Metrics.textAreaTopPadding
-        searchAreaBottomPaddingConstraint?.constant = isActiveState ? -Metrics.activeTextAreaBottomPadding : -Metrics.textAreaBottomPadding
-
-        let cornerRadius = isActiveState ? Metrics.activeCornerRadius : Metrics.cornerRadius
-
         // This is needed so progress bar is clipped properly
-        omniBarProgressView.layer.cornerRadius = cornerRadius
-        searchAreaContainerView.layer.cornerRadius = cornerRadius
-        activeOutlineView.layer.cornerRadius = cornerRadius
+        omniBarProgressView.layer.cornerRadius = Metrics.cornerRadius
+        searchAreaContainerView.layer.cornerRadius = Metrics.cornerRadius
+        activeOutlineView.layer.cornerRadius = isActiveState ? Metrics.activeBorderRadius : Metrics.cornerRadius
 
         activeOutlineView.alpha = isActiveState ? 1 : 0
 
         updateShadows()
+    }
+
+    private func updateVerticalSpacing() {
+        textAreaTopPaddingConstraint?.constant = isUsingSmallTopSpacing ? Metrics.textAreaTopPaddingAdjustedSpacing : Metrics.textAreaVerticalPaddingRegularSpacing
+        textAreaBottomPaddingConstraint?.constant = -(isUsingSmallTopSpacing ? Metrics.textAreaBottomPaddingAdjustedSpacing : Metrics.textAreaVerticalPaddingRegularSpacing)
     }
 
     override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
@@ -555,6 +607,10 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         onClearButtonPressed?()
     }
 
+    @objc private func shareButtonTap() {
+        onSharePressed?()
+    }
+
     @objc private func cancelButtonTap() {
         onAbortButtonPressed?()
     }
@@ -569,19 +625,20 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
 
     private struct Metrics {
         static let itemSize: CGFloat = 44
-        static let height: CGFloat = 68
+        static let height: CGFloat = 60
 
         static let cornerRadius: CGFloat = 16
-        static let activeCornerRadius: CGFloat = 18
 
+        static let activeBorderRadius: CGFloat = 18
         static let activeBorderWidth: CGFloat = 2
 
         static let textAreaHorizontalPadding: CGFloat = 16
 
-        static let textAreaTopPadding: CGFloat = 12
-        static let textAreaBottomPadding: CGFloat = 12
-        static let activeTextAreaTopPadding: CGFloat = 10
-        static let activeTextAreaBottomPadding: CGFloat = 10
+        // Used when OmniBar is positioned on the bottom of the screen
+        static let textAreaTopPaddingAdjustedSpacing: CGFloat = 10
+        static let textAreaBottomPaddingAdjustedSpacing: CGFloat = 6
+
+        static let textAreaVerticalPaddingRegularSpacing: CGFloat = 8
 
         static let expandedSizeSpacing: CGFloat = 24.0
         static let expandedSizeMargins = NSDirectionalEdgeInsets(
@@ -623,5 +680,29 @@ extension UpdatedOmniBarView {
 
     func moveSeparatorToBottom() {
         // no-op
+    }
+
+    // Used to mask shadows going outside of bounds to prevent them covering other content
+    func updateMaskLayer(maskTop: Bool) {
+        self.masksTop = maskTop
+
+        updateMaskLayer()
+    }
+
+    private func updateMaskLayer() {
+        let maskLayer = CALayer()
+
+        let clippingOffset = 100.0
+        let inset = clippingOffset * 2
+
+        // Make the frame uniformly larger along each axis and offset to top or bottom
+        let maskFrame = layer.bounds
+            .insetBy(dx: -inset, dy: -inset)
+            .offsetBy(dx: 0, dy: masksTop ? clippingOffset : -clippingOffset)
+
+        maskLayer.frame = maskFrame
+        maskLayer.backgroundColor = UIColor.black.cgColor
+
+        layer.mask = maskLayer
     }
 }

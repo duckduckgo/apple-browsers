@@ -108,6 +108,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
     var showAddWidgetEducationView: Bool = false
 
     let tipsModel: VPNTipsModel
+    let featureDiscovery: FeatureDiscovery
 
     // MARK: Error
 
@@ -179,13 +180,15 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
                 serverInfoObserver: ConnectionServerInfoObserver,
                 errorObserver: ConnectionErrorObserver = ConnectionErrorObserverThroughSession(),
                 locationListRepository: NetworkProtectionLocationListRepository,
-                enablesUnifiedFeedbackForm: Bool) {
+                enablesUnifiedFeedbackForm: Bool,
+                featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()) {
         self.tunnelController = tunnelController
         self.settings = settings
         self.statusObserver = statusObserver
         self.serverInfoObserver = serverInfoObserver
         self.errorObserver = errorObserver
         self.enablesUnifiedFeedbackForm = enablesUnifiedFeedbackForm
+        self.featureDiscovery = featureDiscovery
 
         statusMessage = Self.message(for: statusObserver.recentValue)
         self.headerTitle = Self.titleText(status: statusObserver.recentValue)

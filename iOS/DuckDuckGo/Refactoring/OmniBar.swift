@@ -20,10 +20,10 @@
 import Foundation
 import PrivacyDashboard
 
+// We only support chat for now.  More options will be added in a future customisation project.
 enum OmniBarAccessoryType {
-     case share
-     case chat
- }
+    case chat
+}
 
 protocol OmniBar: AnyObject {
     var barView: any OmniBarView { get }
@@ -47,6 +47,12 @@ protocol OmniBar: AnyObject {
     func hideSeparator()
     func moveSeparatorToTop()
     func moveSeparatorToBottom()
+
+    func useSmallTopSpacing()
+    func useRegularTopSpacing()
+
+    func preventShadowsOnTop()
+    func preventShadowsOnBottom()
 
     func enterPhoneState()
     func enterPadState()
@@ -74,4 +80,23 @@ protocol OmniBar: AnyObject {
 
     func cancelAllAnimations()
     func completeAnimationForDaxDialog()
+}
+
+extension OmniBar {
+    func adjust(for position: AddressBarPosition) {
+        switch position {
+        case .bottom:
+            moveSeparatorToTop()
+            useSmallTopSpacing()
+
+            // [1] We want OmniBar shadows bleed down to the toolbar...
+            preventShadowsOnTop()
+        case .top:
+            moveSeparatorToBottom()
+            useRegularTopSpacing()
+
+            // [1] ... but not to the webpage
+            preventShadowsOnBottom()
+        }
+    }
 }

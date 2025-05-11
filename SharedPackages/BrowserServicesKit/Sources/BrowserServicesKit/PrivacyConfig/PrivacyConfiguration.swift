@@ -55,10 +55,16 @@ public protocol PrivacyConfiguration {
     /// Trackers that has been allow listed because of site breakage
     var trackerAllowlist: PrivacyConfigurationData.TrackerAllowlist { get }
 
-    func isEnabled(featureKey: PrivacyFeature, versionProvider: AppVersionProvider) -> Bool
+    /// Checks if a given feature is enabled for a given version, allowing a default value to be set in the case that there is no definition for that feature on the config
+    func isEnabled(featureKey: PrivacyFeature, versionProvider: AppVersionProvider, defaultValue: Bool) -> Bool
+
+    /// Returns the state of a given feature for a given version
     func stateFor(featureKey: PrivacyFeature, versionProvider: AppVersionProvider) -> PrivacyConfigurationFeatureState
 
-    func isSubfeatureEnabled(_ subfeature: any PrivacySubfeature, versionProvider: AppVersionProvider, randomizer: (Range<Double>) -> Double) -> Bool
+    /// Checks if a given feature is enabled for a given version, allowing a default value to be set in the case that there is no definition for that feature on the config
+    func isSubfeatureEnabled(_ subfeature: any PrivacySubfeature, versionProvider: AppVersionProvider, randomizer: (Range<Double>) -> Double, defaultValue: Bool) -> Bool
+
+    /// Returns the state of a given subfeature for a given version
     func stateFor(_ subfeature: any PrivacySubfeature, versionProvider: AppVersionProvider, randomizer: (Range<Double>) -> Double) -> PrivacyConfigurationFeatureState
 
     /// Domains for which given PrivacyFeature is disabled.
@@ -117,16 +123,16 @@ public protocol PrivacyConfiguration {
 }
 
 public extension PrivacyConfiguration {
-    func isEnabled(featureKey: PrivacyFeature) -> Bool {
-        return isEnabled(featureKey: featureKey, versionProvider: AppVersionProvider())
+    func isEnabled(featureKey: PrivacyFeature, defaultValue: Bool = false) -> Bool {
+        return isEnabled(featureKey: featureKey, versionProvider: AppVersionProvider(), defaultValue: defaultValue)
     }
 
     func stateFor(featureKey: PrivacyFeature) -> PrivacyConfigurationFeatureState {
         return stateFor(featureKey: featureKey, versionProvider: AppVersionProvider())
     }
 
-    func isSubfeatureEnabled(_ subfeature: any PrivacySubfeature, randomizer: (Range<Double>) -> Double = Double.random(in:)) -> Bool {
-        return isSubfeatureEnabled(subfeature, versionProvider: AppVersionProvider(), randomizer: randomizer)
+    func isSubfeatureEnabled(_ subfeature: any PrivacySubfeature, randomizer: (Range<Double>) -> Double = Double.random(in:), defaultValue: Bool = false) -> Bool {
+        return isSubfeatureEnabled(subfeature, versionProvider: AppVersionProvider(), randomizer: randomizer, defaultValue: defaultValue)
     }
 
     func stateFor(_ subfeature: any PrivacySubfeature, randomizer: (Range<Double>) -> Double = Double.random(in:)) -> PrivacyConfigurationFeatureState {

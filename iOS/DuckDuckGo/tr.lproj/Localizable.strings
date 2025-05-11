@@ -1,7 +1,4 @@
 /* No comment provided by engineer. */
-" " = " ";
-
-/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -310,6 +307,93 @@
 /* No comment provided by engineer. */
 "autoconsent.info.header" = "DuckDuckGo ziyaret ettiğiniz sitelerde çerez onayı açılır pencereleri tespit ederse çerez tercihlerinizi çerezleri en aza indirecek ve gizliliği en üst düzeye çıkaracak şekilde otomatik olarak ayarlayabilir ve ardından açılır pencereleri kapatabiliriz. Bazı siteler çerez tercihlerini yönetmek için bir seçenek sunmaz. Bu nedenle yalnızca bu gibi açılır pencereleri gizleyebiliriz.";
 
+/* Toast message when a credit card item is deleted */
+"autofill.creditcard.deleted-message-no-title" = "Kart silindi";
+
+/* Card name label for credit card details on autofill */
+"autofill.creditcard.details.card-name" = "Kart üzerindeki isim";
+
+/* Card nickname label for credit card details on autofill */
+"autofill.creditcard.details.card-nickname" = "Kart takma adı";
+
+/* Card number label for credit card details on autofill */
+"autofill.creditcard.details.card-number" = "Kart numarası";
+
+/* Card number label for credit card details on autofill when editing */
+"autofill.creditcard.details.card-number.required" = "Kart numarası";
+
+/* Title for toast when copying the credit card name */
+"autofill.creditcard.details.copy-toast.card-name-copied" = "İsim kopyalandı";
+
+/* Title for toast when copying the credit card number */
+"autofill.creditcard.details.copy-toast.card-number-copied" = "Kart numarası kopyalandı";
+
+/* Title for toast when copying the credit card cvv (security code) */
+"autofill.creditcard.details.copy-toast.cvv-copied" = "CVV kopyalandı";
+
+/* Title for toast when copying the credit card expiration date */
+"autofill.creditcard.details.copy-toast.exp-date-copied" = "Son kullanma tarihi kopyalandı";
+
+/* CVV (security code) label for credit card details on autofill */
+"autofill.creditcard.details.cvv" = "CVV";
+
+/* Title for autofill credit card details */
+"autofill.creditcard.details.default-title" = "Kart";
+
+/* Delete button when deleting an autofill credit card */
+"autofill.creditcard.details.delete" = "Kartı Sil";
+
+/* Autofill alert button confirming delete credit card */
+"autofill.creditcard.details.delete-confirmation.button" = "Kartı Sil";
+
+/* Autofill message confirming delete credit card */
+"autofill.creditcard.details.delete-confirmation.message" = "Bu kartı silmek istediğinizden emin misiniz?";
+
+/* Title when editing autofill credit card details */
+"autofill.creditcard.details.edit-title" = "Kartı Düzenle";
+
+/* Placeholder for card number field on autofill credit card details */
+"autofill.creditcard.details.edit.card-number-placeholder" = "1234 5678 1234 5678";
+
+/* Placeholder for CVV security code field on autofill credit card details */
+"autofill.creditcard.details.edit.cvv-placeholder" = "Güvenlik kodu";
+
+/* Placeholder for expiration date field on autofill credit card details */
+"autofill.creditcard.details.edit.exp-date-placeholder" = "AA / YY";
+
+/* Expiration date label for credit card details on autofill */
+"autofill.creditcard.details.exp-date" = "Son kullanma tarihi";
+
+/* Title when adding new autofill credit card */
+"autofill.creditcard.details.new-title" = "Kart Ekle";
+
+/* Placeholder for card name field on autofill credit card details */
+"autofill.creditcard.edit.card-name-placeholder" = "Kart üzerindeki isim";
+
+/* Placeholder for card nickname field on autofill credit card details */
+"autofill.creditcard.edit.card-nickname-placeholder" = "(ör. İş)";
+
+/* Subtitle for view displayed when no autofill credit cards have been saved */
+"autofill.creditcard.empty-view.subtitle.first.paragraph" = "Kredi kartları cihazınızda güvenli bir şekilde saklanır.";
+
+/* Title for view displayed when autofill has no credit cards saved */
+"autofill.creditcard.empty-view.title" = "Henüz kaydedilmiş kredi kartı yok";
+
+/* Reason for auth when opening credit card list */
+"autofill.creditcard.list.auth.reason" = "Kredi kartlarına erişmek için cihazın kilidini açın";
+
+/* Credit card row label for credit card expiry date */
+"autofill.creditcard.list.item.expiry" = "Son kullanma tarihi:";
+
+/* Title for screen listing autofill credit cards */
+"autofill.creditcard.list.title" = "Kredi Kartları";
+
+/* Title for view displayed when autofill is locked on devices where a passcode has not been set */
+"autofill.creditcard.no-auth.subtitle" = "Kredi kartlarınızı korumak için bir parola gereklidir.";
+
+/* Title for view displayed when autofill is locked on devices where a passcode has not been set */
+"autofill.creditcard.no-auth.title" = "Kredi kartlarını kaydetmek için cihazınızın güvenliğini sağlayın";
+
 /* Do not translate - stringsdict entry */
 "autofill.delete.all.passwords.completion" = "autofill.delete.all.passwords.completion";
 
@@ -330,6 +414,9 @@
 
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Email Protection'ı Etkinleştir";
+
+/* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
+"autofill.hide-card-cvv" = "CVV'yi gizle";
 
 /* Accessibility title for a Hide Password button replacing displayed password with ***** */
 "autofill.hide-password" = "Parolayı gizle";
@@ -385,7 +472,7 @@
 /* Message displayed after updating an autofill login */
 "autofill.login-updated.toast" = "Şifre güncellendi";
 
-/* Menu item text for copying autofill login details */
+/* Menu item text for copying autofill details */
 "autofill.logins.copy-prompt" = "%@ Ögesini Kopyala";
 
 /* Title for toast when copying address */
@@ -519,6 +606,9 @@
 
 /* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
 "autofill.logins.list.settings.footer" = "Parolalar şifrelenir. Onları sizden başka kimse göremez. Biz bile.";
+
+/* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
+"autofill.logins.list.settings.passwords.cards.footer" = "Parolalar ve kredi kartları şifrelenmiştir. Onları sizden başka kimse göremez. Biz bile.";
 
 /* Section title for group of suggested saved logins */
 "autofill.logins.list.suggested" = "Önerilen";
@@ -687,6 +777,9 @@
 
 /* Section header for the autofill settings screen */
 "autofill.settings.view.section-header" = "Görüntüle";
+
+/* Accessibility title for a Show CVV button displaying actual credit card CVV (security code) instead of *** */
+"autofill.show-card-cvv" = "CVV'yi göster";
 
 /* Accessibility title for a Show Password button displaying actial password instead of ***** */
 "autofill.show-password" = "Parolayı göster";
@@ -1057,41 +1150,8 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Dün";
 
-/* No comment provided by engineer. */
-"dax.hide.button" = "İpuçlarını Sonsuza Kadar Gizle";
-
-/* No comment provided by engineer. */
-"dax.hide.cancel" = "İptal";
-
-/* Subtitle in Hide Dax dialog */
-"dax.hide.message" = "Sadece birkaç tane var ve onları da bilgilendirici hâle getirmeye çalıştık.";
-
-/* Title in Hide Dax dialog */
-"dax.hide.title" = "Kalan ipuçları gizlensin mi?";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search" = "DuckDuckGo aramalarınız anonimdir. Her zaman. 🙌";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search.cta" = "Uf!";
-
-/* First parameter is a count of additional trackers, second and third are names of the tracker networks (strings) */
-"dax.onboarding.browsing.multiple.trackers" = "dax.onboarding.browsing.multiple.trackers";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.multiple.trackers.cta" = "Çak Bir Beşlik!";
-
-/* Parameter is domain name (string) */
-"dax.onboarding.browsing.one.tracker" = "*%1$@* sizi burada izlemeye çalışıyordu.\n\nOnları engelledim!\n\n☝️ Yeni bir siteyi ziyaret ettiğinizde sizi kimin izlemeye çalıştığını görmek için adres çubuğunu kontrol edebilirsiniz.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.one.tracker.cta" = "Çak Bir Beşlik!";
-
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Dikkat! %2$@ üzerindeki etkinliğinizin %1$@ tarafından görülmesini önleyemiyorum.\n\nAma benimle gezinirseniz diğer birçok sitedeki izleyicisini engelleyerek %1$@ tarafından sizinle ilgili olarak toplanan bilgilerin miktarını genel anlamda azaltabilirim.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.site.is.major.tracker.cta" = "Anladım";
 
 /* Parameters are domain names (strings) */
 "dax.onboarding.browsing.site.owned.by.major.tracker" = "Dikkat! %1$@ sitesinin sahibi %2$@ olduğundan, buradaki etkinliğinizi görmesini engelleyemem.\n\nAma benimle gezinirseniz diğer sitelerdeki pek çok izleyicisini engelleyerek sizinle ilgili olarak %2$@ tarafından toplanan bilgilerin miktarını genel anlamda azaltabilirim.";
@@ -1102,29 +1162,8 @@
 /* No comment provided by engineer. */
 "dax.onboarding.browsing.without.trackers" = "Siz internette gezinirken sinir bozucu izleyicileri engelleyeceğim.\n\nHadi gezinmeye devam edin!";
 
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.without.trackers.cta" = "Anladım";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button" = "Kişisel veriler tarayıcınızda birikebilir. İğrenç. Bunların hepsini yakmak için Yangın Düğmesi'ni kullanın. Hemen deneyin! 👇";
-
-/* Cancel action */
-"dax.onboarding.fire.button.cancelAction" = "İptal";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button.confirmAction" = "Sekmeleri Kapat ve Verileri Temizle";
-
 /* Encourage user to add favorite site using the browsing menu. */
 "dax.onboarding.home.add.favorite" = "En sevdiğiniz siteleri anında ziyaret edin!\n\nSevdiğiniz bir siteye gidin. Ardından \"...\" simgesine dokunun ve *Favorilere Ekle* ögesini seçin.";
-
-/* Accessible version of dax.onboarding.home.add.favorite */
-"dax.onboarding.home.add.favorite.accessible" = "En sevdiğiniz siteleri anında ziyaret edin! En sevdiğiniz sitelerden birini ziyaret edin. Ardından, menü düğmesine dokunun ve Favorilere Ekle'yi seçin.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.home.initial" = "Şimdi favori sitelerinizden birini ziyaret etmeyi deneyin!\n\nSizi gözetlemelerini önlemek için izleyicileri engelleyeceğim. Mümkünse bağlantınızın güvenlik seviyesini de yükselteceğim. 🔒";
-
-/* ad = advertisment */
-"dax.onboarding.home.subsequent" = "İşte bu kadar!\n\nUnutmayın: İnterneti benimle ne kadar çok gezerseniz rahatsız edici reklamları da o kadar az görürsünüz. 👍";
 
 /* No comment provided by engineer. */
 "Debug" = "Hata Ayıklama";
@@ -1210,21 +1249,6 @@
 /* Title for message explaining to the user that Duck Player is not available */
 "duck-player.contingency-title" = "Duck Player Kullanılamıyor";
 
-/* Text for the toggle to autoplay videos */
-"duck-player.native-autoplay-videos" = "Autoplay Videos";
-
-/* Text for the description about autoplay videos */
-"duck-player.native-autoplay-videos.description" = "Videos opened in Duck Player will automatically begin playback. Turn this off if you would like to manually start playback of videos opened in Duck Player.";
-
-/* Text for the button to watch a video on DuckPlayer */
-"duck-player.native-open-in-duckplayer" = "Play this video in Duck Player";
-
-/* Text for the button to resume watching a video on DuckPlayer */
-"duck-player.native-resume-in-duckplayer" = "Resume in Duck Player";
-
-/* Text for the button to watch a video on YouTube */
-"duck-player.native-watch-on-youtube" = "Watch in Youtube";
-
 /* Button for the message explaining to the user that Duck Player is not available so the user can learn more */
 "duck-player.video-contingency-cta" = "Daha Fazla Bilgi";
 
@@ -1235,16 +1259,16 @@
 "duckai.preferences.text.markdown" = "Duck.ai, popüler 3. taraf Al sohbet modelleriyle anonim olarak sohbet etmenizi sağlayan isteğe bağlı bir özelliktir. Sohbetleriniz yapay zekayı eğitmek için kullanılmaz.\n[Daha Fazla Bilgi](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
-"duckai.settings.enable.address-bar-toggle" = "Duck.ai'ı Adres Çubuğunda Göster";
+"duckai.settings.enable.address-bar-toggle" = "Adres Çubuğu";
 
 /* Toggle text to enable/disable AI Chat in the browsing menu */
-"duckai.settings.enable.browsing-menu-toggle" = "Tarayıcı Menüsünde Duck.ai'yi Göster";
+"duckai.settings.enable.browsing-menu-toggle" = "Tarayıcı menüsü";
 
 /* Toggle text to enable/disable Duck.ai in tab manager */
-"duckai.settings.enable.tab-switcher-toggle" = "Duck.ai'ı Sekmeler Ekranında Göster";
+"duckai.settings.enable.tab-switcher-toggle" = "Sekmeler Ekranı";
 
 /* Toggle text to enable/disable Duck.ai in voice search */
-"duckai.settings.enable.voice-search-toggle" = "Sesli Aramada Duck.ai'yi Göster";
+"duckai.settings.enable.voice-search-toggle" = "Sesli Arama";
 
 /* Settings screen cell text for AI Chat settings */
 "duckai.settings.title" = "Duck.ai";
@@ -1261,14 +1285,8 @@
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Hiçbir zaman";
 
-/* Toast message for the Duck Player entry pill dismiss count */
-"duckPlayer.pill.dismiss.count.toast.message" = "Want to turn off Duck Player appearing on Youtube?";
-
-/* Button on Toast message for the Duck Player entry pill dismiss count */
-"duckPlayer.pill.dismiss.count.toast.message.button" = "Ayarları Aç";
-
-/* Caption for Duck Player entry point */
-"duckplayer.pill.watch.without.ads" = "No targeted ads, always private";
+/* Settings screen cell text for DuckPlayer settings */
+"duckplayer.open.video.settings.title" = "Duck Player";
 
 /* Body text for the modal feature explanation */
 "duckplayer.presentation.modal.body" = "Duck Player, DuckDuckGo'da hedefli reklamlar olmadan YouTube'u izlemenizi sağlar ve izlediğiniz şeyler önerilerinizi etkilemez.";
@@ -1299,39 +1317,6 @@
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.title" = "Duck Player";
-
-/* Text displayed when DuckPlayer is in 'Ask' mode for Youtube. */
-"duckPlayerNative.ask.label" = "Seçmeme izin ver";
-
-/* Text displayed when DuckPlayer is automatically enabled for Youtube */
-"duckPlayerNative.auto.label" = "Otomatik olarak";
-
-/* Label for the automatic youtube video opening */
-"duckPlayerNative.auto.open.label" = "YouTube'da Duck Player'ı otomatik olarak aç";
-
-/* CTA for DuckPlayer priming modal */
-"duckPlayerNative.modal.cta" = "Watch Now Privately";
-
-/* Description for DuckPlayer priming modal */
-"duckPlayerNative.modal.description" = "Plus, what you watch in Duck Player won’t influence your YouTube recommendations.";
-
-/* Title for DuckPlayer priming modal */
-"duckPlayerNative.modal.title" = "Play this video in Duck Player to watch without targeted ads!";
-
-/* Text displayed when DuckPlayer is in off for youtube. */
-"duckPlayerNative.never.label" = "Gösterme";
-
-/* Label for the use DuckPlayer on Youtube toggle footer */
-"duckPlayerNative.use.on.serp.footer" = "Clicking on YouTube videos in DuckDuckGo search results will open in Duck Player.";
-
-/* Label for the use DuckPlayer on SERP toggle */
-"duckPlayerNative.use.on.serp.label" = "DuckDuckGo Search Results";
-
-/* Label for the use DuckPlayer on Youtube toggle footer */
-"duckPlayerNative.use.on.youtube.footer" = "Choose how you would like Duck Player to handle YouTube videos when navigating from the YouTube website.";
-
-/* Label for the use DuckPlayer on Youtube toggle */
-"duckPlayerNative.use.on.youtube.label" = "Youtube.com'da kullan";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "E-posta Koruması";
@@ -2258,7 +2243,7 @@
 "onboarding.skip.cta.resumeOnboarding" = "Eğitimi Göster";
 
 /* The message of the skip onboarding dialog popup. */
-"onboarding.skip.message" = "Unutmayın: Fire Button 🔥 ile tüm sekmeleri, geçmişi ve tarama verilerini iki dokunuşla silebilirsiniz.";
+"onboarding.skip.message" = "Unutmayın: Fire Button 🔥 ile tüm sekmelerinizi, geçmişinizi ve tarama verilerinizi iki dokunuşla silebilirsiniz";
 
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Anladım! Diğer ipuçlarını atlayacağım.";
@@ -2293,11 +2278,11 @@
 /* No comment provided by engineer. */
 "onboardingWelcomeHeader" = "DuckDuckGo'ya Hoş Geldiniz!";
 
-/* No comment provided by engineer. */
-"Open tabs remain unaffected by this change.  Please close all tabs for this setting to take effect." = "Açık sekmeler bu değişiklikten etkilenmez.  Bu ayarın etkili olması için lütfen tüm sekmeleri kapatın.";
-
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Bu bağlantıyı açmak için gereken uygulama bulunamıyor";
+
+/* No comment provided by engineer. */
+"Please close all tabs for this setting to take effect." = "Bu ayarın etkili olması için lütfen tüm sekmeleri kapatın.";
 
 /* Activate button */
 "pm.activate" = "Yeniden etkinleştir";
@@ -2521,6 +2506,9 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Tam Site Adresini Göster";
 
+/* Settings screen text for showing AI Chat in various places in the app */
+"settings.aichat.shortcuts" = "Kısayollar";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Her Zaman Açık";
 
@@ -2592,6 +2580,9 @@
 
 /* Settings cell for Email Protection */
 "settings.emailProtection.description" = "E-posta izleyicileri engelleyin ve adresinizi gizleyin";
+
+/* Settings screen cell text for enabling AI chat */
+"settings.enable.aichat" = "Duck.ai'ı etkinleştir";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Email Protection'ı Etkinleştir";
@@ -2793,9 +2784,6 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Depolanan Ana Bilgisayar Adı: %@";
-
-/* Button for adding email address to subscription */
-"subscription.activate.add.email.button" = "E-posta Ekle";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Cihaza Ekle";
@@ -3018,6 +3006,9 @@
 
 /* Unknown period subscription renewal info where parameter is renewal date. This reads as 'Your subscription renews on (date)' */
 "subscription.subscription.renewing.unknown.caption" = "Aboneliğiniz %@ tarihinde yenilenecek.";
+
+/* Unknown period subscription renewal info where parameter is renewal date. This reads as 'Your subscription renews on (date)' */
+"subscription.subscription.renewing.unknown.trial.caption" = "Aboneliğiniz %@ tarihinde yenilenecek.";
 
 /* Annual subscription renewal info where parameter is renewal date. This reads as 'Your annual subscription renews on (date)' */
 "subscription.subscription.renewing.yearly.caption" = "Yıllık aboneliğiniz %@ tarihinde yenilenecek.";

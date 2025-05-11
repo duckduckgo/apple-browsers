@@ -118,7 +118,7 @@ final class TabBarItemCellView: NSView {
         static let trailingSpaceWithPermissionAndButton: CGFloat = 40
     }
 
-    private var tabStyleProvider: TabStyleProviding = NSApp.delegateTyped.visualStyleManager.style.tabStyleProvider
+    private var visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyleManager.style
 
     fileprivate let faviconImageView = {
         let faviconImageView = NSImageView()
@@ -160,7 +160,6 @@ final class TabBarItemCellView: NSView {
         titleTextField.drawsBackground = false
         titleTextField.isBordered = false
         titleTextField.font = NSFont.systemFont(ofSize: 13)
-        titleTextField.textColor = .labelColor
         titleTextField.lineBreakMode = .byClipping
         return titleTextField
     }()
@@ -205,6 +204,12 @@ final class TabBarItemCellView: NSView {
         let mouseOverView = MouseOverView()
         mouseOverView.mouseOverColor = .tabMouseOver
         return mouseOverView
+    }()
+
+    fileprivate let roundedBackgroundColorView = {
+        let view = ColorView(frame: .zero)
+        view.alphaValue = 0.8
+        return view
     }()
 
     fileprivate let rightSeparatorView = ColorView(frame: .zero)
@@ -262,7 +267,13 @@ final class TabBarItemCellView: NSView {
         ]
         mouseOverView.layer?.addSublayer(borderLayer)
 
+        titleTextField.textColor = visualStyle.textPrimaryColor
+
         addSubview(mouseOverView)
+        if visualStyle.tabStyleProvider.isRoundedBackgroundPresentOnHover {
+            roundedBackgroundColorView.cornerRadius = 6
+            addSubview(roundedBackgroundColorView)
+        }
         addSubview(faviconImageView)
         addSubview(crashIndicatorButton)
         addSubview(audioButton)
@@ -279,6 +290,12 @@ final class TabBarItemCellView: NSView {
     override func layout() {
         super.layout()
         mouseOverView.frame = bounds
+        if visualStyle.tabStyleProvider.isRoundedBackgroundPresentOnHover {
+            roundedBackgroundColorView.frame = NSRect(x: bounds.origin.x + 4,
+                                                      y: bounds.origin.y + 6,
+                                                      width: bounds.width - 8,
+                                                      height: bounds.height - 8)
+        }
 
         withoutAnimation {
             borderLayer.frame = bounds
@@ -294,6 +311,7 @@ final class TabBarItemCellView: NSView {
             layoutForCompactMode()
         }
 
+        let tabStyleProvider = visualStyle.tabStyleProvider
         rightSeparatorView.frame = NSRect(x: bounds.maxX.rounded() - 1, y: bounds.midY - (tabStyleProvider.separatorHeight / 2), width: 1, height: tabStyleProvider.separatorHeight)
         rightSeparatorView.backgroundColor = tabStyleProvider.separatorColor
     }
@@ -426,6 +444,8 @@ final class TabBarViewItem: NSCollectionViewItem {
     private var currentURL: URL?
     private var cancellables = Set<AnyCancellable>()
 
+    private let tabVisualProvider: TabStyleProviding = NSApp.delegateTyped.visualStyleManager.style.tabStyleProvider
+
     weak var delegate: TabBarViewItemDelegate?
     var tabViewModel: TabBarViewModel? {
         guard let representedObject else { return nil }
@@ -435,6 +455,8 @@ final class TabBarViewItem: NSCollectionViewItem {
         }
         return tabViewModel
     }
+
+    private var visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager
 
     private(set) var isMouseOver = false
 
@@ -674,10 +696,18 @@ final class TabBarViewItem: NSCollectionViewItem {
         withoutAnimation {
             if isSelected || isDragged {
                 cell.mouseOverView.mouseOverColor = nil
-                cell.mouseOverView.backgroundColor = .navigationBarBackground
+                cell.mouseOverView.backgroundColor = visualStyleManager.style.navigationBackgroundColor
             } else {
-                cell.mouseOverView.mouseOverColor = .tabMouseOver
-                cell.mouseOverView.backgroundColor = nil
+                if tabVisualProvider.isRoundedBackgroundPresentOnHover {
+                    cell.mouseOverView.mouseOverColor = nil
+                    cell.mouseOverView.backgroundColor = visualStyleManager.style.baseBackgroundColor
+                    cell.roundedBackgroundColorView.backgroundColor = visualStyleManager.style.navigationBackgroundColor
+                    cell.roundedBackgroundColorView.isHidden = !isMouseOver || isSelected
+                } else {
+                    cell.mouseOverView.mouseOverColor = .tabMouseOver
+                    cell.mouseOverView.backgroundColor = nil
+                }
+
             }
             cell.borderLayer.isHidden = !isSelected
         }

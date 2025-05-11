@@ -1,7 +1,4 @@
 /* No comment provided by engineer. */
-" " = " ";
-
-/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -310,6 +307,93 @@
 /* No comment provided by engineer. */
 "autoconsent.info.header" = "Keď DuckDuckGo zistí na vami navštívených lokalitách kontextové okná týkajúce sa súhlasu so súbormi cookie, môžeme sa pokúsiť automaticky nastaviť vaše možnosti súborov cookie tak, aby sa využívanie súborov cookie minimalizovali a aby sa maximalizovala ochrana súkromia, a potom môžeme kontextové automaticky okná zavrieť. Niektoré lokality neponúkajú možnosť spravovať preferencie súborov cookie, takže takéto kontextové okná môžeme iba skryť.";
 
+/* Toast message when a credit card item is deleted */
+"autofill.creditcard.deleted-message-no-title" = "Karta bola odstránená";
+
+/* Card name label for credit card details on autofill */
+"autofill.creditcard.details.card-name" = "Meno na karte";
+
+/* Card nickname label for credit card details on autofill */
+"autofill.creditcard.details.card-nickname" = "Prezývka karty";
+
+/* Card number label for credit card details on autofill */
+"autofill.creditcard.details.card-number" = "Číslo karty";
+
+/* Card number label for credit card details on autofill when editing */
+"autofill.creditcard.details.card-number.required" = "Číslo karty";
+
+/* Title for toast when copying the credit card name */
+"autofill.creditcard.details.copy-toast.card-name-copied" = "Názov bol skopírovaný";
+
+/* Title for toast when copying the credit card number */
+"autofill.creditcard.details.copy-toast.card-number-copied" = "Číslo karty bolo skopírované";
+
+/* Title for toast when copying the credit card cvv (security code) */
+"autofill.creditcard.details.copy-toast.cvv-copied" = "CVV bolo skopírované";
+
+/* Title for toast when copying the credit card expiration date */
+"autofill.creditcard.details.copy-toast.exp-date-copied" = "Dátum vypršania platnosti bol skopírovaný";
+
+/* CVV (security code) label for credit card details on autofill */
+"autofill.creditcard.details.cvv" = "CVV";
+
+/* Title for autofill credit card details */
+"autofill.creditcard.details.default-title" = "Karta";
+
+/* Delete button when deleting an autofill credit card */
+"autofill.creditcard.details.delete" = "Odstrániť kartu";
+
+/* Autofill alert button confirming delete credit card */
+"autofill.creditcard.details.delete-confirmation.button" = "Odstrániť kartu";
+
+/* Autofill message confirming delete credit card */
+"autofill.creditcard.details.delete-confirmation.message" = "Naozaj chceš odstrániť túto kartu?";
+
+/* Title when editing autofill credit card details */
+"autofill.creditcard.details.edit-title" = "Upraviť kartu";
+
+/* Placeholder for card number field on autofill credit card details */
+"autofill.creditcard.details.edit.card-number-placeholder" = "1234 5678 1234 5678";
+
+/* Placeholder for CVV security code field on autofill credit card details */
+"autofill.creditcard.details.edit.cvv-placeholder" = "Bezpečnostný kód";
+
+/* Placeholder for expiration date field on autofill credit card details */
+"autofill.creditcard.details.edit.exp-date-placeholder" = "MM / RR";
+
+/* Expiration date label for credit card details on autofill */
+"autofill.creditcard.details.exp-date" = "Dátum vypršania platnosti";
+
+/* Title when adding new autofill credit card */
+"autofill.creditcard.details.new-title" = "Pridať kartu";
+
+/* Placeholder for card name field on autofill credit card details */
+"autofill.creditcard.edit.card-name-placeholder" = "Meno na karte";
+
+/* Placeholder for card nickname field on autofill credit card details */
+"autofill.creditcard.edit.card-nickname-placeholder" = "(napr. Práca)";
+
+/* Subtitle for view displayed when no autofill credit cards have been saved */
+"autofill.creditcard.empty-view.subtitle.first.paragraph" = "Kreditné karty sú bezpečne uložené vo tvojom zariadení.";
+
+/* Title for view displayed when autofill has no credit cards saved */
+"autofill.creditcard.empty-view.title" = "Zatiaľ nie sú uložené žiadne kreditné karty";
+
+/* Reason for auth when opening credit card list */
+"autofill.creditcard.list.auth.reason" = "Odomkni zariadenie, aby si získal/-a prístup ku kreditným kartám.";
+
+/* Credit card row label for credit card expiry date */
+"autofill.creditcard.list.item.expiry" = "Vypršanie platnosti:";
+
+/* Title for screen listing autofill credit cards */
+"autofill.creditcard.list.title" = "Kreditné karty";
+
+/* Title for view displayed when autofill is locked on devices where a passcode has not been set */
+"autofill.creditcard.no-auth.subtitle" = "Na ochranu tvojich kreditných kariet je potrebný prístupový kód.";
+
+/* Title for view displayed when autofill is locked on devices where a passcode has not been set */
+"autofill.creditcard.no-auth.title" = "Zabezpeč svoje zariadenie na uloženie kreditných kariet";
+
 /* Do not translate - stringsdict entry */
 "autofill.delete.all.passwords.completion" = "autofill.delete.all.passwords.completion";
 
@@ -330,6 +414,9 @@
 
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Povoliť ochranu e-mailu";
+
+/* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
+"autofill.hide-card-cvv" = "Skryť CVV";
 
 /* Accessibility title for a Hide Password button replacing displayed password with ***** */
 "autofill.hide-password" = "Skryť heslo";
@@ -385,7 +472,7 @@
 /* Message displayed after updating an autofill login */
 "autofill.login-updated.toast" = "Aktualizácia hesla";
 
-/* Menu item text for copying autofill login details */
+/* Menu item text for copying autofill details */
 "autofill.logins.copy-prompt" = "Kopírovať %@";
 
 /* Title for toast when copying address */
@@ -519,6 +606,9 @@
 
 /* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
 "autofill.logins.list.settings.footer" = "Heslá sú zašifrované. Nikto okrem vás ich nemôže vidieť, dokonca ani my.";
+
+/* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
+"autofill.logins.list.settings.passwords.cards.footer" = "Heslá a kreditné karty sú zašifrované. Nemôže ich vidieť nikto okrem teba, dokonca ani my.";
 
 /* Section title for group of suggested saved logins */
 "autofill.logins.list.suggested" = "Navrhované";
@@ -687,6 +777,9 @@
 
 /* Section header for the autofill settings screen */
 "autofill.settings.view.section-header" = "Zobraziť";
+
+/* Accessibility title for a Show CVV button displaying actual credit card CVV (security code) instead of *** */
+"autofill.show-card-cvv" = "Zobraziť CVV";
 
 /* Accessibility title for a Show Password button displaying actial password instead of ***** */
 "autofill.show-password" = "Zobraziť heslo";
@@ -1057,41 +1150,8 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Včera";
 
-/* No comment provided by engineer. */
-"dax.hide.button" = "Navždy skryť tipy";
-
-/* No comment provided by engineer. */
-"dax.hide.cancel" = "Zrušiť";
-
-/* Subtitle in Hide Dax dialog */
-"dax.hide.message" = "Je ich len niekoľko, snažili sme sa, aby mali informatívny charakter.";
-
-/* Title in Hide Dax dialog */
-"dax.hide.title" = "Skryť zostávajúce tipy?";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search" = "Vyhľadávania v službe DuckDuckGo sú anonymné. Vždy. 🙌";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search.cta" = "Uf!";
-
-/* First parameter is a count of additional trackers, second and third are names of the tracker networks (strings) */
-"dax.onboarding.browsing.multiple.trackers" = "dax.onboarding.browsing.multiple.trackers";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.multiple.trackers.cta" = "Ruku na to!";
-
-/* Parameter is domain name (string) */
-"dax.onboarding.browsing.one.tracker" = "Služba *%1$@* sa vás tu pokúsila sledovať.\n\nBola zablokovaná!\n\n☝️ Môžete skontrolovať lištu s adresou a zistiť, kto sa vás snaží sledovať, keď navštívite novú webovú stránku.️";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.one.tracker.cta" = "Ruku na to!";
-
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Hlavu hore! Nemôžem zabrániť službe %1$@ v tom, aby videla vašu aktivitu na %2$@.\n\nPrehliadajte so mnou a môžem obmedziť to, čo o vás služba %1$@ celkovo vie, zablokovaním jej sledovacích zariadení na mnohých ďalších stránkach.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.site.is.major.tracker.cta" = "Rozumiem";
 
 /* Parameters are domain names (strings) */
 "dax.onboarding.browsing.site.owned.by.major.tracker" = "Hlavu hore! Pretože %2$@ vlastní %1$@, nemôžem im zabrániť v tom, aby tu videli vašu aktivitu.\n\nPrehliadajte so mnou a môžem obmedziť to, čo o vás %2$@ celkovo vie, zablokovaním ich sledovacích zariadení na mnohých ďalších stránkach.";
@@ -1102,29 +1162,8 @@
 /* No comment provided by engineer. */
 "dax.onboarding.browsing.without.trackers" = "Počas toho, ako budete ťukať a posúvať, zablokujem nepríjemné sledovacie zariadenia.\n\nNeprestávajte - pokračujte v prehľadávaní!";
 
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.without.trackers.cta" = "Rozumiem";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button" = "Vo vašom prehliadači sa môžu zhromažďovať osobné údaje. Fuj. Pomocou tlačidla na vymazanie ich môžete všetky odstrániť. Vyskúšajte to! 👇";
-
-/* Cancel action */
-"dax.onboarding.fire.button.cancelAction" = "Zrušiť";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button.confirmAction" = "Zatvoriť karty a vymazať údaje";
-
 /* Encourage user to add favorite site using the browsing menu. */
 "dax.onboarding.home.add.favorite" = "Navštívte svoje obľúbené stránky bleskurýchlo!\n\nPrejdite na stránku, ktorá sa vám páči. Potom kliknite na ikonu „⋯“ a vyberte možnosť *Pridať k obľúbeným*.";
-
-/* Accessible version of dax.onboarding.home.add.favorite */
-"dax.onboarding.home.add.favorite.accessible" = "Navštívte svoje obľúbené stránky bleskurýchlo! Navštívte jednu z vašich obľúbených stránok. Potom kliknite na tlačidlo otvorenej ponuky a vyberte možnosť Pridať k obľúbeným.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.home.initial" = "Nabudúce skúste navštíviť jednu z vašich obľúbených webových stránok!\n\nZablokujem sledovacie zariadenia, ktoré by vás mohli špehovať. Ak to bude možné, dokážem tiež zlepšiť zabezpečenie vášho pripojenia. 🔒";
-
-/* ad = advertisment */
-"dax.onboarding.home.subsequent" = "Máte to!\n\nPamätajte: zakaždým, keď surfujete na webe v našej aplikácii, príšerným reklamám pristrihávate krídla. 👍";
 
 /* No comment provided by engineer. */
 "Debug" = "Ladenie (debug)";
@@ -1210,21 +1249,6 @@
 /* Title for message explaining to the user that Duck Player is not available */
 "duck-player.contingency-title" = "Duck Player nie je dostupný";
 
-/* Text for the toggle to autoplay videos */
-"duck-player.native-autoplay-videos" = "Autoplay Videos";
-
-/* Text for the description about autoplay videos */
-"duck-player.native-autoplay-videos.description" = "Videos opened in Duck Player will automatically begin playback. Turn this off if you would like to manually start playback of videos opened in Duck Player.";
-
-/* Text for the button to watch a video on DuckPlayer */
-"duck-player.native-open-in-duckplayer" = "Play this video in Duck Player";
-
-/* Text for the button to resume watching a video on DuckPlayer */
-"duck-player.native-resume-in-duckplayer" = "Resume in Duck Player";
-
-/* Text for the button to watch a video on YouTube */
-"duck-player.native-watch-on-youtube" = "Watch in Youtube";
-
 /* Button for the message explaining to the user that Duck Player is not available so the user can learn more */
 "duck-player.video-contingency-cta" = "Zistite viac";
 
@@ -1235,16 +1259,16 @@
 "duckai.preferences.text.markdown" = "Duck.ai je voliteľná funkcia, ktorá ti umožňuje anonymne chatovať s obľúbenými modelmi chatu s umelou inteligenciou tretích strán. Tvoje chaty sa nepoužívajú na trénovanie AI.\n[Viac informácií](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
-"duckai.settings.enable.address-bar-toggle" = "Zobraziť Duck.ai v adresnom riadku";
+"duckai.settings.enable.address-bar-toggle" = "Riadok adresy";
 
 /* Toggle text to enable/disable AI Chat in the browsing menu */
-"duckai.settings.enable.browsing-menu-toggle" = "Zobraziť Duck.ai v ponuke prehliadača";
+"duckai.settings.enable.browsing-menu-toggle" = "Ponuka prehliadača";
 
 /* Toggle text to enable/disable Duck.ai in tab manager */
-"duckai.settings.enable.tab-switcher-toggle" = "Zobraziť Duck.ai na obrazovke kariet";
+"duckai.settings.enable.tab-switcher-toggle" = "Obrazovka kariet";
 
 /* Toggle text to enable/disable Duck.ai in voice search */
-"duckai.settings.enable.voice-search-toggle" = "Zobraziť Duck.ai v hlasovom vyhľadávaní";
+"duckai.settings.enable.voice-search-toggle" = "Hlasové vyhľadávanie";
 
 /* Settings screen cell text for AI Chat settings */
 "duckai.settings.title" = "Duck.ai";
@@ -1261,14 +1285,8 @@
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Nikdy";
 
-/* Toast message for the Duck Player entry pill dismiss count */
-"duckPlayer.pill.dismiss.count.toast.message" = "Want to turn off Duck Player appearing on Youtube?";
-
-/* Button on Toast message for the Duck Player entry pill dismiss count */
-"duckPlayer.pill.dismiss.count.toast.message.button" = "Otvoriť nastavenia";
-
-/* Caption for Duck Player entry point */
-"duckplayer.pill.watch.without.ads" = "No targeted ads, always private";
+/* Settings screen cell text for DuckPlayer settings */
+"duckplayer.open.video.settings.title" = "Duck Player";
 
 /* Body text for the modal feature explanation */
 "duckplayer.presentation.modal.body" = "Prehrávač Duck Player vám umožňuje sledovať YouTube v prehliadači DuckDuckGo bez cielených reklám a to, čo sledujete, nebude mať vplyv na vaše odporúčania.";
@@ -1299,39 +1317,6 @@
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.title" = "Duck Player";
-
-/* Text displayed when DuckPlayer is in 'Ask' mode for Youtube. */
-"duckPlayerNative.ask.label" = "Chcem si vybrať";
-
-/* Text displayed when DuckPlayer is automatically enabled for Youtube */
-"duckPlayerNative.auto.label" = "Automaticky";
-
-/* Label for the automatic youtube video opening */
-"duckPlayerNative.auto.open.label" = "Automaticky otvoriť Duck Player na YouTube";
-
-/* CTA for DuckPlayer priming modal */
-"duckPlayerNative.modal.cta" = "Watch Now Privately";
-
-/* Description for DuckPlayer priming modal */
-"duckPlayerNative.modal.description" = "Plus, what you watch in Duck Player won’t influence your YouTube recommendations.";
-
-/* Title for DuckPlayer priming modal */
-"duckPlayerNative.modal.title" = "Play this video in Duck Player to watch without targeted ads!";
-
-/* Text displayed when DuckPlayer is in off for youtube. */
-"duckPlayerNative.never.label" = "Neukazovať";
-
-/* Label for the use DuckPlayer on Youtube toggle footer */
-"duckPlayerNative.use.on.serp.footer" = "Clicking on YouTube videos in DuckDuckGo search results will open in Duck Player.";
-
-/* Label for the use DuckPlayer on SERP toggle */
-"duckPlayerNative.use.on.serp.label" = "DuckDuckGo Search Results";
-
-/* Label for the use DuckPlayer on Youtube toggle footer */
-"duckPlayerNative.use.on.youtube.footer" = "Choose how you would like Duck Player to handle YouTube videos when navigating from the YouTube website.";
-
-/* Label for the use DuckPlayer on Youtube toggle */
-"duckPlayerNative.use.on.youtube.label" = "Použiť na Youtube.com";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Ochrana e-mailu";
@@ -2293,11 +2278,11 @@
 /* No comment provided by engineer. */
 "onboardingWelcomeHeader" = "Vitajte v aplikácii DuckDuckGo!";
 
-/* No comment provided by engineer. */
-"Open tabs remain unaffected by this change.  Please close all tabs for this setting to take effect." = "Táto zmena neovplyvní otvorené karty.  Na použitie tohto nastavenia zatvor všetky karty.";
-
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Aplikácia potrebná na otvorenie odkazu sa nenašla";
+
+/* No comment provided by engineer. */
+"Please close all tabs for this setting to take effect." = "Na použitie tohto nastavenia zatvor všetky karty.";
 
 /* Activate button */
 "pm.activate" = "Reaktivovať";
@@ -2521,6 +2506,9 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Zobraziť úplnú adresu lokality";
 
+/* Settings screen text for showing AI Chat in various places in the app */
+"settings.aichat.shortcuts" = "Skratky";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Vždy zapnuté";
 
@@ -2592,6 +2580,9 @@
 
 /* Settings cell for Email Protection */
 "settings.emailProtection.description" = "Zablokujte nástroje na sledovanie e‑mailov a skryte vašu adresu";
+
+/* Settings screen cell text for enabling AI chat */
+"settings.enable.aichat" = "Povoliť Duck.ai";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Povoliť ochranu e-mailu";
@@ -2793,9 +2784,6 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Uložený názov hostiteľa: %@";
-
-/* Button for adding email address to subscription */
-"subscription.activate.add.email.button" = "Pridať e-mail";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Pridať do zariadenia";
@@ -3018,6 +3006,9 @@
 
 /* Unknown period subscription renewal info where parameter is renewal date. This reads as 'Your subscription renews on (date)' */
 "subscription.subscription.renewing.unknown.caption" = "Tvoje predplatné sa obnoví %@.";
+
+/* Unknown period subscription renewal info where parameter is renewal date. This reads as 'Your subscription renews on (date)' */
+"subscription.subscription.renewing.unknown.trial.caption" = "Tvoje predplatné sa obnoví %@.";
 
 /* Annual subscription renewal info where parameter is renewal date. This reads as 'Your annual subscription renews on (date)' */
 "subscription.subscription.renewing.yearly.caption" = "Tvoje ročné predplatné sa obnoví %@.";

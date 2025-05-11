@@ -38,7 +38,8 @@ final class NewTabPageCustomizationProvider: NewTabPageCustomBackgroundProviding
             background: .init(customizationModel.customBackground),
             theme: .init(appearancePreferences.currentThemeName),
             userColor: customizationModel.lastPickedCustomColor,
-            userImages: customizationModel.availableUserBackgroundImages.map(NewTabPageDataModel.UserImage.init)
+            userImages: customizationModel.availableUserBackgroundImages.map(NewTabPageDataModel.UserImage.init),
+            defaultStyles: .init(customizationModel.backgroundColors)
         )
     }
 
@@ -206,5 +207,12 @@ extension NewTabPageDataModel.Theme {
         case .systemDefault:
             return nil
         }
+    }
+}
+
+extension NewTabPageDataModel.DefaultStyles {
+    init(_ backgroundColors: NewTabPageCustomizationModel.DefaultBackgroundColorStyle) {
+        self.init(lightBackgroundColor: backgroundColors.lightBackgroundColor,
+                  darkBackgroundColor: backgroundColors.darkBackgroundColor)
     }
 }

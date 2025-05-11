@@ -19,7 +19,6 @@
 import BrowserServicesKit
 import Combine
 import Common
-import Configuration
 import Foundation
 import GRDB
 import SecureStorage
@@ -53,7 +52,8 @@ public extension BrokerProfileQueryData {
                 schedulingConfig: DataBrokerScheduleConfig.mock,
                 parent: parentURL,
                 mirrorSites: mirrorSites,
-                optOutUrl: optOutUrl ?? ""
+                optOutUrl: optOutUrl ?? "",
+                eTag: ""
             ),
             profileQuery: ProfileQuery(firstName: "John", lastName: "Doe", city: "Miami", state: "FL", birthYear: 50, deprecated: deprecated),
             scanJobData: ScanJobData(brokerId: 1,
@@ -183,6 +183,7 @@ public final class PrivacyConfigurationManagingMock: PrivacyConfigurationManagin
 }
 
 public final class PrivacyConfigurationMock: PrivacyConfiguration {
+
     public var identifier: String = "mock"
     public var version: String? = "123456789"
 
@@ -192,16 +193,16 @@ public final class PrivacyConfigurationMock: PrivacyConfiguration {
 
     public var trackerAllowlist = BrowserServicesKit.PrivacyConfigurationData.TrackerAllowlist(entries: [String: [PrivacyConfigurationData.TrackerAllowlist.Entry]](), state: "mock")
 
-    public func isEnabled(featureKey: BrowserServicesKit.PrivacyFeature, versionProvider: BrowserServicesKit.AppVersionProvider) -> Bool {
+    public func isSubfeatureEnabled(_ subfeature: any PrivacySubfeature, versionProvider: AppVersionProvider, randomizer: (Range<Double>) -> Double, defaultValue: Bool) -> Bool {
+        false
+    }
+
+    public func isEnabled(featureKey: PrivacyFeature, versionProvider: AppVersionProvider, defaultValue: Bool) -> Bool {
         false
     }
 
     public func stateFor(featureKey: BrowserServicesKit.PrivacyFeature, versionProvider: BrowserServicesKit.AppVersionProvider) -> BrowserServicesKit.PrivacyConfigurationFeatureState {
         .disabled(.disabledInConfig)
-    }
-
-    func isSubfeatureEnabled(_ subfeature: any PrivacySubfeature, versionProvider: BrowserServicesKit.AppVersionProvider) -> Bool {
-        false
     }
 
     public func stateFor(_ subfeature: any PrivacySubfeature, versionProvider: BrowserServicesKit.AppVersionProvider, randomizer: (Range<Double>) -> Double) -> BrowserServicesKit.PrivacyConfigurationFeatureState {
@@ -246,10 +247,6 @@ public final class PrivacyConfigurationMock: PrivacyConfiguration {
 
     public func userDisabledProtection(forDomain: String) {
 
-    }
-
-    public func isSubfeatureEnabled(_ subfeature: any BrowserServicesKit.PrivacySubfeature, versionProvider: BrowserServicesKit.AppVersionProvider, randomizer: (Range<Double>) -> Double) -> Bool {
-        false
     }
 
     public func stateFor(subfeatureID: SubfeatureID, parentFeatureID: ParentFeatureID, versionProvider: AppVersionProvider, randomizer: (Range<Double>) -> Double) -> PrivacyConfigurationFeatureState {
@@ -578,9 +575,9 @@ public final class DataBrokerProtectionSecureVaultMock: DataBrokerProtectionSecu
 
     public func fetchBroker(with name: String) throws -> DataBroker? {
         if shouldReturnOldVersionBroker {
-            return .init(id: 1, name: "Broker", url: "broker.com", steps: [Step](), version: "1.0.0", schedulingConfig: .mock, optOutUrl: "")
+            return .init(id: 1, name: "Broker", url: "broker.com", steps: [Step](), version: "1.0.0", schedulingConfig: .mock, optOutUrl: "", eTag: "")
         } else if shouldReturnNewVersionBroker {
-            return .init(id: 1, name: "Broker", url: "broker.com", steps: [Step](), version: "1.0.1", schedulingConfig: .mock, optOutUrl: "")
+            return .init(id: 1, name: "Broker", url: "broker.com", steps: [Step](), version: "1.0.1", schedulingConfig: .mock, optOutUrl: "", eTag: "")
         }
 
         return nil
@@ -1237,12 +1234,15 @@ public extension DataBroker {
                 maintenanceScan: 0,
                 maxAttempts: -1
             ),
-            optOutUrl: ""
+            optOutUrl: "",
+            eTag: ""
         )
     }
 }
 
 public final class MockDataBrokerProtectionOperationQueueManager: DataBrokerProtectionQueueManager {
+    public var delegate: DataBrokerProtectionQueueManagerDelegate?
+
     public var debugRunningStatusString: String { return "" }
 
     public var startImmediateScanOperationsIfPermittedCompletionError: DataBrokerProtectionJobsErrorCollection?
@@ -1253,7 +1253,7 @@ public final class MockDataBrokerProtectionOperationQueueManager: DataBrokerProt
     public var startScheduledAllOperationsIfPermittedCalledCompletion: (() -> Void)?
     public var startScheduledScanOperationsIfPermittedCalledCompletion: (() -> Void)?
 
-    public init(operationQueue: DataBrokerProtectionOperationQueue, operationsCreator: DataBrokerOperationsCreator, mismatchCalculator: MismatchCalculator, brokerUpdater: DataBrokerProtectionBrokerUpdater?, pixelHandler: Common.EventMapping<DataBrokerProtectionSharedPixels>) {
+    public init(operationQueue: DataBrokerProtectionOperationQueue, operationsCreator: DataBrokerOperationsCreator, mismatchCalculator: MismatchCalculator, pixelHandler: Common.EventMapping<DataBrokerProtectionSharedPixels>) {
 
     }
 
@@ -1353,7 +1353,7 @@ public final class MockDataBrokerOperation: DataBrokerOperation, @unchecked Send
 
     public override func main() {
         if shouldError {
-            errorDelegate?.dataBrokerOperationDidError(DataBrokerProtectionError.noActionFound, withBrokerName: nil)
+            errorDelegate?.dataBrokerOperationDidError(DataBrokerProtectionError.noActionFound, withBrokerName: nil, version: nil)
         }
 
         finish()
@@ -1397,7 +1397,7 @@ public final class MockDataBrokerOperationErrorDelegate: DataBrokerOperationErro
 
     public init() {}
 
-    public func dataBrokerOperationDidError(_ error: any Error, withBrokerName brokerName: String?) {
+    public func dataBrokerOperationDidError(_ error: any Error, withBrokerName brokerName: String?, version: String?) {
         operationErrors.append(error)
     }
 }
@@ -1489,23 +1489,68 @@ public final class MockMismatchCalculator: MismatchCalculator {
     }
 }
 
-public final class MockDataBrokerProtectionBrokerUpdater: DataBrokerProtectionBrokerUpdater {
+public final class MockBrokerJSONService: BrokerJSONServiceProvider {
+    public var vault: any DataBrokerProtectionCore.DataBrokerProtectionSecureVault
 
     public private(set) var didCallUpdateBrokers = false
     public private(set) var didCallCheckForUpdates = false
 
-    public static func provideForDebug() -> DefaultDataBrokerProtectionBrokerUpdater? {
-        nil
+    public init() {
+        self.vault = try! DataBrokerProtectionSecureVaultMock(providers:
+                                                                SecureStorageProviders(
+                                                                    crypto: EmptySecureStorageCryptoProviderMock(),
+                                                                    database: SecureStorageDatabaseProviderMock(),
+                                                                    keystore: EmptySecureStorageKeyStoreProviderMock()))
     }
 
-    public init() { }
+    public func checkForUpdates(skipsLimiter: Bool) async throws {
+        didCallCheckForUpdates = true
+    }
+
+    public func checkForUpdates() async throws {
+        didCallCheckForUpdates = true
+    }
+
+    public func bundledBrokers() throws -> [DataBroker]? {
+        nil
+    }
 
     public func updateBrokers() {
         didCallUpdateBrokers = true
     }
+}
 
-    public func checkForUpdatesInBrokerJSONFiles() {
-        didCallCheckForUpdates = true
+public struct MockLocalBrokerJSONService: LocalBrokerJSONServiceProvider {
+    public init() {}
+
+    public func bundledBrokers() throws -> [DataBroker]? {
+        []
+    }
+
+    public func checkForUpdates() async throws {
+    }
+}
+
+public final class MockFileManager: FileManager {
+    public var hasUnzippedContent = false
+
+    let fileNames = ["valid-broker", "invalid-broker-with-unsupported-type", "invalid-broker-with-unsupported-action"]
+    lazy var fileURLs = fileNames.compactMap { Bundle.module.url(forResource: $0, withExtension: "json", subdirectory: "Resources") }
+
+    public override func fileExists(atPath path: String, isDirectory: UnsafeMutablePointer<ObjCBool>?) -> Bool {
+        hasUnzippedContent
+    }
+
+    public override func contentsOfDirectory(at url: URL, includingPropertiesForKeys keys: [URLResourceKey]?, options mask: FileManager.DirectoryEnumerationOptions = []) throws -> [URL] {
+        hasUnzippedContent ? fileURLs : []
+    }
+
+    public override func removeItem(at URL: URL) throws {
+        hasUnzippedContent = false
+    }
+
+    public override func unzipArchive(at sourceURL: URL, to destinationURL: URL) throws {
+        hasUnzippedContent = true
     }
 }
 
@@ -1810,7 +1855,8 @@ public extension BrokerDB {
             BrokerDB(id: nil, name: .random(length: 4),
                      json: try! JSONSerialization.data(withJSONObject: [:], options: []),
                      version: "\($0).\($0).\($0)",
-                     url: "www.testbroker.com")
+                     url: "www.testbroker.com",
+                     eTag: "")
         }
     }
 }
@@ -1869,6 +1915,7 @@ public struct MockMigrationsProvider: DataBrokerProtectionDatabaseMigrationsProv
     public static var didCallV3Migrations = false
     public static var didCallV4Migrations = false
     public static var didCallV5Migrations = false
+    public static var didCallV6Migrations = false
 
     public static var v2Migrations: (inout GRDB.DatabaseMigrator) throws -> Void {
         didCallV2Migrations = true
@@ -1887,6 +1934,11 @@ public struct MockMigrationsProvider: DataBrokerProtectionDatabaseMigrationsProv
 
     public static var v5Migrations: (inout GRDB.DatabaseMigrator) throws -> Void {
         didCallV5Migrations = true
+        return { _ in }
+    }
+
+    public static var v6Migrations: (inout GRDB.DatabaseMigrator) throws -> Void {
+        didCallV6Migrations = true
         return { _ in }
     }
 }
@@ -1952,7 +2004,8 @@ public extension DataBroker {
                 maintenanceScan: 0,
                 maxAttempts: -1
             ),
-            optOutUrl: ""
+            optOutUrl: "",
+            eTag: ""
         )
     }
 
@@ -1973,7 +2026,8 @@ public extension DataBroker {
                 maxAttempts: -1
             ),
             parent: "some",
-            optOutUrl: ""
+            optOutUrl: "",
+            eTag: ""
         )
     }
 
@@ -1989,7 +2043,8 @@ public extension DataBroker {
                 maintenanceScan: 0,
                 maxAttempts: -1
             ),
-            optOutUrl: ""
+            optOutUrl: "",
+            eTag: ""
         )
     }
 
@@ -2004,7 +2059,8 @@ public extension DataBroker {
                 maintenanceScan: 0,
                 maxAttempts: -1
               ),
-              optOutUrl: ""
+              optOutUrl: "",
+              eTag: ""
         )
     }
 
@@ -2025,7 +2081,8 @@ public extension DataBroker {
                 maxAttempts: -1
             ),
             mirrorSites: mirroSites,
-            optOutUrl: ""
+            optOutUrl: "",
+            eTag: ""
         )
     }
 }

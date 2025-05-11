@@ -37,7 +37,7 @@ final class BookmarksBarViewModel: NSObject {
 
     enum Constants {
         static let buttonSpacing: CGFloat = 2
-        static let buttonHeight: CGFloat = 28
+        static let buttonHeight: CGFloat = 24
         static let maximumButtonWidth: CGFloat = 128
         static let labelFont = NSFont.systemFont(ofSize: 12)
 
@@ -265,7 +265,7 @@ extension BookmarksBarViewModel: NSCollectionViewDelegate, NSCollectionViewDataS
             return NSView()
         }
 
-        let imageView = NSImageView(image: .dropTargetIndicator16)
+        let imageView = NSImageView(image: .dropTargetIndicator)
         imageView.contentTintColor = NSColor.controlAccentColor
 
         return imageView

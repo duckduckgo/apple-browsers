@@ -1,6 +1,6 @@
 {
     "readme": "https://github.com/duckduckgo/privacy-configuration",
-    "version": 1745829810305,
+    "version": 1746438951882,
     "features": {
         "adAttributionReporting": {
             "state": "disabled",
@@ -576,6 +576,15 @@
                     "domain": "telekom.de"
                 },
                 {
+                    "domain": "caf.fr"
+                },
+                {
+                    "domain": "homeoffice.gov.uk"
+                },
+                {
+                    "domain": "riga-airport.com"
+                },
+                {
                     "domain": "marvel.com"
                 },
                 {
@@ -744,7 +753,7 @@
                     "state": "disabled"
                 }
             },
-            "hash": "26fbb1f002757d923e9e6481ce6dc1e9"
+            "hash": "a0c0168a977266d50ddecb95e18187f6"
         },
         "autofillBreakageReporter": {
             "state": "disabled",
@@ -1718,7 +1727,10 @@
                     "rollout": {
                         "steps": [
                             {
-                                "percent": 75
+                                "percent": 25
+                            },
+                            {
+                                "percent": 100
                             }
                         ]
                     },
@@ -1734,7 +1746,7 @@
                     ]
                 }
             },
-            "hash": "d16e37acdd458df34ba259aa5b011f44"
+            "hash": "933995b88b904ab6070a76c259001a6c"
         },
         "contextualOnboarding": {
             "exceptions": [],
@@ -1911,6 +1923,10 @@
                     {
                         "domain": "ihg.com",
                         "reason": "https://github.com/duckduckgo/privacy-configuration/pull/2872"
+                    },
+                    {
+                        "domain": "routenote.com",
+                        "reason": "https://github.com/duckduckgo/privacy-configuration/pull/3055"
                     }
                 ],
                 "webViewDefault": [
@@ -1930,7 +1946,7 @@
             },
             "exceptions": [],
             "state": "enabled",
-            "hash": "663bc161529b959e8f74047818899fb5"
+            "hash": "c66ed3232c7c619b86d36754e1a6795f"
         },
         "dbp": {
             "state": "enabled",
@@ -3562,24 +3578,8 @@
                                 "type": "hide-empty"
                             },
                             {
-                                "selector": ".global-nav-view, .global-nav-view .global-nav-content",
-                                "type": "modify-style",
-                                "values": [
-                                    {
-                                        "property": "margin-top",
-                                        "value": "0px"
-                                    }
-                                ]
-                            },
-                            {
-                                "selector": ".search-subnav-slender-view, .search-slender-advanced-panel-view",
-                                "type": "modify-style",
-                                "values": [
-                                    {
-                                        "property": "top",
-                                        "value": "0px"
-                                    }
-                                ]
+                                "selector": "[class*='-ad-container']",
+                                "type": "override"
                             }
                         ]
                     },
@@ -5071,6 +5071,10 @@
                             {
                                 "selector": ".ad-area",
                                 "type": "hide-empty"
+                            },
+                            {
+                                "selector": "[data-qa='AdSlot-Container']",
+                                "type": "closest-empty"
                             }
                         ]
                     },
@@ -5910,7 +5914,7 @@
                 ]
             },
             "state": "enabled",
-            "hash": "693682fb8295d98b311a3e00894cd8d1"
+            "hash": "ad6bcadd6f0b2a42e041d469540d9b19"
         },
         "exceptionHandler": {
             "exceptions": [
@@ -6361,10 +6365,12 @@
                     "globalprivacycontrol.org",
                     "washingtonpost.com",
                     "nytimes.com",
+                    "privacytests.org",
+                    "privacytests2.org",
                     "privacy-test-pages.site"
                 ]
             },
-            "hash": "08ccc28c266fd21b8f14844800bf483c"
+            "hash": "51b1a944db37d7510c33a27991f702c2"
         },
         "harmfulApis": {
             "settings": {
@@ -7125,9 +7131,10 @@
             "hash": "003c4c59d4fb6697038dc43f2ec718b3"
         },
         "tabCrashRecovery": {
-            "state": "internal",
+            "state": "enabled",
             "exceptions": [],
-            "hash": "f1daaefe788583c2a00d7d19a23864a7"
+            "minSupportedVersion": "1.137.0",
+            "hash": "c38c449ed89cf483a61da23acace65ec"
         },
         "tabManager": {
             "exceptions": [],
@@ -9218,6 +9225,12 @@
                                 "domains": [
                                     "<all>"
                                 ]
+                            },
+                            {
+                                "rule": "www.gstatic.com/flutter-canvaskit",
+                                "domains": [
+                                    "nimblerx.com"
+                                ]
                             }
                         ]
                     },
@@ -10949,7 +10962,8 @@
                             {
                                 "rule": "cdn.weglot.com/weglot.min.js",
                                 "domains": [
-                                    "cherrycreekschools.org"
+                                    "cherrycreekschools.org",
+                                    "myavista.com"
                                 ]
                             }
                         ]
@@ -11162,7 +11176,7 @@
                     "domain": "flexmls.com"
                 }
             ],
-            "hash": "1f42fea428309de67561253162607c91"
+            "hash": "40d82e4c970f35509f7ab81b9222ea14"
         },
         "trackingCookies1p": {
             "settings": {

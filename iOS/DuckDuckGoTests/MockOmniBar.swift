@@ -41,6 +41,10 @@ final class MockOmniBar: OmniBar {
     func hideSeparator() { }
     func moveSeparatorToTop() { }
     func moveSeparatorToBottom() { }
+    func useSmallTopSpacing() { }
+    func useRegularTopSpacing() { }
+    func preventShadowsOnTop() { }
+    func preventShadowsOnBottom() { }
     func enterPhoneState() { }
     func enterPadState() { }
     func startBrowsing() { }
@@ -60,19 +64,20 @@ final class MockOmniBar: OmniBar {
     func resetPrivacyIcon(for url: URL?) { }
     func cancelAllAnimations() { }
     func completeAnimationForDaxDialog() { }
-
+    
     final class MockOmniBarView: UIView, OmniBarView {
 
         required init?(coder: NSCoder) {
             fatalError("init(coder:) has not been implemented")
         }
-
+        
         init() {
             super.init(frame: .zero)
         }
-
+        
         var text: String?
-        var expectedHeight: CGFloat = 52
+        static let expectedHeight: CGFloat = 52
+        var expectedHeight: CGFloat = MockOmniBarView.expectedHeight
         var textField: DuckDuckGo.TextFieldWithInsets!
         var accessoryType: DuckDuckGo.OmniBarAccessoryType = .chat
         var privacyInfoContainer: DuckDuckGo.PrivacyInfoContainerView!
@@ -91,12 +96,13 @@ final class MockOmniBar: OmniBar {
         var leftIconContainerView: UIView! = UIView()
         var customIconView: UIImageView = UIImageView()
         var clearButton: UIButton! = UIButton()
+        var shareButton: UIButton! = UIButton()
 
         func showSeparator() { }
         func hideSeparator() { }
         func moveSeparatorToTop() { }
         func moveSeparatorToBottom() { }
-
+        
         var progressView: DuckDuckGo.ProgressView?
         var privacyIconView: UIView?
         var searchContainerWidth: CGFloat = 0
@@ -118,11 +124,12 @@ final class MockOmniBar: OmniBar {
         var onDismissPressed: (() -> Void)?
         var onSettingsLongPress: (() -> Void)?
         var onAccessoryLongPress: (() -> Void)?
+        var onSharePressed: (() -> Void)?
 
         static func create() -> Self {
             Self.init()
         }
-
+        
         var isPrivacyInfoContainerHidden: Bool = true
         var isClearButtonHidden: Bool = true
         var isMenuButtonHidden: Bool = true
@@ -137,6 +144,7 @@ final class MockOmniBar: OmniBar {
         var isAccessoryButtonHidden: Bool = true
         var isSearchLoupeHidden: Bool = true
         var isDismissButtonHidden: Bool = true
+        var isShareButtonHidden: Bool = true
 
     }
 }

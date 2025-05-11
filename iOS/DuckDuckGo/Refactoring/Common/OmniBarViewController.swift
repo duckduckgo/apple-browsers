@@ -119,6 +119,8 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.refreshButton.pointerStyleProvider = { button, _, _ -> UIPointerStyle? in
             return .init(effect: .lift(.init(view: button)))
         }
+
+        barView.shareButton.isPointerInteractionEnabled = true
     }
 
     private func configureTextField() {
@@ -184,6 +186,12 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.onRefreshPressed = { [weak self] in
             self?.onRefreshPressed()
         }
+        barView.onRefreshPressed = { [weak self] in
+            self?.onRefreshPressed()
+        }
+        barView.onSharePressed = { [weak self] in
+            self?.onSharePressed()
+        }
         barView.onBackPressed = { [weak self] in
             self?.onBackPressed()
         }
@@ -228,6 +236,22 @@ class OmniBarViewController: UIViewController, OmniBar {
 
     func moveSeparatorToBottom() {
         barView.moveSeparatorToBottom()
+    }
+
+    func useSmallTopSpacing() {
+        // no-op - implemented in subclass
+    }
+
+    func useRegularTopSpacing() {
+        // no-op - implemented in subclass
+    }
+
+    func preventShadowsOnTop() {
+        // no-op - implemented in subclass
+    }
+
+    func preventShadowsOnBottom() {
+        // no-op - implemented in subclass
     }
 
     func startBrowsing() {
@@ -439,6 +463,7 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.isSettingsButtonHidden = !state.showSettings
         barView.isCancelButtonHidden = !state.showCancel
         barView.isRefreshButtonHidden = !state.showRefresh
+        barView.isShareButtonHidden = !state.showShare
         barView.isVoiceSearchButtonHidden = !state.showVoiceSearch
         barView.isAbortButtonHidden = !state.showAbort
         barView.isBackButtonHidden = !state.showBackButton
@@ -592,6 +617,11 @@ class OmniBarViewController: UIViewController, OmniBar {
         Pixel.fire(pixel: .refreshPressed)
         cancelAllAnimations()
         omniDelegate?.onRefreshPressed()
+    }
+
+    private func onSharePressed() {
+        // TODO pixel
+        omniDelegate?.onSharePressed()
     }
 
     private func onBackPressed() {

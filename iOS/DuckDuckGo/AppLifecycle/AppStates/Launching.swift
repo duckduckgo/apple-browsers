@@ -69,6 +69,8 @@ struct Launching: LaunchingHandling {
 
         let appKeyValueFileStoreService = try AppKeyValueFileStoreService()
         let autofillService = AutofillService()
+
+        let dbpService = DBPService(appDependencies: AppDependencyProvider.shared)
         let configurationService = RemoteConfigurationService()
         let crashCollectionService = CrashCollectionService()
         let statisticsService = StatisticsService()
@@ -128,6 +130,7 @@ struct Launching: LaunchingHandling {
                                authenticationService: authenticationService,
                                syncService: syncService,
                                vpnService: vpnService,
+                               dbpService: dbpService,
                                autofillService: autofillService,
                                remoteMessagingService: remoteMessagingService,
                                configurationService: configurationService,

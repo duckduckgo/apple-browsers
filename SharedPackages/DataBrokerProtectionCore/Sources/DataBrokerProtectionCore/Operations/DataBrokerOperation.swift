@@ -68,7 +68,7 @@ public enum OperationType {
 }
 
 public protocol DataBrokerOperationErrorDelegate: AnyObject {
-    func dataBrokerOperationDidError(_ error: Error, withBrokerName brokerName: String?)
+    func dataBrokerOperationDidError(_ error: Error, withBrokerName brokerName: String?, version: String?)
 }
 
 // swiftlint:disable explicit_non_final_class
@@ -195,7 +195,7 @@ public class DataBrokerOperation: Operation, @unchecked Sendable {
                 continue
             }
             do {
-                Logger.dataBrokerProtection.log("Running operation: \(String(describing: operationData), privacy: .public)")
+                Logger.dataBrokerProtection.log("Running operation: \(String(describing: operationData))")
 
                 try await DataBrokerProfileQueryOperationManager(vpnBypassService: operationDependencies.vpnBypassService).runOperation(operationData: operationData,
                                                                                 brokerProfileQueryData: brokerProfileData,
@@ -217,7 +217,9 @@ public class DataBrokerOperation: Operation, @unchecked Sendable {
             } catch {
                 Logger.dataBrokerProtection.error("Error: \(error.localizedDescription, privacy: .public)")
 
-                errorDelegate?.dataBrokerOperationDidError(error, withBrokerName: brokerProfileQueriesData.first?.dataBroker.name)
+                errorDelegate?.dataBrokerOperationDidError(error,
+                                                           withBrokerName: brokerProfileQueriesData.first?.dataBroker.name,
+                                                           version: brokerProfileQueriesData.first?.dataBroker.version)
             }
         }
 

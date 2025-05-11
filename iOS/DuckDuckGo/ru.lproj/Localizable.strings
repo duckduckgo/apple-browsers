@@ -1,7 +1,4 @@
 /* No comment provided by engineer. */
-" " = " ";
-
-/* No comment provided by engineer. */
 "%@" = "%@";
 
 /* No comment provided by engineer. */
@@ -310,6 +307,93 @@
 /* No comment provided by engineer. */
 "autoconsent.info.header" = "Если DuckDuckGo обнаружит всплывающее окно выбора куки-файлов на каком-либо сайте, мы попытаемся автоматически выбрать минимум куки, максимально защитив ваши данные, а затем закроем окно. Некоторые сайты не позволяют контролировать настройки куки-файлов. В этом случае мы можем их только скрыть.";
 
+/* Toast message when a credit card item is deleted */
+"autofill.creditcard.deleted-message-no-title" = "Карта удалена";
+
+/* Card name label for credit card details on autofill */
+"autofill.creditcard.details.card-name" = "Имя на карте";
+
+/* Card nickname label for credit card details on autofill */
+"autofill.creditcard.details.card-nickname" = "Удобное название карты";
+
+/* Card number label for credit card details on autofill */
+"autofill.creditcard.details.card-number" = "Номер карты";
+
+/* Card number label for credit card details on autofill when editing */
+"autofill.creditcard.details.card-number.required" = "Номер карты";
+
+/* Title for toast when copying the credit card name */
+"autofill.creditcard.details.copy-toast.card-name-copied" = "Имя скопировано";
+
+/* Title for toast when copying the credit card number */
+"autofill.creditcard.details.copy-toast.card-number-copied" = "Номер карты скопирован";
+
+/* Title for toast when copying the credit card cvv (security code) */
+"autofill.creditcard.details.copy-toast.cvv-copied" = "CVV-код скопирован";
+
+/* Title for toast when copying the credit card expiration date */
+"autofill.creditcard.details.copy-toast.exp-date-copied" = "Дата истечения срока действия скопирована";
+
+/* CVV (security code) label for credit card details on autofill */
+"autofill.creditcard.details.cvv" = "CVV-код";
+
+/* Title for autofill credit card details */
+"autofill.creditcard.details.default-title" = "Карта";
+
+/* Delete button when deleting an autofill credit card */
+"autofill.creditcard.details.delete" = "Удалить карту";
+
+/* Autofill alert button confirming delete credit card */
+"autofill.creditcard.details.delete-confirmation.button" = "Удалить карту";
+
+/* Autofill message confirming delete credit card */
+"autofill.creditcard.details.delete-confirmation.message" = "Вы точно хотите удалить эту карту?";
+
+/* Title when editing autofill credit card details */
+"autofill.creditcard.details.edit-title" = "Изменить карту";
+
+/* Placeholder for card number field on autofill credit card details */
+"autofill.creditcard.details.edit.card-number-placeholder" = "1234 5678 1234 5678";
+
+/* Placeholder for CVV security code field on autofill credit card details */
+"autofill.creditcard.details.edit.cvv-placeholder" = "Код безопасности";
+
+/* Placeholder for expiration date field on autofill credit card details */
+"autofill.creditcard.details.edit.exp-date-placeholder" = "ММ / ГГ";
+
+/* Expiration date label for credit card details on autofill */
+"autofill.creditcard.details.exp-date" = "Срок действия";
+
+/* Title when adding new autofill credit card */
+"autofill.creditcard.details.new-title" = "Добавить карту";
+
+/* Placeholder for card name field on autofill credit card details */
+"autofill.creditcard.edit.card-name-placeholder" = "Имя на карте";
+
+/* Placeholder for card nickname field on autofill credit card details */
+"autofill.creditcard.edit.card-nickname-placeholder" = "(например, «Для работы»)";
+
+/* Subtitle for view displayed when no autofill credit cards have been saved */
+"autofill.creditcard.empty-view.subtitle.first.paragraph" = "Реквизиты карт надежно хранятся на вашем устройстве.";
+
+/* Title for view displayed when autofill has no credit cards saved */
+"autofill.creditcard.empty-view.title" = "Сохраненных карт пока нет";
+
+/* Reason for auth when opening credit card list */
+"autofill.creditcard.list.auth.reason" = "Для доступа к картам необходимо разблокировать устройство";
+
+/* Credit card row label for credit card expiry date */
+"autofill.creditcard.list.item.expiry" = "Срок действия:";
+
+/* Title for screen listing autofill credit cards */
+"autofill.creditcard.list.title" = "Платежные карты";
+
+/* Title for view displayed when autofill is locked on devices where a passcode has not been set */
+"autofill.creditcard.no-auth.subtitle" = "Код-пароль нужен для защиты ваших платежных карт.";
+
+/* Title for view displayed when autofill is locked on devices where a passcode has not been set */
+"autofill.creditcard.no-auth.title" = "Для хранения карт нужна защита устройства";
+
 /* Do not translate - stringsdict entry */
 "autofill.delete.all.passwords.completion" = "autofill.delete.all.passwords.completion";
 
@@ -330,6 +414,9 @@
 
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "Включите защиту электронной почты";
+
+/* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
+"autofill.hide-card-cvv" = "Скрыть CVV-код";
 
 /* Accessibility title for a Hide Password button replacing displayed password with ***** */
 "autofill.hide-password" = "Скрыть пароль";
@@ -385,7 +472,7 @@
 /* Message displayed after updating an autofill login */
 "autofill.login-updated.toast" = "Пароль обновлен";
 
-/* Menu item text for copying autofill login details */
+/* Menu item text for copying autofill details */
 "autofill.logins.copy-prompt" = "Копировать %@";
 
 /* Title for toast when copying address */
@@ -519,6 +606,9 @@
 
 /* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
 "autofill.logins.list.settings.footer" = "Пароли подвергаются шифрованию. Никто, кроме вас, их не увидит. Даже мы.";
+
+/* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
+"autofill.logins.list.settings.passwords.cards.footer" = "Пароли и реквизиты карт подвергаются шифрованию. Никто, кроме вас, их не увидит. Даже мы.";
 
 /* Section title for group of suggested saved logins */
 "autofill.logins.list.suggested" = "Рекомендации";
@@ -687,6 +777,9 @@
 
 /* Section header for the autofill settings screen */
 "autofill.settings.view.section-header" = "Просмотр";
+
+/* Accessibility title for a Show CVV button displaying actual credit card CVV (security code) instead of *** */
+"autofill.show-card-cvv" = "Показать CVV-код";
 
 /* Accessibility title for a Show Password button displaying actial password instead of ***** */
 "autofill.show-password" = "Показать пароль";
@@ -1057,41 +1150,8 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Вчера";
 
-/* No comment provided by engineer. */
-"dax.hide.button" = "Скрыть подсказки навсегда";
-
-/* No comment provided by engineer. */
-"dax.hide.cancel" = "Отменить";
-
-/* Subtitle in Hide Dax dialog */
-"dax.hide.message" = "Их немного, и мы постарались сделать их информативными.";
-
-/* Title in Hide Dax dialog */
-"dax.hide.title" = "Скрыть другие подсказки?";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search" = "Ваши поисковые запросы в DuckDuckGo анонимны. Все и всегда. 🙌";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search.cta" = "Уф!";
-
-/* First parameter is a count of additional trackers, second and third are names of the tracker networks (strings) */
-"dax.onboarding.browsing.multiple.trackers" = "dax.onboarding.browsing.multiple.trackers";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.multiple.trackers.cta" = "Дай пять!";
-
-/* Parameter is domain name (string) */
-"dax.onboarding.browsing.one.tracker" = "Сайт *%1$@* пытался вести за вами слежку.\n\nНо мы его заблокировали!\n\n☝️ Заходя на новый сайт, вы всегда можете проверить, шпионит ли он за вами: просто загляните в адресную строку.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.one.tracker.cta" = "Дай пять!";
-
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Внимание! Мы не можем скрыть вашу активность от %1$@ на %2$@.\n\nИспользуйте наш браузер, и мы сократим объем собираемой о вас информации, заблокировав трекеры %1$@ на других сайтах.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.site.is.major.tracker.cta" = "Понятно";
 
 /* Parameters are domain names (strings) */
 "dax.onboarding.browsing.site.owned.by.major.tracker" = "Внимание! Так как %1$@ принадлежит сети %2$@, мы не можем скрыть вашу активность на этом ресурсе.\n\nИспользуйте наш браузер, и мы сократим объем собираемой о вас информации, заблокировав трекеры %2$@ на других сайтах.";
@@ -1102,29 +1162,8 @@
 /* No comment provided by engineer. */
 "dax.onboarding.browsing.without.trackers" = "Вы жмете на кнопки и листаете страницы — мы блокируем трекеры.\n\nПользуйтесь сайтами без страха!";
 
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.without.trackers.cta" = "Понятно";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button" = "В браузере могут скапливаться личные данные. Фу! Пользуйтесь кнопкой «Огонь», чтобы сжечь весь лишний мусор. Попробуйте сами! 👇";
-
-/* Cancel action */
-"dax.onboarding.fire.button.cancelAction" = "Отменить";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button.confirmAction" = "Закрыть вкладки и удалить данные";
-
 /* Encourage user to add favorite site using the browsing menu. */
 "dax.onboarding.home.add.favorite" = "Посещайте любимые сайты в мгновение ока! \n\nЗайдите на сайт, который вам нравится. Затем нажмите значок «⋯» и выберите *Добавить в избранное*.";
-
-/* Accessible version of dax.onboarding.home.add.favorite */
-"dax.onboarding.home.add.favorite.accessible" = "Посещайте любимые сайты в мгновение ока! Посетите один из своих любимых сайтов. Затем нажмите кнопку меню и выберите «Добавить в избранное».";
-
-/* No comment provided by engineer. */
-"dax.onboarding.home.initial" = "А теперь попробуйте заглянуть на любимый сайт!\n\nМы заблокируем трекеры и пресечем слежку. И даже постараемся повысить безопасность соединения 🔒";
-
-/* ad = advertisment */
-"dax.onboarding.home.subsequent" = "Проще некуда!\n\nПросматривать сайтам с нами — значит навсегда попрощаться с назойливой рекламой 👍";
 
 /* No comment provided by engineer. */
 "Debug" = "Отладка";
@@ -1210,21 +1249,6 @@
 /* Title for message explaining to the user that Duck Player is not available */
 "duck-player.contingency-title" = "Duck Player недоступен";
 
-/* Text for the toggle to autoplay videos */
-"duck-player.native-autoplay-videos" = "Autoplay Videos";
-
-/* Text for the description about autoplay videos */
-"duck-player.native-autoplay-videos.description" = "Videos opened in Duck Player will automatically begin playback. Turn this off if you would like to manually start playback of videos opened in Duck Player.";
-
-/* Text for the button to watch a video on DuckPlayer */
-"duck-player.native-open-in-duckplayer" = "Play this video in Duck Player";
-
-/* Text for the button to resume watching a video on DuckPlayer */
-"duck-player.native-resume-in-duckplayer" = "Resume in Duck Player";
-
-/* Text for the button to watch a video on YouTube */
-"duck-player.native-watch-on-youtube" = "Watch in Youtube";
-
 /* Button for the message explaining to the user that Duck Player is not available so the user can learn more */
 "duck-player.video-contingency-cta" = "Узнать больше";
 
@@ -1235,16 +1259,16 @@
 "duckai.preferences.text.markdown" = "Duck.ai — дополнительная функция, позволяющая анонимно беседовать с популярными сторонними чат-моделями на базе искусственного интеллекта. Содержимое чатов не применяется для обучения ИИ.\n[Подробнее...](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
-"duckai.settings.enable.address-bar-toggle" = "Показывать Duck.ai в адресной строке";
+"duckai.settings.enable.address-bar-toggle" = "Адресная строка";
 
 /* Toggle text to enable/disable AI Chat in the browsing menu */
-"duckai.settings.enable.browsing-menu-toggle" = "Показывать Duck.ai в меню браузера";
+"duckai.settings.enable.browsing-menu-toggle" = "Меню браузера";
 
 /* Toggle text to enable/disable Duck.ai in tab manager */
-"duckai.settings.enable.tab-switcher-toggle" = "Отображать Duck.ai на экране вкладок";
+"duckai.settings.enable.tab-switcher-toggle" = "Tabs Screen";
 
 /* Toggle text to enable/disable Duck.ai in voice search */
-"duckai.settings.enable.voice-search-toggle" = "Показывать Duck.ai в голосовом поиске";
+"duckai.settings.enable.voice-search-toggle" = "Голосовой поиск";
 
 /* Settings screen cell text for AI Chat settings */
 "duckai.settings.title" = "Duck.ai";
@@ -1261,14 +1285,8 @@
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Никогда";
 
-/* Toast message for the Duck Player entry pill dismiss count */
-"duckPlayer.pill.dismiss.count.toast.message" = "Want to turn off Duck Player appearing on Youtube?";
-
-/* Button on Toast message for the Duck Player entry pill dismiss count */
-"duckPlayer.pill.dismiss.count.toast.message.button" = "Открыть Настройки";
-
-/* Caption for Duck Player entry point */
-"duckplayer.pill.watch.without.ads" = "No targeted ads, always private";
+/* Settings screen cell text for DuckPlayer settings */
+"duckplayer.open.video.settings.title" = "Проигрыватель Duck Player";
 
 /* Body text for the modal feature explanation */
 "duckplayer.presentation.modal.body" = "Проигрыватель Duck Player позволяет смотреть видео из YouTube в браузере DuckDuckGo без целевой рекламы. Просмотренные ролики не влияют на рекомендации.";
@@ -1299,39 +1317,6 @@
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.title" = "Проигрыватель Duck Player";
-
-/* Text displayed when DuckPlayer is in 'Ask' mode for Youtube. */
-"duckPlayerNative.ask.label" = "Разрешить мне выбрать";
-
-/* Text displayed when DuckPlayer is automatically enabled for Youtube */
-"duckPlayerNative.auto.label" = "Автоматически";
-
-/* Label for the automatic youtube video opening */
-"duckPlayerNative.auto.open.label" = "Автоматически открывать Duck Player на YouTube";
-
-/* CTA for DuckPlayer priming modal */
-"duckPlayerNative.modal.cta" = "Watch Now Privately";
-
-/* Description for DuckPlayer priming modal */
-"duckPlayerNative.modal.description" = "Plus, what you watch in Duck Player won’t influence your YouTube recommendations.";
-
-/* Title for DuckPlayer priming modal */
-"duckPlayerNative.modal.title" = "Play this video in Duck Player to watch without targeted ads!";
-
-/* Text displayed when DuckPlayer is in off for youtube. */
-"duckPlayerNative.never.label" = "Не показывать";
-
-/* Label for the use DuckPlayer on Youtube toggle footer */
-"duckPlayerNative.use.on.serp.footer" = "Clicking on YouTube videos in DuckDuckGo search results will open in Duck Player.";
-
-/* Label for the use DuckPlayer on SERP toggle */
-"duckPlayerNative.use.on.serp.label" = "DuckDuckGo Search Results";
-
-/* Label for the use DuckPlayer on Youtube toggle footer */
-"duckPlayerNative.use.on.youtube.footer" = "Choose how you would like Duck Player to handle YouTube videos when navigating from the YouTube website.";
-
-/* Label for the use DuckPlayer on Youtube toggle */
-"duckPlayerNative.use.on.youtube.label" = "Использовать на YouTube.com";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Защита электронной почты";
@@ -2258,7 +2243,7 @@
 "onboarding.skip.cta.resumeOnboarding" = "Показать руководство";
 
 /* The message of the skip onboarding dialog popup. */
-"onboarding.skip.message" = "Напоминаем: с помощью кнопки огня 🔥 можно за пару нажатий закрыть все вкладки, а также стереть историю и скопившиеся в браузере данные.";
+"onboarding.skip.message" = "Напоминаем: с помощью кнопки Fire Button🔥 можно за пару нажатий закрыть все вкладки, а также стереть историю и скопившиеся в браузере данные.";
 
 /* The title of the skip onboarding dialog popup */
 "onboarding.skip.title" = "Понятно. Тогда мы пропустим остальные советы.";
@@ -2293,11 +2278,11 @@
 /* No comment provided by engineer. */
 "onboardingWelcomeHeader" = "Добро пожаловать в DuckDuckGo!";
 
-/* No comment provided by engineer. */
-"Open tabs remain unaffected by this change.  Please close all tabs for this setting to take effect." = "Это изменение не затронет открытые вкладки.  Закройте их все, чтобы настройка вступила в силу.";
-
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Приложение для открытия этой ссылки не найдено";
+
+/* No comment provided by engineer. */
+"Please close all tabs for this setting to take effect." = "Закройте их все, чтобы настройка вступила в силу.";
 
 /* Activate button */
 "pm.activate" = "Активировать";
@@ -2521,6 +2506,9 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Показывать полный адрес сайта";
 
+/* Settings screen text for showing AI Chat in various places in the app */
+"settings.aichat.shortcuts" = "Ярлыки";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Всегда включено";
 
@@ -2592,6 +2580,9 @@
 
 /* Settings cell for Email Protection */
 "settings.emailProtection.description" = "Блокировка почтовых трекеров и скрытие адреса";
+
+/* Settings screen cell text for enabling AI chat */
+"settings.enable.aichat" = "Включить Duck.ai";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Включите защиту электронной почты";
@@ -2793,9 +2784,6 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Сохраненное имя хоста: %@";
-
-/* Button for adding email address to subscription */
-"subscription.activate.add.email.button" = "Добавить адрес эл. почты";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Добавление на устройство";
@@ -3018,6 +3006,9 @@
 
 /* Unknown period subscription renewal info where parameter is renewal date. This reads as 'Your subscription renews on (date)' */
 "subscription.subscription.renewing.unknown.caption" = "Ваша подписка продлится %@.";
+
+/* Unknown period subscription renewal info where parameter is renewal date. This reads as 'Your subscription renews on (date)' */
+"subscription.subscription.renewing.unknown.trial.caption" = "Ваша подписка продлится %@.";
 
 /* Annual subscription renewal info where parameter is renewal date. This reads as 'Your annual subscription renews on (date)' */
 "subscription.subscription.renewing.yearly.caption" = "Ваша годовая подписка продлится %@.";

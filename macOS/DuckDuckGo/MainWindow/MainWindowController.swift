@@ -40,16 +40,23 @@ final class MainWindowController: NSWindowController {
         return window?.standardWindowButton(.closeButton)?.superview
     }
 
-    init(window: NSWindow? = nil, mainViewController: MainViewController, popUp: Bool, fireWindowSession: FireWindowSession? = nil, fireViewModel: FireViewModel? = nil) {
-        let size = mainViewController.view.frame.size
-        let moveToCenter = CGAffineTransform(translationX: ((NSScreen.main?.frame.width ?? 1024) - size.width) / 2,
-                                             y: ((NSScreen.main?.frame.height ?? 790) - size.height) / 2)
-        let frame = NSRect(origin: (NSScreen.main?.frame.origin ?? .zero).applying(moveToCenter),
-                           size: size)
+    @MainActor
+    init(window: NSWindow? = nil,
+         mainViewController: MainViewController,
+         popUp: Bool,
+         fireWindowSession: FireWindowSession? = nil,
+         fireViewModel: FireViewModel? = nil) {
 
-        assert(window == nil || [.unitTests, .integrationTests].contains(AppVersion.runType), "Window should not be set in non-test environment")
-        let window = window ?? (popUp ? PopUpWindow(frame: frame) : MainWindow(frame: frame))
+        // Compute initial window frame
+        let frame = InitialWindowFrameProvider.initialFrame()
+
+        assert(window == nil || [.unitTests, .integrationTests].contains(AppVersion.runType),
+               "Window should not be set in non-test environment")
+        let window = window ?? (popUp
+            ? PopUpWindow(frame: frame)
+            : MainWindow(frame: frame))
         window.contentViewController = mainViewController
+        window.setContentSize(frame.size)
         self.fireViewModel = fireViewModel ?? FireCoordinator.fireViewModel
 
         assert(!mainViewController.isBurner || fireWindowSession != nil)
@@ -315,26 +322,26 @@ extension MainWindowController: NSWindowDelegate {
 
     private func hideTabBarAndBookmarksBar() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
-            self?.mainViewController.disableTabPreviews()
-            self?.mainViewController.mainView.navigationBarTopConstraint.animator().constant = 0
-            self?.mainViewController.mainView.tabBarHeightConstraint.animator().constant = 0
-            self?.mainViewController.mainView.webContainerTopConstraintToNavigation.animator().priority = .defaultHigh
-            self?.mainViewController.mainView.webContainerTopConstraint.animator().priority = .defaultLow
-            self?.moveTabBarView(toTitlebarView: false)
-            self?.window?.titlebarAppearsTransparent = false
-            self?.window?.toolbar = nil
+            guard let self else { return }
+            mainViewController.disableTabPreviews()
+            mainViewController.mainView.isTabBarShown = false
+            mainViewController.mainView.webContainerTopBinding = .navigationBar
+            mainViewController.updateBookmarksBarViewVisibility(visible: false)
+            moveTabBarView(toTitlebarView: false)
+            window?.titlebarAppearsTransparent = false
+            window?.toolbar = nil
         }
     }
 
     private func showTabBarAndBookmarksBar() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { [weak self] in
-            self?.mainViewController.enableTabPreviews()
-            self?.mainViewController.mainView.tabBarHeightConstraint.animator().constant = 38
-            self?.mainViewController.mainView.navigationBarTopConstraint.animator().constant = 38
-            self?.mainViewController.mainView.webContainerTopConstraintToNavigation.animator().priority = .defaultLow
-            self?.mainViewController.mainView.webContainerTopConstraint.animator().priority = .defaultHigh
-            self?.window?.titlebarAppearsTransparent = true
-            self?.setupToolbar()
+            guard let self else { return }
+            mainViewController.enableTabPreviews()
+            mainViewController.mainView.isTabBarShown = true
+            mainViewController.mainView.webContainerTopBinding = .tabBar
+            mainViewController.updateBookmarksBarViewVisibility(visible: mainViewController.shouldShowBookmarksBar)
+            window?.titlebarAppearsTransparent = true
+            setupToolbar()
         }
     }
 
@@ -494,6 +501,7 @@ fileprivate extension NavigationBarViewController {
     var controlsForUserPrevention: [NSControl?] {
         return [homeButton,
                 optionsButton,
+                overflowButton,
                 bookmarkListButton,
                 passwordManagementButton,
                 addressBarViewController?.addressBarTextField,

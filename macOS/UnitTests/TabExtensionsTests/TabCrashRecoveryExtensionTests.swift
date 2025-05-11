@@ -18,6 +18,7 @@
 
 import BrowserServicesKit
 import Combine
+import FeatureFlags
 import PixelKit
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
@@ -122,7 +123,7 @@ final class TabCrashRecoveryExtensionTests: XCTestCase {
     @MainActor
     func testWhenWebViewIsNotSetThenWebViewIsNotReloadedAndTabCrashErrorIsNotEmitted() async {
         internalUserDeciderStore.isInternalUser = false
-        featureFlagger.isFeatureOn = false
+        featureFlagger.isFeatureOn = { _ in false }
 
         tabCrashRecoveryExtension.webContentProcessDidTerminate(with: nil)
         XCTAssertEqual(webView.reloadCallsCount, 0)
@@ -160,7 +161,7 @@ final class TabCrashRecoveryExtensionTests: XCTestCase {
 
     @MainActor
     func testWhenFeatureFlagIsDisabledAndUserIsInternalThenWebViewIsReloadedAndTabCrashErrorIsNotEmitted() async {
-        featureFlagger.isFeatureOn = false
+        featureFlagger.isFeatureOn = { _ in false }
         internalUserDeciderStore.isInternalUser = true
         setUpRegularTab()
 
@@ -171,8 +172,27 @@ final class TabCrashRecoveryExtensionTests: XCTestCase {
     }
 
     @MainActor
+    func testWhenFeatureFlagIsDisabledAndUserIsInternalAndTabCrashDebuggingIsEnabledThenWebViewIsNotReloadedAndTabCrashErrorIsEmitted() async {
+        featureFlagger.isFeatureOn = { flag in
+            switch flag {
+            case FeatureFlag.tabCrashDebugging:
+                return true
+            default:
+                return false
+            }
+        }
+        internalUserDeciderStore.isInternalUser = true
+        setUpRegularTab()
+
+        tabCrashRecoveryExtension.webContentProcessDidTerminate(with: nil)
+        XCTAssertEqual(webView.reloadCallsCount, 0)
+        XCTAssertEqual(tabCrashTypes, [])
+        XCTAssertEqual(tabCrashErrorPayloads.count, 1)
+    }
+
+    @MainActor
     func testWhenFeatureFlagIsDisabledAndUserIsNotInternalThenWebViewIsNotReloadedAndTabCrashErrorIsEmitted() async {
-        featureFlagger.isFeatureOn = false
+        featureFlagger.isFeatureOn = { _ in false }
         internalUserDeciderStore.isInternalUser = false
         setUpRegularTab()
 
@@ -186,7 +206,7 @@ final class TabCrashRecoveryExtensionTests: XCTestCase {
 
     @MainActor
     func testWhenFeatureFlagIsEnabledThenWebViewIsReloadedAndTabCrashErrorIsNotEmitted() async {
-        featureFlagger.isFeatureOn = true
+        featureFlagger.isFeatureOn = { _ in true }
         setUpRegularTab()
 
         tabCrashRecoveryExtension.webContentProcessDidTerminate(with: nil)
@@ -197,7 +217,7 @@ final class TabCrashRecoveryExtensionTests: XCTestCase {
 
     @MainActor
     func testWhenFeatureFlagIsEnabledAndIsCrashLoopThenWebViewIsNotReloadedAndTabCrashErrorIsEmitted() async {
-        featureFlagger.isFeatureOn = true
+        featureFlagger.isFeatureOn = { _ in true }
         crashLoopDetector.isCrashLoop = { _, _ in true }
         setUpRegularTab()
 
@@ -209,7 +229,7 @@ final class TabCrashRecoveryExtensionTests: XCTestCase {
 
     @MainActor
     func testThatLastCrashedAtIsRemembered() async {
-        featureFlagger.isFeatureOn = true
+        featureFlagger.isFeatureOn = { _ in true }
         crashLoopDetector.isCrashLoop = { _, _ in false }
         setUpRegularTab()
 
@@ -236,7 +256,7 @@ final class TabCrashRecoveryExtensionTests: XCTestCase {
                 expectation.fulfill()
             }
         }
-        featureFlagger.isFeatureOn = true
+        featureFlagger.isFeatureOn = { _ in true }
         crashLoopDetector.isCrashLoop = { _, _ in true }
         setUpRegularTab()
 

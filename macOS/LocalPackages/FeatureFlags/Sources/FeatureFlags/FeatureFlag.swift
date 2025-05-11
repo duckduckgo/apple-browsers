@@ -69,18 +69,36 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/0/72649045549333/1209633877674689/f
     case exchangeKeysToSyncWithAnotherDevice
 
+    // Demonstrative cases for default value. Remove once a real-world feature/subfeature is added
+    case failsafeExampleCrossPlatformFeature
+    case failsafeExamplePlatformSpecificSubfeature
+
     /// https://app.asana.com/0/72649045549333/1209793701087222/f
     case visualRefresh
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1209227311680179?focus=true
-    case tabCrashDebugTools
+    case tabCrashDebugging
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1209227311680179?focus=true
     case tabCrashRecovery
 
+    /// https://app.asana.com/1/137249556945/project/1148564399326804/task/1209499005452053?focus=true
+    case delayedWebviewPresentation
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1205508328452434?focus=true
+    case dbpRemoteBrokerDelivery
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
+    public var defaultValue: Bool {
+        switch self {
+        case .failsafeExampleCrossPlatformFeature, .failsafeExamplePlatformSpecificSubfeature:
+            true
+        default:
+            false
+        }
+    }
+
     public var cohortType: (any FeatureFlagCohortDescribing.Type)? {
         switch self {
         case .popoverVsBannerExperiment:
@@ -112,9 +130,12 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .privacyProAuthV2,
                 .scamSiteProtection,
                 .exchangeKeysToSyncWithAnotherDevice,
+                .failsafeExampleCrossPlatformFeature,
+                .failsafeExamplePlatformSpecificSubfeature,
                 .visualRefresh,
-                .tabCrashDebugTools,
-                .tabCrashRecovery:
+                .tabCrashDebugging,
+                .tabCrashRecovery,
+                .delayedWebviewPresentation:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -123,7 +144,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .contextualOnboarding,
                 .unknownUsernameCategorization,
                 .credentialsImportPromotionForExistingUsers,
-                .maliciousSiteProtection:
+                .maliciousSiteProtection,
+                .dbpRemoteBrokerDelivery:
             return false
         }
     }
@@ -174,12 +196,20 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
         case .exchangeKeysToSyncWithAnotherDevice:
             return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
+        case .failsafeExampleCrossPlatformFeature:
+            return .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests))
+        case .failsafeExamplePlatformSpecificSubfeature:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests))
         case .visualRefresh:
             return .remoteDevelopment(.feature(.experimentalBrowserTheming))
-        case .tabCrashDebugTools:
+        case .tabCrashDebugging:
             return .disabled
         case .tabCrashRecovery:
             return .remoteReleasable(.feature(.tabCrashRecovery))
+        case .delayedWebviewPresentation:
+            return .remoteReleasable(.feature(.delayedWebviewPresentation))
+        case .dbpRemoteBrokerDelivery:
+            return .remoteReleasable(.subfeature(DBPSubfeature.remoteBrokerDelivery))
         }
     }
 }

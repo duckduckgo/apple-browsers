@@ -140,6 +140,7 @@ extension Pixel {
         case browsingMenuShare
         case browsingMenuCopy
         case browsingMenuPrint
+        case browsingMenuReload
         case browsingMenuListPrint
         case browsingMenuFindInPage
         case browsingMenuZoom
@@ -769,6 +770,11 @@ extension Pixel {
 
         case debugBreakageExperiment
 
+        case debugWebViewNotInVisibleTabHierarchy
+        case debugWebViewInVisibleTabHidden
+        case debugWebViewNotAttachedToWindow
+        case debugWebViewHasZeroFrameSize
+
         // Return user measurement
         case debugReturnUserAddATB
         case debugReturnUserUpdateATB
@@ -953,7 +959,6 @@ extension Pixel {
         case privacyProInvalidRefreshTokenDetected
         case privacyProInvalidRefreshTokenSignedOut
         case privacyProInvalidRefreshTokenRecovered
-        case privacyProAuthV2MigrationStarted
         case privacyProAuthV2MigrationFailed
         case privacyProAuthV2MigrationSucceeded
         case privacyProAuthV2GetTokensError
@@ -966,6 +971,30 @@ extension Pixel {
         case privacyProActivatingRestoreErrorFailedToFetchAccountDetails
         case privacyProActivatingRestoreErrorFailedToFetchSubscriptionDetails
         case privacyProActivatingRestoreErrorSubscriptionExpired
+
+        /**
+         * Event Trigger: The Privacy Pro onboarding promotion is displayed to the user
+         *
+         * Anomaly Investigation:
+         * - This should only be fired during app onboarding. See `OnboardingPrivacyProPromotionHelper`
+         */
+        case privacyProOnboardingPromotionImpression
+
+        /**
+         * Event Trigger: The user tapped the 'Learn More' button on the Privacy Pro onboarding promotion
+         *
+         * Anomaly Investigation:
+         * - This should only be fired during app onboarding. See `OnboardingPrivacyProPromotionHelper`
+         */
+        case privacyProOnboardingPromotionTap
+
+        /**
+         * Event Trigger: The user tapped the 'Skip' button on the Privacy Pro onboarding promotion
+         *
+         * Anomaly Investigation:
+         * - This should only be fired during app onboarding. See `OnboardingPrivacyProPromotionHelper`
+         */
+        case privacyProOnboardingPromotionDismiss
 
         // MARK: Pixel Experiment
         case pixelExperimentEnrollment
@@ -1007,6 +1036,9 @@ extension Pixel {
         case settingsNextStepsAddAppToDock
         case settingsNextStepsAddWidget
         case settingsMoreSearchSettings
+
+        /// [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210068471808737)
+        case settingsPresentedFromMenu
 
         // Web pixels
         case privacyProOfferMonthlyPriceClick
@@ -1053,7 +1085,11 @@ extension Pixel {
         case newTabPageCustomizeShortcutRemoved(_ shortcutName: String)
         case newTabPageCustomizeShortcutAdded(_ shortcutName: String)
 
-        // MARK: DuckPlayer        
+        // MARK: DuckPlayer
+
+        /// [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210068471808737)
+        case duckPlayerSettingsOpen
+
         case duckPlayerDailyUniqueView
         case duckPlayerViewFromYoutubeViaMainOverlay
         case duckPlayerViewFromYoutubeViaHoverButton
@@ -1136,6 +1172,8 @@ extension Pixel {
         case aiChatSettingsTabManagerTurnedOff
         case aiChatSettingsTabManagerTurnedOn
         case aiChatSettingsDisplayed
+        case aiChatSettingsEnabled
+        case aiChatSettingsDisabled
 
         // MARK: Lifecycle
         case appDidTransitionToUnexpectedState
@@ -1247,6 +1285,7 @@ extension Pixel.Event {
         case .browsingMenuToggleBrowsingMode: return "mb_dm"
         case .browsingMenuCopy: return "mb_cp"
         case .browsingMenuPrint: return "mb_pr"
+        case .browsingMenuReload: return "m_nav_menu_reload"
 
         case .browsingMenuFindInPage: return "mb_fp"
         case .browsingMenuZoom: return "m_menu_page_zoom_taps"
@@ -1815,6 +1854,11 @@ extension Pixel.Event {
         case .debugSetAsDefaultBrowserMaxNumberOfAttemptsNoExistingResultPersistedFailure: return "m_debug_set-default-browser_failure-max-number-of-attempts-reached-no-persisted-result"
         case .debugSetAsDefaultBrowserUnknownFailure: return "m_debug_set-default-browser_failure-unknown-error"
 
+        case .debugWebViewInVisibleTabHidden: return "m_debug_webview_in_visible_tab_hidden"
+        case .debugWebViewNotInVisibleTabHierarchy: return "m_debug_webview_not_in_visible_tab_hierarchy"
+        case .debugWebViewNotAttachedToWindow: return "m_debug_webview_not_attached_to_window"
+        case .debugWebViewHasZeroFrameSize: return "m_debug_webview_has_zero_frame_size"
+
             // MARK: Ad Attribution
 
         case .adAttributionGlobalAttributedRulesDoNotExist: return "m_attribution_global_attributed_rules_do_not_exist"
@@ -2001,7 +2045,6 @@ extension Pixel.Event {
         case .privacyProInvalidRefreshTokenDetected: return "m_privacy-pro_auth_invalid_refresh_token_detected"
         case .privacyProInvalidRefreshTokenSignedOut: return "m_privacy-pro_auth_invalid_refresh_token_signed_out"
         case .privacyProInvalidRefreshTokenRecovered: return "m_privacy-pro_auth_invalid_refresh_token_recovered"
-        case .privacyProAuthV2MigrationStarted: return "m_privacy-pro_auth_v2_migration_started"
         case .privacyProAuthV2MigrationFailed: return "m_privacy-pro_auth_v2_migration_failure"
         case .privacyProAuthV2MigrationSucceeded: return "m_privacy-pro_auth_v2_migration_success"
         case .privacyProAuthV2GetTokensError: return "m_privacy-pro_auth_v2_get_tokens_error"
@@ -2015,11 +2058,18 @@ extension Pixel.Event {
         case .privacyProActivatingRestoreErrorFailedToFetchSubscriptionDetails: return "m_privacy-pro_activating_restore_error_failed_to_fetch_subscription_details"
         case .privacyProActivatingRestoreErrorSubscriptionExpired: return "m_privacy-pro_activating_restore_error_subscription_expired"
 
+        case .privacyProOnboardingPromotionImpression: return "m_privacy-pro_onboarding_promotion_impression"
+
+        case .privacyProOnboardingPromotionTap: return "m_privacy-pro_onboarding_promotion_tap"
+
+        case .privacyProOnboardingPromotionDismiss: return "m_privacy-pro_onboarding_promotion_dismiss"
+
         // MARK: Pixel Experiment
         case .pixelExperimentEnrollment: return "pixel_experiment_enrollment"
 
         // MARK: Settings
         case .settingsPresented: return "m_settings_presented"
+        case .settingsPresentedFromMenu: return "m_settings_presented-from-menu"
         case .settingsSetAsDefault: return "m_settings_set_as_default"
         case .settingsVoiceSearchOn: return "m_settings_voice_search_on"
         case .settingsVoiceSearchOff: return "m_settings_voice_search_off"
@@ -2119,6 +2169,7 @@ extension Pixel.Event {
             return "m_new_tab_page_customize_shortcut_added_\(shortcutName)"
 
         // MARK: DuckPlayer
+        case .duckPlayerSettingsOpen: return "m_settings_duckplayer_open"
         case .duckPlayerDailyUniqueView: return "duckplayer_daily-unique-view"
         case .duckPlayerViewFromYoutubeViaMainOverlay: return "duckplayer_view-from_youtube_main-overlay"
         case .duckPlayerViewFromYoutubeViaHoverButton: return "duckplayer_view-from_youtube_hover-button"
@@ -2206,6 +2257,8 @@ extension Pixel.Event {
         case .aiChatSettingsTabManagerTurnedOff: return "m_aichat_settings_tab_manager_turned_off"
         case .aiChatSettingsTabManagerTurnedOn: return "m_aichat_settings_tab_manager_turned_on"
         case .aiChatSettingsDisplayed: return "m_aichat_settings_displayed"
+        case .aiChatSettingsEnabled: return "m_aichat_settings_enabled"
+        case .aiChatSettingsDisabled: return "m_aichat_settings_disabled"
 
         // MARK: Lifecycle
         case .appDidTransitionToUnexpectedState: return "m_debug_app-did-transition-to-unexpected-state-4"

@@ -72,7 +72,12 @@ public enum PrivacyFeature: String {
     case setAsDefaultAndAddToDock
     case contentScopeExperiments
     case extendedOnboarding
+    case macOSBrowserConfig
+    case iOSBrowserConfig
+    // Demonstrative case for default value. Remove once a real-world feature is added
+    case intentionallyLocalOnlyFeatureForTests
     case tabCrashRecovery
+    case delayedWebviewPresentation
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -83,6 +88,24 @@ public protocol PrivacySubfeature: RawRepresentable where RawValue == String {
 }
 
 // MARK: Subfeature definitions
+
+public enum MacOSBrowserConfigSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature {
+        .macOSBrowserConfig
+    }
+
+    // Demonstrative case for default value. Remove once a real-world feature is added
+    case intentionallyLocalOnlySubfeatureForTests
+}
+
+public enum iOSBrowserConfigSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature {
+        .iOSBrowserConfig
+    }
+
+    // Demonstrative case for default value. Remove once a real-world feature is added
+    case intentionallyLocalOnlySubfeatureForTests
+}
 
 public enum TabManagerSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature {
@@ -107,6 +130,8 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case unknownUsernameCategorization
     case credentialsImportPromotionForExistingUsers
     case partialFormSaves
+    case autofillCreditCards
+    case autofillCreditCardsOnByDefault
 }
 
 public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
@@ -117,6 +142,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case waitlist
     case waitlistBetaActive
     case freemium
+    case remoteBrokerDelivery
 }
 
 public enum ContentScopeExperimentsSubfeatures: String, Equatable, PrivacySubfeature {
@@ -202,8 +228,8 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case useUnifiedFeedback
     case setAccessTokenCookieForSubscriptionDomains
     case privacyProFreeTrialJan25
-    case privacyProOnboardingCTAMarch25
     case privacyProAuthV2
+    case privacyProOnboardingPromotion
 }
 
 public enum SslCertificatesSubfeature: String, PrivacySubfeature {

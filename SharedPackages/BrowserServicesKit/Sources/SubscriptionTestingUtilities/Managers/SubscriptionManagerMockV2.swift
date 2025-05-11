@@ -47,7 +47,7 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
 
     public func getSubscriptionFrom(lastTransactionJWSRepresentation: String) async throws -> Subscription.PrivacyProSubscription? {
         guard let resultSubscription else {
-            throw OAuthClientError.missingTokens
+            throw OAuthClientError.missingTokenContainer
         }
         return resultSubscription
     }
@@ -91,12 +91,12 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
         switch policy {
         case .local, .localValid, .localForceRefresh:
             guard let resultTokenContainer else {
-                throw OAuthClientError.missingTokens
+                throw OAuthClientError.missingTokenContainer
             }
             return resultTokenContainer
         case .createIfNeeded:
             guard let resultCreateAccountTokenContainer else {
-                throw OAuthClientError.missingTokens
+                throw OAuthClientError.missingTokenContainer
             }
             resultTokenContainer = resultCreateAccountTokenContainer
             return resultCreateAccountTokenContainer
@@ -106,7 +106,7 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
     public var resultExchangeTokenContainer: Networking.TokenContainer?
     public func exchange(tokenV1: String) async throws -> Networking.TokenContainer {
         guard let resultExchangeTokenContainer else {
-           throw OAuthClientError.missingTokens
+           throw OAuthClientError.missingTokenContainer
         }
         resultTokenContainer = resultExchangeTokenContainer
         return resultExchangeTokenContainer
@@ -160,7 +160,7 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
         }
     }
 
-    public func adopt(tokenContainer: Networking.TokenContainer) {
+    public func adopt(tokenContainer: Networking.TokenContainer) async throws {
         self.resultTokenContainer = tokenContainer
     }
 

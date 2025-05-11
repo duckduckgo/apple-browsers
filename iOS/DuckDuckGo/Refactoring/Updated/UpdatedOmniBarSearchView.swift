@@ -74,15 +74,16 @@ final class UpdatedOmniBarSearchView: UIView {
 
         leftIconContainerPlaceholder.addSubview(leftIconContainer)
 
-        mainStackView.addArrangedSubview(leftIconContainerPlaceholder)
         mainStackView.addSubview(notificationContainer)
         mainStackView.addSubview(privacyInfoContainer)
+        mainStackView.addArrangedSubview(leftIconContainerPlaceholder)
         mainStackView.addArrangedSubview(textField)
         mainStackView.addArrangedSubview(trailingItemsContainer)
 
         trailingItemsContainer.addArrangedSubview(clearButton)
         trailingItemsContainer.addArrangedSubview(voiceSearchButton)
         trailingItemsContainer.addArrangedSubview(reloadButton)
+        trailingItemsContainer.addArrangedSubview(shareButton)
         trailingItemsContainer.addArrangedSubview(cancelButton)
         trailingItemsContainer.addArrangedSubview(separatorView)
         trailingItemsContainer.addArrangedSubview(accessoryButton)
@@ -103,8 +104,9 @@ final class UpdatedOmniBarSearchView: UIView {
             mainStackView.bottomAnchor.constraint(equalTo: bottomAnchor),
 
             notificationContainer.leadingAnchor.constraint(equalTo: leftIconContainerPlaceholder.leadingAnchor, constant: 4),
-            notificationContainer.trailingAnchor.constraint(lessThanOrEqualTo: textField.trailingAnchor),
+            notificationContainer.trailingAnchor.constraint(equalTo: textField.trailingAnchor),
             notificationContainer.centerYAnchor.constraint(equalTo: textField.centerYAnchor),
+            notificationContainer.heightAnchor.constraint(equalTo: textField.heightAnchor, constant: 4),
 
             leftIconContainerPlaceholder.leadingAnchor.constraint(equalTo: leftIconContainer.leadingAnchor),
             leftIconContainerPlaceholder.trailingAnchor.constraint(equalTo: leftIconContainer.trailingAnchor),
@@ -118,6 +120,7 @@ final class UpdatedOmniBarSearchView: UIView {
         UpdatedOmniBarView.activateItemSizeConstraints(for: voiceSearchButton)
         UpdatedOmniBarView.activateItemSizeConstraints(for: reloadButton)
         UpdatedOmniBarView.activateItemSizeConstraints(for: clearButton)
+        UpdatedOmniBarView.activateItemSizeConstraints(for: shareButton)
         UpdatedOmniBarView.activateItemSizeConstraints(for: cancelButton)
         UpdatedOmniBarView.activateItemSizeConstraints(for: accessoryButton)
         UpdatedOmniBarView.activateItemSizeConstraints(for: leftIconContainer)

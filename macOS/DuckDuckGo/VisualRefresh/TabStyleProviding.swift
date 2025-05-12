@@ -41,12 +41,19 @@ final class LegacyTabStyleProvider: TabStyleProviding {
 }
 
 final class NewlineTabStyleProvider: TabStyleProviding {
-    let separatorColor: NSColor = .tabSeparatorNew
+    private let palette: ColorPalette
+
+    var separatorColor: NSColor { palette.decorationTertiary }
+    var selectedTabColor: NSColor { palette.surfacePrimary }
+
     let separatorHeight: CGFloat = 16
     let standardTabHeight: CGFloat = 38
     let pinnedTabWidth: CGFloat = 34
     let pinnedTabHeight: CGFloat = 36
     let shouldShowSShapedTab = true
-    let selectedTabColor: NSColor = .navigationBackgroundColorNew
     let isRoundedBackgroundPresentOnHover = true
+
+    init(palette: any ColorPalette) {
+        self.palette = palette
+    }
 }

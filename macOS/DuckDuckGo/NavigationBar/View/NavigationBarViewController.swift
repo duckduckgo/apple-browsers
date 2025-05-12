@@ -767,22 +767,22 @@ final class NavigationBarViewController: NSViewController {
             downloadsButton, passwordManagementButton, bookmarkListButton, optionsButton]
 
         allButtons.forEach { button in
-            button.normalTintColor = visualStyle.iconsColor
-            button.mouseOverColor = visualStyle.buttonMouseOverColor
+            button.normalTintColor = visualStyle.colorsProvider.iconsColor
+            button.mouseOverColor = visualStyle.colorsProvider.buttonMouseOverColor
         }
     }
 
     private func setupBackgroundViewsAndColors() {
         if visualStyle.areNavigationBarCornersRound {
-            backgroundBaseColorView.backgroundColor = visualStyle.baseBackgroundColor
-            backgroundColorView.backgroundColor = visualStyle.navigationBackgroundColor
+            backgroundBaseColorView.backgroundColor = visualStyle.colorsProvider.baseBackgroundColor
+            backgroundColorView.backgroundColor = visualStyle.colorsProvider.navigationBackgroundColor
             backgroundColorView.cornerRadius = 10
             backgroundColorView.maskedCorners = [
                 .layerMinXMaxYCorner,
                 .layerMaxXMaxYCorner
             ]
         } else {
-            backgroundBaseColorView.backgroundColor = visualStyle.navigationBackgroundColor
+            backgroundBaseColorView.backgroundColor = visualStyle.colorsProvider.navigationBackgroundColor
             backgroundColorView.isHidden = true
         }
     }

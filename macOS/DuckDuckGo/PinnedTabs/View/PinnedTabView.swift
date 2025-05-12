@@ -259,14 +259,14 @@ struct PinnedTabInnerView: View {
 
             if isSelected && showSShaped {
                 PinnedTabRampView(rampWidth: rampSize,
-                                rampHeight: rampSize,
-                                foregroundColor: .navigationBackgroundColorNew)
+                                  rampHeight: rampSize,
+                                  foregroundColor: .surfacePrimary)
                 .position(x: 2, y: height - (rampSize / 2))
 
                 PinnedTabRampView(rampWidth: rampSize,
-                                rampHeight: rampSize,
-                                isFlippedHorizontally: true,
-                                foregroundColor: .navigationBackgroundColorNew)
+                                  rampHeight: rampSize,
+                                  isFlippedHorizontally: true,
+                                  foregroundColor: .surfacePrimary)
                 .position(x: width + rampSize + 2, y: height - (rampSize / 2))
             }
         }

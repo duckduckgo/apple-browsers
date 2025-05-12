@@ -21,7 +21,8 @@ UPGRADABLE_EMBEDDED_FILES = [
   'DuckDuckGo/ContentBlocker/AppTrackerDataSetProvider.swift',
   'DuckDuckGo/ContentBlocker/trackerData.json',
   'DuckDuckGo/ContentBlocker/AppPrivacyConfigurationDataProvider.swift',
-  'DuckDuckGo/ContentBlocker/macos-config.json'
+  'DuckDuckGo/ContentBlocker/macos-config.json',
+  '../SharedPackages/DataBrokerProtectionCore/Sources/DataBrokerProtectionCore/Resources/JSON/*.json'
 ].freeze
 
 default_platform(:mac)
@@ -118,7 +119,7 @@ platform :mac do
   lane :promote_latest_testflight_to_appstore do |options|
 
     latest_build_info = fetch_testflight_build_number(options)
-    latest_build_number = lane_context[SharedValues::LATEST_TESTFLIGHT_BUILD_NUMBER]   
+    latest_build_number = lane_context[SharedValues::LATEST_TESTFLIGHT_BUILD_NUMBER]
     latest_build_version = lane_context[SharedValues::LATEST_TESTFLIGHT_VERSION]
 
     UI.message("The latest build number #{latest_build_number} of the latest version: #{latest_build_version}")
@@ -440,7 +441,7 @@ platform :mac do
   # - Ensures git status is clean
   #
   private_lane :macos_codefreeze_prechecks do
-    ensure_git_status_clean 
+    ensure_git_status_clean
 
     ensure_git_branch(branch: DEFAULT_BRANCH)
     git_pull
@@ -452,10 +453,10 @@ platform :mac do
   # Ensures that the local repository is in a resumable state:
   #
   # - Validates the current branch
-  # - Validates not committed changes 
+  # - Validates not committed changes
   #
   private_lane :macos_codefreeze_resume_prechecks do
-    unless git_branch.start_with?(RELEASE_BRANCH) 
+    unless git_branch.start_with?(RELEASE_BRANCH)
       UI.abort_with_message!("Not in a resumable state: should be a #{RELEASE_BRANCH} branch")
     end
 
@@ -631,21 +632,22 @@ release in progress and you're making a follow-up internal release that includes
   private_lane :macos_update_embedded_files do |options|
     sh("cd #{PROJECT_ROOT_FOLDER} && ./scripts/update_embedded.sh")
 
-    # Verify no unexpected files were modified
-    result = sh('git', 'status')
-    modified_files = result.split("\n").select { |line| line.include?('modified:') }
-    modified_files = modified_files.map { |str| str.split(':')[1].strip }
-    nopref_modified_files = modified_files.map { |str| str.delete_prefix('../') }
-    nopref_modified_files.each do |modified_file|
-      UI.abort_with_message!("Unexpected change to #{modified_file}.") unless UPGRADABLE_EMBEDDED_FILES.any? do |s|
-        s.include?(modified_file)
+    # Verify no unexpected files were modified or added
+    result = sh('git', 'status', '-s')
+    modified_files = result.split("\n")
+      .select { |line| line.start_with?(' M') || line.start_with?('??') }
+      .map { |line| line.split(' ', 2)[1] }
+    nopref_files = modified_files.map { |str| str.delete_prefix('../') }
+    nopref_files.each do |file|
+      UI.abort_with_message!("Unexpected change to #{file}.") unless UPGRADABLE_EMBEDDED_FILES.any? do |pattern|
+        File.fnmatch?(pattern, file)
       end
     end
 
     # Run tests (CI will run them separately)
     run_tests(scheme: 'macOS Browser') unless is_ci
 
-    # Every thing looks good: commit and push
+    # Every thing looks good: commit
     unless modified_files.empty?
       modified_files.each { |modified_file| sh('git', 'add', modified_file.to_s) }
       sh('git', 'commit', '-m', 'Update embedded files')

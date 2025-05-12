@@ -46,7 +46,7 @@ final class RampView: NSView {
             context.scaleBy(x: -1, y: 1)
         }
 
-        NSColor.navigationBackgroundColorNew.setFill()
+        NSColor.surfacePrimary.setFill()
 
         let path = NSBezierPath()
         path.move(to: NSPoint(x: rampWidth, y: 0))

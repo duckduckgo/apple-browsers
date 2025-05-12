@@ -167,7 +167,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     override func viewDidLoad() {
         shadowView.isHidden = visualStyle.tabStyleProvider.shouldShowSShapedTab
-        backgroundColorView.backgroundColor = visualStyle.baseBackgroundColor
+        backgroundColorView.backgroundColor = visualStyle.colorsProvider.baseBackgroundColor
         scrollView.updateScrollElasticity(with: tabMode)
         observeToScrollNotifications()
         subscribeToSelectionIndex()

@@ -10,6 +10,7 @@ base_dir="${script_dir}/.."
 # Danger checks that the URLs match on every PR. If the code changes, the regex that Danger uses may need an update.
 TDS_URL="https://staticcdn.duckduckgo.com/trackerblocking/v6/current/macos-tds.json"
 CONFIG_URL="https://staticcdn.duckduckgo.com/trackerblocking/config/v4/macos-config.json"
+DBP_BROKER_URL="https://dbp.duckduckgo.com/dbp/remote/v0?name=all.zip&type=combined"
 
 # If -c is passed, then check the URLs in the Configuration files are correct.
 if [ "$1" == "-c" ]; then
@@ -85,9 +86,44 @@ performUpdate() {
 	rm -f "$temp_etag_filename"
 }
 
+performDBPBrokerUpdate() {
+	local file_url=$1
+	local target_dir=$2
+
+	printf "Processing DBP broker data: %s\n" "${file_url}"
+
+	local dbp_zip="dbp_broker_data.zip"
+	local dbp_extract_dir="dbp_broker_data"
+
+	if [ -z "$DBP_API_AUTH_TOKEN" ]; then
+		printf "Error: DBP_API_AUTH_TOKEN is not set. Aborting.\n"
+		exit 1
+	fi
+
+	printf "Downloading DBP broker JSONs...\n"
+	curl -s -H "Authorization: Bearer $DBP_API_AUTH_TOKEN" -L "$file_url" -o "$dbp_zip"
+
+	rm -rf "$dbp_extract_dir"
+	mkdir "$dbp_extract_dir"
+
+	unzip -o "$dbp_zip" -d "$dbp_extract_dir" >/dev/null
+
+	# Ignore unrelated files
+	find "$dbp_extract_dir" -type f -name '*_etag.json' -delete
+
+	find "$dbp_extract_dir" -name '*.json' -exec cp {} "$target_dir" \;
+
+	printf "DBP broker JSON files updated\n\n"
+
+	rm -rf "$dbp_zip" "$dbp_extract_dir"
+}
+
 performUpdate $TDS_URL \
 		"$base_dir/DuckDuckGo/ContentBlocker/AppTrackerDataSetProvider.swift" \
 		"$base_dir/DuckDuckGo/ContentBlocker/trackerData.json"
 performUpdate $CONFIG_URL \
 		"$base_dir/DuckDuckGo/ContentBlocker/AppPrivacyConfigurationDataProvider.swift" \
 		"$base_dir/DuckDuckGo/ContentBlocker/macos-config.json"
+
+performDBPBrokerUpdate "$DBP_BROKER_URL" \
+		"$base_dir/../SharedPackages/DataBrokerProtectionCore/Sources/DataBrokerProtectionCore/BundleResources/JSON/"

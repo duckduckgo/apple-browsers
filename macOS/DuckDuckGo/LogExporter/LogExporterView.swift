@@ -38,21 +38,22 @@ struct LogExporterView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            // Time Interval Input
+            Text("Time Interval:")
+                .font(.headline)
             HStack {
-                Text("Time Interval:")
-                    .font(.headline)
-                TextField("Enter time interval in minutes (e.g., 30)", text: $timeIntervalString)
+                TextField("", text: $timeIntervalString)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
+                Text("Minutes")
+                    .font(.body)
             }
 
             // Checkboxes
             VStack(alignment: .leading) {
                 Text("File Types:")
                     .font(.headline)
-                Toggle("All DDG", isOn: $includeAllDDG).padding(.leading)
-                Toggle("Network protection", isOn: $includeNetworkProtection).padding(.leading)
-                Toggle("Sparkle", isOn: $includeSparkle).padding(.leading)
+                Toggle("All DDG", isOn: $includeAllDDG)
+                Toggle("Network protection", isOn: $includeNetworkProtection)
+                Toggle("Sparkle", isOn: $includeSparkle)
             }
 
             Spacer()
@@ -77,10 +78,12 @@ struct LogExporterView: View {
                         includeSparkle: includeSparkle
                     ))
                 }
+                .disabled(timeIntervalString.isEmpty || (includeAllDDG || includeNetworkProtection || includeSparkle) == false)
                 .keyboardShortcut(.defaultAction)
+
             }
         }
-        .padding()
-        .frame(minWidth: 250, minHeight: 200)
+        .padding(44)
+        .frame(minWidth: 250, maxWidth: 250, minHeight: 250, maxHeight: 250)
     }
 }

@@ -314,7 +314,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         return
     }
 
-    // swiftlint:disable:next cyclomatic_complexity
+    // swiftlint:disable cyclomatic_complexity
     /// Observes URL changes and redirects to Duck Player when appropriate, avoiding duplicate handling.
     ///
     /// - Parameter webView: The `WKWebView` whose URL has changed.
@@ -403,7 +403,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         toggleMediaPlayback(webView, pause: false)
         return .notHandled(.isNotYoutubeWatch)
     }
-    // swiftlint:enable cyclomatic_complexity
+    // swiftlint:disable cyclomatic_complexity
 
     /// Custom back navigation logic to handle Duck Player in the web view's history stack.
     ///

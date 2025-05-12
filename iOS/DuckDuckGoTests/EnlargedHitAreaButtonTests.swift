@@ -74,4 +74,3 @@ final class EnlargedHitAreaButtonTests: XCTestCase {
         XCTAssertEqual(edgeInsets.right, -10)
     }
 }
-

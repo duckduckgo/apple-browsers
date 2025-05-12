@@ -23,7 +23,7 @@ protocol ColorsProviding {
     var textSecondaryColor: NSColor { get }
     var backgroundTertiaryColor: NSColor { get }
     var accentPrimaryColor: NSColor { get }
-    var accentAlternateColor: NSColor { get }
+    var addressBarOutlineShadow: NSColor { get }
     var iconsColor: NSColor { get }
     var buttonMouseOverColor: NSColor { get }
     var addressBarSuffixTextColor: NSColor { get }
@@ -41,7 +41,7 @@ final class LegacyColorsProviding: ColorsProviding {
     var textSecondaryColor: NSColor { .secondaryLabelColor }
     var backgroundTertiaryColor: NSColor { .inactiveSearchBarBackground }
     var accentPrimaryColor: NSColor { .controlAccentColor.withAlphaComponent(0.8) }
-    var accentAlternateColor: NSColor { .controlColor.withAlphaComponent(0.2) }
+    var addressBarOutlineShadow: NSColor { .controlColor.withAlphaComponent(0.2) }
     var iconsColor: NSColor { .button }
     var buttonMouseOverColor: NSColor { .buttonMouseOver }
     var addressBarSuffixTextColor: NSColor { .addressBarSuffix }
@@ -60,7 +60,7 @@ final class NewColorsProviding: ColorsProviding {
     var textSecondaryColor: NSColor { palette.textSecondary }
     var backgroundTertiaryColor: NSColor { palette.surfaceTertiary }
     var accentPrimaryColor: NSColor { palette.accentPrimary }
-    var accentAlternateColor: NSColor { palette.accentAltPrimary }
+    var addressBarOutlineShadow: NSColor { palette.accentAltGlow }
     var addressBarSuffixTextColor: NSColor { palette.textSecondary }
     var addressBarTextFieldColor: NSColor { palette.textPrimary }
     var iconsColor: NSColor { palette.iconsPrimary }

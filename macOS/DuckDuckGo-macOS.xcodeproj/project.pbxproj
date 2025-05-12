@@ -8080,7 +8080,6 @@
 		8585B63526D6E5F600C1416F /* SwiftUI */ = {
 			isa = PBXGroup;
 			children = (
-				BB32C5962DCCF79D00775E80 /* PinnedTabRampView.swift */,
 				84CE00152DAE41EA00852AA2 /* ResizablePreviewView.swift */,
 				BBC7BDAB2D5BB0720037A4AE /* BannerView.swift */,
 				31C3CE0128EDC1E70002C24A /* CustomRoundedCornersShape.swift */,
@@ -8103,7 +8102,6 @@
 		8585B63626D6E61500C1416F /* AppKit */ = {
 			isa = PBXGroup;
 			children = (
-				BB32C5932DCCF77C00775E80 /* RampView.swift */,
 				85774B022A71CDD000DE0561 /* BlockMenuItem.swift */,
 				B65E6B9D26D9EC0800095F96 /* CircularProgressView.swift */,
 				B693954626F04BEA0015B914 /* ColorView.swift */,
@@ -9097,6 +9095,8 @@
 				AA6FFB4524DC3B5A0028F4D0 /* WebView.swift */,
 				B6B2400D28083B49001B8F3A /* WebViewContainerView.swift */,
 				37054FCD2876472D00033B6F /* WebViewSnapshotView.swift */,
+				BB32C5962DCCF79D00775E80 /* PinnedTabRampView.swift */,
+				BB32C5932DCCF77C00775E80 /* RampView.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";

@@ -31,8 +31,11 @@ import Cocoa
  */
 final class RampView: NSView {
 
-    var rampWidth: CGFloat = 12.0
-    var rampHeight: CGFloat = 12.0
+    enum Consts {
+        static let rampWidth: CGFloat = 12
+        static let rampHeight: CGFloat = 12
+    }
+
     var isFlippedHorizontally: Bool = false
 
     override func draw(_ dirtyRect: NSRect) {
@@ -49,11 +52,11 @@ final class RampView: NSView {
         NSColor.surfacePrimary.setFill()
 
         let path = NSBezierPath()
-        path.move(to: NSPoint(x: rampWidth, y: 0))
+        path.move(to: NSPoint(x: Consts.rampWidth, y: 0))
         path.line(to: NSPoint(x: 0, y: 0))
         path.appendArc(
-            withCenter: NSPoint(x: rampWidth, y: rampHeight),
-            radius: rampWidth,
+            withCenter: NSPoint(x: Consts.rampWidth, y: Consts.rampHeight),
+            radius: Consts.rampWidth,
             startAngle: 180,
             endAngle: 270,
             clockwise: false

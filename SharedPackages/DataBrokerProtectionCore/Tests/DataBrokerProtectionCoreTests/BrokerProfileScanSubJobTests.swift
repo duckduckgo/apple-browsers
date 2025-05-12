@@ -25,9 +25,6 @@ import DataBrokerProtectionCoreTestsUtils
 
 final class BrokerProfileScanSubJobTests: XCTestCase {
     var sut: BrokerProfileScanSubJob!
-    let mockWebOperationRunner = MockWebJobRunner()
-    let mockDatabase = MockDatabase()
-    let mockEventsHandler = MockOperationEventsHandler()
 
     var mockScanRunner: MockScanSubJobWebRunner!
     var mockOptOutRunner: MockOptOutSubJobWebRunner!

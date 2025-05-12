@@ -344,11 +344,11 @@ final class DuckPlayerNativeUIPresenter {
 
     @MainActor
     private func presentDismissCountToast() {
-        var message = AttributedString("Want to turn off Duck Player appearing on Youtube?")
+        var message = AttributedString(UserText.duckPlayerToastTurnOffAnytime)
         message.foregroundColor = .white
         displayToast(
             with: message,
-            buttonTitle: "Open Settings"
+            buttonTitle: UserText.duckPlayerToastOpenSettings
         ) {
             NotificationCenter.default.post(
                 name: .settingsDeepLinkNotification,

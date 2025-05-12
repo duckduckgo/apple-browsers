@@ -1282,11 +1282,20 @@
 /* Text displayed when DuckPlayer is in 'Ask' mode. */
 "duckPlayer.ask.label" = "Vprašaj vsakič";
 
+/* Subtitle explaining how Duck Player protects privacy */
+"duckplayer.blocks.ads.keeps.history.private" = "Predvajalnik Duck Player blokira ciljane oglase in ohranja vašo zgodovino ogledov zasebno.";
+
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Nikoli";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";
+
+/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
+"duckplayer.open.youtube.videos.here" = "Videoposnetke iz YouTuba odpri tukaj";
+
+/* Button text to play a video in Duck Player */
+"duckplayer.play.in.duck.player" = "Predvajaj ta videoposnetek v predvajalniku Duck Player";
 
 /* Body text for the modal feature explanation */
 "duckplayer.presentation.modal.body" = "Predvajalnik Duck Player vam s pomočjo DuckDuckGo omogoča gledanje YouTuba brez ciljanih oglasov, kar gledate pa ne bo vplivalo na vaša priporočila.";
@@ -1299,6 +1308,18 @@
 
 /* Two line title (separated by \n) for the feature explanation */
 "duckplayer.presentation.modal.title.youtube" = "Se utapljate v oglasih na YouTubu? S predvajalnikom Duck Player bo to preteklost!";
+
+/* Button text to resume video in Duck Player */
+"duckplayer.resume.in.duck.player" = "Nadaljuj predvajanje v predvajalniku Duck Player";
+
+/* Footer text explaining the auto-play toggle in Duck Player settings */
+"duckplayer.settings.autoplay.footer" = "Videoposnetki, odprti v predvajalniku Duck Player, se bodo samodejno začeli predvajati. To možnost izklopite, če želite ročno začeti predvajanje videoposnetkov, odprtih v predvajalniku Duck Player.";
+
+/* Label for the auto-play toggle in Duck Player settings */
+"duckplayer.settings.autoplay.label" = "Samodejno predvajaj videoposnetke";
+
+/* Label for the experimental section in Duck Player settings */
+"duckplayer.settings.experimental.label" = "Poskusno";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "DuckDuckGo zagotavlja vse bistvene elemente zasebnosti, ki jih potrebujete, da se zaščitite med brskanjem po spletu.";
@@ -1315,8 +1336,47 @@
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.open-videos-in" = "Videoposnetke v YouTubu odpri s predvajalnikom Duck Player";
 
+/* Footer text explaining the search results toggle in Duck Player settings */
+"duckplayer.settings.search.results.footer" = "Če v rezultatih iskanja v DuckDuckGo kliknete videoposnetke v YouTubu, se ti odprejo v predvajalniku Duck Player.";
+
+/* Label for the search results toggle in Duck Player settings */
+"duckplayer.settings.search.results.label" = "Rezultati iskanja v DuckDuckGo";
+
+/* Message for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.message" = "Da bo ta nastavitev začela veljati, zaprite vse zavihke.";
+
+/* OK button text for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.ok" = "V REDU";
+
+/* Title for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.title" = "Pomembno!";
+
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.title" = "Duck Player";
+
+/* Label for the Duck Player variant picker in Duck Player settings */
+"duckplayer.settings.variant.label" = "Različica predvajalnika Duck Player";
+
+/* Footer text explaining the YouTube.com option in Duck Player settings */
+"duckplayer.settings.youtube.footer" = "Če med brskanjem po spletnem mestu YouTube.com kliknete videoposnetke v YouTubu, se odpre predvajalnik Duck Player.";
+
+/* Label for the YouTube.com option in Duck Player settings */
+"duckplayer.settings.youtube.label" = "YouTube.com";
+
+/* Button text to open Duck Player settings */
+"duckplayer.toast.open.settings" = "Odpri nastavitve";
+
+/* Toast message informing user they can disable Duck Player in settings */
+"duckplayer.toast.turn.off.anytime" = "Predvajalnik Duck Player lahko kadar koli izklopite v nastavitvah";
+
+/* Button text to watch video on YouTube */
+"duckplayer.watch.on.youtube" = "Glej na YouTubu";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.watch.without.targeted.ads" = "Glejte brez ciljanih oglasov";
+
+/* Title for Duck Player welcome message highlighting privacy benefits */
+"duckplayer.youtube.no.ads.privacy" = "Glejte YouTube z manj oglasi in več zasebnosti";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Zaščita e-pošte";
@@ -2280,9 +2340,6 @@
 
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Aplikacije, ki je potrebna za odpiranje te povezave, ni mogoče najti";
-
-/* No comment provided by engineer. */
-"Please close all tabs for this setting to take effect." = "Da bo ta nastavitev začela veljati, zaprite vse zavihke.";
 
 /* Activate button */
 "pm.activate" = "Znova aktiviraj";

@@ -1282,11 +1282,20 @@
 /* Text displayed when DuckPlayer is in 'Ask' mode. */
 "duckPlayer.ask.label" = "Pergunte todas as vezes";
 
+/* Subtitle explaining how Duck Player protects privacy */
+"duckplayer.blocks.ads.keeps.history.private" = "O Duck Player bloqueia anúncios personalizados e mantém o teu histórico de visualizações privado.";
+
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Nunca";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";
+
+/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
+"duckplayer.open.youtube.videos.here" = "Abrir vídeos do YouTube aqui";
+
+/* Button text to play a video in Duck Player */
+"duckplayer.play.in.duck.player" = "Reproduzir este vídeo no Duck Player";
 
 /* Body text for the modal feature explanation */
 "duckplayer.presentation.modal.body" = "O Duck Player permite-te ver o YouTube sem anúncios segmentados no DuckDuckGo, e o que vês não vai influenciar as tuas recomendações.";
@@ -1299,6 +1308,18 @@
 
 /* Two line title (separated by \n) for the feature explanation */
 "duckplayer.presentation.modal.title.youtube" = "Já não suportas ver anúncios no YouTube? Experimenta o Duck Player!";
+
+/* Button text to resume video in Duck Player */
+"duckplayer.resume.in.duck.player" = "Retomar no Duck Player";
+
+/* Footer text explaining the auto-play toggle in Duck Player settings */
+"duckplayer.settings.autoplay.footer" = "A reprodução de vídeos abertos no Duck Player será iniciada automaticamente. Desative esta opção se quiser iniciar manualmente a reprodução de vídeos abertos no Duck Player.";
+
+/* Label for the auto-play toggle in Duck Player settings */
+"duckplayer.settings.autoplay.label" = "Reprodução automática de vídeos";
+
+/* Label for the experimental section in Duck Player settings */
+"duckplayer.settings.experimental.label" = "Experimental";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "O DuckDuckGo fornece todos os Privacy Essentials de que precisas para te protegeres enquanto navegas na Web.";
@@ -1315,8 +1336,47 @@
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.open-videos-in" = "Abrir vídeos do YouTube no Duck Player";
 
+/* Footer text explaining the search results toggle in Duck Player settings */
+"duckplayer.settings.search.results.footer" = "Ao clicares em vídeos do YouTube nos resultados da pesquisa do DuckDuckGo, estes serão abertos no Duck Player.";
+
+/* Label for the search results toggle in Duck Player settings */
+"duckplayer.settings.search.results.label" = "Resultados da DuckDuckGo Search";
+
+/* Message for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.message" = "Fecha todos os separadores para esta definição entrar em vigor.";
+
+/* OK button text for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.ok" = "OK";
+
+/* Title for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.title" = "Importante!";
+
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.title" = "Duck Player";
+
+/* Label for the Duck Player variant picker in Duck Player settings */
+"duckplayer.settings.variant.label" = "Variante do Duck Player";
+
+/* Footer text explaining the YouTube.com option in Duck Player settings */
+"duckplayer.settings.youtube.footer" = "Ao clicares em vídeos do YouTube enquanto navegas no YouTube.com, estes serão abertos no Duck Player.";
+
+/* Label for the YouTube.com option in Duck Player settings */
+"duckplayer.settings.youtube.label" = "YouTube.com";
+
+/* Button text to open Duck Player settings */
+"duckplayer.toast.open.settings" = "Abre Definições";
+
+/* Toast message informing user they can disable Duck Player in settings */
+"duckplayer.toast.turn.off.anytime" = "Podes desativar o Duck Player em qualquer altura nas Definições";
+
+/* Button text to watch video on YouTube */
+"duckplayer.watch.on.youtube" = "Ver no YouTube";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.watch.without.targeted.ads" = "Ver sem anúncios segmentados";
+
+/* Title for Duck Player welcome message highlighting privacy benefits */
+"duckplayer.youtube.no.ads.privacy" = "Vê o YouTube com menos anúncios e mais privacidade";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Proteção de e-mail";
@@ -2280,9 +2340,6 @@
 
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Não encontramos a aplicação necessária para abrir esse link";
-
-/* No comment provided by engineer. */
-"Please close all tabs for this setting to take effect." = "Fecha todos os separadores para esta definição entrar em vigor.";
 
 /* Activate button */
 "pm.activate" = "Reativar";

@@ -27,13 +27,13 @@ struct PinnedTabsView: View {
     var body: some View {
         HStack(alignment: .bottom, spacing: 0) {
             ForEach(model.items) { item in
-                PinnedTabView(width: tabStyleProvider.pinnedTabWidth,
-                              height: tabStyleProvider.pinnedTabHeight,
+                PinnedTabView(tabStyleProvider: tabStyleProvider,
                               model: item,
                               showsHover: draggedTab == nil)
                     .environmentObject(model)
                     .frame(maxWidth: tabStyleProvider.pinnedTabWidth,
                            maxHeight: tabStyleProvider.pinnedTabHeight)
+                    .zIndex(model.selectedItem == item ? 1 : 0)
             }
         }
         .frame(minHeight: tabStyleProvider.pinnedTabHeight)

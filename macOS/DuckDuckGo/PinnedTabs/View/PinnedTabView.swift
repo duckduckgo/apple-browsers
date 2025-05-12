@@ -25,8 +25,7 @@ struct PinnedTabView: View, DropDelegate {
         static let cornerRadius: CGFloat = 10
     }
 
-    let width: CGFloat
-    let height: CGFloat
+    let tabStyleProvider: TabStyleProviding
 
     @ObservedObject var model: Tab
     @EnvironmentObject var collectionModel: PinnedTabsViewModel
@@ -44,25 +43,30 @@ struct PinnedTabView: View, DropDelegate {
                 }
             } label: {
                 PinnedTabInnerView(
-                    width: width,
-                    height: height,
+                    width: tabStyleProvider.pinnedTabWidth,
+                    height: tabStyleProvider.pinnedTabHeight,
+                    isSelected: isSelected,
                     foregroundColor: foregroundColor,
-                    drawSeparator: !collectionModel.itemsWithoutSeparator.contains(model)
+                    separatorColor: Color(tabStyleProvider.separatorColor),
+                    separatorHeight: tabStyleProvider.separatorHeight,
+                    drawSeparator: !collectionModel.itemsWithoutSeparator.contains(model),
+                    showSShaped: tabStyleProvider.shouldShowSShapedTab
                 )
                 .environmentObject(model)
                 .environmentObject(model.crashIndicatorModel)
             }
             .buttonStyle(TouchDownButtonStyle())
-            .cornerRadius(Const.cornerRadius, corners: [.topLeft, .topRight])
             .contextMenu { contextMenu }
             .onDrop(of: [
                 NSPasteboard.PasteboardType.URL.rawValue,
                 NSPasteboard.PasteboardType.string.rawValue,
             ], delegate: self)
 
-            BorderView(isSelected: isSelected,
-                       cornerRadius: Const.cornerRadius,
-                       size: TabShadowConfig.dividerSize)
+            if !tabStyleProvider.shouldShowSShapedTab {
+                BorderView(isSelected: isSelected,
+                           cornerRadius: Const.cornerRadius,
+                           size: TabShadowConfig.dividerSize)
+            }
         }
 
         if controlActiveState == .key {
@@ -96,7 +100,7 @@ struct PinnedTabView: View, DropDelegate {
 
     private var foregroundColor: Color {
         if isSelected {
-            return .navigationBarBackground
+            return Color(tabStyleProvider.selectedTabColor)
         }
         let isHovered = collectionModel.hoveredItem == model
         return showsHover && isHovered ? .tabMouseOver : Color.clear
@@ -215,10 +219,15 @@ private struct BorderView: View {
 }
 
 struct PinnedTabInnerView: View {
+    let rampSize: CGFloat = 10.0
     let width: CGFloat
     let height: CGFloat
+    var isSelected: Bool
     var foregroundColor: Color
+    var separatorColor: Color
+    var separatorHeight: CGFloat
     var drawSeparator: Bool = true
+    var showSShaped: Bool
 
     @Environment(\.colorScheme) var colorScheme
     @EnvironmentObject var model: Tab
@@ -229,12 +238,17 @@ struct PinnedTabInnerView: View {
         ZStack {
             Rectangle()
                 .foregroundColor(foregroundColor)
+                .frame(width: width, height: height)
+                .cornerRadius(PinnedTabView.Const.cornerRadius, corners: [.topLeft, .topRight])
+
             if drawSeparator {
                 GeometryReader { proxy in
                     Rectangle()
-                        .foregroundColor(.separator)
-                        .frame(width: 1, height: 20)
-                        .offset(x: proxy.size.width-1, y: 6)
+                        .foregroundColor(separatorColor)
+                        .frame(width: 1, height: separatorHeight)
+                        .offset(
+                            x: showSShaped ? proxy.size.width - rampSize + 2 : proxy.size.width-1,
+                            y: showSShaped ? 10 : 6)
                 }
             }
             favicon
@@ -242,8 +256,24 @@ struct PinnedTabInnerView: View {
                 .opacity(controlActiveState == .key ? 1.0 : 0.60)
                 .frame(maxWidth: 16, maxHeight: 16)
                 .aspectRatio(contentMode: .fit)
+
+            if isSelected && showSShaped {
+                PinnedTabRampView(rampWidth: rampSize,
+                                  rampHeight: rampSize,
+                                  foregroundColor: .surfacePrimary)
+                .position(x: 2, y: height - (rampSize / 2))
+
+                PinnedTabRampView(rampWidth: rampSize,
+                                  rampHeight: rampSize,
+                                  isFlippedHorizontally: true,
+                                  foregroundColor: .surfacePrimary)
+                .position(x: width + rampSize + 2, y: height - (rampSize / 2))
+            }
         }
-        .frame(width: width)
+        .frame(
+            width: showSShaped ? width + rampSize + 4 : width,
+            height: height
+        )
     }
 
     @ViewBuilder

@@ -18,12 +18,16 @@
 //
 
 import Combine
+import SwiftUI
 
 protocol AIChatInputBoxHandling {
     // Publishers
     var didPressFireButton: PassthroughSubject<Void, Never> { get }
     var didPressNewChatButton: PassthroughSubject<Void, Never> { get }
     var didSubmitText: PassthroughSubject<String, Never> { get }
+    var didPressStopGeneratingButton: PassthroughSubject<Void, Never> { get }
+
+    var aiChatStatus: AIChatStatusValue { get set }
 
     // Methods
     func fireButtonPressed()
@@ -31,10 +35,32 @@ protocol AIChatInputBoxHandling {
     func submitText(_ text: String)
 }
 
+enum AIChatStatusValue: String, Codable {
+    case startStreamNewPrompt = "start_stream:new_prompt"
+    case loading
+    case streaming
+    case error
+    case ready
+    case blocked
+    case unknown
+}
+
+struct AIChatStatus: Codable {
+    let status: AIChatStatusValue
+}
+
 final class AIChatInputBoxHandler: AIChatInputBoxHandling {
     let didPressFireButton = PassthroughSubject<Void, Never>()
     let didPressNewChatButton = PassthroughSubject<Void, Never>()
+    let didPressStopGeneratingButton = PassthroughSubject<Void, Never>()
     let didSubmitText = PassthroughSubject<String, Never>()
+
+    @MainActor
+    var aiChatStatus: AIChatStatusValue = .unknown {
+        didSet {
+            updateStatus()
+        }
+    }
 
     private let inputBoxViewModel: AIChatInputBoxViewModel
     private var cancellables = Set<AnyCancellable>()
@@ -63,6 +89,26 @@ final class AIChatInputBoxHandler: AIChatInputBoxHandling {
                 self?.didSubmitText.send(text)
             }
             .store(in: &cancellables)
+
+        inputBoxViewModel.didPressStopGenerating
+            .sink { [weak self] _ in
+                self?.didPressStopGeneratingButton.send()
+            }
+            .store(in: &cancellables)
+    }
+
+    @MainActor
+    private func updateStatus() {
+        withAnimation {
+            switch aiChatStatus {
+            case .startStreamNewPrompt, .error, .ready, .blocked:
+                inputBoxViewModel.state = .ready
+            case .loading, .streaming:
+                inputBoxViewModel.state = .waitingForGeneration
+            case .unknown:
+                inputBoxViewModel.state = .unknown
+            }
+        }
     }
 
     // MARK: - Public Methods

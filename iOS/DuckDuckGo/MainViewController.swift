@@ -198,7 +198,7 @@ class MainViewController: UIViewController {
     }()
 
     private lazy var aiChatViewControllerManager: AIChatViewControllerManager = {
-        let manager = AIChatViewControllerManager(featureFlagger: featureFlagger)
+        let manager = AIChatViewControllerManager(experimentalAIChatManager: .init(featureFlagger: featureFlagger))
         manager.delegate = self
         return manager
     }()

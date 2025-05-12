@@ -220,8 +220,8 @@ final class AddressBarButtonsViewController: NSViewController {
         setupDaxLogo()
 
         bookmarkButton.sendAction(on: .leftMouseDown)
-        bookmarkButton.normalTintColor = visualStyle.iconsColor
-        zoomButton.normalTintColor = visualStyle.iconsColor
+        bookmarkButton.normalTintColor = visualStyle.colorsProvider.iconsColor
+        zoomButton.normalTintColor = visualStyle.colorsProvider.iconsColor
         configureAIChatButton()
         privacyEntryPointButton.toolTip = UserText.privacyDashboardTooltip
     }
@@ -846,8 +846,8 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func configureAIChatButton() {
-        aiChatButton.mouseOverColor = visualStyle.buttonMouseOverColor
-        aiChatButton.normalTintColor = visualStyle.iconsColor
+        aiChatButton.mouseOverColor = visualStyle.colorsProvider.buttonMouseOverColor
+        aiChatButton.normalTintColor = visualStyle.colorsProvider.iconsColor
         aiChatButton.setAccessibilityIdentifier("AddressBarButtonsViewController.aiChatButton")
         aiChatButton.menu = NSMenu {
             NSMenuItem(title: UserText.aiChatAddressBarHideButton,

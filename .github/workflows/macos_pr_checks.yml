@@ -117,9 +117,13 @@ jobs:
             flavor: Non-Sandbox
           - cache-key: sandbox-
             flavor: Sandbox
+          - runs-on: macos-15
+            flavor: Non-Sandbox
+          - runs-on: macos-15-xlarge
+            flavor: Sandbox
 
-    runs-on: macos-15
-    timeout-minutes: 60
+    runs-on: ${{ matrix.runs-on }}
+    timeout-minutes: 30
 
     outputs:
       private-api-check-report: ${{ steps.private-api.outputs.report }}

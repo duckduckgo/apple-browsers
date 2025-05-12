@@ -39,7 +39,7 @@ extension TabViewController {
         return settings.isAIChatBrowsingMenuUserSettingsEnabled
     }
 
-    private var shouldShowPrintButtonInBrowsingMenuList: Bool { shouldShowAIChatInMenu }
+    private var shouldShowCopyButtonInBrowsingMenuList: Bool { shouldShowAIChatInMenu }
 
     func buildBrowsingMenuHeaderContent() -> [BrowsingMenuEntry] {
         var entries = [BrowsingMenuEntry]()
@@ -58,23 +58,12 @@ extension TabViewController {
             self.onShareAction(forLink: self.link!, fromView: menu)
         })
 
-        let copyEntry = BrowsingMenuEntry.regular(name: UserText.actionCopy, image: UIImage(named: "Copy-24")!, action: { [weak self] in
-            guard let strongSelf = self else { return }
-            if !strongSelf.isError, let url = strongSelf.webView.url {
-                strongSelf.onCopyAction(forUrl: url)
-            } else if let text = self?.chromeDelegate?.omniBar.text {
-                strongSelf.onCopyAction(for: text)
-            }
+        let copyEntry = buildCopyEntry(smallIcon: false)
 
-            Pixel.fire(pixel: .browsingMenuCopy)
-            let addressBarBottom = strongSelf.appSettings.currentAddressBarPosition.isBottom
-            ActionMessageView.present(message: UserText.actionCopyMessage,
-                                      presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom))
-        })
-
-        let printEntry = BrowsingMenuEntry.regular(name: UserText.actionPrint, image: UIImage(named: "Print-24")!, action: { [weak self] in
-            Pixel.fire(pixel: .browsingMenuPrint)
-            self?.print()
+        let reloadEntry = BrowsingMenuEntry.regular(name: UserText.actionRefresh, image: UIImage(named: "Reload-24")!, action: { [weak self] in
+            guard let self = self else { return }
+            Pixel.fire(pixel: .browsingMenuReload)
+            self.reload()
         })
 
         let chatEntry = BrowsingMenuEntry.regular(name: UserText.actionOpenAIChat, image: UIImage(named: "AIChat-24")!, action: { [weak self] in
@@ -86,13 +75,13 @@ extension TabViewController {
         if shouldShowAIChatInMenu {
             entries.append(newTabEntry)
             entries.append(chatEntry)
+            entries.append(reloadEntry)
             entries.append(shareEntry)
-            entries.append(copyEntry)
         } else {
             entries.append(newTabEntry)
-            entries.append(shareEntry)
+            entries.append(reloadEntry)
             entries.append(copyEntry)
-            entries.append(printEntry)
+            entries.append(shareEntry)
         }
 
         return entries
@@ -111,15 +100,17 @@ extension TabViewController {
         let linkEntries = buildLinkEntries(with: bookmarksInterface)
         entries.append(contentsOf: linkEntries)
 
-        if shouldShowPrintButtonInBrowsingMenuList {
-            entries.append(.regular(name: UserText.actionPrintSite,
-                                    accessibilityLabel: UserText.actionPrintSite,
-                                    image: UIImage(named: "Print-16")!,
-                                    action: { [weak self] in
-                Pixel.fire(pixel: .browsingMenuListPrint)
-                self?.print()
-            }))
+        if shouldShowCopyButtonInBrowsingMenuList {
+            entries.append(buildCopyEntry(smallIcon: true))
         }
+
+        entries.append(.regular(name: UserText.actionPrintSite,
+                                accessibilityLabel: UserText.actionPrintSite,
+                                image: UIImage(named: "Print-16")!,
+                                action: { [weak self] in
+            Pixel.fire(pixel: .browsingMenuListPrint)
+            self?.print()
+        }))
 
         if let domain = self.privacyInfo?.domain {
             entries.append(self.buildToggleProtectionEntry(forDomain: domain))
@@ -246,6 +237,23 @@ extension TabViewController {
                                          action: { [weak self] in
                                             self?.enableFireproofingForDomain(domain)
                                          })
+    }
+
+    private func buildCopyEntry(smallIcon: Bool) -> BrowsingMenuEntry {
+        let image = UIImage(resource: smallIcon ? .copy16 : .copy24)
+        return BrowsingMenuEntry.regular(name: UserText.actionCopy, image: image, action: { [weak self] in
+            guard let strongSelf = self else { return }
+            if !strongSelf.isError, let url = strongSelf.webView.url {
+                strongSelf.onCopyAction(forUrl: url)
+            } else if let text = self?.chromeDelegate?.omniBar.text {
+                strongSelf.onCopyAction(for: text)
+            }
+
+            Pixel.fire(pixel: .browsingMenuCopy)
+            let addressBarBottom = strongSelf.appSettings.currentAddressBarPosition.isBottom
+            ActionMessageView.present(message: UserText.actionCopyMessage,
+                                      presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom))
+        })
     }
 
     private func onNewTabAction() {

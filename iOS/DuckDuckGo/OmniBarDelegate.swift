@@ -54,7 +54,9 @@ protocol OmniBarDelegate: AnyObject {
     func onEnterPressed()
 
     func onRefreshPressed()
-    
+
+    func onSharePressed()
+
     func onBackPressed()
     
     func onForwardPressed()

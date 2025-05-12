@@ -48,6 +48,8 @@ protocol VisualStyleProviding {
     var overflowButtonImage: NSImage { get }
     var toolbarButtonsCornerRadius: CGFloat { get }
     var navigationBackgroundColor: NSColor { get }
+    var fireWindowGraphic: NSImage { get }
+    var areNavigationBarCornersRound: Bool { get }
 
     /// General colors
     var baseBackgroundColor: NSColor { get }
@@ -125,6 +127,8 @@ struct VisualStyle: VisualStyleProviding {
     let addressBarIconsProvider: AddressBarIconsProviding
     let tabStyleProvider: TabStyleProviding
     let navigationBackgroundColor: NSColor
+    let fireWindowGraphic: NSImage
+    let areNavigationBarCornersRound: Bool
     let baseBackgroundColor: NSColor
     let textPrimaryColor: NSColor
     let textSecondaryColor: NSColor
@@ -206,6 +210,8 @@ struct VisualStyle: VisualStyleProviding {
                            addressBarIconsProvider: LegacyAddressBarIconsProvider(),
                            tabStyleProvider: LegacyTabStyleProvider(),
                            navigationBackgroundColor: .navigationBarBackground,
+                           fireWindowGraphic: .burnerWindowGraphic,
+                           areNavigationBarCornersRound: false,
                            baseBackgroundColor: .windowBackground,
                            textPrimaryColor: .labelColor,
                            textSecondaryColor: .secondaryLabelColor,
@@ -251,6 +257,8 @@ struct VisualStyle: VisualStyleProviding {
                            addressBarIconsProvider: NewAddressBarIconsProvider(),
                            tabStyleProvider: NewlineTabStyleProvider(),
                            navigationBackgroundColor: .navigationBackgroundColorNew,
+                           fireWindowGraphic: .burnerWindowGraphicNew,
+                           areNavigationBarCornersRound: true,
                            baseBackgroundColor: .backgroundBaseColorNew,
                            textPrimaryColor: .primaryTextColorNew,
                            textSecondaryColor: .secondaryTextColorNew,

@@ -1,9 +1,9 @@
 GIT
   remote: https://github.com/duckduckgo/fastlane-plugin-ddg_apple_automation
-  revision: ded2217d2057e2becec50e8d3484db8be3eaadc9
-  tag: 2.3.0
+  revision: 6b9ad0df2d53559152170a75b723c74784b77dd6
+  tag: 2.3.1
   specs:
-    fastlane-plugin-ddg_apple_automation (2.3.0)
+    fastlane-plugin-ddg_apple_automation (2.3.1)
       asana
       climate_control
       httpparty
@@ -27,7 +27,7 @@ GEM
       oauth2 (>= 1.4, < 3)
     atomos (0.1.3)
     aws-eventstream (1.3.2)
-    aws-partitions (1.1100.0)
+    aws-partitions (1.1102.0)
     aws-sdk-core (3.223.0)
       aws-eventstream (~> 1, >= 1.3.0)
       aws-partitions (~> 1, >= 1.992.0)
@@ -187,7 +187,7 @@ GEM
     httpparty (0.2.0)
       httparty (> 0)
     jmespath (1.6.2)
-    json (2.11.3)
+    json (2.12.0)
     jwt (2.10.1)
       base64
     logger (1.7.0)

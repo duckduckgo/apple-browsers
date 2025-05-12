@@ -26,6 +26,7 @@ struct AIChatInputBox: View {
     @State private var isFocused = false
     @State private var text = ""
     @State private var textHeight: CGFloat = 40
+    @State private var showingDeleteConfirmation = false
 
     private var isSendButtonDisabled: Bool {
         text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -104,12 +105,24 @@ struct AIChatInputBox: View {
 
     private var defaultInputView: some View {
         HStack(spacing: 12) {
-            Button(action: viewModel.fireButtonPressed) {
+            Button(action: { showingDeleteConfirmation = true }) {
                 Image(systemName: "flame.fill")
                     .foregroundColor(.red)
                     .font(.system(size: 20, weight: .medium))
             }
             .fixedSize()
+            .confirmationDialog(
+                "Delete this chat?",
+                isPresented: $showingDeleteConfirmation,
+                titleVisibility: .visible
+            ) {
+                Button("Delete Chat", role: .destructive) {
+                    viewModel.fireButtonPressed()
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Are you sure you want to delete this chat? This cannot be undone.")
+            }
 
             ZStack(alignment: .leading) {
                 Text(text.isEmpty ? "Enter message..." : text)
@@ -156,7 +169,7 @@ private struct ExpandingTextView: UIViewRepresentable {
     @Binding var text: String
     @Binding var height: CGFloat
     @Binding var isFirstResponder: Bool
-    private let maxTextHeight: CGFloat = 70
+    private let maxTextHeight: CGFloat = 80
 
     func makeUIView(context: Context) -> UITextView {
         let textView = UITextView()

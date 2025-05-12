@@ -28,5 +28,6 @@ public extension NSNotification.Name {
     static let accountDidSignOut = Notification.Name("com.duckduckgo.subscription.AccountDidSignOut")
     static let entitlementsDidChange = Notification.Name("com.duckduckgo.subscription.EntitlementsDidChange")
     static let subscriptionDidChange = Notification.Name("com.duckduckgo.subscription.SubscriptionDidChange")
+    static let availableAppStoreProductsDidChange = Notification.Name("com.duckduckgo.subscription.AvailableAppStoreProductsDidChange")
     static let expiredRefreshTokenDetected = Notification.Name("com.duckduckgo.subscription.ExpiredRefreshTokenDetected")
 }

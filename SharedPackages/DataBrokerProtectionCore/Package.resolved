@@ -21,7 +21,7 @@
     {
       "identity" : "designresourceskit",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/duckduckgo/DesignResourcesKit",
+      "location" : "https://github.com/duckduckgo/DesignResourcesKit.git",
       "state" : {
         "revision" : "f07a285c6edb5265b3a256c87124135ebcedee6f",
         "version" : "4.3.0"
@@ -115,6 +115,15 @@
       "state" : {
         "revision" : "a3f0ade39904602aa45874a7d71db4fafa10f7d9",
         "version" : "3.0.1"
+      }
+    },
+    {
+      "identity" : "zipfoundation",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/weichsel/ZIPFoundation.git",
+      "state" : {
+        "revision" : "02b6abe5f6eef7e3cbd5f247c5cc24e246efcfe0",
+        "version" : "0.9.19"
       }
     }
   ],

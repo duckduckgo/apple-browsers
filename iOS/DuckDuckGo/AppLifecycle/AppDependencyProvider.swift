@@ -180,9 +180,10 @@ final class AppDependencyProvider: DependencyProvider {
             authenticationStateProvider = subscriptionManager
             subscriptionAuthV1toV2Bridge = subscriptionManager
 
-            if tokenStorageV2.tokenContainer != nil {
+            let tokenContainer = try? tokenStorageV2.getTokenContainer()
+            if tokenContainer != nil {
                 Logger.subscription.debug("Cleaning up Auth V2 token")
-                tokenStorageV2.tokenContainer = nil
+                try? tokenStorageV2.saveTokenContainer(nil)
                 subscriptionEndpointService.clearSubscription()
             }
         } else {
@@ -203,7 +204,7 @@ final class AppDependencyProvider: DependencyProvider {
                                                                                    baseURL: subscriptionEnvironment.serviceEnvironment.url)
             apiServiceForSubscription.authorizationRefresherCallback = { _ in
 
-                guard let tokenContainer = tokenStorageV2.tokenContainer else {
+                guard let tokenContainer = try? tokenStorageV2.getTokenContainer() else {
                     throw OAuthClientError.internalError("Missing refresh token")
                 }
 

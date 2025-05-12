@@ -93,7 +93,7 @@ extension DefaultSubscriptionManager {
         let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainType: keychainType) { _, error in
             Logger.subscription.error("Failed to remove AuthV2 token container : \(error.localizedDescription, privacy: .public)")
         }
-        tokenStorage.tokenContainer = nil
+        try? tokenStorage.saveTokenContainer(nil)
     }
 }
 
@@ -143,7 +143,7 @@ extension DefaultSubscriptionManagerV2 {
                                                                                baseURL: environment.serviceEnvironment.url)
         apiServiceForSubscription.authorizationRefresherCallback = { _ in
 
-            guard let tokenContainer = tokenStorage.tokenContainer else {
+            guard let tokenContainer = try? tokenStorage.getTokenContainer() else {
                 throw OAuthClientError.internalError("Missing refresh token")
             }
 

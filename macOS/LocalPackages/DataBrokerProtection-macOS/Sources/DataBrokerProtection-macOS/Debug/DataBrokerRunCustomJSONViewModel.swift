@@ -23,6 +23,7 @@ import Common
 import ContentScopeScripts
 import Combine
 import os.log
+import PixelKit
 
 struct ExtractedAddress: Codable {
     let state: String
@@ -131,6 +132,7 @@ struct ScanResult {
     let extractedProfile: ExtractedProfile
 }
 
+// swiftlint:disable force_try
 final class DataBrokerRunCustomJSONViewModel: ObservableObject {
     @Published var birthYear: String = ""
     @Published var results = [ScanResult]()
@@ -197,8 +199,13 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         self.privacyConfigManager = privacyConfigurationManager
         self.contentScopeProperties = contentScopeProperties
 
-        let fileResources = FileResources()
-        self.brokers = (try? fileResources.fetchBrokerFromResourceFiles()) ?? [DataBroker]()
+        let pixelKit = PixelKit.shared!
+        let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .macOS)
+        let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler)
+        let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
+        let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
+        let vault = try! vaultFactory.makeVault(reporter: reporter)
+        self.brokers = try! vault.fetchAllBrokers()
     }
 
     func runAllBrokers() {
@@ -663,3 +670,4 @@ extension ScrapedData {
         }
     }
 }
+// swiftlint:enable force_try

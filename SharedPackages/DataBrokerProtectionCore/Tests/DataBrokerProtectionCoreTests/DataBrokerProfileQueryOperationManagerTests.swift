@@ -45,7 +45,7 @@ final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
             let extractedProfileId: Int64 = 1
             let currentPreferredRunDate = Date()
 
-            let mockDataBroker = DataBroker(name: "databroker", url: "databroker.com", steps: [Step](), version: "1.0", schedulingConfig: config, optOutUrl: "")
+            let mockDataBroker = DataBroker(name: "databroker", url: "databroker.com", steps: [Step](), version: "1.0", schedulingConfig: config, optOutUrl: "", eTag: "")
             let mockProfileQuery = ProfileQuery(id: profileQueryId, firstName: "a", lastName: "b", city: "c", state: "d", birthYear: 1222)
 
             let historyEvents = [HistoryEvent(extractedProfileId: extractedProfileId, brokerId: brokerId, profileQueryId: profileQueryId, type: .optOutRequested)]
@@ -93,7 +93,7 @@ final class DataBrokerProfileQueryOperationManagerTests: XCTestCase {
             let extractedProfileId: Int64 = 1
             let currentPreferredRunDate = Date()
 
-            let mockDataBroker = DataBroker(name: "databroker", url: "databroker.com", steps: [Step](), version: "1.0", schedulingConfig: config, optOutUrl: "")
+            let mockDataBroker = DataBroker(name: "databroker", url: "databroker.com", steps: [Step](), version: "1.0", schedulingConfig: config, optOutUrl: "", eTag: "")
             let mockProfileQuery = ProfileQuery(id: profileQueryId, firstName: "a", lastName: "b", city: "c", state: "d", birthYear: 1222)
 
             let historyEvents = [HistoryEvent(extractedProfileId: extractedProfileId, brokerId: brokerId, profileQueryId: profileQueryId, type: .optOutRequested)]
@@ -144,7 +144,7 @@ pixelHandler: MockDataBrokerProtectionPixelsHandler(),
             let extractedProfileId: Int64 = 1
             let currentPreferredRunDate = Date()
 
-            let mockDataBroker = DataBroker(name: "databroker", url: "databroker.com", steps: [Step](), version: "1.0", schedulingConfig: config, optOutUrl: "")
+            let mockDataBroker = DataBroker(name: "databroker", url: "databroker.com", steps: [Step](), version: "1.0", schedulingConfig: config, optOutUrl: "", eTag: "")
             let mockProfileQuery = ProfileQuery(id: profileQueryId, firstName: "a", lastName: "b", city: "c", state: "d", birthYear: 1222)
 
             let historyEvents = [HistoryEvent(extractedProfileId: extractedProfileId, brokerId: brokerId, profileQueryId: profileQueryId, type: .optOutRequested)]
@@ -897,7 +897,7 @@ pixelHandler: MockDataBrokerProtectionPixelsHandler(),
         let extractedProfileId: Int64 = 1
         let currentPreferredRunDate = Date()
 
-        let mockDataBroker = DataBroker(name: "databroker", url: "databroker.com", steps: [Step](), version: "1.0", schedulingConfig: config, optOutUrl: "")
+        let mockDataBroker = DataBroker(name: "databroker", url: "databroker.com", steps: [Step](), version: "1.0", schedulingConfig: config, optOutUrl: "", eTag: "")
         let mockProfileQuery = ProfileQuery(id: profileQueryId, firstName: "a", lastName: "b", city: "c", state: "d", birthYear: 1222)
 
         let historyEvents = [HistoryEvent(extractedProfileId: extractedProfileId, brokerId: brokerId, profileQueryId: profileQueryId, type: .optOutRequested)]
@@ -924,7 +924,7 @@ pixelHandler: MockDataBrokerProtectionPixelsHandler(),
         let currentPreferredRunDate = Date()
         let expectedPreferredRunDate = Date().addingTimeInterval(config.confirmOptOutScan.hoursToSeconds)
 
-        let mockDataBroker = DataBroker(name: "databroker", url: "databroker.com", steps: [Step](), version: "1.0", schedulingConfig: config, optOutUrl: "")
+        let mockDataBroker = DataBroker(name: "databroker", url: "databroker.com", steps: [Step](), version: "1.0", schedulingConfig: config, optOutUrl: "", eTag: "")
         let mockProfileQuery = ProfileQuery(id: profileQueryId, firstName: "a", lastName: "b", city: "c", state: "d", birthYear: 1222)
 
         let historyEvents = [HistoryEvent(extractedProfileId: extractedProfileId, brokerId: brokerId, profileQueryId: profileQueryId, type: .optOutRequested)]

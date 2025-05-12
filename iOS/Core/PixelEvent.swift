@@ -140,6 +140,7 @@ extension Pixel {
         case browsingMenuShare
         case browsingMenuCopy
         case browsingMenuPrint
+        case browsingMenuReload
         case browsingMenuListPrint
         case browsingMenuFindInPage
         case browsingMenuZoom
@@ -971,6 +972,30 @@ extension Pixel {
         case privacyProActivatingRestoreErrorFailedToFetchSubscriptionDetails
         case privacyProActivatingRestoreErrorSubscriptionExpired
 
+        /**
+         * Event Trigger: The Privacy Pro onboarding promotion is displayed to the user
+         *
+         * Anomaly Investigation:
+         * - This should only be fired during app onboarding. See `OnboardingPrivacyProPromotionHelper`
+         */
+        case privacyProOnboardingPromotionImpression
+
+        /**
+         * Event Trigger: The user tapped the 'Learn More' button on the Privacy Pro onboarding promotion
+         *
+         * Anomaly Investigation:
+         * - This should only be fired during app onboarding. See `OnboardingPrivacyProPromotionHelper`
+         */
+        case privacyProOnboardingPromotionTap
+
+        /**
+         * Event Trigger: The user tapped the 'Skip' button on the Privacy Pro onboarding promotion
+         *
+         * Anomaly Investigation:
+         * - This should only be fired during app onboarding. See `OnboardingPrivacyProPromotionHelper`
+         */
+        case privacyProOnboardingPromotionDismiss
+
         // MARK: Pixel Experiment
         case pixelExperimentEnrollment
 
@@ -1147,6 +1172,8 @@ extension Pixel {
         case aiChatSettingsTabManagerTurnedOff
         case aiChatSettingsTabManagerTurnedOn
         case aiChatSettingsDisplayed
+        case aiChatSettingsEnabled
+        case aiChatSettingsDisabled
 
         // MARK: Lifecycle
         case appDidTransitionToUnexpectedState
@@ -1258,6 +1285,7 @@ extension Pixel.Event {
         case .browsingMenuToggleBrowsingMode: return "mb_dm"
         case .browsingMenuCopy: return "mb_cp"
         case .browsingMenuPrint: return "mb_pr"
+        case .browsingMenuReload: return "m_nav_menu_reload"
 
         case .browsingMenuFindInPage: return "mb_fp"
         case .browsingMenuZoom: return "m_menu_page_zoom_taps"
@@ -2030,6 +2058,12 @@ extension Pixel.Event {
         case .privacyProActivatingRestoreErrorFailedToFetchSubscriptionDetails: return "m_privacy-pro_activating_restore_error_failed_to_fetch_subscription_details"
         case .privacyProActivatingRestoreErrorSubscriptionExpired: return "m_privacy-pro_activating_restore_error_subscription_expired"
 
+        case .privacyProOnboardingPromotionImpression: return "m_privacy-pro_onboarding_promotion_impression"
+
+        case .privacyProOnboardingPromotionTap: return "m_privacy-pro_onboarding_promotion_tap"
+
+        case .privacyProOnboardingPromotionDismiss: return "m_privacy-pro_onboarding_promotion_dismiss"
+
         // MARK: Pixel Experiment
         case .pixelExperimentEnrollment: return "pixel_experiment_enrollment"
 
@@ -2223,6 +2257,8 @@ extension Pixel.Event {
         case .aiChatSettingsTabManagerTurnedOff: return "m_aichat_settings_tab_manager_turned_off"
         case .aiChatSettingsTabManagerTurnedOn: return "m_aichat_settings_tab_manager_turned_on"
         case .aiChatSettingsDisplayed: return "m_aichat_settings_displayed"
+        case .aiChatSettingsEnabled: return "m_aichat_settings_enabled"
+        case .aiChatSettingsDisabled: return "m_aichat_settings_disabled"
 
         // MARK: Lifecycle
         case .appDidTransitionToUnexpectedState: return "m_debug_app-did-transition-to-unexpected-state-4"

@@ -62,8 +62,8 @@ final class AddressBarViewController: NSViewController {
     @IBOutlet var switchToTabBoxMinXConstraint: NSLayoutConstraint!
     @IBOutlet var passiveTextFieldMinXConstraint: NSLayoutConstraint!
     @IBOutlet var activeTextFieldMinXConstraint: NSLayoutConstraint!
-    @IBOutlet var addressBarPassiveTextCenterXConstraint: NSLayoutConstraint!
     @IBOutlet var addressBarTextTrailingConstraint: NSLayoutConstraint!
+    @IBOutlet var passiveTextFieldTrailingConstraint: NSLayoutConstraint!
 
     private let popovers: NavigationBarPopovers?
     private(set) var addressBarButtonsViewController: AddressBarButtonsViewController?
@@ -83,7 +83,7 @@ final class AddressBarViewController: NSViewController {
         }
     }
 
-    private var isFirstResponder = false {
+    private(set) var isFirstResponder = false {
         didSet {
             updateView()
             updateSwitchToTabBoxAppearance()
@@ -92,7 +92,7 @@ final class AddressBarViewController: NSViewController {
         }
     }
 
-    private var isHomePage = false {
+    private(set) var isHomePage = false {
         didSet {
             updateView()
             suggestionContainerViewModel.isHomePage = isHomePage
@@ -205,6 +205,7 @@ final class AddressBarViewController: NSViewController {
 
     override func viewDidLayout() {
         addressBarTextField.viewDidLayout()
+        updateSwitchToTabBoxAppearance()
     }
 
     // MARK: - Subscriptions
@@ -433,7 +434,8 @@ final class AddressBarViewController: NSViewController {
 
     private func updateSwitchToTabBoxAppearance() {
         guard case .editing(.openTabSuggestion) = mode,
-              addressBarTextField.isVisible, let editor = addressBarTextField.editor else {
+              addressBarTextField.isVisible, let editor = addressBarTextField.editor,
+              view.frame.size.width > 280 else {
             switchToTabBox.isHidden = true
             switchToTabBox.alphaValue = 0
             return
@@ -653,8 +655,9 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
     }
 
     func addressBarButtonsViewController(_ controller: AddressBarButtonsViewController, didUpdateAIChatButtonVisibility isVisible: Bool) {
-        addressBarTextTrailingConstraint.constant = isVisible ? 80 : 45
-        addressBarPassiveTextCenterXConstraint.constant = isVisible ? -20 : 0
+        let trailingConstant: CGFloat = isVisible ? 80 : 45
+        addressBarTextTrailingConstraint.constant = trailingConstant
+        passiveTextFieldTrailingConstraint.constant = trailingConstant
     }
 
     func addressBarButtonsViewControllerClearButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {

@@ -19,43 +19,17 @@
 import SwiftUI
 import Combine
 import BrowserServicesKit
+import PreferencesUI_macOS
 
 final class PrivacyProtectionStatus: ObservableObject {
 
-    static func status(for preferencePane: PreferencePaneIdentifier) -> PrivacyProtectionStatus {
-        switch preferencePane {
-        case .defaultBrowser:
-            return PrivacyProtectionStatus(statusPublisher: DefaultBrowserPreferences.shared.$isDefault) { isDefault in
-                isDefault ? .on : .off
-            }
-        case .privateSearch:
-            return PrivacyProtectionStatus(statusIndicator: .on)
-        case .webTrackingProtection:
-            return PrivacyProtectionStatus(statusIndicator: .on)
-        case .cookiePopupProtection:
-            return PrivacyProtectionStatus(statusPublisher: CookiePopupProtectionPreferences.shared.$isAutoconsentEnabled) { isAutoconsentEnabled in
-                isAutoconsentEnabled ? .on : .off
-            }
-        case .emailProtection:
-            let publisher = Publishers.Merge(
-                NotificationCenter.default.publisher(for: .emailDidSignIn),
-                NotificationCenter.default.publisher(for: .emailDidSignOut)
-            )
-            return PrivacyProtectionStatus(statusPublisher: publisher, initialValue: EmailManager().isSignedIn ? .on : .off) { _ in
-                EmailManager().isSignedIn ? .on : .off
-            }
-        default:
-            return PrivacyProtectionStatus()
-        }
-    }
-
     var statusSubscription: AnyCancellable?
-    @Published var status: Preferences.StatusIndicator?
+    @Published var status: StatusIndicator?
 
     // Initializer for observable properties
     init<T: Publisher>(statusPublisher: T,
-                       initialValue: Preferences.StatusIndicator? = nil,
-                       transform: @escaping (T.Output) -> Preferences.StatusIndicator?) where T.Failure == Never {
+                       initialValue: StatusIndicator? = nil,
+                       transform: @escaping (T.Output) -> StatusIndicator?) where T.Failure == Never {
         self.status = initialValue
 
         statusSubscription = statusPublisher
@@ -71,7 +45,7 @@ final class PrivacyProtectionStatus: ObservableObject {
     }
 
     // Initializer for items with static status
-    init(statusIndicator: Preferences.StatusIndicator) {
+    init(statusIndicator: StatusIndicator) {
         self.status = statusIndicator
     }
 }

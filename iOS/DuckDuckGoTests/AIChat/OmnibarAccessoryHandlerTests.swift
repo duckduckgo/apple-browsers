@@ -21,6 +21,7 @@ import XCTest
 import AIChat
 @testable import DuckDuckGo
 
+/// Only chat is supported for now.  This will all get refactored out in a future project for  browser customisation.
 class OmnibarAccessoryHandlerTests: XCTestCase {
 
     static let DDGSearchURL = URL(string: "https://duckduckgo.com?q=hello")!
@@ -34,7 +35,7 @@ class OmnibarAccessoryHandlerTests: XCTestCase {
 
         let accessoryType = handler.omnibarAccessory(for: OmnibarAccessoryHandlerTests.DDGSearchURL)
 
-        XCTAssertEqual(accessoryType, OmniBarAccessoryType.share)
+        XCTAssertEqual(accessoryType, OmniBarAccessoryType.chat)
     }
 
     func testOmnibarAccessoryWhenAIChatFeatureAndUserSettingsEnabledWithDuckDuckGoURL() {
@@ -52,7 +53,7 @@ class OmnibarAccessoryHandlerTests: XCTestCase {
         let handler = OmnibarAccessoryHandler(settings: settings)
         let accessoryType = handler.omnibarAccessory(for: OmnibarAccessoryHandlerTests.randomURL)
 
-        XCTAssertEqual(accessoryType, OmniBarAccessoryType.share)
+        XCTAssertEqual(accessoryType, OmniBarAccessoryType.chat)
     }
 
     func testOmnibarAccessoryWhenAIChatFeatureAndUserSettingsEnabledWithDuckDuckGoHomeURL() {
@@ -61,6 +62,6 @@ class OmnibarAccessoryHandlerTests: XCTestCase {
         let handler = OmnibarAccessoryHandler(settings: settings)
         let accessoryType = handler.omnibarAccessory(for: OmnibarAccessoryHandlerTests.DDGHomeURL)
 
-        XCTAssertEqual(accessoryType, OmniBarAccessoryType.share)
+        XCTAssertEqual(accessoryType, OmniBarAccessoryType.chat)
     }
 }

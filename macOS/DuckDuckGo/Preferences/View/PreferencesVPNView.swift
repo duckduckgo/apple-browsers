@@ -40,9 +40,7 @@ extension Preferences {
 
                 PreferencePaneSection {
                     Button(UserText.openVPNButtonTitle) {
-                        Task { @MainActor in
-                            NotificationCenter.default.post(name: .ToggleNetworkProtectionInMainWindow, object: nil)
-                        }
+                        model.openVPNViewInMainWindow()
                     }
                 }
                 .padding(.bottom, 12)

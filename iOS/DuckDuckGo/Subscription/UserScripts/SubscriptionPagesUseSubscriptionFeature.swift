@@ -144,7 +144,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
     private let appStoreAccountManagementFlow: AppStoreAccountManagementFlow
     private let privacyProDataReporter: PrivacyProDataReporting?
     private let freeTrialsExperiment: any FreeTrialsFeatureFlagExperimenting
-    private let onboardingPrivacyProPromoExperiment: any OnboardingPrivacyProPromoExperimenting
 
     init(subscriptionManager: SubscriptionManager,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
@@ -153,8 +152,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
          appStoreRestoreFlow: AppStoreRestoreFlow,
          appStoreAccountManagementFlow: AppStoreAccountManagementFlow,
          privacyProDataReporter: PrivacyProDataReporting? = nil,
-         freeTrialsExperiment: any FreeTrialsFeatureFlagExperimenting = FreeTrialsFeatureFlagExperiment(),
-         onboardingPrivacyProPromoExperiment: OnboardingPrivacyProPromoExperimenting = OnboardingPrivacyProPromoExperiment()) {
+         freeTrialsExperiment: any FreeTrialsFeatureFlagExperimenting = FreeTrialsFeatureFlagExperiment()) {
         self.subscriptionManager = subscriptionManager
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.appStorePurchaseFlow = appStorePurchaseFlow
@@ -163,7 +161,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         self.subscriptionAttributionOrigin = subscriptionAttributionOrigin
         self.privacyProDataReporter = subscriptionAttributionOrigin != nil ? privacyProDataReporter : nil
         self.freeTrialsExperiment = freeTrialsExperiment
-        self.onboardingPrivacyProPromoExperiment = onboardingPrivacyProPromoExperiment
     }
 
     // Transaction Status and errors are observed from ViewModels to handle errors in the UI
@@ -373,10 +370,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         } else if let frontEndExperiment = subscriptionSelection.experiment {
             subscriptionParameters = frontEndExperiment.asParameters()
         }
-
-
-        // Privacy Pro Promotion Experiment Pixels
-        firePrivacyProPromotionSubscriptionPurchasePixel(for: subscriptionSelection.id)
 
         switch await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS, additionalParams: subscriptionParameters) {
         case .success(let purchaseUpdate):
@@ -671,23 +664,6 @@ private extension DefaultSubscriptionPagesUseSubscriptionFeature {
     }
 }
 
-private extension DefaultSubscriptionPagesUseSubscriptionFeature {
-    /// Fires a subscription purchase pixel for a Subscription if applicable.
-    ///
-    /// - Parameter id: The subscription identifier used to determine the type of subscription.
-    func firePrivacyProPromotionSubscriptionPurchasePixel(for id: String) {
-        /*
-         Logic based on strings is obviously not ideal, but acceptable for this temporary
-         experiment.
-         */
-        if id.contains("month") {
-            onboardingPrivacyProPromoExperiment.fireSubscriptionStartedMonthlyPixel()
-        } else if id.contains("year") {
-            onboardingPrivacyProPromoExperiment.fireSubscriptionStartedYearlyPixel()
-        }
-    }
-}
-
 final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesUseSubscriptionFeature {
 
     private let subscriptionAttributionOrigin: String?
@@ -697,7 +673,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
     private let subscriptionFeatureAvailability: SubscriptionFeatureAvailability
     private let privacyProDataReporter: PrivacyProDataReporting?
     private let freeTrialsExperiment: any FreeTrialsFeatureFlagExperimenting
-    private let onboardingPrivacyProPromoExperiment: any OnboardingPrivacyProPromoExperimenting
 
     init(subscriptionManager: SubscriptionManagerV2,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
@@ -705,8 +680,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
          appStorePurchaseFlow: AppStorePurchaseFlowV2,
          appStoreRestoreFlow: AppStoreRestoreFlowV2,
          privacyProDataReporter: PrivacyProDataReporting? = nil,
-         freeTrialsExperiment: any FreeTrialsFeatureFlagExperimenting = FreeTrialsFeatureFlagExperiment(),
-         onboardingPrivacyProPromoExperiment: OnboardingPrivacyProPromoExperimenting = OnboardingPrivacyProPromoExperiment()) {
+         freeTrialsExperiment: any FreeTrialsFeatureFlagExperimenting = FreeTrialsFeatureFlagExperiment()) {
         self.subscriptionManager = subscriptionManager
         self.subscriptionFeatureAvailability = subscriptionFeatureAvailability
         self.appStorePurchaseFlow = appStorePurchaseFlow
@@ -714,7 +688,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         self.subscriptionAttributionOrigin = subscriptionAttributionOrigin
         self.privacyProDataReporter = subscriptionAttributionOrigin != nil ? privacyProDataReporter : nil
         self.freeTrialsExperiment = freeTrialsExperiment
-        self.onboardingPrivacyProPromoExperiment = onboardingPrivacyProPromoExperiment
     }
 
     // Transaction Status and errors are observed from ViewModels to handle errors in the UI
@@ -978,9 +951,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             subscriptionParameters = frontEndExperiment.asParameters()
         }
 
-        // Privacy Pro Promotion Experiment Pixels
-        firePrivacyProPromotionSubscriptionPurchasePixel(for: subscriptionSelection.id)
-
         switch await appStorePurchaseFlow.completeSubscriptionPurchase(with: purchaseTransactionJWS,
                                                                        additionalParams: subscriptionParameters) {
         case .success:
@@ -1232,23 +1202,6 @@ private extension DefaultSubscriptionPagesUseSubscriptionFeatureV2 {
         }
 
         return subscriptionOptions
-    }
-}
-
-private extension DefaultSubscriptionPagesUseSubscriptionFeatureV2 {
-    /// Fires a subscription purchase pixel for a Subscription if applicable.
-    ///
-    /// - Parameter id: The subscription identifier used to determine the type of subscription.
-    func firePrivacyProPromotionSubscriptionPurchasePixel(for id: String) {
-        /*
-         Logic based on strings is obviously not ideal, but acceptable for this temporary
-         experiment.
-         */
-        if id.contains("month") {
-            onboardingPrivacyProPromoExperiment.fireSubscriptionStartedMonthlyPixel()
-        } else if id.contains("year") {
-            onboardingPrivacyProPromoExperiment.fireSubscriptionStartedYearlyPixel()
-        }
     }
 }
 

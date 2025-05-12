@@ -1150,41 +1150,8 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Ontem";
 
-/* No comment provided by engineer. */
-"dax.hide.button" = "Ocultar dicas para sempre";
-
-/* No comment provided by engineer. */
-"dax.hide.cancel" = "Cancelar";
-
-/* Subtitle in Hide Dax dialog */
-"dax.hide.message" = "Há apenas algumas, e tentamos torná-las informativas.";
-
-/* Title in Hide Dax dialog */
-"dax.hide.title" = "Ocultar as dicas restantes?";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search" = "As tuas pesquisas no DuckDuckGo são anónimas. Sempre. 🙌";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search.cta" = "Ufa!";
-
-/* First parameter is a count of additional trackers, second and third are names of the tracker networks (strings) */
-"dax.onboarding.browsing.multiple.trackers" = "dax.onboarding.browsing.multiple.trackers";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.multiple.trackers.cta" = "Dá cá cinco!";
-
-/* Parameter is domain name (string) */
-"dax.onboarding.browsing.one.tracker" = "*%1$@* estava a tentar rastreá-lo aqui.\n\nEu bloqueei-o!\n\n☝️Pode verificar a barra de endereços para ver quem está a tentar rastreá-lo quando visita um site novo.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.one.tracker.cta" = "Dá cá cinco!";
-
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Alerta! Não consigo que %1$@ veja a sua atividade no %2$@.\n\nMas navegue comigo, e eu consigo reduzir o que %1$@ sabe sobre si em geral ao bloquear os seus rastreadores em muitos outros sites.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.site.is.major.tracker.cta" = "Entendi";
 
 /* Parameters are domain names (strings) */
 "dax.onboarding.browsing.site.owned.by.major.tracker" = "Alerta! Uma vez que %2$@ possui %1$@, eu não consigo impedi-los de verem a sua atividade aqui.\n\nMas navegue comigo, e eu consigo reduzir o que %2$@ sabe sobre si na generalidade, bloqueando os seus rastreadores em muitos outros sites.";
@@ -1195,29 +1162,8 @@
 /* No comment provided by engineer. */
 "dax.onboarding.browsing.without.trackers" = "Enquanto toca e desliza, eu bloqueio rastreadores irritantes.\n\nContinue a navegar!";
 
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.without.trackers.cta" = "Entendi";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button" = "Os dados pessoais podem ser acumulados no seu navegador. Que nojo. Use o botão de fogo para queimar tudo. Experimente agora! 👇";
-
-/* Cancel action */
-"dax.onboarding.fire.button.cancelAction" = "Cancelar";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button.confirmAction" = "Fechar separadores e limpar os dados";
-
 /* Encourage user to add favorite site using the browsing menu. */
 "dax.onboarding.home.add.favorite" = "Visite os seus sites favoritos num instante!\n\nVá a um site que ame. De seguida, toque no ''⋯'' ícone e selecione *Adicionar aos Favoritos*.";
-
-/* Accessible version of dax.onboarding.home.add.favorite */
-"dax.onboarding.home.add.favorite.accessible" = "Visite os seus sites favoritos num instante! Visite um dos seus sites favoritos. De seguida, toque no botão abrir menu e selecione Adicionar aos Favoritos.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.home.initial" = "Em seguida, tente visitar um dos seus sites preferidos!\n\nBloquearei rastreadores para que não possam espiá-lo. Também irei atualizar a segurança da sua conexão, se possível. 🔒";
-
-/* ad = advertisment */
-"dax.onboarding.home.subsequent" = "Você consegue!\n\nLembre-se: sempre que navega comigo, um anúncio assustador perde as suas asas. 👍";
 
 /* No comment provided by engineer. */
 "Debug" = "Depurar";
@@ -1313,16 +1259,16 @@
 "duckai.preferences.text.markdown" = "O Duck.ai é uma funcionalidade opcional que te permite conversar anonimamente com modelos de chat de IA populares de terceiros. As tuas conversas não são usadas para treinar a IA.\n[Sabe mais](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
-"duckai.settings.enable.address-bar-toggle" = "Mostrar Duck.ai na barra de endereço";
+"duckai.settings.enable.address-bar-toggle" = "Barra de endereço";
 
 /* Toggle text to enable/disable AI Chat in the browsing menu */
-"duckai.settings.enable.browsing-menu-toggle" = "Mostrar Duck.ai no menu do navegador";
+"duckai.settings.enable.browsing-menu-toggle" = "Menu do navegador";
 
 /* Toggle text to enable/disable Duck.ai in tab manager */
-"duckai.settings.enable.tab-switcher-toggle" = "Mostrar Duck.ai no ecrã dos separadores";
+"duckai.settings.enable.tab-switcher-toggle" = "Ecrã Separadores";
 
 /* Toggle text to enable/disable Duck.ai in voice search */
-"duckai.settings.enable.voice-search-toggle" = "Mostrar Duck.ai na pesquisa por voz";
+"duckai.settings.enable.voice-search-toggle" = "Pesquisa por voz";
 
 /* Settings screen cell text for AI Chat settings */
 "duckai.settings.title" = "Duck.ai";
@@ -2332,11 +2278,11 @@
 /* No comment provided by engineer. */
 "onboardingWelcomeHeader" = "Damos-lhe as boas-vindas ao DuckDuckGo!";
 
-/* No comment provided by engineer. */
-"Open tabs remain unaffected by this change.  Please close all tabs for this setting to take effect." = "Os separadores abertos não são afetados por esta alteração.  Fecha todos os separadores para esta definição entrar em vigor.";
-
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Não encontramos a aplicação necessária para abrir esse link";
+
+/* No comment provided by engineer. */
+"Please close all tabs for this setting to take effect." = "Fecha todos os separadores para esta definição entrar em vigor.";
 
 /* Activate button */
 "pm.activate" = "Reativar";
@@ -2560,6 +2506,9 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Mostrar endereço completo do site";
 
+/* Settings screen text for showing AI Chat in various places in the app */
+"settings.aichat.shortcuts" = "Atalhos";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Sempre ligada";
 
@@ -2631,6 +2580,9 @@
 
 /* Settings cell for Email Protection */
 "settings.emailProtection.description" = "Bloqueie rastreadores de e-mail e oculte o seu endereço.";
+
+/* Settings screen cell text for enabling AI chat */
+"settings.enable.aichat" = "Ativar Duck.ai";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Ativa a Email Protection";

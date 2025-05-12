@@ -1150,41 +1150,8 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Dün";
 
-/* No comment provided by engineer. */
-"dax.hide.button" = "İpuçlarını Sonsuza Kadar Gizle";
-
-/* No comment provided by engineer. */
-"dax.hide.cancel" = "İptal";
-
-/* Subtitle in Hide Dax dialog */
-"dax.hide.message" = "Sadece birkaç tane var ve onları da bilgilendirici hâle getirmeye çalıştık.";
-
-/* Title in Hide Dax dialog */
-"dax.hide.title" = "Kalan ipuçları gizlensin mi?";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search" = "DuckDuckGo aramalarınız anonimdir. Her zaman. 🙌";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search.cta" = "Uf!";
-
-/* First parameter is a count of additional trackers, second and third are names of the tracker networks (strings) */
-"dax.onboarding.browsing.multiple.trackers" = "dax.onboarding.browsing.multiple.trackers";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.multiple.trackers.cta" = "Çak Bir Beşlik!";
-
-/* Parameter is domain name (string) */
-"dax.onboarding.browsing.one.tracker" = "*%1$@* sizi burada izlemeye çalışıyordu.\n\nOnları engelledim!\n\n☝️ Yeni bir siteyi ziyaret ettiğinizde sizi kimin izlemeye çalıştığını görmek için adres çubuğunu kontrol edebilirsiniz.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.one.tracker.cta" = "Çak Bir Beşlik!";
-
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Dikkat! %2$@ üzerindeki etkinliğinizin %1$@ tarafından görülmesini önleyemiyorum.\n\nAma benimle gezinirseniz diğer birçok sitedeki izleyicisini engelleyerek %1$@ tarafından sizinle ilgili olarak toplanan bilgilerin miktarını genel anlamda azaltabilirim.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.site.is.major.tracker.cta" = "Anladım";
 
 /* Parameters are domain names (strings) */
 "dax.onboarding.browsing.site.owned.by.major.tracker" = "Dikkat! %1$@ sitesinin sahibi %2$@ olduğundan, buradaki etkinliğinizi görmesini engelleyemem.\n\nAma benimle gezinirseniz diğer sitelerdeki pek çok izleyicisini engelleyerek sizinle ilgili olarak %2$@ tarafından toplanan bilgilerin miktarını genel anlamda azaltabilirim.";
@@ -1195,29 +1162,8 @@
 /* No comment provided by engineer. */
 "dax.onboarding.browsing.without.trackers" = "Siz internette gezinirken sinir bozucu izleyicileri engelleyeceğim.\n\nHadi gezinmeye devam edin!";
 
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.without.trackers.cta" = "Anladım";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button" = "Kişisel veriler tarayıcınızda birikebilir. İğrenç. Bunların hepsini yakmak için Yangın Düğmesi'ni kullanın. Hemen deneyin! 👇";
-
-/* Cancel action */
-"dax.onboarding.fire.button.cancelAction" = "İptal";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button.confirmAction" = "Sekmeleri Kapat ve Verileri Temizle";
-
 /* Encourage user to add favorite site using the browsing menu. */
 "dax.onboarding.home.add.favorite" = "En sevdiğiniz siteleri anında ziyaret edin!\n\nSevdiğiniz bir siteye gidin. Ardından \"...\" simgesine dokunun ve *Favorilere Ekle* ögesini seçin.";
-
-/* Accessible version of dax.onboarding.home.add.favorite */
-"dax.onboarding.home.add.favorite.accessible" = "En sevdiğiniz siteleri anında ziyaret edin! En sevdiğiniz sitelerden birini ziyaret edin. Ardından, menü düğmesine dokunun ve Favorilere Ekle'yi seçin.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.home.initial" = "Şimdi favori sitelerinizden birini ziyaret etmeyi deneyin!\n\nSizi gözetlemelerini önlemek için izleyicileri engelleyeceğim. Mümkünse bağlantınızın güvenlik seviyesini de yükselteceğim. 🔒";
-
-/* ad = advertisment */
-"dax.onboarding.home.subsequent" = "İşte bu kadar!\n\nUnutmayın: İnterneti benimle ne kadar çok gezerseniz rahatsız edici reklamları da o kadar az görürsünüz. 👍";
 
 /* No comment provided by engineer. */
 "Debug" = "Hata Ayıklama";
@@ -1313,16 +1259,16 @@
 "duckai.preferences.text.markdown" = "Duck.ai, popüler 3. taraf Al sohbet modelleriyle anonim olarak sohbet etmenizi sağlayan isteğe bağlı bir özelliktir. Sohbetleriniz yapay zekayı eğitmek için kullanılmaz.\n[Daha Fazla Bilgi](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
-"duckai.settings.enable.address-bar-toggle" = "Duck.ai'ı Adres Çubuğunda Göster";
+"duckai.settings.enable.address-bar-toggle" = "Adres Çubuğu";
 
 /* Toggle text to enable/disable AI Chat in the browsing menu */
-"duckai.settings.enable.browsing-menu-toggle" = "Tarayıcı Menüsünde Duck.ai'yi Göster";
+"duckai.settings.enable.browsing-menu-toggle" = "Tarayıcı menüsü";
 
 /* Toggle text to enable/disable Duck.ai in tab manager */
-"duckai.settings.enable.tab-switcher-toggle" = "Duck.ai'ı Sekmeler Ekranında Göster";
+"duckai.settings.enable.tab-switcher-toggle" = "Sekmeler Ekranı";
 
 /* Toggle text to enable/disable Duck.ai in voice search */
-"duckai.settings.enable.voice-search-toggle" = "Sesli Aramada Duck.ai'yi Göster";
+"duckai.settings.enable.voice-search-toggle" = "Sesli Arama";
 
 /* Settings screen cell text for AI Chat settings */
 "duckai.settings.title" = "Duck.ai";
@@ -2332,11 +2278,11 @@
 /* No comment provided by engineer. */
 "onboardingWelcomeHeader" = "DuckDuckGo'ya Hoş Geldiniz!";
 
-/* No comment provided by engineer. */
-"Open tabs remain unaffected by this change.  Please close all tabs for this setting to take effect." = "Açık sekmeler bu değişiklikten etkilenmez.  Bu ayarın etkili olması için lütfen tüm sekmeleri kapatın.";
-
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Bu bağlantıyı açmak için gereken uygulama bulunamıyor";
+
+/* No comment provided by engineer. */
+"Please close all tabs for this setting to take effect." = "Bu ayarın etkili olması için lütfen tüm sekmeleri kapatın.";
 
 /* Activate button */
 "pm.activate" = "Yeniden etkinleştir";
@@ -2560,6 +2506,9 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Tam Site Adresini Göster";
 
+/* Settings screen text for showing AI Chat in various places in the app */
+"settings.aichat.shortcuts" = "Kısayollar";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Her Zaman Açık";
 
@@ -2631,6 +2580,9 @@
 
 /* Settings cell for Email Protection */
 "settings.emailProtection.description" = "E-posta izleyicileri engelleyin ve adresinizi gizleyin";
+
+/* Settings screen cell text for enabling AI chat */
+"settings.enable.aichat" = "Duck.ai'ı etkinleştir";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Email Protection'ı Etkinleştir";

@@ -1150,41 +1150,8 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "I går";
 
-/* No comment provided by engineer. */
-"dax.hide.button" = "Skjul tips for alltid";
-
-/* No comment provided by engineer. */
-"dax.hide.cancel" = "Avbryt";
-
-/* Subtitle in Hide Dax dialog */
-"dax.hide.message" = "Det er bare noen få, og vi prøvde å gjøre dem informative.";
-
-/* Title in Hide Dax dialog */
-"dax.hide.title" = "Skjule gjenværende tips?";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search" = "DuckDuckGo-søkene dine er anonyme. Alltid. 🙌";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search.cta" = "Puh!";
-
-/* First parameter is a count of additional trackers, second and third are names of the tracker networks (strings) */
-"dax.onboarding.browsing.multiple.trackers" = "dax.onboarding.browsing.multiple.trackers";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.multiple.trackers.cta" = "High five!";
-
-/* Parameter is domain name (string) */
-"dax.onboarding.browsing.one.tracker" = "*%1$@* prøvde å spore deg her.\n\nJeg har blokkert dem!\n\n☝️ Du kan sjekke adresselinjen for å se hvem som prøver å spore deg når du besøker et nytt nettsted.️";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.one.tracker.cta" = "High five!";
-
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Pass opp! Jeg klarer ikke å forhindre at %1$@ ser aktiviteten din på %2$@.\n\nMen surf med meg, så kan jeg redusere informasjonen %1$@ får om deg. Det gjør jeg ved å blokkere vedkommendes sporingsanordninger på mange andre nettsteder.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.site.is.major.tracker.cta" = "Den er grei";
 
 /* Parameters are domain names (strings) */
 "dax.onboarding.browsing.site.owned.by.major.tracker" = "Pass opp! Siden %2$@ eier %1$@, kan jeg ikke forhindre at de ser aktiviteten din her.\n\nMen surf med meg, så kan jeg redusere informasjonen %2$@ får om deg. Det gjør jeg ved å blokkere vedkommendes sporingsanordninger på mange andre nettsteder.";
@@ -1195,29 +1162,8 @@
 /* No comment provided by engineer. */
 "dax.onboarding.browsing.without.trackers" = "Jeg blokkerer irriterende sporere mens du trykker og blar.\n\nDu kan bare fortsette å surfe!";
 
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.without.trackers.cta" = "Den er grei";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button" = "Det kan samles opp personopplysninger i nettleseren din. Fysj. Bruk brannknappen til å sette fyr på alt sammen. Prøv det nå! 👇";
-
-/* Cancel action */
-"dax.onboarding.fire.button.cancelAction" = "Avbryt";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button.confirmAction" = "Lukk faner og slett data";
-
 /* Encourage user to add favorite site using the browsing menu. */
 "dax.onboarding.home.add.favorite" = "Besøk favorittsidene dine på et blunk!\n\nGå til et nettsted du liker. Trykk deretter på «…»-ikonet og velg *Legg til i Favoritter*.";
-
-/* Accessible version of dax.onboarding.home.add.favorite */
-"dax.onboarding.home.add.favorite.accessible" = "Besøk favorittsidene dine på et blunk! Besøk en av favorittsidene dine. Trykk deretter på Åpne meny-knappen og velg Legg til i Favoritter.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.home.initial" = "Deretter kan du besøke et av favorittnettstedene dine!\n\nJeg blokkerer sporingsforsøk slik at de ikke kan spionere på deg. Hvis det er mulig, oppgraderer jeg også sikkerheten på forbindelsen din. 🔒";
-
-/* ad = advertisment */
-"dax.onboarding.home.subsequent" = "Dette går bra!\n\nHusk: Hver gang du surfer med meg, klippes vingene av en ekkel annonse. 👍";
 
 /* No comment provided by engineer. */
 "Debug" = "Feilsøke";
@@ -1313,16 +1259,16 @@
 "duckai.preferences.text.markdown" = "Duck.ai er en valgfri funksjon der du kan chatte anonymt med populære tredjeparts AI-chat-modeller. Chattene dine brukes ikke til å trene AI.\n[Finn ut mer](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
-"duckai.settings.enable.address-bar-toggle" = "Vis Duck.ai i adressefeltet";
+"duckai.settings.enable.address-bar-toggle" = "Adressefelt";
 
 /* Toggle text to enable/disable AI Chat in the browsing menu */
-"duckai.settings.enable.browsing-menu-toggle" = "Vis Duck.ai i nettlesermenyen";
+"duckai.settings.enable.browsing-menu-toggle" = "Nettlesermeny";
 
 /* Toggle text to enable/disable Duck.ai in tab manager */
-"duckai.settings.enable.tab-switcher-toggle" = "Vis Duck.ai på skjermen med faner";
+"duckai.settings.enable.tab-switcher-toggle" = "Faneskjerm";
 
 /* Toggle text to enable/disable Duck.ai in voice search */
-"duckai.settings.enable.voice-search-toggle" = "Vis Duck.ai i talesøk";
+"duckai.settings.enable.voice-search-toggle" = "Talesøk";
 
 /* Settings screen cell text for AI Chat settings */
 "duckai.settings.title" = "Duck.ai";
@@ -2332,11 +2278,11 @@
 /* No comment provided by engineer. */
 "onboardingWelcomeHeader" = "Velkommen til DuckDuckGo!";
 
-/* No comment provided by engineer. */
-"Open tabs remain unaffected by this change.  Please close all tabs for this setting to take effect." = "Åpne faner blir ikke berørt av denne endringen.  Alle faner må lukkes for at innstillingen skal virke.";
-
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Appen som kreves for å åpne koblingen ble ikke funnet";
+
+/* No comment provided by engineer. */
+"Please close all tabs for this setting to take effect." = "Alle faner må lukkes for at innstillingen skal virke.";
 
 /* Activate button */
 "pm.activate" = "Aktiver på nytt";
@@ -2560,6 +2506,9 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Vis fullstendig nettstedsadresse";
 
+/* Settings screen text for showing AI Chat in various places in the app */
+"settings.aichat.shortcuts" = "Snarveier";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Alltid på";
 
@@ -2631,6 +2580,9 @@
 
 /* Settings cell for Email Protection */
 "settings.emailProtection.description" = "Blokker e-postsporere og skjul adressen din";
+
+/* Settings screen cell text for enabling AI chat */
+"settings.enable.aichat" = "Aktiver Duck.ai";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Aktiver e-postbeskyttelse";

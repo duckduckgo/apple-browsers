@@ -61,8 +61,7 @@ final class SubscriptionPagesUseSubscriptionFeatureSimplifiedPaywallTests: XCTes
             appStorePurchaseFlow: mockAppStorePurchaseFlow,
             appStoreRestoreFlow: AppStoreRestoreFlowMock(),
             appStoreAccountManagementFlow: AppStoreAccountManagementFlowMock(),
-            freeTrialsExperiment: mockFreeTrialsFeatureFlagExperiment,
-            onboardingPrivacyProPromoExperiment: OnboardingPrivacyProPromoExperiment(experimentPixelFirer: PixelKit.self))
+            freeTrialsExperiment: mockFreeTrialsFeatureFlagExperiment)
     }
 
     func testWhenSubscriptionSelectedIncludesExperimentParameters_thenSubscriptionPurchasedReceivesExperimentParameters() async throws {

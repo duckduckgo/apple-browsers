@@ -91,7 +91,7 @@ final class AIChatInputBoxHandler: AIChatInputBoxHandling {
             .store(in: &cancellables)
 
         inputBoxViewModel.didPressStopGenerating
-            .sink { [weak self] text in
+            .sink { [weak self] _ in
                 self?.didPressStopGeneratingButton.send()
             }
             .store(in: &cancellables)

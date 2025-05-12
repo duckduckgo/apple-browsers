@@ -287,7 +287,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         case .createIfNeeded:
             do {
                 return try await getTokens(policy: .localValid)
-            } catch OAuthClientError.missingTokenContainer {
+            } catch {
                 Logger.OAuthClient.log("Local token not found, creating a new account")
                 do {
                     let tokenContainer = try await createAccount()
@@ -297,9 +297,6 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
                     Logger.OAuthClient.fault("Failed to create account: \(error.localizedDescription, privacy: .public)")
                     throw error
                 }
-            } catch {
-                Logger.OAuthClient.error("Failed to create account: \(error.localizedDescription, privacy: .public)")
-                throw error
             }
         }
     }

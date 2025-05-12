@@ -29,13 +29,13 @@ extension Preferences {
         @ObservedObject var defaultBrowserModel: DefaultBrowserPreferences
         @State private var isAddedToDock = false
         var dockCustomizer: DockCustomizer
-        let status: PrivacyProtectionStatus
+        let protectionStatus: PrivacyProtectionStatus?
 
         var body: some View {
             PreferencePane(UserText.defaultBrowser, spacing: 4) {
 
                 // SECTION 1: Status Indicator
-                if let status = status.status {
+                if let status = protectionStatus?.status {
                     PreferencePaneSection {
                         StatusIndicatorView(status: status, isLarge: true)
                     }

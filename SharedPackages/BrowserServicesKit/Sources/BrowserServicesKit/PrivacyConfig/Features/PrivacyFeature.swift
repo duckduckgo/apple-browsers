@@ -142,6 +142,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case waitlist
     case waitlistBetaActive
     case freemium
+    case remoteBrokerDelivery
 }
 
 public enum ContentScopeExperimentsSubfeatures: String, Equatable, PrivacySubfeature {
@@ -227,8 +228,8 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case useUnifiedFeedback
     case setAccessTokenCookieForSubscriptionDomains
     case privacyProFreeTrialJan25
-    case privacyProOnboardingCTAMarch25
     case privacyProAuthV2
+    case privacyProOnboardingPromotion
 }
 
 public enum SslCertificatesSubfeature: String, PrivacySubfeature {

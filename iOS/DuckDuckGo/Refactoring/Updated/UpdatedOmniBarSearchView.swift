@@ -75,10 +75,12 @@ final class UpdatedOmniBarSearchView: UIView {
         leftIconContainerPlaceholder.addSubview(leftIconContainer)
 
         mainStackView.addSubview(notificationContainer)
-        mainStackView.addSubview(privacyInfoContainer)
+
         mainStackView.addArrangedSubview(leftIconContainerPlaceholder)
         mainStackView.addArrangedSubview(textField)
         mainStackView.addArrangedSubview(trailingItemsContainer)
+
+        mainStackView.addSubview(privacyInfoContainer)
 
         trailingItemsContainer.addArrangedSubview(clearButton)
         trailingItemsContainer.addArrangedSubview(voiceSearchButton)

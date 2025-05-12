@@ -78,13 +78,16 @@ public final class DataBrokerProtectionDatabase: DataBrokerProtectionRepository 
     private let fakeBrokerFlag: DataBrokerDebugFlag
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     private let vault: (any DataBrokerProtectionSecureVault)
+    private let localBrokerService: LocalBrokerJSONServiceProvider
 
     public init(fakeBrokerFlag: DataBrokerDebugFlag,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-                vault: (any DataBrokerProtectionSecureVault)) {
+                vault: (any DataBrokerProtectionSecureVault),
+                localBrokerService: LocalBrokerJSONServiceProvider) {
         self.fakeBrokerFlag = fakeBrokerFlag
         self.pixelHandler = pixelHandler
         self.vault = vault
+        self.localBrokerService = localBrokerService
     }
 
     public func save(_ profile: DataBrokerProtectionProfile) async throws {
@@ -505,21 +508,24 @@ extension DataBrokerProtectionDatabase {
         let newProfileQueries = profile.profileQueries
         _ = try vault.save(profile: profile)
 
-        if let brokers = try FileResources().fetchBrokerFromResourceFiles() {
-            var brokerIDs = [Int64]()
+        /// Fetch all broker IDs
+        let storedBrokers = try vault.fetchAllBrokers()
+        var brokerIDs = storedBrokers.compactMap(\.id)
 
+        /// If none exists in the vault, populate them with bundled JSONs
+        if storedBrokers.isEmpty, let brokers = try localBrokerService.bundledBrokers() {
             for broker in brokers {
                 let brokerId = try vault.save(broker: broker)
                 brokerIDs.append(brokerId)
             }
-
-            try initializeDatabaseForProfile(
-                profileId: Self.profileId,
-                vault: vault,
-                brokerIDs: brokerIDs,
-                profileQueries: newProfileQueries
-            )
         }
+
+        try initializeDatabaseForProfile(
+            profileId: Self.profileId,
+            vault: vault,
+            brokerIDs: brokerIDs,
+            profileQueries: newProfileQueries
+        )
     }
 
     // https://app.asana.com/0/481882893211075/1205574642847432/f

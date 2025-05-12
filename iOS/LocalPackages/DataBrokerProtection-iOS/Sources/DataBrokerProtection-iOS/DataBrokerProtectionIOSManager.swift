@@ -58,7 +58,8 @@ public class DataBrokerProtectionIOSManagerProvider {
     private let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName)
 
     public static func iOSManager(authenticationManager: DataBrokerProtectionAuthenticationManaging,
-                                  privacyConfigurationManager: PrivacyConfigurationManaging) -> DataBrokerProtectionIOSManager? {
+                                  privacyConfigurationManager: PrivacyConfigurationManaging,
+                                  featureFlagger: RemoteBrokerDeliveryFeatureFlagging) -> DataBrokerProtectionIOSManager? {
         guard let pixelKit = PixelKit.shared else {
             assertionFailure("PixelKit not set up")
             return nil
@@ -99,18 +100,18 @@ public class DataBrokerProtectionIOSManagerProvider {
             return nil
         }
 
-        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault)
+        let localBrokerService = LocalBrokerJSONService(vault: vault, pixelHandler: sharedPixelsHandler)
+
+        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault, localBrokerService: localBrokerService)
 
         let operationQueue = OperationQueue()
         let operationsBuilder = DefaultDataBrokerOperationsCreator()
         let mismatchCalculator = DefaultMismatchCalculator(database: database,
                                                            pixelHandler: sharedPixelsHandler)
 
-        let brokerUpdater = DefaultDataBrokerProtectionBrokerUpdater(vault: vault, pixelHandler: sharedPixelsHandler)
         let queueManager =  DefaultDataBrokerProtectionQueueManager(operationQueue: operationQueue,
                                                                     operationsCreator: operationsBuilder,
                                                                     mismatchCalculator: mismatchCalculator,
-                                                                    brokerUpdater: brokerUpdater,
                                                                     pixelHandler: sharedPixelsHandler)
 
         let backendServicePixels = DefaultDataBrokerProtectionBackendServicePixels(pixelHandler: sharedPixelsHandler,

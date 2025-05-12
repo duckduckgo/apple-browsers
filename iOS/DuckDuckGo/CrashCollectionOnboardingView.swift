@@ -64,7 +64,7 @@ struct CrashCollectionOnboardingView: View {
                             if model.isReportVisible {
                                 ZStack {
                                     Rectangle()
-                                        .foregroundColor(Color(designSystemColor: .container))
+                                        .foregroundColor(Color(designSystemColor: .lines))
                                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                                         .cornerRadius(4.0)
 

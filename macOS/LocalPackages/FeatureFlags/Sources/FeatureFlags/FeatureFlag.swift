@@ -39,9 +39,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     case credentialsImportPromotionForExistingUsers
 
-    /// https://app.asana.com/0/0/1209150117333883/f
-    case networkProtectionAppExclusions
-
     /// https://app.asana.com/0/0/1209402073283584
     case networkProtectionAppStoreSysex
 
@@ -84,6 +81,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1148564399326804/task/1209499005452053?focus=true
     case delayedWebviewPresentation
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1205508328452434?focus=true
+    case dbpRemoteBrokerDelivery
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -115,7 +115,6 @@ extension FeatureFlag: FeatureFlagDescribing {
         switch self {
         case .autofillPartialFormSaves,
                 .autocompleteTabs,
-                .networkProtectionAppExclusions,
                 .networkProtectionAppStoreSysex,
                 .networkProtectionAppStoreSysexMessage,
                 .networkProtectionRiskyDomainsProtection,
@@ -141,7 +140,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .contextualOnboarding,
                 .unknownUsernameCategorization,
                 .credentialsImportPromotionForExistingUsers,
-                .maliciousSiteProtection:
+                .maliciousSiteProtection,
+                .dbpRemoteBrokerDelivery:
             return false
         }
     }
@@ -164,8 +164,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.contextualOnboarding))
         case .credentialsImportPromotionForExistingUsers:
             return .remoteReleasable(.subfeature(AutofillSubfeature.credentialsImportPromotionForExistingUsers))
-        case .networkProtectionAppExclusions:
-            return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appExclusions))
         case .networkProtectionAppStoreSysex:
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtension))
         case .networkProtectionAppStoreSysexMessage:
@@ -204,6 +202,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.tabCrashRecovery))
         case .delayedWebviewPresentation:
             return .remoteReleasable(.feature(.delayedWebviewPresentation))
+        case .dbpRemoteBrokerDelivery:
+            return .remoteReleasable(.subfeature(DBPSubfeature.remoteBrokerDelivery))
         }
     }
 }

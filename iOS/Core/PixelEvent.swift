@@ -972,6 +972,30 @@ extension Pixel {
         case privacyProActivatingRestoreErrorFailedToFetchSubscriptionDetails
         case privacyProActivatingRestoreErrorSubscriptionExpired
 
+        /**
+         * Event Trigger: The Privacy Pro onboarding promotion is displayed to the user
+         *
+         * Anomaly Investigation:
+         * - This should only be fired during app onboarding. See `OnboardingPrivacyProPromotionHelper`
+         */
+        case privacyProOnboardingPromotionImpression
+
+        /**
+         * Event Trigger: The user tapped the 'Learn More' button on the Privacy Pro onboarding promotion
+         *
+         * Anomaly Investigation:
+         * - This should only be fired during app onboarding. See `OnboardingPrivacyProPromotionHelper`
+         */
+        case privacyProOnboardingPromotionTap
+
+        /**
+         * Event Trigger: The user tapped the 'Skip' button on the Privacy Pro onboarding promotion
+         *
+         * Anomaly Investigation:
+         * - This should only be fired during app onboarding. See `OnboardingPrivacyProPromotionHelper`
+         */
+        case privacyProOnboardingPromotionDismiss
+
         // MARK: Pixel Experiment
         case pixelExperimentEnrollment
 
@@ -2033,6 +2057,12 @@ extension Pixel.Event {
         case .privacyProActivatingRestoreErrorFailedToFetchAccountDetails: return "m_privacy-pro_activating_restore_error_failed_to_fetch_account_details"
         case .privacyProActivatingRestoreErrorFailedToFetchSubscriptionDetails: return "m_privacy-pro_activating_restore_error_failed_to_fetch_subscription_details"
         case .privacyProActivatingRestoreErrorSubscriptionExpired: return "m_privacy-pro_activating_restore_error_subscription_expired"
+
+        case .privacyProOnboardingPromotionImpression: return "m_privacy-pro_onboarding_promotion_impression"
+
+        case .privacyProOnboardingPromotionTap: return "m_privacy-pro_onboarding_promotion_tap"
+
+        case .privacyProOnboardingPromotionDismiss: return "m_privacy-pro_onboarding_promotion_dismiss"
 
         // MARK: Pixel Experiment
         case .pixelExperimentEnrollment: return "pixel_experiment_enrollment"

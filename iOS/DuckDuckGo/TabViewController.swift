@@ -183,6 +183,7 @@ class TabViewController: UIViewController {
     // Required to prevent fireproof prompt presenting before autofill save login prompt
     private var saveLoginPromptLastDismissed: Date?
     private var saveLoginPromptIsPresenting: Bool = false
+    var firstLoad: Bool = true
 
     private var cachedRuntimeConfigurationForDomain: [String: String?] = [:]
 
@@ -513,6 +514,8 @@ class TabViewController: UIViewController {
         unregisterFromResignActive()
         tabInteractionStateSource?.saveState(webView.interactionState, for: tabModel)
         domainFillCreditCardPromptLastShownOn = nil
+        firstLoad = true
+        cleanupAutofillAccessoryView()
     }
 
     private func registerForAddressBarLocationNotifications() {
@@ -643,7 +646,7 @@ class TabViewController: UIViewController {
             webView = customWebView(configuration)
             view.layoutIfNeeded()
         } else {
-            webView = WKWebView(frame: view.bounds, configuration: configuration)
+            webView = WebView(frame: view.bounds, configuration: configuration)
         }
         textZoomCoordinator.onWebViewCreated(applyToWebView: webView)
         specialErrorPageNavigationHandler.attachWebView(webView)
@@ -1198,6 +1201,7 @@ class TabViewController: UIViewController {
     func didLaunchBrowsingMenu() {
         DaxDialogs.shared.resumeRegularFlow()
         domainFillCreditCardPromptLastShownOn = nil
+        firstLoad = true
     }
 
     private func openExternally(url: URL) {
@@ -1531,6 +1535,7 @@ extension TabViewController: WKNavigationDelegate {
         linkProtection.setMainFrameUrl(webView.url)
         referrerTrimming.onBeginNavigation(to: webView.url)
         adClickAttributionDetection.onStartNavigation(url: webView.url)
+        cleanupAutofillAccessoryView()
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -3005,17 +3010,68 @@ extension TabViewController: SecureVaultManagerDelegate {
 
         if creditCards.count > 0 {
             if domainFillCreditCardPromptLastShownOn != url?.host {
+                firstLoad = true
                 AppDependencyProvider.shared.autofillLoginSession.endSession()
                 self.domainFillCreditCardPromptLastShownOn = self.url?.host
             }
+            
+            if firstLoad {
+                firstLoad = false
+                presentAutofillPromptViewController(creditCards: creditCards, trigger: trigger) { creditCard in
+                    completionHandler(creditCard)
+                }
+            } else {
+                setupAutofillAccessoryViewWithCustomWebView()
+                
+                guard let suggestionsView = (self.webView as? WebView)?.inputAccessoryView as? CreditCardInputAccessoryView else {
+                    return
+                }
+                let cards = creditCards.asCardRowViewModels
+                
+                suggestionsView.updateSuggestions(cards)
+                suggestionsView.onCardSelected = { [weak self] card in
+                    completionHandler(card)
+                    if card == nil {
+                        self?.webView.resignFirstResponder()
+                    }
+                    self?.cleanupAutofillAccessoryView(resetFirstLoadStatus: false)
+                }
 
-            presentAutofillPromptViewController(creditCards: creditCards, trigger: trigger) { creditCard in
-                completionHandler(creditCard)
+                // Make the suggestions visible
+                suggestionsView.isHidden = false
+                            
+                // Force the input system to refresh
+                webView.reloadInputViews()
             }
         } else {
             completionHandler(nil)
         }
         
+    }
+
+    func setupAutofillAccessoryViewWithCustomWebView() {
+        guard let autofillWebView = webView as? WebView else {
+            return
+        }
+        
+        let suggestionsView = CreditCardInputAccessoryView(frame: .zero)
+        suggestionsView.isHidden = true
+        
+        // Set as the input accessory view
+        autofillWebView.setInputAccessoryView(suggestionsView)
+    }
+    
+    func cleanupAutofillAccessoryView(resetFirstLoadStatus: Bool = true) {
+        guard let suggestionsView = (self.webView as? WebView)?.inputAccessoryView as? CreditCardInputAccessoryView else {
+            return
+        }
+
+        if resetFirstLoadStatus {
+            firstLoad = true
+        }
+        suggestionsView.updateSuggestions([])
+        suggestionsView.isHidden = true
+        webView.reloadInputViews()
     }
 
     func presentAutofillPromptViewController(creditCards: [SecureVaultModels.CreditCard],

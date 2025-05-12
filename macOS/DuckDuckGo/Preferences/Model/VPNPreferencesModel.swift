@@ -329,6 +329,12 @@ final class VPNPreferencesModel: ObservableObject {
     // MARK: - Actions
 
     @MainActor
+    func openVPNViewInMainWindow() {
+        PixelKit.fire(PrivacyProPixel.privacyProVPNSettings)
+        NotificationCenter.default.post(name: .ToggleNetworkProtectionInMainWindow, object: nil)
+    }
+
+    @MainActor
     func manageExcludedApps() {
         WindowControllersManager.shared.showVPNAppExclusions()
     }

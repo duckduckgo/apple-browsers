@@ -38,29 +38,29 @@ struct LogExporterView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Time Interval:")
+            Text(verbatim: "Time Interval:")
                 .font(.headline)
             HStack {
                 TextField("", text: $timeIntervalString)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
-                Text("Minutes")
+                Text(verbatim: "Minutes")
                     .font(.body)
             }
 
             // Checkboxes
             VStack(alignment: .leading) {
-                Text("File Types:")
+                Text(verbatim: "File Types:")
                     .font(.headline)
-                Toggle("All DDG", isOn: $includeAllDDG)
-                Toggle("Network protection", isOn: $includeNetworkProtection)
-                Toggle("Sparkle", isOn: $includeSparkle)
+                Toggle(UserText.duckDuckGo, isOn: $includeAllDDG)
+                Toggle(UserText.networkProtection, isOn: $includeNetworkProtection)
+                Toggle(UserText.update, isOn: $includeSparkle)
             }
 
             Spacer()
 
             HStack {
                 Spacer()
-                Button("Cancel") {
+                Button(UserText.cancel) {
                     onComplete(.init(
                         confirmed: false,
                         timeInterval: Int(timeIntervalString) ?? Self.defaultInterval,
@@ -69,7 +69,7 @@ struct LogExporterView: View {
                         includeSparkle: includeSparkle
                     ))
                 }
-                Button("OK") {
+                Button(UserText.ok) {
                     onComplete(.init(
                         confirmed: true,
                         timeInterval: Int(timeIntervalString) ?? Self.defaultInterval,

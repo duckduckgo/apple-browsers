@@ -19,6 +19,7 @@
 import Foundation
 import SwiftUI
 import Subscription
+import SubscriptionUI
 import BrowserServicesKit
 
 struct PreferencesSection: Hashable, Identifiable {
@@ -28,8 +29,8 @@ struct PreferencesSection: Hashable, Identifiable {
     @MainActor
     static func defaultSections(includingDuckPlayer: Bool,
                                 includingSync: Bool,
-                                includingVPN: Bool,
-                                includingAIChat: Bool) -> [PreferencesSection] {
+                                includingAIChat: Bool,
+                                subscriptionState: PreferencesSidebarSubscriptionState) -> [PreferencesSection] {
         let privacyPanes: [PreferencePaneIdentifier] = [
             .defaultBrowser, .privateSearch, .webTrackingProtection, .cookiePopupProtection, .emailProtection
         ]
@@ -65,30 +66,44 @@ struct PreferencesSection: Hashable, Identifiable {
             .init(id: .about, panes: otherPanes)
         ]
 
-        let subscriptionManager = Application.appDelegate.subscriptionAuthV1toV2Bridge
-        let platform = subscriptionManager.currentEnvironment.purchasePlatform
-        var shouldHidePrivacyProDueToNoProducts = platform == .appStore && subscriptionManager.canPurchase == false
-
-        if subscriptionManager.isUserAuthenticated {
-            shouldHidePrivacyProDueToNoProducts = false
-        }
-
-        if !shouldHidePrivacyProDueToNoProducts {
-            var subscriptionPanes: [PreferencePaneIdentifier] = [.subscription]
-
-            if includingVPN {
-                subscriptionPanes.append(.vpn)
-            }
-
-            sections.insert(.init(id: .privacyPro, panes: subscriptionPanes), at: 1)
+        if let subscriptionSection = makeSubscriptionSection(subscriptionState: subscriptionState) {
+            sections.insert(subscriptionSection, at: 1)
         }
 
         return sections
+    }
+
+    private static func makeSubscriptionSection(subscriptionState: PreferencesSidebarSubscriptionState) -> PreferencesSection? {
+        if subscriptionState.hasSubscription {
+            var subscriptionPanes: [PreferencePaneIdentifier] = []
+
+            if let currentSubscriptionFeatures = subscriptionState.subscriptionFeatures {
+                if currentSubscriptionFeatures.contains(.networkProtection) {
+                    subscriptionPanes.append(.vpn)
+                }
+                if currentSubscriptionFeatures.contains(.dataBrokerProtection) {
+                    subscriptionPanes.append(.personalInformationRemoval)
+                }
+                if currentSubscriptionFeatures.contains(.identityTheftRestoration) || currentSubscriptionFeatures.contains(.identityTheftRestorationGlobal) {
+                    subscriptionPanes.append(.identityTheftRestoration)
+                }
+            }
+
+            subscriptionPanes.append(.subscriptionSettings)
+            return PreferencesSection(id: .privacyPro, panes: subscriptionPanes)
+        } else if subscriptionState.shouldHideSubscriptionPurchase {
+            // No active subscription and no option to purchase
+            return nil
+        } else {
+            // No active subscription
+            return PreferencesSection(id: .purchasePrivacyPro, panes: [.privacyPro])
+        }
     }
 }
 
 enum PreferencesSectionIdentifier: Hashable, CaseIterable {
     case privacyProtections
+    case purchasePrivacyPro
     case privacyPro
     case regularPreferencePanes
     case about
@@ -97,8 +112,10 @@ enum PreferencesSectionIdentifier: Hashable, CaseIterable {
         switch self {
         case .privacyProtections:
             return UserText.privacyProtections
-        case .privacyPro:
+        case .purchasePrivacyPro:
             return nil
+        case .privacyPro:
+            return UserText.subscription
         case .regularPreferencePanes:
             return UserText.mainSettings
         case .about:
@@ -119,8 +136,11 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
     case sync
     case appearance
     case dataClearing
+    case privacyPro
     case vpn
-    case subscription
+    case personalInformationRemoval
+    case identityTheftRestoration
+    case subscriptionSettings
     case autofill
     case accessibility
     case duckPlayer = "duckplayer"
@@ -174,10 +194,16 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
             return UserText.appearance
         case .dataClearing:
             return UserText.dataClearing
+        case .privacyPro:
+            return UserText.subscription
         case .vpn:
             return UserText.vpn
-        case .subscription:
-            return UserText.subscription
+        case .personalInformationRemoval:
+            return UserText.personalInformationRemoval
+        case .identityTheftRestoration:
+            return UserText.identityTheftRestoration
+        case .subscriptionSettings:
+            return UserText.subscriptionSettings
         case .autofill:
             return UserText.passwordManagementTitle
         case .accessibility:
@@ -213,9 +239,15 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
             return "Appearance"
         case .dataClearing:
             return "FireSettings"
+        case .privacyPro:
+            return "PrivacyPro"
         case .vpn:
             return "VPN"
-        case .subscription:
+        case .personalInformationRemoval:
+            return "PersonalInformationRemoval-Multicolor-16"
+        case .identityTheftRestoration:
+            return "Identity-Theft-Restoration-Multicolor-16"
+        case .subscriptionSettings:
             return "PrivacyPro"
         case .autofill:
             return "Autofill"

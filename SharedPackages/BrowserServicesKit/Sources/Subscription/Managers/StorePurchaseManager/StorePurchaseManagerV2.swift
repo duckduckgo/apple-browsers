@@ -190,6 +190,8 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
                 for id in availableProducts.compactMap({ $0.id }) {
                     _ = await subscriptionFeatureMappingCache.subscriptionFeatures(for: id)
                 }
+
+                NotificationCenter.default.post(name: .availableAppStoreProductsDidChange, object: self, userInfo: nil)
             }
         } catch {
             Logger.subscriptionStorePurchaseManager.error("Failed to fetch available products: \(String(reflecting: error), privacy: .public)")

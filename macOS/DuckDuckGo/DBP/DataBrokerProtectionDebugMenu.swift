@@ -268,10 +268,12 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
     @objc private func backgroundAgentDisable() {
         LoginItemsManager().disableLoginItems([LoginItem.dbpBackgroundAgent])
+        NotificationCenter.default.post(name: .dbpLoginItemDisabled, object: nil)
     }
 
     @objc private func backgroundAgentEnable() {
         LoginItemsManager().enableLoginItems([LoginItem.dbpBackgroundAgent])
+        NotificationCenter.default.post(name: .dbpLoginItemEnabled, object: nil)
     }
 
     @objc private func deleteAllDataAndStopAgent() {

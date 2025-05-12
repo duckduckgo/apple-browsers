@@ -101,18 +101,10 @@ final class AIChatInputBoxHandler: AIChatInputBoxHandling {
     private func updateStatus() {
         withAnimation {
             switch aiChatStatus {
-            case .startStreamNewPrompt:
+            case .startStreamNewPrompt, .error, .ready, .blocked:
                 inputBoxViewModel.state = .ready
-            case .loading:
+            case .loading, .streaming:
                 inputBoxViewModel.state = .waitingForGeneration
-            case .streaming:
-                inputBoxViewModel.state = .waitingForGeneration
-            case .error:
-                inputBoxViewModel.state = .ready
-            case .ready:
-                inputBoxViewModel.state = .ready
-            case .blocked:
-                inputBoxViewModel.state = .ready
             case .unknown:
                 inputBoxViewModel.state = .unknown
             }

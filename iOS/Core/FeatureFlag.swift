@@ -103,6 +103,8 @@ public enum FeatureFlag: String {
     case experimentalAIChat
 
     case privacyProOnboardingPromotion
+
+    case privacyProFreeTrial
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -139,7 +141,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .autofillCreditCards,
                 .autofillCreditCardsOnByDefault,
                 .exchangeKeysToSyncWithAnotherDevice,
-                .privacyProOnboardingPromotion:
+                .privacyProOnboardingPromotion,
+                .privacyProFreeTrial:
             return true
         case .onboardingSetAsDefaultBrowser:
             if #available(iOS 18.3, *) {
@@ -246,6 +249,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .privacyProOnboardingPromotion:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProOnboardingPromotion))
+        case .privacyProFreeTrial:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProFreeTrial))
         }
     }
 }

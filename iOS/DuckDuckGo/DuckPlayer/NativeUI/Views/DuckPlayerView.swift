@@ -185,7 +185,7 @@ struct DuckPlayerView: View {
                 RoundedRectangle(cornerRadius: Constants.uiElementRadius)
                     .fill(Constants.uiElementsBackground)
                 HStack(spacing: 8) {
-                    Text(verbatim: "Auto-open Duck Player on Youtube")
+                    Text(UserText.duckPlayerOpenYouTubeVideosHere)
                         .daxBodyRegular()
                         .foregroundColor(.white)
                     Spacer()
@@ -213,7 +213,7 @@ struct DuckPlayerView: View {
                     viewModel.openInYouTube()
                 } label: {
                     HStack(spacing: LayoutConstants.defaultSpacing) {
-                        Text(verbatim: "Watch in Youtube")
+                        Text(UserText.duckPlayerWatchOnYoutube)
                             .daxBodyRegular()
                             .foregroundColor(.white)
                         Spacer()
@@ -282,28 +282,28 @@ struct DuckPlayerView: View {
    @ViewBuilder
   private var bubbleContent: some View {
     VStack(alignment: .leading, spacing: LayoutConstants.defaultSpacing) {
-        Text(verbatim: "You're watching in Duck Player!\nNo targeted ads here.")
+        Text(UserText.duckPlayerYouTubeNoAdsPrivacy)
             .daxHeadline()
             .foregroundColor(.white)
             .lineLimit(2)
             .minimumScaleFactor(0.9)
             .fixedSize(horizontal: false, vertical: true)
             .multilineTextAlignment(.leading)
-
-        Text(verbatim: "To go back to YouTube, close Duck Player. Not for you? Turn it off below!")
+ 
+        Text(UserText.duckPlayerBlocksAdsKeepsHistoryPrivate)
             .daxBodyRegular()
             .foregroundColor(.white.opacity(0.8))
             .multilineTextAlignment(.leading)
             .lineLimit(3)
             .fixedSize(horizontal: false, vertical: true)
             .padding(.top, 4)
-
+ 
         // Toggle
         ZStack {
             RoundedRectangle(cornerRadius: 8)
                 .fill(Color.black.opacity(0.8))
             HStack(spacing: 8) {
-                Text(verbatim: "Open YouTube videos here")
+                Text(UserText.duckPlayerOpenYouTubeVideosHere)
                     .daxBodyRegular()
                     .foregroundColor(.white)
                 Spacer()

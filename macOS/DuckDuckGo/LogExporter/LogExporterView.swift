@@ -83,7 +83,7 @@ struct LogExporterView: View {
 
             }
         }
-        .padding(44)
+        .padding(20)
         .frame(minWidth: 250, maxWidth: 250, minHeight: 250, maxHeight: 250)
     }
 }

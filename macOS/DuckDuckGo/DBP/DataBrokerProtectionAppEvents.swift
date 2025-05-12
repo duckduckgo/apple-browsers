@@ -72,6 +72,7 @@ struct DataBrokerProtectionAppEvents {
             let prerequisitesMet = await featureGatekeeper.arePrerequisitesSatisfied()
             guard prerequisitesMet else {
                 loginItemsManager.disableLoginItems([LoginItem.dbpBackgroundAgent])
+                NotificationCenter.default.post(name: .dbpLoginItemDisabled, object: nil)
                 return
             }
         }
@@ -80,7 +81,9 @@ struct DataBrokerProtectionAppEvents {
     private func restartBackgroundAgent(loginItemsManager: LoginItemsManager) {
         DataBrokerProtectionLoginItemPixels.fire(pixel: GeneralPixel.dataBrokerResetLoginItemDaily, frequency: .daily)
         loginItemsManager.disableLoginItems([LoginItem.dbpBackgroundAgent])
+        NotificationCenter.default.post(name: .dbpLoginItemDisabled, object: nil)
         loginItemsManager.enableLoginItems([LoginItem.dbpBackgroundAgent])
+        NotificationCenter.default.post(name: .dbpLoginItemEnabled, object: nil)
 
         // restartLoginItems doesn't work when we change the agent name
     }

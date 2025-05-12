@@ -162,6 +162,10 @@ class DownloadsTests: XCTestCase {
     }
 
     private func toggleAlwaysAskWhereToSaveFiles(_ enabled: Bool) {
+        // scroll the view to the bottom
+        // scroll view is the second scroll view in the view hierarchy
+        let scrollView = app.scrollViews.element(boundBy: 1)
+        scrollView.swipeUp()
         let toggle = app.checkBoxes["PreferencesGeneralView.alwaysAskWhereToSaveFiles"]
         XCTAssertTrue(toggle.waitForExistence(timeout: UITests.Timeouts.elementExistence))
         if (toggle.value as? Bool) != enabled {

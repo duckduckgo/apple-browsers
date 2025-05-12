@@ -1282,11 +1282,20 @@
 /* Text displayed when DuckPlayer is in 'Ask' mode. */
 "duckPlayer.ask.label" = "Να γίνεται ερώτηση κάθε φορά";
 
+/* Subtitle explaining how Duck Player protects privacy */
+"duckplayer.blocks.ads.keeps.history.private" = "Το Duck Player αποκλείει τις στοχευμένες διαφημίσεις και κρατά το ιστορικό προβολής σας ιδιωτικό.";
+
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Ποτέ";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";
+
+/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
+"duckplayer.open.youtube.videos.here" = "Άνοιγμα βίντεο του YouTube εδώ";
+
+/* Button text to play a video in Duck Player */
+"duckplayer.play.in.duck.player" = "Αναπαραγωγή αυτού του βίντεο στο Duck Player";
 
 /* Body text for the modal feature explanation */
 "duckplayer.presentation.modal.body" = "Το Duck Player σάς επιτρέπει να παρακολουθείτε YouTube χωρίς στοχευμένες διαφημίσεις στο DuckDuckGo, ενώ το περιεχόμενο που παρακολουθείτε δεν θα επηρεάσει τις συστάσεις που θα λαμβάνετε.";
@@ -1299,6 +1308,18 @@
 
 /* Two line title (separated by \n) for the feature explanation */
 "duckplayer.presentation.modal.title.youtube" = "Πνίγεστε από τις διαφημίσεις στο YouTube; Όχι με το Duck Player!";
+
+/* Button text to resume video in Duck Player */
+"duckplayer.resume.in.duck.player" = "Συνέχεια στο Duck Player";
+
+/* Footer text explaining the auto-play toggle in Duck Player settings */
+"duckplayer.settings.autoplay.footer" = "Τα βίντεο που ανοίγονται στο Duck Player θα ξεκινούν αυτόματα την αναπαραγωγή. Απενεργοποιήστε αυτή την επιλογή αν θέλετε να ξεκινάτε μη αυτόματα την αναπαραγωγή των βίντεο που ανοίγονται στο Duck Player.";
+
+/* Label for the auto-play toggle in Duck Player settings */
+"duckplayer.settings.autoplay.label" = "Βίντεο με αυτόματη αναπαραγωγή";
+
+/* Label for the experimental section in Duck Player settings */
+"duckplayer.settings.experimental.label" = "Πειραματικό";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "Το DuckDuckGo παρέχει όλα τα Privacy Essentials που χρειάζεστε για να προστατευτείτε καθώς περιηγείστε στον ιστό.";
@@ -1315,8 +1336,47 @@
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.open-videos-in" = "Ανοίξτε τα βίντεο του YouTube στο Duck Player";
 
+/* Footer text explaining the search results toggle in Duck Player settings */
+"duckplayer.settings.search.results.footer" = "Κάνοντας κλικ σε βίντεο του YouTube από τα αποτελέσματα αναζήτησης του DuckDuckGo, θα ανοίγουν στο Duck Player.";
+
+/* Label for the search results toggle in Duck Player settings */
+"duckplayer.settings.search.results.label" = "Αποτελέσματα DuckDuckGo Search";
+
+/* Message for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.message" = "Κλείστε όλες τις καρτέλες για να τεθεί σε ισχύ η ρύθμιση αυτή.";
+
+/* OK button text for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.ok" = "Εντάξει";
+
+/* Title for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.title" = "Σημαντικό!";
+
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.title" = "Duck Player";
+
+/* Label for the Duck Player variant picker in Duck Player settings */
+"duckplayer.settings.variant.label" = "Παραλλαγή Duck Player";
+
+/* Footer text explaining the YouTube.com option in Duck Player settings */
+"duckplayer.settings.youtube.footer" = "Κάνοντας κλικ σε βίντεο στο YouTube κατά την περιήγηση στο YouTube.com, θα ανοίγουν στο Duck Player.";
+
+/* Label for the YouTube.com option in Duck Player settings */
+"duckplayer.settings.youtube.label" = "YouTube.com";
+
+/* Button text to open Duck Player settings */
+"duckplayer.toast.open.settings" = "Άνοιγμα ρυθμίσεων";
+
+/* Toast message informing user they can disable Duck Player in settings */
+"duckplayer.toast.turn.off.anytime" = "Μπορείτε να απενεργοποιήσετε το Duck Player οποιαδήποτε στιγμή στις Ρυθμίσεις";
+
+/* Button text to watch video on YouTube */
+"duckplayer.watch.on.youtube" = "Παρακολούθηση στο YouTube";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.watch.without.targeted.ads" = "Παρακολουθήστε χωρίς στοχευμένες διαφημίσεις";
+
+/* Title for Duck Player welcome message highlighting privacy benefits */
+"duckplayer.youtube.no.ads.privacy" = "Παρακολουθήστε το YouTube με λιγότερες διαφημίσεις και περισσότερο απόρρητο";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Προστασία email";
@@ -2280,9 +2340,6 @@
 
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Δεν είναι δυνατή η εύρεση της εφαρμογής που απαιτείται για άνοιγμα αυτού του συνδέσμου";
-
-/* No comment provided by engineer. */
-"Please close all tabs for this setting to take effect." = "Κλείστε όλες τις καρτέλες για να τεθεί σε ισχύ η ρύθμιση αυτή.";
 
 /* Activate button */
 "pm.activate" = "Ενεργοποίηση";

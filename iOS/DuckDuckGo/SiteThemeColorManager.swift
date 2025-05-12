@@ -138,7 +138,11 @@ final class SiteThemeColorManager {
             newColor = color
         }
 
-        viewCoordinator.statusBackground.backgroundColor = newColor
+        if AppWidthObserver.shared.isPad && tabViewController?.traitCollection.horizontalSizeClass == .regular {
+            viewCoordinator.statusBackground.backgroundColor = ThemeManager.shared.currentTheme.tabsBarBackgroundColor
+        } else {
+            viewCoordinator.statusBackground.backgroundColor = newColor
+        }
         tabViewController?.pullToRefreshViewAdapter?.backgroundColor = newColor
         tabViewController?.webView?.underPageBackgroundColor = newColor
         tabViewController?.webView?.scrollView.backgroundColor = newColor

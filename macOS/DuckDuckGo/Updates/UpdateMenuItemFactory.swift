@@ -34,7 +34,7 @@ final class UpdateMenuItemFactory {
 
         let title: String
 
-        if controller.isAtRestartCheckpoint {
+        if controller.isAtRestartCheckpoint && !controller.shouldForceUpdateCheck {
             title = UserText.updateReadyMenuItem
         } else {
             title = UserText.updateAvailableMenuItem

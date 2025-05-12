@@ -50,6 +50,7 @@ protocol UpdateControllerProtocol: AnyObject {
     var areAutomaticUpdatesEnabled: Bool { get set }
 
     var isAtRestartCheckpoint: Bool { get }
+    var shouldForceUpdateCheck: Bool { get }
 }
 
 #if SPARKLE
@@ -158,7 +159,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     // MARK: - Feature Flags support
 
     private let featureFlagger: FeatureFlagger
-    private var autoUpdateAllowed: Bool {
+    private var autoRestartAllowed: Bool {
         !featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp)
     }
 
@@ -212,26 +213,36 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
         Logger.updates.log("Checking for updates respecting rollout")
 
+        userDriver?.userCheckedForUpdates()
         updater.checkForUpdatesInBackground()
     }
 
     // Check for updates immediately, bypassing the rollout schedule
     // This is used for user-initiated update checks only
     func checkForUpdateSkippingRollout() {
-        if !autoUpdateAllowed && shouldForceUpdateCheck {
+        let discardCurrentUpdate = !autoRestartAllowed && shouldForceUpdateCheck
+
+        guard !discardCurrentUpdate else {
             userDriver?.cancelAndDismissCurrentUpdate()
             updater = nil
 
-            guard let updater = try? configureUpdater(needsUpdateCheck: true) else {
-                return
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+                guard let updater = try? self?.configureUpdater(needsUpdateCheck: true) else {
+                    return
+                }
+
+                self?.userDriver?.userCheckedForUpdates()
+                updater.checkForUpdates()
             }
-            updater.checkForUpdates()
+
+            return
         }
 
         guard let updater, !updater.sessionInProgress else { return }
 
         Logger.updates.log("Checking for updates skipping rollout")
 
+        userDriver?.userCheckedForUpdates()
         updater.checkForUpdates()
     }
 
@@ -241,7 +252,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     //
     // Due to frequent releases (weekly public, daily internal), the downloaded update
     // may become obsolete if the user doesn't relaunch the app for an extended period.
-    private var shouldForceUpdateCheck: Bool {
+    var shouldForceUpdateCheck: Bool {
         let thresholdInDays = internalUserDecider.isInternalUser ? 1 : 7
         guard let userDriver, userDriver.daysSinceLastUpdateCheck > thresholdInDays else { return false }
 
@@ -322,6 +333,20 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     }
 
     @objc func runUpdateFromMenuItem() {
+        // Duplicating the code a bit to make the feature flag separation clearer
+        // remove this comment once the feature flag is removed.
+        guard autoRestartAllowed else {
+            openUpdatesPage()
+
+            if shouldForceUpdateCheck {
+                checkForUpdateSkippingRollout()
+                return
+            }
+
+            runUpdate()
+            return
+        }
+
         if shouldForceUpdateCheck {
             openUpdatesPage()
         }
@@ -334,7 +359,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
         PixelKit.fire(DebugEvent(GeneralPixel.updaterDidRunUpdate))
 
-        guard autoUpdateAllowed else {
+        guard autoRestartAllowed else {
             userDriver.resume()
             return
         }

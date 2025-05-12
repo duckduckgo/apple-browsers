@@ -120,12 +120,18 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
     // Resume the update process when the user explicitly chooses to do so
     private var onResuming: (() -> Void)? {
         didSet {
-            pendingUpdateSince = Date()
+            if autoRestartAllowed {
+                userCheckedForUpdates()
+            }
         }
     }
 
     @UserDefaultsWrapper(key: .pendingUpdateSince, defaultValue: .distantPast)
     private var pendingUpdateSince: Date
+
+    func userCheckedForUpdates() {
+        pendingUpdateSince = Date()
+    }
 
     var daysSinceLastUpdateCheck: Int {
         Calendar.current.dateComponents([.day], from: pendingUpdateSince, to: Date()).day ?? Int.max
@@ -152,7 +158,7 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
 
     private let featureFlagger: FeatureFlagger
 
-    private var autoUpdateAllowed: Bool {
+    private var autoRestartAllowed: Bool {
         !featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp)
     }
 
@@ -276,7 +282,7 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
             Logger.updates.log("Updater dismissing obsolete update")
         }
 
-        guard autoUpdateAllowed else {
+        guard autoRestartAllowed else {
             onResuming = { reply(.install) }
             updateProgress = .updateCycleDone(.pausedAtRestartCheckpoint)
             Logger.updates.log("Updater paused at restart checkpoint")

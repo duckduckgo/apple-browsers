@@ -269,7 +269,7 @@ final class BrowserTabViewController: NSViewController {
             self.previouslySelectedTab = nil
         }
 
-        openNewTab(with: .settings(pane: .subscription))
+        openNewTab(with: .settings(pane: .subscriptionSettings))
     }
 
     @objc

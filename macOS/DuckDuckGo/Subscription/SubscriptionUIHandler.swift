@@ -20,6 +20,7 @@ import AppKit
 import SubscriptionUI
 import WebKit
 import Subscription
+import PixelKit
 
 @MainActor
 final class SubscriptionUIHandler: SubscriptionUIHandling {
@@ -58,10 +59,10 @@ final class SubscriptionUIHandler: SubscriptionUIHandling {
         let actionHandlers = SubscriptionAccessActionHandlers(openActivateViaEmailURL: {
             let url = Application.appDelegate.subscriptionAuthV1toV2Bridge.url(for: .activationFlow)
             handler.subscriptionAccessActionOpenURLHandler(url: url)
+            PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
         }, restorePurchases: {
             handler.subscriptionAccessActionRestorePurchases(message: message)
-        }, uiActionHandler: { event in
-            handler.subscriptionAccessActionHandleAction(event: event)
+            PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseStoreStart, frequency: .legacyDailyAndCount)
         })
 
         let newSubscriptionAccessViewController = SubscriptionAccessViewController(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge,

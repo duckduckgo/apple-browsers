@@ -42,21 +42,30 @@ extension Preferences {
     struct PaneSidebarItem: View {
         let pane: PreferencePaneIdentifier
         let isSelected: Bool
+        let isEnabled: Bool
         let action: () -> Void
         @ObservedObject var protectionStatus: PrivacyProtectionStatus
 
-        init(pane: PreferencePaneIdentifier, isSelected: Bool, status: PrivacyProtectionStatus? = nil, action: @escaping () -> Void) {
+        init(pane: PreferencePaneIdentifier, isSelected: Bool, isEnabled: Bool = true, status: PrivacyProtectionStatus?, action: @escaping () -> Void) {
             self.pane = pane
             self.isSelected = isSelected
+            self.isEnabled = isEnabled
             self.action = action
-            self.protectionStatus = status ?? PrivacyProtectionStatus.status(for: pane)
+            self.protectionStatus = status ?? PrivacyProtectionStatus()
         }
 
         var body: some View {
             Button(action: action) {
                 HStack(spacing: 6) {
                     Image(pane.preferenceIconName).frame(width: 16, height: 16)
+                        .if(!isEnabled) {
+                            $0.grayscale(1.0).opacity(0.5)
+                        }
+
                     Text(pane.displayName).font(PreferencesUI_macOS.Const.Fonts.sideBarItem)
+                        .if(!isEnabled) {
+                            $0.opacity(0.5)
+                        }
 
                     Spacer()
 
@@ -71,62 +80,7 @@ extension Preferences {
             }
             .buttonStyle(SidebarItemButtonStyle(isSelected: isSelected))
             .accessibilityIdentifier("PreferencesSidebar.\(pane.id.rawValue)Button")
-        }
-    }
-
-    enum StatusIndicator: Equatable {
-        case alwaysOn
-        case on
-        case off
-        case custom(String)
-
-        var text: String {
-            switch self {
-            case .alwaysOn:
-                return UserText.preferencesAlwaysOn
-            case .on:
-                return UserText.preferencesOn
-            case .off:
-                return UserText.preferencesOff
-            case .custom(let customText):
-                return customText
-            }
-        }
-    }
-
-    struct StatusIndicatorView: View {
-        var status: StatusIndicator
-        var isLarge: Bool = false
-
-        private var fontSize: CGFloat {
-            isLarge ? 13 : 10
-        }
-
-        private var circleSize: CGFloat {
-            isLarge ? 7 : 5
-        }
-
-        var body: some View {
-            HStack(spacing: isLarge ? 6 : 4) {
-                Circle()
-                    .frame(width: circleSize, height: circleSize)
-                    .foregroundColor(colorForStatus(status))
-
-                Text(status.text)
-                    .font(.system(size: fontSize))
-                    .foregroundColor(.secondary)
-            }
-        }
-
-        private func colorForStatus(_ status: StatusIndicator) -> Color {
-            switch status {
-            case .on, .alwaysOn:
-                return .alertGreen
-            case .off:
-                return Color.secondary.opacity(0.33)
-            case .custom:
-                return .orange
-            }
+            .disabled(!isEnabled)
         }
     }
 
@@ -179,6 +133,9 @@ extension Preferences {
             }
             .padding(.top, 18)
             .padding(.horizontal, 10)
+            .onAppear {
+                model.onAppear()
+            }
         }
 
         @ViewBuilder
@@ -186,7 +143,8 @@ extension Preferences {
             ForEach(section.panes) { pane in
                 PaneSidebarItem(pane: pane,
                                 isSelected: model.selectedPane == pane,
-                                status: pane == .vpn ? model.vpnProtectionStatus() : nil) {
+                                isEnabled: model.isSidebarItemEnabled(for: pane),
+                                status: model.protectionStatus(for: pane)) {
                     model.selectPane(pane)
                 }
             }

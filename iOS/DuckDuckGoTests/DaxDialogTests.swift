@@ -893,13 +893,14 @@ final class DaxDialog: XCTestCase {
 
     // MARK: - States
 
-    func testWhenUserIsInTreatmentCohortAndHasNotSeenPromotion_OnNextHomeScreenMessageNew_ReturnsPrivacyProPromotion() {
+    func testWhenShouldDisplayPromotionAndHasNotSeenPromotion_OnNextHomeScreenMessageNew_ReturnsPrivacyProPromotion() {
         // GIVEN
         let settings = MockDaxDialogsSettings()
         settings.browsingFinalDialogShown = true
         settings.privacyProPromotionDialogShown = false
-        let mockExperiment = MockOnboardingPrivacyProPromoExperimenting(cohort: .treatment)
-        let sut = makeSUT(settings: settings, onboardingPrivacyProPromoExperiment: mockExperiment)
+        let mockOnboardingPromotionHelper = MockOnboardingPrivacyProPromotionHelper()
+        mockOnboardingPromotionHelper.shouldDisplayValue = true
+        let sut = makeSUT(settings: settings, onboardingPrivacyProPromotionHelper: mockOnboardingPromotionHelper)
 
         // WHEN
         let result = sut.nextHomeScreenMessageNew()
@@ -908,13 +909,14 @@ final class DaxDialog: XCTestCase {
         XCTAssertEqual(result, .privacyProPromotion)
     }
 
-    func testWhenUserIsInControlCohort_OnNextHomeScreenMessageNew_DoesNotReturnPrivacyProPromotion() {
+    func testWhenShouldNotDisplayPromotion_OnNextHomeScreenMessageNew_DoesNotReturnPrivacyProPromotion() {
         // GIVEN
         let settings = MockDaxDialogsSettings()
         settings.browsingFinalDialogShown = true
         settings.privacyProPromotionDialogShown = false
-        let mockExperiment = MockOnboardingPrivacyProPromoExperimenting(cohort: .control)
-        let sut = makeSUT(settings: settings, onboardingPrivacyProPromoExperiment: mockExperiment)
+        let mockOnboardingPromotionHelper = MockOnboardingPrivacyProPromotionHelper()
+        mockOnboardingPromotionHelper.shouldDisplayValue = false
+        let sut = makeSUT(settings: settings, onboardingPrivacyProPromotionHelper: mockOnboardingPromotionHelper)
 
         // WHEN
         let result = sut.nextHomeScreenMessageNew()
@@ -928,8 +930,9 @@ final class DaxDialog: XCTestCase {
         let settings = MockDaxDialogsSettings()
         settings.browsingFinalDialogShown = true
         settings.privacyProPromotionDialogShown = true
-        let mockExperiment = MockOnboardingPrivacyProPromoExperimenting(cohort: .treatment)
-        let sut = makeSUT(settings: settings, onboardingPrivacyProPromoExperiment: mockExperiment)
+        let mockOnboardingPromotionHelper = MockOnboardingPrivacyProPromotionHelper()
+        mockOnboardingPromotionHelper.shouldDisplayValue = true
+        let sut = makeSUT(settings: settings, onboardingPrivacyProPromotionHelper: mockOnboardingPromotionHelper)
 
         // WHEN
         let result = sut.nextHomeScreenMessageNew()
@@ -943,8 +946,9 @@ final class DaxDialog: XCTestCase {
         let settings = MockDaxDialogsSettings()
         settings.browsingFinalDialogShown = false
         settings.privacyProPromotionDialogShown = false
-        let mockExperiment = MockOnboardingPrivacyProPromoExperimenting(cohort: .treatment)
-        let sut = makeSUT(settings: settings, onboardingPrivacyProPromoExperiment: mockExperiment)
+        let mockOnboardingPromotionHelper = MockOnboardingPrivacyProPromotionHelper()
+        mockOnboardingPromotionHelper.shouldDisplayValue = true
+        let sut = makeSUT(settings: settings, onboardingPrivacyProPromotionHelper: mockOnboardingPromotionHelper)
 
         // WHEN
         let result = sut.nextHomeScreenMessageNew()
@@ -984,8 +988,9 @@ final class DaxDialog: XCTestCase {
         let settings = MockDaxDialogsSettings()
         settings.browsingFinalDialogShown = true
         settings.privacyProPromotionDialogShown = false
-        let mockExperiment = MockOnboardingPrivacyProPromoExperimenting(cohort: .treatment)
-        let sut = makeSUT(settings: settings, onboardingPrivacyProPromoExperiment: mockExperiment)
+        let mockOnboardingPromotionHelper = MockOnboardingPrivacyProPromotionHelper()
+        mockOnboardingPromotionHelper.shouldDisplayValue = true
+        let sut = makeSUT(settings: settings, onboardingPrivacyProPromotionHelper: mockOnboardingPromotionHelper)
 
         // WHEN
         _ = sut.nextHomeScreenMessageNew()
@@ -1129,45 +1134,29 @@ final class DaxDialog: XCTestCase {
                            protectionStatus: protectionStatus)
     }
 
-    private func makeSUT(settings: DaxDialogsSettings, onboardingPrivacyProPromoExperiment: OnboardingPrivacyProPromoExperimenting = MockOnboardingPrivacyProPromoExperimenting(cohort: .control)) -> DaxDialogs {
+    private func makeSUT(settings: DaxDialogsSettings, onboardingPrivacyProPromotionHelper: OnboardingPrivacyProPromotionHelping = MockOnboardingPrivacyProPromotionHelper()) -> DaxDialogs {
         DaxDialogs(settings: settings,
                    entityProviding: entityProvider,
                    variantManager: MockVariantManager(),
-                   onboardingPrivacyProPromoExperiment: onboardingPrivacyProPromoExperiment)
+                   onboardingPrivacyProPromotionHelper: onboardingPrivacyProPromotionHelper)
     }
 }
 
-class MockOnboardingPrivacyProPromoExperimenting: OnboardingPrivacyProPromoExperimenting {
-    private let cohort: PrivacyProOnboardingCTAMarch25Cohort?
-    private(set) var fireSubscriptionStartedMonthlyPixelCalled = false
-    private(set) var fireSubscriptionStartedYearlyPixelCalled = false
+final class MockOnboardingPrivacyProPromotionHelper: OnboardingPrivacyProPromotionHelping {
 
-    init(cohort: PrivacyProOnboardingCTAMarch25Cohort?) {
-        self.cohort = cohort
-    }
+    var shouldDisplayValue: Bool = false
 
-    func getCohortIfEnabled() -> PrivacyProOnboardingCTAMarch25Cohort? {
-        return cohort
+    var shouldDisplay: Bool {
+        shouldDisplayValue
     }
 
     func redirectURLComponents() -> URLComponents? {
         return nil
     }
 
-    func fireImpressionPixel() {
-    }
+    func fireImpressionPixel() {}
 
-    func fireTapPixel() {
-    }
+    func fireTapPixel() {}
 
-    func fireDismissPixel() {
-    }
-
-    func fireSubscriptionStartedMonthlyPixel() {
-        fireSubscriptionStartedMonthlyPixelCalled = true
-    }
-
-    func fireSubscriptionStartedYearlyPixel() {
-        fireSubscriptionStartedYearlyPixelCalled = true
-    }
+    func fireDismissPixel() {}
 }

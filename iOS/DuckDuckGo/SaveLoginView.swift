@@ -156,7 +156,7 @@ struct SaveLoginView: View {
             .padding(.vertical, Const.Size.featuresListVerticalSpacing)
             .frame(maxWidth: .infinity, alignment: .center)
             Rectangle()
-                .fill(Color(designSystemColor: .container))
+                .fill(Color(designSystemColor: .lines))
                 .frame(height: 1)
             VStack(alignment: .leading, spacing: Const.Size.featuresListVerticalSpacing) {
                 featuresListItem(
@@ -185,7 +185,7 @@ struct SaveLoginView: View {
         .overlay(
             RoundedRectangle(cornerRadius: Const.Size.featuresListBorderCornerRadius)
                 .inset(by: 0.5)
-                .stroke(Color(designSystemColor: .container), lineWidth: 1)
+                .stroke(Color(designSystemColor: .lines), lineWidth: 1)
         )
         .fixedSize(horizontal: false, vertical: true)
     }

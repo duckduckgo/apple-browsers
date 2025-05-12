@@ -180,6 +180,8 @@ final class DataBrokerProtectionDatabaseProviderTests: XCTestCase {
                     try db.execute(sql: "PRAGMA foreign_keys = ON")
                 }
 
+            } catch let error as GRDB.DatabaseError where error.message == "table broker has no column named eTag" {
+                // no-op, BrokerDB.eTag doesn't exist as of v3 migration so we expect this
             } catch {
                 XCTFail("Failed to setup invalid data")
             }

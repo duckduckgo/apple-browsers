@@ -49,6 +49,7 @@ protocol VisualStyleProviding {
     var toolbarButtonsCornerRadius: CGFloat { get }
     var navigationBackgroundColor: NSColor { get }
     var fireWindowGraphic: NSImage { get }
+    var areNavigationBarCornersRound: Bool { get }
 
     /// General colors
     var baseBackgroundColor: NSColor { get }
@@ -127,6 +128,7 @@ struct VisualStyle: VisualStyleProviding {
     let tabStyleProvider: TabStyleProviding
     let navigationBackgroundColor: NSColor
     let fireWindowGraphic: NSImage
+    let areNavigationBarCornersRound: Bool
     let baseBackgroundColor: NSColor
     let textPrimaryColor: NSColor
     let textSecondaryColor: NSColor
@@ -209,6 +211,7 @@ struct VisualStyle: VisualStyleProviding {
                            tabStyleProvider: LegacyTabStyleProvider(),
                            navigationBackgroundColor: .navigationBarBackground,
                            fireWindowGraphic: .burnerWindowGraphic,
+                           areNavigationBarCornersRound: false,
                            baseBackgroundColor: .windowBackground,
                            textPrimaryColor: .labelColor,
                            textSecondaryColor: .secondaryLabelColor,
@@ -255,6 +258,7 @@ struct VisualStyle: VisualStyleProviding {
                            tabStyleProvider: NewlineTabStyleProvider(),
                            navigationBackgroundColor: .navigationBackgroundColorNew,
                            fireWindowGraphic: .burnerWindowGraphicNew,
+                           areNavigationBarCornersRound: true,
                            baseBackgroundColor: .backgroundBaseColorNew,
                            textPrimaryColor: .primaryTextColorNew,
                            textSecondaryColor: .secondaryTextColorNew,

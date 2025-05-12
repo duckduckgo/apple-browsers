@@ -420,23 +420,6 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
         return menuItems
     }
 
-    private func legacyStatusViewSubmenu() -> [StatusBarMenu.MenuItem] {
-        [
-            .text(title: UserText.networkProtectionStatusMenuVPNSettings, action: { [weak self] in
-                try? await self?.appLauncher.launchApp(withCommand: VPNAppLaunchCommand.showSettings)
-            }),
-            .text(title: UserText.networkProtectionStatusMenuFAQ, action: { [weak self] in
-                try? await self?.appLauncher.launchApp(withCommand: VPNAppLaunchCommand.showFAQ)
-            }),
-            .text(title: UserText.networkProtectionStatusMenuSendFeedback, action: { [weak self] in
-                try? await self?.appLauncher.launchApp(withCommand: VPNAppLaunchCommand.shareFeedback)
-            }),
-            .text(title: UserText.networkProtectionStatusMenuOpenDuckDuckGo, action: { [weak self] in
-                try? await self?.appLauncher.launchApp(withCommand: VPNAppLaunchCommand.justOpen)
-            }),
-        ]
-    }
-
     @MainActor
     private func makeStatusBarMenu() -> StatusBarMenu {
         #if DEBUG
@@ -458,11 +441,6 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
 
         let menuItems = { [weak self] () -> [NetworkProtectionStatusView.Model.MenuItem] in
             guard let self else { return [] }
-
-            guard featureFlagger.isFeatureOn(.networkProtectionAppExclusions) else {
-                return legacyStatusViewSubmenu()
-            }
-
             return statusViewSubmenu()
         }
 

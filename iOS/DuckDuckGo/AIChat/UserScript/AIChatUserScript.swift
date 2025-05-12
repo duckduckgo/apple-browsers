@@ -21,9 +21,13 @@ import Common
 import UserScript
 import Foundation
 import AIChat
+import WebKit
+import Combine
 
-/// Protocol defining the delegate methods for AIChatUserScript events
+// MARK: - Delegate Protocol
+
 protocol AIChatUserScriptDelegate: AnyObject {
+
     /// Called when the user script receives a message from the web content
     /// - Parameters:
     ///   - userScript: The user script that received the message
@@ -31,18 +35,67 @@ protocol AIChatUserScriptDelegate: AnyObject {
     func aiChatUserScript(_ userScript: AIChatUserScript, didReceiveMessage message: AIChatUserScriptMessages)
 }
 
+// MARK: - AIChatUserScript Class
+
 final class AIChatUserScript: NSObject, Subfeature {
+
+    // MARK: - Push Message Enum
+
+    enum AIChatPushMessage {
+        case submitPrompt(AIChatNativePrompt)
+        case fireButtonAction
+        case newChatAction
+        case promptInterruption
+
+        var methodName: String {
+            switch self {
+            case .submitPrompt:
+                return "submitAIChatNativePrompt"
+            case .fireButtonAction:
+                return "submitFireButtonAction"
+            case .newChatAction:
+                return "submitNewChatAction"
+            case .promptInterruption:
+                return "submitPromptInterruption"
+            }
+        }
+
+        var params: Encodable? {
+            switch self {
+            case .submitPrompt(let prompt):
+                return prompt
+            default:
+                return nil
+            }
+        }
+    }
+
+    // MARK: - Properties
+
     weak var delegate: AIChatUserScriptDelegate?
-    private var handler: AIChatUserScriptHandling
-    public let featureName: String = "aiChat"
     weak var broker: UserScriptMessageBroker?
+    weak var webView: WKWebView?
+
+    private let handler: AIChatUserScriptHandling
     private(set) var messageOriginPolicy: MessageOriginPolicy
+    private var cancellables = Set<AnyCancellable>()
+
+    var inputBoxHandler: AIChatInputBoxHandling? {
+        didSet { subscribeToInputBoxEvents() }
+    }
+
+    let featureName: String = "aiChat"
+
+    // MARK: - Initialization
 
     init(handler: AIChatUserScriptHandling, debugSettings: AIChatDebugSettingsHandling) {
         self.handler = handler
-        var rules = [HostnameMatchingRule]()
+        self.messageOriginPolicy = .only(rules: Self.buildMessageOriginRules(debugSettings: debugSettings))
+    }
 
-        /// Default rule for DuckDuckGo AI Chat
+    private static func buildMessageOriginRules(debugSettings: AIChatDebugSettingsHandling) -> [HostnameMatchingRule] {
+        var rules: [HostnameMatchingRule] = []
+
         if let ddgDomain = URL.ddg.host {
             rules.append(.exact(hostname: ddgDomain))
         }
@@ -50,16 +103,26 @@ final class AIChatUserScript: NSObject, Subfeature {
         if let debugHostname = debugSettings.messagePolicyHostname {
             rules.append(.exact(hostname: debugHostname))
         }
+        return rules
+    }
 
-        self.messageOriginPolicy = .only(rules: rules)
+    // MARK: - Subfeature
+
+    func with(broker: UserScriptMessageBroker) {
+        self.broker = broker
     }
 
     func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
-        guard let messageName = AIChatUserScriptMessages(rawValue: methodName) else { return nil }
+        guard let message = AIChatUserScriptMessages(rawValue: methodName) else {
+            print("Unhandled message: \(methodName) in AIChatUserScript")
+            return nil
+        }
 
-        delegate?.aiChatUserScript(self, didReceiveMessage: messageName)
+        delegate?.aiChatUserScript(self, didReceiveMessage: message)
 
-        switch messageName {
+        switch message {
+        case .responseState:
+            return handler.getResponseState
         case .getAIChatNativeConfigValues:
             return handler.getAIChatNativeConfigValues
         case .getAIChatNativeHandoffData:
@@ -72,6 +135,41 @@ final class AIChatUserScript: NSObject, Subfeature {
     }
 
     func setPayloadHandler(_ payloadHandler: any AIChatConsumableDataHandling) {
-        self.handler.setPayloadHandler(payloadHandler)
+        handler.setPayloadHandler(payloadHandler)
+    }
+
+    // MARK: - Input Box Event Subscription
+
+    private func subscribeToInputBoxEvents() {
+        inputBoxHandler?.didSubmitText
+            .sink(receiveValue: submitPrompt)
+            .store(in: &cancellables)
+
+        inputBoxHandler?.didPressNewChatButton
+            .sink(receiveValue: { [weak self] _ in self?.push(.newChatAction) })
+            .store(in: &cancellables)
+
+        inputBoxHandler?.didPressFireButton
+            .sink(receiveValue: { [weak self] _ in self?.push(.fireButtonAction) })
+            .store(in: &cancellables)
+    }
+
+    // MARK: - AI Chat Actions
+
+    func submitPrompt(_ prompt: String) {
+        let promptPayload = AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true)
+        push(.submitPrompt(promptPayload))
+    }
+
+    func submitPromptInterruption() {
+        push(.promptInterruption)
+    }
+
+    // MARK: - Private Helper
+
+    private func push(_ message: AIChatPushMessage) {
+        guard let webView = webView else { return }
+        let params: Encodable? = message.params
+        broker?.push(method: message.methodName, params: params, for: self, into: webView)
     }
 }

@@ -69,10 +69,16 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
     /// Cancellables for delaying actions
     private var cancellables = Set<AnyCancellable>()
 
+    /// isDuckPlayerPresented is true when the DuckPlayer is presented
+    private(set) var isDuckPlayerPillPresented = false
+    private(set) var isDuckPlayerPresented = false
+
     private struct Constants {
         static let duckPlayerScheme = URL.NavigationalScheme.duck.rawValue
         static let serpNotifyEnabled = "enabled"
         static let serpNotifyDisabled = "disabled"
+        static let pillPresentationDelay: TimeInterval = 1.0
+        static let playerPresentationDelay: TimeInterval = 1.0
     }
 
     /// JavaScript for media playback control
@@ -241,6 +247,54 @@ final class NativeDuckPlayerNavigationHandler: NSObject {
             }
         }
     }
+
+    /// Resets the DuckPlayer Presentation State
+    private func resetDuckPlayerPresentation() {
+        isDuckPlayerPillPresented = false
+        isDuckPlayerPresented = false
+    }
+
+    /// Presents the DuckPlayer Pill with a delay   
+    /// - Parameters:    
+    ///   - videoID: The ID of the video to load
+    ///   - timestamp: The timestamp of the video
+    private func presentDuckPlayerPill(for videoID: String, timestamp: TimeInterval?) {
+        isDuckPlayerPillPresented = true
+        delayHandler.delay(seconds: Constants.pillPresentationDelay)
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    self?.duckPlayer.presentPill(for: videoID, timestamp: timestamp)
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    /// Presents the DuckPlayer with a delay
+    /// - Parameters:
+    ///   - videoID: The ID of the video to load
+    ///   - timestamp: The timestamp of the video
+    private func presentDuckPlayer(for videoID: String, timestamp: TimeInterval?) {
+        isDuckPlayerPresented = true
+        delayHandler.delay(seconds: Constants.playerPresentationDelay)
+            .sink { [weak self] _ in
+                Task { @MainActor in
+                    self?.loadNativeDuckPlayerVideo(videoID: videoID)
+                }
+            }
+            .store(in: &cancellables)
+    }
+
+    /// Dismisses the DuckPlayer Pill
+    /// - Parameters:
+    ///   - reset: Whether to reset the DuckPlayer state
+    ///   - animated: Whether to animate the dismissal
+    ///   - programatic: Whether the dismissal is programmatic
+    private func dismissDuckPlayerPill(reset: Bool, animated: Bool, programatic: Bool) {
+        isDuckPlayerPillPresented = false
+        Task { @MainActor in
+            duckPlayer.dismissPill(reset: reset, animated: animated, programatic: programatic)
+        }
+    }
 }
 
 extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
@@ -260,6 +314,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         return
     }
 
+    // swiftlint:disable cyclomatic_complexity
     /// Observes URL changes and redirects to Duck Player when appropriate, avoiding duplicate handling.
     ///
     /// - Parameter webView: The `WKWebView` whose URL has changed.
@@ -268,6 +323,18 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
     func handleURLChange(webView: WKWebView, previousURL: URL?, newURL: URL?) -> DuckPlayerNavigationHandlerURLChangeResult {
 
         guard featureFlagger.isFeatureOn(.duckPlayer) else { return .notHandled(.featureOff) }
+
+        // Skip if the new URL is a YouTube watch page with a hashtag
+        // This is a special case where YouTube navigates to/from intenal UI (Search, setttings, etc)
+        if let previousID = previousURL?.youtubeVideoParams?.0,
+           let newID = newURL?.youtubeVideoParams?.0,
+           previousID == newID,
+           newURL?.isYoutubeWatchWithHashtag == true || previousURL?.isYoutubeWatchWithHashtag == true {
+            return .notHandled(.isYoutubeInternalNavigation)
+        }
+
+        // Reset the DuckPlayer Presentation State
+        resetDuckPlayerPresentation()
 
         // Ensure all media playback is allowed by default
         self.toggleMediaPlayback(webView, pause: false)
@@ -285,16 +352,17 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         // Set the referrer
         setReferrer(webView: webView)
 
+        // Dismiss the DuckPlayer Pill
+        dismissDuckPlayerPill(reset: true, animated: true, programatic: true)
+
         // Never present DuckPlayer for non-YouTube URLs
         guard let url = newURL, let (videoID, _) = url.youtubeVideoParams else {
-            duckPlayer.dismissPill(reset: true, animated: true, programatic: true)
             lastHandledVideoID = nil
             return .notHandled(.invalidURL)
         }
 
         // Only present DuckPlayer for YouTube Watch URLs
         guard url.isYoutubeWatch else {
-            duckPlayer.dismissPill(reset: true, animated: true, programatic: true)
             lastHandledVideoID = nil
             return .notHandled(.isNotYoutubeWatch)
         }
@@ -311,7 +379,6 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
 
         // Ensure pill is dismissed if DuckPlayer is disabled
         if duckPlayer.settings.nativeUIYoutubeMode == .never {
-            duckPlayer.dismissPill(reset: true, animated: false, programatic: true)
             lastHandledVideoID = nil
             return .notHandled(.duckPlayerDisabled)
         }
@@ -319,8 +386,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         // Present Duck Player Pill (Native entry point)
         if duckPlayer.settings.nativeUIYoutubeMode == .ask {
             lastHandledVideoID = videoID
-            Task { await pauseVideoStart(webView: webView) }
-            duckPlayer.presentPill(for: videoID, timestamp: nil)
+            presentDuckPlayerPill(for: videoID, timestamp: nil)
             return .handled(.duckPlayerEnabled)
         }
 
@@ -328,12 +394,8 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         if duckPlayer.settings.nativeUIYoutubeMode == .auto {
             lastHandledVideoID = videoID
             Task { await pauseVideoStart(webView: webView) }
-            self.duckPlayer.presentPill(for: videoID, timestamp: nil)
-            delayHandler.delay(seconds: 1.0)
-                .sink { [weak self] _ in
-                    self?.loadNativeDuckPlayerVideo(videoID: videoID)
-                }
-                .store(in: &cancellables)
+            presentDuckPlayerPill(for: videoID, timestamp: nil)
+            presentDuckPlayer(for: videoID, timestamp: nil)
             return .handled(.duckPlayerEnabled)
         }
 
@@ -341,6 +403,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         toggleMediaPlayback(webView, pause: false)
         return .notHandled(.isNotYoutubeWatch)
     }
+    // swiftlint:enable cyclomatic_complexity
 
     /// Custom back navigation logic to handle Duck Player in the web view's history stack.
     ///
@@ -496,7 +559,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         guard featureFlagger.isFeatureOn(.duckPlayer) else { return }
         if let url = hostViewController.tabModel.link?.url, url.isYoutubeWatch {
             if !disableDuckPlayerForNextVideo && !isLinkPreview {
-                self.duckPlayer.presentPill(for: url.youtubeVideoParams?.0 ?? "", timestamp: nil)
+                presentDuckPlayerPill(for: url.youtubeVideoParams?.0 ?? "", timestamp: nil)
             }
         }
     }

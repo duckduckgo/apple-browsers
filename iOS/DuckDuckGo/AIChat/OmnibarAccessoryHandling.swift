@@ -29,10 +29,6 @@ struct OmnibarAccessoryHandler: OmnibarAccessoryHandling {
     let settings: AIChatSettingsProvider
 
     func omnibarAccessory(for url: URL?) -> OmniBarAccessoryType {
-        guard settings.isAIChatAddressBarUserSettingsEnabled else {
-            return .share
-        }
-
-        return (url?.isDuckDuckGoSearch == true || url == nil) ? .chat : .share
+        .chat
     }
 }

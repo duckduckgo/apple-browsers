@@ -39,18 +39,17 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     var accessoryButton: UIButton! { searchAreaView.accessoryButton }
     var menuButton: UIButton! { menuButtonView }
     var refreshButton: UIButton! { searchAreaView.reloadButton }
+    var shareButton: UIButton! { searchAreaView.shareButton }
     var privacyIconView: UIView? { privacyInfoContainer.privacyIcon }
     var searchContainer: UIView! { searchAreaContainerView }
     let expectedHeight: CGFloat = UpdatedOmniBarView.expectedHeight
     static let expectedHeight: CGFloat = Metrics.height
 
-    var accessoryType: OmniBarAccessoryType = .share {
+    var accessoryType: OmniBarAccessoryType = .chat {
         didSet {
             switch accessoryType {
             case .chat:
                 searchAreaView.accessoryButton.setImage(UIImage(resource: .aiChatNew24), for: .normal)
-            case .share:
-                searchAreaView.accessoryButton.setImage(UIImage(resource: .shareAppleNew24), for: .normal)
             }
             updateAccessoryAccessibility()
         }
@@ -106,8 +105,14 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     }
     var isRefreshButtonHidden: Bool {
         get { searchAreaView.reloadButton.isHidden }
-        set { searchAreaView.reloadButton.isHidden = newValue }
+        set { searchAreaView.reloadButton.isHidden = true }
     }
+
+    var isShareButtonHidden: Bool {
+        get { searchAreaView.shareButton.isHidden }
+        set { searchAreaView.shareButton.isHidden = newValue }
+    }
+
     var isVoiceSearchButtonHidden: Bool {
         get { searchAreaView.voiceSearchButton.isHidden }
         set {
@@ -180,6 +185,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     var onSettingsButtonPressed: (() -> Void)?
     var onCancelPressed: (() -> Void)?
     var onRefreshPressed: (() -> Void)?
+    var onSharePressed: (() -> Void)?
     var onBackPressed: (() -> Void)?
     var onForwardPressed: (() -> Void)?
     var onBookmarksPressed: (() -> Void)?
@@ -215,6 +221,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
 
     var searchContainerWidth: CGFloat { searchAreaView.frame.width }
 
+    private var masksTop: Bool = true
     private let omniBarProgressView = OmniBarProgressView()
     var progressView: ProgressView? { omniBarProgressView.progressView }
 
@@ -251,6 +258,12 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+
+        updateMaskLayer()
     }
 
     private func setUpSubviews() {
@@ -398,6 +411,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         searchAreaView.voiceSearchButton.addTarget(self, action: #selector(voiceSearchButtonTap), for: .touchUpInside)
         searchAreaView.reloadButton.addTarget(self, action: #selector(reloadButtonTap), for: .touchUpInside)
         searchAreaView.clearButton.addTarget(self, action: #selector(clearButtonTap), for: .touchUpInside)
+        searchAreaView.shareButton.addTarget(self, action: #selector(shareButtonTap), for: .touchUpInside)
         searchAreaView.cancelButton.addTarget(self, action: #selector(cancelButtonTap), for: .touchUpInside)
         searchAreaView.accessoryButton.addTarget(self, action: #selector(accessoryButtonTap), for: .touchUpInside)
 
@@ -519,9 +533,6 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         case .chat:
             accessoryButton.accessibilityLabel = "AI Chat"
             accessoryButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.AIChat"
-        case .share:
-            accessoryButton.accessibilityLabel = "Share"
-            accessoryButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.Share"
         }
         accessoryButton.accessibilityTraits = .button
     }
@@ -596,6 +607,10 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         onClearButtonPressed?()
     }
 
+    @objc private func shareButtonTap() {
+        onSharePressed?()
+    }
+
     @objc private func cancelButtonTap() {
         onAbortButtonPressed?()
     }
@@ -665,5 +680,29 @@ extension UpdatedOmniBarView {
 
     func moveSeparatorToBottom() {
         // no-op
+    }
+
+    // Used to mask shadows going outside of bounds to prevent them covering other content
+    func updateMaskLayer(maskTop: Bool) {
+        self.masksTop = maskTop
+
+        updateMaskLayer()
+    }
+
+    private func updateMaskLayer() {
+        let maskLayer = CALayer()
+
+        let clippingOffset = 100.0
+        let inset = clippingOffset * 2
+
+        // Make the frame uniformly larger along each axis and offset to top or bottom
+        let maskFrame = layer.bounds
+            .insetBy(dx: -inset, dy: -inset)
+            .offsetBy(dx: 0, dy: masksTop ? clippingOffset : -clippingOffset)
+
+        maskLayer.frame = maskFrame
+        maskLayer.backgroundColor = UIColor.black.cgColor
+
+        layer.mask = maskLayer
     }
 }

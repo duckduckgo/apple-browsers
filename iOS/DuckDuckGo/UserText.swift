@@ -1552,7 +1552,35 @@ Take back control of your personal information with the browser designed for dat
     static let duckPlayerContingencyMessageBody = NSLocalizedString("duck-player.video-contingency-message", value: "Duck Player's functionality has been affected by recent changes to YouTube. We’re working to fix these issues and appreciate your understanding.", comment: "Message explaining to the user that Duck Player is not available")
     static let duckPlayerContingencyMessageCTA = NSLocalizedString("duck-player.video-contingency-cta", value: "Learn More", comment: "Button for the message explaining to the user that Duck Player is not available so the user can learn more")
 
+    // MARK: - Duck Player Native
+    
+    public static let duckPlayerOpenYouTubeVideosHere = NSLocalizedString("duckplayer.open.youtube.videos.here", value: "Open YouTube videos here", comment: "Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player")
+    public static let duckPlayerWatchWithoutTargetedAds = NSLocalizedString("duckplayer.watch.without.targeted.ads", value: "Watch without targeted ads", comment: "Subtitle explaining Duck Player blocks targeted ads")
+    public static let duckPlayerPlayInDuckPlayer = NSLocalizedString("duckplayer.play.in.duck.player", value: "Play this video in Duck Player", comment: "Button text to play a video in Duck Player")
+    public static let duckPlayerYouTubeNoAdsPrivacy = NSLocalizedString("duckplayer.youtube.no.ads.privacy", value: "Watch YouTube with fewer ads and more privacy", comment: "Title for Duck Player welcome message highlighting privacy benefits")
+    public static let duckPlayerBlocksAdsKeepsHistoryPrivate = NSLocalizedString("duckplayer.blocks.ads.keeps.history.private", value: "Duck Player blocks targeted ads and keeps your viewing history private.", comment: "Subtitle explaining how Duck Player protects privacy")
+    public static let duckPlayerWatchOnYoutube = NSLocalizedString("duckplayer.watch.on.youtube", value: "Watch on YouTube", comment: "Button text to watch video on YouTube")
+    public static let duckPlayerResumeInDuckPlayer = NSLocalizedString("duckplayer.resume.in.duck.player", value: "Resume in Duck Player", comment: "Button text to resume video in Duck Player")
+    public static let duckPlayerToastTurnOffAnytime = NSLocalizedString("duckplayer.toast.turn.off.anytime", value: "You can turn off Duck Player anytime in Settings", comment: "Toast message informing user they can disable Duck Player in settings")
+    public static let duckPlayerToastOpenSettings = NSLocalizedString("duckplayer.toast.open.settings", value: "Open Settings", comment: "Button text to open Duck Player settings")
+    
+    // Settings Duck Player View 
+    public static let duckPlayerSearchResultsFooter = NSLocalizedString("duckplayer.settings.search.results.footer", value: "Clicking on YouTube videos from DuckDuckGo search results will open in Duck Player.", comment: "Footer text explaining the search results toggle in Duck Player settings")
+    public static let duckPlayerSearchResultsLabel = NSLocalizedString("duckplayer.settings.search.results.label", value: "DuckDuckGo Search Results", comment: "Label for the search results toggle in Duck Player settings")
+    public static let duckPlayerYoutubeFooter = NSLocalizedString("duckplayer.settings.youtube.footer", value: "Clicking on YouTube videos when browsing YouTube.com will open in Duck Player.", comment: "Footer text explaining the YouTube.com option in Duck Player settings")
+    public static let duckPlayerYoutubeLabel = NSLocalizedString("duckplayer.settings.youtube.label", value: "YouTube.com", comment: "Label for the YouTube.com option in Duck Player settings")
+    public static let duckPlayerAutoplayFooter = NSLocalizedString("duckplayer.settings.autoplay.footer", value: "Videos opened in Duck Player will automatically begin playback. Turn this off if you would like to manually start playback of videos opened in Duck Player.", comment: "Footer text explaining the auto-play toggle in Duck Player settings")
+    public static let duckPlayerAutoplayLabel = NSLocalizedString("duckplayer.settings.autoplay.label", value: "Auto-play videos", comment: "Label for the auto-play toggle in Duck Player settings")
+    public static let duckPlayerExperimentalLabel = NSLocalizedString("duckplayer.settings.experimental.label", value: "Experimental", comment: "Label for the experimental section in Duck Player settings")
+    public static let duckPlayerVariantLabel = NSLocalizedString("duckplayer.settings.variant.label", value: "Duck Player Variant", comment: "Label for the Duck Player variant picker in Duck Player settings")
+    public static let duckPlayerTabAlertTitle = NSLocalizedString("duckplayer.settings.tab.alert.title", value: "Important!", comment: "Title for the alert when changing Duck Player variant")
+    public static let duckPlayerTabAlertMessage = NSLocalizedString("duckplayer.settings.tab.alert.message", value: "Please close all tabs for this setting to take effect.", comment: "Message for the alert when changing Duck Player variant")
+    public static let duckPlayerTabAlertOK = NSLocalizedString("duckplayer.settings.tab.alert.ok", value: "OK", comment: "OK button text for the alert when changing Duck Player variant")
+
     // MARK: - AI Chat
+    public static let settingsEnableAiChat = NSLocalizedString("settings.enable.aichat", value: "Enable Duck.ai", comment: "Settings screen cell text for enabling AI chat")
+
+    public static let settingsAiChatShortcuts = NSLocalizedString("settings.aichat.shortcuts", value: "Shortcuts", comment: "Settings screen text for showing AI Chat in various places in the app")
 
     public static let voiceSearchToggleSearch = NSLocalizedString("voice-search-toggle-serp-option", value: "Search", comment: "Voice search toggle option for searching on the web")
     public static let voiceSearchToggleAIChat = NotLocalizedString("voice-search-toggle-aichat-option", value: "Duck.ai", comment: "Voice search toggle option for searching on the AI Chat. Feature name. Not translated")
@@ -1563,13 +1591,13 @@ Take back control of your personal information with the browser designed for dat
 Duck.ai is an optional feature that lets you chat anonymously with popular 3rd-party Al chat models. Your chats are not used to train AI.
 [Learn More](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)
 """, comment: "Ai Chat preferences explanation with a markdown link. Do not translate what's inside [] and ()")
-    public static let aiChatSettingsEnableBrowsingMenuToggle = NSLocalizedString("duckai.settings.enable.browsing-menu-toggle", value: "Show Duck.ai in Browser Menu", comment: "Toggle text to enable/disable AI Chat in the browsing menu")
+    public static let aiChatSettingsEnableBrowsingMenuToggle = NSLocalizedString("duckai.settings.enable.browsing-menu-toggle", value: "Browser Menu", comment: "Toggle text to enable/disable AI Chat in the browsing menu")
 
-    public static let aiChatSettingsEnableAddressBarToggle = NSLocalizedString("duckai.settings.enable.address-bar-toggle", value: "Show Duck.ai in Address Bar", comment: "Toggle text to enable/disable Duck.ai in the address bar")
+    public static let aiChatSettingsEnableAddressBarToggle = NSLocalizedString("duckai.settings.enable.address-bar-toggle", value: "Address Bar", comment: "Toggle text to enable/disable Duck.ai in the address bar")
 
-    public static let aiChatSettingsEnableVoiceSearchToggle = NSLocalizedString("duckai.settings.enable.voice-search-toggle", value: "Show Duck.ai in Voice Search", comment: "Toggle text to enable/disable Duck.ai in voice search")
+    public static let aiChatSettingsEnableVoiceSearchToggle = NSLocalizedString("duckai.settings.enable.voice-search-toggle", value: "Voice Search", comment: "Toggle text to enable/disable Duck.ai in voice search")
 
-    public static let aiChatSettingsEnableTabSwitcherToggle = NSLocalizedString("duckai.settings.enable.tab-switcher-toggle", value: "Show Duck.ai on the Tabs Screen", comment: "Toggle text to enable/disable Duck.ai in tab manager")
+    public static let aiChatSettingsEnableTabSwitcherToggle = NSLocalizedString("duckai.settings.enable.tab-switcher-toggle", value: "Tabs Screen", comment: "Toggle text to enable/disable Duck.ai in tab manager")
 
     public enum MaliciousSiteProtectionSettings {
         public static let header = NSLocalizedString("malicious-site-protection.settings.header", value: "Site Safety Warnings", comment: "Header text for Malicious Site Protection settings")

@@ -567,7 +567,7 @@ final class SubscriptionDebugViewController: UITableViewController {
             do {
                 let tokenContainer = try await subscriptionManagerV2.getTokenContainer(policy: .localValid)
                 showAlert(title: "Token details", message: "\(tokenContainer.debugDescription)")
-            } catch OAuthClientError.missingTokens {
+            } catch OAuthClientError.missingTokenContainer {
                 showAlert(title: "Not authenticated", message: "No authenticated user found! - Token not available")
             } catch {
                 showAlert(title: "Error Validating Token", message: "\(error)")
@@ -646,7 +646,7 @@ final class SubscriptionDebugViewController: UITableViewController {
                     return entitlement.rawValue
                 }.joined(separator: "\n")
                 showAlert(title: "Available Entitlements", message: entitlementsDescription)
-            } catch OAuthClientError.missingTokens {
+            } catch OAuthClientError.missingTokenContainer {
                 showAlert(title: "Not authenticated", message: "No authenticated user found! - Token not available")
             } catch {
                 showAlert(title: "Error retrieving entitlements", message: "\(error)")

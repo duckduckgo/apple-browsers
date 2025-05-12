@@ -207,6 +207,12 @@ final class TabBarItemCellView: NSView {
         return mouseOverView
     }()
 
+    fileprivate let roundedBackgroundColorView = {
+        let view = ColorView(frame: .zero)
+        view.alphaValue = 0.8
+        return view
+    }()
+
     fileprivate let rightSeparatorView = ColorView(frame: .zero)
 
     fileprivate lazy var rightRampView: RampView = {
@@ -283,6 +289,10 @@ final class TabBarItemCellView: NSView {
         titleTextField.textColor = visualStyle.textPrimaryColor
 
         addSubview(mouseOverView)
+        if visualStyle.tabStyleProvider.isRoundedBackgroundPresentOnHover {
+            roundedBackgroundColorView.cornerRadius = 6
+            addSubview(roundedBackgroundColorView)
+        }
         addSubview(faviconImageView)
         addSubview(crashIndicatorButton)
         addSubview(audioButton)
@@ -299,6 +309,12 @@ final class TabBarItemCellView: NSView {
     override func layout() {
         super.layout()
         mouseOverView.frame = bounds
+        if visualStyle.tabStyleProvider.isRoundedBackgroundPresentOnHover {
+            roundedBackgroundColorView.frame = NSRect(x: bounds.origin.x + 4,
+                                                      y: bounds.origin.y + 6,
+                                                      width: bounds.width - 8,
+                                                      height: bounds.height - 8)
+        }
 
         if visualStyle.tabStyleProvider.shouldShowSShapedTab {
             withoutAnimation {
@@ -457,6 +473,8 @@ final class TabBarViewItem: NSCollectionViewItem {
 
     private var currentURL: URL?
     private var cancellables = Set<AnyCancellable>()
+
+    private let tabVisualProvider: TabStyleProviding = NSApp.delegateTyped.visualStyleManager.style.tabStyleProvider
 
     weak var delegate: TabBarViewItemDelegate?
     var tabViewModel: TabBarViewModel? {
@@ -717,8 +735,16 @@ final class TabBarViewItem: NSCollectionViewItem {
                 cell.mouseOverView.mouseOverColor = nil
                 cell.mouseOverView.backgroundColor = visualStyle.navigationBackgroundColor
             } else {
-                cell.mouseOverView.mouseOverColor = .tabMouseOver
-                cell.mouseOverView.backgroundColor = nil
+                if tabVisualProvider.isRoundedBackgroundPresentOnHover {
+                    cell.mouseOverView.mouseOverColor = nil
+                    cell.mouseOverView.backgroundColor = visualStyle.baseBackgroundColor
+                    cell.roundedBackgroundColorView.backgroundColor = visualStyle.navigationBackgroundColor
+                    cell.roundedBackgroundColorView.isHidden = !isMouseOver || isSelected
+                } else {
+                    cell.mouseOverView.mouseOverColor = .tabMouseOver
+                    cell.mouseOverView.backgroundColor = nil
+                }
+
             }
 
             if visualStyle.tabStyleProvider.shouldShowSShapedTab {

@@ -25,8 +25,8 @@ protocol TabStyleProviding {
     var pinnedTabWidth: CGFloat { get }
 
     var shouldShowSShapedTab: Bool { get }
-
     var selectedTabColor: NSColor { get }
+    var isRoundedBackgroundPresentOnHover: Bool { get }
 }
 
 final class LegacyTabStyleProvider: TabStyleProviding {
@@ -37,6 +37,7 @@ final class LegacyTabStyleProvider: TabStyleProviding {
     let pinnedTabHeight: CGFloat = 34
     let shouldShowSShapedTab = false
     let selectedTabColor: NSColor = .navigationBarBackground
+    let isRoundedBackgroundPresentOnHover = false
 }
 
 final class NewlineTabStyleProvider: TabStyleProviding {
@@ -47,4 +48,5 @@ final class NewlineTabStyleProvider: TabStyleProviding {
     let pinnedTabHeight: CGFloat = 36
     let shouldShowSShapedTab = true
     let selectedTabColor: NSColor = .navigationBackgroundColorNew
+    let isRoundedBackgroundPresentOnHover = true
 }

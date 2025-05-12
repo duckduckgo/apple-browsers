@@ -409,6 +409,9 @@ class OmniBarCell: UICollectionViewCell {
     var controller: OmniBarViewController?
 
     weak var omniBar: OmniBar? {
+        willSet {
+            omniBar?.barView.removeFromSuperview()
+        }
         didSet {
             guard let omniBarView = omniBar?.barView else { return }
 

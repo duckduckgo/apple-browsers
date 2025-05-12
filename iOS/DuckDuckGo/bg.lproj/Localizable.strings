@@ -1150,41 +1150,8 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Вчера";
 
-/* No comment provided by engineer. */
-"dax.hide.button" = "Скрий съветите за постоянно";
-
-/* No comment provided by engineer. */
-"dax.hide.cancel" = "Отмени";
-
-/* Subtitle in Hide Dax dialog */
-"dax.hide.message" = "Само няколко са и се постарахме да са информативни.";
-
-/* Title in Hide Dax dialog */
-"dax.hide.title" = "Скрий оставащите съвети?";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search" = "Търсенето в DuckDuckGo е анонимно. Винаги. 🙌";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search.cta" = "Слава Богу!";
-
-/* First parameter is a count of additional trackers, second and third are names of the tracker networks (strings) */
-"dax.onboarding.browsing.multiple.trackers" = "dax.onboarding.browsing.multiple.trackers";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.multiple.trackers.cta" = "Дай пет!";
-
-/* Parameter is domain name (string) */
-"dax.onboarding.browsing.one.tracker" = "*%1$@* се опитва да ви проследи тук.\n\nБлокирах ги!\n\n☝️ Вижте адресната лента, за да разберете кой се опитва да ви проследи, когато посещавате нов сайт.️";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.one.tracker.cta" = "Дай пет!";
-
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Внимание! Не мога да направя така, че %1$@ да не вижда вашата активност на %2$@.\n\nНо ако сърфирате с мен, като цяло мога да намаля информацията, която %1$@ научава за вас, като блокирам неговите тракери на много други сайтове.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.site.is.major.tracker.cta" = "Разбрах";
 
 /* Parameters are domain names (strings) */
 "dax.onboarding.browsing.site.owned.by.major.tracker" = "Внимание! Тъй като %2$@ притежава %1$@, той вижда какво правите тук.\n\nНо ако сърфирате с мен, като цяло мога да намаля информацията, която %2$@ научава за вас, като блокирам неговите тракери на много други сайтове.";
@@ -1195,29 +1162,8 @@
 /* No comment provided by engineer. */
 "dax.onboarding.browsing.without.trackers" = "Докато докосвате и превъртате, аз ще блокирам досадните тракери.\n\nПродължавайте да сърфирате спокойно!";
 
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.without.trackers.cta" = "Разбрах";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button" = "Личните данни могат да се натрупват в браузъра. Много неприятно. Използвайте огнения бутон, за да изгорите всичко. Опитайте сега! 👇";
-
-/* Cancel action */
-"dax.onboarding.fire.button.cancelAction" = "Отмени";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button.confirmAction" = "Затваряне на разделите и изчистване на данните";
-
 /* Encourage user to add favorite site using the browsing menu. */
 "dax.onboarding.home.add.favorite" = "Отварянето на любимите ви сайтове става светкавично!\n\nОтворете сайт, който харесвате. След това докоснете иконата \"⋯\" и изберете *Добавяне към любими*.";
-
-/* Accessible version of dax.onboarding.home.add.favorite */
-"dax.onboarding.home.add.favorite.accessible" = "Отварянето на любимите ви сайтове става светкавично! Посетете някой от любимите си сайтове. След това докоснете бутона за отваряне на меню и изберете \"Добавяне към любими\".";
-
-/* No comment provided by engineer. */
-"dax.onboarding.home.initial" = "Сега опитайте да отворите някой от любимите си сайтове!\n\nЩе блокирам тракерите, за да не ви шпионират. Освен това ще подобря сигурността на вашата връзка, ако това е възможно. 🔒";
-
-/* ad = advertisment */
-"dax.onboarding.home.subsequent" = "Нали разбрахте!\n\nЗапомнете: Всеки път, когато сърфирате с мен, аз подрязвам крилцата на някоя досадна реклама. 👍";
 
 /* No comment provided by engineer. */
 "Debug" = "Отстраняване на грешки";
@@ -1313,16 +1259,16 @@
 "duckai.preferences.text.markdown" = "Duck.ai е незадължителна функция, чрез която можете да разговаряте анонимно с популярни AI чат модели от трети страни. Чатовете не се използват за обучение на AI.\n[Научете повече](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
-"duckai.settings.enable.address-bar-toggle" = "Показване на Duck.ai в адресната лента";
+"duckai.settings.enable.address-bar-toggle" = "Адресна лента";
 
 /* Toggle text to enable/disable AI Chat in the browsing menu */
-"duckai.settings.enable.browsing-menu-toggle" = "Показване на Duck.ai в менюто на браузъра";
+"duckai.settings.enable.browsing-menu-toggle" = "Меню на браузъра";
 
 /* Toggle text to enable/disable Duck.ai in tab manager */
-"duckai.settings.enable.tab-switcher-toggle" = "Показване на Duck.ai на екрана с раздели";
+"duckai.settings.enable.tab-switcher-toggle" = "Екран с раздели";
 
 /* Toggle text to enable/disable Duck.ai in voice search */
-"duckai.settings.enable.voice-search-toggle" = "Показване на Duck.ai в гласовото търсене";
+"duckai.settings.enable.voice-search-toggle" = "Гласово търсене";
 
 /* Settings screen cell text for AI Chat settings */
 "duckai.settings.title" = "Duck.ai";
@@ -1336,11 +1282,20 @@
 /* Text displayed when DuckPlayer is in 'Ask' mode. */
 "duckPlayer.ask.label" = "Питай всеки път";
 
+/* Subtitle explaining how Duck Player protects privacy */
+"duckplayer.blocks.ads.keeps.history.private" = "Duck Player блокира насочените реклами и запазва вашата история на гледанията поверителна.";
+
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Никога";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";
+
+/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
+"duckplayer.open.youtube.videos.here" = "Отваряйте видеа от YouTube тук";
+
+/* Button text to play a video in Duck Player */
+"duckplayer.play.in.duck.player" = "Пускане на това видео в Duck Player";
 
 /* Body text for the modal feature explanation */
 "duckplayer.presentation.modal.body" = "С Duck Player на DuckDuckGo можете да гледате YouTube без насочени реклами и вече гледаните видеоклипове няма да повлияят на препоръчаните.";
@@ -1353,6 +1308,18 @@
 
 /* Two line title (separated by \n) for the feature explanation */
 "duckplayer.presentation.modal.title.youtube" = "Писна ли ви от рекламите в YouTube? Не и с Duck Player!";
+
+/* Button text to resume video in Duck Player */
+"duckplayer.resume.in.duck.player" = "Продължаване в Duck Player";
+
+/* Footer text explaining the auto-play toggle in Duck Player settings */
+"duckplayer.settings.autoplay.footer" = "Видеата, отворени в Duck Player, ще започнат да се възпроизвеждат автоматично. Изключете това, ако искате ръчно да стартирате възпроизвеждането на видеата, отворени в Duck Player.";
+
+/* Label for the auto-play toggle in Duck Player settings */
+"duckplayer.settings.autoplay.label" = "Автоматично пускане на видеа";
+
+/* Label for the experimental section in Duck Player settings */
+"duckplayer.settings.experimental.label" = "Експериментално";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "В Privacy Essentials на DuckDuckGo са осигурени всички настройки за поверителност, необходими за защита при сърфиране в мрежата.";
@@ -1369,8 +1336,47 @@
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.open-videos-in" = "Отваряне на видеоклипове от YouTube в Duck Player";
 
+/* Footer text explaining the search results toggle in Duck Player settings */
+"duckplayer.settings.search.results.footer" = "Щракването върху видеа в YouTube от резултатите от търсенето на DuckDuckGo ще ги отвори в Duck Player.";
+
+/* Label for the search results toggle in Duck Player settings */
+"duckplayer.settings.search.results.label" = "Резултати от DuckDuckGo Search";
+
+/* Message for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.message" = "Моля, затворете всички раздели, за да влезе в сила тази настройка.";
+
+/* OK button text for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.ok" = "ОК";
+
+/* Title for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.title" = "Важно!";
+
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.title" = "Duck Player";
+
+/* Label for the Duck Player variant picker in Duck Player settings */
+"duckplayer.settings.variant.label" = "Вариант на Duck Player";
+
+/* Footer text explaining the YouTube.com option in Duck Player settings */
+"duckplayer.settings.youtube.footer" = "Щракването върху видеа в YouTube при сърфиране в YouTube.com ще ги отвори в Duck Player.";
+
+/* Label for the YouTube.com option in Duck Player settings */
+"duckplayer.settings.youtube.label" = "YouTube.com";
+
+/* Button text to open Duck Player settings */
+"duckplayer.toast.open.settings" = "Отваряне на настройки";
+
+/* Toast message informing user they can disable Duck Player in settings */
+"duckplayer.toast.turn.off.anytime" = "Можете да изключите Duck Player по всяко време в „Настройки“";
+
+/* Button text to watch video on YouTube */
+"duckplayer.watch.on.youtube" = "Гледане в YouTube";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.watch.without.targeted.ads" = "Гледайте без насочени реклами";
+
+/* Title for Duck Player welcome message highlighting privacy benefits */
+"duckplayer.youtube.no.ads.privacy" = "Гледайте YouTube с по-малко реклами и повече поверителност";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Защита на имейл";
@@ -2332,9 +2338,6 @@
 /* No comment provided by engineer. */
 "onboardingWelcomeHeader" = "Добре дошли в DuckDuckGo!";
 
-/* No comment provided by engineer. */
-"Open tabs remain unaffected by this change.  Please close all tabs for this setting to take effect." = "Тази промяна не засяга отворените раздели.  Моля, затворете всички раздели, за да влезе в сила тази настройка.";
-
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Не е намерено приложението, необходимо за отваряне на тази връзка";
 
@@ -2560,6 +2563,9 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Показване на пълния адрес на сайта";
 
+/* Settings screen text for showing AI Chat in various places in the app */
+"settings.aichat.shortcuts" = "Бързи Връзки";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Винаги включено";
 
@@ -2631,6 +2637,9 @@
 
 /* Settings cell for Email Protection */
 "settings.emailProtection.description" = "Блокирайте имейл тракерите и скрийте своя адрес";
+
+/* Settings screen cell text for enabling AI chat */
+"settings.enable.aichat" = "Активиране на Duck.ai";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Активиране на Email Protection";

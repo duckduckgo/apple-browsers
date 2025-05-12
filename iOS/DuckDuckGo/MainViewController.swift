@@ -142,7 +142,7 @@ class MainViewController: UIViewController {
     }()
 
     weak var tabSwitcherController: TabSwitcherViewController?
-    var tabSwitcherButton: TabSwitcherButton!
+    var tabSwitcherButton: TabSwitcherButton?
 
     /// Do not reference directly, use `presentedMenuButton`
     let menuButton = MenuButton()
@@ -198,7 +198,7 @@ class MainViewController: UIViewController {
     }()
 
     private lazy var aiChatViewControllerManager: AIChatViewControllerManager = {
-        let manager = AIChatViewControllerManager()
+        let manager = AIChatViewControllerManager(featureFlagger: featureFlagger)
         manager.delegate = self
         return manager
     }()
@@ -798,9 +798,11 @@ class MainViewController: UIViewController {
 
             viewCoordinator.toolbarTabSwitcherButton.customView = button
         } else {
+            assert(tabSwitcherButton == nil)
             tabSwitcherButton = TabSwitcherButton()
-            tabSwitcherButton.delegate = self
+            tabSwitcherButton?.delegate = self
             viewCoordinator.toolbarTabSwitcherButton.customView = tabSwitcherButton
+            assert(tabSwitcherButton != nil)
         }
         viewCoordinator.toolbarTabSwitcherButton.isAccessibilityElement = true
         viewCoordinator.toolbarTabSwitcherButton.accessibilityTraits = .button
@@ -962,7 +964,8 @@ class MainViewController: UIViewController {
                                                   variantManager: variantManager,
                                                   newTabDialogFactory: newTabDaxDialogFactory,
                                                   newTabDialogTypeProvider: DaxDialogs.shared,
-                                                  faviconLoader: faviconLoader)
+                                                  faviconLoader: faviconLoader,
+                                                  messageNavigationDelegate: self)
 
         controller.delegate = self
         controller.shortcutsDelegate = self
@@ -1265,8 +1268,9 @@ class MainViewController: UIViewController {
     private func refreshTabIcon() {
         if !isExperimentalAppearanceEnabled {
             viewCoordinator.toolbarTabSwitcherButton.accessibilityHint = UserText.numberOfTabs(tabManager.count)
-            tabSwitcherButton.tabCount = tabManager.count
-            tabSwitcherButton.hasUnread = tabManager.hasUnread
+            assert(tabSwitcherButton != nil)
+            tabSwitcherButton?.tabCount = tabManager.count
+            tabSwitcherButton?.hasUnread = tabManager.hasUnread
         }
     }
 
@@ -2070,6 +2074,10 @@ extension MainViewController: BrowserChromeDelegate {
 
 extension MainViewController: OmniBarDelegate {
 
+    func onSharePressed() {
+        shareCurrentURLFromAddressBar()
+    }
+
     func selectedSuggestion() -> Suggestion? {
         return suggestionTrayController?.selectedSuggestion
     }
@@ -2326,11 +2334,13 @@ extension MainViewController: OmniBarDelegate {
         switch accessoryType {
         case .chat:
             openAIChatFromAddressBar()
-        case .share:
-            guard let link = currentTab?.link else { return }
-            Pixel.fire(pixel: .addressBarShare)
-            currentTab?.onShareAction(forLink: link, fromView: viewCoordinator.omniBar.barView.accessoryButton)
         }
+    }
+
+    private func shareCurrentURLFromAddressBar() {
+        Pixel.fire(pixel: .addressBarShare)
+        guard let link = currentTab?.link else { return }
+        currentTab?.onShareAction(forLink: link, fromView: viewCoordinator.omniBar.barView.accessoryButton)
     }
 
     private func openAIChatFromAddressBar() {
@@ -2911,7 +2921,6 @@ extension MainViewController: TabSwitcherDelegate {
                    withAdditionalParameters: featureDiscovery.addToParams([:], forFeature: .aiChat))
         self.aiChatViewControllerManager.openAIChat(on: tabSwitcher)
     }
-
 }
 
 extension MainViewController: BookmarksDelegate {
@@ -3364,3 +3373,6 @@ private extension UIBarButtonItem {
         }
     }
 }
+
+/// This extension allows delegating from the RMF action button when the action type is 'navigation'.  It shadows existing functions.
+extension MainViewController: MessageNavigationDelegate { }

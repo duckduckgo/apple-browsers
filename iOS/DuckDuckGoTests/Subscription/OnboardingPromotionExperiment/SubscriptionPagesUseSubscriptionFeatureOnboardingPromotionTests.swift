@@ -31,7 +31,6 @@ final class SubscriptionPagesUseSubscriptionFeatureOnboardingPromotionTests: XCT
     private var mockSubscriptionManager: SubscriptionManagerMock!
     private var mockAccountManager: AccountManagerMock!
     private var mockStorePurchaseManager: StorePurchaseManagerMock!
-    private var mockOnboardingPrivacyProPromoExperiment: MockOnboardingPrivacyProPromoExperimenting!
     private var mockAppStorePurchaseFlow: AppStorePurchaseFlowMock!
 
     override func setUpWithError() throws {
@@ -46,50 +45,12 @@ final class SubscriptionPagesUseSubscriptionFeatureOnboardingPromotionTests: XCT
                                                       subscriptionFeatureMappingCache: SubscriptionFeatureMappingCacheMock())
 
         mockAppStorePurchaseFlow = AppStorePurchaseFlowMock()
-        mockOnboardingPrivacyProPromoExperiment = MockOnboardingPrivacyProPromoExperimenting(cohort: .treatment)
 
         sut = DefaultSubscriptionPagesUseSubscriptionFeature(subscriptionManager: mockSubscriptionManager,
                                                              subscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock.enabled,
                                                              subscriptionAttributionOrigin: nil,
                                                              appStorePurchaseFlow: mockAppStorePurchaseFlow,
                                                              appStoreRestoreFlow: AppStoreRestoreFlowMock(),
-                                                             appStoreAccountManagementFlow: AppStoreAccountManagementFlowMock(),
-                                                             onboardingPrivacyProPromoExperiment: mockOnboardingPrivacyProPromoExperiment)
-    }
-
-    func testWhenMonthlySubscribeSucceeds_thenSubscriptionPurchasedMonthlyPixelFired() async throws {
-        // Given
-        mockAccountManager.accessToken = nil
-        mockSubscriptionManager.canPurchase = true
-        mockAppStorePurchaseFlow.purchaseSubscriptionResult = .success("")
-        mockAppStorePurchaseFlow.completeSubscriptionPurchaseResult = .success(.completed)
-        mockAppStorePurchaseFlow.purchaseSubscriptionBlock = { self.mockAccountManager.accessToken = "token" }
-
-        let params: [String: Any] = ["id": "monthly-subscription"]
-
-        // When
-        _ = await sut.subscriptionSelected(params: params, original: MockWKScriptMessage(name: "", body: ""))
-
-        // Then
-        XCTAssertTrue(mockOnboardingPrivacyProPromoExperiment.fireSubscriptionStartedMonthlyPixelCalled)
-        XCTAssertFalse(mockOnboardingPrivacyProPromoExperiment.fireSubscriptionStartedYearlyPixelCalled)
-    }
-
-    func testWhenYearlySubscribeSucceeds_thenSubscriptionPurchasedYearlyPixelFired() async throws {
-        // Given
-        mockAccountManager.accessToken = nil
-        mockSubscriptionManager.canPurchase = true
-        mockAppStorePurchaseFlow.purchaseSubscriptionResult = .success("")
-        mockAppStorePurchaseFlow.completeSubscriptionPurchaseResult = .success(.completed)
-        mockAppStorePurchaseFlow.purchaseSubscriptionBlock = { self.mockAccountManager.accessToken = "token" }
-
-        let params: [String: Any] = ["id": "yearly-subscription"]
-
-        // When
-        _ = await sut.subscriptionSelected(params: params, original: MockWKScriptMessage(name: "", body: ""))
-
-        // Then
-        XCTAssertFalse(mockOnboardingPrivacyProPromoExperiment.fireSubscriptionStartedMonthlyPixelCalled)
-        XCTAssertTrue(mockOnboardingPrivacyProPromoExperiment.fireSubscriptionStartedYearlyPixelCalled)
+                                                             appStoreAccountManagementFlow: AppStoreAccountManagementFlowMock())
     }
 }

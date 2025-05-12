@@ -25,7 +25,7 @@ public enum StoreError: Error {
     case failedVerification
 }
 
-public enum StorePurchaseManagerError: Error {
+public enum StorePurchaseManagerError: LocalizedError {
     case productNotFound
     case externalIDisNotAValidUUID
     case purchaseFailed
@@ -33,6 +33,29 @@ public enum StorePurchaseManagerError: Error {
     case transactionPendingAuthentication
     case purchaseCancelledByUser
     case unknownError
+
+    public var errorDescription: String? {
+        switch self {
+        case .productNotFound:
+            return "Product not found"
+        case .externalIDisNotAValidUUID:
+            return "External ID is not a valid UUID"
+        case .purchaseFailed:
+            return "Purchase failed"
+        case .transactionCannotBeVerified:
+            return "Transaction cannot be verified"
+        case .transactionPendingAuthentication:
+            return "Transaction pending authentication"
+        case .purchaseCancelledByUser:
+            return "Purchase cancelled by user"
+        case .unknownError:
+            return "Unknown error"
+        }
+    }
+
+    public var localizedDescription: String {
+        errorDescription ?? "Unknown"
+    }
 }
 
 public protocol StorePurchaseManagerV2 {
@@ -167,6 +190,8 @@ public final class DefaultStorePurchaseManagerV2: ObservableObject, StorePurchas
                 for id in availableProducts.compactMap({ $0.id }) {
                     _ = await subscriptionFeatureMappingCache.subscriptionFeatures(for: id)
                 }
+
+                NotificationCenter.default.post(name: .availableAppStoreProductsDidChange, object: self, userInfo: nil)
             }
         } catch {
             Logger.subscriptionStorePurchaseManager.error("Failed to fetch available products: \(String(reflecting: error), privacy: .public)")

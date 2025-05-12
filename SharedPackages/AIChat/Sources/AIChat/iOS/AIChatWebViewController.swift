@@ -31,7 +31,7 @@ final class AIChatWebViewController: UIViewController {
     private let chatModel: AIChatViewModeling
     private var downloadHandler: DownloadHandling
 
-    private lazy var webView: WKWebView = {
+    private(set) lazy var webView: WKWebView = {
         let webView = WKWebView(frame: .zero, configuration: chatModel.webViewConfiguration)
         webView.isOpaque = false /// Required to make the background color visible
         webView.backgroundColor = .webViewBackgroundColor

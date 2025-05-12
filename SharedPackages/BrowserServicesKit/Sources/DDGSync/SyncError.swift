@@ -22,7 +22,7 @@ public enum SyncError: Error, Equatable {
 
     public enum AccountRemovedReason: String, Equatable {
         case authStateInactive = "auth-state-inactive"
-        case syncEnabledNotSetOnKeyValueStore = "not-set-on-key-value-store"
+        case syncEnabledNotSetOnKeyValueStore = "not-set-on-key-value-store2"
         case notFoundInSecureStorage = "not-found-in-secure-storage"
         case userTurnedOffSync = "user-turned-off"
         case userDeletedAccount = "user-deleted-account"

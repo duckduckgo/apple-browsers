@@ -403,7 +403,7 @@ extension NativeDuckPlayerNavigationHandler: DuckPlayerNavigationHandling {
         toggleMediaPlayback(webView, pause: false)
         return .notHandled(.isNotYoutubeWatch)
     }
-    // swiftlint:disable cyclomatic_complexity
+    // swiftlint:enable cyclomatic_complexity
 
     /// Custom back navigation logic to handle Duck Player in the web view's history stack.
     ///

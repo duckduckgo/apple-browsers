@@ -148,7 +148,22 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
 
     private(set) var sparkleUpdateState: SPUUserUpdateState?
 
-    init(internalUserDecider: InternalUserDecider, hasPendingObsoleteUpdate: Bool, areAutomaticUpdatesEnabled: Bool) {
+    // MARK: - Feature Flags support
+
+    private let featureFlagger: FeatureFlagger
+
+    private var autoUpdateAllowed: Bool {
+        !featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp)
+    }
+
+    // MARK: - Initializers
+
+    init(internalUserDecider: InternalUserDecider,
+         hasPendingObsoleteUpdate: Bool,
+         areAutomaticUpdatesEnabled: Bool,
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+
+        self.featureFlagger = featureFlagger
         self.internalUserDecider = internalUserDecider
         self.ignoresCheckpoint = hasPendingObsoleteUpdate
         self.checkpoint = areAutomaticUpdatesEnabled ? .restart : .download
@@ -259,6 +274,13 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
             reply(.skip)
             self?.updateProgress = .updateCycleDone(.dismissingObsoleteUpdate)
             Logger.updates.log("Updater dismissing obsolete update")
+        }
+
+        guard autoUpdateAllowed else {
+            onResuming = { reply(.install) }
+            updateProgress = .updateCycleDone(.pausedAtRestartCheckpoint)
+            Logger.updates.log("Updater paused at restart checkpoint")
+            return
         }
 
         if checkpoint == .restart && !ignoresCheckpoint {

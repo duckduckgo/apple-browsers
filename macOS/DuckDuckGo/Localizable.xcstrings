@@ -70857,6 +70857,18 @@
         }
       }
     },
+    "update.ready.menu.item" : {
+      "comment" : "Title of the menu item that informs user that a new update has been downloaded and the user should restart the app to update. Clicking on the menu item restarts the app",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Update Ready - Restart to Update"
+          }
+        }
+      }
+    },
     "URL" : {
       "localizations" : {
         "de" : {

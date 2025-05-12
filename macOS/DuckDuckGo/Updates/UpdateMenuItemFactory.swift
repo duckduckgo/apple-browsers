@@ -30,6 +30,23 @@ final class UpdateMenuItemFactory {
         return item
     }
 
+    static func menuItem(for controller: UpdateControllerProtocol) -> NSMenuItem {
+
+        let title: String
+
+        if controller.isAtRestartCheckpoint {
+            title = UserText.updateReadyMenuItem
+        } else {
+            title = UserText.updateAvailableMenuItem
+        }
+
+        let item = NSMenuItem(title: title)
+        item.target = Application.appDelegate.updateController
+        item.action = #selector(UpdateController.runUpdateFromMenuItem)
+        item.image = NSImage.updateMenuItemIcon
+        return item
+    }
+
 }
 
 #endif

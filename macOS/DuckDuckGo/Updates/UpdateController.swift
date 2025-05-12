@@ -49,6 +49,7 @@ protocol UpdateControllerProtocol: AnyObject {
 
     var areAutomaticUpdatesEnabled: Bool { get set }
 
+    var isAtRestartCheckpoint: Bool { get }
 }
 
 #if SPARKLE
@@ -121,6 +122,21 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         }
     }
 
+    var isAtRestartCheckpoint: Bool {
+        guard let userDriver else {
+            return false
+        }
+
+        switch userDriver.updateProgress {
+        case .readyToInstallAndRelaunch:
+            return true
+        case .updateCycleDone(let reason) where reason == .pausedAtRestartCheckpoint:
+            return true
+        default:
+            return false
+        }
+    }
+
     @UserDefaultsWrapper(key: .pendingUpdateShown, defaultValue: false)
     var needsNotificationDot: Bool {
         didSet {
@@ -139,10 +155,20 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
     private var shouldCheckNewApplicationVersion = true
 
+    // MARK: - Feature Flags support
+
+    private let featureFlagger: FeatureFlagger
+    private var autoUpdateAllowed: Bool {
+        !featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp)
+    }
+
     // MARK: - Public
 
-    init(internalUserDecider: InternalUserDecider) {
+    init(internalUserDecider: InternalUserDecider,
+         featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+
         willRelaunchAppPublisher = willRelaunchAppSubject.eraseToAnyPublisher()
+        self.featureFlagger = featureFlagger
         self.internalUserDecider = internalUserDecider
         super.init()
 
@@ -192,6 +218,16 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     // Check for updates immediately, bypassing the rollout schedule
     // This is used for user-initiated update checks only
     func checkForUpdateSkippingRollout() {
+        if !autoUpdateAllowed && shouldForceUpdateCheck {
+            userDriver?.cancelAndDismissCurrentUpdate()
+            updater = nil
+
+            guard let updater = try? configureUpdater(needsUpdateCheck: true) else {
+                return
+            }
+            updater.checkForUpdates()
+        }
+
         guard let updater, !updater.sessionInProgress else { return }
 
         Logger.updates.log("Checking for updates skipping rollout")
@@ -221,7 +257,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     //   - needsUpdateCheck: A flag indicating whether to perform a new appcast check.
     //     Set to `true` if the pending update might be obsolete.
     //     Defaults to `false`
-    private func configureUpdater(needsUpdateCheck: Bool = false) throws {
+    private func configureUpdater(needsUpdateCheck: Bool = false) throws -> SPUUpdater? {
         // Workaround to reset the updater state
         cachedUpdateResult = nil
         latestUpdate = nil
@@ -229,30 +265,33 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         userDriver = UpdateUserDriver(internalUserDecider: internalUserDecider,
                                       hasPendingObsoleteUpdate: needsUpdateCheck,
                                       areAutomaticUpdatesEnabled: areAutomaticUpdatesEnabled)
-        guard let userDriver else { return }
+        guard let userDriver else { return nil }
 
-        updater = SPUUpdater(hostBundle: Bundle.main, applicationBundle: Bundle.main, userDriver: userDriver, delegate: self)
+        let updater = SPUUpdater(hostBundle: Bundle.main, applicationBundle: Bundle.main, userDriver: userDriver, delegate: self)
 
 #if DEBUG
         if NSApp.delegateTyped.featureFlagger.isFeatureOn(.autoUpdateInDEBUG) {
-            updater?.updateCheckInterval = 10_800
+            updater.updateCheckInterval = 10_800
         } else {
-            updater?.updateCheckInterval = 0
+            updater.updateCheckInterval = 0
         }
-        updater?.automaticallyChecksForUpdates = false
-        updater?.automaticallyDownloadsUpdates = false
+        updater.automaticallyChecksForUpdates = false
+        updater.automaticallyDownloadsUpdates = false
 #else
         // Some older version uses SUAutomaticallyUpdate to control app restart behavior
         // We disable it to prevent interference with our custom updater UI
-        if updater?.automaticallyDownloadsUpdates == true {
-            updater?.automaticallyDownloadsUpdates = false
+        if updater.automaticallyDownloadsUpdates == true {
+            updater.automaticallyDownloadsUpdates = false
         }
 #endif
 
         updateProcessCancellable = userDriver.updateProgressPublisher
             .assign(to: \.updateProgress, onWeaklyHeld: self)
 
-        try updater?.start()
+        try updater.start()
+        self.updater = updater
+
+        return updater
     }
 
     private func showUpdateNotificationIfNeeded() {
@@ -294,6 +333,11 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         guard let userDriver else { return }
 
         PixelKit.fire(DebugEvent(GeneralPixel.updaterDidRunUpdate))
+
+        guard autoUpdateAllowed else {
+            userDriver.resume()
+            return
+        }
 
         guard shouldForceUpdateCheck else {
             userDriver.resume()

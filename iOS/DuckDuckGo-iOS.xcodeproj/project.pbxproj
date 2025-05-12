@@ -1096,6 +1096,7 @@
 		C15516062D47D2EF001B94E9 /* burst-blob-passwords.json in Resources */ = {isa = PBXBuildFile; fileRef = C15516052D47D2EF001B94E9 /* burst-blob-passwords.json */; };
 		C158AC7B297AB5DC0008723A /* MockSecureVault.swift in Sources */ = {isa = PBXBuildFile; fileRef = C158AC7A297AB5DC0008723A /* MockSecureVault.swift */; };
 		C159DF072A430B60007834BB /* EmailSignupViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C159DF062A430B60007834BB /* EmailSignupViewController.swift */; };
+		C15CDF3D2DD2253C00A67F63 /* SubscriptionFreeTrialsHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C15CDF3C2DD2252F00A67F63 /* SubscriptionFreeTrialsHelper.swift */; };
 		C160544129D6044D00B715A1 /* AutofillInterfaceUsernameTruncator.swift in Sources */ = {isa = PBXBuildFile; fileRef = C160544029D6044D00B715A1 /* AutofillInterfaceUsernameTruncator.swift */; };
 		C163DC962DC92FDC0026852D /* OnboardingPrivacyProPromotionHelpingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C163DC952DC92FDC0026852D /* OnboardingPrivacyProPromotionHelpingTests.swift */; };
 		C1641EAF2BC2F5140012607A /* ImportPasswordsViaSyncViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1641EAE2BC2F5140012607A /* ImportPasswordsViaSyncViewController.swift */; };
@@ -3171,6 +3172,7 @@
 		C1588FC52D08644800C9BE70 /* sk */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = sk; path = sk.lproj/Localizable.strings; sourceTree = "<group>"; };
 		C158AC7A297AB5DC0008723A /* MockSecureVault.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockSecureVault.swift; sourceTree = "<group>"; };
 		C159DF062A430B60007834BB /* EmailSignupViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmailSignupViewController.swift; sourceTree = "<group>"; };
+		C15CDF3C2DD2252F00A67F63 /* SubscriptionFreeTrialsHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionFreeTrialsHelper.swift; sourceTree = "<group>"; };
 		C160544029D6044D00B715A1 /* AutofillInterfaceUsernameTruncator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillInterfaceUsernameTruncator.swift; sourceTree = "<group>"; };
 		C163677A2D08638C001D1094 /* nb */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = nb; path = nb.lproj/InfoPlist.strings; sourceTree = "<group>"; };
 		C163677B2D08638C001D1094 /* nb */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = nb; path = nb.lproj/Localizable.strings; sourceTree = "<group>"; };
@@ -6317,6 +6319,22 @@
 			name = EmailProtection;
 			sourceTree = "<group>";
 		};
+		C15CDF3B2DD2247C00A67F63 /* FreeTrials */ = {
+			isa = PBXGroup;
+			children = (
+				C15CDF3C2DD2252F00A67F63 /* SubscriptionFreeTrialsHelper.swift */,
+			);
+			path = FreeTrials;
+			sourceTree = "<group>";
+		};
+		C162A1B52D79F6EC00C34BAB /* OnboardingPromotionExperiment */ = {
+			isa = PBXGroup;
+			children = (
+				C162A1B62D79F71500C34BAB /* SubscriptionPagesUseSubscriptionFeatureOnboardingPromotionTests.swift */,
+			);
+			path = OnboardingPromotionExperiment;
+			sourceTree = "<group>";
+		};
 		C163DC922DC92F880026852D /* Onboarding */ = {
 			isa = PBXGroup;
 			children = (
@@ -6807,6 +6825,7 @@
 		D664C7922B289AA000CBFA76 /* Subscription */ = {
 			isa = PBXGroup;
 			children = (
+				C15CDF3B2DD2247C00A67F63 /* FreeTrials */,
 				F1D4472C2D9EB2470085809A /* AuthV2PixelHandler.swift */,
 				D6D95CE42B6DA3F200960317 /* AsyncHeadlessWebview */,
 				1E53508E2C7C9A1F00818DAA /* DefaultSubscriptionManager+AccountManagerKeychainAccessDelegate.swift */,
@@ -9407,6 +9426,7 @@
 				3158461A281B08F5004ADB8B /* AutofillLoginListViewModel.swift in Sources */,
 				31C138A827A3E9C900FFD4B2 /* URLDownloadSession.swift in Sources */,
 				981FED76220464EF008488D7 /* AutoClearSettingsModel.swift in Sources */,
+				C15CDF3D2DD2253C00A67F63 /* SubscriptionFreeTrialsHelper.swift in Sources */,
 				83004E882193E8C700DA013C /* TabViewControllerLongPressMenuExtension.swift in Sources */,
 				98F78B8E22419093007CACF4 /* ThemableNavigationController.swift in Sources */,
 				CBD4F140279EBFB300B20FD7 /* SwiftUICollectionViewCell.swift in Sources */,

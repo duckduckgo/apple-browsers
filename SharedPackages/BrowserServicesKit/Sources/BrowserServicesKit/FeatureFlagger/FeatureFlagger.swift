@@ -193,27 +193,6 @@ public protocol FeatureFlagger: AnyObject {
     ///
     func isFeatureOn<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> Bool
 
-    /// Retrieves the cohort for a feature flag if the feature is enabled.
-    ///
-    /// This method determines the source of the feature flag and evaluates its eligibility based on
-    /// the user's internal status and the privacy configuration. It supports different sources, such as
-    /// disabled features, internal-only features, and remotely toggled features.
-    ///
-    /// - Parameter featureFlag: A feature flag conforming to `FeatureFlagDescribing`.
-    ///
-    /// - Returns: The `CohortID` associated with the feature flag, or `nil` if the feature is disabled or
-    ///   does not meet the eligibility criteria.
-    ///
-    /// - Behavior:
-    ///   - For `.disabled`: Returns `nil`.
-    ///   - For `.internalOnly`: Returns the cohort if the user is an internal user.
-    ///   - For `.remoteDevelopment` and `.remoteReleasable`:
-    ///     - If the feature is a subfeature, resolves its cohort using `resolveCohort(_ subfeature:)`.
-    ///     - Returns `nil` if the user is not eligible.
-    ///
-    /// > Note: Setting `allowOverride` to `false` skips checking local overrides. This can be used
-    ///   when the non-overridden feature flag value is required.
-
     /// Retrieves or attempts to assign a cohort for a feature flag if the feature is enabled.
     ///
     /// This method checks whether the feature flag is active based on its source configuration.

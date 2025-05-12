@@ -36,7 +36,7 @@ final class PrivacyDashboardPopover: NSPopover {
     var viewController: PrivacyDashboardViewController {
         (contentViewController as? PrivacyDashboardViewController)!
     }
-    let contentScopeExperimentsManager: ContentScopeExperimentsManaging
+    private let contentScopeExperimentsManager: ContentScopeExperimentsManaging
 
     init(entryPoint: PrivacyDashboardEntryPoint = .dashboard, contentScopeExperimentsManager: ContentScopeExperimentsManaging) {
         self.contentScopeExperimentsManager = contentScopeExperimentsManager

@@ -19,7 +19,24 @@
 import Foundation
 
 public protocol ContentScopeExperimentsManaging {
+    /// Retrieves all active experiments, that live under the "ContentScopeExperiments" parent feature, currently assigned to the user.
+    ///
+    /// This method filters allActiveExperiments based on the parent feature "ContentScopeExperiments"
+    ///
+    /// - Returns: A dictionary of active experiments where the key is the experiment's subfeature ID,
+    ///   and the value is the associated `ExperimentData`.
+    ///
     var allActiveContentScopeExperiments: Experiments { get }
+
+    /// Retrieves or attempts to assign the cohorts for all  "ContentScopeExperiments" experiments.
+    ///
+    /// This method checks whether each "ContentScopeExperiments" sub-feature is active based on its source configuration.
+    /// For features that are enabled and support cohorts, it returns the assigned cohorts if they exist.
+    /// Otherwise, it attempts to resolve and assign the appropriate cohort from the available options.
+    ///
+    /// If local overrides are enabled (`allowOverride = true`) and the user is internal, the overridden
+    /// cohort is returned before any other logic is applied.
+    ///
     func resolveContentScopeScriptActiveExperiments() -> Experiments
 }
 

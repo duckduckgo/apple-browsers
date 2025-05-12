@@ -78,11 +78,9 @@ public final class ContentScopeProperties: Encodable {
 
     private func setCurrentCohort(experimentManager: ContentScopeExperimentsManaging?) -> [ContentScopeExperimentData] {
         guard let experiments = experimentManager?.resolveContentScopeScriptActiveExperiments() else { return [] }
-        var data = [ContentScopeExperimentData]()
-        for experiment in experiments {
-            data.append(ContentScopeExperimentData(feature: experiment.value.parentID, subfeature: experiment.key, cohort: experiment.value.cohortID))
+        return experiments.map {
+            ContentScopeExperimentData(feature: $0.value.parentID, subfeature: $0.key, cohort: $0.value.cohortID)
         }
-        return data
     }
 
 }

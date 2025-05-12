@@ -477,8 +477,10 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
             } else {
                 Logger.networkProtection.log("Using Auth V2")
                 do {
-                    let token = try await subscriptionManager.getTokenContainer(policy: .localValid)
-                    return .success(token.decodedAccessToken.hasEntitlement(.networkProtection))
+                    let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .localValid)
+                    let isNetworkProtectionEnabled = tokenContainer.decodedAccessToken.hasEntitlement(.networkProtection)
+                    Logger.networkProtection.log("NetworkProtectionEnabled if: \( isNetworkProtectionEnabled ? "Enabled" : "Disabled", privacy: .public)")
+                    return .success(isNetworkProtectionEnabled)
                 } catch {
                     return .failure(error)
                 }

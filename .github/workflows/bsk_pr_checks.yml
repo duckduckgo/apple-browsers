@@ -64,7 +64,17 @@ jobs:
         run: set -o pipefail && swift build | tee build-log.txt | xcbeautify
 
       - name: Run tests
+        id: run-unit-tests
         run: set -o pipefail && swift test | tee -a build-log.txt | xcbeautify --report junit --report-path . --junit-report-filename package-tests.xml
+
+      - name: Upload JUnit XML as artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bsk-macos-unittests.xml
+          path: |
+            SharedPackages/BrowserServicesKit/package-tests.xml
+          retention-days: 7
 
       - name: Publish Unit Tests Report
         uses: mikepenz/action-junit-report@v4
@@ -76,7 +86,7 @@ jobs:
           check_retries: true
 
       - name: Update Asana with failed unit tests
-        if: always() # always run even if the previous step fails
+        if: always() && steps.run-unit-tests.outcome == 'failure'
         env:
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
           WORKFLOW_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
@@ -154,6 +164,7 @@ jobs:
           # mv .build/* DerivedData/SourcePackages
 
       - name: Run tests
+        id: run-unit-tests-ios
         run: |
           set -o pipefail && xcodebuild test \
             -scheme BrowserServicesKit \
@@ -167,6 +178,15 @@ jobs:
             | tee -a ios-build-log.txt \
             | xcbeautify --report junit --report-path . --junit-report-filename bsk-ios-unittests.xml
 
+      - name: Upload JUnit XML as artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bsk-ios-unittests.xml
+          path: |
+            SharedPackages/BrowserServicesKit/bsk-ios-unittests.xml
+          retention-days: 7
+
       - name: Publish Unit Tests Report
         uses: mikepenz/action-junit-report@v4
         if: always()
@@ -176,7 +196,7 @@ jobs:
           require_tests: true
 
       - name: Update Asana with failed unit tests
-        if: always() # always run even if the previous step fails
+        if: always() && steps.run-unit-tests-ios.outcome == 'failure'
         env:
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
           WORKFLOW_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}

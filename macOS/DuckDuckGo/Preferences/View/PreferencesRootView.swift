@@ -38,8 +38,10 @@ enum Preferences {
             }
         }
         static let paneContentWidth: CGFloat = 544
-        static let panePaddingHorizontal: CGFloat = 40
-        static let panePaddingVertical: CGFloat = 40
+        static let panePaddingHorizontal: CGFloat = 24
+        static let panePaddingVertical: CGFloat = 32
+        static let minSidebarWidth: CGFloat = 128
+        static let minContentWidth: CGFloat = 416
     }
 
     struct RootView: View {
@@ -61,7 +63,8 @@ enum Preferences {
 
         var body: some View {
             HStack(spacing: 0) {
-                Sidebar().environmentObject(model).frame(width: Const.sidebarWidth)
+                Sidebar().environmentObject(model).frame(minWidth: Const.minSidebarWidth, maxWidth: Const.sidebarWidth)
+                    .layoutPriority(1)
                 Color(NSColor.separatorColor).frame(width: 1)
                 ScrollView(.vertical) {
                     HStack(spacing: 0) {
@@ -69,7 +72,7 @@ enum Preferences {
                         Spacer()
                     }
                 }
-                .frame(maxWidth: .infinity)
+                .frame(minWidth: Const.minContentWidth, maxWidth: .infinity)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.preferencesBackground)
@@ -224,7 +227,8 @@ enum Preferences {
 
         var body: some View {
             HStack(spacing: 0) {
-                Sidebar().environmentObject(model).frame(width: Const.sidebarWidth)
+                Sidebar().environmentObject(model).frame(minWidth: Const.minSidebarWidth, maxWidth: Const.sidebarWidth)
+                    .layoutPriority(1)
                 Color(NSColor.separatorColor).frame(width: 1)
                 ScrollView(.vertical) {
                     HStack(spacing: 0) {
@@ -232,7 +236,7 @@ enum Preferences {
                         Spacer()
                     }
                 }
-                .frame(maxWidth: .infinity)
+                .frame(minWidth: Const.minContentWidth, maxWidth: .infinity)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color.preferencesBackground)

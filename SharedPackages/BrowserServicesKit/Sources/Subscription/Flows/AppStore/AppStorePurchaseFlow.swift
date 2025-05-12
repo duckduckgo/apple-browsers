@@ -92,7 +92,7 @@ public final class DefaultAppStorePurchaseFlow: AppStorePurchaseFlow {
                 Logger.subscription.info("[AppStorePurchaseFlow] purchaseSubscription -> restoreAccountFromPastPurchase: activeSubscriptionAlreadyPresent")
                 return .failure(.activeSubscriptionAlreadyPresent)
             case .failure(let error):
-                Logger.subscription.info("[AppStorePurchaseFlow] purchaseSubscription -> restoreAccountFromPastPurchase: \(String(reflecting: error), privacy: .public)")
+                Logger.subscription.info("[AppStorePurchaseFlow] purchaseSubscription -> restoreAccountFromPastPurchase: \(error.localizedDescription, privacy: .public)")
                 switch error {
                 case .subscriptionExpired(let expiredAccountDetails):
                     externalID = expiredAccountDetails.externalID
@@ -109,7 +109,7 @@ public final class DefaultAppStorePurchaseFlow: AppStorePurchaseFlow {
                             accountManager.storeAccount(token: accessToken, email: accountDetails.email, externalID: accountDetails.externalID)
                         }
                     case .failure(let error):
-                        Logger.subscription.error("[AppStorePurchaseFlow] createAccount error: \(String(reflecting: error), privacy: .public)")
+                        Logger.subscription.error("[AppStorePurchaseFlow] createAccount error: \(error.localizedDescription, privacy: .public)")
                         return .failure(.accountCreationFailed(error))
                     }
                 }
@@ -121,7 +121,7 @@ public final class DefaultAppStorePurchaseFlow: AppStorePurchaseFlow {
         case .success(let transactionJWS):
             return .success(transactionJWS)
         case .failure(let error):
-            Logger.subscription.error("[AppStorePurchaseFlow] purchaseSubscription error: \(String(reflecting: error), privacy: .public)")
+            Logger.subscription.error("[AppStorePurchaseFlow] purchaseSubscription error: \(error.localizedDescription, privacy: .public)")
             accountManager.signOut(skipNotification: true)
             switch error {
             case .purchaseCancelledByUser:

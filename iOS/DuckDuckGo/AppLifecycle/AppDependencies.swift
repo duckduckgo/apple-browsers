@@ -30,6 +30,7 @@ struct AppServices {
     let authenticationService: AuthenticationService
     let syncService: SyncService
     let vpnService: VPNService
+    let dbpService: DBPService
     let autofillService: AutofillService
     let remoteMessagingService: RemoteMessagingService
     let configurationService: RemoteConfigurationService

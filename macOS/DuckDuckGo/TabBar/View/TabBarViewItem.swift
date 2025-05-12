@@ -310,10 +310,13 @@ final class TabBarItemCellView: NSView {
         super.layout()
         mouseOverView.frame = bounds
         if visualStyle.tabStyleProvider.isRoundedBackgroundPresentOnHover {
-            roundedBackgroundColorView.frame = NSRect(x: bounds.origin.x + 4,
-                                                      y: bounds.origin.y + 6,
-                                                      width: bounds.width - 8,
-                                                      height: bounds.height - 8)
+            let padding: CGFloat = 4
+            let height = bounds.height - (padding * 2)
+            let y = bounds.midY - (height / 2)
+            roundedBackgroundColorView.frame = NSRect(x: bounds.origin.x + padding,
+                                                      y: y,
+                                                      width: bounds.width - (padding * 2),
+                                                      height: height)
         }
 
         if visualStyle.tabStyleProvider.shouldShowSShapedTab {

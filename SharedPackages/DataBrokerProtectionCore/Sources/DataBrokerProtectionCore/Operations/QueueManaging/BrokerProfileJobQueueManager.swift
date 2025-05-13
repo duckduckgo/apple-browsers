@@ -72,11 +72,11 @@ public enum DataBrokerProtectionQueueManagerDebugCommand {
 }
 
 public protocol BrokerProfileJobQueueManaging {
+    var delegate: BrokerProfileJobQueueManagerDelegate? { get set }
 
     init(jobQueue: BrokerProfileJobQueue,
          jobProvider: BrokerProfileJobProviding,
          mismatchCalculator: MismatchCalculator,
-         brokerUpdater: BrokerJSONServiceProvider?,
          pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>)
 
     func startImmediateScanOperationsIfPermitted(showWebView: Bool,
@@ -96,12 +96,16 @@ public protocol BrokerProfileJobQueueManaging {
     var debugRunningStatusString: String { get }
 }
 
+public protocol BrokerProfileJobQueueManagerDelegate: AnyObject {
+    func queueManagerWillEnqueueOperations(_ queueManager: BrokerProfileJobQueueManaging)
+}
+
 public final class BrokerProfileJobQueueManager: BrokerProfileJobQueueManaging {
+    public weak var delegate: BrokerProfileJobQueueManagerDelegate?
 
     private var jobQueue: BrokerProfileJobQueue
     private let jobProvider: BrokerProfileJobProviding
     private let mismatchCalculator: MismatchCalculator
-    private let brokerUpdater: BrokerJSONServiceProvider?
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
 
     private var mode = BrokerProfileJobQueueMode.idle
@@ -120,13 +124,11 @@ public final class BrokerProfileJobQueueManager: BrokerProfileJobQueueManaging {
     public init(jobQueue: BrokerProfileJobQueue,
                 jobProvider: BrokerProfileJobProviding,
                 mismatchCalculator: MismatchCalculator,
-                brokerUpdater: BrokerJSONServiceProvider?,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>) {
 
         self.jobQueue = jobQueue
         self.jobProvider = jobProvider
         self.mismatchCalculator = mismatchCalculator
-        self.brokerUpdater = brokerUpdater
         self.pixelHandler = pixelHandler
     }
 
@@ -214,12 +216,15 @@ private extension BrokerProfileJobQueueManager {
             return
         }
 
+        if delegate != nil {
+            jobQueue.addBarrierBlock1 { [weak self] in
+                guard let self, let delegate = self.delegate else { return }
+                delegate.queueManagerWillEnqueueOperations(self)
+            }
+        }
+
         cancelCurrentModeAndResetIfNeeded()
-
         mode = newMode
-
-        updateBrokerData()
-
         addJobs(for: type,
                 priorityDate: mode.priorityDate,
                 showWebView: showWebView,
@@ -246,12 +251,6 @@ private extension BrokerProfileJobQueueManager {
         mode = .idle
         if clearErrors {
             operationErrors = []
-        }
-    }
-
-    func updateBrokerData() {
-        Task {
-            try await brokerUpdater?.checkForUpdates()
         }
     }
 

@@ -1238,6 +1238,8 @@ public extension DataBroker {
 }
 
 public final class MockBrokerProfileJobQueueManager: BrokerProfileJobQueueManaging {
+    public var delegate: BrokerProfileJobQueueManagerDelegate?
+
     public var debugRunningStatusString: String { return "" }
 
     public var startImmediateScanOperationsIfPermittedCompletionError: DataBrokerProtectionJobsErrorCollection?
@@ -1248,7 +1250,7 @@ public final class MockBrokerProfileJobQueueManager: BrokerProfileJobQueueManagi
     public var startScheduledAllOperationsIfPermittedCalledCompletion: (() -> Void)?
     public var startScheduledScanOperationsIfPermittedCalledCompletion: (() -> Void)?
 
-    public init(jobQueue: BrokerProfileJobQueue, jobProvider: BrokerProfileJobProviding, mismatchCalculator: MismatchCalculator, brokerUpdater: BrokerJSONServiceProvider?, pixelHandler: Common.EventMapping<DataBrokerProtectionSharedPixels>) {
+    public init(jobQueue: BrokerProfileJobQueue, jobProvider: BrokerProfileJobProviding, mismatchCalculator: MismatchCalculator, pixelHandler: Common.EventMapping<DataBrokerProtectionSharedPixels>) {
 
     }
 
@@ -2015,6 +2017,7 @@ public final class MockOptOutSubJobWebRunner: BrokerProfileOptOutSubJobWebRunnin
     }
 
     public func clear() {
+        shouldOptOutThrow = false
         wasOptOutCalled = false
     }
 }

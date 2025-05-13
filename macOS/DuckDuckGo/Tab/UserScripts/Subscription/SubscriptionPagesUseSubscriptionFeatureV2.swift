@@ -546,14 +546,6 @@ extension SubscriptionPagesUseSubscriptionFeatureV2: SubscriptionAccessActionHan
             await self.uiHandler.showTab(with: .subscription(url))
         }
     }
-
-    func subscriptionAccessActionHandleAction(event: SubscriptionAccessActionHandlingEvent) {
-        switch event {
-        case .activateSubscriptionViaEmailClick:
-            PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
-        default: break
-        }
-    }
 }
 
 private extension SubscriptionPagesUseSubscriptionFeatureV2 {

@@ -76,7 +76,8 @@ final class UserScripts: UserScriptsProvider {
                                                                 privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: AppDependencyProvider.shared.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
         autoconsentUserScript = AutoconsentUserScript(config: sourceProvider.privacyConfigurationManager.privacyConfig)
 
-        let aiChatScriptHandler = AIChatUserScriptHandler(featureFlagger: featureFlagger)
+        let experimentalManager: ExperimentalAIChatManager = .init(featureFlagger: featureFlagger)
+        let aiChatScriptHandler = AIChatUserScriptHandler(experimentalAIChatManager: experimentalManager)
         aiChatUserScript = AIChatUserScript(handler: aiChatScriptHandler,
                                             debugSettings: aiChatDebugSettings)
         subscriptionUserScript = SubscriptionUserScript(

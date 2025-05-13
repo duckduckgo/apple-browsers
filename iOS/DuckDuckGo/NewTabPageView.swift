@@ -271,7 +271,8 @@ private struct CustomizeButtonPrefKey: PreferenceKey {
         messagesModel: NewTabPageMessagesModel(
             homePageMessagesConfiguration: PreviewMessagesConfiguration(
                 homeMessages: []
-            )
+            ),
+            navigator: DefaultMessageNavigator(delegate: nil)
         ),
         favoritesViewModel: FavoritesPreviewModel(),
         shortcutsModel: ShortcutsModel(),
@@ -296,7 +297,8 @@ private struct CustomizeButtonPrefKey: PreferenceKey {
                         )
                     )
                 ]
-            )
+            ),
+            navigator: DefaultMessageNavigator(delegate: nil)
         ),
         favoritesViewModel: FavoritesPreviewModel(),
         shortcutsModel: ShortcutsModel(),
@@ -311,7 +313,8 @@ private struct CustomizeButtonPrefKey: PreferenceKey {
         messagesModel: NewTabPageMessagesModel(
             homePageMessagesConfiguration: PreviewMessagesConfiguration(
                 homeMessages: []
-            )
+            ),
+            navigator: DefaultMessageNavigator(delegate: nil)
         ),
         favoritesViewModel: FavoritesPreviewModel(favorites: []),
         shortcutsModel: ShortcutsModel(),
@@ -326,7 +329,8 @@ private struct CustomizeButtonPrefKey: PreferenceKey {
         messagesModel: NewTabPageMessagesModel(
             homePageMessagesConfiguration: PreviewMessagesConfiguration(
                 homeMessages: []
-            )
+            ),
+            navigator: DefaultMessageNavigator(delegate: nil)
         ),
         favoritesViewModel: FavoritesPreviewModel(),
         shortcutsModel: ShortcutsModel(),

@@ -107,6 +107,8 @@ public final class DBPPrivacyConfigurationManager: PrivacyConfigurationManaging 
 
         return result
     }
+
+    public init() {}
 }
 
 func privacyConfiguration(withData data: PrivacyConfigurationData,

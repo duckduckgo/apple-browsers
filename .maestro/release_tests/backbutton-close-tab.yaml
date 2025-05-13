@@ -42,7 +42,7 @@ tags:
 - tapOn: "Open \"Privacy Test Pages - Home\" at privacy-test-pages.site"
 - assertNotVisible: ".*Ad Click Flow.*"
 - assertVisible: ".*Privacy Test Pages.*"
-- tapOn: "Refresh Page"
+- runFlow: ../shared/pull_to_refresh.yaml
 
 # Long press an item and open in new tab
 - longPressOn: "• 1 major tracker loaded via script"

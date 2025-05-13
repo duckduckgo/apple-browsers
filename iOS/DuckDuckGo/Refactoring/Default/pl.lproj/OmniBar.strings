@@ -10,6 +10,9 @@
 /* Class = "UIButton"; accessibilityLabel = "Clear text"; ObjectID = "Dt8-We-5tV"; */
 "Dt8-We-5tV.accessibilityLabel" = "Wyczyść tekst";
 
+/* Class = "UIButton"; accessibilityLabel = "Refresh Page"; ObjectID = "eR6-Vx-MAY"; */
+"eR6-Vx-MAY.accessibilityLabel" = "Odśwież stronę";
+
 /* Class = "UIButton"; accessibilityLabel = "Stop Loading"; ObjectID = "gb5-wL-4OW"; */
 "gb5-wL-4OW.accessibilityLabel" = "Zatrzymaj ładowanie";
 

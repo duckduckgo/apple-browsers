@@ -75,14 +75,17 @@ final class UpdatedOmniBarSearchView: UIView {
         leftIconContainerPlaceholder.addSubview(leftIconContainer)
 
         mainStackView.addSubview(notificationContainer)
-        mainStackView.addSubview(privacyInfoContainer)
+
         mainStackView.addArrangedSubview(leftIconContainerPlaceholder)
         mainStackView.addArrangedSubview(textField)
         mainStackView.addArrangedSubview(trailingItemsContainer)
 
+        mainStackView.addSubview(privacyInfoContainer)
+
         trailingItemsContainer.addArrangedSubview(clearButton)
         trailingItemsContainer.addArrangedSubview(voiceSearchButton)
         trailingItemsContainer.addArrangedSubview(reloadButton)
+        trailingItemsContainer.addArrangedSubview(shareButton)
         trailingItemsContainer.addArrangedSubview(cancelButton)
         trailingItemsContainer.addArrangedSubview(separatorView)
         trailingItemsContainer.addArrangedSubview(accessoryButton)
@@ -119,6 +122,7 @@ final class UpdatedOmniBarSearchView: UIView {
         UpdatedOmniBarView.activateItemSizeConstraints(for: voiceSearchButton)
         UpdatedOmniBarView.activateItemSizeConstraints(for: reloadButton)
         UpdatedOmniBarView.activateItemSizeConstraints(for: clearButton)
+        UpdatedOmniBarView.activateItemSizeConstraints(for: shareButton)
         UpdatedOmniBarView.activateItemSizeConstraints(for: cancelButton)
         UpdatedOmniBarView.activateItemSizeConstraints(for: accessoryButton)
         UpdatedOmniBarView.activateItemSizeConstraints(for: leftIconContainer)

@@ -181,14 +181,8 @@ public final class DataBrokerProtectionIOSManager {
     }
 
     public func startAllOperations() {
-        queueManager.startScheduledAllOperationsIfPermitted(showWebView: false,
-                                                            jobDependencies: jobDependencies,
-                                                            errorHandler: nil
-        ) { [self] in
-            queueManager.startScheduledAllOperationsIfPermitted(showWebView: false,
-                                                                jobDependencies: jobDependencies,
-                                                                errorHandler: nil,
-                                                                completion: nil)
+        queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil) { [self] in
+            queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil, completion: nil)
         }
     }
 
@@ -230,9 +224,7 @@ public final class DataBrokerProtectionIOSManager {
                 task.setTaskCompleted(success: false)
                 return
             }
-            queueManager.startScheduledAllOperationsIfPermitted(showWebView: false,
-                                                                jobDependencies: jobDependencies,
-                                                                errorHandler: nil) {
+            queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil) {
                 Logger.dataBrokerProtection.log("All operations completed in background task")
                 task.setTaskCompleted(success: true)
             }

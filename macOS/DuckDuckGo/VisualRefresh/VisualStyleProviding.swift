@@ -50,6 +50,8 @@ protocol VisualStyleProviding {
     var toolbarButtonsCornerRadius: CGFloat { get }
     var fireWindowGraphic: NSImage { get }
     var areNavigationBarCornersRound: Bool { get }
+    var bookmarksBarMenuBookmarkIcon: NSImage { get }
+    var bookmarksBarMenuFolderIcon: NSImage { get }
 
     /// Other
     var vpnNavigationIconsProvider: IconProvider { get }
@@ -121,6 +123,8 @@ struct VisualStyle: VisualStyleProviding {
     let colorsProvider: ColorsProviding
     let defaultAddressBarFontSize: CGFloat
     let newTabOrHomePageAddressBarFontSize: CGFloat
+    let bookmarksBarMenuBookmarkIcon: NSImage
+    let bookmarksBarMenuFolderIcon: NSImage
 
     func addressBarHeight(for type: AddressBarSizeClass) -> CGFloat {
         switch type {
@@ -192,7 +196,9 @@ struct VisualStyle: VisualStyleProviding {
                            areNavigationBarCornersRound: false,
                            colorsProvider: LegacyColorsProviding(),
                            defaultAddressBarFontSize: 13,
-                           newTabOrHomePageAddressBarFontSize: 15)
+                           newTabOrHomePageAddressBarFontSize: 15,
+                           bookmarksBarMenuBookmarkIcon: .bookmark,
+                           bookmarksBarMenuFolderIcon: .folder16)
     }
 
     static var current: VisualStyleProviding {
@@ -231,7 +237,9 @@ struct VisualStyle: VisualStyleProviding {
                            areNavigationBarCornersRound: true,
                            colorsProvider: NewColorsProviding(palette: palette),
                            defaultAddressBarFontSize: 13,
-                           newTabOrHomePageAddressBarFontSize: 13)
+                           newTabOrHomePageAddressBarFontSize: 13,
+                           bookmarksBarMenuBookmarkIcon: .bookmarkNew,
+                           bookmarksBarMenuFolderIcon: .folderNew)
     }
 }
 

@@ -23,6 +23,9 @@ public protocol AIChatSettingsProvider {
     /// The URL used to open AI Chat in the `AIChatViewController`.
     var aiChatURL: URL { get }
 
+    /// The user state for AI chat overall.
+    var isAIChatEnabled: Bool { get }
+
     /// The user settings state for the AI Chat browsing address bar.
     var isAIChatAddressBarUserSettingsEnabled: Bool { get }
 
@@ -34,6 +37,9 @@ public protocol AIChatSettingsProvider {
 
     /// The user settings state for the AI Chat in tab manager
     var isAIChatTabSwitcherUserSettingsEnabled: Bool { get }
+
+    /// Updates the user settings state for AI Chat overall.
+    func enableAIChat(enable: Bool)
 
     /// Updates the user settings state for the AI Chat browsing menu.
     func enableAIChatBrowsingMenuUserSettings(enable: Bool)

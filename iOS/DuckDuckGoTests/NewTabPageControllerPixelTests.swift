@@ -83,7 +83,8 @@ final class NewTabPageControllerPixelTests: XCTestCase {
                                  newTabDialogFactory: MockDaxDialogFactory(),
                                  newTabDialogTypeProvider: MockNewTabDialogSpecProvider(),
                                  faviconLoader: EmptyFaviconLoading(),
-                                 pixelFiring: PixelFiringMock.self)
+                                 pixelFiring: PixelFiringMock.self,
+                                 messageNavigationDelegate: MockMessageNavigationDelegate())
     }
 }
 

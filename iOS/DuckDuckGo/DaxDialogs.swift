@@ -201,20 +201,20 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
 
     private var currentHomeSpec: HomeScreenSpec?
 
-    private let onboardingPrivacyProPromoExperiment: OnboardingPrivacyProPromoExperimenting
+    private let onboardingPrivacyProPromotionHelper: OnboardingPrivacyProPromotionHelping
 
     /// Use singleton accessor, this is only accessible for tests
     init(settings: DaxDialogsSettings = DefaultDaxDialogsSettings(),
          entityProviding: EntityProviding,
          variantManager: VariantManager = DefaultVariantManager(),
          launchOptionsHandler: LaunchOptionsHandler = LaunchOptionsHandler(),
-         onboardingPrivacyProPromoExperiment: OnboardingPrivacyProPromoExperimenting = OnboardingPrivacyProPromoExperiment()
+         onboardingPrivacyProPromotionHelper: OnboardingPrivacyProPromotionHelping = OnboardingPrivacyProPromotionHelper()
     ) {
         self.settings = settings
         self.entityProviding = entityProviding
         self.variantManager = variantManager
         self.launchOptionsHandler = launchOptionsHandler
-        self.onboardingPrivacyProPromoExperiment = onboardingPrivacyProPromoExperiment
+        self.onboardingPrivacyProPromotionHelper = onboardingPrivacyProPromotionHelper
     }
 
     private var firstBrowsingMessageSeen: Bool {
@@ -489,13 +489,10 @@ final class DaxDialogs: NewTabDialogSpecProvider, ContextualOnboardingLogic {
 
         guard isEnabled else { return nil }
 
-        // If the user has already seen the end of journey dialog we don't want to show any other NTP Dax dialog.
+        // If the user has already seen the end of journey dialog we want to check if the user is eligible to purchase Privacy Pro and if so, display an additional Privacy Pro promotion dialog.
         guard !finalDaxDialogSeen else {
 
-            // Privacy Pro Onboarding Promotion Experiment
-            // https://app.asana.com/0/1206488453854252/1208543866522488/f
-            let cohort = onboardingPrivacyProPromoExperiment.getCohortIfEnabled()
-            if .treatment == cohort && !privacyProPromotionDialogSeen {
+            if onboardingPrivacyProPromotionHelper.shouldDisplay && !privacyProPromotionDialogSeen {
                 return .privacyProPromotion
             }
 

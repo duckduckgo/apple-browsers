@@ -243,7 +243,7 @@ class SubscriptionManagerV2Tests: XCTestCase {
         do {
             try await subscriptionManager.getTokenContainer(policy: .localValid)
             XCTFail("This should fail with error: SubscriptionManagerError.tokenRefreshFailed")
-        } catch SubscriptionManagerError.tokenRefreshFailed {
+        } catch SubscriptionManagerError.tokenUnavailable {
 
         } catch {
             XCTFail("Wrong error: \(error)")
@@ -258,15 +258,19 @@ class SubscriptionManagerV2Tests: XCTestCase {
         do {
             try await subscriptionManager.getTokenContainer(policy: .localValid)
             XCTFail("This should fail with error: SubscriptionManagerError.tokenRefreshFailed")
+        } catch SubscriptionManagerError.tokenUnavailable {
+
         } catch {
-            XCTAssertEqual(error as! SubscriptionManagerError, SubscriptionManagerError.tokenRefreshFailed(error: nil))
+            XCTFail("Unexpected error: \(error)")
         }
 
         do {
             try await subscriptionManager.getTokenContainer(policy: .localValid)
             XCTFail("This should fail with error: SubscriptionManagerError.tokenRefreshFailed")
+        } catch SubscriptionManagerError.tokenUnavailable {
+
         } catch {
-            XCTAssertEqual(error as! SubscriptionManagerError, SubscriptionManagerError.tokenRefreshFailed(error: nil))
+            XCTFail("Unexpected error: \(error)")
         }
     }
 }

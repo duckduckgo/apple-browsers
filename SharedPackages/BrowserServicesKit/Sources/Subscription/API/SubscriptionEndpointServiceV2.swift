@@ -178,8 +178,10 @@ New: \(subscription.debugDescription, privacy: .public)
             Task { @MainActor in
                 NotificationCenter.default.post(name: .subscriptionDidChange, object: self, userInfo: [UserDefaultsCacheKey.subscription: subscription])
                 // TMP: Convert to Entitlement (authV1)
-                let entitlements = subscription.features?.map { $0.entitlement } ?? []
-                NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: [UserDefaultsCacheKey.subscriptionEntitlements: entitlements])
+                if let features = subscription.features {
+                    let entitlements = features.map { $0.entitlement }
+                    NotificationCenter.default.post(name: .entitlementsDidChange, object: self, userInfo: [UserDefaultsCacheKey.subscriptionEntitlements: entitlements])
+                }
             }
         }
     }

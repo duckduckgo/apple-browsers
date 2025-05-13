@@ -37,7 +37,6 @@ public struct RecoverSyncedDataView: View {
                 HStack {
                     Button(action: onCancel, label: {
                         Text(UserText.cancelButton)
-                            .foregroundColor(.primary)
                     })
                     Spacer()
                 }
@@ -54,6 +53,7 @@ public struct RecoverSyncedDataView: View {
                         .multilineTextAlignment(.center)
             }
             .padding(.horizontal, 20)
+            .foregroundStyle(Color(designSystemColor: .textPrimary))
         } foregroundContent: {
             Button {
                 model.recoverSyncDataPressed()
@@ -65,5 +65,6 @@ public struct RecoverSyncedDataView: View {
             .padding(.horizontal, 30)
             .padding(.bottom, 8)
         }
+        .background(Color(designSystemColor: .background))
     }
 }

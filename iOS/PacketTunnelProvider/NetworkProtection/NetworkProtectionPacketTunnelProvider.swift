@@ -504,7 +504,8 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             entitlementsCheck = {
                 Logger.networkProtection.log("Subscription Entitlements check...")
                 do {
-                    let isNetworkProtectionEnabled = try await subscriptionManager.isFeatureAvailableForUser(.networkProtection)
+                    let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .localValid)
+                    let isNetworkProtectionEnabled = tokenContainer.decodedAccessToken.hasEntitlement(.networkProtection)
                     Logger.networkProtection.log("NetworkProtectionEnabled if: \( isNetworkProtectionEnabled ? "Enabled" : "Disabled", privacy: .public)")
                     return .success(isNetworkProtectionEnabled)
                 } catch {
@@ -651,7 +652,7 @@ extension NetworkProtectionPacketTunnelProvider: AccountManagerKeychainAccessDel
         }
 
         let parameters = [PixelParameters.privacyProKeychainAccessType: accessType.rawValue,
-                          PixelParameters.privacyProKeychainError: expectedError.errorDescription,
+                          PixelParameters.privacyProKeychainError: expectedError.errorDescription ?? "Unknown",
                           PixelParameters.source: KeychainErrorSource.vpn.rawValue,
                           PixelParameters.authVersion: KeychainErrorAuthVersion.v1.rawValue]
         DailyPixel.fireDailyAndCount(pixel: .privacyProKeychainAccessError,

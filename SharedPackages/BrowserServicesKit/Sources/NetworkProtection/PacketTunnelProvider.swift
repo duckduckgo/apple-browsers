@@ -644,9 +644,6 @@ open class PacketTunnelProvider: NEPacketTunnelProvider {
             Logger.networkProtection.log("Set new token container")
             do {
                 try await tokenHandlerProvider.adoptToken(newTokenContainer)
-                // It’s important to force refresh the token to immediately branch the one used by the system extension from the one used in the main app.
-                // See discussion https://app.asana.com/0/1199230911884351/1208785842165508/f
-                try await tokenHandlerProvider.refreshToken()
             } catch {
                 Logger.networkProtection.fault("Error adopting token container: \(error, privacy: .public)")
                 throw TunnelError.startingTunnelWithoutAuthToken(internalError: error)

@@ -32,6 +32,7 @@ struct DuckPlayerView: View {
     // Local state & Task for hiding the auto open on Youtube toggle after 2 seconds
     @State private var hideToggleTask: DispatchWorkItem?
     @State private var showOpenInYoutubeToggle: Bool = true
+    @State private var controlsVisibility: Bool = false
 
     enum Constants {
         static let daxLogo = "Home"
@@ -41,6 +42,7 @@ struct DuckPlayerView: View {
         static let dragGestureThreshold: CGFloat = 100
         static let uiElementsBackground: Color = Color.gray.opacity(0.2)
         static let uiElementRadius: CGFloat = 8
+        static let chevronUpIcon: String = "chevron.up"
     }
 
     enum LayoutConstants {
@@ -66,6 +68,12 @@ struct DuckPlayerView: View {
         static let settingsButtonSize: CGFloat = 20
         static let closeButtonSize: CGFloat = 44
         static let bubbleCloseButtonSize: CGFloat = 32
+        static let controlsSpacing: CGFloat = 8
+        static let controlButtonSize: CGFloat = 30
+        static let controlIconSize: CGFloat = 10
+        static let controlButtonBottomPadding: CGFloat = 10
+        static let animationResponseTime: Double = 0.4
+        static let animationDampingFraction: Double = 0.8
     }
 
     var body: some View {
@@ -90,7 +98,6 @@ struct DuckPlayerView: View {
                 }
 
                 // Video Container
-                Spacer()
                 GeometryReader { geometry in
                     ZStack {
                         webView
@@ -104,15 +111,50 @@ struct DuckPlayerView: View {
                         y: geometry.size.height / 2
                     )
                 }
+                .layoutPriority(1)
 
-                // Show only if the source is youtube and the toggle should be visible
-                autoOpenToggleView
+                Spacer(minLength: LayoutConstants.controlsSpacing)
 
-                // Show the youtube button if needed
-                youtubeButtonView
+                // Controls Container
+                VStack(spacing: 4) {
+                    if controlsVisibility {
+                        // Show only if the source is youtube and the toggle should be visible
+                        autoOpenToggleView
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+
+                        // Show the youtube button if needed
+                        youtubeButtonView
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+                }
+                .animation(.spring(response: LayoutConstants.animationResponseTime, dampingFraction: LayoutConstants.animationDampingFraction), value: controlsVisibility)
+                .frame(minWidth: 0, maxWidth: .infinity)
+                .padding(.bottom, controlsVisibility ?  LayoutConstants.controlsSpacing: 0)
 
                 // Show the welcome message if needed
                 welcomeMessage
+
+                if !viewModel.shouldShowWelcomeMessage && !viewModel.isLandscape {
+                    // Toggle Controls Button
+                    ZStack {
+                        Circle()
+                            .fill(Color.gray.opacity(0.5))
+                            .frame(width: LayoutConstants.controlButtonSize, height: LayoutConstants.controlButtonSize)
+
+                        Button(action: {
+                            withAnimation(.spring(response: LayoutConstants.animationResponseTime, dampingFraction: LayoutConstants.animationDampingFraction)) {
+                                controlsVisibility.toggle()
+                            }
+                        }) {
+                            Image(systemName: Constants.chevronUpIcon)
+                                .font(.system(size: LayoutConstants.controlIconSize, weight: .bold))
+                                .foregroundColor(.white)
+                                .frame(width: LayoutConstants.controlButtonSize, height: LayoutConstants.controlButtonSize)
+                                .rotationEffect(Angle(degrees: controlsVisibility ? 180 : 0))
+                        }
+                    }
+                    .padding(.bottom, LayoutConstants.controlButtonBottomPadding)
+                }
             }
         }
         .gesture(
@@ -127,7 +169,6 @@ struct DuckPlayerView: View {
         .onFirstAppear {
             viewModel.onFirstAppear()
             autoOpenOnYoutube = viewModel.autoOpenOnYoutube
-            showOpenInYoutubeToggle = !viewModel.autoOpenOnYoutube
         }
         .onAppear {
             viewModel.onAppear()
@@ -135,36 +176,16 @@ struct DuckPlayerView: View {
         .onDisappear {
             viewModel.onDisappear()
         }
-        .onChange(of: autoOpenOnYoutube) { newValue in
-            // Create a new task to hide the toggle after 2 seconds
-            hideToggleTask?.cancel()
-
-            if newValue {
-
-                let task = DispatchWorkItem {
-                    withAnimation {
-                        showOpenInYoutubeToggle = false
-                        viewModel.autoOpenOnYoutube = true
-                        viewModel.hideAutoOpenToggle()
-                    }
-                }
-
-                hideToggleTask = task
-                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0, execute: task)
-            } else {
-                viewModel.autoOpenOnYoutube = false
-            }
-        }
     }
 
     @ViewBuilder
     private var autoOpenToggleView: some View {
-        if viewModel.showAutoOpenOnYoutubeToggle && viewModel.source == .youtube && showOpenInYoutubeToggle {
+        if viewModel.showAutoOpenOnYoutubeToggle && viewModel.source == .youtube {
             ZStack {
                 RoundedRectangle(cornerRadius: Constants.uiElementRadius)
                     .fill(Constants.uiElementsBackground)
                 HStack(spacing: 8) {
-                    Text(verbatim: "Auto-open Duck Player on Youtube")
+                    Text(UserText.duckPlayerOpenYouTubeVideosHere)
                         .daxBodyRegular()
                         .foregroundColor(.white)
                     Spacer()
@@ -176,8 +197,7 @@ struct DuckPlayerView: View {
             }
             .frame(height: LayoutConstants.bottomButtonHeight)
             .padding(.horizontal, LayoutConstants.horizontalPadding)
-            .padding(.bottom, LayoutConstants.horizontalPadding)
-            .padding(.top, LayoutConstants.videoContainerPadding)
+            .padding(.bottom, LayoutConstants.controlsSpacing)
             .transition(.opacity)
             .animation(.easeInOut, value: showOpenInYoutubeToggle)
         }
@@ -193,7 +213,7 @@ struct DuckPlayerView: View {
                     viewModel.openInYouTube()
                 } label: {
                     HStack(spacing: LayoutConstants.defaultSpacing) {
-                        Text(verbatim: "Watch in Youtube")
+                        Text(UserText.duckPlayerWatchOnYoutube)
                             .daxBodyRegular()
                             .foregroundColor(.white)
                         Spacer()
@@ -207,10 +227,9 @@ struct DuckPlayerView: View {
             }
             .frame(height: LayoutConstants.bottomButtonHeight)
             .padding(.horizontal, LayoutConstants.horizontalPadding)
-            .padding(.bottom, LayoutConstants.horizontalPadding)
-            .padding(.top, LayoutConstants.videoContainerPadding)
+            .padding(.bottom, 8)
         } else {
-            Spacer()
+            EmptyView()
         }
     }
 
@@ -263,28 +282,28 @@ struct DuckPlayerView: View {
    @ViewBuilder
   private var bubbleContent: some View {
     VStack(alignment: .leading, spacing: LayoutConstants.defaultSpacing) {
-        Text(verbatim: "You're watching in Duck Player!\nNo targeted ads here.")
+        Text(UserText.duckPlayerYouTubeNoAdsPrivacy)
             .daxHeadline()
             .foregroundColor(.white)
             .lineLimit(2)
             .minimumScaleFactor(0.9)
             .fixedSize(horizontal: false, vertical: true)
             .multilineTextAlignment(.leading)
-
-        Text(verbatim: "To go back to YouTube, close Duck Player. Not for you? Turn it off below!")
+ 
+        Text(UserText.duckPlayerBlocksAdsKeepsHistoryPrivate)
             .daxBodyRegular()
             .foregroundColor(.white.opacity(0.8))
             .multilineTextAlignment(.leading)
             .lineLimit(3)
             .fixedSize(horizontal: false, vertical: true)
             .padding(.top, 4)
-
+ 
         // Toggle
         ZStack {
             RoundedRectangle(cornerRadius: 8)
                 .fill(Color.black.opacity(0.8))
             HStack(spacing: 8) {
-                Text(verbatim: "Open YouTube videos here")
+                Text(UserText.duckPlayerOpenYouTubeVideosHere)
                     .daxBodyRegular()
                     .foregroundColor(.white)
                 Spacer()
@@ -302,7 +321,7 @@ struct DuckPlayerView: View {
 
     @ViewBuilder
     private var welcomeMessage: some View {
-        if viewModel.shouldShowWelcomeMessage {
+        if viewModel.shouldShowWelcomeMessage && !viewModel.isLandscape {
             ZStack(alignment: .topTrailing) {
                 VStack(alignment: .leading) {
                     HStack {

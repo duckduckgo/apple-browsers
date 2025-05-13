@@ -42,7 +42,7 @@ tags:
 - tapOn: "Open \"Privacy Test Pages - Home\" at privacy-test-pages.site"
 - assertNotVisible: ".*Ad Click Flow.*"
 - assertVisible: ".*Privacy Test Pages.*"
-- tapOn: "Refresh Page"
+- runFlow: ../shared/pull_to_refresh.yaml
 
 # Suggestions
 - assertVisible:
@@ -63,7 +63,7 @@ tags:
 - assertVisible: ".*Privacy Test Pages.*"
 
 # Needed or else test can't see the Tab Switcher button for some reason
-- tapOn: "Refresh Page"
+- runFlow: ../shared/pull_to_refresh.yaml
 
 # Close Tab
 - assertVisible: Tab Switcher
@@ -78,7 +78,7 @@ tags:
 - tapOn: "Done"
 
 # Switch tabs from new tab
-- tapOn: "Refresh Page"
+- runFlow: ../shared/pull_to_refresh.yaml
 - assertVisible: Tab Switcher
 - tapOn: Tab Switcher
 - assertVisible: ".*Privacy Test Pages.*"
@@ -92,7 +92,7 @@ tags:
 - assertVisible: "Switch to Tab.*privacy-test-pages.site"
 - tapOn: "Switch to Tab.*privacy-test-pages.site"
 - assertVisible: ".*Privacy Test Pages.*"
-- tapOn: "Refresh Page"
+- runFlow: ../shared/pull_to_refresh.yaml
 - assertVisible: Tab Switcher
 - tapOn: Tab Switcher
 - assertVisible: "1 Private Tab"

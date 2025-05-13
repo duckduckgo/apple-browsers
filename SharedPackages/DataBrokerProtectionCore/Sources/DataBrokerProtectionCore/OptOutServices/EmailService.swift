@@ -68,8 +68,8 @@ public struct EmailService: EmailServiceProtocol {
 
     public func getEmail(dataBrokerURL: String, attemptId: UUID) async throws -> EmailData {
 
-        var urlComponents = URLComponents(url: settings.selectedEnvironment.endpointURL, resolvingAgainstBaseURL: true)
-        urlComponents?.path = "\(Constants.endpointSubPath)/generate"
+        var urlComponents = URLComponents(url: settings.endpointURL, resolvingAgainstBaseURL: true)
+        urlComponents?.path += "\(Constants.endpointSubPath)/generate"
         urlComponents?.queryItems = [
             URLQueryItem(name: "dataBroker", value: dataBrokerURL),
             URLQueryItem(name: "attemptId", value: attemptId.uuidString)
@@ -150,8 +150,8 @@ public struct EmailService: EmailServiceProtocol {
     }
 
     private func extractEmailLink(email: String, attemptId: UUID) async throws -> EmailResponse {
-        var urlComponents = URLComponents(url: settings.selectedEnvironment.endpointURL, resolvingAgainstBaseURL: true)
-        urlComponents?.path = "\(Constants.endpointSubPath)/links"
+        var urlComponents = URLComponents(url: settings.endpointURL, resolvingAgainstBaseURL: true)
+        urlComponents?.path += "\(Constants.endpointSubPath)/links"
         urlComponents?.queryItems = [
             URLQueryItem(name: "e", value: email),
             URLQueryItem(name: "attemptId", value: attemptId.uuidString)

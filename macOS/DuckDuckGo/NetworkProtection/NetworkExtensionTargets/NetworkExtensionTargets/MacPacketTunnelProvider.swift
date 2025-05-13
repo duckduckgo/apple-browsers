@@ -454,7 +454,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                                               apiService: APIServiceFactory.makeAPIServiceForAuthV2())
         let tokenStoreV2 = NetworkProtectionKeychainTokenStoreV2(keychainType: Bundle.keychainType,
                                                                  serviceName: Self.tokenContainerServiceName,
-                                                                 errorEvents: debugEvents)
+                                                                 errorEventsHandler: debugEvents)
         let authClient = DefaultOAuthClient(tokensStorage: tokenStoreV2,
                                             legacyTokenStorage: nil,
                                             authService: authService)
@@ -477,8 +477,10 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
             } else {
                 Logger.networkProtection.log("Using Auth V2")
                 do {
-                    let token = try await subscriptionManager.getTokenContainer(policy: .localValid)
-                    return .success(token.decodedAccessToken.hasEntitlement(.networkProtection))
+                    let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .localValid)
+                    let isNetworkProtectionEnabled = tokenContainer.decodedAccessToken.hasEntitlement(.networkProtection)
+                    Logger.networkProtection.log("NetworkProtectionEnabled if: \( isNetworkProtectionEnabled ? "Enabled" : "Disabled", privacy: .public)")
+                    return .success(isNetworkProtectionEnabled)
                 } catch {
                     return .failure(error)
                 }
@@ -590,7 +592,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         if !Self.isAuthV2Enabled {
             // Auth V2 cleanup in case of rollback
             Logger.subscription.debug("Cleaning up Auth V2 token")
-            tokenStorageV2.tokenContainer = nil
+            try? tokenStorageV2.saveTokenContainer(nil)
         }
     }
 

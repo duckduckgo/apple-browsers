@@ -319,8 +319,9 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
     func endConnectMode() {
         connector?.stopPolling()
         connector = nil
-        connectionController.stopConnectMode()
-        connectionController.stopExchangeMode()
+        Task {
+            await connectionController.cancel()
+        }
     }
 
     func startConnectMode() throws -> String {
@@ -523,15 +524,7 @@ extension SyncSettingsViewController {
         let theme = ThemeManager.shared.currentTheme
         view.backgroundColor = theme.backgroundColor
 
-        navigationController?.navigationBar.barTintColor = theme.barBackgroundColor
-        navigationController?.navigationBar.tintColor = theme.navigationBarTintColor
-
-        let appearance = UINavigationBarAppearance()
-        appearance.shadowColor = .clear
-        appearance.backgroundColor = theme.backgroundColor
-
-        navigationController?.navigationBar.standardAppearance = appearance
-        navigationController?.navigationBar.scrollEdgeAppearance = appearance
+        decorateNavigationBar()
 
     }
 

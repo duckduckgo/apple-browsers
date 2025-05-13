@@ -18,13 +18,23 @@
 //
 
 import Combine
+import SwiftUI
 
 final class AIChatInputBoxViewModel: ObservableObject {
+
+    enum State {
+        case ready
+        case waitingForGeneration
+        case unknown
+    }
+
+    @Published var state: State = .unknown
 
     // MARK: - Publishers
     let didPressFireButton = PassthroughSubject<Void, Never>()
     let didPressNewChatButton = PassthroughSubject<Void, Never>()
     let didSubmitText = PassthroughSubject<String, Never>()
+    let didPressStopGenerating = PassthroughSubject<Void, Never>()
 
     // MARK: - Public Methods
     func fireButtonPressed() {
@@ -37,5 +47,9 @@ final class AIChatInputBoxViewModel: ObservableObject {
 
     func submitText(_ text: String) {
         didSubmitText.send(text)
+    }
+    
+    func stopGenerating() {
+        didPressStopGenerating.send()
     }
 }

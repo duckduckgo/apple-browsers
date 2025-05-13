@@ -275,7 +275,7 @@ private struct RoundedCardView: View {
                     .foregroundColor(Color(designSystemColor: .textSecondary))
 
                 Rectangle()
-                    .fill(Color(designSystemColor: .container))
+                    .fill(Color(designSystemColor: .lines))
                     .frame(height: 1)
                     .padding(Constants.separatorPadding)
 

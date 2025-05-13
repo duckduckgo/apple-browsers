@@ -1,0 +1,68 @@
+# bookmarks.yaml
+appId: com.duckduckgo.mobile.ios
+tags:
+    - release
+
+---
+
+# Set up 
+- runFlow: 
+    file: ../shared/setup.yaml
+
+# New tab screen
+- assertVisible: "Duck.ai"
+- tapOn: "Duck.ai"
+- assertVisible: "Say hello to Duck.ai"
+- tapOn: "Close 24"
+
+# Browsing
+- assertVisible:
+    id: "searchEntry"
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://privacy-test-pages.site"
+- pressKey: Enter
+- assertVisible: "Duck.ai"
+- tapOn: "Duck.ai"
+- assertVisible: "Say hello to Duck.ai"
+- tapOn: "Close 24"
+
+# Tab Switcher
+- tapOn: "Tab Switcher"
+- assertVisible: "Duck.ai"
+- tapOn: "Duck.ai"
+- assertVisible: "Say hello to Duck.ai"
+- tapOn: "Close 24"
+- tapOn: "New Tab"
+
+# Turn it off
+- tapOn: "Cancel"
+- tapOn: "Browsing Menu"
+- tapOn: "Settings"
+- scrollUntilVisible: 
+    element: "Duck.ai"
+    direction: DOWN
+- tapOn: "Duck.ai"
+- tapOn:
+    text: "1"
+    index: 0
+- tapOn: "Settings"
+- tapOn: "Done"
+
+# New tab screen
+- assertNotVisible: "Duck.ai"
+
+# Browsing
+- assertVisible:
+    id: "searchEntry"
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://privacy-test-pages.site"
+- pressKey: Enter
+- assertNotVisible: "Duck.ai"
+
+# Tab Switcher
+- tapOn: "Tab Switcher"
+- assertNotVisible: "Duck.ai"
+
+

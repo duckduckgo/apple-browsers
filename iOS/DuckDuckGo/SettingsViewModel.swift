@@ -49,6 +49,7 @@ final class SettingsViewModel: ObservableObject {
     let aiChatSettings: AIChatSettingsProvider
     let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
     let experimentalThemingManager: ExperimentalThemingManager
+    var experimentalAIChatManager: ExperimentalAIChatManager
     private let duckPlayerSettings: DuckPlayerSettings
     let featureDiscovery: FeatureDiscovery
 
@@ -474,6 +475,7 @@ final class SettingsViewModel: ObservableObject {
          aiChatSettings: AIChatSettingsProvider,
          maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
          experimentalThemingManager: ExperimentalThemingManager,
+         experimentalAIChatManager: ExperimentalAIChatManager,
          duckPlayerSettings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
          featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()
     ) {
@@ -494,6 +496,7 @@ final class SettingsViewModel: ObservableObject {
         self.aiChatSettings = aiChatSettings
         self.maliciousSiteProtectionPreferencesManager = maliciousSiteProtectionPreferencesManager
         self.experimentalThemingManager = experimentalThemingManager
+        self.experimentalAIChatManager = experimentalAIChatManager
         self.duckPlayerSettings = duckPlayerSettings
         self.featureDiscovery = featureDiscovery
         setupNotificationObservers()
@@ -523,6 +526,7 @@ extension SettingsViewModel {
             addressBar: SettingsState.AddressBar(enabled: !isPad, position: appSettings.currentAddressBarPosition),
             showsFullURL: appSettings.showFullSiteAddress,
             isExperimentalThemingEnabled: experimentalThemingManager.isExperimentalThemingEnabled,
+            isExperimentalAIChatEnabled: experimentalAIChatManager.isExperimentalAIChatSettingsEnabled,
             sendDoNotSell: appSettings.sendDoNotSell,
             autoconsentEnabled: appSettings.autoconsentEnabled,
             autoclearDataEnabled: AutoClearSettingsModel(settings: appSettings) != nil,
@@ -1086,6 +1090,15 @@ extension SettingsViewModel {
                 self.aiChatSettings.enableAIChatTabSwitcherUserSettings(enable: newValue)
             }
         )
+    }
+
+    var aiChatExperimentalBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.state.isExperimentalAIChatEnabled },
+            set: { _ in
+                self.experimentalAIChatManager.toggleExperimentalTheming()
+                self.state.isExperimentalAIChatEnabled = self.experimentalAIChatManager.isExperimentalAIChatSettingsEnabled
+            })
     }
 
 }

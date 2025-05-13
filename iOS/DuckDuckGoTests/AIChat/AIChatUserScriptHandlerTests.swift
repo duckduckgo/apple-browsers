@@ -28,12 +28,22 @@ class AIChatUserScriptHandlerTests: XCTestCase {
     var aiChatUserScriptHandler: AIChatUserScriptHandler!
     var mockFeatureFlagger: MockFeatureFlagger!
     var mockPayloadHandler: AIChatPayloadHandler!
+    private var mockUserDefaults: UserDefaults!
+
+    private var mockSuiteName: String {
+        String(describing: self)
+    }
 
     override func setUp() {
         super.setUp()
         mockFeatureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
         mockPayloadHandler = AIChatPayloadHandler()
-        aiChatUserScriptHandler = AIChatUserScriptHandler(featureFlagger: mockFeatureFlagger)
+
+        mockUserDefaults = UserDefaults(suiteName: mockSuiteName)
+        mockUserDefaults.removePersistentDomain(forName: mockSuiteName)
+
+        let experimentalAIChatManager = ExperimentalAIChatManager(featureFlagger: mockFeatureFlagger, userDefaults: mockUserDefaults)
+        aiChatUserScriptHandler = AIChatUserScriptHandler(experimentalAIChatManager: experimentalAIChatManager)
         aiChatUserScriptHandler.setPayloadHandler(mockPayloadHandler)
     }
 

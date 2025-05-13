@@ -94,14 +94,14 @@ final class BookmarksBarViewController: NSViewController {
 
         viewModel.delegate = self
 
-        backgroundColorView.backgroundColor = visualStyleManager.style.navigationBackgroundColor
+        backgroundColorView.backgroundColor = visualStyleManager.style.colorsProvider.navigationBackgroundColor
 
         let nib = NSNib(nibNamed: "BookmarksBarCollectionViewItem", bundle: .main)
         bookmarksBarCollectionView.setDraggingSourceOperationMask([.copy, .move], forLocal: true)
         bookmarksBarCollectionView.register(nib, forItemWithIdentifier: BookmarksBarCollectionViewItem.identifier)
 
         bookmarksBarCollectionView.registerForDraggedTypes(BookmarkDragDropManager.draggedTypes)
-        bookmarksBarCollectionView.backgroundColors = [visualStyleManager.style.navigationBackgroundColor]
+        bookmarksBarCollectionView.backgroundColors = [visualStyleManager.style.colorsProvider.navigationBackgroundColor]
 
         clippedItemsIndicator.registerForDraggedTypes(BookmarkDragDropManager.draggedTypes)
         clippedItemsIndicator.delegate = self

@@ -63,7 +63,17 @@ struct SettingsAIChatView: View {
                     SettingsCellView(label: UserText.aiChatSettingsEnableTabSwitcherToggle,
                                      accessory: .toggle(isOn: viewModel.aiChatTabSwitcherEnabledBinding))
                 }
+
+                if viewModel.experimentalAIChatManager.isExperimentalAIChatFeatureFlagEnabled {
+                    Section {
+                        SettingsCellView(label: UserText.settingsAIChatExperimentalMainSwitch,
+                                         accessory: .toggle(isOn: viewModel.aiChatExperimentalBinding))
+                    } header: {
+                        Text(UserText.settingsAIChatExperimentalSection)
+                    }
+                }
             }
+
         }.applySettingsListModifiers(title: UserText.aiChatFeatureName,
                                      displayMode: .inline,
                                      viewModel: viewModel)

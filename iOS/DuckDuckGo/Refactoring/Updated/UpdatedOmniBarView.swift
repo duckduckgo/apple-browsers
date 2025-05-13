@@ -50,6 +50,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
             switch accessoryType {
             case .chat:
                 searchAreaView.accessoryButton.setImage(UIImage(resource: .aiChatNew24), for: .normal)
+                searchAreaView.accessoryButton.accessibilityLabel = UserText.aiChatFeatureName
             }
             updateAccessoryAccessibility()
         }

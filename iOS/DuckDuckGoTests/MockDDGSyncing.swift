@@ -131,14 +131,11 @@ final class MockSyncConnectionControlling: SyncConnectionControlling {
         ""
     }
     
-    func stopExchangeMode() {
+    func cancel() {
     }
     
     func startConnectMode() throws -> String {
         ""
-    }
-    
-    func stopConnectMode() {
     }
     
     func syncCodeEntered(code: String) async -> Bool {

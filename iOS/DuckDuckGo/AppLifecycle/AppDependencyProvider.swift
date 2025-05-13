@@ -193,13 +193,14 @@ final class AppDependencyProvider: DependencyProvider {
             dbpSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
 
             let authEnvironment: OAuthEnvironment = subscriptionEnvironment.serviceEnvironment == .production ? .production : .staging
-            let authService = DefaultOAuthService(baseURL: authEnvironment.url, apiService: APIServiceFactory.makeAPIServiceForAuthV2())
+            let authService = DefaultOAuthService(baseURL: authEnvironment.url,
+                                                  apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent))
             let legacyAccountStorage = SubscriptionTokenKeychainStorage(keychainType: .dataProtection(.named(subscriptionAppGroup)))
             let authClient = DefaultOAuthClient(tokensStorage: tokenStorageV2,
                                                 legacyTokenStorage: legacyAccountStorage,
                                                 authService: authService)
 
-            var apiServiceForSubscription = APIServiceFactory.makeAPIServiceForSubscription()
+            var apiServiceForSubscription = APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent)
             let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: apiServiceForSubscription,
                                                                                    baseURL: subscriptionEnvironment.serviceEnvironment.url)
             apiServiceForSubscription.authorizationRefresherCallback = { _ in

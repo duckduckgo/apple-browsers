@@ -126,7 +126,8 @@ extension DefaultSubscriptionManagerV2 {
                             canPerformAuthMigration: Bool,
                             pixelHandlingSource: AuthV2PixelHandler.Source) {
 
-        let authService = DefaultOAuthService(baseURL: environment.authEnvironment.url, apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: UserAgent.duckDuckGoUserAgent()))
+        let authService = DefaultOAuthService(baseURL: environment.authEnvironment.url,
+                                              apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: UserAgent.duckDuckGoUserAgent()))
         let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainType: keychainType) { accessType, error in
             PixelKit.fire(PrivacyProErrorPixel.privacyProKeychainAccessError(accessType: accessType,
                                                                              accessError: error,

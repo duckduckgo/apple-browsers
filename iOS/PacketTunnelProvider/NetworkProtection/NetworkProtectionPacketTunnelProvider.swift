@@ -469,7 +469,8 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             // MARK: Subscription V2
             Logger.networkProtection.log("Configure Subscription V2")
             let authEnvironment: OAuthEnvironment = subscriptionEnvironment.serviceEnvironment == .production ? .production : .staging
-            let authService = DefaultOAuthService(baseURL: authEnvironment.url, apiService: APIServiceFactory.makeAPIServiceForAuthV2())
+            let authService = DefaultOAuthService(baseURL: authEnvironment.url,
+                                                  apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent))
 
             // keychain storage
             let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
@@ -486,7 +487,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
                                                 legacyTokenStorage: legacyAccountStorage,
                                                 authService: authService)
-            let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: APIServiceFactory.makeAPIServiceForSubscription(),
+            let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent),
                                                                                    baseURL: subscriptionEnvironment.serviceEnvironment.url)
             let storePurchaseManager = DefaultStorePurchaseManagerV2(subscriptionFeatureMappingCache: subscriptionEndpointService)
             let pixelHandler = AuthV2PixelHandler(source: .systemExtension)

@@ -6225,12 +6225,12 @@
 			name = Autofill;
 			sourceTree = "<group>";
 		};
-		C1106F2F2D0EFD6F0054A221 /* FreeTrialsExperiment */ = {
+		C1106F2F2D0EFD6F0054A221 /* FreeTrials */ = {
 			isa = PBXGroup;
 			children = (
 				C1F04B632D1068DC003DEF05 /* SubscriptionPagesUseSubscriptionFeatureFreeTrialsTests.swift */,
 			);
-			path = FreeTrialsExperiment;
+			path = FreeTrials;
 			sourceTree = "<group>";
 		};
 		C12552952D0B066B00A0FDAA /* FreeTrialsExperiment */ = {
@@ -6313,14 +6313,6 @@
 				C15CDF3C2DD2252F00A67F63 /* SubscriptionFreeTrialsHelper.swift */,
 			);
 			path = FreeTrials;
-			sourceTree = "<group>";
-		};
-		C162A1B52D79F6EC00C34BAB /* OnboardingPromotionExperiment */ = {
-			isa = PBXGroup;
-			children = (
-				C162A1B62D79F71500C34BAB /* SubscriptionPagesUseSubscriptionFeatureOnboardingPromotionTests.swift */,
-			);
-			path = OnboardingPromotionExperiment;
 			sourceTree = "<group>";
 		};
 		C163DC922DC92F880026852D /* Onboarding */ = {
@@ -7644,7 +7636,7 @@
 			isa = PBXGroup;
 			children = (
 				7B6586382DB7F51000D12BE3 /* SimplifiedPaywall */,
-				C1106F2F2D0EFD6F0054A221 /* FreeTrialsExperiment */,
+				C1106F2F2D0EFD6F0054A221 /* FreeTrials */,
 				1E25D5302C921246004400F0 /* Mocks */,
 				D664C7952B289AA000CBFA76 /* Subscription.storekit */,
 				BDE219E92C457B46005D5884 /* PrivacyProDataReporterTests.swift */,

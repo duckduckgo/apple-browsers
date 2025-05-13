@@ -69,7 +69,7 @@ public protocol SyncConnectionControlling {
      */
     func cancel() async
 
-    func startPairingMode(_ pairingInfo: PairingInfo) async
+    func startPairingMode(_ pairingInfo: PairingInfo) async -> Bool
 
     /**
      Handles a scanned or pasted key and starts excange, recovery or connect flow
@@ -132,23 +132,32 @@ public actor SyncConnectionController: SyncConnectionControlling {
         stopExchangeMode()
     }
 
-    public func startPairingMode(_ pairingInfo: PairingInfo) async {
+    public func startPairingMode(_ pairingInfo: PairingInfo) async -> Bool {
+        guard !isCodeHandlingInFlight else {
+            return false
+        }
+        isCodeHandlingInFlight = true
+        defer {
+            isCodeHandlingInFlight = false
+        }
+
         let syncCode: SyncCode
         do {
             syncCode = try SyncCode.decodeBase64String(pairingInfo.base64Code)
         } catch {
             await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: error)
-            return
+            return false
         }
 
         await delegate?.controllerDidRecognizeScannedCode()
 
         if let exchangeKey = syncCode.exchangeKey {
-            _ = await handleExchangeKey(exchangeKey)
+            return await handleExchangeKey(exchangeKey)
         } else if let connectKey = syncCode.connect {
-            _ = await handleConnectKey(connectKey)
+            return await handleConnectKey(connectKey)
         } else {
             await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: nil)
+            return false
         }
     }
 
@@ -161,9 +170,14 @@ public actor SyncConnectionController: SyncConnectionControlling {
         defer {
             isCodeHandlingInFlight = false
         }
+
         let syncCode: SyncCode
         do {
-            syncCode = try SyncCode.decodeBase64String(code)
+            if let url = URL(string: code), let pairingInfo = PairingInfo(url: url) {
+                syncCode = try SyncCode.decodeBase64String(pairingInfo.base64Code)
+            } else {
+                syncCode = try SyncCode.decodeBase64String(code)
+            }
         } catch {
             await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: error)
             return false

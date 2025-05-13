@@ -33,6 +33,7 @@ protocol ScriptSourceProviding {
     var contentScopeProperties: ContentScopeProperties { get }
     var sessionKey: String { get }
     var messageSecret: String { get }
+    var currentCohorts: [ContentScopeExperimentData] { get }
 
 }
 
@@ -52,6 +53,7 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
     let contentBlockingManager: ContentBlockerRulesManagerProtocol
     let fireproofing: Fireproofing
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
+    var currentCohorts: [ContentScopeExperimentData] = []
 
     init(appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
@@ -72,11 +74,12 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
                                                       privacyConfigurationManager: privacyConfigurationManager)
         sessionKey = Self.generateSessionKey()
         messageSecret = Self.generateSessionKey()
+        currentCohorts = Self.generateCurrentCohorts(experimentManager: contentScopeExperimentsManager)
         contentScopeProperties = ContentScopeProperties(gpcEnabled: appSettings.sendDoNotSell,
                                                         sessionKey: sessionKey,
                                                         messageSecret: messageSecret,
                                                         featureToggles: ContentScopeFeatureToggles.supportedFeaturesOniOS,
-                                                        experimentManager: contentScopeExperimentsManager)
+                                                        currentCohorts: currentCohorts)
         autofillSourceProvider = Self.makeAutofillSource(privacyConfigurationManager: privacyConfigurationManager,
                                                          properties: contentScopeProperties)
     }
@@ -120,6 +123,13 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
                                                                  isDebugBuild: isDebugBuild)
 
         return surrogatesConfig
+    }
+
+    private static func generateCurrentCohorts(experimentManager: ContentScopeExperimentsManaging) -> [ContentScopeExperimentData] {
+        let experiments = experimentManager.resolveContentScopeScriptActiveExperiments()
+        return experiments.map {
+            ContentScopeExperimentData(feature: $0.value.parentID, subfeature: $0.key, cohort: $0.value.cohortID)
+        }
     }
 
 }

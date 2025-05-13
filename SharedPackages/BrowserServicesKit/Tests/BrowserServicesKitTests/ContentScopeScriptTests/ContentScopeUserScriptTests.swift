@@ -36,18 +36,12 @@ final class ContentScopeUserScriptTests: XCTestCase {
             "flag": "debug-flag-enabled"
         ]
     ]
-    let testExperimentData = ExperimentData(
-        parentID: "parentExperiment",
-        cohortID: "aCohort",
-        enrollmentDate: Date()
-    )
+    let experimentData = ContentScopeExperimentData(feature: "parentExperiment", subfeature: "experiment", cohort: "aCohort")
     var experimentManager: MockContentScopeExperimentManager!
 
     override func setUp() {
         super.setUp()
-        experimentManager = MockContentScopeExperimentManager()
-        experimentManager.allActiveContentScopeExperiments = ["test": testExperimentData]
-        properties = ContentScopeProperties(gpcEnabled: false, sessionKey: "", messageSecret: "", featureToggles: ContentScopeFeatureToggles(emailProtection: false, emailProtectionIncontextSignup: false, credentialsAutofill: false, identitiesAutofill: false, creditCardsAutofill: false, credentialsSaving: false, passwordGeneration: false, inlineIconCredentials: false, thirdPartyCredentialsProvider: false, unknownUsernameCategorization: false, partialFormSaves: false), experimentManager: experimentManager)
+        properties = ContentScopeProperties(gpcEnabled: false, sessionKey: "", messageSecret: "", featureToggles: ContentScopeFeatureToggles(emailProtection: false, emailProtectionIncontextSignup: false, credentialsAutofill: false, identitiesAutofill: false, creditCardsAutofill: false, credentialsSaving: false, passwordGeneration: false, inlineIconCredentials: false, thirdPartyCredentialsProvider: false, unknownUsernameCategorization: false, partialFormSaves: false), currentCohorts: [experimentData])
         configGenerator = MockCSSPrivacyConfigGenerator()
         mockPrivacyConfigurationManager = MockPrivacyConfigurationManager(privacyConfig: MockPrivacyConfiguration(), internalUserDecider: DefaultInternalUserDecider(mockedStore: MockInternalUserStoring()))
         mockPrivacyConfigurationManager.currentConfigString = managerConfig
@@ -134,8 +128,9 @@ final class ContentScopeUserScriptTests: XCTestCase {
         let source = ContentScopeUserScript.generateSource(mockPrivacyConfigurationManager, properties: properties, isolated: false, config: WebkitMessagingConfig(webkitMessageHandlerNames: [], secret: "", hasModernWebkitAPI: true), privacyConfigurationJSONGenerator: configGenerator)
 
         XCTAssertTrue(source.contains("currentCohorts"))
-        XCTAssertTrue(source.contains(testExperimentData.cohortID))
-        XCTAssertTrue(source.contains(testExperimentData.parentID))
+        XCTAssertTrue(source.contains(experimentData.cohort))
+        XCTAssertTrue(source.contains(experimentData.feature))
+        XCTAssertTrue(source.contains(experimentData.subfeature))
     }
 }
 

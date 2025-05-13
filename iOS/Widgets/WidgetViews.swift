@@ -56,7 +56,7 @@ struct FavoriteView: View {
                             }
                             
                         } else if favorite.isDuckDuckGo {
-                            Image(.duckDuckGoColor24)
+                            Image(uiImage: DesignSystemImages.Color.Size24.duckDuckGo)
                                 .resizable()
                                 .useFullColorRendering()
                                 .frame(width: 45, height: 45, alignment: .center)
@@ -136,7 +136,7 @@ struct FavoritesWidgetView: View {
                 HStack(spacing: 12) {
                     LargeSearchFieldView()
                     Link(destination: DeepLinks.openAIChat.appendingParameter(name: WidgetSourceType.sourceKey, value: WidgetSourceType.favorite.rawValue)) {
-                        CircleIconView(image: Image(.aiChat24))
+                        CircleIconView(image: Image(uiImage: DesignSystemImages.Color.Size24.aiChat))
                     }
                 }
                 if entry.favorites.isEmpty, !entry.isPreview {
@@ -206,7 +206,7 @@ struct SearchWidgetView: View {
                         .fill(Color(designSystemColor: .container))
                         .frame(width: 126, height: 46)
 
-                    Image(.findSearch20)
+                    Image(uiImage: DesignSystemImages.Glyphs.Size20.findSearch)
                         .useFullColorRendering()
                         .frame(width: 20, height: 20)
                         .padding(.leading)

@@ -19,10 +19,11 @@
 
 import SwiftUI
 import DuckUI
+import DesignResourcesKit
 
 struct NewTabPageCustomizeButtonView: View {
     var body: some View {
-        Image(.options16)
+        Image(uiImage: DesignSystemImages.Glyphs.Size16.options)
     }
 }
 

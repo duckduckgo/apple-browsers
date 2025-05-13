@@ -51,7 +51,7 @@ class BookmarkFolderCell: UITableViewCell {
                 title.text = folder.title
             }
 
-            folderImageView.image = UIImage(named: "Folder")
+            folderImageView.image = UIImage(resource: .folder)
         }
     }
     

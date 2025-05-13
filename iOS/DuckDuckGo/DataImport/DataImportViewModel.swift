@@ -23,6 +23,7 @@ import UniformTypeIdentifiers
 import Core
 import BrowserServicesKit
 import Common
+import DesignResourcesKit
 
 protocol DataImportViewModelDelegate: AnyObject {
     func dataImportViewModelDidRequestImportFile(_ viewModel: DataImportViewModel)
@@ -145,12 +146,13 @@ final class DataImportViewModel: ObservableObject {
         }
         let importScreen: ImportScreen
 
+        #warning("ICONS: missing passwordsImport128 and bookmarksImport96")
         var image: Image {
             switch importScreen {
             case .passwords:
-                return Image(.passwordsImport128)
+                return Image(uiImage: DesignSystemImages.Color.Size24.exclamation)
             case .bookmarks:
-                return Image(.bookmarksImport96)
+                return Image(uiImage: DesignSystemImages.Color.Size24.exclamation)
             }
         }
 

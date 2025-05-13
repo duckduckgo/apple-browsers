@@ -26,6 +26,7 @@ import WidgetKit
 import Common
 import PrivacyDashboard
 import PixelExperimentKit
+import DesignResourcesKit
 
 extension TabViewController {
 
@@ -240,7 +241,7 @@ extension TabViewController {
     }
 
     private func buildCopyEntry(smallIcon: Bool) -> BrowsingMenuEntry {
-        let image = UIImage(resource: smallIcon ? .copy16 : .copy24)
+        let image = smallIcon ? DesignSystemImages.Glyphs.Size16.copy : DesignSystemImages.Glyphs.Size24.copy
         return BrowsingMenuEntry.regular(name: UserText.actionCopy, image: image, action: { [weak self] in
             guard let strongSelf = self else { return }
             if !strongSelf.isError, let url = strongSelf.webView.url {

@@ -25,7 +25,8 @@ struct FavoriteAddItemView: View {
         RoundedRectangle(cornerRadius: 8, style: .continuous)
             .fill(.clear)
             .overlay {
-                Image(.add24)
+                #warning("ICONS: missing glyphs/24/add")
+                Image(uiImage: DesignSystemImages.Glyphs.Size24.exclamation)
                     .tintIfAvailable(Color(designSystemColor: .icons))
             }
             .aspectRatio(1.0, contentMode: .fit)

@@ -20,6 +20,7 @@
 import SwiftUI
 import WidgetKit
 import AppIntents
+import DesignResourcesKit
 
 @available(iOS 17.0, *)
 struct QuickActionsProvider: AppIntentTimelineProvider {
@@ -85,13 +86,14 @@ enum ShortcutOption: String, CaseIterable, Identifiable, AppEnum {
 
     var id: String { self.rawValue }
 
+    #warning("ICONS: Use of color here should be glyph")
     var icon: Image {
         switch self {
-        case .passwords: return Image(.key24)
-        case .duckAI: return Image(.aiChat24)
-        case .voiceSearch: return Image(.microphoneSolidSearch24)
-        case .favorites: return Image(.favorite24)
-        case .emailProtection: return Image(.email24)
+        case .passwords: return Image(uiImage: DesignSystemImages.Color.Size24.key)
+        case .duckAI: return Image(uiImage: DesignSystemImages.Glyphs.Size24.aiChat)
+        case .voiceSearch: return Image(uiImage: DesignSystemImages.Glyphs.Size24.microphone)
+        case .favorites: return Image(uiImage: DesignSystemImages.Color.Size24.favorite)
+        case .emailProtection: return Image(uiImage: DesignSystemImages.Color.Size24.email)
         }
     }
 
@@ -145,7 +147,8 @@ struct QuickActionsWidgetView: View {
 private struct SearchBoxView: View {
     var body: some View {
         HStack {
-            Image(.duckDuckGoColor28)
+            #warning("ICONS: image changed from 28 to 24")
+            Image(uiImage: DesignSystemImages.Color.Size24.duckDuckGo)
                 .resizable()
                 .useFullColorRendering()
                 .frame(width: 28, height: 28)

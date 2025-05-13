@@ -20,6 +20,7 @@
 import Foundation
 import UIKit
 import Lottie
+import DesignResourcesKit
 
 enum PrivacyIcon {
     case daxLogo, shield, shieldWithDot, alert
@@ -27,7 +28,8 @@ enum PrivacyIcon {
     fileprivate var staticImage: UIImage? {
         switch self {
         case .daxLogo: return UIImage(resource: .logoIcon)
-        case .alert: return UIImage(resource: .alertColor24)
+        #warning("ICONS: missing color/24/alert")
+        case .alert: return DesignSystemImages.Color.Size24.exclamation
         default: return nil
         }
     }

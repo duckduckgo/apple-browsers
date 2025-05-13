@@ -21,6 +21,7 @@ import UIKit
 import BrowserServicesKit
 import Combine
 import SwiftUI
+import DesignResourcesKit
 
 final class AutofillCreditCardListViewController: UIViewController {
     
@@ -28,8 +29,9 @@ final class AutofillCreditCardListViewController: UIViewController {
     private let secureVault: (any AutofillSecureVault)?
     private var cancellables: Set<AnyCancellable> = []
     
+    #warning("ICONS: missing glyphs/24/add")
     private lazy var addBarButtonItem: UIBarButtonItem = {
-        UIBarButtonItem(image: UIImage(named: "Add-24"),
+        UIBarButtonItem(image: DesignSystemImages.Glyphs.Size24.exclamation,
                         style: .plain,
                         target: self,
                         action: #selector(addButtonPressed))

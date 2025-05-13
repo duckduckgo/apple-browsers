@@ -54,7 +54,8 @@ struct AutofillCreditCardListView: View {
 private struct EmptyStateView: View {
     var body: some View {
         VStack(spacing: 0) {
-            Image(.creditCardsAdd96)
+            #warning("ICONS: image changaed from 96 -> 24")
+            Image(uiImage: DesignSystemImages.Color.Size24.creditCard)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 96, height: 96)

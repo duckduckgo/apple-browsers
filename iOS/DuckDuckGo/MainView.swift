@@ -166,8 +166,8 @@ extension MainViewFactory {
     final class LogoBackgroundView: UIView { }
     private func createLogoBackground() {
         coordinator.logoContainer = LogoBackgroundView()
-        coordinator.logo = UIImageView(image: UIImage(named: "Logo"))
-        coordinator.logoText = UIImageView(image: UIImage(named: "TextDuckDuckGo"))
+        coordinator.logo = UIImageView(image: UIImage(resource: .logo))
+        coordinator.logoText = UIImageView(image: UIImage(resource: .textDuckDuckGo))
 
         coordinator.logoContainer.backgroundColor = .clear
         coordinator.logoContainer.addSubview(coordinator.logo)

@@ -21,6 +21,7 @@ import UIKit
 import BrowserServicesKit
 import Core
 import Bookmarks
+import DesignResourcesKit
 
 // MARK: Source agnostic action implementations
 extension TabSwitcherViewController {
@@ -460,7 +461,7 @@ extension TabSwitcherViewController {
         }
 
         barsHandler.menuButton.accessibilityLabel = "More Menu"
-        barsHandler.menuButton.image = UIImage(resource: .moreApple24)
+        barsHandler.menuButton.image = DesignSystemImages.Glyphs.Size24.moreApple
         barsHandler.menuButton.tintColor = UIColor(designSystemColor: .icons)
         barsHandler.menuButton.menu = createMultiSelectionMenu()
         barsHandler.menuButton.isEnabled = canShowSelectionMenu

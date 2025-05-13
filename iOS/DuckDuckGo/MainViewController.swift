@@ -40,6 +40,7 @@ import PageRefreshMonitor
 import BrokenSitePrompt
 import AIChat
 import NetworkExtension
+import DesignResourcesKit
 
 class MainViewController: UIViewController {
 
@@ -789,7 +790,7 @@ class MainViewController: UIViewController {
             let button = ToolbarButton()
             button.frame = CGRect(x: 0, y: 0, width: 34, height: 44)
 
-            button.setImage(UIImage(resource: .tabNew24))
+            button.setImage(DesignSystemImages.Glyphs.Size24.tabNew)
             button.addAction(UIAction(handler: { _ in self.showTabSwitcher() }), for: .touchUpInside)
 
             let longPressRecognizer = UILongPressGestureRecognizer(target: self, action: #selector(onNewTabLongPressRecognizer))
@@ -832,7 +833,8 @@ class MainViewController: UIViewController {
         viewCoordinator.omniBar.barView.bookmarksButton.addGestureRecognizer(UILongPressGestureRecognizer(target: self,
                                                                                   action: #selector(quickSaveBookmarkLongPress(gesture:))))
         gestureBookmarksButton.delegate = self
-        gestureBookmarksButton.image = UIImage(named: "Bookmarks")
+
+        gestureBookmarksButton.image = DesignSystemImages.Glyphs.Size24.bookmarks
     }
 
     private func bindFavoritesDisplayMode() {

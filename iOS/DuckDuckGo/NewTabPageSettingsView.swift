@@ -19,6 +19,7 @@
 
 import SwiftUI
 import Common
+import DesignResourcesKit
 
 struct NewTabPageSettingsView: View {
     @Environment(\.dismiss) var dismiss
@@ -104,12 +105,14 @@ struct NewTabPageSettingsView: View {
         ForEach(sectionsSettingsModel.itemsSettings, id: \.item) { setting in
             switch setting.item {
             case .favorites:
+                #warning("ICONS: favorites -> favorites solid")
                 NewTabPageSettingsSectionItemView(title: UserText.newTabPageSettingsSectionNameFavorites,
-                                                  iconResource: .favorite24,
+                                                  icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.favoriteSolid),
                                                   isEnabled: setting.isEnabled)
             case .shortcuts:
+                #warning("ICONS: missing glyphs/size24/exclamation")
                 NewTabPageSettingsSectionItemView(title: UserText.newTabPageSettingsSectionNameShortcuts,
-                                                  iconResource: .shortcut24,
+                                                  icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.exclamation),
                                                   isEnabled: setting.isEnabled)
             }
         }.onMove(perform: { indices, newOffset in

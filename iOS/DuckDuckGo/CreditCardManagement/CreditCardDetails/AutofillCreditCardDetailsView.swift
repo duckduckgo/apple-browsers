@@ -226,14 +226,15 @@ private struct EditableCreditCardNumberCell: View {
                 if text.count > 0 {
                     if let closeButtonVisible = closeButtonVisible {
                         if closeButtonVisible {
-                            Image(.clear16)
+                            #warning("ICONS: image renamed from clear to clear solid")
+                            Image(uiImage: DesignSystemImages.Glyphs.Size16.clearSolid)
                                 .onTapGesture {
                                     self.text = ""
                                     self.formattedText = ""
                                     self.isCardValid = CreditCardValidation.isValidCardNumber(text)
                                 }
                         } else if !isCardValid {
-                            Image(.exclamationColor16)
+                            Image(uiImage: DesignSystemImages.Color.Size16.exclamation)
                         }
                     }
                 }
@@ -439,7 +440,8 @@ private struct EditableDateCell: View {
                 
                 if formattedExpiration.count > 0 {
                     if selectedCell == id {
-                        Image(.clear16)
+                        #warning("ICONS: image renamed from clear to clear sold")
+                        Image(uiImage: DesignSystemImages.Glyphs.Size16.clearSolid)
                             .onTapGesture {
                                 self.formattedExpiration = ""
                                 self.expirationMonth = nil

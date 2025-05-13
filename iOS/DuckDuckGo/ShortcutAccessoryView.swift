@@ -19,6 +19,7 @@
 
 import SwiftUI
 import DuckUI
+import DesignResourcesKit
 
 struct ShortcutAccessoryView: View {
 
@@ -30,7 +31,7 @@ struct ShortcutAccessoryView: View {
         Circle()
             .foregroundStyle(bgColorForAccessoryType(accessoryType))
             .overlay {
-                Image(accessoryType.iconResource)
+                accessoryType.image
                     .resizable()
                     .foregroundColor(accessoryType.foregroundColor)
                     .aspectRatio(contentMode: .fit)
@@ -61,12 +62,14 @@ enum ShortcutAccessoryType {
 }
 
 private extension ShortcutAccessoryType {
-    var iconResource: ImageResource {
+    var image: Image {
         switch self {
         case .selected:
-            return .check16Alt
+            #warning("ICONS: .check16Alt -> Glyphs/16/checkGray")
+            return Image(uiImage: DesignSystemImages.Glyphs.Size16.checkGray)
         case .add:
-            return .add16
+            #warning("ICONs: missing .add16")
+            return Image(uiImage: DesignSystemImages.Glyphs.Size16.exclamation)
         }
     }
 

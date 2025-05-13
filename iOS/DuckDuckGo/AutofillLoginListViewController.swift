@@ -71,7 +71,7 @@ final class AutofillLoginListViewController: UIViewController {
     private var syncUpdatesCancellable: AnyCancellable?
 
     private lazy var addBarButtonItem: UIBarButtonItem = {
-        UIBarButtonItem(image: UIImage(named: "Add-24"),
+        UIBarButtonItem(image: DesignSystemImages.Glyphs.Size24.add,
                         style: .plain,
                         target: self,
                         action: #selector(addButtonPressed))
@@ -79,7 +79,7 @@ final class AutofillLoginListViewController: UIViewController {
 
     private lazy var moreButton: UIButton = {
         let button = UIButton(type: .system)
-        button.setImage(UIImage(named: "More-Apple-24"), for: .normal)
+        button.setImage(DesignSystemImages.Glyphs.Size24.moreApple, for: .normal)
         button.showsMenuAsPrimaryAction = true
         button.menu = moreMenu
         return button
@@ -389,20 +389,20 @@ final class AutofillLoginListViewController: UIViewController {
     }
 
     private func editAction() -> UIAction {
-        return UIAction(title: UserText.actionGenericEdit, image: UIImage(named: "Edit-16")) { [weak self] _ in
+        return UIAction(title: UserText.actionGenericEdit, image: DesignSystemImages.Glyphs.Size16.edit) { [weak self] _ in
             self?.setEditing(true, animated: true)
         }
     }
 
     private func importFileAction() -> UIAction {
-        return UIAction(title: UserText.autofillEmptyViewImportButtonTitle, image: UIImage(named: "Import-16")) { [weak self] _ in
+        return UIAction(title: UserText.autofillEmptyViewImportButtonTitle, image: DesignSystemImages.Glyphs.Size16.import) { [weak self] _ in
             self?.segueToFileImport()
             Pixel.fire(pixel: .autofillImportPasswordsOverflowMenuTapped)
         }
     }
 
     private func importViaSyncAction() -> UIAction {
-        return UIAction(title: UserText.autofillEmptyViewImportViaSyncButtonTitle, image: UIImage(named: "Sync-16")) { [weak self] _ in
+        return UIAction(title: UserText.autofillEmptyViewImportViaSyncButtonTitle, image: DesignSystemImages.Glyphs.Size16.sync) { [weak self] _ in
             self?.segueToImportViaSync()
             Pixel.fire(pixel: .autofillLoginsImport)
         }

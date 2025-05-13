@@ -49,7 +49,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         didSet {
             switch accessoryType {
             case .chat:
-                searchAreaView.accessoryButton.setImage(UIImage(resource: .aiChatNew24), for: .normal)
+                searchAreaView.accessoryButton.setImage(DesignSystemImages.Glyphs.Size24.aiChat, for: .normal)
             }
             updateAccessoryAccessibility()
         }
@@ -386,19 +386,20 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
 
         leadingButtonsContainer.isHidden = true
 
-        backButtonView.setImage(UIImage(resource: .arrowLeftSmall24))
+        backButtonView.setImage(DesignSystemImages.Glyphs.Size24.arrowLeftSmall)
         UpdatedOmniBarView.setUpCommonProperties(for: backButtonView)
 
-        forwardButtonView.setImage(UIImage(resource: .arrowRightNew24))
+        forwardButtonView.setImage(DesignSystemImages.Glyphs.Size24.arrowRight)
         UpdatedOmniBarView.setUpCommonProperties(for: forwardButtonView)
 
-        bookmarksButtonView.setImage(UIImage(resource: .bookmarksStacked24))
+        #warning("ICONS: image changed from bookmarksStacked24 -> bookmarksList")
+        bookmarksButtonView.setImage(DesignSystemImages.Glyphs.Size24.bookmarksList)
         UpdatedOmniBarView.setUpCommonProperties(for: bookmarksButtonView)
 
-        menuButtonView.setImage(UIImage(resource: .menuHamburgerNew24))
+        menuButtonView.setImage(DesignSystemImages.Glyphs.Size24.menuHamburger)
         UpdatedOmniBarView.setUpCommonProperties(for: menuButtonView)
 
-        settingsButtonView.setImage(UIImage(resource: .settingsNew24))
+        settingsButtonView.setImage(DesignSystemImages.Glyphs.Size24.settings)
         UpdatedOmniBarView.setUpCommonProperties(for: settingsButtonView)
 
         progressView?.hide()

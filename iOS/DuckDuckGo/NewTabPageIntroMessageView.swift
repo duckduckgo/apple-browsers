@@ -46,7 +46,8 @@ struct NewTabPageIntroMessageView: View {
                 Button {
                     onClose?()
                 } label: {
-                    Image(.close24)
+                    #warning("ICONS: Size24/close -> Size16/close")
+                    Image(uiImage: DesignSystemImages.Glyphs.Size16.close)
                 }
                 .frame(alignment: .topTrailing)
                 .foregroundStyle(Color(designSystemColor: .icons))

@@ -145,8 +145,10 @@ final class AppDependencyProvider: DependencyProvider {
                                                                      key: UserDefaultsCacheKey.subscriptionEntitlements,
                                                                      settings: UserDefaultsCacheSettings(defaultExpirationInterval: .minutes(20)))
             let accessTokenStorage = SubscriptionTokenKeychainStorage(keychainType: .dataProtection(.named(subscriptionAppGroup)))
-            let subscriptionEndpointService = DefaultSubscriptionEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment)
-            let authService = DefaultAuthEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment)
+            let subscriptionEndpointService = DefaultSubscriptionEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment,
+                                                                                 userAgent: DefaultUserAgentManager.duckDuckGoUserAgent)
+            let authService = DefaultAuthEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment,
+                                                         userAgent: DefaultUserAgentManager.duckDuckGoUserAgent)
             let subscriptionFeatureMappingCache = DefaultSubscriptionFeatureMappingCache(subscriptionEndpointService: subscriptionEndpointService,
                                                                                          userDefaults: subscriptionUserDefaults)
             let accountManager = DefaultAccountManager(accessTokenStorage: accessTokenStorage,

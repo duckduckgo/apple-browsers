@@ -448,8 +448,10 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
             let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
             let accessTokenStorage = SubscriptionTokenKeychainStorage(keychainType: .dataProtection(.named(subscriptionAppGroup)))
-            let subscriptionEndpointService = DefaultSubscriptionEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment)
-            let authService = DefaultAuthEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment)
+            let subscriptionEndpointService = DefaultSubscriptionEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment,
+                                                                                 userAgent: DefaultUserAgentManager.duckDuckGoUserAgent)
+            let authService = DefaultAuthEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment,
+                                                         userAgent: DefaultUserAgentManager.duckDuckGoUserAgent)
             let accountManager = DefaultAccountManager(accessTokenStorage: accessTokenStorage,
                                                        entitlementsCache: entitlementsCache,
                                                        subscriptionEndpointService: subscriptionEndpointService,

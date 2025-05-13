@@ -451,7 +451,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
         // MARK: - V2
         let authService = DefaultOAuthService(baseURL: subscriptionEnvironment.authEnvironment.url,
-                                              apiService: APIServiceFactory.makeAPIServiceForAuthV2())
+                                              apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: UserAgent.duckDuckGoUserAgent()))
         let tokenStoreV2 = NetworkProtectionKeychainTokenStoreV2(keychainType: Bundle.keychainType,
                                                                  serviceName: Self.tokenContainerServiceName,
                                                                  errorEventsHandler: debugEvents)
@@ -459,7 +459,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                                             legacyTokenStorage: nil,
                                             authService: authService)
 
-        let subscriptionEndpointServiceV2 = DefaultSubscriptionEndpointServiceV2(apiService: APIServiceFactory.makeAPIServiceForSubscription(),
+        let subscriptionEndpointServiceV2 = DefaultSubscriptionEndpointServiceV2(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent()),
                                                                                baseURL: subscriptionEnvironment.serviceEnvironment.url)
         let pixelHandler = AuthV2PixelHandler(source: .systemExtension)
         let subscriptionManager = DefaultSubscriptionManagerV2(oAuthClient: authClient,

@@ -140,6 +140,7 @@ public struct SyncSettingsView: View {
 
     }
 
+    // At some point work out how to change at least the fallback image to a resource.
     @ViewBuilder
     func deviceTypeImage(_ device: SyncSettingsViewModel.Device) -> some View {
         let image = UIImage(named: "SyncDeviceType_\(device.type)") ?? UIImage(named: "SyncDeviceType_phone")!

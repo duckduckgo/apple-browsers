@@ -119,8 +119,8 @@ class FaviconsTests: XCTestCase {
     func testWhenDomainIsBookmarkThenIsFaviconCached() {
         let expectation = self.expectation(description: "isFaviconCachedForBookmarks")
 
-        guard let image = UIImage(named: "Logo"),
-              let resource = favicons.defaultResource(forDomain: Constants.exampleDomain) else {
+        let image = UIImage(resource: .logo)
+        guard let resource = favicons.defaultResource(forDomain: Constants.exampleDomain) else {
             XCTFail("Failed to load data needed for test")
             return
         }
@@ -134,21 +134,13 @@ class FaviconsTests: XCTestCase {
     }
 
 	func testWhenProvidedImageThenSizeIsValid() {
-		guard let image = UIImage(named: "Logo") else {
-			XCTFail("Failed to load image needed for test")
-			return
-		}
-
+        let image = UIImage(resource: .logo)
 		XCTAssertTrue(favicons.isValidImage(image, forMaxSize: CGSize(width: 128.0, height: 128.0)))
 		XCTAssertFalse(favicons.isValidImage(image, forMaxSize: CGSize(width: 64.0, height: 64.0)))
 	}
 
 	func testWhenProvidedImageThenImageIsResized() {
-		guard let image = UIImage(named: "Logo") else {
-			XCTFail("Failed to load image needed for test")
-			return
-		}
-
+        let image = UIImage(resource: .logo)
 		let size = CGSize(width: 64, height: 64)
 		XCTAssertTrue(image.size != size)
 

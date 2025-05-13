@@ -28,9 +28,20 @@ import BrowserServicesKit
 
 extension DefaultOmniBarView: NibLoading {}
 
-public enum OmniBarIcon: String {
-    case duckPlayer = "DuckPlayerURLIcon"
-    case specialError = "Globe-24"
+public enum OmniBarIcon {
+    case duckPlayer
+    case specialError
+
+    #warning("ICONS: missing DuckPlayerURLIcon")
+    var image: UIImage {
+        switch self {
+        case .duckPlayer:
+            return UIImage(resource: .duckPlayerURLIcon)
+        case .specialError:
+            return DesignSystemImages.Glyphs.Size24.globe
+        }
+    }
+
 }
 
 final class DefaultOmniBarView: UIView {
@@ -104,7 +115,7 @@ final class DefaultOmniBarView: UIView {
         didSet {
             switch accessoryType {
             case .chat:
-                accessoryButton.setImage(UIImage(named: "AIChat-24"), for: .normal)
+                accessoryButton.setImage(DesignSystemImages.Glyphs.Size24.aiChat, for: .normal)
             }
         }
     }

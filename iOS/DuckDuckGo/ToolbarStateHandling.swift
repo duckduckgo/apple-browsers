@@ -20,6 +20,7 @@
 import UIKit
 import BrowserServicesKit
 import SwiftUICore
+import DesignResourcesKit
 
 enum ToolbarContentState: Equatable {
     case newTab
@@ -49,8 +50,7 @@ final class ToolbarHandler: ToolbarStateHandling {
     }()
 
     lazy var backButton = {
-        let imageName = isExperimentalThemingEnabled ? "Arrow-Left-New-24" : "BrowsePrevious"
-        return createBarButtonItem(title: UserText.keyCommandBrowserBack, imageName: imageName)
+        return createBarButtonItem(title: UserText.keyCommandBrowserBack, image: DesignSystemImages.Glyphs.Size24.arrowLeft)
     }()
 
     private(set) lazy var fireButton = FireButton()
@@ -61,33 +61,28 @@ final class ToolbarHandler: ToolbarStateHandling {
             barButtonItem.title = UserText.actionForgetAll
             return barButtonItem
         } else {
-            return createBarButtonItem(title: UserText.actionForgetAll, imageName: "Fire")
+            return createBarButtonItem(title: UserText.actionForgetAll, image: DesignSystemImages.Glyphs.Size24.fire)
         }
     }()
 
     lazy var forwardButton = {
-        let imageName = isExperimentalThemingEnabled ? "Arrow-Right-New-24" : "BrowseNext"
-        return createBarButtonItem(title: UserText.keyCommandBrowserForward, imageName: imageName)
+        return createBarButtonItem(title: UserText.keyCommandBrowserForward, image: DesignSystemImages.Glyphs.Size24.arrowRight)
     }()
 
     lazy var tabSwitcherButton = {
-        let imageName = isExperimentalThemingEnabled ? "Tab-New-24" : "Add-24"
-        return createBarButtonItem(title: UserText.tabSwitcherAccessibilityLabel, imageName: imageName)
+        return createBarButtonItem(title: UserText.tabSwitcherAccessibilityLabel, image: DesignSystemImages.Glyphs.Size24.tabNew)
     }()
 
     lazy var bookmarkButton = {
-        let imageName = isExperimentalThemingEnabled ? "Bookmarks-Stacked-24" : "Book-24"
-        return createBarButtonItem(title: UserText.actionOpenBookmarks, imageName: imageName)
+        return createBarButtonItem(title: UserText.actionOpenBookmarks, image: DesignSystemImages.Glyphs.Size24.bookmarksList)
     }()
 
     lazy var passwordsButton = {
-        let imageName = isExperimentalThemingEnabled ? "Key-New-24" : "Key-24"
-        return createBarButtonItem(title: UserText.actionOpenPasswords, imageName: imageName)
+        return createBarButtonItem(title: UserText.actionOpenPasswords, image: DesignSystemImages.Glyphs.Size24.key)
     }()
 
     lazy var browserMenuButton = {
-        let imageName = isExperimentalThemingEnabled ? "Menu-Hamburger-New-24" : "Menu-Horizontal-24"
-        return createBarButtonItem(title: UserText.menuButtonHint, imageName: imageName)
+        return createBarButtonItem(title: UserText.menuButtonHint, image: DesignSystemImages.Glyphs.Size24.menuHamburger)
     }()
 
     private var state: ToolbarContentState?
@@ -134,10 +129,10 @@ final class ToolbarHandler: ToolbarStateHandling {
         forwardButton.isEnabled = currentTab?.canGoForward ?? false
     }
 
-    private func createBarButtonItem(title: String, imageName: String) -> UIBarButtonItem {
+    private func createBarButtonItem(title: String, image: UIImage) -> UIBarButtonItem {
         if self.isExperimentalThemingEnabled {
             let button = ToolbarButton(.primary)
-            button.setImage(UIImage(named: imageName))
+            button.setImage(image)
             button.frame = CGRect(x: 0, y: 0, width: 34, height: 44)
 
             let barItem = UIBarButtonItem(customView: button)
@@ -145,7 +140,7 @@ final class ToolbarHandler: ToolbarStateHandling {
 
             return barItem
         } else {
-            return UIBarButtonItem(title: title, image: UIImage(named: imageName), primaryAction: nil)
+            return UIBarButtonItem(title: title, image: image, primaryAction: nil)
         }
     }
 

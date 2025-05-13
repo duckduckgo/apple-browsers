@@ -342,7 +342,7 @@ final class TabViewCell: UICollectionViewCell {
 
             link?.text = UserText.homeTabSearchAndFavorites
             title.text = UserText.homeTabTitle
-            favicon.image = UIImage(named: "Logo")
+            favicon.image = UIImage(resource: .logo)
             unread.isHidden = true
             self.preview?.isHidden = !tab.viewed
             title.isHidden = !tab.viewed
@@ -354,7 +354,7 @@ final class TabViewCell: UICollectionViewCell {
 
             // Duck Player videos
             if let url = tab.link?.url, url.isDuckPlayer {
-                favicon.image = UIImage(named: "DuckPlayerURLIcon")
+                favicon.image = UIImage(resource: .duckPlayerURLIcon)
             } else {
                 favicon.loadFavicon(forDomain: tab.link?.url.host, usingCache: .tabs)
             }

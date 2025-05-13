@@ -424,7 +424,7 @@ class OmniBarViewController: UIViewController, OmniBar {
     // Support static custom icons, for things like internal pages, for example
     func showCustomIcon(icon: OmniBarIcon) {
         barView.privacyInfoContainer.privacyIcon.isHidden = true
-        barView.customIconView.image = UIImage(named: icon.rawValue)
+        barView.customIconView.image = icon.image
         barView.privacyInfoContainer.addSubview(barView.customIconView)
         barView.customIconView.isHidden = false
     }

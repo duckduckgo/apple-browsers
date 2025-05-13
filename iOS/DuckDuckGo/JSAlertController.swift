@@ -22,7 +22,8 @@ import Core
 import DesignResourcesKit
 
 private extension UIImage {
-    static let highlightedAlertButtonTint = UIImage(named: "AlertButtonHighlightedTint")
+    #warning("ICONS: not in design system images")
+    static let highlightedAlertButtonTint = UIImage(resource: .alertButtonHighlightedTint)
 }
 
 final class JSAlertController: UIViewController {

@@ -209,6 +209,7 @@ public final class DataBrokerProtectionAgentManager {
 
         self.activityScheduler.delegate = self
         self.ipcServer.serverDelegate = self
+        self.queueManager.delegate = self
         self.ipcServer.activate()
     }
 
@@ -291,6 +292,18 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionBackgroundActivi
             completion?()
         }
     }
+}
+
+extension DataBrokerProtectionAgentManager: BrokerProfileJobQueueManagerDelegate {
+
+    public func queueManagerWillEnqueueOperations(_ queueManager: BrokerProfileJobQueueManaging) {
+        Task {
+            do {
+                try await brokerUpdater.checkForUpdates()
+            }
+        }
+    }
+
 }
 
 extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {

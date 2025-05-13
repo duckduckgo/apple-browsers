@@ -150,8 +150,6 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
 
     private let emailService: EmailService
     private let captchaService: CaptchaService
-    // private let scanRunner: BrokerProfileScanSubJobWebRunning
-    // private let optOutRunner: BrokerProfileOptOutSubJobWebRunning
     private let privacyConfigManager: PrivacyConfigurationManaging
     private let fakePixelHandler: EventMapping<DataBrokerProtectionSharedPixels> = EventMapping { event, _, _, _ in
         print(event)

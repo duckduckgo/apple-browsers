@@ -25,6 +25,8 @@ import PixelKit
 
 final class PinnedTabsManager {
 
+    static let shared = PinnedTabsManager()
+
     private(set) var tabCollection: TabCollection
     private(set) var tabViewModels = [Tab: TabViewModel]()
 

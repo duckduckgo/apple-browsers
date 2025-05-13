@@ -260,16 +260,19 @@ final class BookmarkOutlineCellView: NSTableCellView {
 
     private func updateUIAtNarrowWidths() {
         // Hide cell contents if menu button is visible
-        // and cell is too small to show at least menu and favicon without overlap
-        if frame.width < Constants.menuWidth + Constants.faviconWidth {
-            faviconImageWidthConstraint.constant = menuButton.isShown ? 0 : Constants.faviconWidth
-            titleLabel.widthAnchor.constraint(equalToConstant: 0)
-                .autoDeactivatedWhenViewIsHidden(menuButton)
-            urlLabel.widthAnchor.constraint(equalToConstant: 0)
-                .autoDeactivatedWhenViewIsHidden(menuButton)
-            countLabel.widthAnchor.constraint(equalToConstant: 0)
-                .autoDeactivatedWhenViewIsHidden(menuButton)
+        // and cell is too small to show at least menu and favicon without overlap.
+        // Skip adjustments until the view is on a window to not affect bookmarks bar popovers sizing.
+        guard window != nil, frame.width < Constants.menuWidth + Constants.faviconWidth else {
+            return
         }
+
+        faviconImageWidthConstraint.constant = menuButton.isShown ? 0 : Constants.faviconWidth
+        titleLabel.widthAnchor.constraint(equalToConstant: 0)
+            .autoDeactivatedWhenViewIsHidden(menuButton)
+        urlLabel.widthAnchor.constraint(equalToConstant: 0)
+            .autoDeactivatedWhenViewIsHidden(menuButton)
+        countLabel.widthAnchor.constraint(equalToConstant: 0)
+            .autoDeactivatedWhenViewIsHidden(menuButton)
     }
 
     override func layout() {

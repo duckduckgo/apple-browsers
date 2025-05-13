@@ -57,12 +57,12 @@ public protocol SyncConnectionControlling {
     /**
      Returns a device ID, public key and secret key ready for display and allows callers attempt to fetch the transmitted public key
      */
-    func startExchangeMode() async throws -> String
+    func startExchangeMode(shouldGenerateURLBasedCode: Bool)  async throws -> String
 
     /**
      Returns a device id and temporary secret key ready for display and allows callers attempt to fetch the transmitted recovery key.
      */
-    func startConnectMode() async throws -> String
+    func startConnectMode(shouldGenerateURLBasedCode: Bool) async throws -> String
 
     /**
      Cancels any in-flight connection flows
@@ -112,19 +112,26 @@ public actor SyncConnectionController: SyncConnectionControlling {
         self.dependencies = dependencies
     }
 
-    public func startExchangeMode() throws -> String {
+    public func startExchangeMode(shouldGenerateURLBasedCode: Bool = false) throws -> String {
         let exchanger = try remoteExchange()
         self.exchanger = exchanger
         startExchangePolling()
-        return exchanger.code
+        guard shouldGenerateURLBasedCode else {
+            return exchanger.code
+        }
+        let pairingInfo = PairingInfo(base64Code: exchanger.code, deviceName: deviceName)
+        return pairingInfo.toURL(baseURL: URL(string: "https://duckduckgo.com")!).absoluteString
     }
 
-    public func startConnectMode() throws -> String {
+    public func startConnectMode(shouldGenerateURLBasedCode: Bool = false) throws -> String {
         let connector = try remoteConnect()
         self.connector = connector
         self.startConnectPolling()
-
-        return connector.code
+        guard shouldGenerateURLBasedCode else {
+            return connector.code
+        }
+        let pairingInfo = PairingInfo(base64Code: connector.code, deviceName: deviceName)
+        return pairingInfo.toURL(baseURL: URL(string: "https://duckduckgo.com")!).absoluteString
     }
 
     public func cancel() {

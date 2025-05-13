@@ -25,7 +25,7 @@ public class MockTokenStorage: AuthTokenStoring {
         self.tokenContainer = tokenContainer
     }
 
-    var tokenContainer: Networking.TokenContainer?
+    public var tokenContainer: Networking.TokenContainer?
 
     public func getTokenContainer() throws -> Networking.TokenContainer? {
         tokenContainer

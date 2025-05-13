@@ -135,6 +135,9 @@ final class DuckPlayerNativeUIPresenter {
         constraintUpdatePublisher.eraseToAnyPublisher()
     }
 
+    // State management for pill presentation
+    private var presentedPillType: PillType?
+
     // MARK: - Public Methods
     ///
     /// - Parameter appSettings: The application settings
@@ -321,6 +324,7 @@ final class DuckPlayerNativeUIPresenter {
         // Then clean up references
         containerViewController = nil
         containerViewModel = nil
+        presentedPillType = nil
         containerCancellables.removeAll()
 
         // Finally ensure constraints are reset
@@ -384,6 +388,12 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         if state.videoID != videoID {
             state.hasBeenShown = false
             state.videoID = videoID
+            presentedPillType = nil
+        }
+
+        // If the welcome pill is already presented, don't show the entry pill
+        if presentedPillType == .welcome {
+            return
         }
 
         // Determine the pill type
@@ -397,6 +407,8 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
             // Logic for returning users
             pillType = state.hasBeenShown ? .reEntry : .entry
         }
+
+        presentedPillType = pillType
 
         // If no specific timestamp is provided, use the current stave value
         let timestamp = timestamp ?? state.timestamp ?? 0
@@ -547,6 +559,9 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
 
         // Update State
         self.state.hasBeenShown = true
+        
+        // Reset the presented pill type as we are transitioning to the full player
+        self.presentedPillType = nil
 
         // Subscribe to Navigation Request Publisher
         viewModel.youtubeNavigationRequestPublisher

@@ -52,6 +52,7 @@ public enum FeatureFlag: String, CaseIterable {
     case historyView
 
     case autoUpdateInDEBUG
+    case updatesWontAutomaticallyRestartApp
 
     case autofillPartialFormSaves
     case autocompleteTabs
@@ -122,6 +123,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .historyView,
                 .webExtensions,
                 .autoUpdateInDEBUG,
+                .updatesWontAutomaticallyRestartApp,
                 .popoverVsBannerExperiment,
                 .privacyProAuthV2,
                 .scamSiteProtection,
@@ -171,6 +173,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .historyView:
             return .remoteReleasable(.subfeature(HTMLHistoryPageSubfeature.isLaunched))
         case .autoUpdateInDEBUG:
+            return .disabled
+        case .updatesWontAutomaticallyRestartApp:
             return .disabled
         case .autofillPartialFormSaves:
             return .remoteReleasable(.subfeature(AutofillSubfeature.partialFormSaves))

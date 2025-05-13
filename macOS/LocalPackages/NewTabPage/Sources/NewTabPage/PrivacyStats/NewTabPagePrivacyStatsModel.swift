@@ -129,6 +129,10 @@ public final class NewTabPagePrivacyStatsModel {
         eventMapping?.fire(.showMore)
     }
 
+    func calculateTotalCount() async -> Int64 {
+        await privacyStats.fetchPrivacyStatsTotalCount()
+    }
+
     func calculatePrivacyStats() async -> NewTabPageDataModel.PrivacyStatsData {
         let stats = await privacyStats.fetchPrivacyStats()
 

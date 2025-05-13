@@ -32,6 +32,7 @@ public enum PrivacyStatsError: CustomNSError {
     case failedToStorePrivacyStats(Error)
     case failedToClearPrivacyStats(Error)
     case failedToLoadCurrentPrivacyStats(Error)
+    case failedToFetchPrivacyStatsTotalCount(Error)
 
     public static let errorDomain: String = "PrivacyStatsError"
 
@@ -45,6 +46,8 @@ public enum PrivacyStatsError: CustomNSError {
             return 3
         case .failedToClearPrivacyStats:
             return 4
+        case .failedToFetchPrivacyStatsTotalCount:
+            return 5
         }
     }
 
@@ -57,7 +60,8 @@ public enum PrivacyStatsError: CustomNSError {
         case .failedToFetchPrivacyStatsSummary(let error),
                 .failedToStorePrivacyStats(let error),
                 .failedToLoadCurrentPrivacyStats(let error),
-                .failedToClearPrivacyStats(let error):
+                .failedToClearPrivacyStats(let error),
+                .failedToFetchPrivacyStatsTotalCount(let error):
             return error
         }
     }
@@ -94,6 +98,8 @@ public protocol PrivacyStatsCollecting {
      * of tracking attempts blocked in past 7 days.
      */
     func fetchPrivacyStats() async -> [String: Int64]
+
+    func fetchPrivacyStatsTotalCount() async -> Int64
 
     /**
      * This function clears all blocked tracker stats from the database.
@@ -156,6 +162,24 @@ public final class PrivacyStats: PrivacyStatsCollecting {
                 } catch {
                     errorEvents?.fire(.failedToFetchPrivacyStatsSummary(error))
                     continuation.resume(returning: [:])
+                }
+            }
+        }
+    }
+
+    public func fetchPrivacyStatsTotalCount() async -> Int64 {
+        return await withCheckedContinuation { continuation in
+            context.perform { [weak self] in
+                guard let self else {
+                    continuation.resume(returning: 0)
+                    return
+                }
+                do {
+                    let totalCount = try PrivacyStatsUtils.load7DaysTotalBlockedTrackersCount(in: context)
+                    continuation.resume(returning: totalCount)
+                } catch {
+                    errorEvents?.fire(.failedToFetchPrivacyStatsTotalCount(error))
+                    continuation.resume(returning: 0)
                 }
             }
         }

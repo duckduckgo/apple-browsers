@@ -385,8 +385,8 @@
                             <constraint firstAttribute="trailing" secondItem="EQw-GG-GMA" secondAttribute="trailing" id="oYK-XH-0iN"/>
                             <constraint firstItem="gIy-el-24l" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="eEh-kf-smR" secondAttribute="trailing" constant="12" id="rfA-3F-QAf"/>
                             <constraint firstItem="gIy-el-24l" firstAttribute="width" secondItem="hYV-nu-QIp" secondAttribute="width" multiplier="0.6" priority="250" id="rqL-Vd-lnY"/>
-                            <constraint firstItem="gIy-el-24l" firstAttribute="centerX" secondItem="hYV-nu-QIp" secondAttribute="centerX" priority="100" id="zgI-LQ-Zj3"/>
                             <constraint firstItem="bSB-ca-LaM" firstAttribute="top" secondItem="hYV-nu-QIp" secondAttribute="top" id="uuJ-L8-bDw"/>
+                            <constraint firstItem="gIy-el-24l" firstAttribute="centerX" secondItem="hYV-nu-QIp" secondAttribute="centerX" priority="100" id="zgI-LQ-Zj3"/>
                         </constraints>
                     </view>
                     <connections>
@@ -756,7 +756,7 @@
                                     <action selector="clearButtonAction:" target="mcr-nj-GmC" id="m9h-NY-Ujx"/>
                                 </connections>
                             </button>
-                            <stackView distribution="fill" orientation="horizontal" alignment="centerY" spacing="2" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="L9C-04-I02">
+                            <stackView distribution="fill" orientation="horizontal" alignment="centerY" spacing="2" horizontalStackHuggingPriority="249.99998474121094" verticalStackHuggingPriority="249.99998474121094" detachesHiddenViews="YES" translatesAutoresizingMaskIntoConstraints="NO" id="L9C-04-I02" userLabel="Ai Chat Stack View">
                                 <rect key="frame" x="573" y="7" width="5" height="20"/>
                                 <subviews>
                                     <imageView horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="L8T-hS-NZz">
@@ -1063,6 +1063,7 @@
                     <connections>
                         <outlet property="aiChatButton" destination="vcx-Ct-S1I" id="wLJ-dM-o4o"/>
                         <outlet property="aiChatDivider" destination="L8T-hS-NZz" id="1f9-tG-uDW"/>
+                        <outlet property="aiChatStackTrailingViewConstraint" destination="SQu-A0-Vje" id="7rh-E8-Hyx"/>
                         <outlet property="animationWrapperView" destination="hdY-An-3W8" id="53o-2D-orG"/>
                         <outlet property="bookmarkButton" destination="taC-vG-1fV" id="tbQ-qW-71o"/>
                         <outlet property="buttonsContainer" destination="HEu-ro-RSA" id="5r4-Ag-NpA"/>

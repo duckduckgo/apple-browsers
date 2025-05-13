@@ -88,10 +88,6 @@ final class AddressBarTextField: NSTextField {
         currentEditor()?.selectAll(self)
     }
 
-    func viewDidLayout() {
-        layoutSuggestionWindow()
-    }
-
     // MARK: Observation
 
     private func subscribeToSuggestionResult() {

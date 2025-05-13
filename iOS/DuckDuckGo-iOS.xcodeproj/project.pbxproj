@@ -6197,12 +6197,12 @@
 			name = Autofill;
 			sourceTree = "<group>";
 		};
-		C1106F2F2D0EFD6F0054A221 /* FreeTrialsExperiment */ = {
+		C1106F2F2D0EFD6F0054A221 /* FreeTrials */ = {
 			isa = PBXGroup;
 			children = (
 				C1F04B632D1068DC003DEF05 /* SubscriptionPagesUseSubscriptionFeatureFreeTrialsTests.swift */,
 			);
-			path = FreeTrialsExperiment;
+			path = FreeTrials;
 			sourceTree = "<group>";
 		};
 		C12552952D0B066B00A0FDAA /* FreeTrialsExperiment */ = {
@@ -7617,7 +7617,7 @@
 			children = (
 				7B6586382DB7F51000D12BE3 /* SimplifiedPaywall */,
 				C162A1B52D79F6EC00C34BAB /* OnboardingPromotionExperiment */,
-				C1106F2F2D0EFD6F0054A221 /* FreeTrialsExperiment */,
+				C1106F2F2D0EFD6F0054A221 /* FreeTrials */,
 				1E25D5302C921246004400F0 /* Mocks */,
 				D664C7952B289AA000CBFA76 /* Subscription.storekit */,
 				BDE219E92C457B46005D5884 /* PrivacyProDataReporterTests.swift */,

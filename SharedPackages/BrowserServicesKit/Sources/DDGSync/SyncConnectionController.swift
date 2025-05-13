@@ -120,7 +120,8 @@ public actor SyncConnectionController: SyncConnectionControlling {
             return exchanger.code
         }
         let pairingInfo = PairingInfo(base64Code: exchanger.code, deviceName: deviceName)
-        return pairingInfo.toURL(baseURL: URL(string: "https://duckduckgo.com")!).absoluteString
+        let code = pairingInfo.toURL(baseURL: URL(string: "https://duckduckgo.com")!).absoluteString
+        return code
     }
 
     public func startConnectMode(shouldGenerateURLBasedCode: Bool = false) throws -> String {
@@ -131,7 +132,8 @@ public actor SyncConnectionController: SyncConnectionControlling {
             return connector.code
         }
         let pairingInfo = PairingInfo(base64Code: connector.code, deviceName: deviceName)
-        return pairingInfo.toURL(baseURL: URL(string: "https://duckduckgo.com")!).absoluteString
+        let code = pairingInfo.toURL(baseURL: URL(string: "https://duckduckgo.com")!).absoluteString
+        return code
     }
 
     public func cancel() {

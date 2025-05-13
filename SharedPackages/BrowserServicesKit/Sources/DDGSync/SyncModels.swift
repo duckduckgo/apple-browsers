@@ -140,6 +140,11 @@ public struct ExchangeMessage: Codable, Sendable {
 }
 
 public struct PairingInfo {
+    enum Keys {
+        static let code = "code"
+        static let deviceName = "deviceName"
+    }
+
     public let base64Code: String
     public let deviceName: String
 
@@ -147,12 +152,22 @@ public struct PairingInfo {
         guard Self.isPairing(url: url) else {
             return nil
         }
-        guard let queryParameters = url.queryParameters(),
-              let encodedCode = queryParameters["code"],
-              let deviceName = queryParameters["deviceName"] else {
+        guard let fragment = URLComponents(url: url, resolvingAgainstBaseURL: false)?.fragment else {
             return nil
         }
-        self.init(base64Code: Self.restoreBase64(from: encodedCode),
+        let params = fragment
+            .split(separator: "&")
+            .compactMap { part -> (String, String)? in
+                let keyValue = part.split(separator: "=", maxSplits: 1).map(String.init)
+                guard keyValue.count == 2 else { return nil }
+                return (keyValue[0], keyValue[1].removingPercentEncoding ?? keyValue[1])
+            }
+
+        let dict = Dictionary(uniqueKeysWithValues: params)
+        guard let code = dict[Keys.code], let deviceName = dict[Keys.deviceName] else {
+            return nil
+        }
+        self.init(base64Code: Self.restoreBase64(from: code),
                   deviceName: deviceName)
     }
 
@@ -164,10 +179,8 @@ public struct PairingInfo {
     func toURL(baseURL: URL) -> URL {
         let url = baseURL.appendingPathComponent("sync/pairing")
         var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false)
-        urlComponents?.queryItems = [
-            .init(name: "code", value: base64URLCode),
-            .init(name: "deviceName", value: deviceName)
-        ]
+        let fragment = "&\(Keys.code)=\(base64URLCode)&\(Keys.deviceName)=\(deviceName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? deviceName)"
+        urlComponents?.fragment = fragment
         return urlComponents?.url ?? url
     }
 

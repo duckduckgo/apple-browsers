@@ -73,7 +73,7 @@ private extension SimpleNewTabPageView {
     @ViewBuilder
     private var sectionsView: some View {
         GeometryReader { proxy in
-                ScrollView {
+            ScrollView {
                 VStack(spacing: Metrics.sectionSpacing) {
                     
                     messagesSectionView

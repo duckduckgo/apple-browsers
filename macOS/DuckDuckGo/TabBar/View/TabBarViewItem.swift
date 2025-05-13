@@ -376,7 +376,7 @@ final class TabBarItemCellView: NSView {
         }
 
         if visualStyle.tabStyleProvider.extraTabSpacing {
-            minX = minX + 4
+            minX += 4
         }
         titleTextField.frame = NSRect(x: minX, y: bounds.midY - 8, width: bounds.maxX - minX - 8, height: 16)
         updateTitleTextFieldMask()

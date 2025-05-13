@@ -856,7 +856,7 @@
                                         <rect key="frame" x="5" y="0.0" width="32" height="32"/>
                                         <subviews>
                                             <button translatesAutoresizingMaskIntoConstraints="NO" id="psi-hX-Kh9">
-                                                <rect key="frame" x="8" y="8" width="16" height="16"/>
+                                                <rect key="frame" x="15" y="8" width="16" height="16"/>
                                                 <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="Search" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="NBl-r8-f28">
                                                     <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                                     <font key="font" metaFont="system"/>
@@ -869,7 +869,7 @@
                                         </subviews>
                                         <constraints>
                                             <constraint firstItem="psi-hX-Kh9" firstAttribute="centerY" secondItem="3Iv-YW-zn2" secondAttribute="centerY" id="0Ul-G5-HXF"/>
-                                            <constraint firstItem="psi-hX-Kh9" firstAttribute="centerX" secondItem="3Iv-YW-zn2" secondAttribute="centerX" id="2X2-AK-TfF"/>
+                                            <constraint firstItem="psi-hX-Kh9" firstAttribute="centerX" secondItem="3Iv-YW-zn2" secondAttribute="centerX" constant="7" id="2X2-AK-TfF"/>
                                             <constraint firstAttribute="width" constant="32" id="Elf-ZT-HxV"/>
                                             <constraint firstAttribute="height" constant="32" id="fQf-sl-KYI"/>
                                         </constraints>

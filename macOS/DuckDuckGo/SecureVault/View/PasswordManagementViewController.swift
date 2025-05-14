@@ -47,6 +47,8 @@ final class PasswordManagementViewController: NSViewController {
 
     weak var delegate: PasswordManagementDelegate?
 
+    @IBOutlet weak var boxView: NSBox!
+    @IBOutlet weak var backgroundView: ColorView!
     @IBOutlet weak var lockMenuItem: NSMenuItem!
     @IBOutlet weak var importPasswordMenuItem: NSMenuItem!
     @IBOutlet weak var settingsMenuItem: NSMenuItem!
@@ -165,9 +167,14 @@ final class PasswordManagementViewController: NSViewController {
     private let urlMatcher = AutofillDomainNameUrlMatcher()
     private let tld = ContentBlocking.shared.tld
     private let urlSort = AutofillDomainNameUrlSort()
+    private let visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyleManager.style
 
     override func viewDidLoad() {
         super.viewDidLoad()
+
+        boxView.fillColor = visualStyle.colorsProvider.passwordManagerBackgroundColor
+        backgroundView.backgroundColor = visualStyle.colorsProvider.passwordManagerLockScreenBackgroundColor
+
         createListView()
         createLoginItemView()
         setupStrings()

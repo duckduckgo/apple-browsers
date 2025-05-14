@@ -28,6 +28,7 @@ protocol ColorsProviding {
     var buttonMouseOverColor: NSColor { get }
     var addressBarSuffixTextColor: NSColor { get }
     var addressBarTextFieldColor: NSColor { get }
+    var settingsBackgroundColor: NSColor { get }
 
     /// New Tab Page
     var ntpLightBackgroundColor: String { get }
@@ -46,6 +47,7 @@ final class LegacyColorsProviding: ColorsProviding {
     var buttonMouseOverColor: NSColor { .buttonMouseOver }
     var addressBarSuffixTextColor: NSColor { .addressBarSuffix }
     var addressBarTextFieldColor: NSColor { .suggestionText }
+    var settingsBackgroundColor: NSColor { .preferencesBackground }
     var ntpLightBackgroundColor: String { "#FAFAFA" }
     var ntpDarkBackgroundColor: String { "#333333" }
 
@@ -63,6 +65,7 @@ final class NewColorsProviding: ColorsProviding {
     var addressBarOutlineShadow: NSColor { palette.accentAltGlow }
     var addressBarSuffixTextColor: NSColor { palette.textSecondary }
     var addressBarTextFieldColor: NSColor { palette.textPrimary }
+    var settingsBackgroundColor: NSColor { palette.surfacePrimary }
     var iconsColor: NSColor { palette.iconsPrimary }
     var buttonMouseOverColor: NSColor { palette.controlsFillPrimary }
     var ntpLightBackgroundColor: String { "#F2F2F2" }

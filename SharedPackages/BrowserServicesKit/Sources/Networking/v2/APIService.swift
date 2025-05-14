@@ -41,6 +41,7 @@ public class DefaultAPIService: APIService {
     /// Designited initialiser
     /// - Parameters:
     ///   - urlSession: The URLSession used for fetching requests
+    ///   - userAgent: Optional user agent string that is applied to all requests fired via service, unless they set it on their own via header
     ///   - authorizationRefresherCallback: Optional closure called every time an authenticated request fails with a 401
     public init(urlSession: URLSession = .shared, userAgent: String? = nil, authorizationRefresherCallback: AuthorizationRefresherCallback? = nil) {
         self.urlSession = urlSession

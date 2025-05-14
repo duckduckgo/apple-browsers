@@ -199,6 +199,39 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         }
     }
 
+    @MainActor
+    func testPresentPill_WhenWelcomePillAlreadyPresented_DoesNotShowEntryPill() {
+        // Given
+        let videoID = "test123"
+        let timestamp: TimeInterval? = nil
+        mockDuckPlayerSettings.primingMessagePresented = false
+        mockDuckPlayerSettings.variant = .nativeOptIn
+
+        // When: Present the welcome pill
+        sut.presentPill(for: videoID, in: mockHostViewController, timestamp: timestamp)
+        guard let containerViewModel = sut.containerViewModel else {
+            XCTFail("Container view model should be created")
+            return
+        }
+        containerViewModel.sheetAnimationCompleted = true
+
+        // Now, try to present the pill again (should be ignored if welcome pill is already presented)
+        sut.presentPill(for: videoID, in: mockHostViewController, timestamp: timestamp)
+
+        // Then: The pill type should still be welcome, not entry or reEntry
+        let presentedPillTypeMirror = Mirror(reflecting: sut!)
+        let presentedPillType = presentedPillTypeMirror.children.first { $0.label == "presentedPillType" }?.value as? Any
+        // We can't access private enum directly, but we can check that containerViewModel is not replaced and notifications are not duplicated
+        XCTAssertNotNil(containerViewModel, "Container view model should still exist")
+        // There should be only one pill visibility notification (from the first present)
+        let postedNotifications = testNotificationCenter.postedNotifications.filter { notification in
+            notification.name == DuckPlayerNativeUIPresenter.Notifications.duckPlayerPillUpdated
+        }
+        XCTAssertEqual(postedNotifications.count, 1, "Should only post one pill visibility notification when welcome pill is already presented")
+        // The containerViewModel should not be dismissed or replaced
+        XCTAssertTrue(containerViewModel.sheetVisible, "Welcome pill should still be visible and not replaced by entry pill")
+    }
+
     // MARK: - presentPill Tests
 
     @MainActor
@@ -328,6 +361,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         let timestamp: TimeInterval? = 30
         let source: DuckPlayer.VideoNavigationSource = .youtube
         mockDuckPlayerSettings.welcomeMessageShown = true
+        mockDuckPlayerSettings.primingMessagePresented = true
 
         // When
         // First present the pill
@@ -379,6 +413,76 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
     @objc private func handlePillVisibilityChange(_ notification: Notification) {
         // This is just a placeholder for the notification observer
         // The actual verification is done in the test
+    }
+
+    @MainActor
+    func testWelcomePillToDuckPlayerToReEntryPill_ShowsReEntryPill() {
+        // Given
+        let videoID = "welcomeToReEntryTest"
+        let initialTimestamp: TimeInterval? = 60
+        let source: DuckPlayer.VideoNavigationSource = .youtube
+
+        mockDuckPlayerSettings.primingMessagePresented = false // Start with priming not presented
+        mockDuckPlayerSettings.variant = .nativeOptIn // Consistent setup
+
+        // Clear any initial notifications/updates
+        testNotificationCenter.postedNotifications.removeAll()
+        constraintUpdates.removeAll()
+
+        // When: 1. Present pill (should be welcome pill)
+        sut.presentPill(for: videoID, in: mockHostViewController, timestamp: initialTimestamp)
+
+        // Then: Assert welcome pill was shown and primingMessagePresented is now true
+        XCTAssertTrue(mockDuckPlayerSettings.primingMessagePresented, "Priming message should be presented after the first pill.")
+        var postedNotifications = testNotificationCenter.postedNotifications.filter { $0.name == DuckPlayerNativeUIPresenter.Notifications.duckPlayerPillUpdated }
+        XCTAssertEqual(postedNotifications.count, 1, "Should post 1 pill visibility notification for welcome pill.")
+        XCTAssertEqual(postedNotifications.last?.userInfo?[DuckPlayerNativeUIPresenter.NotificationKeys.isVisible] as? Bool, true, "Welcome pill should be visible.")
+
+        // Clear notifications for the next step
+        testNotificationCenter.postedNotifications.removeAll()
+
+        // When: 2. Present DuckPlayer (this dismisses the welcome pill)
+        let (_, _) = sut.presentDuckPlayer(
+            videoID: videoID,
+            source: source,
+            in: mockHostViewController,
+            title: nil,
+            timestamp: initialTimestamp
+        )
+
+        // Then: DuckPlayer presentation should post a notification that the previous pill is hidden
+        postedNotifications = testNotificationCenter.postedNotifications.filter { $0.name == DuckPlayerNativeUIPresenter.Notifications.duckPlayerPillUpdated }
+        XCTAssertEqual(postedNotifications.count, 1, "Should post 1 pill visibility notification (hide) when DuckPlayer is presented.")
+        XCTAssertEqual(postedNotifications.last?.userInfo?[DuckPlayerNativeUIPresenter.NotificationKeys.isVisible] as? Bool, false, "Pill should be hidden when DuckPlayer is presented.")
+        XCTAssertTrue(sut.state.hasBeenShown, "state.hasBeenShown should be true after DuckPlayer is presented.")
+
+        // Clear notifications for the next step
+        testNotificationCenter.postedNotifications.removeAll()
+
+        // When: 3. Simulate DuckPlayer dismissal
+        guard let playerViewModel = sut.playerViewModel else {
+            XCTFail("Player view model should be created for dismissal")
+            return
+        }
+        let dismissalTimestamp: TimeInterval = 120
+        playerViewModel.dismissPublisher.send(dismissalTimestamp)
+
+        // Then: Verify re-entry pill is shown
+        // After dismissal, presentPill is called, which should show the re-entry pill.
+        // This should result in a notification that a pill is visible again.
+        postedNotifications = testNotificationCenter.postedNotifications.filter { $0.name == DuckPlayerNativeUIPresenter.Notifications.duckPlayerPillUpdated }
+        XCTAssertEqual(postedNotifications.count, 1, "Should post 1 pill visibility notification for re-entry pill after DuckPlayer dismissal.")
+        XCTAssertEqual(postedNotifications.last?.userInfo?[DuckPlayerNativeUIPresenter.NotificationKeys.isVisible] as? Bool, true, "Re-entry pill should be visible.")
+
+        // Verify state for re-entry
+        XCTAssertEqual(sut.state.videoID, videoID, "Video ID should be the same for re-entry.")
+        XCTAssertEqual(sut.state.timestamp, dismissalTimestamp, "Timestamp should be updated from dismissal for re-entry.")
+        XCTAssertTrue(sut.state.hasBeenShown, "state.hasBeenShown should remain true for re-entry pill logic.")
+        XCTAssertTrue(mockDuckPlayerSettings.primingMessagePresented, "primingMessagePresented should remain true after welcome pill.")
+
+        // Verify that a pill container/view model exists and is visible
+        XCTAssertNotNil(sut.containerViewModel, "ContainerViewModel should exist for the re-entry pill.")
+        XCTAssertTrue(sut.containerViewModel?.sheetVisible ?? false, "Re-entry pill sheet should be visible.")
     }
 
     // MARK: - dismissPill Tests

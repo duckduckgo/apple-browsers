@@ -373,7 +373,7 @@ final class DuckDuckGoVPNAppDelegate: NSObject, NSApplicationDelegate {
     }()
 
     private func statusViewSubmenu() -> [StatusBarMenu.MenuItem] {
-        let appLauncher = AppLauncher(appBundleURL: Bundle.main.bundleURL)
+        let appLauncher = AppLauncher()
         let proxySettings = TransparentProxySettings(defaults: .netP)
         let excludedAppsMinusDBPAgent = proxySettings.excludedApps.filter { $0 != Bundle.main.dbpBackgroundAgentBundleId }
 

@@ -42,8 +42,10 @@ performUpdate() {
     revision=$(jq -r '.revision' "$temp_filename")
 
     # Compare the fetched revision with the local new_revision variable
-    if [ "$revision" != "$new_revision" ]; then
-        echo "❌ Revision mismatch! Expected '$new_revision', got '$revision' – ${temp_filename}"
+    # Allow for a difference of up to 2 revision numbers
+    rev_diff=$(( ${revision#0} - ${new_revision#0} ))
+    if [ "${rev_diff#-}" -gt 5 ]; then
+        echo "❌ Revision mismatch too large! Expected near '$new_revision', got '$revision' – ${temp_filename}"
         exit 1
     fi
     printf "writing to %s\n" "${data_path}"

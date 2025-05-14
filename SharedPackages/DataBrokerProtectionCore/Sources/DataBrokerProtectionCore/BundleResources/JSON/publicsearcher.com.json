@@ -1,7 +1,7 @@
 {
   "name": "PublicSearcher",
   "url": "publicsearcher.com",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "parent": "privatereports.com",
   "optOutUrl": "https://www.publicsearcher.com/optOut/name/landingPage",
   "steps": [

@@ -785,34 +785,17 @@ class MainViewController: UIViewController {
     }
 
     private func initTabButton() {
-        if isExperimentalAppearanceEnabled {
-            let button = NewTabSwitcherButton()
-            button.frame = CGRect(x: 0, y: 0, width: 34, height: 44)
+        assert(tabSwitcherButton == nil)
 
-            button.setImage(UIImage(resource: .tabNew24))
-            button.addAction(UIAction(handler: { _ in self.showTabSwitcher() }), for: .touchUpInside)
+        tabSwitcherButton = isExperimentalAppearanceEnabled ? TabSwitcherStaticButton() : TabSwitcherAnimatedButton()
 
-            let longPressRecognizer = UILongPressGestureRecognizer(target: self, action: #selector(onNewTabLongPressRecognizer))
-            longPressRecognizer.minimumPressDuration = 0.4
-            button.addGestureRecognizer(longPressRecognizer)
+        tabSwitcherButton?.delegate = self
+        viewCoordinator.toolbarTabSwitcherButton.customView = tabSwitcherButton
 
-            viewCoordinator.toolbarTabSwitcherButton.customView = button
-        } else {
-            assert(tabSwitcherButton == nil)
-            tabSwitcherButton = TabSwitcherButton()
-            tabSwitcherButton?.delegate = self
-            viewCoordinator.toolbarTabSwitcherButton.customView = tabSwitcherButton
-            assert(tabSwitcherButton != nil)
-        }
+        assert(tabSwitcherButton != nil)
+
         viewCoordinator.toolbarTabSwitcherButton.isAccessibilityElement = true
         viewCoordinator.toolbarTabSwitcherButton.accessibilityTraits = .button
-    }
-
-    @objc private func onNewTabLongPressRecognizer(_ recognizer: UILongPressGestureRecognizer) {
-        guard recognizer.state == .began else { return }
-
-        UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
-        newTabShortcutAction()
     }
 
     private func initMenuButton() {
@@ -1266,12 +1249,10 @@ class MainViewController: UIViewController {
     }
 
     private func refreshTabIcon() {
-//        if !isExperimentalAppearanceEnabled {
-            viewCoordinator.toolbarTabSwitcherButton.accessibilityHint = UserText.numberOfTabs(tabManager.count)
-            assert(tabSwitcherButton != nil)
-            tabSwitcherButton?.tabCount = tabManager.count
-            tabSwitcherButton?.hasUnread = true // tabManager.hasUnread
-//        }
+        viewCoordinator.toolbarTabSwitcherButton.accessibilityHint = UserText.numberOfTabs(tabManager.count)
+        assert(tabSwitcherButton != nil)
+        tabSwitcherButton?.tabCount = tabManager.count
+        tabSwitcherButton?.hasUnread = tabManager.hasUnread
     }
 
     private func refreshOmniBar() {
@@ -2937,7 +2918,7 @@ extension MainViewController: BookmarksDelegate {
 
 extension MainViewController: TabSwitcherButtonDelegate {
 
-    @objc func launchNewTab(_ button: TabSwitcherButton) {
+    func launchNewTab(_ button: TabSwitcherButton) {
         newTabShortcutAction()
     }
 

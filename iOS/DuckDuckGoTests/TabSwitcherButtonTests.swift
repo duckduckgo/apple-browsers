@@ -24,7 +24,7 @@ class TabSwitcherButtonTests: XCTestCase {
 
     func testInitialState() {
         
-        let button = TabSwitcherButton()
+        let button = TabSwitcherAnimatedButton()
         XCTAssertEqual(0, button.anim.currentProgress)
         XCTAssertEqual(0, button.tabCount)
         XCTAssertFalse(button.hasUnread)
@@ -33,7 +33,7 @@ class TabSwitcherButtonTests: XCTestCase {
     }
     
     func testWhenAnimateCalledThenCountIsIncremented() {
-        let button = TabSwitcherButton()
+        let button = TabSwitcherAnimatedButton()
         button.incrementAnimated()
         RunLoop.main.run(until: Date(timeIntervalSinceNow: 1.0))
         XCTAssertEqual(1, button.tabCount)
@@ -41,7 +41,7 @@ class TabSwitcherButtonTests: XCTestCase {
     
     func testWhenUnreadIsSetThenAnimationIsSetToEnd() {
         
-        let button = TabSwitcherButton()
+        let button = TabSwitcherAnimatedButton()
         button.hasUnread = true
         XCTAssertEqual(1.0, button.anim.currentProgress)
         
@@ -49,7 +49,7 @@ class TabSwitcherButtonTests: XCTestCase {
     
     func testWhenCountSetBackToZeroThenTextIsBlank() {
         
-        let button = TabSwitcherButton()
+        let button = TabSwitcherAnimatedButton()
         button.tabCount = 1
         XCTAssertNotNil(button.label.text)
         button.tabCount = 0
@@ -59,7 +59,7 @@ class TabSwitcherButtonTests: XCTestCase {
 
     func testWhenExceedsMaxThenLabelIsSetAppropriately() {
         
-        let button = TabSwitcherButton()
+        let button = TabSwitcherAnimatedButton()
         button.tabCount = 100
         XCTAssertEqual("~", button.label.text)
         
@@ -67,7 +67,7 @@ class TabSwitcherButtonTests: XCTestCase {
 
     func testWhenCountIsUpdatedThenLabelIsUpdated() {
         
-        let button = TabSwitcherButton()
+        let button = TabSwitcherAnimatedButton()
         button.tabCount = 99
         XCTAssertEqual("99", button.label.text)
         

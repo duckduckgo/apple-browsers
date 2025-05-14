@@ -1,5 +1,5 @@
 //
-//  TabSwitcherButton.swift
+//  TabSwitcherAnimatedButton.swift
 //  DuckDuckGo
 //
 //  Copyright © 2017 DuckDuckGo. All rights reserved.
@@ -21,14 +21,14 @@ import UIKit
 import Lottie
 import Core
 
-protocol TabSwitcherButtonDelegate: NSObjectProtocol {
+protocol TabSwitcherButtonDelegate: AnyObject {
     
-    func showTabSwitcher(_ button: UIButton)
-    func launchNewTab(_ button: UIButton)
-    
+    func showTabSwitcher(_ button: TabSwitcherButton)
+    func launchNewTab(_ button: TabSwitcherButton)
+
 }
 
-class TabSwitcherButton: UIView {
+class TabSwitcherAnimatedButton: UIView, TabSwitcherButton {
     
     struct Constants {
         
@@ -198,7 +198,7 @@ class TabSwitcherButton: UIView {
     }
 }
 
-extension TabSwitcherButton {
+extension TabSwitcherAnimatedButton {
     
     private func decorate() {
         let theme = ThemeManager.shared.currentTheme
@@ -225,7 +225,7 @@ extension TabSwitcherButton {
     }
 }
 
-extension TabSwitcherButton: UIPointerInteractionDelegate {
+extension TabSwitcherAnimatedButton: UIPointerInteractionDelegate {
     
     func pointerInteraction(_ interaction: UIPointerInteraction, styleFor region: UIPointerRegion) -> UIPointerStyle? {
         return .init(effect: .highlight(.init(view: pointerView)))

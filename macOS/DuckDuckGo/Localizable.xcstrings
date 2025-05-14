@@ -59676,6 +59676,18 @@
         }
       }
     },
+    "preferences.scam-blocker.title" : {
+      "comment" : "Title of the section of a setting page that shows Scam Blocking preferences (weather warning in case of scam sites)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Scam Blocker"
+          }
+        }
+      }
+    },
     "preferences.set-as-default" : {
       "comment" : "Menu option to set the browser as default",
       "extractionState" : "extracted_with_value",
@@ -60092,6 +60104,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Для настройки синхронизации и резервного копирования нужно разблокировать устройство."
+          }
+        }
+      }
+    },
+    "preferences.threat-protection" : {
+      "comment" : "Title of the option to show the Threat Protection preferences",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Threat Protection"
           }
         }
       }

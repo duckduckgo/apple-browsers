@@ -48,6 +48,13 @@ struct SettingsPrivacyProtectionsView: View {
                                  statusIndicator: StatusIndicatorView(status: .on))
             }
 
+            // Threat Protection
+            NavigationLink(destination: WebTrackingProtectionView().environmentObject(viewModel)) {
+                SettingsCellView(label: "Threat Protection",
+                                 image: Image("SettingsWebTrackingProtection"),
+                                 statusIndicator: StatusIndicatorView(status: .on))
+            }
+
             // Cookie Pop-Up Protection
             NavigationLink(destination: CookiePopUpProtectionView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.cookiePopUpProtection,

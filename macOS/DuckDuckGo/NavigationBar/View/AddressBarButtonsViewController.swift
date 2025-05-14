@@ -228,24 +228,24 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func setupButtonPaddings() {
-        if visualStyle.shouldAddPaddingToAddressBarButtons {
-            if let superview = privacyEntryPointButton.superview {
-                privacyEntryPointButton.translatesAutoresizingMaskIntoConstraints = false
-                NSLayoutConstraint.activate([
-                    privacyEntryPointButton.leadingAnchor.constraint(equalTo: superview.leadingAnchor, constant: 2),
-                    privacyEntryPointButton.topAnchor.constraint(equalTo: superview.topAnchor, constant: 2),
-                    privacyEntryPointButton.bottomAnchor.constraint(equalTo: superview.bottomAnchor, constant: -2)
-                ])
-            }
+        guard visualStyle.shouldAddPaddingToAddressBarButtons else { return }
 
-            if let superview = aiChatButton.superview {
-                aiChatButton.translatesAutoresizingMaskIntoConstraints = false
-                aiChatStackTrailingViewConstraint.constant = 2
-                NSLayoutConstraint.activate([
-                    aiChatButton.topAnchor.constraint(equalTo: superview.topAnchor, constant: 2),
-                    aiChatButton.bottomAnchor.constraint(equalTo: superview.bottomAnchor, constant: -2)
-                ])
-            }
+        if let superview = privacyEntryPointButton.superview {
+            privacyEntryPointButton.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                privacyEntryPointButton.leadingAnchor.constraint(equalTo: superview.leadingAnchor, constant: 2),
+                privacyEntryPointButton.topAnchor.constraint(equalTo: superview.topAnchor, constant: 2),
+                privacyEntryPointButton.bottomAnchor.constraint(equalTo: superview.bottomAnchor, constant: -2)
+            ])
+        }
+
+        if let superview = aiChatButton.superview {
+            aiChatButton.translatesAutoresizingMaskIntoConstraints = false
+            aiChatStackTrailingViewConstraint.constant = 2
+            NSLayoutConstraint.activate([
+                aiChatButton.topAnchor.constraint(equalTo: superview.topAnchor, constant: 2),
+                aiChatButton.bottomAnchor.constraint(equalTo: superview.bottomAnchor, constant: -2)
+            ])
         }
     }
 

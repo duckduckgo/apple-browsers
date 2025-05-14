@@ -375,9 +375,8 @@ final class TabBarItemCellView: NSView {
             permissionButton.frame = NSRect(x: maxX - 20, y: bounds.midY - 12, width: 24, height: 24)
         }
 
-        if visualStyle.tabStyleProvider.extraTabSpacing {
-            minX += 4
-        }
+        minX += visualStyle.tabStyleProvider.tabSpacing
+
         titleTextField.frame = NSRect(x: minX, y: bounds.midY - 8, width: bounds.maxX - minX - 8, height: 16)
         updateTitleTextFieldMask()
     }

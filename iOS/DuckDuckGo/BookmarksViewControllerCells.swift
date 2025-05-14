@@ -76,9 +76,8 @@ class BookmarksViewControllerCellFactory {
         let theme = ThemeManager.shared.currentTheme
         cell.backgroundColor = theme.tableCellBackgroundColor
         cell.titleLabel.textColor = theme.tableCellTextColor
-        if ExperimentalThemingManager().isExperimentalThemingEnabled {
-            cell.favoriteImageView.image = DesignSystemImages.Color.Size24.favorite
-        } else {
+        cell.favoriteImageView.image = DesignSystemImages.Glyphs.Size24.favorite
+        if !ExperimentalThemingManager().isExperimentalThemingEnabled {
             cell.favoriteImageView.tintColor = UIColor(designSystemColor: .icons)
         }
         cell.faviconImageView.tintColor = UIColor(designSystemColor: .icons)
@@ -96,9 +95,8 @@ class BookmarksViewControllerCellFactory {
         cell.titleLabel.textColor = theme.tableCellTextColor
         cell.childrenCountLabel.textColor = theme.tableCellTextColor
         cell.editingAccessoryType = .disclosureIndicator
-        if ExperimentalThemingManager().isExperimentalThemingEnabled {
-            cell.iconImageView.image = DesignSystemImages.Color.Size24.folder
-        } else {
+        cell.iconImageView.image = DesignSystemImages.Glyphs.Size24.folder
+        if !ExperimentalThemingManager().isExperimentalThemingEnabled {
             cell.iconImageView.tintColor = UIColor(designSystemColor: .icons)
         }
         return cell

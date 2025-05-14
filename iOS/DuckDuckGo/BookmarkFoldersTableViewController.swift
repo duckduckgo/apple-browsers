@@ -287,6 +287,7 @@ class FavoriteCell: UITableViewCell {
     override func awakeFromNib() {
         super.awakeFromNib()
         backgroundColor = UIColor(designSystemColor: .surface)
+        iconImageView.image = DesignSystemImages.Glyphs.Size24.folder
         iconImageView.tintColor = UIColor(designSystemColor: .icons)
         label.textColor = UIColor(designSystemColor: .textPrimary)
     }
@@ -313,6 +314,7 @@ class AddFolderCell: UITableViewCell {
     override func awakeFromNib() {
         super.awakeFromNib()
         backgroundColor = UIColor(designSystemColor: .surface)
+        iconImageView.image = DesignSystemImages.Glyphs.Size24.folderAdd
         iconImageView.tintColor = UIColor(designSystemColor: .icons)
         label.textColor = UIColor(designSystemColor: .textPrimary)
     }

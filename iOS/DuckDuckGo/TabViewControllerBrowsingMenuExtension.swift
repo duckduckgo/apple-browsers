@@ -315,7 +315,7 @@ extension TabViewController {
     #warning("ICONS: missing library 16 (open bookmarks)")
     private func buildOpenBookmarksEntry() -> BrowsingMenuEntry {
         BrowsingMenuEntry.regular(name: UserText.actionOpenBookmarks,
-                                  image: DesignSystemImages.Glyphs.Size16.exclamation,
+                                  image: DesignSystemImages.Glyphs.Size24.bookmarks,
                                                  action: { [weak self] in
             self?.onOpenBookmarksAction()
         })

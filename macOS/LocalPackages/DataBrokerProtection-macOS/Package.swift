@@ -36,6 +36,7 @@ let package = Package(
         .package(path: "../XPCHelper"),
         .package(path: "../Freemium"),
         .package(path: "../NetworkProtectionMac"),
+        .package(path: "../FeatureFlags"),
     ],
     targets: [
         .target(
@@ -49,6 +50,7 @@ let package = Package(
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
                 .product(name: "Configuration", package: "BrowserServicesKit"),
                 .product(name: "Persistence", package: "BrowserServicesKit"),
+                .product(name: "FeatureFlags", package: "FeatureFlags"),
                 .product(name: "Freemium", package: "Freemium"),
                 .product(name: "NetworkProtection", package: "NetworkProtectionMac"),
                 .product(name: "NetworkProtectionIPC", package: "NetworkProtectionMac"),
@@ -68,6 +70,7 @@ let package = Package(
                 "Freemium",
                 .product(name: "PersistenceTestingUtils", package: "BrowserServicesKit"),
                 .product(name: "SubscriptionTestingUtilities", package: "BrowserServicesKit"),
+                .product(name: "FeatureFlags", package: "FeatureFlags"),
             ]
         )
     ]

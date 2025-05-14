@@ -34,6 +34,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../BrowserServicesKit"),
+        .package(url: "https://github.com/weichsel/ZIPFoundation.git", exact: "0.9.19"),
     ],
     targets: [
         .target(
@@ -41,10 +42,10 @@ let package = Package(
             dependencies: [
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
-                .product(name: "Configuration", package: "BrowserServicesKit"),
                 .product(name: "Persistence", package: "BrowserServicesKit"),
+                "ZIPFoundation",
             ],
-            resources: [.copy("Resources")],
+            resources: [.copy("BundleResources")],
             swiftSettings: [
                 .define("DEBUG", .when(configuration: .debug))
             ]
@@ -55,7 +56,6 @@ let package = Package(
                 "DataBrokerProtectionCore",
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "PixelKit", package: "BrowserServicesKit"),
-                .product(name: "Configuration", package: "BrowserServicesKit"),
                 .product(name: "Persistence", package: "BrowserServicesKit"),
             ],
             swiftSettings: [
@@ -72,7 +72,7 @@ let package = Package(
                 .product(name: "SubscriptionTestingUtilities", package: "BrowserServicesKit"),
             ],
             resources: [
-                .copy("Resources")
+                .copy("BundleResources")
             ]
         )
     ]

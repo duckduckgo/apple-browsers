@@ -219,6 +219,12 @@ struct JsonToRemoteMessageModelMapper {
             return .appStore
         case .dismiss:
             return .dismiss
+        case .navigation:
+            if let value = NavigationTarget(rawValue: jsonAction.value) {
+                return .navigation(value: value)
+            } else {
+                return nil
+            }
         case .none:
             return nil
         }
@@ -244,6 +250,8 @@ struct JsonToRemoteMessageModelMapper {
             return .newForMacAndWindows
         case .privacyShield:
             return .privacyShield
+        case .aiChat:
+            return .aiChat
         case .none:
             return .announce
         }

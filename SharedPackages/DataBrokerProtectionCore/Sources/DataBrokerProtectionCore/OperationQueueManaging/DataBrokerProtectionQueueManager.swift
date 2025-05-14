@@ -72,11 +72,11 @@ public enum DataBrokerProtectionQueueManagerDebugCommand {
 }
 
 public protocol DataBrokerProtectionQueueManager {
+    var delegate: DataBrokerProtectionQueueManagerDelegate? { get set }
 
     init(operationQueue: DataBrokerProtectionOperationQueue,
          operationsCreator: DataBrokerOperationsCreator,
          mismatchCalculator: MismatchCalculator,
-         brokerUpdater: DataBrokerProtectionBrokerUpdater?,
          pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>)
 
     func startImmediateScanOperationsIfPermitted(showWebView: Bool,
@@ -96,12 +96,16 @@ public protocol DataBrokerProtectionQueueManager {
     var debugRunningStatusString: String { get }
 }
 
+public protocol DataBrokerProtectionQueueManagerDelegate: AnyObject {
+    func queueManagerWillEnqueueOperations(_ queueManager: DataBrokerProtectionQueueManager)
+}
+
 public final class DefaultDataBrokerProtectionQueueManager: DataBrokerProtectionQueueManager {
+    public weak var delegate: DataBrokerProtectionQueueManagerDelegate?
 
     private var operationQueue: DataBrokerProtectionOperationQueue
     private let operationsCreator: DataBrokerOperationsCreator
     private let mismatchCalculator: MismatchCalculator
-    private let brokerUpdater: DataBrokerProtectionBrokerUpdater?
     private let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
 
     private var mode = DataBrokerProtectionQueueMode.idle
@@ -120,13 +124,11 @@ public final class DefaultDataBrokerProtectionQueueManager: DataBrokerProtection
     public init(operationQueue: DataBrokerProtectionOperationQueue,
                 operationsCreator: DataBrokerOperationsCreator,
                 mismatchCalculator: MismatchCalculator,
-                brokerUpdater: DataBrokerProtectionBrokerUpdater?,
                 pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>) {
 
         self.operationQueue = operationQueue
         self.operationsCreator = operationsCreator
         self.mismatchCalculator = mismatchCalculator
-        self.brokerUpdater = brokerUpdater
         self.pixelHandler = pixelHandler
     }
 
@@ -214,12 +216,15 @@ private extension DefaultDataBrokerProtectionQueueManager {
             return
         }
 
+        if delegate != nil {
+            operationQueue.addBarrierBlock1 { [weak self] in
+                guard let self, let delegate = self.delegate else { return }
+                delegate.queueManagerWillEnqueueOperations(self)
+            }
+        }
+
         cancelCurrentModeAndResetIfNeeded()
-
         mode = newMode
-
-        updateBrokerData()
-
         addOperations(withType: type,
                       priorityDate: mode.priorityDate,
                       showWebView: showWebView,
@@ -247,11 +252,6 @@ private extension DefaultDataBrokerProtectionQueueManager {
         if clearErrors {
             operationErrors = []
         }
-    }
-
-    func updateBrokerData() {
-        // Update broker files if applicable
-        brokerUpdater?.checkForUpdatesInBrokerJSONFiles()
     }
 
     func addOperations(withType type: OperationType,
@@ -297,18 +297,18 @@ private extension DefaultDataBrokerProtectionQueueManager {
 }
 
 extension DefaultDataBrokerProtectionQueueManager: DataBrokerOperationErrorDelegate {
-    public func dataBrokerOperationDidError(_ error: any Error, withBrokerName brokerName: String?) {
+    public func dataBrokerOperationDidError(_ error: any Error, withBrokerName brokerName: String?, version: String?) {
         operationErrors.append(error)
 
-        guard let error = error as? DataBrokerProtectionError, let brokerName else { return }
+        guard let error = error as? DataBrokerProtectionError, let brokerName, let version else { return }
 
         switch error {
         case .httpError(let code):
-            pixelHandler.fire(.httpError(error: error, code: code, dataBroker: brokerName))
+            pixelHandler.fire(.httpError(error: error, code: code, dataBroker: brokerName, version: version))
         case .actionFailed(let actionId, let message):
-            pixelHandler.fire(.actionFailedError(error: error, actionId: actionId, message: message, dataBroker: brokerName))
+            pixelHandler.fire(.actionFailedError(error: error, actionId: actionId, message: message, dataBroker: brokerName, version: version))
         default:
-            pixelHandler.fire(.otherError(error: error, dataBroker: brokerName))
+            pixelHandler.fire(.otherError(error: error, dataBroker: brokerName, version: version))
         }
     }
 }

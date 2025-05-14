@@ -58,7 +58,8 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
             variantManager: variantManager,
             newTabDialogFactory: dialogFactory,
             newTabDialogTypeProvider: specProvider,
-            faviconLoader: EmptyFaviconLoading()
+            faviconLoader: EmptyFaviconLoading(),
+            messageNavigationDelegate: MockMessageNavigationDelegate()
         )
 
         let window = UIWindow(frame: UIScreen.main.bounds)

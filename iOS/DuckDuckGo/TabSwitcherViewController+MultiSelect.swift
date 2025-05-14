@@ -23,7 +23,6 @@ import Core
 import Bookmarks
 
 // MARK: Source agnostic action implementations
-// TODO fire pixels from the source specific action implementations
 extension TabSwitcherViewController {
 
     func bookmarkTabs(withIndexPaths indexPaths: [IndexPath], title: String, message: String,

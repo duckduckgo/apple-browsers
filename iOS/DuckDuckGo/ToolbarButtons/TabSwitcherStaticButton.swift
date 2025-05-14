@@ -24,6 +24,10 @@ final class TabSwitcherStaticButton: ToolbarButton, TabSwitcherButton {
     private let tabSwitcherView = TabSwitcherStaticView()
     weak var delegate: TabSwitcherButtonDelegate?
 
+    var text: String? {
+        tabSwitcherView.label.text
+    }
+
     init() {
         super.init()
         self.frame = CGRect(x: 0, y: 0, width: 34, height: 44)

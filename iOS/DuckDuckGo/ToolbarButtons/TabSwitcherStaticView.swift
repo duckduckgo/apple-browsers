@@ -23,7 +23,7 @@ final class TabSwitcherStaticView: UIView {
     private let iconImageView = UIImageView(image: UIImage(resource: .tabNew24))
     private let unreadDotImageView = UIImageView(image: UIImage(resource: .tabMobileAlertDot24))
 
-    private let label = UILabel()
+    let label = UILabel()
 
     override init(frame: CGRect = .zero) {
         super.init(frame: frame)

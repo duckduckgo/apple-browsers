@@ -16,7 +16,8 @@ DBP_BROKER_URL="https://dbp.duckduckgo.com/dbp/remote/v0?name=all.zip&type=combi
 # Broker names must be unique across all files.
 checkUniqueBrokerNames() {
 	local dir=$1
-	local temp_file=$(mktemp)
+	local temp_file
+	temp_file=$(mktemp)
 	local error_found=0
 
 	find "$dir" -name '*.json' -exec jq -r '.name' {} \; > "$temp_file"

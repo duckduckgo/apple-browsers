@@ -23,8 +23,8 @@ import Core
 
 protocol TabSwitcherButtonDelegate: NSObjectProtocol {
     
-    func showTabSwitcher(_ button: TabSwitcherButton)
-    func launchNewTab(_ button: TabSwitcherButton)
+    func showTabSwitcher(_ button: UIButton)
+    func launchNewTab(_ button: UIButton)
     
 }
 

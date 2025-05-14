@@ -786,7 +786,7 @@ class MainViewController: UIViewController {
 
     private func initTabButton() {
         if isExperimentalAppearanceEnabled {
-            let button = ToolbarButton()
+            let button = NewTabSwitcherButton()
             button.frame = CGRect(x: 0, y: 0, width: 34, height: 44)
 
             button.setImage(UIImage(resource: .tabNew24))
@@ -1266,12 +1266,12 @@ class MainViewController: UIViewController {
     }
 
     private func refreshTabIcon() {
-        if !isExperimentalAppearanceEnabled {
+//        if !isExperimentalAppearanceEnabled {
             viewCoordinator.toolbarTabSwitcherButton.accessibilityHint = UserText.numberOfTabs(tabManager.count)
             assert(tabSwitcherButton != nil)
             tabSwitcherButton?.tabCount = tabManager.count
-            tabSwitcherButton?.hasUnread = tabManager.hasUnread
-        }
+            tabSwitcherButton?.hasUnread = true // tabManager.hasUnread
+//        }
     }
 
     private func refreshOmniBar() {

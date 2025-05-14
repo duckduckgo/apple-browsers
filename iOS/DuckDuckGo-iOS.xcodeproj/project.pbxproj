@@ -4725,6 +4725,17 @@
 			name = Settings;
 			sourceTree = "<group>";
 		};
+		6F505C022DD2158100E1A1DA /* ToolbarButtons */ = {
+			isa = PBXGroup;
+			children = (
+				851DFD86212C39D300D95F20 /* TabSwitcherButton.swift */,
+				8C4838B4221C8F7F008A6739 /* GestureToolbarButton.swift */,
+				6F572DA72DAD38E400CD300E /* FireButton.swift */,
+				9880722925FA497B0039EF4B /* MenuButton.swift */,
+			);
+			path = ToolbarButtons;
+			sourceTree = "<group>";
+		};
 		6F5938962DB1027400C8C068 /* ButtonConfigurations */ = {
 			isa = PBXGroup;
 			children = (
@@ -7693,19 +7704,18 @@
 		F1C5ECFA1E37B15B00C599A4 /* Main */ = {
 			isa = PBXGroup;
 			children = (
+				6F505C022DD2158100E1A1DA /* ToolbarButtons */,
 				310742A52848CD780012660B /* BackForwardMenuHistoryItem.swift */,
 				6AC6DAB228804F97002723C0 /* BarsAnimator.swift */,
 				8563A03B1F9288D600F04442 /* BrowserChromeManager.swift */,
 				9865DFF822A8220D00D27829 /* FavoritesOverlay.swift */,
 				854A012E2A5563A400FCC628 /* FindInPage.xib */,
 				988F3DD2237DE8D900AEE34C /* ForgetDataAlert.swift */,
-				8C4838B4221C8F7F008A6739 /* GestureToolbarButton.swift */,
 				8577A1C4255D2C0D00D43FCD /* HitTestingToolbar.swift */,
 				85DDE03F2AC6FF65006ABCA2 /* MainView.swift */,
 				F17669D61E43401C003D3222 /* MainViewController.swift */,
 				CB3CC3362D9EFFB4004D6B33 /* SiteThemeColorManager.swift */,
 				31D4CD4A2D4D1C2600BC27C6 /* ToolbarStateHandling.swift */,
-				6F572DA72DAD38E400CD300E /* FireButton.swift */,
 				566B736F2BECD46800FF1959 /* MainViewController+SyncAlerts.swift */,
 				981CA7E92617797500E119D5 /* MainViewController+AddFavoriteFlow.swift */,
 				1E4F4A59297193DE00625985 /* MainViewController+CookiesManaged.swift */,
@@ -7714,14 +7724,12 @@
 				850ABD002AC3961100A733DF /* MainViewController+Segues.swift */,
 				9880723525FA4E440039EF4B /* menu_dark.json */,
 				9880723625FA4E450039EF4B /* menu_light.json */,
-				9880722925FA497B0039EF4B /* MenuButton.swift */,
 				98EF177C21837E35006750C1 /* new_tab_dark.json */,
 				85371D232121B9D400920548 /* new_tab.json */,
 				31B2F11E287846320040427A /* NoMicPermissionAlert.swift */,
 				8540BD5323D8D5080057FDD2 /* FireproofingAlert.swift */,
 				850ABD022AC4D46C00A733DF /* SuggestionTray.storyboard */,
 				85864FBB24D31EF300E756FF /* SuggestionTrayViewController.swift */,
-				851DFD86212C39D300D95F20 /* TabSwitcherButton.swift */,
 				CBEFB9102ADFFE7900DEDE7B /* CriticalAlerts.swift */,
 				85B9814D2B5EB618009AC9A6 /* SwipeTabsCoordinator.swift */,
 				85DE68192B6A8BB000DED4FE /* MainViewCoordinator.swift */,

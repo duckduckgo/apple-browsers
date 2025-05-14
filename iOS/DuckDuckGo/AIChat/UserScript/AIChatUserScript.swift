@@ -129,6 +129,10 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.getAIChatNativeHandoffData
         case .openAIChat:
             return handler.openAIChat
+        case .hideChatInput:
+            return handler.hideChatInput
+        case .showChatInput:
+            return handler.showChatInput
         default:
             return nil
         }

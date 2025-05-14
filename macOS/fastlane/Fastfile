@@ -22,7 +22,7 @@ UPGRADABLE_EMBEDDED_FILES = [
   'DuckDuckGo/ContentBlocker/trackerData.json',
   'DuckDuckGo/ContentBlocker/AppPrivacyConfigurationDataProvider.swift',
   'DuckDuckGo/ContentBlocker/macos-config.json',
-  '../SharedPackages/DataBrokerProtectionCore/Sources/DataBrokerProtectionCore/Resources/JSON/*.json'
+  '../SharedPackages/DataBrokerProtectionCore/Sources/DataBrokerProtectionCore/BundleResources/JSON/*.json'
 ].freeze
 
 default_platform(:mac)

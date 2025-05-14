@@ -208,8 +208,8 @@ public final class DataBrokerProtectionAgentManager {
         self.freemiumDBPUserStateManager = freemiumDBPUserStateManager
 
         self.activityScheduler.delegate = self
-        self.ipcServer.serverDelegate = self
         self.queueManager.delegate = self
+        self.ipcServer.serverDelegate = self
         self.ipcServer.activate()
     }
 
@@ -386,7 +386,7 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentAppEvents {
             let profileQueries = try dataManager.profileQueriesCount()
             let durationSinceStart = Date().timeIntervalSince(startTime) * 1000
             self.sharedPixelsHandler.fire(.initialScanTotalDuration(duration: durationSinceStart.rounded(.towardZero),
-                                                             profileQueries: profileQueries))
+                                                                    profileQueries: profileQueries))
         } catch {
             Logger.dataBrokerProtection.log("Initial Scans Error when trying to fetch the profile to get the profile queries")
         }
@@ -401,15 +401,24 @@ extension DataBrokerProtectionAgentManager: DataBrokerProtectionAgentDebugComman
     }
 
     public func startImmediateOperations(showWebView: Bool) {
-        queueManager.startImmediateScanOperationsIfPermitted(showWebView: showWebView, jobDependencies: jobDependencies, errorHandler: nil, completion: nil)
+        queueManager.startImmediateScanOperationsIfPermitted(showWebView: showWebView,
+                                                             jobDependencies: jobDependencies,
+                                                             errorHandler: nil,
+                                                             completion: nil)
     }
 
     public func startScheduledOperations(showWebView: Bool) {
-        startFreemiumOrSubscriptionScheduledOperations(showWebView: showWebView, jobDependencies: jobDependencies, errorHandler: nil, completion: nil)
+        startFreemiumOrSubscriptionScheduledOperations(showWebView: showWebView,
+                                                       jobDependencies: jobDependencies,
+                                                       errorHandler: nil,
+                                                       completion: nil)
     }
 
     public func runAllOptOuts(showWebView: Bool) {
-        queueManager.execute(.startOptOutOperations(showWebView: showWebView, jobDependencies: jobDependencies, errorHandler: nil, completion: nil))
+        queueManager.execute(.startOptOutOperations(showWebView: showWebView,
+                                                    jobDependencies: jobDependencies,
+                                                    errorHandler: nil,
+                                                    completion: nil))
     }
 
     public func getDebugMetadata() async -> DBPBackgroundAgentMetadata? {

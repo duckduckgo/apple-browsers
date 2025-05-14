@@ -123,7 +123,7 @@ public class MaliciousSiteProtectionManager: MaliciousSiteDetecting {
 
     init(
         apiEnvironment: MaliciousSiteProtection.APIClientEnvironment? = nil,
-        apiService: APIService = DefaultAPIService(urlSession: .shared),
+        apiService: APIService = DefaultAPIService(urlSession: .shared, userAgent: UserAgent.duckDuckGoUserAgent()),
         embeddedDataProvider: MaliciousSiteProtection.EmbeddedDataProviding? = nil,
         dataManager: MaliciousSiteProtection.DataManager? = nil,
         detector: MaliciousSiteProtection.MaliciousSiteDetecting? = nil,

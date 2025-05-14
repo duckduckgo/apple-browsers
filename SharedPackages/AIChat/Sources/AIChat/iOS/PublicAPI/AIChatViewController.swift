@@ -240,6 +240,10 @@ extension AIChatViewController {
         ])
 
         viewController.didMove(toParent: self)
+
+        if let chatInputView = chatInputHostingController?.view {
+            view.bringSubviewToFront(chatInputView)
+        }
     }
 
     private func removeWebViewController() {

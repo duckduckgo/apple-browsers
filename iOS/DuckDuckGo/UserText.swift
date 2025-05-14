@@ -1578,6 +1578,9 @@ Take back control of your personal information with the browser designed for dat
     public static let duckPlayerTabAlertOK = NSLocalizedString("duckplayer.settings.tab.alert.ok", value: "OK", comment: "OK button text for the alert when changing Duck Player variant")
 
     // MARK: - AI Chat
+    public static let settingsAIChatExperimentalMainSwitch = NotLocalizedString("settings.aichat.native.experimental", value: "Experimental Duck.ai", comment: "")
+    public static let settingsAIChatExperimentalSection = NotLocalizedString("settings.aichat.experimental.section.title", value: "Experimental Duck.ai (internal only) ", comment: "")
+
     public static let settingsEnableAiChat = NSLocalizedString("settings.enable.aichat", value: "Enable Duck.ai", comment: "Settings screen cell text for enabling AI chat")
 
     public static let settingsAiChatShortcuts = NSLocalizedString("settings.aichat.shortcuts", value: "Shortcuts", comment: "Settings screen text for showing AI Chat in various places in the app")

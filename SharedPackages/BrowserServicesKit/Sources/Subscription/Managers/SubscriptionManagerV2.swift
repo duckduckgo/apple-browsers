@@ -420,19 +420,28 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             }
 
             return resultTokenContainer
+        } catch OAuthClientError.missingTokenContainer {
+            // Expected when no tokens are available
+            throw SubscriptionManagerError.tokenUnavailable(error: OAuthClientError.missingTokenContainer)
         } catch {
+            pixelHandler.handle(pixelType: .getTokensError(policy, error))
+
             switch error {
-            case OAuthClientError.missingTokenContainer: // Expected when no tokens are available
+
+            case OAuthClientError.unknownAccount:
+                Logger.subscription.error("Refresh failed, the account is unknown. Logging out...")
+                await signOut(notifyUI: true)
                 throw SubscriptionManagerError.tokenUnavailable(error: error)
-            case OAuthClientError.refreshTokenExpired, OAuthClientError.invalidTokenRequest:
-                pixelHandler.handle(pixelType: .getTokensError(policy, error))
+
+            case OAuthClientError.refreshTokenExpired,
+                OAuthClientError.invalidTokenRequest:
                 do {
                     return try await attemptTokenRecovery()
                 } catch {
-                    throw error
+                    throw SubscriptionManagerError.tokenUnavailable(error: error)
                 }
+
             default:
-                pixelHandler.handle(pixelType: .getTokensError(policy, error))
                 throw SubscriptionManagerError.tokenUnavailable(error: error)
             }
         }

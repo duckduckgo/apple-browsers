@@ -73,6 +73,7 @@ class TabSwitcherBarsStateHandler {
 
         self.fireButton.accessibilityLabel = "Close all tabs and clear data"
         self.tabSwitcherStyleButton.accessibilityLabel = "Toggle between grid and list view"
+        self.duckChatButton.accessibilityLabel = UserText.aiChatFeatureName
 
         self.canShowEditButton = self.totalTabsCount > 1 || containsWebPages
 

@@ -114,7 +114,7 @@ final class AIChatUserScript: NSObject, Subfeature {
 
     func handler(forMethodNamed methodName: String) -> Subfeature.Handler? {
         guard let message = AIChatUserScriptMessages(rawValue: methodName) else {
-            print("Unhandled message: \(methodName) in AIChatUserScript")
+            Logger.aiChat.debug("Unhandled message: \(methodName) in AIChatUserScript")
             return nil
         }
 
@@ -129,6 +129,10 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.getAIChatNativeHandoffData
         case .openAIChat:
             return handler.openAIChat
+        case .hideChatInput:
+            return handler.hideChatInput
+        case .showChatInput:
+            return handler.showChatInput
         default:
             return nil
         }
@@ -152,6 +156,12 @@ final class AIChatUserScript: NSObject, Subfeature {
         inputBoxHandler?.didPressFireButton
             .sink(receiveValue: { [weak self] _ in self?.push(.fireButtonAction) })
             .store(in: &cancellables)
+
+        inputBoxHandler?.didPressStopGeneratingButton
+            .sink(receiveValue: { [weak self] _ in self?.push(.promptInterruption) })
+            .store(in: &cancellables)
+
+        handler.setAIChatInputBoxHandler(inputBoxHandler)
     }
 
     // MARK: - AI Chat Actions
@@ -159,10 +169,6 @@ final class AIChatUserScript: NSObject, Subfeature {
     func submitPrompt(_ prompt: String) {
         let promptPayload = AIChatNativePrompt.queryPrompt(prompt, autoSubmit: true)
         push(.submitPrompt(promptPayload))
-    }
-
-    func submitPromptInterruption() {
-        push(.promptInterruption)
     }
 
     // MARK: - Private Helper

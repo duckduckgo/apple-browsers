@@ -83,6 +83,7 @@ protocol TabBarViewItemDelegate: AnyObject {
     @MainActor func tabBarViewItemCrashAction(_: TabBarViewItem)
     @MainActor func tabBarViewItemDidUpdateCrashInfoPopoverVisibility(_: TabBarViewItem, sender: NSButton, shouldShow: Bool)
 }
+
 final class TabBarItemCellView: NSView {
 
     enum WidthStage {
@@ -214,6 +215,19 @@ final class TabBarItemCellView: NSView {
 
     fileprivate let rightSeparatorView = ColorView(frame: .zero)
 
+    fileprivate lazy var rightRampView: RampView = {
+        let view = RampView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+
+    fileprivate lazy var leftRampView: RampView = {
+        let view = RampView()
+        view.isFlippedHorizontally = true
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
+    }()
+
     fileprivate lazy var borderLayer: CALayer = {
         let layer = CALayer()
         layer.borderWidth = TabShadowConfig.dividerSize
@@ -257,21 +271,29 @@ final class TabBarItemCellView: NSView {
     override init(frame: NSRect) {
         super.init(frame: frame)
         translatesAutoresizingMaskIntoConstraints = false
-
-        clipsToBounds = true
+        clipsToBounds = !visualStyle.tabStyleProvider.shouldShowSShapedTab
 
         mouseOverView.cornerRadius = 8
         mouseOverView.maskedCorners = [
             .layerMinXMaxYCorner,
             .layerMaxXMaxYCorner
         ]
-        mouseOverView.layer?.addSublayer(borderLayer)
 
-        titleTextField.textColor = visualStyle.textPrimaryColor
+        if visualStyle.tabStyleProvider.shouldShowSShapedTab {
+            addSubview(leftRampView)
+            addSubview(rightRampView)
+        } else {
+            mouseOverView.layer?.addSublayer(borderLayer)
+        }
+
+        titleTextField.textColor = visualStyle.colorsProvider.textPrimaryColor
 
         addSubview(mouseOverView)
         if visualStyle.tabStyleProvider.isRoundedBackgroundPresentOnHover {
             roundedBackgroundColorView.cornerRadius = 6
+            crashIndicatorButton.setCornerRadius(5)
+            audioButton.setCornerRadius(5)
+            closeButton.setCornerRadius(5)
             addSubview(roundedBackgroundColorView)
         }
         addSubview(faviconImageView)
@@ -291,17 +313,30 @@ final class TabBarItemCellView: NSView {
         super.layout()
         mouseOverView.frame = bounds
         if visualStyle.tabStyleProvider.isRoundedBackgroundPresentOnHover {
-            roundedBackgroundColorView.frame = NSRect(x: bounds.origin.x + 4,
-                                                      y: bounds.origin.y + 6,
-                                                      width: bounds.width - 8,
-                                                      height: bounds.height - 8)
+            let padding: CGFloat = 4
+            let height = bounds.height - (padding * 2)
+            let y = bounds.midY - (height / 2)
+            roundedBackgroundColorView.frame = NSRect(x: bounds.origin.x + padding,
+                                                      y: y,
+                                                      width: bounds.width - (padding * 2),
+                                                      height: height)
         }
 
-        withoutAnimation {
-            borderLayer.frame = bounds
-            leftPixelMask.frame = CGRect(x: 0, y: 0, width: TabShadowConfig.dividerSize, height: TabShadowConfig.dividerSize)
-            rightPixelMask.frame = CGRect(x: borderLayer.bounds.width - TabShadowConfig.dividerSize, y: 0, width: TabShadowConfig.dividerSize, height: TabShadowConfig.dividerSize)
-            topContentLineMask.frame = CGRect(x: 0, y: TabShadowConfig.dividerSize, width: borderLayer.bounds.width, height: borderLayer.bounds.height - TabShadowConfig.dividerSize)
+        if visualStyle.tabStyleProvider.shouldShowSShapedTab {
+            withoutAnimation {
+                rightRampView.frame = CGRect(x: bounds.width, y: 0, width: RampView.Consts.rampWidth, height: RampView.Consts.rampHeight)
+                leftRampView.frame = CGRect(x: -RampView.Consts.rampWidth, y: 0, width: RampView.Consts.rampWidth, height: RampView.Consts.rampHeight)
+                leftPixelMask.frame = CGRect(x: 0, y: 0, width: TabShadowConfig.dividerSize, height: TabShadowConfig.dividerSize)
+                rightPixelMask.frame = CGRect(x: bounds.width - TabShadowConfig.dividerSize, y: 0, width: TabShadowConfig.dividerSize, height: TabShadowConfig.dividerSize)
+                topContentLineMask.frame = CGRect(x: 0, y: TabShadowConfig.dividerSize, width: bounds.width, height: bounds.height - TabShadowConfig.dividerSize)
+            }
+        } else {
+            withoutAnimation {
+                borderLayer.frame = bounds
+                leftPixelMask.frame = CGRect(x: 0, y: 0, width: TabShadowConfig.dividerSize, height: TabShadowConfig.dividerSize)
+                rightPixelMask.frame = CGRect(x: borderLayer.bounds.width - TabShadowConfig.dividerSize, y: 0, width: TabShadowConfig.dividerSize, height: TabShadowConfig.dividerSize)
+                topContentLineMask.frame = CGRect(x: 0, y: TabShadowConfig.dividerSize, width: borderLayer.bounds.width, height: borderLayer.bounds.height - TabShadowConfig.dividerSize)
+            }
         }
 
         switch widthStage {
@@ -317,7 +352,7 @@ final class TabBarItemCellView: NSView {
     }
 
     private func layoutForNormalMode() {
-        var minX: CGFloat = 9
+        var minX: CGFloat = 12
         if faviconImageView.isShown {
             faviconImageView.frame = NSRect(x: minX, y: bounds.midY - 8, width: 16, height: 16)
             minX = faviconImageView.frame.maxX + 4
@@ -339,6 +374,8 @@ final class TabBarItemCellView: NSView {
         if permissionButton.isShown {
             permissionButton.frame = NSRect(x: maxX - 20, y: bounds.midY - 12, width: 24, height: 24)
         }
+
+        minX += visualStyle.tabStyleProvider.tabSpacing
 
         titleTextField.frame = NSRect(x: minX, y: bounds.midY - 8, width: bounds.maxX - minX - 8, height: 16)
         updateTitleTextFieldMask()
@@ -396,10 +433,11 @@ final class TabBarItemCellView: NSView {
 
     override func updateLayer() {
         NSAppearance.withAppAppearance {
-            borderLayer.borderColor = NSColor.tabShadowLine.cgColor
+            if !visualStyle.tabStyleProvider.shouldShowSShapedTab {
+                borderLayer.borderColor = NSColor.tabShadowLine.cgColor
+            }
         }
     }
-
 }
 
 @MainActor
@@ -456,7 +494,7 @@ final class TabBarViewItem: NSCollectionViewItem {
         return tabViewModel
     }
 
-    private var visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager
+    private var visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyleManager.style
 
     private(set) var isMouseOver = false
 
@@ -508,6 +546,13 @@ final class TabBarViewItem: NSCollectionViewItem {
             if isSelected {
                 isDragged = false
             }
+
+            /// This fixes a bug where the hover state of the non-selected tab
+            /// will be drawn above the selected tab, which messes with the s-shaped
+            /// given that is drawn out of bounds
+            view.wantsLayer = true
+            view.layer?.zPosition = isSelected ? 1 : 0
+
             updateSubviews()
             updateUsedPermissions()
         }
@@ -696,12 +741,12 @@ final class TabBarViewItem: NSCollectionViewItem {
         withoutAnimation {
             if isSelected || isDragged {
                 cell.mouseOverView.mouseOverColor = nil
-                cell.mouseOverView.backgroundColor = visualStyleManager.style.navigationBackgroundColor
+                cell.mouseOverView.backgroundColor = visualStyle.colorsProvider.navigationBackgroundColor
             } else {
                 if tabVisualProvider.isRoundedBackgroundPresentOnHover {
                     cell.mouseOverView.mouseOverColor = nil
-                    cell.mouseOverView.backgroundColor = visualStyleManager.style.baseBackgroundColor
-                    cell.roundedBackgroundColorView.backgroundColor = visualStyleManager.style.navigationBackgroundColor
+                    cell.mouseOverView.backgroundColor = visualStyle.colorsProvider.baseBackgroundColor
+                    cell.roundedBackgroundColorView.backgroundColor = visualStyle.colorsProvider.navigationBackgroundColor
                     cell.roundedBackgroundColorView.isHidden = !isMouseOver || isSelected
                 } else {
                     cell.mouseOverView.mouseOverColor = .tabMouseOver
@@ -709,7 +754,13 @@ final class TabBarViewItem: NSCollectionViewItem {
                 }
 
             }
-            cell.borderLayer.isHidden = !isSelected
+
+            if visualStyle.tabStyleProvider.shouldShowSShapedTab {
+                cell.rightRampView.isHidden = !(isSelected || isDragged)
+                cell.leftRampView.isHidden = !(isSelected || isDragged)
+            } else {
+                cell.borderLayer.isHidden = !isSelected
+            }
         }
 
         let showCloseButton = (isMouseOver && (!widthStage.isCloseButtonHidden || NSApp.isCommandPressed)) || isSelected

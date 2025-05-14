@@ -1282,11 +1282,20 @@
 /* Text displayed when DuckPlayer is in 'Ask' mode. */
 "duckPlayer.ask.label" = "Vždycky se ptát";
 
+/* Subtitle explaining how Duck Player protects privacy */
+"duckplayer.blocks.ads.keeps.history.private" = "Duck Player blokuje cílené reklamy a uchovává soukromí tvé historie sledování.";
+
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Nikdy";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";
+
+/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
+"duckplayer.open.youtube.videos.here" = "Otevírat videa YouTube zde";
+
+/* Button text to play a video in Duck Player */
+"duckplayer.play.in.duck.player" = "Přehrát toto video v Duck Playeru";
 
 /* Body text for the modal feature explanation */
 "duckplayer.presentation.modal.body" = "Duck Player umožňuje dívat se na YouTube v prohlížeči DuckDuckGo bez cílených reklam. To, co sleduješ, nebude ovlivňovat tvoje doporučení.";
@@ -1299,6 +1308,18 @@
 
 /* Two line title (separated by \n) for the feature explanation */
 "duckplayer.presentation.modal.title.youtube" = "Topíš se v reklamách na YouTube? S přehrávačem Duck Player nebudeš!";
+
+/* Button text to resume video in Duck Player */
+"duckplayer.resume.in.duck.player" = "Pokračovat v Duck Playeru";
+
+/* Footer text explaining the auto-play toggle in Duck Player settings */
+"duckplayer.settings.autoplay.footer" = "Videa otevřená v Duck Playeru se automaticky začnou přehrávat. Pokud chceš přehrávání videí otevřených v Duck Playeru spouštět ručně, vypni tuto volbu.";
+
+/* Label for the auto-play toggle in Duck Player settings */
+"duckplayer.settings.autoplay.label" = "Automatické přehrávání videí";
+
+/* Label for the experimental section in Duck Player settings */
+"duckplayer.settings.experimental.label" = "Experimentální";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "DuckDuckGo má všechno, co ti zaručí ochranu soukromí při procházení webu.";
@@ -1315,8 +1336,47 @@
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.open-videos-in" = "Otevírat videa na YouTube v přehrávači Duck Player";
 
+/* Footer text explaining the search results toggle in Duck Player settings */
+"duckplayer.settings.search.results.footer" = "Kliknutím na videa na YouTube ve výsledcích vyhledávání DuckDuckGo se otevře přehrávač Duck Player.";
+
+/* Label for the search results toggle in Duck Player settings */
+"duckplayer.settings.search.results.label" = "Výsledky vyhledávání na DuckDuckGo";
+
+/* Message for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.message" = "Nastavení se projeví po zavření všech panelů.";
+
+/* OK button text for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.ok" = "DOBŘE";
+
+/* Title for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.title" = "Důležité!";
+
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.title" = "Duck Player";
+
+/* Label for the Duck Player variant picker in Duck Player settings */
+"duckplayer.settings.variant.label" = "Varianta Duck Player";
+
+/* Footer text explaining the YouTube.com option in Duck Player settings */
+"duckplayer.settings.youtube.footer" = "YouTube videa se při procházení stránek YouTube.com otevřou po kliknutí v přehrávači Duck Player.";
+
+/* Label for the YouTube.com option in Duck Player settings */
+"duckplayer.settings.youtube.label" = "YouTube.com";
+
+/* Button text to open Duck Player settings */
+"duckplayer.toast.open.settings" = "Otevřené nastavení";
+
+/* Toast message informing user they can disable Duck Player in settings */
+"duckplayer.toast.turn.off.anytime" = "Duck Player můžeš kdykoli vypnout v Nastavení";
+
+/* Button text to watch video on YouTube */
+"duckplayer.watch.on.youtube" = "Sledovat na YouTube";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.watch.without.targeted.ads" = "Sleduj bez cílených reklam";
+
+/* Title for Duck Player welcome message highlighting privacy benefits */
+"duckplayer.youtube.no.ads.privacy" = "Sleduj YouTube s menším počtem reklam a větším soukromím";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Ochrana e-mailu";
@@ -2280,9 +2340,6 @@
 
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Aplikaci nutnou k otevření tohoto odkazu nelze nalézt";
-
-/* No comment provided by engineer. */
-"Please close all tabs for this setting to take effect." = "Nastavení se projeví po zavření všech panelů.";
 
 /* Activate button */
 "pm.activate" = "Znovu aktivovat";

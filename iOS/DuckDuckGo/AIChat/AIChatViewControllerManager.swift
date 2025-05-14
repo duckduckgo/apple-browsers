@@ -50,19 +50,19 @@ final class AIChatViewControllerManager {
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let downloadsDirectoryHandler: DownloadsDirectoryHandling
     private let userAgentManager: AIChatUserAgentProviding
-    private let featureFlagger: FeatureFlagger
+    private let experimentalAIChatManager: ExperimentalAIChatManager
 
     // MARK: - Initialization
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
          downloadsDirectoryHandler: DownloadsDirectoryHandling = DownloadsDirectoryHandler(),
          userAgentManager: UserAgentManager = DefaultUserAgentManager.shared,
-         featureFlagger: FeatureFlagger) {
+         experimentalAIChatManager: ExperimentalAIChatManager) {
 
         self.privacyConfigurationManager = privacyConfigurationManager
         self.downloadsDirectoryHandler = downloadsDirectoryHandler
         self.userAgentManager = AIChatUserAgentHandler(userAgentManager: userAgentManager)
-        self.featureFlagger = featureFlagger
+        self.experimentalAIChatManager = experimentalAIChatManager
     }
 
     // MARK: - Public Methods
@@ -137,7 +137,7 @@ final class AIChatViewControllerManager {
     }
 
     private func setupChatInputBoxIfNeeded() -> AnyView? {
-        guard featureFlagger.isFeatureOn(.aiChatNativePrompt) else { return nil }
+        guard experimentalAIChatManager.isExperimentalAIChatSettingsEnabled else { return nil }
 
         let viewModel = AIChatInputBoxViewModel()
         let handler = AIChatInputBoxHandler(inputBoxViewModel: viewModel)

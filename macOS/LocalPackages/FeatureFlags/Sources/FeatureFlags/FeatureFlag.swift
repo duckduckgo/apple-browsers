@@ -39,9 +39,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     case credentialsImportPromotionForExistingUsers
 
-    /// https://app.asana.com/0/0/1209150117333883/f
-    case networkProtectionAppExclusions
-
     /// https://app.asana.com/0/0/1209402073283584
     case networkProtectionAppStoreSysex
 
@@ -55,6 +52,7 @@ public enum FeatureFlag: String, CaseIterable {
     case historyView
 
     case autoUpdateInDEBUG
+    case updatesWontAutomaticallyRestartApp
 
     case autofillPartialFormSaves
     case autocompleteTabs
@@ -118,7 +116,6 @@ extension FeatureFlag: FeatureFlagDescribing {
         switch self {
         case .autofillPartialFormSaves,
                 .autocompleteTabs,
-                .networkProtectionAppExclusions,
                 .networkProtectionAppStoreSysex,
                 .networkProtectionAppStoreSysexMessage,
                 .networkProtectionRiskyDomainsProtection,
@@ -126,6 +123,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .historyView,
                 .webExtensions,
                 .autoUpdateInDEBUG,
+                .updatesWontAutomaticallyRestartApp,
                 .popoverVsBannerExperiment,
                 .privacyProAuthV2,
                 .scamSiteProtection,
@@ -168,8 +166,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.contextualOnboarding))
         case .credentialsImportPromotionForExistingUsers:
             return .remoteReleasable(.subfeature(AutofillSubfeature.credentialsImportPromotionForExistingUsers))
-        case .networkProtectionAppExclusions:
-            return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appExclusions))
         case .networkProtectionAppStoreSysex:
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtension))
         case .networkProtectionAppStoreSysexMessage:
@@ -177,6 +173,8 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .historyView:
             return .remoteReleasable(.subfeature(HTMLHistoryPageSubfeature.isLaunched))
         case .autoUpdateInDEBUG:
+            return .disabled
+        case .updatesWontAutomaticallyRestartApp:
             return .disabled
         case .autofillPartialFormSaves:
             return .remoteReleasable(.subfeature(AutofillSubfeature.partialFormSaves))

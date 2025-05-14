@@ -321,24 +321,25 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
     
     private func newCollectCode(showQRCode: Bool) {
-        let code: String
-        
-        if isSyncEnabled {
-            do {
-                code = try connectionController.startExchangeMode()
-            } catch {
-                self.handleError(SyncErrorMessage.unableToSyncWithDevice, error: error, event: .syncLoginError)
-                return
+        Task { @MainActor in
+            let code: String
+            if isSyncEnabled {
+                do {
+                    code = try await connectionController.startExchangeMode()
+                } catch {
+                    self.handleError(SyncErrorMessage.unableToSyncWithDevice, error: error, event: .syncLoginError)
+                    return
+                }
+            } else {
+                do {
+                    code = try await connectionController.startConnectMode()
+                } catch {
+                    self.handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
+                    return
+                }
             }
-        } else {
-            do {
-                code = try connectionController.startConnectMode()
-            } catch {
-                self.handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
-                return
-            }
+            presentScanOrPasteCodeView(code: code, showQRCode: showQRCode)
         }
-        presentScanOrPasteCodeView(code: code, showQRCode: showQRCode)
     }
     
     private func legacyCollectCode(showQRCode: Bool) {

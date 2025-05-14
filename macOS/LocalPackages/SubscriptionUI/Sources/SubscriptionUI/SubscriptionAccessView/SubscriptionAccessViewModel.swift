@@ -44,23 +44,19 @@ public final class SubscriptionAccessViewModel {
 
     public func handleEmailAction() {
         actionHandlers.openActivateViaEmailURL()
-        actionHandlers.uiActionHandler(.activateSubscriptionViaEmailClick)
     }
 
     public func handleRestorePurchaseAction() {
         actionHandlers.restorePurchases()
-        actionHandlers.uiActionHandler(.activateSubscriptionViaRestoreAppStorePurchaseClick)
     }
 }
 
 public final class SubscriptionAccessActionHandlers {
     var openActivateViaEmailURL: () -> Void
     var restorePurchases: () -> Void
-    var uiActionHandler: (PreferencesSubscriptionModel.UserEvent) -> Void
 
-    public init(openActivateViaEmailURL: @escaping () -> Void, restorePurchases: @escaping () -> Void, uiActionHandler: @escaping (PreferencesSubscriptionModel.UserEvent) -> Void) {
+    public init(openActivateViaEmailURL: @escaping () -> Void, restorePurchases: @escaping () -> Void) {
         self.openActivateViaEmailURL = openActivateViaEmailURL
         self.restorePurchases = restorePurchases
-        self.uiActionHandler = uiActionHandler
     }
 }

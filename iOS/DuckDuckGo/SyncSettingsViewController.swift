@@ -319,8 +319,9 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
     func endConnectMode() {
         connector?.stopPolling()
         connector = nil
-        connectionController.stopConnectMode()
-        connectionController.stopExchangeMode()
+        Task {
+            await connectionController.cancel()
+        }
     }
 
     func startConnectMode() throws -> String {

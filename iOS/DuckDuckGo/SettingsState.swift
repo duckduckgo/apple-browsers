@@ -63,6 +63,7 @@ struct SettingsState {
     var addressBar: AddressBar
     var showsFullURL: Bool
     var isExperimentalThemingEnabled: Bool
+    var isExperimentalAIChatEnabled: Bool
 
     // Privacy properties
     var sendDoNotSell: Bool
@@ -121,6 +122,7 @@ struct SettingsState {
             addressBar: AddressBar(enabled: false, position: .top),
             showsFullURL: false,
             isExperimentalThemingEnabled: false,
+            isExperimentalAIChatEnabled: false,
             sendDoNotSell: true,
             autoconsentEnabled: false,
             autoclearDataEnabled: false,

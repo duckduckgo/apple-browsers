@@ -144,6 +144,8 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
                 for id in availableProducts.compactMap({ $0.id }) {
                     _ = await subscriptionFeatureMappingCache.subscriptionFeatures(for: id)
                 }
+
+                NotificationCenter.default.post(name: .availableAppStoreProductsDidChange, object: self, userInfo: nil)
             }
         } catch {
             Logger.subscription.error("[StorePurchaseManager] Error: \(error.localizedDescription, privacy: .public)")

@@ -143,6 +143,7 @@ final class FirePopoverViewController: NSViewController {
 
     @IBAction func openNewBurnerWindowAction(_ sender: Any) {
         NSApp.delegateTyped.newBurnerWindow(self)
+        delegate?.firePopoverViewControllerDidCancel(self)
     }
 
     @IBAction func openDetailsButtonAction(_ sender: Any) {

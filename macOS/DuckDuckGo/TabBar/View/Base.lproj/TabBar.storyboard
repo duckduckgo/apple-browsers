@@ -297,6 +297,7 @@
                         <outlet property="fireButton" destination="XV4-Ze-5j7" id="ZCC-wX-7hC"/>
                         <outlet property="leftScrollButton" destination="7XG-Qm-Ksx" id="yre-8P-vb9"/>
                         <outlet property="leftShadowImageView" destination="zsA-or-9Xo" id="wVp-jj-2UD"/>
+                        <outlet property="leftSideStackLeadingConstraint" destination="qU6-dU-yJw" id="eFI-TI-wxX"/>
                         <outlet property="pinnedTabsContainerView" destination="G3c-kC-Gu9" id="v78-CF-sIa"/>
                         <outlet property="pinnedTabsViewLeadingConstraint" destination="a7p-a2-dhE" id="0hK-dY-o7E"/>
                         <outlet property="pinnedTabsWindowDraggingView" destination="1Zn-JZ-2g3" id="Rld-aG-FZ2"/>

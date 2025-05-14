@@ -1150,41 +1150,8 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Eilen";
 
-/* No comment provided by engineer. */
-"dax.hide.button" = "Piilota vinkit ikuisesti";
-
-/* No comment provided by engineer. */
-"dax.hide.cancel" = "Peruuta";
-
-/* Subtitle in Hide Dax dialog */
-"dax.hide.message" = "Niitä on vain pari, ja yritimme tehdä niistä informatiivisia.";
-
-/* Title in Hide Dax dialog */
-"dax.hide.title" = "Piilotetaanko jäljellä olevat vinkit?";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search" = "DuckDuckGo-hakusi ovat aina nimettömiä. 🙌";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search.cta" = "Huh huh!";
-
-/* First parameter is a count of additional trackers, second and third are names of the tracker networks (strings) */
-"dax.onboarding.browsing.multiple.trackers" = "dax.onboarding.browsing.multiple.trackers";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.multiple.trackers.cta" = "Ylävitonen!";
-
-/* Parameter is domain name (string) */
-"dax.onboarding.browsing.one.tracker" = "*%1$@* yritti seurata sinua.\n\nEstin sen!\n\n☝️ Tarkista osoiteriviltä, kuka yrittää seurata sinua, kun vierailet uudella sivustolla.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.one.tracker.cta" = "Ylävitonen!";
-
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Huomio! %1$@ näkee mitä teet sivustolla %2$@, enkä voi estää sitä.\n\nMutta jos käytät minua selaamiseen, voin vähentää, mitä %1$@ saa tietää sinusta, estämällä heidän seurantansa monilla muilla sivustoilla.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.site.is.major.tracker.cta" = "Selvä";
 
 /* Parameters are domain names (strings) */
 "dax.onboarding.browsing.site.owned.by.major.tracker" = "Huomio! Koska %2$@ omistaa palvelun %1$@, en voi estää heitä näkemästä, mitä teet täällä.\n\nMutta jos käytät minua selaamiseen, voin vähentää, mitä %2$@ saa tietää sinusta, estämällä heidän seurantansa monilla muilla sivustoilla.";
@@ -1195,29 +1162,8 @@
 /* No comment provided by engineer. */
 "dax.onboarding.browsing.without.trackers" = "Kun napautat ja selaat, estän ikävät seurantaohjelmat.\n\nEli jatka vain selaamista!";
 
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.without.trackers.cta" = "Selvä";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button" = "Henkilökohtaisia tietoja voi tallentua selaimeesi. Hyi. Hävitä ne kaikki Liekki-painikkeella. Kokeile nyt! 👇";
-
-/* Cancel action */
-"dax.onboarding.fire.button.cancelAction" = "Peruuta";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button.confirmAction" = "Sulje välilehdet ja tyhjennä tiedot";
-
 /* Encourage user to add favorite site using the browsing menu. */
 "dax.onboarding.home.add.favorite" = "Käy lempisivustoillasi hetkessä!\n\nSiirry lempisivustollesi. Napauta \"...\"-kuvaketta ja valitse *Lisää suosikkeihin*.";
-
-/* Accessible version of dax.onboarding.home.add.favorite */
-"dax.onboarding.home.add.favorite.accessible" = "Käy lempisivustoillasi hetkessä! Käy suosikkisivustoillasi. Napauta sitten valikon avauspainiketta ja valitse Lisää suosikkeihin.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.home.initial" = "Käy seuraavaksi jollain lempisivustoistasi.\n\nEstän jäljittäjät, jotta he eivät voi vakoilla sinua. Päivitän myös yhteytesi suojauksen, jos se on mahdollista. 🔒";
-
-/* ad = advertisment */
-"dax.onboarding.home.subsequent" = "Hyvin menee!\n\nMuista, että joka kerta kun käytät minua selaamiseen, rasittavat mainokset katoavat. 👍";
 
 /* No comment provided by engineer. */
 "Debug" = "Virheenkorjaus";
@@ -1313,16 +1259,16 @@
 "duckai.preferences.text.markdown" = "Duck.ai on valinnainen ominaisuus, jonka avulla voit keskustella anonyymisti suosittujen kolmannen osapuolen tekoälykeskustelumallien kanssa. Keskustelujasi ei käytetä tekoälyn kouluttamiseen.\n[Lue lisää](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
-"duckai.settings.enable.address-bar-toggle" = "Näytä Duck.ai osoiterivillä";
+"duckai.settings.enable.address-bar-toggle" = "Osoitekenttä";
 
 /* Toggle text to enable/disable AI Chat in the browsing menu */
-"duckai.settings.enable.browsing-menu-toggle" = "Näytä Duck.ai selainvalikossa";
+"duckai.settings.enable.browsing-menu-toggle" = "Selainvalikko";
 
 /* Toggle text to enable/disable Duck.ai in tab manager */
-"duckai.settings.enable.tab-switcher-toggle" = "Näytä Duck.ai välilehtinäytöllä";
+"duckai.settings.enable.tab-switcher-toggle" = "Välilehdet-näyttö";
 
 /* Toggle text to enable/disable Duck.ai in voice search */
-"duckai.settings.enable.voice-search-toggle" = "Näytä Duck.ai äänihaussa";
+"duckai.settings.enable.voice-search-toggle" = "Äänihaku";
 
 /* Settings screen cell text for AI Chat settings */
 "duckai.settings.title" = "Duck.ai";
@@ -1336,11 +1282,20 @@
 /* Text displayed when DuckPlayer is in 'Ask' mode. */
 "duckPlayer.ask.label" = "Kysy joka kerta";
 
+/* Subtitle explaining how Duck Player protects privacy */
+"duckplayer.blocks.ads.keeps.history.private" = "Duck Player estää kohdennetut mainokset ja pitää katseluhistoriasi yksityisenä.";
+
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Ei koskaan";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";
+
+/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
+"duckplayer.open.youtube.videos.here" = "Avaa YouTube-videot täällä";
+
+/* Button text to play a video in Duck Player */
+"duckplayer.play.in.duck.player" = "Toista tämä video Duck Playerissa";
 
 /* Body text for the modal feature explanation */
 "duckplayer.presentation.modal.body" = "Duck Playerin avulla voit katsella YouTubea ilman kohdennettuja mainoksia DuckDuckGossa, eivätkä katsomasi videot vaikuta suosituksiisi.";
@@ -1353,6 +1308,18 @@
 
 /* Two line title (separated by \n) for the feature explanation */
 "duckplayer.presentation.modal.title.youtube" = "Hukutko mainoksiin YouTubessa? Duck Playerin avulla et huku!";
+
+/* Button text to resume video in Duck Player */
+"duckplayer.resume.in.duck.player" = "Jatka Duck Playerissa";
+
+/* Footer text explaining the auto-play toggle in Duck Player settings */
+"duckplayer.settings.autoplay.footer" = "Duck Playerissa avatut videot toistetaan automaattisesti. Poista tämä käytöstä, jos haluat toistaa Duck Playerissa avatut videot manuaalisesti.";
+
+/* Label for the auto-play toggle in Duck Player settings */
+"duckplayer.settings.autoplay.label" = "Toista videot automaattisesti";
+
+/* Label for the experimental section in Duck Player settings */
+"duckplayer.settings.experimental.label" = "Kokeellinen";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "DuckDuckGo tarjoaa kaikki Privacy Essentials ominaisuudet, joita tarvitset suojautuaksesi selatessasi verkkoa.";
@@ -1369,8 +1336,47 @@
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.open-videos-in" = "Avaa YouTube-videot Duck Playerissa";
 
+/* Footer text explaining the search results toggle in Duck Player settings */
+"duckplayer.settings.search.results.footer" = "YouTube-videoiden napsauttaminen DuckDuckGo-hakutuloksissa avaa videot Duck Playerissa.";
+
+/* Label for the search results toggle in Duck Player settings */
+"duckplayer.settings.search.results.label" = "DuckDuckGo-hakutulokset";
+
+/* Message for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.message" = "Sulje kaikki välilehdet, jotta tämä asetus astuu voimaan.";
+
+/* OK button text for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.ok" = "OK";
+
+/* Title for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.title" = "Tärkeää!";
+
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.title" = "Duck Player";
+
+/* Label for the Duck Player variant picker in Duck Player settings */
+"duckplayer.settings.variant.label" = "Duck Player -variaatio";
+
+/* Footer text explaining the YouTube.com option in Duck Player settings */
+"duckplayer.settings.youtube.footer" = "Kun selaat YouTube.comissa ja napsautat YouTube-videoita, ne avataan Duck Playerissa.";
+
+/* Label for the YouTube.com option in Duck Player settings */
+"duckplayer.settings.youtube.label" = "YouTube.com";
+
+/* Button text to open Duck Player settings */
+"duckplayer.toast.open.settings" = "Avaa asetukset";
+
+/* Toast message informing user they can disable Duck Player in settings */
+"duckplayer.toast.turn.off.anytime" = "Voit poistaa Duck Playerin käytöstä milloin tahansa asetuksissa.";
+
+/* Button text to watch video on YouTube */
+"duckplayer.watch.on.youtube" = "Katso YouTubessa";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.watch.without.targeted.ads" = "Katso ilman kohdennettuja mainoksia";
+
+/* Title for Duck Player welcome message highlighting privacy benefits */
+"duckplayer.youtube.no.ads.privacy" = "Katso YouTubea vähemmin mainoksin ja yksityisemmin";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Sähköpostisuojaus";
@@ -2332,9 +2338,6 @@
 /* No comment provided by engineer. */
 "onboardingWelcomeHeader" = "Tervetuloa DuckDuckGo-sovellukseen!";
 
-/* No comment provided by engineer. */
-"Open tabs remain unaffected by this change.  Please close all tabs for this setting to take effect." = "Tämä muutos ei vaikuta avoimiin välilehtiin.  Sulje kaikki välilehdet, jotta tämä asetus astuu voimaan.";
-
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Linkin avaamiseen tarvittavaa sovellusta ei löydy";
 
@@ -2560,6 +2563,8 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Näytä sivuston osoite kokonaan";
 
+/* Settings screen text for showing AI Chat in various places in the app */
+"settings.aichat.shortcuts" = "Pikavalinnat";
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Aina käytössä";
 
@@ -2631,6 +2636,9 @@
 
 /* Settings cell for Email Protection */
 "settings.emailProtection.description" = "Estä sähköpostiseuraajat ja piilota osoitteesi";
+
+/* Settings screen cell text for enabling AI chat */
+"settings.enable.aichat" = "Ota Duck.ai käyttöön";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Ota Email Protection käyttöön";

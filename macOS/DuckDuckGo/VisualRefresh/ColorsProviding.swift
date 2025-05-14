@@ -31,6 +31,7 @@ protocol ColorsProviding {
     var settingsBackgroundColor: NSColor { get }
     var bookmarksManagerBackgroundColor: NSColor { get }
     var bookmarksPanelBackgroundColor: NSColor { get }
+    var downloadsPanelBackgroundColor: NSColor { get }
 
     /// New Tab Page
     var ntpLightBackgroundColor: String { get }
@@ -52,6 +53,7 @@ final class LegacyColorsProviding: ColorsProviding {
     var settingsBackgroundColor: NSColor { .preferencesBackground }
     var bookmarksManagerBackgroundColor: NSColor { .bookmarkPageBackground}
     var bookmarksPanelBackgroundColor: NSColor { .popoverBackground }
+    var downloadsPanelBackgroundColor: NSColor { .popoverBackground }
     var ntpLightBackgroundColor: String { "#FAFAFA" }
     var ntpDarkBackgroundColor: String { "#333333" }
 
@@ -74,6 +76,7 @@ final class NewColorsProviding: ColorsProviding {
     var buttonMouseOverColor: NSColor { palette.controlsFillPrimary }
     var bookmarksManagerBackgroundColor: NSColor { palette.surfacePrimary }
     var bookmarksPanelBackgroundColor: NSColor { palette.surfacePrimary }
+    var downloadsPanelBackgroundColor: NSColor { palette.surfacePrimary }
     var ntpLightBackgroundColor: String { "#F2F2F2" }
     var ntpDarkBackgroundColor: String { "#27282A" }
 

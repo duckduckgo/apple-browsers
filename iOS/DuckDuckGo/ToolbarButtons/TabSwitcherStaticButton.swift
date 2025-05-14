@@ -57,6 +57,7 @@ final class TabSwitcherStaticButton: ToolbarButton, TabSwitcherButton {
         tabSwitcherView.frame = bounds
         tabSwitcherView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
 
+        // This is needed so the ToolbarButton is resized appropriately.
         setImage(.fake(size: CGSize(width: 24, height: 24)))
     }
 
@@ -112,9 +113,9 @@ final class TabSwitcherStaticButton: ToolbarButton, TabSwitcherButton {
 private extension UIImage {
     static func fake(size: CGSize) -> UIImage {
         let renderer = UIGraphicsImageRenderer(size: size)
-            let image = renderer.image { context in
-                // No drawing operations needed for transparency
-            }
+        let image = renderer.image { _ in
+            // No drawing operations needed for transparency
+        }
         return image
     }
 }

@@ -324,7 +324,7 @@ final class APIServiceTests: XCTestCase {
 
     func testWhenAPIRequestsSetsUserAgent() async throws {
         let requestUserAgent = "requestUserAgent"
-        let request = APIRequestV2(url: HTTPURLResponse.testUrl,headers: APIRequestV2.HeadersV2(userAgent: requestUserAgent))!
+        let request = APIRequestV2(url: HTTPURLResponse.testUrl, headers: APIRequestV2.HeadersV2(userAgent: requestUserAgent))!
 
         MockURLProtocol.requestHandler = { request in
             XCTAssertEqual(request.value(forHTTPHeaderField: HTTPHeaderKey.userAgent), requestUserAgent)
@@ -337,7 +337,7 @@ final class APIServiceTests: XCTestCase {
 
     func testWhenAPIServiceSetsUserAgent() async throws {
         let serviceUserAgent = "serviceUserAgent"
-        let request = APIRequestV2(url: HTTPURLResponse.testUrl,headers: APIRequestV2.HeadersV2())!
+        let request = APIRequestV2(url: HTTPURLResponse.testUrl, headers: APIRequestV2.HeadersV2())!
 
         MockURLProtocol.requestHandler = { request in
             XCTAssertEqual(request.value(forHTTPHeaderField: HTTPHeaderKey.userAgent), serviceUserAgent)
@@ -351,7 +351,7 @@ final class APIServiceTests: XCTestCase {
     func testWhenAPIRequestsSetsUserAgentItIsNotOverridenByAPIService() async throws {
         let serviceUserAgent = "serviceUserAgent"
         let requestUserAgent = "requestUserAgent"
-        let request = APIRequestV2(url: HTTPURLResponse.testUrl,headers: APIRequestV2.HeadersV2(userAgent: requestUserAgent))!
+        let request = APIRequestV2(url: HTTPURLResponse.testUrl, headers: APIRequestV2.HeadersV2(userAgent: requestUserAgent))!
 
         MockURLProtocol.requestHandler = { request in
             XCTAssertEqual(request.value(forHTTPHeaderField: HTTPHeaderKey.userAgent), requestUserAgent)

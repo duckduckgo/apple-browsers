@@ -36,12 +36,24 @@ final class SubscriptionFreeTrialsHelperTests: XCTestCase {
     }
 
     func testIsEligibleForFreeTrial_FeatureFlagEnabled_ReturnsTrue() throws {
+        // Given
         mockFeatureFlagger.enabledFeatureFlags = [.privacyProFreeTrial]
-        XCTAssertTrue(sut.areFreeTrialsAvailable)
+        
+        // When
+        let result = sut.areFreeTrialsAvailable
+        
+        // Then
+        XCTAssertTrue(result)
     }
 
     func testIsEligibleForFreeTrial_FeatureFlagDisabled_ReturnsFalse() throws {
+        // Given
         mockFeatureFlagger.enabledFeatureFlags = []
-        XCTAssertFalse(sut.areFreeTrialsAvailable)
+        
+        // When
+        let result = sut.areFreeTrialsAvailable
+        
+        // Then
+        XCTAssertFalse(result)
     }
 }

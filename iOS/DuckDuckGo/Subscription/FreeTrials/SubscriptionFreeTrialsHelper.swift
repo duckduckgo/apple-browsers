@@ -20,27 +20,26 @@
 import BrowserServicesKit
 import Core
 
+/// Protocol defining the interface for handling subscription free trials availability.
 protocol SubscriptionFreeTrialsHelping {
+    /// Indicates whether free trials are currently available.
     var areFreeTrialsAvailable: Bool { get }
-    var origin: String  { get }
 }
 
+/// A helper struct that determines the availability of subscription free trials.
 struct SubscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping {
-    /// Constants used by the helper.
-    enum Constants {
-        /// The origin parameter value for this privacy pro promotion funnel.
-        static let origin = "TBD"
-    }
 
     /// The feature flagging service used to determine if the promotion should be shown.
     private let featureFlagger: FeatureFlagger
 
+    /// Indicates whether free trials are currently available.
+    /// This is determined by checking if the privacy pro free trial feature flag is enabled.
     var areFreeTrialsAvailable: Bool {
         return featureFlagger.isFeatureOn(for: FeatureFlag.privacyProFreeTrial, allowOverride: true)
     }
 
-    let origin = Constants.origin
-
+    /// Initializes a new instance of SubscriptionFreeTrialsHelper.
+    /// - Parameter featureFlagger: The feature flagging service to use. Defaults to the shared app dependency provider's feature flagger.
     init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         self.featureFlagger = featureFlagger
     }

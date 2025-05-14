@@ -98,7 +98,9 @@ public final class DataClient: HistoryViewUserScriptClient {
         return DataModel.Configuration(
             env: env,
             locale: Bundle.main.preferredLocalizations.first ?? "en",
-            platform: .init(name: "macos")
+            platform: .init(name: "macos"),
+            customizer: .init(defaultStyles: .init(lightBackgroundColor: "#F2F2F2",
+                                                   darkBackgroundColor: "#27282A"))
         )
     }
 

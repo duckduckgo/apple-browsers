@@ -154,9 +154,14 @@ extension DataModel {
         var env: String
         var locale: String
         var platform: Platform
+        var customizer: Customizer
 
         struct Platform: Encodable, Equatable {
             var name: String
+        }
+
+        struct Customizer: Encodable, Equatable {
+            var defaultStyles: DefaultStyles?
         }
     }
 
@@ -208,5 +213,15 @@ extension DataModel {
 
     struct HistoryOpenAction: Codable {
         let url: String
+    }
+
+    struct DefaultStyles: Encodable, Equatable {
+        public let lightBackgroundColor: String
+        public let darkBackgroundColor: String
+
+        public init(lightBackgroundColor: String, darkBackgroundColor: String) {
+            self.lightBackgroundColor = lightBackgroundColor
+            self.darkBackgroundColor = darkBackgroundColor
+        }
     }
 }

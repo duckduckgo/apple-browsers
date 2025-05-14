@@ -238,7 +238,7 @@ class AppUserDefaultsTests: XCTestCase {
         return mockPrivacyConfiguration
     }
 
-    private func createFeatureFlagger(withFeatureFlagEnabled featureFlag: FeatureFlag) -> FeatureFlagger & ContentScopeExperimentsManaging {
+    private func createFeatureFlagger(withFeatureFlagEnabled featureFlag: FeatureFlag) -> FeatureFlagger {
         let mockFeatureFlagger = MockFeatureFlagger()
         mockFeatureFlagger.enabledFeatureFlags.append(featureFlag)
         return mockFeatureFlagger

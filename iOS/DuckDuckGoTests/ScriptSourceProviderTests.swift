@@ -56,14 +56,6 @@ final class ScriptSourceProviderTests: XCTestCase {
 
 }
 
-class MockContentScopeExperimentManager: ContentScopeExperimentsManaging {
-    var allActiveContentScopeExperiments: Experiments = [:]
-
-    func resolveContentScopeScriptActiveExperiments() -> Experiments {
-        return allActiveContentScopeExperiments
-    }
-}
-
 class MockContentBlockerRulesManagerProtocol: ContentBlockerRulesManagerProtocol {
     func entity(forHost host: String) -> Entity? {
         return nil

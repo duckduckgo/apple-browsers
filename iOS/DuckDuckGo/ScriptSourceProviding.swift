@@ -59,7 +59,7 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
          privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
          contentBlockingManager: ContentBlockerRulesManagerProtocol = ContentBlocking.shared.contentBlockingManager,
          fireproofing: Fireproofing,
-         contentScopeExperimentsManager: ContentScopeExperimentsManaging = AppDependencyProvider.shared.featureFlagger) {
+         contentScopeExperimentsManager: ContentScopeExperimentsManaging = AppDependencyProvider.shared.contentScopeExperimentsManager) {
 
         sendDoNotSell = appSettings.sendDoNotSell
         

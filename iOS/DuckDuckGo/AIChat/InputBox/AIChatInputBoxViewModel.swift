@@ -22,13 +22,14 @@ import SwiftUI
 
 final class AIChatInputBoxViewModel: ObservableObject {
 
-    enum State {
+    enum ChatState {
         case ready
         case waitingForGeneration
         case unknown
     }
 
-    @Published var state: State = .unknown
+    @Published var state: ChatState = .unknown
+    @Published var visibility: AIChatInputBoxVisibility = .unknown
 
     // MARK: - Publishers
     let didPressFireButton = PassthroughSubject<Void, Never>()

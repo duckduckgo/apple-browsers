@@ -19,6 +19,7 @@
 
 import UIKit
 import Core
+import DesignResourcesKit
 
 protocol TabViewCellDelegate: AnyObject {
 
@@ -327,6 +328,7 @@ final class TabViewCell: UICollectionViewCell {
 
         updateCurrentTabBorder()
 
+        removeButton.setImage(DesignSystemImages.Glyphs.Size24.close, for: .normal)
         if let link = tab.link {
             removeButton.accessibilityLabel = UserText.closeTab(withTitle: link.displayTitle, atAddress: link.url.host ?? "")
             title.accessibilityLabel = UserText.openTab(withTitle: link.displayTitle, atAddress: link.url.host ?? "")

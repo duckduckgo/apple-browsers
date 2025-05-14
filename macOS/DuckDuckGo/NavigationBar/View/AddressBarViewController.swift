@@ -22,6 +22,10 @@ import Lottie
 import Common
 import AIChat
 
+protocol AddressBarViewControllerDelegate: AnyObject {
+    func resizeAddressBarForHomePage(_ addressBarViewController: AddressBarViewController, isFocused: Bool)
+}
+
 final class AddressBarViewController: NSViewController {
 
     enum Mode: Equatable {
@@ -109,6 +113,8 @@ final class AddressBarViewController: NSViewController {
     /// save mouse-down position to handle same-place clicks outside of the Address Bar to remove first responder
     private var clickPoint: NSPoint?
 
+    weak var delegate: AddressBarViewControllerDelegate?
+
     // MARK: - View Lifecycle
 
     required init?(coder: NSCoder) {
@@ -169,6 +175,8 @@ final class AddressBarViewController: NSViewController {
 
         // disallow dragging window by the background view
         activeBackgroundView.interceptClickEvents = true
+
+        addressBarTextField.focusDelegate = self
     }
 
     override func viewWillAppear() {
@@ -776,6 +784,16 @@ extension AddressBarViewController: NSDraggingDestination {
             // activate the address bar and replace its string value
             return addressBarTextField.performDragOperation(draggingInfo)
         }
+    }
+}
+
+extension AddressBarViewController: AddressBarTextFieldFocusDelegate {
+    func addressBarDidFocus(_ addressBarTextField: AddressBarTextField) {
+        delegate?.resizeAddressBarForHomePage(self, isFocused: true)
+    }
+
+    func addressBarDidLoseFocus(_ addressBarTextField: AddressBarTextField) {
+        delegate?.resizeAddressBarForHomePage(self, isFocused: false)
     }
 }
 

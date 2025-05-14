@@ -19,6 +19,7 @@
 
 import UIKit
 import Core
+import DesignResourcesKit
 
 protocol TabsBarDelegate: NSObjectProtocol {
     
@@ -86,6 +87,9 @@ class TabsBarViewController: UIViewController {
         configureGestures()
         
         enableInteractionsWithPointer()
+
+        addTabButton.setImage(DesignSystemImages.Glyphs.Size24.add, for: .normal)
+        fireButton.setImage(DesignSystemImages.Glyphs.Size24.fire, for: .normal)
     }
 
     override func viewWillAppear(_ animated: Bool) {

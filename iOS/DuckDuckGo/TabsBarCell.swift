@@ -43,7 +43,8 @@ class TabsBarCell: UICollectionViewCell {
     
     override func awakeFromNib() {
         super.awakeFromNib()
-        
+
+        removeButton.setImage(DesignSystemImages.Glyphs.Size16.close, for: .normal)
         removeButton.isPointerInteractionEnabled = true
         removeButton.pointerStyleProvider = { button, _, _ -> UIPointerStyle? in
             return .init(effect: .lift(.init(view: button)))

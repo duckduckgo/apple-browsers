@@ -384,8 +384,8 @@
                                                 <stackView opaque="NO" contentMode="scaleToFill" spacing="4" translatesAutoresizingMaskIntoConstraints="NO" id="LwM-2c-pnd">
                                                     <rect key="frame" x="12" y="0.0" width="56" height="40"/>
                                                     <subviews>
-                                                        <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="GlobeSmall" translatesAutoresizingMaskIntoConstraints="NO" id="uOh-0G-QVj">
-                                                            <rect key="frame" x="0.0" y="0.0" width="16" height="40"/>
+                                                        <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="externaldrive.badge.questionmark" catalog="system" translatesAutoresizingMaskIntoConstraints="NO" id="uOh-0G-QVj">
+                                                            <rect key="frame" x="-2" y="1.5" width="18" height="39"/>
                                                             <constraints>
                                                                 <constraint firstAttribute="width" constant="16" id="bXc-Lb-63L"/>
                                                                 <constraint firstAttribute="height" constant="16" id="gfL-GQ-54f"/>
@@ -415,7 +415,7 @@
                                                     <constraints>
                                                         <constraint firstAttribute="width" constant="32" id="VnH-Yc-5vx"/>
                                                     </constraints>
-                                                    <state key="normal" image="Remove"/>
+                                                    <state key="normal" image="externaldrive.badge.plus" catalog="system"/>
                                                     <connections>
                                                         <action selector="onRemovePressed" destination="sXq-vg-lf2" eventType="touchUpInside" id="76r-66-qxK"/>
                                                     </connections>
@@ -468,7 +468,7 @@
                                         <constraints>
                                             <constraint firstAttribute="width" constant="30" id="nob-CW-zXt"/>
                                         </constraints>
-                                        <state key="normal" image="Add"/>
+                                        <state key="normal" image="externaldrive" catalog="system"/>
                                         <connections>
                                             <action selector="onNewTabPressed" destination="LNa-Pc-RyW" eventType="touchUpInside" id="nKg-dF-UQL"/>
                                         </connections>
@@ -479,7 +479,7 @@
                                         <constraints>
                                             <constraint firstAttribute="width" constant="30" id="VVN-wr-Trj"/>
                                         </constraints>
-                                        <state key="normal" image="sharesheet-burndata"/>
+                                        <state key="normal" image="externaldrive" catalog="system"/>
                                         <connections>
                                             <action selector="onFireButtonPressed" destination="LNa-Pc-RyW" eventType="touchUpInside" id="Sqt-ap-yN7"/>
                                         </connections>
@@ -537,12 +537,12 @@
         </scene>
     </scenes>
     <resources>
-        <image name="Add" width="24" height="24"/>
         <image name="Close-24" width="24" height="24"/>
         <image name="GlobeSmall" width="24" height="24"/>
-        <image name="Remove" width="24" height="24"/>
         <image name="TabUnread" width="24" height="24"/>
-        <image name="sharesheet-burndata" width="24" height="24"/>
+        <image name="externaldrive" catalog="system" width="128" height="88"/>
+        <image name="externaldrive.badge.plus" catalog="system" width="128" height="91"/>
+        <image name="externaldrive.badge.questionmark" catalog="system" width="128" height="91"/>
         <namedColor name="icons">
             <color red="0.0" green="0.0" blue="0.0" alpha="0.8399999737739563" colorSpace="custom" customColorSpace="sRGB"/>
         </namedColor>

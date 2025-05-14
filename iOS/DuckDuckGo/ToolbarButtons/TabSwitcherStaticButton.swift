@@ -64,12 +64,13 @@ final class TabSwitcherStaticButton: ToolbarButton, TabSwitcherButton {
 
     private func refresh() {
         if tabCount == 0 {
-            tabSwitcherView.updateCount(nil)
+            tabSwitcherView.updateCount(nil, isSymbol: false)
             return
         }
 
-        let text = tabCount >= Constants.maxTextTabs ? "∞" : "\(tabCount)"
-        tabSwitcherView.updateCount(text)
+        let useSymbol = tabCount >= Constants.maxTextTabs
+        let text = useSymbol ? "∞" : "\(tabCount)"
+        tabSwitcherView.updateCount(text, isSymbol: useSymbol)
     }
 
     var hasUnread: Bool {

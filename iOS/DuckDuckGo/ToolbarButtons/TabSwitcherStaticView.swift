@@ -45,7 +45,8 @@ final class TabSwitcherStaticView: UIView {
         }
     }
 
-    func updateCount(_ count: String?) {
+    func updateCount(_ count: String?, isSymbol: Bool) {
+        updateFont(isSymbol)
         label.text = count
     }
 
@@ -89,15 +90,6 @@ final class TabSwitcherStaticView: UIView {
         label.textAlignment = .center
         label.isUserInteractionEnabled = false
         iconImageView.isUserInteractionEnabled = false
-
-        if #available(iOS 16.0, *) {
-            label.font = UIFont.systemFont(ofSize: Metrics.fontSize,
-                                           weight: Metrics.fontWeight,
-                                           width: .condensed)
-        } else {
-            label.font = UIFont.systemFont(ofSize: Metrics.fontSize,
-                                           weight: Metrics.fontWeight)
-        }
     }
 
     override func tintColorDidChange() {
@@ -107,11 +99,29 @@ final class TabSwitcherStaticView: UIView {
         label.textColor = tintColor
     }
 
+    private func updateFont(_ isShowingSymbol: Bool) {
+        let size = isShowingSymbol ? Metrics.symbolFontSize : Metrics.fontSize
+        let weight = isShowingSymbol ? Metrics.symbolFontWeight : Metrics.fontWeight
+
+        if #available(iOS 16.0, *) {
+            label.font = UIFont.systemFont(ofSize: size,
+                                           weight: weight,
+                                           width: .condensed)
+        } else {
+            label.font = UIFont.systemFont(ofSize: size,
+                                           weight: weight)
+        }
+    }
+
     private struct Metrics {
         static let iconSize: CGFloat = 24
 
         static let labelOffset: CGFloat = 2
+
         static let fontSize = 9.0
         static let fontWeight = UIFont.Weight.bold
+
+        static let symbolFontSize = 12.0
+        static let symbolFontWeight = UIFont.Weight.semibold
     }
 }

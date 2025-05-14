@@ -29,6 +29,7 @@ protocol ColorsProviding {
     var addressBarSuffixTextColor: NSColor { get }
     var addressBarTextFieldColor: NSColor { get }
     var settingsBackgroundColor: NSColor { get }
+    var bookmarksManagerBackgroundColor: NSColor { get }
 
     /// New Tab Page
     var ntpLightBackgroundColor: String { get }
@@ -48,6 +49,7 @@ final class LegacyColorsProviding: ColorsProviding {
     var addressBarSuffixTextColor: NSColor { .addressBarSuffix }
     var addressBarTextFieldColor: NSColor { .suggestionText }
     var settingsBackgroundColor: NSColor { .preferencesBackground }
+    var bookmarksManagerBackgroundColor: NSColor { .bookmarkPageBackground}
     var ntpLightBackgroundColor: String { "#FAFAFA" }
     var ntpDarkBackgroundColor: String { "#333333" }
 
@@ -68,6 +70,7 @@ final class NewColorsProviding: ColorsProviding {
     var settingsBackgroundColor: NSColor { palette.surfacePrimary }
     var iconsColor: NSColor { palette.iconsPrimary }
     var buttonMouseOverColor: NSColor { palette.controlsFillPrimary }
+    var bookmarksManagerBackgroundColor: NSColor { .surfacePrimary }
     var ntpLightBackgroundColor: String { "#F2F2F2" }
     var ntpDarkBackgroundColor: String { "#27282A" }
 

@@ -443,7 +443,7 @@ final class BrokerProfileScanSubJobTests: XCTestCase {
         XCTAssertTrue(areDatesEqualIgnoringSeconds(date1: mockDatabase.lastPreferredRunDateOnOptOut, date2: Date().addingTimeInterval(schedulingConfig.hoursUntilNextOptOutAttempt.hoursToSeconds)))
     }
 
-    func testWhenUpdatingDatesAndLastEventIsMatchesFound_thenWeSetScanPreferredDateToMaintanence() throws {
+    func testWhenUpdatingDatesAndLastEventIsMatchesFound_thenWeSetScanPreferredDateToMaintenance() throws {
         let brokerId: Int64 = 1
         let profileQueryId: Int64 = 1
         let extractedProfileId: Int64 = 1

@@ -85,14 +85,7 @@ public final class TunnelControllerViewModel: ObservableObject {
         return formatter
     }()
 
-    private static let timeLapsedFormatter: DateComponentsFormatter = {
-        let formatter = DateComponentsFormatter()
-        formatter.allowedUnits = [.day, .hour, .minute, .second]
-        formatter.unitsStyle = .abbreviated
-        formatter.zeroFormattingBehavior = .dropLeading
-        return formatter
-    }()
-
+    private let timeLapsedFormatter: VPNTimeFormatting
     private let uiActionHandler: VPNUIActionHandling
 
     // MARK: - Misc
@@ -112,6 +105,7 @@ public final class TunnelControllerViewModel: ObservableObject {
                 vpnSettings: VPNSettings,
                 proxySettings: TransparentProxySettings,
                 locationFormatter: VPNLocationFormatting,
+                timeLapsedFormatter: VPNTimeFormatting = VPNTimeFormatter(),
                 uiActionHandler: VPNUIActionHandling) {
 
         self.tunnelController = controller
@@ -122,6 +116,7 @@ public final class TunnelControllerViewModel: ObservableObject {
         self.vpnSettings = vpnSettings
         self.proxySettings = proxySettings
         self.locationFormatter = locationFormatter
+        self.timeLapsedFormatter = timeLapsedFormatter
         self.uiActionHandler = uiActionHandler
 
         connectionStatus = statusReporter.statusObserver.recentValue
@@ -441,7 +436,7 @@ public final class TunnelControllerViewModel: ObservableObject {
 
     private func timeLapsedString(since date: Date) -> String {
         let secondsLapsed = Date().timeIntervalSince(timerDateOverride ?? date)
-        return Self.timeLapsedFormatter.string(from: secondsLapsed) ?? UserText.networkProtectionStatusViewTimerZero
+        return timeLapsedFormatter.string(from: secondsLapsed)
     }
 
     /// The feature status (ON/OFF) right below the main icon.

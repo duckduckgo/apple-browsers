@@ -30,6 +30,7 @@ protocol ColorsProviding {
     var addressBarTextFieldColor: NSColor { get }
     var settingsBackgroundColor: NSColor { get }
     var bookmarksManagerBackgroundColor: NSColor { get }
+    var bookmarksPanelBackgroundColor: NSColor { get }
 
     /// New Tab Page
     var ntpLightBackgroundColor: String { get }
@@ -50,6 +51,7 @@ final class LegacyColorsProviding: ColorsProviding {
     var addressBarTextFieldColor: NSColor { .suggestionText }
     var settingsBackgroundColor: NSColor { .preferencesBackground }
     var bookmarksManagerBackgroundColor: NSColor { .bookmarkPageBackground}
+    var bookmarksPanelBackgroundColor: NSColor { .popoverBackground }
     var ntpLightBackgroundColor: String { "#FAFAFA" }
     var ntpDarkBackgroundColor: String { "#333333" }
 
@@ -70,7 +72,8 @@ final class NewColorsProviding: ColorsProviding {
     var settingsBackgroundColor: NSColor { palette.surfacePrimary }
     var iconsColor: NSColor { palette.iconsPrimary }
     var buttonMouseOverColor: NSColor { palette.controlsFillPrimary }
-    var bookmarksManagerBackgroundColor: NSColor { .surfacePrimary }
+    var bookmarksManagerBackgroundColor: NSColor { palette.surfacePrimary }
+    var bookmarksPanelBackgroundColor: NSColor { palette.surfacePrimary }
     var ntpLightBackgroundColor: String { "#F2F2F2" }
     var ntpDarkBackgroundColor: String { "#27282A" }
 

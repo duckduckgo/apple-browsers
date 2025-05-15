@@ -23,28 +23,28 @@ import DataBrokerProtectionCoreTestsUtils
 
 final class DataBrokerExecutionConfigTests: XCTestCase {
 
-    private let sut = DataBrokerExecutionConfig()
+    private let sut = BrokerJobExecutionConfig()
 
-    func testWhenOperationIsManualScans_thenConcurrentOperationsBetweenBrokersIsSix() {
-        let value = sut.concurrentOperationsFor(.manualScan)
+    func testWhenOperationIsManualScans_thenConcurrentJobsBetweenBrokersIsSix() {
+        let value = sut.concurrentJobsFor(.manualScan)
         let expectedValue = 6
         XCTAssertEqual(value, expectedValue)
     }
 
-    func testWhenOperationIsScheduledScans_thenConcurrentOperationsBetweenBrokersIsTwo() {
-        let value = sut.concurrentOperationsFor(.scheduledScan)
+    func testWhenOperationIsScheduledScans_thenConcurrentJobsBetweenBrokersIsTwo() {
+        let value = sut.concurrentJobsFor(.scheduledScan)
         let expectedValue = 2
         XCTAssertEqual(value, expectedValue)
     }
 
-    func testWhenOperationIsAll_thenConcurrentOperationsBetweenBrokersIsTwo() {
-        let value = sut.concurrentOperationsFor(.all)
+    func testWhenOperationIsAll_thenConcurrentJobsBetweenBrokersIsTwo() {
+        let value = sut.concurrentJobsFor(.all)
         let expectedValue = 2
         XCTAssertEqual(value, expectedValue)
     }
 
-    func testWhenOperationIsOptOut_thenConcurrentOperationsBetweenBrokersIsTwo() {
-        let value = sut.concurrentOperationsFor(.optOut)
+    func testWhenOperationIsOptOut_thenConcurrentJobsBetweenBrokersIsTwo() {
+        let value = sut.concurrentJobsFor(.optOut)
         let expectedValue = 2
         XCTAssertEqual(value, expectedValue)
     }

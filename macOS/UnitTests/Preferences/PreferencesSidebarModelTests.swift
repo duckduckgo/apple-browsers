@@ -18,28 +18,48 @@
 
 import XCTest
 import Combine
+import Subscription
+import SubscriptionUI
+import SubscriptionTestingUtilities
+import Common
 @testable import DuckDuckGo_Privacy_Browser
 
+@MainActor
 final class PreferencesSidebarModelTests: XCTestCase {
+
+    private var testNotificationCenter: NotificationCenter!
+    private var mockSubscriptionManager: SubscriptionAuthV1toV2BridgeMock!
 
     var cancellables = Set<AnyCancellable>()
 
     override func setUpWithError() throws {
         try super.setUpWithError()
+        testNotificationCenter = NotificationCenter()
+        mockSubscriptionManager = SubscriptionAuthV1toV2BridgeMock()
         cancellables.removeAll()
     }
 
-    @MainActor
     private func PreferencesSidebarModel(loadSections: [PreferencesSection]? = nil, tabSwitcherTabs: [Tab.TabContent] = Tab.TabContent.displayableTabTypes) -> DuckDuckGo_Privacy_Browser.PreferencesSidebarModel {
         return DuckDuckGo_Privacy_Browser.PreferencesSidebarModel(
-            loadSections: { loadSections ?? PreferencesSection.defaultSections(includingDuckPlayer: false, includingSync: false, includingVPN: false, includingAIChat: false) },
+            loadSections: { _ in loadSections ?? PreferencesSection.defaultSections(includingDuckPlayer: false, includingSync: false, includingAIChat: false, subscriptionState: .initial) },
             tabSwitcherTabs: tabSwitcherTabs,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false)
+            syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false),
+            subscriptionManager: mockSubscriptionManager
         )
     }
 
-    @MainActor
+    private func PreferencesSidebarModel(loadSections: @escaping (PreferencesSidebarSubscriptionState) -> [PreferencesSection]) -> DuckDuckGo_Privacy_Browser.PreferencesSidebarModel {
+        return DuckDuckGo_Privacy_Browser.PreferencesSidebarModel(
+            loadSections: loadSections,
+            tabSwitcherTabs: [],
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false),
+            subscriptionManager: mockSubscriptionManager,
+            notificationCenter: testNotificationCenter
+        )
+    }
+
     func testWhenInitializedThenFirstPaneInFirstSectionIsSelected() throws {
         let sections: [PreferencesSection] = [.init(id: .regularPreferencePanes, panes: [.appearance, .autofill])]
         let model = PreferencesSidebarModel(loadSections: sections)
@@ -47,7 +67,6 @@ final class PreferencesSidebarModelTests: XCTestCase {
         XCTAssertEqual(model.selectedPane, .appearance)
     }
 
-    @MainActor
     func testWhenResetTabSelectionIfNeededCalledThenPreferencesTabIsSelected() throws {
         let tabs: [Tab.TabContent] = [.anySettingsPane, .bookmarks]
         let model = PreferencesSidebarModel(tabSwitcherTabs: tabs)
@@ -58,7 +77,6 @@ final class PreferencesSidebarModelTests: XCTestCase {
         XCTAssertEqual(model.selectedTabIndex, 0)
     }
 
-    @MainActor
     func testWhenSelectPaneIsCalledWithTheSamePaneThenEventIsNotPublished() throws {
         let sections: [PreferencesSection] = [.init(id: .regularPreferencePanes, panes: [.appearance])]
         let model = PreferencesSidebarModel(loadSections: sections)
@@ -74,7 +92,6 @@ final class PreferencesSidebarModelTests: XCTestCase {
         XCTAssertTrue(selectedPaneUpdates.isEmpty)
     }
 
-    @MainActor
     func testWhenSelectPaneIsCalledWithNonexistentPaneThenItHasNoEffect() throws {
         let sections: [PreferencesSection] = [.init(id: .regularPreferencePanes, panes: [.appearance, .autofill])]
         let model = PreferencesSidebarModel(loadSections: sections)
@@ -83,7 +100,6 @@ final class PreferencesSidebarModelTests: XCTestCase {
         XCTAssertEqual(model.selectedPane, .appearance)
     }
 
-    @MainActor
     func testWhenSelectedTabIndexIsChangedThenSelectedPaneIsNotAffected() throws {
         let sections: [PreferencesSection] = [.init(id: .regularPreferencePanes, panes: [.general, .appearance, .autofill])]
         let tabs: [Tab.TabContent] = [.anySettingsPane, .bookmarks]
@@ -102,5 +118,164 @@ final class PreferencesSidebarModelTests: XCTestCase {
         model.selectedTabIndex = 0
 
         XCTAssertEqual(selectedPaneUpdates, [.appearance])
+    }
+
+    // MARK: Tests for `currentSubscriptionState`
+
+    func testCurrentSubscriptionStateWhenNoSubscriptionPresent() async throws {
+        // Given
+        mockSubscriptionManager.accessTokenResult = .failure(SubscriptionManagerError.tokenUnavailable(error: nil))
+        XCTAssertFalse(mockSubscriptionManager.isUserAuthenticated)
+
+        // When
+        let model = PreferencesSidebarModel()
+        model.onAppear() // to trigger `refreshSubscriptionStateAndSectionsIfNeeded()`
+        try await Task.sleep(interval: 0.1)
+
+        // Then
+        XCTAssertFalse(model.currentSubscriptionState.hasSubscription)
+        XCTAssertEqual(model.currentSubscriptionState.userEntitlements, [])
+    }
+
+    func testCurrentSubscriptionStateForAvailableSubscriptionFeatures() async throws {
+        // Given
+        mockSubscriptionManager.accessTokenResult = .success("token")
+        XCTAssertTrue(mockSubscriptionManager.isUserAuthenticated)
+
+        mockSubscriptionManager.subscriptionFeatures = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration]
+
+        // When
+        let model = PreferencesSidebarModel()
+        model.onAppear() // to trigger `refreshSubscriptionStateAndSectionsIfNeeded()`
+        try await Task.sleep(interval: 0.1)
+
+        // Then
+        XCTAssertTrue(model.currentSubscriptionState.hasSubscription)
+        XCTAssertTrue(model.currentSubscriptionState.subscriptionFeatures!.contains(.networkProtection))
+        XCTAssertTrue(model.currentSubscriptionState.subscriptionFeatures!.contains(.dataBrokerProtection))
+        XCTAssertTrue(model.currentSubscriptionState.subscriptionFeatures!.contains(.identityTheftRestoration))
+    }
+
+    func testCurrentSubscriptionStateForUserEntitlements() async throws {
+        // Given
+        mockSubscriptionManager.accessTokenResult = .success("token")
+        XCTAssertTrue(mockSubscriptionManager.isUserAuthenticated)
+
+        mockSubscriptionManager.enabledFeatures = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration]
+
+        // When
+        let model = PreferencesSidebarModel()
+        model.onAppear() // to trigger `refreshSubscriptionStateAndSectionsIfNeeded()`
+        try await Task.sleep(interval: 0.1)
+
+        // Then
+        XCTAssertTrue(model.currentSubscriptionState.hasSubscription)
+        XCTAssertTrue(model.currentSubscriptionState.userEntitlements.contains(.networkProtection))
+        XCTAssertTrue(model.currentSubscriptionState.userEntitlements.contains(.dataBrokerProtection))
+        XCTAssertTrue(model.currentSubscriptionState.userEntitlements.contains(.identityTheftRestoration))
+
+        XCTAssertTrue(model.isSidebarItemEnabled(for: .vpn))
+        XCTAssertTrue(model.isSidebarItemEnabled(for: .personalInformationRemoval))
+        XCTAssertTrue(model.isSidebarItemEnabled(for: .identityTheftRestoration))
+    }
+
+    func testCurrentSubscriptionStateForMissingUserEntitlements() async throws {
+        // Given
+        mockSubscriptionManager.accessTokenResult = .success("token")
+        XCTAssertTrue(mockSubscriptionManager.isUserAuthenticated)
+
+        mockSubscriptionManager.enabledFeatures = []
+
+        // When
+        let model = PreferencesSidebarModel()
+        model.onAppear() // to trigger `refreshSubscriptionStateAndSectionsIfNeeded()`
+        try await Task.sleep(interval: 0.1)
+
+        // Then
+        XCTAssertTrue(model.currentSubscriptionState.hasSubscription)
+        XCTAssertFalse(model.currentSubscriptionState.userEntitlements.contains(.networkProtection))
+        XCTAssertFalse(model.currentSubscriptionState.userEntitlements.contains(.dataBrokerProtection))
+        XCTAssertFalse(model.currentSubscriptionState.userEntitlements.contains(.identityTheftRestoration))
+
+        XCTAssertFalse(model.isSidebarItemEnabled(for: .vpn))
+        XCTAssertFalse(model.isSidebarItemEnabled(for: .personalInformationRemoval))
+        XCTAssertFalse(model.isSidebarItemEnabled(for: .identityTheftRestoration))
+    }
+
+    // MARK: Tests for subscribed refresh notification triggers
+
+    func testModelReloadsSectionsWhenRefreshSectionsCalled() async throws {
+        // Given
+        var startProcessingFulfilment = false
+        let expectation = expectation(description: "Load sections called")
+
+        let model = PreferencesSidebarModel(loadSections: { _ in
+            if startProcessingFulfilment {
+                expectation.fulfill()
+            }
+            return []
+        })
+
+        model.onAppear() // to trigger `refreshSubscriptionStateAndSectionsIfNeeded()`
+        try await Task.sleep(interval: 0.1)
+        startProcessingFulfilment = true
+
+        // When
+        model.refreshSections()
+
+        // Then
+        await fulfillment(of: [expectation], timeout: 1)
+    }
+
+    func testModelReloadsSectionsOnNotificationForAccountDidSignIn() async throws {
+        try await testModelReloadsSections(on: .accountDidSignIn, timeout: .seconds(1))
+    }
+
+    func testModelReloadsSectionsOnNotificationForAccountDidSignOut() async throws {
+        try await testModelReloadsSections(on: .accountDidSignOut, timeout: .seconds(1))
+    }
+
+    func testModelReloadsSectionsOnNotificationForAvailableAppStoreProductsDidChange() async throws {
+        try await testModelReloadsSections(on: .availableAppStoreProductsDidChange, timeout: .seconds(1))
+    }
+
+    func testModelReloadsSectionsOnNotificationForSubscriptionDidChange() async throws {
+        try await testModelReloadsSections(on: .subscriptionDidChange, timeout: .seconds(1))
+    }
+
+    func testModelReloadsSectionsOnNotificationForEntitlementsDidChange() async throws {
+        try await testModelReloadsSections(on: .entitlementsDidChange, timeout: .seconds(1))
+    }
+
+    func testModelReloadsSectionsOnNotificationForDBPLoginItemEnabled() async throws {
+        try await testModelReloadsSections(on: .dbpLoginItemEnabled, timeout: .seconds(3))
+    }
+
+    func testModelReloadsSectionsOnNotificationForDBPLoginItemDisabled() async throws {
+        try await testModelReloadsSections(on: .dbpLoginItemDisabled, timeout: .seconds(3))
+    }
+
+    private func testModelReloadsSections(on notification: Notification.Name, timeout: TimeInterval) async throws {
+        // Given
+        var startProcessingFulfilment = false
+        let expectation = expectation(description: "Load sections called")
+        expectation.expectedFulfillmentCount = 1
+
+        let model = PreferencesSidebarModel(loadSections: { _ in
+            if startProcessingFulfilment {
+                expectation.fulfill()
+            }
+            return []
+        })
+        model.onAppear() // to trigger `refreshSubscriptionStateAndSectionsIfNeeded()`
+        try await Task.sleep(interval: 0.1)
+        startProcessingFulfilment = true
+
+        // When
+        mockSubscriptionManager.accessTokenResult = .success("state_change_is_required_to_trigger_refresh")
+        testNotificationCenter.post(name: notification, object: self, userInfo: nil)
+
+        // Then
+        await fulfillment(of: [expectation], timeout: timeout)
     }
 }

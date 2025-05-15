@@ -26,14 +26,15 @@ protocol VisualStyleProviding {
     func addressBarHeight(for type: AddressBarSizeClass) -> CGFloat
     func addressBarTopPadding(for type: AddressBarSizeClass) -> CGFloat
     func addressBarBottomPadding(for type: AddressBarSizeClass) -> CGFloat
+    func addressBarStackSpacing(for type: AddressBarSizeClass) -> CGFloat
     func shouldShowOutlineBorder(isHomePage: Bool) -> Bool
-    var addressBarSuffixTextColor: NSColor { get }
-    var addressBarTextFieldColor: NSColor { get }
     var defaultAddressBarFontSize: CGFloat { get }
     var newTabOrHomePageAddressBarFontSize: CGFloat { get }
     var addressBarIconsProvider: AddressBarIconsProviding { get }
     var privacyShieldStyleProvider: PrivacyShieldAddressBarStyleProviding { get }
     var shouldShowLogoinInAddressBar: Bool { get }
+    var addressBarButtonsCornerRadius: CGFloat { get }
+    var shouldAddPaddingToAddressBarButtons: Bool { get }
 
     /// Navigation toolbar
     var backButtonImage: NSImage { get }
@@ -44,28 +45,20 @@ protocol VisualStyleProviding {
     var passwordManagerButtonImage: NSImage { get }
     var bookmarksButtonImage: NSImage { get }
     var moreOptionsbuttonImage: NSImage { get }
+    var overflowButtonImage: NSImage { get }
+    var aiChatButtonImage: NSImage { get }
     var toolbarButtonsCornerRadius: CGFloat { get }
-    var navigationBackgroundColor: NSColor { get }
-
-    /// General colors
-    var baseBackgroundColor: NSColor { get }
-    var textPrimaryColor: NSColor { get }
-    var textSecondaryColor: NSColor { get }
-    var backgroundTertiaryColor: NSColor { get }
-    var accentPrimaryColor: NSColor { get }
-    var accentAlternateColor: NSColor { get }
-    var iconsColor: NSColor { get }
-    var buttonMouseOverColor: NSColor { get }
-
-    /// New Tab Page
-    var ntpLightBackgroundColor: String { get }
-    var ntpDarkBackgroundColor: String { get }
+    var fireWindowGraphic: NSImage { get }
+    var areNavigationBarCornersRound: Bool { get }
+    var bookmarksBarMenuBookmarkIcon: NSImage { get }
+    var bookmarksBarMenuFolderIcon: NSImage { get }
 
     /// Other
     var vpnNavigationIconsProvider: IconProvider { get }
     var fireButtonStyleProvider: FireButtonIconStyleProviding { get }
     var moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding { get }
     var tabStyleProvider: TabStyleProviding { get }
+    var colorsProvider: ColorsProviding { get }
 }
 
 protocol VisualStyleManagerProviding {
@@ -115,29 +108,23 @@ struct VisualStyle: VisualStyleProviding {
     let passwordManagerButtonImage: NSImage
     let bookmarksButtonImage: NSImage
     let moreOptionsbuttonImage: NSImage
+    let overflowButtonImage: NSImage
+    let aiChatButtonImage: NSImage
     let vpnNavigationIconsProvider: IconProvider
     let fireButtonStyleProvider: FireButtonIconStyleProviding
     let moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding
     let privacyShieldStyleProvider: PrivacyShieldAddressBarStyleProviding
     let addressBarIconsProvider: AddressBarIconsProviding
+    let addressBarButtonsCornerRadius: CGFloat
+    let shouldAddPaddingToAddressBarButtons: Bool
     let tabStyleProvider: TabStyleProviding
-    let navigationBackgroundColor: NSColor
-    let baseBackgroundColor: NSColor
-    let textPrimaryColor: NSColor
-    let textSecondaryColor: NSColor
-    let backgroundTertiaryColor: NSColor
-    let accentPrimaryColor: NSColor
-    let accentAlternateColor: NSColor
-    let addressBarSuffixTextColor: NSColor
-    let addressBarTextFieldColor: NSColor
-    let iconsColor: NSColor
-    let buttonMouseOverColor: NSColor
-
-    let ntpLightBackgroundColor: String
-    let ntpDarkBackgroundColor: String
-
+    let fireWindowGraphic: NSImage
+    let areNavigationBarCornersRound: Bool
+    let colorsProvider: ColorsProviding
     let defaultAddressBarFontSize: CGFloat
     let newTabOrHomePageAddressBarFontSize: CGFloat
+    let bookmarksBarMenuBookmarkIcon: NSImage
+    let bookmarksBarMenuFolderIcon: NSImage
 
     func addressBarHeight(for type: AddressBarSizeClass) -> CGFloat {
         switch type {
@@ -160,6 +147,13 @@ struct VisualStyle: VisualStyleProviding {
         case .default: return addressBarBottomPaddingForDefault
         case .homePage: return addressBarBottomPaddingForHomePage
         case .popUpWindow: return addressBarBottomPaddingForPopUpWindow
+        }
+    }
+
+    func addressBarStackSpacing(for type: AddressBarSizeClass) -> CGFloat {
+        switch type.isLogoVisible {
+        case true: return 16
+        case false: return 0
         }
     }
 
@@ -188,30 +182,27 @@ struct VisualStyle: VisualStyleProviding {
                            passwordManagerButtonImage: .passwordManagement,
                            bookmarksButtonImage: .bookmarks,
                            moreOptionsbuttonImage: .settings,
+                           overflowButtonImage: .chevronDoubleRight16,
+                           aiChatButtonImage: .aiChat,
                            vpnNavigationIconsProvider: NavigationBarIconProvider(),
                            fireButtonStyleProvider: LegacyFireButtonIconStyleProvider(),
                            moreOptionsMenuIconsProvider: LegacyMoreOptionsMenuIcons(),
                            privacyShieldStyleProvider: LegacyPrivacyShieldAddressBarStyleProvider(),
                            addressBarIconsProvider: LegacyAddressBarIconsProvider(),
+                           addressBarButtonsCornerRadius: 0,
+                           shouldAddPaddingToAddressBarButtons: false,
                            tabStyleProvider: LegacyTabStyleProvider(),
-                           navigationBackgroundColor: .navigationBarBackground,
-                           baseBackgroundColor: .windowBackground,
-                           textPrimaryColor: .labelColor,
-                           textSecondaryColor: .secondaryLabelColor,
-                           backgroundTertiaryColor: .inactiveSearchBarBackground,
-                           accentPrimaryColor: .controlAccentColor.withAlphaComponent(0.8),
-                           accentAlternateColor: .controlColor.withAlphaComponent(0.2),
-                           addressBarSuffixTextColor: .addressBarSuffix,
-                           addressBarTextFieldColor: .suggestionText,
-                           iconsColor: .button,
-                           buttonMouseOverColor: .buttonMouseOver,
-                           ntpLightBackgroundColor: "#FAFAFA",
-                           ntpDarkBackgroundColor: "#333333",
+                           fireWindowGraphic: .burnerWindowGraphic,
+                           areNavigationBarCornersRound: false,
+                           colorsProvider: LegacyColorsProviding(),
                            defaultAddressBarFontSize: 13,
-                           newTabOrHomePageAddressBarFontSize: 15)
+                           newTabOrHomePageAddressBarFontSize: 15,
+                           bookmarksBarMenuBookmarkIcon: .bookmark,
+                           bookmarksBarMenuFolderIcon: .folder16)
     }
 
     static var current: VisualStyleProviding {
+        let palette = NewColorPalette()
         return VisualStyle(addressBarHeightForDefault: 52,
                            addressBarHeightForHomePage: 52,
                            addressBarHeightForPopUpWindow: 52,
@@ -232,27 +223,23 @@ struct VisualStyle: VisualStyleProviding {
                            passwordManagerButtonImage: .passwordManagerNew,
                            bookmarksButtonImage: .bookmarksNew,
                            moreOptionsbuttonImage: .optionsNew,
+                           overflowButtonImage: .chevronDoubleRight16,
+                           aiChatButtonImage: .aiChatNew,
                            vpnNavigationIconsProvider: NewVPNNavigationBarIconProvider(),
                            fireButtonStyleProvider: NewFireButtonIconStyleProvider(),
                            moreOptionsMenuIconsProvider: NewMoreOptionsMenuIcons(),
                            privacyShieldStyleProvider: NewPrivacyShieldAddressBarStyleProvider(),
                            addressBarIconsProvider: NewAddressBarIconsProvider(),
-                           tabStyleProvider: NewlineTabStyleProvider(),
-                           navigationBackgroundColor: .navigationBackgroundColorNew,
-                           baseBackgroundColor: .backgroundBaseColorNew,
-                           textPrimaryColor: .primaryTextColorNew,
-                           textSecondaryColor: .secondaryTextColorNew,
-                           backgroundTertiaryColor: .surfaceTertiaryNew,
-                           accentPrimaryColor: .accentPrimaryNew,
-                           accentAlternateColor: .accentAltNew,
-                           addressBarSuffixTextColor: .accentPrimaryNew,
-                           addressBarTextFieldColor: .primaryTextColorNew,
-                           iconsColor: .iconsPrimaryNew,
-                           buttonMouseOverColor: .controlsFillPrimaryNew,
-                           ntpLightBackgroundColor: "#E9EBEC",
-                           ntpDarkBackgroundColor: "#27282A",
+                           addressBarButtonsCornerRadius: 9,
+                           shouldAddPaddingToAddressBarButtons: true,
+                           tabStyleProvider: NewlineTabStyleProvider(palette: palette),
+                           fireWindowGraphic: .burnerWindowGraphicNew,
+                           areNavigationBarCornersRound: true,
+                           colorsProvider: NewColorsProviding(palette: palette),
                            defaultAddressBarFontSize: 13,
-                           newTabOrHomePageAddressBarFontSize: 13)
+                           newTabOrHomePageAddressBarFontSize: 13,
+                           bookmarksBarMenuBookmarkIcon: .bookmarkNew,
+                           bookmarksBarMenuFolderIcon: .folderNew)
     }
 }
 

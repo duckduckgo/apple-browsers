@@ -33,6 +33,7 @@ public protocol DataBrokerProtectionDatabaseMigrationsProvider {
     static var v3Migrations: (inout DatabaseMigrator) throws -> Void { get }
     static var v4Migrations: (inout DatabaseMigrator) throws -> Void { get }
     static var v5Migrations: (inout DatabaseMigrator) throws -> Void { get }
+    static var v6Migrations: (inout DatabaseMigrator) throws -> Void { get }
 }
 
 public final class DefaultDataBrokerProtectionDatabaseMigrationsProvider: DataBrokerProtectionDatabaseMigrationsProvider {
@@ -61,6 +62,15 @@ public final class DefaultDataBrokerProtectionDatabaseMigrationsProvider: DataBr
         migrator.registerMigration("v3", migrate: migrateV3(database:))
         migrator.registerMigration("v4", migrate: migrateV4(database:))
         migrator.registerMigration("v5", migrate: migrateV5(database:))
+    }
+
+    public static var v6Migrations: (inout DatabaseMigrator) throws -> Void = { migrator in
+        migrator.registerMigration("v1", migrate: migrateV1(database:))
+        migrator.registerMigration("v2", migrate: migrateV2(database:))
+        migrator.registerMigration("v3", migrate: migrateV3(database:))
+        migrator.registerMigration("v4", migrate: migrateV4(database:))
+        migrator.registerMigration("v5", migrate: migrateV5(database:))
+        migrator.registerMigration("v6", migrate: migrateV6(database:))
     }
 
     static func migrateV1(database: Database) throws {
@@ -288,6 +298,15 @@ public final class DefaultDataBrokerProtectionDatabaseMigrationsProvider: DataBr
         try database.execute(sql: """
                 UPDATE \(OptOutDB.databaseTableName) SET \(OptOutDB.Columns.attemptCount.name) = 0
         """)
+    }
+
+    static func migrateV6(database: Database) throws {
+        try database.alter(table: BrokerDB.databaseTableName) {
+            $0.add(column: BrokerDB.Columns.eTag.name, .text).notNull().defaults(to: DataBroker.Constants.defaultETag)
+        }
+        try database.execute(sql: """
+                UPDATE \(BrokerDB.databaseTableName) SET \(BrokerDB.Columns.eTag.name) = ?
+        """, arguments: [DataBroker.Constants.defaultETag])
     }
 
     private static func deleteOrphanedRecords(database: Database) throws {

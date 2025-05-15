@@ -25,7 +25,7 @@ public struct BrokerProfileQueryData: Sendable {
     public let scanJobData: ScanJobData
     public let optOutJobData: [OptOutJobData]
 
-    public var operationsData: [BrokerJobData] {
+    public var jobsData: [BrokerJobData] {
         optOutJobData + [scanJobData]
     }
 
@@ -34,7 +34,7 @@ public struct BrokerProfileQueryData: Sendable {
     }
 
     public var events: [HistoryEvent] {
-        operationsData.flatMap { $0.historyEvents }.sorted { $0.date < $1.date }
+        jobsData.flatMap { $0.historyEvents }.sorted { $0.date < $1.date }
     }
 
     public var hasMatches: Bool {

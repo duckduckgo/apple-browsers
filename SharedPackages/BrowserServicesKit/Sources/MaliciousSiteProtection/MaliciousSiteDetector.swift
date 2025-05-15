@@ -47,7 +47,7 @@ public final class MaliciousSiteDetector: MaliciousSiteDetecting {
     private let eventMapping: EventMapping<Event>
     private let supportedThreatsProvider: SupportedThreatsProvider
 
-    public convenience init(apiEnvironment: APIClientEnvironment, service: APIService = DefaultAPIService(urlSession: .shared), dataManager: DataManager, eventMapping: EventMapping<Event>, supportedThreatsProvider: @escaping SupportedThreatsProvider
+    public convenience init(apiEnvironment: APIClientEnvironment, service: APIService, dataManager: DataManager, eventMapping: EventMapping<Event>, supportedThreatsProvider: @escaping SupportedThreatsProvider
     ) {
         self.init(apiClient: APIClient(environment: apiEnvironment, service: service), dataManager: dataManager, eventMapping: eventMapping, supportedThreatsProvider: supportedThreatsProvider)
     }

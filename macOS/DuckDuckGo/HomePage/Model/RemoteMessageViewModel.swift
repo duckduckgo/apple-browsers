@@ -95,6 +95,11 @@ struct RemoteMessageViewModel {
             return { @MainActor in
                 await onDidClose(buttonAction)
             }
+        case .navigation:
+            assertionFailure("Navigation is not supported on macOS")
+            return { @MainActor in
+                await onDidClose(buttonAction)
+            }
         }
     }
 }
@@ -114,7 +119,7 @@ extension RemoteAction {
 
     func actionStyle(isSecondaryAction: Bool = false) -> RemoteMessageButtonViewModel.ActionStyle {
         switch self {
-        case .appStore, .url, .survey, .share:
+        case .appStore, .url, .survey, .share, .navigation:
             if isSecondaryAction {
                 return .cancel
             }
@@ -144,6 +149,8 @@ private extension RemoteMessageModelType {
                 return .remoteMessageAppUpdate
             case .privacyShield:
                 return .remoteMessagePrivacyShield
+            case .aiChat:
+                return .remoteMessageDuckAi
             case .macComputer, .newForMacAndWindows:
                 return nil
             }

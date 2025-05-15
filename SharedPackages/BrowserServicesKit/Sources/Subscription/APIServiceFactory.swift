@@ -22,19 +22,19 @@ import Networking
 public struct APIServiceFactory {
 
     /// Creates an APIService for the main app flow. This service stores cookies or use any cache.
-    public static func makeAPIServiceForAuthV2() -> APIService {
+    public static func makeAPIServiceForAuthV2(withUserAgent userAgent: String) -> APIService {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.requestCachePolicy = .reloadIgnoringLocalCacheData
         configuration.httpCookieStorage = nil
         let urlSession = URLSession(configuration: configuration, delegate: SessionDelegate(), delegateQueue: nil)
-        return DefaultAPIService(urlSession: urlSession)
+        return DefaultAPIService(urlSession: urlSession, userAgent: userAgent)
     }
 
     /// Creates an APIService for the subscription flow. This service should not store cookies.
-    public static func makeAPIServiceForSubscription() -> APIService {
+    public static func makeAPIServiceForSubscription(withUserAgent userAgent: String) -> APIService {
         let configuration = URLSessionConfiguration.default
         configuration.httpCookieStorage = nil
         let urlSession = URLSession(configuration: configuration, delegate: SessionDelegate(), delegateQueue: nil)
-        return DefaultAPIService(urlSession: urlSession)
+        return DefaultAPIService(urlSession: urlSession, userAgent: userAgent)
     }
 }

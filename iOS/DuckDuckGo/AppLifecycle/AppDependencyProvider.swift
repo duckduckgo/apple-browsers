@@ -25,6 +25,8 @@ import Bookmarks
 import Subscription
 import Common
 import NetworkProtection
+import DataBrokerProtectionCore
+import DataBrokerProtection_iOS
 import RemoteMessaging
 import PageRefreshMonitor
 import PixelKit
@@ -57,6 +59,9 @@ protocol DependencyProvider {
     var subscriptionManager: (any SubscriptionManager)? { get }
     var subscriptionManagerV2: (any SubscriptionManagerV2)? { get }
     var isAuthV2Enabled: Bool { get }
+
+    // DBP
+    var dbpSettings: DataBrokerProtectionSettings { get }
 }
 
 /// Provides dependencies for objects that are not directly instantiated
@@ -94,6 +99,7 @@ final class AppDependencyProvider: DependencyProvider {
     let connectionObserver: ConnectionStatusObserver = ConnectionStatusObserverThroughSession()
     let serverInfoObserver: ConnectionServerInfoObserver = ConnectionServerInfoObserverThroughSession()
     let vpnSettings = VPNSettings(defaults: .networkProtectionGroupDefaults)
+    let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
     let persistentPixel: PersistentPixelFiring = PersistentPixel()
 
     private init() {
@@ -128,17 +134,21 @@ final class AppDependencyProvider: DependencyProvider {
         }
         self.isAuthV2Enabled = featureFlagger.isFeatureOn(.privacyProAuthV2)
         vpnSettings.isAuthV2Enabled = self.isAuthV2Enabled
+        dbpSettings.isAuthV2Enabled = self.isAuthV2Enabled
         if !isAuthV2Enabled {
             // V1
             Logger.subscription.debug("Configuring Subscription V1")
             vpnSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
+            dbpSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
 
             let entitlementsCache = UserDefaultsCache<[Entitlement]>(userDefaults: subscriptionUserDefaults,
                                                                      key: UserDefaultsCacheKey.subscriptionEntitlements,
                                                                      settings: UserDefaultsCacheSettings(defaultExpirationInterval: .minutes(20)))
             let accessTokenStorage = SubscriptionTokenKeychainStorage(keychainType: .dataProtection(.named(subscriptionAppGroup)))
-            let subscriptionEndpointService = DefaultSubscriptionEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment)
-            let authService = DefaultAuthEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment)
+            let subscriptionEndpointService = DefaultSubscriptionEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment,
+                                                                                 userAgent: DefaultUserAgentManager.duckDuckGoUserAgent)
+            let authService = DefaultAuthEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment,
+                                                         userAgent: DefaultUserAgentManager.duckDuckGoUserAgent)
             let subscriptionFeatureMappingCache = DefaultSubscriptionFeatureMappingCache(subscriptionEndpointService: subscriptionEndpointService,
                                                                                          userDefaults: subscriptionUserDefaults)
             let accountManager = DefaultAccountManager(accessTokenStorage: accessTokenStorage,
@@ -172,29 +182,32 @@ final class AppDependencyProvider: DependencyProvider {
             authenticationStateProvider = subscriptionManager
             subscriptionAuthV1toV2Bridge = subscriptionManager
 
-            if tokenStorageV2.tokenContainer != nil {
+            let tokenContainer = try? tokenStorageV2.getTokenContainer()
+            if tokenContainer != nil {
                 Logger.subscription.debug("Cleaning up Auth V2 token")
-                tokenStorageV2.tokenContainer = nil
+                try? tokenStorageV2.saveTokenContainer(nil)
                 subscriptionEndpointService.clearSubscription()
             }
         } else {
             // V2
             Logger.subscription.debug("Configuring Subscription V2")
             vpnSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
+            dbpSettings.alignTo(subscriptionEnvironment: subscriptionEnvironment)
 
             let authEnvironment: OAuthEnvironment = subscriptionEnvironment.serviceEnvironment == .production ? .production : .staging
-            let authService = DefaultOAuthService(baseURL: authEnvironment.url, apiService: APIServiceFactory.makeAPIServiceForAuthV2())
+            let authService = DefaultOAuthService(baseURL: authEnvironment.url,
+                                                  apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent))
             let legacyAccountStorage = SubscriptionTokenKeychainStorage(keychainType: .dataProtection(.named(subscriptionAppGroup)))
             let authClient = DefaultOAuthClient(tokensStorage: tokenStorageV2,
                                                 legacyTokenStorage: legacyAccountStorage,
                                                 authService: authService)
 
-            var apiServiceForSubscription = APIServiceFactory.makeAPIServiceForSubscription()
+            var apiServiceForSubscription = APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent)
             let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: apiServiceForSubscription,
                                                                                    baseURL: subscriptionEnvironment.serviceEnvironment.url)
             apiServiceForSubscription.authorizationRefresherCallback = { _ in
 
-                guard let tokenContainer = tokenStorageV2.tokenContainer else {
+                guard let tokenContainer = try? tokenStorageV2.getTokenContainer() else {
                     throw OAuthClientError.internalError("Missing refresh token")
                 }
 
@@ -255,7 +268,6 @@ final class AppDependencyProvider: DependencyProvider {
                                                                               featureFlagger: featureFlagger,
                                                                               persistentPixel: persistentPixel,
                                                                               settings: vpnSettings)
-
     }
 
 }

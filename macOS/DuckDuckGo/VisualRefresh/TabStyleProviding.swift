@@ -23,6 +23,11 @@ protocol TabStyleProviding {
     var standardTabHeight: CGFloat { get }
     var pinnedTabHeight: CGFloat { get }
     var pinnedTabWidth: CGFloat { get }
+
+    var shouldShowSShapedTab: Bool { get }
+    var selectedTabColor: NSColor { get }
+    var isRoundedBackgroundPresentOnHover: Bool { get }
+    var tabSpacing: CGFloat { get }
 }
 
 final class LegacyTabStyleProvider: TabStyleProviding {
@@ -31,12 +36,27 @@ final class LegacyTabStyleProvider: TabStyleProviding {
     let standardTabHeight: CGFloat = 34
     let pinnedTabWidth: CGFloat = 34
     let pinnedTabHeight: CGFloat = 34
+    let shouldShowSShapedTab = false
+    let selectedTabColor: NSColor = .navigationBarBackground
+    let isRoundedBackgroundPresentOnHover = false
+    let tabSpacing: CGFloat = 0
 }
 
 final class NewlineTabStyleProvider: TabStyleProviding {
-    let separatorColor: NSColor = .tabSeparatorNew
+    private let palette: ColorPalette
+
+    var separatorColor: NSColor { palette.decorationTertiary }
+    var selectedTabColor: NSColor { palette.surfacePrimary }
+
     let separatorHeight: CGFloat = 16
     let standardTabHeight: CGFloat = 38
     let pinnedTabWidth: CGFloat = 34
     let pinnedTabHeight: CGFloat = 36
+    let shouldShowSShapedTab = true
+    let isRoundedBackgroundPresentOnHover = true
+    let tabSpacing: CGFloat = 4.0
+
+    init(palette: any ColorPalette) {
+        self.palette = palette
+    }
 }

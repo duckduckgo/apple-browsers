@@ -20,14 +20,13 @@
 import Combine
 import SwiftUI
 import AIChat
-import Combine
-import SwiftUI
 
 final class AIChatInputBoxHandler: AIChatInputBoxHandling {
     let didPressFireButton = PassthroughSubject<Void, Never>()
     let didPressNewChatButton = PassthroughSubject<Void, Never>()
     let didPressStopGeneratingButton = PassthroughSubject<Void, Never>()
-    let didSubmitText = PassthroughSubject<String, Never>()
+    let didSubmitPrompt = PassthroughSubject<String, Never>()
+    let didSubmitQuery = PassthroughSubject<String, Never>()
 
     @MainActor @Published var aiChatInputBoxVisibility: AIChatInputBoxVisibility = .unknown {
         didSet {
@@ -66,12 +65,17 @@ final class AIChatInputBoxHandler: AIChatInputBoxHandling {
             }
             .store(in: &cancellables)
 
-        inputBoxViewModel.didSubmitText
+        inputBoxViewModel.didSubmitQuery
             .sink { [weak self] text in
-                self?.didSubmitText.send(text)
+                self?.didSubmitQuery.send(text)
             }
             .store(in: &cancellables)
 
+        inputBoxViewModel.didSubmitPrompt
+            .sink { [weak self] text in
+                self?.didSubmitPrompt.send(text)
+            }
+            .store(in: &cancellables)
         inputBoxViewModel.didPressStopGenerating
             .sink { [weak self] _ in
                 self?.didPressStopGeneratingButton.send()
@@ -91,18 +95,5 @@ final class AIChatInputBoxHandler: AIChatInputBoxHandling {
                 inputBoxViewModel.state = .unknown
             }
         }
-    }
-
-    // MARK: - Public Methods
-    func fireButtonPressed() {
-        inputBoxViewModel.fireButtonPressed()
-    }
-
-    func newChatButtonPressed() {
-        inputBoxViewModel.newChatButtonPressed()
-    }
-
-    func submitText(_ text: String) {
-        inputBoxViewModel.submitText(text)
     }
 }

@@ -41,7 +41,7 @@ struct BrowserToggleInputView: View {
         Group {
             HStack(alignment: .top, spacing: 8) {
                 if viewModel.inputMode == .search {
-                    SearchTextField(text: $viewModel.inputText, placeholder: placeHolderText)
+                    SearchTextField(text: $viewModel.inputText, placeholder: placeHolderText, viewModel: viewModel)
                         .textFieldStyle(.plain)
                         .frame(maxWidth: .infinity)
                 } else {
@@ -106,6 +106,7 @@ struct BrowserToggleInputView: View {
 struct SearchTextField: UIViewRepresentable {
     @Binding var text: String
     let placeholder: String
+    let viewModel: AIChatInputBoxViewModel
 
     func makeUIView(context: Context) -> UITextField {
         let textField = UITextField()
@@ -113,7 +114,8 @@ struct SearchTextField: UIViewRepresentable {
         textField.delegate = context.coordinator
         textField.borderStyle = .none
         textField.backgroundColor = .clear
-        textField.returnKeyType = .search
+        textField.keyboardType = .webSearch
+        textField.autocapitalizationType = .none
         return textField
     }
 
@@ -125,14 +127,16 @@ struct SearchTextField: UIViewRepresentable {
     }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(text: $text)
+        Coordinator(text: $text, viewModel: viewModel)
     }
 
     class Coordinator: NSObject, UITextFieldDelegate {
         @Binding var text: String
+        let viewModel: AIChatInputBoxViewModel
 
-        init(text: Binding<String>) {
+        init(text: Binding<String>, viewModel: AIChatInputBoxViewModel) {
             _text = text
+            self.viewModel = viewModel
         }
 
         func textFieldDidChangeSelection(_ textField: UITextField) {
@@ -141,6 +145,12 @@ struct SearchTextField: UIViewRepresentable {
                     self.text = textField.text ?? ""
                 }
             }
+        }
+
+        func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+            viewModel.submitText(textField.text ?? "")
+            viewModel.clearText()
+            return true
         }
     }
 }

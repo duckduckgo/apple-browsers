@@ -26,17 +26,14 @@ import SwiftUI
 public protocol AIChatInputBoxHandling {
     var didPressFireButton: PassthroughSubject<Void, Never> { get }
     var didPressNewChatButton: PassthroughSubject<Void, Never> { get }
-    var didSubmitText: PassthroughSubject<String, Never> { get }
+    var didSubmitPrompt: PassthroughSubject<String, Never> { get }
+    var didSubmitQuery: PassthroughSubject<String, Never> { get }
     var didPressStopGeneratingButton: PassthroughSubject<Void, Never> { get }
 
     var aiChatStatusPublisher: Published<AIChatStatusValue>.Publisher { get }
     var aiChatInputBoxVisibilityPublisher: Published<AIChatInputBoxVisibility>.Publisher { get }
     var aiChatStatus: AIChatStatusValue { get set }
     var aiChatInputBoxVisibility: AIChatInputBoxVisibility { get set }
-
-    func fireButtonPressed()
-    func newChatButtonPressed()
-    func submitText(_ text: String)
 }
 
 

@@ -48,7 +48,8 @@ final class AIChatInputBoxViewModel: ObservableObject {
     // MARK: - Publishers
     let didPressFireButton = PassthroughSubject<Void, Never>()
     let didPressNewChatButton = PassthroughSubject<Void, Never>()
-    let didSubmitText = PassthroughSubject<String, Never>()
+    let didSubmitPrompt = PassthroughSubject<String, Never>()
+    let didSubmitQuery = PassthroughSubject<String, Never>()
     let didPressStopGenerating = PassthroughSubject<Void, Never>()
 
     // MARK: - Public Methods
@@ -65,7 +66,11 @@ final class AIChatInputBoxViewModel: ObservableObject {
     }
 
     func submitText(_ text: String) {
-        didSubmitText.send(text)
+        if inputMode == .chat {
+            didSubmitPrompt.send(text)
+        } else {
+            didSubmitQuery.send(text)
+        }
     }
 
     func stopGenerating() {

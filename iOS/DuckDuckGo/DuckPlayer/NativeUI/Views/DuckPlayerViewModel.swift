@@ -101,6 +101,15 @@ final class DuckPlayerViewModel: ObservableObject {
         source == .youtube
     }
 
+    // Controls visibility
+    var controlsVisible: Bool {
+        get {
+            duckPlayerSettings.duckPlayerControlsVisible
+        }
+        set {
+            duckPlayerSettings.duckPlayerControlsVisible = newValue
+        }
+    }
     var cancellables = Set<AnyCancellable>()
 
     /// The DuckPlayer instance

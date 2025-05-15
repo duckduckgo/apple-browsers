@@ -150,35 +150,6 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
         return menuItems
     }
 
-    /// Only used if the .networkProtectionAppExclusions feature flag is disabled
-    ///
-    private func legacyStatusViewSubmenu() -> [StatusBarMenu.MenuItem] {
-        let appLauncher = AppLauncher(appBundleURL: Bundle.main.bundleURL)
-
-        if UserDefaults.netP.networkProtectionOnboardingStatus == .completed {
-            return [
-                .text(title: UserText.networkProtectionNavBarStatusViewVPNSettings, action: {
-                    try? await appLauncher.launchApp(withCommand: VPNAppLaunchCommand.showSettings)
-                }),
-                .text(title: UserText.networkProtectionNavBarStatusViewFAQ, action: {
-                    try? await appLauncher.launchApp(withCommand: VPNAppLaunchCommand.showFAQ)
-                }),
-                .text(title: UserText.networkProtectionNavBarStatusViewSendFeedback, action: {
-                    try? await appLauncher.launchApp(withCommand: VPNAppLaunchCommand.shareFeedback)
-                })
-            ]
-        } else {
-            return [
-                .text(title: UserText.networkProtectionNavBarStatusViewFAQ, action: {
-                    try? await appLauncher.launchApp(withCommand: VPNAppLaunchCommand.showFAQ)
-                }),
-                .text(title: UserText.networkProtectionNavBarStatusViewSendFeedback, action: {
-                    try? await appLauncher.launchApp(withCommand: VPNAppLaunchCommand.shareFeedback)
-                })
-            ]
-        }
-    }
-
     func show(positionedBelow view: NSView, withDelegate delegate: NSPopoverDelegate) -> NSPopover {
 
         /// Since the favicon doesn't have a publisher we force refreshing here
@@ -222,11 +193,6 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
 
             let menuItems = { [weak self] () -> [NetworkProtectionStatusView.Model.MenuItem] in
                 guard let self else { return [] }
-
-                guard featureFlagger.isFeatureOn(.networkProtectionAppExclusions) else {
-                    return legacyStatusViewSubmenu()
-                }
-
                 return statusViewSubmenu()
             }
 

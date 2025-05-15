@@ -105,6 +105,7 @@ final class DefaultOmniBarView: UIView {
             switch accessoryType {
             case .chat:
                 accessoryButton.setImage(UIImage(named: "AIChat-24"), for: .normal)
+                accessoryButton.accessibilityLabel = UserText.aiChatFeatureName
             }
         }
     }

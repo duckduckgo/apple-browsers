@@ -19,6 +19,7 @@
 import Foundation
 import Common
 import os.log
+import Networking
 
 public enum APIServiceError: Swift.Error, LocalizedError {
     case decodingError
@@ -75,10 +76,12 @@ public enum APICachePolicy {
 
 public struct DefaultSubscriptionAPIService: SubscriptionAPIService {
     private let baseURL: URL
+    private let userAgent: String
     private let session: URLSession
 
-    public init(baseURL: URL, session: URLSession) {
+    public init(baseURL: URL, userAgent: String, session: URLSession) {
         self.baseURL = baseURL
+        self.userAgent = userAgent
         self.session = session
     }
 
@@ -120,9 +123,9 @@ public struct DefaultSubscriptionAPIService: SubscriptionAPIService {
         let url = baseURL.appendingPathComponent(endpoint)
         var request = URLRequest(url: url)
         request.httpMethod = method
-        if let headers = headers {
-            request.allHTTPHeaderFields = headers
-        }
+        request.allHTTPHeaderFields = headers ?? [:]
+        request.allHTTPHeaderFields?[HTTPHeaderKey.userAgent] = userAgent
+
         if let body = body {
             request.httpBody = body
         }

@@ -50,7 +50,7 @@ struct EmptyCookieHandler: CookieHandler {
     }
 }
 
-final class DebugScanJob: DataBrokerJob {
+final class DebugScanJob: SubJobWebRunning {
     typealias ReturnValue = DebugScanReturnValue
     typealias InputValue = Void
 

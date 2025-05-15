@@ -230,45 +230,6 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         XCTAssertEqual(sut.lastHandledVideoID, "f7g8h9i0j1k")
     }
 
-    func testHandleURLChange_WhenLastHandledVideoIDIsSameAsCurrentVideoID_HandlesCorrectly() {
-        // Given
-        mockFeatureFlagger.enabledFeatures = [.duckPlayer]
-        let videoURLAsk = URL(string: "https://www.youtube.com/watch?v=2b3c4d5e6f7")!
-        let videoURLWithHashesAsk = URL(string: "https://www.youtube.com/watch?v=2b3c4d5e6f7#settings")!
-        let videoURLAuto = URL(string: "https://www.youtube.com/watch?v=3c4d5e6f7g8")!
-        let videoURLWithHashesAuto = URL(string: "https://www.youtube.com/watch?v=3c4d5e6f7g8#settings")!
-
-        // Test with .ask mode
-        playerSettings.nativeUIYoutubeMode = .ask
-        sut.lastHandledVideoID = nil
-        let result = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: videoURLAsk)
-        XCTAssertEqual(result, .handled(.duckPlayerEnabled))
-        XCTAssertTrue(sut.isDuckPlayerPillPresented)
-        XCTAssertFalse(sut.isDuckPlayerPresented)
-        XCTAssertEqual(sut.lastHandledVideoID, "2b3c4d5e6f7")
-
-        let result2 = sut.handleURLChange(webView: mockWebView, previousURL: videoURLAsk, newURL: videoURLWithHashesAsk)
-        XCTAssertEqual(result2, .notHandled(.disabledForVideo))
-        XCTAssertEqual(sut.lastHandledVideoID, "2b3c4d5e6f7")
-
-        // Reset state for .auto mode test
-        mockDuckPlayer.presentPillCalled = false
-        mockDuckPlayer.loadNativeDuckPlayerVideoCalled = false
-        sut.lastHandledVideoID = nil
-
-        // Test with .auto mode
-        playerSettings.nativeUIYoutubeMode = .auto
-        let resultAuto = sut.handleURLChange(webView: mockWebView, previousURL: nil, newURL: videoURLAuto)
-        XCTAssertEqual(resultAuto, .handled(.duckPlayerEnabled))
-        XCTAssertTrue(sut.isDuckPlayerPillPresented)
-        XCTAssertTrue(sut.isDuckPlayerPresented)
-        XCTAssertEqual(sut.lastHandledVideoID, "3c4d5e6f7g8")
-
-        let resultAuto2 = sut.handleURLChange(webView: mockWebView, previousURL: videoURLAuto, newURL: videoURLWithHashesAuto)
-        XCTAssertEqual(resultAuto2, .notHandled(.disabledForVideo))
-        XCTAssertEqual(sut.lastHandledVideoID, "3c4d5e6f7g8")
-    }
-
     func testHandleURLChange_WhenDuckPlayerSetToNever_HandlesCorrectly() {
         // Given
         mockFeatureFlagger.enabledFeatures = [.duckPlayer]
@@ -618,4 +579,30 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         XCTAssertNil(sut.lastHandledVideoID)
     }
     
+    func testHandleURLChange_WithYoutubeHashtagNavigation_ReturnsNotHandled() {
+        // Given
+        mockFeatureFlagger.enabledFeatures = [.duckPlayer]
+        let videoID = "abcdef12345"
+        let youtubeURL = URL(string: "https://www.youtube.com/watch?v=\(videoID)")!
+        let youtubeURLWithHashtag = URL(string: "https://www.youtube.com/watch?v=\(videoID)#settings")!
+        
+        // Test navigation from regular URL to hashtag URL (same video ID)
+        let result1 = sut.handleURLChange(webView: mockWebView, previousURL: youtubeURL, newURL: youtubeURLWithHashtag)
+        XCTAssertEqual(result1, .notHandled(.isYoutubeInternalNavigation))
+        
+        // Test navigation from hashtag URL to regular URL (same video ID)
+        let result2 = sut.handleURLChange(webView: mockWebView, previousURL: youtubeURLWithHashtag, newURL: youtubeURL)
+        XCTAssertEqual(result2, .notHandled(.isYoutubeInternalNavigation))
+        
+        // Test navigation between different hashtags (same video ID)
+        let youtubeURLWithDifferentHashtag = URL(string: "https://www.youtube.com/watch?v=\(videoID)#comments")!
+        let result3 = sut.handleURLChange(webView: mockWebView, previousURL: youtubeURLWithHashtag, newURL: youtubeURLWithDifferentHashtag)
+        XCTAssertEqual(result3, .notHandled(.isYoutubeInternalNavigation))
+        
+        // Verify that different video IDs don't trigger the internal navigation handling
+        let differentVideoID = "xyz987654"
+        let differentVideoURL = URL(string: "https://www.youtube.com/watch?v=\(differentVideoID)#settings")!
+        let result4 = sut.handleURLChange(webView: mockWebView, previousURL: youtubeURLWithHashtag, newURL: differentVideoURL)
+        XCTAssertNotEqual(result4, .notHandled(.isYoutubeInternalNavigation))
+    }
 }

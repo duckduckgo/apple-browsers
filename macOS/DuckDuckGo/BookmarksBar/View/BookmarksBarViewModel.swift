@@ -62,6 +62,7 @@ final class BookmarksBarViewModel: NSObject {
     weak var delegate: BookmarksBarViewModelDelegate?
     var isInteractionPrevented = false
 
+    private let visualStyle: VisualStyleProviding
     private let bookmarkManager: BookmarkManager
     private let dragDropManager: BookmarkDragDropManager
     private let tabCollectionViewModel: TabCollectionViewModel
@@ -109,10 +110,14 @@ final class BookmarksBarViewModel: NSObject {
 
     // MARK: - Initialization
 
-    init(bookmarkManager: BookmarkManager, dragDropManager: BookmarkDragDropManager = .shared, tabCollectionViewModel: TabCollectionViewModel) {
+    init(bookmarkManager: BookmarkManager,
+         dragDropManager: BookmarkDragDropManager = .shared,
+         tabCollectionViewModel: TabCollectionViewModel,
+         visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
         self.tabCollectionViewModel = tabCollectionViewModel
+        self.visualStyle = visualStyleManager.style
         super.init()
         subscribeToBookmarks()
     }
@@ -281,7 +286,9 @@ extension BookmarksBarViewModel: NSCollectionViewDelegate, NSCollectionViewDataS
 
         let bookmarksBarItem = bookmarksBarItems[indexPath.item]
         bookmarksCollectionViewItem.delegate = self
-        bookmarksCollectionViewItem.updateItem(from: bookmarksBarItem.entity, isInteractionPrevented: isInteractionPrevented)
+        bookmarksCollectionViewItem.updateItem(from: bookmarksBarItem.entity,
+                                               isInteractionPrevented: isInteractionPrevented,
+                                               visualStyle: visualStyle)
 
         return bookmarksCollectionViewItem
     }

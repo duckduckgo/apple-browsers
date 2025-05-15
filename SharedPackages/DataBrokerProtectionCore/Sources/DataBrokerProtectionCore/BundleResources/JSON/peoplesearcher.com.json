@@ -1,7 +1,7 @@
 {
   "name": "PeopleSearcher",
   "url": "peoplesearcher.com",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "parent": "privatereports.com",
   "optOutUrl": "https://www.peoplesearcher.com/optOut/name/landing",
   "steps": [
@@ -57,7 +57,7 @@
           "elements": [
             {
               "type": "button",
-              "selector": "#ux-1"
+              "selector": "#ux-2"
             }
           ],
           "id": "67016aba-7d1f-4e1c-9da2-2e3b8e3ad9d1"

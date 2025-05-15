@@ -80,7 +80,7 @@ jobs:
         uses: mikepenz/action-junit-report@v4
         if: always()
         with:
-          check_name: Test Report (macOS)
+          check_name: BSK Test Report (macOS)
           report_paths: SharedPackages/BrowserServicesKit/package-tests.xml
           require_tests: true
           check_retries: true
@@ -191,7 +191,7 @@ jobs:
         uses: mikepenz/action-junit-report@v4
         if: always()
         with:
-          check_name: Test Report (iOS)
+          check_name: BSK Test Report (iOS)
           report_paths: SharedPackages/BrowserServicesKit/bsk-ios-unittests.xml
           require_tests: true
 

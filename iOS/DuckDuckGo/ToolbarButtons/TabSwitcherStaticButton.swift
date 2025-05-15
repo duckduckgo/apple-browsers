@@ -89,7 +89,20 @@ final class TabSwitcherStaticButton: ToolbarButton, TabSwitcherButton {
     }
 
     func animateUpdate(update: @escaping () -> Void) {
+        let animator1 = UIViewPropertyAnimator(duration: 0.25, curve: .easeIn) {
+            self.tabSwitcherView.transform = CGAffineTransform(scaleX: 0.5, y: 0.5)
+        }
+
+        let animator2 = UIViewPropertyAnimator(duration: 0.8, dampingRatio: 0.3) {
+            self.tabSwitcherView.transform = .identity
+        }
+
+        animator1.addCompletion { _ in
             update()
+            animator2.startAnimation()
+        }
+
+        animator1.startAnimation()
     }
 
     override func tintColorDidChange() {

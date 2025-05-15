@@ -63,7 +63,7 @@ struct OngoingDownloadRow: View {
         Button {
             cancelButtonAction()
         } label: {
-            Image("Close-24")
+            Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
         }
         .accessibilityLabel(UserText.cancelDownloadAlertCancelAction)
         .buttonStyle(.plain)

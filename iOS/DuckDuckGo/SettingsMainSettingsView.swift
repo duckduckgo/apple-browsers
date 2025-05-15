@@ -30,14 +30,14 @@ struct SettingsMainSettingsView: View {
             // General
             NavigationLink(destination: SettingsGeneralView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.general,
-                                 image: Image("SettingsGeneral"))
+                                 image: Image(.settingsGeneral))
             }
 
             // Sync & Backup
             let statusIndicator = viewModel.syncStatus == .on ? StatusIndicatorView(status: viewModel.syncStatus, isDotHidden: true) : nil
             let label = viewModel.state.sync.title
             SettingsCellView(label: label,
-                             image: Image("SettingsSync"),
+                             image: Image(.settingsSync),
                              action: { viewModel.presentLegacyView(.sync) },
                              statusIndicator: statusIndicator,
                              disclosureIndicator: true,
@@ -46,12 +46,12 @@ struct SettingsMainSettingsView: View {
             // Appearance
             NavigationLink(destination: SettingsAppearanceView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.settingsAppearanceSection,
-                                 image: Image("SettingsAppearance"))
+                                 image: Image(.settingsAppearance))
             }
 
             // Passwords
             SettingsCellView(label: UserText.settingsLogins,
-                             image: Image("SettingsPasswords"),
+                             image: Image(.settingsPasswords),
                              action: { viewModel.presentLegacyView(.logins) },
                              disclosureIndicator: true,
                              isButton: true)
@@ -59,13 +59,13 @@ struct SettingsMainSettingsView: View {
             // Accessibility
             NavigationLink(destination: SettingsAccessibilityView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.accessibility,
-                                 image: Image("SettingsAccessibility"))
+                                 image: Image(.settingsAccessibility))
             }
 
             // Data Clearing
             NavigationLink(destination: SettingsDataClearingView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.dataClearing,
-                                 image: Image("SettingsDataClearing"))
+                                 image: Image(.settingsDataClearing))
             }
 
             // Duck Player
@@ -73,14 +73,14 @@ struct SettingsMainSettingsView: View {
             if viewModel.state.duckPlayerEnabled {
                 NavigationLink(destination: SettingsDuckPlayerView().environmentObject(viewModel)) {
                     SettingsCellView(label: UserText.duckPlayerFeatureName,
-                                     image: Image("SettingsDuckPlayer"))
+                                     image: Image(.settingsDuckPlayer))
                 }
             }
 
             // AI Chat
             NavigationLink(destination: SettingsAIChatView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.aiChatFeatureName,
-                                 image: Image("SettingsAIChat"))
+                                 image: Image(.settingsAIChat))
             }
         }
 

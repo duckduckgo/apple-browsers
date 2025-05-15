@@ -59,7 +59,9 @@ struct FavoriteView: View {
                             Image(uiImage: DesignSystemImages.Color.Size24.duckDuckGo)
                                 .resizable()
                                 .useFullColorRendering()
-                                .frame(width: 45, height: 45, alignment: .center)
+                                .frame(width: 46, height: 46, alignment: .center)
+                                .isHidden(false)
+                                .accessibilityHidden(true)
                             
                         } else {
                             Text(favorite.domain.first?.uppercased() ?? "")
@@ -193,7 +195,7 @@ struct SearchWidgetView: View {
         ZStack {
             VStack(alignment: .center, spacing: 15) {
 
-                Image(.logo)
+                Image(uiImage: DesignSystemImages.Color.Size24.duckDuckGo)
                     .resizable()
                     .useFullColorRendering()
                     .frame(width: 46, height: 46, alignment: .center)
@@ -229,7 +231,7 @@ struct PasswordsWidgetView: View {
         ZStack {
             VStack(alignment: .center, spacing: 6) {
 
-                Image(.widgetPasswordIllustration)
+                Image(uiImage: DesignSystemImages.Color.Size24.key)
                         .useFullColorRendering()
                         .frame(width: 96, height: 72)
                         .isHidden(false)

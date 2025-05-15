@@ -21,6 +21,7 @@ import Core
 import Subscription
 import SwiftUI
 import UIKit
+import DesignResourcesKit
 
 struct SettingsSubscriptionView: View {
 
@@ -29,8 +30,6 @@ struct SettingsSubscriptionView: View {
         static let topCellPadding = 3.0
         static let noEntitlementsIconWidth = 20.0
         static let navigationDelay = 0.3
-        static let infoIcon = "info-16"
-        static let alertIcon = "Exclamation-Color-16"
         static let privacyPolicyURL = URL(string: "https://duckduckgo.com/pro/privacy-terms")!
     }
 
@@ -173,7 +172,7 @@ struct SettingsSubscriptionView: View {
                     label: UserText.settingsPProManageSubscription,
                     subtitle: UserText.settingsPProSubscriptionExpiredTitle,
                     image: Image("SettingsPrivacyPro"),
-                    accessory: .image(Image("Exclamation-Color-16"))
+                    accessory: .image(Image(uiImage: DesignSystemImages.Color.Size16.exclamation))
                 )
             }
         } else {
@@ -188,7 +187,7 @@ struct SettingsSubscriptionView: View {
                     label: UserText.settingsPProManageSubscription,
                     subtitle: UserText.settingsPProSubscriptionExpiredTitle,
                     image: Image("SettingsPrivacyPro"),
-                    accessory: .image(Image("Exclamation-Color-16"))
+                    accessory: .image(Image(uiImage: DesignSystemImages.Color.Size16.exclamation))
                 )
             }
         }

@@ -19,6 +19,7 @@
 
 import Foundation
 import SwiftUI
+import DesignResourcesKit
 
 struct AutocompleteView: View {
 
@@ -73,14 +74,14 @@ private struct HistoryMessageView: View {
             Button {
                 onDismiss()
             } label: {
-                Image("Close-24")
+                Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
                     .foregroundColor(.primary)
             }
             .padding(.top, 4)
             .buttonStyle(.plain)
 
             VStack {
-                Image("RemoteMessageAnnouncement")
+                Image(.remoteMessageAnnouncement)
                     .padding(8)
 
                 Text(UserText.autocompleteHistoryWarningTitle)
@@ -209,8 +210,8 @@ private struct SuggestionView: View {
 
     var tapAheadImage: Image? {
         guard model.canShowTapAhead else { return nil }
-        return Image(autocompleteModel.isAddressBarAtBottom ?
-                      "Arrow-Circle-Down-Left-16" : "Arrow-Circle-Up-Left-16")
+        return Image(uiImage: autocompleteModel.isAddressBarAtBottom ?
+                     DesignSystemImages.Glyphs.Size24.arrowDownLeft : DesignSystemImages.Glyphs.Size24.arrowDownRight)
     }
 
     var body: some View {
@@ -218,7 +219,7 @@ private struct SuggestionView: View {
 
             switch model.suggestion {
             case .phrase(let phrase):
-                SuggestionListItem(icon: Image("Find-Search-24"),
+                SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.findSearchSmall),
                                    title: phrase,
                                    query: query,
                                    indicator: tapAheadImage) {
@@ -226,31 +227,31 @@ private struct SuggestionView: View {
                 }
 
             case .website(let url):
-                SuggestionListItem(icon: Image("Globe-24"),
+                SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.globe),
                                    title: url.formattedForSuggestion())
 
             case .bookmark(let title, let url, let isFavorite, _) where isFavorite:
-                SuggestionListItem(icon: Image("Bookmark-Fav-24"),
+                SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.favorite),
                                    title: title,
                                    subtitle: url.formattedForSuggestion())
 
             case .bookmark(let title, let url, _, _):
-                SuggestionListItem(icon: Image("Bookmark-24"),
+                SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.bookmarkNew),
                                    title: title,
                                    subtitle: url.formattedForSuggestion())
 
             case .historyEntry(_, let url, _) where url.isDuckDuckGoSearch:
-                SuggestionListItem(icon: Image("History-24"),
+                SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.history),
                                    title: url.searchQuery ?? "",
                                    subtitle: UserText.autocompleteSearchDuckDuckGo)
 
             case .historyEntry(let title, let url, _):
-                SuggestionListItem(icon: Image("History-24"),
+                SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.history),
                                    title: title ?? "",
                                    subtitle: url.formattedForSuggestion())
 
             case .openTab(title: let title, url: let url, _, _):
-                SuggestionListItem(icon: Image("OpenTab-24"),
+                SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.tabNew),
                                    title: title,
                                    subtitle: "\(UserText.autocompleteSwitchToTab) · \(url.formattedForSuggestion())")
 

@@ -29,7 +29,7 @@ struct SettingsPrivacyProtectionsView: View {
         Section(header: Text("Privacy Protections")) {
             // Default Browser
             SettingsCellView(label: UserText.defaultBrowser,
-                             image: Image("SettingsDefaultBrowser"),
+                             image: Image(.settingsDefaultBrowser),
                              action: { viewModel.setAsDefaultBrowser() },
                              webLinkIndicator: true,
                              isButton: true)
@@ -37,28 +37,28 @@ struct SettingsPrivacyProtectionsView: View {
             // Private Search
             NavigationLink(destination: PrivateSearchView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.privateSearch,
-                                 image: Image("SettingsSearch"),
+                                 image: Image(.settingsSearch),
                                  statusIndicator: StatusIndicatorView(status: .on))
             }
 
             // Web Tracking Protection
             NavigationLink(destination: WebTrackingProtectionView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.webTrackingProtection,
-                                 image: Image("SettingsWebTrackingProtection"),
+                                 image: Image(.settingsWebTrackingProtection),
                                  statusIndicator: StatusIndicatorView(status: .on))
             }
 
             // Cookie Pop-Up Protection
             NavigationLink(destination: CookiePopUpProtectionView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.cookiePopUpProtection,
-                                 image: Image("SettingsCookiePopUpProtection"),
+                                 image: Image(.settingsCookiePopUpProtection),
                                  statusIndicator: StatusIndicatorView(status: viewModel.cookiePopUpProtectionStatus))
             }
 
             // Email Protection
             NavigationLink(destination: EmailProtectionView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.emailProtection,
-                                 image: Image("SettingsEmailProtection"),
+                                 image: Image(.settingsEmailProtection),
                                  statusIndicator: StatusIndicatorView(status: viewModel.emailProtectionStatus))
             }
         }

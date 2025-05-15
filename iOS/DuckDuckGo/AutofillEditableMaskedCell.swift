@@ -87,7 +87,7 @@ struct AutofillEditableMaskedCell: View {
                 
                 if unmaskedString.count > 0 {
                     if closeButtonVisible {
-                        Image("Clear-16")
+                        Image(uiImage: DesignSystemImages.Glyphs.Size16.clear)
                             .onTapGesture {
                                 self.unmaskedString = ""
                             }

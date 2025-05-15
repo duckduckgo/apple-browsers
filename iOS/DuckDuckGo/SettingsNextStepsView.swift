@@ -28,28 +28,28 @@ struct SettingsNextStepsView: View {
         Section(header: Text(UserText.nextSteps)) {
             // Add App to Your Dock
             SettingsCellView(label: UserText.settingsAddToDock,
-                             image: Image("SettingsAddToDock"),
+                             image: Image(.settingsAddToDock),
                              action: { viewModel.presentLegacyView(.addToDock) },
                              isButton: true)
 
             // Add Widget to Home Screen
             NavigationLink(destination: WidgetEducationView()) {
                 SettingsCellView(label: UserText.settingsAddWidget,
-                                 image: Image("SettingsAddWidget"))
+                                 image: Image(.settingsAddWidget))
             }
 
             // Set Your Address Bar Position
             if viewModel.state.addressBar.enabled {
                 NavigationLink(destination: SettingsAppearanceView().environmentObject(viewModel)) {
                     SettingsCellView(label: UserText.setYourAddressBarPosition,
-                                     image: Image("SettingsAddressBarPosition"))
+                                     image: Image(.settingsAddressBarPosition))
                 }
             }
 
             // Enable Voice Search
             NavigationLink(destination: SettingsAccessibilityView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.enableVoiceSearch,
-                                 image: Image("SettingsVoiceSearch"))
+                                 image: Image(.settingsVoiceSearch))
             }
         }
 

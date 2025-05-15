@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import DesignResourcesKit
 
 struct ClearTextField: View {
     var placeholderText: String
@@ -52,7 +53,7 @@ struct ClearTextField: View {
                 }
 
             Spacer()
-            Image("Clear-16")
+            Image(uiImage: DesignSystemImages.Glyphs.Size16.clear)
                 .opacity(closeButtonOpacity)
                 .onTapGesture { self.text = "" }
         }

@@ -69,7 +69,7 @@ struct AutofillCreditCardDetailsView: View {
                                     isMonospaced: true,
                                     actionTitle: UserText.autofillCopyPrompt(for: UserText.autofillCreditCardDetailsCardNumber),
                                     action: { viewModel.copyToPasteboard(.cardNumber) },
-                                    buttonImageName: "Copy-24",
+                                    buttonImage: DesignSystemImages.Glyphs.Size24.copy,
                                     buttonAccessibilityLabel: UserText.autofillCopyPrompt(for: UserText.autofillCreditCardDetailsCardNumber),
                                     buttonAction: { viewModel.copyToPasteboard(.cardNumber) })
                 
@@ -78,7 +78,7 @@ struct AutofillCreditCardDetailsView: View {
                                     selectedCell: $viewModel.selectedCell,
                                     actionTitle: UserText.autofillCopyPrompt(for: UserText.autofillCreditCardDetailsExpirationDate),
                                     action: { viewModel.copyToPasteboard(.expirationDate) },
-                                    buttonImageName: "Copy-24",
+                                    buttonImage: DesignSystemImages.Glyphs.Size24.copy,
                                     buttonAccessibilityLabel: UserText.autofillCopyPrompt(for: UserText.autofillCreditCardDetailsExpirationDate),
                                     buttonAction: { viewModel.copyToPasteboard(.expirationDate) })
                 
@@ -90,10 +90,10 @@ struct AutofillCreditCardDetailsView: View {
                                     action: { viewModel.isSecurityCodeHidden.toggle() },
                                     secondaryActionTitle: UserText.autofillCopyPrompt(for: UserText.autofillCreditCardDetailsCVV),
                                     secondaryAction: { viewModel.copyToPasteboard(.cardSecurityCode) },
-                                    buttonImageName: viewModel.isSecurityCodeHidden ? "Eye-24" : "Eye-Closed-24",
+                                    buttonImage: viewModel.isSecurityCodeHidden ? DesignSystemImages.Glyphs.Size24.eye : DesignSystemImages.Glyphs.Size24.eyeClosed,
                                     buttonAccessibilityLabel: viewModel.isSecurityCodeHidden ? UserText.autofillShowCreditCardCVV : UserText.autofillHideCreditCardCVV,
                                     buttonAction: { viewModel.isSecurityCodeHidden.toggle() },
-                                    secondaryButtonImageName: "Copy-24",
+                                    secondaryButtonImage: DesignSystemImages.Glyphs.Size24.copy,
                                     secondaryButtonAccessibilityLabel: UserText.autofillCopyPrompt(for: UserText.autofillCreditCardDetailsCVV),
                                     secondaryButtonAction: { viewModel.copyToPasteboard(.cardSecurityCode) })
                 
@@ -102,11 +102,11 @@ struct AutofillCreditCardDetailsView: View {
                                     selectedCell: $viewModel.selectedCell,
                                     actionTitle: UserText.autofillCopyPrompt(for: UserText.autofillCreditCardDetailsCardName),
                                     action: { viewModel.copyToPasteboard(.cardholderName) },
-                                    buttonImageName: "Copy-24",
+                                    buttonImage: DesignSystemImages.Glyphs.Size24.copy,
                                     buttonAccessibilityLabel: UserText.autofillCopyPrompt(for: UserText.autofillCreditCardDetailsCardName),
                                     buttonAction: { viewModel.copyToPasteboard(.cardholderName) })
             }
-            
+
             Section {
                 deleteCell()
             }
@@ -226,8 +226,7 @@ private struct EditableCreditCardNumberCell: View {
                 if text.count > 0 {
                     if let closeButtonVisible = closeButtonVisible {
                         if closeButtonVisible {
-                            #warning("ICONS: image renamed from clear to clear solid")
-                            Image(uiImage: DesignSystemImages.Glyphs.Size16.clearSolid)
+                            Image(uiImage: DesignSystemImages.Glyphs.Size16.clear)
                                 .onTapGesture {
                                     self.text = ""
                                     self.formattedText = ""
@@ -440,8 +439,7 @@ private struct EditableDateCell: View {
                 
                 if formattedExpiration.count > 0 {
                     if selectedCell == id {
-                        #warning("ICONS: image renamed from clear to clear sold")
-                        Image(uiImage: DesignSystemImages.Glyphs.Size16.clearSolid)
+                        Image(uiImage: DesignSystemImages.Glyphs.Size16.clear)
                             .onTapGesture {
                                 self.formattedExpiration = ""
                                 self.expirationMonth = nil

@@ -21,6 +21,7 @@ import SwiftUI
 import NetworkProtection
 import TipKit
 import Networking
+import DesignResourcesKit
 
 struct NetworkProtectionStatusView: View {
 
@@ -277,9 +278,7 @@ struct NetworkProtectionStatusView: View {
         Section {
             NavigationLink(destination: NetworkProtectionVPNSettingsView()) {
                 HStack {
-                    Image("Settings-24")
-                        .resizable()
-                        .frame(width: 24, height: 24)
+                    Image(uiImage: DesignSystemImages.Glyphs.Size24.settings)
                     Text(UserText.netPVPNSettingsTitle)
                 }
                 .daxBodyRegular()
@@ -296,7 +295,7 @@ struct NetworkProtectionStatusView: View {
         Section {
             NavigationLink(destination: LazyView(NetworkProtectionFAQView())) {
                 HStack {
-                    Image("Help-24")
+                    Image(uiImage: DesignSystemImages.Glyphs.Size24.help)
                     Text(UserText.netPVPNSettingsFAQ)
                 }
                 .daxBodyRegular()
@@ -306,7 +305,7 @@ struct NetworkProtectionStatusView: View {
             if statusModel.enablesUnifiedFeedbackForm {
                 NavigationLink(destination: LazyView(UnifiedFeedbackRootView(viewModel: feedbackFormModel))) {
                     HStack {
-                        Image("Support-24")
+                        Image(uiImage: DesignSystemImages.Glyphs.Size24.support)
                         Text(UserText.subscriptionFeedback)
                     }
                     .daxBodyRegular()
@@ -444,7 +443,8 @@ private struct NetworkProtectionErrorView: View {
     var body: some View {
         VStack(alignment: .leading) {
             HStack {
-                Image("Alert-Color-16")
+                #warning("ICONS: Alert-Color-16 -> glyphs/size16/alertRecolorable")
+                Image(uiImage: DesignSystemImages.Glyphs.Size16.alertRecolorable)
                 Text(title)
                     .daxBodyBold()
                     .foregroundColor(.primary)
@@ -464,7 +464,7 @@ private struct NetworkProtectionLocationItemView: View {
     var body: some View {
         HStack(spacing: 8) {
             if let imageName {
-                Image(imageName)
+                Image(uiImage: DesignSystemImages.Glyphs.Size24.location)
             }
 
             Text(title)
@@ -505,13 +505,15 @@ private struct NetworkProtectionThroughputItemView: View {
 
             Spacer(minLength: 2)
 
-            Image("VPNDownload")
+            #warning("ICONS: missing VPNDownload")
+            Image(uiImage: DesignSystemImages.Glyphs.Size24.exclamation)
                 .foregroundColor(.init(designSystemColor: .textSecondary))
             Text(downloadSpeed)
                 .daxBodyRegular()
                 .foregroundColor(.init(designSystemColor: .textSecondary))
 
-            Image("VPNUpload")
+            #warning("ICONS: missing VPNUpload")
+            Image(uiImage: DesignSystemImages.Glyphs.Size24.exclamation)
                 .foregroundColor(.init(designSystemColor: .textSecondary))
                 .padding(.leading, 4)
             Text(uploadSpeed)

@@ -27,7 +27,7 @@ struct SettingsCellComponents {
             .foregroundColor(Color(UIColor.tertiaryLabel))
     }
     static var link: some View {
-        Image("SettingsLink")
+        Image(.settingsLink)
             .font(Font.system(.footnote).weight(.bold))
             .foregroundColor(Color(UIColor.tertiaryLabel))
     }
@@ -349,7 +349,7 @@ enum SampleOption: String, CaseIterable, Hashable, CustomStringConvertible {
 
             SettingsCellView(label: "Multi-line Cell with disclosure \nLine 2\nLine 3",
                              subtitle: "Curabitur erat massa, cursus sed velit",
-                             image: Image("SettingsPrivacyProITP"),
+                             image: Image(.settingsPrivacyProITP),
                              disclosureIndicator: true)
             .previewLayout(.sizeThatFits)
 
@@ -360,14 +360,14 @@ enum SampleOption: String, CaseIterable, Hashable, CustomStringConvertible {
 
             SettingsCellView(label: "Subtitle image cell with disclosure",
                              subtitle: "This is the subtitle",
-                             accessory: .image(Image("Exclamation-Color-16")),
+                             accessory: .image(Image(uiImage: DesignSystemImages.Color.Size24.privacyPro)),
                              disclosureIndicator: true)
             .previewLayout(.sizeThatFits)
 
             SettingsCellView(label: "Greyed out cell",
                              subtitle: "This is the subtitle",
-                             image: Image("SettingsPrivacyProITP"),
-                             accessory: .image(Image("Exclamation-Color-16")),
+                             image: Image(uiImage: DesignSystemImages.Color.Size24.privacyPro),
+                             accessory: .image(Image(uiImage: DesignSystemImages.Color.Size24.exclamation)),
                              disclosureIndicator: true,
                              isGreyedOut: true)
             .previewLayout(.sizeThatFits)
@@ -378,7 +378,7 @@ enum SampleOption: String, CaseIterable, Hashable, CustomStringConvertible {
             .previewLayout(.sizeThatFits)
 
             SettingsCellView(label: "Switch Cell",
-                             image: Image("SettingsAppearance"),
+                             image: Image(.settingsAppearance),
                              accessory: .toggle(isOn: .constant(true)))
             .previewLayout(.sizeThatFits)
 
@@ -394,10 +394,10 @@ enum SampleOption: String, CaseIterable, Hashable, CustomStringConvertible {
 
             let cellContent: () -> some View = {
                 HStack(spacing: 15) {
-                    Image(systemName: "bird.circle")
+                    Image(uiImage: DesignSystemImages.Color.Size24.appearance)
                         .foregroundColor(.orange)
                         .imageScale(.large)
-                    Image(systemName: "bird.circle")
+                    Image(uiImage: DesignSystemImages.Color.Size24.appearance)
                         .foregroundColor(.orange)
                         .imageScale(.medium)
 
@@ -407,10 +407,10 @@ enum SampleOption: String, CaseIterable, Hashable, CustomStringConvertible {
                             .font(.headline)
                     }
                     Spacer()
-                    Image(systemName: "bird.circle")
+                    Image(uiImage: DesignSystemImages.Color.Size24.appearance)
                         .foregroundColor(.orange)
                         .imageScale(.medium)
-                    Image(systemName: "bird.circle")
+                    Image(uiImage: DesignSystemImages.Color.Size24.appearance)
                         .foregroundColor(.orange)
                         .imageScale(.large)
                 }
@@ -421,21 +421,21 @@ enum SampleOption: String, CaseIterable, Hashable, CustomStringConvertible {
                 .previewLayout(.sizeThatFits)
 
             SettingsCellView(label: "Cell with image",
-                             image: Image("SettingsAppearance"),
+                             image: Image(uiImage: DesignSystemImages.Color.Size24.appearance),
                              statusIndicator: StatusIndicatorView(status: .off),
                              disclosureIndicator: true
             )
 
 
             SettingsCellView(label: "Cell a long long long long long long long title",
-                             image: Image("SettingsAppearance"),
+                             image: Image(uiImage: DesignSystemImages.Color.Size24.appearance),
                              statusIndicator: StatusIndicatorView(status: .alwaysOn),
                              disclosureIndicator: true
             )
 
             SettingsCellView(label: "Cell with everything Lorem ipsum dolor sit amet, consectetur",
                              subtitle: "Long subtitle Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation",
-                             image: Image("SettingsAppearance"),
+                             image: Image(uiImage: DesignSystemImages.Color.Size24.appearance),
                              accessory: .toggle(isOn: .constant(true)),
                              statusIndicator: StatusIndicatorView(status: .on),
                              disclosureIndicator: true

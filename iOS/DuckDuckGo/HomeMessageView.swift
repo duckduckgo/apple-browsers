@@ -107,7 +107,7 @@ struct HomeMessageView: View {
                 await viewModel.onDidClose(.close)
             }
         } label: {
-            Image("Close-24")
+            Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
                 .foregroundColor(.primary)
         }
         .frame(width: Const.Size.closeButtonWidth, height: Const.Size.closeButtonWidth)
@@ -154,7 +154,7 @@ struct HomeMessageView: View {
             } label: {
                 HStack {
                     if case .share = buttonModel.actionStyle {
-                        Image("Share-24")
+                        Image(uiImage: DesignSystemImages.Glyphs.Size24.shareApple)
                             .resizable()
                             .frame(width: 24, height: 24)
                     }
@@ -242,7 +242,8 @@ private extension Color {
 }
 
 private extension Image {
-    static let dismiss = Image("HomeMessageDismissIcon")
+    #warning("ICONS: HomeMessageDismiss -> glyphs/size24/close")
+    static let dismiss = Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
 }
 
 private enum Const {

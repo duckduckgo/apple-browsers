@@ -148,7 +148,7 @@ struct AutofillLoginDetailsView: View {
                              action: { viewModel.copyToPasteboard(.address) },
                              secondaryActionTitle: viewModel.websiteIsValidUrl ? UserText.autofillOpenWebsitePrompt : nil,
                              secondaryAction: viewModel.websiteIsValidUrl ? { viewModel.openUrl() } : nil,
-                             buttonImageName: "Globe-24",
+                             buttonImage: DesignSystemImages.Glyphs.Size24.globe,
                              buttonAccessibilityLabel: UserText.autofillOpenWebsitePrompt,
                              buttonAction: viewModel.websiteIsValidUrl ? { viewModel.openUrl() } : nil)
             }
@@ -261,7 +261,7 @@ struct AutofillLoginDetailsView: View {
                             selectedCell: $viewModel.selectedCell,
                             actionTitle: UserText.autofillCopyPrompt(for: UserText.autofillLoginDetailsUsername),
                             action: { viewModel.copyToPasteboard(.username) },
-                            buttonImageName: "Copy-24",
+                            buttonImage: DesignSystemImages.Glyphs.Size24.copy,
                             buttonAccessibilityLabel: UserText.autofillCopyPrompt(for: UserText.autofillLoginDetailsUsername),
                             buttonAction: { viewModel.copyToPasteboard(.username) })
 
@@ -276,10 +276,10 @@ struct AutofillLoginDetailsView: View {
                             action: { viewModel.isPasswordHidden.toggle() },
                             secondaryActionTitle: UserText.autofillCopyPrompt(for: UserText.autofillLoginDetailsPassword),
                             secondaryAction: { viewModel.copyToPasteboard(.password) },
-                            buttonImageName: viewModel.isPasswordHidden ? "Eye-24" : "Eye-Closed-24",
+                            buttonImage: viewModel.isPasswordHidden ? DesignSystemImages.Glyphs.Size24.exclamation : DesignSystemImages.Glyphs.Size24.exclamationSolid,
                             buttonAccessibilityLabel: viewModel.isPasswordHidden ? UserText.autofillShowPassword : UserText.autofillHidePassword,
                             buttonAction: { viewModel.isPasswordHidden.toggle() },
-                            secondaryButtonImageName: "Copy-24",
+                            secondaryButtonImage: DesignSystemImages.Glyphs.Size24.copy,
                             secondaryButtonAccessibilityLabel: UserText.autofillCopyPrompt(for: UserText.autofillLoginDetailsPassword),
                             secondaryButtonAction: { viewModel.copyToPasteboard(.password) })
     }
@@ -300,7 +300,8 @@ struct AutofillLoginDetailsView: View {
                     .frame(width: 80)
                     .toggleStyle(SwitchToggleStyle(tint: Color(ThemeManager.shared.currentTheme.buttonTintColor)))
             } else {
-                Image("Alert-Color-16")
+                #warning("ICONS: Alert-Color-16 -> glyphs/size16/alertRecolorable")
+                Image(uiImage: DesignSystemImages.Glyphs.Size16.alertRecolorable)
                     .resizable()
                     .frame(width: 20, height: 20)
                     .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 0))

@@ -30,7 +30,7 @@ struct SettingsOthersView: View {
             // About
             NavigationLink(destination: AboutView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.settingsAboutSection,
-                                 image: Image("LogoIcon"),
+                                 image: Image(.logoIcon),
                                  accessory: .rightDetail("v\(viewModel.state.version)"))
             }
 
@@ -60,18 +60,18 @@ struct SettingsOthersView: View {
                     }
                 } label: {
                     SettingsCellView(label: UserText.subscriptionFeedback,
-                                     image: Image("SettingsFeedback"))
+                                     image: Image(.settingsFeedback))
                 }
             } else {
                 SettingsCellView(label: UserText.settingsFeedback,
-                                 image: Image("SettingsFeedback"),
+                                 image: Image(.settingsFeedback),
                                  action: { viewModel.presentLegacyView(.feedback) },
                                  isButton: true)
             }
 
             // DuckDuckGo on Other Platforms
             SettingsCellView(label: UserText.duckduckgoOnOtherPlatforms,
-                             image: Image("SettingsOtherPlatforms"),
+                             image: Image(.settingsOtherPlatforms),
                              action: { viewModel.openOtherPlatforms() },
                              webLinkIndicator: true,
                              isButton: true)

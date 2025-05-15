@@ -200,7 +200,7 @@ private enum Const {
 }
 
 private extension Image {
-    static let copy = Image("Copy-24")
+    static let copy = Image(uiImage: DesignSystemImages.Glyphs.Size24.copy)
 }
 
 // MARK: - Preview

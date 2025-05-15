@@ -256,6 +256,6 @@ private enum Const {
 }
 
 private extension Image {
-    static let close = Image("Close-24")
-    static let appIcon = Image("WaitlistShareSheetLogo")
+    static let close = Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
+    static let appIcon = Image(.waitlistShareSheetLogo)
 }

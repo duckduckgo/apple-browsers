@@ -91,6 +91,7 @@ struct AboutPanelView: View {
 }
 
 // Controller to display the About panel
+@MainActor
 final class AboutPanelController {
 
     private var panel: AboutPanelWindow

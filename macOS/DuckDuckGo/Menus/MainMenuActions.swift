@@ -262,6 +262,7 @@ extension AppDelegate {
         }
     }
 
+    @MainActor
     @objc func openAbout(_ sender: Any?) {
         AboutPanelController.show(internalUserDecider: internalUserDecider)
     }

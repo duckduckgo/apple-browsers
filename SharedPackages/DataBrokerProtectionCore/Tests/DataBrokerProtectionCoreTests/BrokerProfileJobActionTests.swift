@@ -419,6 +419,67 @@ final class BrokerProfileJobActionTests: XCTestCase {
         XCTAssertEqual(mockStageCalculator.stage, .submit)
     }
 
+    func testWhenExpectationActionRunsDuringScan_thenRetriesCountIsSetToOne() async {
+        let expectationAction = ExpectationAction(id: "1", actionType: .expectation, expectations: [Item](), dataSource: nil, actions: nil)
+        let sut = BrokerProfileScanSubJobWebRunner(
+            privacyConfig: PrivacyConfigurationManagingMock(),
+            prefs: ContentScopeProperties.mock,
+            query: .mock(with: [Step(type: .scan, actions: [])]),
+            emailService: emailService,
+            captchaService: captchaService,
+            stageDurationCalculator: MockStageDurationCalculator(),
+            pixelHandler: MockPixelHandler(),
+            shouldRunNextStep: { true }
+        )
+
+        XCTAssertEqual(sut.retriesCountOnError, 0)
+        await sut.runNextAction(expectationAction)
+        XCTAssertEqual(sut.retriesCountOnError, 1)
+    }
+
+    func testWhenExpectationActionRunsDuringOptOut_thenRetriesCountIsSetToThree() async {
+        let expectationAction = ExpectationAction(id: "1", actionType: .expectation, expectations: [Item](), dataSource: nil, actions: nil)
+        let sut = BrokerProfileOptOutSubJobWebRunner(
+            privacyConfig: PrivacyConfigurationManagingMock(),
+            prefs: ContentScopeProperties.mock,
+            query: BrokerProfileQueryData.mock(),
+            emailService: emailService,
+            captchaService: captchaService,
+            operationAwaitTime: 0,
+            stageCalculator: MockStageDurationCalculator(),
+            pixelHandler: pixelHandler,
+            shouldRunNextStep: { true }
+        )
+
+        XCTAssertEqual(sut.retriesCountOnError, 3)
+        await sut.runNextAction(expectationAction)
+        XCTAssertEqual(sut.retriesCountOnError, 3)
+    }
+
+    func testWhenExpectationActionFailsDuringScan_thenRetryOnce() async {
+        let expectationAction = ExpectationAction(id: "1", actionType: .expectation, expectations: [Item](), dataSource: nil, actions: nil)
+        let sut = BrokerProfileScanSubJobWebRunner(
+            privacyConfig: PrivacyConfigurationManagingMock(),
+            prefs: ContentScopeProperties.mock,
+            query: .mock(with: [Step(type: .scan, actions: [])]),
+            emailService: emailService,
+            captchaService: captchaService,
+            stageDurationCalculator: MockStageDurationCalculator(),
+            pixelHandler: MockPixelHandler(),
+            shouldRunNextStep: { true }
+        )
+        sut.webViewHandler = webViewHandler
+
+        await sut.runNextAction(expectationAction)
+        XCTAssertEqual(sut.retriesCountOnError, 1)
+
+        await sut.onError(error: DataBrokerProtectionError.httpError(code: 429))
+        XCTAssertEqual(sut.retriesCountOnError, 0)
+
+        await sut.onError(error: DataBrokerProtectionError.httpError(code: 429))
+        XCTAssertTrue(webViewHandler.wasFinishCalled)
+    }
+
     func testWhenFillFormActionRuns_thenStageIsSetToFillForm() async {
         let mockStageCalculator = MockStageDurationCalculator()
         let fillFormAction = FillFormAction(id: "1", actionType: .fillForm, selector: "", elements: [PageElement](), dataSource: nil)

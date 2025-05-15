@@ -820,7 +820,7 @@ final class NavigationBarViewController: NSViewController {
 
     private var daxFadeInAnimation: DispatchWorkItem?
     private var heightChangeAnimation: DispatchWorkItem?
-    func resizeAddressBar(for sizeClass: AddressBarSizeClass, animated: Bool, focused: Bool = false) {
+    func resizeAddressBar(for sizeClass: AddressBarSizeClass, animated: Bool) {
         daxFadeInAnimation?.cancel()
         heightChangeAnimation?.cancel()
 
@@ -830,8 +830,9 @@ final class NavigationBarViewController: NSViewController {
         let performResize = { [weak self] in
             guard let self else { return }
 
+            let isAddressBarFocused = view.window?.firstResponder == addressBarViewController?.addressBarTextField.currentEditor()
             let height: NSLayoutConstraint = animated ? navigationBarHeightConstraint.animator() : navigationBarHeightConstraint
-            height.constant = visualStyle.addressBarHeight(for: sizeClass, focused: focused)
+            height.constant = visualStyle.addressBarHeight(for: sizeClass, focused: isAddressBarFocused)
 
             let barTop: NSLayoutConstraint = animated ? addressBarTopConstraint.animator() : addressBarTopConstraint
             barTop.constant = visualStyle.addressBarTopPadding(for: sizeClass)
@@ -1667,7 +1668,7 @@ extension NavigationBarViewController: AddressBarViewControllerDelegate {
 
     func resizeAddressBarForHomePage(_ addressBarViewController: AddressBarViewController, isFocused: Bool) {
         let addressBarSizeClass: AddressBarSizeClass = tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab ? .homePage : .default
-        resizeAddressBar(for: addressBarSizeClass, animated: true, focused: isFocused)
+        resizeAddressBar(for: addressBarSizeClass, animated: true)
     }
 }
 

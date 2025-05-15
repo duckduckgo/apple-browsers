@@ -380,7 +380,7 @@ final class MainViewController: NSViewController {
 
     private func resizeNavigationBar(isHomePage homePage: Bool, animated: Bool) {
         updateDividerColor(isShowingHomePage: homePage)
-        navigationBarViewController.resizeAddressBar(for: homePage ? .homePage : (isInPopUpWindow ? .popUpWindow : .default), animated: animated, focused: true)
+        navigationBarViewController.resizeAddressBar(for: homePage ? .homePage : (isInPopUpWindow ? .popUpWindow : .default), animated: animated)
     }
 
     private var lastTabContent = Tab.TabContent.none

@@ -980,16 +980,12 @@ extension AddressBarTextField: NSTextFieldDelegate {
     func controlTextDidEndEditing(_ obj: Notification) {
         suggestionContainerViewModel?.clearUserStringValue()
         hideSuggestionWindow()
+        focusDelegate?.addressBarDidLoseFocus(self)
     }
 
     func controlTextDidChange(_ obj: Notification) {
         handleTextDidChange()
         onboardingDelegate?.measureAddressBarTypedIn()
-    }
-
-    override func textDidEndEditing(_ notification: Notification) {
-        super.textDidEndEditing(notification)
-        focusDelegate?.addressBarDidLoseFocus(self)
     }
 
     private func handleTextDidChange() {

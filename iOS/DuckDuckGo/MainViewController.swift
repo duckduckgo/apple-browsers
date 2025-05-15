@@ -2630,7 +2630,6 @@ extension MainViewController: TabDelegate {
              inheritingAttribution attribution: AdClickAttributionLogic.State?) {
         _ = tabManager.add(url: url, inBackground: true, inheritedAttribution: attribution)
         animateBackgroundTab()
-        refreshControls()
     }
 
     func tab(_ tab: TabViewController,

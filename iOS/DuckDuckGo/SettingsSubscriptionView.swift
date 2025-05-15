@@ -60,7 +60,7 @@ struct SettingsSubscriptionView: View {
     private var manageSubscriptionView: some View {
         SettingsCellView(
             label: UserText.settingsPProManageSubscription,
-            image: Image("SettingsPrivacyPro")
+            image: Image(.settingsPrivacyPro)
         )
     }
 
@@ -86,7 +86,7 @@ struct SettingsSubscriptionView: View {
 
             SettingsCellView(label: UserText.settingsPProSubscribe,
                              subtitle: subtitleText,
-                             image: Image("SettingsPrivacyPro"))
+                             image: Image(.settingsPrivacyPro))
             .disabled(true)
 
             // Get privacy pro
@@ -130,7 +130,7 @@ struct SettingsSubscriptionView: View {
 
         if subscriptionFeatures.contains(.networkProtection) {
             SettingsCellView(label: UserText.settingsPProVPNTitle,
-                             image: Image("SettingsPrivacyProVPN"),
+                             image: Image(.settingsPrivacyProVPN),
                              statusIndicator: StatusIndicatorView(status: .off),
                              isGreyedOut: true
             )
@@ -139,7 +139,7 @@ struct SettingsSubscriptionView: View {
         if subscriptionFeatures.contains(.dataBrokerProtection) {
             SettingsCellView(
                 label: UserText.settingsPProDBPTitle,
-                image: Image("SettingsPrivacyProPIR"),
+                image: Image(.settingsPrivacyProPIR),
                 statusIndicator: StatusIndicatorView(status: .off),
                 isGreyedOut: true
             )
@@ -148,7 +148,7 @@ struct SettingsSubscriptionView: View {
         if subscriptionFeatures.contains(.identityTheftRestoration) || subscriptionFeatures.contains(.identityTheftRestorationGlobal) {
             SettingsCellView(
                 label: UserText.settingsPProITRTitle,
-                image: Image("SettingsPrivacyProITP"),
+                image: Image(.settingsPrivacyProITP),
                 statusIndicator: StatusIndicatorView(status: .off),
                 isGreyedOut: true
             )
@@ -171,7 +171,7 @@ struct SettingsSubscriptionView: View {
                 SettingsCellView(
                     label: UserText.settingsPProManageSubscription,
                     subtitle: UserText.settingsPProSubscriptionExpiredTitle,
-                    image: Image("SettingsPrivacyPro"),
+                    image: Image(.settingsPrivacyPro),
                     accessory: .image(Image(uiImage: DesignSystemImages.Color.Size16.exclamation))
                 )
             }
@@ -186,7 +186,7 @@ struct SettingsSubscriptionView: View {
                 SettingsCellView(
                     label: UserText.settingsPProManageSubscription,
                     subtitle: UserText.settingsPProSubscriptionExpiredTitle,
-                    image: Image("SettingsPrivacyPro"),
+                    image: Image(.settingsPrivacyPro),
                     accessory: .image(Image(uiImage: DesignSystemImages.Color.Size16.exclamation))
                 )
             }
@@ -209,7 +209,7 @@ struct SettingsSubscriptionView: View {
                 SettingsCellView(
                     label: UserText.settingsPProManageSubscription,
                     subtitle: UserText.settingsPProActivating,
-                    image: Image("SettingsPrivacyPro")
+                    image: Image(.settingsPrivacyPro)
                 )
             }
         } else {
@@ -223,7 +223,7 @@ struct SettingsSubscriptionView: View {
                 SettingsCellView(
                     label: UserText.settingsPProManageSubscription,
                     subtitle: UserText.settingsPProActivating,
-                    image: Image("SettingsPrivacyPro")
+                    image: Image(.settingsPrivacyPro)
                 )
             }
         }
@@ -241,7 +241,7 @@ struct SettingsSubscriptionView: View {
             NavigationLink(destination: LazyView(NetworkProtectionRootView()), isActive: $isShowingVPN) {
                 SettingsCellView(
                     label: UserText.settingsPProVPNTitle,
-                    image: Image("SettingsPrivacyProVPN"),
+                    image: Image(.settingsPrivacyProVPN),
                     statusIndicator: StatusIndicatorView(status: isVPNConnected ? .on : .off),
                     isGreyedOut: !hasVPNEntitlement
                 )
@@ -255,7 +255,7 @@ struct SettingsSubscriptionView: View {
             NavigationLink(destination: LazyView(SubscriptionPIRView()), isActive: $isShowingDBP) {
                 SettingsCellView(
                     label: UserText.settingsPProDBPTitle,
-                    image: Image("SettingsPrivacyProPIR"),
+                    image: Image(.settingsPrivacyProPIR),
                     statusIndicator: StatusIndicatorView(status: hasDBPEntitlement ? .on : .off),
                     isGreyedOut: !hasDBPEntitlement
                 )
@@ -269,7 +269,7 @@ struct SettingsSubscriptionView: View {
             NavigationLink(destination: LazyView(SubscriptionITPView()), isActive: $isShowingITP) {
                 SettingsCellView(
                     label: UserText.settingsPProITRTitle,
-                    image: Image("SettingsPrivacyProITP"),
+                    image: Image(.settingsPrivacyProITP),
                     statusIndicator: StatusIndicatorView(status: hasITREntitlement ? .on : .off),
                     isGreyedOut: !hasITREntitlement
                 )

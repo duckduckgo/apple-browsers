@@ -93,7 +93,7 @@ public struct PlatformLinksView: View {
                     }
                 } label: {
                     HStack(spacing: 6) {
-                        Image("Share-Apple-24")
+                        Image(uiImage: DesignSystemImages.Glyphs.Size24.shareApple)
                         Text(UserText.syncGetOtherDevicesButtonTitle)
                             .daxBodyBold()
                     }

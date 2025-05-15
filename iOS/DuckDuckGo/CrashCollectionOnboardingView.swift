@@ -129,7 +129,6 @@ struct CrashCollectionOnboardingView: View {
             HStack {
                 if model.showReportButtonMode == .hideDetails {
                     Text(UserText.crashReportHideDetails).daxButton()
-                    Image("ChevronUp").frame(width: 7, height: 12)
                     Image(uiImage: DesignSystemImages.Glyphs.Size24.chevronUpSmall).frame(width: 7, height: 12)
                 } else {
                     Text(UserText.crashReportShowDetails).daxButton()

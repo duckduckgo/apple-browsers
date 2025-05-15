@@ -143,7 +143,7 @@ public struct ScanOrSeeCode: View {
                     .onTapGesture {
                         model.showShareCodeSheet()
                     }
-                Image("Arrow-Circle-Right-12")
+                Image(uiImage: DesignSystemImages.Glyphs.Size12.arrowCircleRight)
             }
         }
     }

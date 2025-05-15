@@ -19,6 +19,7 @@
 
 import SwiftUI
 import DuckUI
+import DesignResourcesKit
 
 public struct ScanOrEnterCodeToRecoverSyncedDataView: View {
 
@@ -59,7 +60,7 @@ public struct ScanOrEnterCodeToRecoverSyncedDataView: View {
                                 PasteCodeView(model: model)
                             })
                             .foregroundColor(Color(designSystemColor: .accent))
-                            Image("Arrow-Circle-Right-12")
+                            Image(uiImage: DesignSystemImages.Glyphs.Size12.arrowCircleRight)
                         }
                     }
                     .padding(20)

@@ -667,8 +667,8 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
         passiveTextFieldTrailingConstraint.constant = trailingConstant
     }
 
-    func addressBarButtonsViewControllerClearButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
-        addressBarTextField.clearValue()
+    func addressBarButtonsViewControllerCancelButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
+        _ = escapeKeyDown()
     }
 }
 

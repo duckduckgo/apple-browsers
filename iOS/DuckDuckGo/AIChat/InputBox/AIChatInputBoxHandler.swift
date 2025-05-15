@@ -19,42 +19,9 @@
 
 import Combine
 import SwiftUI
-
-protocol AIChatInputBoxHandling {
-    // Publishers
-    var didPressFireButton: PassthroughSubject<Void, Never> { get }
-    var didPressNewChatButton: PassthroughSubject<Void, Never> { get }
-    var didSubmitText: PassthroughSubject<String, Never> { get }
-    var didPressStopGeneratingButton: PassthroughSubject<Void, Never> { get }
-
-    var aiChatStatus: AIChatStatusValue { get set }
-    var aiChatInputBoxVisibility: AIChatInputBoxVisibility { get set }
-
-    // Methods
-    func fireButtonPressed()
-    func newChatButtonPressed()
-    func submitText(_ text: String)
-}
-
-enum AIChatStatusValue: String, Codable {
-    case startStreamNewPrompt = "start_stream:new_prompt"
-    case loading
-    case streaming
-    case error
-    case ready
-    case blocked
-    case unknown
-}
-
-enum AIChatInputBoxVisibility: String, Codable {
-    case hidden
-    case visible
-    case unknown
-}
-
-struct AIChatStatus: Codable {
-    let status: AIChatStatusValue
-}
+import AIChat
+import Combine
+import SwiftUI
 
 final class AIChatInputBoxHandler: AIChatInputBoxHandling {
     let didPressFireButton = PassthroughSubject<Void, Never>()
@@ -62,19 +29,20 @@ final class AIChatInputBoxHandler: AIChatInputBoxHandling {
     let didPressStopGeneratingButton = PassthroughSubject<Void, Never>()
     let didSubmitText = PassthroughSubject<String, Never>()
 
-    @MainActor
-    var aiChatInputBoxVisibility: AIChatInputBoxVisibility = .unknown {
+    @MainActor @Published var aiChatInputBoxVisibility: AIChatInputBoxVisibility = .unknown {
         didSet {
             inputBoxViewModel.visibility = aiChatInputBoxVisibility
         }
     }
 
-    @MainActor
-    var aiChatStatus: AIChatStatusValue = .unknown {
+    @MainActor @Published var aiChatStatus: AIChatStatusValue = .unknown {
         didSet {
             updateStatus()
         }
     }
+
+    var aiChatStatusPublisher: Published<AIChatStatusValue>.Publisher { $aiChatStatus }
+    var aiChatInputBoxVisibilityPublisher: Published<AIChatInputBoxVisibility>.Publisher { $aiChatInputBoxVisibility }
 
     private let inputBoxViewModel: AIChatInputBoxViewModel
     private var cancellables = Set<AnyCancellable>()

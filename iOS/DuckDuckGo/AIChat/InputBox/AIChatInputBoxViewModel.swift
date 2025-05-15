@@ -19,6 +19,7 @@
 
 import Combine
 import SwiftUI
+import AIChat
 
 final class AIChatInputBoxViewModel: ObservableObject {
 
@@ -28,8 +29,21 @@ final class AIChatInputBoxViewModel: ObservableObject {
         case unknown
     }
 
+    enum InputMode: String, CaseIterable, Identifiable {
+         case search
+         case chat = "duck.ai"
+
+         var id: Self { self }
+     }
+
+    @Published var inputText: String = ""
     @Published var state: ChatState = .unknown
     @Published var visibility: AIChatInputBoxVisibility = .unknown
+    @Published var inputMode: InputMode = .chat {
+        didSet {
+            removeExtraLines()
+        }
+    }
 
     // MARK: - Publishers
     let didPressFireButton = PassthroughSubject<Void, Never>()
@@ -38,6 +52,10 @@ final class AIChatInputBoxViewModel: ObservableObject {
     let didPressStopGenerating = PassthroughSubject<Void, Never>()
 
     // MARK: - Public Methods
+    func clearText() {
+        inputText = ""
+    }
+
     func fireButtonPressed() {
         didPressFireButton.send()
     }
@@ -49,8 +67,15 @@ final class AIChatInputBoxViewModel: ObservableObject {
     func submitText(_ text: String) {
         didSubmitText.send(text)
     }
-    
+
     func stopGenerating() {
         didPressStopGenerating.send()
     }
+
+    //MARK: - Private Methods
+    private func removeExtraLines() {
+        /// Should just remove the extra lines in the future, leaving it like this for now
+        inputText = ""
+    }
+
 }

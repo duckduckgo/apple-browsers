@@ -100,7 +100,8 @@ final class AIChatViewControllerManager {
             inspectableWebView: inspectableWebView,
             downloadsPath: downloadsDirectoryHandler.downloadsDirectory,
             userAgentManager: userAgentManager,
-            chatInputBox: chatInputBox
+            chatInputBoxViewController: chatInputBox,
+            chatInputBoxHandler: inputBoxHandler
         )
 
         aiChatViewController.delegate = self
@@ -136,16 +137,14 @@ final class AIChatViewControllerManager {
 #endif
     }
 
-    private func setupChatInputBoxIfNeeded() -> AnyView? {
+    private func setupChatInputBoxIfNeeded() -> UIViewController? {
         guard experimentalAIChatManager.isExperimentalAIChatSettingsEnabled else { return nil }
-
         let viewModel = AIChatInputBoxViewModel()
         let handler = AIChatInputBoxHandler(inputBoxViewModel: viewModel)
 
         inputBoxViewModel = viewModel
         inputBoxHandler = handler
-
-        return AnyView(AIChatInputBox(viewModel: viewModel))
+        return ChatInputBoxViewController(viewModel: viewModel)
     }
 
     private func cleanUpUserContent() {

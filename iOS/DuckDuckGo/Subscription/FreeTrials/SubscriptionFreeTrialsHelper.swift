@@ -20,13 +20,13 @@
 import BrowserServicesKit
 import Core
 
-/// Protocol defining the interface for handling subscription free trials availability.
+/// Protocol defining the interface for encapsulating subscription free trial logic.
 protocol SubscriptionFreeTrialsHelping {
     /// Indicates whether free trials are currently available.
     var areFreeTrialsAvailable: Bool { get }
 }
 
-/// A helper struct that determines the availability of subscription free trials.
+/// A helper struct that encapsulates subscription free trial logic.
 struct SubscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping {
 
     /// The feature flagging service used to determine if the promotion should be shown.

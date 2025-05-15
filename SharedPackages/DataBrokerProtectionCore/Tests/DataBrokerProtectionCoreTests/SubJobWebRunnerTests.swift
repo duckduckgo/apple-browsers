@@ -1,5 +1,5 @@
 //
-//  DataBrokerJobTests.swift
+//  SubJobWebRunnerTests.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -74,24 +74,26 @@ final class DataBrokerJobTests: XCTestCase {
 
 private extension DataBrokerJobTests {
 
-    var scanJob: ScanJob {
-        ScanJob(privacyConfig: PrivacyConfigurationManagingMock(),
-                prefs: .mock,
-                query: .mock(with: [Step(type: .scan, actions: [])]),
-                emailService: EmailServiceMock(),
-                captchaService: CaptchaServiceMock(),
-                stageDurationCalculator: MockStageDurationCalculator(),
-                pixelHandler: MockPixelHandler(),
-                shouldRunNextStep: { true })
+    var scanJob: BrokerProfileScanSubJobWebRunner {
+        BrokerProfileScanSubJobWebRunner(privacyConfig: PrivacyConfigurationManagingMock(),
+                                         prefs: .mock,
+                                         query: .mock(with: [Step(type: .scan, actions: [])]),
+                                         emailService: EmailServiceMock(),
+                                         captchaService: CaptchaServiceMock(),
+                                         stageDurationCalculator: MockStageDurationCalculator(),
+                                         pixelHandler: MockPixelHandler(),
+                                         shouldRunNextStep: { true })
     }
 
-    var optOutJob: OptOutJob {
-        OptOutJob(privacyConfig: PrivacyConfigurationManagingMock(),
-                  prefs: .mock, query: .mock(with: [Step(type: .optOut, actions: [])]),
-                  emailService: EmailServiceMock(),
-                  captchaService: CaptchaServiceMock(),
-                  stageCalculator: MockStageDurationCalculator(),
-                  pixelHandler: MockPixelHandler(),
-                  shouldRunNextStep: { true })
+    var optOutJob: BrokerProfileOptOutSubJobWebRunner {
+        BrokerProfileOptOutSubJobWebRunner(privacyConfig: PrivacyConfigurationManagingMock(),
+                                           prefs: .mock,
+                                           query: .mock(with: [Step(type: .optOut, actions: [])]),
+                                           emailService: EmailServiceMock(),
+                                           captchaService: CaptchaServiceMock(),
+                                           stageCalculator: MockStageDurationCalculator(),
+                                           pixelHandler: MockPixelHandler(),
+                                           shouldRunNextStep: { true })
     }
+
 }

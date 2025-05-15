@@ -58,6 +58,7 @@ final class AddressBarTextField: NSTextField {
     private var selectedTabViewModelCancellable: AnyCancellable?
     private var addressBarStringCancellable: AnyCancellable?
     private var contentTypeCancellable: AnyCancellable?
+    private var windowFrameCancellable: AnyCancellable?
 
     weak var onboardingDelegate: OnboardingAddressBarReporting?
 
@@ -85,10 +86,6 @@ final class AddressBarTextField: NSTextField {
     override func mouseDown(with event: NSEvent) {
         super.mouseDown(with: event)
         currentEditor()?.selectAll(self)
-    }
-
-    func viewDidLayout() {
-        layoutSuggestionWindow()
     }
 
     // MARK: Observation
@@ -634,6 +631,12 @@ final class AddressBarTextField: NSTextField {
         guard !suggestionWindow.isVisible, isFirstResponder else { return }
 
         window.addChildWindow(suggestionWindow, ordered: .above)
+
+        windowFrameCancellable = window.publisher(for: \.frame)
+            .sink { [weak self] _ in
+                self?.layoutSuggestionWindow()
+            }
+
         layoutSuggestionWindow()
     }
 
@@ -643,6 +646,8 @@ final class AddressBarTextField: NSTextField {
 
         parent.removeChildWindow(suggestionWindow)
         suggestionWindow.orderOut(nil)
+        windowFrameCancellable?.cancel()
+        windowFrameCancellable = nil
     }
 
     private func layoutSuggestionWindow() {

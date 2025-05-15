@@ -1,5 +1,5 @@
 //
-//  ScanJob.swift
+//  BrokerProfileScanSubJobWebRunner.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -23,39 +23,45 @@ import UserScript
 import Common
 import os.log
 
-final class ScanJob: DataBrokerJob {
-    typealias ReturnValue = [ExtractedProfile]
-    typealias InputValue = Void
+public protocol BrokerProfileScanSubJobWebRunning {
+    func scan(_ profileQuery: BrokerProfileQueryData,
+              showWebView: Bool,
+              shouldRunNextStep: @escaping () -> Bool) async throws -> [ExtractedProfile]
+}
 
-    let privacyConfig: PrivacyConfigurationManaging
-    let prefs: ContentScopeProperties
-    let query: BrokerProfileQueryData
-    let emailService: EmailServiceProtocol
-    let captchaService: CaptchaServiceProtocol
-    let cookieHandler: CookieHandler
-    let stageCalculator: StageDurationCalculator
-    var webViewHandler: WebViewHandler?
-    var actionsHandler: ActionsHandler?
-    var continuation: CheckedContinuation<[ExtractedProfile], Error>?
-    var extractedProfile: ExtractedProfile?
+public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerProfileScanSubJobWebRunning {
+    public typealias ReturnValue = [ExtractedProfile]
+    public typealias InputValue = Void
+
+    public let privacyConfig: PrivacyConfigurationManaging
+    public let prefs: ContentScopeProperties
+    public let query: BrokerProfileQueryData
+    public let emailService: EmailServiceProtocol
+    public let captchaService: CaptchaServiceProtocol
+    public let cookieHandler: CookieHandler
+    public let stageCalculator: StageDurationCalculator
+    public var webViewHandler: WebViewHandler?
+    public var actionsHandler: ActionsHandler?
+    public var continuation: CheckedContinuation<[ExtractedProfile], Error>?
+    public var extractedProfile: ExtractedProfile?
     private let operationAwaitTime: TimeInterval
-    let shouldRunNextStep: () -> Bool
-    var retriesCountOnError: Int = 0
-    let clickAwaitTime: TimeInterval
-    let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
-    var postLoadingSiteStartTime: Date?
+    public let shouldRunNextStep: () -> Bool
+    public var retriesCountOnError: Int = 0
+    public let clickAwaitTime: TimeInterval
+    public let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
+    public var postLoadingSiteStartTime: Date?
 
-    init(privacyConfig: PrivacyConfigurationManaging,
-         prefs: ContentScopeProperties,
-         query: BrokerProfileQueryData,
-         emailService: EmailServiceProtocol,
-         captchaService: CaptchaServiceProtocol,
-         cookieHandler: CookieHandler = BrokerCookieHandler(),
-         operationAwaitTime: TimeInterval = 3,
-         clickAwaitTime: TimeInterval = 0,
-         stageDurationCalculator: StageDurationCalculator,
-         pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-         shouldRunNextStep: @escaping () -> Bool
+    public init(privacyConfig: PrivacyConfigurationManaging,
+                prefs: ContentScopeProperties,
+                query: BrokerProfileQueryData,
+                emailService: EmailServiceProtocol,
+                captchaService: CaptchaServiceProtocol,
+                cookieHandler: CookieHandler = BrokerCookieHandler(),
+                operationAwaitTime: TimeInterval = 3,
+                clickAwaitTime: TimeInterval = 0,
+                stageDurationCalculator: StageDurationCalculator,
+                pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
+                shouldRunNextStep: @escaping () -> Bool
     ) {
         self.privacyConfig = privacyConfig
         self.prefs = prefs
@@ -70,10 +76,17 @@ final class ScanJob: DataBrokerJob {
         self.pixelHandler = pixelHandler
     }
 
-    func run(inputValue: InputValue,
-             webViewHandler: WebViewHandler? = nil,
-             actionsHandler: ActionsHandler? = nil,
-             showWebView: Bool) async throws -> [ExtractedProfile] {
+    @MainActor
+    public func scan(_ profileQuery: BrokerProfileQueryData,
+                     showWebView: Bool,
+                     shouldRunNextStep: @escaping () -> Bool) async throws -> [ExtractedProfile] {
+        return try await self.run(inputValue: (), showWebView: showWebView)
+    }
+
+    public func run(inputValue: InputValue,
+                    webViewHandler: WebViewHandler? = nil,
+                    actionsHandler: ActionsHandler? = nil,
+                    showWebView: Bool) async throws -> [ExtractedProfile] {
         try await withCheckedThrowingContinuation { continuation in
             self.continuation = continuation
             Task {
@@ -98,12 +111,12 @@ final class ScanJob: DataBrokerJob {
         }
     }
 
-    func extractedProfiles(profiles: [ExtractedProfile], meta: [String: Any]?) async {
+    public func extractedProfiles(profiles: [ExtractedProfile], meta: [String: Any]?) async {
         complete(profiles)
         await executeNextStep()
     }
 
-    func executeNextStep() async {
+    public func executeNextStep() async {
         retriesCountOnError = 0 // We reset the retries on error when it is successful
         Logger.action.debug("SCAN Waiting \(self.operationAwaitTime, privacy: .public) seconds...")
 

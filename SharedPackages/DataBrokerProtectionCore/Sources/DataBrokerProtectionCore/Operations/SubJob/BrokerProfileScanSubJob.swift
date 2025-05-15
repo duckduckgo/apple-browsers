@@ -1,7 +1,7 @@
 //
-//  DataBrokerProfileQueryOperationManager.swift
+//  BrokerProfileScanSubJob.swift
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -20,109 +20,49 @@ import Foundation
 import Common
 import os.log
 
-enum OperationsError: Error {
-    case idsMissingForBrokerOrProfileQuery
-}
+struct BrokerProfileScanSubJob {
+    private let dependencies: BrokerProfileJobDependencyProviding
 
-protocol OperationsManager {
-
-    // We want to refactor this to return a NSOperation in the future
-    // so we have more control of stopping/starting the queue
-    // for the time being, shouldRunNextStep: @escaping () -> Bool is being used
-    func runOperation(operationData: BrokerJobData,
-                      brokerProfileQueryData: BrokerProfileQueryData,
-                      database: DataBrokerProtectionRepository,
-                      notificationCenter: NotificationCenter,
-                      runner: WebJobRunner,
-                      pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-                      showWebView: Bool,
-                      isImmediateOperation: Bool,
-                      eventsHandler: EventMapping<OperationEvent>,
-                      shouldRunNextStep: @escaping () -> Bool) async throws
-}
-
-struct DataBrokerProfileQueryOperationManager: OperationsManager {
-    private let vpnBypassService: VPNBypassFeatureProvider?
-
-    init(vpnBypassService: VPNBypassFeatureProvider?) {
-        vpnBypassService?.setUp()
-        self.vpnBypassService = vpnBypassService
+    init(dependencies: BrokerProfileJobDependencyProviding) {
+        dependencies.vpnBypassService?.setUp()
+        self.dependencies = dependencies
     }
 
     private var vpnConnectionState: String {
-        vpnBypassService?.connectionStatus ?? "unknown"
+        dependencies.vpnBypassService?.connectionStatus ?? "unknown"
     }
 
     private var vpnBypassStatus: String {
-        vpnBypassService?.bypassStatus.rawValue ?? "unknown"
-    }
-
-    internal func runOperation(operationData: BrokerJobData,
-                               brokerProfileQueryData: BrokerProfileQueryData,
-                               database: DataBrokerProtectionRepository,
-                               notificationCenter: NotificationCenter = NotificationCenter.default,
-                               runner: WebJobRunner,
-                               pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-                               showWebView: Bool = false,
-                               isImmediateOperation: Bool = false,
-                               eventsHandler: EventMapping<OperationEvent>,
-                               shouldRunNextStep: @escaping () -> Bool) async throws {
-
-        if operationData as? ScanJobData != nil {
-            try await runScanOperation(on: runner,
-                                       brokerProfileQueryData: brokerProfileQueryData,
-                                       database: database,
-                                       notificationCenter: notificationCenter,
-                                       pixelHandler: pixelHandler,
-                                       showWebView: showWebView,
-                                       isManual: isImmediateOperation,
-                                       eventsHandler: eventsHandler,
-                                       shouldRunNextStep: shouldRunNextStep)
-        } else if let optOutJobData = operationData as? OptOutJobData {
-            try await runOptOutOperation(for: optOutJobData.extractedProfile,
-                                         on: runner,
-                                         brokerProfileQueryData: brokerProfileQueryData,
-                                         database: database,
-                                         notificationCenter: notificationCenter,
-                                         pixelHandler: pixelHandler,
-                                         showWebView: showWebView,
-                                         eventsHandler: eventsHandler,
-                                         shouldRunNextStep: shouldRunNextStep)
-        }
+        dependencies.vpnBypassService?.bypassStatus.rawValue ?? "unknown"
     }
 
     // MARK: - Scan Jobs
 
-    internal func runScanOperation(on runner: WebJobRunner,
-                                   brokerProfileQueryData: BrokerProfileQueryData,
-                                   database: DataBrokerProtectionRepository,
-                                   notificationCenter: NotificationCenter,
-                                   pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-                                   showWebView: Bool = false,
-                                   isManual: Bool = false,
-                                   eventsHandler: EventMapping<OperationEvent>,
-                                   shouldRunNextStep: @escaping () -> Bool) async throws {
+    public func runScan(brokerProfileQueryData: BrokerProfileQueryData,
+                        showWebView: Bool = false,
+                        isManual: Bool = false,
+                        shouldRunNextStep: @escaping () -> Bool) async throws {
         Logger.dataBrokerProtection.log("Running scan operation: \(brokerProfileQueryData.dataBroker.name, privacy: .public)")
 
         // 1. Validate that the broker and profile query data objects each have an ID:
         guard let brokerId = brokerProfileQueryData.dataBroker.id,
               let profileQueryId = brokerProfileQueryData.profileQuery.id else {
             // Maybe send pixel?
-            throw OperationsError.idsMissingForBrokerOrProfileQuery
+            throw BrokerProfileSubJobError.idsMissingForBrokerOrProfileQuery
         }
 
         defer {
-            try? database.updateLastRunDate(Date(), brokerId: brokerId, profileQueryId: profileQueryId)
-            notificationCenter.post(name: DataBrokerProtectionNotifications.didFinishScan, object: brokerProfileQueryData.dataBroker.name)
+            try? dependencies.database.updateLastRunDate(Date(), brokerId: brokerId, profileQueryId: profileQueryId)
+            dependencies.notificationCenter.post(name: DataBrokerProtectionNotifications.didFinishScan, object: brokerProfileQueryData.dataBroker.name)
             Logger.dataBrokerProtection.log("Finished scan operation: \(brokerProfileQueryData.dataBroker.name, privacy: .public)")
         }
 
         // 2. Set up dependencies used to report the status of the scan job:
-        let eventPixels = DataBrokerProtectionEventPixels(database: database, handler: pixelHandler)
+        let eventPixels = DataBrokerProtectionEventPixels(database: dependencies.database, handler: dependencies.pixelHandler)
         let stageCalculator = DataBrokerProtectionStageDurationCalculator(
             dataBroker: brokerProfileQueryData.dataBroker.name,
             dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
-            handler: pixelHandler,
+            handler: dependencies.pixelHandler,
             isImmediateOperation: isManual,
             vpnConnectionState: vpnConnectionState,
             vpnBypassStatus: vpnBypassStatus
@@ -131,16 +71,16 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
         do {
             // 3. Record the start of the scan job:
             let event = HistoryEvent(brokerId: brokerId, profileQueryId: profileQueryId, type: .scanStarted)
-            try database.add(event)
+            try dependencies.database.add(event)
 
             // 4. Get extracted profiles from the runner:
-            let profilesFoundDuringCurrentScanJob = try await runner.scan(
-                brokerProfileQueryData,
-                stageCalculator: stageCalculator,
-                pixelHandler: pixelHandler,
-                showWebView: showWebView,
-                shouldRunNextStep: shouldRunNextStep
-            )
+            let runner = dependencies.createScanRunner(profileQuery: brokerProfileQueryData,
+                                                       stageDurationCalculator: stageCalculator,
+                                                       shouldRunNextStep: shouldRunNextStep)
+
+            let profilesFoundDuringCurrentScanJob = try await runner.scan(brokerProfileQueryData,
+                                                                          showWebView: showWebView,
+                                                                          shouldRunNextStep: shouldRunNextStep)
 
             Logger.dataBrokerProtection.log("OperationManager found profiles: \(profilesFoundDuringCurrentScanJob, privacy: .public)")
 
@@ -153,14 +93,14 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                     profileQueryId: profileQueryId,
                     type: .matchesFound(count: profilesFoundDuringCurrentScanJob.count)
                 )
-                try database.add(event)
+                try dependencies.database.add(event)
 
                 // 5b. Iterate over found profiles and process them:
                 try scheduleOptOutsForExtractedProfiles(extractedProfiles: profilesFoundDuringCurrentScanJob,
                                                         brokerProfileQueryData: brokerProfileQueryData,
                                                         brokerId: brokerId,
                                                         profileQueryId: profileQueryId,
-                                                        database: database,
+                                                        database: dependencies.database,
                                                         eventPixels: eventPixels,
                                                         stageCalculator: stageCalculator)
             } else {
@@ -168,7 +108,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                 try storeScanWithNoMatchesEvent(
                     brokerId: brokerId,
                     profileQueryId: profileQueryId,
-                    database: database,
+                    database: dependencies.database,
                     stageCalculator: stageCalculator
                 )
             }
@@ -188,9 +128,9 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                     brokerId: brokerId,
                     profileQueryId: profileQueryId,
                     brokerProfileQueryData: brokerProfileQueryData,
-                    database: database,
-                    pixelHandler: pixelHandler,
-                    eventsHandler: eventsHandler
+                    database: dependencies.database,
+                    pixelHandler: dependencies.pixelHandler,
+                    eventsHandler: dependencies.eventsHandler
                 )
             } else {
                 // 7b. If there were no removed profiles, update the date entries:
@@ -200,7 +140,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                     profileQueryId: profileQueryId,
                     extractedProfileId: nil,
                     schedulingConfig: brokerProfileQueryData.dataBroker.schedulingConfig,
-                    database: database
+                    database: dependencies.database
                 )
             }
         } catch {
@@ -211,7 +151,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                                  profileQueryId: profileQueryId,
                                  extractedProfileId: nil,
                                  error: error,
-                                 database: database,
+                                 database: dependencies.database,
                                  schedulingConfig: brokerProfileQueryData.dataBroker.schedulingConfig)
             throw error
         }
@@ -304,7 +244,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
         brokerProfileQueryData: BrokerProfileQueryData,
         database: DataBrokerProtectionRepository,
         pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-        eventsHandler: EventMapping<OperationEvent>
+        eventsHandler: EventMapping<JobEvent>
     ) throws {
         var shouldSendProfileRemovedEvent = false
         for removedProfile in removedProfiles {
@@ -347,7 +287,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
         }
     }
 
-    private func sendProfilesRemovedEventIfNecessary(eventsHandler: EventMapping<OperationEvent>,
+    private func sendProfilesRemovedEventIfNecessary(eventsHandler: EventMapping<JobEvent>,
                                                      database: DataBrokerProtectionRepository) {
 
         guard let savedExtractedProfiles = try? database.fetchAllBrokerProfileQueryData().flatMap({ $0.extractedProfiles }),
@@ -366,176 +306,6 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
         }
     }
 
-    // MARK: - Opt-Out Jobs
-
-    internal func runOptOutOperation(for extractedProfile: ExtractedProfile,
-                                     on runner: WebJobRunner,
-                                     brokerProfileQueryData: BrokerProfileQueryData,
-                                     database: DataBrokerProtectionRepository,
-                                     notificationCenter: NotificationCenter,
-                                     pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-                                     showWebView: Bool = false,
-                                     eventsHandler: EventMapping<OperationEvent>,
-                                     shouldRunNextStep: @escaping () -> Bool) async throws {
-        // 1. Validate that the broker and profile query data objects each have an ID:
-        guard let brokerId = brokerProfileQueryData.dataBroker.id,
-              let profileQueryId = brokerProfileQueryData.profileQuery.id,
-              let extractedProfileId = extractedProfile.id else {
-            // Maybe send pixel?
-            throw OperationsError.idsMissingForBrokerOrProfileQuery
-        }
-
-        // 2. Validate that profile hasn't already been opted-out:
-        guard extractedProfile.removedDate == nil else {
-            Logger.dataBrokerProtection.log("Profile already removed, skipping...")
-            return
-        }
-
-        // 3. Validate that profile is eligible to be opted-out now:
-        guard !brokerProfileQueryData.dataBroker.performsOptOutWithinParent() else {
-            Logger.dataBrokerProtection.log("Broker opts out in parent, skipping...")
-            return
-        }
-
-        // 4. Validate that profile isn't manually removed by user (using "This isn't me")
-        guard let events = try? database.fetchOptOutHistoryEvents(brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId),
-              !events.doesBelongToUserRemovedRecord else {
-            Logger.dataBrokerProtection.log("Manually removed by user, skipping...")
-            return
-        }
-
-        // 5. Set up dependencies used to report the status of the opt-out job:
-        let stageDurationCalculator = DataBrokerProtectionStageDurationCalculator(
-            dataBroker: brokerProfileQueryData.dataBroker.url,
-            dataBrokerVersion: brokerProfileQueryData.dataBroker.version,
-            handler: pixelHandler,
-            vpnConnectionState: vpnConnectionState,
-            vpnBypassStatus: vpnBypassStatus
-        )
-
-        // 6. Record the start of the opt-out job:
-        stageDurationCalculator.fireOptOutStart()
-        Logger.dataBrokerProtection.log("Running opt-out operation: \(brokerProfileQueryData.dataBroker.name, privacy: .public)")
-
-        // 7. Set up a defer block to report opt-out job completion regardless of its success:
-        defer {
-            reportOptOutJobCompletion(
-                brokerProfileQueryData: brokerProfileQueryData,
-                extractedProfileId: extractedProfileId,
-                brokerId: brokerId,
-                profileQueryId: profileQueryId,
-                database: database,
-                notificationCenter: notificationCenter
-            )
-        }
-
-        // 8. Perform the opt-out:
-        do {
-            // 8a. Mark the profile as having its opt-out job started:
-            try database.add(.init(extractedProfileId: extractedProfileId, brokerId: brokerId, profileQueryId: profileQueryId, type: .optOutStarted))
-
-            // 8b. Perform the opt-out itself:
-            try await runner.optOut(profileQuery: brokerProfileQueryData,
-                                    extractedProfile: extractedProfile,
-                                    stageCalculator: stageDurationCalculator,
-                                    pixelHandler: pixelHandler,
-                                    showWebView: showWebView,
-                                    shouldRunNextStep: shouldRunNextStep)
-
-            // 8c. Update state to indicate that the opt-out has been requested, for a future scan to confirm:
-            let tries = try fetchTotalNumberOfOptOutAttempts(database: database, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
-            stageDurationCalculator.fireOptOutValidate()
-            stageDurationCalculator.fireOptOutSubmitSuccess(tries: tries)
-
-            let updater = OperationPreferredDateUpdaterUseCase(database: database)
-            try updater.updateChildrenBrokerForParentBroker(brokerProfileQueryData.dataBroker, profileQueryId: profileQueryId)
-
-            try database.addAttempt(extractedProfileId: extractedProfileId,
-                                    attemptUUID: stageDurationCalculator.attemptId,
-                                    dataBroker: stageDurationCalculator.dataBroker,
-                                    lastStageDate: stageDurationCalculator.lastStateTime,
-                                    startTime: stageDurationCalculator.startTime)
-            try database.add(.init(extractedProfileId: extractedProfileId, brokerId: brokerId, profileQueryId: profileQueryId, type: .optOutRequested))
-            try incrementOptOutAttemptCountIfNeeded(
-                database: database,
-                brokerId: brokerId,
-                profileQueryId: profileQueryId,
-                extractedProfileId: extractedProfileId
-            )
-        } catch {
-            // 9. Catch errors from the opt-out job and report them:
-            let tries = try? fetchTotalNumberOfOptOutAttempts(database: database, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
-            stageDurationCalculator.fireOptOutFailure(tries: tries ?? -1)
-            handleOperationError(
-                origin: .optOut,
-                brokerId: brokerId,
-                profileQueryId: profileQueryId,
-                extractedProfileId: extractedProfileId,
-                error: error,
-                database: database,
-                schedulingConfig: brokerProfileQueryData.dataBroker.schedulingConfig
-            )
-            throw error
-        }
-    }
-
-    private func reportOptOutJobCompletion(brokerProfileQueryData: BrokerProfileQueryData,
-                                           extractedProfileId: Int64,
-                                           brokerId: Int64,
-                                           profileQueryId: Int64,
-                                           database: DataBrokerProtectionRepository,
-                                           notificationCenter: NotificationCenter) {
-        Logger.dataBrokerProtection.log("Finished opt-out operation: \(brokerProfileQueryData.dataBroker.name, privacy: .public)")
-
-        try? database.updateLastRunDate(Date(), brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
-        do {
-            try updateOperationDataDates(
-                origin: .optOut,
-                brokerId: brokerId,
-                profileQueryId: profileQueryId,
-                extractedProfileId: extractedProfileId,
-                schedulingConfig: brokerProfileQueryData.dataBroker.schedulingConfig,
-                database: database
-            )
-        } catch {
-            handleOperationError(
-                origin: .optOut,
-                brokerId: brokerId,
-                profileQueryId: profileQueryId,
-                extractedProfileId: extractedProfileId,
-                error: error,
-                database: database,
-                schedulingConfig: brokerProfileQueryData.dataBroker.schedulingConfig
-            )
-        }
-        notificationCenter.post(name: DataBrokerProtectionNotifications.didFinishOptOut, object: brokerProfileQueryData.dataBroker.name)
-    }
-
-    private func incrementOptOutAttemptCountIfNeeded(database: DataBrokerProtectionRepository,
-                                                     brokerId: Int64,
-                                                     profileQueryId: Int64,
-                                                     extractedProfileId: Int64) throws {
-        guard let events = try? database.fetchOptOutHistoryEvents(brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId),
-              events.max(by: { $0.date < $1.date })?.type == .optOutRequested else {
-            return
-        }
-
-        try database.incrementAttemptCount(brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId)
-    }
-
-    private func fetchTotalNumberOfOptOutAttempts(database: DataBrokerProtectionRepository,
-                                                  brokerId: Int64,
-                                                  profileQueryId: Int64,
-                                                  extractedProfileId: Int64) throws -> Int {
-        let events = try database.fetchOptOutHistoryEvents(
-            brokerId: brokerId,
-            profileQueryId: profileQueryId,
-            extractedProfileId: extractedProfileId
-        )
-
-        return events.filter { $0.type == .optOutStarted }.count
-    }
-
     // MARK: - Generic Job Logic
 
     internal func updateOperationDataDates(origin: OperationPreferredDateUpdaterOrigin,
@@ -544,7 +314,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
                                            extractedProfileId: Int64?,
                                            schedulingConfig: DataBrokerScheduleConfig,
                                            database: DataBrokerProtectionRepository) throws {
-        let dateUpdater = OperationPreferredDateUpdaterUseCase(database: database)
+        let dateUpdater = OperationPreferredDateUpdater(database: database)
         try dateUpdater.updateOperationDataDates(origin: origin,
                                                  brokerId: brokerId,
                                                  profileQueryId: profileQueryId,
@@ -590,20 +360,7 @@ struct DataBrokerProfileQueryOperationManager: OperationsManager {
             Logger.dataBrokerProtection.log("Can't update operation date after error")
         }
 
-        Logger.dataBrokerProtection.error("Error on operation : \(error.localizedDescription, privacy: .public)")
+        Logger.dataBrokerProtection.error("Error on operation: \(error.localizedDescription, privacy: .public)")
     }
 
-}
-
-extension Bundle {
-    struct Keys {
-        static let vpnMenuAgentBundleId = "AGENT_BUNDLE_ID"
-    }
-
-    var vpnMenuAgentBundleId: String {
-        guard let bundleID = object(forInfoDictionaryKey: Keys.vpnMenuAgentBundleId) as? String else {
-            fatalError("Info.plist is missing \(Keys.vpnMenuAgentBundleId)")
-        }
-        return bundleID
-    }
 }

@@ -1,5 +1,5 @@
 //
-//  OperationEvent.swift
+//  BrokerProfileSubJobError.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -18,10 +18,6 @@
 
 import Foundation
 
-public enum OperationEvent {
-    case profileSaved
-    case firstScanCompleted
-    case firstScanCompletedAndMatchesFound
-    case firstProfileRemoved
-    case allProfilesRemoved
+enum BrokerProfileSubJobError: Error {
+    case idsMissingForBrokerOrProfileQuery
 }

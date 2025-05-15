@@ -1,5 +1,5 @@
 //
-//  OptOutJob.swift
+//  BrokerProfileOptOutSubJobWebRunner.swift
 //
 //  Copyright © 2023 DuckDuckGo. All rights reserved.
 //
@@ -23,46 +23,52 @@ import UserScript
 import os.log
 import Common
 
-final class OptOutJob: DataBrokerJob {
-    typealias ReturnValue = Void
-    typealias InputValue = ExtractedProfile
+public protocol BrokerProfileOptOutSubJobWebRunning {
+    func optOut(profileQuery: BrokerProfileQueryData,
+                extractedProfile: ExtractedProfile,
+                showWebView: Bool,
+                shouldRunNextStep: @escaping () -> Bool) async throws
+}
 
-    let privacyConfig: PrivacyConfigurationManaging
-    let prefs: ContentScopeProperties
-    let query: BrokerProfileQueryData
-    let emailService: EmailServiceProtocol
-    let captchaService: CaptchaServiceProtocol
-    let cookieHandler: CookieHandler
-    let stageCalculator: StageDurationCalculator
-    var webViewHandler: WebViewHandler?
-    var actionsHandler: ActionsHandler?
-    var continuation: CheckedContinuation<Void, Error>?
-    var extractedProfile: ExtractedProfile?
+public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerProfileOptOutSubJobWebRunning {
+    public typealias ReturnValue = Void
+    public typealias InputValue = ExtractedProfile
+
+    public let privacyConfig: PrivacyConfigurationManaging
+    public let prefs: ContentScopeProperties
+    public let query: BrokerProfileQueryData
+    public let emailService: EmailServiceProtocol
+    public let captchaService: CaptchaServiceProtocol
+    public let cookieHandler: CookieHandler
+    public let stageCalculator: StageDurationCalculator
+    public var webViewHandler: WebViewHandler?
+    public var actionsHandler: ActionsHandler?
+    public var continuation: CheckedContinuation<Void, Error>?
+    public var extractedProfile: ExtractedProfile?
     private let operationAwaitTime: TimeInterval
-    let shouldRunNextStep: () -> Bool
-    let clickAwaitTime: TimeInterval
-    let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
-    var postLoadingSiteStartTime: Date?
+    public let shouldRunNextStep: () -> Bool
+    public let clickAwaitTime: TimeInterval
+    public let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
+    public var postLoadingSiteStartTime: Date?
 
     // Captcha is a third-party resource that sometimes takes more time to load
     // if we are not able to get the captcha information. We will try to run the action again
     // instead of failing the whole thing.
     //
     // https://app.asana.com/0/1203581873609357/1205476538384291/f
-    var retriesCountOnError: Int = 3
+    public var retriesCountOnError: Int = 3
 
-    init(privacyConfig: PrivacyConfigurationManaging,
-         prefs: ContentScopeProperties,
-         query: BrokerProfileQueryData,
-         emailService: EmailServiceProtocol,
-         captchaService: CaptchaServiceProtocol,
-         cookieHandler: CookieHandler = BrokerCookieHandler(),
-         operationAwaitTime: TimeInterval = 3,
-         clickAwaitTime: TimeInterval = 40,
-         stageCalculator: StageDurationCalculator,
-         pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
-         shouldRunNextStep: @escaping () -> Bool
-    ) {
+    public init(privacyConfig: PrivacyConfigurationManaging,
+                prefs: ContentScopeProperties,
+                query: BrokerProfileQueryData,
+                emailService: EmailServiceProtocol,
+                captchaService: CaptchaServiceProtocol,
+                cookieHandler: CookieHandler = BrokerCookieHandler(),
+                operationAwaitTime: TimeInterval = 3,
+                clickAwaitTime: TimeInterval = 40,
+                stageCalculator: StageDurationCalculator,
+                pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>,
+                shouldRunNextStep: @escaping () -> Bool) {
         self.privacyConfig = privacyConfig
         self.prefs = prefs
         self.query = query
@@ -76,10 +82,17 @@ final class OptOutJob: DataBrokerJob {
         self.pixelHandler = pixelHandler
     }
 
-    func run(inputValue: ExtractedProfile,
-             webViewHandler: WebViewHandler? = nil,
-             actionsHandler: ActionsHandler? = nil,
-             showWebView: Bool = false) async throws {
+    public func optOut(profileQuery: BrokerProfileQueryData,
+                       extractedProfile: ExtractedProfile,
+                       showWebView: Bool,
+                       shouldRunNextStep: @escaping () -> Bool) async throws {
+        try await run(inputValue: extractedProfile, showWebView: showWebView)
+    }
+
+    public func run(inputValue: ExtractedProfile,
+                    webViewHandler: WebViewHandler? = nil,
+                    actionsHandler: ActionsHandler? = nil,
+                    showWebView: Bool = false) async throws {
         try await withCheckedThrowingContinuation { continuation in
             self.extractedProfile = inputValue.merge(with: query.profileQuery)
             self.continuation = continuation
@@ -110,11 +123,11 @@ final class OptOutJob: DataBrokerJob {
         }
     }
 
-    func extractedProfiles(profiles: [ExtractedProfile], meta: [String: Any]?) async {
+    public func extractedProfiles(profiles: [ExtractedProfile], meta: [String: Any]?) async {
         // No - op
     }
 
-    func executeNextStep() async {
+    public func executeNextStep() async {
         retriesCountOnError = 0 // We reset the retries on error when it is successful
         Logger.action.debug("OPTOUT Waiting \(self.operationAwaitTime, privacy: .public) seconds...")
         try? await Task.sleep(nanoseconds: UInt64(operationAwaitTime) * 1_000_000_000)

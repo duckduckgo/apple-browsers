@@ -315,6 +315,9 @@ struct DuckPlayerView: View {
                     .onChange(of: autoOpenOnYoutube) { newValue in
                         viewModel.autoOpenOnYoutube = newValue
                     }
+                    .onChange(of: autoOpenOnYoutube) { newValue in
+                        viewModel.autoOpenOnYoutube = newValue
+                    }
             }
             .padding(.horizontal, LayoutConstants.horizontalPadding)
         }

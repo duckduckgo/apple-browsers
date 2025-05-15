@@ -46,7 +46,7 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
     }
 
     var mustCheckForUpdatesBeforeUserCanTakeAction: Bool {
-        areAutomaticUpdatesEnabled && !autoRestartAllowed
+        !autoRestartAllowed
     }
 
     @Published var updateState = UpdateState.upToDate

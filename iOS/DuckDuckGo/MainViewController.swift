@@ -1599,7 +1599,9 @@ class MainViewController: UIViewController {
 
     func animateBackgroundTab() {
         showBars()
-        tabSwitcherButton?.incrementAnimated()
+        tabSwitcherButton?.animateUpdate {
+            self.refreshTabIcon()
+        }
         tabsBarController?.backgroundTabAdded()
     }
 
@@ -2644,7 +2646,9 @@ extension MainViewController: TabDelegate {
                 self.currentTab?.openedByPage = true
                 self.currentTab?.openingTab = tab
             }
-            tabSwitcherButton?.incrementAnimated()
+            tabSwitcherButton?.animateUpdate {
+                self.tabSwitcherButton?.tabCount += 1
+            }
         } else {
             loadUrlInNewTab(url, inheritedAttribution: attribution)
             self.currentTab?.openingTab = tab

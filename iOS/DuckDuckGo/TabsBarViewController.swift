@@ -147,8 +147,9 @@ class TabsBarViewController: UIViewController {
 
     func backgroundTabAdded() {
         reloadData()
-        tabSwitcherButton.tabCount = tabsCount - 1
-        tabSwitcherButton.incrementAnimated()
+        tabSwitcherButton.animateUpdate {
+            self.tabSwitcherButton.tabCount = self.tabsCount
+        }
     }
     
     private func configureGestures() {

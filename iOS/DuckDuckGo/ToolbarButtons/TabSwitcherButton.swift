@@ -25,5 +25,5 @@ protocol TabSwitcherButton: UIView {
     var tabCount: Int { get set }
     var hasUnread: Bool { get set }
 
-    func incrementAnimated()
+    func animateUpdate(update: @escaping () -> Void)
 }

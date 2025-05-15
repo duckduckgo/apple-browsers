@@ -88,8 +88,8 @@ final class TabSwitcherStaticButton: ToolbarButton, TabSwitcherButton {
         }
     }
 
-    func incrementAnimated() {
-        tabCount += 1
+    func animateUpdate(update: @escaping () -> Void) {
+            update()
     }
 
     override func tintColorDidChange() {

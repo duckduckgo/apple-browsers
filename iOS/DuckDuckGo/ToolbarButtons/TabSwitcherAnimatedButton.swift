@@ -73,7 +73,12 @@ class TabSwitcherAnimatedButton: UIView, TabSwitcherButton {
     
     var hasUnread: Bool = false {
         didSet {
-            anim.currentProgress = hasUnread ? 1.0 : 0.0
+            // Not sure what it is supposed to be doing by setting the animation progress to 1 for unread state.
+            // There's no "alert dot" in the animation.
+            // Adding the check for active animation here to prevent it from finishing abruptly.
+            if !anim.isAnimationPlaying {
+                anim.currentProgress = hasUnread ? 1.0 : 0.0
+            }
         }
     }
     
@@ -160,12 +165,12 @@ class TabSwitcherAnimatedButton: UIView, TabSwitcherButton {
         tint(alpha: 1, animated: false)
     }
     
-    func incrementAnimated() {
+    func animateUpdate(update: @escaping () -> Void) {
         anim.play()
         UIView.animate(withDuration: Constants.labelFadeDuration, animations: {
             self.label.alpha = 0.0
         }, completion: { _ in
-            self.tabCount += 1
+            update()
             UIView.animate(withDuration: Constants.labelFadeDuration, animations: {
                 self.label.alpha = 1.0
             })

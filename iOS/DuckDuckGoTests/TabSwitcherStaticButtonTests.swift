@@ -29,11 +29,11 @@ class TabSwitcherStaticButtonTests: XCTestCase {
         XCTAssertNil(button.text)
     }
 
-    func testWhenAnimateCalledThenCountIsIncrementedForStaticButton() {
+    func testWhenAnimateCalledThenCountIsNotIncremented() {
         let button = TabSwitcherStaticButton()
-        button.incrementAnimated()
-        XCTAssertEqual(1, button.tabCount)
-        XCTAssertEqual("1", button.text)
+        button.animateUpdate { }
+        XCTAssertEqual(0, button.tabCount)
+        XCTAssertNil(button.text)
     }
 
     func testWhenCountSetBackToZeroThenTextIsBlank() {

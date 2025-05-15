@@ -310,6 +310,8 @@ final class BrowserTabViewController: NSViewController {
                 subscribeToHoveredLink(of: selectedTabViewModel)
                 subscribeToUserDialogs(of: selectedTabViewModel)
 
+                wasContextualOnboardingDialogDismissed = true
+
                 adjustFirstResponder(force: true)
             }
             .store(in: &cancellables)
@@ -472,6 +474,7 @@ final class BrowserTabViewController: NSViewController {
             delegate?.dismissViewHighlight()
             return
         }
+        self.wasContextualOnboardingDialogDismissed = false
 
         var onDismissAction: () -> Void = {}
         if let webViewContainer {
@@ -654,7 +657,6 @@ final class BrowserTabViewController: NSViewController {
             self.presentContextualOnboarding()
             self.lastURL = self.tabViewModel?.tab.url
             self.lastTab = self.tabViewModel?.tab
-            self.wasContextualOnboardingDialogDismissed = false
         }.store(in: &tabViewModelCancellables)
     }
 
@@ -1171,7 +1173,7 @@ extension BrowserTabViewController: TabDelegate {
         // This helps keep dialogs consistent when moving between Windows
         //  - If the dialog was dismissed it will not reload when leaving and coming back to the Window
         //  - It tells presentContextualOnboarding that should show the lastDialog if possible
-        if !wasContextualOnboardingDialogDismissed {
+        if !wasContextualOnboardingDialogDismissed && onboardingDialogTypeProvider.state != .onboardingCompleted {
             presentContextualOnboarding(showLastDialog: true)
         }
     }

@@ -108,13 +108,9 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     @UserDefaultsWrapper(key: .automaticUpdates, defaultValue: true)
     var areAutomaticUpdatesEnabled: Bool {
         willSet {
-            let togglingAutoUpdatesShouldDiscardUpdate = !autoRestartAllowed
-
-            if togglingAutoUpdatesShouldDiscardUpdate {
-                if newValue != areAutomaticUpdatesEnabled {
-                    userDriver?.cancelAndDismissCurrentUpdate()
-                    updater = nil
-                }
+            if newValue != areAutomaticUpdatesEnabled {
+                userDriver?.cancelAndDismissCurrentUpdate()
+                updater = nil
             }
         }
         didSet {

@@ -49,6 +49,14 @@ public protocol SubJobWebRunning: CCFCommunicationDelegate {
              actionsHandler: ActionsHandler?,
              showWebView: Bool) async throws -> ReturnValue
 
+    /// Customization point for a given action when it's expected to run as the next action
+    /// Here we can set the stage, invoke other services, change the retry counts, etc
+    /// By default, the webViewHandler should execute the action
+    ///
+    /// Returns `true` if the action has been executed and we should early return, not passing it to the webViewHandler
+    /// Returns `false` if the action should be passed to the webViewHandler to execute
+    func canPerformNextAction(_ action: Action) async -> Bool
+
     func executeNextStep() async
     func executeCurrentAction() async
 }
@@ -56,6 +64,10 @@ public protocol SubJobWebRunning: CCFCommunicationDelegate {
 public extension SubJobWebRunning {
 
     // MARK: - Shared functions
+
+    func canPerformNextAction(_ action: Action) async -> Bool {
+        false
+    }
 
     func runNextAction(_ action: Action) async {
         switch action {
@@ -108,6 +120,10 @@ public extension SubJobWebRunning {
                 await onError(error: DataBrokerProtectionError.emailError(error as? EmailError))
                 return
             }
+        }
+
+        if await canPerformNextAction(action) {
+            return
         }
 
         await webViewHandler?.execute(action: action, data: .userData(query.profileQuery, self.extractedProfile))

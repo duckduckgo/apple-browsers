@@ -263,8 +263,7 @@ extension AppDelegate {
     }
 
     @objc func openAbout(_ sender: Any?) {
-        let aboutController = AboutPanelController(internalUserDecider: internalUserDecider)
-        aboutController.show()
+        AboutPanelController.show(internalUserDecider: internalUserDecider)
     }
 
     @objc func openImportBrowserDataWindow(_ sender: Any?) {

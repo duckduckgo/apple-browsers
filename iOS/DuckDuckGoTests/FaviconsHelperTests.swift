@@ -32,9 +32,14 @@ class FaviconsHelperTests: XCTestCase {
 
         Favicons.Constants.tabsCache.clearMemoryCache()
         Favicons.Constants.fireproofCache.clearMemoryCache()
-
-        Favicons.Constants.tabsCache.clearDiskCache() { expectation.fulfill() }
-        Favicons.Constants.fireproofCache.clearDiskCache() { expectation.fulfill() }
+        
+        Favicons.Constants.tabsCache.clearDiskCache() {
+            expectation.fulfill()
+        }
+        
+        Favicons.Constants.fireproofCache.clearDiskCache() {
+            expectation.fulfill()
+        }
 
         waitForExpectations(timeout: 5, handler: nil)
     }

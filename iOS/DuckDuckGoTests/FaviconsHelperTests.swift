@@ -65,7 +65,7 @@ class FaviconsHelperTests: XCTestCase {
     }
     
     func testLoadFaviconSync_WhenMissingFavicon_ReturnsFakeFavicon() {
-        let result = FaviconsHelper.loadFaviconSync(forDomain: "missingfavicon1.com",
+        let result = FaviconsHelper.loadFaviconSync(forDomain: "missingfavicon.com",
                                                    usingCache: .fireproof,
                                                    useFakeFavicon: true)
         
@@ -75,7 +75,7 @@ class FaviconsHelperTests: XCTestCase {
     
     func testLoadFaviconSync_WhenCachedFavicon_ReturnsFromCache() {
         // Setup
-        let domain = "missingfavicon2.com"
+        let domain = "example.com"
         let cache = Favicons.Constants.caches[.fireproof]!
         let resource = Favicons.shared.defaultResource(forDomain: domain)!
         let testImage = UIImage(named: "Logo")!

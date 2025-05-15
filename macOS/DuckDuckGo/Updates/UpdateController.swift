@@ -108,9 +108,13 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     @UserDefaultsWrapper(key: .automaticUpdates, defaultValue: true)
     var areAutomaticUpdatesEnabled: Bool {
         willSet {
-            if newValue != areAutomaticUpdatesEnabled {
-                userDriver?.cancelAndDismissCurrentUpdate()
-                updater = nil
+            let togglingAutoUpdatesShouldDiscardUpdate = !autoRestartAllowed
+
+            if togglingAutoUpdatesShouldDiscardUpdate {
+                if newValue != areAutomaticUpdatesEnabled {
+                    userDriver?.cancelAndDismissCurrentUpdate()
+                    updater = nil
+                }
             }
         }
         didSet {
@@ -227,11 +231,13 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
             updater = nil
 
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-                guard let updater = try? self?.configureUpdater(needsUpdateCheck: true) else {
+                guard let self,
+                      let updater = try? configureUpdater(needsUpdateCheck: true) else {
                     return
                 }
+                self.updater = updater
 
-                self?.userDriver?.userCheckedForUpdates()
+                userDriver?.userCheckedForUpdates()
                 updater.checkForUpdates()
             }
 
@@ -242,7 +248,6 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
         Logger.updates.log("Checking for updates skipping rollout")
 
-        userDriver?.userCheckedForUpdates()
         updater.checkForUpdates()
     }
 
@@ -274,7 +279,6 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         latestUpdate = nil
 
         userDriver = UpdateUserDriver(internalUserDecider: internalUserDecider,
-                                      hasPendingObsoleteUpdate: needsUpdateCheck,
                                       areAutomaticUpdatesEnabled: areAutomaticUpdatesEnabled)
         guard let userDriver else { return nil }
 

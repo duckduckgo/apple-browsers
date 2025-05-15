@@ -18,6 +18,7 @@
 
 import Common
 import Foundation
+import Networking
 
 public struct GetSubscriptionFeaturesResponse: Decodable {
     public let features: [Entitlement.ProductName]
@@ -78,11 +79,11 @@ public struct DefaultSubscriptionEndpointService: SubscriptionEndpointService {
         self.apiService = apiService
     }
 
-    public init(currentServiceEnvironment: SubscriptionEnvironment.ServiceEnvironment) {
+    public init(currentServiceEnvironment: SubscriptionEnvironment.ServiceEnvironment, userAgent: String) {
         self.currentServiceEnvironment = currentServiceEnvironment
         let baseURL = currentServiceEnvironment == .production ? URL(string: "https://subscriptions.duckduckgo.com/api")! : URL(string: "https://subscriptions-dev.duckduckgo.com/api")!
         let session = URLSession(configuration: URLSessionConfiguration.ephemeral)
-        self.apiService = DefaultSubscriptionAPIService(baseURL: baseURL, session: session)
+        self.apiService = DefaultSubscriptionAPIService(baseURL: baseURL, userAgent: userAgent, session: session)
     }
 
     // MARK: - Subscription fetching with caching

@@ -35,14 +35,17 @@ public protocol APIService {
 /// The default implementation of `APIService`
 public class DefaultAPIService: APIService {
     private let urlSession: URLSession
+    private let userAgent: String?
     public var authorizationRefresherCallback: AuthorizationRefresherCallback?
 
     /// Designited initialiser
     /// - Parameters:
     ///   - urlSession: The URLSession used for fetching requests
+    ///   - userAgent: Optional user agent string that is applied to all requests fired via service, unless they set it on their own via header
     ///   - authorizationRefresherCallback: Optional closure called every time an authenticated request fails with a 401
-    public init(urlSession: URLSession = .shared, authorizationRefresherCallback: AuthorizationRefresherCallback? = nil) {
+    public init(urlSession: URLSession = .shared, userAgent: String? = nil, authorizationRefresherCallback: AuthorizationRefresherCallback? = nil) {
         self.urlSession = urlSession
+        self.userAgent = userAgent
         self.authorizationRefresherCallback = authorizationRefresherCallback
     }
 
@@ -54,6 +57,10 @@ public class DefaultAPIService: APIService {
         var request = request
 
         Logger.networking.debug("Fetching: \(request.debugDescription)")
+
+        if let userAgent {
+            request.updateUserAgentIfMissing(userAgent)
+        }
 
         var result: (data: Data, response: URLResponse)
         do {

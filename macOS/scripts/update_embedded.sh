@@ -10,7 +10,30 @@ base_dir="${script_dir}/.."
 # Danger checks that the URLs match on every PR. If the code changes, the regex that Danger uses may need an update.
 TDS_URL="https://staticcdn.duckduckgo.com/trackerblocking/v6/current/macos-tds.json"
 CONFIG_URL="https://staticcdn.duckduckgo.com/trackerblocking/config/v4/macos-config.json"
+
 DBP_BROKER_URL="https://dbp.duckduckgo.com/dbp/remote/v0?name=all.zip&type=combined"
+
+# Broker names must be unique across all files.
+checkUniqueBrokerNames() {
+	local dir=$1
+	local temp_file
+	temp_file=$(mktemp)
+	local error_found=0
+
+	find "$dir" -name '*.json' -exec jq -r '.name' {} \; > "$temp_file"
+
+	if sort "$temp_file" | uniq -d | grep -q .; then
+		printf "Error: Duplicate broker names found:\n"
+		sort "$temp_file" | uniq -d | while read -r name; do
+			printf "\nBroker name '%s' found in:\n" "$name"
+			find "$dir" -name '*.json' -exec sh -c 'if jq -e --arg name "$1" ".name == \$name" "$2" >/dev/null; then printf "  - %s\n" "$2"; fi' _ "$name" {} \;
+		done
+		error_found=1
+	fi
+
+	rm "$temp_file"
+	return $error_found
+}
 
 # If -c is passed, then check the URLs in the Configuration files are correct.
 if [ "$1" == "-c" ]; then
@@ -127,3 +150,9 @@ performUpdate $CONFIG_URL \
 
 performDBPBrokerUpdate "$DBP_BROKER_URL" \
 		"$base_dir/../SharedPackages/DataBrokerProtectionCore/Sources/DataBrokerProtectionCore/BundleResources/JSON/"
+
+# Check for unique broker names after all updates
+if ! checkUniqueBrokerNames "$base_dir/../SharedPackages/DataBrokerProtectionCore/Sources/DataBrokerProtectionCore/BundleResources/JSON/"; then
+	printf "Error: Duplicate broker names. Aborting.\n"
+	exit 1
+fi

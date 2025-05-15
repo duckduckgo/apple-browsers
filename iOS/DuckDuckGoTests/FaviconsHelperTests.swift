@@ -26,10 +26,17 @@ class FaviconsHelperTests: XCTestCase {
     
     override func setUp() {
         super.setUp()
-        Favicons.Constants.tabsCache.clearDiskCache()
+
+        let expectation = expectation(description: "FaviconHelperTests setup")
+        expectation.expectedFulfillmentCount = 2
+
         Favicons.Constants.tabsCache.clearMemoryCache()
-        Favicons.Constants.fireproofCache.clearDiskCache()
         Favicons.Constants.fireproofCache.clearMemoryCache()
+
+        Favicons.Constants.tabsCache.clearDiskCache { expectation.fulfill() }
+        Favicons.Constants.fireproofCache.clearDiskCache { expectation.fulfill() }
+
+        waitForExpectations(timeout: 5, handler: nil)
     }
     
     func testLoadFaviconSync_WhenPlayerDomain_ReturnsDuckPlayer() {
@@ -53,7 +60,7 @@ class FaviconsHelperTests: XCTestCase {
     }
     
     func testLoadFaviconSync_WhenMissingFavicon_ReturnsFakeFavicon() {
-        let result = FaviconsHelper.loadFaviconSync(forDomain: "example.com",
+        let result = FaviconsHelper.loadFaviconSync(forDomain: "missingfavicon.com",
                                                    usingCache: .fireproof,
                                                    useFakeFavicon: true)
         

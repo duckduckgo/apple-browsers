@@ -62,4 +62,4 @@ final class ChatInputBoxViewController: UIViewController {
     func updateBottomConstraint(_ constant: CGFloat) {
         bottomConstraint?.constant = constant
     }
-} 
+}

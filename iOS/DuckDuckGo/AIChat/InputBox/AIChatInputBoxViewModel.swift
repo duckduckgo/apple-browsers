@@ -77,7 +77,7 @@ final class AIChatInputBoxViewModel: ObservableObject {
         didPressStopGenerating.send()
     }
 
-    //MARK: - Private Methods
+    // MARK: - Private Methods
     private func removeExtraLines() {
         /// Should just remove the extra lines in the future, leaving it like this for now
         inputText = ""

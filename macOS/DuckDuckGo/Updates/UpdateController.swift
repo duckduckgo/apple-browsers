@@ -162,6 +162,9 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     private var autoRestartAllowed: Bool {
         !featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp)
     }
+    private var canBuildsExpire: Bool {
+        featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp)
+    }
 
     // MARK: - Public
 
@@ -182,6 +185,20 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 #else
         checkForUpdateRespectingRollout()
 #endif
+
+        subscribeToResignKeyNotifications()
+    }
+
+    private var cancellables = Set<AnyCancellable>()
+
+    private func subscribeToResignKeyNotifications() {
+        NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)
+            .debounce(for: .seconds(1), scheduler: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.discardCurrentUpdateIfExpiredAndCheckAgain()
+            }
+            // Store subscription to keep it alive
+            .store(in: &cancellables)
     }
 
     func checkNewApplicationVersionIfNeeded(updateProgress: UpdateCycleProgress) {
@@ -217,26 +234,37 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         updater.checkForUpdatesInBackground()
     }
 
+    private var isBuildExpired: Bool {
+        canBuildsExpire && shouldForceUpdateCheck
+    }
+
+    @discardableResult
+    private func discardCurrentUpdateIfExpiredAndCheckAgain() -> Bool {
+        guard isBuildExpired else {
+            return false
+        }
+
+        userDriver?.cancelAndDismissCurrentUpdate()
+        updater = nil
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
+            guard let self,
+                  let updater = try? configureUpdater(needsUpdateCheck: true) else {
+                return
+            }
+            self.updater = updater
+
+            userDriver?.userCheckedForUpdates()
+            updater.checkForUpdates()
+        }
+
+        return true
+    }
+
     // Check for updates immediately, bypassing the rollout schedule
     // This is used for user-initiated update checks only
     func checkForUpdateSkippingRollout() {
-        let discardCurrentUpdate = !autoRestartAllowed && shouldForceUpdateCheck
-
-        guard !discardCurrentUpdate else {
-            userDriver?.cancelAndDismissCurrentUpdate()
-            updater = nil
-
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { [weak self] in
-                guard let self,
-                      let updater = try? configureUpdater(needsUpdateCheck: true) else {
-                    return
-                }
-                self.updater = updater
-
-                userDriver?.userCheckedForUpdates()
-                updater.checkForUpdates()
-            }
-
+        guard !discardCurrentUpdateIfExpiredAndCheckAgain() else {
             return
         }
 

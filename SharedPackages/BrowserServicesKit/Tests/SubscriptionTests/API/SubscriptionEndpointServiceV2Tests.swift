@@ -40,8 +40,8 @@ final class SubscriptionEndpointServiceV2Tests: XCTestCase {
         encoder.dateEncodingStrategy = .millisecondsSince1970
         apiService = MockAPIService()
         endpointService = DefaultSubscriptionEndpointServiceV2(apiService: apiService,
-                                                             baseURL: baseURL,
-                                                             subscriptionCache: disposableCache)
+                                                               baseURL: baseURL,
+                                                               subscriptionCache: disposableCache)
     }
 
     override func tearDown() {

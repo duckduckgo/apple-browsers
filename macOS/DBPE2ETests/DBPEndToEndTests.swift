@@ -44,8 +44,7 @@ final class DBPEndToEndTests: XCTestCase {
         loginItemsManager.disableLoginItems([LoginItem.dbpBackgroundAgent])
         loginItemsManager.enableLoginItems([LoginItem.dbpBackgroundAgent])
 
-        communicationLayer = DBPUICommunicationLayer(webURLSettings:
-                                                        DataBrokerProtectionWebUIURLSettings(UserDefaults.standard),
+        communicationLayer = DBPUICommunicationLayer(webURLSettings: DataBrokerProtectionWebUIURLSettings(UserDefaults.standard),
                                                      privacyConfig: PrivacyConfigurationManagingMock())
         communicationLayer.delegate = pirProtectionManager.dataManager!.communicator
 

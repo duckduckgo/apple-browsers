@@ -89,6 +89,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let internalUserDecider: InternalUserDecider
     private var isInternalUserSharingCancellable: AnyCancellable?
     let featureFlagger: FeatureFlagger
+    let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     let featureFlagOverridesPublishingHandler = FeatureFlagOverridesPublishingHandler<FeatureFlag>()
     private var appIconChanger: AppIconChanger!
     private var autoClearHandler: AutoClearHandler!
@@ -270,7 +271,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         configurationManager = ConfigurationManager(store: configurationStore)
 
-        featureFlagger = DefaultFeatureFlagger(
+        let featureFlagger = DefaultFeatureFlagger(
             internalUserDecider: internalUserDecider,
             privacyConfigManager: AppPrivacyFeatures.shared.contentBlocking.privacyConfigurationManager,
             localOverrides: FeatureFlagLocalOverrides(
@@ -280,6 +281,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             experimentManager: ExperimentCohortsManager(store: ExperimentsDataStore(), fireCohortAssigned: PixelKit.fireExperimentEnrollmentPixel(subfeatureID:experiment:)),
             for: FeatureFlag.self
         )
+        self.featureFlagger = featureFlagger
+        self.contentScopeExperimentsManager = featureFlagger
 
         let coordinator =  DefaultBrowserAndDockPromptCoordinator(featureFlagger: featureFlagger)
         defaultBrowserAndDockPromptPresenter = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, featureFlagger: featureFlagger)

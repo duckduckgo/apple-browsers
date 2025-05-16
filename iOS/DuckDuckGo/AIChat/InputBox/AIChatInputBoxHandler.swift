@@ -28,6 +28,7 @@ protocol AIChatInputBoxHandling {
     var didPressStopGeneratingButton: PassthroughSubject<Void, Never> { get }
 
     var aiChatStatus: AIChatStatusValue { get set }
+    var aiChatInputBoxVisibility: AIChatInputBoxVisibility { get set }
 
     // Methods
     func fireButtonPressed()
@@ -45,6 +46,12 @@ enum AIChatStatusValue: String, Codable {
     case unknown
 }
 
+enum AIChatInputBoxVisibility: String, Codable {
+    case hidden
+    case visible
+    case unknown
+}
+
 struct AIChatStatus: Codable {
     let status: AIChatStatusValue
 }
@@ -54,6 +61,13 @@ final class AIChatInputBoxHandler: AIChatInputBoxHandling {
     let didPressNewChatButton = PassthroughSubject<Void, Never>()
     let didPressStopGeneratingButton = PassthroughSubject<Void, Never>()
     let didSubmitText = PassthroughSubject<String, Never>()
+
+    @MainActor
+    var aiChatInputBoxVisibility: AIChatInputBoxVisibility = .unknown {
+        didSet {
+            inputBoxViewModel.visibility = aiChatInputBoxVisibility
+        }
+    }
 
     @MainActor
     var aiChatStatus: AIChatStatusValue = .unknown {

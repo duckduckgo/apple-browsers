@@ -91,11 +91,12 @@ struct AboutPanelView: View {
 }
 
 // Controller to display the About panel
+@MainActor
 final class AboutPanelController {
 
-    private var panel: NSPanel!
+    private var panel: AboutPanelWindow
 
-    init(internalUserDecider: InternalUserDecider) {
+    private init(internalUserDecider: InternalUserDecider) {
         panel = AboutPanelWindow(
             contentRect: NSRect(x: 0, y: 0, width: 360, height: 300),
             styleMask: [.titled, .closable],
@@ -109,9 +110,17 @@ final class AboutPanelController {
         panel.contentView = hosting.view
     }
 
-    func show() {
-        panel.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
+    private func showPanel() {
+        panel.show()
+    }
+
+    static func show(internalUserDecider: InternalUserDecider) {
+        guard let panel = NSApp.windows.first(where: { $0 is AboutPanelWindow }) as? AboutPanelWindow else {
+            let aboutController = AboutPanelController(internalUserDecider: internalUserDecider)
+            aboutController.showPanel()
+            return
+        }
+        panel.show()
     }
 }
 
@@ -130,5 +139,10 @@ private class AboutPanelWindow: NSPanel {
         }
         self.close()
         return true
+    }
+
+    func show() {
+        makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
     }
 }

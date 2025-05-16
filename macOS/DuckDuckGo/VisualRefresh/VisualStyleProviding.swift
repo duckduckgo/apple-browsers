@@ -23,7 +23,7 @@ import NetworkProtectionUI
 
 protocol VisualStyleProviding {
     /// Address bar
-    func addressBarHeight(for type: AddressBarSizeClass) -> CGFloat
+    func addressBarHeight(for type: AddressBarSizeClass, focused: Bool) -> CGFloat
     func addressBarTopPadding(for type: AddressBarSizeClass) -> CGFloat
     func addressBarBottomPadding(for type: AddressBarSizeClass) -> CGFloat
     func addressBarStackSpacing(for type: AddressBarSizeClass) -> CGFloat
@@ -33,6 +33,8 @@ protocol VisualStyleProviding {
     var addressBarIconsProvider: AddressBarIconsProviding { get }
     var privacyShieldStyleProvider: PrivacyShieldAddressBarStyleProviding { get }
     var shouldShowLogoinInAddressBar: Bool { get }
+    var addressBarButtonsCornerRadius: CGFloat { get }
+    var shouldAddPaddingToAddressBarButtons: Bool { get }
 
     /// Navigation toolbar
     var backButtonImage: NSImage { get }
@@ -44,9 +46,12 @@ protocol VisualStyleProviding {
     var bookmarksButtonImage: NSImage { get }
     var moreOptionsbuttonImage: NSImage { get }
     var overflowButtonImage: NSImage { get }
+    var aiChatButtonImage: NSImage { get }
     var toolbarButtonsCornerRadius: CGFloat { get }
     var fireWindowGraphic: NSImage { get }
     var areNavigationBarCornersRound: Bool { get }
+    var bookmarksBarMenuBookmarkIcon: NSImage { get }
+    var bookmarksBarMenuFolderIcon: NSImage { get }
 
     /// Other
     var vpnNavigationIconsProvider: IconProvider { get }
@@ -91,6 +96,8 @@ struct VisualStyle: VisualStyleProviding {
     private let addressBarBottomPaddingForHomePage: CGFloat
     private let addressBarBottomPaddingForPopUpWindow: CGFloat
     private let alwaysShowAddressBarOutline: Bool
+    private let addressBarHeightWhenFocused: CGFloat
+    private let addressBarHeightForHomePageWhenFocused: CGFloat
 
     let shouldShowLogoinInAddressBar: Bool
     let toolbarButtonsCornerRadius: CGFloat
@@ -104,22 +111,27 @@ struct VisualStyle: VisualStyleProviding {
     let bookmarksButtonImage: NSImage
     let moreOptionsbuttonImage: NSImage
     let overflowButtonImage: NSImage
+    let aiChatButtonImage: NSImage
     let vpnNavigationIconsProvider: IconProvider
     let fireButtonStyleProvider: FireButtonIconStyleProviding
     let moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding
     let privacyShieldStyleProvider: PrivacyShieldAddressBarStyleProviding
     let addressBarIconsProvider: AddressBarIconsProviding
+    let addressBarButtonsCornerRadius: CGFloat
+    let shouldAddPaddingToAddressBarButtons: Bool
     let tabStyleProvider: TabStyleProviding
     let fireWindowGraphic: NSImage
     let areNavigationBarCornersRound: Bool
     let colorsProvider: ColorsProviding
     let defaultAddressBarFontSize: CGFloat
     let newTabOrHomePageAddressBarFontSize: CGFloat
+    let bookmarksBarMenuBookmarkIcon: NSImage
+    let bookmarksBarMenuFolderIcon: NSImage
 
-    func addressBarHeight(for type: AddressBarSizeClass) -> CGFloat {
+    func addressBarHeight(for type: AddressBarSizeClass, focused: Bool) -> CGFloat {
         switch type {
-        case .default: return addressBarHeightForDefault
-        case .homePage: return addressBarHeightForHomePage
+        case .default: return focused ? addressBarHeightWhenFocused : addressBarHeightForDefault
+        case .homePage: return focused ? addressBarHeightForHomePageWhenFocused : addressBarHeightForHomePage
         case .popUpWindow: return addressBarHeightForPopUpWindow
         }
     }
@@ -162,6 +174,8 @@ struct VisualStyle: VisualStyleProviding {
                            addressBarBottomPaddingForHomePage: 8,
                            addressBarBottomPaddingForPopUpWindow: 0,
                            alwaysShowAddressBarOutline: false,
+                           addressBarHeightWhenFocused: 48,
+                           addressBarHeightForHomePageWhenFocused: 52,
                            shouldShowLogoinInAddressBar: false,
                            toolbarButtonsCornerRadius: 4,
                            backButtonImage: .back,
@@ -173,17 +187,22 @@ struct VisualStyle: VisualStyleProviding {
                            bookmarksButtonImage: .bookmarks,
                            moreOptionsbuttonImage: .settings,
                            overflowButtonImage: .chevronDoubleRight16,
+                           aiChatButtonImage: .aiChat,
                            vpnNavigationIconsProvider: NavigationBarIconProvider(),
                            fireButtonStyleProvider: LegacyFireButtonIconStyleProvider(),
                            moreOptionsMenuIconsProvider: LegacyMoreOptionsMenuIcons(),
                            privacyShieldStyleProvider: LegacyPrivacyShieldAddressBarStyleProvider(),
                            addressBarIconsProvider: LegacyAddressBarIconsProvider(),
+                           addressBarButtonsCornerRadius: 0,
+                           shouldAddPaddingToAddressBarButtons: false,
                            tabStyleProvider: LegacyTabStyleProvider(),
                            fireWindowGraphic: .burnerWindowGraphic,
                            areNavigationBarCornersRound: false,
                            colorsProvider: LegacyColorsProviding(),
                            defaultAddressBarFontSize: 13,
-                           newTabOrHomePageAddressBarFontSize: 15)
+                           newTabOrHomePageAddressBarFontSize: 15,
+                           bookmarksBarMenuBookmarkIcon: .bookmark,
+                           bookmarksBarMenuFolderIcon: .folder16)
     }
 
     static var current: VisualStyleProviding {
@@ -198,6 +217,8 @@ struct VisualStyle: VisualStyleProviding {
                            addressBarBottomPaddingForHomePage: 6,
                            addressBarBottomPaddingForPopUpWindow: 6,
                            alwaysShowAddressBarOutline: true,
+                           addressBarHeightWhenFocused: 56,
+                           addressBarHeightForHomePageWhenFocused: 56,
                            shouldShowLogoinInAddressBar: true,
                            toolbarButtonsCornerRadius: 9,
                            backButtonImage: .backNew,
@@ -209,17 +230,22 @@ struct VisualStyle: VisualStyleProviding {
                            bookmarksButtonImage: .bookmarksNew,
                            moreOptionsbuttonImage: .optionsNew,
                            overflowButtonImage: .chevronDoubleRight16,
+                           aiChatButtonImage: .aiChatNew,
                            vpnNavigationIconsProvider: NewVPNNavigationBarIconProvider(),
                            fireButtonStyleProvider: NewFireButtonIconStyleProvider(),
                            moreOptionsMenuIconsProvider: NewMoreOptionsMenuIcons(),
                            privacyShieldStyleProvider: NewPrivacyShieldAddressBarStyleProvider(),
                            addressBarIconsProvider: NewAddressBarIconsProvider(),
+                           addressBarButtonsCornerRadius: 9,
+                           shouldAddPaddingToAddressBarButtons: true,
                            tabStyleProvider: NewlineTabStyleProvider(palette: palette),
                            fireWindowGraphic: .burnerWindowGraphicNew,
                            areNavigationBarCornersRound: true,
                            colorsProvider: NewColorsProviding(palette: palette),
                            defaultAddressBarFontSize: 13,
-                           newTabOrHomePageAddressBarFontSize: 13)
+                           newTabOrHomePageAddressBarFontSize: 13,
+                           bookmarksBarMenuBookmarkIcon: .bookmarkNew,
+                           bookmarksBarMenuFolderIcon: .folderNew)
     }
 }
 

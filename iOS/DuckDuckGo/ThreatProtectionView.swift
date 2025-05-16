@@ -44,7 +44,6 @@ struct ThreatProtectionView: View {
 }
 
 struct ThreatProtectionViewSettings: View {
-
     @ObservedObject private var model: MaliciousSiteProtectionSettingsViewModel
 
     public init(model: MaliciousSiteProtectionSettingsViewModel) {
@@ -52,7 +51,8 @@ struct ThreatProtectionViewSettings: View {
     }
 
     var body: some View {
-        Section(footer: Text("Disabling this feature can put your personal information at risk.")) {
+        Section(footer: Text("Disabling this feature can put your personal information at risk. **[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/scam-blocker/)**")
+        .tint(Color(designSystemColor: .accent))) {
             // Smarter Encryption
             if model.shouldShowMaliciousSiteProtectionSection {
                 SettingsCellView(label: "Smarter Encryption",

@@ -22,7 +22,6 @@ import BrowserServicesKit
 import SwiftUI
 import Combine
 import Core
-import DesignResourcesKit
 
 protocol AutofillCreditCardListViewModelDelegate: AnyObject {
     func autofillCreditCardListViewModelDidSelectCard(_ viewModel: AutofillCreditCardListViewModel, card: SecureVaultModels.CreditCard)
@@ -224,26 +223,25 @@ struct CreditCardViewModel: Identifiable, Hashable {
     var displayTitle: String {
         return card.title.isEmpty ? type.displayName : card.title
     }
-
-    #warning("ICONS: these are missing")
+    
     var icon: Image {
         switch type {
         case .amex:
-            return Image(uiImage: DesignSystemImages.Color.Size24.exclamation)
+            return Image(.creditCardBankAmexColor32)
         case .dinersClub:
-            return Image(uiImage: DesignSystemImages.Color.Size24.exclamation)
+            return Image(.creditCardBankDinersClubColor32)
         case .discover:
-            return Image(uiImage: DesignSystemImages.Color.Size24.exclamation)
+            return Image(.creditCardBankDiscoverColor32)
         case .mastercard:
-            return Image(uiImage: DesignSystemImages.Color.Size24.exclamation)
+            return Image(.creditCardBankMastercardColor32)
         case .jcb:
-            return Image(uiImage: DesignSystemImages.Color.Size24.exclamation)
+            return Image(.creditCardBankJCBColor32)
         case .unionPay:
-            return Image(uiImage: DesignSystemImages.Color.Size24.exclamation)
+            return Image(.creditCardBankUnionpayColor32)
         case .visa:
-            return Image(uiImage: DesignSystemImages.Color.Size24.exclamation)
+            return Image(.creditCardBankVisaColor32)
         case .unknown:
-            return Image(uiImage: DesignSystemImages.Color.Size24.exclamation)
+            return Image(.creditCardColor32)
         }
     }
     

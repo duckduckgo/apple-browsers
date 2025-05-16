@@ -117,6 +117,7 @@ jobs:
           -configuration "CI" \
           -skipPackagePluginValidation -skipMacroValidation \
           ENABLE_TESTABILITY=true \
+          ONLY_ACTIVE_ARCH=YES \
           "-only-testing:DBPE2ETests" \
           -retry-tests-on-failure \
           -test-iterations 2 \

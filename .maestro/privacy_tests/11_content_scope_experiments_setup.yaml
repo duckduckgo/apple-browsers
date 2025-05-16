@@ -28,7 +28,7 @@ name: 01_content_scope_experiments_setup
 - tapOn:
     id: "searchEntry"
 - inputText: "https://privacy-test-pages.site/content-scope-scripts/infra/pages/conditional-matching-experiments.html"
-- tapOn: "go"
+- pressKey: Enter
 
 # Check if two 200 or two 300 are visible
 - assertVisible:

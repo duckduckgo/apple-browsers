@@ -1945,7 +1945,7 @@ class MainViewController: UIViewController {
 
     @objc private func onAIChatOmnibarExperimentOverlayButtonPressed() {
         let viewModel = AIChatInputBoxViewModel(state: .ready, visibility: .visible)
-        let containerVC = ChatInputBoxContainerViewController(viewModel: viewModel, position: appSettings.currentAddressBarPosition)
+        let containerVC = ChatInputBoxContainerViewController(viewModel: viewModel)
         containerVC.delegate = self
         containerVC.modalPresentationStyle = .fullScreen
         containerVC.modalTransitionStyle = .crossDissolve

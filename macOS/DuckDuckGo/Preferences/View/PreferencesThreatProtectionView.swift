@@ -36,10 +36,10 @@ extension Preferences {
                     
                     // SECTION 1.1 Scam Blocker Toggle
                     PreferencePaneSection {
-                        ToggleMenuItem("Warn on sites flagged for scams, phishing and malware",
+                        ToggleMenuItem(UserText.scamBlockerToggleLabel,
                                        isOn: $model.isEnabled)
                         VStack(alignment: .leading, spacing: 1) {
-                            TextMenuItemCaption("Disabling this feature can put your personal information at risk.")
+                            TextMenuItemCaption(UserText.scamBlockerToggleCaption)
                             TextButton(UserText.learnMore) {
                                 model.openNewTab(with: .maliciousSiteProtectionLearnMore)
                             }
@@ -49,7 +49,7 @@ extension Preferences {
             }
 
             // SECTION 2: Smarter Encryption
-            PreferencePane("Smarter Encryption", spacing: 4) {
+            PreferencePane(UserText.smarterEncryptionTitle, spacing: 4) {
 
                 // SECTION 2.1 Smarter Encryption Status Indicator
                 PreferencePaneSection {
@@ -59,7 +59,7 @@ extension Preferences {
                 // SECTION 2.2 Smarter Encryption Description
                 PreferencePaneSection {
                     VStack(alignment: .leading, spacing: 1) {
-                        TextMenuItemCaption("Automatically upgrades links to HTTPS whenever possible")
+                        TextMenuItemCaption(UserText.smarterEncryptionDescription)
                         TextButton(UserText.learnMore) {
                             model.openNewTab(with: .smarterEncryptionLearnMore)
                         }

@@ -59688,6 +59688,30 @@
         }
       }
     },
+    "preferences.scam-blocker.toggle-caption" : {
+      "comment" : "Caption explaining the risk of disabling scam blocker protection",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Disabling this feature can put your personal information at risk."
+          }
+        }
+      }
+    },
+    "preferences.scam-blocker.toggle-label" : {
+      "comment" : "Label for toggle that enables or disables scam, phishing, and malware site warnings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Warn on sites flagged for scams, phishing and malware"
+          }
+        }
+      }
+    },
     "preferences.set-as-default" : {
       "comment" : "Menu option to set the browser as default",
       "extractionState" : "extracted_with_value",
@@ -59864,6 +59888,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Открыть новое окно"
+          }
+        }
+      }
+    },
+    "preferences.smarter-encryption.description" : {
+      "comment" : "Description explaining the Smarter Encryption feature",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Automatically upgrades links to HTTPS whenever possible"
+          }
+        }
+      }
+    },
+    "preferences.smarter-encryption.title" : {
+      "comment" : "Title of the section of a setting page that shows Smarter Encryption preferences",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Smarter Encryption"
           }
         }
       }

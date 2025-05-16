@@ -97,7 +97,7 @@ enum Preferences {
                 case .webTrackingProtection:
                     WebTrackingProtectionView(model: WebTrackingProtectionPreferences.shared)
                 case .threatProtection:
-                    WebTrackingProtectionView(model: WebTrackingProtectionPreferences.shared)
+                    ThreatProtectionView(model: MaliciousSiteProtectionPreferences.shared)
                 case .cookiePopupProtection:
                     CookiePopupProtectionView(model: CookiePopupProtectionPreferences.shared)
                 case .emailProtection:

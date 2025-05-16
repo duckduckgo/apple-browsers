@@ -133,6 +133,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .visualRefresh,
                 .tabCrashDebugging,
                 .tabCrashRecovery,
+                .maliciousSiteProtection,
                 .delayedWebviewPresentation:
             return true
         case .debugMenu,
@@ -142,7 +143,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .contextualOnboarding,
                 .unknownUsernameCategorization,
                 .credentialsImportPromotionForExistingUsers,
-                .maliciousSiteProtection,
                 .dbpRemoteBrokerDelivery:
             return false
         }

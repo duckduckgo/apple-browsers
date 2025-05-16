@@ -633,7 +633,7 @@ class TabViewController: UIViewController {
         if webView.window == nil {
             DailyPixel.fireDailyAndCount(pixel: .debugWebViewNotAttachedToWindow)
         }
-        if webView.isHidden {
+        if webView.isHidden && (errorMessage.text.isNilOrEmpty || error.isHidden) {
             DailyPixel.fireDailyAndCount(pixel: .debugWebViewInVisibleTabHidden)
         }
         if webView.frame == .zero {

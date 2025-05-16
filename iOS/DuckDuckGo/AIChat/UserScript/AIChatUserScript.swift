@@ -145,7 +145,7 @@ final class AIChatUserScript: NSObject, Subfeature {
     // MARK: - Input Box Event Subscription
 
     private func subscribeToInputBoxEvents() {
-        inputBoxHandler?.didSubmitText
+        inputBoxHandler?.didSubmitPrompt
             .sink(receiveValue: submitPrompt)
             .store(in: &cancellables)
 

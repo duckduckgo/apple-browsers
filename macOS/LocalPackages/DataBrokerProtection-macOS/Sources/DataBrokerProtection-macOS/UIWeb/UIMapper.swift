@@ -405,8 +405,8 @@ fileprivate extension Array where Element == BrokerProfileQueryData {
     }
 
     var lastOperation: BrokerJobData? {
-        let allOperations = flatMap { $0.operationsData }
-        let lastOperation = allOperations.sorted(by: {
+        let allJobs = flatMap { $0.jobsData }
+        return allJobs.sorted(by: {
             if let date1 = $0.lastRunDate, let date2 = $1.lastRunDate {
                 return date1 > date2
             } else if $0.lastRunDate != nil {
@@ -415,12 +415,10 @@ fileprivate extension Array where Element == BrokerProfileQueryData {
                 return false
             }
         }).first
-
-        return lastOperation
     }
 
     var lastOperationThatErrored: HistoryEvent? {
-        let lastError = flatMap { $0.operationsData }
+        let lastError = flatMap { $0.jobsData }
             .flatMap { $0.historyEvents }
             .filter { $0.isError }
             .sorted(by: { $0.date > $1.date })
@@ -430,9 +428,9 @@ fileprivate extension Array where Element == BrokerProfileQueryData {
     }
 
     var lastStartedOperation: BrokerJobData? {
-        let allOperations = flatMap { $0.operationsData }
+        let allJobs = flatMap { $0.jobsData }
 
-        return allOperations.sorted(by: {
+        return allJobs.sorted(by: {
             if let date1 = $0.historyEvents.closestHistoryEvent?.date, let date2 = $1.historyEvents.closestHistoryEvent?.date {
                 return date1 > date2
             } else if $0.historyEvents.closestHistoryEvent?.date != nil {

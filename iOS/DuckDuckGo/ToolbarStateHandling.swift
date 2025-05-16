@@ -49,45 +49,38 @@ final class ToolbarHandler: ToolbarStateHandling {
     }()
 
     lazy var backButton = {
-        let imageName = isExperimentalThemingEnabled ? "Arrow-Left-New-24" : "BrowsePrevious"
-        return createBarButtonItem(title: UserText.keyCommandBrowserBack, imageName: imageName)
+        let resource = isExperimentalThemingEnabled ? ImageResource.arrowLeftNew24 : .browsePrevious
+        return createBarButtonItem(title: UserText.keyCommandBrowserBack, imageResource: resource)
     }()
 
-    private(set) lazy var fireButton = FireButton()
-
     lazy var fireBarButtonItem = {
-        if isExperimentalThemingEnabled {
-            let barButtonItem = UIBarButtonItem(customView: fireButton)
-            barButtonItem.title = UserText.actionForgetAll
-            return barButtonItem
-        } else {
-            return createBarButtonItem(title: UserText.actionForgetAll, imageName: "Fire")
-        }
+        let resource = isExperimentalThemingEnabled ? ImageResource.fireNew24 : .fire
+        return createBarButtonItem(title: UserText.actionForgetAll, imageResource: resource)
     }()
 
     lazy var forwardButton = {
-        let imageName = isExperimentalThemingEnabled ? "Arrow-Right-New-24" : "BrowseNext"
-        return createBarButtonItem(title: UserText.keyCommandBrowserForward, imageName: imageName)
+        let resource = isExperimentalThemingEnabled ? ImageResource.arrowRightNew24 : .browseNext
+        return createBarButtonItem(title: UserText.keyCommandBrowserForward, imageResource: resource)
     }()
 
     lazy var tabSwitcherButton = {
-        let imageName = isExperimentalThemingEnabled ? "Tab-New-24" : "Add-24"
-        return createBarButtonItem(title: UserText.tabSwitcherAccessibilityLabel, imageName: imageName)
+        let resource = isExperimentalThemingEnabled ? ImageResource.tabNew24 : .add24
+        return createBarButtonItem(title: UserText.tabSwitcherAccessibilityLabel, imageResource: resource)
     }()
 
     lazy var bookmarkButton = {
-        let imageName = isExperimentalThemingEnabled ? "Bookmarks-Stacked-24" : "Book-24"
-        return createBarButtonItem(title: UserText.actionOpenBookmarks, imageName: imageName)
+        let resource = isExperimentalThemingEnabled ? ImageResource.bookmarksStacked24 : .book24
+        return createBarButtonItem(title: UserText.actionOpenBookmarks, imageResource: resource)
     }()
 
     lazy var passwordsButton = {
-        let imageName = isExperimentalThemingEnabled ? "Key-New-24" : "Key-24"
-        return createBarButtonItem(title: UserText.actionOpenPasswords, imageName: imageName)
+        let resource = isExperimentalThemingEnabled ? ImageResource.keyNew24 : .key24
+        return createBarButtonItem(title: UserText.actionOpenPasswords, imageResource: resource)
     }()
 
     lazy var browserMenuButton = {
-        let imageName = isExperimentalThemingEnabled ? "Menu-Hamburger-New-24" : "Menu-Horizontal-24"
-        return createBarButtonItem(title: UserText.menuButtonHint, imageName: imageName)
+        let resource = isExperimentalThemingEnabled ? ImageResource.menuHamburgerNew24 : .menuHorizontal24
+        return createBarButtonItem(title: UserText.menuButtonHint, imageResource: resource)
     }()
 
     private var state: ToolbarContentState?
@@ -134,10 +127,10 @@ final class ToolbarHandler: ToolbarStateHandling {
         forwardButton.isEnabled = currentTab?.canGoForward ?? false
     }
 
-    private func createBarButtonItem(title: String, imageName: String) -> UIBarButtonItem {
+    private func createBarButtonItem(title: String, imageResource: ImageResource) -> UIBarButtonItem {
         if self.isExperimentalThemingEnabled {
             let button = ToolbarButton(.primary)
-            button.setImage(UIImage(named: imageName))
+            button.setImage(UIImage(resource: imageResource))
             button.frame = CGRect(x: 0, y: 0, width: 34, height: 44)
 
             let barItem = UIBarButtonItem(customView: button)
@@ -145,7 +138,7 @@ final class ToolbarHandler: ToolbarStateHandling {
 
             return barItem
         } else {
-            return UIBarButtonItem(title: title, image: UIImage(named: imageName), primaryAction: nil)
+            return UIBarButtonItem(title: title, image: UIImage(resource: imageResource), primaryAction: nil)
         }
     }
 

@@ -24,7 +24,6 @@ class ToolbarButton: UIButton {
 
     enum ButtonType {
         case primary
-        case fire
         case secondary
     }
 
@@ -73,12 +72,8 @@ private extension ToolbarButton.ButtonType {
 
     func backgroundColor(for state: UIButton.State) -> UIColor {
 
-        switch (self, state) {
-        case (.fire, .highlighted):
-            return UIColor(designSystemColor: .controlsFillTertiary)
-        case (.fire, _):
-            return UIColor(designSystemColor: .controlsFillPrimary)
-        case (_, .highlighted):
+        switch state {
+        case .highlighted:
             return UIColor(designSystemColor: .controlsFillPrimary)
         default:
             return .clear
@@ -88,7 +83,7 @@ private extension ToolbarButton.ButtonType {
     func foregroundColor(for state: UIButton.State) -> UIColor {
 
         switch self {
-        case .primary, .fire:
+        case .primary:
             switch state {
             case .disabled:
                 return UIColor(designSystemColor: .icons).withAlphaComponent(0.5)

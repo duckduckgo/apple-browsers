@@ -73,7 +73,12 @@ private extension NewTabPageView {
     @ViewBuilder
     private var sectionsView: some View {
         GeometryReader { proxy in
-            ScrollView {
+            NewTabPageShadowScrollView(shadowColor: .init(designSystemColor: .shadowPrimary), setUpScrollView: {
+                $0.contentInsetAdjustmentBehavior = .never
+                $0.backgroundColor = UIColor(designSystemColor: .background)
+                $0.alwaysBounceVertical = true
+                $0.keyboardDismissMode = .onDrag
+            }) {
                 VStack(spacing: Metrics.sectionSpacing) {
                     
                     messagesSectionView

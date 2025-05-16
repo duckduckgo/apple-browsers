@@ -66,8 +66,8 @@ final class ToolbarHandler: ToolbarStateHandling {
     }()
 
     lazy var bookmarkButton = {
-        #warning("ICONS: bookmarksStacked24 -> glyphs/size24/bookmarks")
-        return createBarButtonItem(title: UserText.actionOpenBookmarks, image: DesignSystemImages.Glyphs.Size24.bookmarks)
+        #warning("ICONS: ‼️ bookmarksStacked24 -> glyphs/size24/bookmarksList")
+        return createBarButtonItem(title: UserText.actionOpenBookmarks, image: DesignSystemImages.Glyphs.Size24.bookmarksList)
     }()
 
     lazy var passwordsButton = {

@@ -28,9 +28,8 @@ struct BookmarksEmptyView: View {
     var importDocumentButtonAction: (() -> Void)?
 
     var body: some View {
-            #warning("ICONS: Missing 96px bookmarks icon")
             VStack(spacing: 0) {
-                Image(uiImage: DesignSystemImages.Color.Size24.exclamation)
+                Image(.bookmarks96)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 96, height: 96)

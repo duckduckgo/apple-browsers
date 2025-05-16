@@ -211,8 +211,7 @@ struct DataImportSummaryView: View {
             VStack(spacing: 0) {
                 HStack {
                     HStack(spacing: 12) {
-                        #warning("ICONS: missing .checkRecolorable24 .crossRecolorable24")
-                        Image(uiImage: isSuccess ? DesignSystemImages.Glyphs.Size24.exclamation : DesignSystemImages.Glyphs.Size24.exclamation)
+                        Image(uiImage: isSuccess ? DesignSystemImages.Glyphs.Size24.checkRecolorable : DesignSystemImages.Glyphs.Size24.crossRecolorable)
                         Text(label)
                             .daxBodyRegular()
                             .foregroundStyle(Color(designSystemColor: .textPrimary))

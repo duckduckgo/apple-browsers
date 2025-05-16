@@ -32,7 +32,6 @@ public enum OmniBarIcon {
     case duckPlayer
     case specialError
 
-    #warning("ICONS: missing DuckPlayerURLIcon")
     var image: UIImage {
         switch self {
         case .duckPlayer:

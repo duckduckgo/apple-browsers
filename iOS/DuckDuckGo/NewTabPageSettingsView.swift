@@ -105,14 +105,12 @@ struct NewTabPageSettingsView: View {
         ForEach(sectionsSettingsModel.itemsSettings, id: \.item) { setting in
             switch setting.item {
             case .favorites:
-                #warning("ICONS: favorites -> favorites solid")
                 NewTabPageSettingsSectionItemView(title: UserText.newTabPageSettingsSectionNameFavorites,
-                                                  icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.favoriteSolid),
+                                                  icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.favorite),
                                                   isEnabled: setting.isEnabled)
             case .shortcuts:
-                #warning("ICONS: missing glyphs/size24/exclamation")
                 NewTabPageSettingsSectionItemView(title: UserText.newTabPageSettingsSectionNameShortcuts,
-                                                  icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.exclamation),
+                                                  icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.shortcut),
                                                   isEnabled: setting.isEnabled)
             }
         }.onMove(perform: { indices, newOffset in

@@ -28,7 +28,7 @@ enum PrivacyIcon {
     fileprivate var staticImage: UIImage? {
         switch self {
         case .daxLogo: return UIImage(resource: .logoIcon)
-        #warning("ICONS: missing color/24/alert")
+        #warning("ICONS: ‼️ missing color/24/alert")
         case .alert: return DesignSystemImages.Color.Size24.exclamation
         default: return nil
         }

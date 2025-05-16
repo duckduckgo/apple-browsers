@@ -73,7 +73,7 @@ class TabSwitcherViewController: UIViewController {
             }
         }
 
-        #warning("ICONS: tabs toggle icons not in design system")
+        #warning("ICONS: ℹ️ tabs toggle icons not in design system")
         var image: UIImage {
             switch self {
             case .list:

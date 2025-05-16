@@ -169,9 +169,9 @@ extension TabViewController {
         entries.append(buildOpenBookmarksEntry())
 
         if featureFlagger.isFeatureOn(.autofillAccessCredentialManagement) {
-            #warning("ICONS: missing glyphs/16/key")
+            #warning("ICONS: ‼️ missing glyphs/16/key")
             entries.append(BrowsingMenuEntry.regular(name: UserText.actionAutofillLogins,
-                                                     image: DesignSystemImages.Glyphs.Size24.key,
+                                                     image: DesignSystemImages.Glyphs.Size16.exclamation,
                                                      action: { [weak self] in
                 self?.onOpenAutofillLoginsAction()
             }))
@@ -229,7 +229,7 @@ extension TabViewController {
     }
 
 
-    #warning("ICONS: MenuRemoveFireproof / MenuFireproof not in design system")
+    #warning("ICONS: ‼️ MenuRemoveFireproof / MenuFireproof not in design system")
     private func buildKeepSignInEntry(forLink link: Link) -> BrowsingMenuEntry? {
         guard let domain = link.url.host, !link.url.isDuckDuckGo else { return nil }
         let isFireproofed = fireproofing.isAllowed(cookieDomain: domain)
@@ -312,10 +312,10 @@ extension TabViewController {
                                          })
     }
 
-    #warning("ICONS: missing library 16 (open bookmarks)")
+    #warning("ICONS: ‼️ missing library-16 (open bookmarks)")
     private func buildOpenBookmarksEntry() -> BrowsingMenuEntry {
         BrowsingMenuEntry.regular(name: UserText.actionOpenBookmarks,
-                                  image: DesignSystemImages.Glyphs.Size24.bookmarks,
+                                  image: DesignSystemImages.Glyphs.Size16.exclamation,
                                                  action: { [weak self] in
             self?.onOpenBookmarksAction()
         })
@@ -522,7 +522,7 @@ extension TabViewController {
         delegate?.tabDidRequestAIChat(tab: self)
     }
 
-    #warning("ICONS: missing Protections-Blocked and Protections")
+    #warning("ICONS: ‼️ missing Protections-Blocked and Protections")
     private func buildToggleProtectionEntry(forDomain domain: String) -> BrowsingMenuEntry {
         let config = ContentBlocking.shared.privacyConfigurationManager.privacyConfig
         let isProtected = !config.isUserUnprotected(domain: domain)

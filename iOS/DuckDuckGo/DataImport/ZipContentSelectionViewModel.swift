@@ -33,11 +33,9 @@ extension DataImportPreview {
     var icon: Image {
         switch type {
         case .bookmarks:
-            #warning("ICONS: .bookmarksOpen24 -> Color/24/bookmarks")
-            return Image(uiImage: DesignSystemImages.Color.Size24.bookmarks)
+            return Image(uiImage: DesignSystemImages.Glyphs.Size24.bookmarksOpen)
         case .passwords:
-            #warning("ICONS: .key24 -> Color/24/key")
-            return Image(uiImage: DesignSystemImages.Color.Size24.key)
+            return Image(uiImage: DesignSystemImages.Glyphs.Size24.key)
         }
     }
 

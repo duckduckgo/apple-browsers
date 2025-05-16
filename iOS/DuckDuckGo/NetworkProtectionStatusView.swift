@@ -443,7 +443,7 @@ private struct NetworkProtectionErrorView: View {
     var body: some View {
         VStack(alignment: .leading) {
             HStack {
-                #warning("ICONS: Alert-Color-16 -> glyphs/size16/alertRecolorable")
+                #warning("ICONS: ❓ Alert-Color-16 -> glyphs/size16/alertRecolorable")
                 Image(uiImage: DesignSystemImages.Glyphs.Size16.alertRecolorable)
                 Text(title)
                     .daxBodyBold()
@@ -505,15 +505,15 @@ private struct NetworkProtectionThroughputItemView: View {
 
             Spacer(minLength: 2)
 
-            #warning("ICONS: missing VPNDownload")
-            Image(uiImage: DesignSystemImages.Glyphs.Size24.exclamation)
+            #warning("ICONS: ℹ️ missing VPNDownload")
+            Image(.vpnDownload)
                 .foregroundColor(.init(designSystemColor: .textSecondary))
             Text(downloadSpeed)
                 .daxBodyRegular()
                 .foregroundColor(.init(designSystemColor: .textSecondary))
 
-            #warning("ICONS: missing VPNUpload")
-            Image(uiImage: DesignSystemImages.Glyphs.Size24.exclamation)
+            #warning("ICONS: ℹ️ missing VPNUpload")
+            Image(.vpnUpload)
                 .foregroundColor(.init(designSystemColor: .textSecondary))
                 .padding(.leading, 4)
             Text(uploadSpeed)

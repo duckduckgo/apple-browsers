@@ -146,13 +146,12 @@ final class DataImportViewModel: ObservableObject {
         }
         let importScreen: ImportScreen
 
-        #warning("ICONS: missing passwordsImport128 and bookmarksImport96")
         var image: Image {
             switch importScreen {
             case .passwords:
-                return Image(uiImage: DesignSystemImages.Color.Size24.exclamation)
+                return Image(.passwordsImport128)
             case .bookmarks:
-                return Image(uiImage: DesignSystemImages.Color.Size24.exclamation)
+                return Image(.bookmarksImport96)
             }
         }
 

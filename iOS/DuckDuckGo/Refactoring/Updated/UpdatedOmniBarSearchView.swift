@@ -152,18 +152,16 @@ final class UpdatedOmniBarSearchView: UIView {
         accessoryButton.setImage(DesignSystemImages.Glyphs.Size24.aiChat)
         UpdatedOmniBarView.setUpCommonProperties(for: accessoryButton)
 
-        #warning("ICONS: missing image glyphs/size24/reload")
-        reloadButton.setImage(DesignSystemImages.Glyphs.Size24.exclamation)
+        reloadButton.setImage(DesignSystemImages.Glyphs.Size24.reload)
         UpdatedOmniBarView.setUpCommonProperties(for: reloadButton)
 
-        #warning("ICONS: renamed close circle small to clear")
-        clearButton.setImage(DesignSystemImages.Glyphs.Size24.clear)
+        clearButton.setImage(DesignSystemImages.Glyphs.Size24.closeCircleSmall)
         UpdatedOmniBarView.setUpCommonProperties(for: clearButton)
 
         shareButton.setImage(DesignSystemImages.Glyphs.Size24.shareApple)
         UpdatedOmniBarView.setUpCommonProperties(for: shareButton)
 
-        #warning("ICONS: missing image glyphs/size24/cancel")
+        #warning("ICONS: ‼️ missing image glyphs/size24/cancel")
         cancelButton.setImage(DesignSystemImages.Glyphs.Size24.exclamation)
         UpdatedOmniBarView.setUpCommonProperties(for: cancelButton)
 

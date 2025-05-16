@@ -83,7 +83,6 @@ class FeedbackFormViewController: UIViewController {
         loadViewIfNeeded()
         hideWebsiteField()
 
-        #warning("ICONS: happy face not in design system")
         headerImage.image = UIImage(resource: .happyFace)
 
         headerText.setAttributedTextString(UserText.feedbackPositiveFormHeader)
@@ -102,7 +101,6 @@ class FeedbackFormViewController: UIViewController {
 
         loadViewIfNeeded()
         
-        #warning("ICONS: sad face not in design system")
         headerImage.image = UIImage(resource: .sadFace)
         self.headerText.text = FeedbackPresenter.title(for: category)
         

@@ -138,7 +138,7 @@ private struct DataTypeRow: View {
                         viewModel.toggleSelection(importPreview.type)
                     }
                 } label: {
-                    #warning("ICONS: missing .checkRecolorableBlue24 .roundCheckbox24")
+                    #warning("ICONS: ‼️ missing .checkRecolorableBlue24 .roundCheckbox24")
                     Image(uiImage: isSelected ? DesignSystemImages.Glyphs.Size24.exclamation : DesignSystemImages.Glyphs.Size24.exclamation)
                         .resizable()
                         .frame(width: 24, height: 24)

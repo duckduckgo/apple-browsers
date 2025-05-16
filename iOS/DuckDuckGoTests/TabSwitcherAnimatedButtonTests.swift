@@ -1,5 +1,5 @@
 //
-//  TabSwitcherButtonTests.swift
+//  TabSwitcherAnimatedButtonTests.swift
 //  DuckDuckGo
 //
 //  Copyright © 2017 DuckDuckGo. All rights reserved.
@@ -20,36 +20,44 @@
 import XCTest
 @testable import DuckDuckGo
 
-class TabSwitcherButtonTests: XCTestCase {
+class TabSwitcherAnimatedButtonTests: XCTestCase {
 
     func testInitialState() {
         
-        let button = TabSwitcherButton()
+        let button = TabSwitcherAnimatedButton()
         XCTAssertEqual(0, button.anim.currentProgress)
         XCTAssertEqual(0, button.tabCount)
         XCTAssertFalse(button.hasUnread)
         XCTAssertNil(button.label.text)
         
     }
-    
-    func testWhenAnimateCalledThenCountIsIncremented() {
-        let button = TabSwitcherButton()
-        button.incrementAnimated()
-        RunLoop.main.run(until: Date(timeIntervalSinceNow: 1.0))
-        XCTAssertEqual(1, button.tabCount)
+
+    func testStaticButtonInitialState() {
+
+        let button = TabSwitcherStaticButton()
+        XCTAssertEqual(0, button.tabCount)
+        XCTAssertFalse(button.hasUnread)
+
     }
-    
+
+    func testWhenAnimateCalledThenCountIsNotIncremented() {
+        let button = TabSwitcherAnimatedButton()
+        button.animateUpdate { }
+        RunLoop.main.run(until: Date(timeIntervalSinceNow: 1.0))
+        XCTAssertEqual(0, button.tabCount)
+    }
+
     func testWhenUnreadIsSetThenAnimationIsSetToEnd() {
         
-        let button = TabSwitcherButton()
+        let button = TabSwitcherAnimatedButton()
         button.hasUnread = true
         XCTAssertEqual(1.0, button.anim.currentProgress)
         
     }
-    
+
     func testWhenCountSetBackToZeroThenTextIsBlank() {
         
-        let button = TabSwitcherButton()
+        let button = TabSwitcherAnimatedButton()
         button.tabCount = 1
         XCTAssertNotNil(button.label.text)
         button.tabCount = 0
@@ -59,7 +67,7 @@ class TabSwitcherButtonTests: XCTestCase {
 
     func testWhenExceedsMaxThenLabelIsSetAppropriately() {
         
-        let button = TabSwitcherButton()
+        let button = TabSwitcherAnimatedButton()
         button.tabCount = 100
         XCTAssertEqual("~", button.label.text)
         
@@ -67,7 +75,7 @@ class TabSwitcherButtonTests: XCTestCase {
 
     func testWhenCountIsUpdatedThenLabelIsUpdated() {
         
-        let button = TabSwitcherButton()
+        let button = TabSwitcherAnimatedButton()
         button.tabCount = 99
         XCTAssertEqual("99", button.label.text)
         

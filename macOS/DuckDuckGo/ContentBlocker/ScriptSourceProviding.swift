@@ -35,6 +35,7 @@ protocol ScriptSourceProviding {
     var messageSecret: String? { get }
     var onboardingActionsManager: OnboardingActionsManaging? { get }
     var historyViewActionsManager: HistoryViewActionsManager? { get }
+    var currentCohorts: [ContentScopeExperimentData]? { get }
     func buildAutofillSource() -> AutofillUserScriptSourceProvider
 
 }
@@ -42,7 +43,7 @@ protocol ScriptSourceProviding {
 // refactor: ScriptSourceProvider to be passed to init methods as `some ScriptSourceProviding`, DefaultScriptSourceProvider to be killed
 // swiftlint:disable:next identifier_name
 @MainActor func DefaultScriptSourceProvider() -> ScriptSourceProviding {
-    ScriptSourceProvider(configStorage: Application.appDelegate.configurationStore, privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager, webTrackingProtectionPreferences: WebTrackingProtectionPreferences.shared, contentBlockingManager: ContentBlocking.shared.contentBlockingManager, trackerDataManager: ContentBlocking.shared.trackerDataManager, tld: ContentBlocking.shared.tld)
+    ScriptSourceProvider(configStorage: Application.appDelegate.configurationStore, privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager, webTrackingProtectionPreferences: WebTrackingProtectionPreferences.shared, contentBlockingManager: ContentBlocking.shared.contentBlockingManager, trackerDataManager: ContentBlocking.shared.trackerDataManager, experimentManager: Application.appDelegate.contentScopeExperimentsManager, tld: ContentBlocking.shared.tld)
 }
 
 struct ScriptSourceProvider: ScriptSourceProviding {
@@ -53,6 +54,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     private(set) var autofillSourceProvider: AutofillUserScriptSourceProvider?
     private(set) var sessionKey: String?
     private(set) var messageSecret: String?
+    private(set) var currentCohorts: [ContentScopeExperimentData]?
 
     let configStorage: ConfigurationStoring
     let privacyConfigurationManager: PrivacyConfigurationManaging
@@ -60,6 +62,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     let trackerDataManager: TrackerDataManager
     let webTrakcingProtectionPreferences: WebTrackingProtectionPreferences
     let tld: TLD
+    let experimentManager: ContentScopeExperimentsManaging
 
     @MainActor
     init(configStorage: ConfigurationStoring,
@@ -67,6 +70,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
          webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
          contentBlockingManager: ContentBlockerRulesManagerProtocol,
          trackerDataManager: TrackerDataManager,
+         experimentManager: ContentScopeExperimentsManaging,
          tld: TLD) {
 
         self.configStorage = configStorage
@@ -74,6 +78,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.webTrakcingProtectionPreferences = webTrackingProtectionPreferences
         self.contentBlockingManager = contentBlockingManager
         self.trackerDataManager = trackerDataManager
+        self.experimentManager = experimentManager
         self.tld = tld
 
         self.contentBlockerRulesConfig = buildContentBlockerRulesConfig()
@@ -83,6 +88,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.autofillSourceProvider = buildAutofillSource()
         self.onboardingActionsManager = buildOnboardingActionsManager()
         self.historyViewActionsManager = buildHistoryViewActionsManager()
+        self.currentCohorts = generateCurrentCohorts()
     }
 
     private func generateSessionKey() -> String {
@@ -199,5 +205,12 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     private func encodeTrackerData(_ trackerData: TrackerData) -> String {
         let encodedData = try? JSONEncoder().encode(trackerData)
         return String(data: encodedData!, encoding: .utf8)!
+    }
+
+    private func generateCurrentCohorts() -> [ContentScopeExperimentData] {
+        let experiments = experimentManager.resolveContentScopeScriptActiveExperiments()
+        return experiments.map {
+            ContentScopeExperimentData(feature: $0.value.parentID, subfeature: $0.key, cohort: $0.value.cohortID)
+        }
     }
 }

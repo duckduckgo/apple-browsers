@@ -40,6 +40,7 @@ struct Launching: LaunchingHandling {
     private let voiceSearchHelper = VoiceSearchHelper()
     private let fireproofing = UserDefaultsFireproofing.xshared
     private let featureFlagger = AppDependencyProvider.shared.featureFlagger
+    private let contentScopeExperimentsManager = AppDependencyProvider.shared.contentScopeExperimentsManager
     private let aiChatSettings = AIChatSettings()
     private let privacyConfigurationManager = ContentBlocking.shared.privacyConfigurationManager
 
@@ -101,6 +102,7 @@ struct Launching: LaunchingHandling {
                                               subscriptionService: subscriptionService,
                                               voiceSearchHelper: voiceSearchHelper,
                                               featureFlagger: featureFlagger,
+                                              contentScopeExperimentManager: contentScopeExperimentsManager,
                                               aiChatSettings: aiChatSettings,
                                               fireproofing: fireproofing,
                                               maliciousSiteProtectionService: maliciousSiteProtectionService,

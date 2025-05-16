@@ -21,6 +21,7 @@ import Bookmarks
 import SwiftUI
 import UniformTypeIdentifiers
 import DuckUI
+import DesignResourcesKit
 
 struct FavoritesView<Model: FavoritesViewModel>: View {
     @Environment(\.horizontalSizeClass) var horizontalSizeClass
@@ -62,7 +63,9 @@ struct FavoritesView<Model: FavoritesViewModel>: View {
                         model.toggleCollapse()
                     }
                 }, label: {
-                    Image(model.isCollapsed ? .chevronDown : .chevronUp)
+                    Image(uiImage: model.isCollapsed ?
+                          DesignSystemImages.Glyphs.Size24.chevronDownSmall :
+                            DesignSystemImages.Glyphs.Size24.chevronUpSmall)
                         .resizable()
                 })
                 .buttonStyle(ToggleExpandButtonStyle())

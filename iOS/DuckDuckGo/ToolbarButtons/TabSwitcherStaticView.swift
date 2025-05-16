@@ -21,8 +21,9 @@ import UIKit
 import DesignResourcesKit
 
 final class TabSwitcherStaticView: UIView {
-    private let iconImageView = UIImageView(image: DesignSystemImages.Glyphs.Size24.tabNew)
-    private let unreadDotImageView = UIImageView(image: DesignSystemImages.Glyphs.Size24.tabMobileAlertRecolorable)
+    #warning("ICONS: tab mobile images seem out of sync with dub?")
+    private let iconImageView = UIImageView(image: DesignSystemImages.Glyphs.Size24.tabMobile)
+    private let unreadDotImageView = UIImageView(image: DesignSystemImages.Glyphs.Size24.tabMobileAlertDot)
 
     let label = UILabel()
 
@@ -42,9 +43,7 @@ final class TabSwitcherStaticView: UIView {
     var hasUnread: Bool = false {
         didSet {
             unreadDotImageView.isHidden = !hasUnread
-            iconImageView.image = hasUnread ?
-                DesignSystemImages.Glyphs.Size24.tabMobileAlertRecolorable :
-                DesignSystemImages.Glyphs.Size24.tabNew
+            iconImageView.image = hasUnread ? DesignSystemImages.Glyphs.Size24.tabMobileAlertRecolorable : DesignSystemImages.Glyphs.Size24.tabMobile
         }
     }
 

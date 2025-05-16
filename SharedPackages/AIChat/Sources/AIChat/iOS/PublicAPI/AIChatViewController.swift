@@ -48,9 +48,9 @@ public final class AIChatViewController: UIViewController {
     public weak var delegate: AIChatViewControllerDelegate?
     private let chatModel: AIChatViewModeling
     private var webViewController: AIChatWebViewController?
-    private let chatInputHostingController: UIHostingController<AnyView>?
-    private var chatInputHeightConstraint: NSLayoutConstraint?
-    private var chatInputBottomConstraint: NSLayoutConstraint?
+    private var chatInputBoxViewController: UIViewController?
+    private var chatInputBoxHandler: AIChatInputBoxHandling?
+    private var cancellables = Set<AnyCancellable>()
 
     public var webView: WKWebView? {
         webViewController?.webView
@@ -74,31 +74,27 @@ public final class AIChatViewController: UIViewController {
     ///   - requestAuthHandler: A `AIChatRequestAuthorizationHandling` object to handle decide policy callbacks
     ///   - inspectableWebView: Boolean indicating if the webView should be inspectable
     ///   - downloadsPath: URL indicating the path where downloads should be saved
-    ///   - chatInputBox: A SwiftUI view to be used as the native input box for duck.ai
     public convenience init(settings: AIChatSettingsProvider,
                             webViewConfiguration: WKWebViewConfiguration,
                             requestAuthHandler: AIChatRequestAuthorizationHandling,
                             inspectableWebView: Bool,
                             downloadsPath: URL,
                             userAgentManager: AIChatUserAgentProviding,
-                            chatInputBox: AnyView?) {
+                            chatInputBoxViewController: UIViewController?,
+                            chatInputBoxHandler: AIChatInputBoxHandling?) {
         let chatModel = AIChatViewModel(webViewConfiguration: webViewConfiguration,
                                         settings: settings,
                                         requestAuthHandler: requestAuthHandler,
                                         inspectableWebView: inspectableWebView,
                                         downloadsPath: downloadsPath,
                                         userAgentManager: userAgentManager)
-        self.init(chatModel: chatModel, chatInputBox: chatInputBox)
+        self.init(chatModel: chatModel, chatInputBoxViewController: chatInputBoxViewController, chatInputBoxHandler: chatInputBoxHandler)
     }
 
-    internal init(chatModel: AIChatViewModeling, chatInputBox: AnyView?) {
+    internal init(chatModel: AIChatViewModeling, chatInputBoxViewController: UIViewController?, chatInputBoxHandler: AIChatInputBoxHandling?) {
         self.chatModel = chatModel
-        if let view = chatInputBox {
-            self.chatInputHostingController = UIHostingController(rootView: view)
-        } else {
-            self.chatInputHostingController = nil
-        }
-
+        self.chatInputBoxHandler = chatInputBoxHandler
+        self.chatInputBoxViewController = chatInputBoxViewController
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -114,8 +110,8 @@ extension AIChatViewController {
         super.viewDidLoad()
         self.view.backgroundColor = .black
         setupTitleBar()
-        addWebViewController()
         setupChatInputBox()
+        addWebViewController()
     }
 }
 
@@ -134,77 +130,23 @@ extension AIChatViewController {
     }
 }
 
-// MARK: - Keyboard manager
-extension AIChatViewController {
-    public override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(keyboardWillShow(_:)),
-                                               name: UIResponder.keyboardWillShowNotification,
-                                               object: nil)
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(keyboardWillHide(_:)),
-                                               name: UIResponder.keyboardWillHideNotification,
-                                               object: nil)
-    }
-
-    public override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        NotificationCenter.default.removeObserver(self,
-                                                  name: UIResponder.keyboardWillShowNotification,
-                                                  object: nil)
-        NotificationCenter.default.removeObserver(self,
-                                                  name: UIResponder.keyboardWillHideNotification,
-                                                  object: nil)
-    }
-
-    @objc private func keyboardWillShow(_ notification: Notification) {
-        guard let userInfo = notification.userInfo,
-              let frameValue = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue,
-              let durationNumber = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? NSNumber else {
-            return
-        }
-        let duration = durationNumber.doubleValue
-        let keyboardFrame = frameValue.cgRectValue
-        let kbFrameInView = view.convert(keyboardFrame, from: nil)
-        chatInputBottomConstraint?.constant = -kbFrameInView.height
-        UIView.animate(withDuration: duration) {
-            self.view.layoutIfNeeded()
-        }
-    }
-
-    @objc private func keyboardWillHide(_ notification: Notification) {
-        guard let userInfo = notification.userInfo,
-              let durationNumber = userInfo[UIResponder.keyboardAnimationDurationUserInfoKey] as? NSNumber else {
-            return
-        }
-        let duration = durationNumber.doubleValue
-        chatInputBottomConstraint?.constant = 0
-        UIView.animate(withDuration: duration) {
-            self.view.layoutIfNeeded()
-        }
-    }
-}
-
 // MARK: - Views Setup
 extension AIChatViewController {
 
     private func setupChatInputBox() {
-        guard let chatInputHostingController = chatInputHostingController else { return }
+        guard let chatInputBoxViewController = chatInputBoxViewController else { return }
 
-        addChild(chatInputHostingController)
-        chatInputHostingController.view.translatesAutoresizingMaskIntoConstraints = false
-        chatInputHostingController.view.backgroundColor = .clear
-        view.addSubview(chatInputHostingController.view)
+        addChild(chatInputBoxViewController)
+        chatInputBoxViewController.view.translatesAutoresizingMaskIntoConstraints = false
+        chatInputBoxViewController.view.backgroundColor = .clear
+        view.addSubview(chatInputBoxViewController.view)
 
-        let bottomConstraint = chatInputHostingController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
-        chatInputBottomConstraint = bottomConstraint
         NSLayoutConstraint.activate([
-            chatInputHostingController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            chatInputHostingController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            bottomConstraint
+            chatInputBoxViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            chatInputBoxViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            chatInputBoxViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
-        chatInputHostingController.didMove(toParent: self)
+        chatInputBoxViewController.didMove(toParent: self)
     }
 
     private func setupTitleBar() {
@@ -234,16 +176,22 @@ extension AIChatViewController {
 
         NSLayoutConstraint.activate([
             viewController.view.topAnchor.constraint(equalTo: titleBarView.bottomAnchor),
-            viewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             viewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             viewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
 
-        viewController.didMove(toParent: self)
+        if let controller = chatInputBoxViewController {
+            NSLayoutConstraint.activate([
+                viewController.view.bottomAnchor.constraint(equalTo: controller.view.topAnchor),
+            ])
+        } else {
+            NSLayoutConstraint.activate([
+                viewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            ])
 
-        if let chatInputView = chatInputHostingController?.view {
-            view.bringSubviewToFront(chatInputView)
         }
+
+        viewController.didMove(toParent: self)
     }
 
     private func removeWebViewController() {

@@ -184,6 +184,8 @@ class TabViewController: UIViewController {
     private var saveLoginPromptLastDismissed: Date?
     private var saveLoginPromptIsPresenting: Bool = false
     var firstLoad: Bool = true
+    // handle spurious keyboard events when the initial card fill prompt is presenting
+    private var fillCreditCardsPromptIsPresenting: Bool = false
 
     private var cachedRuntimeConfigurationForDomain: [String: String?] = [:]
 
@@ -2632,11 +2634,13 @@ extension TabViewController: UIGestureRecognizerDelegate {
     }
     
     @objc private func keyboardWillHide(_ notification: Notification) {
-        // Clear any pending autofill handlers when keyboard is dismissed
-        autofillUserScript?.clearAllHandlers()
-        
-        // Also clean up the accessory view if needed
-        cleanupAutofillAccessoryView(resetFirstLoadStatus: false)
+        if !fillCreditCardsPromptIsPresenting {
+            // Clear any pending autofill handlers when keyboard is dismissed
+            autofillUserScript?.clearAllHandlers()
+            
+            // Also clean up the accessory view if needed
+            cleanupAutofillAccessoryView(resetFirstLoadStatus: false)
+        }
     }
 }
 
@@ -3032,10 +3036,13 @@ extension TabViewController: SecureVaultManagerDelegate {
             
             if firstLoad {
                 firstLoad = false
+                fillCreditCardsPromptIsPresenting = true
                 presentAutofillPromptViewController(creditCards: creditCards, trigger: trigger) { creditCard in
                     completionHandler(creditCard)
                 }
             } else {
+                fillCreditCardsPromptIsPresenting = false
+                
                 guard let creditCardInputAccessoryView = setupAutofillAccessoryViewWithCustomWebView() else {
                     completionHandler(nil)
                     return

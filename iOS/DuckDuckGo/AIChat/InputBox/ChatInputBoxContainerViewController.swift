@@ -26,16 +26,16 @@ protocol ChatInputBoxContainerViewControllerDelegate: AnyObject {
 }
 
 final class ChatInputBoxContainerViewController: UIViewController {
-    // MARK: - Properties
-    
     private let chatInputBoxViewController: ChatInputBoxViewController
     private var cancellables = Set<AnyCancellable>()
     weak var delegate: ChatInputBoxContainerViewControllerDelegate?
-    
+    private let position: AddressBarPosition
+
     // MARK: - Initialization
     
-    init(viewModel: AIChatInputBoxViewModel) {
+    init(viewModel: AIChatInputBoxViewModel, position: AddressBarPosition = .top) {
         self.chatInputBoxViewController = ChatInputBoxViewController(viewModel: viewModel)
+        self.position = position
         super.init(nibName: nil, bundle: nil)
         
         configureViewModel(viewModel)
@@ -105,10 +105,18 @@ final class ChatInputBoxContainerViewController: UIViewController {
     }
     
     private func setupChatInputBoxConstraints() {
-        NSLayoutConstraint.activate([
+        var constraints: [NSLayoutConstraint] = [
             chatInputBoxViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             chatInputBoxViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            chatInputBoxViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-        ])
+        ]
+        
+        switch position {
+        case .top:
+            constraints.append(chatInputBoxViewController.view.topAnchor.constraint(equalTo: view.topAnchor))
+        case .bottom:
+            constraints.append(chatInputBoxViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor))
+        }
+        
+        NSLayoutConstraint.activate(constraints)
     }
 }

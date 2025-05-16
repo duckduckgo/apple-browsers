@@ -59,11 +59,8 @@ public class DataBrokerProtectionIOSManagerProvider {
 
     public static func iOSManager(authenticationManager: DataBrokerProtectionAuthenticationManaging,
                                   privacyConfigurationManager: PrivacyConfigurationManaging,
-                                  featureFlagger: RemoteBrokerDeliveryFeatureFlagging) -> DataBrokerProtectionIOSManager? {
-        guard let pixelKit = PixelKit.shared else {
-            assertionFailure("PixelKit not set up")
-            return nil
-        }
+                                  featureFlagger: RemoteBrokerDeliveryFeatureFlagging,
+                                  pixelKit: PixelKit) -> DataBrokerProtectionIOSManager? {
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)
 
         let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)

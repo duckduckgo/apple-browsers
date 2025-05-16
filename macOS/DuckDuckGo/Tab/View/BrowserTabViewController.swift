@@ -310,6 +310,7 @@ final class BrowserTabViewController: NSViewController {
                 subscribeToHoveredLink(of: selectedTabViewModel)
                 subscribeToUserDialogs(of: selectedTabViewModel)
 
+                // changing tab is considered equivalent to dismissing the dialog
                 wasContextualOnboardingDialogDismissed = true
 
                 adjustFirstResponder(force: true)
@@ -474,12 +475,14 @@ final class BrowserTabViewController: NSViewController {
             delegate?.dismissViewHighlight()
             return
         }
+        // once a dialog is presented we reset the is dismissed flag
         self.wasContextualOnboardingDialogDismissed = false
 
         var onDismissAction: () -> Void = {}
         if let webViewContainer {
             onDismissAction = { [weak self] in
                 guard let self else { return }
+                // we mark the flag for dialog dismissed
                 wasContextualOnboardingDialogDismissed = true
                 delegate?.dismissViewHighlight()
                 self.removeChild(in: self.containerStackView, webViewContainer: webViewContainer)

@@ -54,7 +54,9 @@ public protocol StageDurationCalculator {
     func fireOptOutValidate()
     func fireOptOutSubmitSuccess(tries: Int)
     func fireOptOutFailure(tries: Int)
+#if os(iOS) && (DEBUG || ALPHA)
     func fireScanStarted()
+#endif
     func fireScanSuccess(matchesFound: Int)
     func fireScanFailed()
     func fireScanError(error: Error)
@@ -209,13 +211,13 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
 #endif
     }
 
+#if os(iOS) && (DEBUG || ALPHA)
     func fireScanStarted() {
     // This should never ever go to production and only exists for internal testing
-    #if os(iOS) && (DEBUG || ALPHA)
         handler.fire(.scanStarted(dataBroker: dataBroker,
                                   deviceID: DataBrokerProtectionSettings.deviceIdentifier))
-    #endif
     }
+#endif
 
     func fireScanSuccess(matchesFound: Int) {
 // This should never ever go to production and only exists for internal testing

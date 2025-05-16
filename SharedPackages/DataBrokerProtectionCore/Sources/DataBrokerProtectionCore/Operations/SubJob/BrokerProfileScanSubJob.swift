@@ -73,7 +73,9 @@ struct BrokerProfileScanSubJob {
             let event = HistoryEvent(brokerId: brokerId, profileQueryId: profileQueryId, type: .scanStarted)
             try dependencies.database.add(event)
 
+#if os(iOS) && (DEBUG || ALPHA)
             stageCalculator.fireScanStarted()
+#endif
 
             // 4. Get extracted profiles from the runner:
             let runner = dependencies.createScanRunner(profileQuery: brokerProfileQueryData,

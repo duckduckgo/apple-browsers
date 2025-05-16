@@ -50,8 +50,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/DesignResourcesKit",
       "state" : {
-        "branch" : "brindy/add-design-icons",
-        "revision" : "c11046b3f868bcd030153471389b478695255d71"
+        "revision" : "a7d01bb9de321ea7416b2a56368f4a28d395d5dc"
       }
     },
     {

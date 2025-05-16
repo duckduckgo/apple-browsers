@@ -69,6 +69,7 @@ public protocol SyncConnectionControlling {
      */
     func cancel() async
 
+    @discardableResult
     func startPairingMode(_ pairingInfo: PairingInfo) async -> Bool
 
     /**
@@ -132,6 +133,7 @@ public actor SyncConnectionController: SyncConnectionControlling {
         stopExchangeMode()
     }
 
+    @discardableResult
     public func startPairingMode(_ pairingInfo: PairingInfo) async -> Bool {
         guard !isCodeHandlingInFlight else {
             return false

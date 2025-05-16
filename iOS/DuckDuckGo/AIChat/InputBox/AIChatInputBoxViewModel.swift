@@ -36,13 +36,24 @@ final class AIChatInputBoxViewModel: ObservableObject {
          var id: Self { self }
      }
 
+    enum FocusState {
+        case focused
+        case unfocused
+    }
+
     @Published var inputText: String = ""
-    @Published var state: ChatState = .unknown
-    @Published var visibility: AIChatInputBoxVisibility = .unknown
+    @Published var state: ChatState
+    @Published var visibility: AIChatInputBoxVisibility
+    @Published var focusState: FocusState = .unfocused
     @Published var inputMode: InputMode = .chat {
         didSet {
             removeExtraLines()
         }
+    }
+
+    init(state: ChatState = .unknown, visibility: AIChatInputBoxVisibility = .unknown) {
+        self.state = state
+        self.visibility = visibility
     }
 
     // MARK: - Publishers
@@ -51,6 +62,7 @@ final class AIChatInputBoxViewModel: ObservableObject {
     let didSubmitPrompt = PassthroughSubject<String, Never>()
     let didSubmitQuery = PassthroughSubject<String, Never>()
     let didPressStopGenerating = PassthroughSubject<Void, Never>()
+    let didPressBackButton = PassthroughSubject<Void, Never>()
 
     // MARK: - Public Methods
     func clearText() {

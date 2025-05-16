@@ -27,11 +27,6 @@ struct BrowserToggleInputView: View {
     private let minLines: Int = 3
     let submitButtonPressed: () -> Void
 
-    enum Position {
-        case top
-        case bottom
-    }
-
     var body: some View {
         inputTextView
             .animation(.easeInOut, value: viewModel.inputMode)

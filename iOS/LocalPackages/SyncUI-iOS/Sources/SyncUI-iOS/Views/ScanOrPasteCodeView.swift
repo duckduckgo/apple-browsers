@@ -94,8 +94,8 @@ public struct ScanOrSeeCode: View {
             return 180
         }
         VStack(spacing: 8) {
-            HStack(alignment: .top, spacing: 20) {
-                QRCodeView(string: qrCodeModel.code ?? "", size: 120)
+            HStack(alignment: .center, spacing: 20) {
+                QRCodeView(string: qrCodeModel.code ?? "", desiredSize: 120)
                 VStack(alignment: .leading, spacing: 10) {
                     HStack {
                         Text(UserText.scanOrSeeCodeScanCodeQRInstructionsTitle)

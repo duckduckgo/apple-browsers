@@ -25,48 +25,54 @@ struct QRCodeView: View {
     let context = CIContext()
 
     let string: String
-    let size: CGFloat
+    let desiredSize: Int
 
-    init(string: String, size: CGFloat) {
+    init(string: String, desiredSize: Int) {
         self.string = string
-        self.size = size
+        self.desiredSize = desiredSize
     }
 
     var body: some View {
-        Image(uiImage: generateQRCode(from: string, size: size))
+        let qrCode = generateQRCode(from: string, desiredSize: desiredSize)
+        Image(uiImage: qrCode)
             .resizable()
             .interpolation(.none)
-            .aspectRatio(contentMode: .fit)
-            .frame(height: size)
+            .frame(width: qrCode.size.width, height: qrCode.size.height)
     }
 
-    func generateQRCode(from text: String, size: CGFloat) -> UIImage {
+    func generateQRCode(from text: String, desiredSize: Int) -> UIImage {
         var qrImage = UIImage(systemName: "xmark.circle") ?? UIImage()
+
         let data = Data(text.utf8)
-        let qrCodeFilter: CIFilter = CIFilter.init(name: "CIQRCodeGenerator")!
+        guard let qrCodeFilter = CIFilter(name: "CIQRCodeGenerator") else { return qrImage }
         qrCodeFilter.setValue(data, forKey: "inputMessage")
         qrCodeFilter.setValue("L", forKey: "inputCorrectionLevel")
 
-        guard let naturalSize = qrCodeFilter.outputImage?.extent.width else {
-            assertionFailure("Failed to generate qr code")
+        guard let outputImage = qrCodeFilter.outputImage else {
+            assertionFailure("Failed to generate QR code")
             return qrImage
         }
 
-        let scale = size / naturalSize
+        let baseSize = outputImage.extent.size.width
+        let size = CGFloat(desiredSize)
 
-        let transform = CGAffineTransform(scaleX: scale, y: scale)
-        guard let outputImage = qrCodeFilter.outputImage?.transformed(by: transform) else {
-            assertionFailure("transformation failed")
+        let scaleFactor = floor(size / baseSize)
+
+        guard scaleFactor >= 1 else {
+            assertionFailure("Desired size too small for sharp QR code")
             return qrImage
         }
 
-        let colorParameters: [String: Any] = [
+        // Scale the QR code using integer scaling
+        let transform = CGAffineTransform(scaleX: scaleFactor, y: scaleFactor)
+        let scaledImage = outputImage.transformed(by: transform)
+
+        let imageWithBlackWhiteColor = scaledImage.applyingFilter("CIFalseColor", parameters: [
             "inputColor0": CIColor(color: .black),
             "inputColor1": CIColor(color: .white)
-        ]
-        let coloredImage = outputImage.applyingFilter("CIFalseColor", parameters: colorParameters)
+        ])
 
-        if let image = context.createCGImage(coloredImage, from: outputImage.extent) {
+        if let image = context.createCGImage(imageWithBlackWhiteColor, from: imageWithBlackWhiteColor.extent) {
             qrImage = UIImage(cgImage: image)
         }
 

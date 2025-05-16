@@ -16,27 +16,27 @@ final class PairingInfoTests: XCTestCase {
 
     func testInit_replacesHyphensWithPluses() throws {
         assertURLFrom(
-            inputString: "https://duckduckgo.com/sync/pairing?code=-eyJyZWNvdmVyeSI6-eyJ1c2VyX2lkIjoiQjM4MDJGN-DUtMkExMC00MUIzLUI1QUEtM--zcwQjU3NDMwMTE0IiwicHJpbWFyeV9rZXkiOiIzbHl3U1dsZWxZeW01bWdSbHl2Z0NqN3JsQW90SDB3MDdsQ0ZDTlFTZERVPSJ9fQ&deviceName=My%20iPhone",
+            inputString: "https://duckduckgo.com/sync/pairing/#&code=-eyJyZWNvdmVyeSI6-eyJ1c2VyX2lkIjoiQjM4MDJGN-DUtMkExMC00MUIzLUI1QUEtM--zcwQjU3NDMwMTE0IiwicHJpbWFyeV9rZXkiOiIzbHl3U1dsZWxZeW01bWdSbHl2Z0NqN3JsQW90SDB3MDdsQ0ZDTlFTZERVPSJ9fQ&deviceName=My%20iPhone",
             resultsIn: "+eyJyZWNvdmVyeSI6+eyJ1c2VyX2lkIjoiQjM4MDJGN+DUtMkExMC00MUIzLUI1QUEtM++zcwQjU3NDMwMTE0IiwicHJpbWFyeV9rZXkiOiIzbHl3U1dsZWxZeW01bWdSbHl2Z0NqN3JsQW90SDB3MDdsQ0ZDTlFTZERVPSJ9fQ="
         )
     }
 
     func testInit_replacesUnderscoresWithForwardslashes() throws {
         assertURLFrom(
-            inputString: "https://duckduckgo.com/sync/pairing?code=_eyJyZWNvdmVyeSI6eyJ1c2VyX2lk_IjoiQjM4MDJGNDUtMkExMC_00MUIzLUI1QUEtMzcwQjU3NDMwMTE0IiwicHJpbWFyeV9rZXkiOiIzbHl3U1dsZWxZeW01bWdSbHl2Z0NqN3JsQW90SD__B3MDdsQ0ZDTlFTZERVPSJ9fQ&deviceName=My%20iPhone",
+            inputString: "https://duckduckgo.com/sync/pairing/#&code=_eyJyZWNvdmVyeSI6eyJ1c2VyX2lk_IjoiQjM4MDJGNDUtMkExMC_00MUIzLUI1QUEtMzcwQjU3NDMwMTE0IiwicHJpbWFyeV9rZXkiOiIzbHl3U1dsZWxZeW01bWdSbHl2Z0NqN3JsQW90SD__B3MDdsQ0ZDTlFTZERVPSJ9fQ&deviceName=My%20iPhone",
             resultsIn: "/eyJyZWNvdmVyeSI6eyJ1c2VyX2lk/IjoiQjM4MDJGNDUtMkExMC/00MUIzLUI1QUEtMzcwQjU3NDMwMTE0IiwicHJpbWFyeV9rZXkiOiIzbHl3U1dsZWxZeW01bWdSbHl2Z0NqN3JsQW90SD//B3MDdsQ0ZDTlFTZERVPSJ9fQ="
         )
     }
 
     func testInit_addsPadding() throws {
         assertURLFrom(
-            inputString: "https://duckduckgo.com/sync/pairing?code=eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiQjM4MDJGNDUtMkExMC00MUIzLUI1QUEtMzcwQjU3NDMwMTE0IiwicHJpbWFyeV9rZXkiOiIzbHl3U1dsZWxZeW01bWdSbHl2Z0NqN3JsQW90SDB3MDdsQ0ZDTlFTZERVPSJ9fQd&deviceName=My%20iPhone",
+            inputString: "https://duckduckgo.com/sync/pairing/#&code=eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiQjM4MDJGNDUtMkExMC00MUIzLUI1QUEtMzcwQjU3NDMwMTE0IiwicHJpbWFyeV9rZXkiOiIzbHl3U1dsZWxZeW01bWdSbHl2Z0NqN3JsQW90SDB3MDdsQ0ZDTlFTZERVPSJ9fQd&deviceName=My%20iPhone",
             resultsIn: "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiQjM4MDJGNDUtMkExMC00MUIzLUI1QUEtMzcwQjU3NDMwMTE0IiwicHJpbWFyeV9rZXkiOiIzbHl3U1dsZWxZeW01bWdSbHl2Z0NqN3JsQW90SDB3MDdsQ0ZDTlFTZERVPSJ9fQd="
         )
 
         assertURLFrom(
-            inputString: "https://duckduckgo.com/sync/pairing?code=eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiQjM4MDJGNDUtMkExMC00MUIzLUI1QUEtMzcwQjU3NDMwMTE0IiwicHJpbWFyeV9rZXkiOiIzbHl3U1dsZWxZeW01bWdSbHl2Z0NqN3JsQW90SDB3MDdsQ0ZDTlFTZERVPSJ9&deviceName=My%20iPhone",
-            resultsIn: "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiQjM4MDJGNDUtMkExMC00MUIzLUI1QUEtMzcwQjU3NDMwMTE0IiwicHJpbWFyeV9rZXkiOiIzbHl3U1dsZWxZeW01bWdSbHl2Z0NqN3JsQW90SDB3MDdsQ0ZDTlFTZERVPSJ9===="
+            inputString: "https://duckduckgo.com/sync/pairing/#&code=eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiQjM4MDJGNDUtMkExMC00MUIzLUI1QUEtMzcwQjU3NDMwMTE0IiwicHJpbWFyeV9rZXkiOiIzbHl3U1dsZWxZeW01bWdSbHl2Z0NqN3JsQW90SDB3MDdsQ0ZDTlFTZERVPSJ9f&deviceName=My%20iPhone",
+            resultsIn: "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiQjM4MDJGNDUtMkExMC00MUIzLUI1QUEtMzcwQjU3NDMwMTE0IiwicHJpbWFyeV9rZXkiOiIzbHl3U1dsZWxZeW01bWdSbHl2Z0NqN3JsQW90SDB3MDdsQ0ZDTlFTZERVPSJ9f==="
         )
     }
 
@@ -56,7 +56,7 @@ final class PairingInfoTests: XCTestCase {
             "onewiththenumber42": "onewiththenumber42",
             "ONEMOREFORLUCK": "ONEMOREFORLUCK"
         ] {
-            let input = URL(string: "https://duckduckgo.com/sync/pairing?code=eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiQjM4MDJGNDUtMkExMC00MUIzLUI1QUEtMzcwQjU3NDMwMTE0IiwicHJpbWFyeV9rZXkiOiIzbHl3U1dsZWxZeW01bWdSbHl2Z0NqN3JsQW90SDB3MDdsQ0ZDTlFTZERVPSJ9&deviceName=\(input)")!
+            let input = URL(string: "https://duckduckgo.com/sync/pairing/#&code=eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiQjM4MDJGNDUtMkExMC00MUIzLUI1QUEtMzcwQjU3NDMwMTE0IiwicHJpbWFyeV9rZXkiOiIzbHl3U1dsZWxZeW01bWdSbHl2Z0NqN3JsQW90SDB3MDdsQ0ZDTlFTZERVPSJ9&deviceName=\(input)")!
             guard let pairingInfo = PairingInfo(url: input) else {
                 XCTFail("Failed to init with url \(input)")
                 return
@@ -70,27 +70,27 @@ final class PairingInfoTests: XCTestCase {
 
     func testToURL_replacesPlusesWithHyphens() {
         let pairingInfo = PairingInfo(base64Code: "+ABCDEFGHIJKLMNOPQ+RSTU+VWXYZabcdefghijklmnopqrstuvwxyz0123456789+", deviceName: "")
-        XCTAssertEqual(pairingInfo.toURL(baseURL: Self.ddgURL).absoluteString, "https://duckduckgo.com/sync/pairing?code=-ABCDEFGHIJKLMNOPQ-RSTU-VWXYZabcdefghijklmnopqrstuvwxyz0123456789-&deviceName=")
+        XCTAssertEqual(pairingInfo.toURL(baseURL: Self.ddgURL).absoluteString, "https://duckduckgo.com/sync/pairing/#&code=-ABCDEFGHIJKLMNOPQ-RSTU-VWXYZabcdefghijklmnopqrstuvwxyz0123456789-&deviceName=")
     }
 
     func testToURL_replacesForwardslashesWithUnderscores() {
         let pairingInfo = PairingInfo(base64Code: "/ABCDE/FGHIJKLMNOPQRSTUVWXYZabcdef/ghijklmnopqrstuvwxyz0123456789/", deviceName: "")
-        XCTAssertEqual(pairingInfo.toURL(baseURL: Self.ddgURL).absoluteString, "https://duckduckgo.com/sync/pairing?code=_ABCDE_FGHIJKLMNOPQRSTUVWXYZabcdef_ghijklmnopqrstuvwxyz0123456789_&deviceName=")
+        XCTAssertEqual(pairingInfo.toURL(baseURL: Self.ddgURL).absoluteString, "https://duckduckgo.com/sync/pairing/#&code=_ABCDE_FGHIJKLMNOPQRSTUVWXYZabcdef_ghijklmnopqrstuvwxyz0123456789_&deviceName=")
     }
 
     func testToURL_removesPadding() {
         let pairingInfo = PairingInfo(base64Code: "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiQjM4MDJGNDUtMkExMC00MUIzLUI1QUEtMzcwQjU3NDMwMTE0IiwicHJpbWFyeV9rZXkiOiIzbHl3U1dsZWxZeW01bWdSbHl2Z0NqN3JsQW90SDB3MDdsQ0ZDTlFTZERVPSJ9====", deviceName: "")
-        XCTAssertEqual(pairingInfo.toURL(baseURL: Self.ddgURL).absoluteString, "https://duckduckgo.com/sync/pairing?code=eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiQjM4MDJGNDUtMkExMC00MUIzLUI1QUEtMzcwQjU3NDMwMTE0IiwicHJpbWFyeV9rZXkiOiIzbHl3U1dsZWxZeW01bWdSbHl2Z0NqN3JsQW90SDB3MDdsQ0ZDTlFTZERVPSJ9&deviceName=")
+        XCTAssertEqual(pairingInfo.toURL(baseURL: Self.ddgURL).absoluteString, "https://duckduckgo.com/sync/pairing/#&code=eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiQjM4MDJGNDUtMkExMC00MUIzLUI1QUEtMzcwQjU3NDMwMTE0IiwicHJpbWFyeV9rZXkiOiIzbHl3U1dsZWxZeW01bWdSbHl2Z0NqN3JsQW90SDB3MDdsQ0ZDTlFTZERVPSJ9&deviceName=")
     }
 
     func testToURL_addsDeviceName() {
         for (input, output) in [
-            "My iPhone": "My%20iPhone",
+            "My iPhone": "My%2520iPhone",
             "onewiththenumber42": "onewiththenumber42",
             "ONEMOREFORLUCK": "ONEMOREFORLUCK"
         ] {
             let pairingInfo = PairingInfo(base64Code: "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiQjM4MDJGNDUtMkExMC00MUIzLUI1QUEtMzcwQjU3NDMwMTE0IiwicHJpbWFyeV9rZXkiOiIzbHl3U1dsZWxZeW01bWdSbHl2Z0NqN3JsQW90SDB3MDdsQ0ZDTlFTZERVPSJ9", deviceName: input)
-            XCTAssertEqual(pairingInfo.toURL(baseURL: Self.ddgURL).absoluteString, "https://duckduckgo.com/sync/pairing?code=eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiQjM4MDJGNDUtMkExMC00MUIzLUI1QUEtMzcwQjU3NDMwMTE0IiwicHJpbWFyeV9rZXkiOiIzbHl3U1dsZWxZeW01bWdSbHl2Z0NqN3JsQW90SDB3MDdsQ0ZDTlFTZERVPSJ9&deviceName=\(output)"
+            XCTAssertEqual(pairingInfo.toURL(baseURL: Self.ddgURL).absoluteString, "https://duckduckgo.com/sync/pairing/#&code=eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiQjM4MDJGNDUtMkExMC00MUIzLUI1QUEtMzcwQjU3NDMwMTE0IiwicHJpbWFyeV9rZXkiOiIzbHl3U1dsZWxZeW01bWdSbHl2Z0NqN3JsQW90SDB3MDdsQ0ZDTlFTZERVPSJ9&deviceName=\(output)"
             )
         }
     }

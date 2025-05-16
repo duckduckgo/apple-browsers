@@ -19,6 +19,7 @@
 import WebKit
 import Common
 import UserScript
+import OSLog
 
 public enum RequestVaultDataAction: String, Codable {
     case none
@@ -579,13 +580,84 @@ extension AutofillUserScript {
                 }
             }
         } else if request.mainType == .creditCards {
-            vaultDelegate?.autofillUserScriptDidRequestCreditCard(self, trigger: request.trigger) { creditCard, action in
+            let messageType = request.mainType.rawValue
+            Logger.autofill.debug("Incoming getAutofillData request")
+            
+            // Register this handler, canceling any previous ones
+            registerHandler(for: messageType, handler: replyHandler)
 
+            vaultDelegate?.autofillUserScriptDidRequestCreditCard(self, trigger: request.trigger) { [weak self] creditCard, action in
                 let response = RequestVaultCreditCardResponse.responseFromSecureVaultCreditCards(creditCard, action: action)
 
                 if let json = try? JSONEncoder().encode(response), let jsonString = String(data: json, encoding: .utf8) {
-                    replyHandler(jsonString)
+                    Logger.autofill.debug("Outgoing getAutofillData response \(jsonString)")
+                    self?.completeHandler(for: messageType, domain: domain, withResponse: jsonString)
                 }
+            }
+        }
+    }
+
+    private func registerHandler(for messageType: String, handler: @escaping MessageReplyHandler) {
+        let key = "\(messageType)"
+        
+        Self.handlersLock.lock()
+        defer { Self.handlersLock.unlock() }
+        
+        var handlers = Self.activeHandlers[key] ?? []
+        
+        // Complete all previous handlers with none response
+        if handlers.count > 0 {
+            let handlersToCancel = handlers
+            handlers.removeAll()
+            
+            // Cancel previous handlers asynchronously to avoid deadlocks
+            DispatchQueue.main.async {
+                for previousHandler in handlersToCancel {
+                    Logger.autofill.debug("Outgoing getAutofillData cleanup response")
+                    previousHandler("{\"success\": {\"action\": \"none\"}}")
+                }
+            }
+        }
+        
+        handlers.append(handler)
+        Self.activeHandlers[key] = handlers
+    }
+    
+    private func completeHandler(for messageType: String, domain: String, withResponse response: String?) {
+        let key = "\(messageType)"
+        
+        Self.handlersLock.lock()
+        var handlers = Self.activeHandlers[key] ?? []
+        
+        if let handler = handlers.first {
+            handlers.removeFirst()
+            Self.activeHandlers[key] = handlers
+            Self.handlersLock.unlock()
+            
+            // Call the handler asynchronously
+            DispatchQueue.main.async {
+                handler(response)
+            }
+        } else {
+            Self.handlersLock.unlock()
+        }
+    }
+    
+    public func clearAllHandlers() {
+        var allHandlers: [MessageReplyHandler] = []
+        
+        Self.handlersLock.lock()
+        
+        for (_, handlers) in Self.activeHandlers {
+            allHandlers.append(contentsOf: handlers)
+        }
+        Self.activeHandlers.removeAll()
+        Self.handlersLock.unlock()
+        
+        DispatchQueue.main.async {
+            for handler in allHandlers {
+                Logger.autofill.debug("Outgoing getAutofillData cleanup all response")
+                handler("{\"success\": {\"action\": \"none\"}}")
             }
         }
     }

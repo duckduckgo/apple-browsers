@@ -1,5 +1,5 @@
 //
-//  TabSwitcherButton.swift
+//  TabSwitcherAnimatedButton.swift
 //  DuckDuckGo
 //
 //  Copyright © 2017 DuckDuckGo. All rights reserved.
@@ -21,14 +21,14 @@ import UIKit
 import Lottie
 import Core
 
-protocol TabSwitcherButtonDelegate: NSObjectProtocol {
+protocol TabSwitcherButtonDelegate: AnyObject {
     
     func showTabSwitcher(_ button: TabSwitcherButton)
     func launchNewTab(_ button: TabSwitcherButton)
-    
+
 }
 
-class TabSwitcherButton: UIView {
+class TabSwitcherAnimatedButton: UIView, TabSwitcherButton {
     
     struct Constants {
         
@@ -73,7 +73,12 @@ class TabSwitcherButton: UIView {
     
     var hasUnread: Bool = false {
         didSet {
-            anim.currentProgress = hasUnread ? 1.0 : 0.0
+            // Not sure what it is supposed to be doing by setting the animation progress to 1 for unread state.
+            // There's no "alert dot" in the animation.
+            // Adding the check for active animation here to prevent it from finishing abruptly.
+            if !anim.isAnimationPlaying {
+                anim.currentProgress = hasUnread ? 1.0 : 0.0
+            }
         }
     }
     
@@ -160,12 +165,12 @@ class TabSwitcherButton: UIView {
         tint(alpha: 1, animated: false)
     }
     
-    func incrementAnimated() {
+    func animateUpdate(update: @escaping () -> Void) {
         anim.play()
         UIView.animate(withDuration: Constants.labelFadeDuration, animations: {
             self.label.alpha = 0.0
         }, completion: { _ in
-            self.tabCount += 1
+            update()
             UIView.animate(withDuration: Constants.labelFadeDuration, animations: {
                 self.label.alpha = 1.0
             })
@@ -198,7 +203,7 @@ class TabSwitcherButton: UIView {
     }
 }
 
-extension TabSwitcherButton {
+extension TabSwitcherAnimatedButton {
     
     private func decorate() {
         let theme = ThemeManager.shared.currentTheme
@@ -225,7 +230,7 @@ extension TabSwitcherButton {
     }
 }
 
-extension TabSwitcherButton: UIPointerInteractionDelegate {
+extension TabSwitcherAnimatedButton: UIPointerInteractionDelegate {
     
     func pointerInteraction(_ interaction: UIPointerInteraction, styleFor region: UIPointerRegion) -> UIPointerStyle? {
         return .init(effect: .highlight(.init(view: pointerView)))

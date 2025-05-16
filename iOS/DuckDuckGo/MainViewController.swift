@@ -132,6 +132,7 @@ class MainViewController: UIViewController {
     private let subscriptionCookieManager: SubscriptionCookieManaging
     let privacyProDataReporter: PrivacyProDataReporting
 
+    let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     private(set) lazy var featureFlagger = AppDependencyProvider.shared.featureFlagger
     private lazy var faviconLoader: FavoritesFaviconLoading = FavoritesFaviconLoader()
     private lazy var faviconsFetcherOnboarding = FaviconsFetcherOnboarding(syncService: syncService, syncBookmarksAdapter: syncDataProviders.bookmarksAdapter)
@@ -236,6 +237,7 @@ class MainViewController: UIViewController {
         subscriptionFeatureAvailability: SubscriptionFeatureAvailability,
         voiceSearchHelper: VoiceSearchHelperProtocol,
         featureFlagger: FeatureFlagger,
+        contentScopeExperimentsManager: ContentScopeExperimentsManaging,
         fireproofing: Fireproofing,
         subscriptionCookieManager: SubscriptionCookieManaging,
         textZoomCoordinator: TextZoomCoordinating,
@@ -271,6 +273,7 @@ class MainViewController: UIViewController {
                                      contextualOnboardingLogic: contextualOnboardingLogic,
                                      onboardingPixelReporter: contextualOnboardingPixelReporter,
                                      featureFlagger: featureFlagger,
+                                     contentScopeExperimentManager: contentScopeExperimentsManager,
                                      subscriptionCookieManager: subscriptionCookieManager,
                                      appSettings: appSettings,
                                      textZoomCoordinator: textZoomCoordinator,
@@ -295,6 +298,7 @@ class MainViewController: UIViewController {
         self.websiteDataManager = websiteDataManager
         self.appDidFinishLaunchingStartTime = appDidFinishLaunchingStartTime
         self.maliciousSiteProtectionPreferencesManager = maliciousSiteProtectionPreferencesManager
+        self.contentScopeExperimentsManager = contentScopeExperimentsManager
         self.isAuthV2Enabled = featureFlagger.isFeatureOn(.privacyProAuthV2)
         super.init(nibName: nil, bundle: nil)
         
@@ -591,12 +595,7 @@ class MainViewController: UIViewController {
         viewCoordinator.toolbarPasswordsButton.setCustomItemAction(on: self, action: #selector(onPasswordsPressed))
         viewCoordinator.toolbarBookmarksButton.setCustomItemAction(on: self, action: #selector(onToolbarBookmarksPressed))
         viewCoordinator.menuToolbarButton.setCustomItemAction(on: self, action: #selector(onMenuPressed))
-
-        if isExperimentalAppearanceEnabled {
-            viewCoordinator.toolbarFireButton.addTarget(self, action: #selector(onFirePressed), for: .touchUpInside)
-        } else {
-            viewCoordinator.toolbarFireBarButtonItem.action = #selector(onFirePressed)
-        }
+        viewCoordinator.toolbarFireBarButtonItem.setCustomItemAction(on: self, action: #selector(onFirePressed))
     }
 
     private func registerForPageRefreshPatterns() {
@@ -786,34 +785,17 @@ class MainViewController: UIViewController {
     }
 
     private func initTabButton() {
-        if isExperimentalAppearanceEnabled {
-            let button = ToolbarButton()
-            button.frame = CGRect(x: 0, y: 0, width: 34, height: 44)
+        assert(tabSwitcherButton == nil)
 
-            button.setImage(DesignSystemImages.Glyphs.Size24.tabNew)
-            button.addAction(UIAction(handler: { _ in self.showTabSwitcher() }), for: .touchUpInside)
+        tabSwitcherButton = isExperimentalAppearanceEnabled ? TabSwitcherStaticButton() : TabSwitcherAnimatedButton()
 
-            let longPressRecognizer = UILongPressGestureRecognizer(target: self, action: #selector(onNewTabLongPressRecognizer))
-            longPressRecognizer.minimumPressDuration = 0.4
-            button.addGestureRecognizer(longPressRecognizer)
+        tabSwitcherButton?.delegate = self
+        viewCoordinator.toolbarTabSwitcherButton.customView = tabSwitcherButton
 
-            viewCoordinator.toolbarTabSwitcherButton.customView = button
-        } else {
-            assert(tabSwitcherButton == nil)
-            tabSwitcherButton = TabSwitcherButton()
-            tabSwitcherButton?.delegate = self
-            viewCoordinator.toolbarTabSwitcherButton.customView = tabSwitcherButton
-            assert(tabSwitcherButton != nil)
-        }
+        assert(tabSwitcherButton != nil)
+
         viewCoordinator.toolbarTabSwitcherButton.isAccessibilityElement = true
         viewCoordinator.toolbarTabSwitcherButton.accessibilityTraits = .button
-    }
-
-    @objc private func onNewTabLongPressRecognizer(_ recognizer: UILongPressGestureRecognizer) {
-        guard recognizer.state == .began else { return }
-
-        UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
-        newTabShortcutAction()
     }
 
     private func initMenuButton() {
@@ -978,7 +960,11 @@ class MainViewController: UIViewController {
         viewCoordinator.logoContainer.isHidden = true
         adjustNewTabPageSafeAreaInsets(for: appSettings.currentAddressBarPosition)
 
+        // Attaching HomeScreen means it's going to be displayed immediately.
+        // This value gets updated on didAppear so after we leave this function so **after** `refreshControls` is done already, which leads to dot being visible on tab switcher icon on newly opened tab page.
+        tabModel.viewed = true
         refreshControls()
+
         syncService.scheduler.requestSyncImmediately()
     }
 
@@ -1268,12 +1254,10 @@ class MainViewController: UIViewController {
     }
 
     private func refreshTabIcon() {
-        if !isExperimentalAppearanceEnabled {
-            viewCoordinator.toolbarTabSwitcherButton.accessibilityHint = UserText.numberOfTabs(tabManager.count)
-            assert(tabSwitcherButton != nil)
-            tabSwitcherButton?.tabCount = tabManager.count
-            tabSwitcherButton?.hasUnread = tabManager.hasUnread
-        }
+        viewCoordinator.toolbarTabSwitcherButton.accessibilityHint = UserText.numberOfTabs(tabManager.count)
+        assert(tabSwitcherButton != nil)
+        tabSwitcherButton?.tabCount = tabManager.count
+        tabSwitcherButton?.hasUnread = tabManager.hasUnread
     }
 
     private func refreshOmniBar() {
@@ -1616,7 +1600,9 @@ class MainViewController: UIViewController {
 
     func animateBackgroundTab() {
         showBars()
-        tabSwitcherButton?.incrementAnimated()
+        tabSwitcherButton?.animateUpdate {
+            self.refreshTabIcon()
+        }
         tabsBarController?.backgroundTabAdded()
     }
 
@@ -2660,7 +2646,9 @@ extension MainViewController: TabDelegate {
                 self.currentTab?.openedByPage = true
                 self.currentTab?.openingTab = tab
             }
-            tabSwitcherButton?.incrementAnimated()
+            tabSwitcherButton?.animateUpdate {
+                self.tabSwitcherButton?.tabCount += 1
+            }
         } else {
             loadUrlInNewTab(url, inheritedAttribution: attribution)
             self.currentTab?.openingTab = tab
@@ -2939,7 +2927,7 @@ extension MainViewController: BookmarksDelegate {
 
 extension MainViewController: TabSwitcherButtonDelegate {
 
-    @objc func launchNewTab(_ button: TabSwitcherButton) {
+    func launchNewTab(_ button: TabSwitcherButton) {
         newTabShortcutAction()
     }
 

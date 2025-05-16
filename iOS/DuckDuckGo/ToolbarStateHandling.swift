@@ -53,16 +53,8 @@ final class ToolbarHandler: ToolbarStateHandling {
         return createBarButtonItem(title: UserText.keyCommandBrowserBack, image: DesignSystemImages.Glyphs.Size24.arrowLeft)
     }()
 
-    private(set) lazy var fireButton = FireButton()
-
     lazy var fireBarButtonItem = {
-        if isExperimentalThemingEnabled {
-            let barButtonItem = UIBarButtonItem(customView: fireButton)
-            barButtonItem.title = UserText.actionForgetAll
-            return barButtonItem
-        } else {
-            return createBarButtonItem(title: UserText.actionForgetAll, image: DesignSystemImages.Glyphs.Size24.fire)
-        }
+        return createBarButtonItem(title: UserText.actionForgetAll, image: DesignSystemImages.Glyphs.Size24.fire)
     }()
 
     lazy var forwardButton = {
@@ -74,7 +66,8 @@ final class ToolbarHandler: ToolbarStateHandling {
     }()
 
     lazy var bookmarkButton = {
-        return createBarButtonItem(title: UserText.actionOpenBookmarks, image: DesignSystemImages.Glyphs.Size24.bookmarksList)
+        #warning("ICONS: bookmarksStacked24 -> glyphs/size24/bookmarks")
+        return createBarButtonItem(title: UserText.actionOpenBookmarks, image: DesignSystemImages.Glyphs.Size24.bookmarks)
     }()
 
     lazy var passwordsButton = {

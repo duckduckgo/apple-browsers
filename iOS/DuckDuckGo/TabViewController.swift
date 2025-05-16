@@ -120,6 +120,7 @@ class TabViewController: UIViewController {
     let appSettings: AppSettings
 
     var featureFlagger: FeatureFlagger
+    let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     let subscriptionCookieManager: SubscriptionCookieManaging
     private lazy var internalUserDecider = AppDependencyProvider.shared.internalUserDecider
 
@@ -340,6 +341,7 @@ class TabViewController: UIViewController {
                                    contextualOnboardingLogic: ContextualOnboardingLogic,
                                    onboardingPixelReporter: OnboardingCustomInteractionPixelReporting,
                                    featureFlagger: FeatureFlagger,
+                                   contentScopeExperimentManager: ContentScopeExperimentsManaging,
                                    subscriptionCookieManager: SubscriptionCookieManaging,
                                    textZoomCoordinator: TextZoomCoordinating,
                                    websiteDataManager: WebsiteDataManaging,
@@ -361,6 +363,7 @@ class TabViewController: UIViewController {
                               contextualOnboardingLogic: contextualOnboardingLogic,
                               onboardingPixelReporter: onboardingPixelReporter,
                               featureFlagger: featureFlagger,
+                              contentScopeExperimentManager: contentScopeExperimentManager,
                               subscriptionCookieManager: subscriptionCookieManager,
                               textZoomCoordinator: textZoomCoordinator,
                               fireproofing: fireproofing,
@@ -426,6 +429,7 @@ class TabViewController: UIViewController {
                    onboardingPixelReporter: OnboardingCustomInteractionPixelReporting,
                    urlCredentialCreator: URLCredentialCreating = URLCredentialCreator(),
                    featureFlagger: FeatureFlagger,
+                   contentScopeExperimentManager: ContentScopeExperimentsManaging,
                    subscriptionCookieManager: SubscriptionCookieManaging,
                    textZoomCoordinator: TextZoomCoordinating,
                    fireproofing: Fireproofing,
@@ -446,6 +450,7 @@ class TabViewController: UIViewController {
         self.contextualOnboardingLogic = contextualOnboardingLogic
         self.onboardingPixelReporter = onboardingPixelReporter
         self.featureFlagger = featureFlagger
+        self.contentScopeExperimentsManager = contentScopeExperimentManager
         self.subscriptionCookieManager = subscriptionCookieManager
         self.textZoomCoordinator = textZoomCoordinator
         self.fireproofing = fireproofing
@@ -628,7 +633,7 @@ class TabViewController: UIViewController {
         if webView.window == nil {
             DailyPixel.fireDailyAndCount(pixel: .debugWebViewNotAttachedToWindow)
         }
-        if webView.isHidden {
+        if webView.isHidden && (errorMessage.text.isNilOrEmpty || error.isHidden) {
             DailyPixel.fireDailyAndCount(pixel: .debugWebViewInVisibleTabHidden)
         }
         if webView.frame == .zero {
@@ -1079,7 +1084,8 @@ class TabViewController: UIViewController {
                                        entryPoint: .dashboard,
                                        privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
                                        contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
-                                       breakageAdditionalInfo: makeBreakageAdditionalInfo())
+                                              breakageAdditionalInfo: makeBreakageAdditionalInfo(),
+                                              contentScopeExperimentsManager: contentScopeExperimentsManager)
     }
     
     private func addTextZoomObserver() {

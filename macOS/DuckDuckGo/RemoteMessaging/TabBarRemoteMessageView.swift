@@ -42,8 +42,8 @@ struct TabBarRemoteMessageView: View {
             .padding(.trailing, 6)
             .cornerRadius(8)
             .background(wasViewHovered
-                        ? Color("PrimaryButtonHover")
-                        : Color("PrimaryButtonRest"))
+                        ? Color(.tabBarRemoteMessageButtonHover)
+                        : Color(.tabBarRemoteMessageButtonRest))
             .onTapGesture { onTap(model.surveyURL) }
             .onHover { hovering in
                 wasViewHovered = hovering
@@ -70,8 +70,8 @@ struct TabBarRemoteMessageView: View {
             .padding([.top, .bottom])
             .padding([.leading, .trailing], 4)
             .background(wasCloseButtonHovered
-                        ? Color("PrimaryButtonHover")
-                        : Color("PrimaryButtonRest"))
+                        ? Color(.tabBarRemoteMessageButtonHover)
+                        : Color(.tabBarRemoteMessageButtonRest))
             .cornerRadius(8)
             .onTapGesture {
                 onClose()
@@ -82,8 +82,8 @@ struct TabBarRemoteMessageView: View {
             .frame(maxWidth: .infinity)
         }
         .background(wasCloseButtonHovered || wasViewHovered
-                    ? Color("PrimaryButtonHover")
-                    : Color("PrimaryButtonRest"))
+                    ? Color(.tabBarRemoteMessageButtonHover)
+                    : Color(.tabBarRemoteMessageButtonRest))
         .frame(height: 24)
         .cornerRadius(8)
         .onAppear(perform: { onAppear() })

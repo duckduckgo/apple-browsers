@@ -79,7 +79,7 @@ class WebsiteBreakageReportTests: XCTestCase {
             userRefreshCount: 0,
             cookieConsentInfo: nil,
             debugFlags: "",
-            privacyExperiments: [:],
+            privacyExperiments: "",
             isPirEnabled: nil
         )
 
@@ -131,7 +131,7 @@ class WebsiteBreakageReportTests: XCTestCase {
             userRefreshCount: 0,
             cookieConsentInfo: CookieConsentInfo(consentManaged: true, cosmetic: true, optoutFailed: true, selftestFailed: true),
             debugFlags: "",
-            privacyExperiments: [:],
+            privacyExperiments: "",
             isPirEnabled: true
         )
 

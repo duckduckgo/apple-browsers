@@ -135,6 +135,7 @@ final class NavigationBarViewController: NSViewController {
                        autofillPopoverPresenter: AutofillPopoverPresenter,
                        brokenSitePromptLimiter: BrokenSitePromptLimiter,
                        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+                       contentScopeExperimentsManager: ContentScopeExperimentsManaging,
                        visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager
     ) -> NavigationBarViewController {
         NSStoryboard(name: "NavigationBar", bundle: nil).instantiateInitialController { coder in
@@ -148,6 +149,7 @@ final class NavigationBarViewController: NSViewController {
                 autofillPopoverPresenter: autofillPopoverPresenter,
                 brokenSitePromptLimiter: brokenSitePromptLimiter,
                 featureFlagger: featureFlagger,
+                contentScopeExperimentManager: contentScopeExperimentsManager,
                 visualStyle: visualStyleManager.style
             )
         }!
@@ -163,10 +165,11 @@ final class NavigationBarViewController: NSViewController {
         autofillPopoverPresenter: AutofillPopoverPresenter,
         brokenSitePromptLimiter: BrokenSitePromptLimiter,
         featureFlagger: FeatureFlagger,
+        contentScopeExperimentManager: ContentScopeExperimentsManaging,
         visualStyle: VisualStyleProviding
     ) {
 
-        self.popovers = NavigationBarPopovers(networkProtectionPopoverManager: networkProtectionPopoverManager, autofillPopoverPresenter: autofillPopoverPresenter, isBurner: tabCollectionViewModel.isBurner)
+        self.popovers = NavigationBarPopovers(networkProtectionPopoverManager: networkProtectionPopoverManager, autofillPopoverPresenter: autofillPopoverPresenter, isBurner: tabCollectionViewModel.isBurner, contentScopeExperimentsManager: contentScopeExperimentManager)
         self.tabCollectionViewModel = tabCollectionViewModel
         self.networkProtectionButtonModel = NetworkProtectionNavBarButtonModel(popoverManager: networkProtectionPopoverManager,
                                                                                statusReporter: networkProtectionStatusReporter,
@@ -327,6 +330,7 @@ final class NavigationBarViewController: NSViewController {
         }
 
         self.addressBarViewController = addressBarViewController
+        self.addressBarViewController?.delegate = self
         return addressBarViewController
     }
 
@@ -829,8 +833,9 @@ final class NavigationBarViewController: NSViewController {
         let performResize = { [weak self] in
             guard let self else { return }
 
+            let isAddressBarFocused = view.window?.firstResponder == addressBarViewController?.addressBarTextField.currentEditor()
             let height: NSLayoutConstraint = animated ? navigationBarHeightConstraint.animator() : navigationBarHeightConstraint
-            height.constant = visualStyle.addressBarHeight(for: sizeClass)
+            height.constant = visualStyle.addressBarHeight(for: sizeClass, focused: isAddressBarFocused)
 
             let barTop: NSLayoutConstraint = animated ? addressBarTopConstraint.animator() : addressBarTopConstraint
             barTop.constant = visualStyle.addressBarTopPadding(for: sizeClass)
@@ -1660,6 +1665,14 @@ extension NavigationBarViewController: MouseOverButtonDelegate {
         }
     }
 
+}
+
+extension NavigationBarViewController: AddressBarViewControllerDelegate {
+
+    func resizeAddressBarForHomePage(_ addressBarViewController: AddressBarViewController, isFocused: Bool) {
+        let addressBarSizeClass: AddressBarSizeClass = tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab ? .homePage : .default
+        resizeAddressBar(for: addressBarSizeClass, animated: true)
+    }
 }
 
 #if DEBUG || REVIEW

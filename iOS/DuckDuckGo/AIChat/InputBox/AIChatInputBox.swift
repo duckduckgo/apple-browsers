@@ -43,6 +43,7 @@ struct AIChatInputBox: View {
                     .opacity(viewModel.visibility == .hidden ? 0 : 1)
             }
         }
+        .frame(maxWidth: .infinity)
         .background(Color(uiColor: viewModel.visibility == .hidden ? .clear : .secondarySystemBackground))
     }
 

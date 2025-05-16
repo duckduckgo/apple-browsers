@@ -1,6 +1,6 @@
 appId: com.duckduckgo.mobile.ios
 tags:
-    - content_scope_experiments
+    - privacy
 name: 01_content_scope_experiments_setup
 
 ---
@@ -8,12 +8,6 @@ name: 01_content_scope_experiments_setup
 # Set up 
 - runFlow: 
     file: ../shared/setup.yaml
-
-# Set Internal User
-- tapOn: Browsing menu
-- tapOn: Settings
-- runFlow:
-    file: ../shared/set_internal_user_from_settings.yaml
 
 #Open Debug Menu
 - runFlow:

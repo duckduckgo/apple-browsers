@@ -49,9 +49,11 @@ extension Preferences {
 #endif
                 }
             }.task {
+#if SPARKLE
                 if model.mustCheckForUpdatesBeforeUserCanTakeAction {
                     model.checkForUpdate()
                 }
+#endif
             }
         }
     }

@@ -110,14 +110,14 @@ struct NewTabPageShadowScrollView<Content: View>: UIViewControllerRepresentable 
         let additionalOffset: CGFloat = 100
 
         NSLayoutConstraint.activate([
-            topShadowView.leadingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.leadingAnchor, constant: -additionalOffset),
-            topShadowView.trailingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.trailingAnchor, constant: additionalOffset),
-            topShadowView.bottomAnchor.constraint(equalTo: scrollView.frameLayoutGuide.topAnchor),
+            topShadowView.leadingAnchor.constraint(equalTo: parentView.leadingAnchor, constant: -additionalOffset),
+            topShadowView.trailingAnchor.constraint(equalTo: parentView.trailingAnchor, constant: additionalOffset),
+            topShadowView.bottomAnchor.constraint(equalTo: parentView.topAnchor),
             topShadowView.heightAnchor.constraint(equalToConstant: ShadowScrollViewMetrics.shadowViewHeight),
 
-            bottomShadowView.leadingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.leadingAnchor, constant: -additionalOffset),
-            bottomShadowView.trailingAnchor.constraint(equalTo: scrollView.frameLayoutGuide.trailingAnchor, constant: additionalOffset),
-            bottomShadowView.topAnchor.constraint(equalTo: scrollView.frameLayoutGuide.bottomAnchor),
+            bottomShadowView.leadingAnchor.constraint(equalTo: parentView.leadingAnchor, constant: -additionalOffset),
+            bottomShadowView.trailingAnchor.constraint(equalTo: parentView.trailingAnchor, constant: additionalOffset),
+            bottomShadowView.topAnchor.constraint(equalTo: parentView.bottomAnchor),
             bottomShadowView.heightAnchor.constraint(equalToConstant: ShadowScrollViewMetrics.shadowViewHeight)
         ])
 
@@ -125,8 +125,6 @@ struct NewTabPageShadowScrollView<Content: View>: UIViewControllerRepresentable 
     }
     
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
-        context.coordinator.contentHostingController?.rootView = content
-
         uiViewController.view.layoutIfNeeded()
         if let scrollView = context.coordinator.scrollView {
             context.coordinator.updateShadowVisibility(scrollView: scrollView)

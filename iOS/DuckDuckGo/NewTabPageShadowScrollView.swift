@@ -37,12 +37,14 @@ struct NewTabPageShadowScrollView<Content: View>: UIViewControllerRepresentable 
         self.setUpScrollView = setUpScrollView
     }
 
+    // MARK: - UIViewControllerRepresentable
+
     func makeUIViewController(context: Context) -> UIViewController {
         let rootViewController = UIViewController()
         let rootView = rootViewController.view!
         let coordinator = context.coordinator
 
-        let scrollView = setUpScrollView(in: rootView, setUpScrollView: self.setUpScrollView)
+        let scrollView = setUpScrollView(in: rootView)
         scrollView.delegate = coordinator
 
         let hostingController = setUpHostingController(for: content, in: scrollView, parentViewController: rootViewController)
@@ -58,7 +60,21 @@ struct NewTabPageShadowScrollView<Content: View>: UIViewControllerRepresentable 
         return rootViewController
     }
 
-    private func setUpScrollView(in parentView: UIView, setUpScrollView: @escaping (UIScrollView) -> Void) -> UIScrollView {
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
+        context.coordinator.contentHostingController?.view.setNeedsUpdateConstraints()
+        
+        if let scrollView = context.coordinator.scrollView {
+            context.coordinator.updateShadowVisibility(scrollView: scrollView)
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
+    // MARK: - Private Setup Methods
+
+    private func setUpScrollView(in parentView: UIView) -> UIScrollView {
         let scrollView = UIScrollView()
         setUpScrollView(scrollView)
         scrollView.translatesAutoresizingMaskIntoConstraints = false
@@ -81,10 +97,7 @@ struct NewTabPageShadowScrollView<Content: View>: UIViewControllerRepresentable 
         scrollView.addSubview(hostingController.view)
         hostingController.didMove(toParent: parentViewController)
 
-        scrollView.clipsToBounds = false
-
         let contentHostingView = hostingController.view!
-
         NSLayoutConstraint.activate([
             contentHostingView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
             contentHostingView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
@@ -97,61 +110,46 @@ struct NewTabPageShadowScrollView<Content: View>: UIViewControllerRepresentable 
 
     private func setUpShadowViews(forScrollView scrollView: UIScrollView, inParentView parentView: UIView) -> (topShadowView: UIView, bottomShadowView: UIView) {
         let topShadowView = makeShadowView(isTop: true)
-        topShadowView.backgroundColor = .white
-        topShadowView.translatesAutoresizingMaskIntoConstraints = false
-        parentView.addSubview(topShadowView)
-
         let bottomShadowView = makeShadowView(isTop: false)
-        bottomShadowView.backgroundColor = .white
-        bottomShadowView.translatesAutoresizingMaskIntoConstraints = false
-        parentView.addSubview(bottomShadowView)
+        
+        [topShadowView, bottomShadowView].forEach {
+            $0.backgroundColor = .white
+            $0.translatesAutoresizingMaskIntoConstraints = false
+            parentView.addSubview($0)
+        }
 
-        // Added to make shadows extend beyond scrollView horizontally (visible on landscape).
-        let additionalOffset: CGFloat = 100
+        // Makes shadows extend beyond scrollView horizontally (visible on landscape)
+        let horizontalShadowOffset = ShadowScrollViewMetrics.horizontalShadowOffset
 
         NSLayoutConstraint.activate([
-            topShadowView.leadingAnchor.constraint(equalTo: parentView.leadingAnchor, constant: -additionalOffset),
-            topShadowView.trailingAnchor.constraint(equalTo: parentView.trailingAnchor, constant: additionalOffset),
+            topShadowView.leadingAnchor.constraint(equalTo: parentView.leadingAnchor, constant: -horizontalShadowOffset),
+            topShadowView.trailingAnchor.constraint(equalTo: parentView.trailingAnchor, constant: horizontalShadowOffset),
             topShadowView.bottomAnchor.constraint(equalTo: parentView.topAnchor),
             topShadowView.heightAnchor.constraint(equalToConstant: ShadowScrollViewMetrics.shadowViewHeight),
 
-            bottomShadowView.leadingAnchor.constraint(equalTo: parentView.leadingAnchor, constant: -additionalOffset),
-            bottomShadowView.trailingAnchor.constraint(equalTo: parentView.trailingAnchor, constant: additionalOffset),
+            bottomShadowView.leadingAnchor.constraint(equalTo: parentView.leadingAnchor, constant: -horizontalShadowOffset),
+            bottomShadowView.trailingAnchor.constraint(equalTo: parentView.trailingAnchor, constant: horizontalShadowOffset),
             bottomShadowView.topAnchor.constraint(equalTo: parentView.bottomAnchor),
             bottomShadowView.heightAnchor.constraint(equalToConstant: ShadowScrollViewMetrics.shadowViewHeight)
         ])
 
         return (topShadowView, bottomShadowView)
     }
-    
-    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
-
-        context.coordinator.contentHostingController?.view.setNeedsUpdateConstraints()
-        
-        if let scrollView = context.coordinator.scrollView {
-            context.coordinator.updateShadowVisibility(scrollView: scrollView)
-        }
-    }
 
     private func makeShadowView(isTop: Bool) -> UIView {
-
         let offsetMultiplier: CGFloat = isTop ? 1 : -1
-
-        let shadowView = CompositeShadowView(shadows: [
+        return CompositeShadowView(shadows: [
             .init(color: shadowColor,
                   radius: ShadowScrollViewMetrics.ShadowLayer1.radius,
                   offset: CGSize(width: 0, height: offsetMultiplier * ShadowScrollViewMetrics.ShadowLayer1.yOffset)),
-            .init(color: shadowColor, radius: ShadowScrollViewMetrics.ShadowLayer2.radius,
+            .init(color: shadowColor,
+                  radius: ShadowScrollViewMetrics.ShadowLayer2.radius,
                   offset: CGSize(width: 0, height: offsetMultiplier * ShadowScrollViewMetrics.ShadowLayer2.yOffset))
         ])
-
-        return shadowView
     }
 
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
-    }
-    
+    // MARK: - Coordinator
+
     final class Coordinator: NSObject, UIScrollViewDelegate {
         var contentHostingController: UIHostingController<Content>?
         var parent: NewTabPageShadowScrollView
@@ -179,16 +177,16 @@ struct NewTabPageShadowScrollView<Content: View>: UIViewControllerRepresentable 
 
             let bottomOverflow = offsetY + scrollViewHeight - contentHeight
             let bottomProgress = (bottomOverflow + overflowOffset) / overflowOffset
-            let bottomOpacity = max(0, min(1.0, 1.0 - bottomProgress))
-
-            bottomShadowView?.alpha = bottomOpacity
+            bottomShadowView?.alpha = max(0, min(1.0, 1.0 - bottomProgress))
         }
     }
 }
 
-// Defined outside because generic type does not support static stored properties
+// MARK: - Constants
+
 private struct ShadowScrollViewMetrics {
     static let shadowViewHeight: CGFloat = 44
+    static let horizontalShadowOffset: CGFloat = 100
 
     struct ShadowLayer1 {
         static let radius: CGFloat = 12

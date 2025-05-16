@@ -245,7 +245,7 @@ public final class DataBrokerProtectionIOSManager {
                 Logger.dataBrokerProtection.log("Background task finshed all operations with time taken: \(timeTaken)")
 // This should never ever go to production due to the deviceID and only exists for internal testing
 #if DEBUG || ALPHA
-                self.iOSPixelsHandler.fire(.backgroundTaskEndedHavingCompletedAllOperations(
+                self.iOSPixelsHandler.fire(.backgroundTaskEndedHavingCompletedAllJobs(
                     duration: timeTaken * 1000.0,
                     deviceID: DataBrokerProtectionSettings.deviceIdentifier))
 #endif

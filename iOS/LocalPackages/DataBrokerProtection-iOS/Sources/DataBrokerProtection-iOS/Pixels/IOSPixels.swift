@@ -29,7 +29,7 @@ public enum IOSPixels {
     // Background Task Scheduling events
     case backgroundTaskStarted(deviceID: String)
     case backgroundTaskExpired(duration: Double, deviceID: String)
-    case backgroundTaskEndedHavingCompletedAllOperations(duration: Double, deviceID: String)
+    case backgroundTaskEndedHavingCompletedAllJobs(duration: Double, deviceID: String)
     case backgroundTaskSchedulingFailed(error: Error?, deviceID: String)
 }
 
@@ -39,7 +39,7 @@ extension IOSPixels: PixelKitEvent {
 
         case .backgroundTaskStarted: return "m_ios_background-task_started"
         case .backgroundTaskExpired: return "m_ios_background-task_expired"
-        case .backgroundTaskEndedHavingCompletedAllOperations: return "m_ios_background-task_ended-having-completed-all-operations"
+        case .backgroundTaskEndedHavingCompletedAllJobs: return "m_ios_background-task_ended-having-completed-all-jobs"
         case .backgroundTaskSchedulingFailed: return "m_ios_dbp_background-task_scheduling-failed"
 
         }
@@ -55,7 +55,7 @@ extension IOSPixels: PixelKitEvent {
                 .backgroundTaskSchedulingFailed(_, let deviceID):
             return [DataBrokerProtectionSharedPixels.Consts.deviceIdentifier: deviceID, DataBrokerProtectionSharedPixels.Consts.deviceModel: DataBrokerProtectionSettings.modelName]
         case .backgroundTaskExpired(let duration, let deviceID),
-                .backgroundTaskEndedHavingCompletedAllOperations(let duration, let deviceID):
+                .backgroundTaskEndedHavingCompletedAllJobs(let duration, let deviceID):
             return [DataBrokerProtectionSharedPixels.Consts.durationInMs: String(duration),
                     DataBrokerProtectionSharedPixels.Consts.deviceIdentifier: deviceID, DataBrokerProtectionSharedPixels.Consts.deviceModel: DataBrokerProtectionSettings.modelName]
         }
@@ -76,7 +76,7 @@ public class IOSPixelsHandler: EventMapping<IOSPixels> {
             switch event {
             case .backgroundTaskStarted,
                     .backgroundTaskExpired,
-                    .backgroundTaskEndedHavingCompletedAllOperations:
+                    .backgroundTaskEndedHavingCompletedAllJobs:
                 self.pixelKit.fire(event)
             case .backgroundTaskSchedulingFailed(let error, _):
                 self.pixelKit.fire(DebugEvent(event, error: error))

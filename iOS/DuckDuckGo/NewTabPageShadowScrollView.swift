@@ -125,7 +125,9 @@ struct NewTabPageShadowScrollView<Content: View>: UIViewControllerRepresentable 
     }
     
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
-        uiViewController.view.layoutIfNeeded()
+
+        context.coordinator.contentHostingController?.view.setNeedsUpdateConstraints()
+        
         if let scrollView = context.coordinator.scrollView {
             context.coordinator.updateShadowVisibility(scrollView: scrollView)
         }

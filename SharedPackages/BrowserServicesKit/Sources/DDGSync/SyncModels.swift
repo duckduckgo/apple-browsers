@@ -177,7 +177,7 @@ public struct PairingInfo {
     }
 
     func toURL(baseURL: URL) -> URL {
-        let url = baseURL.appendingPathComponent("sync/pairing")
+        let url = baseURL.appendingPathComponent("sync/pairing/")
         var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false)
         let fragment = "&\(Keys.code)=\(base64URLCode)&\(Keys.deviceName)=\(deviceName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? deviceName)"
         urlComponents?.fragment = fragment
@@ -189,7 +189,7 @@ public struct PairingInfo {
     }
 
     private static func restoreBase64(from base64URLCode: String) -> String {
-        let paddingLength = 4 - (base64URLCode.count % 4)
+        let paddingLength = (4 - (base64URLCode.count % 4)) % 4
         let padding = String(repeating: "=", count: paddingLength)
         return base64URLCode.replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/").appending(padding)
     }

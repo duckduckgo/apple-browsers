@@ -20,9 +20,6 @@
 import Combine
 import SwiftUI
 
-import Combine
-import SwiftUI
-
 public protocol AIChatInputBoxHandling {
     var didPressFireButton: PassthroughSubject<Void, Never> { get }
     var didPressNewChatButton: PassthroughSubject<Void, Never> { get }
@@ -35,7 +32,6 @@ public protocol AIChatInputBoxHandling {
     var aiChatStatus: AIChatStatusValue { get set }
     var aiChatInputBoxVisibility: AIChatInputBoxVisibility { get set }
 }
-
 
 public enum AIChatStatusValue: String, Codable {
     case startStreamNewPrompt = "start_stream:new_prompt"

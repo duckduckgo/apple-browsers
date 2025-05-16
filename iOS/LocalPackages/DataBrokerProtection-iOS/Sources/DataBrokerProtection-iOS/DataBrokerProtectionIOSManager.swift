@@ -62,6 +62,7 @@ public class DataBrokerProtectionIOSManagerProvider {
                                   featureFlagger: RemoteBrokerDeliveryFeatureFlagging,
                                   pixelKit: PixelKit) -> DataBrokerProtectionIOSManager? {
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)
+        let iOSPixelsHandler = IOSPixelsHandler(pixelKit: pixelKit)
 
         let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
 
@@ -136,6 +137,7 @@ public class DataBrokerProtectionIOSManagerProvider {
             jobDependencies: jobDependencies,
             authenticationManager: authenticationManager,
             sharedPixelsHandler: sharedPixelsHandler,
+            iOSPixelsHandler: iOSPixelsHandler,
             privacyConfigManager: privacyConfigurationManager,
             database: database
         )
@@ -150,6 +152,7 @@ public final class DataBrokerProtectionIOSManager {
     private let jobDependencies: BrokerProfileJobDependencies
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>
+    private let iOSPixelsHandler: EventMapping<IOSPixels>
     private let privacyConfigManager: PrivacyConfigurationManaging
     public let database: DataBrokerProtectionRepository
 
@@ -157,6 +160,7 @@ public final class DataBrokerProtectionIOSManager {
          jobDependencies: BrokerProfileJobDependencies,
          authenticationManager: DataBrokerProtectionAuthenticationManaging,
          sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>,
+         iOSPixelsHandler: EventMapping<IOSPixels>,
          privacyConfigManager: PrivacyConfigurationManaging,
          database: DataBrokerProtectionRepository
     ) {
@@ -164,6 +168,7 @@ public final class DataBrokerProtectionIOSManager {
         self.jobDependencies = jobDependencies
         self.authenticationManager = authenticationManager
         self.sharedPixelsHandler = sharedPixelsHandler
+        self.iOSPixelsHandler = iOSPixelsHandler
         self.privacyConfigManager = privacyConfigManager
 
         self.database = database
@@ -199,6 +204,10 @@ public final class DataBrokerProtectionIOSManager {
                 Logger.dataBrokerProtection.log("Scheduling background task successful")
             } catch {
                 Logger.dataBrokerProtection.log("Scheduling background task failed with error: \(error)")
+// This should never ever go to production due to the deviceID and only exists for internal testing
+#if DEBUG || ALPHA
+                self.iOSPixelsHandler.fire(.backgroundTaskSchedulingFailed(error: error, deviceID: DataBrokerProtectionSettings.deviceIdentifier))
+#endif
             }
 #endif
         }
@@ -206,12 +215,21 @@ public final class DataBrokerProtectionIOSManager {
 
     func handleBGProcessingTask(task: BGTask) {
         Logger.dataBrokerProtection.log("Background task started")
+// This should never ever go to production due to the deviceID and only exists for internal testing
+#if DEBUG || ALPHA
+        iOSPixelsHandler.fire(.backgroundTaskStarted(deviceID: DataBrokerProtectionSettings.deviceIdentifier))
+#endif
         let startTime = Date.now
 
         task.expirationHandler = {
             let timeTaken = Date.now.timeIntervalSince(startTime)
-            self.scheduleBGProcessingTask()
             Logger.dataBrokerProtection.log("Background task expired with time taken: \(timeTaken)")
+// This should never ever go to production due to the deviceID and only exists for internal testing
+#if DEBUG || ALPHA
+            self.iOSPixelsHandler.fire(.backgroundTaskExpired(duration: timeTaken * 1000.0,
+                                                              deviceID: DataBrokerProtectionSettings.deviceIdentifier))
+#endif
+            self.scheduleBGProcessingTask()
             task.setTaskCompleted(success: false)
         }
 
@@ -223,6 +241,16 @@ public final class DataBrokerProtectionIOSManager {
             }
             queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil) {
                 Logger.dataBrokerProtection.log("All operations completed in background task")
+                let timeTaken = Date.now.timeIntervalSince(startTime)
+                Logger.dataBrokerProtection.log("Background task finshed all operations with time taken: \(timeTaken)")
+// This should never ever go to production due to the deviceID and only exists for internal testing
+#if DEBUG || ALPHA
+                self.iOSPixelsHandler.fire(.backgroundTaskEndedHavingCompletedAllOperations(
+                    duration: timeTaken * 1000.0,
+                    deviceID: DataBrokerProtectionSettings.deviceIdentifier))
+#endif
+
+                self.scheduleBGProcessingTask()
                 task.setTaskCompleted(success: true)
             }
         }

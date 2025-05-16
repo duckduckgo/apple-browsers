@@ -21,7 +21,7 @@ import SwiftUI
 import UIKit
 import DesignResourcesKit
 
-struct NewTabPageShadowScrollView<Content: View>: UIViewRepresentable {
+struct NewTabPageShadowScrollView<Content: View>: UIViewControllerRepresentable {
     var content: Content
     let shadowColor: UIColor
     let overflowOffset: CGFloat
@@ -37,37 +37,74 @@ struct NewTabPageShadowScrollView<Content: View>: UIViewRepresentable {
         self.setUpScrollView = setUpScrollView
     }
 
-    func makeUIView(context: Context) -> UIScrollView {
+    func makeUIViewController(context: Context) -> UIViewController {
+        let rootViewController = UIViewController()
+        let rootView = rootViewController.view!
+        let coordinator = context.coordinator
+
+        let scrollView = setUpScrollView(in: rootView, setUpScrollView: self.setUpScrollView)
+        scrollView.delegate = coordinator
+
+        let hostingController = setUpHostingController(for: content, in: scrollView, parentViewController: rootViewController)
+        coordinator.contentHostingController = hostingController
+
+        let shadowViews = setUpShadowViews(forScrollView: scrollView, inParentView: rootView)
+        coordinator.topShadowView = shadowViews.topShadowView
+        coordinator.bottomShadowView = shadowViews.bottomShadowView
+
+        coordinator.scrollView = scrollView
+        coordinator.updateShadowVisibility(scrollView: scrollView)
+
+        return rootViewController
+    }
+
+    private func setUpScrollView(in parentView: UIView, setUpScrollView: @escaping (UIScrollView) -> Void) -> UIScrollView {
         let scrollView = UIScrollView()
-        scrollView.delegate = context.coordinator
-
         setUpScrollView(scrollView)
+        scrollView.translatesAutoresizingMaskIntoConstraints = false
 
-        let hostingController = UIHostingController(rootView: content)
+        parentView.addSubview(scrollView)
+        NSLayoutConstraint.activate([
+            scrollView.leadingAnchor.constraint(equalTo: parentView.leadingAnchor),
+            scrollView.trailingAnchor.constraint(equalTo: parentView.trailingAnchor),
+            scrollView.topAnchor.constraint(equalTo: parentView.topAnchor),
+            scrollView.bottomAnchor.constraint(equalTo: parentView.bottomAnchor)
+        ])
+        return scrollView
+    }
+
+    private func setUpHostingController(for swiftUIContent: Content, in scrollView: UIScrollView, parentViewController: UIViewController) -> UIHostingController<Content> {
+        let hostingController = UIHostingController(rootView: swiftUIContent)
         hostingController.view.translatesAutoresizingMaskIntoConstraints = false
 
+        parentViewController.addChild(hostingController)
         scrollView.addSubview(hostingController.view)
+        hostingController.didMove(toParent: parentViewController)
+
         scrollView.clipsToBounds = false
 
-        let hostingView = hostingController.view!
+        let contentHostingView = hostingController.view!
 
         NSLayoutConstraint.activate([
-            hostingView.leadingAnchor.constraint(equalTo: scrollView.leadingAnchor),
-            hostingView.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor),
-            hostingView.topAnchor.constraint(equalTo: scrollView.topAnchor),
-            hostingView.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
-            hostingView.widthAnchor.constraint(equalTo: scrollView.widthAnchor)
+            contentHostingView.leadingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.leadingAnchor),
+            contentHostingView.trailingAnchor.constraint(equalTo: scrollView.contentLayoutGuide.trailingAnchor),
+            contentHostingView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
+            contentHostingView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
+            contentHostingView.widthAnchor.constraint(equalTo: scrollView.frameLayoutGuide.widthAnchor)
         ])
+        return hostingController
+    }
 
+    private func setUpShadowViews(forScrollView scrollView: UIScrollView, inParentView parentView: UIView) -> (topShadowView: UIView, bottomShadowView: UIView) {
         let topShadowView = makeShadowView(isTop: true)
         topShadowView.backgroundColor = .white
         topShadowView.translatesAutoresizingMaskIntoConstraints = false
-        hostingView.addSubview(topShadowView)
+        parentView.addSubview(topShadowView)
 
         let bottomShadowView = makeShadowView(isTop: false)
         bottomShadowView.backgroundColor = .white
         bottomShadowView.translatesAutoresizingMaskIntoConstraints = false
-        hostingView.addSubview(bottomShadowView)
+        parentView.addSubview(bottomShadowView)
 
         // Added to make shadows extend beyond scrollView horizontally (visible on landscape).
         let additionalOffset: CGFloat = 100
@@ -84,17 +121,16 @@ struct NewTabPageShadowScrollView<Content: View>: UIViewRepresentable {
             bottomShadowView.heightAnchor.constraint(equalToConstant: ShadowScrollViewMetrics.shadowViewHeight)
         ])
 
-        context.coordinator.topShadowView = topShadowView
-        context.coordinator.bottomShadowView = bottomShadowView
-
-        context.coordinator.updateShadowVisibility(scrollView: scrollView)
-
-        return scrollView
+        return (topShadowView, bottomShadowView)
     }
     
-    func updateUIView(_ uiView: UIScrollView, context: Context) {
-        uiView.layoutIfNeeded()
-        context.coordinator.updateShadowVisibility(scrollView: uiView)
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
+        context.coordinator.contentHostingController?.rootView = content
+
+        uiViewController.view.layoutIfNeeded()
+        if let scrollView = context.coordinator.scrollView {
+            context.coordinator.updateShadowVisibility(scrollView: scrollView)
+        }
     }
 
     private func makeShadowView(isTop: Bool) -> UIView {
@@ -117,9 +153,11 @@ struct NewTabPageShadowScrollView<Content: View>: UIViewRepresentable {
     }
     
     final class Coordinator: NSObject, UIScrollViewDelegate {
+        var contentHostingController: UIHostingController<Content>?
         var parent: NewTabPageShadowScrollView
         var topShadowView: UIView?
         var bottomShadowView: UIView?
+        var scrollView: UIScrollView?
         
         init(_ parent: NewTabPageShadowScrollView) {
             self.parent = parent

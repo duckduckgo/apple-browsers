@@ -901,7 +901,6 @@
 		9D41D8DF2DC5213500BA0B63 /* DBPService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D41D8DE2DC5213500BA0B63 /* DBPService.swift */; };
 		9D6891E72DAD2DF800819662 /* DataBrokerProtection-iOS in Frameworks */ = {isa = PBXBuildFile; productRef = 9D6891E62DAD2DF800819662 /* DataBrokerProtection-iOS */; };
 		9DB4A2C72DCA609400DBE00C /* DataBrokerProtectionDebugViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DB4A2C62DCA609400DBE00C /* DataBrokerProtectionDebugViewController.swift */; };
-		9F06EB8A2D10560200905426 /* SettingsMaliciousProtectionSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F06EB892D10560200905426 /* SettingsMaliciousProtectionSectionView.swift */; };
 		9F06EB8C2D10578000905426 /* MaliciousSiteProtectionSettingsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F06EB8B2D10578000905426 /* MaliciousSiteProtectionSettingsViewModelTests.swift */; };
 		9F06EB922D10740500905426 /* MaliciousSiteProtectionPreferencesManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F06EB912D10740500905426 /* MaliciousSiteProtectionPreferencesManagerTests.swift */; };
 		9F0949A02D372AE60079291B /* MaliciousSiteProtectionDatasetsFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F09499F2D372ADB0079291B /* MaliciousSiteProtectionDatasetsFetcher.swift */; };
@@ -2961,7 +2960,6 @@
 		9D6891E52DAD25B600819662 /* DataBrokerProtection-iOS */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = "DataBrokerProtection-iOS"; sourceTree = "<group>"; };
 		9D87088B2DAD5075007E22D4 /* DataBrokerProtectionCore */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = DataBrokerProtectionCore; path = ../../SharedPackages/DataBrokerProtectionCore; sourceTree = "<group>"; };
 		9DB4A2C62DCA609400DBE00C /* DataBrokerProtectionDebugViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataBrokerProtectionDebugViewController.swift; sourceTree = "<group>"; };
-		9F06EB892D10560200905426 /* SettingsMaliciousProtectionSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsMaliciousProtectionSectionView.swift; sourceTree = "<group>"; };
 		9F06EB8B2D10578000905426 /* MaliciousSiteProtectionSettingsViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaliciousSiteProtectionSettingsViewModelTests.swift; sourceTree = "<group>"; };
 		9F06EB912D10740500905426 /* MaliciousSiteProtectionPreferencesManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaliciousSiteProtectionPreferencesManagerTests.swift; sourceTree = "<group>"; };
 		9F09499F2D372ADB0079291B /* MaliciousSiteProtectionDatasetsFetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaliciousSiteProtectionDatasetsFetcher.swift; sourceTree = "<group>"; };
@@ -6007,7 +6005,6 @@
 		9F7ED8122D52EEBA00CCF4F5 /* Sub Sections */ = {
 			isa = PBXGroup;
 			children = (
-				9F06EB892D10560200905426 /* SettingsMaliciousProtectionSectionView.swift */,
 			);
 			name = "Sub Sections";
 			sourceTree = "<group>";
@@ -9549,7 +9546,6 @@
 				6F3537A42C4AC140009F8717 /* NewTabPageDaxLogoView.swift in Sources */,
 				314C92B827C3DD660042EC96 /* QuickLookPreviewView.swift in Sources */,
 				C1B3BF4F2D91805F00EE1D43 /* AutofillCreditCardListViewController.swift in Sources */,
-				9F06EB8A2D10560200905426 /* SettingsMaliciousProtectionSectionView.swift in Sources */,
 				6F5345AF2C53F2DE00424A43 /* NewTabPageSettingsPersistentStorage.swift in Sources */,
 				F1AE54E81F0425FC00D9A700 /* AuthenticationViewController.swift in Sources */,
 				CB9C3F6C2D898BE000264725 /* PullToRefreshViewAdapter.swift in Sources */,

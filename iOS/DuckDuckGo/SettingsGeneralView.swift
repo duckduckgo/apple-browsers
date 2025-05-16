@@ -87,8 +87,6 @@ struct SettingsGeneralView: View {
                                      accessory: .toggle(isOn: viewModel.universalLinksBinding))
                 }
 
-                SettingsMaliciousProtectionSectionView(proxy: proxy, model: MaliciousSiteProtectionSettingsViewModel(manager: viewModel.maliciousSiteProtectionPreferencesManager))
-
             }
             .applySettingsListModifiers(title: UserText.general,
                                         displayMode: .inline,

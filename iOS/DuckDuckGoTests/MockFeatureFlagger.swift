@@ -21,6 +21,7 @@ import BrowserServicesKit
 import Core
 
 final class MockFeatureFlagger: FeatureFlagger {
+
     private(set) var didCallResolveCohort: Bool = false
 
     var internalUserDecider: InternalUserDecider
@@ -60,4 +61,5 @@ final class MockFeatureFlagger: FeatureFlagger {
     var allActiveExperiments: Experiments {
         mockActiveExperiments
     }
+
 }

@@ -44,6 +44,7 @@ class TabManager {
     private let contextualOnboardingLogic: ContextualOnboardingLogic
     private let onboardingPixelReporter: OnboardingPixelReporting
     private let featureFlagger: FeatureFlagger
+    private let contentScopeExperimentManager: ContentScopeExperimentsManaging
     private let textZoomCoordinator: TextZoomCoordinating
     private let fireproofing: Fireproofing
     private let websiteDataManager: WebsiteDataManaging
@@ -71,6 +72,7 @@ class TabManager {
          contextualOnboardingLogic: ContextualOnboardingLogic,
          onboardingPixelReporter: OnboardingPixelReporting,
          featureFlagger: FeatureFlagger,
+         contentScopeExperimentManager: ContentScopeExperimentsManaging,
          subscriptionCookieManager: SubscriptionCookieManaging,
          appSettings: AppSettings,
          textZoomCoordinator: TextZoomCoordinating,
@@ -92,6 +94,7 @@ class TabManager {
         self.contextualOnboardingLogic = contextualOnboardingLogic
         self.onboardingPixelReporter = onboardingPixelReporter
         self.featureFlagger = featureFlagger
+        self.contentScopeExperimentManager = contentScopeExperimentManager
         self.subscriptionCookieManager = subscriptionCookieManager
         self.appSettings = appSettings
         self.textZoomCoordinator = textZoomCoordinator
@@ -132,6 +135,7 @@ class TabManager {
                                                               contextualOnboardingLogic: contextualOnboardingLogic,
                                                               onboardingPixelReporter: onboardingPixelReporter,
                                                               featureFlagger: featureFlagger,
+                                                              contentScopeExperimentManager: contentScopeExperimentManager,
                                                               subscriptionCookieManager: subscriptionCookieManager,
                                                               textZoomCoordinator: textZoomCoordinator,
                                                               websiteDataManager: websiteDataManager,
@@ -224,7 +228,7 @@ class TabManager {
                                                               contextualOnboardingLogic: contextualOnboardingLogic,
                                                               onboardingPixelReporter: onboardingPixelReporter,
                                                               featureFlagger: featureFlagger,
-                                                              subscriptionCookieManager: subscriptionCookieManager,
+                                                              contentScopeExperimentManager: contentScopeExperimentManager, subscriptionCookieManager: subscriptionCookieManager,
                                                               textZoomCoordinator: textZoomCoordinator,
                                                               websiteDataManager: websiteDataManager,
                                                               fireproofing: fireproofing,

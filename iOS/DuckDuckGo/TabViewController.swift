@@ -489,6 +489,7 @@ class TabViewController: UIViewController {
         registerForAddressBarLocationNotifications()
         registerForOrientationDidChangeNotification()
         registerForAutofillNotifications()
+        registerForKeyboardNotifications()
 
         if #available(iOS 16.4, *) {
             registerForInspectableWebViewNotifications()
@@ -2623,6 +2624,20 @@ extension TabViewController: UIGestureRecognizerDelegate {
         }
     }
 
+    private func registerForKeyboardNotifications() {
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(keyboardWillHide),
+                                               name: UIResponder.keyboardWillHideNotification,
+                                               object: nil)
+    }
+    
+    @objc private func keyboardWillHide(_ notification: Notification) {
+        // Clear any pending autofill handlers when keyboard is dismissed
+        autofillUserScript?.clearAllHandlers()
+        
+        // Also clean up the accessory view if needed
+        cleanupAutofillAccessoryView(resetFirstLoadStatus: false)
+    }
 }
 
 // MARK: - UserContentControllerDelegate
@@ -3021,24 +3036,23 @@ extension TabViewController: SecureVaultManagerDelegate {
                     completionHandler(creditCard)
                 }
             } else {
-                setupAutofillAccessoryViewWithCustomWebView()
-                
-                guard let suggestionsView = (self.webView as? WebView)?.inputAccessoryView as? CreditCardInputAccessoryView else {
+                guard let creditCardInputAccessoryView = setupAutofillAccessoryViewWithCustomWebView() else {
+                    completionHandler(nil)
                     return
                 }
-                let cards = creditCards.asCardRowViewModels
                 
-                suggestionsView.updateSuggestions(cards)
-                suggestionsView.onCardSelected = { [weak self] card in
+                let cards = creditCards.asCardRowViewModels
+               
+                creditCardInputAccessoryView.updateSuggestions(cards)
+                creditCardInputAccessoryView.onCardSelected = { [weak self] card in
                     completionHandler(card)
                     if card == nil {
                         self?.webView.resignFirstResponder()
                     }
-                    self?.cleanupAutofillAccessoryView(resetFirstLoadStatus: false)
+//                    self?.cleanupAutofillAccessoryView(resetFirstLoadStatus: false)
                 }
 
-                // Make the suggestions visible
-                suggestionsView.isHidden = false
+                creditCardInputAccessoryView.isHidden = false
                             
                 // Force the input system to refresh
                 webView.reloadInputViews()
@@ -3049,20 +3063,25 @@ extension TabViewController: SecureVaultManagerDelegate {
         
     }
 
-    func setupAutofillAccessoryViewWithCustomWebView() {
+    func setupAutofillAccessoryViewWithCustomWebView() -> CreditCardInputAccessoryView? {
         guard let autofillWebView = webView as? WebView else {
-            return
+            return nil
         }
         
-        let suggestionsView = CreditCardInputAccessoryView(frame: .zero)
-        suggestionsView.isHidden = true
+        if let creditCardInputAccessoryView = autofillWebView.inputAccessoryView as? CreditCardInputAccessoryView {
+            return creditCardInputAccessoryView
+        }
+        
+        let creditCardInputAccessoryView = CreditCardInputAccessoryView(frame: .zero)
+        creditCardInputAccessoryView.isHidden = true
         
         // Set as the input accessory view
-        autofillWebView.setInputAccessoryView(suggestionsView)
+        autofillWebView.setInputAccessoryView(creditCardInputAccessoryView)
+        return creditCardInputAccessoryView
     }
     
     func cleanupAutofillAccessoryView(resetFirstLoadStatus: Bool = true) {
-        guard let suggestionsView = (self.webView as? WebView)?.inputAccessoryView as? CreditCardInputAccessoryView else {
+        guard let webView = webView as? WebView, let suggestionsView = webView.inputAccessoryView as? CreditCardInputAccessoryView else {
             return
         }
 

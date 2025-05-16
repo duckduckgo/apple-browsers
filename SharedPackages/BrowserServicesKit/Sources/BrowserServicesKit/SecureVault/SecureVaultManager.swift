@@ -515,6 +515,10 @@ extension SecureVaultManager: AutofillSecureVaultDelegate {
             }
 
             delegate?.secureVaultManagerShouldPromptUserToAutofillCreditCard(self, withCreditCards: cards, withTrigger: trigger) { creditCard in
+                guard let creditCard else {
+                    completionHandler(nil, .none)
+                    return
+                }
                 completionHandler(creditCard, .fill)
             }
         } catch {

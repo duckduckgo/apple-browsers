@@ -88,7 +88,9 @@ extension CreditCardPromptViewController: CreditCardPromptViewModelDelegate {
     }
     
     func creditCardPromptViewModelCancel(_ viewModel: CreditCardPromptViewModel) {
-        dismiss(animated: true)
+        dismiss(animated: true) { [weak self] in
+            self?.completion?(nil)
+        }
     }
     
     func creditCardPromptViewModelDidResizeContent(_ viewModel: CreditCardPromptViewModel, contentHeight: CGFloat) {

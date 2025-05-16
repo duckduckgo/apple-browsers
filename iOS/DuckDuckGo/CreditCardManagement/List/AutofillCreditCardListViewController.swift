@@ -29,9 +29,8 @@ final class AutofillCreditCardListViewController: UIViewController {
     private let secureVault: (any AutofillSecureVault)?
     private var cancellables: Set<AnyCancellable> = []
     
-    #warning("ICONS: missing glyphs/24/add")
     private lazy var addBarButtonItem: UIBarButtonItem = {
-        UIBarButtonItem(image: DesignSystemImages.Glyphs.Size24.exclamation,
+        UIBarButtonItem(image: DesignSystemImages.Glyphs.Size24.add,
                         style: .plain,
                         target: self,
                         action: #selector(addButtonPressed))

@@ -54,7 +54,7 @@ final class ToolbarHandler: ToolbarStateHandling {
     }()
 
     lazy var fireBarButtonItem = {
-        return createBarButtonItem(title: UserText.actionForgetAll, image: DesignSystemImages.Glyphs.Size24.fire)
+        return createBarButtonItem(title: UserText.actionForgetAll, image: DesignSystemImages.Glyphs.Size24.fireSolid)
     }()
 
     lazy var forwardButton = {

@@ -442,7 +442,7 @@ extension TabSwitcherViewController {
         })
 
         barsHandler.fireButton.accessibilityLabel = "Close all tabs and clear data"
-        barsHandler.fireButton.primaryAction = action(image: DesignSystemImages.Glyphs.Size24.fire) { [weak self] in
+        barsHandler.fireButton.primaryAction = action(image: DesignSystemImages.Glyphs.Size24.fireSolid) { [weak self] in
             self?.burn(sender: self!.barsHandler.fireButton)
         }
 

@@ -89,7 +89,7 @@ class TabsBarViewController: UIViewController {
         enableInteractionsWithPointer()
 
         addTabButton.setImage(DesignSystemImages.Glyphs.Size24.add, for: .normal)
-        fireButton.setImage(DesignSystemImages.Glyphs.Size24.fire, for: .normal)
+        fireButton.setImage(DesignSystemImages.Glyphs.Size24.fireSolid, for: .normal)
     }
 
     override func viewWillAppear(_ animated: Bool) {

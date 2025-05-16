@@ -39,8 +39,11 @@ struct AIChatInputBox: View {
             case .unknown:
                 EmptyView()
             default:
-                inputViews
-                    .opacity(viewModel.visibility == .hidden ? 0 : 1)
+                VStack {
+                    inputViews
+                    Spacer()
+                }
+                .opacity(viewModel.visibility == .hidden ? 0 : 1)
             }
         }
         .frame(maxWidth: .infinity)

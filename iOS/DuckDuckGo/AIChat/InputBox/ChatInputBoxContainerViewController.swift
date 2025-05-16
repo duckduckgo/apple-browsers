@@ -112,11 +112,13 @@ final class ChatInputBoxContainerViewController: UIViewController {
         
         switch position {
         case .top:
-            constraints.append(chatInputBoxViewController.view.topAnchor.constraint(equalTo: view.topAnchor))
+            constraints.append(contentsOf: [
+                chatInputBoxViewController.view.topAnchor.constraint(equalTo: view.topAnchor),
+                chatInputBoxViewController.view.heightAnchor.constraint(greaterThanOrEqualToConstant: 300)
+            ])
         case .bottom:
             constraints.append(chatInputBoxViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor))
         }
-        
         NSLayoutConstraint.activate(constraints)
     }
 }

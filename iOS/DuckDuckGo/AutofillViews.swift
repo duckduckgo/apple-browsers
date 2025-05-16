@@ -94,7 +94,7 @@ struct AutofillViews {
         let text: String
 
         var body: some View {
-            #warning("ICONS: missing glyphs/size16/lock-solid")
+            #warning("ICONS: ‼️ missing glyphs/size16/lock-solid")
             (
                 Text("\(Image(uiImage: DesignSystemImages.Glyphs.Size16.lock)) ").baselineOffset(-1.0)
                 +

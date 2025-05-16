@@ -167,7 +167,7 @@ struct AutofillSettingsView: View {
         let viewModel: AutofillSettingsViewModel
         
         var body: some View {
-            #warning("ICONS: missing 16/lock solid")
+            #warning("ICONS: ‼️ missing 16/lock solid")
             return (Text(Image(uiImage: DesignSystemImages.Glyphs.Size16.lock)).baselineOffset(-1.0).foregroundColor(.secondary)
                     + Text(verbatim: " ")
                     + Text(viewModel.showCreditCards ? UserText.autofillLoginListSettingsPasswordsAndCardsFooter : UserText.autofillLoginListSettingsFooter).foregroundColor(.secondary)

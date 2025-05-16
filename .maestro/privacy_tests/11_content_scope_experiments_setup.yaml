@@ -10,6 +10,8 @@ name: 01_content_scope_experiments_setup
     file: ../shared/setup.yaml
 
 #Open Debug Menu
+- tapOn: Browsing menu
+- tapOn: Settings
 - runFlow:
     file: ../shared/open_debug_menu.yaml
 

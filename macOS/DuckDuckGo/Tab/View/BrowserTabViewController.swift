@@ -310,6 +310,9 @@ final class BrowserTabViewController: NSViewController {
                 subscribeToHoveredLink(of: selectedTabViewModel)
                 subscribeToUserDialogs(of: selectedTabViewModel)
 
+                // changing tab is considered equivalent to dismissing the dialog
+                wasContextualOnboardingDialogDismissed = true
+
                 adjustFirstResponder(force: true)
             }
             .store(in: &cancellables)
@@ -472,11 +475,14 @@ final class BrowserTabViewController: NSViewController {
             delegate?.dismissViewHighlight()
             return
         }
+        // once a dialog is presented we reset the is dismissed flag
+        self.wasContextualOnboardingDialogDismissed = false
 
         var onDismissAction: () -> Void = {}
         if let webViewContainer {
             onDismissAction = { [weak self] in
                 guard let self else { return }
+                // we mark the flag for dialog dismissed
                 wasContextualOnboardingDialogDismissed = true
                 delegate?.dismissViewHighlight()
                 self.removeChild(in: self.containerStackView, webViewContainer: webViewContainer)
@@ -654,7 +660,6 @@ final class BrowserTabViewController: NSViewController {
             self.presentContextualOnboarding()
             self.lastURL = self.tabViewModel?.tab.url
             self.lastTab = self.tabViewModel?.tab
-            self.wasContextualOnboardingDialogDismissed = false
         }.store(in: &tabViewModelCancellables)
     }
 
@@ -1171,7 +1176,7 @@ extension BrowserTabViewController: TabDelegate {
         // This helps keep dialogs consistent when moving between Windows
         //  - If the dialog was dismissed it will not reload when leaving and coming back to the Window
         //  - It tells presentContextualOnboarding that should show the lastDialog if possible
-        if !wasContextualOnboardingDialogDismissed {
+        if !wasContextualOnboardingDialogDismissed && onboardingDialogTypeProvider.state != .onboardingCompleted {
             presentContextualOnboarding(showLastDialog: true)
         }
     }

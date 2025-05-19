@@ -66,6 +66,7 @@ final class OnboardingDaxFavouritesTests: XCTestCase {
         let tabsModel = TabsModel(desktop: true)
         tutorialSettingsMock = MockTutorialSettings(hasSeenOnboarding: false)
         contextualOnboardingLogicMock = ContextualOnboardingLogicMock()
+        let tabsPersistence = try TabsModelPersistence()
         sut = MainViewController(
             bookmarksDatabase: db,
             bookmarksDatabaseCleaner: bookmarkDatabaseCleaner,
@@ -76,6 +77,7 @@ final class OnboardingDaxFavouritesTests: XCTestCase {
             appSettings: AppSettingsMock(),
             previewsSource: MockTabPreviewsSource(),
             tabsModel: tabsModel,
+            tabsPersistence: tabsPersistence,
             syncPausedStateManager: CapturingSyncPausedStateManager(),
             privacyProDataReporter: MockPrivacyProDataReporter(),
             variantManager: MockVariantManager(),

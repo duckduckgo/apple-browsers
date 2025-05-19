@@ -1,5 +1,5 @@
 //
-//  TabsModelPersistenceExtensionTests.swift
+//  TabsModelPersistenceTests.swift
 //  DuckDuckGo
 //
 //  Copyright © 2017 DuckDuckGo. All rights reserved.
@@ -21,7 +21,7 @@ import XCTest
 @testable import DuckDuckGo
 @testable import Core
 
-class TabsModelPersistenceExtensionTests: XCTestCase {
+class TabsModelPersistenceTests: XCTestCase {
 
     struct Constants {
         static let firstTitle = "a title"
@@ -30,8 +30,12 @@ class TabsModelPersistenceExtensionTests: XCTestCase {
         static let secondUrl = "http://anotherurl.com"
     }
 
-    override func setUp() {
-        super.setUp()
+    var persistence: TabsModelPersisting!
+
+    override func setUp() async throws {
+        try await super.setUp()
+
+        persistence = try TabsModelPersistence()
 
         setupUserDefault(with: #file)
         UserDefaults.app.removeObject(forKey: "com.duckduckgo.opentabs")
@@ -54,18 +58,18 @@ class TabsModelPersistenceExtensionTests: XCTestCase {
     }
 
     func testBeforeModelSavedThenGetIsNil() {
-        XCTAssertNil(TabsModel.get())
+        XCTAssertNil(persistence.getTabsModel())
     }
 
     func testWhenModelSavedThenGetIsNotNil() {
-        model.save()
-        XCTAssertNotNil(TabsModel.get())
+        persistence.save(model: model)
+        XCTAssertNotNil(persistence.getTabsModel())
     }
 
     func testWhenModelIsSavedThenGetLoadsCompleteTabs() {
-        model.save()
+        persistence.save(model: model)
 
-        let loaded = TabsModel.get()
+        let loaded = persistence.getTabsModel()
         XCTAssertNotNil(loaded)
         XCTAssertEqual(loaded?.get(tabAt: 0), firstTab)
         XCTAssertEqual(loaded?.get(tabAt: 1), secondTab)
@@ -75,9 +79,9 @@ class TabsModelPersistenceExtensionTests: XCTestCase {
     func testWhenModelIsSavedThenGetLoadsModelWithCurrentSelection() {
         let model = self.model
         model.select(tabAt: 1)
-        model.save()
+        persistence.save(model: model)
 
-        let loaded = TabsModel.get()
+        let loaded = persistence.getTabsModel()
         XCTAssertNotNil(loaded)
         XCTAssertEqual(loaded?.count, 2)
         XCTAssertEqual(loaded?.currentIndex, 1)

@@ -285,7 +285,7 @@ class TabSwitcherViewController: UIViewController {
         if let current = currentSelection {
             let tab = tabsModel.get(tabAt: current)
             tab.viewed = true
-            tabsModel.save()
+            tabManager.save()
             delegate?.tabSwitcher(self, didSelectTab: tab)
         }
         dismiss()

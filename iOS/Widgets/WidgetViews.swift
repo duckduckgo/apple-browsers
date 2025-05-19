@@ -138,7 +138,7 @@ struct FavoritesWidgetView: View {
                 HStack(spacing: 12) {
                     LargeSearchFieldView()
                     Link(destination: DeepLinks.openAIChat.appendingParameter(name: WidgetSourceType.sourceKey, value: WidgetSourceType.favorite.rawValue)) {
-                        CircleIconView(image: Image(uiImage: DesignSystemImages.Color.Size24.aiChat))
+                        CircleIconView(image: Image(uiImage: DesignSystemImages.Glyphs.Size24.aiChat))
                     }
                 }
                 if entry.favorites.isEmpty, !entry.isPreview {
@@ -195,7 +195,7 @@ struct SearchWidgetView: View {
         ZStack {
             VStack(alignment: .center, spacing: 15) {
 
-                Image(uiImage: DesignSystemImages.Color.Size24.duckDuckGo)
+                Image(.logo)
                     .resizable()
                     .useFullColorRendering()
                     .frame(width: 46, height: 46, alignment: .center)
@@ -231,7 +231,7 @@ struct PasswordsWidgetView: View {
         ZStack {
             VStack(alignment: .center, spacing: 6) {
 
-                Image(uiImage: DesignSystemImages.Color.Size24.key)
+                Image(.widgetPasswordIllustration)
                         .useFullColorRendering()
                         .frame(width: 96, height: 72)
                         .isHidden(false)

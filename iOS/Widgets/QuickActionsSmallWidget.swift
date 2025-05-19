@@ -86,14 +86,13 @@ enum ShortcutOption: String, CaseIterable, Identifiable, AppEnum {
 
     var id: String { self.rawValue }
 
-    #warning("ICONS: Use of color here should be glyph")
     var icon: Image {
         switch self {
-        case .passwords: return Image(uiImage: DesignSystemImages.Color.Size24.key)
+        case .passwords: return Image(uiImage: DesignSystemImages.Glyphs.Size24.key)
         case .duckAI: return Image(uiImage: DesignSystemImages.Glyphs.Size24.aiChat)
         case .voiceSearch: return Image(uiImage: DesignSystemImages.Glyphs.Size24.microphone)
-        case .favorites: return Image(uiImage: DesignSystemImages.Color.Size24.favorite)
-        case .emailProtection: return Image(uiImage: DesignSystemImages.Color.Size24.email)
+        case .favorites: return Image(uiImage: DesignSystemImages.Glyphs.Size24.favorite)
+        case .emailProtection: return Image(uiImage: DesignSystemImages.Glyphs.Size24.email)
         }
     }
 
@@ -147,7 +146,6 @@ struct QuickActionsWidgetView: View {
 private struct SearchBoxView: View {
     var body: some View {
         HStack {
-            #warning("ICONS: image changed from 28 to 24")
             Image(uiImage: DesignSystemImages.Color.Size24.duckDuckGo)
                 .resizable()
                 .useFullColorRendering()

@@ -31,7 +31,6 @@ struct LargeSearchFieldView: View {
                     .padding(.vertical, 16)
 
                 HStack {
-                    #warning("ICONS: image changed from 28 to 24")
                     Image(uiImage: DesignSystemImages.Color.Size24.duckDuckGo)
                         .resizable()
                         .useFullColorRendering()

@@ -300,7 +300,6 @@ struct AutofillLoginDetailsView: View {
                     .frame(width: 80)
                     .toggleStyle(SwitchToggleStyle(tint: Color(ThemeManager.shared.currentTheme.buttonTintColor)))
             } else {
-                #warning("ICONS: ❓ Alert-Color-16 -> glyphs/size16/alertRecolorable")
                 Image(uiImage: DesignSystemImages.Glyphs.Size16.alertRecolorable)
                     .resizable()
                     .frame(width: 20, height: 20)

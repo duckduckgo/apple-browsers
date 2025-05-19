@@ -101,7 +101,7 @@ struct DataImportView: View {
 
     private struct PasswordFooterView: View {
         var body: some View {
-            (Text(Image(uiImage: DesignSystemImages.Glyphs.Size16.locationSolid)).baselineOffset(-1.0) + Text(verbatim: " ") + Text(UserText.autofillLoginListSettingsFooter))
+            (Text(Image(uiImage: DesignSystemImages.Glyphs.Size12.lockSolid)).baselineOffset(-1.0) + Text(verbatim: " ") + Text(UserText.autofillLoginListSettingsFooter))
                 .daxFootnoteRegular()
                 .foregroundColor(Color(designSystemColor: .textSecondary))
                 .padding(.trailing)

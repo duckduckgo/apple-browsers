@@ -46,9 +46,9 @@ class SaveBookmarkActivity: UIActivity {
         return isFavorite ? .saveFavoriteInDuckDuckGo : .saveBookmarkInDuckDuckGo
     }
 
-    #warning("ICONS: ℹ️ sharesheet-favorite / sharesheet-bookmark not in Glyphs or Color")
+    // These are styled to match iOS shareshare, but we should try to use system ones if possible in future
     override var activityImage: UIImage {
-        return isFavorite ? UIImage(resource: .sharesheetFavorite) : UIImage(resource: .sharesheetFavorite)
+        return isFavorite ? UIImage(resource: .sharesheetFavorite) : UIImage(resource: .sharesheetBookmark)
     }
 
     override func canPerform(withActivityItems activityItems: [Any]) -> Bool {

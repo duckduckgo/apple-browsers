@@ -65,7 +65,6 @@ private extension ShortcutAccessoryType {
     var image: Image {
         switch self {
         case .selected:
-            #warning("ICONS: ❓ .check16Alt -> Glyphs/16/checkGray")
             return Image(uiImage: DesignSystemImages.Glyphs.Size16.checkGray)
         case .add:
             return Image(uiImage: DesignSystemImages.Glyphs.Size16.add)

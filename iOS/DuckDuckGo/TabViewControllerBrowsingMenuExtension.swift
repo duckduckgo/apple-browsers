@@ -169,9 +169,8 @@ extension TabViewController {
         entries.append(buildOpenBookmarksEntry())
 
         if featureFlagger.isFeatureOn(.autofillAccessCredentialManagement) {
-            #warning("ICONS: ‼️ missing glyphs/16/key")
             entries.append(BrowsingMenuEntry.regular(name: UserText.actionAutofillLogins,
-                                                     image: DesignSystemImages.Glyphs.Size16.exclamation,
+                                                     image: DesignSystemImages.Glyphs.Size16.keyLogin,
                                                      action: { [weak self] in
                 self?.onOpenAutofillLoginsAction()
             }))
@@ -228,22 +227,20 @@ extension TabViewController {
         return entries
     }
 
-
-    #warning("ICONS: ‼️ MenuRemoveFireproof / MenuFireproof not in design system")
     private func buildKeepSignInEntry(forLink link: Link) -> BrowsingMenuEntry? {
         guard let domain = link.url.host, !link.url.isDuckDuckGo else { return nil }
         let isFireproofed = fireproofing.isAllowed(cookieDomain: domain)
         
         if isFireproofed {
             return BrowsingMenuEntry.regular(name: UserText.disablePreservingLogins,
-                                             image: UIImage(resource: .menuRemoveFireproof),
+                                             image: DesignSystemImages.Glyphs.Size16.fireSolid,
                                              action: { [weak self] in
                                                 self?.disableFireproofingForDomain(domain)
                                              })
         }
 
         return BrowsingMenuEntry.regular(name: UserText.enablePreservingLogins,
-                                         image: UIImage(resource: .menuFireproof),
+                                         image: DesignSystemImages.Glyphs.Size16.fireproofSolid,
                                          action: { [weak self] in
                                             self?.enableFireproofingForDomain(domain)
                                          })
@@ -312,10 +309,9 @@ extension TabViewController {
                                          })
     }
 
-    #warning("ICONS: ‼️ missing library-16 (open bookmarks)")
     private func buildOpenBookmarksEntry() -> BrowsingMenuEntry {
         BrowsingMenuEntry.regular(name: UserText.actionOpenBookmarks,
-                                  image: DesignSystemImages.Glyphs.Size16.exclamation,
+                                  image: DesignSystemImages.Glyphs.Size16.bookmarks,
                                                  action: { [weak self] in
             self?.onOpenBookmarksAction()
         })
@@ -522,12 +518,11 @@ extension TabViewController {
         delegate?.tabDidRequestAIChat(tab: self)
     }
 
-    #warning("ICONS: ‼️ missing Protections-Blocked and Protections")
     private func buildToggleProtectionEntry(forDomain domain: String) -> BrowsingMenuEntry {
         let config = ContentBlocking.shared.privacyConfigurationManager.privacyConfig
         let isProtected = !config.isUserUnprotected(domain: domain)
         let title = isProtected ? UserText.actionDisableProtection : UserText.actionEnableProtection
-        let image = isProtected ? DesignSystemImages.Glyphs.Size16.exclamation : DesignSystemImages.Glyphs.Size16.exclamation
+        let image = isProtected ? DesignSystemImages.Glyphs.Size16.shieldBlocked : DesignSystemImages.Glyphs.Size16.shield
 
         return BrowsingMenuEntry.regular(name: title, image: image, action: { [weak self] in
             self?.onToggleProtectionAction(forDomain: domain, isProtected: isProtected)

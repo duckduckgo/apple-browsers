@@ -393,8 +393,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         forwardButtonView.setImage(DesignSystemImages.Glyphs.Size24.arrowRight)
         UpdatedOmniBarView.setUpCommonProperties(for: forwardButtonView)
 
-        #warning("ICONS: ❓ image changed from bookmarksStacked24 -> bookmarksList")
-        bookmarksButtonView.setImage(DesignSystemImages.Glyphs.Size24.bookmarksList)
+        bookmarksButtonView.setImage(DesignSystemImages.Glyphs.Size24.bookmarks)
         UpdatedOmniBarView.setUpCommonProperties(for: bookmarksButtonView)
 
         menuButtonView.setImage(DesignSystemImages.Glyphs.Size24.menuHamburger)

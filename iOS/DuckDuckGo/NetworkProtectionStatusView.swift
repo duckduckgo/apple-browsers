@@ -213,10 +213,9 @@ struct NetworkProtectionStatusView: View {
                 }
 
                 NavigationLink(destination: locationView()) {
-                    NetworkProtectionLocationItemView(title: locationAttributedString, imageName: nil)
+                    NetworkProtectionLocationItemView(title: locationAttributedString, image: nil)
                 }
             } else {
-                let imageName = statusModel.preferredLocation.isNearest ? "VPNLocation" : nil
                 var nearestLocationAttributedString: AttributedString {
                     var attributedString = AttributedString(statusModel.preferredLocation.title)
                     attributedString.foregroundColor = .init(designSystemColor: .textPrimary)
@@ -224,7 +223,7 @@ struct NetworkProtectionStatusView: View {
                 }
 
                 NavigationLink(destination: locationView()) {
-                    NetworkProtectionLocationItemView(title: nearestLocationAttributedString, imageName: imageName)
+                    NetworkProtectionLocationItemView(title: nearestLocationAttributedString, image: Image(uiImage: DesignSystemImages.Glyphs.Size24.location))
                 }
             }
         } header: {
@@ -443,7 +442,6 @@ private struct NetworkProtectionErrorView: View {
     var body: some View {
         VStack(alignment: .leading) {
             HStack {
-                #warning("ICONS: ❓ Alert-Color-16 -> glyphs/size16/alertRecolorable")
                 Image(uiImage: DesignSystemImages.Glyphs.Size16.alertRecolorable)
                 Text(title)
                     .daxBodyBold()
@@ -457,14 +455,15 @@ private struct NetworkProtectionErrorView: View {
     }
 }
 
+#warning("ICONS: brindy fix this, use the glyph location image where relevant")
 private struct NetworkProtectionLocationItemView: View {
     let title: AttributedString
-    let imageName: String?
+    let image: Image?
 
     var body: some View {
         HStack(spacing: 8) {
-            if let imageName {
-                Image(uiImage: DesignSystemImages.Glyphs.Size24.location)
+            if let image {
+                image
             }
 
             Text(title)
@@ -505,14 +504,12 @@ private struct NetworkProtectionThroughputItemView: View {
 
             Spacer(minLength: 2)
 
-            #warning("ICONS: ℹ️ missing VPNDownload")
             Image(.vpnDownload)
                 .foregroundColor(.init(designSystemColor: .textSecondary))
             Text(downloadSpeed)
                 .daxBodyRegular()
                 .foregroundColor(.init(designSystemColor: .textSecondary))
 
-            #warning("ICONS: ℹ️ missing VPNUpload")
             Image(.vpnUpload)
                 .foregroundColor(.init(designSystemColor: .textSecondary))
                 .padding(.leading, 4)

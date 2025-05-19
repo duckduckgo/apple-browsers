@@ -242,7 +242,6 @@ private extension Color {
 }
 
 private extension Image {
-    #warning("ICONS: ❓ HomeMessageDismiss -> glyphs/size24/close")
     static let dismiss = Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
 }
 

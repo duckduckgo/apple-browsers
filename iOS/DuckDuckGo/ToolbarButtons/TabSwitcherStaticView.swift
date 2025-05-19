@@ -21,7 +21,6 @@ import UIKit
 import DesignResourcesKit
 
 final class TabSwitcherStaticView: UIView {
-    #warning("ICONS: tab mobile images seem out of sync with dub?")
     private let iconImageView = UIImageView(image: DesignSystemImages.Glyphs.Size24.tabMobile)
     private let unreadDotImageView = UIImageView(image: DesignSystemImages.Glyphs.Size24.tabMobileAlertDot)
 

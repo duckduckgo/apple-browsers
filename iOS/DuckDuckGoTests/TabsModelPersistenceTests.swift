@@ -18,8 +18,10 @@
 //
 
 import XCTest
+import Persistence
 @testable import DuckDuckGo
 @testable import Core
+@testable import PersistenceTestingUtils
 
 class TabsModelPersistenceTests: XCTestCase {
 
@@ -30,15 +32,27 @@ class TabsModelPersistenceTests: XCTestCase {
         static let secondUrl = "http://anotherurl.com"
     }
 
+    var mockStore: ThrowingKeyValueStoring!
+    var mockLegacyStore: KeyValueStoring!
     var persistence: TabsModelPersisting!
 
     override func setUp() async throws {
         try await super.setUp()
 
-        persistence = try TabsModelPersistence()
+        let store = try MockKeyValueFileStore(throwOnInit: nil)
+        let legacyStore = MockKeyValueStore()
+        mockStore = store
+        mockLegacyStore = legacyStore
+
+        persistence = TabsModelPersistence(store: store,
+                                           legacyStore: legacyStore)
 
         setupUserDefault(with: #file)
         UserDefaults.app.removeObject(forKey: "com.duckduckgo.opentabs")
+    }
+
+    private func tab(title: String, url: String) -> Tab {
+        return Tab(link: Link(title: title, url: URL(string: url)!))
     }
 
     private var firstTab: Tab {
@@ -57,37 +71,61 @@ class TabsModelPersistenceTests: XCTestCase {
         return model
     }
 
-    func testBeforeModelSavedThenGetIsNil() {
-        XCTAssertNil(persistence.getTabsModel())
+    func testBeforeModelSavedThenGetIsNil() throws {
+        XCTAssertNil(try persistence.getTabsModel())
     }
 
-    func testWhenModelSavedThenGetIsNotNil() {
-        persistence.save(model: model)
-        XCTAssertNotNil(persistence.getTabsModel())
+    func testWhenModelSavedThenGetIsNotNil() throws {
+        try persistence.save(model: model)
+        XCTAssertNotNil(try persistence.getTabsModel())
     }
 
-    func testWhenModelIsSavedThenGetLoadsCompleteTabs() {
-        persistence.save(model: model)
+    func testWhenModelIsSavedThenGetLoadsCompleteTabs() throws {
+        try persistence.save(model: model)
 
-        let loaded = persistence.getTabsModel()
+        let loaded = try persistence.getTabsModel()
         XCTAssertNotNil(loaded)
         XCTAssertEqual(loaded?.get(tabAt: 0), firstTab)
         XCTAssertEqual(loaded?.get(tabAt: 1), secondTab)
         XCTAssertEqual(loaded?.currentIndex, 0)
     }
 
-    func testWhenModelIsSavedThenGetLoadsModelWithCurrentSelection() {
+    func testWhenModelIsSavedThenGetLoadsModelWithCurrentSelection() throws {
         let model = self.model
         model.select(tabAt: 1)
-        persistence.save(model: model)
+        try persistence.save(model: model)
 
-        let loaded = persistence.getTabsModel()
+        let loaded = try persistence.getTabsModel()
         XCTAssertNotNil(loaded)
         XCTAssertEqual(loaded?.count, 2)
         XCTAssertEqual(loaded?.currentIndex, 1)
     }
 
-    private func tab(title: String, url: String) -> Tab {
-        return Tab(link: Link(title: title, url: URL(string: url)!))
+    func testWhenMigratingEmptyNoModelIsReturned() throws {
+        XCTAssertNil(try persistence.getTabsModel())
     }
+
+    func testWhenMigratingExistingItIsReturnedAndCleared() throws {
+        let data = try NSKeyedArchiver.archivedData(withRootObject: model, requiringSecureCoding: false)
+        mockLegacyStore.set(data, forKey: "com.duckduckgo.opentabs")
+
+        let loaded = try persistence.getTabsModel()
+        XCTAssertNotNil(loaded)
+        XCTAssertEqual(loaded?.count, 2)
+        XCTAssertEqual(loaded?.currentIndex, 0)
+    }
+
+    func testWhenNotMigratingThenOldValueIsIgnoredIfPresent() throws {
+        let data = try NSKeyedArchiver.archivedData(withRootObject: model, requiringSecureCoding: false)
+        mockLegacyStore.set(data, forKey: "com.duckduckgo.opentabs")
+
+        let newData = try NSKeyedArchiver.archivedData(withRootObject: TabsModel(desktop: false), requiringSecureCoding: false)
+        try mockStore.set(newData, forKey: "TabsModelKey")
+
+        let loaded = try persistence.getTabsModel()
+        XCTAssertNotNil(loaded)
+        XCTAssertEqual(loaded?.count, 1)
+        XCTAssertEqual(loaded?.currentIndex, 0)
+    }
+
 }

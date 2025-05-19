@@ -384,7 +384,11 @@ class TabManager {
     }
 
     func save() {
-        persistence.save(model: model)
+        do {
+            try persistence.save(model: model)
+        } catch {
+            // Pixel
+        }
     }
     
     @MainActor

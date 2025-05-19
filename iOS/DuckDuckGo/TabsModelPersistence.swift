@@ -23,15 +23,16 @@ import Core
 
 protocol TabsModelPersisting {
 
-    func getTabsModel() -> TabsModel?
+    func getTabsModel() throws -> TabsModel?
     func clear()
-    func save(model: TabsModel)
+    func save(model: TabsModel) throws
 }
 
 class TabsModelPersistence: TabsModelPersisting {
 
     private struct Constants {
         static let storageName = "TabsModel"
+        static let storageKey = "TabsModelKey"
         static let legacyUDKey = "com.duckduckgo.opentabs"
     }
 
@@ -41,8 +42,9 @@ class TabsModelPersistence: TabsModelPersisting {
     }
 
     private let store: ThrowingKeyValueStoring
+    private let legacyStore: KeyValueStoring
 
-    init() throws {
+    convenience init() throws {
 
         guard let appSupportDir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
 //            Pixel.fire(pixel: .keyValueFileStoreSupportDirAccessError)
@@ -52,7 +54,9 @@ class TabsModelPersistence: TabsModelPersisting {
         }
 
         do {
-            self.store = try KeyValueFileStore(location: appSupportDir, name: Constants.storageName)
+            let store = try KeyValueFileStore(location: appSupportDir, name: Constants.storageName)
+            self.init(store: store,
+                      legacyStore: UserDefaults.app)
         } catch {
             Pixel.fire(pixel: .keyValueFileStoreInitError)
 
@@ -61,32 +65,60 @@ class TabsModelPersistence: TabsModelPersisting {
         }
     }
 
-    public func getTabsModel() -> TabsModel? {
-        guard let data = UserDefaults.app.object(forKey: Constants.legacyUDKey) as? Data else {
-            return nil
-        }
-        var tabsModel: TabsModel?
+    init(store: ThrowingKeyValueStoring,
+         legacyStore: KeyValueStoring) {
+        self.store = store
+        self.legacyStore = legacyStore
+    }
+
+    private func unarchive(data: Data) -> TabsModel? {
         do {
             let unarchiver = try NSKeyedUnarchiver(forReadingFrom: data)
             unarchiver.requiresSecureCoding = false
-            tabsModel = unarchiver.decodeObject(of: TabsModel.self, forKey: NSKeyedArchiveRootObjectKey)
+            let model = unarchiver.decodeObject(of: TabsModel.self, forKey: NSKeyedArchiveRootObjectKey)
             if let error = unarchiver.error {
                 throw error
             }
+            return model
         } catch {
             Logger.general.error("Something went wrong unarchiving TabsModel \(error.localizedDescription, privacy: .public)")
         }
-        return tabsModel
+        return nil
+    }
+
+    public func getTabsModel() throws -> TabsModel? {
+
+        var data = try store.object(forKey: Constants.storageKey) as? Data
+        if let data {
+            guard let model = unarchive(data: data) else {
+                return nil
+            }
+            return model
+        } else {
+            // Attempt to migrate
+            if let legacyData = legacyStore.object(forKey: Constants.legacyUDKey) as? Data,
+               let model = unarchive(data: legacyData) {
+                do {
+                    try store.set(legacyData, forKey: Constants.storageKey)
+                    legacyStore.removeObject(forKey: Constants.legacyUDKey)
+                } catch {
+                    Logger.general.error("Could not migrate Tabs Model \(error.localizedDescription, privacy: .public)")
+                }
+                return model
+            }
+            return nil
+        }
     }
 
     public func clear() {
-         UserDefaults.app.removeObject(forKey: Constants.legacyUDKey)
+        try? store.removeObject(forKey: Constants.storageKey)
+        legacyStore.removeObject(forKey: Constants.legacyUDKey)
     }
 
-    public func save(model: TabsModel) {
+    public func save(model: TabsModel) throws {
         do {
             let data = try NSKeyedArchiver.archivedData(withRootObject: model, requiringSecureCoding: false)
-            UserDefaults.app.set(data, forKey: Constants.legacyUDKey)
+            try store.set(data, forKey: Constants.storageKey)
         } catch {
             Logger.general.error("Something went wrong archiving TabsModel: \(error.localizedDescription, privacy: .public)")
         }

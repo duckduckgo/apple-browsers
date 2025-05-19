@@ -142,14 +142,6 @@ public actor SyncConnectionController: SyncConnectionControlling {
 
     @discardableResult
     public func startPairingMode(_ pairingInfo: PairingInfo) async -> Bool {
-        guard !isCodeHandlingInFlight else {
-            return false
-        }
-        isCodeHandlingInFlight = true
-        defer {
-            isCodeHandlingInFlight = false
-        }
-
         let syncCode: SyncCode
         do {
             syncCode = try SyncCode.decodeBase64String(pairingInfo.base64Code)
@@ -183,7 +175,7 @@ public actor SyncConnectionController: SyncConnectionControlling {
         let syncCode: SyncCode
         do {
             if let url = URL(string: code), let pairingInfo = PairingInfo(url: url) {
-                syncCode = try SyncCode.decodeBase64String(pairingInfo.base64Code)
+                return await startPairingMode(pairingInfo)
             } else {
                 syncCode = try SyncCode.decodeBase64String(code)
             }

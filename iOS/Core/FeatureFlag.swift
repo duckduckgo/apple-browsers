@@ -42,6 +42,7 @@ public enum FeatureFlag: String {
         
     // Duckplayer 'Web based' UI
     case duckPlayer
+
     // Open Duckplayer in a new tab for 'Web based' UI
     case duckPlayerOpenInNewTab
     
@@ -139,7 +140,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .autofillCreditCards,
              .autofillCreditCardsOnByDefault,
              .exchangeKeysToSyncWithAnotherDevice,
-             .privacyProOnboardingPromotion,
+             .privacyProOnboardingPromotion,             
              .duckPlayerNativeUI:
             return true
         case .onboardingSetAsDefaultBrowser:

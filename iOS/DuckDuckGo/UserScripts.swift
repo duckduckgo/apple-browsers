@@ -116,7 +116,6 @@ final class UserScripts: UserScriptsProvider {
     // Initialize DuckPlayer scripts
     private func initializeDuckPlayer() {
         if let duckPlayer {
-            
             // Initialize scripts if nativeUI is disabled
             if !duckPlayer.settings.nativeUI {
                 youtubeOverlayScript = YoutubeOverlayUserScript(duckPlayer: duckPlayer)

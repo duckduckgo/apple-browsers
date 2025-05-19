@@ -1637,6 +1637,10 @@ class MainViewController: UIViewController {
         swipeTabsCoordinator?.refresh(tabsModel: tabManager.model, scrollToSelected: true)
         newTabPageViewController?.openedAsNewTab(allowingKeyboard: allowingKeyboard)
         themeColorManager.updateThemeColor()
+        
+        if experimentalAIChatManager.isExperimentalAIChatSettingsEnabled {
+            onAIChatOmnibarExperimentOverlayButtonPressed()
+        }
     }
     
     func updateFindInPage() {

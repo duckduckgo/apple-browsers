@@ -42,7 +42,7 @@ struct BrowserToggleInputView: View {
         VStack (spacing: 0) {
             HStack(alignment: .top, spacing: 8) {
                 if viewModel.inputMode == .search {
-                    SearchTextField(text: $viewModel.inputText, placeholder: placeHolderText)
+                    SearchTextField(text: $viewModel.inputText, placeholder: placeHolderText, onSubmit: submitButtonPressed)
                         .textFieldStyle(.plain)
                         .frame(maxWidth: .infinity)
                 } else {
@@ -104,6 +104,7 @@ struct BrowserToggleInputView: View {
 struct SearchTextField: UIViewRepresentable {
     @Binding var text: String
     let placeholder: String
+    let onSubmit: () -> Void
 
     func makeUIView(context: Context) -> UITextField {
         let textField = UITextField()
@@ -123,14 +124,16 @@ struct SearchTextField: UIViewRepresentable {
     }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(text: $text)
+        Coordinator(text: $text, onSubmit: onSubmit)
     }
 
     class Coordinator: NSObject, UITextFieldDelegate {
         @Binding var text: String
+        let onSubmit: () -> Void
 
-        init(text: Binding<String>) {
+        init(text: Binding<String>, onSubmit: @escaping () -> Void) {
             _text = text
+            self.onSubmit = onSubmit
         }
 
         func textFieldDidChangeSelection(_ textField: UITextField) {
@@ -139,6 +142,17 @@ struct SearchTextField: UIViewRepresentable {
                     self.text = textField.text ?? ""
                 }
             }
+        }
+        
+        func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+            if let text = textField.text, !text.isEmpty {
+                DispatchQueue.main.async {
+                    self.text = text
+                    self.onSubmit()
+                }
+            }
+            textField.resignFirstResponder()
+            return true
         }
     }
 }

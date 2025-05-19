@@ -23,7 +23,12 @@ import UIKit
 struct AIChatInputBox: View {
     @ObservedObject var viewModel: AIChatInputBoxViewModel
 
-    @State private var isFocused = false
+    enum FocusState {
+        case focused
+        case unfocused
+    }
+
+    @State private var focusState: FocusState = .unfocused
     @State private var text = ""
     @State private var textHeight: CGFloat = 40
     @State private var showingDeleteConfirmation = false
@@ -33,96 +38,57 @@ struct AIChatInputBox: View {
     }
 
     var body: some View {
-        VStack {
-            Spacer()
-            HStack(spacing: 12) {
-                contentView
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-            .background(Color(uiColor: .secondarySystemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-            .padding(.horizontal)
-            .padding(.bottom)
-        }
-        .opacity(opacity)
-    }
-
-    private var opacity: CGFloat {
-        if viewModel.state == .unknown || viewModel.visibility == .hidden {
-            return 0.0
-        } else {
-            return 1.0
-        }
-    }
-
-    // MARK: - Content View
-
-    @ViewBuilder
-    private var contentView: some View {
-        if viewModel.visibility == .hidden {
-            EmptyView()
-        } else {
+        Group {
             switch viewModel.state {
             case .waitingForGeneration:
                 stopGeneratingButton
             case .unknown:
                 EmptyView()
             default:
-                if isFocused {
-                    focusedInputView
-                } else {
-                    defaultInputView
-                }
+                inputViews
+                    .opacity(viewModel.visibility == .hidden ? 0 : 1)
             }
         }
+        .background(Color(uiColor: viewModel.visibility == .hidden ? .clear : .secondarySystemBackground))
     }
 
     // MARK: - Subviews
 
-    private var stopGeneratingButton: some View {
-        Button(action: viewModel.stopGenerating) {
-            HStack(spacing: 8) {
-                Image(systemName: "stop.fill")
-                    .font(.system(size: 20, weight: .medium))
-                Text("Stop generating...")
+    private var inputViews: some View {
+        VStack {
+            if focusState == .focused {
+                pickerView
+                    .padding(.horizontal)
+                    .padding(.top)
             }
-            .foregroundStyle(.red)
-            .frame(maxWidth: .infinity, alignment: .center)
-        }
-    }
-
-    private var focusedInputView: some View {
-        GeometryReader { geometry in
-            HStack(spacing: 12) {
-                ExpandingTextView(text: $text, height: $textHeight, isFirstResponder: $isFocused)
-                    .frame(minHeight: 40, maxHeight: 200)
-                    .frame(height: textHeight)
-                    .frame(maxWidth: geometry.size.width - 60) // subtract button width + spacing
-                    .layoutPriority(1)
-
-                Button(action: submitText) {
-                    Image(systemName: "paperplane.circle.fill")
-                        .font(.system(size: 36, weight: .medium))
-                        .foregroundColor(isSendButtonDisabled ? .gray : .blue)
+            HStack {
+                if focusState == .focused {
+                    selectedBarView
+                } else {
+                    unselectedBarView
+                        .frame(maxWidth: .infinity)
+                        .padding(.horizontal)
+                        .padding(.vertical, 10)
                 }
-                .disabled(isSendButtonDisabled)
-                .fixedSize()
             }
+            .background(Color(uiColor: .systemBackground))
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .stroke(focusState == .focused ? Color.blue : Color.clear, lineWidth: 2)
+            )
+            .padding()
         }
-        .frame(height: textHeight)
     }
 
-    private var defaultInputView: some View {
-        HStack(spacing: 12) {
-            Button(action: { showingDeleteConfirmation = true }) {
-                Image(systemName: "flame.fill")
+    private var unselectedBarView: some View {
+        HStack {
+            Button {
+                showingDeleteConfirmation = true
+            } label: {
+                Image(systemName: "flame")
                     .foregroundColor(.red)
-                    .font(.system(size: 20, weight: .medium))
             }
-            .fixedSize()
             .confirmationDialog(
                 "Delete this chat?",
                 isPresented: $showingDeleteConfirmation,
@@ -135,122 +101,101 @@ struct AIChatInputBox: View {
             } message: {
                 Text("Are you sure you want to delete this chat? This cannot be undone.")
             }
-
-            ZStack(alignment: .leading) {
-                Text(text.isEmpty ? "Enter message..." : text)
-                    .foregroundColor(text.isEmpty ? .secondary : .primary)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
+            Text("Ask anything...")
+                .foregroundColor(Color(uiColor: .secondaryLabel))
+                .frame(maxWidth: .infinity)
+                .onTapGesture {
+                    withAnimation {
+                        focusState = .focused
+                    }
+                }
+            Spacer()
+            Button {
+                newChatPressed()
+            } label: {
+                Image(systemName: "plus.circle")
+                    .foregroundColor(Color(uiColor: .label))
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .contentShape(Rectangle())
-            .onTapGesture {
-                withAnimation(.spring()) {
-                    isFocused = true
+        }
+    }
+
+    private var pickerView: some View {
+        HStack(alignment: .center) {
+            Button {
+                focusState = .unfocused
+
+            } label: {
+                Image(systemName: "arrow.left")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundColor(.blue)
+            }
+            .buttonStyle(.plain)
+
+
+            Spacer()
+
+            Picker("", selection: $viewModel.inputMode) {
+                ForEach(AIChatInputBoxViewModel.InputMode.allCases) { mode in
+                    Text(mode.rawValue.capitalized)
                 }
             }
+            .pickerStyle(.segmented)
+            .frame(width: 200)
 
-            Button(action: newChatPressed) {
-                Image(systemName: "plus.circle.fill")
-                    .foregroundColor(.blue)
-                    .font(.system(size: 20, weight: .medium))
-            }
-            .fixedSize()
+            Spacer()
         }
+        .padding(.trailing)
+    }
+
+    private var selectedBarView: some View {
+        VStack {
+            BrowserToggleInputView(viewModel: viewModel) {
+                submitText()
+            }
+        }
+    }
+
+    private var stopGeneratingButton: some View {
+
+        Button(action: viewModel.stopGenerating) {
+            HStack(spacing: 8) {
+                Image(systemName: "stop.fill")
+                    .font(.system(size: 20, weight: .medium))
+                Text("Stop generating...")
+            }
+            .foregroundStyle(.red)
+            .frame(maxWidth: .infinity, alignment: .center)
+            .frame(alignment: .center)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 10)
+        .background(Color.black.opacity(0.1))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .padding(.horizontal)
+        .padding()
     }
 
     // MARK: - Actions
 
     private func submitText() {
-        viewModel.submitText(text)
-        text = ""
-        withAnimation(.spring()) {
-            isFocused = false
-        }
+        focusState = .unfocused
+        viewModel.submitText(viewModel.inputText)
+        viewModel.clearText()
     }
 
     private func newChatPressed() {
         viewModel.newChatButtonPressed()
-        withAnimation(.spring()) {
-            isFocused = true
-        }
-    }
-
-}
-private struct ExpandingTextView: UIViewRepresentable {
-    @Binding var text: String
-    @Binding var height: CGFloat
-    @Binding var isFirstResponder: Bool
-    private let maxTextHeight: CGFloat = 80
-
-    func makeUIView(context: Context) -> UITextView {
-        let textView = UITextView()
-        textView.isScrollEnabled = true
-        textView.font = .preferredFont(forTextStyle: .body)
-        textView.backgroundColor = .clear
-        textView.delegate = context.coordinator
-        textView.textContainerInset = UIEdgeInsets(top: 8, left: 4, bottom: 8, right: 4)
-        textView.textContainer.lineBreakMode = .byWordWrapping
-        textView.textContainer.lineFragmentPadding = 0
-        textView.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        return textView
-    }
-
-    func updateUIView(_ uiView: UITextView, context: Context) {
-        if uiView.text != text {
-            uiView.text = text
-        }
-
-        DispatchQueue.main.async {
-            switch (isFirstResponder, uiView.isFirstResponder) {
-            case (true, false):
-                uiView.becomeFirstResponder()
-            case (false, true):
-                uiView.resignFirstResponder()
-            default:
-                break
-            }
-        }
-
-        uiView.invalidateIntrinsicContentSize()
-        uiView.setNeedsLayout()
-        uiView.layoutIfNeeded()
-
-        updateHeight(for: uiView)
-    }
-
-    private func updateHeight(for view: UIView) {
-        let fixedWidth = view.frame.width
-        let newSize = view.sizeThatFits(CGSize(width: fixedWidth, height: .greatestFiniteMagnitude))
-        if height != newSize.height {
-            DispatchQueue.main.async {
-                height = min(newSize.height, maxTextHeight)
-            }
-        }
-    }
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator(text: $text, height: $height)
-    }
-
-    final class Coordinator: NSObject, UITextViewDelegate {
-        @Binding var text: String
-        @Binding var height: CGFloat
-
-        init(text: Binding<String>, height: Binding<CGFloat>) {
-            _text = text
-            _height = height
-        }
-
-        func textViewDidChange(_ textView: UITextView) {
-            text = textView.text
+        withAnimation {
+            focusState = .focused
         }
     }
 }
-
 
 struct AIChatInputBox_Previews: PreviewProvider {
     static var previews: some View {
-        AIChatInputBox(viewModel: AIChatInputBoxViewModel())
+        VStack {
+            Spacer()
+            AIChatInputBox(viewModel: AIChatInputBoxViewModel())
+        }
     }
 }

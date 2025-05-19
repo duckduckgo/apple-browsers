@@ -28,7 +28,7 @@ import PixelKit
 
 protocol AddressBarButtonsViewControllerDelegate: AnyObject {
 
-    func addressBarButtonsViewControllerClearButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
+    func addressBarButtonsViewControllerCancelButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
     func addressBarButtonsViewController(_ controller: AddressBarButtonsViewController, didUpdateAIChatButtonVisibility isVisible: Bool)
     func addressBarButtonsViewControllerHideAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
 }
@@ -69,7 +69,7 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBOutlet weak var bookmarkButton: AddressBarButton!
     @IBOutlet weak var imageButtonWrapper: NSView!
     @IBOutlet weak var imageButton: NSButton!
-    @IBOutlet weak var clearButton: NSButton!
+    @IBOutlet weak var cancelButton: NSButton!
     @IBOutlet private weak var buttonsContainer: NSStackView!
     @IBOutlet weak var aiChatButton: AddressBarMenuButton!
 
@@ -321,8 +321,8 @@ final class AddressBarButtonsViewController: NSViewController {
         openBookmarkPopover(setFavorite: false, accessPoint: .button)
     }
 
-    @IBAction func clearButtonAction(_ sender: Any) {
-        delegate?.addressBarButtonsViewControllerClearButtonClicked(self)
+    @IBAction func cancelButtonAction(_ sender: Any) {
+        delegate?.addressBarButtonsViewControllerCancelButtonClicked(self)
     }
 
     @IBAction func privacyEntryPointButtonAction(_ sender: Any) {
@@ -368,7 +368,7 @@ final class AddressBarButtonsViewController: NSViewController {
     private func setupButtonsCornerRadius() {
         aiChatButton.setCornerRadius(visualStyle.addressBarButtonsCornerRadius)
         bookmarkButton.setCornerRadius(visualStyle.addressBarButtonsCornerRadius)
-        clearButton.setCornerRadius(visualStyle.addressBarButtonsCornerRadius)
+        cancelButton.setCornerRadius(visualStyle.addressBarButtonsCornerRadius)
         permissionButtons.setCornerRadius(visualStyle.addressBarButtonsCornerRadius)
         zoomButton.setCornerRadius(visualStyle.addressBarButtonsCornerRadius)
         privacyEntryPointButton.setCornerRadius(visualStyle.addressBarButtonsCornerRadius)
@@ -391,7 +391,7 @@ final class AddressBarButtonsViewController: NSViewController {
                 }
             }
 
-            return clearButton.isHidden && !hasEmptyAddressBar && (isMouseOverNavigationBar || popovers?.isEditBookmarkPopoverShown == true || isUrlBookmarked)
+            return cancelButton.isHidden && !hasEmptyAddressBar && (isMouseOverNavigationBar || popovers?.isEditBookmarkPopoverShown == true || isUrlBookmarked)
         }
 
         bookmarkButton.isShown = shouldShowBookmarkButton
@@ -450,7 +450,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func updateAIChatDividerVisibility() {
-        let shouldShowDivider = clearButton.isShown || bookmarkButton.isShown
+        let shouldShowDivider = cancelButton.isShown || bookmarkButton.isShown
         aiChatDivider.isHidden = aiChatButton.isHidden || !shouldShowDivider
     }
 
@@ -546,7 +546,7 @@ final class AddressBarButtonsViewController: NSViewController {
     func updateButtons() {
         stopAnimationsAfterFocus()
 
-        clearButton.isShown = isTextFieldEditorFirstResponder && !textFieldValue.isEmpty
+        cancelButton.isShown = isTextFieldEditorFirstResponder && !textFieldValue.isEmpty
 
         updateImageButton()
         updatePrivacyEntryPointButton()

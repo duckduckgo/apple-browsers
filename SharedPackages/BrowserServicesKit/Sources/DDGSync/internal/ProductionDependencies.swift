@@ -28,7 +28,8 @@ struct ProductionDependencies: SyncDependencies {
     let account: AccountManaging
     let api: RemoteAPIRequestCreating
     let payloadCompressor: SyncPayloadCompressing
-    var keyValueStore: KeyValueStoring
+    var keyValueStore: ThrowingKeyValueStoring
+    var legacyKeyValueStore: KeyValueStoring
     let secureStore: SecureStoring
     var crypter: CryptingInternal
     let scheduler: SchedulingInternal
@@ -38,11 +39,13 @@ struct ProductionDependencies: SyncDependencies {
     init(
         serverEnvironment: ServerEnvironment,
         privacyConfigurationManager: PrivacyConfigurationManaging,
+        keyValueStore: ThrowingKeyValueStoring,
         errorEvents: EventMapping<SyncError>
     ) {
         self.init(fileStorageUrl: FileManager.default.applicationSupportDirectoryForComponent(named: "Sync"),
                   serverEnvironment: serverEnvironment,
-                  keyValueStore: UserDefaults(),
+                  keyValueStore: keyValueStore,
+                  legacyKeyValueStore: UserDefaults(),
                   secureStore: SecureStorage(),
                   privacyConfigurationManager: privacyConfigurationManager,
                   errorEvents: errorEvents)
@@ -51,7 +54,8 @@ struct ProductionDependencies: SyncDependencies {
     init(
         fileStorageUrl: URL,
         serverEnvironment: ServerEnvironment,
-        keyValueStore: KeyValueStoring,
+        keyValueStore: ThrowingKeyValueStoring,
+        legacyKeyValueStore: KeyValueStoring,
         secureStore: SecureStoring,
         privacyConfigurationManager: PrivacyConfigurationManaging,
         errorEvents: EventMapping<SyncError>
@@ -59,6 +63,7 @@ struct ProductionDependencies: SyncDependencies {
         self.fileStorageUrl = fileStorageUrl
         self.endpoints = Endpoints(serverEnvironment: serverEnvironment)
         self.keyValueStore = keyValueStore
+        self.legacyKeyValueStore = legacyKeyValueStore
         self.secureStore = secureStore
         self.privacyConfigurationManager = privacyConfigurationManager
         self.errorEvents = errorEvents

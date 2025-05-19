@@ -84,6 +84,7 @@ final class OnboardingNavigationDelegateTests: XCTestCase {
             subscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock.enabled,
             voiceSearchHelper: MockVoiceSearchHelper(isSpeechRecognizerAvailable: true, voiceSearchEnabled: true),
             featureFlagger: MockFeatureFlagger(),
+            contentScopeExperimentsManager: MockContentScopeExperimentManager(),
             fireproofing: MockFireproofing(),
             subscriptionCookieManager: SubscriptionCookieManagerMock(),
             textZoomCoordinator: MockTextZoomCoordinator(),

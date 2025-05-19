@@ -49,6 +49,13 @@ struct ActionButtonsView: View {
                     Image(systemName: "mic.fill")
                         .foregroundColor(.blue)
                 }
+                
+                Button(action: onSendTapped) {
+                    Image(systemName: "magnifyingglass.circle.fill")
+                        .foregroundColor(isSendEnabled ? .blue : .gray)
+                }
+                .font(.system(size: 30, weight: .medium))
+                .disabled(!isSendEnabled)
             } else {
                 Button(action: {
                     isWebAnswerEnabled.toggle()

@@ -134,7 +134,7 @@ struct AIChatInputBox: View {
 
             Picker("", selection: $viewModel.inputMode) {
                 ForEach(AIChatInputBoxViewModel.InputMode.allCases) { mode in
-                    Text(mode.rawValue.capitalized)
+                    Text(mode.rawValue)
                 }
             }
             .pickerStyle(.segmented)

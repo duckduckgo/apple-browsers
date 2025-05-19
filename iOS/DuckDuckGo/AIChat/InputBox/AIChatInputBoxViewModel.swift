@@ -30,8 +30,8 @@ final class AIChatInputBoxViewModel: ObservableObject {
     }
 
     enum InputMode: String, CaseIterable, Identifiable {
-         case search
-         case chat = "duck.ai"
+         case search = "Search"
+         case chat = "Duck.ai"
 
          var id: Self { self }
      }

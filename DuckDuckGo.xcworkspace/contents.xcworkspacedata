@@ -5,9 +5,6 @@
       location = "group:SharedPackages"
       name = "SharedPackages">
       <FileRef
-         location = "container:../content-scope-scripts">
-      </FileRef>
-      <FileRef
          location = "group:UIComponents">
       </FileRef>
       <FileRef

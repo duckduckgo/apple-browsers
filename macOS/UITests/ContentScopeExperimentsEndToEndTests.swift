@@ -46,11 +46,15 @@ final class ContentScopeExperimentsEndToEndTests: XCTestCase {
         let addressBarTextField = app.windows.textFields["AddressBarViewController.addressBarTextField"]
         XCTAssertTrue(
             addressBarTextField.waitForExistence(timeout: UITests.Timeouts.elementExistence),
-            "The Address Bar text field did not exist when it was expected."
+            "The address bar text field didn't become available in a reasonable timeframe."
         )
         addressBarTextField.typeURL(testPageUrl)
+        XCTAssertTrue(
+            app.windows.firstMatch.webViews["Conditional Matching experiments"].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "Test page didn't load with the expected title in a reasonable timeframe."
+        )
 
-        // Step 3: Wait for web view and table and check test passes
+        // Step 3: Check test passes
         let tableRow = app.windows["Conditional Matching experiments"]
             .webViews["Conditional Matching experiments"]
             .tables.children(matching: .tableRow).element(boundBy: 2)

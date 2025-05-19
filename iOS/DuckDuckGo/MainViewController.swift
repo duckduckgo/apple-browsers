@@ -3316,6 +3316,10 @@ extension MainViewController: AIChatViewControllerManagerDelegate {
         loadUrlInNewTab(url, inheritedAttribution: nil)
     }
 
+    func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didSubmitQuery query: String) {
+        self.loadQuery(query)
+    }
+
     func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didRequestOpenDownloadWithFileName fileName: String) {
         segueToDownloads()
     }

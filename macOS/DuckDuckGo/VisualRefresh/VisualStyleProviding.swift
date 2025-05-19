@@ -23,7 +23,7 @@ import NetworkProtectionUI
 
 protocol VisualStyleProviding {
     /// Address bar
-    func addressBarHeight(for type: AddressBarSizeClass) -> CGFloat
+    func addressBarHeight(for type: AddressBarSizeClass, focused: Bool) -> CGFloat
     func addressBarTopPadding(for type: AddressBarSizeClass) -> CGFloat
     func addressBarBottomPadding(for type: AddressBarSizeClass) -> CGFloat
     func addressBarStackSpacing(for type: AddressBarSizeClass) -> CGFloat
@@ -96,6 +96,8 @@ struct VisualStyle: VisualStyleProviding {
     private let addressBarBottomPaddingForHomePage: CGFloat
     private let addressBarBottomPaddingForPopUpWindow: CGFloat
     private let alwaysShowAddressBarOutline: Bool
+    private let addressBarHeightWhenFocused: CGFloat
+    private let addressBarHeightForHomePageWhenFocused: CGFloat
 
     let shouldShowLogoinInAddressBar: Bool
     let toolbarButtonsCornerRadius: CGFloat
@@ -126,10 +128,10 @@ struct VisualStyle: VisualStyleProviding {
     let bookmarksBarMenuBookmarkIcon: NSImage
     let bookmarksBarMenuFolderIcon: NSImage
 
-    func addressBarHeight(for type: AddressBarSizeClass) -> CGFloat {
+    func addressBarHeight(for type: AddressBarSizeClass, focused: Bool) -> CGFloat {
         switch type {
-        case .default: return addressBarHeightForDefault
-        case .homePage: return addressBarHeightForHomePage
+        case .default: return focused ? addressBarHeightWhenFocused : addressBarHeightForDefault
+        case .homePage: return focused ? addressBarHeightForHomePageWhenFocused : addressBarHeightForHomePage
         case .popUpWindow: return addressBarHeightForPopUpWindow
         }
     }
@@ -172,6 +174,8 @@ struct VisualStyle: VisualStyleProviding {
                            addressBarBottomPaddingForHomePage: 8,
                            addressBarBottomPaddingForPopUpWindow: 0,
                            alwaysShowAddressBarOutline: false,
+                           addressBarHeightWhenFocused: 48,
+                           addressBarHeightForHomePageWhenFocused: 52,
                            shouldShowLogoinInAddressBar: false,
                            toolbarButtonsCornerRadius: 4,
                            backButtonImage: .back,
@@ -213,6 +217,8 @@ struct VisualStyle: VisualStyleProviding {
                            addressBarBottomPaddingForHomePage: 6,
                            addressBarBottomPaddingForPopUpWindow: 6,
                            alwaysShowAddressBarOutline: true,
+                           addressBarHeightWhenFocused: 56,
+                           addressBarHeightForHomePageWhenFocused: 56,
                            shouldShowLogoinInAddressBar: true,
                            toolbarButtonsCornerRadius: 9,
                            backButtonImage: .backNew,

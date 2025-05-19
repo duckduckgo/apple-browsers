@@ -77,6 +77,7 @@ final class MainViewController: NSViewController {
          aiChatMenuConfig: AIChatMenuVisibilityConfigurable = AIChatMenuConfiguration(),
          brokenSitePromptLimiter: BrokenSitePromptLimiter = .shared,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+         contentScopeExperimentsManager: ContentScopeExperimentsManaging = NSApp.delegateTyped.contentScopeExperimentsManager,
          defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting = NSApp.delegateTyped.defaultBrowserAndDockPromptPresenter
     ) {
 
@@ -135,7 +136,8 @@ final class MainViewController: NSViewController {
                                                                          networkProtectionPopoverManager: networkProtectionPopoverManager,
                                                                          networkProtectionStatusReporter: networkProtectionStatusReporter,
                                                                          autofillPopoverPresenter: autofillPopoverPresenter,
-                                                                         brokenSitePromptLimiter: brokenSitePromptLimiter)
+                                                                         brokenSitePromptLimiter: brokenSitePromptLimiter,
+                                                                         contentScopeExperimentsManager: contentScopeExperimentsManager)
 
         browserTabViewController = BrowserTabViewController(tabCollectionViewModel: tabCollectionViewModel, bookmarkManager: bookmarkManager)
         findInPageViewController = FindInPageViewController.create()

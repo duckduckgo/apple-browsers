@@ -45,11 +45,7 @@ final class AIChatInputBoxViewModel: ObservableObject {
     @Published var state: ChatState
     @Published var visibility: AIChatInputBoxVisibility
     @Published var focusState: FocusState = .unfocused
-    @Published var inputMode: InputMode = .chat {
-        didSet {
-            removeExtraLines()
-        }
-    }
+    @Published var inputMode: InputMode = .chat
 
     init(state: ChatState = .unknown, visibility: AIChatInputBoxVisibility = .unknown) {
         self.state = state
@@ -88,11 +84,4 @@ final class AIChatInputBoxViewModel: ObservableObject {
     func stopGenerating() {
         didPressStopGenerating.send()
     }
-
-    // MARK: - Private Methods
-    private func removeExtraLines() {
-        /// Should just remove the extra lines in the future, leaving it like this for now
-        inputText = ""
-    }
-
 }

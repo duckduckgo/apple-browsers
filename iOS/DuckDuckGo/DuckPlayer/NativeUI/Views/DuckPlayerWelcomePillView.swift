@@ -66,7 +66,8 @@ struct DuckPlayerWelcomePillView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "play.fill")
                         .foregroundColor(.white)
-                    Text(UserText.duckPlayerPlayInDuckPlayer)
+                    Text(UserText.duckPlayerOptInPillTitle)
+                        .daxButton()
                         .foregroundColor(.white)
                         .font(.headline)
                 }
@@ -100,13 +101,13 @@ struct DuckPlayerWelcomePillView: View {
                 phoneView
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(UserText.duckPlayerYouTubeNoAdsPrivacy)
+                    Text(UserText.duckPlayerOptInWelcomeMessageTitle)
                         .foregroundColor(Color(designSystemColor: .textPrimary))
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
                         .daxTitle3()
 
-                    Text(UserText.duckPlayerBlocksAdsKeepsHistoryPrivate)
+                    Text(UserText.duckPlayerOptInWelcomeMessageContent)
                         .font(.subheadline)
                         .foregroundColor(Color(designSystemColor: .textSecondary))
                         .multilineTextAlignment(.leading)

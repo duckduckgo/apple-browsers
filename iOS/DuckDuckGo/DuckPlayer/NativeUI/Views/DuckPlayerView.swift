@@ -185,7 +185,7 @@ struct DuckPlayerView: View {
                 RoundedRectangle(cornerRadius: Constants.uiElementRadius)
                     .fill(Constants.uiElementsBackground)
                 HStack(spacing: 8) {
-                    Text(UserText.duckPlayerOpenYouTubeVideosHere)
+                    Text(UserText.duckPlayerSettingsToggle)
                         .daxBodyRegular()
                         .foregroundColor(.white)
                     Spacer()
@@ -282,7 +282,7 @@ struct DuckPlayerView: View {
    @ViewBuilder
   private var bubbleContent: some View {
     VStack(alignment: .leading, spacing: LayoutConstants.defaultSpacing) {
-        Text(UserText.duckPlayerYouTubeNoAdsPrivacy)
+        Text(UserText.duckPlayerWelcomeMessageTitle)
             .daxHeadline()
             .foregroundColor(.white)
             .lineLimit(2)
@@ -290,7 +290,7 @@ struct DuckPlayerView: View {
             .fixedSize(horizontal: false, vertical: true)
             .multilineTextAlignment(.leading)
  
-        Text(UserText.duckPlayerBlocksAdsKeepsHistoryPrivate)
+        Text(UserText.duckPlayerWelcomeMessageContent)
             .daxBodyRegular()
             .foregroundColor(.white.opacity(0.8))
             .multilineTextAlignment(.leading)
@@ -303,7 +303,7 @@ struct DuckPlayerView: View {
             RoundedRectangle(cornerRadius: 8)
                 .fill(Color.black.opacity(0.8))
             HStack(spacing: 8) {
-                Text(UserText.duckPlayerOpenYouTubeVideosHere)
+                Text(UserText.duckPlayerSettingsToggle)
                     .daxBodyRegular()
                     .foregroundColor(.white)
                 Spacer()

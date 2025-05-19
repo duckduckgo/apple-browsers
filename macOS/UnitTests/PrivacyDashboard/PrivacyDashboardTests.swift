@@ -31,7 +31,6 @@ final class PrivacyDashboardTests: XCTestCase {
     func testPrivacyDashboardSendExperimentsCohortInBreakageReport() async {
         // GIVEN
         let expectation = XCTestExpectation()
-        let configManager = MockPrivacyConfigurationManaging()
         let testExperimentData = ExperimentData(
             parentID: "parent",
             cohortID: "aCohort",
@@ -63,9 +62,16 @@ final class PrivacyDashboardTests: XCTestCase {
 
 class MockContentScopeExperimentManager: ContentScopeExperimentsManaging {
     var allActiveContentScopeExperiments: Experiments = [:]
+    private(set) var resolveContentScopeScriptActiveExperimentsWasCalled = false
+    private var resolveResult: Experiments?
 
     func resolveContentScopeScriptActiveExperiments() -> Experiments {
-        return allActiveContentScopeExperiments
+        resolveContentScopeScriptActiveExperimentsWasCalled = true
+        return resolveResult ?? allActiveContentScopeExperiments
+    }
+    
+    func setResolveResult(_ experiments: Experiments) {
+        resolveResult = experiments
     }
 }
 

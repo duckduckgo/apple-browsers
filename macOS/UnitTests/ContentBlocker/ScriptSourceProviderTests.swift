@@ -44,7 +44,8 @@ final class ScriptSourceProviderTests: XCTestCase {
     @MainActor
     func testCohortDataWhenAppUsedToday() throws {
         // Given
-        let expectedCohortData = ContentScopeExperimentData(feature: testExperimentData.parentID, subfeature: "test", cohort: testExperimentData.cohortID)
+        let todayCohortData = ExperimentData(parentID: "todayParent", cohortID: "todayCohort", enrollmentDate: Date())
+        experimentManager.setResolveResult(["today": todayCohortData])
         experimentManager.allActiveContentScopeExperiments = ["test": testExperimentData]
         statisticsStore.lastAppRetentionRequestDate = Date()
         
@@ -63,13 +64,16 @@ final class ScriptSourceProviderTests: XCTestCase {
         // Then
         let cohorts = try XCTUnwrap(sourceProvider.currentCohorts)
         XCTAssertFalse(cohorts.isEmpty)
-        XCTAssertEqual(cohorts[0], expectedCohortData)
+        XCTAssertEqual(cohorts[0].feature, "todayParent")
+        XCTAssertEqual(cohorts[0].cohort, "todayCohort")
+        XCTAssertTrue(experimentManager.resolveContentScopeScriptActiveExperimentsWasCalled)
     }
     
     @MainActor
     func testCohortDataWhenAppNotUsedToday() throws {
         // Given
-        let expectedCohortData = ContentScopeExperimentData(feature: testExperimentData.parentID, subfeature: "test", cohort: testExperimentData.cohortID)
+        let todayCohortData = ExperimentData(parentID: "todayParent", cohortID: "todayCohort", enrollmentDate: Date())
+        experimentManager.setResolveResult(["today": todayCohortData])
         experimentManager.allActiveContentScopeExperiments = ["test": testExperimentData]
         statisticsStore.lastAppRetentionRequestDate = Calendar.current.date(byAdding: .day, value: -1, to: Date())
         
@@ -88,6 +92,8 @@ final class ScriptSourceProviderTests: XCTestCase {
         // Then
         let cohorts = try XCTUnwrap(sourceProvider.currentCohorts)
         XCTAssertFalse(cohorts.isEmpty)
-        XCTAssertEqual(cohorts[0], expectedCohortData)
+        XCTAssertEqual(cohorts[0].feature, "parent")
+        XCTAssertEqual(cohorts[0].cohort, "aCohort")
+        XCTAssertFalse(experimentManager.resolveContentScopeScriptActiveExperimentsWasCalled)
     }
 }

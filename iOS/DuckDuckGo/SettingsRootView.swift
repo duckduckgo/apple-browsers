@@ -172,8 +172,6 @@ struct SettingsRootView: View {
             NetworkProtectionRootView()
         case .aiChat:
             SettingsAIChatView().environmentObject(viewModel)
-        case .feedback:
-            fatalError()
         }
     }
 }

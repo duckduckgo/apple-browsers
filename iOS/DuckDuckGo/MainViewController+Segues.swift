@@ -266,9 +266,9 @@ extension MainViewController {
 
     func segueToFeedback() {
         hideAllHighlightsIfNeeded()
-        launchSettings {
-            $0.triggerDeepLinkNavigation(to: .feedback)
-        }
+
+        // TODO show the unified feedback or legacy one
+        
    }
 
     func launchSettings(completion: ((SettingsViewModel) -> Void)? = nil,

@@ -402,8 +402,8 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         // If primingModalEventCount is 0, show the welcome pill for first-time users
         //if !duckPlayerSettings.primingMessagePresented {
             pillType = .welcome
-            //self.duckPlayerSettings.primingMessagePresented = true
-        //} else {
+          self.duckPlayerSettings.primingMessagePresented = true
+        } else {
             // Logic for returning users
             //pillType = state.hasBeenShown ? .reEntry : .entry
         //}

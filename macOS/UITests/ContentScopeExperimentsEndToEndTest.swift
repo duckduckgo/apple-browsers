@@ -35,7 +35,7 @@ final class ContentScopeExperimentsEndToEndTest: XCTestCase {
         menuBarsQuery.menuItems["Remote Configuration"].click()
         menuBarsQuery.menuItems["setCustomConfigurationURL:"].click()
 
-        let configURL = URL(string:"https://privacy-test-pages.site/content-scope-scripts/infra/config/conditional-matching-experiments.json")!
+        let configURL = URL(string: "https://privacy-test-pages.site/content-scope-scripts/infra/config/conditional-matching-experiments.json")!
         let textField = app.dialogs["alert"].children(matching: .textField).element
         XCTAssertTrue(textField.waitForExistence(timeout: 3), "Custom config alert did not appear.")
         textField.typeURL(configURL, pressingEnter: false)

@@ -24,6 +24,7 @@ import BrowserServicesKit
 final class ScriptSourceProviderTests: XCTestCase {
 
     var experimentManager: MockContentScopeExperimentManager!
+    var statisticsStore: MockStatisticsStore!
     let testExperimentData = ExperimentData(
         parentID: "parent",
         cohortID: "aCohort",
@@ -32,23 +33,61 @@ final class ScriptSourceProviderTests: XCTestCase {
 
     override func setUpWithError() throws {
         experimentManager = MockContentScopeExperimentManager()
+        statisticsStore = MockStatisticsStore()
     }
 
     override func tearDownWithError() throws {
         experimentManager = nil
+        statisticsStore = nil
     }
 
     @MainActor
-    func testCohortDataInitialisedCorrectly() throws {
+    func testCohortDataWhenAppUsedToday() throws {
+        // Given
         let expectedCohortData = ContentScopeExperimentData(feature: testExperimentData.parentID, subfeature: "test", cohort: testExperimentData.cohortID)
-        let experimentManager = MockContentScopeExperimentManager()
         experimentManager.allActiveContentScopeExperiments = ["test": testExperimentData]
-        let sourceProvider = ScriptSourceProvider(configStorage: MockConfigurationStore(), privacyConfigurationManager: MockPrivacyConfigurationManaging(), webTrackingProtectionPreferences: WebTrackingProtectionPreferences(), contentBlockingManager: MockContentBlockerRulesManagerProtocol(), trackerDataManager: TrackerDataManager(etag: nil, data: Data(), embeddedDataProvider: MockEmbeddedDataProvider()), experimentManager: experimentManager, tld: TLD())
+        statisticsStore.lastAppRetentionRequestDate = Date()
+        
+        // When
+        let sourceProvider = ScriptSourceProvider(
+            configStorage: MockConfigurationStore(),
+            privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+            webTrackingProtectionPreferences: WebTrackingProtectionPreferences(),
+            contentBlockingManager: MockContentBlockerRulesManagerProtocol(),
+            trackerDataManager: TrackerDataManager(etag: nil, data: Data(), embeddedDataProvider: MockEmbeddedDataProvider()),
+            experimentManager: experimentManager,
+            statisticsStore: statisticsStore,
+            tld: TLD()
+        )
 
+        // Then
         let cohorts = try XCTUnwrap(sourceProvider.currentCohorts)
         XCTAssertFalse(cohorts.isEmpty)
         XCTAssertEqual(cohorts[0], expectedCohortData)
-
     }
+    
+    @MainActor
+    func testCohortDataWhenAppNotUsedToday() throws {
+        // Given
+        let expectedCohortData = ContentScopeExperimentData(feature: testExperimentData.parentID, subfeature: "test", cohort: testExperimentData.cohortID)
+        experimentManager.allActiveContentScopeExperiments = ["test": testExperimentData]
+        statisticsStore.lastAppRetentionRequestDate = Calendar.current.date(byAdding: .day, value: -1, to: Date())
+        
+        // When
+        let sourceProvider = ScriptSourceProvider(
+            configStorage: MockConfigurationStore(),
+            privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+            webTrackingProtectionPreferences: WebTrackingProtectionPreferences(),
+            contentBlockingManager: MockContentBlockerRulesManagerProtocol(),
+            trackerDataManager: TrackerDataManager(etag: nil, data: Data(), embeddedDataProvider: MockEmbeddedDataProvider()),
+            experimentManager: experimentManager,
+            statisticsStore: statisticsStore,
+            tld: TLD()
+        )
 
+        // Then
+        let cohorts = try XCTUnwrap(sourceProvider.currentCohorts)
+        XCTAssertFalse(cohorts.isEmpty)
+        XCTAssertEqual(cohorts[0], expectedCohortData)
+    }
 }

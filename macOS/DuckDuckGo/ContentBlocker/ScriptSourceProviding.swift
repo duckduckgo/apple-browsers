@@ -43,7 +43,7 @@ protocol ScriptSourceProviding {
 // refactor: ScriptSourceProvider to be passed to init methods as `some ScriptSourceProviding`, DefaultScriptSourceProvider to be killed
 // swiftlint:disable:next identifier_name
 @MainActor func DefaultScriptSourceProvider() -> ScriptSourceProviding {
-    ScriptSourceProvider(configStorage: Application.appDelegate.configurationStore, privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager, webTrackingProtectionPreferences: WebTrackingProtectionPreferences.shared, contentBlockingManager: ContentBlocking.shared.contentBlockingManager, trackerDataManager: ContentBlocking.shared.trackerDataManager, experimentManager: Application.appDelegate.contentScopeExperimentsManager, tld: ContentBlocking.shared.tld)
+    ScriptSourceProvider(configStorage: Application.appDelegate.configurationStore, privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager, webTrackingProtectionPreferences: WebTrackingProtectionPreferences.shared, contentBlockingManager: ContentBlocking.shared.contentBlockingManager, trackerDataManager: ContentBlocking.shared.trackerDataManager, experimentManager: Application.appDelegate.contentScopeExperimentsManager, statisticsStore: LocalStatisticsStore(), tld: ContentBlocking.shared.tld)
 }
 
 struct ScriptSourceProvider: ScriptSourceProviding {
@@ -63,6 +63,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     let webTrakcingProtectionPreferences: WebTrackingProtectionPreferences
     let tld: TLD
     let experimentManager: ContentScopeExperimentsManaging
+    let statisticsStore: StatisticsStore
 
     @MainActor
     init(configStorage: ConfigurationStoring,
@@ -71,6 +72,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
          contentBlockingManager: ContentBlockerRulesManagerProtocol,
          trackerDataManager: TrackerDataManager,
          experimentManager: ContentScopeExperimentsManaging,
+         statisticsStore: StatisticsStore = LocalStatisticsStore(),
          tld: TLD) {
 
         self.configStorage = configStorage
@@ -79,6 +81,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.contentBlockingManager = contentBlockingManager
         self.trackerDataManager = trackerDataManager
         self.experimentManager = experimentManager
+        self.statisticsStore = statisticsStore
         self.tld = tld
 
         self.contentBlockerRulesConfig = buildContentBlockerRulesConfig()
@@ -208,7 +211,13 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     }
 
     private func generateCurrentCohorts() -> [ContentScopeExperimentData] {
-        let experiments = experimentManager.resolveContentScopeScriptActiveExperiments()
+        // Only generate new cohorts if the app was used today
+        let experiments = if statisticsStore.isAppRetentionFiredToday {
+            experimentManager.resolveContentScopeScriptActiveExperiments()
+        } else {
+            experimentManager.allActiveContentScopeExperiments
+        }
+        
         return experiments.map {
             ContentScopeExperimentData(feature: $0.value.parentID, subfeature: $0.key, cohort: $0.value.cohortID)
         }

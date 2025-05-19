@@ -359,7 +359,7 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
     
     func syncCodeEntered(code: String) async -> Bool {
         if featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) {
-            return await connectionController.syncCodeEntered(code: code)
+            return await connectionController.syncCodeEntered(code: code, canScanURLBarcodes: featureFlagger.isFeatureOn(.syncCanScanURLBasedBarcodes))
         } else {
             return await legacySyncCodeEntered(code: code)
         }

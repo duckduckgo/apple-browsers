@@ -114,7 +114,7 @@ public enum FeatureFlag: String {
 extension FeatureFlag: FeatureFlagDescribing {
     public var defaultValue: Bool {
         switch self {
-        case .failsafeExampleCrossPlatformFeature, .failsafeExamplePlatformSpecificSubfeature:
+        case .failsafeExampleCrossPlatformFeature, .failsafeExamplePlatformSpecificSubfeature, .syncCanScanURLBasedBarcodes:
             true
         default:
             false

@@ -16,9 +16,6 @@
       <FileRef
          location = "group:DataBrokerProtectionCore">
       </FileRef>
-      <FileRef
-         location = "container:../content-scope-scripts">
-      </FileRef>
    </Group>
    <FileRef
       location = "group:iOS/DuckDuckGo-iOS.xcodeproj">

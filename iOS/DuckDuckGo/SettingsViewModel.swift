@@ -338,11 +338,10 @@ final class SettingsViewModel: ObservableObject {
     
     var duckPlayerNativeUI: Binding<Bool> {
         Binding<Bool>(
-            get: { self.state.duckPlayerNativeUI },
-            set: {
-                self.appSettings.duckPlayerNativeUI = $0
-                self.state.duckPlayerNativeUI = $0
-            }
+            get: { self.featureFlagger.isFeatureOn(.duckPlayerNativeUI) && 
+                   UIDevice.current.userInterfaceIdiom == .phone
+            },
+            set: { _ in }
         )
     }
     
@@ -550,7 +549,6 @@ extension SettingsViewModel {
             duckPlayerMode: duckPlayerSettings.mode,
             duckPlayerOpenInNewTab: duckPlayerSettings.openInNewTab,
             duckPlayerOpenInNewTabEnabled: featureFlagger.isFeatureOn(.duckPlayerOpenInNewTab),
-            duckPlayerNativeUI: duckPlayerSettings.nativeUI,
             duckPlayerAutoplay: duckPlayerSettings.autoplay,
             duckPlayerNativeUISERPEnabled: duckPlayerSettings.nativeUISERPEnabled,
             duckPlayerNativeYoutubeMode: duckPlayerSettings.nativeUIYoutubeMode
@@ -626,8 +624,7 @@ extension SettingsViewModel {
     // Function to update local state from DuckPlayerSettings
     private func updateDuckPlayerState() {
         state.duckPlayerMode = duckPlayerSettings.mode
-        state.duckPlayerOpenInNewTab = duckPlayerSettings.openInNewTab
-        state.duckPlayerNativeUI = duckPlayerSettings.nativeUI
+        state.duckPlayerOpenInNewTab = duckPlayerSettings.openInNewTab        
         state.duckPlayerAutoplay = duckPlayerSettings.autoplay
         state.duckPlayerNativeUISERPEnabled = duckPlayerSettings.nativeUISERPEnabled
         state.duckPlayerNativeYoutubeMode = duckPlayerSettings.nativeUIYoutubeMode

@@ -159,7 +159,8 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     // MARK: - Feature Flags support
 
     private let featureFlagger: FeatureFlagger
-    private var autoRestartAllowed: Bool {
+
+    var autoRestartAllowed: Bool {
         !featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp)
     }
     private var canBuildsExpire: Bool {

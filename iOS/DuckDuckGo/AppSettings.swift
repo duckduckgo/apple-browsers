@@ -87,8 +87,7 @@ protocol AppSettings: AnyObject, OnboardingDebugAppSettings {
     var duckPlayerAskModeOverlayHidden: Bool { get set }
     var duckPlayerOpenInNewTab: Bool { get set }
     
-    // DuckPlayer Native UI
-    var duckPlayerNativeUI: Bool { get set }
+    // DuckPlayer Native UI    
     var duckPlayerAutoplay: Bool { get set }
     var duckPlayerNativeUISERPEnabled: Bool { get set }
     var duckPlayerNativeYoutubeMode: NativeDuckPlayerYoutubeMode { get set }

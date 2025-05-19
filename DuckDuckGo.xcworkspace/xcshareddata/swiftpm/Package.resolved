@@ -296,7 +296,7 @@
         "revision" : "02b6abe5f6eef7e3cbd5f247c5cc24e246efcfe0",
         "version" : "0.9.19"
       }
-    }
-  ],
-  "version" : 2
+    ]
+  },
+  "version": 1
 }

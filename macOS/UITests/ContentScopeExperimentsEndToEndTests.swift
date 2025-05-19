@@ -39,7 +39,9 @@ final class ContentScopeExperimentsEndToEndTests: XCTestCase {
         let textField = app.dialogs["alert"].children(matching: .textField).element
         XCTAssertTrue(textField.waitForExistence(timeout: 3), "Custom config alert did not appear.")
         textField.typeURL(configURL, pressingEnter: false)
-        app.buttons["action-button-1"].click()
+        let button = app.buttons["action-button-1"]
+        XCTAssertTrue(button.waitForExistence(timeout: 3), "The action button did not appear.")
+        button.click()
 
         // Step 2: Load test page
         let testPageUrl = URL(string: "https://privacy-test-pages.site/content-scope-scripts/infra/pages/conditional-matching-experiments.html")!

@@ -252,6 +252,8 @@ struct JsonToRemoteMessageModelMapper {
             return .privacyShield
         case .aiChat:
             return .aiChat
+        case .visualDesignUpdate:
+            return .visualDesignUpdate
         case .none:
             return .announce
         }

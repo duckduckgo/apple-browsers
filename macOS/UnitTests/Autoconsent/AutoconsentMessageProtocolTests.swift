@@ -33,6 +33,7 @@ class AutoconsentMessageProtocolTests: XCTestCase {
                                                                                   data: ConfigurationStore().loadData(for: .trackerDataSet),
                                                                                   embeddedDataProvider: AppTrackerDataSetProvider(),
                                                                                   errorReporting: nil),
+                                           experimentManager: MockContentScopeExperimentManager(),
                                            tld: TLD()),
         config: MockPrivacyConfiguration()
     )

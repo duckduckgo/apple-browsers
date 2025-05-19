@@ -193,27 +193,6 @@ public protocol FeatureFlagger: AnyObject {
     ///
     func isFeatureOn<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> Bool
 
-    /// Retrieves the cohort for a feature flag if the feature is enabled.
-    ///
-    /// This method determines the source of the feature flag and evaluates its eligibility based on
-    /// the user's internal status and the privacy configuration. It supports different sources, such as
-    /// disabled features, internal-only features, and remotely toggled features.
-    ///
-    /// - Parameter featureFlag: A feature flag conforming to `FeatureFlagDescribing`.
-    ///
-    /// - Returns: The `CohortID` associated with the feature flag, or `nil` if the feature is disabled or
-    ///   does not meet the eligibility criteria.
-    ///
-    /// - Behavior:
-    ///   - For `.disabled`: Returns `nil`.
-    ///   - For `.internalOnly`: Returns the cohort if the user is an internal user.
-    ///   - For `.remoteDevelopment` and `.remoteReleasable`:
-    ///     - If the feature is a subfeature, resolves its cohort using `resolveCohort(_ subfeature:)`.
-    ///     - Returns `nil` if the user is not eligible.
-    ///
-    /// > Note: Setting `allowOverride` to `false` skips checking local overrides. This can be used
-    ///   when the non-overridden feature flag value is required.
-
     /// Retrieves or attempts to assign a cohort for a feature flag if the feature is enabled.
     ///
     /// This method checks whether the feature flag is active based on its source configuration.
@@ -390,7 +369,7 @@ public class DefaultFeatureFlagger: FeatureFlagger {
         case .remoteReleasable(let featureType),
                 .remoteDevelopment(let featureType) where internalUserDecider.isInternalUser:
             if case .subfeature(let subfeature) = featureType {
-                if let resolvedCohortID = resolveCohort(subfeature, allowCohortAssignment: allowCohortAssignment) {
+                if let resolvedCohortID = resolveCohort(subfeature.rawValue, parentID: subfeature.parent.rawValue, allowCohortAssignment: allowCohortAssignment) {
                     return featureFlag.cohortType?.cohort(for: resolvedCohortID)
                 }
             }
@@ -400,11 +379,11 @@ public class DefaultFeatureFlagger: FeatureFlagger {
         }
     }
 
-    private func resolveCohort(_ subfeature: any PrivacySubfeature, allowCohortAssignment: Bool = true) -> CohortID? {
+    func resolveCohort(_ subfeatureID: SubfeatureID, parentID: ParentFeatureID, allowCohortAssignment: Bool = true) -> CohortID? {
         let config = privacyConfigManager.privacyConfig
-        let featureState = config.stateFor(subfeature)
-        let cohorts = config.cohorts(for: subfeature)
-        let experiment = ExperimentSubfeature(parentID: subfeature.parent.rawValue, subfeatureID: subfeature.rawValue, cohorts: cohorts ?? [])
+        let featureState = config.stateFor(subfeatureID: subfeatureID, parentFeatureID: parentID)
+        let cohorts = config.cohorts(subfeatureID: subfeatureID, parentFeatureID: parentID)
+        let experiment = ExperimentSubfeature(parentID: parentID, subfeatureID: subfeatureID, cohorts: cohorts ?? [])
         switch featureState {
         case .enabled:
             return experimentManager?.resolveCohort(for: experiment, allowCohortAssignment: allowCohortAssignment)

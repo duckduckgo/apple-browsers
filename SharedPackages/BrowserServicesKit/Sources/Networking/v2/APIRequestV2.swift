@@ -145,6 +145,12 @@ public struct APIRequestV2: Hashable, CustomDebugStringConvertible {
         self.urlRequest.allHTTPHeaderFields?[HTTPHeaderKey.authorization] = "Bearer \(token)"
     }
 
+    public mutating func updateUserAgentIfMissing(_ userAgent: String) {
+        guard self.urlRequest.allHTTPHeaderFields?[HTTPHeaderKey.userAgent] == nil else { return }
+
+        self.urlRequest.allHTTPHeaderFields?[HTTPHeaderKey.userAgent] = userAgent
+    }
+
     public var isAuthenticated: Bool {
         return urlRequest.allHTTPHeaderFields?[HTTPHeaderKey.authorization] != nil
     }

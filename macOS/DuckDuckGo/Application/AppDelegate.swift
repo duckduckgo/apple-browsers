@@ -81,6 +81,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let crashReporter = CrashReporter()
 #endif
 
+    let keyValueStore: ThrowingKeyValueStoring
+
     let faviconManager: FaviconManager
     let pinnedTabsManager = PinnedTabsManager()
     let pinnedTabsManagerProvider: PinnedTabsManagerProviding!
@@ -89,6 +91,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let internalUserDecider: InternalUserDecider
     private var isInternalUserSharingCancellable: AnyCancellable?
     let featureFlagger: FeatureFlagger
+    let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     let featureFlagOverridesPublishingHandler = FeatureFlagOverridesPublishingHandler<FeatureFlag>()
     private var appIconChanger: AppIconChanger!
     private var autoClearHandler: AutoClearHandler!
@@ -203,6 +206,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         do {
+            keyValueStore = try KeyValueFileStore(location: URL.sandboxApplicationSupportURL, name: "AppKeyValueStore")
+        } catch {
+            PixelKit.fire(DebugEvent(GeneralPixel.keyValueFileStoreInitError, error: error))
+            Thread.sleep(forTimeInterval: 1)
+            fatalError("Could not prepare key value store: \(error.localizedDescription)")
+        }
+
+        do {
             let encryptionKey = AppVersion.runType.requiresEnvironment ? try keyStore.readKey() : nil
             fileStore = EncryptedFileStore(encryptionKey: encryptionKey)
         } catch {
@@ -270,7 +281,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         configurationManager = ConfigurationManager(store: configurationStore)
 
-        featureFlagger = DefaultFeatureFlagger(
+        let featureFlagger = DefaultFeatureFlagger(
             internalUserDecider: internalUserDecider,
             privacyConfigManager: AppPrivacyFeatures.shared.contentBlocking.privacyConfigurationManager,
             localOverrides: FeatureFlagLocalOverrides(
@@ -280,6 +291,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             experimentManager: ExperimentCohortsManager(store: ExperimentsDataStore(), fireCohortAssigned: PixelKit.fireExperimentEnrollmentPixel(subfeatureID:experiment:)),
             for: FeatureFlag.self
         )
+        self.featureFlagger = featureFlagger
+        self.contentScopeExperimentsManager = featureFlagger
 
         let coordinator =  DefaultBrowserAndDockPromptCoordinator(featureFlagger: featureFlagger)
         defaultBrowserAndDockPromptPresenter = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, featureFlagger: featureFlagger)
@@ -779,6 +792,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             dataProvidersSource: syncDataProviders,
             errorEvents: SyncErrorHandler(),
             privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
+            keyValueStore: keyValueStore,
             environment: environment
         )
         syncService.initializeIfNeeded()

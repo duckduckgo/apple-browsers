@@ -159,6 +159,10 @@ private struct SuggestionsSection: View {
     let selectedColor = Color(designSystemColor: .accent)
     let unselectedColor = Color(designSystemColor: .surface)
 
+    private struct Metrics {
+        static let rowInsets = EdgeInsets(top: 10, leading: 10, bottom: 8, trailing: 14)
+    }
+
     var body: some View {
         Section {
             ForEach(suggestions.indices, id: \.self) { index in
@@ -168,6 +172,10 @@ private struct SuggestionsSection: View {
                     SuggestionView(model: suggestions[index], query: query)
                  }
                  .listRowBackground(autocompleteViewModel.selection == suggestions[index] ? selectedColor : unselectedColor)
+                 .listRowSeparatorTint(Color(designSystemColor: .lines), edges: [.bottom])
+                 .if(autocompleteViewModel.isExperimentalThemingEnabled) {
+                     $0.listRowInsets(Metrics.rowInsets)
+                 }
                  .modifier(SwipeDeleteHistoryModifier(suggestion: suggestions[index], onSuggestionDeleted: onSuggestionDeleted))
             }
         }
@@ -265,6 +273,8 @@ private struct SuggestionView: View {
 
 private struct SuggestionListItem: View {
 
+    @EnvironmentObject var autocompleteModel: AutocompleteViewModel
+
     let icon: Image
     let title: String
     let subtitle: String?
@@ -288,14 +298,17 @@ private struct SuggestionListItem: View {
     }
 
     var body: some View {
-
-        HStack {
+        HStack(spacing: autocompleteModel.isExperimentalThemingEnabled ? 0 : nil) {
             icon
                 .resizable()
-                .frame(width: 24, height: 24)
+                .frame(width: Metrics.iconSize, height: Metrics.iconSize)
                 .tintIfAvailable(Color(designSystemColor: .icons))
 
-            VStack(alignment: .leading, spacing: 2) {
+            if autocompleteModel.isExperimentalThemingEnabled {
+                Spacer().frame(width: Metrics.spacing)
+            }
+
+            VStack(alignment: .leading, spacing: Metrics.subtitleSpacing) {
 
                 Group {
                     // Can't use dax modifiers because they are not typed for Text
@@ -322,17 +335,35 @@ private struct SuggestionListItem: View {
                         .lineLimit(1)
                 }
             }
+            .padding(.leading, autocompleteModel.isExperimentalThemingEnabled ? 0 : Metrics.spacing)
+            .padding(.trailing, autocompleteModel.isExperimentalThemingEnabled ? 0 : Metrics.indicatorLeadingPadding)
+
+            if autocompleteModel.isExperimentalThemingEnabled && indicator == nil {
+                // No indicator means we want to preserve the room for icon,
+                // so all the titles from other cells are aligned.
+                Spacer(minLength: Metrics.trailingPadding)
+            } else {
+                Spacer()
+            }
 
             if let indicator {
-                Spacer()
                 indicator
                     .highPriorityGesture(TapGesture().onEnded {
                         onTapIndicator?()
                     })
-                    .tintIfAvailable(Color.secondary)
+                    .tintIfAvailable(Color.init(designSystemColor: .iconsSecondary))
             }
         }
     }
+
+    private struct Metrics {
+        static let iconSize: CGFloat = 24
+        static let spacing: CGFloat = 8
+        static let subtitleSpacing: CGFloat = 2
+        static let trailingPadding: CGFloat = 20
+        static let indicatorLeadingPadding: CGFloat = 4
+    }
+
 }
 
 private extension URL {

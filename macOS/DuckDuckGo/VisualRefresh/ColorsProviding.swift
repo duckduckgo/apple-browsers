@@ -35,7 +35,6 @@ protocol ColorsProviding {
     var passwordManagerBackgroundColor: NSColor { get }
     var passwordManagerLockScreenBackgroundColor: NSColor { get }
 
-
     /// New Tab Page
     var ntpLightBackgroundColor: String { get }
     var ntpDarkBackgroundColor: String { get }

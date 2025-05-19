@@ -25,7 +25,7 @@ protocol TabsModelPersisting {
 
     func getTabsModel() throws -> TabsModel?
     func clear()
-    func save(model: TabsModel) throws
+    func save(model: TabsModel)
 }
 
 class TabsModelPersistence: TabsModelPersisting {
@@ -115,7 +115,7 @@ class TabsModelPersistence: TabsModelPersisting {
         legacyStore.removeObject(forKey: Constants.legacyUDKey)
     }
 
-    public func save(model: TabsModel) throws {
+    public func save(model: TabsModel) {
         do {
             let data = try NSKeyedArchiver.archivedData(withRootObject: model, requiringSecureCoding: false)
             try store.set(data, forKey: Constants.storageKey)

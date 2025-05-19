@@ -76,12 +76,12 @@ class TabsModelPersistenceTests: XCTestCase {
     }
 
     func testWhenModelSavedThenGetIsNotNil() throws {
-        try persistence.save(model: model)
+        persistence.save(model: model)
         XCTAssertNotNil(try persistence.getTabsModel())
     }
 
     func testWhenModelIsSavedThenGetLoadsCompleteTabs() throws {
-        try persistence.save(model: model)
+        persistence.save(model: model)
 
         let loaded = try persistence.getTabsModel()
         XCTAssertNotNil(loaded)
@@ -93,7 +93,7 @@ class TabsModelPersistenceTests: XCTestCase {
     func testWhenModelIsSavedThenGetLoadsModelWithCurrentSelection() throws {
         let model = self.model
         model.select(tabAt: 1)
-        try persistence.save(model: model)
+        persistence.save(model: model)
 
         let loaded = try persistence.getTabsModel()
         XCTAssertNotNil(loaded)

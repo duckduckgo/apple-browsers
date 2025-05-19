@@ -455,7 +455,6 @@ private struct NetworkProtectionErrorView: View {
     }
 }
 
-#warning("ICONS: brindy fix this, use the glyph location image where relevant")
 private struct NetworkProtectionLocationItemView: View {
     let title: AttributedString
     let image: Image?

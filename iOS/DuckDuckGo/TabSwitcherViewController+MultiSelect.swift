@@ -285,7 +285,6 @@ extension TabSwitcherViewController {
         let canShowSelectAll = interfaceMode.isLarge && selectedTabs.count < tabsModel.count
         let canClose = interfaceMode.isLarge && selectedTabs.count > 0
 
-        #warning("ICONS: ‼️ tab-close-16 -> glyhps/16/tabCloseAlt should be tabClose")
         let items = [
 
             UIMenu(title: "", options: .displayInline, children: [

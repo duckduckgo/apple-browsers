@@ -309,6 +309,7 @@ public actor SyncConnectionController: SyncConnectionControlling {
                 Task {
                     await delegate?.controllerDidError(.failedToCreateAccount, underlyingError: error)
                 }
+                return false
             }
         }
         do {

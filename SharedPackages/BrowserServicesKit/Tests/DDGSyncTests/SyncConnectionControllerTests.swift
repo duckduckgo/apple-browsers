@@ -102,8 +102,8 @@ import NetworkingTestingUtils
 final class SyncConnectionControllerTests: XCTestCase {
 
     private static let validExchangeCode: String = "eyJleGNoYW5nZV9rZXkiOnsicHVibGljX2tleSI6InlcL2xScDZjOUtUVnNHT0ZXS2djblYrQlE4RlFMUFBxNmplVzRtUzE2OUNRPSIsImtleV9pZCI6IjAwRkY1NDNELUMzMjctNDMzNS1CM0NBLTU1MUQyOTUxOTNGQSJ9fQ=="
-    private static let validConnectCode: String = "eyJjb25uZWN0Ijp7ImRldmljZV9pZCI6IjEyMzQiLCJwdWJsaWNfa2V5IjoieVwvbFJwNmM5S1RWc0dPRldLZ2NuVitCUThGUUxQUHE2amVXNG1TMTYwQ1E9IiwicHJpdmF0ZV9rZXkiOiJ5XC9sUnA2YzlLVFZzR09GV0tnY25WK0JROEZRTFBQcTZqZVc0bVMxNjBDUT0ifX0="
-    private static let validRecoveryCode: String = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiMTIzNCIsInByaW1hcnlfa2V5IjoieVwvbFJwNmM5S1RWc0dPRldLZ2NuVitCUThGUUxQUHE2amVXNG1TMTYwQ1E9In19"
+    private static let validConnectCode: String = "eyJjb25uZWN0Ijp7ImRldmljZV9pZCI6IjdFMTU2NTIyLTk0MDktNEZFOS1BRkY2LUFBNTM4MzIwRDhENCIsInNlY3JldF9rZXkiOiJsN1MxZFBVNkZXUW5oVkczK0dnVjhmaEY4SVRKbE1KZG1xTTRVYkY3eTNrPSJ9fQ=="
+    private static let validRecoveryCode: String = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiMUE0QjBCRUUtMDA2Qy00QjdELUI1MjQtNDBBNzc0RERFNDM0IiwicHJpbWFyeV9rZXkiOiJjU3d1R3FmbTJpbmNcL1JYRW4yTjVxT0x0RllBRU5MY0UwN0lLWFk3ZFI0TT0ifX0="
     private var controller: SyncConnectionController!
     private var syncService: DDGSync!
     private var delegate: MockSyncConnectionControllerDelegate!
@@ -432,6 +432,96 @@ final class SyncConnectionControllerTests: XCTestCase {
         
         XCTAssertTrue(didError)
         XCTAssertEqual(errorType, .failedToLogIn)
+    }
+
+    // MARK: - Recovery Key Flow Tests
+    
+    func test_syncCodeEntered_withRecoveryCode_attemptsLogin() async {
+        let mockAccountManager = AccountManagingMock()
+        dependencies.account = mockAccountManager
+        
+        await controller.syncCodeEntered(code: Self.validRecoveryCode)
+        
+        XCTAssertTrue(mockAccountManager.loginCalled)
+    }
+    
+    func test_syncCodeEntered_withRecoveryCode_whenLoginFails_notifiesError() async {
+        let mockAccountManager = AccountManagingMock()
+        mockAccountManager.loginError = SyncError.failedToDecryptValue("")
+        dependencies.account = mockAccountManager
+        
+        await controller.syncCodeEntered(code: Self.validRecoveryCode)
+        
+        let didError = await delegate.didErrorCalled
+        let errorType = await delegate.didErrorErrors?.error
+        
+        XCTAssertTrue(didError)
+        XCTAssertEqual(errorType, .failedToLogIn)
+    }
+    
+    func test_syncCodeEntered_withRecoveryCode_whenAccountExists_notifiesTwoAccounts() async {
+        let mockAccountManager = AccountManagingMock()
+        mockAccountManager.loginError = SyncError.failedToDecryptValue("")
+        dependencies.account = mockAccountManager
+        try? dependencies.secureStore.persistAccount(SyncAccount.mock)
+        
+        await controller.syncCodeEntered(code: Self.validRecoveryCode)
+        
+        let twoAccountsKey = await delegate.didFindTwoAccountsDuringRecoveryCalled
+        XCTAssertNotNil(twoAccountsKey)
+    }
+    
+    // MARK: - Connect Key Flow Tests
+    
+    func test_syncCodeEntered_withConnectCode_whenNoAccount_createsAccount() async {
+        let mockAccountManager = AccountManagingMock()
+        dependencies.account = mockAccountManager
+        
+        await controller.syncCodeEntered(code: Self.validConnectCode)
+        
+        let didCreateAccount = await delegate.didCreateSyncAccountCalled
+        XCTAssertTrue(didCreateAccount)
+    }
+    
+    func test_syncCodeEntered_withConnectCode_whenAccountCreationThrows_notifiesError() async {
+        let mockAccountManager = AccountManagingMock()
+        mockAccountManager.createAccountError = SyncError.failedToDecryptValue("")
+        dependencies.account = mockAccountManager
+        
+        await controller.syncCodeEntered(code: Self.validConnectCode)
+        
+        let error = try? await waitForError()
+        XCTAssertEqual(error, .failedToCreateAccount)
+    }
+    
+    func test_syncCodeEntered_withConnectCode_transmitsRecoveryKey() async {
+        let mockRecoveryKeyTransmitter = MockRecoveryKeyTransmitting()
+        dependencies.createRecoveryTransmitterStub = mockRecoveryKeyTransmitter
+        
+        await controller.syncCodeEntered(code: Self.validConnectCode)
+        
+        XCTAssertEqual(mockRecoveryKeyTransmitter.sendCalled, 1)
+    }
+    
+    func test_syncCodeEntered_withConnectCode_whenTransmitFails_notifiesError() async {
+        let mockRecoveryKeyTransmitter = MockRecoveryKeyTransmitting()
+        mockRecoveryKeyTransmitter.sendError = SyncError.unableToDecodeResponse("")
+        dependencies.createRecoveryTransmitterStub = mockRecoveryKeyTransmitter
+        
+        await controller.syncCodeEntered(code: Self.validConnectCode)
+        
+        let error = try? await waitForError()
+        XCTAssertEqual(error, .failedToTransmitConnectRecoveryKey)
+    }
+    
+    func test_syncCodeEntered_withConnectCode_whenSuccessful_notifiesCompletion() async {
+        let mockRecoveryKeyTransmitter = MockRecoveryKeyTransmitting()
+        dependencies.createRecoveryTransmitterStub = mockRecoveryKeyTransmitter
+        
+        await controller.syncCodeEntered(code: Self.validConnectCode)
+        
+        let didComplete = await delegate.didCompleteAccountConnectionValue
+        XCTAssertNotNil(didComplete)
     }
 
     private func waitForError() async throws -> SyncConnectionError? {

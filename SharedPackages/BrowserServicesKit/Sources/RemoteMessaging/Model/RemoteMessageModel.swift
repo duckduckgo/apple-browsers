@@ -105,6 +105,7 @@ public enum RemoteMessageModelType: Codable, Equatable {
 public enum NavigationTarget: String, Codable, Equatable {
     case duckAISettings = "duckai.settings"
     case settings
+    case feedback
 }
 
 public enum RemoteAction: Codable, Equatable {

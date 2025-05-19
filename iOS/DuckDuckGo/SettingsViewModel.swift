@@ -794,6 +794,7 @@ extension SettingsViewModel {
         case restoreFlow
         case duckPlayer
         case aiChat
+        case feedback
         // Add other cases as needed
 
         var id: String {
@@ -805,6 +806,7 @@ extension SettingsViewModel {
             case .restoreFlow: return "restoreFlow"
             case .duckPlayer: return "duckPlayer"
             case .aiChat: return "aiChat"
+            case .feedback: return "feedback"
             // Ensure all cases are covered
             }
         }
@@ -815,6 +817,8 @@ extension SettingsViewModel {
             switch self {
             case .netP, .dbp, .itr, .subscriptionFlow, .restoreFlow, .duckPlayer, .aiChat:
                 return .navigationLink
+            case .feedback:
+                return .sheet
             }
         }
     }

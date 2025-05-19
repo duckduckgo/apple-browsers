@@ -195,7 +195,7 @@ extension AppDelegate {
     }
 
     @objc func openReportBrokenSite(_ sender: Any?) {
-        let privacyDashboardViewController = PrivacyDashboardViewController(privacyInfo: nil, entryPoint: .report)
+        let privacyDashboardViewController = PrivacyDashboardViewController(privacyInfo: nil, entryPoint: .report, contentScopeExperimentsManager: self.contentScopeExperimentsManager)
         privacyDashboardViewController.sizeDelegate = self
 
         let window = NSWindow(contentViewController: privacyDashboardViewController)
@@ -262,9 +262,9 @@ extension AppDelegate {
         }
     }
 
+    @MainActor
     @objc func openAbout(_ sender: Any?) {
-        let aboutController = AboutPanelController(internalUserDecider: internalUserDecider)
-        aboutController.show()
+        AboutPanelController.show(internalUserDecider: internalUserDecider)
     }
 
     @objc func openImportBrowserDataWindow(_ sender: Any?) {

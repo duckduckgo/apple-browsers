@@ -70,7 +70,7 @@ jobs:
         uses: mikepenz/action-junit-report@v4
         if: always()
         with:
-          check_name: Test Report (macOS)
+          check_name: DBP Test Report (macOS)
           report_paths: SharedPackages/DataBrokerProtectionCore/package-tests.xml
           require_tests: true
           check_retries: true
@@ -165,14 +165,14 @@ jobs:
             -retry-tests-on-failure \
             CODE_SIGNING_ALLOWED=NO \
             | tee -a ios-build-log.txt \
-            | xcbeautify --report junit --report-path . --junit-report-filename bsk-ios-unittests.xml
+            | xcbeautify --report junit --report-path . --junit-report-filename dbp-ios-unittests.xml
 
       - name: Publish Unit Tests Report
         uses: mikepenz/action-junit-report@v4
         if: always()
         with:
-          check_name: Test Report (iOS)
-          report_paths: SharedPackages/DataBrokerProtectionCore/bsk-ios-unittests.xml
+          check_name: DBP Test Report (iOS)
+          report_paths: SharedPackages/DataBrokerProtectionCore/dbp-ios-unittests.xml
           require_tests: true
 
       - name: Update Asana with failed unit tests

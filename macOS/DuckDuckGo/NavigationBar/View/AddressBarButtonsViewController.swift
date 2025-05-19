@@ -28,7 +28,7 @@ import PixelKit
 
 protocol AddressBarButtonsViewControllerDelegate: AnyObject {
 
-    func addressBarButtonsViewControllerClearButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
+    func addressBarButtonsViewControllerCancelButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
     func addressBarButtonsViewController(_ controller: AddressBarButtonsViewController, didUpdateAIChatButtonVisibility isVisible: Bool)
     func addressBarButtonsViewControllerHideAIChatButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController)
 }
@@ -69,7 +69,7 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBOutlet weak var bookmarkButton: AddressBarButton!
     @IBOutlet weak var imageButtonWrapper: NSView!
     @IBOutlet weak var imageButton: NSButton!
-    @IBOutlet weak var clearButton: NSButton!
+    @IBOutlet weak var cancelButton: NSButton!
     @IBOutlet private weak var buttonsContainer: NSStackView!
     @IBOutlet weak var aiChatButton: AddressBarMenuButton!
 
@@ -81,7 +81,7 @@ final class AddressBarButtonsViewController: NSViewController {
     var shieldDotAnimationView: LottieAnimationView!
 
     @IBOutlet weak var aiChatDivider: NSImageView!
-
+    @IBOutlet weak var aiChatStackTrailingViewConstraint: NSLayoutConstraint!
     @IBOutlet weak var notificationAnimationView: NavigationBarBadgeAnimationView!
 
     @IBOutlet private weak var permissionButtons: NSView!
@@ -218,12 +218,35 @@ final class AddressBarButtonsViewController: NSViewController {
         subscribeToButtonsVisibility()
         subscribeToAIChatPreferences()
         setupDaxLogo()
+        setupButtonsCornerRadius()
 
         bookmarkButton.sendAction(on: .leftMouseDown)
         bookmarkButton.normalTintColor = visualStyle.colorsProvider.iconsColor
-        zoomButton.normalTintColor = visualStyle.colorsProvider.iconsColor
         configureAIChatButton()
         privacyEntryPointButton.toolTip = UserText.privacyDashboardTooltip
+        setupButtonPaddings()
+    }
+
+    private func setupButtonPaddings() {
+        guard visualStyle.shouldAddPaddingToAddressBarButtons else { return }
+
+        if let superview = privacyEntryPointButton.superview {
+            privacyEntryPointButton.translatesAutoresizingMaskIntoConstraints = false
+            NSLayoutConstraint.activate([
+                privacyEntryPointButton.leadingAnchor.constraint(equalTo: superview.leadingAnchor, constant: 2),
+                privacyEntryPointButton.topAnchor.constraint(equalTo: superview.topAnchor, constant: 2),
+                privacyEntryPointButton.bottomAnchor.constraint(equalTo: superview.bottomAnchor, constant: -2)
+            ])
+        }
+
+        if let superview = aiChatButton.superview {
+            aiChatButton.translatesAutoresizingMaskIntoConstraints = false
+            aiChatStackTrailingViewConstraint.constant = 2
+            NSLayoutConstraint.activate([
+                aiChatButton.topAnchor.constraint(equalTo: superview.topAnchor, constant: 2),
+                aiChatButton.bottomAnchor.constraint(equalTo: superview.bottomAnchor, constant: -2)
+            ])
+        }
     }
 
     override func viewWillAppear() {
@@ -298,8 +321,8 @@ final class AddressBarButtonsViewController: NSViewController {
         openBookmarkPopover(setFavorite: false, accessPoint: .button)
     }
 
-    @IBAction func clearButtonAction(_ sender: Any) {
-        delegate?.addressBarButtonsViewControllerClearButtonClicked(self)
+    @IBAction func cancelButtonAction(_ sender: Any) {
+        delegate?.addressBarButtonsViewControllerCancelButtonClicked(self)
     }
 
     @IBAction func privacyEntryPointButtonAction(_ sender: Any) {
@@ -342,6 +365,15 @@ final class AddressBarButtonsViewController: NSViewController {
         onboardingPixelReporter.measurePrivacyDashboardOpened()
     }
 
+    private func setupButtonsCornerRadius() {
+        aiChatButton.setCornerRadius(visualStyle.addressBarButtonsCornerRadius)
+        bookmarkButton.setCornerRadius(visualStyle.addressBarButtonsCornerRadius)
+        cancelButton.setCornerRadius(visualStyle.addressBarButtonsCornerRadius)
+        permissionButtons.setCornerRadius(visualStyle.addressBarButtonsCornerRadius)
+        zoomButton.setCornerRadius(visualStyle.addressBarButtonsCornerRadius)
+        privacyEntryPointButton.setCornerRadius(visualStyle.addressBarButtonsCornerRadius)
+    }
+
     private func updateBookmarkButtonVisibility() {
         guard view.window?.isPopUpWindow == false else { return }
         bookmarkButton.setAccessibilityIdentifier("AddressBarButtonsViewController.bookmarkButton")
@@ -359,7 +391,7 @@ final class AddressBarButtonsViewController: NSViewController {
                 }
             }
 
-            return clearButton.isHidden && !hasEmptyAddressBar && (isMouseOverNavigationBar || popovers?.isEditBookmarkPopoverShown == true || isUrlBookmarked)
+            return cancelButton.isHidden && !hasEmptyAddressBar && (isMouseOverNavigationBar || popovers?.isEditBookmarkPopoverShown == true || isUrlBookmarked)
         }
 
         bookmarkButton.isShown = shouldShowBookmarkButton
@@ -385,10 +417,11 @@ final class AddressBarButtonsViewController: NSViewController {
         && !animation
         && (zoomState != .none || isPopoverShown)
 
-        zoomButton.image = (zoomState == .zoomedOut) ? .zoomOut : .zoomIn
+        zoomButton.image = (zoomState == .zoomedOut) ? visualStyle.moreOptionsMenuIconsProvider.zoomOutIcon : visualStyle.moreOptionsMenuIconsProvider.zoomInIcon
         zoomButton.backgroundColor = isPopoverShown ? .buttonMouseDown : nil
         zoomButton.mouseOverColor = isPopoverShown ? nil : .buttonMouseOver
         zoomButton.isHidden = !shouldShowZoom
+        zoomButton.normalTintColor = visualStyle.colorsProvider.iconsColor
     }
 
     // Temporarily hide/display AI chat button (does not persist)
@@ -417,7 +450,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func updateAIChatDividerVisibility() {
-        let shouldShowDivider = clearButton.isShown || bookmarkButton.isShown
+        let shouldShowDivider = cancelButton.isShown || bookmarkButton.isShown
         aiChatDivider.isHidden = aiChatButton.isHidden || !shouldShowDivider
     }
 
@@ -513,7 +546,7 @@ final class AddressBarButtonsViewController: NSViewController {
     func updateButtons() {
         stopAnimationsAfterFocus()
 
-        clearButton.isShown = isTextFieldEditorFirstResponder && !textFieldValue.isEmpty
+        cancelButton.isShown = isTextFieldEditorFirstResponder && !textFieldValue.isEmpty
 
         updateImageButton()
         updatePrivacyEntryPointButton()
@@ -846,6 +879,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func configureAIChatButton() {
+        aiChatButton.image = visualStyle.aiChatButtonImage
         aiChatButton.mouseOverColor = visualStyle.colorsProvider.buttonMouseOverColor
         aiChatButton.normalTintColor = visualStyle.colorsProvider.iconsColor
         aiChatButton.setAccessibilityIdentifier("AddressBarButtonsViewController.aiChatButton")
@@ -877,6 +911,10 @@ final class AddressBarButtonsViewController: NSViewController {
             ? tabViewModel.usedPermissions.popups
             : nil
         externalSchemeButton.buttonState = tabViewModel.usedPermissions.externalScheme
+
+        geolocationButton.normalTintColor = visualStyle.colorsProvider.iconsColor
+        cameraButton.normalTintColor = visualStyle.colorsProvider.iconsColor
+        microphoneButton.normalTintColor = visualStyle.colorsProvider.iconsColor
     }
 
     private func showOrHidePermissionPopoverIfNeeded() {
@@ -910,7 +948,7 @@ final class AddressBarButtonsViewController: NSViewController {
         } else {
             bookmarkButton.mouseOverTintColor = nil
             bookmarkButton.image = visualStyle.addressBarIconsProvider.addBookmarkIcon
-            bookmarkButton.contentTintColor = nil
+            bookmarkButton.contentTintColor = visualStyle.colorsProvider.iconsColor
             bookmarkButton.toolTip = ShortcutTooltip.bookmarkThisPage.value
             bookmarkButton.setAccessibilityValue("Unbookmarked")
         }

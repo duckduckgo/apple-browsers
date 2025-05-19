@@ -291,6 +291,9 @@ final class TabBarItemCellView: NSView {
         addSubview(mouseOverView)
         if visualStyle.tabStyleProvider.isRoundedBackgroundPresentOnHover {
             roundedBackgroundColorView.cornerRadius = 6
+            crashIndicatorButton.setCornerRadius(5)
+            audioButton.setCornerRadius(5)
+            closeButton.setCornerRadius(5)
             addSubview(roundedBackgroundColorView)
         }
         addSubview(faviconImageView)
@@ -349,7 +352,7 @@ final class TabBarItemCellView: NSView {
     }
 
     private func layoutForNormalMode() {
-        var minX: CGFloat = 9
+        var minX: CGFloat = 12
         if faviconImageView.isShown {
             faviconImageView.frame = NSRect(x: minX, y: bounds.midY - 8, width: 16, height: 16)
             minX = faviconImageView.frame.maxX + 4
@@ -371,6 +374,8 @@ final class TabBarItemCellView: NSView {
         if permissionButton.isShown {
             permissionButton.frame = NSRect(x: maxX - 20, y: bounds.midY - 12, width: 24, height: 24)
         }
+
+        minX += visualStyle.tabStyleProvider.tabSpacing
 
         titleTextField.frame = NSRect(x: minX, y: bounds.midY - 8, width: bounds.maxX - minX - 8, height: 16)
         updateTitleTextFieldMask()

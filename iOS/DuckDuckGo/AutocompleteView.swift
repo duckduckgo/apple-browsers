@@ -211,7 +211,7 @@ private struct SuggestionView: View {
     var tapAheadImage: Image? {
         guard model.canShowTapAhead else { return nil }
         return Image(uiImage: autocompleteModel.isAddressBarAtBottom ?
-                     DesignSystemImages.Glyphs.Size24.arrowDownLeft : DesignSystemImages.Glyphs.Size24.arrowDownRight)
+                     DesignSystemImages.Glyphs.Size16.arrowCircleDownLeft : DesignSystemImages.Glyphs.Size16.arrowCircleUpLeft)
     }
 
     var body: some View {

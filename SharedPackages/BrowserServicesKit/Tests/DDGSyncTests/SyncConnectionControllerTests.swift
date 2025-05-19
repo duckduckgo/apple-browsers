@@ -632,8 +632,8 @@ final class SyncConnectionControllerTests: XCTestCase {
         XCTAssertNotNil(didComplete)
     }
 
-    // MARK: - Recovery Key Flow Tests
-    
+    // MARK: - syncCodeEntered recovery
+
     func test_syncCodeEntered_withRecoveryCode_attemptsLogin() async {
         let mockAccountManager = AccountManagingMock()
         dependencies.account = mockAccountManager
@@ -669,8 +669,8 @@ final class SyncConnectionControllerTests: XCTestCase {
         XCTAssertNotNil(twoAccountsKey)
     }
     
-    // MARK: - Connect Key Flow Tests
-    
+    // MARK: - syncCodeEntered connect
+
     func test_syncCodeEntered_withConnectCode_whenNoAccount_createsAccount() async {
         let mockAccountManager = AccountManagingMock()
         dependencies.account = mockAccountManager

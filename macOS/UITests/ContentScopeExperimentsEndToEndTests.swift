@@ -1,5 +1,5 @@
 //
-//  ContentScopeExperimentsEndToEndTest.swift
+//  ContentScopeExperimentsEndToEndTests.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -18,7 +18,7 @@
 
 import XCTest
 
-final class ContentScopeExperimentsEndToEndTest: XCTestCase {
+final class ContentScopeExperimentsEndToEndTests: XCTestCase {
 
     func testContentScopeExperiments() throws {
         // Initial set up

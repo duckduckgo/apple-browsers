@@ -205,9 +205,7 @@ public final class DataBrokerProtectionIOSManager {
             } catch {
                 Logger.dataBrokerProtection.log("Scheduling background task failed with error: \(error)")
 // This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS
-#if DEBUG || ALPHA
                 self.iOSPixelsHandler.fire(.backgroundTaskSchedulingFailed(error: error, deviceID: DataBrokerProtectionSettings.deviceIdentifier))
-#endif
             }
 #endif
         }
@@ -216,19 +214,15 @@ public final class DataBrokerProtectionIOSManager {
     func handleBGProcessingTask(task: BGTask) {
         Logger.dataBrokerProtection.log("Background task started")
 // This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS
-#if DEBUG || ALPHA
         iOSPixelsHandler.fire(.backgroundTaskStarted(deviceID: DataBrokerProtectionSettings.deviceIdentifier))
-#endif
         let startTime = Date.now
 
         task.expirationHandler = {
             let timeTaken = Date.now.timeIntervalSince(startTime)
             Logger.dataBrokerProtection.log("Background task expired with time taken: \(timeTaken)")
 // This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS
-#if DEBUG || ALPHA
             self.iOSPixelsHandler.fire(.backgroundTaskExpired(duration: timeTaken * 1000.0,
                                                               deviceID: DataBrokerProtectionSettings.deviceIdentifier))
-#endif
             self.scheduleBGProcessingTask()
             task.setTaskCompleted(success: false)
         }
@@ -244,11 +238,9 @@ public final class DataBrokerProtectionIOSManager {
                 let timeTaken = Date.now.timeIntervalSince(startTime)
                 Logger.dataBrokerProtection.log("Background task finshed all operations with time taken: \(timeTaken)")
 // This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS
-#if DEBUG || ALPHA
                 self.iOSPixelsHandler.fire(.backgroundTaskEndedHavingCompletedAllJobs(
                     duration: timeTaken * 1000.0,
                     deviceID: DataBrokerProtectionSettings.deviceIdentifier))
-#endif
 
                 self.scheduleBGProcessingTask()
                 task.setTaskCompleted(success: true)

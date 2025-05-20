@@ -641,7 +641,7 @@ extension SyncPreferences: ManagementDialogModelDelegate {
             return
         }
         Task {
-            await connectionController.syncCodeEntered(code: recoveryCode)
+            await connectionController.syncCodeEntered(code: recoveryCode, canScanURLBarcodes: false)
         }
     }
 

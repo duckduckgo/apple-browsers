@@ -84,18 +84,6 @@ public protocol SyncConnectionControlling {
     func loginAndShowDeviceConnected(recoveryKey: SyncCode.RecoveryKey, isRecovery: Bool) async throws
 }
 
-// Delete on removing syncCanScanURLBasedBarcodes feature flag
-extension SyncConnectionControlling {
-
-    /**
-     Handles a scanned or pasted key and starts excange, recovery or connect flow
-     */
-    @discardableResult
-    func syncCodeEntered(code: String) async -> Bool {
-        await syncCodeEntered(code: code, canScanURLBarcodes: true)
-    }
-}
-
 public actor SyncConnectionController: SyncConnectionControlling {
     private let deviceName: String
     private let deviceType: String

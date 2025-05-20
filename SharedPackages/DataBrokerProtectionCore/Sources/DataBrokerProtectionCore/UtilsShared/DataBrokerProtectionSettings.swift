@@ -151,6 +151,7 @@ extension UserDefaults {
 }
 
 // This should never ever go to production and only exists for internal testing
+#if DEBUG || ALPHA
 extension DataBrokerProtectionSettings {
     static let deviceIdentifierKey = "dbp.deviceIdentifier"
     static let defaults = UserDefaults.standard
@@ -182,3 +183,4 @@ extension DataBrokerProtectionSettings {
         return identifier
     }
 }
+#endif

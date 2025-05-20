@@ -7,9 +7,8 @@ on:
 jobs:
 
     create-asana-pr-subtask-if-needed:
-
+        if: ${{ github.event.requested_reviewer.login != 'Copilot' }}
         name: "Create the PR subtask in Asana"
-
         runs-on: ubuntu-latest
 
         steps:

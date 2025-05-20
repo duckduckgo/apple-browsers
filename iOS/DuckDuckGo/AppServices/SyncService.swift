@@ -40,6 +40,7 @@ final class SyncService {
 
     init(bookmarksDatabase: CoreDataDatabase,
          privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
+         keyValueStore: ThrowingKeyValueStoring,
          application: UIApplication = UIApplication.shared) {
         self.application = application
 #if DEBUG
@@ -71,6 +72,7 @@ final class SyncService {
             dataProvidersSource: syncDataProviders,
             errorEvents: SyncErrorHandler(),
             privacyConfigurationManager: privacyConfigurationManager,
+            keyValueStore: keyValueStore,
             environment: environment
         )
 

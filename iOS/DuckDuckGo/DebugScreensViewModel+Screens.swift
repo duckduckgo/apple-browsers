@@ -54,7 +54,7 @@ extension DebugScreensViewModel {
                     }
                 }
 
-                controller.presentShareSheet(withItems: [DiagnosticReportDataSource(delegate: Delegate(), fireproofing: d.fireproofing)], fromView: controller.view)
+                controller.presentShareSheet(withItems: [DiagnosticReportDataSource(delegate: Delegate(), tabManager: d.tabManager, fireproofing: d.fireproofing)], fromView: controller.view)
             }),
 
             // MARK: SwiftUI Views
@@ -113,6 +113,7 @@ extension DebugScreensViewModel {
                 return storyboard.instantiateViewController(identifier: "ImageCacheDebugViewController") { coder in
                     ImageCacheDebugViewController(coder: coder,
                                                   bookmarksDatabase: d.bookmarksDatabase,
+                                                  tabsModel: d.tabManager.model,
                                                   fireproofing: d.fireproofing)
                 }
             }),

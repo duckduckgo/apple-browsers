@@ -44,12 +44,15 @@ final class DownloadsViewController: NSViewController {
 
     private let separator = NSBox()
     private let viewModel: DownloadListViewModel
+    private let visualStyle: VisualStyleProviding
     private var downloadsCancellable: AnyCancellable?
     private var errorBannerCancellable: AnyCancellable?
     private var errorBannerHostingView: NSHostingView<DownloadsErrorBannerView>?
 
-    init(viewModel: DownloadListViewModel) {
+    init(viewModel: DownloadListViewModel,
+         visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
         self.viewModel = viewModel
+        self.visualStyle = visualStyleManager.style
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -58,7 +61,7 @@ final class DownloadsViewController: NSViewController {
     }
 
     override func loadView() {
-        view = NSView()
+        view = ColorView(frame: .zero, backgroundColor: visualStyle.colorsProvider.bookmarksPanelBackgroundColor)
 
         view.addSubview(titleLabel)
         view.addSubview(openDownloadsFolderButton)

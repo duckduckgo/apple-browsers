@@ -67,7 +67,7 @@ class BlankSnapshotViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        tabSwitcherButton = TabSwitcherButton()
+        tabSwitcherButton = ExperimentalThemingManager().isExperimentalThemingEnabled ? TabSwitcherStaticButton() : TabSwitcherAnimatedButton()
 
         viewCoordinator = MainViewFactory.createViewHierarchy(self,
                                                               aiChatSettings: aiChatSettings,
@@ -85,12 +85,10 @@ class BlankSnapshotViewController: UIViewController {
             viewCoordinator.constraints.navigationBarContainerTop.constant = 40
             configureTabBar()
         } else {
-            if !ExperimentalThemingManager().isExperimentalThemingEnabled {
-                viewCoordinator.toolbarTabSwitcherButton.customView = tabSwitcherButton
-                viewCoordinator.menuToolbarButton.customView = menuButton
-                menuButton.setState(.menuImage, animated: false)
-                viewCoordinator.menuToolbarButton.customView = menuButton
-            }
+            viewCoordinator.toolbarTabSwitcherButton.customView = tabSwitcherButton
+            viewCoordinator.menuToolbarButton.customView = menuButton
+            menuButton.setState(.menuImage, animated: false)
+            viewCoordinator.menuToolbarButton.customView = menuButton
         }
 
         addTapInterceptor()

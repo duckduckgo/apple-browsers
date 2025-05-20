@@ -120,6 +120,7 @@ extension BookmarksContextMenu {
         var items = [
             openBookmarkInNewTabMenuItem(bookmark: bookmark, target: target),
             openBookmarkInNewWindowMenuItem(bookmark: bookmark, target: target),
+            openBookmarkInNewFireWindowMenuItem(bookmark: bookmark, target: target),
             NSMenuItem.separator(),
             addBookmarkToFavoritesMenuItem(isFavorite: isFavorite, bookmark: bookmark, target: target),
             NSMenuItem.separator(),
@@ -175,6 +176,10 @@ extension BookmarksContextMenu {
 
     static func openBookmarkInNewWindowMenuItem(bookmark: Bookmark?, target: AnyObject?) -> NSMenuItem {
         NSMenuItem(title: UserText.openInNewWindow, action: #selector(BookmarkMenuItemSelectors.openBookmarkInNewWindow(_:)), target: target, representedObject: bookmark)
+    }
+
+    static func openBookmarkInNewFireWindowMenuItem(bookmark: Bookmark?, target: AnyObject?) -> NSMenuItem {
+        NSMenuItem(title: UserText.openInNewFireWindow, action: #selector(BookmarkMenuItemSelectors.openBookmarkInNewFireWindow(_:)), target: target, representedObject: bookmark)
     }
 
     static func manageBookmarksMenuItem(target: AnyObject?) -> NSMenuItem {
@@ -295,6 +300,16 @@ extension BookmarksContextMenu: BookmarkMenuItemSelectors {
 
     @MainActor
     @objc func openBookmarkInNewWindow(_ sender: NSMenuItem) {
+        openBookmarkInNewWindowCommon(sender, burningWindow: false)
+    }
+
+    @MainActor
+    @objc func openBookmarkInNewFireWindow(_ sender: NSMenuItem) {
+        openBookmarkInNewWindowCommon(sender, burningWindow: true)
+    }
+
+    @MainActor
+    @objc func openBookmarkInNewWindowCommon(_ sender: NSMenuItem, burningWindow: Bool) {
         guard let bookmark = sender.representedObject as? Bookmark else {
             assertionFailure("Failed to cast menu represented object to Bookmark")
             return
@@ -302,9 +317,10 @@ extension BookmarksContextMenu: BookmarkMenuItemSelectors {
         guard let urlObject = bookmark.urlObject else {
             return
         }
-        let tabCollection = TabCollection(tabs: [Tab(content: .contentFromURL(urlObject, source: .bookmark))])
-        let tabCollectionViewModel = TabCollectionViewModel(tabCollection: tabCollection, burnerMode: .regular)
-        windowControllersManager.openNewWindow(with: tabCollectionViewModel, burnerMode: .regular)
+        let burnerMode: BurnerMode = BurnerMode(isBurner: burningWindow)
+        let tabCollection = TabCollection(tabs: [Tab(content: .contentFromURL(urlObject, source: .bookmark), burnerMode: burnerMode)])
+        let tabCollectionViewModel = TabCollectionViewModel(tabCollection: tabCollection, burnerMode: burnerMode)
+        windowControllersManager.openNewWindow(with: tabCollectionViewModel, burnerMode: burnerMode)
     }
 
     @objc func toggleBookmarkAsFavorite(_ sender: NSMenuItem) {

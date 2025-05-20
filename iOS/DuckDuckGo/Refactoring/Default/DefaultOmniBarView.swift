@@ -257,7 +257,7 @@ final class DefaultOmniBarView: UIView {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        NotificationCenter.default.post(name: DefaultOmniBarView.didLayoutNotification, object: self)
+        NotificationCenter.default.post(name: DefaultOmniBarView.didLayoutNotification, object: self.frame.height)
     }
 }
 

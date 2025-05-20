@@ -111,7 +111,7 @@ struct DuckPlayerWelcomePillView: View {
                         .fixedSize(horizontal: false, vertical: true)
                         .daxBodyRegular()
                 }
-            }           
+            }
             mainActionButton
         }
         .padding(.horizontal, Constants.horizontalPadding)

@@ -205,19 +205,3 @@ final class MockDefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPro
         wasPromptConfirmationCalled = true
     }
 }
-
-final class MockDefaultBrowserAndDockPromptRepository: DefaultBrowserAndDockPromptStoring {
-    var wasPromptShownCalled = false
-    var wasSetPromptShownCalled = false
-    private var wasPromptShownInternal = false
-
-    func didShowPrompt() -> Bool {
-        wasPromptShownCalled = true
-        return wasPromptShownInternal
-    }
-
-    func setPromptShown(_ shown: Bool) {
-        wasSetPromptShownCalled = true
-        wasPromptShownInternal = shown
-    }
-}

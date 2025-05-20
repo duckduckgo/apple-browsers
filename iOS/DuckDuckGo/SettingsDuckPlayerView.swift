@@ -103,6 +103,20 @@ struct SettingsDuckPlayerView: View {
                                         accessory: .toggle(isOn: viewModel.duckPlayerAutoplay))
                                         .disabled(viewModel.shouldDisplayDuckPlayerContingencyMessage)
                     }
+
+                }
+
+                /* Disable experimental features until we have validate the opt-in feature
+                Section(UserText.duckPlayerExperimentalLabel, content: {
+                    SettingsPickerCellView(label: UserText.duckPlayerVariantLabel,
+                                           options: DuckPlayerVariant.allCases,
+                                           selectedOption: viewModel.duckPlayerVariantBinding)
+                        .onChange(of: viewModel.appSettings.duckPlayerVariant) { _ in // Observe the source setting directly
+                            showNewTabAlert = true
+                        }
+                })
+                */
+
             }
 
         }

@@ -235,7 +235,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
         Logger.updates.log("Checking for updates respecting rollout")
 
-        userDriver?.userCheckedForUpdates()
+        userDriver?.updateLastCheckForUpdatesDate()
         updater.checkForUpdatesInBackground()
     }
 
@@ -259,8 +259,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
             }
             self.updater = updater
 
-            userDriver?.userCheckedForUpdates()
-
+            userDriver?.updateLastCheckForUpdatesDate()
             if skipRollout {
                 updater.checkForUpdates()
             } else {
@@ -282,6 +281,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
         Logger.updates.log("Checking for updates skipping rollout")
 
+        userDriver?.updateLastCheckForUpdatesDate()
         updater.checkForUpdates()
     }
 

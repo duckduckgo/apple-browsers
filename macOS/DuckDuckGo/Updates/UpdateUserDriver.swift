@@ -111,7 +111,7 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
     private var onResuming: (() -> Void)? {
         didSet {
             if useLegacyAutoRestartLogic {
-                userCheckedForUpdates()
+                updateLastCheckForUpdatesDate()
             }
         }
     }
@@ -119,7 +119,7 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
     @UserDefaultsWrapper(key: .pendingUpdateSince, defaultValue: .distantPast)
     private var pendingUpdateSince: Date
 
-    func userCheckedForUpdates() {
+    func updateLastCheckForUpdatesDate() {
         pendingUpdateSince = Date()
     }
 

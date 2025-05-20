@@ -87,7 +87,7 @@ class DeviceAttributeMatcherTests: XCTestCase {
         XCTAssertEqual(DeviceAttributeMatcher().evaluate(matchingAttribute: OSMatchingAttribute(fallback: nil)),
                        .match)
     }
-    
+
     func testWhenDeviceMatchesFormFactorThenReturnMatch() throws {
         let formFactor = DevicePlatform.formFactor
         XCTAssertEqual(

@@ -172,6 +172,14 @@ final class DebugScanJob: SubJobWebRunning {
         await executeNextStep()
     }
 
+    func canPerformNextAction(_ action: Action) async -> Bool {
+        if action.actionType == .expectation {
+            retriesCountOnError = 1
+        }
+
+        return false
+    }
+
     public func executeNextStep() async {
         retriesCountOnError = 0 // We reset the retries on error when it is successful
         Logger.action.debug("SCAN Waiting \(self.operationAwaitTime, privacy: .public) seconds...")

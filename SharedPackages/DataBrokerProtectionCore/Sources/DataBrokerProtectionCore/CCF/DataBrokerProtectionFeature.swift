@@ -21,6 +21,7 @@ import WebKit
 import BrowserServicesKit
 import UserScript
 import os.log
+import Common
 
 public protocol CCFCommunicationDelegate: AnyObject {
     func loadURL(url: URL) async
@@ -40,15 +41,19 @@ public enum CCFReceivedMethodName: String {
     case actionError
 }
 
-public struct DataBrokerProtectionFeature: Subfeature {
+public class DataBrokerProtectionFeature: Subfeature {
     public var messageOriginPolicy: MessageOriginPolicy = .all
     public var featureName: String = "brokerProtection"
     public weak var broker: UserScriptMessageBroker? // This broker is not related to DBP brokers. It's just a name we inherit from Subfeature
 
     weak var delegate: CCFCommunicationDelegate?
 
-    public init(delegate: CCFCommunicationDelegate) {
+    private var timer: Timer?
+    private let actionResponseTimeout: TimeInterval
+
+    public init(delegate: CCFCommunicationDelegate, actionResponseTimeout: TimeInterval = .seconds(60)) {
         self.delegate = delegate
+        self.actionResponseTimeout = actionResponseTimeout
     }
 
     public func handler(forMethodNamed methodName: String) -> Handler? {
@@ -66,6 +71,8 @@ public struct DataBrokerProtectionFeature: Subfeature {
     }
 
     func onActionCompleted(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        removeTimer()
+
         Logger.action.log("Action completed")
 
         await parseActionCompleted(params: params)
@@ -113,6 +120,8 @@ public struct DataBrokerProtectionFeature: Subfeature {
     }
 
     func onActionError(params: Any, original: WKScriptMessage) async throws -> Encodable? {
+        removeTimer()
+
         let error = DataBrokerProtectionError.parse(params: params)
         Logger.action.log("Action Error: \(String(describing: error.localizedDescription), privacy: .public)")
 
@@ -120,7 +129,7 @@ public struct DataBrokerProtectionFeature: Subfeature {
         return nil
     }
 
-    mutating func with(broker: UserScriptMessageBroker) {
+    public func with(broker: UserScriptMessageBroker) {
         self.broker = broker
     }
 
@@ -132,5 +141,25 @@ public struct DataBrokerProtectionFeature: Subfeature {
         Logger.action.log("Pushing into WebView: \(method.rawValue) params \(String(describing: params))")
 
         broker.push(method: method.rawValue, params: params, for: self, into: webView)
+
+        removeTimer()
+        timer = Timer.scheduledTimer(withTimeInterval: actionResponseTimeout, repeats: false) { [weak self] _ in
+            self?.handleTimeout(for: (params as? Params)?.state.action)
+        }
+    }
+
+    private func handleTimeout(for action: Action?) {
+        Logger.action.log("Action timeout: \(String(describing: action))")
+
+        removeTimer()
+        Task {
+            await delegate?.onError(error: DataBrokerProtectionError.actionFailed(actionID: action?.id ?? "unknown",
+                                                                                  message: "Request timed out"))
+        }
+    }
+
+    private func removeTimer() {
+        timer?.invalidate()
+        timer = nil
     }
 }

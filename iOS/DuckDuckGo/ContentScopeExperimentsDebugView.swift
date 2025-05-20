@@ -28,8 +28,8 @@ public struct ContentScopeExperimentsDebugView: View {
     private func copyContentToClipboard() {
         var content = "ContentScope Experiments:\n\n"
         for (key, value) in viewModel.activeExperiments.sorted(by: { $0.key < $1.key }) {
-            content += "Feature: \(value.parentID)\n"
             content += "Subfeature: \(key)\n"
+            content += "Feature: \(value.parentID)\n"
             content += "Cohort: \(value.cohortID)\n"
             content += "Enrolled: \(value.enrollmentDate.formatted())\n\n"
         }
@@ -40,9 +40,9 @@ public struct ContentScopeExperimentsDebugView: View {
         List {
             ForEach(Array(viewModel.activeExperiments.sorted(by: { $0.key < $1.key })), id: \.key) { key, value in
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Feature: \(value.parentID)")
-                        .font(.headline)
                     Text("Subfeature: \(key)")
+                        .font(.headline)
+                    Text("Feature: \(value.parentID)")
                         .font(.subheadline)
                     Text("Cohort: \(value.cohortID)")
                         .font(.body)

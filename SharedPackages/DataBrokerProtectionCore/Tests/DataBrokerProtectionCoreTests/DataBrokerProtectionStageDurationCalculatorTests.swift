@@ -40,7 +40,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
 
         if let failurePixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last{
             switch failurePixel {
-#if os(iOS) && (DEBUG || ALPHA)
+#if os(iOS)
             case .scanFailed(let broker, let brokerVersion, _, _, _, _, _, _):
                 XCTAssertEqual(broker, "broker")
                 XCTAssertEqual(brokerVersion, "1.1.1")
@@ -65,7 +65,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
 
         if let failurePixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last{
             switch failurePixel {
-#if os(iOS) && (DEBUG || ALPHA)
+#if os(iOS)
             case .scanError(_, _, _, let category, _, _, _, _, _):
                 XCTAssertEqual(category, ErrorCategory.clientError(httpCode: 403).toString)
 #else
@@ -88,7 +88,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
 
         if let failurePixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last{
             switch failurePixel {
-#if os(iOS) && (DEBUG || ALPHA)
+#if os(iOS)
             case .scanError(_, _, _, let category, _, _, _, _, _):
                 XCTAssertEqual(category, ErrorCategory.serverError(httpCode: 500).toString)
 #else
@@ -111,7 +111,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
 
         if let failurePixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last{
             switch failurePixel {
-#if os(iOS) && (DEBUG || ALPHA)
+#if os(iOS)
             case .scanError(_, _, _, let category, _, _, _, _, _):
                 XCTAssertEqual(category, ErrorCategory.validationError.toString)
 #else
@@ -135,7 +135,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
 
         if let failurePixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last{
             switch failurePixel {
-#if os(iOS) && (DEBUG || ALPHA)
+#if os(iOS)
             case .scanError(_, _, _, let category, _, _, _, _, _):
                 XCTAssertEqual(category, ErrorCategory.networkError.toString)
 #else
@@ -159,7 +159,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
 
         if let failurePixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last{
             switch failurePixel {
-#if os(iOS) && (DEBUG || ALPHA)
+#if os(iOS)
             case .scanError(_, _, _, let category, _, _, _, _, _):
                 XCTAssertEqual(category, "database-error-SecureVaultError-13")
 #else
@@ -183,7 +183,7 @@ final class DataBrokerProtectionStageDurationCalculatorTests: XCTestCase {
 
         if let failurePixel = MockDataBrokerProtectionPixelsHandler.lastPixelsFired.last{
             switch failurePixel {
-#if os(iOS) && (DEBUG || ALPHA)
+#if os(iOS)
             case .scanError(_, _, _, let category, _, _, _, _, _):
                 XCTAssertEqual(category, ErrorCategory.unclassified.toString)
 #else

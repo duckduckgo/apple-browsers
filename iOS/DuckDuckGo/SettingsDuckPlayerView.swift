@@ -109,6 +109,7 @@ struct SettingsDuckPlayerView: View {
 
                 }
 
+                /* Disable experimental features until we have validate the opt-in feature
                 Section(UserText.duckPlayerExperimentalLabel, content: {
                     SettingsPickerCellView(label: UserText.duckPlayerVariantLabel,
                                            options: DuckPlayerVariant.allCases,
@@ -117,6 +118,7 @@ struct SettingsDuckPlayerView: View {
                             showNewTabAlert = true
                         }
                 })
+                */
 
             }
         }

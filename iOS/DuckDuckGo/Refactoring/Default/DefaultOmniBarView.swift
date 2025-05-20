@@ -150,7 +150,7 @@ final class DefaultOmniBarView: UIView {
     }
 
     private func configureImages() {
-        clearButton.setImage(DesignSystemImages.Glyphs.Size24.clear, for: .normal)
+        clearButton.setImage(DesignSystemImages.Glyphs.Size24.closeCircleSmall, for: .normal)
         settingsButton.setImage(DesignSystemImages.Glyphs.Size24.settings, for: .normal)
         cancelButton.setImage(DesignSystemImages.Glyphs.Size24.arrowLeftSmall, for: .normal)
         refreshButton.setImage(DesignSystemImages.Glyphs.Size24.reload, for: .normal)

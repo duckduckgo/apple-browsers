@@ -64,6 +64,9 @@ extension DebugScreensViewModel {
             .view(title: "Feature Flags", { _ in
                 FeatureFlagsMenuView()
             }),
+            .view(title: "ContentScope Experiments", { _ in
+                ContentScopeExperimentsDebugView()
+            }),
             .view(title: "Crashes", { _ in
                 CrashDebugScreen()
             }),

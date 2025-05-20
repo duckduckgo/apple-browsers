@@ -38,7 +38,7 @@ class DeviceAttributeMatcherTests: XCTestCase {
     }
 
     func testWhenDeviceDoesNotMatchLocaleThenReturnFail() throws {
-        XCTAssertEqual(DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersion, locale: "will-not-match", formFactor: "iPhone").evaluate(matchingAttribute: LocaleMatchingAttribute(value: ["en-US"], fallback: false)),
+        XCTAssertEqual(DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersion, locale: "will-not-match", formFactor: DevicePlatform.formFactor).evaluate(matchingAttribute: LocaleMatchingAttribute(value: ["en-US"], fallback: false)),
                        .fail)
     }
 

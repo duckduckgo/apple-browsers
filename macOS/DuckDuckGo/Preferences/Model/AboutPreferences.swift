@@ -41,12 +41,12 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
     }
 
 #if SPARKLE
-    var autoRestartAllowed: Bool {
+    var useLegacyAutoRestartLogic: Bool {
         !featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp)
     }
 
     var mustCheckForUpdatesBeforeUserCanTakeAction: Bool {
-        !autoRestartAllowed
+        !useLegacyAutoRestartLogic
     }
 
     @Published var updateState = UpdateState.upToDate

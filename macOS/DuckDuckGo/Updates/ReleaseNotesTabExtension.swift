@@ -183,7 +183,7 @@ extension ReleaseNotesValues {
         //
         // This was done to provide a quick solution to an issue found during a ship review.
         //
-        let automaticUpdate = updateController.autoRestartAllowed ? updateController.areAutomaticUpdatesEnabled : updateController.isAtRestartCheckpoint
+        let automaticUpdate = updateController.useLegacyAutoRestartLogic ? updateController.areAutomaticUpdatesEnabled : updateController.isAtRestartCheckpoint
 
         self.init(status: status,
                   currentVersion: currentVersion,

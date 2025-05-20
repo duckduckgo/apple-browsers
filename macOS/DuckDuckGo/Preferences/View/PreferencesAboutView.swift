@@ -298,7 +298,7 @@ extension Preferences {
 
         @ViewBuilder
         private var updateButton: some View {
-            if model.autoRestartAllowed {
+            if model.useLegacyAutoRestartLogic {
                 switch model.updateState {
                 case .upToDate:
                     Button(UserText.checkForUpdate) {

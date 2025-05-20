@@ -160,7 +160,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
     private let featureFlagger: FeatureFlagger
 
-    var autoRestartAllowed: Bool {
+    var useLegacyAutoRestartLogic: Bool {
         !featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp)
     }
     private var canBuildsExpire: Bool {
@@ -364,7 +364,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     @objc func runUpdateFromMenuItem() {
         // Duplicating the code a bit to make the feature flag separation clearer
         // remove this comment once the feature flag is removed.
-        guard autoRestartAllowed else {
+        guard useLegacyAutoRestartLogic else {
             openUpdatesPage()
 
             if shouldForceUpdateCheck {
@@ -388,7 +388,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
         PixelKit.fire(DebugEvent(GeneralPixel.updaterDidRunUpdate))
 
-        guard autoRestartAllowed else {
+        guard useLegacyAutoRestartLogic else {
             userDriver.resume()
             return
         }

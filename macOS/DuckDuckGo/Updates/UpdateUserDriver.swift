@@ -110,7 +110,7 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
     // Resume the update process when the user explicitly chooses to do so
     private var onResuming: (() -> Void)? {
         didSet {
-            if autoRestartAllowed {
+            if useLegacyAutoRestartLogic {
                 userCheckedForUpdates()
             }
         }
@@ -146,7 +146,7 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
 
     private let featureFlagger: FeatureFlagger
 
-    private var autoRestartAllowed: Bool {
+    private var useLegacyAutoRestartLogic: Bool {
         !featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp)
     }
 
@@ -268,14 +268,14 @@ final class UpdateUserDriver: NSObject, SPUUserDriver {
             Logger.updates.log("Updater dismissing obsolete update")
         }
 
-        guard autoRestartAllowed else {
+        guard useLegacyAutoRestartLogic else {
             onResuming = { reply(.install) }
             updateProgress = .updateCycleDone(.pausedAtRestartCheckpoint)
             Logger.updates.log("Updater paused at restart checkpoint")
             return
         }
 
-        if areAutomaticUpdatesEnabled || !autoRestartAllowed {
+        if areAutomaticUpdatesEnabled {
             onResuming = { reply(.install) }
             updateProgress = .updateCycleDone(.pausedAtRestartCheckpoint)
             Logger.updates.log("Updater paused at restart checkpoint (automatic update pending user decision)")

@@ -20,9 +20,7 @@
 import DataBrokerProtectionCore
 import DataBrokerProtection_iOS
 import Core
-import Common
 import BrowserServicesKit
-import PixelKit
 
 final class DBPService: NSObject {
 
@@ -35,19 +33,9 @@ final class DBPService: NSObject {
                                                                           isAuthV2Enabled: appDependencies.isAuthV2Enabled)
         let authManager = DataBrokerProtectionAuthenticationManager(subscriptionManager: dbpSubscriptionManager)
         let featureFlagger = DBPFeatureFlagger(appDependencies: appDependencies)
-
-        if let pixelKit = PixelKit.shared {
-            self.dbpIOSManager = DataBrokerProtectionIOSManagerProvider.iOSManager(
-                authenticationManager: authManager,
-                privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
-                featureFlagger: featureFlagger,
-                pixelKit: pixelKit)
-
-            DataBrokerProtectionIOSManager.shared = self.dbpIOSManager
-        } else {
-            assertionFailure("PixelKit not set up")
-            self.dbpIOSManager = nil
-        }
+        self.dbpIOSManager = DataBrokerProtectionIOSManagerProvider.iOSManager(authenticationManager: authManager,
+                                                                               privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager, featureFlagger: featureFlagger)
+        DataBrokerProtectionIOSManager.shared = self.dbpIOSManager
 #else
         self.dbpIOSManager = nil
 #endif

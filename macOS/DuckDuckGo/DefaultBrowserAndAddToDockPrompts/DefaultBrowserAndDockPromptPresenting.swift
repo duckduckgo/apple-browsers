@@ -50,7 +50,7 @@ enum DefaultBrowserAndDockPromptPresentationType {
 
 final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPresenting {
     private let coordinator: DefaultBrowserAndDockPrompt
-    private let repository: DefaultBrowserAndDockPromptStoring
+    private let repository: DefaultBrowserAndDockPromptLegacyStoring
     private let featureFlagger: FeatureFlagger
     private let bannerDismissedSubject = PassthroughSubject<Void, Never>()
 
@@ -58,7 +58,7 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
     private var cancellables: Set<AnyCancellable> = []
 
     init(coordinator: DefaultBrowserAndDockPrompt,
-         repository: DefaultBrowserAndDockPromptStoring = DefaultBrowserAndDockPromptStore(),
+         repository: DefaultBrowserAndDockPromptLegacyStoring = DefaultBrowserAndDockPromptLegacyStore(),
          featureFlagger: FeatureFlagger) {
         self.coordinator = coordinator
         self.repository = repository

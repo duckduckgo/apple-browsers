@@ -16,12 +16,38 @@
 //  limitations under the License.
 //
 
-protocol DefaultBrowserAndDockPromptStoring {
+protocol DefaultBrowserAndDockPromptLegacyStoring {
     func setPromptShown(_ shown: Bool)
     func didShowPrompt() -> Bool
 }
 
-final class DefaultBrowserAndDockPromptStore: DefaultBrowserAndDockPromptStoring {
+protocol DefaultBrowserAndDockPromptStorageReading {
+    var popoverShownDate: TimeInterval? { get }
+    var bannerShownDate: TimeInterval? { get }
+    var isBannerPermanentlyDismissed: Bool { get }
+}
+
+protocol DefaultBrowserAndDockPromptStorageWriting {
+    var popoverShownDate: TimeInterval? { get set }
+    var bannerShownDate: TimeInterval? { get set }
+    var isBannerPermanentlyDismissed: Bool { get set }
+}
+
+extension DefaultBrowserAndDockPromptStorageReading {
+
+    var hasSeenPopover: Bool {
+        popoverShownDate != nil
+    }
+
+    var hasSeenBanner: Bool {
+        bannerShownDate != nil
+    }
+    
+}
+
+typealias DefaultBrowserAndDockPromptStorage = DefaultBrowserAndDockPromptStorageReading & DefaultBrowserAndDockPromptStorageWriting
+
+final class DefaultBrowserAndDockPromptLegacyStore: DefaultBrowserAndDockPromptLegacyStoring {
     private static let promptShownKey = "DefaultBrowserAndDockPromptShown"
 
     private let userDefaults: UserDefaults

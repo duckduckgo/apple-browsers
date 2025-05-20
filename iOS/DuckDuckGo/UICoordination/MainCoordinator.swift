@@ -65,7 +65,8 @@ final class MainCoordinator {
                                                           privacyProDataReporter: reportingService.privacyProDataReporter)
         let previewsSource = DefaultTabPreviewsSource()
         let historyManager = try Self.makeHistoryManager()
-        let tabsModel = Self.prepareTabsModel(previewsSource: previewsSource)
+        let tabsPersistence = try TabsModelPersistence()
+        let tabsModel = try Self.prepareTabsModel(previewsSource: previewsSource, tabsPersistence: tabsPersistence)
         reportingService.privacyProDataReporter.injectTabsModel(tabsModel)
         let daxDialogsFactory = ExperimentContextualDaxDialogsFactory(contextualOnboardingLogic: daxDialogs,
                                                                       contextualOnboardingPixelReporter: reportingService.onboardingPixelReporter)
@@ -79,6 +80,7 @@ final class MainCoordinator {
                                         appSettings: AppDependencyProvider.shared.appSettings,
                                         previewsSource: previewsSource,
                                         tabsModel: tabsModel,
+                                        tabsPersistence: tabsPersistence,
                                         syncPausedStateManager: syncService.syncErrorHandler,
                                         privacyProDataReporter: reportingService.privacyProDataReporter,
                                         variantManager: variantManager,
@@ -122,17 +124,17 @@ final class MainCoordinator {
     }
 
     private static func prepareTabsModel(previewsSource: TabPreviewsSource = DefaultTabPreviewsSource(),
-                                         appSettings: AppSettings = AppDependencyProvider.shared.appSettings) -> TabsModel {
+                                         tabsPersistence: TabsModelPersisting,
+                                         appSettings: AppSettings = AppDependencyProvider.shared.appSettings) throws -> TabsModel {
         let isPadDevice = UIDevice.current.userInterfaceIdiom == .pad
         let tabsModel: TabsModel
         if AutoClearSettingsModel(settings: appSettings) != nil {
             tabsModel = TabsModel(desktop: isPadDevice)
-            tabsModel.save()
+            tabsPersistence.clear()
+            tabsPersistence.save(model: tabsModel)
             previewsSource.removeAllPreviews()
         } else {
-            if let storedModel = TabsModel.get() {
-                // Save new model in case of migration
-                storedModel.save()
+            if let storedModel = try tabsPersistence.getTabsModel() {
                 tabsModel = storedModel
             } else {
                 tabsModel = TabsModel(desktop: isPadDevice)

@@ -73,6 +73,10 @@ struct BrokerProfileScanSubJob {
             let event = HistoryEvent(brokerId: brokerId, profileQueryId: profileQueryId, type: .scanStarted)
             try dependencies.database.add(event)
 
+#if os(iOS) && (DEBUG || ALPHA)
+            stageCalculator.fireScanStarted()
+#endif
+
             // 4. Get extracted profiles from the runner:
             let runner = dependencies.createScanRunner(profileQuery: brokerProfileQueryData,
                                                        stageDurationCalculator: stageCalculator,
@@ -276,8 +280,20 @@ struct BrokerProfileScanSubJob {
                     let calculateDurationSinceLastStage = now.timeIntervalSince(attempt.lastStageDate) * 1000
                     let calculateDurationSinceStart = now.timeIntervalSince(attempt.startDate) * 1000
                     pixelHandler.fire(.optOutFinish(dataBroker: attempt.dataBroker, attemptId: attemptUUID, duration: calculateDurationSinceLastStage))
+
+// This should never ever go to production and only exists for internal testing
+#if os(iOS) && (DEBUG || ALPHA)
+                    pixelHandler.fire(.optOutSuccess(dataBroker: attempt.dataBroker,
+                                                     attemptId: attemptUUID,
+                                                     duration: calculateDurationSinceStart,
+                                                     brokerType: brokerProfileQueryData.dataBroker.type,
+                                                     vpnConnectionState: vpnConnectionState,
+                                                     vpnBypassStatus: vpnBypassStatus,
+                                                     deviceID: DataBrokerProtectionSettings.deviceIdentifier))
+#else
                     pixelHandler.fire(.optOutSuccess(dataBroker: attempt.dataBroker, attemptId: attemptUUID, duration: calculateDurationSinceStart,
                                                      brokerType: brokerProfileQueryData.dataBroker.type, vpnConnectionState: vpnConnectionState, vpnBypassStatus: vpnBypassStatus))
+#endif
                 }
             }
         }

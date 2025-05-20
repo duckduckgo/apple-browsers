@@ -99,7 +99,7 @@ public struct BrokenSiteReport {
     let locale: Locale
     let cookieConsentInfo: CookieConsentInfo?
     let debugFlags: String
-    let privacyExperiments: [String: String]
+    let privacyExperiments: String
     let isPirEnabled: Bool?
 #if os(iOS)
     let siteType: SiteType
@@ -134,7 +134,7 @@ public struct BrokenSiteReport {
         locale: Locale = Locale.current,
         cookieConsentInfo: CookieConsentInfo?,
         debugFlags: String,
-        privacyExperiments: [String: String],
+        privacyExperiments: String,
         isPirEnabled: Bool?
     ) {
         self.siteUrl = siteUrl
@@ -196,7 +196,7 @@ public struct BrokenSiteReport {
         locale: Locale = Locale.current,
         cookieConsentInfo: CookieConsentInfo?,
         debugFlags: String,
-        privacyExperiments: [String: String],
+        privacyExperiments: String,
         isPirEnabled: Bool?
     ) {
         self.siteUrl = siteUrl
@@ -256,7 +256,8 @@ public struct BrokenSiteReport {
             "consentManaged": boolToStringValue(cookieConsentInfo?.consentManaged),
             "consentOptoutFailed": boolToStringValue(cookieConsentInfo?.optoutFailed),
             "consentSelftestFailed": boolToStringValue(cookieConsentInfo?.selftestFailed),
-            "debugFlags": debugFlags
+            "debugFlags": debugFlags,
+            "contentScopeExperiments": privacyExperiments
         ]
 
         if mode == .regular {
@@ -281,10 +282,6 @@ public struct BrokenSiteReport {
         if let jsPerformance {
             let perf = jsPerformance.map { String($0) }.joined(separator: ",")
             result["jsPerformance"] = perf
-        }
-
-        for (key, value) in privacyExperiments {
-            result[key] = value
         }
 
         if isPirEnabled == true {

@@ -31,6 +31,18 @@ public protocol UserScriptWithContentScope: UserScript {
     var delegate: ContentScopeUserScriptDelegate? { get set }
 }
 
+public struct ContentScopeExperimentData: Encodable, Equatable {
+    public let feature: String
+    public let subfeature: String
+    public let cohort: String
+
+    public init(feature: String, subfeature: String, cohort: String) {
+        self.feature = feature
+        self.subfeature = subfeature
+        self.cohort = cohort
+    }
+}
+
 public final class ContentScopeProperties: Encodable {
     public let globalPrivacyControlValue: Bool
     public let debug: Bool = false
@@ -39,8 +51,13 @@ public final class ContentScopeProperties: Encodable {
     public let languageCode: String
     public let platform = ContentScopePlatform()
     public let features: [String: ContentScopeFeature]
+    public var currentCohorts: [ContentScopeExperimentData]
 
-    public init(gpcEnabled: Bool, sessionKey: String, messageSecret: String, featureToggles: ContentScopeFeatureToggles) {
+    public init(gpcEnabled: Bool,
+                sessionKey: String,
+                messageSecret: String,
+                featureToggles: ContentScopeFeatureToggles,
+                currentCohorts: [ContentScopeExperimentData] = []) {
         self.globalPrivacyControlValue = gpcEnabled
         self.sessionKey = sessionKey
         self.messageSecret = messageSecret
@@ -48,6 +65,7 @@ public final class ContentScopeProperties: Encodable {
         features = [
             "autofill": ContentScopeFeature(featureToggles: featureToggles)
         ]
+        self.currentCohorts = currentCohorts
     }
 
     enum CodingKeys: String, CodingKey {
@@ -60,7 +78,10 @@ public final class ContentScopeProperties: Encodable {
         case messageSecret
         case platform
         case features
+        case currentCohorts
+
     }
+
 }
 
 public struct ContentScopeFeature: Encodable {

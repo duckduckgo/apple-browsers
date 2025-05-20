@@ -75,13 +75,15 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
 
     private let networkProtectionPopoverManager: NetPPopoverManager
     private let isBurner: Bool
+    private let contentScopeExperimentsManager: ContentScopeExperimentsManaging
 
     private var popoverIsShownCancellables = Set<AnyCancellable>()
 
-    init(networkProtectionPopoverManager: NetPPopoverManager, autofillPopoverPresenter: AutofillPopoverPresenter, isBurner: Bool) {
+    init(networkProtectionPopoverManager: NetPPopoverManager, autofillPopoverPresenter: AutofillPopoverPresenter, isBurner: Bool, contentScopeExperimentsManager: ContentScopeExperimentsManaging) {
         self.networkProtectionPopoverManager = networkProtectionPopoverManager
         self.autofillPopoverPresenter = autofillPopoverPresenter
         self.isBurner = isBurner
+        self.contentScopeExperimentsManager = contentScopeExperimentsManager
     }
 
     var passwordManagementDomain: String? {
@@ -314,7 +316,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     func openPrivacyDashboard(for tabViewModel: TabViewModel, from button: MouseOverButton, entryPoint: PrivacyDashboardEntryPoint) {
         guard closeTransientPopovers() else { return }
 
-        let popover = PrivacyDashboardPopover(entryPoint: entryPoint)
+        let popover = PrivacyDashboardPopover(entryPoint: entryPoint, contentScopeExperimentsManager: contentScopeExperimentsManager)
         popover.delegate = self
         self.privacyDashboardPopover = popover
         self.subscribePrivacyDashboardPendingUpdates(for: popover)

@@ -188,11 +188,11 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         // https://app.asana.com/0/1177771139624306/1202033879471339
         addMouseMonitors()
         addTabBarRemoteMessageListener()
-        subscribeToChildWindows()
     }
 
     override func viewDidAppear() {
         enableScrollButtons()
+        subscribeToChildWindows()
     }
 
     override func viewWillDisappear() {

@@ -32,7 +32,6 @@ struct DuckPlayerView: View {
     // Local state & Task for hiding the auto open on Youtube toggle after 2 seconds
     @State private var hideToggleTask: DispatchWorkItem?
     @State private var showOpenInYoutubeToggle: Bool = true
-    @State private var controlsVisibility: Bool = false
 
     enum Constants {
         static let daxLogo = "Home"
@@ -117,7 +116,7 @@ struct DuckPlayerView: View {
 
                 // Controls Container
                 VStack(spacing: 4) {
-                    if controlsVisibility {
+                    if viewModel.controlsVisible {
                         // Show only if the source is youtube and the toggle should be visible
                         autoOpenToggleView
                             .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -127,9 +126,9 @@ struct DuckPlayerView: View {
                             .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
                 }
-                .animation(.spring(response: LayoutConstants.animationResponseTime, dampingFraction: LayoutConstants.animationDampingFraction), value: controlsVisibility)
+                .animation(.spring(response: LayoutConstants.animationResponseTime, dampingFraction: LayoutConstants.animationDampingFraction), value: viewModel.controlsVisible)
                 .frame(minWidth: 0, maxWidth: .infinity)
-                .padding(.bottom, controlsVisibility ?  LayoutConstants.controlsSpacing: 0)
+                .padding(.bottom, viewModel.controlsVisible ?  LayoutConstants.controlsSpacing: 0)
 
                 // Show the welcome message if needed
                 welcomeMessage
@@ -143,14 +142,14 @@ struct DuckPlayerView: View {
 
                         Button(action: {
                             withAnimation(.spring(response: LayoutConstants.animationResponseTime, dampingFraction: LayoutConstants.animationDampingFraction)) {
-                                controlsVisibility.toggle()
+                                viewModel.controlsVisible.toggle()
                             }
                         }) {
                             Image(systemName: Constants.chevronUpIcon)
                                 .font(.system(size: LayoutConstants.controlIconSize, weight: .bold))
                                 .foregroundColor(.white)
                                 .frame(width: LayoutConstants.controlButtonSize, height: LayoutConstants.controlButtonSize)
-                                .rotationEffect(Angle(degrees: controlsVisibility ? 180 : 0))
+                                .rotationEffect(Angle(degrees: viewModel.controlsVisible ? 180 : 0))
                         }
                     }
                     .padding(.bottom, LayoutConstants.controlButtonBottomPadding)
@@ -192,6 +191,9 @@ struct DuckPlayerView: View {
                     Toggle(isOn: $autoOpenOnYoutube) {}
                         .labelsHidden()
                         .tint(.init(designSystemColor: .accent))
+                        .onChange(of: autoOpenOnYoutube) { newValue in
+                            viewModel.autoOpenOnYoutube = newValue
+                        }
                 }
                 .padding(.horizontal, LayoutConstants.horizontalPadding)
             }
@@ -310,6 +312,9 @@ struct DuckPlayerView: View {
                 Toggle(isOn: $autoOpenOnYoutube) {}
                     .labelsHidden()
                     .tint(.init(designSystemColor: .accent))
+                    .onChange(of: autoOpenOnYoutube) { newValue in
+                        viewModel.autoOpenOnYoutube = newValue
+                    }
             }
             .padding(.horizontal, LayoutConstants.horizontalPadding)
         }

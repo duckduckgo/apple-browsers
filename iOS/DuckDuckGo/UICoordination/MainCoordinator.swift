@@ -130,7 +130,8 @@ final class MainCoordinator {
         let tabsModel: TabsModel
         if AutoClearSettingsModel(settings: appSettings) != nil {
             tabsModel = TabsModel(desktop: isPadDevice)
-            try tabsPersistence.save(model: tabsModel)
+            tabsPersistence.clear()
+            tabsPersistence.save(model: tabsModel)
             previewsSource.removeAllPreviews()
         } else {
             if let storedModel = try tabsPersistence.getTabsModel() {

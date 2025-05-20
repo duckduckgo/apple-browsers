@@ -102,7 +102,7 @@ public struct ScanOrSeeCode: View {
                             .fixedSize(horizontal: false, vertical: true)
                             .multilineTextAlignment(.leading)
                         Spacer()
-                        Image("SyncDeviceType_phone")
+                        Image(uiImage: DesignSystemImages.Glyphs.Size24.deviceMobile)
                             .padding(2)
                             .background(
                                 RoundedRectangle(cornerRadius: 2)

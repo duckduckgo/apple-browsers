@@ -41,16 +41,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts",
       "state" : {
-        "revision" : "8c0378dfe85790d25ee5800845bc8ddcbed0faec",
-        "version" : "8.23.0"
-      }
-    },
-    {
-      "identity" : "designresourceskit",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/duckduckgo/DesignResourcesKit",
-      "state" : {
-        "revision" : "c1e49ac6c3f245169512ca2baee30238fdeb6a44"
+        "revision" : "53975299db5319b0a3e6811086d7b848f1b62abe",
+        "version" : "8.24.0"
       }
     },
     {
@@ -58,8 +50,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/duckduckgo-autofill.git",
       "state" : {
-        "revision" : "90541ed7d3a69733fc37e9c51bd92f21e0d56a57",
-        "version" : "17.1.0"
+        "revision" : "e02f499ad25f439e8a2a36ac6f9b9d88b8a65d56",
+        "version" : "17.2.0"
       }
     },
     {

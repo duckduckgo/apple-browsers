@@ -152,6 +152,8 @@ final class DuckPlayerNativeUIPresenter {
         setupNotificationObservers(notificationCenter: notificationCenter)
     }
 
+    // To be replaced with AppUserDefaults.Notifications.addressBarPositionChanged after release
+    // https://app.asana.com/1/137249556945/project/1207252092703676/task/1210323588862346?focus=true
     private func setupNotificationObservers(notificationCenter: NotificationCenter) {
         notificationCenter.addObserver(
             self,
@@ -182,6 +184,8 @@ final class DuckPlayerNativeUIPresenter {
         guard let height = notification.object as? CGFloat else { return }
         omniBarHeight = height
         guard let bottomConstraint = bottomConstraint else { return }
+        // To be replaced with AppUserDefaults.Notifications.addressBarPositionChanged after release
+        // https://app.asana.com/1/137249556945/project/1207252092703676/task/1210323588862346?focus=true
         bottomConstraint.constant = appSettings.currentAddressBarPosition == .bottom ? -height : 0
     }
 

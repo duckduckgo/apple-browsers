@@ -129,8 +129,7 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
         return surrogatesConfig
     }
 
-    private static func generateCurrentCohorts(experimentManager: ContentScopeExperimentsManaging,
-                                             statisticsStore: StatisticsStore) -> [ContentScopeExperimentData] {
+    private static func generateCurrentCohorts(experimentManager: ContentScopeExperimentsManaging, statisticsStore: StatisticsStore) -> [ContentScopeExperimentData] {
         // Only generate new cohorts if the app was used today
         let experiments = if statisticsStore.isAppRetentionFiredToday {
             experimentManager.resolveContentScopeScriptActiveExperiments()

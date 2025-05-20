@@ -217,7 +217,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         } else {
             experimentManager.allActiveContentScopeExperiments
         }
-        
+
         return experiments.map {
             ContentScopeExperimentData(feature: $0.value.parentID, subfeature: $0.key, cohort: $0.value.cohortID)
         }

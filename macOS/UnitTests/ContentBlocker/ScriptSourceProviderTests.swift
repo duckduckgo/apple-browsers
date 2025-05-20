@@ -48,7 +48,7 @@ final class ScriptSourceProviderTests: XCTestCase {
         experimentManager.setResolveResult(["today": todayCohortData])
         experimentManager.allActiveContentScopeExperiments = ["test": testExperimentData]
         statisticsStore.lastAppRetentionRequestDate = Date()
-        
+
         // When
         let sourceProvider = ScriptSourceProvider(
             configStorage: MockConfigurationStore(),
@@ -68,7 +68,7 @@ final class ScriptSourceProviderTests: XCTestCase {
         XCTAssertEqual(cohorts[0].cohort, "todayCohort")
         XCTAssertTrue(experimentManager.resolveContentScopeScriptActiveExperimentsWasCalled)
     }
-    
+
     @MainActor
     func testCohortDataWhenAppNotUsedToday() throws {
         // Given
@@ -76,7 +76,7 @@ final class ScriptSourceProviderTests: XCTestCase {
         experimentManager.setResolveResult(["today": todayCohortData])
         experimentManager.allActiveContentScopeExperiments = ["test": testExperimentData]
         statisticsStore.lastAppRetentionRequestDate = Calendar.current.date(byAdding: .day, value: -1, to: Date())
-        
+    
         // When
         let sourceProvider = ScriptSourceProvider(
             configStorage: MockConfigurationStore(),

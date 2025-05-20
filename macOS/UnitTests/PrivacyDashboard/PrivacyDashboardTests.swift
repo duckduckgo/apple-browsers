@@ -69,7 +69,7 @@ class MockContentScopeExperimentManager: ContentScopeExperimentsManaging {
         resolveContentScopeScriptActiveExperimentsWasCalled = true
         return resolveResult ?? allActiveContentScopeExperiments
     }
-    
+
     func setResolveResult(_ experiments: Experiments) {
         resolveResult = experiments
     }

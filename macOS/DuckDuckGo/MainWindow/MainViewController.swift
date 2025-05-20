@@ -578,7 +578,7 @@ extension MainViewController: NSDraggingDestination {
     }
 
     func draggingUpdated(_ draggingInfo: NSDraggingInfo) -> NSDragOperation {
-        return .copy
+        return browserTabViewController.draggingUpdated(draggingInfo)
     }
 
     func performDragOperation(_ draggingInfo: NSDraggingInfo) -> Bool {

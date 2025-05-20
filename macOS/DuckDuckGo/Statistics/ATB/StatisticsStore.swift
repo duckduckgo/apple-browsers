@@ -21,9 +21,6 @@ import BrowserServicesKit
 
 protocol StatisticsStore: BrowserServicesKit.StatisticsStore {
 
-    var lastAppRetentionRequestDate: Date? { get set }
-    var isAppRetentionFiredToday: Bool { get }
-
     var waitlistUnlocked: Bool { get set }
 
     var autoLockEnabled: Bool { get set }

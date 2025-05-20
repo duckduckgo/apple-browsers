@@ -53,13 +53,15 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
     let contentBlockingManager: ContentBlockerRulesManagerProtocol
     let fireproofing: Fireproofing
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
-    var currentCohorts: [ContentScopeExperimentData] = []
+    let statisticsStore: StatisticsStore
+    var currentCohorts: [ContentScopeExperimentData]
 
     init(appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
          contentBlockingManager: ContentBlockerRulesManagerProtocol = ContentBlocking.shared.contentBlockingManager,
          fireproofing: Fireproofing,
-         contentScopeExperimentsManager: ContentScopeExperimentsManaging = AppDependencyProvider.shared.contentScopeExperimentsManager) {
+         contentScopeExperimentsManager: ContentScopeExperimentsManaging = AppDependencyProvider.shared.contentScopeExperimentsManager,
+         statisticsStore: StatisticsStore = StatisticsUserDefaults()) {
 
         sendDoNotSell = appSettings.sendDoNotSell
         
@@ -67,6 +69,7 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
         self.contentBlockingManager = contentBlockingManager
         self.fireproofing = fireproofing
         self.contentScopeExperimentsManager = contentScopeExperimentsManager
+        self.statisticsStore = statisticsStore
 
         contentBlockerRulesConfig = Self.buildContentBlockerRulesConfig(contentBlockingManager: contentBlockingManager,
                                                                         privacyConfigurationManager: privacyConfigurationManager)
@@ -74,7 +77,8 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
                                                       privacyConfigurationManager: privacyConfigurationManager)
         sessionKey = Self.generateSessionKey()
         messageSecret = Self.generateSessionKey()
-        currentCohorts = Self.generateCurrentCohorts(experimentManager: contentScopeExperimentsManager)
+        currentCohorts = Self.generateCurrentCohorts(experimentManager: contentScopeExperimentsManager,
+                                                    statisticsStore: statisticsStore)
         contentScopeProperties = ContentScopeProperties(gpcEnabled: appSettings.sendDoNotSell,
                                                         sessionKey: sessionKey,
                                                         messageSecret: messageSecret,
@@ -125,8 +129,15 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
         return surrogatesConfig
     }
 
-    private static func generateCurrentCohorts(experimentManager: ContentScopeExperimentsManaging) -> [ContentScopeExperimentData] {
-        let experiments = experimentManager.resolveContentScopeScriptActiveExperiments()
+    private static func generateCurrentCohorts(experimentManager: ContentScopeExperimentsManaging,
+                                             statisticsStore: StatisticsStore) -> [ContentScopeExperimentData] {
+        // Only generate new cohorts if the app was used today
+        let experiments = if statisticsStore.isAppRetentionFiredToday {
+            experimentManager.resolveContentScopeScriptActiveExperiments()
+        } else {
+            experimentManager.allActiveContentScopeExperiments
+        }
+        
         return experiments.map {
             ContentScopeExperimentData(feature: $0.value.parentID, subfeature: $0.key, cohort: $0.value.cohortID)
         }

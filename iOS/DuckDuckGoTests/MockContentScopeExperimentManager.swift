@@ -22,8 +22,15 @@ import BrowserServicesKit
 
 class MockContentScopeExperimentManager: ContentScopeExperimentsManaging {
     var allActiveContentScopeExperiments: Experiments = [:]
+    private var resolveResult: Experiments = [:]
+    var resolveContentScopeScriptActiveExperimentsWasCalled = false
 
     func resolveContentScopeScriptActiveExperiments() -> Experiments {
-        return allActiveContentScopeExperiments
+        resolveContentScopeScriptActiveExperimentsWasCalled = true
+        return resolveResult
+    }
+    
+    func setResolveResult(_ experiments: Experiments) {
+        resolveResult = experiments
     }
 }

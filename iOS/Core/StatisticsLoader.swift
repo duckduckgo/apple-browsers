@@ -172,6 +172,7 @@ public class StatisticsLoader {
             }
             if let data = response?.data, let atb = try? self.parser.convert(fromJsonData: data) {
                 self.statisticsStore.appRetentionAtb = atb.version
+                self.statisticsStore.lastAppRetentionRequestDate = Date()
                 self.storeUpdateVersionIfPresent(atb)
                 self.updateUsageSegmentationWithAtb(atb, activityType: .appUse)
             }

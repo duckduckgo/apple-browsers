@@ -119,6 +119,9 @@ class AtbServerTests: XCTestCase {
 }
 
 class MockStatisticsStore: StatisticsStore {
+    var lastAppRetentionRequestDate: Date?
+    
+    var isAppRetentionFiredToday: Bool = false
     
     var hasInstallStatistics: Bool = false
     

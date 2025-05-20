@@ -99,5 +99,38 @@ class StatisticsUserDefaultsTests: XCTestCase {
         testee.atb = Constants.atb
         XCTAssertEqual(testee.searchRetentionAtb, Constants.atb)
     }
+    
+    func testLastAppRetentionRequestDateDefaultsAndSetting() throws {
+        // Initially should be nil
+        XCTAssertNil(testee.lastAppRetentionRequestDate)
+        
+        // Set a date and verify it's stored
+        let testDate = Date()
+        testee.lastAppRetentionRequestDate = testDate
+        let storedTimeInterval = try XCTUnwrap(testee.lastAppRetentionRequestDate?.timeIntervalSince1970)
+        XCTAssertEqual(storedTimeInterval, testDate.timeIntervalSince1970, accuracy: 0.1)
+        
+        // Clear and verify it's nil again
+        testee.lastAppRetentionRequestDate = nil
+        XCTAssertNil(testee.lastAppRetentionRequestDate)
+    }
+    
+    func testIsAppRetentionFiredToday() {
+        // Initially should be false
+        XCTAssertFalse(testee.isAppRetentionFiredToday)
+        
+        // Set today's date and verify it returns true
+        testee.lastAppRetentionRequestDate = Date()
+        XCTAssertTrue(testee.isAppRetentionFiredToday)
+        
+        // Set yesterday's date and verify it returns false
+        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: Date())!
+        testee.lastAppRetentionRequestDate = yesterday
+        XCTAssertFalse(testee.isAppRetentionFiredToday)
+        
+        // Set nil date and verify it returns false
+        testee.lastAppRetentionRequestDate = nil
+        XCTAssertFalse(testee.isAppRetentionFiredToday)
+    }
 
 }

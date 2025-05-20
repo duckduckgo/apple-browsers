@@ -26,4 +26,6 @@ public protocol StatisticsStore: AnyObject {
     var searchRetentionAtb: String? { get set }
     var appRetentionAtb: String? { get set }
     var variant: String? { get set }
+    var lastAppRetentionRequestDate: Date? { get set }
+    var isAppRetentionFiredToday: Bool { get }
 }

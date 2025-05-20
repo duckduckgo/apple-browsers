@@ -400,13 +400,13 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         let pillType: PillType
 
         // If primingModalEventCount is 0, show the welcome pill for first-time users
-        //if !duckPlayerSettings.primingMessagePresented {
+        if !duckPlayerSettings.primingMessagePresented {
             pillType = .welcome
-            //self.duckPlayerSettings.primingMessagePresented = true
-        //} else {
+            self.duckPlayerSettings.primingMessagePresented = true
+        } else {
             // Logic for returning users
-            //pillType = state.hasBeenShown ? .reEntry : .entry
-        //}
+            pillType = state.hasBeenShown ? .reEntry : .entry
+        }
 
         presentedPillType = pillType
 

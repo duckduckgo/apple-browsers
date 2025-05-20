@@ -92,6 +92,8 @@ public class AppUserDefaults: AppSettings {
         static let duckPlayerWelcomeMessageShown = "com.duckduckgo.ios.duckPlayerWelcomeMessageShown"
         static let duckPlayerPrimingMessagePresented = "com.duckduckgo.ios.duckPlayerPrimingMessagePresented"
         static let duckPlayerControlsVisible = "com.duckduckgo.ios.duckPlayerControlsVisible"
+        static let duckPlayerNativeUIWasUsed = "com.duckduckgo.ios.duckPlayerNativeUIWasUsed"
+        static let duckPlayerNativeUISettingsMapped = "com.duckduckgo.ios.duckPlayerNativeUISettingsMapped"
     }
 
     private struct DebugKeys {
@@ -501,6 +503,12 @@ public class AppUserDefaults: AppSettings {
     
     @UserDefaultsWrapper(key: .duckPlayerAutoplay, defaultValue: true)
     var duckPlayerAutoplay: Bool
+
+    @UserDefaultsWrapper(key: .duckPlayerNativeUIWasUsed, defaultValue: false)
+    var duckPlayerNativeUIWasUsed: Bool
+
+    @UserDefaultsWrapper(key: .duckPlayerNativeUISettingsMapped, defaultValue: false)
+    var duckPlayerNativeUISettingsMapped: Bool
 
     @UserDefaultsWrapper(key: .duckPlayerWelcomeMessageShown, defaultValue: false)
     var duckPlayerWelcomeMessageShown: Bool

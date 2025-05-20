@@ -941,6 +941,29 @@ extension MainViewController {
         UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.homePageShowEmailProtection.rawValue)
     }
 
+    @objc func showContentScopeExperiments(_ sender: Any?) {
+        let experiments = Application.appDelegate.contentScopeExperimentsManager.allActiveContentScopeExperiments
+
+        let alert = NSAlert()
+        alert.messageText = "Content Scope Experiments"
+
+        var infoText = "Active Experiments:\n"
+        if experiments.isEmpty {
+            infoText += "No active experiments\n"
+        } else {
+            for (key, data) in experiments {
+                infoText += "\nExperiment: \(key)\n"
+                infoText += "Parent ID: \(data.parentID)\n"
+                infoText += "Cohort ID: \(data.cohortID)\n"
+                infoText += "Enrollment Date: \(data.enrollmentDate)\n"
+            }
+        }
+
+        alert.informativeText = infoText
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
+    }
+
     @objc func skipOnboarding(_ sender: Any?) {
         UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.onboardingFinished.rawValue)
         Application.appDelegate.onboardingContextualDialogsManager.state = .onboardingCompleted

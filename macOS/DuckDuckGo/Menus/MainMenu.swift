@@ -667,6 +667,9 @@ final class MainMenu: NSMenu {
             }
             NSMenuItem(title: "History")
                 .submenu(HistoryDebugMenu())
+            NSMenuItem(title: "Content Scopes Experiment") {
+                NSMenuItem(title: "Show Active Experiments", action: #selector(MainViewController.showContentScopeExperiments))
+            }
             NSMenuItem(title: "Reset Data") {
                 NSMenuItem(title: "Reset Default Browser Prompt", action: #selector(MainViewController.resetDefaultBrowserPrompt))
                 NSMenuItem(title: "Reset Default Grammar Checks", action: #selector(MainViewController.resetDefaultGrammarChecks))

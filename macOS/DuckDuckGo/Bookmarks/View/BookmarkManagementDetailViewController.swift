@@ -73,6 +73,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
     private let bookmarkManager: BookmarkManager
     private let dragDropManager: BookmarkDragDropManager
     private let sortBookmarksViewModel: SortBookmarksViewModel
+    private let visualStyle: VisualStyleProviding
     private var selectionState: BookmarkManagementSidebarViewController.SelectionState = .empty {
         didSet {
             reloadData()
@@ -117,12 +118,14 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
     }
 
     init(bookmarkManager: BookmarkManager = LocalBookmarkManager.shared,
-         dragDropManager: BookmarkDragDropManager = BookmarkDragDropManager.shared) {
+         dragDropManager: BookmarkDragDropManager = BookmarkDragDropManager.shared,
+         visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
         let metrics = BookmarksSearchAndSortMetrics()
         let sortViewModel = SortBookmarksViewModel(manager: bookmarkManager, metrics: metrics, origin: .manager)
         self.sortBookmarksViewModel = sortViewModel
+        self.visualStyle = visualStyleManager.style
         self.managementDetailViewModel = BookmarkManagementDetailViewModel(bookmarkManager: bookmarkManager,
                                                                            metrics: metrics,
                                                                            mode: bookmarkManager.sortMode)
@@ -135,7 +138,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
 
     override func loadView() {
         let showSyncPromo = syncPromoManager.shouldPresentPromoFor(.bookmarks)
-        view = ColorView(frame: .zero, backgroundColor: .bookmarkPageBackground)
+        view = ColorView(frame: .zero, backgroundColor: visualStyle.colorsProvider.bookmarksManagerBackgroundColor)
         view.translatesAutoresizingMaskIntoConstraints = false
 
         // set menu before `newFolderButton` initialization as it uses the menu as its target

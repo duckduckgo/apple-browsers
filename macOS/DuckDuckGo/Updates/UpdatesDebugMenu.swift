@@ -20,9 +20,6 @@ import AppKit
 import AIChat
 
 final class UpdatesDebugMenu: NSMenu {
-    private let customURLLabelMenuItem = NSMenuItem(title: "")
-    private let debugStorage = AIChatDebugURLSettings()
-
     init() {
         super.init(title: "")
 

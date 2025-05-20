@@ -126,7 +126,7 @@ extension TabViewController {
         if link != nil {
             let name = UserText.actionReportBrokenSite
             entries.append(BrowsingMenuEntry.regular(name: name,
-                                                     image: DesignSystemImages.Glyphs.Size16.feedback,
+                                                     image: DesignSystemImages.Glyphs.Size16.feedbackBlank,
                                                      action: { [weak self] in
                 self?.onReportBrokenSiteAction()
             }))

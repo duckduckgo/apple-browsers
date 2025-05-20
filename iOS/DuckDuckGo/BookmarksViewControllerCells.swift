@@ -76,10 +76,7 @@ class BookmarksViewControllerCellFactory {
         let theme = ThemeManager.shared.currentTheme
         cell.backgroundColor = theme.tableCellBackgroundColor
         cell.titleLabel.textColor = theme.tableCellTextColor
-        cell.favoriteImageView.image = DesignSystemImages.Glyphs.Size24.favorite
-        if !ExperimentalThemingManager().isExperimentalThemingEnabled {
-            cell.favoriteImageView.tintColor = UIColor(designSystemColor: .icons)
-        }
+        cell.favoriteImageView.image = DesignSystemImages.Color.Size16.favorite
         cell.faviconImageView.tintColor = UIColor(designSystemColor: .icons)
         cell.editingAccessoryType = .disclosureIndicator
         return cell

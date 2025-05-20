@@ -90,13 +90,17 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
         case .upToDate:
             return UpdateButtonConfiguration(
                 title: UserText.checkForUpdate,
-                action: checkForUpdate,
+                action: { [weak self] in
+                    self?.checkForUpdate(userInitiated: true)
+                },
                 enabled: true)
         case .updateCycle(let progress):
             if isAtRestartCheckpoint {
                 return UpdateButtonConfiguration(
                     title: UserText.restartToUpdate,
-                    action: runUpdate,
+                    action: { [weak self] in
+                        self?.checkForUpdate(userInitiated: true)
+                    },
                     enabled: true)
             } else if hasPendingUpdate {
                 return UpdateButtonConfiguration(
@@ -106,12 +110,16 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
             } else if progress.isFailed {
                 return UpdateButtonConfiguration(
                     title: UserText.retryUpdate,
-                    action: checkForUpdate,
+                    action: { [weak self] in
+                        self?.checkForUpdate(userInitiated: true)
+                    },
                     enabled: true)
             } else {
                 return UpdateButtonConfiguration(
                     title: UserText.checkForUpdate,
-                    action: checkForUpdate,
+                    action: { [weak self] in
+                        self?.checkForUpdate(userInitiated: true)
+                    },
                     enabled: false)
             }
         }
@@ -140,8 +148,12 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
     }
 
 #if SPARKLE
-    func checkForUpdate() {
-        updateController?.checkForUpdateSkippingRollout()
+    func checkForUpdate(userInitiated: Bool) {
+        if userInitiated {
+            updateController?.checkForUpdateSkippingRollout()
+        } else {
+            updateController?.checkForUpdateRespectingRollout()
+        }
     }
 
     func runUpdate() {

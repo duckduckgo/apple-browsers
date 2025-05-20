@@ -51,7 +51,7 @@ extension Preferences {
             }.task {
 #if SPARKLE
                 if model.mustCheckForUpdatesBeforeUserCanTakeAction {
-                    model.checkForUpdate()
+                    model.checkForUpdate(userInitiated: false)
                 }
 #endif
             }
@@ -302,7 +302,7 @@ extension Preferences {
                 switch model.updateState {
                 case .upToDate:
                     Button(UserText.checkForUpdate) {
-                        model.checkForUpdate()
+                        model.checkForUpdate(userInitiated: true)
                     }
                     .buttonStyle(UpdateButtonStyle(enabled: true))
                 case .updateCycle(let progress):
@@ -313,12 +313,12 @@ extension Preferences {
                         .buttonStyle(UpdateButtonStyle(enabled: true))
                     } else if progress.isFailed {
                         Button(UserText.retryUpdate) {
-                            model.checkForUpdate()
+                            model.checkForUpdate(userInitiated: true)
                         }
                         .buttonStyle(UpdateButtonStyle(enabled: true))
                     } else {
                         Button(UserText.checkForUpdate) {
-                            model.checkForUpdate()
+                            model.checkForUpdate(userInitiated: true)
                         }
                         .buttonStyle(UpdateButtonStyle(enabled: false))
                         .disabled(true)

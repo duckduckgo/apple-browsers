@@ -196,7 +196,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
         NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)
             .debounce(for: .seconds(1), scheduler: DispatchQueue.main)
             .sink { [weak self] _ in
-                self?.discardCurrentUpdateIfExpiredAndCheckAgain()
+                self?.discardCurrentUpdateIfExpiredAndCheckAgain(skipRollout: false)
             }
             // Store subscription to keep it alive
             .store(in: &cancellables)
@@ -227,6 +227,10 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     // Check for updates while adhering to the rollout schedule
     // This is the default behavior
     func checkForUpdateRespectingRollout() {
+        guard !discardCurrentUpdateIfExpiredAndCheckAgain(skipRollout: false) else {
+            return
+        }
+
         guard let updater, !updater.sessionInProgress else { return }
 
         Logger.updates.log("Checking for updates respecting rollout")
@@ -240,7 +244,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     }
 
     @discardableResult
-    private func discardCurrentUpdateIfExpiredAndCheckAgain() -> Bool {
+    private func discardCurrentUpdateIfExpiredAndCheckAgain(skipRollout: Bool) -> Bool {
         guard isBuildExpired else {
             return false
         }
@@ -256,7 +260,12 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
             self.updater = updater
 
             userDriver?.userCheckedForUpdates()
-            updater.checkForUpdates()
+
+            if skipRollout {
+                updater.checkForUpdates()
+            } else {
+                updater.checkForUpdatesInBackground()
+            }
         }
 
         return true
@@ -265,7 +274,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
     // Check for updates immediately, bypassing the rollout schedule
     // This is used for user-initiated update checks only
     func checkForUpdateSkippingRollout() {
-        guard !discardCurrentUpdateIfExpiredAndCheckAgain() else {
+        guard !discardCurrentUpdateIfExpiredAndCheckAgain(skipRollout: true) else {
             return
         }
 
@@ -368,7 +377,7 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
             openUpdatesPage()
 
             if shouldForceUpdateCheck {
-                checkForUpdateSkippingRollout()
+                checkForUpdateRespectingRollout()
                 return
             }
 

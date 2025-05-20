@@ -47,7 +47,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             case .saveProfile:
                 return "Save Profile"
             case .deviceIdentifier:
-#if DEBUG || ALPHA
+#if !RELEASE
                 return "UUID: \(DataBrokerProtectionSettings.deviceIdentifier)"
 #else
                 return "No UUID due to wrong build type"

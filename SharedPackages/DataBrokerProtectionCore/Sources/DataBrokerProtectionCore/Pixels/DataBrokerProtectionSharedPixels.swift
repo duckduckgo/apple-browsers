@@ -86,7 +86,7 @@ public enum DataBrokerProtectionSharedPixels {
         public static let calculatedOrphanedRecords = "calculated-orphaned-records"
 
 // This should never ever go to production and only exists for internal testing
-#if os(iOS) && (DEBUG || ALPHA)
+#if os(iOS) && !RELEASE
         public static let deviceIdentifier = "testerId"
         public static let deviceModel = "deviceModel"
 #endif
@@ -105,7 +105,7 @@ public enum DataBrokerProtectionSharedPixels {
     case parentChildMatches(parent: String, child: String, value: Int)
 
 // This should never ever go to production due to the deviceID and only exists for internal testing
-#if os(iOS) && (DEBUG || ALPHA)
+#if os(iOS) && !RELEASE
     // Stage Pixels
     case optOutStart(dataBroker: String, attemptId: UUID, deviceID: String)
 
@@ -213,7 +213,7 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .optOutFailure: return "dbp_optout_process_failure"
 
             // Scan/Search pixels: https://app.asana.com/0/1203581873609357/1205337273100855/f
-#if os(iOS) && (DEBUG || ALPHA)
+#if os(iOS) && !RELEASE
         case .scanStarted: return "dbp_scan_started"
 #endif
         case .scanSuccess: return "dbp_search_stage_main_status_success"
@@ -298,7 +298,7 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .parentChildMatches(let parent, let child, let value):
             return ["parent": parent, "child": child, "value": String(value)]
 // This should never ever go to production due to the deviceID and only exists for internal testing
-#if os(iOS) && (DEBUG || ALPHA)
+#if os(iOS) && !RELEASE
         case .optOutStart(let dataBroker, let attemptId, let deviceID):
             return [Consts.dataBrokerParamKey: dataBroker, Consts.attemptIdParamKey: attemptId.uuidString, Consts.deviceIdentifier: deviceID, Consts.deviceModel: DataBrokerProtectionSettings.modelName]
 #else
@@ -326,7 +326,7 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .optOutFillForm(let dataBroker, let attemptId, let duration):
             return [Consts.dataBrokerParamKey: dataBroker, Consts.attemptIdParamKey: attemptId.uuidString, Consts.durationParamKey: String(duration)]
 // This should never ever go to production due to the deviceID and only exists for internal testing
-#if os(iOS) && (DEBUG || ALPHA)
+#if os(iOS) && !RELEASE
         case .optOutSubmitSuccess(let dataBroker, let attemptId, let duration, let tries, let pattern, let vpnConnectionState, let vpnBypassStatus, let deviceID):
             var params = [Consts.dataBrokerParamKey: dataBroker, Consts.attemptIdParamKey: attemptId.uuidString, Consts.durationParamKey: String(duration), Consts.triesKey: String(tries), Consts.vpnConnectionStateParamKey: vpnConnectionState, Consts.vpnBypassStatusParamKey: vpnBypassStatus, Consts.deviceIdentifier: deviceID, Consts.deviceModel: DataBrokerProtectionSettings.modelName]
             if let pattern = pattern {
@@ -545,7 +545,7 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                     .weeklyChildBrokerOrphanedOptOuts:
 
                 self.pixelKit.fire(event, withNamePrefix: platform.pixelNamePrefix)
-#if os(iOS) && (DEBUG || ALPHA)
+#if os(iOS) && !RELEASE
             case .scanStarted:
                 self.pixelKit.fire(event, withNamePrefix: platform.pixelNamePrefix)
 #endif

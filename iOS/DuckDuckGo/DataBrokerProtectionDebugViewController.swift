@@ -38,7 +38,6 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     enum DatabaseRows: Int, CaseIterable {
         case databaseBrowser
         case saveProfile
-        case deviceIdentifier
 
         var title: String {
             switch self {
@@ -46,12 +45,6 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 return "Database Browser"
             case .saveProfile:
                 return "Save Profile"
-            case .deviceIdentifier:
-#if DEBUG || ALPHA
-                return "UUID: \(DataBrokerProtectionSettings.deviceIdentifier)"
-#else
-                return "No UUID due to wrong build type"
-#endif
             }
         }
     }
@@ -129,8 +122,6 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             let saveProfileViewController = DebugSaveProfileViewController(database: dbpManager.database)
             self.navigationController?.pushViewController(saveProfileViewController, animated: true)
 
-        case .deviceIdentifier:
-            break
 
         case .none:
             return

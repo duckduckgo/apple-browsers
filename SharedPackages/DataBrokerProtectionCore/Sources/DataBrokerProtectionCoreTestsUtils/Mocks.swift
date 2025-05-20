@@ -1064,9 +1064,6 @@ public final class MockStageDurationCalculator: StageDurationCalculator {
     public func fireOptOutFailure(tries: Int) {
     }
 
-    public func fireScanStarted() {
-    }
-
     public func fireScanSuccess(matchesFound: Int) {
     }
 

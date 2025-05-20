@@ -188,7 +188,7 @@ final class MockDuckPlayerSettings: DuckPlayerSettings {
     var duckPlayerControlsVisible: Bool = false
     
 
-    init(appSettings: any DuckDuckGo.AppSettings, privacyConfigManager: any BrowserServicesKit.PrivacyConfigurationManaging, internalUserDecider: any BrowserServicesKit.InternalUserDecider) {}
+    init(appSettings: any DuckDuckGo.AppSettings, privacyConfigManager: any BrowserServicesKit.PrivacyConfigurationManaging, featureFlagger: any BrowserServicesKit.FeatureFlagger) {}
 
     func triggerNotification() {}
 
@@ -361,7 +361,7 @@ final class MockDuckPlayer: DuckPlayerControlling {
 }
 
 enum MockFeatureFlag: Hashable {
-    case duckPlayer, duckPlayerOpenInNewTab
+    case duckPlayer, duckPlayerOpenInNewTab, nativeUI
 }
 
 final class MockDuckPlayerFeatureFlagger: FeatureFlagger {

@@ -32,7 +32,7 @@ final class DuckPlayerViewModelTests: XCTestCase {
     @MainActor
     override func setUp() {
         super.setUp()
-        mockSettings = MockDuckPlayerSettings(appSettings: AppSettingsMock(), privacyConfigManager: MockPrivacyConfigurationManager(), internalUserDecider: MockDuckPlayerInternalUserDecider())
+        mockSettings = MockDuckPlayerSettings(appSettings: AppSettingsMock(), privacyConfigManager: MockPrivacyConfigurationManager(), featureFlagger: MockDuckPlayerFeatureFlagger())
         viewModel = DuckPlayerViewModel(videoID: "testVideoID", duckPlayerSettings: mockSettings, source: .serp)
         cancellables = []
     }

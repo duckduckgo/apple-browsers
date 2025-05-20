@@ -71,19 +71,9 @@ extension Pixel {
         case tabSwitchLongPressNewTab
         case tabSwitcherOpenedDaily
 
-        // MARK: KeyValueFiles Store validation
+        // MARK: KeyValueFiles Store
         case keyValueFileStoreSupportDirAccessError
         case keyValueFileStoreInitError
-        case keyValueFileStoreFirstAccess(success: Bool)
-        case keyValueFileStoreSecondAccess(firstAccessStatus: Bool, secondAccessStatus: Bool)
-
-        case keyValueFileStoreAsyncDirAccessError
-        case keyValueFileStoreAsyncInitError
-        case keyValueFileStoreAsyncFirstAccess(success: Bool)
-
-        case keyValueFileStoreRetryDirAccessError
-        case keyValueFileStoreRetryInitError
-        case keyValueFileStoreRetryAccess(success: Bool, delay: Int)
 
         // MARK: Tabswitcher improvements
         case tabSwitcherEditMenuClicked
@@ -807,7 +797,9 @@ extension Pixel {
         case syncDuckAddressOverride
         case syncSuccessRateDaily
         case syncLocalTimestampResolutionTriggered(Feature)
-        case syncFailedToMigrate
+        case syncMigratedToFileStore
+        case syncFailedToMigrateToFileStore
+        case syncFailedToInitFileStore
         case syncFailedToLoadAccount
         case syncFailedToSetupEngine
         case syncBookmarksObjectLimitExceededDaily
@@ -1223,18 +1215,8 @@ extension Pixel.Event {
             
         case .privacyDashboardReportBrokenSite: return "mp_rb"
 
-        case .keyValueFileStoreSupportDirAccessError: return "m_test_key_value_file_store_support_dir_access_error"
-        case .keyValueFileStoreInitError: return "m_test_key_value_file_store_init_error"
-        case .keyValueFileStoreFirstAccess(let success): return "m_test_key_value_file_store_first_acccess_\(success ? "success" : "failed")"
-        case .keyValueFileStoreSecondAccess(let firstAccessStatus, let secondAccessStatus): return "m_test_key_value_file_store_first_acccess_\(firstAccessStatus ? "success" : "failed")_second_acccess_\(secondAccessStatus ? "success" : "failed")"
-
-        case .keyValueFileStoreAsyncDirAccessError: return "m_test_async_key_value_file_store_support_dir_access_error"
-        case .keyValueFileStoreAsyncInitError: return "m_test_async_key_value_file_store_init_error"
-        case .keyValueFileStoreAsyncFirstAccess(let success): return "m_test_async_key_value_file_store_first_acccess_\(success ? "success" : "failed")"
-
-        case .keyValueFileStoreRetryDirAccessError: return "m_test_retry_key_value_file_store_support_dir_access_error"
-        case .keyValueFileStoreRetryInitError: return "m_test_retry_key_value_file_store_init_error"
-        case .keyValueFileStoreRetryAccess(let success, let delay): return "m_test_retry_key_value_file_store_acccess_\(delay)_\(success ? "success" : "failed")"
+        case .keyValueFileStoreSupportDirAccessError: return "m_debug_key_value_file_store_support_dir_access_error"
+        case .keyValueFileStoreInitError: return "m_debug_key_value_file_store_init_error"
 
         case .tabSwitcherNewLayoutSeen: return "m_ts_n"
         case .tabSwitcherListEnabled: return "m_ts_l"
@@ -1900,8 +1882,10 @@ extension Pixel.Event {
         case .syncDuckAddressOverride: return "m_sync_duck_address_override"
         case .syncSuccessRateDaily: return "m_sync_success_rate_daily"
         case .syncLocalTimestampResolutionTriggered(let feature): return "m_sync_\(feature.name)_local_timestamp_resolution_triggered"
-        case .syncFailedToMigrate: return "m_d_sync_failed_to_migrate"
-        case .syncFailedToLoadAccount: return "m_d_sync_failed_to_load_account"
+        case .syncMigratedToFileStore: return "m_debug_sync_migrated_to_file_store"
+        case .syncFailedToInitFileStore: return "m_debug_sync_failed_to_init_file_store"
+        case .syncFailedToMigrateToFileStore: return "m_debug_sync_failed_to_migrate_to_file_store"
+        case .syncFailedToLoadAccount: return "m_d_sync_failed_to_load_account2"
         case .syncFailedToSetupEngine: return "m_d_sync_failed_to_setup_engine"
         case .syncBookmarksObjectLimitExceededDaily: return "m_sync_bookmarks_object_limit_exceeded_daily"
         case .syncCredentialsObjectLimitExceededDaily: return "m_sync_credentials_object_limit_exceeded_daily"

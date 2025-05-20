@@ -73,6 +73,7 @@ final class BookmarkListViewController: NSViewController {
     private let treeControllerSearchDataSource: BookmarkListTreeControllerSearchDataSource
     private let sortBookmarksViewModel: SortBookmarksViewModel
     private let bookmarkMetrics: BookmarksSearchAndSortMetrics
+    private let visualStyle: VisualStyleProviding
 
     private let treeController: BookmarkTreeController
 
@@ -148,7 +149,8 @@ final class BookmarkListViewController: NSViewController {
 
     init(bookmarkManager: BookmarkManager = LocalBookmarkManager.shared,
          dragDropManager: BookmarkDragDropManager = BookmarkDragDropManager.shared,
-         metrics: BookmarksSearchAndSortMetrics = BookmarksSearchAndSortMetrics()) {
+         metrics: BookmarksSearchAndSortMetrics = BookmarksSearchAndSortMetrics(),
+         visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
         self.treeControllerDataSource = BookmarkListTreeControllerDataSource(bookmarkManager: bookmarkManager)
@@ -159,6 +161,7 @@ final class BookmarkListViewController: NSViewController {
                                                      sortMode: sortBookmarksViewModel.selectedSortMode,
                                                      searchDataSource: treeControllerSearchDataSource,
                                                      isBookmarksBarMenu: false)
+        self.visualStyle = visualStyleManager.style
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -170,7 +173,7 @@ final class BookmarkListViewController: NSViewController {
 
     override func loadView() {
         let showSyncPromo = syncPromoManager.shouldPresentPromoFor(.bookmarks)
-        view = ColorView(frame: .zero, backgroundColor: .popoverBackground)
+        view = ColorView(frame: .zero, backgroundColor: visualStyle.colorsProvider.bookmarksPanelBackgroundColor)
 
         view.addSubview(titleTextField)
         view.addSubview(boxDivider)

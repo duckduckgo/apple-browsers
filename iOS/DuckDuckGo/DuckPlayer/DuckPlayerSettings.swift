@@ -219,6 +219,12 @@ protocol DuckPlayerSettings: AnyObject {
     // Whether the View controls are visible
     var duckPlayerControlsVisible: Bool { get set }
 
+    // Whether the Native UI was used
+    var nativeUIWasUsed: Bool { get set }
+
+    // Whether the Native UI settings were mapped
+    var nativeUISettingsMapped: Bool { get set }
+
     /// Initializes a new instance with the provided app settings and privacy configuration manager.
     ///
     /// - Parameters:
@@ -512,6 +518,29 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
             triggerNotification()
         }
     }
+
+    // Whether the Native UI was used
+    var nativeUIWasUsed: Bool {
+        get {
+            return appSettings.duckPlayerNativeUIWasUsed
+        }
+        set {
+            appSettings.duckPlayerNativeUIWasUsed = newValue
+            triggerNotification()
+        }
+    }
+
+    // Whether the Native UI settings were mapped
+    var nativeUISettingsMapped: Bool {
+        get {
+            return appSettings.duckPlayerNativeUISettingsMapped
+        }
+        set {
+            appSettings.duckPlayerNativeUISettingsMapped = newValue
+            triggerNotification()
+        }
+    }
+    
 
     /// Registers a publisher to listen for changes in the privacy configuration.
     private func registerConfigPublisher() {

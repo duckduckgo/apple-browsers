@@ -51,7 +51,7 @@ class BookmarkFolderCell: UITableViewCell {
                 title.text = folder.title
             }
 
-            folderImageView.image = DesignSystemImages.Glyphs.Size24.folder
+            folderImageView.image = DesignSystemImages.Color.Size24.folder
         }
     }
     

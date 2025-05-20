@@ -92,7 +92,7 @@ class BookmarksViewControllerCellFactory {
         cell.titleLabel.textColor = theme.tableCellTextColor
         cell.childrenCountLabel.textColor = theme.tableCellTextColor
         cell.editingAccessoryType = .disclosureIndicator
-        cell.iconImageView.image = DesignSystemImages.Glyphs.Size24.folder
+        cell.iconImageView.image = DesignSystemImages.Color.Size24.folder
         if !ExperimentalThemingManager().isExperimentalThemingEnabled {
             cell.iconImageView.tintColor = UIColor(designSystemColor: .icons)
         }

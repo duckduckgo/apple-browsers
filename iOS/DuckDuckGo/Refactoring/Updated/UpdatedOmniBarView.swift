@@ -262,9 +262,9 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     }
 
     override func layoutSubviews() {
-        super.layoutSubviews()
-
+        super.layoutSubviews()        
         updateMaskLayer()
+        NotificationCenter.default.post(name: DefaultOmniBarView.didLayoutNotification, object: self.frame.height)
     }
 
     private func setUpSubviews() {

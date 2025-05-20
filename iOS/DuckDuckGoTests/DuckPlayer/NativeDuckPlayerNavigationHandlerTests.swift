@@ -34,10 +34,9 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
     private var mockWebView: MockWebView!
     private var mockAppSettings: AppSettingsMock!
     private var mockPrivacyConfig: PrivacyConfigurationManagerMock!
-    private var mockInternalUserDecider: MockDuckPlayerInternalUserDecider!
+    private var mockFeatureFlagger: MockDuckPlayerFeatureFlagger!
     private var playerSettings: MockDuckPlayerSettings!
     private var mockDuckPlayer: MockDuckPlayer!
-    private var mockFeatureFlagger: MockDuckPlayerFeatureFlagger!
     private var sut: NativeDuckPlayerNavigationHandler!
     private var mockTabNavigator: MockDuckPlayerTabNavigator!
     private var mockNativeUIPresenter: MockDuckPlayerNativeUIPresenting!
@@ -50,17 +49,16 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         mockWebView = MockWebView()
         mockAppSettings = AppSettingsMock()
         mockPrivacyConfig = PrivacyConfigurationManagerMock()
-        mockInternalUserDecider = MockDuckPlayerInternalUserDecider()
+        mockFeatureFlagger = MockDuckPlayerFeatureFlagger()
         mockDelayHandler = MockDelayHandler()
 
         playerSettings = MockDuckPlayerSettings(
             appSettings: mockAppSettings,
             privacyConfigManager: mockPrivacyConfig,
-            internalUserDecider: mockInternalUserDecider
+            featureFlagger: mockFeatureFlagger
         )
         playerSettings.variant = .nativeOptIn
-
-        mockFeatureFlagger = MockDuckPlayerFeatureFlagger()
+        
         mockNativeUIPresenter = MockDuckPlayerNativeUIPresenting()
 
         mockDuckPlayer = MockDuckPlayer(
@@ -90,8 +88,7 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         mockFeatureFlagger = nil
         mockTabNavigator = nil
         sut = nil
-        mockNativeUIPresenter = nil
-        mockInternalUserDecider = nil
+        mockNativeUIPresenter = nil        
         mockDelayHandler = nil
         super.tearDown()
     }

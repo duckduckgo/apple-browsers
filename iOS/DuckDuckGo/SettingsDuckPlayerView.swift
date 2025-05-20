@@ -69,8 +69,10 @@ struct SettingsDuckPlayerView: View {
                 .listRowBackground(Color.clear)
             }
 
-            Section {
-                if !viewModel.duckPlayerNativeUI.wrappedValue {
+           
+            // Duck Player Classic UI
+            if !viewModel.duckPlayerNativeUI.wrappedValue {
+                Section {
                     SettingsPickerCellView(label: UserText.settingsOpenVideosInDuckPlayerLabel,
                                         options: DuckPlayerMode.allCases,
                                         selectedOption: viewModel.duckPlayerModeBinding)
@@ -81,6 +83,26 @@ struct SettingsDuckPlayerView: View {
                                             accessory: .toggle(isOn: viewModel.duckPlayerOpenInNewTabBinding))
                     }
                 }
+            } else {
+                // Duck Player Native UI
+                Section(footer: Text(UserText.duckPlayerSearchResultsFooter)) {
+                        SettingsCellView(label: UserText.duckPlayerSearchResultsLabel,
+                                        accessory: .toggle(isOn: viewModel.duckPlayerNativeUISERPEnabled))
+                                        .disabled(viewModel.shouldDisplayDuckPlayerContingencyMessage)
+                    }
+
+                    Section(footer: Text(UserText.duckPlayerYoutubeFooter)) {
+                    SettingsPickerCellView(label: UserText.duckPlayerYoutubeLabel,
+                                        options: NativeDuckPlayerYoutubeMode.allCases,
+                                        selectedOption: viewModel.duckPlayerNativeYoutubeModeBinding)
+                                        .disabled(viewModel.shouldDisplayDuckPlayerContingencyMessage)
+                    }
+
+                    Section(footer: Text(UserText.duckPlayerAutoplayFooter)) {
+                        SettingsCellView(label: UserText.duckPlayerAutoplayLabel,
+                                        accessory: .toggle(isOn: viewModel.duckPlayerAutoplay))
+                                        .disabled(viewModel.shouldDisplayDuckPlayerContingencyMessage)
+                    }
             }
 
         }

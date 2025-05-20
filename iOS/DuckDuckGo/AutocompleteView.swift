@@ -231,12 +231,12 @@ private struct SuggestionView: View {
                                    title: url.formattedForSuggestion())
 
             case .bookmark(let title, let url, let isFavorite, _) where isFavorite:
-                SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.favorite),
+                SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.bookmarkFavorite),
                                    title: title,
                                    subtitle: url.formattedForSuggestion())
 
             case .bookmark(let title, let url, _, _):
-                SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.bookmarkNew),
+                SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.bookmark),
                                    title: title,
                                    subtitle: url.formattedForSuggestion())
 
@@ -251,7 +251,7 @@ private struct SuggestionView: View {
                                    subtitle: url.formattedForSuggestion())
 
             case .openTab(title: let title, url: let url, _, _):
-                SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.tabNew),
+                SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.tabMobile),
                                    title: title,
                                    subtitle: "\(UserText.autocompleteSwitchToTab) · \(url.formattedForSuggestion())")
 

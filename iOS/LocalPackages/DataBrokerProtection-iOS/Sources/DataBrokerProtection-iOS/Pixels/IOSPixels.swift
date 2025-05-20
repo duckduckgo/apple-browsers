@@ -38,9 +38,9 @@ extension IOSPixels: PixelKitEvent {
         switch self {
 
 // This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS
-        case .backgroundTaskStarted: return "m_ios_background-task_started"
-        case .backgroundTaskExpired: return "m_ios_background-task_expired"
-        case .backgroundTaskEndedHavingCompletedAllJobs: return "m_ios_background-task_ended-having-completed-all-jobs"
+        case .backgroundTaskStarted: return "m_ios_dbp_background-task_started"
+        case .backgroundTaskExpired: return "m_ios_dbp_background-task_expired"
+        case .backgroundTaskEndedHavingCompletedAllJobs: return "m_ios_dbp_background-task_ended-having-completed-all-jobs"
         case .backgroundTaskSchedulingFailed: return "m_ios_dbp_background-task_scheduling-failed"
 
         }

@@ -25,8 +25,8 @@ import DataBrokerProtectionCore
 
 public enum IOSPixels {
 
-// This should never ever go to production due to the deviceID and only exists for internal testing
-#if !RELEASE
+// This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS
+#if DEBUG || ALPHA
     // Background Task Scheduling events
     case backgroundTaskStarted(deviceID: String)
     case backgroundTaskExpired(duration: Double, deviceID: String)
@@ -39,8 +39,8 @@ extension IOSPixels: PixelKitEvent {
     public var name: String {
         switch self {
 
-// This should never ever go to production due to the deviceID and only exists for internal testing
-#if !RELEASE
+// This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS
+#if DEBUG || ALPHA
         case .backgroundTaskStarted: return "m_ios_background-task_started"
         case .backgroundTaskExpired: return "m_ios_background-task_expired"
         case .backgroundTaskEndedHavingCompletedAllJobs: return "m_ios_background-task_ended-having-completed-all-jobs"
@@ -56,8 +56,8 @@ extension IOSPixels: PixelKitEvent {
 
     public var parameters: [String: String]? {
         switch self {
-// This should never ever go to production due to the deviceID and only exists for internal testing
-#if !RELEASE
+// This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS
+#if DEBUG || ALPHA
         case .backgroundTaskStarted(let deviceID),
                 .backgroundTaskSchedulingFailed(_, let deviceID):
             return [DataBrokerProtectionSharedPixels.Consts.deviceIdentifier: deviceID, DataBrokerProtectionSharedPixels.Consts.deviceModel: DataBrokerProtectionSettings.modelName]
@@ -82,8 +82,8 @@ public class IOSPixelsHandler: EventMapping<IOSPixels> {
 
         self.eventMapper = { event, _, _, _ in
             switch event {
-// This should never ever go to production due to the deviceID and only exists for internal testing
-#if !RELEASE
+// This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS
+#if DEBUG || ALPHA
             case .backgroundTaskStarted,
                     .backgroundTaskExpired,
                     .backgroundTaskEndedHavingCompletedAllJobs:

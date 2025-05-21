@@ -54,13 +54,16 @@ enum Preferences {
         var subscriptionSettingsModel: PreferencesSubscriptionSettingsModelV1?
         let subscriptionManager: SubscriptionManager
         let subscriptionUIHandler: SubscriptionUIHandling
+        let visualStyle: VisualStyleProviding
 
         init(model: PreferencesSidebarModel,
              subscriptionManager: SubscriptionManager,
-             subscriptionUIHandler: SubscriptionUIHandling) {
+             subscriptionUIHandler: SubscriptionUIHandling,
+             visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
             self.model = model
             self.subscriptionManager = subscriptionManager
             self.subscriptionUIHandler = subscriptionUIHandler
+            self.visualStyle = visualStyleManager.style
             self.purchaseSubscriptionModel = makePurchaseSubscriptionViewModel()
             self.personalInformationRemovalModel = makePersonalInformationRemovalViewModel()
             self.identityTheftRestorationModel = makeIdentityTheftRestorationViewModel()
@@ -81,7 +84,7 @@ enum Preferences {
                 .frame(minWidth: Const.minContentWidth, maxWidth: .infinity)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.preferencesBackground)
+            .background(Color(visualStyle.colorsProvider.settingsBackgroundColor))
         }
 
         @ViewBuilder
@@ -275,15 +278,18 @@ enum Preferences {
         var subscriptionSettingsModel: PreferencesSubscriptionSettingsModelV2?
         let subscriptionManager: SubscriptionManagerV2
         let subscriptionUIHandler: SubscriptionUIHandling
+        let visualStyle: VisualStyleProviding
 
         init(
             model: PreferencesSidebarModel,
             subscriptionManager: SubscriptionManagerV2,
-            subscriptionUIHandler: SubscriptionUIHandling
+            subscriptionUIHandler: SubscriptionUIHandling,
+            visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager
         ) {
             self.model = model
             self.subscriptionManager = subscriptionManager
             self.subscriptionUIHandler = subscriptionUIHandler
+            self.visualStyle = visualStyleManager.style
             self.purchaseSubscriptionModel = makePurchaseSubscriptionViewModel()
             self.personalInformationRemovalModel = makePersonalInformationRemovalViewModel()
             self.identityTheftRestorationModel = makeIdentityTheftRestorationViewModel()
@@ -304,7 +310,7 @@ enum Preferences {
                 .frame(minWidth: Const.minContentWidth, maxWidth: .infinity)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.preferencesBackground)
+            .background(Color(visualStyle.colorsProvider.settingsBackgroundColor))
         }
 
         @ViewBuilder

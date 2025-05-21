@@ -28,8 +28,12 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
     private let internalUserDecider: InternalUserDecider
     @Published var isInternalUser: Bool
     private var internalUserCancellable: AnyCancellable?
+    private let featureFlagger: FeatureFlagger
 
-    private init(internalUserDecider: InternalUserDecider) {
+    private init(internalUserDecider: InternalUserDecider,
+                 featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+
+        self.featureFlagger = featureFlagger
         self.internalUserDecider = internalUserDecider
         self.isInternalUser = internalUserDecider.isInternalUser
         self.internalUserCancellable = internalUserDecider.isInternalUserPublisher
@@ -37,6 +41,14 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
     }
 
 #if SPARKLE
+    var useLegacyAutoRestartLogic: Bool {
+        !featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp)
+    }
+
+    var mustCheckForUpdatesBeforeUserCanTakeAction: Bool {
+        !useLegacyAutoRestartLogic
+    }
+
     @Published var updateState = UpdateState.upToDate
 
     var updateController: UpdateControllerProtocol? {
@@ -58,6 +70,60 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
     }
 
     private var subscribed = false
+
+    private var hasPendingUpdate: Bool {
+        updateController?.hasPendingUpdate == true
+    }
+
+    private var isAtRestartCheckpoint: Bool {
+        updateController?.isAtRestartCheckpoint ?? false
+    }
+
+    struct UpdateButtonConfiguration {
+        let title: String
+        let action: () -> Void
+        let enabled: Bool
+    }
+
+    var updateButtonConfiguration: UpdateButtonConfiguration {
+        switch updateState {
+        case .upToDate:
+            return UpdateButtonConfiguration(
+                title: UserText.checkForUpdate,
+                action: { [weak self] in
+                    self?.checkForUpdate(userInitiated: true)
+                },
+                enabled: true)
+        case .updateCycle(let progress):
+            if isAtRestartCheckpoint {
+                return UpdateButtonConfiguration(
+                    title: UserText.restartToUpdate,
+                    action: { [weak self] in
+                        self?.checkForUpdate(userInitiated: true)
+                    },
+                    enabled: true)
+            } else if hasPendingUpdate {
+                return UpdateButtonConfiguration(
+                    title: UserText.runUpdate,
+                    action: runUpdate,
+                    enabled: true)
+            } else if progress.isFailed {
+                return UpdateButtonConfiguration(
+                    title: UserText.retryUpdate,
+                    action: { [weak self] in
+                        self?.checkForUpdate(userInitiated: true)
+                    },
+                    enabled: true)
+            } else {
+                return UpdateButtonConfiguration(
+                    title: UserText.checkForUpdate,
+                    action: { [weak self] in
+                        self?.checkForUpdate(userInitiated: true)
+                    },
+                    enabled: false)
+            }
+        }
+    }
 
 #endif
 
@@ -82,8 +148,12 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
     }
 
 #if SPARKLE
-    func checkForUpdate() {
-        updateController?.checkForUpdateSkippingRollout()
+    func checkForUpdate(userInitiated: Bool) {
+        if userInitiated {
+            updateController?.checkForUpdateSkippingRollout()
+        } else {
+            updateController?.checkForUpdateRespectingRollout()
+        }
     }
 
     func runUpdate() {

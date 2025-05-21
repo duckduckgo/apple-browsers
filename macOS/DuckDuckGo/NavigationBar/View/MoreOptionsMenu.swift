@@ -405,7 +405,12 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             return
         }
 
-        addItem(UpdateMenuItemFactory.menuItem(for: update))
+        if featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp) {
+            addItem(UpdateMenuItemFactory.menuItem(for: updateController))
+        } else {
+            addItem(UpdateMenuItemFactory.menuItem(for: update))
+        }
+
         addItem(NSMenuItem.separator())
 #endif
     }

@@ -111,5 +111,5 @@ class AppSettingsMock: AppSettings {
     var duckPlayerWelcomeMessageShown: Bool = false
     var duckPlayerVariant: DuckDuckGo.DuckPlayerVariant = .classicWeb
     var duckPlayerPrimingMessagePresented: Bool = false
-
+    var duckPlayerControlsVisible: Bool = true
 }

@@ -139,6 +139,66 @@ public struct ExchangeMessage: Codable, Sendable {
     public let deviceName: String
 }
 
+public struct PairingInfo {
+    enum Keys {
+        static let code = "code"
+        static let deviceName = "deviceName"
+    }
+
+    public let base64Code: String
+    public let deviceName: String
+
+    public init?(url: URL) {
+        guard Self.isPairing(url: url) else {
+            return nil
+        }
+        guard let fragment = URLComponents(url: url, resolvingAgainstBaseURL: false)?.fragment else {
+            return nil
+        }
+        let params = fragment
+            .split(separator: "&")
+            .compactMap { part -> (String, String)? in
+                let keyValue = part.split(separator: "=", maxSplits: 1).map(String.init)
+                guard keyValue.count == 2 else { return nil }
+                return (keyValue[0], keyValue[1].removingPercentEncoding ?? keyValue[1])
+            }
+
+        let dict = Dictionary(uniqueKeysWithValues: params)
+        guard let code = dict[Keys.code], let deviceName = dict[Keys.deviceName] else {
+            return nil
+        }
+        self.init(base64Code: Self.restoreBase64(from: code),
+                  deviceName: deviceName)
+    }
+
+    init(base64Code: String, deviceName: String) {
+        self.base64Code = base64Code
+        self.deviceName = deviceName
+    }
+
+    func toURL(baseURL: URL) -> URL {
+        let url = baseURL.appendingPathComponent("sync/pairing/")
+        var urlComponents = URLComponents(url: url, resolvingAgainstBaseURL: false)
+        let fragment = "&\(Keys.code)=\(base64URLCode)&\(Keys.deviceName)=\(deviceName.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? deviceName)"
+        urlComponents?.fragment = fragment
+        return urlComponents?.url ?? url
+    }
+
+    private static func isPairing(url: URL) -> Bool {
+        url.pathComponents.contains("sync") && url.pathComponents.last == "pairing" && url.isPart(ofDomain: "duckduckgo.com")
+    }
+
+    private static func restoreBase64(from base64URLCode: String) -> String {
+        let paddingLength = (4 - (base64URLCode.count % 4)) % 4
+        let padding = String(repeating: "=", count: paddingLength)
+        return base64URLCode.replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/").appending(padding)
+    }
+
+    private var base64URLCode: String {
+        base64Code.replacingOccurrences(of: "+", with: "-").replacingOccurrences(of: "/", with: "_").replacingOccurrences(of: "=", with: "")
+    }
+}
+
 public struct SyncCode: Codable {
 
     public enum Base64Error: Error {

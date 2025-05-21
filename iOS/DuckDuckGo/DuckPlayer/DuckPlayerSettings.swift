@@ -79,11 +79,11 @@ enum NativeDuckPlayerYoutubeMode: Equatable, Codable, CustomStringConvertible, C
     var description: String {
         switch self {
         case .auto:
-            return "Automatically"
+            return UserText.duckPlayerNativeYoutubeModeAuto
         case .ask:
-            return "Let me choose"
+            return UserText.duckPlayerNativeYoutubeModeAsk
         case .never:
-            return "Don't Show"
+            return UserText.duckPlayerNativeYoutubeModeNever
         }
     }
 
@@ -215,6 +215,9 @@ protocol DuckPlayerSettings: AnyObject {
 
     // Time since last priming modal was presented
     var primingMessagePresented: Bool { get set }
+
+    // Whether the View controls are visible
+    var duckPlayerControlsVisible: Bool { get set }
 
     /// Initializes a new instance with the provided app settings and privacy configuration manager.
     ///
@@ -480,6 +483,17 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
         }
         set {
             appSettings.duckPlayerPillDismissCount = newValue
+            triggerNotification()
+        }
+    }
+
+     // Determines if we should show a custom view when YouTube returns an error
+    var duckPlayerControlsVisible: Bool {
+        get {
+            return appSettings.duckPlayerControlsVisible
+        }
+        set {
+            appSettings.duckPlayerControlsVisible = newValue
             triggerNotification()
         }
     }

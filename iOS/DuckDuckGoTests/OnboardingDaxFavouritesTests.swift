@@ -29,6 +29,7 @@ import Core
 import SubscriptionTestingUtilities
 import Common
 @testable import DuckDuckGo
+@testable import PersistenceTestingUtils
 
 final class OnboardingDaxFavouritesTests: XCTestCase {
     private var sut: MainViewController!
@@ -66,6 +67,7 @@ final class OnboardingDaxFavouritesTests: XCTestCase {
         let tabsModel = TabsModel(desktop: true)
         tutorialSettingsMock = MockTutorialSettings(hasSeenOnboarding: false)
         contextualOnboardingLogicMock = ContextualOnboardingLogicMock()
+        let tabsPersistence = try TabsModelPersistence(store: MockKeyValueFileStore(), legacyStore: MockKeyValueStore())
         sut = MainViewController(
             bookmarksDatabase: db,
             bookmarksDatabaseCleaner: bookmarkDatabaseCleaner,
@@ -76,6 +78,7 @@ final class OnboardingDaxFavouritesTests: XCTestCase {
             appSettings: AppSettingsMock(),
             previewsSource: MockTabPreviewsSource(),
             tabsModel: tabsModel,
+            tabsPersistence: tabsPersistence,
             syncPausedStateManager: CapturingSyncPausedStateManager(),
             privacyProDataReporter: MockPrivacyProDataReporter(),
             variantManager: MockVariantManager(),

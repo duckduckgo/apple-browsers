@@ -30,7 +30,8 @@ import os.log
 class TabManager {
 
     private(set) var model: TabsModel
-    
+    private(set) var persistence: TabsModelPersisting
+
     private var tabControllerCache = [TabViewController]()
 
     private let bookmarksDatabase: CoreDataDatabase
@@ -61,6 +62,7 @@ class TabManager {
 
     @MainActor
     init(model: TabsModel,
+         persistence: TabsModelPersisting,
          previewsSource: TabPreviewsSource,
          interactionStateSource: TabInteractionStateSource?,
          bookmarksDatabase: CoreDataDatabase,
@@ -83,6 +85,7 @@ class TabManager {
          featureDiscovery: FeatureDiscovery
     ) {
         self.model = model
+        self.persistence = persistence
         self.previewsSource = previewsSource
         self.interactionStateSource = interactionStateSource
         self.bookmarksDatabase = bookmarksDatabase
@@ -381,7 +384,7 @@ class TabManager {
     }
 
     func save() {
-        model.save()
+        persistence.save(model: model)
     }
     
     @MainActor

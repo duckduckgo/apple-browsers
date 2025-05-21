@@ -1052,7 +1052,7 @@ final class BrowserTabViewController: NSViewController {
 extension BrowserTabViewController: NSDraggingDestination {
 
     func draggingEntered(_ draggingInfo: NSDraggingInfo) -> NSDragOperation {
-        return .copy
+        return draggingUpdated(draggingInfo)
     }
 
     func draggingUpdated(_ draggingInfo: NSDraggingInfo) -> NSDragOperation {

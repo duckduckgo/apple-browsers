@@ -225,6 +225,7 @@ class MainViewController: UIViewController {
         appSettings: AppSettings,
         previewsSource: TabPreviewsSource,
         tabsModel: TabsModel,
+        tabsPersistence: TabsModelPersisting,
         syncPausedStateManager: any SyncPausedStateManaging,
         privacyProDataReporter: PrivacyProDataReporting,
         variantManager: VariantManager,
@@ -262,6 +263,7 @@ class MainViewController: UIViewController {
 
         let interactionStateSource = WebViewStateRestorationManager(featureFlagger: featureFlagger).isFeatureEnabled ? TabInteractionStateDiskSource() : nil
         self.tabManager = TabManager(model: tabsModel,
+                                     persistence: tabsPersistence,
                                      previewsSource: previewsSource,
                                      interactionStateSource: interactionStateSource,
                                      bookmarksDatabase: bookmarksDatabase,
@@ -3314,6 +3316,10 @@ extension MainViewController: AutofillLoginListViewControllerDelegate {
 extension MainViewController: AIChatViewControllerManagerDelegate {
     func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didRequestToLoad url: URL) {
         loadUrlInNewTab(url, inheritedAttribution: nil)
+    }
+
+    func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didSubmitQuery query: String) {
+        self.loadQuery(query)
     }
 
     func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didRequestOpenDownloadWithFileName fileName: String) {

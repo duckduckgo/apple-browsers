@@ -229,7 +229,8 @@ final class MockSyncDependencies: SyncDependencies, SyncDependenciesDebuggingSup
     var scheduler: SchedulingInternal = SchedulerMock()
     var privacyConfigurationManager: PrivacyConfigurationManaging = MockPrivacyConfigurationManager()
     var errorEvents: EventMapping<SyncError> = MockErrorHandler()
-    var keyValueStore: KeyValueStoring = MockKeyValueStore()
+    var keyValueStore: ThrowingKeyValueStoring = try! MockKeyValueFileStore()
+    var legacyKeyValueStore: KeyValueStoring = MockKeyValueStore()
 
     var request = HTTPRequestingMock()
 

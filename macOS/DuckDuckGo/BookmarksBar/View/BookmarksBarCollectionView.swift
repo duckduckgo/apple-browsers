@@ -1,5 +1,5 @@
 //
-//  ItemCachingCollectionView.swift
+//  BookmarksBarCollectionView.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -19,7 +19,7 @@
 import AppKit
 import Foundation
 
-final class ItemCachingCollectionView: NSCollectionView {
+final class BookmarksBarCollectionView: NSCollectionView {
 
     private struct CollectionViewItemCacheIdentifier: Hashable {
         let identifier: NSUserInterfaceItemIdentifier
@@ -68,6 +68,12 @@ final class ItemCachingCollectionView: NSCollectionView {
             item.view.removeFromSuperview()
         }
         collectionViewItemCache.removeAll(keepingCapacity: true)
+    }
+    override func mouseDown(with event: NSEvent) {
+        // Clear selection index paths on mouse down to prevent dragging multiple items with ⌘ pressed
+        // we don‘t support “selection” anyways
+        selectionIndexPaths = []
+        super.mouseDown(with: event)
     }
 
 }

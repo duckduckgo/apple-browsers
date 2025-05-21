@@ -27,9 +27,9 @@ struct ThreatProtectionView: View {
 
     var description: PrivacyProtectionDescription {
         PrivacyProtectionDescription(imageName: "SettingsWebTrackingProtectionContent",
-                                     title: "Threat Protection",
-                                     status: .alwaysOn,
-                                     explanation: "Some descriptions go here")
+                                     title: UserText.threatProtection,
+                                     status: .on,
+                                     explanation: UserText.threatProtectionCaption)
     }
 
     var body: some View {
@@ -51,19 +51,26 @@ struct ThreatProtectionViewSettings: View {
     }
 
     var body: some View {
-        Section(footer: Text("Disabling this feature can put your personal information at risk. **[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/scam-blocker/)**")
-        .tint(Color(designSystemColor: .accent))) {
-            // Smarter Encryption
-            if model.shouldShowMaliciousSiteProtectionSection {
+        // Smarter Encryption
+        Section(footer: Text(LocalizedStringKey(UserText.smarterEncryptionDescription))
+            .tint(Color(designSystemColor: .accent))) {
                 SettingsCellView(label: "Smarter Encryption",
-                                 subtitle: "Automatically updates links to HTTPS whenever possible",
                                  statusIndicator: StatusIndicatorView(status: .alwaysOn))
             }
 
-            // Scam Blocker
-            SettingsCellView(label: "Scam Blocker",
-                             subtitle: "Warn on sites flagged for scam, phishing and malware",
-                             accessory: .toggle(isOn: $model.isMaliciousSiteProtectionOn))
+        // Scam Blocker
+        if model.shouldShowMaliciousSiteProtectionSection {
+            Section(footer: VStack(alignment: .leading, spacing: 8) {
+                Text(LocalizedStringKey(UserText.scamBlockerToggleLabel))
+                    .tint(Color(designSystemColor: .accent))
+                if !model.isMaliciousSiteProtectionOn {
+                    Text(UserText.scamBlockerToggleCaption)
+                        .foregroundColor(.red)
+                }
+            }) {
+                    SettingsCellView(label: "Scam Blocker",
+                                     accessory: .toggle(isOn: $model.isMaliciousSiteProtectionOn))
+                }
         }
     }
 }

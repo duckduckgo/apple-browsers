@@ -266,12 +266,6 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     private func setUpSubviews() {
         addSubview(stackView)
 
-        searchAreaContainerView.addSubview(searchAreaView)
-        searchAreaContainerView.addSubview(omniBarProgressView)
-
-        searchAreaStackView.addArrangedSubview(searchAreaContainerView)
-        searchAreaStackView.addArrangedSubview(bookmarksButtonView)
-
         stackView.addArrangedSubview(leadingButtonsContainer)
         stackView.addArrangedSubview(searchAreaAlignmentView)
         stackView.addArrangedSubview(trailingButtonsContainer)
@@ -280,6 +274,12 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         leadingButtonsContainer.addArrangedSubview(forwardButtonView)
 
         searchAreaAlignmentView.addSubview(searchAreaStackView)
+
+        searchAreaStackView.addArrangedSubview(searchAreaContainerView)
+        searchAreaStackView.addArrangedSubview(bookmarksButtonView)
+
+        searchAreaContainerView.addSubview(searchAreaView)
+        searchAreaContainerView.addSubview(omniBarProgressView)
 
         trailingButtonsContainer.addArrangedSubview(menuButtonView)
         trailingButtonsContainer.addArrangedSubview(settingsButtonView)

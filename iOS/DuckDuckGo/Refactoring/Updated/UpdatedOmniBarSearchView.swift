@@ -161,7 +161,7 @@ final class UpdatedOmniBarSearchView: UIView {
         shareButton.setImage(DesignSystemImages.Glyphs.Size24.shareApple)
         UpdatedOmniBarView.setUpCommonProperties(for: shareButton)
 
-        cancelButton.setImage(DesignSystemImages.Glyphs.Size24.arrowLeft)
+        cancelButton.setImage(DesignSystemImages.Glyphs.Size24.close)
         UpdatedOmniBarView.setUpCommonProperties(for: cancelButton)
 
         voiceSearchButton.setImage(DesignSystemImages.Glyphs.Size24.microphone)

@@ -70,6 +70,8 @@ public extension SubJobWebRunning {
     }
 
     func runNextAction(_ action: Action) async {
+        let stepType = actionsHandler?.step.type
+        
         switch action {
         case is GetCaptchaInfoAction:
             stageCalculator.setStage(.captchaParse)
@@ -101,7 +103,9 @@ public extension SubJobWebRunning {
                                                                                      attemptId: stageCalculator.attemptId,
                                                                                      shouldRunNextStep: shouldRunNextStep) {
                 stageCalculator.fireOptOutCaptchaSolve()
-                await webViewHandler?.execute(action: action, data: .solveCaptcha(CaptchaToken(token: captchaData)))
+                await webViewHandler?.execute(action: action,
+                                              ofType: stepType,
+                                              data: .solveCaptcha(CaptchaToken(token: captchaData)))
             } else {
                 await onError(error: DataBrokerProtectionError.captchaServiceError(CaptchaServiceError.nilDataWhenFetchingCaptchaResult))
             }
@@ -126,7 +130,9 @@ public extension SubJobWebRunning {
             return
         }
 
-        await webViewHandler?.execute(action: action, data: .userData(query.profileQuery, self.extractedProfile))
+        await webViewHandler?.execute(action: action,
+                                      ofType: stepType,
+                                      data: .userData(query.profileQuery, self.extractedProfile))
     }
 
     private func runEmailConfirmationAction(action: EmailConfirmationAction) async throws {

@@ -133,7 +133,7 @@ public class DataBrokerProtectionFeature: Subfeature {
         self.broker = broker
     }
 
-    func pushAction(method: CCFSubscribeActionName, webView: WKWebView, params: Encodable) {
+    func pushAction(method: CCFSubscribeActionName, webView: WKWebView, params: Encodable, canTimeOut: Bool) {
         guard let broker = broker else {
             assertionFailure("Cannot continue without broker instance")
             return
@@ -142,18 +142,26 @@ public class DataBrokerProtectionFeature: Subfeature {
 
         broker.push(method: method.rawValue, params: params, for: self, into: webView)
 
-        removeTimer()
-        timer = Timer.scheduledTimer(withTimeInterval: actionResponseTimeout, repeats: false) { [weak self] _ in
-            self?.handleTimeout(for: (params as? Params)?.state.action)
+        if canTimeOut {
+            installTimer(for: (params as? Params)?.state.action)
         }
     }
 
-    private func handleTimeout(for action: Action?) {
+    private func installTimer(for action: Action?) {
+        guard let action else { return }
+
+        removeTimer()
+        timer = Timer.scheduledTimer(withTimeInterval: actionResponseTimeout, repeats: false) { [weak self] _ in
+            self?.handleTimeout(for: action)
+        }
+    }
+
+    private func handleTimeout(for action: Action) {
         Logger.action.log("Action timeout: \(String(describing: action))")
 
         removeTimer()
         Task {
-            await delegate?.onError(error: DataBrokerProtectionError.actionFailed(actionID: action?.id ?? "unknown",
+            await delegate?.onError(error: DataBrokerProtectionError.actionFailed(actionID: action.id,
                                                                                   message: "Request timed out"))
         }
     }

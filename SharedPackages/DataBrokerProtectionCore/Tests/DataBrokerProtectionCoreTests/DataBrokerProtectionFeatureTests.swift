@@ -120,7 +120,7 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
         let action = ExpectationAction(id: "expectation-1", actionType: .expectation, expectations: [], dataSource: nil, actions: nil)
         let params = Params(state: ActionRequest(action: action, data: mockCCFRequestData))
 
-        sut.pushAction(method: .onActionReceived, webView: mockWebView, params: params)
+        sut.pushAction(method: .onActionReceived, webView: mockWebView, params: params, canTimeOut: true)
 
         let testPeriod = Date(timeIntervalSinceNow: 0.2)
         while Date() < testPeriod {
@@ -136,7 +136,7 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
         let action = ExpectationAction(id: "expectation-1", actionType: .expectation, expectations: [], dataSource: nil, actions: nil)
         let params = Params(state: ActionRequest(action: action, data: mockCCFRequestData))
 
-        sut.pushAction(method: .onActionReceived, webView: mockWebView, params: params)
+        sut.pushAction(method: .onActionReceived, webView: mockWebView, params: params, canTimeOut: true)
 
         Task {
             let completionParams = ["result": ["success": ["actionID": "expectation-1", "actionType": "expectation"] as [String: Any]]]
@@ -161,7 +161,7 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
         let action = ExpectationAction(id: "expectation-1", actionType: .expectation, expectations: [], dataSource: nil, actions: nil)
         let params = Params(state: ActionRequest(action: action, data: mockCCFRequestData))
 
-        sut.pushAction(method: .onActionReceived, webView: mockWebView, params: params)
+        sut.pushAction(method: .onActionReceived, webView: mockWebView, params: params, canTimeOut: true)
 
         Task {
             let errorParams = ["error": "No action found."]

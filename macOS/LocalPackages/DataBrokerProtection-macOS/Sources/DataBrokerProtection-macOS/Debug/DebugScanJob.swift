@@ -146,7 +146,9 @@ final class DebugScanJob: SubJobWebRunning {
             }
         }
 
-        await webViewHandler?.execute(action: action, data: .userData(query.profileQuery, self.extractedProfile))
+        await webViewHandler?.execute(action: action,
+                                      ofType: actionsHandler?.step.type,
+                                      data: .userData(query.profileQuery, self.extractedProfile))
     }
 
     public func extractedProfiles(profiles: [ExtractedProfile], meta: [String: Any]?) async {

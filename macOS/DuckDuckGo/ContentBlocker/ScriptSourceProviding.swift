@@ -54,7 +54,16 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     private(set) var autofillSourceProvider: AutofillUserScriptSourceProvider?
     private(set) var sessionKey: String?
     private(set) var messageSecret: String?
-    private(set) var currentCohorts: [ContentScopeExperimentData]?
+    private var storedCohorts: [ContentScopeExperimentData]
+    private let cohortsUpdated: Bool = false
+
+    var currentCohorts: [ContentScopeExperimentData] {
+        if !storedCohorts {
+            storedCohorts = Self.generateCurrentCohorts(experimentManager: contentScopeExperimentsManager,
+                                                       statisticsStore: statisticsStore)
+        }
+        return storedCohorts
+    }
 
     let configStorage: ConfigurationStoring
     let privacyConfigurationManager: PrivacyConfigurationManaging
@@ -91,7 +100,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.autofillSourceProvider = buildAutofillSource()
         self.onboardingActionsManager = buildOnboardingActionsManager()
         self.historyViewActionsManager = buildHistoryViewActionsManager()
-        self.currentCohorts = generateCurrentCohorts()
+        self.storedCohorts = generateCurrentCohorts()
     }
 
     private func generateSessionKey() -> String {
@@ -214,8 +223,10 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         // Only generate new cohorts if the app was used today
         let experiments = if statisticsStore.isAppRetentionFiredToday {
             experimentManager.resolveContentScopeScriptActiveExperiments()
+            cohortsUpdated = true
         } else {
             experimentManager.allActiveContentScopeExperiments
+            cohortsUpdated = false
         }
 
         return experiments.map {

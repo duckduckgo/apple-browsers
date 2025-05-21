@@ -93,9 +93,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/0/1206329551987282/1209130794450271
     case onboardingSetAsDefaultBrowser
 
-    /// https://app.asana.com/0/72649045549333/1209633877674689/f
-    case exchangeKeysToSyncWithAnotherDevice
-
     // Demonstrative cases for default value. Remove once a real-world feature/subfeature is added
     case failsafeExampleCrossPlatformFeature
     case failsafeExamplePlatformSpecificSubfeature
@@ -152,13 +149,14 @@ extension FeatureFlag: FeatureFlagDescribing {
              .maliciousSiteProtection,
              .autofillCreditCards,
              .autofillCreditCardsOnByDefault,
-             .exchangeKeysToSyncWithAnotherDevice,
              .privacyProOnboardingPromotion,
              .syncSetupBarcodeIsUrlBased,
              .canScanUrlBasedSyncSetupBarcodes,
              .duckPlayerNativeUI,
              .privacyProFreeTrial,
-             .autofillPasswordVariantCategorization:
+             .autofillPasswordVariantCategorization,                
+             .syncSetupBarcodeIsUrlBased,
+             .canScanUrlBasedSyncSetupBarcodes:
             return true
         case .onboardingSetAsDefaultBrowser:
             if #available(iOS 18.3, *) {
@@ -255,8 +253,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
         case .onboardingSetAsDefaultBrowser:
             return .remoteReleasable(.subfeature(OnboardingSubfeature.setAsDefaultBrowserExperiment))
-        case .exchangeKeysToSyncWithAnotherDevice:
-            return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
         case .failsafeExampleCrossPlatformFeature:
             return .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests))
         case .failsafeExamplePlatformSpecificSubfeature:

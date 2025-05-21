@@ -315,14 +315,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     private func collectCode(showQRCode: Bool) {
-        guard featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) else {
-            legacyCollectCode(showQRCode: showQRCode)
-            return
-        }
-        newCollectCode(showQRCode: showQRCode)
-    }
-    
-    private func newCollectCode(showQRCode: Bool) {
         Task { @MainActor in
             let code: String
             let shouldGenerateURLBasedCode = featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased)
@@ -343,22 +335,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             }
             presentScanOrPasteCodeView(code: code, showQRCode: showQRCode)
         }
-    }
-    
-    private func legacyCollectCode(showQRCode: Bool) {
-        let code: String
-        
-        if isSyncEnabled {
-            code = recoveryCode
-        } else {
-            do {
-                code = try startConnectMode()
-            } catch {
-                self.handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
-                return
-            }
-        }
-        presentScanOrPasteCodeView(code: code, showQRCode: showQRCode)
     }
     
     private func presentScanOrPasteCodeView(code: String, showQRCode: Bool) {

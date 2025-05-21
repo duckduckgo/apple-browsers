@@ -557,10 +557,6 @@ extension SyncPreferences: ManagementDialogModelDelegate {
     }
 
     func startPollingForRecoveryKey(isRecovery: Bool) {
-        guard featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) else {
-            legacyStartPollingForRecoveryKey(isRecovery: isRecovery)
-            return
-        }
         newStartPollingForRecoveryKey(isRecovery: isRecovery)
     }
 
@@ -593,110 +589,14 @@ extension SyncPreferences: ManagementDialogModelDelegate {
         }
     }
 
-    private func legacyStartPollingForRecoveryKey(isRecovery: Bool) {
-        Task { @MainActor in
-            do {
-                self.connector = try syncService.remoteConnect()
-                self.codeToDisplay = connector?.code
-                if isRecovery {
-                    self.presentDialog(for: .enterRecoveryCode(code: codeToDisplay ?? ""))
-                } else {
-                    self.presentDialog(for: .syncWithAnotherDevice(code: codeToDisplay ?? ""))
-                }
-                if let recoveryKey = try await connector?.pollForRecoveryKey() {
-                    presentDialog(for: .prepareToSync)
-                    self.recoveryKey = recoveryKey
-                    try await loginAndShowPresentedDialog(recoveryKey, isRecovery: isRecovery)
-                } else {
-                    // Polling was likeley cancelled elsewhere (e.g. dialog closed)
-                    return
-                }
-            } catch {
-                if syncService.account == nil {
-                    if isRecovery {
-                        managementDialogModel.syncErrorMessage = SyncErrorMessage(
-                            type: .unableToSyncToServer,
-                            description: error.localizedDescription
-                        )
-                    } else {
-                        managementDialogModel.syncErrorMessage = SyncErrorMessage(
-                            type: .unableToSyncToOtherDevice,
-                            description: error.localizedDescription
-                        )
-                    }
-                    PixelKit.fire(DebugEvent(GeneralPixel.syncLoginError(error: error)))
-                }
-            }
-        }
-    }
-
     func stopPollingForRecoveryKey() {
         self.connector?.stopPolling()
         self.connector = nil
     }
 
     func recoverDevice(recoveryCode: String, fromRecoveryScreen: Bool) {
-        guard featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) else {
-            legacyRecoverDevice(recoveryCode: recoveryCode, fromRecoveryScreen: fromRecoveryScreen)
-            return
-        }
         Task {
             await connectionController.syncCodeEntered(code: recoveryCode, canScanURLBarcodes: false)
-        }
-    }
-
-    private func legacyRecoverDevice(recoveryCode: String, fromRecoveryScreen: Bool) {
-        Task { @MainActor in
-            guard let syncCode = try? SyncCode.decodeBase64String(recoveryCode) else {
-                managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .invalidCode, description: "")
-                return
-            }
-            presentDialog(for: .prepareToSync)
-            if let recoveryKey = syncCode.recovery {
-                do {
-                    try await loginAndShowPresentedDialog(recoveryKey, isRecovery: fromRecoveryScreen)
-                } catch {
-                    if case SyncError.accountAlreadyExists = error,
-                        featureFlagger.isFeatureOn(.syncSeamlessAccountSwitching) {
-                        handleAccountAlreadyExists(recoveryKey)
-                    } else if case SyncError.accountAlreadyExists = error {
-                        managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToMergeTwoAccounts, description: "")
-                        PixelKit.fire(DebugEvent(GeneralPixel.syncLoginExistingAccountError(error: error)))
-                    } else {
-                        managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToOtherDevice)
-                    }
-                }
-            } else if let connectKey = syncCode.connect {
-                do {
-                    if syncService.account == nil {
-                        let device = deviceInfo()
-                        try await syncService.createAccount(deviceName: device.name, deviceType: device.type)
-                        let additionalParameters = syncPromoSource.map { ["source": $0] } ?? [:]
-                        PixelKit.fire(GeneralPixel.syncSignupConnect, withAdditionalParameters: additionalParameters)
-                        presentDialog(for: .saveRecoveryCode(recoveryCode))
-                    }
-
-                    try await syncService.transmitRecoveryKey(connectKey)
-                    self.$devices
-                        .removeDuplicates()
-                        .dropFirst()
-                        .prefix(1)
-                        .sink { [weak self] _ in
-                            guard let self else { return }
-                            self.presentDialog(for: .saveRecoveryCode(recoveryCode))
-                        }.store(in: &cancellables)
-                    // The UI will update when the devices list changes.
-                } catch {
-                    managementDialogModel.syncErrorMessage = SyncErrorMessage(
-                        type: .unableToSyncToOtherDevice,
-                        description: error.localizedDescription
-                    )
-                    PixelKit.fire(DebugEvent(GeneralPixel.syncLoginError(error: error)))
-                }
-            } else {
-                managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .invalidCode, description: "")
-                return
-            }
         }
     }
 
@@ -773,10 +673,6 @@ extension SyncPreferences: ManagementDialogModelDelegate {
             return
         }
         if isSyncEnabled {
-            guard featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) else {
-                presentDialog(for: .syncWithAnotherDevice(code: recoveryCode ?? ""))
-                return
-            }
             self.startPollingForPublicKey()
         } else {
             self.startPollingForRecoveryKey(isRecovery: false)
@@ -812,7 +708,7 @@ extension SyncPreferences: ManagementDialogModelDelegate {
     @MainActor
     func copyCode() {
         var code: String?
-        if isSyncEnabled && !featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) {
+        if isSyncEnabled {
             code = recoveryCode
         } else {
             // Fall back to recovery code if no other codeToDisplay is set as, if available,

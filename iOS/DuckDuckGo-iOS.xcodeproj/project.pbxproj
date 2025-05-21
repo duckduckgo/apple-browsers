@@ -509,6 +509,7 @@
 		6FE3AF472D9ECF6B001AE6B8 /* dark-shield-dot-new.json in Resources */ = {isa = PBXBuildFile; fileRef = 6FE3AF442D9ECF6B001AE6B8 /* dark-shield-dot-new.json */; };
 		6FEC0B852C999352006B4F6E /* FavoriteItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FEC0B842C999352006B4F6E /* FavoriteItem.swift */; };
 		6FEC0B882C999961006B4F6E /* FavoritesListInteractingAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FEC0B872C999961006B4F6E /* FavoritesListInteractingAdapter.swift */; };
+		6FF4943F2DDDDC4000BCF5F0 /* NSLayoutConstraintExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FF4943E2DDDDC4000BCF5F0 /* NSLayoutConstraintExtension.swift */; };
 		6FF915822B88E07A0042AC87 /* AdAttributionFetcherTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FF915802B88E0750042AC87 /* AdAttributionFetcherTests.swift */; };
 		6FF9AD3F2CE63DD800C5A406 /* TabSwitcherOpenDailyPixel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FF9AD3E2CE63DC200C5A406 /* TabSwitcherOpenDailyPixel.swift */; };
 		6FF9AD412CE6610F00C5A406 /* TabSwitcherOpenDailyPixelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FF9AD402CE6610600C5A406 /* TabSwitcherOpenDailyPixelTests.swift */; };
@@ -2105,6 +2106,7 @@
 		6FE3AF452D9ECF6B001AE6B8 /* shield-dot-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "shield-dot-new.json"; sourceTree = "<group>"; };
 		6FEC0B842C999352006B4F6E /* FavoriteItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoriteItem.swift; sourceTree = "<group>"; };
 		6FEC0B872C999961006B4F6E /* FavoritesListInteractingAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesListInteractingAdapter.swift; sourceTree = "<group>"; };
+		6FF4943E2DDDDC4000BCF5F0 /* NSLayoutConstraintExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NSLayoutConstraintExtension.swift; sourceTree = "<group>"; };
 		6FF915802B88E0750042AC87 /* AdAttributionFetcherTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdAttributionFetcherTests.swift; sourceTree = "<group>"; };
 		6FF9AD3E2CE63DC200C5A406 /* TabSwitcherOpenDailyPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSwitcherOpenDailyPixel.swift; sourceTree = "<group>"; };
 		6FF9AD402CE6610600C5A406 /* TabSwitcherOpenDailyPixelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabSwitcherOpenDailyPixelTests.swift; sourceTree = "<group>"; };
@@ -7823,6 +7825,7 @@
 				83004E832193E14C00DA013C /* UIAlertControllerExtension.swift */,
 				F1B745211E549D550072547E /* UIColorExtension.swift */,
 				F194FAEC1F14E2B3009B4DF8 /* UIFontExtension.swift */,
+				6FF4943E2DDDDC4000BCF5F0 /* NSLayoutConstraintExtension.swift */,
 				1EC458452948932500CB2B13 /* UIHostingControllerExtension.swift */,
 				1EC51CD828D8C0DF00E9D05A /* UIImageExtension.swift */,
 				850365F223DE087800D0F787 /* UIImageViewExtension.swift */,
@@ -9665,6 +9668,7 @@
 				CBF2597B2D414B6D00AC63E4 /* PersistentStoresConfiguration.swift in Sources */,
 				C1B7B51C28941E980098FD6A /* HomeMessageViewModelBuilder.swift in Sources */,
 				85BA58551F34F49E00C6E8CA /* AppUserDefaults.swift in Sources */,
+				6FF4943F2DDDDC4000BCF5F0 /* NSLayoutConstraintExtension.swift in Sources */,
 				9D41D8DD2DC5153D00BA0B63 /* DataBrokerProtectionSettings+Environment.swift in Sources */,
 				C1B7B52528941F2A0098FD6A /* RemoteMessagingClient.swift in Sources */,
 				3132FA2827A0788400DD7A12 /* PassKitPreviewHelper.swift in Sources */,

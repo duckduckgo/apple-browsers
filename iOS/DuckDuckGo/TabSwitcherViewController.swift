@@ -28,6 +28,7 @@ import os.log
 import SwiftUI
 import BrowserServicesKit
 import AIChat
+import Combine
 
 class TabSwitcherViewController: UIViewController {
 
@@ -111,6 +112,7 @@ class TabSwitcherViewController: UIViewController {
     }
 
     let barsHandler = TabSwitcherBarsStateHandler()
+    private var tabObserverCancellable: AnyCancellable?
 
     required init?(coder: NSCoder,
                    bookmarksDatabase: CoreDataDatabase,
@@ -158,6 +160,10 @@ class TabSwitcherViewController: UIViewController {
         if !tabSwitcherSettings.hasSeenNewLayout {
             Pixel.fire(pixel: .tabSwitcherNewLayoutSeen)
             tabSwitcherSettings.hasSeenNewLayout = true
+        }
+
+        tabObserverCancellable = tabsModel.$tabs.receive(on: DispatchQueue.main).sink { [weak self] _ in
+            self?.collectionView.reloadData()
         }
     }
 
@@ -285,7 +291,7 @@ class TabSwitcherViewController: UIViewController {
         if let current = currentSelection {
             let tab = tabsModel.get(tabAt: current)
             tab.viewed = true
-            tabsModel.save()
+            tabManager.save()
             delegate?.tabSwitcher(self, didSelectTab: tab)
         }
         dismiss()

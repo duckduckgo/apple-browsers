@@ -27,13 +27,14 @@ private struct Constants {
     static let hStackSpacing: CGFloat = 20
     static let daxLogo = "DaxLogoSimple"
     static let iconSize: CGFloat = 40
-    static let regularPadding: CGFloat = 16
-    static let cornerRadius: CGFloat = 16
+    static let horizontalPadding: CGFloat = 32
+    static let verticalPadding: CGFloat = 24
+    static let cornerRadius: CGFloat = 12
     static let shadowOpacity: CGFloat = 0.1
     static let shadowRadius: CGFloat = 3
     static let shadowOffset: CGSize = CGSize(width: 0, height: 4)
-    static let mainButtonHeight: CGFloat = 50
-    static let buttonCornerRadius: CGFloat = 14
+    static let mainButtonHeight: CGFloat = 40
+    static let buttonCornerRadius: CGFloat = 8
     static let primingImageName: String = "DuckPlayer-PrimingAnimation"
     static let imageWidth: CGFloat = 150
     static let imageHeight: CGFloat = 150
@@ -54,8 +55,7 @@ struct DuckPlayerWelcomePillView: View {
     private var playButton: some View {
         Image(systemName: "play.fill")
             .foregroundColor(.white)
-            .font(.system(size: 20, weight: .bold))
-            .frame(width: 100, height: 300)
+            .font(.system(size: 22, weight: .bold))
             .cornerRadius(16)
     }
 
@@ -66,7 +66,8 @@ struct DuckPlayerWelcomePillView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "play.fill")
                         .foregroundColor(.white)
-                    Text(UserText.duckPlayerPlayInDuckPlayer)
+                    Text(UserText.duckPlayerOptInPillTitle)
+                        .daxButton()
                         .foregroundColor(.white)
                         .font(.headline)
                 }
@@ -75,10 +76,8 @@ struct DuckPlayerWelcomePillView: View {
                  .foregroundColor(Color(designSystemColor: .buttonsPrimaryText))
                 .background(Color(designSystemColor: .buttonsPrimaryDefault))
                 .cornerRadius(Constants.buttonCornerRadius)
-                .padding(.horizontal, Constants.regularPadding)
-                .padding(.bottom, Constants.regularPadding)
             })
-            .padding(.top, 22)
+            .padding(.top, 10)
     }
 
     private var phoneView: some View {
@@ -87,26 +86,25 @@ struct DuckPlayerWelcomePillView: View {
             loopMode: .mode(.playOnce),
             isAnimating: $isAnimating
         )
-        .frame(width: 70, height: 120)
+        .frame(width: 68, height: 120)
         .background(Color.clear)
-        .scaleEffect(0.7)
+        .scaleEffect(0.66)
         .padding(.top, 10)
-        .padding(.leading, 10)
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            HStack(alignment: .center, spacing: 20) {
+        VStack(alignment: .leading, spacing: 15) {
+            HStack(alignment: .center, spacing: 30) {
                 phoneView
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(UserText.duckPlayerYouTubeNoAdsPrivacy)
+                    Text(UserText.duckPlayerOptInWelcomeMessageTitle)
                         .foregroundColor(Color(designSystemColor: .textPrimary))
                         .multilineTextAlignment(.leading)
                         .fixedSize(horizontal: false, vertical: true)
                         .daxTitle3()
 
-                    Text(UserText.duckPlayerBlocksAdsKeepsHistoryPrivate)
+                    Text(UserText.duckPlayerOptInWelcomeMessageContent)
                         .font(.subheadline)
                         .foregroundColor(Color(designSystemColor: .textSecondary))
                         .multilineTextAlignment(.leading)
@@ -114,12 +112,11 @@ struct DuckPlayerWelcomePillView: View {
                         .daxBodyRegular()
                 }
             }
-            .padding(.horizontal, Constants.regularPadding)
-            .padding(.top, Constants.regularPadding)
-
             mainActionButton
         }
-       .background(
+        .padding(.horizontal, Constants.horizontalPadding)
+        .padding(.vertical, Constants.verticalPadding)
+        .background(
             Color(designSystemColor: colorScheme == .dark ? .container : .backgroundSheets)
         )
         .cornerRadius(Constants.cornerRadius)

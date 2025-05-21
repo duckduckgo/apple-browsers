@@ -151,7 +151,7 @@ extension UserDefaults {
 }
 
 // This should never ever go to production and only exists for internal testing
-#if os(iOS) && (DEBUG || ALPHA)
+#if os(iOS)
 extension DataBrokerProtectionSettings {
     static let deviceIdentifierKey = "dbp.deviceIdentifier"
     static let defaults = UserDefaults.standard

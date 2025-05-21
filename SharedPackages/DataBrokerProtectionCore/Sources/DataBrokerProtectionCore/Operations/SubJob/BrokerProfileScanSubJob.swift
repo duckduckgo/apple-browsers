@@ -73,7 +73,7 @@ struct BrokerProfileScanSubJob {
             let event = HistoryEvent(brokerId: brokerId, profileQueryId: profileQueryId, type: .scanStarted)
             try dependencies.database.add(event)
 
-#if os(iOS) && (DEBUG || ALPHA)
+#if os(iOS)
             stageCalculator.fireScanStarted()
 #endif
 
@@ -282,7 +282,7 @@ struct BrokerProfileScanSubJob {
                     pixelHandler.fire(.optOutFinish(dataBroker: attempt.dataBroker, attemptId: attemptUUID, duration: calculateDurationSinceLastStage))
 
 // This should never ever go to production and only exists for internal testing
-#if os(iOS) && (DEBUG || ALPHA)
+#if os(iOS)
                     pixelHandler.fire(.optOutSuccess(dataBroker: attempt.dataBroker,
                                                      attemptId: attemptUUID,
                                                      duration: calculateDurationSinceStart,

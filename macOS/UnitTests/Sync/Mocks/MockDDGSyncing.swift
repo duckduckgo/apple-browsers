@@ -119,7 +119,7 @@ class MockDDGSyncing: DDGSyncing {
 }
 
 final class MockSyncConnectionControlling: SyncConnectionControlling {
-    
+
     func cancel() async {
     }
 

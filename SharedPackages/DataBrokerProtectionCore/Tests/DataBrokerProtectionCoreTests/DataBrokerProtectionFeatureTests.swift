@@ -114,7 +114,7 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
         XCTAssertEqual(mockCSSDelegate.captchaInfo?.type, "g-captcha")
     }
 
-    func testWhenActionTimesOut_thenDelegateReceivesTimeoutError() {
+    func testWhenExpectationActionTimesOut_thenDelegateReceivesTimeoutError() {
         let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, actionResponseTimeout: 0.1)
         sut.with(broker: mockBroker)
         let action = ExpectationAction(id: "expectation-1", actionType: .expectation, expectations: [], dataSource: nil, actions: nil)
@@ -130,7 +130,23 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
         XCTAssertEqual(mockCSSDelegate.lastError as? DataBrokerProtectionError, DataBrokerProtectionError.actionFailed(actionID: "expectation-1", message: "Request timed out"))
     }
 
-    func testWhenActionCompletesBeforeTimeout_thenNoTimeoutErrorIsSent() {
+    func testWhenNonExpectationActionTimeOut_thenDelegateDoesNotReceiveTimeoutError() {
+        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, actionResponseTimeout: 0.1)
+        sut.with(broker: mockBroker)
+        let action = NavigateAction(id: "navigate-1", actionType: .navigate, url: "", ageRange: nil, dataSource: nil)
+        let params = Params(state: ActionRequest(action: action, data: mockCCFRequestData))
+
+        sut.pushAction(method: .onActionReceived, webView: mockWebView, params: params, canTimeOut: false)
+
+        let testPeriod = Date(timeIntervalSinceNow: 0.2)
+        while Date() < testPeriod {
+            RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.1))
+        }
+
+        XCTAssertNil(mockCSSDelegate.lastError)
+    }
+
+    func testWhenExpectationActionCompletesBeforeTimeout_thenNoTimeoutErrorIsSent() {
         let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, actionResponseTimeout: 0.1)
         sut.with(broker: mockBroker)
         let action = ExpectationAction(id: "expectation-1", actionType: .expectation, expectations: [], dataSource: nil, actions: nil)
@@ -155,7 +171,7 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
         XCTAssertEqual(mockCSSDelegate.successActionId, "expectation-1")
     }
 
-    func testWhenActionFailsBeforeTimeout_thenNoTimeoutErrorIsSent() {
+    func testWhenExpectationActionFailsBeforeTimeout_thenNoTimeoutErrorIsSent() {
         let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, actionResponseTimeout: 0.1)
         sut.with(broker: mockBroker)
         let action = ExpectationAction(id: "expectation-1", actionType: .expectation, expectations: [], dataSource: nil, actions: nil)

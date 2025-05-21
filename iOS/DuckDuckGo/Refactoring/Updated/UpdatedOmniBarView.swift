@@ -147,14 +147,10 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         didSet {
             leadingButtonsContainer.isHidden = isUsingCompactLayout
             trailingButtonsContainer.isHidden = isUsingCompactLayout
-            leadingSpacer.isHidden = isUsingCompactLayout
-            trailingSpacer.isHidden = isUsingCompactLayout
             bookmarksButtonView.isHidden = isUsingCompactLayout
 
             readableSearchAreaWidthConstraint?.isActive = !isUsingCompactLayout
             largeSizeSpacingConstraint?.isActive = !isUsingCompactLayout
-
-            stackView.spacing = isUsingCompactLayout ? 0 : Metrics.expandedSizeSpacing
         }
     }
 
@@ -234,9 +230,6 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     private let searchAreaStackView = UIStackView()
     private let activeOutlineView = UIView()
 
-    private let leadingSpacer = UIView()
-    private let trailingSpacer = UIView()
-
     private let stackView = UIStackView()
 
     static func create() -> Self {
@@ -277,9 +270,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         searchAreaStackView.addArrangedSubview(bookmarksButtonView)
 
         stackView.addArrangedSubview(leadingButtonsContainer)
-        stackView.addArrangedSubview(leadingSpacer)
         stackView.addArrangedSubview(searchAreaStackView)
-        stackView.addArrangedSubview(trailingSpacer)
         stackView.addArrangedSubview(trailingButtonsContainer)
 
         leadingButtonsContainer.addArrangedSubview(backButtonView)
@@ -300,15 +291,10 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         let searchAreaCenterXConstraint = searchAreaContainerView.centerXAnchor.constraint(equalTo: centerXAnchor)
         searchAreaCenterXConstraint.priority = .defaultHigh
 
-        let largeSizeSpacing = leadingSpacer.widthAnchor.constraint(equalTo: trailingSpacer.widthAnchor)
-        largeSizeSpacing.priority = .init(700)
-        largeSizeSpacing.isActive = false
-
         let textAreaTopPaddingConstraint = stackView.topAnchor.constraint(equalTo: topAnchor, constant: Metrics.textAreaVerticalPaddingRegularSpacing)
         let textAreaBottomPaddingConstraint = stackView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Metrics.textAreaVerticalPaddingRegularSpacing)
 
         readableSearchAreaWidthConstraint = readableSearchAreaWidth
-        largeSizeSpacingConstraint = largeSizeSpacing
         self.textAreaTopPaddingConstraint = textAreaTopPaddingConstraint
         self.textAreaBottomPaddingConstraint = textAreaBottomPaddingConstraint
 

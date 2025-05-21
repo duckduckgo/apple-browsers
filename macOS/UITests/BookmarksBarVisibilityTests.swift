@@ -44,7 +44,7 @@ class BookmarksBarVisibilityTests: UITestCase {
         app.launchEnvironment["UITEST_MODE"] = "1"
         pageTitle = UITests.randomPageTitle(length: titleStringLength)
         urlForBookmarksBar = UITests.simpleServedPage(titled: pageTitle)
-        
+
         addressBarBookmarkButton = app.buttons["AddressBarButtonsViewController.bookmarkButton"]
         addressBarTextField = app.textFields["AddressBarViewController.addressBarTextField"]
         bookmarksBarCollectionView = app.collectionViews["BookmarksBarViewController.bookmarksBarCollectionView"]
@@ -68,7 +68,7 @@ class BookmarksBarVisibilityTests: UITestCase {
             "The Address Bar text field did not exist when it was expected."
         )
         addressBarTextField.typeURL(urlForBookmarksBar)
-        
+
         // Wait for the page to load
         XCTAssertTrue(
             app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -80,7 +80,7 @@ class BookmarksBarVisibilityTests: UITestCase {
 
         // Add bookmark via address bar button
         addressBarBookmarkButton.clickAfterExistenceTestSucceeds()
-        
+
         // Verify bookmark dialog appears and add the bookmark
         XCTAssertTrue(
             defaultBookmarkDialogButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -93,7 +93,7 @@ class BookmarksBarVisibilityTests: UITestCase {
             bookmarksBarCollectionView.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Bookmarks bar should get visible when first bookmark is added."
         )
-        
+
         // Verify bookmarks bar prompt popover appears
         XCTAssertTrue(
             bookmarksBarPromptPopover.waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -128,7 +128,7 @@ class BookmarksBarVisibilityTests: UITestCase {
             "The Address Bar text field did not exist when it was expected."
         )
         addressBarTextField.typeURL(urlForBookmarksBar)
-        
+
         // Wait for the page to load
         XCTAssertTrue(
             app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -140,7 +140,7 @@ class BookmarksBarVisibilityTests: UITestCase {
 
         // Add bookmark via address bar button
         addressBarBookmarkButton.clickAfterExistenceTestSucceeds()
-        
+
         // Verify bookmark dialog appears and add the bookmark
         XCTAssertTrue(
             defaultBookmarkDialogButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -153,7 +153,7 @@ class BookmarksBarVisibilityTests: UITestCase {
             bookmarksBarCollectionView.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Bookmarks bar should get visible when first bookmark is added."
         )
-        
+
         // Verify bookmarks bar prompt popover appears
         XCTAssertTrue(
             bookmarksBarPromptPopover.waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -179,7 +179,7 @@ class BookmarksBarVisibilityTests: UITestCase {
             "The Address Bar text field did not exist when it was expected."
         )
         addressBarTextField.typeURL(urlForBookmarksBar)
-        
+
         // Wait for the page to load
         XCTAssertTrue(
             app.windows.webViews[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -191,7 +191,7 @@ class BookmarksBarVisibilityTests: UITestCase {
 
         // Add bookmark via address bar button
         addressBarBookmarkButton.clickAfterExistenceTestSucceeds()
-        
+
         // Verify bookmark dialog appears and add the bookmark
         XCTAssertTrue(
             defaultBookmarkDialogButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -204,7 +204,7 @@ class BookmarksBarVisibilityTests: UITestCase {
             bookmarksBarCollectionView.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Bookmarks bar should get visible when first bookmark is added."
         )
-        
+
         // Verify bookmarks bar prompt popover appears
         XCTAssertTrue(
             bookmarksBarPromptPopover.waitForExistence(timeout: UITests.Timeouts.elementExistence),
@@ -239,4 +239,4 @@ class BookmarksBarVisibilityTests: UITestCase {
         )
         skipOnboardingMenuItem.click()
     }
-} 
+}

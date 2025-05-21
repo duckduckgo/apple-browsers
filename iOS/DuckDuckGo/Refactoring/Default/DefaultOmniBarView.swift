@@ -152,8 +152,6 @@ final class DefaultOmniBarView: UIView {
     private func configureImages() {
         clearButton.setImage(DesignSystemImages.Glyphs.Size24.closeCircleSmall, for: .normal)
         settingsButton.setImage(DesignSystemImages.Glyphs.Size24.settings, for: .normal)
-        cancelButton.setImage(DesignSystemImages.Glyphs.Size24.arrowLeftSmall, for: .normal)
-        refreshButton.setImage(DesignSystemImages.Glyphs.Size24.reload, for: .normal)
         shareButton.setImage(DesignSystemImages.Glyphs.Size24.shareApple, for: .normal)
         voiceSearchButton.setImage(DesignSystemImages.Glyphs.Size24.microphone, for: .normal)
         abortButton.setImage(DesignSystemImages.Glyphs.Size24.close, for: .normal)
@@ -162,6 +160,10 @@ final class DefaultOmniBarView: UIView {
         forwardButton.setImage(DesignSystemImages.Glyphs.Size24.arrowRight, for: .normal)
         dismissButton.setImage(DesignSystemImages.Glyphs.Size24.arrowLeftSmall, for: .normal)
 
+        // This isn't actually used but just in case
+        refreshButton.setImage(DesignSystemImages.Glyphs.Size24.reload, for: .normal)
+
+        // Cancel button is text and not even used
         // Accessory button set elsewhere
         // Menu button set elsewhere
 

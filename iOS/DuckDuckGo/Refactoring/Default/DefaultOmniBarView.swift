@@ -152,11 +152,11 @@ final class DefaultOmniBarView: UIView {
     private func configureImages() {
         clearButton.setImage(DesignSystemImages.Glyphs.Size24.closeCircleSmall, for: .normal)
         settingsButton.setImage(DesignSystemImages.Glyphs.Size24.settings, for: .normal)
-        cancelButton.setImage(DesignSystemImages.Glyphs.Size24.close, for: .normal)
+        cancelButton.setImage(DesignSystemImages.Glyphs.Size24.arrowLeftSmall, for: .normal)
         refreshButton.setImage(DesignSystemImages.Glyphs.Size24.reload, for: .normal)
         shareButton.setImage(DesignSystemImages.Glyphs.Size24.shareApple, for: .normal)
         voiceSearchButton.setImage(DesignSystemImages.Glyphs.Size24.microphone, for: .normal)
-        abortButton.setImage(DesignSystemImages.Glyphs.Size24.crossSolidSmall, for: .normal)
+        abortButton.setImage(DesignSystemImages.Glyphs.Size24.close, for: .normal)
         bookmarksButton.setImage(DesignSystemImages.Glyphs.Size24.bookmarks, for: .normal)
         backButton.setImage(DesignSystemImages.Glyphs.Size24.arrowLeft, for: .normal)
         forwardButton.setImage(DesignSystemImages.Glyphs.Size24.arrowRight, for: .normal)

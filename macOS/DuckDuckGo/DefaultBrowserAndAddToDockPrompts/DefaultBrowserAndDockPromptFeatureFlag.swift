@@ -35,7 +35,7 @@ public protocol DefaultBrowserAndDockPromptFeatureFlagsSettingsProvider {
     var bannerRepeatIntervalDays: Int { get }
 }
 
-/// An enum representing the different settings for malicious site protection feature flags.
+/// An enum representing the different settings for Set Default Browser (SAD) and Add to Dock (ATT) feature flag.
 public enum DefaultBrowserAndDockPromptFeatureSettings: String {
     /// The setting for the number of days to wait after app installation before showing the first popover.
     case firstPopoverDelayDays

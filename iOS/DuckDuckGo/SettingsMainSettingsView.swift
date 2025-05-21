@@ -20,6 +20,7 @@
 import SwiftUI
 import UIKit
 import SyncUI_iOS
+import DesignResourcesKit
 
 struct SettingsMainSettingsView: View {
 
@@ -30,14 +31,14 @@ struct SettingsMainSettingsView: View {
             // General
             NavigationLink(destination: SettingsGeneralView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.general,
-                                 image: Image(.settingsGeneral))
+                                 image: Image(uiImage: DesignSystemImages.Color.Size24.settings))
             }
 
             // Sync & Backup
             let statusIndicator = viewModel.syncStatus == .on ? StatusIndicatorView(status: viewModel.syncStatus, isDotHidden: true) : nil
             let label = viewModel.state.sync.title
             SettingsCellView(label: label,
-                             image: Image(.settingsSync),
+                             image: Image(uiImage: DesignSystemImages.Color.Size24.sync),
                              action: { viewModel.presentLegacyView(.sync) },
                              statusIndicator: statusIndicator,
                              disclosureIndicator: true,
@@ -46,12 +47,12 @@ struct SettingsMainSettingsView: View {
             // Appearance
             NavigationLink(destination: SettingsAppearanceView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.settingsAppearanceSection,
-                                 image: Image(.settingsAppearance))
+                                 image: Image(uiImage: DesignSystemImages.Color.Size24.appearance))
             }
 
             // Passwords
             SettingsCellView(label: UserText.settingsLogins,
-                             image: Image(.settingsPasswords),
+                             image: Image(uiImage: DesignSystemImages.Color.Size24.autofill),
                              action: { viewModel.presentLegacyView(.logins) },
                              disclosureIndicator: true,
                              isButton: true)
@@ -59,13 +60,13 @@ struct SettingsMainSettingsView: View {
             // Accessibility
             NavigationLink(destination: SettingsAccessibilityView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.accessibility,
-                                 image: Image(.settingsAccessibility))
+                                 image: Image(uiImage: DesignSystemImages.Color.Size24.accessibility))
             }
 
             // Data Clearing
             NavigationLink(destination: SettingsDataClearingView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.dataClearing,
-                                 image: Image(.settingsDataClearing))
+                                 image: Image(uiImage: DesignSystemImages.Color.Size24.fire))
             }
 
             // Duck Player
@@ -73,14 +74,14 @@ struct SettingsMainSettingsView: View {
             if viewModel.state.duckPlayerEnabled {
                 NavigationLink(destination: SettingsDuckPlayerView().environmentObject(viewModel)) {
                     SettingsCellView(label: UserText.duckPlayerFeatureName,
-                                     image: Image(.settingsDuckPlayer))
+                                     image: Image(uiImage: DesignSystemImages.Color.Size24.videoPlayer))
                 }
             }
 
             // AI Chat
             NavigationLink(destination: SettingsAIChatView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.aiChatFeatureName,
-                                 image: Image(.settingsAIChat))
+                                 image: Image(uiImage: DesignSystemImages.Color.Size24.aiChat))
             }
         }
 

@@ -27,7 +27,7 @@ struct SettingsCellComponents {
             .foregroundColor(Color(UIColor.tertiaryLabel))
     }
     static var link: some View {
-        Image(.settingsLink)
+        Image(uiImage: DesignSystemImages.Glyphs.Size16.openIn)
             .font(Font.system(.footnote).weight(.bold))
             .foregroundColor(Color(UIColor.tertiaryLabel))
     }
@@ -349,7 +349,7 @@ enum SampleOption: String, CaseIterable, Hashable, CustomStringConvertible {
 
             SettingsCellView(label: "Multi-line Cell with disclosure \nLine 2\nLine 3",
                              subtitle: "Curabitur erat massa, cursus sed velit",
-                             image: Image(.settingsPrivacyProITP),
+                             image: Image(uiImage: DesignSystemImages.Color.Size24.identity),
                              disclosureIndicator: true)
             .previewLayout(.sizeThatFits)
 
@@ -378,7 +378,7 @@ enum SampleOption: String, CaseIterable, Hashable, CustomStringConvertible {
             .previewLayout(.sizeThatFits)
 
             SettingsCellView(label: "Switch Cell",
-                             image: Image(.settingsAppearance),
+                             image: Image(uiImage: DesignSystemImages.Color.Size24.appearance),
                              accessory: .toggle(isOn: .constant(true)))
             .previewLayout(.sizeThatFits)
 

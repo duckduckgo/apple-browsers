@@ -20,6 +20,7 @@
 import SwiftUI
 import UIKit
 import Networking
+import DesignResourcesKit
 
 struct SettingsOthersView: View {
 
@@ -60,18 +61,18 @@ struct SettingsOthersView: View {
                     }
                 } label: {
                     SettingsCellView(label: UserText.subscriptionFeedback,
-                                     image: Image(.settingsFeedback))
+                                     image: Image(uiImage: DesignSystemImages.Color.Size24.feedback))
                 }
             } else {
                 SettingsCellView(label: UserText.settingsFeedback,
-                                 image: Image(.settingsFeedback),
+                                 image: Image(uiImage: DesignSystemImages.Color.Size24.feedback),
                                  action: { viewModel.presentLegacyView(.feedback) },
                                  isButton: true)
             }
 
             // DuckDuckGo on Other Platforms
             SettingsCellView(label: UserText.duckduckgoOnOtherPlatforms,
-                             image: Image(.settingsOtherPlatforms),
+                             image: Image(uiImage: DesignSystemImages.Color.Size24.downloads),
                              action: { viewModel.openOtherPlatforms() },
                              webLinkIndicator: true,
                              isButton: true)

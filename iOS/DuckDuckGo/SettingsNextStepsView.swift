@@ -19,6 +19,7 @@
 
 import SwiftUI
 import UIKit
+import DesignResourcesKit
 
 struct SettingsNextStepsView: View {
 
@@ -28,28 +29,28 @@ struct SettingsNextStepsView: View {
         Section(header: Text(UserText.nextSteps)) {
             // Add App to Your Dock
             SettingsCellView(label: UserText.settingsAddToDock,
-                             image: Image(.settingsAddToDock),
+                             image: Image(uiImage: DesignSystemImages.Color.Size24.addToDock),
                              action: { viewModel.presentLegacyView(.addToDock) },
                              isButton: true)
 
             // Add Widget to Home Screen
             NavigationLink(destination: WidgetEducationView()) {
                 SettingsCellView(label: UserText.settingsAddWidget,
-                                 image: Image(.settingsAddWidget))
+                                 image: Image(uiImage: DesignSystemImages.Color.Size24.addWidget))
             }
 
             // Set Your Address Bar Position
             if viewModel.state.addressBar.enabled {
                 NavigationLink(destination: SettingsAppearanceView().environmentObject(viewModel)) {
                     SettingsCellView(label: UserText.setYourAddressBarPosition,
-                                     image: Image(.settingsAddressBarPosition))
+                                     image: Image(uiImage: DesignSystemImages.Color.Size24.addressBarBottom))
                 }
             }
 
             // Enable Voice Search
             NavigationLink(destination: SettingsAccessibilityView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.enableVoiceSearch,
-                                 image: Image(.settingsVoiceSearch))
+                                 image: Image(uiImage: DesignSystemImages.Color.Size24.microphone))
             }
         }
 

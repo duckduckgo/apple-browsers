@@ -20,6 +20,7 @@
 import SwiftUI
 import UIKit
 import Core
+import DesignResourcesKit
 
 struct SettingsPrivacyProtectionsView: View {
 
@@ -29,7 +30,7 @@ struct SettingsPrivacyProtectionsView: View {
         Section(header: Text("Privacy Protections")) {
             // Default Browser
             SettingsCellView(label: UserText.defaultBrowser,
-                             image: Image(.settingsDefaultBrowser),
+                             image: Image(uiImage: DesignSystemImages.Color.Size24.defaultBrowserMobile),
                              action: { viewModel.setAsDefaultBrowser() },
                              webLinkIndicator: true,
                              isButton: true)
@@ -37,28 +38,28 @@ struct SettingsPrivacyProtectionsView: View {
             // Private Search
             NavigationLink(destination: PrivateSearchView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.privateSearch,
-                                 image: Image(.settingsSearch),
+                                 image: Image(uiImage: DesignSystemImages.Color.Size24.findSearch),
                                  statusIndicator: StatusIndicatorView(status: .on))
             }
 
             // Web Tracking Protection
             NavigationLink(destination: WebTrackingProtectionView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.webTrackingProtection,
-                                 image: Image(.settingsWebTrackingProtection),
+                                 image: Image(uiImage: DesignSystemImages.Color.Size24.shield),
                                  statusIndicator: StatusIndicatorView(status: .on))
             }
 
             // Cookie Pop-Up Protection
             NavigationLink(destination: CookiePopUpProtectionView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.cookiePopUpProtection,
-                                 image: Image(.settingsCookiePopUpProtection),
+                                 image: Image(uiImage: DesignSystemImages.Color.Size24.cookie),
                                  statusIndicator: StatusIndicatorView(status: viewModel.cookiePopUpProtectionStatus))
             }
 
             // Email Protection
             NavigationLink(destination: EmailProtectionView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.emailProtection,
-                                 image: Image(.settingsEmailProtection),
+                                 image: Image(uiImage: DesignSystemImages.Color.Size24.email),
                                  statusIndicator: StatusIndicatorView(status: viewModel.emailProtectionStatus))
             }
         }

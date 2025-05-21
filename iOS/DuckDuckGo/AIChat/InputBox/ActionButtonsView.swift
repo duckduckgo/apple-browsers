@@ -85,7 +85,7 @@ struct ActionButtonsView: View {
 
         .padding(.horizontal, 8)
     }
-} 
+}
 
 #Preview {
     ActionButtonsView(mode: .chat, onDuckAssistTapped: {}, onVoiceTapped: {}, onWebAnswerTapped: {}, onSendTapped: {}, isSendEnabled: true)

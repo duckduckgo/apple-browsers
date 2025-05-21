@@ -79,11 +79,11 @@ enum NativeDuckPlayerYoutubeMode: Equatable, Codable, CustomStringConvertible, C
     var description: String {
         switch self {
         case .auto:
-            return "Automatically"
+            return UserText.duckPlayerNativeYoutubeModeAuto
         case .ask:
-            return "Let me choose"
+            return UserText.duckPlayerNativeYoutubeModeAsk
         case .never:
-            return "Don't Show"
+            return UserText.duckPlayerNativeYoutubeModeNever
         }
     }
 

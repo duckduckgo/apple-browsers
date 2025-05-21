@@ -24,12 +24,10 @@ class BookmarksBarVisibilityTests: UITestCase {
     private var urlForBookmarksBar: URL!
     private let titleStringLength = 12
 
-    private var addressBarBookmarkButton: XCUIElement!
     private var addressBarTextField: XCUIElement!
     private var bookmarksBarCollectionView: XCUIElement!
     private var defaultBookmarkDialogButton: XCUIElement!
     private var resetBookMarksMenuItem: XCUIElement!
-    private var optionsButton: XCUIElement!
     private var skipOnboardingMenuItem: XCUIElement!
     private var bookmarksBarPromptPopover: XCUIElement!
 
@@ -45,12 +43,10 @@ class BookmarksBarVisibilityTests: UITestCase {
         pageTitle = UITests.randomPageTitle(length: titleStringLength)
         urlForBookmarksBar = UITests.simpleServedPage(titled: pageTitle)
 
-        addressBarBookmarkButton = app.buttons["AddressBarButtonsViewController.bookmarkButton"]
         addressBarTextField = app.textFields["AddressBarViewController.addressBarTextField"]
         bookmarksBarCollectionView = app.collectionViews["BookmarksBarViewController.bookmarksBarCollectionView"]
         defaultBookmarkDialogButton = app.buttons["BookmarkDialogButtonsView.defaultButton"]
         resetBookMarksMenuItem = app.menuItems["MainMenu.resetBookmarks"]
-        optionsButton = app.buttons["NavigationBarViewController.optionsButton"]
         skipOnboardingMenuItem = app.menuItems["MainMenu.skipOnboarding"]
         bookmarksBarPromptPopover = app.popovers.containing(NSPredicate(format: "title == %@", "Show Bookmarks Bar?")).element
 
@@ -75,11 +71,8 @@ class BookmarksBarVisibilityTests: UITestCase {
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
 
-        // In order to directly click the bookmark button in the address bar, we need to hover over something in the bar area
-        optionsButton.hoverAfterExistenceTestSucceeds()
-
-        // Add bookmark via address bar button
-        addressBarBookmarkButton.clickAfterExistenceTestSucceeds()
+        // Add bookmark
+        app.typeKey("d", modifierFlags: .command)
 
         // Verify bookmark dialog appears and add the bookmark
         XCTAssertTrue(
@@ -115,7 +108,7 @@ class BookmarksBarVisibilityTests: UITestCase {
         app.typeKey("t", modifierFlags: .command)
 
         // Verify bookmarks bar is shown in the new tab
-        XCTAssertFalse(
+        XCTAssertTrue(
             bookmarksBarCollectionView.waitForExistence(timeout: UITests.Timeouts.elementExistence),
             "Bookmarks bar should be hidden in new tab after dismissing prompt popover."
         )
@@ -135,11 +128,8 @@ class BookmarksBarVisibilityTests: UITestCase {
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
 
-        // In order to directly click the bookmark button in the address bar, we need to hover over something in the bar area
-        optionsButton.hoverAfterExistenceTestSucceeds()
-
-        // Add bookmark via address bar button
-        addressBarBookmarkButton.clickAfterExistenceTestSucceeds()
+        // Add bookmark
+        app.typeKey("d", modifierFlags: .command)
 
         // Verify bookmark dialog appears and add the bookmark
         XCTAssertTrue(
@@ -186,11 +176,8 @@ class BookmarksBarVisibilityTests: UITestCase {
             "Visited site didn't load with the expected title in a reasonable timeframe."
         )
 
-        // In order to directly click the bookmark button in the address bar, we need to hover over something in the bar area
-        optionsButton.hoverAfterExistenceTestSucceeds()
-
-        // Add bookmark via address bar button
-        addressBarBookmarkButton.clickAfterExistenceTestSucceeds()
+        // Add bookmark
+        app.typeKey("d", modifierFlags: .command)
 
         // Verify bookmark dialog appears and add the bookmark
         XCTAssertTrue(

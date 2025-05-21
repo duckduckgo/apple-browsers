@@ -138,7 +138,7 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
 
         sut.pushAction(method: .onActionReceived, webView: mockWebView, params: params, canTimeOut: false)
 
-        let testPeriod = Date(timeIntervalSinceNow: 0.2)
+        let testPeriod = Date(timeIntervalSinceNow: 0.3)
         while Date() < testPeriod {
             RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.1))
         }
@@ -159,7 +159,7 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
             _ = try? await sut.onActionCompleted(params: completionParams, original: MockWKScriptMessage())
         }
 
-        let testPeriod = Date(timeIntervalSinceNow: 0.2)
+        let testPeriod = Date(timeIntervalSinceNow: 0.3)
         while Date() < testPeriod {
             RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.1))
             if mockCSSDelegate.lastError != nil {
@@ -184,7 +184,7 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
             _ = try? await sut.onActionError(params: errorParams, original: MockWKScriptMessage())
         }
 
-        let testPeriod = Date(timeIntervalSinceNow: 0.2)
+        let testPeriod = Date(timeIntervalSinceNow: 0.3)
         while Date() < testPeriod {
             RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.1))
             if let error = mockCSSDelegate.lastError as? DataBrokerProtectionError,

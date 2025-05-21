@@ -168,6 +168,7 @@ extension SyncSettingsView {
             } label: {
                 HStack {
                     deviceTypeImage(device)
+                        .foregroundColor(.primary)
                     Text(device.name)
                         .foregroundColor(.primary)
                     Spacer()

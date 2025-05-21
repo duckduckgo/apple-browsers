@@ -67,7 +67,7 @@ struct DuckPlayerEntryPillView: View {
                             .frame(width: Constants.iconSize, height: Constants.iconSize)
 
                         VStack(alignment: .leading) {
-                            Text(UserText.duckPlayerPlayInDuckPlayer)
+                            Text(UserText.duckPlayerOptInPillTitle)
                                 .daxSubheadSemibold()
                                 .foregroundColor(Color(designSystemColor: .textPrimary))
                                 .multilineTextAlignment(.leading)
@@ -75,7 +75,7 @@ struct DuckPlayerEntryPillView: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .layoutPriority(1)
 
-                            Text(UserText.duckPlayerWatchWithoutTargetedAds)
+                            Text(UserText.duckPlayerOptInPillSubtitle)
                                 .daxFootnoteRegular()
                                 .foregroundColor(Color(designSystemColor: .textSecondary))
                                 .multilineTextAlignment(.leading)

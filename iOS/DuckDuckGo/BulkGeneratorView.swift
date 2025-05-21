@@ -136,7 +136,7 @@ struct BulkTabFactory: BulkGeneratorView.Factory {
     }
     
     func finished() {
-        tabManager.model.save()
+        tabManager.save()
     }
     
 }

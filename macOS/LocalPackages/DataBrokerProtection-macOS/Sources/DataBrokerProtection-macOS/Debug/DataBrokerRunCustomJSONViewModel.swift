@@ -98,7 +98,7 @@ final class NameUI: ObservableObject {
     }
 
     static func empty() -> NameUI {
-        .init(first: "Jason", middle: "", last: "Jones")
+        .init(first: "", middle: "", last: "")
     }
 
     func toModel() -> DataBrokerProtectionProfile.Name {
@@ -117,7 +117,7 @@ final class AddressUI: ObservableObject {
     }
 
     static func empty() -> AddressUI {
-        .init(city: "Los Angeles", state: "ca")
+        .init(city: "", state: "")
     }
 
     func toModel() -> DataBrokerProtectionProfile.Address {
@@ -134,7 +134,7 @@ struct ScanResult {
 
 // swiftlint:disable force_try
 final class DataBrokerRunCustomJSONViewModel: ObservableObject {
-    @Published var birthYear: String = "1988"
+    @Published var birthYear: String = ""
     @Published var results = [ScanResult]()
     @Published var showAlert = false
     @Published var showNoResults = false
@@ -199,7 +199,7 @@ final class DataBrokerRunCustomJSONViewModel: ObservableObject {
         let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
         let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
         let vault = try! vaultFactory.makeVault(reporter: reporter)
-        self.brokers = try! vault.fetchAllBrokers().filter { $0.name == "InfoTracer" }
+        self.brokers = try! vault.fetchAllBrokers()
     }
 
     func runAllBrokers() {

@@ -176,6 +176,7 @@ internal class MouseOverView: NSControl, Hoverable {
 
         super.mouseUp(with: event)
 
+        guard isMouseLocationInsideBounds(event.locationInWindow) else { return }
         delegate?.mouseClickView?(self, mouseUpEvent: event)
         if eventTypeMask.contains(.init(type: event.type)), let action {
             NSApp.sendAction(action, to: target, from: self)

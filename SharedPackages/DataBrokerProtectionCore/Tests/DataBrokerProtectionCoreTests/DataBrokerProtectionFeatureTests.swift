@@ -19,10 +19,18 @@
 import XCTest
 @testable import DataBrokerProtectionCore
 import DataBrokerProtectionCoreTestsUtils
+import UserScript
+import WebKit
 
 final class DataBrokerProtectionFeatureTests: XCTestCase {
 
     let mockCSSDelegate = MockCSSCommunicationDelegate()
+
+    let mockWebView = WKWebView()
+    let mockBroker = UserScriptMessageBroker(context: "mock context")
+
+    let mockProfileQuery = ProfileQuery(firstName: "", lastName: "", city: "", state: "", birthYear: 1970)
+    lazy var mockCCFRequestData = CCFRequestData.userData(mockProfileQuery, nil)
 
     override func setUp() {
         mockCSSDelegate.reset()
@@ -105,6 +113,72 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
         XCTAssertEqual(mockCSSDelegate.captchaInfo?.url, "www.test.com")
         XCTAssertEqual(mockCSSDelegate.captchaInfo?.type, "g-captcha")
     }
+
+    func testWhenActionTimesOut_thenDelegateReceivesTimeoutError() {
+        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, actionResponseTimeout: 0.1)
+        sut.with(broker: mockBroker)
+        let action = ExpectationAction(id: "expectation-1", actionType: .expectation, expectations: [], dataSource: nil, actions: nil)
+        let params = Params(state: ActionRequest(action: action, data: mockCCFRequestData))
+
+        sut.pushAction(method: .onActionReceived, webView: mockWebView, params: params)
+
+        let testPeriod = Date(timeIntervalSinceNow: 0.2)
+        while Date() < testPeriod {
+            RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.1))
+        }
+
+        XCTAssertEqual(mockCSSDelegate.lastError as? DataBrokerProtectionError, DataBrokerProtectionError.actionFailed(actionID: "expectation-1", message: "Request timed out"))
+    }
+
+    func testWhenActionCompletesBeforeTimeout_thenNoTimeoutErrorIsSent() {
+        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, actionResponseTimeout: 0.1)
+        sut.with(broker: mockBroker)
+        let action = ExpectationAction(id: "expectation-1", actionType: .expectation, expectations: [], dataSource: nil, actions: nil)
+        let params = Params(state: ActionRequest(action: action, data: mockCCFRequestData))
+
+        sut.pushAction(method: .onActionReceived, webView: mockWebView, params: params)
+
+        Task {
+            let completionParams = ["result": ["success": ["actionID": "expectation-1", "actionType": "expectation"] as [String: Any]]]
+            _ = try? await sut.onActionCompleted(params: completionParams, original: MockWKScriptMessage())
+        }
+
+        let testPeriod = Date(timeIntervalSinceNow: 0.2)
+        while Date() < testPeriod {
+            RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.1))
+            if mockCSSDelegate.lastError != nil {
+                XCTFail("Unexpected error")
+            }
+        }
+
+        XCTAssertNil(mockCSSDelegate.lastError)
+        XCTAssertEqual(mockCSSDelegate.successActionId, "expectation-1")
+    }
+
+    func testWhenActionFailsBeforeTimeout_thenNoTimeoutErrorIsSent() {
+        let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, actionResponseTimeout: 0.1)
+        sut.with(broker: mockBroker)
+        let action = ExpectationAction(id: "expectation-1", actionType: .expectation, expectations: [], dataSource: nil, actions: nil)
+        let params = Params(state: ActionRequest(action: action, data: mockCCFRequestData))
+
+        sut.pushAction(method: .onActionReceived, webView: mockWebView, params: params)
+
+        Task {
+            let errorParams = ["error": "No action found."]
+            _ = try? await sut.onActionError(params: errorParams, original: MockWKScriptMessage())
+        }
+
+        let testPeriod = Date(timeIntervalSinceNow: 0.2)
+        while Date() < testPeriod {
+            RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.1))
+            if let error = mockCSSDelegate.lastError as? DataBrokerProtectionError,
+               error != .noActionFound {
+                XCTFail("Unexpected error")
+            }
+        }
+
+        XCTAssertEqual(mockCSSDelegate.lastError as? DataBrokerProtectionError, .noActionFound)
+    }
 }
 
 final class MockCSSCommunicationDelegate: CCFCommunicationDelegate {
@@ -146,5 +220,31 @@ final class MockCSSCommunicationDelegate: CCFCommunicationDelegate {
         successActionId = nil
         captchaInfo = nil
         solveCaptchaResponse = nil
+    }
+}
+
+private class MockWKScriptMessage: WKScriptMessage {
+
+    let mockedName: String
+    let mockedBody: Any
+    let mockedWebView: WKWebView?
+
+    override var name: String {
+        return mockedName
+    }
+
+    override var body: Any {
+        return mockedBody
+    }
+
+    override var webView: WKWebView? {
+        return mockedWebView
+    }
+
+    init(name: String = "", body: Any = "", webView: WKWebView? = nil) {
+        self.mockedName = name
+        self.mockedBody = body
+        self.mockedWebView = webView
+        super.init()
     }
 }

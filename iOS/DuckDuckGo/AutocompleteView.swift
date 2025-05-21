@@ -304,10 +304,6 @@ private struct SuggestionListItem: View {
                 .frame(width: Metrics.iconSize, height: Metrics.iconSize)
                 .tintIfAvailable(Color(designSystemColor: .icons))
 
-            if autocompleteModel.isExperimentalThemingEnabled {
-                Spacer().frame(width: Metrics.spacing)
-            }
-
             VStack(alignment: .leading, spacing: Metrics.subtitleSpacing) {
 
                 Group {
@@ -335,7 +331,7 @@ private struct SuggestionListItem: View {
                         .lineLimit(1)
                 }
             }
-            .padding(.leading, autocompleteModel.isExperimentalThemingEnabled ? 0 : Metrics.spacing)
+            .padding(.leading, Metrics.spacing)
             .padding(.trailing, autocompleteModel.isExperimentalThemingEnabled ? 0 : Metrics.indicatorLeadingPadding)
 
             if autocompleteModel.isExperimentalThemingEnabled && indicator == nil {

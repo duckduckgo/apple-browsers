@@ -233,6 +233,7 @@ class MainViewController: UIViewController {
         appSettings: AppSettings,
         previewsSource: TabPreviewsSource,
         tabsModel: TabsModel,
+        tabsPersistence: TabsModelPersisting,
         syncPausedStateManager: any SyncPausedStateManaging,
         privacyProDataReporter: PrivacyProDataReporting,
         variantManager: VariantManager,
@@ -272,6 +273,7 @@ class MainViewController: UIViewController {
 
         let interactionStateSource = WebViewStateRestorationManager(featureFlagger: featureFlagger).isFeatureEnabled ? TabInteractionStateDiskSource() : nil
         self.tabManager = TabManager(model: tabsModel,
+                                     persistence: tabsPersistence,
                                      previewsSource: previewsSource,
                                      interactionStateSource: interactionStateSource,
                                      bookmarksDatabase: bookmarksDatabase,

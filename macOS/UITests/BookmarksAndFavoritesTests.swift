@@ -29,6 +29,7 @@ class BookmarksAndFavoritesTests: UITestCase {
     private var bookmarkDialogBookmarkFolderDropdown: XCUIElement!
     private var bookmarkPageContextMenuItem: XCUIElement!
     private var bookmarkPageMenuItem: XCUIElement!
+    private var bookmarkPageMainMenuItem: XCUIElement!
     private var bookmarksBarCollectionView: XCUIElement!
     private var bookmarksDialogAddToFavoritesCheckbox: XCUIElement!
     private var bookmarksManagementAccessoryImageView: XCUIElement!
@@ -72,6 +73,7 @@ class BookmarksAndFavoritesTests: UITestCase {
         bookmarkDialogBookmarkFolderDropdown = app.popUpButtons["bookmark.add.folder.dropdown"]
         bookmarkPageContextMenuItem = app.menuItems["ContextMenuManager.bookmarkPageMenuItem"]
         bookmarkPageMenuItem = app.menuItems["MoreOptionsMenu.bookmarkPage"]
+        bookmarkPageMainMenuItem = app.menuItems["Bookmark This Page…"]
         bookmarksBarCollectionView = app.collectionViews["BookmarksBarViewController.bookmarksBarCollectionView"]
         bookmarksDialogAddToFavoritesCheckbox = app.checkBoxes["bookmark.add.add.to.favorites.button"]
         bookmarksManagementAccessoryImageView = app.images["BookmarkTableCellView.accessoryImageView"]
@@ -103,6 +105,48 @@ class BookmarksAndFavoritesTests: UITestCase {
         resetBookmarks()
         app.typeKey("w", modifierFlags: [.command, .option, .shift]) // Let's enforce a single window
         app.typeKey("n", modifierFlags: .command)
+    }
+
+    func test_bookmarks_canBeAddedTo_withMainMenuBookmarkThisPage() {
+        openSiteToBookmark(bookmarkingViaDialog: false, escapingDialog: false)
+        bookmarkPageMainMenuItem.clickAfterExistenceTestSucceeds()
+        XCTAssertTrue( // Check Add Bookmark dialog for existence but don't click on it
+            defaultBookmarkDialogButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "The \"Add bookmark\" dialog option button didn't appear with the expected title in a reasonable timeframe."
+        )
+        XCTAssertTrue(
+            addressBarBookmarkButton.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "The address bar bookmark button didn't appear with the expected title in a reasonable timeframe."
+        )
+        XCTAssertTrue(
+            bookmarkDialogBookmarkFolderDropdown.waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "The \"Add bookmark\" dialog's bookmark folder dropdown didn't appear with the expected title in a reasonable timeframe."
+        )
+        let bookmarkDialogBookmarkFolderDropdownValue = try? XCTUnwrap(
+            bookmarkDialogBookmarkFolderDropdown.value as? String,
+            "It wasn't possible to get the value of the \"Add bookmark\" dialog's bookmark folder dropdown as String"
+        )
+        XCTAssertEqual( // Bookmark dialog must default to "Bookmarks" folder
+            bookmarkDialogBookmarkFolderDropdownValue,
+            "Bookmarks",
+            "The accessibility value of the \"Add bookmark\" dialog's bookmark folder dropdown must be \"Bookmarks\"."
+        )
+
+        let addressBarBookmarkButtonValue = try? XCTUnwrap(
+            addressBarBookmarkButton.value as? String,
+            "It wasn't possible to get the value of the address bar bookmark button as String"
+        )
+        XCTAssertEqual( // The bookmark icon is already in a filled state and it isn't necessary to click the add button
+            addressBarBookmarkButtonValue,
+            "Bookmarked",
+            "The accessibility value of the address bar bookmark button must be \"Bookmarked\", which indicates the icon in the filled state."
+        )
+
+        bookmarksMenu.clickAfterExistenceTestSucceeds()
+        XCTAssertTrue( // And the bookmark is found in the Bookmarks menu
+            app.menuItems[pageTitle].waitForExistence(timeout: UITests.Timeouts.elementExistence),
+            "The bookmark in the \"Bookmarks\" menu with the title of the test page didn't appear with the expected title in a reasonable timeframe."
+        )
     }
 
     func test_bookmarks_canBeAddedTo_withContextClickBookmarkThisPage() {
@@ -148,7 +192,7 @@ class BookmarksAndFavoritesTests: UITestCase {
         )
     }
 
-    func test_bookmarks_canBeAddedTo_withSettingsItemBookmarkThisPage() {
+    func test_bookmarks_canBeAddedTo_withMoreMenuItemBookmarkThisPage() {
         openSiteToBookmark(bookmarkingViaDialog: false, escapingDialog: false)
         optionsButton.clickAfterExistenceTestSucceeds()
         openBookmarksMenuItem.hoverAfterExistenceTestSucceeds()

@@ -75,6 +75,11 @@ extension Pixel {
         case keyValueFileStoreSupportDirAccessError
         case keyValueFileStoreInitError
 
+        // MARK: Tabs Store
+        case tabsStoreSupportDirAccessError
+        case tabsStoreInitError
+        case tabsStoreSaveError
+
         // MARK: Tabswitcher improvements
         case tabSwitcherEditMenuClicked
         case tabSwitcherEditMenuSelectTabs
@@ -1217,6 +1222,10 @@ extension Pixel.Event {
 
         case .keyValueFileStoreSupportDirAccessError: return "m_debug_key_value_file_store_support_dir_access_error"
         case .keyValueFileStoreInitError: return "m_debug_key_value_file_store_init_error"
+
+        case .tabsStoreSupportDirAccessError: return "m_debug_tabs_store_support_dir_access_error"
+        case .tabsStoreInitError: return "m_debug_tabs_store_init_error"
+        case .tabsStoreSaveError: return "m_debug_tabs_store_save_error"
 
         case .tabSwitcherNewLayoutSeen: return "m_ts_n"
         case .tabSwitcherListEnabled: return "m_ts_l"

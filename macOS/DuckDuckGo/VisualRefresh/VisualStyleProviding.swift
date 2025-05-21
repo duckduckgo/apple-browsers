@@ -59,6 +59,7 @@ protocol VisualStyleProviding {
     var moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding { get }
     var tabStyleProvider: TabStyleProviding { get }
     var colorsProvider: ColorsProviding { get }
+    var fireButtonSize: CGFloat { get }
 }
 
 protocol VisualStyleManagerProviding {
@@ -127,6 +128,7 @@ struct VisualStyle: VisualStyleProviding {
     let newTabOrHomePageAddressBarFontSize: CGFloat
     let bookmarksBarMenuBookmarkIcon: NSImage
     let bookmarksBarMenuFolderIcon: NSImage
+    let fireButtonSize: CGFloat
 
     func addressBarHeight(for type: AddressBarSizeClass, focused: Bool) -> CGFloat {
         switch type {
@@ -202,7 +204,8 @@ struct VisualStyle: VisualStyleProviding {
                            defaultAddressBarFontSize: 13,
                            newTabOrHomePageAddressBarFontSize: 15,
                            bookmarksBarMenuBookmarkIcon: .bookmark,
-                           bookmarksBarMenuFolderIcon: .folder16)
+                           bookmarksBarMenuFolderIcon: .folder16,
+                           fireButtonSize: 28)
     }
 
     static var current: VisualStyleProviding {
@@ -245,7 +248,8 @@ struct VisualStyle: VisualStyleProviding {
                            defaultAddressBarFontSize: 13,
                            newTabOrHomePageAddressBarFontSize: 13,
                            bookmarksBarMenuBookmarkIcon: .bookmarkNew,
-                           bookmarksBarMenuFolderIcon: .folderNew)
+                           bookmarksBarMenuFolderIcon: .folderNew,
+                           fireButtonSize: 32)
     }
 }
 

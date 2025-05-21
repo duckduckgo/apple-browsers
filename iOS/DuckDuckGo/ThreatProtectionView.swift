@@ -56,7 +56,7 @@ struct ThreatProtectionViewSettings: View {
             .tint(Color(designSystemColor: .accent))) {
                 SettingsCellView(label: "Smarter Encryption",
                                  statusIndicator: StatusIndicatorView(status: .alwaysOn))
-            }
+        }
 
         // Scam Blocker
         if model.shouldShowMaliciousSiteProtectionSection {
@@ -67,11 +67,11 @@ struct ThreatProtectionViewSettings: View {
                     Text(UserText.scamBlockerToggleCaption)
                         .foregroundColor(.red)
                 }
-            }) {
-                    SettingsCellView(label: "Scam Blocker",
-                                     accessory: .toggle(isOn: $model.isMaliciousSiteProtectionOn))
-                }
+            })
+            {
+                SettingsCellView(label: "Scam Blocker",
+                                 accessory: .toggle(isOn: $model.isMaliciousSiteProtectionOn))
+            }
         }
     }
 }
-

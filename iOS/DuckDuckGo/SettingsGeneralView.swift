@@ -27,7 +27,7 @@ struct SettingsGeneralView: View {
     @State var shouldShowNoMicrophonePermissionAlert = false
 
     var body: some View {
-        ScrollViewReader { proxy in
+        ScrollViewReader { _ in
             List {
                 // Application Lock
                 Section(footer: Text(UserText.settingsAutoLockDescription)) {

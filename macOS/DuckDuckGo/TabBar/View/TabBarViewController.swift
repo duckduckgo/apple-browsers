@@ -616,7 +616,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         guard !tabPreviewWindowController.isPresented else { return }
 
         if let indexPath = collectionView.withMouseLocationInViewCoordinates(convert: { self.collectionView.indexPathForItem(at: $0) }),
-           let tabBarViewItem = collectionView.item(at: indexPath) as? TabBarViewItem {
+           let tabBarViewItem = collectionView.item(at: indexPath) as? TabBarViewItem,
+           collectionView.visibleRect.intersects(tabBarViewItem.view.frame) {
             showTabPreview(for: tabBarViewItem)
         } else if let pinnedTabIndex = pinnedTabsViewModel?.hoveredItemIndex {
             showPinnedTabPreview(at: pinnedTabIndex)

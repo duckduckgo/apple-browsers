@@ -194,7 +194,6 @@ final class UpdateController: NSObject, UpdateControllerProtocol {
 
     private func subscribeToResignKeyNotifications() {
         NotificationCenter.default.publisher(for: NSWindow.didResignKeyNotification)
-            .debounce(for: .seconds(1), scheduler: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.discardCurrentUpdateIfExpiredAndCheckAgain(skipRollout: false)
             }

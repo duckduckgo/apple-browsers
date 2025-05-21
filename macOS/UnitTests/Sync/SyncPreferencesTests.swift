@@ -74,7 +74,9 @@ final class SyncPreferencesTests: XCTestCase {
     var appearancePreferences: AppearancePreferences!
     var syncPreferences: SyncPreferences!
     var pausedStateManager: MockSyncPausedStateManaging!
+    var connectionController: MockSyncConnectionControlling!
     var testRecoveryCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiMDZGODhFNzEtNDFBRS00RTUxLUE2UkRtRkEwOTcwMDE5QkYwIiwicHJpbWFyeV9rZXkiOiI1QTk3U3dsQVI5RjhZakJaU09FVXBzTktnSnJEYnE3aWxtUmxDZVBWazgwPSJ9fQ=="
+    lazy var testRecoveryKey = try! SyncCode.decodeBase64String(testRecoveryCode).recovery!
     var cancellables: Set<AnyCancellable>!
 
     var bookmarksDatabase: CoreDataDatabase!
@@ -91,7 +93,7 @@ final class SyncPreferencesTests: XCTestCase {
         syncCredentialsAdapter = SyncCredentialsAdapter(secureVaultFactory: AutofillSecureVaultFactory, syncErrorHandler: SyncErrorHandler())
         let featureFlagger = MockSyncFeatureFlagger()
         featureFlagger.isFeatureOn[FeatureFlag.syncSeamlessAccountSwitching.rawValue] = true
-        featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = false
+        connectionController = MockSyncConnectionControlling()
 
         syncPreferences = SyncPreferences(
             syncService: ddgSyncing,
@@ -101,6 +103,10 @@ final class SyncPreferencesTests: XCTestCase {
             managementDialogModel: managementDialogModel,
             userAuthenticator: MockUserAuthenticator(),
             syncPausedStateManager: pausedStateManager,
+            connectionControllerFactory: { [weak self] _, _ in
+                guard let self else { return MockSyncConnectionControlling() }
+                return connectionController
+            },
             featureFlagger: featureFlagger
         )
     }
@@ -298,62 +304,49 @@ final class SyncPreferencesTests: XCTestCase {
         XCTAssertNil(syncPreferences.syncPausedButtonAction)
     }
 
-    func test_recoverDevice_accountAlreadyExists_oneDevice_disconnectsThenLogsInAgain() async {
+    func test_recoverDevice_callsConnectionController() async throws {
+        syncPreferences.recoverDevice(recoveryCode: testRecoveryCode, fromRecoveryScreen: false)
+        _ = try await waitForPublisher(connectionController.$syncCodeEnteredCalled, toEmit: true)
+    }
+
+    func test_controllerDidFindTwoAccountsDuringRecovery_accountAlreadyExists_oneDevice_disconnectsThenLogsInAgain() async throws {
         // Must have an account to prevent devices being cleared
         setUpWithSingleDevice(id: "1")
-        let firstLoginCalledExpectation = XCTestExpectation(description: "Login Called Once")
-        let secondLoginCalledExpectation = XCTestExpectation(description: "Login Called Again")
-
+        var didCallDDGSyncLogin = false
         ddgSyncing.spyLogin = { [weak self] _, _, _ in
-            self?.ddgSyncing.spyLogin = { [weak self] _, _, _ in
-                guard let self else { return [] }
-                // Assert disconnect before returning from login to ensure correct order
-                XCTAssert(ddgSyncing.disconnectCalled)
-                secondLoginCalledExpectation.fulfill()
-                return [RegisteredDevice(id: "1", name: "iPhone", type: "iPhone"), RegisteredDevice(id: "2", name: "Macbook Pro", type: "Macbook Pro")]
-            }
-            firstLoginCalledExpectation.fulfill()
-            throw SyncError.accountAlreadyExists
+            guard let self else { return [] }
+            didCallDDGSyncLogin = true
+            XCTAssert(ddgSyncing.disconnectCalled)
+            return [RegisteredDevice(id: "1", name: "iPhone", type: "iPhone"), RegisteredDevice(id: "2", name: "Macbook Pro", type: "Macbook Pro")]
         }
-
-        syncPreferences.recoverDevice(recoveryCode: testRecoveryCode, fromRecoveryScreen: false)
-
-        await fulfillment(of: [firstLoginCalledExpectation, secondLoginCalledExpectation], timeout: 5.0)
+        await syncPreferences.controllerDidFindTwoAccountsDuringRecovery(testRecoveryKey)
+        XCTAssert(didCallDDGSyncLogin)
     }
 
     func test_recoverDevice_accountAlreadyExists_oneDevice_updatesDevicesWithReturnedDevices() async throws {
         // Must have an account to prevent devices being cleared
         setUpWithSingleDevice(id: "1")
 
-        ddgSyncing.spyLogin = { [weak self] _, _, _ in
-            self?.ddgSyncing.spyLogin = { _, _, _ in
-                return [RegisteredDevice(id: "1", name: "iPhone", type: "iPhone"), RegisteredDevice(id: "2", name: "Macbook Pro", type: "Macbook Pro")]
-            }
-            throw SyncError.accountAlreadyExists
+        ddgSyncing.spyLogin = { _, _, _ in
+            return [RegisteredDevice(id: "1", name: "iPhone", type: "iPhone"), RegisteredDevice(id: "2", name: "Macbook Pro", type: "Macbook Pro")]
         }
 
-        syncPreferences.recoverDevice(recoveryCode: testRecoveryCode, fromRecoveryScreen: false)
+        await syncPreferences.controllerDidFindTwoAccountsDuringRecovery(testRecoveryKey)
 
         let deviceIDsPublisher = syncPreferences.$devices.map { $0.map { $0.id } }
-        _ = try await waitForPublisher(deviceIDsPublisher, timeout: 15.0, toEmit: ["1", "2"])
+        _ = try await waitForPublisher(deviceIDsPublisher, toEmit: ["1", "2"])
     }
 
     func test_recoverDevice_accountAlreadyExists_oneDevice_endsFlow() async throws {
         setUpWithSingleDevice(id: "1")
         // Removal of currentDialog indicates end of flow
         managementDialogModel.currentDialog = .enterRecoveryCode(code: "")
-        let loginCalledExpectation = XCTestExpectation(description: "Login Called Once")
 
-        ddgSyncing.spyLogin = { [weak self] _, _, _ in
-            self?.ddgSyncing.spyLogin = { _, _, _ in
-                return [RegisteredDevice(id: "1", name: "iPhone", type: "iPhone"), RegisteredDevice(id: "2", name: "Macbook Pro", type: "Macbook Pro")]
-            }
-            loginCalledExpectation.fulfill()
-            throw SyncError.accountAlreadyExists
+        ddgSyncing.spyLogin = { _, _, _ in
+            return [RegisteredDevice(id: "1", name: "iPhone", type: "iPhone"), RegisteredDevice(id: "2", name: "Macbook Pro", type: "Macbook Pro")]
         }
 
-        syncPreferences.recoverDevice(recoveryCode: testRecoveryCode, fromRecoveryScreen: false)
-        await fulfillment(of: [loginCalledExpectation], timeout: 5.0)
+        await syncPreferences.controllerDidFindTwoAccountsDuringRecovery(testRecoveryKey)
 
         _ = try await waitForPublisher(managementDialogModel.$currentDialog, timeout: 5.0, toEmit: nil)
     }
@@ -363,16 +356,7 @@ final class SyncPreferencesTests: XCTestCase {
         ddgSyncing.account = SyncAccount(deviceId: "1", deviceName: "", deviceType: "", userId: "", primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
         syncPreferences.devices = [SyncDevice(RegisteredDevice(id: "1", name: "iPhone", type: "iPhone")), SyncDevice(RegisteredDevice(id: "2", name: "iPhone", type: "iPhone"))]
 
-        let loginCalledExpectation = XCTestExpectation(description: "Login Called Again")
-
-        ddgSyncing.spyLogin = { _, _, _ in
-            loginCalledExpectation.fulfill()
-            throw SyncError.accountAlreadyExists
-        }
-
-        syncPreferences.recoverDevice(recoveryCode: testRecoveryCode, fromRecoveryScreen: false)
-
-        await fulfillment(of: [loginCalledExpectation], timeout: 5.0)
+        await syncPreferences.controllerDidFindTwoAccountsDuringRecovery(testRecoveryKey)
 
         XCTAssert(managementDialogModel.shouldShowErrorMessage)
         XCTAssert(managementDialogModel.shouldShowSwitchAccountsMessage)

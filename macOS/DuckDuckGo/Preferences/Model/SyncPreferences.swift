@@ -172,6 +172,12 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
 
     private let diagnosisHelper: SyncDiagnosisHelper
 
+    private static let defaultConnectionControllerFactory: (DDGSyncing, SyncConnectionControllerDelegate) -> SyncConnectionControlling = { syncService, delegate in
+        syncService.createConnectionController(deviceName: deviceInfo().name, deviceType: deviceInfo().type, delegate: delegate)
+    }
+    private let connectionControllerFactory: (DDGSyncing, SyncConnectionControllerDelegate) -> SyncConnectionControlling
+    private lazy var connectionController: SyncConnectionControlling = connectionControllerFactory(syncService, self)
+
     init(
         syncService: DDGSyncing,
         syncBookmarksAdapter: SyncBookmarksAdapter,
@@ -180,6 +186,7 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
         managementDialogModel: ManagementDialogModel = ManagementDialogModel(),
         userAuthenticator: UserAuthenticating = DeviceAuthenticator.shared,
         syncPausedStateManager: any SyncPausedStateManaging,
+        connectionControllerFactory: @escaping (DDGSyncing, SyncConnectionControllerDelegate) -> SyncConnectionControlling = SyncPreferences.defaultConnectionControllerFactory,
         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger
     ) {
         self.syncService = syncService
@@ -189,6 +196,7 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
         self.syncFeatureFlags = syncService.featureFlags
         self.userAuthenticator = userAuthenticator
         self.syncPausedStateManager = syncPausedStateManager
+        self.connectionControllerFactory = connectionControllerFactory
         self.featureFlagger = featureFlagger
 
         self.isFaviconsFetchingEnabled = syncBookmarksAdapter.isFaviconsFetchingEnabled
@@ -461,7 +469,6 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
     private var connector: RemoteConnecting?
     private let userAuthenticator: UserAuthenticating
     private var syncPromoSource: String?
-    private lazy var connectionController: SyncConnectionControlling = syncService.createConnectionController(deviceName: deviceInfo().name, deviceType: deviceInfo().type, delegate: self)
 }
 
 extension SyncPreferences: ManagementDialogModelDelegate {
@@ -514,14 +521,14 @@ extension SyncPreferences: ManagementDialogModelDelegate {
         }
     }
 
-    private func deviceInfo() -> (name: String, type: String) {
+    static private func deviceInfo() -> (name: String, type: String) {
         let hostname = SCDynamicStoreCopyComputerName(nil, nil) as? String ?? ProcessInfo.processInfo.hostName
         return (name: hostname, type: "desktop")
     }
 
     @MainActor
     private func loginAndShowPresentedDialog(_ recoveryKey: SyncCode.RecoveryKey, isRecovery: Bool) async throws {
-        let device = deviceInfo()
+        let device = Self.deviceInfo()
         let devices = try await syncService.login(recoveryKey, deviceName: device.name, deviceType: device.type)
         mapDevices(devices)
         PixelKit.fire(GeneralPixel.syncLogin)
@@ -543,7 +550,7 @@ extension SyncPreferences: ManagementDialogModelDelegate {
                 isCreatingAccount = false
             }
             do {
-                let device = deviceInfo()
+                let device = Self.deviceInfo()
                 presentDialog(for: .prepareToSync)
                 try await syncService.createAccount(deviceName: device.name, deviceType: device.type)
                 let additionalParameters = syncPromoSource.map { ["source": $0] } ?? [:]
@@ -708,13 +715,7 @@ extension SyncPreferences: ManagementDialogModelDelegate {
     @MainActor
     func copyCode() {
         var code: String?
-        if isSyncEnabled {
-            code = recoveryCode
-        } else {
-            // Fall back to recovery code if no other codeToDisplay is set as, if available,
-            // a recovery code will always work for connection
-            code = codeToDisplay ?? recoveryCode
-        }
+        code = codeToDisplay ?? recoveryCode
         guard let code else { return }
         let pasteboard = NSPasteboard.general
         pasteboard.declareTypes([.string], owner: nil)
@@ -763,7 +764,7 @@ extension SyncPreferences: ManagementDialogModelDelegate {
         }
 
         do {
-            let device = deviceInfo()
+            let device = Self.deviceInfo()
             let registeredDevices = try await syncService.login(recoveryKey, deviceName: device.name, deviceType: device.type)
             await mapDevices(registeredDevices)
         } catch {
@@ -789,17 +790,16 @@ extension SyncPreferences: ManagementDialogModelDelegate {
         }
     }
 
-    private func handleAccountAlreadyExists(_ recoveryKey: SyncCode.RecoveryKey) {
-        Task { @MainActor in
-            if devices.count > 1 {
-                managementDialogModel.showSwitchAccountsMessage()
-                PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncAskUserToSwitchAccount.withoutMacPrefix)
-            } else {
-                await switchAccounts(recoveryKey: recoveryKey)
-                managementDialogModel.endFlow()
-            }
-            PixelKit.fire(DebugEvent(GeneralPixel.syncLoginExistingAccountError(error: SyncError.accountAlreadyExists)))
+    @MainActor
+    private func handleAccountAlreadyExists(_ recoveryKey: SyncCode.RecoveryKey) async {
+        if devices.count > 1 {
+            managementDialogModel.showSwitchAccountsMessage()
+            PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncAskUserToSwitchAccount.withoutMacPrefix)
+        } else {
+            await switchAccounts(recoveryKey: recoveryKey)
+            managementDialogModel.endFlow()
         }
+        PixelKit.fire(DebugEvent(GeneralPixel.syncLoginExistingAccountError(error: SyncError.accountAlreadyExists)))
     }
 
     private func handleError(_ syncErrorType: SyncErrorType, error: Error?, pixelEvent: PixelKitEvent?) {
@@ -810,6 +810,7 @@ extension SyncPreferences: ManagementDialogModelDelegate {
     }
 }
 
+@MainActor
 extension SyncPreferences: SyncConnectionControllerDelegate {
     func controllerWillBeginTransmittingRecoveryKey() async {
         // no-op
@@ -860,7 +861,7 @@ extension SyncPreferences: SyncConnectionControllerDelegate {
     }
 
     func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey) async {
-        handleAccountAlreadyExists(recoveryKey)
+        await handleAccountAlreadyExists(recoveryKey)
     }
 
     func controllerDidError(_ error: SyncConnectionError, underlyingError: (any Error)?) {

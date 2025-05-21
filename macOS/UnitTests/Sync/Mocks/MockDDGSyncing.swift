@@ -83,7 +83,9 @@ class MockDDGSyncing: DDGSyncing {
         return self.stubLogin
     }
 
+    @Published var loginCalled: Bool = false
     func login(_ recoveryKey: SyncCode.RecoveryKey, deviceName: String, deviceType: String) async throws -> [RegisteredDevice] {
+        loginCalled = true
         return try spyLogin(recoveryKey, deviceName, deviceType)
     }
 
@@ -119,26 +121,68 @@ class MockDDGSyncing: DDGSyncing {
 }
 
 final class MockSyncConnectionControlling: SyncConnectionControlling {
-
+    
+    @Published var cancelCalled: Bool = false
     func cancel() async {
+        cancelCalled = true
     }
 
+    @Published var startExhangeModeCalled: Bool = false
+    var spyStartExchangeModelShouldGenerateURLBasedCode: Bool?
+    var stubStartExchangeMode: String = ""
+    var stubStartExchangeModeError: Error?
     func startExchangeMode(shouldGenerateURLBasedCode: Bool) async throws -> String {
-        ""
+        startExhangeModeCalled = true
+        spyStartExchangeModelShouldGenerateURLBasedCode = shouldGenerateURLBasedCode
+        if let error = stubStartExchangeModeError {
+            throw error
+        }
+        return stubStartExchangeMode
     }
 
+    @Published var startConnectModeCalled: Bool = false
+    var spyStartConnectModeShouldGenerateURLBasedCode: Bool?
+    var stubStartConnectMode: String = ""
+    var stubStartConnectModeError: Error?
     func startConnectMode(shouldGenerateURLBasedCode: Bool) async throws -> String {
-        ""
+        startConnectModeCalled = true
+        spyStartConnectModeShouldGenerateURLBasedCode = shouldGenerateURLBasedCode
+        if let error = stubStartConnectModeError {
+            throw error
+        }
+        return stubStartConnectMode
     }
 
+    @Published var startPairingModeCalled: Bool = false
+    var spyStartPairingModeInfo: PairingInfo?
+    var stubStartPairingMode: Bool = true
     func startPairingMode(_ pairingInfo: PairingInfo) async -> Bool {
-        true
+        startPairingModeCalled = true
+        spyStartPairingModeInfo = pairingInfo
+        return stubStartPairingMode
     }
 
+    @Published var syncCodeEnteredCalled: Bool = false
+    var spySyncCodeEnteredCode: String?
+    var spySyncCodeEnteredCanScanURLBarcodes: Bool?
+    var stubSyncCodeEntered: Bool = true
     func syncCodeEntered(code: String, canScanURLBarcodes: Bool) async -> Bool {
-        true
+        syncCodeEnteredCalled = true
+        spySyncCodeEnteredCode = code
+        spySyncCodeEnteredCanScanURLBarcodes = canScanURLBarcodes
+        return stubSyncCodeEntered
     }
 
+    @Published var loginAndShowDeviceConnectedCalled: Bool = false
+    var spyLoginAndShowDeviceConnectedRecoveryKey: SyncCode.RecoveryKey?
+    var spyLoginAndShowDeviceConnectedIsRecovery: Bool?
+    var stubLoginAndShowDeviceConnectedError: Error?
     func loginAndShowDeviceConnected(recoveryKey: SyncCode.RecoveryKey, isRecovery: Bool) async throws {
+        loginAndShowDeviceConnectedCalled = true
+        spyLoginAndShowDeviceConnectedRecoveryKey = recoveryKey
+        spyLoginAndShowDeviceConnectedIsRecovery = isRecovery
+        if let error = stubLoginAndShowDeviceConnectedError {
+            throw error
+        }
     }
 }

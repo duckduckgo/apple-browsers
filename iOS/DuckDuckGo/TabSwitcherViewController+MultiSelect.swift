@@ -313,7 +313,7 @@ extension TabSwitcherViewController {
             ].compactMap { $0 }),
 
             UIMenu(title: "", options: .displayInline, children: [
-                canClose ? destructive(UserText.closeTabs(withCount: selectedTabs.count), DesignSystemImages.Glyphs.Size16.close, { [weak self] in
+                canClose ? destructive(UserText.closeTabs(withCount: selectedTabs.count), DesignSystemImages.Glyphs.Size16.closeOutline, { [weak self] in
                     self?.selectModeCloseSelectedTabs()
                 }) : nil,
             ].compactMap { $0 }),
@@ -393,7 +393,7 @@ extension TabSwitcherViewController {
             ].compactMap { $0 }),
             
             UIMenu(title: "", options: .displayInline, children: [
-                destructive(UserText.closeTabs(withCount: tabs.count), DesignSystemImages.Glyphs.Size16.close, { [weak self] in
+                destructive(UserText.closeTabs(withCount: tabs.count), DesignSystemImages.Glyphs.Size16.closeOutline, { [weak self] in
                     self?.longPressMenuCloseTabs(indexPaths: indexPaths)
                 })
             ]),

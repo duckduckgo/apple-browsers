@@ -331,10 +331,10 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
             omniBarProgressView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
             omniBarProgressView.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor),
 
-            searchAreaAlignmentView.topAnchor.constraint(equalTo: searchAreaStackView.topAnchor),
-            searchAreaAlignmentView.bottomAnchor.constraint(equalTo: searchAreaStackView.bottomAnchor),
-            searchAreaAlignmentView.leadingAnchor.constraint(lessThanOrEqualTo: searchAreaStackView.leadingAnchor),
-            searchAreaAlignmentView.trailingAnchor.constraint(greaterThanOrEqualTo: searchAreaStackView.trailingAnchor),
+            searchAreaStackView.topAnchor.constraint(equalTo: searchAreaAlignmentView.topAnchor),
+            searchAreaStackView.bottomAnchor.constraint(equalTo: searchAreaAlignmentView.bottomAnchor),
+            searchAreaStackView.leadingAnchor.constraint(greaterThanOrEqualTo: searchAreaAlignmentView.leadingAnchor),
+            searchAreaStackView.trailingAnchor.constraint(lessThanOrEqualTo: searchAreaAlignmentView.trailingAnchor),
 
             // We want searchAreaStackView to grow as much as it's possible
             searchAreaStackView.widthAnchor.constraint(equalTo: widthAnchor).withPriority(.defaultHigh),

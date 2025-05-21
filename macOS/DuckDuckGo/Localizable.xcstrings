@@ -59707,7 +59707,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Warn on sites flagged for scams, phishing and malware"
+            "value" : "Warn on sites flagged for scams, phishing, or malware"
           }
         }
       }
@@ -59912,6 +59912,18 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Smarter Encryption"
+          }
+        }
+      }
+    },
+    "preferences.status-indicator.always-on" : {
+      "comment" : "Status indicator of a browser privacy protection feature.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Always On"
           }
         }
       }
@@ -60164,6 +60176,18 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Threat Protection"
+          }
+        }
+      }
+    },
+    "preferences.threat-protection.caption" : {
+      "comment" : "Caption of the option to show the Threat Protection preferences",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo's enhanced protections stop common threats while keeping your connection secure."
           }
         }
       }

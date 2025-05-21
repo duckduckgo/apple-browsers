@@ -406,7 +406,7 @@ extension URL {
     static var maliciousSiteProtectionLearnMore = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy/scam-blocker/")!
 
     static var smarterEncryptionLearnMore: URL {
-        return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption")!
+        return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/")!
     }
 
     static var dnsBlocklistLearnMore = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists")!

@@ -30,34 +30,23 @@ extension Preferences {
 
         var body: some View {
 
-            // SECTION 1: Scam Blocker
-            if model.isFeatureOn {
-                PreferencePane(UserText.scamBlockerTitle) {
-                    
-                    // SECTION 1.1 Scam Blocker Toggle
-                    PreferencePaneSection {
-                        ToggleMenuItem(UserText.scamBlockerToggleLabel,
-                                       isOn: $model.isEnabled)
-                        VStack(alignment: .leading, spacing: 1) {
-                            TextMenuItemCaption(UserText.scamBlockerToggleCaption)
-                            TextButton(UserText.learnMore) {
-                                model.openNewTab(with: .maliciousSiteProtectionLearnMore)
-                            }
-                        }.padding(.leading, 19)
+            PreferencePane(UserText.threatProtection, spacing: 4) {
+                // SECTION 1: Status Indicator
+                PreferencePaneSection {
+                    StatusIndicatorView(status: .on, isLarge: true)
+                }
+
+                // SECTION 2: Threat Protection Caption
+                PreferencePaneSection {
+                    TextMenuItemCaption(UserText.threatProtectionCaption)
+                }
+
+                // SECTION 3: Smarter Encryption
+                PreferencePaneSection {
+                    VStack(alignment: .leading, spacing: 0) {
+                        TextMenuItemHeader(UserText.smarterEncryptionTitle)
+                        TextMenuItemCaption(UserText.statusIndicatorAlwaysOn)
                     }
-                }
-            }
-
-            // SECTION 2: Smarter Encryption
-            PreferencePane(UserText.smarterEncryptionTitle, spacing: 4) {
-
-                // SECTION 2.1 Smarter Encryption Status Indicator
-                PreferencePaneSection {
-                    StatusIndicatorView(status: .alwaysOn, isLarge: true)
-                }
-
-                // SECTION 2.2 Smarter Encryption Description
-                PreferencePaneSection {
                     VStack(alignment: .leading, spacing: 1) {
                         TextMenuItemCaption(UserText.smarterEncryptionDescription)
                         TextButton(UserText.learnMore) {
@@ -66,6 +55,23 @@ extension Preferences {
                     }
                 }
 
+                // SECTION 4: Scam Blocker
+                PreferencePaneSection {
+                    TextMenuItemHeader(UserText.scamBlockerTitle)
+                    VStack(alignment: .leading, spacing: 1) {
+                        ToggleMenuItem(UserText.scamBlockerToggleLabel,
+                                       isOn: $model.isEnabled)
+                        VStack(alignment: .leading, spacing: 1) {
+                            TextButton(UserText.learnMore) {
+                                model.openNewTab(with: .maliciousSiteProtectionLearnMore)
+                            }
+                            Text(UserText.maliciousDetectionEnabledWarning)
+                                .opacity(model.isEnabled ? 0 : 1)
+                                .font(.footnote)
+                                .foregroundColor(.red)
+                        }.padding(.leading, 19)
+                    }
+                }
             }
         }
     }

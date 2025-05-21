@@ -72,7 +72,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         }
     }
 
-    private let bookmarkManager: BookmarkManager = LocalBookmarkManager.shared
+    private let bookmarkManager: BookmarkManager
     private let visualStyle: VisualStyleProviding
     private var pinnedTabsViewModel: PinnedTabsViewModel?
     private var pinnedTabsView: PinnedTabsView?
@@ -132,9 +132,14 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         }
     }
 
-    static func create(tabCollectionViewModel: TabCollectionViewModel, activeRemoteMessageModel: ActiveRemoteMessageModel) -> TabBarViewController {
+    static func create(tabCollectionViewModel: TabCollectionViewModel, bookmarkManager: BookmarkManager, activeRemoteMessageModel: ActiveRemoteMessageModel) -> TabBarViewController {
         NSStoryboard(name: "TabBar", bundle: nil).instantiateInitialController { coder in
-            self.init(coder: coder, tabCollectionViewModel: tabCollectionViewModel, activeRemoteMessageModel: activeRemoteMessageModel)
+            self.init(
+                coder: coder,
+                tabCollectionViewModel: tabCollectionViewModel,
+                bookmarkManager: bookmarkManager,
+                activeRemoteMessageModel: activeRemoteMessageModel
+            )
         }!
     }
 
@@ -142,16 +147,19 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         fatalError("TabBarViewController: Bad initializer")
     }
 
-    init?(coder: NSCoder, tabCollectionViewModel: TabCollectionViewModel,
+    init?(coder: NSCoder,
+          tabCollectionViewModel: TabCollectionViewModel,
+          bookmarkManager: BookmarkManager,
           activeRemoteMessageModel: ActiveRemoteMessageModel,
           visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
         self.tabCollectionViewModel = tabCollectionViewModel
+        self.bookmarkManager = bookmarkManager
         let tabBarActiveRemoteMessageModel = TabBarActiveRemoteMessage(activeRemoteMessageModel: activeRemoteMessageModel)
         self.tabBarRemoteMessageViewModel = TabBarRemoteMessageViewModel(activeRemoteMessageModel: tabBarActiveRemoteMessageModel,
                                                                          isFireWindow: tabCollectionViewModel.isBurner)
         self.visualStyle = visualStyleManager.style
         if !tabCollectionViewModel.isBurner, let pinnedTabCollection = tabCollectionViewModel.pinnedTabsManager?.tabCollection {
-            let pinnedTabsViewModel = PinnedTabsViewModel(collection: pinnedTabCollection)
+            let pinnedTabsViewModel = PinnedTabsViewModel(collection: pinnedTabCollection, bookmarkManager: bookmarkManager)
             let pinnedTabsView = PinnedTabsView(model: pinnedTabsViewModel)
             self.pinnedTabsViewModel = pinnedTabsViewModel
             self.pinnedTabsView = pinnedTabsView
@@ -1011,7 +1019,10 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
         // open Add Bookmark modal dialog
         guard let url = tabViewModel.tabContent.userEditableUrl else { return }
 
-        let dialog = BookmarksDialogViewFactory.makeAddBookmarkView(currentTab: WebsiteInfo(url: url, title: tabViewModel.title))
+        let dialog = BookmarksDialogViewFactory.makeAddBookmarkView(
+            currentTab: WebsiteInfo(url: url, title: tabViewModel.title),
+            bookmarkManager: bookmarkManager
+        )
         dialog.show(in: view.window)
     }
 
@@ -1394,7 +1405,10 @@ extension TabBarViewController: TabBarViewItemDelegate {
 
     func tabBarViewItemBookmarkAllOpenTabsAction(_ tabBarViewItem: TabBarViewItem) {
         let websitesInfo = tabCollectionViewModel.tabs.compactMap(WebsiteInfo.init)
-        BookmarksDialogViewFactory.makeBookmarkAllOpenTabsView(websitesInfo: websitesInfo).show()
+        BookmarksDialogViewFactory.makeBookmarkAllOpenTabsView(
+            websitesInfo: websitesInfo,
+            bookmarkManager: bookmarkManager
+        ).show()
     }
 
     func tabBarViewItemWillOpenContextMenu(_: TabBarViewItem) {

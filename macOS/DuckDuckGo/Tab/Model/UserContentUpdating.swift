@@ -52,9 +52,11 @@ final class UserContentUpdating {
          trackerDataManager: TrackerDataManager,
          configStorage: ConfigurationStoring,
          webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
+         experimentManager: @autoclosure @escaping () -> ContentScopeExperimentsManaging,
          tld: TLD,
          appearancePreferences: AppearancePreferences,
-         startupPreferences: StartupPreferences
+         startupPreferences: StartupPreferences,
+         bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling
     ) {
 
         let makeValue: (Update) -> NewContent = { rulesUpdate in
@@ -63,10 +65,11 @@ final class UserContentUpdating {
                                                       webTrackingProtectionPreferences: webTrackingProtectionPreferences,
                                                       contentBlockingManager: contentBlockerRulesManager,
                                                       trackerDataManager: trackerDataManager,
-                                                      experimentManager: Application.appDelegate.contentScopeExperimentsManager,
+                                                      experimentManager: experimentManager(),
                                                       tld: tld,
                                                       appearancePreferences: appearancePreferences,
-                                                      startupPreferences: startupPreferences)
+                                                      startupPreferences: startupPreferences,
+                                                      bookmarkManager: bookmarkManager)
             return NewContent(rulesUpdate: rulesUpdate, sourceProvider: sourceProvider)
         }
 

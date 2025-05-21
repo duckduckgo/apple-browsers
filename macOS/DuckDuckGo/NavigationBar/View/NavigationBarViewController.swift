@@ -80,7 +80,8 @@ final class NavigationBarViewController: NSViewController {
         return progressView
     }()
 
-    private let dragDropManager: BookmarkDragDropManager
+    private let bookmarkDragDropManager: BookmarkDragDropManager
+    private let bookmarkManager: BookmarkManager
 
     private var subscriptionManager: SubscriptionAuthV1toV2Bridge {
         Application.appDelegate.subscriptionAuthV1toV2Bridge
@@ -129,7 +130,8 @@ final class NavigationBarViewController: NSViewController {
 
     static func create(tabCollectionViewModel: TabCollectionViewModel,
                        downloadListCoordinator: DownloadListCoordinator = .shared,
-                       dragDropManager: BookmarkDragDropManager = .shared,
+                       bookmarkManager: BookmarkManager,
+                       bookmarkDragDropManager: BookmarkDragDropManager,
                        networkProtectionPopoverManager: NetPPopoverManager,
                        networkProtectionStatusReporter: NetworkProtectionStatusReporter,
                        autofillPopoverPresenter: AutofillPopoverPresenter,
@@ -142,7 +144,8 @@ final class NavigationBarViewController: NSViewController {
                 coder: coder,
                 tabCollectionViewModel: tabCollectionViewModel,
                 downloadListCoordinator: downloadListCoordinator,
-                dragDropManager: dragDropManager,
+                bookmarkManager: bookmarkManager,
+                bookmarkDragDropManager: bookmarkDragDropManager,
                 networkProtectionPopoverManager: networkProtectionPopoverManager,
                 networkProtectionStatusReporter: networkProtectionStatusReporter,
                 autofillPopoverPresenter: autofillPopoverPresenter,
@@ -157,7 +160,8 @@ final class NavigationBarViewController: NSViewController {
         coder: NSCoder,
         tabCollectionViewModel: TabCollectionViewModel,
         downloadListCoordinator: DownloadListCoordinator,
-        dragDropManager: BookmarkDragDropManager,
+        bookmarkManager: BookmarkManager,
+        bookmarkDragDropManager: BookmarkDragDropManager,
         networkProtectionPopoverManager: NetPPopoverManager,
         networkProtectionStatusReporter: NetworkProtectionStatusReporter,
         autofillPopoverPresenter: AutofillPopoverPresenter,
@@ -166,13 +170,20 @@ final class NavigationBarViewController: NSViewController {
         visualStyle: VisualStyleProviding
     ) {
 
-        self.popovers = NavigationBarPopovers(networkProtectionPopoverManager: networkProtectionPopoverManager, autofillPopoverPresenter: autofillPopoverPresenter, isBurner: tabCollectionViewModel.isBurner)
+        self.popovers = NavigationBarPopovers(
+            bookmarkManager: bookmarkManager,
+            bookmarkDragDropManager: bookmarkDragDropManager,
+            networkProtectionPopoverManager: networkProtectionPopoverManager,
+            autofillPopoverPresenter: autofillPopoverPresenter,
+            isBurner: tabCollectionViewModel.isBurner
+        )
         self.tabCollectionViewModel = tabCollectionViewModel
         self.networkProtectionButtonModel = NetworkProtectionNavBarButtonModel(popoverManager: networkProtectionPopoverManager,
                                                                                statusReporter: networkProtectionStatusReporter,
                                                                                iconProvider: visualStyle.iconsProvider.vpnNavigationIconsProvider)
         self.downloadListCoordinator = downloadListCoordinator
-        self.dragDropManager = dragDropManager
+        self.bookmarkManager = bookmarkManager
+        self.bookmarkDragDropManager = bookmarkDragDropManager
         self.brokenSitePromptLimiter = brokenSitePromptLimiter
         self.featureFlagger = featureFlagger
         self.visualStyle = visualStyle
@@ -320,6 +331,7 @@ final class NavigationBarViewController: NSViewController {
         let onboardingPixelReporter = OnboardingPixelReporter()
         guard let addressBarViewController = AddressBarViewController(coder: coder,
                                                                       tabCollectionViewModel: tabCollectionViewModel,
+                                                                      bookmarkManager: bookmarkManager,
                                                                       burnerMode: burnerMode,
                                                                       popovers: popovers,
                                                                       onboardingPixelReporter: onboardingPixelReporter) else {
@@ -439,6 +451,7 @@ final class NavigationBarViewController: NSViewController {
         dockCustomization = Application.appDelegate.dockCustomization
 #endif
         let menu = MoreOptionsMenu(tabCollectionViewModel: tabCollectionViewModel,
+                                   bookmarkManager: bookmarkManager,
                                    passwordManagerCoordinator: PasswordManagerCoordinator.shared,
                                    vpnFeatureGatekeeper: DefaultVPNFeatureGatekeeper(subscriptionManager: subscriptionManager),
                                    internalUserDecider: internalUserDecider,
@@ -1528,7 +1541,7 @@ extension NavigationBarViewController: OptionsButtonMenuDelegate {
 
     func optionsButtonMenuRequestedBookmarkAllOpenTabs(_ sender: NSMenuItem) {
         let websitesInfo = tabCollectionViewModel.tabs.compactMap(WebsiteInfo.init)
-        BookmarksDialogViewFactory.makeBookmarkAllOpenTabsView(websitesInfo: websitesInfo).show()
+        BookmarksDialogViewFactory.makeBookmarkAllOpenTabsView(websitesInfo: websitesInfo, bookmarkManager: bookmarkManager).show()
     }
 
     func optionsButtonMenuRequestedBookmarkPopover(_ menu: NSMenu) {
@@ -1633,7 +1646,7 @@ extension NavigationBarViewController: MouseOverButtonDelegate {
 
     func mouseOverButton(_ sender: MouseOverButton, draggingEntered info: any NSDraggingInfo, isMouseOver: UnsafeMutablePointer<Bool>) -> NSDragOperation {
         guard sender === bookmarkListButton else { return .none }
-        let operation = dragDropManager.validateDrop(info, to: PseudoFolder.bookmarks)
+        let operation = bookmarkDragDropManager.validateDrop(info, to: PseudoFolder.bookmarks)
         isMouseOver.pointee = (operation != .none)
         return operation
     }
@@ -1642,7 +1655,7 @@ extension NavigationBarViewController: MouseOverButtonDelegate {
         guard sender === bookmarkListButton else { return .none }
         cursorDraggedOverBookmarkListButton(with: info)
 
-        let operation = dragDropManager.validateDrop(info, to: PseudoFolder.bookmarks)
+        let operation = bookmarkDragDropManager.validateDrop(info, to: PseudoFolder.bookmarks)
         isMouseOver.pointee = (operation != .none)
         return operation
     }

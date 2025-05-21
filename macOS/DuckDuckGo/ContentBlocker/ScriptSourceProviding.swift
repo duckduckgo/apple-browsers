@@ -52,7 +52,8 @@ protocol ScriptSourceProviding {
         experimentManager: Application.appDelegate.contentScopeExperimentsManager,
         tld: ContentBlocking.shared.tld,
         appearancePreferences: Application.appDelegate.appearancePreferences,
-        startupPreferences: Application.appDelegate.startupPreferences
+        startupPreferences: Application.appDelegate.startupPreferences,
+        bookmarkManager: Application.appDelegate.bookmarkManager
     )
 }
 
@@ -73,6 +74,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     let webTrakcingProtectionPreferences: WebTrackingProtectionPreferences
     let tld: TLD
     let experimentManager: ContentScopeExperimentsManaging
+    let bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling
 
     @MainActor
     init(configStorage: ConfigurationStoring,
@@ -83,7 +85,9 @@ struct ScriptSourceProvider: ScriptSourceProviding {
          experimentManager: ContentScopeExperimentsManaging,
          tld: TLD,
          appearancePreferences: AppearancePreferences,
-         startupPreferences: StartupPreferences) {
+         startupPreferences: StartupPreferences,
+         bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling
+    ) {
 
         self.configStorage = configStorage
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -92,6 +96,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.trackerDataManager = trackerDataManager
         self.experimentManager = experimentManager
         self.tld = tld
+        self.bookmarkManager = bookmarkManager
 
         self.contentBlockerRulesConfig = buildContentBlockerRulesConfig()
         self.surrogatesConfig = buildSurrogatesConfig()
@@ -99,7 +104,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.messageSecret = generateSessionKey()
         self.autofillSourceProvider = buildAutofillSource()
         self.onboardingActionsManager = buildOnboardingActionsManager(appearancePreferences, startupPreferences)
-        self.historyViewActionsManager = buildHistoryViewActionsManager()
+        self.historyViewActionsManager = buildHistoryViewActionsManager(bookmarksHandler: bookmarkManager)
         self.currentCohorts = generateCurrentCohorts()
     }
 
@@ -162,11 +167,13 @@ struct ScriptSourceProvider: ScriptSourceProviding {
             dockCustomization: DockCustomizer(),
             defaultBrowserProvider: SystemDefaultBrowserProvider(),
             appearancePreferences: appearancePreferences,
-            startupPreferences: startupPreferences)
+            startupPreferences: startupPreferences,
+            bookmarkManager: bookmarkManager
+        )
     }
 
-    private func buildHistoryViewActionsManager() -> HistoryViewActionsManager {
-        HistoryViewActionsManager(historyCoordinator: HistoryCoordinator.shared)
+    private func buildHistoryViewActionsManager(bookmarksHandler: HistoryViewBookmarksHandling) -> HistoryViewActionsManager {
+        HistoryViewActionsManager(historyCoordinator: HistoryCoordinator.shared, bookmarksHandler: bookmarksHandler)
     }
 
     private func loadTextFile(_ fileName: String, _ fileExt: String) -> String? {

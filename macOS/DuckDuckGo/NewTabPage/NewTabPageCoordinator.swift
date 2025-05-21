@@ -30,7 +30,7 @@ final class NewTabPageCoordinator {
     init(
         appearancePreferences: AppearancePreferences,
         customizationModel: NewTabPageCustomizationModel,
-        bookmarkManager: BookmarkManager & URLFavoriteStatusProviding = LocalBookmarkManager.shared,
+        bookmarkManager: BookmarkManager & URLFavoriteStatusProviding & RecentActivityFavoritesHandling,
         activeRemoteMessageModel: ActiveRemoteMessageModel,
         historyCoordinator: HistoryCoordinating,
         privacyStats: PrivacyStatsCollecting,

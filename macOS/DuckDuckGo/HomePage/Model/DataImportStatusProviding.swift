@@ -32,7 +32,7 @@ final class BookmarksAndPasswordsImportStatusProvider: DataImportStatusProviding
     let bookmarkManager: BookmarkManager
 
     init(secureVault: (any AutofillSecureVault)? = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter.shared),
-         bookmarkManager: BookmarkManager = LocalBookmarkManager.shared) {
+         bookmarkManager: BookmarkManager) {
         self.secureVault = secureVault
         self.bookmarkManager = bookmarkManager
     }

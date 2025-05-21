@@ -134,8 +134,8 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private let popovers: NavigationBarPopovers?
+    private let bookmarkManager: BookmarkManager
 
-    private var bookmarkManager: BookmarkManager = LocalBookmarkManager.shared
     var controllerMode: AddressBarViewController.Mode? {
         didSet {
             updateButtons()
@@ -188,6 +188,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
     init?(coder: NSCoder,
           tabCollectionViewModel: TabCollectionViewModel,
+          bookmarkManager: BookmarkManager,
           accessibilityPreferences: AccessibilityPreferences = AccessibilityPreferences.shared,
           popovers: NavigationBarPopovers?,
           onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
@@ -195,6 +196,7 @@ final class AddressBarButtonsViewController: NSViewController {
           aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
           visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
         self.tabCollectionViewModel = tabCollectionViewModel
+        self.bookmarkManager = bookmarkManager
         self.accessibilityPreferences = accessibilityPreferences
         self.popovers = popovers
         self.onboardingPixelReporter = onboardingPixelReporter

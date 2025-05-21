@@ -232,10 +232,11 @@ final class SearchNonexistentDomainTests: XCTestCase {
         addressBar.stringValue = enteredString
 
         let suggestionLoadingMock = SuggestionLoadingMock()
+        let bookmarkProviderMock = SuggestionsBookmarkProvider(bookmarkManager: MockBookmarkManager())
         let suggestionContainer = SuggestionContainer(openTabsProvider: { [] },
                                                       suggestionLoading: suggestionLoadingMock,
                                                       historyProvider: HistoryCoordinator.shared,
-                                                      bookmarkProvider: LocalBookmarkManager.shared,
+                                                      bookmarkProvider: bookmarkProviderMock,
                                                       burnerMode: .regular,
                                                       isUrlIgnored: { _ in false })
         addressBar.suggestionContainerViewModel = SuggestionContainerViewModel(isHomePage: true, isBurner: false, suggestionContainer: suggestionContainer, visualStyle: VisualStyle.legacy)

@@ -23,7 +23,7 @@ import FeatureFlags
 public protocol DefaultBrowserAndDockPromptFeatureFlagProvider {
     /// A Boolean value indicating whether Set Default Browser (SAD) and Add To Dock (ATT) are enabled.
     /// - Returns: `true` if the feature is enabled; otherwise, `false`.
-    var isDefaultBrowserAndDockPromptEnabled: Bool { get }
+    var isDefaultBrowserAndDockPromptFeatureEnabled: Bool { get }
 }
 
 public protocol DefaultBrowserAndDockPromptFeatureFlagsSettingsProvider {
@@ -37,11 +37,11 @@ public protocol DefaultBrowserAndDockPromptFeatureFlagsSettingsProvider {
 
 /// An enum representing the different settings for Set Default Browser (SAD) and Add to Dock (ATT) feature flag.
 public enum DefaultBrowserAndDockPromptFeatureSettings: String {
-    /// The setting for the number of days to wait after app installation before showing the first popover.
+    /// The setting for the number of days to wait after app installation before showing the first popover. Default to 14 days.
     case firstPopoverDelayDays
-    /// The setting for the number of days to wait after the popover has been shown before displaying the banner.
+    /// The setting for the number of days to wait after the popover has been shown before displaying the banner. Default to 14 days.
     case bannerAfterPopoverDelayDays
-    /// The settings for the number of days between subsequent displays of the banner.
+    /// The settings for the number of days between subsequent displays of the banner. Default to 14 days.
     case bannerRepeatIntervalDays
 
     public var defaultValue: Int {

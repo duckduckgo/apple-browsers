@@ -43,7 +43,7 @@ struct DefaultBrowserAndDockPromptTypeDeciderTests {
     @Test("Return Nil Prompt when Feature Is Disabled")
     func checkPromptIsNilWhenFeatureFlagIsDisabled() {
         // GIVEN
-        featureFlaggerMock.isDefaultBrowserAndDockPromptEnabled = false
+        featureFlaggerMock.isDefaultBrowserAndDockPromptFeatureEnabled = false
 
         // WHEN
         let result = sut.promptType()

@@ -44,8 +44,9 @@ protocol ToolbarStateHandling {
 
 final class ToolbarHandler: ToolbarStateHandling {
     weak var toolbar: UIToolbar?
+
     private let featureFlagger: FeatureFlagger
-    lazy var isExperimentalThemingEnabled = {
+    private lazy var isExperimentalThemingEnabled = {
         ExperimentalThemingManager(featureFlagger: featureFlagger).isExperimentalThemingEnabled
     }()
 

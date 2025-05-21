@@ -338,8 +338,9 @@ final class SettingsViewModel: ObservableObject {
     
     var duckPlayerNativeUI: Binding<Bool> {
         Binding<Bool>(
-            get: { self.featureFlagger.isFeatureOn(.duckPlayerNativeUI) && 
-                   UIDevice.current.userInterfaceIdiom == .phone
+            get: { 
+                (self.featureFlagger.isFeatureOn(.duckPlayerNativeUI) || self.isInternalUser) && 
+                UIDevice.current.userInterfaceIdiom == .phone
             },
             set: { _ in }
         )

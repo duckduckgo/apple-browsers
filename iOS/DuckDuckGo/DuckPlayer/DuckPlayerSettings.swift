@@ -232,7 +232,8 @@ protocol DuckPlayerSettings: AnyObject {
     ///   - privacyConfigManager: The privacy configuration manager.
     init(appSettings: AppSettings, 
          privacyConfigManager: PrivacyConfigurationManaging,
-         featureFlagger: FeatureFlagger)
+         featureFlagger: FeatureFlagger,
+         internalUserDecider: InternalUserDecider)
 
     /// Triggers a notification to update subscribers about settings changes.
     func triggerNotification()
@@ -287,17 +288,21 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
     ///   - featureFlagger: The feature flagger.
     init(appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          privacyConfigManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+         internalUserDecider: InternalUserDecider = AppDependencyProvider.shared.internalUserDecider) {
         self.appSettings = appSettings
         self.privacyConfigManager = privacyConfigManager
-        self.featureFlagger = featureFlagger
+        self.featureFlagger = featureFlagger        
 
         // DuckPlayer Classic is enabled (Web Version)
         self._isDuckPlayerClassicEnabled = featureFlagger.isFeatureOn(.duckPlayer)
         
+        let isInternalUser = internalUserDecider.isInternalUser
+        let isFeatureEnabled = featureFlagger.isFeatureOn(.duckPlayer) && 
+                                     featureFlagger.isFeatureOn(.duckPlayerNativeUI)
+
         // DuckPlayer Native is only available on iPhone and only if DuckPlayer is enabled
-        self._isDuckPlayerNativeEnabled = featureFlagger.isFeatureOn(.duckPlayer) && 
-                                          featureFlagger.isFeatureOn(.duckPlayerNativeUI) && 
+        self._isDuckPlayerNativeEnabled = (isInternalUser || isFeatureEnabled) && 
                                           UIDevice.current.userInterfaceIdiom == .phone
         registerConfigPublisher()
         registerForNotificationChanges()
@@ -540,7 +545,7 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
             triggerNotification()
         }
     }
-    
+
 
     /// Registers a publisher to listen for changes in the privacy configuration.
     private func registerConfigPublisher() {

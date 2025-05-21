@@ -283,12 +283,23 @@ final class MainView: NSView {
     override func updateTrackingAreas() {
         if let mouseAboveWebViewTrackingArea {
             removeTrackingArea(mouseAboveWebViewTrackingArea)
-            isMouseAboveWebView = false
             let trackingArea = makeMouseAboveViewTrackingArea()
             self.mouseAboveWebViewTrackingArea = trackingArea
             addTrackingArea(trackingArea)
+            updateIsMouseAboveWebView(for: trackingArea)
         }
         super.updateTrackingAreas()
+    }
+
+    private func updateIsMouseAboveWebView(for trackingArea: NSTrackingArea) {
+        guard let window else {
+            isMouseAboveWebView = false
+            return
+        }
+
+        let mouseLocation = window.mouseLocationOutsideOfEventStream
+        let viewLocation = convert(mouseLocation, from: nil)
+        isMouseAboveWebView = trackingArea.rect.contains(viewLocation)
     }
 
     override func mouseEntered(with event: NSEvent) {

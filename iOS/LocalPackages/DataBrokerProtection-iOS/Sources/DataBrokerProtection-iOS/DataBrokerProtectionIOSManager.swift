@@ -248,19 +248,32 @@ public final class DataBrokerProtectionIOSManager {
         }
     }
 
+    // MARK: - Run Prerequisites
+
+    public var meetsProfileRunPrequisite: Bool {
+        get throws {
+            return try database.fetchProfile() != nil
+        }
+    }
+
+    public var meetsAuthenticationRunPrequisite: Bool {
+        return authenticationManager.isUserAuthenticated
+    }
+
+    public var meetsEntitlementRunPrequisite: Bool {
+        get async throws {
+            return try await authenticationManager.hasValidEntitlement()
+        }
+    }
+
     private func validateRunPrerequisites() async -> Bool {
-
         do {
-            let hasProfile = try database.fetchProfile() != nil
-            let isAuthenticated = authenticationManager.isUserAuthenticated
-
-            if !hasProfile || !isAuthenticated {
+            if !(try meetsProfileRunPrequisite) || !meetsAuthenticationRunPrequisite {
                 Logger.dataBrokerProtection.log("Prerequisites are invalid")
                 return false
             }
 
-            let hasValidEntitlement = try await authenticationManager.hasValidEntitlement()
-            return hasValidEntitlement
+            return try await meetsEntitlementRunPrequisite
         } catch {
             Logger.dataBrokerProtection.error("Error validating prerequisites, error: \(error.localizedDescription, privacy: .public)")
             return false

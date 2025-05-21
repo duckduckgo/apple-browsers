@@ -331,15 +331,13 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
             omniBarProgressView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
             omniBarProgressView.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor),
 
-            searchAreaAlignmentView.widthAnchor.constraint(equalTo: widthAnchor).withPriority(.defaultHigh),
             searchAreaAlignmentView.topAnchor.constraint(equalTo: searchAreaStackView.topAnchor),
             searchAreaAlignmentView.bottomAnchor.constraint(equalTo: searchAreaStackView.bottomAnchor),
             searchAreaAlignmentView.leadingAnchor.constraint(lessThanOrEqualTo: searchAreaStackView.leadingAnchor),
             searchAreaAlignmentView.trailingAnchor.constraint(greaterThanOrEqualTo: searchAreaStackView.trailingAnchor),
 
             // We want searchAreaStackView to grow as much as it's possible
-            searchAreaAlignmentView.leadingAnchor.constraint(equalTo: searchAreaStackView.leadingAnchor).withPriority(.defaultHigh),
-            searchAreaAlignmentView.trailingAnchor.constraint(equalTo: searchAreaStackView.trailingAnchor).withPriority(.defaultHigh)
+            searchAreaStackView.widthAnchor.constraint(equalTo: widthAnchor).withPriority(.defaultHigh),
         ])
 
         UpdatedOmniBarView.activateItemSizeConstraints(for: backButtonView)

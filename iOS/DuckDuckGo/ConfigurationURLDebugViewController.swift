@@ -31,6 +31,8 @@ final class ConfigurationURLDebugViewController: UITableViewController {
 
     }
 
+    /// Adding support for more configs?  Don't forget to add it to the `setConfigurationURLProvider`
+    ///  function in `AppConfiguration`.
     enum CustomURLsRows: Int, CaseIterable {
 
         case privacyConfigURL
@@ -53,7 +55,6 @@ final class ConfigurationURLDebugViewController: UITableViewController {
     }()
 
     private var customURLProvider = CustomConfigurationURLProvider()
-
 
     @UserDefaultsWrapper(key: .lastConfigurationUpdateDate, defaultValue: nil)
     private var lastConfigurationUpdateDate: Date?

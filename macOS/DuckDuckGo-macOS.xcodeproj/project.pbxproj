@@ -2558,6 +2558,10 @@
 		9FFBEE672DDD83C20058B11A /* DefaultBrowserAndDockPromptStorageTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FFBEE652DDD83B40058B11A /* DefaultBrowserAndDockPromptStorageTests.swift */; };
 		9FFBEE6C2DDEAF820058B11A /* MockDefaultBrowserAndDockPromptTypeDecider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FFBEE6B2DDEAF7E0058B11A /* MockDefaultBrowserAndDockPromptTypeDecider.swift */; };
 		9FFBEE6D2DDEAF820058B11A /* MockDefaultBrowserAndDockPromptTypeDecider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FFBEE6B2DDEAF7E0058B11A /* MockDefaultBrowserAndDockPromptTypeDecider.swift */; };
+		9FFBEE6F2DDEDB3C0058B11A /* MockDefaultBrowserAndDockPromptCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FFBEE6E2DDEDB2D0058B11A /* MockDefaultBrowserAndDockPromptCoordinator.swift */; };
+		9FFBEE702DDEDB3C0058B11A /* MockDefaultBrowserAndDockPromptCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FFBEE6E2DDEDB2D0058B11A /* MockDefaultBrowserAndDockPromptCoordinator.swift */; };
+		9FFBEE732DDEDC650058B11A /* ApplicationBuildTypeMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FFBEE722DDEDC600058B11A /* ApplicationBuildTypeMock.swift */; };
+		9FFBEE742DDEDC650058B11A /* ApplicationBuildTypeMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FFBEE722DDEDC600058B11A /* ApplicationBuildTypeMock.swift */; };
 		AA06B6B72672AF8100F541C5 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = AA06B6B62672AF8100F541C5 /* Sparkle */; };
 		AA0877B826D5160D00B05660 /* SafariVersionReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0877B726D5160D00B05660 /* SafariVersionReaderTests.swift */; };
 		AA0877BA26D5161D00B05660 /* WebKitVersionProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA0877B926D5161D00B05660 /* WebKitVersionProviderTests.swift */; };
@@ -4856,6 +4860,8 @@
 		9FFBEE622DDD7A040058B11A /* DefaultBrowserAndDockPromptEventMapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptEventMapper.swift; sourceTree = "<group>"; };
 		9FFBEE652DDD83B40058B11A /* DefaultBrowserAndDockPromptStorageTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptStorageTests.swift; sourceTree = "<group>"; };
 		9FFBEE6B2DDEAF7E0058B11A /* MockDefaultBrowserAndDockPromptTypeDecider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDefaultBrowserAndDockPromptTypeDecider.swift; sourceTree = "<group>"; };
+		9FFBEE6E2DDEDB2D0058B11A /* MockDefaultBrowserAndDockPromptCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockDefaultBrowserAndDockPromptCoordinator.swift; sourceTree = "<group>"; };
+		9FFBEE722DDEDC600058B11A /* ApplicationBuildTypeMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationBuildTypeMock.swift; sourceTree = "<group>"; };
 		AA0877B726D5160D00B05660 /* SafariVersionReaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SafariVersionReaderTests.swift; sourceTree = "<group>"; };
 		AA0877B926D5161D00B05660 /* WebKitVersionProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebKitVersionProviderTests.swift; sourceTree = "<group>"; };
 		AA0F3DB6261A566C0077F2D9 /* SuggestionLoadingMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuggestionLoadingMock.swift; sourceTree = "<group>"; };
@@ -8379,6 +8385,7 @@
 				4BA1A6CE258BF58C00F6F690 /* FileSystem */,
 				9F0660752BECC7E700B8EEF1 /* Pixel */,
 				B6AE74322609AFBB005B9B1A /* Progress */,
+				9FFBEE712DDEDC540058B11A /* Utilities */,
 				EEEFA33F2D142AA6006A3F8A /* CombineTestHelpers.swift */,
 				4B9292C42667104B00AD2C21 /* CoreDataTestUtilities.swift */,
 				B603972B29BEDF2100902A34 /* ExpectedNavigationExtension.swift */,
@@ -8467,6 +8474,7 @@
 		9F15567C2DDC3F8300A35DBA /* Mocks */ = {
 			isa = PBXGroup;
 			children = (
+				9FFBEE6E2DDEDB2D0058B11A /* MockDefaultBrowserAndDockPromptCoordinator.swift */,
 				9FFBEE6B2DDEAF7E0058B11A /* MockDefaultBrowserAndDockPromptTypeDecider.swift */,
 				9F15567D2DDC3F8E00A35DBA /* MockDefaultBrowserAndDockPromptFeatureFlagger.swift */,
 				9F1556802DDC41D800A35DBA /* MockDefaultBrowserAndDockPromptStorage.swift */,
@@ -8562,6 +8570,14 @@
 				9FBB0C042CBD223D0006B6A6 /* ViewHighlighter.swift */,
 			);
 			path = ViewHighlighter;
+			sourceTree = "<group>";
+		};
+		9FFBEE712DDEDC540058B11A /* Utilities */ = {
+			isa = PBXGroup;
+			children = (
+				9FFBEE722DDEDC600058B11A /* ApplicationBuildTypeMock.swift */,
+			);
+			path = Utilities;
 			sourceTree = "<group>";
 		};
 		AA0877B626D515EE00B05660 /* UserAgent */ = {
@@ -13409,6 +13425,7 @@
 				1DA6D1032A1FFA3B00540406 /* HTTPCookieTests.swift in Sources */,
 				3706FE45293F661700E42796 /* ProgressEstimationTests.swift in Sources */,
 				31A2FD182BAB43BA00D0E741 /* DataBrokerProtectionFeatureGatekeeperTests.swift in Sources */,
+				9FFBEE732DDEDC650058B11A /* ApplicationBuildTypeMock.swift in Sources */,
 				B6619F072B17138D00CD9186 /* DataImportSourceViewModelTests.swift in Sources */,
 				3706FE46293F661700E42796 /* EncryptedValueTransformerTests.swift in Sources */,
 				9F3910632B68C35600CB5112 /* DownloadsTabExtensionTests.swift in Sources */,
@@ -13525,6 +13542,7 @@
 				3706FE77293F661700E42796 /* PreferencesSidebarModelTests.swift in Sources */,
 				5650E3742D3FDC8900D41ECF /* PageRefreshMonitorExtensionTests.swift in Sources */,
 				37657FC42DB8D564003D749E /* TabCrashRecoveryExtensionTests.swift in Sources */,
+				9FFBEE702DDEDB3C0058B11A /* MockDefaultBrowserAndDockPromptCoordinator.swift in Sources */,
 				3706FE78293F661700E42796 /* HistoryCoordinatingMock.swift in Sources */,
 				3706FE79293F661700E42796 /* AppearancePreferencesTests.swift in Sources */,
 				3706FE7A293F661700E42796 /* FirePopoverViewModelTests.swift in Sources */,
@@ -15387,6 +15405,7 @@
 				9FFBEE6D2DDEAF820058B11A /* MockDefaultBrowserAndDockPromptTypeDecider.swift in Sources */,
 				4BB99D1026FE1A84001E4761 /* FirefoxBookmarksReaderTests.swift in Sources */,
 				1D638D612C44F2BA00530DD5 /* ApplicationUpdateDetectorTests.swift in Sources */,
+				9FFBEE742DDEDC650058B11A /* ApplicationBuildTypeMock.swift in Sources */,
 				9FBD84702BB3DD8400220859 /* MockAttributionsPixelHandler.swift in Sources */,
 				37657FC52DB8D564003D749E /* TabCrashRecoveryExtensionTests.swift in Sources */,
 				4B117F7D276C0CB5002F3D8C /* LocalStatisticsStoreTests.swift in Sources */,
@@ -15417,6 +15436,7 @@
 				376C4DB928A1A48A00CC0F5B /* FirePopoverViewModelTests.swift in Sources */,
 				AAEC74B62642CC6A00C2EFBC /* HistoryStoringMock.swift in Sources */,
 				C18194672C7F60E500381092 /* FreemiumDBPPresenterTests.swift in Sources */,
+				9FFBEE6F2DDEDB3C0058B11A /* MockDefaultBrowserAndDockPromptCoordinator.swift in Sources */,
 				AA652CB125DD825B009059CC /* LocalBookmarkStoreTests.swift in Sources */,
 				B630794226731F5400DCEE41 /* WKDownloadMock.swift in Sources */,
 				B6C0B24626E9CB190031CB7F /* RunLoopExtensionTests.swift in Sources */,

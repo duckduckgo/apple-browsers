@@ -350,11 +350,6 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
     }
 }
 
-final class ApplicationBuildTypeMock: ApplicationBuildType {
-    var isSparkleBuild: Bool = false
-    var isAppStoreBuild: Bool = false
-}
-
 final class FeatureFlaggerMock: FeatureFlagger {
     var internalUserDecider: InternalUserDecider
     var localOverrides: FeatureFlagLocalOverriding?

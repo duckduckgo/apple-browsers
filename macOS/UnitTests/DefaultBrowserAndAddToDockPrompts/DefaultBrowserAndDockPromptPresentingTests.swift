@@ -204,28 +204,3 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
         XCTAssertEqual(didReceiveBannerDismissedCount, 2)
     }
 }
-
-final class MockDefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt {
-    var getPromptTypeResult: DefaultBrowserAndDockPromptPresentationType?
-    var evaluatePromptEligibility: DefaultBrowserAndDockPromptType?
-
-    private(set) var wasPromptConfirmationCalled = false
-    private(set) var wasDismissPromptCalled = false
-    private(set) var capturedPrompt: DefaultBrowserAndDockPromptPresentationType?
-    private(set) var capturedShouldHidePermanently = false
-
-    func getPromptType() -> DefaultBrowserAndDockPromptPresentationType? {
-        getPromptTypeResult
-    }
-
-    func confirmAction(for prompt: DefaultBrowserAndDockPromptPresentationType) {
-        wasPromptConfirmationCalled = true
-        capturedPrompt = prompt
-    }
-
-    func dismissAction(for prompt: DefaultBrowserAndDockPromptPresentationType, shouldHidePermanently: Bool) {
-        wasDismissPromptCalled = true
-        capturedPrompt = prompt
-        capturedShouldHidePermanently = shouldHidePermanently
-    }
-}

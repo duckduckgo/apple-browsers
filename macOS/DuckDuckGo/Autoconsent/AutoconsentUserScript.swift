@@ -271,7 +271,9 @@ extension AutoconsentUserScript {
 
         let autoconsentConfig = [
             "type": "initResp",
-            "rules": nil, // rules are bundled with the content script atm
+            "rules": [
+                "compact": remoteConfig["compactRuleList"] ?? nil
+            ],
             "config": [
                 "enabled": true,
                 "autoAction": preferences.isAutoconsentEnabled == true ? "optOut" : nil,

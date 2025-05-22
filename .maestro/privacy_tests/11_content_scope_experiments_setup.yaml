@@ -1,0 +1,36 @@
+appId: com.duckduckgo.mobile.ios
+tags:
+    - privacy
+name: 01_content_scope_experiments_setup
+
+---
+
+# Set up 
+- runFlow: 
+    file: ../shared/setup.yaml
+
+#Open Debug Menu
+- tapOn: Browsing menu
+- tapOn: Settings
+- runFlow:
+    file: ../shared/open_debug_menu.yaml
+
+##Override Privacy Config
+- tapOn: "Configuration URLs"
+- tapOn: "Privacy Config"
+- inputText: "https://privacy-test-pages.site/content-scope-scripts/infra/config/conditional-matching-experiments.json"
+- tapOn: "Override"
+- tapOn: "Debug"
+- tapOn: "Settings"
+- tapOn: "Done"
+
+#Visit Test site
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://privacy-test-pages.site/content-scope-scripts/infra/pages/conditional-matching-experiments.html"
+- pressKey: Enter
+
+# Check if two 200 or two 300 are visible
+- assertVisible:
+    text: "200|300"
+    index: 1

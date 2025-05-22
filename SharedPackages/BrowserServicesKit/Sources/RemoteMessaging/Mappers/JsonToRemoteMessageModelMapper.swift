@@ -23,6 +23,7 @@ import os.log
 private enum AttributesKey: String, CaseIterable {
     case locale
     case osApi
+    case formFactor
     case isInternalUser
     case appId
     case appVersion
@@ -57,6 +58,7 @@ private enum AttributesKey: String, CaseIterable {
         switch self {
         case .locale: return LocaleMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .osApi: return OSMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .formFactor: return FormFactorMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .isInternalUser: return IsInternalUserMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .appId: return AppIdMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .appVersion: return AppVersionMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)

@@ -172,9 +172,10 @@ private struct SuggestionsSection: View {
                     SuggestionView(model: suggestions[index], query: query)
                  }
                  .listRowBackground(autocompleteViewModel.selection == suggestions[index] ? selectedColor : unselectedColor)
-                 .listRowSeparatorTint(Color(designSystemColor: .lines), edges: [.bottom])
                  .if(autocompleteViewModel.isExperimentalThemingEnabled) {
-                     $0.listRowInsets(Metrics.rowInsets)
+                     $0
+                         .listRowInsets(Metrics.rowInsets)
+                         .listRowSeparatorTint(Color(designSystemColor: .lines), edges: [.bottom])
                  }
                  .modifier(SwipeDeleteHistoryModifier(suggestion: suggestions[index], onSuggestionDeleted: onSuggestionDeleted))
             }

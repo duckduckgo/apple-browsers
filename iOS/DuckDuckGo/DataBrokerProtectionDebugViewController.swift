@@ -26,11 +26,14 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
 
     enum Sections: Int, CaseIterable {
         case database
+        case runPrerequisites
 
         var title: String {
             switch self {
             case .database:
                 return "Database"
+            case .runPrerequisites:
+                return "Run Prerequisites"
             }
         }
     }
@@ -56,7 +59,22 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         }
     }
 
-    // MARK: Properties
+    enum RunPrerequisitesRows: Int, CaseIterable {
+        case isAuthenticated
+        case hasEntitlement
+        case hasProfile
+
+        var title: String {
+            switch self {
+            case .isAuthenticated:
+                return "Is Authenticated"
+            case .hasEntitlement:
+                return "Has Entitlement"
+            case .hasProfile:
+                return "Has Profile"
+            }
+        }
+    }
 
     // MARK: Lifecycle
 
@@ -88,6 +106,18 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             let row = DatabaseRows(rawValue: indexPath.row)
             cell.textLabel?.text = row?.title
 
+        case .runPrerequisites:
+            let row = RunPrerequisitesRows(rawValue: indexPath.row)
+            cell.textLabel?.text = row?.title
+
+            let service = DBPService(appDependencies: AppDependencyProvider.shared)
+            switch row {
+            case .isAuthenticated: cell.detailTextLabel?.text = "Test"
+            case .hasEntitlement: cell.detailTextLabel?.text = "Test"
+            case .hasProfile: cell.detailTextLabel?.text = "Test"
+            case nil: break
+            }
+
         case .none:
             break
         }
@@ -98,6 +128,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch Sections(rawValue: section) {
         case .database: return DatabaseRows.allCases.count
+        case .runPrerequisites: return RunPrerequisitesRows.allCases.count
         case .none: return 0
 
         }
@@ -107,12 +138,16 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         switch Sections(rawValue: indexPath.section) {
         case .database:
             didSelectDatabase(at: indexPath)
+        case .runPrerequisites:
+            break
         case .none:
             break
         }
 
         tableView.deselectRow(at: indexPath, animated: true)
     }
+
+    // MARK: - Database Rows
 
     private func didSelectDatabase(at indexPath: IndexPath) {
         guard let dbpManager = DataBrokerProtectionIOSManager.shared else {

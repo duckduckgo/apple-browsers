@@ -118,7 +118,7 @@ final class ConfigurationURLDebugViewController: UITableViewController {
     }
 
     private func fetchRemoteMessagingConfig() {
-        // TODO
+        (UIApplication.shared.delegate as? AppDelegate)?.debugRefreshRemoteMessages()
     }
 
     private func fetchAssets(for row: CustomURLsRows) {

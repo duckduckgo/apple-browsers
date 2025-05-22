@@ -103,12 +103,18 @@ public enum FeatureFlag: String {
     case experimentalAIChat
 
     case privacyProOnboardingPromotion
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210081345713964?focus=true
+    case syncSetupBarcodeIsUrlBased
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210081345713964?focus=true
+    case canScanUrlBasedSyncSetupBarcodes
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
     public var defaultValue: Bool {
         switch self {
-        case .failsafeExampleCrossPlatformFeature, .failsafeExamplePlatformSpecificSubfeature:
+        case .failsafeExampleCrossPlatformFeature, .failsafeExamplePlatformSpecificSubfeature, .canScanUrlBasedSyncSetupBarcodes:
             true
         default:
             false
@@ -139,7 +145,9 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .autofillCreditCards,
                 .autofillCreditCardsOnByDefault,
                 .exchangeKeysToSyncWithAnotherDevice,
-                .privacyProOnboardingPromotion:
+                .privacyProOnboardingPromotion,
+                .syncSetupBarcodeIsUrlBased,
+                .canScanUrlBasedSyncSetupBarcodes:
             return true
         case .onboardingSetAsDefaultBrowser:
             if #available(iOS 18.3, *) {
@@ -246,6 +254,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .privacyProOnboardingPromotion:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProOnboardingPromotion))
+        case .syncSetupBarcodeIsUrlBased:
+            return .disabled
+        case .canScanUrlBasedSyncSetupBarcodes:
+            return .remoteReleasable(.subfeature(SyncSubfeature.canScanUrlBasedSyncSetupBarcodes))
         }
     }
 }

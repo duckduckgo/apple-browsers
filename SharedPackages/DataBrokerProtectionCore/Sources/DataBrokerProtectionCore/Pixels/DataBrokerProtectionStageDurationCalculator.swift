@@ -54,7 +54,7 @@ public protocol StageDurationCalculator {
     func fireOptOutValidate()
     func fireOptOutSubmitSuccess(tries: Int)
     func fireOptOutFailure(tries: Int)
-#if os(iOS) && (DEBUG || ALPHA)
+#if os(iOS)
     func fireScanStarted()
 #endif
     func fireScanSuccess(matchesFound: Int)
@@ -116,7 +116,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     func fireOptOutStart() {
         setStage(.start)
         // This should never ever go to production and only exists for internal testing
-        #if os(iOS) && (DEBUG || ALPHA)
+        #if os(iOS)
         handler.fire(.optOutStart(dataBroker: dataBroker, attemptId: attemptId, deviceID: DataBrokerProtectionSettings.deviceIdentifier))
         #else
         handler.fire(.optOutStart(dataBroker: dataBroker, attemptId: attemptId))
@@ -159,7 +159,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
 
     func fireOptOutSubmitSuccess(tries: Int) {
 // This should never ever go to production and only exists for internal testing
-#if os(iOS) && (DEBUG || ALPHA)
+#if os(iOS)
         handler.fire(.optOutSubmitSuccess(dataBroker: dataBroker,
                                           attemptId: attemptId,
                                           duration: durationSinceStartTime(),
@@ -185,7 +185,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
 
     func fireOptOutFailure(tries: Int) {
 // This should never ever go to production and only exists for internal testing
-#if os(iOS) && (DEBUG || ALPHA)
+#if os(iOS)
         handler.fire(.optOutFailure(dataBroker: dataBroker,
                                     dataBrokerVersion: dataBrokerVersion,
                                     attemptId: attemptId,
@@ -211,7 +211,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
 #endif
     }
 
-#if os(iOS) && (DEBUG || ALPHA)
+#if os(iOS)
     func fireScanStarted() {
     // This should never ever go to production and only exists for internal testing
         handler.fire(.scanStarted(dataBroker: dataBroker,
@@ -221,7 +221,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
 
     func fireScanSuccess(matchesFound: Int) {
 // This should never ever go to production and only exists for internal testing
-#if os(iOS) && (DEBUG || ALPHA)
+#if os(iOS)
         handler.fire(.scanSuccess(dataBroker: dataBroker,
                                   matchesFound: matchesFound,
                                   duration: durationSinceStartTime(),
@@ -237,7 +237,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
 
     func fireScanFailed() {
 // This should never ever go to production and only exists for internal testing
-#if os(iOS) && (DEBUG || ALPHA)
+#if os(iOS)
         handler.fire(.scanFailed(dataBroker: dataBroker,
                                  dataBrokerVersion: dataBrokerVersion,
                                  duration: durationSinceStartTime(),
@@ -281,7 +281,7 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
         }
 
 // This should never ever go to production and only exists for internal testing
-#if os(iOS) && (DEBUG || ALPHA)
+#if os(iOS)
         handler.fire(
             .scanError(
                 dataBroker: dataBroker,

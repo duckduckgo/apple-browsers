@@ -91,6 +91,7 @@ public class AppUserDefaults: AppSettings {
         static let duckPlayerVariant = "com.duckduckgo.ios.duckPlayerVariant"
         static let duckPlayerWelcomeMessageShown = "com.duckduckgo.ios.duckPlayerWelcomeMessageShown"
         static let duckPlayerPrimingMessagePresented = "com.duckduckgo.ios.duckPlayerPrimingMessagePresented"
+        static let duckPlayerControlsVisible = "com.duckduckgo.ios.duckPlayerControlsVisible"
     }
 
     private struct DebugKeys {
@@ -581,6 +582,9 @@ public class AppUserDefaults: AppSettings {
                                             object: nil)
         }
     }
+
+    @UserDefaultsWrapper(key: .duckPlayerControlsVisible, defaultValue: true)
+    var duckPlayerControlsVisible: Bool
 }
 
 extension AppUserDefaults: AppConfigurationFetchStatistics {

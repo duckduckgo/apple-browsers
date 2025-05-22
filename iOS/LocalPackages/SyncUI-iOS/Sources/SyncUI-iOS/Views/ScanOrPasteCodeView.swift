@@ -60,13 +60,13 @@ public struct ScanOrSeeCode: View {
 
     @ViewBuilder
     func titleView() -> some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 5) {
             Text(UserText.scanOrSeeCodeTitle)
-                .daxTitle2()
+                .daxSubheadSemibold()
             instructionsText()
                 .daxFootnoteRegular()
-                .multilineTextAlignment(.center)
                 .padding(.horizontal, 16)
+                .multilineTextAlignment(.leading)
         }
         .padding(.top, 10)
     }
@@ -102,13 +102,6 @@ public struct ScanOrSeeCode: View {
                             .daxBodyBold()
                             .fixedSize(horizontal: false, vertical: true)
                             .multilineTextAlignment(.leading)
-                        Spacer()
-                        Image("SyncDeviceType_phone")
-                            .padding(2)
-                            .background(
-                                RoundedRectangle(cornerRadius: 2)
-                                    .fill(Color(designSystemColor: .lines))
-                            )
                     }
                     Text(UserText.scanOrSeeCodeScanCodeQRInstructionsBody)
                         .foregroundColor(.secondary)
@@ -117,12 +110,10 @@ public struct ScanOrSeeCode: View {
                 }
                 .frame(maxWidth: maxWidth)
             }
-            .frame(width: width)
             .padding(20)
             .background(
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(cornerRadius: 16)
                     .fill(Color(designSystemColor: .container))
-                    .frame(width: width - 20)
                     .preferredColorScheme(.dark)
             )
             .padding(20)

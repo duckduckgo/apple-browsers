@@ -1,5 +1,5 @@
 //
-//  DefaultBrowserAndDockPromptFeatureFlag.swift
+//  DefaultBrowserAndDockPromptFeatureFlagger.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -54,3 +54,49 @@ public enum DefaultBrowserAndDockPromptFeatureSettings: String {
 }
 
 typealias DefaultBrowserAndDockPromptFeatureFlagger = DefaultBrowserAndDockPromptFeatureFlagProvider & DefaultBrowserAndDockPromptFeatureFlagsSettingsProvider
+
+final class DefaultBrowserAndDockPromptFeatureFlag {
+    private let privacyConfigManager: PrivacyConfigurationManaging
+    private let featureFlagger: FeatureFlagger
+
+    private var remoteSettings: PrivacyConfigurationData.PrivacyFeature.FeatureSettings {
+        privacyConfigManager.privacyConfig.settings(for: .setAsDefaultAndAddToDock)
+    }
+
+    public init(privacyConfigManager: PrivacyConfigurationManaging, featureFlagger: FeatureFlagger) {
+        self.privacyConfigManager = privacyConfigManager
+        self.featureFlagger = featureFlagger
+    }
+}
+
+// MARK: - DefaultBrowserAndDockPromptFeatureFlagger
+
+extension DefaultBrowserAndDockPromptFeatureFlag: DefaultBrowserAndDockPromptFeatureFlagProvider {
+
+    public var isDefaultBrowserAndDockPromptFeatureEnabled: Bool {
+        featureFlagger.isFeatureOn(for: FeatureFlag.popoverVsBannerExperiment)
+    }
+
+}
+
+// MARK: - DefaultBrowserAndDockPromptFeatureFlagsSettingsProvider
+
+extension DefaultBrowserAndDockPromptFeatureFlag: DefaultBrowserAndDockPromptFeatureFlagsSettingsProvider {
+
+    public var firstPopoverDelayDays: Int {
+        getSettings(.firstPopoverDelayDays)
+    }
+
+    public var bannerAfterPopoverDelayDays: Int {
+        getSettings(.bannerAfterPopoverDelayDays)
+    }
+
+    public var bannerRepeatIntervalDays: Int {
+        getSettings(.bannerRepeatIntervalDays)
+    }
+
+    private func getSettings(_ value: DefaultBrowserAndDockPromptFeatureSettings) -> Int {
+        remoteSettings[value.rawValue] as? Int ?? value.defaultValue
+    }
+
+}

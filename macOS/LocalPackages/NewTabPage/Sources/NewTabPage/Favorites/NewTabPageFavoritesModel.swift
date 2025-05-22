@@ -50,6 +50,7 @@ final class UserDefaultsNewTabPageFavoritesSettingsPersistor: NewTabPageFavorite
     }
 }
 
+public let NewTabPageContextMenuTitle = "NewTabPageContextMenu"
 public final class NewTabPageFavoritesModel<FavoriteType, ActionHandler>: NSObject where FavoriteType: NewTabPageFavorite,
                                                                                          ActionHandler: FavoritesActionsHandling,
                                                                                          ActionHandler.FavoriteType == FavoriteType {
@@ -137,7 +138,7 @@ public final class NewTabPageFavoritesModel<FavoriteType, ActionHandler>: NSObje
          */
         guard let favorite = favorites.first(where: { $0.id == bookmarkID}) else { return }
 
-        let menu = NSMenu {
+        let menu = NSMenu(title: NewTabPageContextMenuTitle) {
             if let url = favorite.urlObject {
                 NSMenuItem(title: UserText.openInNewTab) { [weak self] _ in
                     self?.openInNewTab(url, sourceWindow: window)

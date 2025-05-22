@@ -18,6 +18,7 @@
 
 import Cocoa
 import Combine
+import NewTabPage
 import WebKit
 
 final class MainView: NSView {
@@ -143,8 +144,13 @@ final class MainView: NSView {
 
     // PDF Plugin context menu
     override func willOpenMenu(_ menu: NSMenu, with event: NSEvent) {
-        setupSearchContextMenuItem(menu: menu)
-        setupSaveAsAndPrintMenuItems(menu: menu, with: event)
+        // the handler intercepts New Tab Page context menu presented by `NewTabPageContextMenuPresenting` as well
+        // we don‘t want the menu items to be added to the New Tab Page context menu
+        if menu.title != NewTabPage.NewTabPageContextMenuTitle {
+            setupSearchContextMenuItem(menu: menu)
+            setupSaveAsAndPrintMenuItems(menu: menu, with: event)
+        }
+
         super.willOpenMenu(menu, with: event)
     }
 

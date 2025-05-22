@@ -269,7 +269,7 @@ extension TabViewController {
     }
 
     private func buildFindInPageEntry(forLink link: Link) -> BrowsingMenuEntry {
-        return BrowsingMenuEntry.regular(name: UserText.findInPage, image: DesignSystemImages.Glyphs.Size16.findSearch, action: { [weak self] in
+        return BrowsingMenuEntry.regular(name: UserText.findInPage, image: DesignSystemImages.Glyphs.Size16.findInPage, action: { [weak self] in
             Pixel.fire(pixel: .browsingMenuFindInPage)
             self?.requestFindInPage()
         })

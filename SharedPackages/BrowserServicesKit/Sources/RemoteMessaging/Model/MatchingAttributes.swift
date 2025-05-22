@@ -38,6 +38,11 @@ struct OSMatchingAttribute: StringRangeMatching {
     var fallback: Bool?
 }
 
+struct FormFactorMatchingAttribute: SingleValueMatching {
+    var value: [String]? = []
+    var fallback: Bool?
+}
+
 struct IsInternalUserMatchingAttribute: SingleValueMatching {
     var value: Bool?
     var fallback: Bool?

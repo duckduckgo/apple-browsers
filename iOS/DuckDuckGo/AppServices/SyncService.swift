@@ -43,12 +43,12 @@ final class SyncService {
          keyValueStore: ThrowingKeyValueStoring,
          application: UIApplication = UIApplication.shared) {
         self.application = application
-#if DEBUG
+
+#if CI
         let defaultEnvironment = ServerEnvironment.development
 #else
         let defaultEnvironment = ServerEnvironment.production
 #endif
-
         let environment = ServerEnvironment(
             UserDefaultsWrapper(
                 key: .syncEnvironment,

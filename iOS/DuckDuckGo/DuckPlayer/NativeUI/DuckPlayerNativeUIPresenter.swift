@@ -438,10 +438,15 @@ final class DuckPlayerNativeUIPresenter {
     private func firePillImpressionPixels(for pillType: PillType) {        
         switch pillType {
         case .welcome:
-            pixelHandler.fire(.duckPlayerNativePrimingModalImpression)
+            if duckPlayerSettings.nativeUIYoutubeMode == .ask {
+                pixelHandler.fire(.duckPlayerNativePrimingModalImpression)
+            }
         case .entry:
-            pixelHandler.fire(.duckPlayerNativeEntryPointImpression)
+            if duckPlayerSettings.nativeUIYoutubeMode == .ask {
+                pixelHandler.fire(.duckPlayerNativeEntryPointImpression)
+            }
         case .reEntry:
+            // Re-entry is shown in both .ask and .auto modes
             pixelHandler.fire(.duckPlayerNativeReEntryPointImpression)
         }
     }
@@ -620,6 +625,8 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
             duckPlayerSettings.pillDismissCount = 0
         }
         
+        // Fire pixels as needed
+        fireDuckPlayerPresentationPixels(for: source)
 
         let navigationRequest = PassthroughSubject<URL, Never>()
         let settingsRequest = PassthroughSubject<Void, Never>()

@@ -250,7 +250,7 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
     private let privacyConfigManager: PrivacyConfigurationManaging
     private var isFeatureEnabledCancellable: AnyCancellable?    
     private var featureFlagger: FeatureFlagger
-    private var pixelHandler: DuckPlayerPixelFiring.Type
+    var pixelHandler: DuckPlayerPixelFiring.Type
 
     // DuckPlayer Classic is enabled (Web Version)
     private var _isDuckPlayerClassicEnabled: Bool

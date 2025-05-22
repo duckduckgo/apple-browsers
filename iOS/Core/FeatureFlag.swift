@@ -140,7 +140,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .autofillCreditCards,
              .autofillCreditCardsOnByDefault,
              .exchangeKeysToSyncWithAnotherDevice,
-             .privacyProOnboardingPromotion,             
+             .privacyProOnboardingPromotion,
              .duckPlayerNativeUI:
             return true
         case .onboardingSetAsDefaultBrowser:

@@ -60040,10 +60040,58 @@
       "comment" : "Description explaining the Smarter Encryption feature",
       "extractionState" : "extracted_with_value",
       "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Links nach Möglichkeit automatisch auf HTTPS aktualisieren."
+          }
+        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "Automatically upgrades links to HTTPS whenever possible."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualiza automáticamente los enlaces a HTTPS siempre que sea posible."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Met automatiquement à niveau les liens vers HTTPS lorsque c'est possible."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiorna automaticamente i link a HTTPS quando possibile."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Links worden waar mogelijk automatisch naar HTTPS geüpgraded."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "W miarę możliwości automatycznie aktualizuje łącza do protokołu HTTPS."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atualiza automaticamente os links para HTTPS sempre que possível."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "По возможности автоматически переводит ссылки на более безопасный протокол HTTPS."
           }
         }
       }

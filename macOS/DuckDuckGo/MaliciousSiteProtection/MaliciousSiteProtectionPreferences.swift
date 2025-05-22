@@ -30,7 +30,7 @@ struct MaliciousSiteProtectionPreferencesUserDefaultsPersistor: MaliciousSitePro
     var isEnabled: Bool
 }
 
-final class MaliciousSiteProtectionPreferences: ObservableObject {
+final class MaliciousSiteProtectionPreferences: ObservableObject, PreferencesTabOpening {
 
     static let shared = MaliciousSiteProtectionPreferences()
     private let featureFlagger: FeatureFlagger
@@ -44,11 +44,6 @@ final class MaliciousSiteProtectionPreferences: ObservableObject {
 
     var isFeatureOn: Bool {
         featureFlagger.isFeatureOn(.maliciousSiteProtection)
-    }
-
-    @MainActor
-    func openNewTab(with url: URL) {
-        WindowControllersManager.shared.show(url: url, source: .ui, newTab: true)
     }
 
     init(persistor: MaliciousSiteProtectionPreferencesPersistor = MaliciousSiteProtectionPreferencesUserDefaultsPersistor(),

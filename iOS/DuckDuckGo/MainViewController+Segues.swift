@@ -255,12 +255,19 @@ extension MainViewController {
     func segueToSettingsSync(with source: String? = nil, pairingInfo: PairingInfo? = nil) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
-        launchSettings {
-            if let source = source {
-                $0.shouldPresentSyncViewWithSource(source)
-            } else {
-                $0.presentLegacyView(.sync(pairingInfo))
+        let launchSync: () -> Void = { [weak self] in
+            self?.launchSettings {
+                if let source = source {
+                    $0.shouldPresentSyncViewWithSource(source)
+                } else {
+                    $0.presentLegacyView(.sync(pairingInfo))
+                }
             }
+        }
+        if let presentedViewController {
+            presentedViewController.dismiss(animated: false, completion: launchSync)
+        } else {
+            launchSync()
         }
     }
 

@@ -43,4 +43,17 @@ public enum DevicePlatform {
         return false
         #endif
     }
+
+    public static var formFactor: String {
+        switch true {
+        case isMac:
+            return "desktop"
+        case isIpad:
+            return "tablet"
+        case isIphone:
+            return "phone"
+        default:
+            return "unknown"
+        }
+    }
 }

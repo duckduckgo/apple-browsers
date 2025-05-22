@@ -327,13 +327,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         let emailAccessToken = try? EmailManager().getToken()
         let purchaseTransactionJWS: String
 
-        /*
-         Prior to purchase, check the Free Trial experiment status.
-         This status determines the post-purchase Free Trial actions we will perform.
-         It must be checked now, as purchasing causes the status to change.
-         */
-        let shouldPerformFreeTrialPostPurchaseActions = userIsEnrolledInFreeTrialsExperiment
-
         switch await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelection.id,
                                                                emailAccessToken: emailAccessToken) {
         case .success(let transactionJWS):
@@ -362,12 +355,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         setTransactionStatus(.polling)
 
         var subscriptionParameters: [String: String]?
-
-        // Free Trials Experiment Parameters & Pixels
-        if shouldPerformFreeTrialPostPurchaseActions {
-            subscriptionParameters = completeSubscriptionFreeTrialParameters
-            fireFreeTrialSubscriptionPurchasePixel(for: subscriptionSelection.id)
-        } else if let frontEndExperiment = subscriptionSelection.experiment {
+        if let frontEndExperiment = subscriptionSelection.experiment {
             subscriptionParameters = frontEndExperiment.asParameters()
         }
 
@@ -901,13 +889,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
 
         let purchaseTransactionJWS: String
 
-        /*
-         Prior to purchase, check the Free Trial experiment status.
-         This status determines the post-purchase Free Trial actions we will perform.
-         It must be checked now, as purchasing causes the status to change.
-         */
-        let shouldPerformFreeTrialPostPurchaseActions = userIsEnrolledInFreeTrialsExperiment
-
         switch await appStorePurchaseFlow.purchaseSubscription(with: subscriptionSelection.id) {
         case .success(let transactionJWS):
             Logger.subscription.log("Subscription purchased successfully")
@@ -942,12 +923,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         }
 
         var subscriptionParameters: [String: String]?
-
-        // Free Trials Experiment Parameters & Pixels
-        if shouldPerformFreeTrialPostPurchaseActions {
-            subscriptionParameters = completeSubscriptionFreeTrialParameters
-            fireFreeTrialSubscriptionPurchasePixel(for: subscriptionSelection.id)
-        } else if let frontEndExperiment = subscriptionSelection.experiment {
+        if let frontEndExperiment = subscriptionSelection.experiment {
             subscriptionParameters = frontEndExperiment.asParameters()
         }
 

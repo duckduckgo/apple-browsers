@@ -1,8 +1,8 @@
 //
-//  ShowQRCodeViewModel.swift
+//  NSLayoutConstraintExtension.swift
 //  DuckDuckGo
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,19 +17,14 @@
 //  limitations under the License.
 //
 
-import Foundation
 import UIKit
 
-final class ShowQRCodeViewModel: ObservableObject {
-
-    @Published var code: String
-
-    init(code: String) {
-        self.code = code
+public extension NSLayoutConstraint {
+    /// Sets priority and returns the constraint
+    ///
+    /// Useful inside `NSLayoutConstraint.activate()` function.
+    func withPriority(_ priority: UILayoutPriority) -> NSLayoutConstraint {
+        self.priority = priority
+        return self
     }
-
-    func copy() {
-        UIPasteboard.general.string = code
-    }
-
 }

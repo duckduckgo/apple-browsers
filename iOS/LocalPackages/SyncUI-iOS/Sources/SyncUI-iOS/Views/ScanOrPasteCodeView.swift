@@ -22,12 +22,13 @@ import DesignResourcesKit
 
 public struct ScanOrSeeCode: View {
     @ObservedObject var model: ScanOrPasteCodeViewModel
-    @State var qrCodeModel = ShowQRCodeViewModel()
+    @State var qrCodeModel: ShowQRCodeViewModel
 
     @State private var isShareSheetPresented: Bool = false
 
     public init(model: ScanOrPasteCodeViewModel) {
         self.model = model
+        self.qrCodeModel = ShowQRCodeViewModel(code: model.code)
     }
 
     public var body: some View {

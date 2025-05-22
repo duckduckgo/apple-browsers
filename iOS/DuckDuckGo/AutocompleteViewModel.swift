@@ -52,10 +52,12 @@ class AutocompleteViewModel: ObservableObject {
     weak var delegate: AutocompleteViewModelDelegate?
 
     let isAddressBarAtBottom: Bool
+    let isExperimentalThemingEnabled: Bool
 
-    init(isAddressBarAtBottom: Bool, showMessage: Bool) {
+    init(isAddressBarAtBottom: Bool, showMessage: Bool, isExperimentalThemingEnabled: Bool) {
         self.isAddressBarAtBottom = isAddressBarAtBottom
         self.isMessageVisible = showMessage
+        self.isExperimentalThemingEnabled = isExperimentalThemingEnabled
     }
 
     func updateSuggestions(_ suggestions: SuggestionResult) {

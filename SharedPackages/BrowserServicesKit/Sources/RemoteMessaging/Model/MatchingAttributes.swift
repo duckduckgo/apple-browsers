@@ -221,6 +221,11 @@ struct MessageShownMatchingAttribute: SingleValueMatching {
     var fallback: Bool?
 }
 
+struct AllFeatureFlagsEnabledMatchingAttribute: ArrayContainsAllMatching {
+    var value: [String]? = []
+    var fallback: Bool?
+}
+
 struct UnknownMatchingAttribute: MatchingAttribute, Equatable {
     var fallback: Bool?
 

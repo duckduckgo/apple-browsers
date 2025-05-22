@@ -116,6 +116,12 @@
           "max": "16",
           "fallback": true
         },
+        "formFactor": {
+          "value": [
+            "tablet"
+          ],
+          "fallback": true
+        },
         "webview": {
           "min": "80.012.12343",
           "max": "90.023.23423",

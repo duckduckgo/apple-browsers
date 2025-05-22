@@ -146,19 +146,10 @@ extension FeatureFlag: FeatureFlagDescribing {
              .autofillCreditCards,
              .autofillCreditCardsOnByDefault,
              .exchangeKeysToSyncWithAnotherDevice,
-             .privacyProOnboardingPromotion,             
+             .privacyProOnboardingPromotion,
+             .syncSetupBarcodeIsUrlBased,
+             .canScanUrlBasedSyncSetupBarcodes,
              .duckPlayerNativeUI:
-                .experimentalBrowserTheming,
-                .networkProtectionRiskyDomainsProtection,
-                .privacyProAuthV2,
-                .scamSiteProtection,
-                .maliciousSiteProtection,
-                .autofillCreditCards,
-                .autofillCreditCardsOnByDefault,
-                .exchangeKeysToSyncWithAnotherDevice,
-                .privacyProOnboardingPromotion,
-                .syncSetupBarcodeIsUrlBased,
-                .canScanUrlBasedSyncSetupBarcodes:
             return true
         case .onboardingSetAsDefaultBrowser:
             if #available(iOS 18.3, *) {

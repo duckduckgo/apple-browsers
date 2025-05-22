@@ -37,7 +37,7 @@ protocol ScriptSourceProviding {
 
 }
 
-struct DefaultScriptSourceProvider: ScriptSourceProviding {
+class DefaultScriptSourceProvider: ScriptSourceProviding {
 
     var loginDetectionEnabled: Bool { fireproofing.loginDetectionEnabled }
     let sendDoNotSell: Bool
@@ -55,12 +55,13 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     let statisticsStore: StatisticsStore
     private var storedCohorts: [ContentScopeExperimentData]
-    private let cohortsUpdated: Bool = false
+    private var cohortsUpdated: Bool = false
 
     var currentCohorts: [ContentScopeExperimentData] {
-        if !storedCohorts {
+        if !cohortsUpdated && statisticsStore.isAppRetentionFiredToday {
             storedCohorts = Self.generateCurrentCohorts(experimentManager: contentScopeExperimentsManager,
                                                        statisticsStore: statisticsStore)
+            cohortsUpdated = true
         }
         return storedCohorts
     }
@@ -79,7 +80,6 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
         self.fireproofing = fireproofing
         self.contentScopeExperimentsManager = contentScopeExperimentsManager
         self.statisticsStore = statisticsStore
-        self.wasInitiallyActive = statisticsStore.isAppRetentionFiredToday
 
         contentBlockerRulesConfig = Self.buildContentBlockerRulesConfig(contentBlockingManager: contentBlockingManager,
                                                                         privacyConfigurationManager: privacyConfigurationManager)
@@ -143,10 +143,8 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
         // Only generate new cohorts if the app was used today
         let experiments = if statisticsStore.isAppRetentionFiredToday {
             experimentManager.resolveContentScopeScriptActiveExperiments()
-            cohortsUpdated = true
         } else {
             experimentManager.allActiveContentScopeExperiments
-            cohortsUpdated = false
         }
         
         return experiments.map {

@@ -35,7 +35,7 @@ protocol ScriptSourceProviding {
     var messageSecret: String? { get }
     var onboardingActionsManager: OnboardingActionsManaging? { get }
     var historyViewActionsManager: HistoryViewActionsManager? { get }
-    var currentCohorts: [ContentScopeExperimentData]? { get }
+    var currentCohorts: [ContentScopeExperimentData] { get }
     func buildAutofillSource() -> AutofillUserScriptSourceProvider
 
 }
@@ -46,7 +46,7 @@ protocol ScriptSourceProviding {
     ScriptSourceProvider(configStorage: Application.appDelegate.configurationStore, privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager, webTrackingProtectionPreferences: WebTrackingProtectionPreferences.shared, contentBlockingManager: ContentBlocking.shared.contentBlockingManager, trackerDataManager: ContentBlocking.shared.trackerDataManager, experimentManager: Application.appDelegate.contentScopeExperimentsManager, statisticsStore: LocalStatisticsStore(), tld: ContentBlocking.shared.tld)
 }
 
-struct ScriptSourceProvider: ScriptSourceProviding {
+class ScriptSourceProvider: ScriptSourceProviding {
     private(set) var contentBlockerRulesConfig: ContentBlockerUserScriptConfig?
     private(set) var surrogatesConfig: SurrogatesUserScriptConfig?
     private(set) var onboardingActionsManager: OnboardingActionsManaging?
@@ -54,13 +54,12 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     private(set) var autofillSourceProvider: AutofillUserScriptSourceProvider?
     private(set) var sessionKey: String?
     private(set) var messageSecret: String?
-    private var storedCohorts: [ContentScopeExperimentData]
-    private let cohortsUpdated: Bool = false
+    private var storedCohorts: [ContentScopeExperimentData] = []
+    private var cohortsUpdated: Bool = false
 
     var currentCohorts: [ContentScopeExperimentData] {
-        if !storedCohorts {
-            storedCohorts = Self.generateCurrentCohorts(experimentManager: contentScopeExperimentsManager,
-                                                       statisticsStore: statisticsStore)
+        if !cohortsUpdated {
+            storedCohorts = generateCurrentCohorts()
         }
         return storedCohorts
     }
@@ -221,14 +220,13 @@ struct ScriptSourceProvider: ScriptSourceProviding {
 
     private func generateCurrentCohorts() -> [ContentScopeExperimentData] {
         // Only generate new cohorts if the app was used today
-        let experiments = if statisticsStore.isAppRetentionFiredToday {
-            experimentManager.resolveContentScopeScriptActiveExperiments()
+        let experiments: Experiments
+        if statisticsStore.isAppRetentionFiredToday {
+            experiments = experimentManager.resolveContentScopeScriptActiveExperiments()
             cohortsUpdated = true
         } else {
-            experimentManager.allActiveContentScopeExperiments
-            cohortsUpdated = false
+            experiments = experimentManager.allActiveContentScopeExperiments
         }
-
         return experiments.map {
             ContentScopeExperimentData(feature: $0.value.parentID, subfeature: $0.key, cohort: $0.value.cohortID)
         }

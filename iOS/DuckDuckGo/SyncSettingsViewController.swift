@@ -314,14 +314,34 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
 
     private func startPairingIfNecessary() {
         if let pairingInfo {
-            Task {
-                do {
-                    try await authenticateUser()
-                    await connectionController.startPairingMode(pairingInfo)
-                }
-            }
-            self.pairingInfo = nil
+            askForPairingConfirmation(deviceName: pairingInfo.deviceName)
         }
+    }
+
+    private func askForAuthThenStartPairing() {
+        guard let pairingInfo = self.pairingInfo else { return }
+        Task {
+            do {
+                try await authenticateUser()
+                await connectionController.startPairingMode(pairingInfo)
+            }
+        }
+        self.pairingInfo = nil
+    }
+
+    func askForPairingConfirmation(deviceName: String) {
+        let alert = UIAlertController(title: UserText.syncAlertSyncNewDeviceTitle,
+                                      message: UserText.syncAlertSyncNewDeviceMessage(deviceName),
+                                      preferredStyle: .alert)
+        let cancelAction = UIAlertAction(title: UserText.actionCancel, style: .cancel) { [weak self] _ in
+            self?.pairingInfo = nil
+        }
+        let confirmAction = UIAlertAction(title: UserText.syncAlertSyncNewDeviceButton, style: .default) { [weak self] _ in
+            self?.askForAuthThenStartPairing()
+        }
+        alert.addAction(cancelAction)
+        alert.addAction(confirmAction)
+        self.present(alert, animated: true)
     }
 }
 

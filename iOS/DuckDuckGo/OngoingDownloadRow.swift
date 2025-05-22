@@ -67,6 +67,7 @@ struct OngoingDownloadRow: View {
         }
         .accessibilityLabel(UserText.cancelDownloadAlertCancelAction)
         .buttonStyle(.plain)
+        .foregroundStyle(Color(designSystemColor: .icons))
     }
 }
 
@@ -148,6 +149,6 @@ private extension EdgeInsets {
 private extension Color {
     static let filename = Color(designSystemColor: .textPrimary)
     static let fileSize = Color(designSystemColor: .textSecondary)
-    static let progressBackground = Color(singleUseColor: .downloadProgressBarBackground)
+    static let progressBackground = Color(designSystemColor: .lines)
     static let progressFill = Color(designSystemColor: .accent)
 }

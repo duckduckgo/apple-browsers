@@ -30,19 +30,26 @@ final class AIChatInputBoxViewModel: ObservableObject {
     }
 
     enum InputMode: String, CaseIterable, Identifiable {
-         case search
-         case chat = "duck.ai"
+         case search = "Search"
+         case chat = "Duck.ai"
 
          var id: Self { self }
      }
 
+    enum FocusState {
+        case focused
+        case unfocused
+    }
+
     @Published var inputText: String = ""
-    @Published var state: ChatState = .unknown
-    @Published var visibility: AIChatInputBoxVisibility = .unknown
-    @Published var inputMode: InputMode = .chat {
-        didSet {
-            removeExtraLines()
-        }
+    @Published var state: ChatState
+    @Published var visibility: AIChatInputBoxVisibility
+    @Published var focusState: FocusState = .unfocused
+    @Published var inputMode: InputMode = .chat
+
+    init(state: ChatState = .unknown, visibility: AIChatInputBoxVisibility = .unknown) {
+        self.state = state
+        self.visibility = visibility
     }
 
     // MARK: - Publishers
@@ -51,6 +58,7 @@ final class AIChatInputBoxViewModel: ObservableObject {
     let didSubmitPrompt = PassthroughSubject<String, Never>()
     let didSubmitQuery = PassthroughSubject<String, Never>()
     let didPressStopGenerating = PassthroughSubject<Void, Never>()
+    let didPressBackButton = PassthroughSubject<Void, Never>()
 
     // MARK: - Public Methods
     func clearText() {
@@ -76,11 +84,4 @@ final class AIChatInputBoxViewModel: ObservableObject {
     func stopGenerating() {
         didPressStopGenerating.send()
     }
-
-    // MARK: - Private Methods
-    private func removeExtraLines() {
-        /// Should just remove the extra lines in the future, leaving it like this for now
-        inputText = ""
-    }
-
 }

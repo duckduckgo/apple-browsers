@@ -442,15 +442,16 @@ extension AppDelegate {
     }
 
     @objc func resetBookmarks(_ sender: Any?) {
-        LocalBookmarkManager.shared.resetBookmarks()
-        LocalBookmarkManager.shared.sortMode = .manual
-        UserDefaultsWrapper<Bool>(key: .homePageContinueSetUpImport, defaultValue: false).clear()
-        UserDefaultsWrapper<Bool>(key: .showBookmarksBar, defaultValue: false).clear()
-        UserDefaultsWrapper<Bool>(key: .bookmarksBarPromptShown, defaultValue: false).clear()
-        UserDefaultsWrapper<Bool>(key: .centerAlignedBookmarksBar, defaultValue: false).clear()
-        UserDefaultsWrapper<Bool>(key: .showTabsAndBookmarksBarOnFullScreen, defaultValue: false).clear()
+        LocalBookmarkManager.shared.resetBookmarks {
+            LocalBookmarkManager.shared.sortMode = .manual
+            UserDefaultsWrapper<Bool>(key: .homePageContinueSetUpImport, defaultValue: false).clear()
+            UserDefaultsWrapper<Bool>(key: .showBookmarksBar, defaultValue: false).clear()
+            UserDefaultsWrapper<Bool>(key: .bookmarksBarPromptShown, defaultValue: false).clear()
+            UserDefaultsWrapper<Bool>(key: .centerAlignedBookmarksBar, defaultValue: false).clear()
+            UserDefaultsWrapper<Bool>(key: .showTabsAndBookmarksBarOnFullScreen, defaultValue: false).clear()
 
-        appearancePreferences.reload()
+            self.appearancePreferences.reload()
+        }
     }
 
     @objc func resetPinnedTabs(_ sender: Any?) {

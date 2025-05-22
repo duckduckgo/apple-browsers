@@ -488,7 +488,7 @@ final class LocalBookmarkManager: BookmarkManager {
 
     // MARK: - Debugging
 
-    func resetBookmarks() {
+    func resetBookmarks(completion: @escaping () -> Void) {
         guard let store = bookmarkStore as? LocalBookmarkStore else {
             return
         }
@@ -496,7 +496,7 @@ final class LocalBookmarkManager: BookmarkManager {
         store.resetBookmarks { [self] _ in
             self.loadBookmarks()
             self.requestSync()
-
+            completion()
         }
     }
 

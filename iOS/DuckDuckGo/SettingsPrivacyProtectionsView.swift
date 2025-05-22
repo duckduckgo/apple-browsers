@@ -59,7 +59,7 @@ struct SettingsPrivacyProtectionsView: View {
             // Email Protection
             NavigationLink(destination: EmailProtectionView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.emailProtection,
-                                 image: Image(uiImage: DesignSystemImages.Color.Size24.email),
+                                 image: Image(uiImage: DesignSystemImages.Color.Size24.emailProtection),
                                  statusIndicator: StatusIndicatorView(status: viewModel.emailProtectionStatus))
             }
         }

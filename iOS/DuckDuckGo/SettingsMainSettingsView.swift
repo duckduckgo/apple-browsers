@@ -38,7 +38,7 @@ struct SettingsMainSettingsView: View {
             let statusIndicator = viewModel.syncStatus == .on ? StatusIndicatorView(status: viewModel.syncStatus, isDotHidden: true) : nil
             let label = viewModel.state.sync.title
             SettingsCellView(label: label,
-                             image: Image(uiImage: DesignSystemImages.Color.Size24.sync),
+                             image: Image(uiImage: DesignSystemImages.Color.Size24.sync1),
                              action: { viewModel.presentLegacyView(.sync) },
                              statusIndicator: statusIndicator,
                              disclosureIndicator: true,
@@ -52,7 +52,7 @@ struct SettingsMainSettingsView: View {
 
             // Passwords
             SettingsCellView(label: UserText.settingsLogins,
-                             image: Image(uiImage: DesignSystemImages.Color.Size24.autofill),
+                             image: Image(uiImage: DesignSystemImages.Color.Size24.key),
                              action: { viewModel.presentLegacyView(.logins) },
                              disclosureIndicator: true,
                              isButton: true)

@@ -114,12 +114,15 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1198964220583541/task/1210272333893232?focus=true
     case autofillPasswordVariantCategorization
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210081345713964?focus=true
+    case canInterceptSyncSetupUrls
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
     public var defaultValue: Bool {
         switch self {
-        case .failsafeExampleCrossPlatformFeature, .failsafeExamplePlatformSpecificSubfeature, .canScanUrlBasedSyncSetupBarcodes:
+        case .failsafeExampleCrossPlatformFeature, .failsafeExamplePlatformSpecificSubfeature, .canScanUrlBasedSyncSetupBarcodes, .canInterceptSyncSetupUrls:
             true
         default:
             false
@@ -150,13 +153,12 @@ extension FeatureFlag: FeatureFlagDescribing {
              .autofillCreditCards,
              .autofillCreditCardsOnByDefault,
              .privacyProOnboardingPromotion,
-             .syncSetupBarcodeIsUrlBased,
-             .canScanUrlBasedSyncSetupBarcodes,
              .duckPlayerNativeUI,
              .privacyProFreeTrial,
              .autofillPasswordVariantCategorization,                
              .syncSetupBarcodeIsUrlBased,
-             .canScanUrlBasedSyncSetupBarcodes:
+             .canScanUrlBasedSyncSetupBarcodes,
+             .canInterceptSyncSetupUrls:
             return true
         case .onboardingSetAsDefaultBrowser:
             if #available(iOS 18.3, *) {
@@ -269,6 +271,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProFreeTrial))
         case .autofillPasswordVariantCategorization:
             return .remoteReleasable(.subfeature(AutofillSubfeature.passwordVariantCategorization))
+        case .canInterceptSyncSetupUrls:
+            return .remoteReleasable(.subfeature(SyncSubfeature.canInterceptSyncSetupUrls))
         }
     }
 }

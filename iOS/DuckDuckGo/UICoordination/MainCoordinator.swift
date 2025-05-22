@@ -244,7 +244,7 @@ extension MainCoordinator: URLHandling {
         case .openAIChat:
             AIChatDeepLinkHandler().handleDeepLink(url, on: controller)
         default:
-            if featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased), let pairingInfo = PairingInfo(url: url) {
+            if featureFlagger.isFeatureOn(.canInterceptSyncSetupUrls), let pairingInfo = PairingInfo(url: url) {
                 controller.segueToSettingsSync(with: nil, pairingInfo: pairingInfo)
                 return true
             }

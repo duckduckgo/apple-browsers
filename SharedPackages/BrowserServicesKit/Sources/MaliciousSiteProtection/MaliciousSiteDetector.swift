@@ -97,6 +97,8 @@ public final class MaliciousSiteDetector: MaliciousSiteDetecting {
 
         let hostHash = canonicalHost.sha256
         let hashPrefix = String(hostHash.prefix(Constants.hashPrefixStoreLength))
+        print("SABRINA \(url) \(hostHash)")
+        print("SABRINA \(url) \(hashPrefix)")
 
         // 1. Check for matching hash prefixes.
         // The hash prefix list serves as a representation of the entire database:
@@ -108,6 +110,8 @@ public final class MaliciousSiteDetector: MaliciousSiteDetecting {
                 hashPrefixMatchingThreatKinds.append(threatKind)
             }
         }
+
+        print("SABRINA \(url) \(hashPrefixMatchingThreatKinds)")
 
         // Return no threats if no matching hash prefixes are found in the database.
         guard !hashPrefixMatchingThreatKinds.isEmpty else { return .none }

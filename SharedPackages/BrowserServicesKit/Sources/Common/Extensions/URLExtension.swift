@@ -580,6 +580,16 @@ extension URL {
         // Step 8: Lowercase everything
         urlString = urlString.lowercased()
 
+        // Step 9: Remove "www." from the host component
+        if var components = URLComponents(string: urlString) {
+            if let host = components.host, host.hasPrefix("www.") {
+                components.host = String(host.droppingWwwPrefix()) // "www.".count = 4
+            }
+            if let finalURL = components.url {
+                urlString = finalURL.absoluteString
+            }
+        }
+
         // Validate the URL according to RFC 2396
         guard let validURL = URL(string: urlString), validURL.path.count > 0 else {
             return nil

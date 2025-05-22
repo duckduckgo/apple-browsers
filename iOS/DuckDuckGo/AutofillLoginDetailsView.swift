@@ -276,14 +276,13 @@ struct AutofillLoginDetailsView: View {
                             action: { viewModel.isPasswordHidden.toggle() },
                             secondaryActionTitle: UserText.autofillCopyPrompt(for: UserText.autofillLoginDetailsPassword),
                             secondaryAction: { viewModel.copyToPasteboard(.password) },
-                            buttonImage: viewModel.isPasswordHidden ? DesignSystemImages.Glyphs.Size24.exclamation : DesignSystemImages.Glyphs.Size24.exclamationSolid,
+                            buttonImage: viewModel.isPasswordHidden ? DesignSystemImages.Glyphs.Size24.eye : DesignSystemImages.Glyphs.Size24.eyeClosed,
                             buttonAccessibilityLabel: viewModel.isPasswordHidden ? UserText.autofillShowPassword : UserText.autofillHidePassword,
                             buttonAction: { viewModel.isPasswordHidden.toggle() },
                             secondaryButtonImage: DesignSystemImages.Glyphs.Size24.copy,
                             secondaryButtonAccessibilityLabel: UserText.autofillCopyPrompt(for: UserText.autofillLoginDetailsPassword),
                             secondaryButtonAction: { viewModel.copyToPasteboard(.password) })
     }
-
 
     private func privateEmailCell() -> some View {
         HStack {

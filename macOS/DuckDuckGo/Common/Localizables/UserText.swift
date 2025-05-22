@@ -720,7 +720,7 @@ struct UserText {
     static let scamBlockerToggleCaption = NSLocalizedString("preferences.scam-blocker.toggle-caption", value: "Disabling this feature can put your personal information at risk.", comment: "Caption explaining the risk of disabling scam blocker protection")
     static let smarterEncryptionTitle = NSLocalizedString("preferences.smarter-encryption.title", value: "Smarter Encryption", comment: "Title of the section of a setting page that shows Smarter Encryption preferences")
     static let statusIndicatorAlwaysOn = NSLocalizedString("preferences.status-indicator.always-on", value: "Always On", comment: "Status indicator of a browser privacy protection feature.")
-    static let smarterEncryptionDescription = NSLocalizedString("preferences.smarter-encryption.description", value: "Automatically upgrades links to HTTPS whenever possible", comment: "Description explaining the Smarter Encryption feature")
+    static let smarterEncryptionDescription = NSLocalizedString("preferences.smarter-encryption.description", value: "Automatically upgrades links to HTTPS whenever possible.", comment: "Description explaining the Smarter Encryption feature")
     static let emailProtectionPreferences = NSLocalizedString("preferences.email-protection", value: "Email Protection", comment: "Title of the option to show the Email Protection preferences")
     static let autofillEnabledFor = NSLocalizedString("preferences.autofill-enabled-for", value: "Autofill enabled in this browser for:", comment: "Label presented before the email account in email protection preferences")
 

@@ -59899,7 +59899,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Automatically upgrades links to HTTPS whenever possible"
+            "value" : "Automatically upgrades links to HTTPS whenever possible."
           }
         }
       }

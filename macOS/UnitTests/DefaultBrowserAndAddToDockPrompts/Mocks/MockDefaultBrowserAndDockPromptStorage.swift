@@ -35,7 +35,7 @@ final class MockDefaultBrowserAndDockPromptRepository: DefaultBrowserAndDockProm
     }
 }
 
-final class MockDefaultBrowserAndDockPromptStore: DefaultBrowserAndDockPromptStorageReading {
+final class MockDefaultBrowserAndDockPromptStore: DefaultBrowserAndDockPromptStorage {
     var popoverShownDate: TimeInterval?
     var bannerShownDate: TimeInterval?
     var isBannerPermanentlyDismissed = false

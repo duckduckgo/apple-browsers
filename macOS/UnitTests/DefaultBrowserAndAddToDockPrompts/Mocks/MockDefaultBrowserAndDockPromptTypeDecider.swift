@@ -1,5 +1,5 @@
 //
-//  DefaultBrowserAndDockPromptNotifications.swift
+//  MockDefaultBrowserAndDockPromptTypeDecider.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,6 +16,13 @@
 //  limitations under the License.
 //
 
-public extension Notification.Name {
-    static let setAsDefaultBrowserAndAddToDockExperimentFlagOverrideDidChange = Notification.Name("com.duckduckgo.app.setAsDefaultBrowserAndAddToDockExperimentFlagOverrideDidChange")
+import Foundation
+@testable import DuckDuckGo_Privacy_Browser
+
+final class MockDefaultBrowserAndDockPromptTypeDecider: DefaultBrowserAndDockPromptTypeDeciding {
+    var promptTypeToReturn: DefaultBrowserAndDockPromptPresentationType?
+
+    func promptType() -> DefaultBrowserAndDockPromptPresentationType? {
+        promptTypeToReturn
+    }
 }

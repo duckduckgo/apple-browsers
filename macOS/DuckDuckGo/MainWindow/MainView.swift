@@ -144,12 +144,9 @@ final class MainView: NSView {
 
     // PDF Plugin context menu
     override func willOpenMenu(_ menu: NSMenu, with event: NSEvent) {
-        // the handler intercepts New Tab Page context menu presented by `NewTabPageContextMenuPresenting` as well
-        // we don‘t want the menu items to be added to the New Tab Page context menu
-        if menu.title != NewTabPage.NewTabPageContextMenuTitle {
-            setupSearchContextMenuItem(menu: menu)
-            setupSaveAsAndPrintMenuItems(menu: menu, with: event)
-        }
+        // note, this will also handle the New Tab Page context menu
+        setupSearchContextMenuItem(menu: menu)
+        setupSaveAsAndPrintMenuItems(menu: menu, with: event)
 
         super.willOpenMenu(menu, with: event)
     }
@@ -193,7 +190,7 @@ final class MainView: NSView {
             }
             return (self.hitTest(bounds.center) as? WKWebView)?.hudView()
         }()
-        assert(hudView != nil)
+        guard let hudView else { return }
 
         // insert Save As… and Print… items after `Open with Preview`
         // 1. find `Copy`

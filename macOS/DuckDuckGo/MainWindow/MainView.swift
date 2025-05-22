@@ -18,7 +18,6 @@
 
 import Cocoa
 import Combine
-import NewTabPage
 import WebKit
 
 final class MainView: NSView {

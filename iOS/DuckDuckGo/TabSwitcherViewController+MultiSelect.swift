@@ -313,7 +313,7 @@ extension TabSwitcherViewController {
             ].compactMap { $0 }),
 
             UIMenu(title: "", options: .displayInline, children: [
-                canClose ? destructive(UserText.closeTabs(withCount: selectedTabs.count), DesignSystemImages.Glyphs.Size16.closeOutline, { [weak self] in
+                canClose ? destructive(UserText.closeTabs(withCount: selectedTabs.count), imageForCloseTabs(selectedTabs.count), { [weak self] in
                     self?.selectModeCloseSelectedTabs()
                 }) : nil,
             ].compactMap { $0 }),
@@ -393,18 +393,24 @@ extension TabSwitcherViewController {
             ].compactMap { $0 }),
             
             UIMenu(title: "", options: .displayInline, children: [
-                destructive(UserText.closeTabs(withCount: tabs.count), DesignSystemImages.Glyphs.Size16.closeOutline, { [weak self] in
+                destructive(UserText.closeTabs(withCount: tabs.count), imageForCloseTabs(tabs.count), { [weak self] in
                     self?.longPressMenuCloseTabs(indexPaths: indexPaths)
                 })
             ]),
 
             UIMenu(title: "", options: .displayInline, children: [
                 // Always use plural here
-                canCloseOthers ? destructive(UserText.tabSwitcherCloseOtherTabs(withCount: 2), DesignSystemImages.Glyphs.Size16.tabCloseAlt, { [weak self] in
+                canCloseOthers ? destructive(UserText.tabSwitcherCloseOtherTabs(withCount: 2), imageForCloseTabs(2), { [weak self] in
                     self?.longPressMenuCloseOtherTabs(retainingIndexPaths: indexPaths)
                 }) : nil
             ].compactMap { $0 }),
         ].compactMap { $0 })
+    }
+
+    private func imageForCloseTabs(_ count: Int) -> UIImage {
+        return count < 2 ?
+            DesignSystemImages.Glyphs.Size16.closeOutline :
+            DesignSystemImages.Glyphs.Size16.tabCloseAlt
     }
 
     private func shouldShowBookmarkThisPageLongPressMenuItem(_ tab: Tab, _ bookmarksModel: MenuBookmarksViewModel) -> Bool {

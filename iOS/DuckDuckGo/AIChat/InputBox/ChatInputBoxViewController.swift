@@ -23,7 +23,6 @@ import SwiftUI
 final class ChatInputBoxViewController: UIViewController {
     private let viewModel: AIChatInputBoxViewModel
     private var hostingController: UIHostingController<AIChatInputBox>?
-    private var bottomConstraint: NSLayoutConstraint?
     
     init(viewModel: AIChatInputBoxViewModel) {
         self.viewModel = viewModel
@@ -52,14 +51,9 @@ final class ChatInputBoxViewController: UIViewController {
             hostingVC.view.topAnchor.constraint(equalTo: view.topAnchor),
             hostingVC.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             hostingVC.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            hostingVC.view.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            hostingVC.view.heightAnchor.constraint(equalTo: view.heightAnchor)
         ])
-        
         hostingVC.didMove(toParent: self)
         self.hostingController = hostingVC
-    }
-    
-    func updateBottomConstraint(_ constant: CGFloat) {
-        bottomConstraint?.constant = constant
     }
 }

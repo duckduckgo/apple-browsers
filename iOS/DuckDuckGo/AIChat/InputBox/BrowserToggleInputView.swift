@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import UIKit
 
 struct BrowserToggleInputView: View {
     @ObservedObject var viewModel: AIChatInputBoxViewModel
@@ -37,11 +38,11 @@ struct BrowserToggleInputView: View {
             .animation(.easeInOut, value: viewModel.inputMode)
     }
 
-    var inputTextView: some View {
-        Group {
+    private var inputTextView: some View {
+        VStack (spacing: 0) {
             HStack(alignment: .top, spacing: 8) {
                 if viewModel.inputMode == .search {
-                    SearchTextField(text: $viewModel.inputText, placeholder: placeHolderText, viewModel: viewModel)
+                    SearchTextField(text: $viewModel.inputText, placeholder: placeHolderText, onSubmit: submitButtonPressed)
                         .textFieldStyle(.plain)
                         .frame(maxWidth: .infinity)
                 } else {
@@ -58,28 +59,25 @@ struct BrowserToggleInputView: View {
                         .buttonStyle(.plain)
                         .padding(.top, 4)
                     }
-
-                    if viewModel.inputMode == .chat {
-                        VStack {
-                            Spacer()
-                            Button {
-                                submitButtonPressed()
-                            } label: {
-                                Image(systemName: "paperplane.circle.fill")
-                                    .font(.system(size: 36, weight: .medium))
-                                    .foregroundColor(viewModel.inputText.isEmpty ? .gray : .blue)
-                            }
-                            .buttonStyle(.plain)
-                            .disabled(viewModel.inputText.isEmpty)
-                        }
-                    }
                 }
             }
+            .frame(minWidth: 0, maxWidth: .infinity)
+            .frame(height: calculatedHeight)
+            .padding(.horizontal)
+            .padding(.top)
+            .animation(.easeInOut, value: calculatedHeight)
+
+            ActionButtonsView(
+                mode: viewModel.inputMode,
+                onDuckAssistTapped: { },
+                onVoiceTapped: { },
+                onWebAnswerTapped: { },
+                onSendTapped: submitButtonPressed,
+                isSendEnabled: !viewModel.inputText.isEmpty
+            )
+            .padding(.horizontal, 4)
+            .frame(minHeight: 44)
         }
-        .frame(minWidth: 0, maxWidth: .infinity)
-        .frame(height: calculatedHeight)
-        .padding()
-        .animation(.easeInOut, value: calculatedHeight)
     }
 
     var placeHolderText: String {
@@ -106,7 +104,7 @@ struct BrowserToggleInputView: View {
 struct SearchTextField: UIViewRepresentable {
     @Binding var text: String
     let placeholder: String
-    let viewModel: AIChatInputBoxViewModel
+    let onSubmit: () -> Void
 
     func makeUIView(context: Context) -> UITextField {
         let textField = UITextField()
@@ -114,8 +112,7 @@ struct SearchTextField: UIViewRepresentable {
         textField.delegate = context.coordinator
         textField.borderStyle = .none
         textField.backgroundColor = .clear
-        textField.keyboardType = .webSearch
-        textField.autocapitalizationType = .none
+        textField.returnKeyType = .search
         return textField
     }
 
@@ -127,16 +124,16 @@ struct SearchTextField: UIViewRepresentable {
     }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(text: $text, viewModel: viewModel)
+        Coordinator(text: $text, onSubmit: onSubmit)
     }
 
     class Coordinator: NSObject, UITextFieldDelegate {
         @Binding var text: String
-        let viewModel: AIChatInputBoxViewModel
+        let onSubmit: () -> Void
 
-        init(text: Binding<String>, viewModel: AIChatInputBoxViewModel) {
+        init(text: Binding<String>, onSubmit: @escaping () -> Void) {
             _text = text
-            self.viewModel = viewModel
+            self.onSubmit = onSubmit
         }
 
         func textFieldDidChangeSelection(_ textField: UITextField) {
@@ -146,10 +143,15 @@ struct SearchTextField: UIViewRepresentable {
                 }
             }
         }
-
+        
         func textFieldShouldReturn(_ textField: UITextField) -> Bool {
-            viewModel.submitText(textField.text ?? "")
-            viewModel.clearText()
+            if let text = textField.text, !text.isEmpty {
+                DispatchQueue.main.async {
+                    self.text = text
+                    self.onSubmit()
+                }
+            }
+            textField.resignFirstResponder()
             return true
         }
     }
@@ -198,4 +200,8 @@ extension String {
         let lines = self.components(separatedBy: "\n")
         return lines.count
     }
+}
+
+#Preview {
+    BrowserToggleInputView(viewModel: AIChatInputBoxViewModel(), submitButtonPressed: {})
 }

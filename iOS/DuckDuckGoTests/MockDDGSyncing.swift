@@ -130,12 +130,12 @@ final class MockSyncConnectionControlling: SyncConnectionControlling {
     func cancel() async {
     }
 
-    func startExchangeMode(shouldGenerateURLBasedCode: Bool) async throws -> String {
-        ""
+    func startExchangeMode() async throws -> PairingInfo {
+        .init(base64Code: "", deviceName: "")
     }
 
-    func startConnectMode(shouldGenerateURLBasedCode: Bool) async throws -> String {
-        ""
+    func startConnectMode() async throws -> PairingInfo {
+        .init(base64Code: "", deviceName: "")
     }
 
     func startPairingMode(_ pairingInfo: PairingInfo) async -> Bool {

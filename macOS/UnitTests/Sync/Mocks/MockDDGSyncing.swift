@@ -129,28 +129,26 @@ final class MockSyncConnectionControlling: SyncConnectionControlling {
 
     @Published var startExhangeModeCalled: Bool = false
     var spyStartExchangeModelShouldGenerateURLBasedCode: Bool?
-    var stubStartExchangeMode: String = ""
-    var stubStartExchangeModeError: Error?
-    func startExchangeMode(shouldGenerateURLBasedCode: Bool) async throws -> String {
+    var startExchangeModeStub: PairingInfo = .init(base64Code: "", deviceName: "")
+    var startExchangeModeError: Error?
+    func startExchangeMode() async throws -> PairingInfo {
         startExhangeModeCalled = true
-        spyStartExchangeModelShouldGenerateURLBasedCode = shouldGenerateURLBasedCode
-        if let error = stubStartExchangeModeError {
+        if let error = startExchangeModeError {
             throw error
         }
-        return stubStartExchangeMode
+        return startExchangeModeStub
     }
 
     @Published var startConnectModeCalled: Bool = false
     var spyStartConnectModeShouldGenerateURLBasedCode: Bool?
-    var stubStartConnectMode: String = ""
-    var stubStartConnectModeError: Error?
-    func startConnectMode(shouldGenerateURLBasedCode: Bool) async throws -> String {
+    var startConnectModeStub: PairingInfo = .init(base64Code: "", deviceName: "")
+    var startConnectModeError: Error?
+    func startConnectMode() async throws -> PairingInfo {
         startConnectModeCalled = true
-        spyStartConnectModeShouldGenerateURLBasedCode = shouldGenerateURLBasedCode
-        if let error = stubStartConnectModeError {
+        if let error = startConnectModeError {
             throw error
         }
-        return stubStartConnectMode
+        return startConnectModeStub
     }
 
     @Published var startPairingModeCalled: Bool = false
@@ -184,5 +182,20 @@ final class MockSyncConnectionControlling: SyncConnectionControlling {
         if let error = stubLoginAndShowDeviceConnectedError {
             throw error
         }
+    }
+}
+
+extension SyncAccount {
+    static var mock: SyncAccount {
+        SyncAccount(
+            deviceId: "deviceId",
+            deviceName: "deviceName",
+            deviceType: "deviceType",
+            userId: "userId",
+            primaryKey: "primaryKey".data(using: .utf8)!,
+            secretKey: "secretKey".data(using: .utf8)!,
+            token: "token",
+            state: .active
+        )
     }
 }

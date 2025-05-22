@@ -316,29 +316,32 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
 
     private func collectCode(showQRCode: Bool) {
         Task { @MainActor in
-            let code: String
+            let pairingInfo: PairingInfo
             let shouldGenerateURLBasedCode = featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased)
             if isSyncEnabled {
                 do {
-                    code = try await connectionController.startExchangeMode(shouldGenerateURLBasedCode: shouldGenerateURLBasedCode)
+                    pairingInfo = try await connectionController.startExchangeMode()
                 } catch {
                     self.handleError(SyncErrorMessage.unableToSyncWithDevice, error: error, event: .syncLoginError)
                     return
                 }
             } else {
                 do {
-                    code = try await connectionController.startConnectMode(shouldGenerateURLBasedCode: shouldGenerateURLBasedCode)
+                    pairingInfo = try await connectionController.startConnectMode()
                 } catch {
                     self.handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
                     return
                 }
             }
-            presentScanOrPasteCodeView(code: code, showQRCode: showQRCode)
+            presentScanOrPasteCodeView(pairingInfo: pairingInfo, showQRCode: showQRCode)
         }
     }
     
-    private func presentScanOrPasteCodeView(code: String, showQRCode: Bool) {
-        let model = ScanOrPasteCodeViewModel(code: code)
+    private func presentScanOrPasteCodeView(pairingInfo: PairingInfo, showQRCode: Bool) {
+        let codeForDisplayOrPasting = pairingInfo.base64Code
+        let stringForQRCode = featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased) ? pairingInfo.url.absoluteString : pairingInfo.base64Code
+
+        let model = ScanOrPasteCodeViewModel(codeForDisplayOrPasting: codeForDisplayOrPasting, qrCodeString: stringForQRCode)
         model.delegate = self
         
         var controller: UIHostingController<AnyView>

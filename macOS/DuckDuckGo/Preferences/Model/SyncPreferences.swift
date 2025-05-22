@@ -41,6 +41,7 @@ extension SyncDevice {
 }
 
 final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel {
+
     var syncPausedTitle: String? {
         return syncPausedStateManager.syncPausedMessageData?.title
     }
@@ -97,7 +98,9 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
         syncService.account != nil
     }
 
-    @Published var codeToDisplay: String?
+    @Published var stringForQR: String?
+    @Published var codeForDisplayOrPasting: String?
+
     let managementDialogModel: ManagementDialogModel
 
     @Published var devices: [SyncDevice] = [] {
@@ -240,7 +243,7 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
             .asVoid()
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in
-                self?.updateState()
+                self?.refreshDevices()
             }
             .store(in: &cancellables)
 
@@ -362,11 +365,6 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
     }
 
     // MARK: - Private
-
-    private func updateState() {
-        managementDialogModel.codeToDisplay = syncService.account?.recoveryCode
-        refreshDevices()
-    }
 
     @MainActor
     private func mapDevices(_ registeredDevices: [RegisteredDevice]) {
@@ -570,12 +568,15 @@ extension SyncPreferences: ManagementDialogModelDelegate {
     private func newStartPollingForRecoveryKey(isRecovery: Bool) {
         Task { @MainActor in
             do {
-                let shouldGenerateURLBasedCode = featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased)
-                self.codeToDisplay = try await connectionController.startConnectMode(shouldGenerateURLBasedCode: shouldGenerateURLBasedCode)
+                let pairingInfo = try await connectionController.startConnectMode()
+                let codeForDisplayOrPasting = pairingInfo.base64Code
+                let stringForQR = pairingInfo.url.absoluteString
+                self.codeForDisplayOrPasting = codeForDisplayOrPasting
+                self.stringForQR = featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased) ? pairingInfo.url.absoluteString : pairingInfo.base64Code
                 if isRecovery {
-                    self.presentDialog(for: .enterRecoveryCode(code: codeToDisplay ?? ""))
+                    self.presentDialog(for: .enterRecoveryCode(stringForQRCode: stringForQR))
                 } else {
-                    self.presentDialog(for: .syncWithAnotherDevice(code: codeToDisplay ?? ""))
+                    self.presentDialog(for: .syncWithAnotherDevice(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQR))
                 }
             } catch {
                 if syncService.account == nil {
@@ -715,7 +716,7 @@ extension SyncPreferences: ManagementDialogModelDelegate {
     @MainActor
     func copyCode() {
         var code: String?
-        code = codeToDisplay ?? recoveryCode
+        code = codeForDisplayOrPasting ?? recoveryCode
         guard let code else { return }
         let pasteboard = NSPasteboard.general
         pasteboard.declareTypes([.string], owner: nil)
@@ -780,9 +781,12 @@ extension SyncPreferences: ManagementDialogModelDelegate {
     private func startPollingForPublicKey() {
         Task { @MainActor in
             do {
-                let shouldGenerateURLBasedCode = featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased)
-                self.codeToDisplay = try await connectionController.startExchangeMode(shouldGenerateURLBasedCode: shouldGenerateURLBasedCode)
-                self.presentDialog(for: .syncWithAnotherDevice(code: codeToDisplay ?? ""))
+                let pairingInfo = try await connectionController.startExchangeMode()
+                let codeForDisplayOrPasting = pairingInfo.base64Code
+                let stringForQR = pairingInfo.url.absoluteString
+                self.codeForDisplayOrPasting = codeForDisplayOrPasting
+                self.stringForQR = featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased) ? pairingInfo.url.absoluteString : pairingInfo.base64Code
+                self.presentDialog(for: .syncWithAnotherDevice(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQR))
             } catch {
                 managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToOtherDevice, description: error.localizedDescription)
                 PixelKit.fire(DebugEvent(GeneralPixel.syncLoginError(error: error)))
@@ -851,7 +855,8 @@ extension SyncPreferences: SyncConnectionControllerDelegate {
     }
 
     func controllerDidCompleteLogin(registeredDevices: [RegisteredDevice], isRecovery: Bool) {
-        self.codeToDisplay = self.recoveryCode
+        self.codeForDisplayOrPasting = self.recoveryCode
+        self.stringForQR = self.recoveryCode
         mapDevices(registeredDevices)
         PixelKit.fire(GeneralPixel.syncLogin)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {

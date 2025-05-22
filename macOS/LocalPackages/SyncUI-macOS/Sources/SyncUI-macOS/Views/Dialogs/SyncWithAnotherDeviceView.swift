@@ -23,7 +23,8 @@ struct SyncWithAnotherDeviceView: View {
 
     @EnvironmentObject var model: ManagementDialogModel
     @EnvironmentObject var recoveryCodeModel: RecoveryCodeViewModel
-    let code: String
+    let codeForDisplayOrPasting: String
+    let stringForQRCode: String
 
     @State private var selectedSegment = 0
     @State private var showQRCode = true
@@ -116,7 +117,7 @@ struct SyncWithAnotherDeviceView: View {
     fileprivate func scanQRCodeView() -> some View {
         return  Group {
             Text(UserText.syncWithAnotherDeviceShowQRCodeExplanation)
-            QRCode(string: code, size: CGSize(width: 164, height: 164))
+            QRCode(string: stringForQRCode, size: CGSize(width: 164, height: 164))
             Text(UserText.syncWithAnotherDeviceViewTextCode)
                 .fontWeight(.semibold)
                 .foregroundColor(Color(.linkBlue))
@@ -149,7 +150,7 @@ struct SyncWithAnotherDeviceView: View {
         Group {
             VStack(spacing: 20) {
                 Text(UserText.syncWithAnotherDeviceShowCodeExplanation)
-                Text(code)
+                Text(codeForDisplayOrPasting)
                     .font(
                     Font.custom("SF Mono", size: 13)
                     .weight(.medium)
@@ -159,7 +160,7 @@ struct SyncWithAnotherDeviceView: View {
                     .multilineTextAlignment(.center)
                 HStack(spacing: 10) {
                     Button {
-                        shareContent(code)
+                        shareContent(codeForDisplayOrPasting)
                     } label: {
                         HStack {
                             Image(.share)

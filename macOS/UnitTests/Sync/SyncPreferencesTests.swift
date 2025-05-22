@@ -19,7 +19,7 @@
 import Bookmarks
 import Combine
 import Persistence
-import SyncUI_macOS
+@testable import SyncUI_macOS
 import XCTest
 import PersistenceTestingUtils
 @testable import BrowserServicesKit
@@ -75,6 +75,7 @@ final class SyncPreferencesTests: XCTestCase {
     var syncPreferences: SyncPreferences!
     var pausedStateManager: MockSyncPausedStateManaging!
     var connectionController: MockSyncConnectionControlling!
+    var featureFlagger: MockSyncFeatureFlagger!
     var testRecoveryCode = "eyJyZWNvdmVyeSI6eyJ1c2VyX2lkIjoiMDZGODhFNzEtNDFBRS00RTUxLUE2UkRtRkEwOTcwMDE5QkYwIiwicHJpbWFyeV9rZXkiOiI1QTk3U3dsQVI5RjhZakJaU09FVXBzTktnSnJEYnE3aWxtUmxDZVBWazgwPSJ9fQ=="
     lazy var testRecoveryKey = try! SyncCode.decodeBase64String(testRecoveryCode).recovery!
     var cancellables: Set<AnyCancellable>!
@@ -91,7 +92,7 @@ final class SyncPreferencesTests: XCTestCase {
 
         syncBookmarksAdapter = SyncBookmarksAdapter(database: bookmarksDatabase, appearancePreferences: appearancePreferences, syncErrorHandler: SyncErrorHandler())
         syncCredentialsAdapter = SyncCredentialsAdapter(secureVaultFactory: AutofillSecureVaultFactory, syncErrorHandler: SyncErrorHandler())
-        let featureFlagger = MockSyncFeatureFlagger()
+        featureFlagger = MockSyncFeatureFlagger()
         featureFlagger.isFeatureOn[FeatureFlag.syncSeamlessAccountSwitching.rawValue] = true
         connectionController = MockSyncConnectionControlling()
 
@@ -340,7 +341,7 @@ final class SyncPreferencesTests: XCTestCase {
     func test_recoverDevice_accountAlreadyExists_oneDevice_endsFlow() async throws {
         setUpWithSingleDevice(id: "1")
         // Removal of currentDialog indicates end of flow
-        managementDialogModel.currentDialog = .enterRecoveryCode(code: "")
+        managementDialogModel.currentDialog = .enterRecoveryCode(stringForQRCode: "")
 
         ddgSyncing.spyLogin = { _, _, _ in
             return [RegisteredDevice(id: "1", name: "iPhone", type: "iPhone"), RegisteredDevice(id: "2", name: "Macbook Pro", type: "Macbook Pro")]
@@ -394,6 +395,173 @@ final class SyncPreferencesTests: XCTestCase {
         ddgSyncing.account = SyncAccount(deviceId: id, deviceName: "iPhone", deviceType: "iPhone", userId: "", primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
         ddgSyncing.registeredDevices = [RegisteredDevice(id: id, name: "iPhone", type: "iPhone")]
         syncPreferences.devices = [SyncDevice(RegisteredDevice(id: id, name: "iPhone", type: "iPhone"))]
+    }
+
+    @MainActor
+    func test_startPollingForRecoveryKey_whenFeatureFlagOff_usesBase64Code() async throws {
+        let featureFlagger = MockSyncFeatureFlagger()
+        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = false
+        let pairingInfo = PairingInfo(base64Code: "test_code", deviceName: "test_device")
+        connectionController.startConnectModeStub = pairingInfo
+        
+        syncPreferences = SyncPreferences(
+            syncService: ddgSyncing,
+            syncBookmarksAdapter: syncBookmarksAdapter,
+            syncCredentialsAdapter: syncCredentialsAdapter,
+            appearancePreferences: appearancePreferences,
+            managementDialogModel: managementDialogModel,
+            userAuthenticator: MockUserAuthenticator(),
+            syncPausedStateManager: pausedStateManager,
+            connectionControllerFactory: { [weak self] _, _ in
+                guard let self else { return MockSyncConnectionControlling() }
+                return connectionController
+            },
+            featureFlagger: featureFlagger
+        )
+        
+        syncPreferences.startPollingForRecoveryKey(isRecovery: false)
+        
+        try await waitForPublisher(syncPreferences.$codeForDisplayOrPasting, toEmit: "test_code")
+        try await waitForPublisher(syncPreferences.$stringForQR, toEmit: "test_code")
+    }
+    
+    @MainActor
+    func test_startPollingForRecoveryKey_whenFeatureFlagOn_usesURL() async throws {
+        let featureFlagger = MockSyncFeatureFlagger()
+        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = true
+        let pairingInfo = PairingInfo(base64Code: "test_code", deviceName: "test_device")
+        connectionController.startConnectModeStub = pairingInfo
+        
+        syncPreferences = SyncPreferences(
+            syncService: ddgSyncing,
+            syncBookmarksAdapter: syncBookmarksAdapter,
+            syncCredentialsAdapter: syncCredentialsAdapter,
+            appearancePreferences: appearancePreferences,
+            managementDialogModel: managementDialogModel,
+            userAuthenticator: MockUserAuthenticator(),
+            syncPausedStateManager: pausedStateManager,
+            connectionControllerFactory: { [weak self] _, _ in
+                guard let self else { return MockSyncConnectionControlling() }
+                return connectionController
+            },
+            featureFlagger: featureFlagger
+        )
+        
+        syncPreferences.startPollingForRecoveryKey(isRecovery: false)
+        
+        try await waitForPublisher(syncPreferences.$codeForDisplayOrPasting, toEmit: "test_code")
+        try await waitForPublisher(syncPreferences.$stringForQR, toEmit: pairingInfo.url.absoluteString)
+    }
+    
+    @MainActor
+    func test_syncWithAnotherDevicePressed_accountExists_whenFeatureFlagOff_usesBase64Code() async throws {
+        let featureFlagger = MockSyncFeatureFlagger()
+        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = false
+        let pairingInfo = PairingInfo(base64Code: "test_code", deviceName: "test_device")
+        connectionController.startExchangeModeStub = pairingInfo
+        ddgSyncing.account = .mock
+
+        syncPreferences = SyncPreferences(
+            syncService: ddgSyncing,
+            syncBookmarksAdapter: syncBookmarksAdapter,
+            syncCredentialsAdapter: syncCredentialsAdapter,
+            appearancePreferences: appearancePreferences,
+            managementDialogModel: managementDialogModel,
+            userAuthenticator: MockUserAuthenticator(),
+            syncPausedStateManager: pausedStateManager,
+            connectionControllerFactory: { [weak self] _, _ in
+                guard let self else { return MockSyncConnectionControlling() }
+                return connectionController
+            },
+            featureFlagger: featureFlagger
+        )
+        
+        await syncPreferences.syncWithAnotherDevicePressed()
+        
+        try await waitForPublisher(syncPreferences.$codeForDisplayOrPasting, toEmit: "test_code")
+        try await waitForPublisher(syncPreferences.$stringForQR, toEmit: "test_code")
+    }
+    
+    @MainActor
+    func test_syncWithAnotherDevicePressed_accountExists_whenFeatureFlagOn_usesURL() async throws {
+        let featureFlagger = MockSyncFeatureFlagger()
+        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = true
+        let pairingInfo = PairingInfo(base64Code: "test_code", deviceName: "test_device")
+        connectionController.startExchangeModeStub = pairingInfo
+        ddgSyncing.account = .mock
+
+        syncPreferences = SyncPreferences(
+            syncService: ddgSyncing,
+            syncBookmarksAdapter: syncBookmarksAdapter,
+            syncCredentialsAdapter: syncCredentialsAdapter,
+            appearancePreferences: appearancePreferences,
+            managementDialogModel: managementDialogModel,
+            userAuthenticator: MockUserAuthenticator(),
+            syncPausedStateManager: pausedStateManager,
+            connectionControllerFactory: { [weak self] _, _ in
+                guard let self else { return MockSyncConnectionControlling() }
+                return connectionController
+            },
+            featureFlagger: featureFlagger
+        )
+        
+        await syncPreferences.syncWithAnotherDevicePressed()
+        
+        try await waitForPublisher(syncPreferences.$codeForDisplayOrPasting, toEmit: "test_code")
+        try await waitForPublisher(syncPreferences.$stringForQR, toEmit: pairingInfo.url.absoluteString)
+    }
+
+    @MainActor
+    func test_startPollingForRecoveryKey_whenError_showsError() async throws {
+        let featureFlagger = MockSyncFeatureFlagger()
+        connectionController.startConnectModeError = SyncError.failedToDecryptValue("")
+        
+        syncPreferences = SyncPreferences(
+            syncService: ddgSyncing,
+            syncBookmarksAdapter: syncBookmarksAdapter,
+            syncCredentialsAdapter: syncCredentialsAdapter,
+            appearancePreferences: appearancePreferences,
+            managementDialogModel: managementDialogModel,
+            userAuthenticator: MockUserAuthenticator(),
+            syncPausedStateManager: pausedStateManager,
+            connectionControllerFactory: { [weak self] _, _ in
+                guard let self else { return MockSyncConnectionControlling() }
+                return connectionController
+            },
+            featureFlagger: featureFlagger
+        )
+        
+        syncPreferences.startPollingForRecoveryKey(isRecovery: false)
+
+        try await waitForPublisher(managementDialogModel.$shouldShowErrorMessage, toEmit: true)
+        try await waitForPublisher(managementDialogModel.$syncErrorMessage.compactMap { $0 }.map(\.type), toEmit: .unableToSyncToOtherDevice)
+    }
+    
+    @MainActor
+    func test_syncWithAnotherDevicePressed_accountExists_whenError_showsError() async throws {
+        let featureFlagger = MockSyncFeatureFlagger()
+        connectionController.startExchangeModeError = SyncError.failedToDecryptValue("")
+        ddgSyncing.account = .mock
+
+        syncPreferences = SyncPreferences(
+            syncService: ddgSyncing,
+            syncBookmarksAdapter: syncBookmarksAdapter,
+            syncCredentialsAdapter: syncCredentialsAdapter,
+            appearancePreferences: appearancePreferences,
+            managementDialogModel: managementDialogModel,
+            userAuthenticator: MockUserAuthenticator(),
+            syncPausedStateManager: pausedStateManager,
+            connectionControllerFactory: { [weak self] _, _ in
+                guard let self else { return MockSyncConnectionControlling() }
+                return connectionController
+            },
+            featureFlagger: featureFlagger
+        )
+        
+        await syncPreferences.syncWithAnotherDevicePressed()
+        
+        try await waitForPublisher(managementDialogModel.$shouldShowErrorMessage, toEmit: true)
+        try await waitForPublisher(managementDialogModel.$syncErrorMessage.compactMap { $0 }.map(\.type), toEmit: .unableToSyncToOtherDevice)
     }
 }
 

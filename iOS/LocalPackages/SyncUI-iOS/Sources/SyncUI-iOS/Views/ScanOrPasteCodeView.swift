@@ -28,7 +28,7 @@ public struct ScanOrSeeCode: View {
 
     public init(model: ScanOrPasteCodeViewModel) {
         self.model = model
-        self.qrCodeModel = ShowQRCodeViewModel(code: model.code)
+        self.qrCodeModel = model.showQRCodeModel
     }
 
     public var body: some View {
@@ -95,7 +95,7 @@ public struct ScanOrSeeCode: View {
         }
         VStack(spacing: 8) {
             HStack(alignment: .center, spacing: 20) {
-                QRCodeView(string: qrCodeModel.code ?? "", desiredSize: 120)
+                QRCodeView(string: qrCodeModel.qrCodeString, desiredSize: 120)
                 VStack(alignment: .leading, spacing: 10) {
                     HStack {
                         Text(UserText.scanOrSeeCodeScanCodeQRInstructionsTitle)
@@ -129,9 +129,6 @@ public struct ScanOrSeeCode: View {
             cantScanView()
         }
         .padding(.bottom, 40)
-        .onAppear {
-            self.qrCodeModel.code = model.code
-        }
         .frame(width: width)
     }
 

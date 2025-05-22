@@ -63,7 +63,7 @@ final class PrivacyDashboardViewController: NSViewController {
     }
     var sizeDelegate: PrivacyDashboardViewControllerSizeDelegate?
     private weak var tabViewModel: TabViewModel?
-    private let contentScopeExperimentsManager: ContentScopeExperimentsManaging
+//    private let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     private let pixelFiring: (
         _ event: PixelKitEvent,
         _ withAdditionalParameters: [String: String]?,
@@ -87,7 +87,7 @@ final class PrivacyDashboardViewController: NSViewController {
     init(privacyInfo: PrivacyInfo? = nil,
          entryPoint: PrivacyDashboardEntryPoint = .dashboard,
          privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
-         contentScopeExperimentsManager: ContentScopeExperimentsManaging,
+//         contentScopeExperimentsManager: ContentScopeExperimentsManaging,
          pixelFiring: @escaping (
             _ event: PixelKitEvent,
             _ withAdditionalParameters: [String: String]?,
@@ -103,7 +103,7 @@ final class PrivacyDashboardViewController: NSViewController {
         let toggleReportingConfiguration = ToggleReportingConfiguration(privacyConfigurationManager: privacyConfigurationManager)
         let toggleReportingFeature = ToggleReportingFeature(toggleReportingConfiguration: toggleReportingConfiguration)
         let toggleReportingManager = ToggleReportingManager(feature: toggleReportingFeature)
-        self.contentScopeExperimentsManager = contentScopeExperimentsManager
+//        self.contentScopeExperimentsManager = contentScopeExperimentsManager
         self.pixelFiring = pixelFiring
         self.privacyDashboardController = PrivacyDashboardController(privacyInfo: privacyInfo,
                                                                      entryPoint: entryPoint,
@@ -382,16 +382,16 @@ extension PrivacyDashboardViewController {
             statusCodes = [httpStatusCode]
         }
 
-        var privacyExperimentCohorts: String {
-            var experiments: [String: String] = [:]
-            for feature in contentScopeExperimentsManager.allActiveContentScopeExperiments {
-                experiments[feature.key] = feature.value.cohortID
-            }
-            return experiments
-                .sorted { $0.key < $1.key }
-                .map { "\($0.key):\($0.value)" }
-                .joined(separator: ",")
-        }
+//        var privacyExperimentCohorts: String {
+//            var experiments: [String: String] = [:]
+//            for feature in contentScopeExperimentsManager.allActiveContentScopeExperiments {
+//                experiments[feature.key] = feature.value.cohortID
+//            }
+//            return experiments
+//                .sorted { $0.key < $1.key }
+//                .map { "\($0.key):\($0.value)" }
+//                .joined(separator: ",")
+//        }
 
         let isPirEnabled = await isPirEnabledAndUserHasProfile()
 
@@ -418,7 +418,7 @@ extension PrivacyDashboardViewController {
                                                userRefreshCount: currentTab.brokenSiteInfo?.refreshCountSinceLoad ?? -1,
                                                cookieConsentInfo: currentTab.privacyInfo?.cookieConsentManaged,
                                                debugFlags: currentTab.privacyInfo?.debugFlags ?? "",
-                                               privacyExperiments: privacyExperimentCohorts,
+                                               privacyExperiments: currentTab.privacyInfo?.privacyExperimentCohorts ?? "",
                                                isPirEnabled: isPirEnabled)
         return websiteBreakage
     }

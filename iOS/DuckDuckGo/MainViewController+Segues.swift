@@ -115,8 +115,7 @@ extension MainViewController {
                                            entryPoint: entryPoint,
                                            privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
                                            contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
-                                           breakageAdditionalInfo: self.currentTab?.makeBreakageAdditionalInfo(),
-                                           contentScopeExperimentsManager: self.contentScopeExperimentsManager)
+                                           breakageAdditionalInfo: self.currentTab?.makeBreakageAdditionalInfo())
         }
         
         guard let controller = controller else {

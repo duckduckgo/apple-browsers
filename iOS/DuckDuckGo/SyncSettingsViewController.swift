@@ -315,7 +315,10 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
     private func startPairingIfNecessary() {
         if let pairingInfo {
             Task {
-                await connectionController.startPairingMode(pairingInfo)
+                do {
+                    try await authenticateUser()
+                    await connectionController.startPairingMode(pairingInfo)
+                }
             }
             self.pairingInfo = nil
         }

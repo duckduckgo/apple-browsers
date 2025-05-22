@@ -49,9 +49,9 @@ final class AutofillSettingsViewModel: ObservableObject {
         var icon: Image {
             switch self {
             case .passwords:
-                return Image(uiImage: DesignSystemImages.Color.Size24.key)
+                return Image(uiImage: DesignSystemImages.Glyphs.Size24.key)
             case .creditCards:
-                return Image(uiImage: DesignSystemImages.Color.Size24.creditCard)
+                return Image(uiImage: DesignSystemImages.Glyphs.Size24.creditCard)
             }
         }
         

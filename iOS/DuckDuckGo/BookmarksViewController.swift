@@ -37,10 +37,6 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
     private enum Constants {
         static var saveToFiles = "com.apple.DocumentManagerUICore.SaveToFiles"
         static var bookmarksFileName = "DuckDuckGo Bookmarks.html"
-//        static var moreButtonImage = "More-Apple-24"
-//        static var addButtonImage = "Folder-Add-24"
-//        static var importBookmarkImage = "Import-16"
-//        static var exportBookmarkImage = "Export-Right-16"
     }
 
     @IBOutlet weak var tableView: UITableView!
@@ -682,7 +678,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
     // when importing on iOS 18.2 and above
     func importAction() -> UIAction {
         return UIAction(title: UserText.importBookmarksActionTitle,
-                        image: DesignSystemImages.Glyphs.Size16.import
+                        image: DesignSystemImages.Glyphs.Size16.importLeft
         ) { [weak self] _ in
             self?.segueToDataImport()
             Pixel.fire(pixel: .bookmarksImportOverflowMenuTapped)
@@ -692,7 +688,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
     // when importing < iOS 18.2
     func importViaDocumentPickerAction() -> UIAction {
         return UIAction(title: UserText.importBookmarksActionHtmlTitle,
-                        image: DesignSystemImages.Glyphs.Size16.import
+                        image: DesignSystemImages.Glyphs.Size16.importLeft
         ) { [weak self] _ in
             self?.presentDocumentPicker()
         }

@@ -331,7 +331,7 @@ private struct SuggestionListItem: View {
                         .lineLimit(1)
                 }
             }
-            .padding(.leading, Metrics.spacing)
+            .padding(.leading, Metrics.verticalSpacing)
             .padding(.trailing, autocompleteModel.isExperimentalThemingEnabled ? 0 : Metrics.indicatorLeadingPadding)
 
             if autocompleteModel.isExperimentalThemingEnabled && indicator == nil {
@@ -354,7 +354,7 @@ private struct SuggestionListItem: View {
 
     private struct Metrics {
         static let iconSize: CGFloat = 24
-        static let spacing: CGFloat = 8
+        static let verticalSpacing: CGFloat = 10
         static let subtitleSpacing: CGFloat = 2
         static let trailingPadding: CGFloat = 20
         static let indicatorLeadingPadding: CGFloat = 4

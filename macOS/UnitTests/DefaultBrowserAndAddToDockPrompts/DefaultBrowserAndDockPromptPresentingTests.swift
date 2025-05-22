@@ -22,45 +22,29 @@ import Combine
 
 final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
 
-    private var cancellables = Set<AnyCancellable>()
+    private var cancellables: Set<AnyCancellable>!
 
-    func testTryToShownPromptDoesNothingWhenPromptWasShown() {
-        var popoverAnchorProviderCalled = false
-        var bannerViewHandlerCalled = false
-        let coordinator = MockDefaultBrowserAndDockPromptCoordinator()
-        let repository = MockDefaultBrowserAndDockPromptRepository()
-        let featureFlagger = MockFeatureFlagger()
-        let sut = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, repository: repository, featureFlagger: featureFlagger)
+    override func setUpWithError() throws {
+        try super.setUpWithError()
 
-        repository.setPromptShown(true)
-        coordinator.getPromptTypeResult = .banner
+        cancellables = []
+    }
 
-        sut.tryToShowPrompt(
-            popoverAnchorProvider: {
-                popoverAnchorProviderCalled = true
-                return nil
-            },
-            bannerViewHandler: { _ in
-                bannerViewHandlerCalled = true
-            }
-        )
+    override func tearDownWithError() throws {
+        try super.tearDownWithError()
 
-        XCTAssertFalse(popoverAnchorProviderCalled)
-        XCTAssertFalse(bannerViewHandlerCalled)
-        XCTAssertTrue(repository.wasPromptShownCalled)
+        cancellables = nil
     }
 
     func testTryToShowPromptDoesNothingWhenPromptTypeIsNil() {
+        // GIVEN
         var popoverAnchorProviderCalled = false
         var bannerViewHandlerCalled = false
         let coordinator = MockDefaultBrowserAndDockPromptCoordinator()
-        let repository = MockDefaultBrowserAndDockPromptRepository()
-        let featureFlagger = MockFeatureFlagger()
-        let sut = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, repository: repository, featureFlagger: featureFlagger)
-
-        repository.setPromptShown(false)
+        let sut = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator)
         coordinator.getPromptTypeResult = nil
 
+        // WHEN
         sut.tryToShowPrompt(
             popoverAnchorProvider: {
                 popoverAnchorProviderCalled = true
@@ -71,86 +55,108 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
             }
         )
 
+        // THEN
         XCTAssertFalse(popoverAnchorProviderCalled)
         XCTAssertFalse(bannerViewHandlerCalled)
-        XCTAssertTrue(repository.wasPromptShownCalled)
     }
 
     func testTryToShowPromptShowsBannerWhenPromptTypeIsBanner() {
+        // GIVEN
         let coordinator = MockDefaultBrowserAndDockPromptCoordinator()
-        let repository = MockDefaultBrowserAndDockPromptRepository()
-        let featureFlagger = MockFeatureFlagger()
-        let sut = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, repository: repository, featureFlagger: featureFlagger)
+        let sut = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator)
 
         coordinator.getPromptTypeResult = .banner
         coordinator.evaluatePromptEligibility = .bothDefaultBrowserAndDockPrompt
-        repository.setPromptShown(false)
 
         var bannerShown = false
         let bannerViewHandler: (BannerMessageViewController) -> Void = { _ in
             bannerShown = true
         }
 
+        // WHEN
         sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: bannerViewHandler)
 
+        // THEN
         XCTAssertTrue(bannerShown)
-        XCTAssertTrue(repository.wasPromptShownCalled)
     }
 
     func testTryToShowPromptShowsPopoverWhenPromptTypeIsPopover() {
+        // GIVEN
         var popoverShown = false
         let coordinator = MockDefaultBrowserAndDockPromptCoordinator()
-        let repository = MockDefaultBrowserAndDockPromptRepository()
-        let featureFlagger = MockFeatureFlagger()
-        let sut = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, repository: repository, featureFlagger: featureFlagger)
+        let sut = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator)
 
         coordinator.getPromptTypeResult = .popover
-        repository.setPromptShown(false)
 
         let popoverAnchorProvider: () -> NSView? = {
             popoverShown = true
             return NSView()
         }
 
+        // WHEN
         sut.tryToShowPrompt(popoverAnchorProvider: popoverAnchorProvider, bannerViewHandler: { _ in })
 
+        // THEN
         XCTAssertTrue(popoverShown)
-        XCTAssertTrue(repository.wasPromptShownCalled)
     }
 
-    func testBannerConfirmationCallsCoordinatorPromptConfirmation() {
+    func testBannerConfirmationCallsCoordinatorConfirmationActionForBannerPrompt() {
+        // GIVEN
         let coordinator = MockDefaultBrowserAndDockPromptCoordinator()
-        let repository = MockDefaultBrowserAndDockPromptRepository()
-        let featureFlagger = MockFeatureFlagger()
-        let sut = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, repository: repository, featureFlagger: featureFlagger)
+        let sut = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator)
 
         coordinator.getPromptTypeResult = .banner
         coordinator.evaluatePromptEligibility = .bothDefaultBrowserAndDockPrompt
-        repository.setPromptShown(false)
 
         let bannerViewHandler: (BannerMessageViewController) -> Void = { banner in
             banner.viewModel.buttonAction()
         }
 
+        // WHEN
         sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: bannerViewHandler)
 
+        // THEN
         XCTAssertTrue(coordinator.wasPromptConfirmationCalled)
+        XCTAssertEqual(coordinator.capturedPrompt, .banner)
     }
 
-    func testBannerDismissedPublisherEmitsWhenBannerIsDismissed() {
+    func testPromptShouldBeDismissedBeforePresentingNewOne() {
         let coordinator = MockDefaultBrowserAndDockPromptCoordinator()
-        let repository = MockDefaultBrowserAndDockPromptRepository()
-        let featureFlagger = MockFeatureFlagger()
-        let sut = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, repository: repository, featureFlagger: featureFlagger)
+        let sut = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator)
         let expectation = expectation(description: "Banner dismissed")
 
         coordinator.getPromptTypeResult = .banner
         coordinator.evaluatePromptEligibility = .bothDefaultBrowserAndDockPrompt
-        repository.setPromptShown(false)
 
         var didReceiveBannerDismissed = false
         sut.bannerDismissedPublisher.sink { _ in
             didReceiveBannerDismissed = true
+            expectation.fulfill()
+        }.store(in: &cancellables)
+
+        // WHEN
+        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: { banner in })
+
+        // THEN
+        wait(for: [expectation], timeout: 1.0)
+        XCTAssertTrue(didReceiveBannerDismissed)
+    }
+
+    func testBannerDismissedPublisherEmitsWhenBannerIsDismissed() {
+        // GIVEN
+        let coordinator = MockDefaultBrowserAndDockPromptCoordinator()
+        let sut = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator)
+        let expectation = expectation(description: "Banner dismissed")
+        expectation.expectedFulfillmentCount = 2 // When we present a prompt we ensure we dismiss any already presented ones.
+
+        coordinator.getPromptTypeResult = .banner
+        coordinator.evaluatePromptEligibility = .bothDefaultBrowserAndDockPrompt
+
+        var didReceiveBannerDismissed = false
+        var didReceiveBannerDismissedCount = 0
+        sut.bannerDismissedPublisher.sink { _ in
+            didReceiveBannerDismissed = true
+            didReceiveBannerDismissedCount += 1
             expectation.fulfill()
         }.store(in: &cancellables)
 
@@ -158,26 +164,30 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
             banner.viewModel.closeAction()
         }
 
+        // WHEN
         sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: bannerViewHandler)
 
+        // THEN
         wait(for: [expectation], timeout: 1.0)
         XCTAssertTrue(didReceiveBannerDismissed)
+        XCTAssertEqual(didReceiveBannerDismissedCount, 2)
     }
 
     func testBannerDismissedPublisherEmitsWhenBannerIsActioned() {
+        // GIVEN
         let coordinator = MockDefaultBrowserAndDockPromptCoordinator()
-        let repository = MockDefaultBrowserAndDockPromptRepository()
-        let featureFlagger = MockFeatureFlagger()
-        let sut = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, repository: repository, featureFlagger: featureFlagger)
+        let sut = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator)
         let expectation = expectation(description: "Banner dismissed")
+        expectation.expectedFulfillmentCount = 2 // When we present a prompt we ensure we dismiss any already presented ones.
 
         coordinator.getPromptTypeResult = .banner
         coordinator.evaluatePromptEligibility = .bothDefaultBrowserAndDockPrompt
-        repository.setPromptShown(false)
 
         var didReceiveBannerDismissed = false
+        var didReceiveBannerDismissedCount = 0
         sut.bannerDismissedPublisher.sink { _ in
             didReceiveBannerDismissed = true
+            didReceiveBannerDismissedCount += 1
             expectation.fulfill()
         }.store(in: &cancellables)
 
@@ -185,23 +195,37 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
             banner.viewModel.buttonAction()
         }
 
+        // WHEN
         sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: bannerViewHandler)
 
+        // THEN
         wait(for: [expectation], timeout: 1.0)
         XCTAssertTrue(didReceiveBannerDismissed)
+        XCTAssertEqual(didReceiveBannerDismissedCount, 2)
     }
 }
 
 final class MockDefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt {
     var getPromptTypeResult: DefaultBrowserAndDockPromptPresentationType?
     var evaluatePromptEligibility: DefaultBrowserAndDockPromptType?
-    var wasPromptConfirmationCalled = false
 
-    func getPromptType(experimentDecider: DefaultBrowserAndDockPromptExperimentDeciding) -> DefaultBrowserAndDockPromptPresentationType? {
-        return getPromptTypeResult
+    private(set) var wasPromptConfirmationCalled = false
+    private(set) var wasDismissPromptCalled = false
+    private(set) var capturedPrompt: DefaultBrowserAndDockPromptPresentationType?
+    private(set) var capturedShouldHidePermanently = false
+
+    func getPromptType() -> DefaultBrowserAndDockPromptPresentationType? {
+        getPromptTypeResult
     }
 
-    func onPromptConfirmation() {
+    func confirmAction(for prompt: DefaultBrowserAndDockPromptPresentationType) {
         wasPromptConfirmationCalled = true
+        capturedPrompt = prompt
+    }
+
+    func dismissAction(for prompt: DefaultBrowserAndDockPromptPresentationType, shouldHidePermanently: Bool) {
+        wasDismissPromptCalled = true
+        capturedPrompt = prompt
+        capturedShouldHidePermanently = shouldHidePermanently
     }
 }

@@ -50,21 +50,13 @@ enum DefaultBrowserAndDockPromptPresentationType {
 
 final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPresenting {
     private let coordinator: DefaultBrowserAndDockPrompt
-    private let repository: DefaultBrowserAndDockPromptLegacyStoring
-    private let featureFlagger: FeatureFlagger
     private let bannerDismissedSubject = PassthroughSubject<Void, Never>()
 
     private var popover: NSPopover?
     private var cancellables: Set<AnyCancellable> = []
 
-    init(coordinator: DefaultBrowserAndDockPrompt,
-         repository: DefaultBrowserAndDockPromptLegacyStoring = DefaultBrowserAndDockPromptLegacyStore(),
-         featureFlagger: FeatureFlagger) {
+    init(coordinator: DefaultBrowserAndDockPrompt) {
         self.coordinator = coordinator
-        self.repository = repository
-        self.featureFlagger = featureFlagger
-
-        subscribeToLocalOverride()
     }
 
     var bannerDismissedPublisher: AnyPublisher<Void, Never> {
@@ -73,7 +65,10 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
 
     func tryToShowPrompt(popoverAnchorProvider: () -> NSView?,
                          bannerViewHandler: (BannerMessageViewController) -> Void) {
-        guard !repository.didShowPrompt(), let type = coordinator.getPromptType() else { return }
+        guard let type = coordinator.getPromptType() else { return }
+
+        // Dismiss any visible prompt before presenting another one
+        bannerDismissedSubject.send()
 
         switch type {
         case .banner:
@@ -94,12 +89,8 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
             return
         }
 
-        /// For the popover we mark it as shown when the user actions on it.
-        /// Given that we want to show the banner in all windows.
-        repository.setPromptShown(true)
-
-        self.initializePopover(with: content)
-        self.showPopover(positionedBelow: view)
+        initializePopover(with: content)
+        showPopover(positionedBelow: view)
     }
 
     private func getBanner() -> BannerMessageViewController? {
@@ -116,13 +107,12 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
             image: content.icon,
             buttonText: content.primaryButtonTitle,
             buttonAction: {
-                self.coordinator.onPromptConfirmation()
-                self.repository.setPromptShown(true)
+                self.coordinator.confirmAction(for: .banner)
                 self.bannerDismissedSubject.send()
             },
             closeAction: {
+                self.coordinator.dismissAction(for: .banner, shouldHidePermanently: false)
                 self.bannerDismissedSubject.send()
-                self.repository.setPromptShown(true)
             })
     }
 
@@ -134,11 +124,12 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
             image: content.icon,
             buttonText: content.primaryButtonTitle,
             buttonAction: {
-                self.coordinator.onPromptConfirmation()
+                self.coordinator.confirmAction(for: .popover)
                 self.popover?.close()
             },
             secondaryButtonText: content.secondaryButtonTitle,
             secondaryButtonAction: {
+                self.coordinator.dismissAction(for: .popover, shouldHidePermanently: false)
                 self.popover?.close()
             })
 
@@ -157,22 +148,4 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
         popover?.contentViewController?.view.makeMeFirstResponder()
     }
 
-    private func subscribeToLocalOverride() {
-        guard let overridesHandler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
-            return
-        }
-
-        overridesHandler.experimentFlagDidChangePublisher
-            .filter { $0.0 == .popoverVsBannerExperiment }
-            .sink { (_, cohort) in
-                if FeatureFlag.PopoverVSBannerExperimentCohort.cohort(for: cohort) == nil { return }
-
-                /// For testing purposes when we override the local features and because we want to show the prompt.
-                /// We set the set prompt flag to false in case it was show in the past.
-                self.repository.setPromptShown(false)
-
-                NotificationCenter.default.post(name: .setAsDefaultBrowserAndAddToDockExperimentFlagOverrideDidChange, object: nil)
-            }
-            .store(in: &cancellables)
-    }
 }

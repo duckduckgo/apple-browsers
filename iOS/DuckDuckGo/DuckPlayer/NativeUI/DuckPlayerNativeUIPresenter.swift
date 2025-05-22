@@ -32,6 +32,7 @@ public enum DuckPlayerConstraintUpdate {
 protocol DuckPlayerNativeUIPresenting {
 
     var videoPlaybackRequest: PassthroughSubject<(videoID: String, timestamp: TimeInterval?), Never> { get }
+    var pixelHandler: DuckPlayerPixelFiring.Type { get }
 
     @MainActor func presentPill(for videoID: String, in hostViewController: DuckPlayerHosting, timestamp: TimeInterval?)
     @MainActor func dismissPill(reset: Bool, animated: Bool, programatic: Bool)
@@ -138,17 +139,22 @@ final class DuckPlayerNativeUIPresenter {
     // State management for pill presentation
     private var presentedPillType: PillType?
 
+    // Pixel Handler
+    let pixelHandler: DuckPlayerPixelFiring.Type
+
     // MARK: - Public Methods
     ///
     /// - Parameter appSettings: The application settings
     init(appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          duckPlayerSettings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
          state: DuckPlayerState = DuckPlayerState(),
-         notificationCenter: NotificationCenter = .default) {
+         notificationCenter: NotificationCenter = .default,
+         pixelHandler: DuckPlayerPixelFiring.Type = DuckPlayerPixelHandler.self) {
         self.appSettings = appSettings
         self.duckPlayerSettings = duckPlayerSettings
         self.state = state
         self.notificationCenter = notificationCenter
+        self.pixelHandler = pixelHandler
         setupNotificationObservers(notificationCenter: notificationCenter)
     }
 
@@ -377,6 +383,69 @@ final class DuckPlayerNativeUIPresenter {
         )
     }
 
+    /// Fires DuckPlayer presentation pixels
+    private func fireDuckPlayerPresentationPixels(for source: DuckPlayer.VideoNavigationSource) {
+
+        // Daily Pixel
+        let setting = duckPlayerSettings.nativeUIYoutubeMode == .auto ? "auto" : "ask"
+        let toggle = duckPlayerSettings.duckPlayerControlsVisible ? "visible" : "hidden"
+        pixelHandler.fireDaily(.duckPlayerNativeDailyUniqueView(setting: setting, toggle: toggle))
+
+        if source == .youtube {
+            switch duckPlayerSettings.nativeUIYoutubeMode {
+            case .auto:
+                pixelHandler.fire(.duckPlayerNativeViewFromYoutubeAutomatic)
+            case .ask:
+                switch presentedPillType {
+                case .entry:
+                    pixelHandler.fire(.duckPlayerNativeViewFromYoutubeEntryPoint)
+                case .reEntry:
+                    pixelHandler.fire(.duckPlayerNativeViewFromYoutubeReEntryPoint)
+                case .welcome:
+                    pixelHandler.fire(.duckPlayerNativePrimingModalCTA)
+                case .none:
+                    break
+                }
+            case .never:
+                break
+            }
+        }
+
+        if source == .serp {
+            pixelHandler.fire(.duckPlayerNativeViewFromSERP)
+        }
+
+        if source == .other {
+            pixelHandler.fire(.duckPlayerNativeViewFromOther)
+        }
+    }
+
+    /// Fires Pill Dismissal pixels
+    private func fireDuckPlayerDismissalPixels(for pillType: PillType) {
+            switch presentedPillType {
+            case .welcome:
+                pixelHandler.fire(.duckPlayerNativePrimingModalDismissed)
+            case .entry:
+                pixelHandler.fire(.duckPlayerNativeEntryPointDismissed)
+            case .reEntry:
+                pixelHandler.fire(.duckPlayerNativeReEntryPointDismissed)
+            default:
+                break
+            }
+    }
+
+    /// Fires pill impression pixels
+    private func firePillImpressionPixels(for pillType: PillType) {        
+        switch pillType {
+        case .welcome:
+            pixelHandler.fire(.duckPlayerNativePrimingModalImpression)
+        case .entry:
+            pixelHandler.fire(.duckPlayerNativeEntryPointImpression)
+        case .reEntry:
+            pixelHandler.fire(.duckPlayerNativeReEntryPointImpression)
+        }
+    }
+
 }
 
 extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
@@ -395,11 +464,6 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
             presentedPillType = nil
         }
 
-        // If the welcome pill is already presented, don't show the entry pill
-        if presentedPillType == .welcome {
-            return
-        }
-
         // Determine the pill type
         let pillType: PillType
 
@@ -413,6 +477,9 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         }
 
         presentedPillType = pillType
+
+        // Fire pill impression pixels
+        firePillImpressionPixels(for: pillType)
 
         // If no specific timestamp is provided, use the current stave value
         let timestamp = timestamp ?? state.timestamp ?? 0
@@ -503,6 +570,11 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         if !programatic {
             duckPlayerSettings.pillDismissCount += 1
 
+            // Fire pill dismissal pixels
+            if let presentedPillType = presentedPillType {
+                fireDuckPlayerDismissalPixels(for: presentedPillType)
+            }
+
             if duckPlayerSettings.pillDismissCount == 3 {
                 // Present toast reminding the user that they can disable DuckPlayer in settings
                 presentDismissCountToast()
@@ -547,6 +619,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         if duckPlayerSettings.pillDismissCount < 3 {
             duckPlayerSettings.pillDismissCount = 0
         }
+        
 
         let navigationRequest = PassthroughSubject<URL, Never>()
         let settingsRequest = PassthroughSubject<Void, Never>()

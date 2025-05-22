@@ -1189,9 +1189,9 @@ extension Pixel {
         
         /// First time Duck Player is opened each day
         /// - Parameters:
-        ///   - settings: The Duck Player setting (default | always)
+        ///   - setting: The Duck Player setting (default | always)
         ///   - toggle: The toggle state (visible | hidden)
-        case duckPlayerNativeDailyUniqueView(settings: String, toggle: String)
+        case duckPlayerNativeDailyUniqueView(setting: String, toggle: String)
         /// Duck Player is opened automatically on YouTube
         case duckPlayerNativeViewFromYoutubeAutomatic
         /// Duck Player is opened from the YouTube entry point
@@ -1200,6 +1200,8 @@ extension Pixel {
         case duckPlayerNativeViewFromYoutubeReEntryPoint
         /// Duck Player is opened from SERP
         case duckPlayerNativeViewFromSERP
+        /// Duck Player is opened from Other
+        case duckPlayerNativeViewFromOther
         /// Watch on YouTube button is tapped from Duck Player UI
         case duckPlayerNativeWatchOnYoutube
         /// Duck Player entry point is shown on YouTube video page
@@ -1615,18 +1617,18 @@ extension Pixel.Event {
 
         case .autofillJSPixelFired(let pixel):
             return "m_ios_\(pixel.pixelName)"
-            
+
         case .secureVaultError: return "m_secure_vault_error"
-            
+
         case .secureVaultInitFailedError: return "m_secure-vault_error_init-failed"
         case .secureVaultFailedToOpenDatabaseError: return "m_secure-vault_error_failed-to-open-database"
-            
+
         case .secureVaultIsEnabledCheckedWhenEnabledAndDataProtected: return "m_secure-vault_is-enabled-checked_when-enabled-and-data-protected"
 
         case .secureVaultV4Migration: return "m_secure-vault_v4-migration"
         case .secureVaultV4MigrationSkipped: return "m_secure-vault_v4-migration-skipped"
 
-            // MARK: Data Import pixels
+        // MARK: Data Import pixels
 
         case .autofillImportPasswordsImportButtonTapped: return "autofill_import_passwords_import_button_tapped"
         case .autofillImportPasswordsImportButtonShown: return "autofill_import_passwords_import_button_shown"
@@ -2341,12 +2343,12 @@ extension Pixel.Event {
         case .tabSwitcherLongPressCloseOtherTabsDaily: return "m_tab_manager_long_press_close_other_tabs_daily"
 
         // MARK: - Duck Player Native pixels
-        
+
         /// First time Duck Player is opened each day
         /// - Parameters:
         ///   - settings: The Duck Player setting (default | always)
         ///   - toggle: The toggle state (visible | hidden)
-        case .duckPlayerNativeDailyUniqueView
+        case .duckPlayerNativeDailyUniqueView:
             return "duckplayer.native-daily-unique-view"
         /// Duck Player is opened automatically on YouTube
         case .duckPlayerNativeViewFromYoutubeAutomatic:
@@ -2360,6 +2362,9 @@ extension Pixel.Event {
         /// Duck Player is opened from SERP
         case .duckPlayerNativeViewFromSERP:
             return "duckplayer.native-view-from-serp-ios-iphone"
+        /// Duck Player is opened from Other
+        case .duckPlayerNativeViewFromOther:
+            return "duckplayer.native-view-from-other-ios-iphone"
         /// Watch on YouTube button is tapped from Duck Player UI
         case .duckPlayerNativeWatchOnYoutube:
             return "duckplayer.native-watch-on-youtube-ios-iphone"

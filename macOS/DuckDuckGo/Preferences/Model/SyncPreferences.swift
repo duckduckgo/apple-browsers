@@ -567,7 +567,8 @@ extension SyncPreferences: ManagementDialogModelDelegate {
     private func newStartPollingForRecoveryKey(isRecovery: Bool) {
         Task { @MainActor in
             do {
-                self.codeToDisplay = try await connectionController.startConnectMode()
+                let shouldGenerateURLBasedCode = featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased)
+                self.codeToDisplay = try await connectionController.startConnectMode(shouldGenerateURLBasedCode: shouldGenerateURLBasedCode)
                 if isRecovery {
                     self.presentDialog(for: .enterRecoveryCode(code: codeToDisplay ?? ""))
                 } else {
@@ -640,7 +641,7 @@ extension SyncPreferences: ManagementDialogModelDelegate {
             return
         }
         Task {
-            await connectionController.syncCodeEntered(code: recoveryCode)
+            await connectionController.syncCodeEntered(code: recoveryCode, canScanURLBarcodes: false)
         }
     }
 
@@ -882,7 +883,8 @@ extension SyncPreferences: ManagementDialogModelDelegate {
     private func startPollingForPublicKey() {
         Task { @MainActor in
             do {
-                self.codeToDisplay = try await connectionController.startExchangeMode()
+                let shouldGenerateURLBasedCode = featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased)
+                self.codeToDisplay = try await connectionController.startExchangeMode(shouldGenerateURLBasedCode: shouldGenerateURLBasedCode)
                 self.presentDialog(for: .syncWithAnotherDevice(code: codeToDisplay ?? ""))
             } catch {
                 managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToOtherDevice, description: error.localizedDescription)

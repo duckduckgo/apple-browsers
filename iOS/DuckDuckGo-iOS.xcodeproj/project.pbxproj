@@ -9892,6 +9892,8 @@
 				4B27FBB12C9252F4007E21A7 /* DefaultPersistentPixelStorageTests.swift in Sources */,
 				564DE45A2C450BE600D23241 /* DaxDialogsNewTabTests.swift in Sources */,
 				C174CE602BD6A6CE00AED2EA /* MockDDGSyncing.swift in Sources */,
+				987DA29E2D936330002E03B7 /* KeyValueFileStoreServiceTests.swift in Sources */,
+				56D5B39A2DD3831800407440 /* ScriptSourceProviderTests.swift in Sources */,
 				9F4CC51F2C48D758006A96EB /* ContextualDaxDialogsFactoryTests.swift in Sources */,
 				8521FDE6238D414B00A44CC3 /* FileStoreTests.swift in Sources */,
 				F14E491F1E391CE900DC037C /* URLExtensionTests.swift in Sources */,

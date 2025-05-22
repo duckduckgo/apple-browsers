@@ -51,6 +51,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     @IBOutlet weak var windowDraggingViewLeadingConstraint: NSLayoutConstraint!
     @IBOutlet weak var burnerWindowBackgroundView: NSImageView!
 
+    @IBOutlet weak var fireButtonWidthConstraint: NSLayoutConstraint!
+    @IBOutlet weak var fireButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var addTabButton: MouseOverButton!
 
     private var fireButtonMouseOverCancellable: AnyCancellable?
@@ -272,6 +274,9 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             .sink(receiveValue: { [weak self] _ in
                 self?.stopFireButtonPulseAnimation()
             })
+
+        fireButtonWidthConstraint.constant = visualStyle.fireButtonSize
+        fireButtonHeightConstraint.constant = visualStyle.fireButtonSize
     }
 
     private func setupAsBurnerWindowIfNeeded() {

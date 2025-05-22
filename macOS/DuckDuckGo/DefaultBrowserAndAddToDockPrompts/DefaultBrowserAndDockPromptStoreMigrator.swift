@@ -1,5 +1,5 @@
 //
-//  DefaultBrowserAndDockStoreMigrator.swift
+//  DefaultBrowserAndDockPromptStoreMigrator.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -18,11 +18,11 @@
 
 import Foundation
 
-protocol DefaultBrowserAndDockStoreMigrating: AnyObject {
+protocol DefaultBrowserAndDockPromptStoreMigrating: AnyObject {
     func migrateIfNeeded()
 }
 
-final class DefaultBrowserAndDockStoreMigrator: DefaultBrowserAndDockStoreMigrating {
+final class DefaultBrowserAndDockPromptStoreMigrator: DefaultBrowserAndDockPromptStoreMigrating {
     private let oldStore: DefaultBrowserAndDockPromptLegacyStoring
     private let newStore: DefaultBrowserAndDockPromptStorage
     private let dateProvider: () -> Date

@@ -22,7 +22,7 @@ import Testing
 struct DefaultBrowserAndDockStoreMigratorTests {
     private var oldStoreMock: MockDefaultBrowserAndDockPromptRepository!
     private var newStoreMock: MockDefaultBrowserAndDockPromptStore!
-    private var sut: DefaultBrowserAndDockStoreMigrator!
+    private var sut: DefaultBrowserAndDockPromptStoreMigrator!
     private var timeTraveller: TimeTraveller!
     private static let now = Date(timeIntervalSince1970: 1747872000)
 
@@ -30,7 +30,7 @@ struct DefaultBrowserAndDockStoreMigratorTests {
         oldStoreMock = MockDefaultBrowserAndDockPromptRepository()
         newStoreMock = MockDefaultBrowserAndDockPromptStore()
         timeTraveller = TimeTraveller(date: Self.now)
-        sut = DefaultBrowserAndDockStoreMigrator(oldStore: oldStoreMock, newStore: newStoreMock, dateProvider: timeTraveller.getDate)
+        sut = DefaultBrowserAndDockPromptStoreMigrator(oldStore: oldStoreMock, newStore: newStoreMock, dateProvider: timeTraveller.getDate)
     }
 
     @Test("Check Migration Happens When User Has Seen Generic Prompt But Not Popover")

@@ -520,7 +520,10 @@ extension URL {
         // Step 7: Replace any characters other than letters, numbers, ".", and "-" with "%XX" escape codes, using lowercase hexadecimal digits
         canonicalHost = canonicalHost.addingPercentEncoding(withAllowedCharacters: .urlHostAllowed) ?? ""
 
-        // Step 8: If more than six components in the resulting hostname, discard all but the rightmost six components
+        // Step 8: Strip www. prefix (if present)
+        canonicalHost = canonicalHost.droppingWwwPrefix()
+
+        // Step 9: If more than six components in the resulting hostname, discard all but the rightmost six components
         let components = canonicalHost.components(separatedBy: ".").suffix(6)
         canonicalHost = components.joined(separator: ".")
 

@@ -225,6 +225,9 @@ protocol DuckPlayerSettings: AnyObject {
     // Whether the Native UI settings were mapped
     var nativeUISettingsMapped: Bool { get set }
 
+    // Pixel Handler
+    var pixelHandler: DuckPlayerPixelFiring.Type { get }
+
     /// Initializes a new instance with the provided app settings and privacy configuration manager.
     ///
     /// - Parameters:
@@ -233,7 +236,8 @@ protocol DuckPlayerSettings: AnyObject {
     init(appSettings: AppSettings, 
          privacyConfigManager: PrivacyConfigurationManaging,
          featureFlagger: FeatureFlagger,
-         internalUserDecider: InternalUserDecider)
+         internalUserDecider: InternalUserDecider,
+         pixelHandler: DuckPlayerPixelFiring.Type)
 
     /// Triggers a notification to update subscribers about settings changes.
     func triggerNotification()
@@ -246,6 +250,7 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
     private let privacyConfigManager: PrivacyConfigurationManaging
     private var isFeatureEnabledCancellable: AnyCancellable?    
     private var featureFlagger: FeatureFlagger
+    private var pixelHandler: DuckPlayerPixelFiring.Type
 
     // DuckPlayer Classic is enabled (Web Version)
     private var _isDuckPlayerClassicEnabled: Bool
@@ -289,11 +294,13 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
     init(appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          privacyConfigManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         internalUserDecider: InternalUserDecider = AppDependencyProvider.shared.internalUserDecider) {
+         internalUserDecider: InternalUserDecider = AppDependencyProvider.shared.internalUserDecider,
+         pixelHandler: DuckPlayerPixelFiring.Type = DuckPlayerPixelHandler.self) {
         self.appSettings = appSettings
         self.privacyConfigManager = privacyConfigManager
-        self.featureFlagger = featureFlagger        
-
+        self.featureFlagger = featureFlagger
+        self.pixelHandler = pixelHandler
+        
         // DuckPlayer Classic is enabled (Web Version)
         self._isDuckPlayerClassicEnabled = featureFlagger.isFeatureOn(.duckPlayer)
         
@@ -383,6 +390,7 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
         set {
             if newValue != appSettings.duckPlayerNativeUISERPEnabled {
                 appSettings.duckPlayerNativeUISERPEnabled = newValue
+                pixelHandler.fire(newValue ? .duckPlayerNativeSettingsSerpOn : .duckPlayerNativeSettingsSerpOff)
                 triggerNotification()
             }
         }
@@ -399,6 +407,14 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
             // Allow direct setting if needed, potentially overridden by variant change
             if newValue != appSettings.duckPlayerNativeYoutubeMode {
                 appSettings.duckPlayerNativeYoutubeMode = newValue
+                switch newValue {
+                case .auto:
+                    pixelHandler.fire(.duckPlayerNativeSettingsYoutubeAutomatic)
+                case .ask:
+                    pixelHandler.fire(.duckPlayerNativeSettingsYoutubeChoose)
+                case .never:
+                    pixelHandler.fire(.duckPlayerNativeSettingsYoutubeDontShow)
+                }
                 triggerNotification()
             }
         }

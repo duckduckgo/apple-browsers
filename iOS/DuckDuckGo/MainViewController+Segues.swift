@@ -265,10 +265,11 @@ extension MainViewController {
     }
 
     func segueToFeedback() {
+        Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
-
-        // TODO show the unified feedback or legacy one
-        
+        launchSettings {
+            $0.presentLegacyView(.feedback)
+        }
    }
 
     func launchSettings(completion: ((SettingsViewModel) -> Void)? = nil,

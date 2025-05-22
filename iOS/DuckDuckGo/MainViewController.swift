@@ -3317,11 +3317,7 @@ extension MainViewController: AIChatViewControllerManagerDelegate {
     func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didRequestToLoad url: URL) {
         if let tabSwitcher = tabSwitcherController {
             loadUrlInNewTab(url, inheritedAttribution: nil)
-            tabSwitcher.dismiss(animated: true) {
-                if let lastTab = self.tabManager.model.tabs.last {
-                    self.tabManager.selectTab(lastTab)
-                }
-            }
+            tabSwitcher.dismiss(animated: true)
         } else {
             loadUrlInNewTab(url, inheritedAttribution: nil)
         }

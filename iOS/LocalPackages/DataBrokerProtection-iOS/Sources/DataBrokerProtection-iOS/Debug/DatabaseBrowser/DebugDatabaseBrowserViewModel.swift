@@ -71,7 +71,7 @@ final class DebugDatabaseBrowserViewModel: ObservableObject {
             let scansTable = createTable(using: scanJobs, tableName: "ScanOperation")
             let optOutsTable = createTable(using: optOutJobs, tableName: "OptOutOperation")
             let extractedProfilesTable = createTable(using: extractedProfiles, tableName: "ExtractedProfile")
-            let eventsTable = createTable(using: events.sorted(by: { $0.date < $1.date }), tableName: "Events")
+            let eventsTable = createTable(using: events.sorted(by: { $0.date > $1.date }), tableName: "Events")
             let attemptsTable = createTable(using: attempts.sorted(by: <), tableName: "OptOutAttempts")
 
             DispatchQueue.main.async {

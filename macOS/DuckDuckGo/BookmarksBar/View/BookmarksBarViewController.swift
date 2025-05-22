@@ -99,9 +99,11 @@ final class BookmarksBarViewController: NSViewController {
         let nib = NSNib(nibNamed: "BookmarksBarCollectionViewItem", bundle: .main)
         bookmarksBarCollectionView.setDraggingSourceOperationMask([.copy, .move], forLocal: true)
         bookmarksBarCollectionView.register(nib, forItemWithIdentifier: BookmarksBarCollectionViewItem.identifier)
+        bookmarksBarCollectionView.allowsMultipleSelection = false
 
         bookmarksBarCollectionView.registerForDraggedTypes(BookmarkDragDropManager.draggedTypes)
         bookmarksBarCollectionView.backgroundColors = [visualStyleManager.style.colorsProvider.navigationBackgroundColor]
+        bookmarksBarCollectionView.setAccessibilityIdentifier("BookmarksBarViewController.bookmarksBarCollectionView")
 
         clippedItemsIndicator.registerForDraggedTypes(BookmarkDragDropManager.draggedTypes)
         clippedItemsIndicator.delegate = self
@@ -113,7 +115,6 @@ final class BookmarksBarViewController: NSViewController {
         bookmarksBarCollectionView.dataSource = viewModel
 
         view.postsFrameChangedNotifications = true
-        bookmarksBarCollectionView.setAccessibilityIdentifier("BookmarksBarViewController.bookmarksBarCollectionView")
     }
 
     private func setUpImportBookmarksButton() {

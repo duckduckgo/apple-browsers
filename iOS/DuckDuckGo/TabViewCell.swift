@@ -283,14 +283,16 @@ final class TabViewCell: UICollectionViewCell {
 
     func updateSelectionIndicator(_ image: UIImageView) {
         if !isSelected {
-            image.image = UIImage(systemName: "circle")
+            image.image = DesignSystemImages.Glyphs.Size24.shapeCircle
         } else {
-            let symbolColorConfiguration = UIImage.SymbolConfiguration(paletteColors: [
-                .white, // The check
-                .clear, // This does nothing in this palette
-                UIColor(designSystemColor: .accent), // The filled background of the circle
-            ])
-            image.image = UIImage(systemName: "checkmark.circle.fill")?.applyingSymbolConfiguration(symbolColorConfiguration)
+//            let symbolColorConfiguration = UIImage.SymbolConfiguration(paletteColors: [
+//                .white, // The check
+//                .clear, // This does nothing in this palette
+//                UIColor(designSystemColor: .accent), // The filled background of the circle
+//            ])
+//            image.image = UIImage(systemName: "checkmark.circle.fill")?.applyingSymbolConfiguration(symbolColorConfiguration)
+            // This is temporary until we can work out how to use the above logic with custom symbols
+            image.image = UIImage(resource: .checkAccentDONOTUSE)
         }
     }
 

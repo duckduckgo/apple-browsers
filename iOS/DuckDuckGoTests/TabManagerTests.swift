@@ -33,7 +33,7 @@ final class TabManagerTests: XCTestCase {
         let originalTab = tabsModel.get(tabAt: 0)
         XCTAssertTrue(originalTab === tabsModel.get(tabAt: 0))
 
-        let manager = makeManager(tabsModel)
+        let manager = try makeManager(tabsModel)
         manager.remove(at: 0)
 
         XCTAssertEqual(1, tabsModel.count)
@@ -47,7 +47,7 @@ final class TabManagerTests: XCTestCase {
 
         tabsModel.select(tabAt: 0)
 
-        let manager = makeManager(tabsModel)
+        let manager = try makeManager(tabsModel)
         _ = manager.add(url: URL(string: "https://example.com")!, inheritedAttribution: nil)
 
         // We expect the new tab to be the index after whatever was current (ie zero)
@@ -66,7 +66,7 @@ final class TabManagerTests: XCTestCase {
         let tabsModel = TabsModel(desktop: false)
         tabsModel.add(tab: Tab())
         tabsModel.add(tab: Tab())
-        let manager = makeManager(tabsModel, previewsSource: mock)
+        let manager = try makeManager(tabsModel, previewsSource: mock)
         NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
         try await Task.sleep(interval: 0.5)
         XCTAssertEqual(1, mock.removePreviewsWithIdNotInCalls.count)
@@ -76,9 +76,10 @@ final class TabManagerTests: XCTestCase {
     }
 
     func makeManager(_ model: TabsModel,
-                     previewsSource: TabPreviewsSource = MockTabPreviewsSource()) -> TabManager {
-
+                     previewsSource: TabPreviewsSource = MockTabPreviewsSource()) throws -> TabManager {
+        let tabsPersistence = try TabsModelPersistence()
         return TabManager(model: model,
+                          persistence: tabsPersistence,
                           previewsSource: previewsSource,
                           interactionStateSource: TabInteractionStateDiskSource(),
                           bookmarksDatabase: MockBookmarksDatabase.make(prepareFolderStructure: false),

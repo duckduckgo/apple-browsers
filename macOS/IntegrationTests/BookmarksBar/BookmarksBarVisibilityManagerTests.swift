@@ -71,7 +71,7 @@ final class BookmarksBarVisibilityManagerTests: XCTestCase {
 
     // Appearance `showBookmarksBars` false
     @MainActor
-    func testWhenSelectedTaContentAndShowBookmarksBarIsFalseThenIsBookmarksBarVisibleIsFalse() throws {
+    func testWhenSelectedTabContentAndShowBookmarksBarIsFalseThenIsBookmarksBarVisibleIsFalse() throws {
         // GIVEN
         appearance.showBookmarksBar = false
 

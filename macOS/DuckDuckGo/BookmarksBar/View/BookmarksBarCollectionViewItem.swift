@@ -137,7 +137,7 @@ final class BookmarksBarCollectionViewItem: NSCollectionViewItem {
     }
 
     deinit {
-        // Sometimes the ItemCachingCollectionView doesn‘t remove the cell views
+        // Sometimes the BookmarksBarCollectionView doesn‘t remove the cell views
         // when the BookmarksBarCollectionViewItem is deallocated
         // Steps to reproduce:
         // 1. Create 1 folder and 4 bookmarks on the bookmarks bar

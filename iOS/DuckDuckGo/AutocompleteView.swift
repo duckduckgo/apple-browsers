@@ -331,8 +331,7 @@ private struct SuggestionListItem: View {
                         .lineLimit(1)
                 }
             }
-            .padding(.leading, Metrics.verticalSpacing)
-            .padding(.trailing, autocompleteModel.isExperimentalThemingEnabled ? 0 : Metrics.indicatorLeadingPadding)
+            .padding(.leading, autocompleteModel.isExperimentalThemingEnabled ? Metrics.verticalSpacing : 0)
 
             if autocompleteModel.isExperimentalThemingEnabled && indicator == nil {
                 // No indicator means we want to preserve the room for icon,
@@ -348,6 +347,7 @@ private struct SuggestionListItem: View {
                         onTapIndicator?()
                     })
                     .tintIfAvailable(Color.init(designSystemColor: .iconsSecondary))
+                    .padding(.leading, autocompleteModel.isExperimentalThemingEnabled ? Metrics.indicatorLeadingPadding : 0)
             }
         }
     }

@@ -80,7 +80,7 @@ final class ScriptSourceProvider: ScriptSourceProviding {
          contentBlockingManager: ContentBlockerRulesManagerProtocol,
          trackerDataManager: TrackerDataManager,
          experimentManager: ContentScopeExperimentsManaging,
-         statisticsStore: StatisticsStore = LocalStatisticsStore(),
+         statisticsStore: StatisticsStore,
          tld: TLD) {
 
         self.configStorage = configStorage

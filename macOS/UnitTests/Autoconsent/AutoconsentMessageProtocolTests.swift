@@ -34,6 +34,7 @@ class AutoconsentMessageProtocolTests: XCTestCase {
                                                                                   embeddedDataProvider: AppTrackerDataSetProvider(),
                                                                                   errorReporting: nil),
                                            experimentManager: MockContentScopeExperimentManager(),
+                                           statisticsStore: MockStatisticsStore(),
                                            tld: TLD()),
         config: MockPrivacyConfiguration()
     )

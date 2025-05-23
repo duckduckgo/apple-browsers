@@ -172,7 +172,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
                 if jobScheduled {
                     cell.textLabel?.text = "✅ PIR will run some time after device is locked and connected to power"
                 } else {
-                    cell.textLabel?.text = "❌ Background and foreground the app to schedule PIR"
+                    cell.textLabel?.text = "❌ Restart the app to schedule PIR"
                 }
             }
 

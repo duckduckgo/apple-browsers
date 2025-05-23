@@ -352,7 +352,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
         setTransactionStatus(.polling)
 
         var subscriptionParameters: [String: String]?
-
         if let frontEndExperiment = subscriptionSelection.experiment {
             subscriptionParameters = frontEndExperiment.asParameters()
         }
@@ -846,7 +845,6 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         }
 
         var subscriptionParameters: [String: String]?
-
         if let frontEndExperiment = subscriptionSelection.experiment {
             subscriptionParameters = frontEndExperiment.asParameters()
         }

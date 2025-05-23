@@ -16,7 +16,7 @@
 //  limitations under the License.
 //
 
-import DesignResourcesKit
+import DesignResourcesKitIcons
 
 protocol BookmarksIconsProviding {
     var bookmarksManagerRootIcon: NSImage { get }

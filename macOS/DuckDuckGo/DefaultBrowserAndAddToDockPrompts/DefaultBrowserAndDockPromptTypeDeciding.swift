@@ -25,18 +25,18 @@ protocol DefaultBrowserAndDockPromptTypeDeciding {
 final class DefaultBrowserAndDockPromptTypeDecider: DefaultBrowserAndDockPromptTypeDeciding {
     private let featureFlagger: DefaultBrowserAndDockPromptFeatureFlagger
     private let store: DefaultBrowserAndDockPromptStorageReading
-    private let statisticsStore: StatisticsStore
+    private let installDateProvider: () -> Date?
     private let dateProvider: () -> Date
 
     init(
         featureFlagger: DefaultBrowserAndDockPromptFeatureFlagger,
         store: DefaultBrowserAndDockPromptStorageReading,
-        statisticsStore: StatisticsStore,
+        installDateProvider: @escaping () -> Date?,
         dateProvider: @escaping () -> Date = Date.init
     ) {
         self.featureFlagger = featureFlagger
         self.store = store
-        self.statisticsStore = statisticsStore
+        self.installDateProvider = installDateProvider
         self.dateProvider = dateProvider
     }
 
@@ -68,7 +68,7 @@ final class DefaultBrowserAndDockPromptTypeDecider: DefaultBrowserAndDockPromptT
 private extension DefaultBrowserAndDockPromptTypeDecider {
 
     func daysSinceInstall() -> Int {
-        daysSince(date: statisticsStore.installDate)
+        daysSince(date: installDateProvider())
     }
 
     func daysSincePopoverShown() -> Int {

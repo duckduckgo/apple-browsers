@@ -132,7 +132,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let newTabPageCustomizationModel: NewTabPageCustomizationModel
     let remoteMessagingClient: RemoteMessagingClient!
     let onboardingContextualDialogsManager: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater
-    private(set) var defaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPresenter!
+    let defaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPresenter
     let visualStyleManager: VisualStyleManagerProviding
 
     let isAuthV2Enabled: Bool
@@ -310,6 +310,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         newTabPageCustomizationModel = NewTabPageCustomizationModel(visualStyleManager: visualStyleManager, appearancePreferences: appearancePreferences)
 
         onboardingContextualDialogsManager = ContextualDialogsManager()
+
+        let defaultBrowserAndDockPromptKeyValueStore = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStore)
+        DefaultBrowserAndDockPromptStoreMigrator(
+            oldStore: DefaultBrowserAndDockPromptLegacyStore(),
+            newStore: defaultBrowserAndDockPromptKeyValueStore
+        ).migrateIfNeeded()
+
+        let defaultBrowserAndDockPromptFeatureFlag = DefaultBrowserAndDockPromptFeatureFlag(
+            privacyConfigManager: ContentBlocking.shared.privacyConfigurationManager,
+            featureFlagger: featureFlagger
+        )
+        let defaultBrowserAndDockPromptDecider = DefaultBrowserAndDockPromptTypeDecider(
+            featureFlagger: defaultBrowserAndDockPromptFeatureFlag,
+            store: defaultBrowserAndDockPromptKeyValueStore,
+            installDateProvider: { LocalStatisticsStore().installDate }
+        )
+        let coordinator = DefaultBrowserAndDockPromptCoordinator(
+            promptTypeDecider: defaultBrowserAndDockPromptDecider,
+            store: defaultBrowserAndDockPromptKeyValueStore,
+            isOnboardingCompleted: onboardingContextualDialogsManager.state == .onboardingCompleted
+        )
+        let statusUpdateNotifier = DefaultBrowserAndDockPromptStatusUpdateNotifier()
+        defaultBrowserAndDockPromptPresenter = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, statusUpdateNotifier: statusUpdateNotifier)
 
         // MARK: - Subscription configuration
 
@@ -526,28 +549,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let statisticsLoader = AppVersion.runType.requiresEnvironment ? StatisticsLoader.shared : nil
         statisticsLoader?.load()
-
-        let defaultBrowserAndDockPromptKeyValueStore = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStore)
-        let defaultBrowserAndDockPromptStoreMigrator = DefaultBrowserAndDockPromptStoreMigrator(
-            oldStore: DefaultBrowserAndDockPromptLegacyStore(),
-            newStore: defaultBrowserAndDockPromptKeyValueStore
-        )
-        let defaultBrowserAndDockPromptFeatureFlag = DefaultBrowserAndDockPromptFeatureFlag(
-            privacyConfigManager: ContentBlocking.shared.privacyConfigurationManager,
-            featureFlagger: featureFlagger
-        )
-        let defaultBrowserAndDockPromptDecider = DefaultBrowserAndDockPromptTypeDecider(
-            featureFlagger: defaultBrowserAndDockPromptFeatureFlag,
-            store: defaultBrowserAndDockPromptKeyValueStore,
-            statisticsStore: LocalStatisticsStore()
-        )
-        let coordinator = DefaultBrowserAndDockPromptCoordinator(
-            promptTypeDecider: defaultBrowserAndDockPromptDecider,
-            store: defaultBrowserAndDockPromptKeyValueStore,
-            isOnboardingCompleted: onboardingContextualDialogsManager.state == .onboardingCompleted
-        )
-        let statusUpdateNotifier = DefaultBrowserAndDockPromptStatusUpdateNotifier()
-        defaultBrowserAndDockPromptPresenter = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, statusUpdateNotifier: statusUpdateNotifier)
 
         startupSync()
 

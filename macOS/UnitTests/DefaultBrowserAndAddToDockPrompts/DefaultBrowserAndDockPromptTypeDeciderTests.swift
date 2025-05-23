@@ -20,22 +20,23 @@ import Testing
 import FeatureFlags
 @testable import DuckDuckGo_Privacy_Browser
 
-struct DefaultBrowserAndDockPromptTypeDeciderTests {
+final class DefaultBrowserAndDockPromptTypeDeciderTests {
     private var featureFlaggerMock: MockDefaultBrowserAndDockPromptFeatureFlagger!
     private var storeMock: MockDefaultBrowserAndDockPromptStore!
-    private var statisticsStoreMock: MockStatisticsStore!
     private var timeTraveller: TimeTraveller!
     private var sut: DefaultBrowserAndDockPromptTypeDecider!
 
     init() {
         featureFlaggerMock = MockDefaultBrowserAndDockPromptFeatureFlagger()
         storeMock = MockDefaultBrowserAndDockPromptStore()
-        statisticsStoreMock = MockStatisticsStore()
         timeTraveller = TimeTraveller()
+    }
+
+    func makeSUT(installDate: Date? = nil) {
         sut = DefaultBrowserAndDockPromptTypeDecider(
             featureFlagger: featureFlaggerMock,
             store: storeMock,
-            statisticsStore: statisticsStoreMock,
+            installDateProvider: { installDate },
             dateProvider: timeTraveller.getDate
         )
     }
@@ -44,6 +45,7 @@ struct DefaultBrowserAndDockPromptTypeDeciderTests {
     func checkPromptIsNilWhenFeatureFlagIsDisabled() {
         // GIVEN
         featureFlaggerMock.isDefaultBrowserAndDockPromptFeatureEnabled = false
+        makeSUT()
 
         // WHEN
         let result = sut.promptType()
@@ -58,7 +60,7 @@ struct DefaultBrowserAndDockPromptTypeDeciderTests {
         storeMock.popoverShownDate = nil
         featureFlaggerMock.firstPopoverDelayDays = 14
         let installDate = Date(timeIntervalSince1970: 1747699200) // 20 May 2025 12:00:00 AM
-        statisticsStoreMock.installDate = installDate
+        makeSUT(installDate: installDate)
         timeTraveller.setNowDate(installDate)
 
         // WHEN
@@ -84,6 +86,7 @@ struct DefaultBrowserAndDockPromptTypeDeciderTests {
         let popoverSeenDate = Date(timeIntervalSince1970: 1747699200) // 20 May 2025 12:00:00 AM
         storeMock.popoverShownDate = popoverSeenDate.timeIntervalSince1970
         timeTraveller.setNowDate(popoverSeenDate)
+        makeSUT()
 
         // WHEN
         var result = sut.promptType()
@@ -109,6 +112,7 @@ struct DefaultBrowserAndDockPromptTypeDeciderTests {
         storeMock.popoverShownDate = bannerSeenDate.addingTimeInterval(-.days(5)).timeIntervalSince1970 // Not important what value is stored for this test.
         storeMock.bannerShownDate = bannerSeenDate.timeIntervalSince1970
         timeTraveller.setNowDate(bannerSeenDate)
+        makeSUT()
 
         // WHEN
         var result = sut.promptType()
@@ -135,6 +139,7 @@ struct DefaultBrowserAndDockPromptTypeDeciderTests {
         storeMock.popoverShownDate = bannerSeenDate.addingTimeInterval(-.days(5)).timeIntervalSince1970 // Not important what value is stored for this test.
         storeMock.bannerShownDate = bannerSeenDate.timeIntervalSince1970
         timeTraveller.advanceBy(.days(14))
+        makeSUT()
 
         // WHEN
         let result = sut.promptType()
@@ -157,7 +162,7 @@ struct DefaultBrowserAndDockPromptTypeDeciderTests {
         featureFlaggerMock.bannerAfterPopoverDelayDays = 20
         featureFlaggerMock.bannerRepeatIntervalDays = 30
         let installDate = Date(timeIntervalSince1970: 1747699200) // 20 May 2025 12:00:00 AM
-        statisticsStoreMock.installDate = installDate
+        makeSUT(installDate: installDate)
         timeTraveller.setNowDate(installDate)
 
         // THEN prompt is nil as installation date and now are same day.

@@ -1673,7 +1673,7 @@ extension NavigationBarViewController: AddressBarViewControllerDelegate {
     func resizeAddressBarForHomePage(_ addressBarViewController: AddressBarViewController, isFocused: Bool) {
         let addressBarSizeClass: AddressBarSizeClass = tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab ? .homePage : .default
 
-        if visualStyle.shouldShowLogoinInAddressBar {
+        if visualStyle.addressBarStyleProvider.shouldShowLogoinInAddressBar {
             resizeAddressBar(for: addressBarSizeClass, animated: true)
         }
     }

@@ -36,7 +36,6 @@ final class AutoClearHandler {
     @MainActor
     func handleAppLaunch() {
         burnOnStartIfNeeded()
-        restoreTabsIfNeeded()
         resetTheCorrectTerminationFlag()
     }
 

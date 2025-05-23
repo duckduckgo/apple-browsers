@@ -75,6 +75,31 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
     }
 
     private let timeLapsedFormatter: VPNTimeFormatting
+    enum TimerOverride {
+        case none
+        case minute
+        case hour
+        case day
+    }
+    private var timerDateOverride: Date?
+    private var timerOverride: TimerOverride = .none
+
+    func overrideConnectionStartDate() {
+        switch timerOverride {
+        case .none:
+            timerOverride = .minute
+            timerDateOverride = Date().addingTimeInterval(-TimeInterval.minutes(1).advanced(by: -4))
+        case .minute:
+            timerOverride = .hour
+            timerDateOverride = Date().addingTimeInterval(-TimeInterval.hours(1).advanced(by: -4))
+        case .hour:
+            timerOverride = .day
+            timerDateOverride = Date().addingTimeInterval(-TimeInterval.day.advanced(by: -4))
+        case .day:
+            timerOverride = .none
+            timerDateOverride = nil
+        }
+    }
 
     private static var snoozeRemainingDateFormatter: DateComponentsFormatter = {
         let formatter = DateComponentsFormatter()
@@ -146,7 +171,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
     }
 
     @Published public var snoozeRequestPending = false
-    @Published public var statusMessage: String
+    @Published public var statusMessage: String = ""
     @Published public var shouldDisableToggle: Bool = false
 
     // MARK: Location
@@ -187,7 +212,6 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
         self.enablesUnifiedFeedbackForm = enablesUnifiedFeedbackForm
         self.featureDiscovery = featureDiscovery
 
-        statusMessage = Self.message(for: statusObserver.recentValue)
         self.headerTitle = Self.titleText(status: statusObserver.recentValue)
         self.statusImageID = Self.statusImageID(connected: statusObserver.recentValue.isConnected)
 
@@ -198,6 +222,8 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
         self.tipsModel = VPNTipsModel(
             statusObserver: statusObserver,
             vpnSettings: settings)
+
+        statusMessage = message(for: statusObserver.recentValue)
 
         updateViewModel(withStatus: statusObserver.recentValue)
 
@@ -262,7 +288,8 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
             .flatMap(maxPublishers: .max(1)) { [weak self] status in
 
                 guard let self else {
-                    return Just(message(for: .disconnected)).eraseToAnyPublisher()}
+                    return [Just("").eraseToAnyPublisher()].publisher
+                }
 
                 // As soon as the connection status changes, we should update the status message
                 var statusUpdatePublishers = [Just(message(for: status)).eraseToAnyPublisher()]
@@ -467,6 +494,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
 
     @MainActor
     private func enableNetP() async {
+        timerOverride = .none
         await tunnelController.start()
     }
 
@@ -525,8 +553,8 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
     private func timedConnectedStatusMessagePublisher(forConnectedDate connectedDate: Date) -> AnyPublisher<String, Never> {
         Timer.publish(every: .seconds(1), on: .main, in: .default)
             .autoconnect()
-            .map {
-                connectedMessage(for: connectedDate, currentDate: $0)
+            .compactMap { [weak self] in
+                self?.connectedMessage(for: connectedDate, currentDate: $0)
             }
             .eraseToAnyPublisher()
     }
@@ -556,7 +584,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
     }
 
     private func connectedMessage(for connectedDate: Date, currentDate: Date = Date()) -> String {
-        let timeLapsedInterval = currentDate.timeIntervalSince(connectedDate)
+        let timeLapsedInterval = currentDate.timeIntervalSince(timerDateOverride ?? connectedDate)
         let timeLapsed = timeLapsedFormatter.string(from: timeLapsedInterval)
         return UserText.netPStatusConnected(since: timeLapsed)
     }

@@ -422,13 +422,13 @@ public final class TunnelControllerViewModel: ObservableObject {
         switch timerOverride {
         case .none:
             timerOverride = .minute
-            timerDateOverride = Date().addingTimeInterval(-TimeInterval.minutes(1).advanced(by: -10))
+            timerDateOverride = Date().addingTimeInterval(-TimeInterval.minutes(1).advanced(by: -4))
         case .minute:
             timerOverride = .hour
-            timerDateOverride = Date().addingTimeInterval(-TimeInterval.hours(1).advanced(by: -10))
+            timerDateOverride = Date().addingTimeInterval(-TimeInterval.hours(1).advanced(by: -4))
         case .hour:
             timerOverride = .day
-            timerDateOverride = Date().addingTimeInterval(-TimeInterval.day.advanced(by: -10))
+            timerDateOverride = Date().addingTimeInterval(-TimeInterval.day.advanced(by: -4))
         case .day:
             timerOverride = .none
             timerDateOverride = nil

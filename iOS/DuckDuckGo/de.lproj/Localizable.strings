@@ -262,6 +262,9 @@
 /* No comment provided by engineer. */
 "Are you sure you want to delete all bookmarks? This action cannot be undone." = "Bist du sicher, dass du alle Lesezeichen löschen möchtest? Diese Aktion kann nicht rückgängig gemacht werden.";
 
+/* No comment provided by engineer. */
+"Are you sure you want to delete this chat? This cannot be undone." = "Möchtest du diesen Chat wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.";
+
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Anmelden";
 
@@ -1282,17 +1285,11 @@
 /* Text displayed when DuckPlayer is in 'Ask' mode. */
 "duckPlayer.ask.label" = "Jedes Mal fragen";
 
-/* Subtitle explaining how Duck Player protects privacy */
-"duckplayer.blocks.ads.keeps.history.private" = "Der Duck Player blockiert zielgerichtete Werbung und sorgt für einen privaten Wiedergabeverlauf.";
-
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Nie";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";
-
-/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
-"duckplayer.open.youtube.videos.here" = "YouTube-Videos hier öffnen";
 
 /* Button text to play a video in Duck Player */
 "duckplayer.play.in.duck.player" = "Dieses Video im Duck Player abspielen";
@@ -1366,17 +1363,8 @@
 /* Button text to open Duck Player settings */
 "duckplayer.toast.open.settings" = "Einstellungen öffnen";
 
-/* Toast message informing user they can disable Duck Player in settings */
-"duckplayer.toast.turn.off.anytime" = "Du kannst den Duck Player jederzeit in den Einstellungen deaktivieren";
-
 /* Button text to watch video on YouTube */
 "duckplayer.watch.on.youtube" = "Auf YouTube ansehen";
-
-/* Subtitle explaining Duck Player blocks targeted ads */
-"duckplayer.watch.without.targeted.ads" = "Ohne gezielte Werbung ansehen";
-
-/* Title for Duck Player welcome message highlighting privacy benefits */
-"duckplayer.youtube.no.ads.privacy" = "YouTube mit weniger Werbung und mehr Privatsphäre ansehen";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "E-Mail-Schutz";
@@ -2410,6 +2398,30 @@
 /* Title for the Privacy Pro feedback form */
 "ppro.feedback-form.title" = "Rückmeldung senden";
 
+/* Title of the section of a setting page that shows Scam Blocking preferences (weather warning in case of scam sites) */
+"preferences.scam-blocker.title" = "Betrugsblocker";
+
+/* Caption explaining the risk of disabling scam blocker protection */
+"preferences.scam-blocker.toggle-caption" = "Das Deaktivieren dieser Funktion kann deine persönlichen Daten gefährden.";
+
+/* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
+"preferences.scam-blocker.toggle-label" = "Warnt vor Websites, die als betrügerische, Phishing- oder Malware-Websites gekennzeichnet sind. [Mehr erfahren](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/scam-blocker/)";
+
+/* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
+"preferences.smarter-encryption.description" = "Links nach Möglichkeit automatisch auf HTTPS aktualisieren. [Mehr erfahren](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
+
+/* Title of the section of a setting page that shows Smarter Encryption preferences */
+"preferences.smarter-encryption.title" = "Smarter Encryption";
+
+/* Status indicator of a browser privacy protection feature. */
+"preferences.status-indicator.always-on" = "Immer aktiviert";
+
+/* Title of the option to show the Threat Protection preferences */
+"preferences.threat-protection" = "Schutz vor Bedrohungen";
+
+/* Caption of the option to show the Threat Protection preferences */
+"preferences.threat-protection.caption" = "Der erweitere Schutz von DuckDuckGo schützt deine Verbindung und stoppt gängige Bedrohungen.";
+
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Einige Lesezeichen oder Passwörter sind falsch formatiert oder zu lang und wurden nicht synchronisiert.";
 
@@ -2838,6 +2850,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Welche Website ist fehlerhaft?";
+
+/* No comment provided by engineer. */
+"Stop generating..." = "Generierung stoppen ...";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Gespeicherter Hostname: %@";

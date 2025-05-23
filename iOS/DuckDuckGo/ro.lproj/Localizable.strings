@@ -262,6 +262,9 @@
 /* No comment provided by engineer. */
 "Are you sure you want to delete all bookmarks? This action cannot be undone." = "Sigur dorești să ștergi toate marcajele? Această acțiune nu poate fi anulată.";
 
+/* No comment provided by engineer. */
+"Are you sure you want to delete this chat? This cannot be undone." = "Sigur dorești să ștergi acest chat? Acest lucru nu poate fi anulat.";
+
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Autentificare";
 
@@ -1282,17 +1285,11 @@
 /* Text displayed when DuckPlayer is in 'Ask' mode. */
 "duckPlayer.ask.label" = "Întreabă de fiecare dată";
 
-/* Subtitle explaining how Duck Player protects privacy */
-"duckplayer.blocks.ads.keeps.history.private" = "Duck Player blochează reclamele direcționate și îți păstrează confidențial istoricul de vizionare.";
-
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Niciodată";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";
-
-/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
-"duckplayer.open.youtube.videos.here" = "Deschide aici videoclipurile de pe YouTube";
 
 /* Button text to play a video in Duck Player */
 "duckplayer.play.in.duck.player" = "Redă acest videoclip în Duck Player";
@@ -1366,17 +1363,8 @@
 /* Button text to open Duck Player settings */
 "duckplayer.toast.open.settings" = "Deschide Setări";
 
-/* Toast message informing user they can disable Duck Player in settings */
-"duckplayer.toast.turn.off.anytime" = "Poți dezactiva oricând Duck Player din Setări.";
-
 /* Button text to watch video on YouTube */
 "duckplayer.watch.on.youtube" = "Vizionează pe YouTube";
-
-/* Subtitle explaining Duck Player blocks targeted ads */
-"duckplayer.watch.without.targeted.ads" = "Vizionează fără reclame direcționate";
-
-/* Title for Duck Player welcome message highlighting privacy benefits */
-"duckplayer.youtube.no.ads.privacy" = "Urmărește YouTube cu mai puține reclame și mai multă confidențialitate";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Protecția comunicațiilor prin e-mail";
@@ -2410,6 +2398,30 @@
 /* Title for the Privacy Pro feedback form */
 "ppro.feedback-form.title" = "Trimite feedback";
 
+/* Title of the section of a setting page that shows Scam Blocking preferences (weather warning in case of scam sites) */
+"preferences.scam-blocker.title" = "Instrument de blocare a înșelătoriilor";
+
+/* Caption explaining the risk of disabling scam blocker protection */
+"preferences.scam-blocker.toggle-caption" = "Dezactivarea acestei funcții poate genera riscuri privind datele tale cu caracter personal.";
+
+/* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
+"preferences.scam-blocker.toggle-label" = "Avertizează cu privire la site-urile marcate ca incluzând escrocherii, phishing sau programe rău intenționate. [Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/scam-blocker/)";
+
+/* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
+"preferences.smarter-encryption.description" = "Actualizează automat linkurile la HTTPS, oricând este posibil. [Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
+
+/* Title of the section of a setting page that shows Smarter Encryption preferences */
+"preferences.smarter-encryption.title" = "Criptare inteligentă";
+
+/* Status indicator of a browser privacy protection feature. */
+"preferences.status-indicator.always-on" = "Întotdeauna activat";
+
+/* Title of the option to show the Threat Protection preferences */
+"preferences.threat-protection" = "Protecție împotriva amenințărilor";
+
+/* Caption of the option to show the Threat Protection preferences */
+"preferences.threat-protection.caption" = "Protecțiile îmbunătățite oferite de DuckDuckGo stopează amenințările comune, menținându-ți în același timp conexiunea securizată.";
+
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Unele semne de carte sau parole sunt formatate incorect sau sunt prea lungi și nu au fost sincronizate.";
 
@@ -2838,6 +2850,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Ce site este defect?";
+
+/* No comment provided by engineer. */
+"Stop generating..." = "Oprește generarea...";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Numele gazdă stocat: %@";

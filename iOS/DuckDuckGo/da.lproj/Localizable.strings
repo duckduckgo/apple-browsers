@@ -262,6 +262,9 @@
 /* No comment provided by engineer. */
 "Are you sure you want to delete all bookmarks? This action cannot be undone." = "Er du sikker på, at du vil slette alle bogmærker? Denne handling kan ikke fortrydes.";
 
+/* No comment provided by engineer. */
+"Are you sure you want to delete this chat? This cannot be undone." = "Er du sikker på, at du vil slette denne chat? Dette kan ikke fortrydes.";
+
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Log ind";
 
@@ -1282,17 +1285,11 @@
 /* Text displayed when DuckPlayer is in 'Ask' mode. */
 "duckPlayer.ask.label" = "Spørg hver gang";
 
-/* Subtitle explaining how Duck Player protects privacy */
-"duckplayer.blocks.ads.keeps.history.private" = "Duck Player blokerer målrettede annoncer og holder din visningshistorik privat.";
-
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Aldrig";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";
-
-/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
-"duckplayer.open.youtube.videos.here" = "Åbn YouTube-videoer her";
 
 /* Button text to play a video in Duck Player */
 "duckplayer.play.in.duck.player" = "Afspil denne video i Duck Player";
@@ -1366,17 +1363,8 @@
 /* Button text to open Duck Player settings */
 "duckplayer.toast.open.settings" = "Åbn Indstillinger";
 
-/* Toast message informing user they can disable Duck Player in settings */
-"duckplayer.toast.turn.off.anytime" = "Du kan til enhver tid slå Duck Player fra under Indstillinger";
-
 /* Button text to watch video on YouTube */
 "duckplayer.watch.on.youtube" = "Se på YouTube";
-
-/* Subtitle explaining Duck Player blocks targeted ads */
-"duckplayer.watch.without.targeted.ads" = "Se uden målrettede reklamer";
-
-/* Title for Duck Player welcome message highlighting privacy benefits */
-"duckplayer.youtube.no.ads.privacy" = "Se YouTube med færre reklamer og mere privatliv";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "E-mailbeskyttelse";
@@ -2410,6 +2398,30 @@
 /* Title for the Privacy Pro feedback form */
 "ppro.feedback-form.title" = "Send tilbagemelding";
 
+/* Title of the section of a setting page that shows Scam Blocking preferences (weather warning in case of scam sites) */
+"preferences.scam-blocker.title" = "Blokering af svindel";
+
+/* Caption explaining the risk of disabling scam blocker protection */
+"preferences.scam-blocker.toggle-caption" = "Deaktivering af denne funktion kan bringe dine personlige oplysninger i fare.";
+
+/* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
+"preferences.scam-blocker.toggle-label" = "Advar på websteder, der er registreret for svindel, phishing eller malware. [Læs mere](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/scam-blocker/)";
+
+/* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
+"preferences.smarter-encryption.description" = "Opgraderer automatisk links til HTTPS, når det er muligt. [Læs mere](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
+
+/* Title of the section of a setting page that shows Smarter Encryption preferences */
+"preferences.smarter-encryption.title" = "Smarter Encryption";
+
+/* Status indicator of a browser privacy protection feature. */
+"preferences.status-indicator.always-on" = "Altid aktiv";
+
+/* Title of the option to show the Threat Protection preferences */
+"preferences.threat-protection" = "Trusselsbeskyttelse";
+
+/* Caption of the option to show the Threat Protection preferences */
+"preferences.threat-protection.caption" = "DuckDuckGos forbedrede beskyttelser stopper almindelige trusler, mens de holder din forbindelse sikker.";
+
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Nogle bogmærker eller adgangskoder er formateret forkert eller er for lange og blev ikke synkroniseret.";
 
@@ -2838,6 +2850,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Hvilket websted er ødelagt?";
+
+/* No comment provided by engineer. */
+"Stop generating..." = "Stop generering...";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Gemt værtsnavn: %@";

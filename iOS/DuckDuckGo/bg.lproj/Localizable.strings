@@ -262,6 +262,9 @@
 /* No comment provided by engineer. */
 "Are you sure you want to delete all bookmarks? This action cannot be undone." = "Сигурни ли сте, че искате да изтриете всички отметки? Това действие не може да бъде отменено.";
 
+/* No comment provided by engineer. */
+"Are you sure you want to delete this chat? This cannot be undone." = "Наистина ли искате да изтриете този чат? Това действие не може да бъде отменено.";
+
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Влизане";
 
@@ -1282,17 +1285,11 @@
 /* Text displayed when DuckPlayer is in 'Ask' mode. */
 "duckPlayer.ask.label" = "Питай всеки път";
 
-/* Subtitle explaining how Duck Player protects privacy */
-"duckplayer.blocks.ads.keeps.history.private" = "Duck Player блокира насочените реклами и запазва вашата история на гледанията поверителна.";
-
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Никога";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";
-
-/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
-"duckplayer.open.youtube.videos.here" = "Отваряйте видеа от YouTube тук";
 
 /* Button text to play a video in Duck Player */
 "duckplayer.play.in.duck.player" = "Пускане на това видео в Duck Player";
@@ -1366,17 +1363,8 @@
 /* Button text to open Duck Player settings */
 "duckplayer.toast.open.settings" = "Отваряне на настройки";
 
-/* Toast message informing user they can disable Duck Player in settings */
-"duckplayer.toast.turn.off.anytime" = "Можете да изключите Duck Player по всяко време в „Настройки“";
-
 /* Button text to watch video on YouTube */
 "duckplayer.watch.on.youtube" = "Гледане в YouTube";
-
-/* Subtitle explaining Duck Player blocks targeted ads */
-"duckplayer.watch.without.targeted.ads" = "Гледайте без насочени реклами";
-
-/* Title for Duck Player welcome message highlighting privacy benefits */
-"duckplayer.youtube.no.ads.privacy" = "Гледайте YouTube с по-малко реклами и повече поверителност";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Защита на имейл";
@@ -2410,6 +2398,30 @@
 /* Title for the Privacy Pro feedback form */
 "ppro.feedback-form.title" = "Изпратете отзив";
 
+/* Title of the section of a setting page that shows Scam Blocking preferences (weather warning in case of scam sites) */
+"preferences.scam-blocker.title" = "Блокиране на измами";
+
+/* Caption explaining the risk of disabling scam blocker protection */
+"preferences.scam-blocker.toggle-caption" = "Деактивирането на тази функция може да изложи личната ви информация на риск.";
+
+/* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
+"preferences.scam-blocker.toggle-label" = "Предупреждения в сайтове, отбелязани за измами, фишинг или злонамерен софтуер. [Научете повече](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/scam-blocker/)";
+
+/* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
+"preferences.smarter-encryption.description" = "Автоматично надграждане на връзките до HTTPS, когато е възможно. [Научете повече](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
+
+/* Title of the section of a setting page that shows Smarter Encryption preferences */
+"preferences.smarter-encryption.title" = "Smarter Encryption";
+
+/* Status indicator of a browser privacy protection feature. */
+"preferences.status-indicator.always-on" = "Винаги включено";
+
+/* Title of the option to show the Threat Protection preferences */
+"preferences.threat-protection" = "Защита от заплахи";
+
+/* Caption of the option to show the Threat Protection preferences */
+"preferences.threat-protection.caption" = "Усъвършенстваните защити на DuckDuckGo предотвратяват често срещаните заплахи, като същевременно запазват връзката ви сигурна.";
+
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Някои отметки или пароли са форматирани неправилно или са твърде дълги и не бяха синхронизирани.";
 
@@ -2838,6 +2850,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Кой уебсайт е повреден?";
+
+/* No comment provided by engineer. */
+"Stop generating..." = "Спиране на генерирането...";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Запазено име на хост: %@";

@@ -262,6 +262,9 @@
 /* No comment provided by engineer. */
 "Are you sure you want to delete all bookmarks? This action cannot be undone." = "Är du säker på att du vill ta bort alla bokmärken? Åtgärden kan inte ångras.";
 
+/* No comment provided by engineer. */
+"Are you sure you want to delete this chat? This cannot be undone." = "Är du säker på att du vill ta bort den här chatten? Detta kan inte ångras.";
+
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Logga in";
 
@@ -1282,17 +1285,11 @@
 /* Text displayed when DuckPlayer is in 'Ask' mode. */
 "duckPlayer.ask.label" = "Fråga varje gång";
 
-/* Subtitle explaining how Duck Player protects privacy */
-"duckplayer.blocks.ads.keeps.history.private" = "Duck Player blockerar riktade annonser och håller din tittarhistorik privat.";
-
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Aldrig";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";
-
-/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
-"duckplayer.open.youtube.videos.here" = "Öppna YouTube-videor här";
 
 /* Button text to play a video in Duck Player */
 "duckplayer.play.in.duck.player" = "Spela den här videon i Duck Player";
@@ -1366,17 +1363,8 @@
 /* Button text to open Duck Player settings */
 "duckplayer.toast.open.settings" = "Öppna inställningar";
 
-/* Toast message informing user they can disable Duck Player in settings */
-"duckplayer.toast.turn.off.anytime" = "Du kan när som helst inaktivera Duck Player i Inställningar";
-
 /* Button text to watch video on YouTube */
 "duckplayer.watch.on.youtube" = "Se på Youtube";
-
-/* Subtitle explaining Duck Player blocks targeted ads */
-"duckplayer.watch.without.targeted.ads" = "Titta utan riktade annonser";
-
-/* Title for Duck Player welcome message highlighting privacy benefits */
-"duckplayer.youtube.no.ads.privacy" = "Titta på YouTube med färre annonser och mer sekretess";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "E-postskydd";
@@ -2410,6 +2398,30 @@
 /* Title for the Privacy Pro feedback form */
 "ppro.feedback-form.title" = "Skicka återkoppling";
 
+/* Title of the section of a setting page that shows Scam Blocking preferences (weather warning in case of scam sites) */
+"preferences.scam-blocker.title" = "Bedrägeriblockerare";
+
+/* Caption explaining the risk of disabling scam blocker protection */
+"preferences.scam-blocker.toggle-caption" = "Om den här funktionen inaktiveras kan dina personuppgifter utsättas för risker.";
+
+/* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
+"preferences.scam-blocker.toggle-label" = "Varna på webbplatser som har flaggats för bedrägerier, nätfiske eller skadlig programvara. [Läs mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/scam-blocker/)";
+
+/* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
+"preferences.smarter-encryption.description" = "Uppgraderar automatiskt länkar till HTTPS när det är möjligt. [Läs mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
+
+/* Title of the section of a setting page that shows Smarter Encryption preferences */
+"preferences.smarter-encryption.title" = "Smarter Encryption";
+
+/* Status indicator of a browser privacy protection feature. */
+"preferences.status-indicator.always-on" = "Alltid på";
+
+/* Title of the option to show the Threat Protection preferences */
+"preferences.threat-protection" = "Skydd mot hot";
+
+/* Caption of the option to show the Threat Protection preferences */
+"preferences.threat-protection.caption" = "DuckDuckGos förbättrade skydd stoppar vanliga hot samtidigt som din anslutning förblir säker.";
+
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Vissa bokmärken eller lösenord är felaktigt formaterade eller för långa och synkroniserades inte.";
 
@@ -2838,6 +2850,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Vilken webbplats är skadad?";
+
+/* No comment provided by engineer. */
+"Stop generating..." = "Sluta generera ...";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Lagrade värdnamn: %@";

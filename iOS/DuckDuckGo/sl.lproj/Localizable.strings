@@ -262,6 +262,9 @@
 /* No comment provided by engineer. */
 "Are you sure you want to delete all bookmarks? This action cannot be undone." = "Ali ste prepričani, da želite izbrisati vse zaznamke? Tega dejanja ni mogoče razveljaviti.";
 
+/* No comment provided by engineer. */
+"Are you sure you want to delete this chat? This cannot be undone." = "Ste prepričani, da želite izbrisati ta klepet? Tega ni mogoče razveljaviti.";
+
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Prijavite se";
 
@@ -1282,17 +1285,11 @@
 /* Text displayed when DuckPlayer is in 'Ask' mode. */
 "duckPlayer.ask.label" = "Vprašaj vsakič";
 
-/* Subtitle explaining how Duck Player protects privacy */
-"duckplayer.blocks.ads.keeps.history.private" = "Predvajalnik Duck Player blokira ciljane oglase in ohranja vašo zgodovino ogledov zasebno.";
-
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Nikoli";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";
-
-/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
-"duckplayer.open.youtube.videos.here" = "Videoposnetke iz YouTuba odpri tukaj";
 
 /* Button text to play a video in Duck Player */
 "duckplayer.play.in.duck.player" = "Predvajaj ta videoposnetek v predvajalniku Duck Player";
@@ -1366,17 +1363,8 @@
 /* Button text to open Duck Player settings */
 "duckplayer.toast.open.settings" = "Odpri nastavitve";
 
-/* Toast message informing user they can disable Duck Player in settings */
-"duckplayer.toast.turn.off.anytime" = "Predvajalnik Duck Player lahko kadar koli izklopite v nastavitvah";
-
 /* Button text to watch video on YouTube */
 "duckplayer.watch.on.youtube" = "Glej na YouTubu";
-
-/* Subtitle explaining Duck Player blocks targeted ads */
-"duckplayer.watch.without.targeted.ads" = "Glejte brez ciljanih oglasov";
-
-/* Title for Duck Player welcome message highlighting privacy benefits */
-"duckplayer.youtube.no.ads.privacy" = "Glejte YouTube z manj oglasi in več zasebnosti";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Zaščita e-pošte";
@@ -2410,6 +2398,30 @@
 /* Title for the Privacy Pro feedback form */
 "ppro.feedback-form.title" = "Pošljite povratne informacije";
 
+/* Title of the section of a setting page that shows Scam Blocking preferences (weather warning in case of scam sites) */
+"preferences.scam-blocker.title" = "Preprečevanje prevar";
+
+/* Caption explaining the risk of disabling scam blocker protection */
+"preferences.scam-blocker.toggle-caption" = "Če omogočite to funkcijo, lahko ogrozite varnost svojih osebnih podatkov.";
+
+/* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
+"preferences.scam-blocker.toggle-label" = "Prikaži opozorilo na spletnih mestih, označenih zaradi prevar, lažnega predstavljanja ali zlonamerne programske opreme. [Več o tem](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/scam-blocker/)";
+
+/* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
+"preferences.smarter-encryption.description" = "Samodejno nadgradi povezave na HTTPS, kadar je to mogoče. [Več o tem](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
+
+/* Title of the section of a setting page that shows Smarter Encryption preferences */
+"preferences.smarter-encryption.title" = "Smarter Encryption";
+
+/* Status indicator of a browser privacy protection feature. */
+"preferences.status-indicator.always-on" = "Vedno vklopljeno";
+
+/* Title of the option to show the Threat Protection preferences */
+"preferences.threat-protection" = "Zaščita pred grožnjami";
+
+/* Caption of the option to show the Threat Protection preferences */
+"preferences.threat-protection.caption" = "Izboljšana zaščita DuckDuckGo prestreže pogoste grožnje in obenem skrbi za varnost vaše povezave.";
+
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Nekateri zaznamki ali gesla so napačno oblikovani ali predolgi in niso bili sinhronizirani.";
 
@@ -2838,6 +2850,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "Katera spletna stran je poškodovana?";
+
+/* No comment provided by engineer. */
+"Stop generating..." = "Ustavi ustvarjanje …";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Shranjeno ime gostitelja: %@";

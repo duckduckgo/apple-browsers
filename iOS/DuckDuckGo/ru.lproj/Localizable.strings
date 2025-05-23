@@ -262,6 +262,9 @@
 /* No comment provided by engineer. */
 "Are you sure you want to delete all bookmarks? This action cannot be undone." = "Вы точно хотите удалить все закладки? Это действие нельзя отменить.";
 
+/* No comment provided by engineer. */
+"Are you sure you want to delete this chat? This cannot be undone." = "Вы точно хотите удалить этот чат? Это необратимая операция.";
+
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Войти";
 
@@ -1265,7 +1268,7 @@
 "duckai.settings.enable.browsing-menu-toggle" = "Меню браузера";
 
 /* Toggle text to enable/disable Duck.ai in tab manager */
-"duckai.settings.enable.tab-switcher-toggle" = "Tabs Screen";
+"duckai.settings.enable.tab-switcher-toggle" = "Экран вкладок";
 
 /* Toggle text to enable/disable Duck.ai in voice search */
 "duckai.settings.enable.voice-search-toggle" = "Голосовой поиск";
@@ -1282,17 +1285,11 @@
 /* Text displayed when DuckPlayer is in 'Ask' mode. */
 "duckPlayer.ask.label" = "Спрашивать каждый раз";
 
-/* Subtitle explaining how Duck Player protects privacy */
-"duckplayer.blocks.ads.keeps.history.private" = "Проигрыватель Duck Player блокирует целевую рекламу и хранит вашу историю просмотров в тайне.";
-
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Никогда";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Проигрыватель Duck Player";
-
-/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
-"duckplayer.open.youtube.videos.here" = "Открывать видео из YouTube здесь";
 
 /* Button text to play a video in Duck Player */
 "duckplayer.play.in.duck.player" = "Воспроизвести в Duck Player";
@@ -1366,17 +1363,8 @@
 /* Button text to open Duck Player settings */
 "duckplayer.toast.open.settings" = "Открыть Настройки";
 
-/* Toast message informing user they can disable Duck Player in settings */
-"duckplayer.toast.turn.off.anytime" = "Duck Player можно в любой момент отключить в настройках.";
-
 /* Button text to watch video on YouTube */
 "duckplayer.watch.on.youtube" = "Смотреть на YouTube";
-
-/* Subtitle explaining Duck Player blocks targeted ads */
-"duckplayer.watch.without.targeted.ads" = "Видео без целевой рекламы";
-
-/* Title for Duck Player welcome message highlighting privacy benefits */
-"duckplayer.youtube.no.ads.privacy" = "Меньше рекламы и больше приватности при просмотре YouTube-роликов";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Защита электронной почты";
@@ -2410,6 +2398,30 @@
 /* Title for the Privacy Pro feedback form */
 "ppro.feedback-form.title" = "Отправить отзыв";
 
+/* Title of the section of a setting page that shows Scam Blocking preferences (weather warning in case of scam sites) */
+"preferences.scam-blocker.title" = "Блокировщик мошенничества";
+
+/* Caption explaining the risk of disabling scam blocker protection */
+"preferences.scam-blocker.toggle-caption" = "При отключении этой функции ваши личные данные могут оказаться под угрозой.";
+
+/* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
+"preferences.scam-blocker.toggle-label" = "Предупреждать о мошеннических, фишинговых и вредоносных сайтах. [Подробнее...](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/scam-blocker/)";
+
+/* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
+"preferences.smarter-encryption.description" = "По возможности автоматически переводит ссылки на более безопасный протокол HTTPS. [Подробнее...](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
+
+/* Title of the section of a setting page that shows Smarter Encryption preferences */
+"preferences.smarter-encryption.title" = "Усовершенствованное шифрование";
+
+/* Status indicator of a browser privacy protection feature. */
+"preferences.status-indicator.always-on" = "Всегда включено";
+
+/* Title of the option to show the Threat Protection preferences */
+"preferences.threat-protection" = "Защита от угроз";
+
+/* Caption of the option to show the Threat Protection preferences */
+"preferences.threat-protection.caption" = "Функции повышенной защиты DuckDuckGo пресекают распространенные угрозы, одновременно обеспечивая вам безопасное соединение.";
+
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Некоторые закладки или пароли не синхронизируются из-за неверного формата или превышения ограничений по длине.";
 
@@ -2838,6 +2850,9 @@
 
 /* No comment provided by engineer. */
 "siteFeedback.urlPlaceholder" = "На каком сайте возникает проблема?";
+
+/* No comment provided by engineer. */
+"Stop generating..." = "Остановить генерацию...";
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Сохраненное имя хоста: %@";

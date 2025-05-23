@@ -223,10 +223,7 @@ protocol DuckPlayerSettings: AnyObject {
     var nativeUIWasUsed: Bool { get set }
 
     // Whether the Native UI settings were mapped
-    var nativeUISettingsMapped: Bool { get set }
-
-    // Pixel Handler
-    var pixelHandler: DuckPlayerPixelFiring.Type { get }
+    var nativeUISettingsMapped: Bool { get set }    
 
     /// Initializes a new instance with the provided app settings and privacy configuration manager.
     ///
@@ -236,8 +233,7 @@ protocol DuckPlayerSettings: AnyObject {
     init(appSettings: AppSettings,
          privacyConfigManager: PrivacyConfigurationManaging,
          featureFlagger: FeatureFlagger,
-         internalUserDecider: InternalUserDecider,
-         pixelHandler: DuckPlayerPixelFiring.Type)
+         internalUserDecider: InternalUserDecider)
 
     /// Triggers a notification to update subscribers about settings changes.
     func triggerNotification()
@@ -249,8 +245,7 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
     private var appSettings: AppSettings
     private let privacyConfigManager: PrivacyConfigurationManaging
     private var isFeatureEnabledCancellable: AnyCancellable?
-    private var featureFlagger: FeatureFlagger
-    var pixelHandler: DuckPlayerPixelFiring.Type
+    private var featureFlagger: FeatureFlagger    
 
     // DuckPlayer Classic is enabled (Web Version)
     private var _isDuckPlayerClassicEnabled: Bool
@@ -294,12 +289,10 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
     init(appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          privacyConfigManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
          featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
-         internalUserDecider: InternalUserDecider = AppDependencyProvider.shared.internalUserDecider,
-         pixelHandler: DuckPlayerPixelFiring.Type = DuckPlayerPixelHandler.self) {
+         internalUserDecider: InternalUserDecider = AppDependencyProvider.shared.internalUserDecider) {
         self.appSettings = appSettings
         self.privacyConfigManager = privacyConfigManager
-        self.featureFlagger = featureFlagger
-        self.pixelHandler = pixelHandler
+        self.featureFlagger = featureFlagger        
         
         // DuckPlayer Classic is enabled (Web Version)
         self._isDuckPlayerClassicEnabled = featureFlagger.isFeatureOn(.duckPlayer)
@@ -389,8 +382,7 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
         }
         set {
             if newValue != appSettings.duckPlayerNativeUISERPEnabled {
-                appSettings.duckPlayerNativeUISERPEnabled = newValue
-                pixelHandler.fire(newValue ? .duckPlayerNativeSettingsSerpOn : .duckPlayerNativeSettingsSerpOff)
+                appSettings.duckPlayerNativeUISERPEnabled = newValue                
                 triggerNotification()
             }
         }
@@ -404,17 +396,9 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
             return appSettings.duckPlayerNativeYoutubeMode
         }
         set {
-            // Allow direct setting if needed, potentially overridden by variant change
+            // Allow d  irect setting if needed, potentially overridden by variant change
             if newValue != appSettings.duckPlayerNativeYoutubeMode {
                 appSettings.duckPlayerNativeYoutubeMode = newValue
-                switch newValue {
-                case .auto:
-                    pixelHandler.fire(.duckPlayerNativeSettingsYoutubeAutomatic)
-                case .ask:
-                    pixelHandler.fire(.duckPlayerNativeSettingsYoutubeChoose)
-                case .never:
-                    pixelHandler.fire(.duckPlayerNativeSettingsYoutubeDontShow)
-                }
                 triggerNotification()
             }
         }

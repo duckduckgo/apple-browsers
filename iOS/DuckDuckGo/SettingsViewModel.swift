@@ -51,6 +51,7 @@ final class SettingsViewModel: ObservableObject {
     let experimentalThemingManager: ExperimentalThemingManager
     var experimentalAIChatManager: ExperimentalAIChatManager
     private let duckPlayerSettings: DuckPlayerSettings
+    private let duckPlayerPixelHandler: DuckPlayerPixelFiring.Type
     let featureDiscovery: FeatureDiscovery
 
     // Subscription Dependencies
@@ -365,6 +366,7 @@ final class SettingsViewModel: ObservableObject {
             set: {
                 self.appSettings.duckPlayerNativeUISERPEnabled = $0
                 self.state.duckPlayerNativeUISERPEnabled = $0
+                self.duckPlayerPixelHandler.fire($0 ? .duckPlayerNativeSettingsSerpOn : .duckPlayerNativeSettingsSerpOff)
             }
         )
     }
@@ -377,6 +379,15 @@ final class SettingsViewModel: ObservableObject {
             set: {
                 self.appSettings.duckPlayerNativeYoutubeMode = $0
                 self.state.duckPlayerNativeYoutubeMode = $0
+
+                switch $0 {
+                case .auto:
+                    self.duckPlayerPixelHandler.fire(.duckPlayerNativeSettingsYoutubeAutomatic)
+                case .ask:
+                    self.duckPlayerPixelHandler.fire(.duckPlayerNativeSettingsYoutubeChoose)
+                case .never:
+                    self.duckPlayerPixelHandler.fire(.duckPlayerNativeSettingsYoutubeDontShow)
+                }
             }
         )
     }
@@ -480,6 +491,7 @@ final class SettingsViewModel: ObservableObject {
          experimentalThemingManager: ExperimentalThemingManager,
          experimentalAIChatManager: ExperimentalAIChatManager,
          duckPlayerSettings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
+         duckPlayerPixelHandler: DuckPlayerPixelFiring.Type = DuckPlayerPixelHandler.self,
          featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
          subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping = SubscriptionFreeTrialsHelper()
     ) {
@@ -502,6 +514,7 @@ final class SettingsViewModel: ObservableObject {
         self.experimentalThemingManager = experimentalThemingManager
         self.experimentalAIChatManager = experimentalAIChatManager
         self.duckPlayerSettings = duckPlayerSettings
+        self.duckPlayerPixelHandler = duckPlayerPixelHandler
         self.featureDiscovery = featureDiscovery
         self.subscriptionFreeTrialsHelper = subscriptionFreeTrialsHelper
         setupNotificationObservers()

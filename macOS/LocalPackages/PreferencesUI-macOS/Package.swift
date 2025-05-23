@@ -12,7 +12,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../SwiftUIExtensions"),
-        .package(url: "https://github.com/duckduckgo/DesignResourcesKit", exact: "4.4.2")
+        .package(url: "https://github.com/duckduckgo/DesignResourcesKit", exact: "5.0.0")
     ],
     targets: [
         .target(

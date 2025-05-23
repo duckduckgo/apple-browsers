@@ -129,7 +129,8 @@ final class RemoteMessagingClientTests: XCTestCase {
                 internalUserDecider: InternalUserDeciderMock(),
                 statisticsStore: MockStatisticsStore(),
                 variantManager: MockVariantManager(),
-                subscriptionManager: subscriptionAuthV1toV2Bridge
+                subscriptionManager: subscriptionAuthV1toV2Bridge,
+                featureFlagger: MockFeatureFlagger()
             ),
             remoteMessagingAvailabilityProvider: availabilityProvider
         )

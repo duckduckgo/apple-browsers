@@ -153,7 +153,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .privacyProOnboardingPromotion,
              .syncSetupBarcodeIsUrlBased,
              .canScanUrlBasedSyncSetupBarcodes,
-             .duckPlayerNativeUI, 
+             .duckPlayerNativeUI,
              .privacyProFreeTrial:
             return true
         case .onboardingSetAsDefaultBrowser:

@@ -218,9 +218,7 @@ struct LargeOmniBarState {
         let showBackground = true
         let showClear = false
         var showAbort: Bool { isLoading }
-
-        // To be removed
-        var showRefresh: Bool { false }
+        let showRefresh = true
         var showShare: Bool { !isLoading }
         let showMenu = true
         let showSettings = false

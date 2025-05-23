@@ -3156,6 +3156,7 @@
 		BB7BAAC02DDBADB2004A5A58 /* NavigationToolbarIconsProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB7BAABE2DDBADB1004A5A58 /* NavigationToolbarIconsProviding.swift */; };
 		BB7BAAC22DDBB096004A5A58 /* AddressBarStyleProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB7BAAC12DDBB089004A5A58 /* AddressBarStyleProviding.swift */; };
 		BB7BAAC32DDBB096004A5A58 /* AddressBarStyleProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB7BAAC12DDBB089004A5A58 /* AddressBarStyleProviding.swift */; };
+		BB7D100C2DE0D9430027222A /* DesignResourcesKitIcons in Frameworks */ = {isa = PBXBuildFile; productRef = BB7D100B2DE0D9430027222A /* DesignResourcesKitIcons */; };
 		BB7D35702DB80E0D0002CDB6 /* TabStyleProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB7D356F2DB80E040002CDB6 /* TabStyleProviding.swift */; };
 		BB7D35712DB80E0D0002CDB6 /* TabStyleProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB7D356F2DB80E040002CDB6 /* TabStyleProviding.swift */; };
 		BB80DDCF2D75E94D00ED1FFF /* DefaultBrowserAndDockPromptCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB80DDCE2D75E94A00ED1FFF /* DefaultBrowserAndDockPromptCoordinatorTests.swift */; };
@@ -5293,6 +5294,7 @@
 		BB7BAABB2DDBAD4F004A5A58 /* IconsProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IconsProviding.swift; sourceTree = "<group>"; };
 		BB7BAABE2DDBADB1004A5A58 /* NavigationToolbarIconsProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationToolbarIconsProviding.swift; sourceTree = "<group>"; };
 		BB7BAAC12DDBB089004A5A58 /* AddressBarStyleProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarStyleProviding.swift; sourceTree = "<group>"; };
+		BB7D100A2DE0D9370027222A /* DesignResourcesKitIcons */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = DesignResourcesKitIcons; path = ../SharedPackages/DesignResourcesKitIcons; sourceTree = SOURCE_ROOT; };
 		BB7D356F2DB80E040002CDB6 /* TabStyleProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabStyleProviding.swift; sourceTree = "<group>"; };
 		BB80DDCE2D75E94A00ED1FFF /* DefaultBrowserAndDockPromptCoordinatorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DefaultBrowserAndDockPromptCoordinatorTests.swift; sourceTree = "<group>"; };
 		BB80DDD12D75EEA100ED1FFF /* ApplicationBuildType.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ApplicationBuildType.swift; sourceTree = "<group>"; };
@@ -5801,6 +5803,7 @@
 				1EA7B8D32B7E078C000330A4 /* SubscriptionUI in Frameworks */,
 				4B9EE3182D76C80800DDC75C /* BrowserServicesKit in Frameworks */,
 				4B9EE31C2D76C81600DDC75C /* Configuration in Frameworks */,
+				BB7D100C2DE0D9430027222A /* DesignResourcesKitIcons in Frameworks */,
 				4B9EE3222D76C83900DDC75C /* DuckPlayer in Frameworks */,
 				379230942D38527E0019E130 /* HistoryView in Frameworks */,
 				B6F7128129F681EB00594A45 /* QuickLookUI.framework in Frameworks */,
@@ -6487,6 +6490,7 @@
 		378E279C2970217400FCADA2 /* LocalPackages */ = {
 			isa = PBXGroup;
 			children = (
+				BB7D100A2DE0D9370027222A /* DesignResourcesKitIcons */,
 				31B649382DB2899500A7AEE0 /* AIChat */,
 				7B3A16402D4B798000D4C869 /* AppInfoRetriever */,
 				9D9DE5712C63A96400D20B15 /* AppKitExtensions */,
@@ -11275,6 +11279,7 @@
 				9DB980132D96AFEA00B174B3 /* DataBrokerProtection-macOS */,
 				31B649392DB289A600A7AEE0 /* AIChat */,
 				316AC7882DC28DDA003D9770 /* UIComponents */,
+				BB7D100B2DE0D9430027222A /* DesignResourcesKitIcons */,
 			);
 			productName = DuckDuckGo;
 			productReference = AA585D7E248FD31100E9A3E2 /* DuckDuckGo.app */;
@@ -17528,6 +17533,10 @@
 			isa = XCSwiftPackageProductDependency;
 			package = B6EC37F529B5DAAC001ACE79 /* XCRemoteSwiftPackageReference "swifter" */;
 			productName = Swifter;
+		};
+		BB7D100B2DE0D9430027222A /* DesignResourcesKitIcons */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = DesignResourcesKitIcons;
 		};
 		BDADBDC82BD2BC2200421B9B /* Lottie */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -38,8 +38,8 @@ public protocol DuckPlayerPixelFiring {
     ///   - parameters: Additional parameters to include with the pixel
     ///   - debounceTime: Time in seconds to debounce identical pixel events
     static func fireDaily(_ pixel: Pixel.Event,
-                         withAdditionalParameters parameters: [String: String],
-                         debounceTime: Int)
+                          withAdditionalParameters parameters: [String: String],
+                          debounceTime: Int)
 }
 
 public extension DuckPlayerPixelFiring {
@@ -73,14 +73,14 @@ public extension DuckPlayerPixelFiring {
 
 public final class DuckPlayerPixelHandler: DuckPlayerPixelFiring {
     public static func fire(_ pixel: Pixel.Event,
-                           withAdditionalParameters parameters: [String: String],
-                           debounceTime: Int) {
+                            withAdditionalParameters parameters: [String: String],
+                            debounceTime: Int) {
         Pixel.fire(pixel: pixel, withAdditionalParameters: parameters, debounce: debounceTime)
     }
 
     public static func fireDaily(_ pixel: Pixel.Event,
-                                withAdditionalParameters parameters: [String: String],
-                                debounceTime: Int) {
+                                 withAdditionalParameters parameters: [String: String],
+                                 debounceTime: Int) {
         DailyPixel.fire(pixel: pixel, withAdditionalParameters: parameters)
     }
 }

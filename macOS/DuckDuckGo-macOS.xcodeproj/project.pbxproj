@@ -2542,6 +2542,10 @@
 		9FBD84782BB3E54200220859 /* InstallationAttributionPixelHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FBD84762BB3E54200220859 /* InstallationAttributionPixelHandlerTests.swift */; };
 		9FBD847A2BB3EC3300220859 /* MockAttributionOriginProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FBD84792BB3EC3300220859 /* MockAttributionOriginProvider.swift */; };
 		9FBD847B2BB3EC3300220859 /* MockAttributionOriginProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FBD84792BB3EC3300220859 /* MockAttributionOriginProvider.swift */; };
+		9FCB94682DE05A4A00BC662B /* TimerInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FCB94672DE05A4400BC662B /* TimerInterface.swift */; };
+		9FCB94692DE05A4A00BC662B /* TimerInterface.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FCB94672DE05A4400BC662B /* TimerInterface.swift */; };
+		9FCB946B2DE05AC800BC662B /* MockTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FCB946A2DE05AC600BC662B /* MockTimer.swift */; };
+		9FCB946C2DE05AC800BC662B /* MockTimer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FCB946A2DE05AC600BC662B /* MockTimer.swift */; };
 		9FDA6C212B79A59D00E099A9 /* BookmarkFavoriteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDA6C202B79A59D00E099A9 /* BookmarkFavoriteView.swift */; };
 		9FDA6C222B79A59D00E099A9 /* BookmarkFavoriteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FDA6C202B79A59D00E099A9 /* BookmarkFavoriteView.swift */; };
 		9FEE98652B846870002E44E8 /* AddEditBookmarkView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FEE98642B846870002E44E8 /* AddEditBookmarkView.swift */; };
@@ -4863,6 +4867,8 @@
 		9FBD84722BB3E15D00220859 /* InstallationAttributionPixelHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstallationAttributionPixelHandler.swift; sourceTree = "<group>"; };
 		9FBD84762BB3E54200220859 /* InstallationAttributionPixelHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstallationAttributionPixelHandlerTests.swift; sourceTree = "<group>"; };
 		9FBD84792BB3EC3300220859 /* MockAttributionOriginProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAttributionOriginProvider.swift; sourceTree = "<group>"; };
+		9FCB94672DE05A4400BC662B /* TimerInterface.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerInterface.swift; sourceTree = "<group>"; };
+		9FCB946A2DE05AC600BC662B /* MockTimer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockTimer.swift; sourceTree = "<group>"; };
 		9FDA6C202B79A59D00E099A9 /* BookmarkFavoriteView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarkFavoriteView.swift; sourceTree = "<group>"; };
 		9FEE98642B846870002E44E8 /* AddEditBookmarkView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddEditBookmarkView.swift; sourceTree = "<group>"; };
 		9FEE98682B85B869002E44E8 /* BookmarksDialogViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksDialogViewModel.swift; sourceTree = "<group>"; };
@@ -8494,6 +8500,7 @@
 				9F15567D2DDC3F8E00A35DBA /* MockDefaultBrowserAndDockPromptFeatureFlagger.swift */,
 				9F1556802DDC41D800A35DBA /* MockDefaultBrowserAndDockPromptStorage.swift */,
 				9FFBEE822DE016D50058B11A /* MockDefaultBrowserAndDockPromptStatusUpdateNotifier.swift */,
+				9FCB946A2DE05AC600BC662B /* MockTimer.swift */,
 			);
 			path = Mocks;
 			sourceTree = "<group>";
@@ -8586,6 +8593,14 @@
 				9FBB0C042CBD223D0006B6A6 /* ViewHighlighter.swift */,
 			);
 			path = ViewHighlighter;
+			sourceTree = "<group>";
+		};
+		9FCB94662DE05A3600BC662B /* SharedInterfaces */ = {
+			isa = PBXGroup;
+			children = (
+				9FCB94672DE05A4400BC662B /* TimerInterface.swift */,
+			);
+			path = SharedInterfaces;
 			sourceTree = "<group>";
 		};
 		9FFBEE712DDEDC540058B11A /* Utilities */ = {
@@ -10321,6 +10336,7 @@
 		BBDE001A2D6DE66100109F88 /* DefaultBrowserAndAddToDockPrompts */ = {
 			isa = PBXGroup;
 			children = (
+				9FCB94662DE05A3600BC662B /* SharedInterfaces */,
 				9FFBEE752DDEDE770058B11A /* DefaultBrowserAndDockPromptStoreMigrator.swift */,
 				BBE948CF2D6FD10C00FAC581 /* DefaultBrowserAndDockPromptStoring.swift */,
 				BB7696C42D6E333300AD8DAB /* DefaultBrowserAndDockPromptPresenting.swift */,
@@ -13070,6 +13086,7 @@
 				CBECDB882CDACE29005B8B87 /* BrokenSitePromptLimiter.swift in Sources */,
 				B645D8F729FA95440024461F /* WKProcessPoolExtension.swift in Sources */,
 				9F9C49FE2BC7E9830099738D /* BookmarkAllTabsDialogViewModel.swift in Sources */,
+				9FCB94692DE05A4A00BC662B /* TimerInterface.swift in Sources */,
 				9F514F922B7D88AD001832A9 /* AddEditBookmarkFolderDialogView.swift in Sources */,
 				3706FC52293F65D500E42796 /* MouseOverAnimationButton.swift in Sources */,
 				3706FC53293F65D500E42796 /* TabBarScrollView.swift in Sources */,
@@ -13277,6 +13294,7 @@
 				1D838A342C44F0320078373F /* ReleaseNotesParserTests.swift in Sources */,
 				5603D90729B7B746007F9F01 /* MockTabViewItemDelegate.swift in Sources */,
 				3706FDF9293F661700E42796 /* TabViewModelTests.swift in Sources */,
+				9FCB946C2DE05AC800BC662B /* MockTimer.swift in Sources */,
 				37DB56F62C3B3C420093D4DC /* MockRemoteMessagingStore.swift in Sources */,
 				9F872DA12B90644800138637 /* ContextualMenuTests.swift in Sources */,
 				3706FDFA293F661700E42796 /* DefaultBrowserPreferencesTests.swift in Sources */,
@@ -14757,6 +14775,7 @@
 				AAE7527A263B046100B973F8 /* History.xcdatamodeld in Sources */,
 				B64C853D26944B940048FEBE /* PermissionStore.swift in Sources */,
 				4BB99D0126FE191E001E4761 /* ChromiumBookmarksReader.swift in Sources */,
+				9FCB94682DE05A4A00BC662B /* TimerInterface.swift in Sources */,
 				B6C0B23426E71BCD0031CB7F /* Downloads.xcdatamodeld in Sources */,
 				37EE55E92D5F197300D53C7C /* BadgeAnimationView.swift in Sources */,
 				37EE55EA2D5F197300D53C7C /* BadgeNotificationAnimationModel.swift in Sources */,
@@ -15329,6 +15348,7 @@
 				B603975329C1FFAE00902A34 /* ExpectedNavigationExtension.swift in Sources */,
 				56BA1E802BAB2E43001CF69F /* ErrorPageTabExtensionTest.swift in Sources */,
 				B603975029C1FF5F00902A34 /* TestsURLExtension.swift in Sources */,
+				9FCB946B2DE05AC800BC662B /* MockTimer.swift in Sources */,
 				1DA7FEE62D883436004882E9 /* PinnedTabsManagerProvidingMock.swift in Sources */,
 				B6A5A27E25B9403E00AA7ADA /* FileStoreMock.swift in Sources */,
 				567A23DB2C8894CD0010F66C /* ContextualDaxDialogsFactoryTests.swift in Sources */,

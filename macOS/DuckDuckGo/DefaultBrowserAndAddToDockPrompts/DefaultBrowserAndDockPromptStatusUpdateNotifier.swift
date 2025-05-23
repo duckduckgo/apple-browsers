@@ -69,37 +69,3 @@ final class DefaultBrowserAndDockPromptStatusUpdateNotifier: DefaultBrowserAndDo
         timer = nil
     }
 }
-
-// MARK: - Interface For Testing
-
-public protocol TimerInterface: AnyObject {
-    var isValid: Bool { get }
-    func invalidate()
-    func fire()
-}
-
-extension Timer: TimerInterface {}
-
-public protocol TimerCreating: AnyObject {
-    func makeTimer(withTimeInterval interval: TimeInterval, repeats: Bool, on runLoop: RunLoop, block: @escaping @Sendable (TimerInterface) -> Void) -> TimerInterface
-}
-
-public extension TimerCreating {
-
-    func makeTimer(withTimeInterval interval: TimeInterval, repeats: Bool, block: @escaping @Sendable (TimerInterface) -> Void) -> TimerInterface {
-        makeTimer(withTimeInterval: interval, repeats: repeats, on: .main, block: block)
-    }
-
-}
-
-public final class TimerFactory: TimerCreating {
-
-    public init() {}
-
-    public func makeTimer(withTimeInterval interval: TimeInterval, repeats: Bool, on runLoop: RunLoop, block: @escaping @Sendable (TimerInterface) -> Void) -> TimerInterface {
-        let timer = Timer(timeInterval: interval, repeats: repeats, block: block)
-        runLoop.add(timer, forMode: .common)
-        return timer
-    }
-
-}

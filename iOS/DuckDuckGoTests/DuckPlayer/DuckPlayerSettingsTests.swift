@@ -38,13 +38,13 @@ extension UIDevice {
     static let originalDevice = UIDevice.current
     static var mockDevice = MockUIDevice()
     
-    @objc static var swizzled_current: UIDevice {
+    @objc static var swizzledCurrent: UIDevice {
         return mockDevice
     }
     
     static func swizzleCurrent() {
         let originalSelector = #selector(getter: UIDevice.current)
-        let swizzledSelector = #selector(getter: UIDevice.swizzled_current)
+        let swizzledSelector = #selector(getter: UIDevice.swizzledCurrent)
         
         let originalMethod = class_getClassMethod(UIDevice.self, originalSelector)!
         let swizzledMethod = class_getClassMethod(UIDevice.self, swizzledSelector)!
@@ -54,7 +54,7 @@ extension UIDevice {
     
     static func unswizzleCurrent() {
         let originalSelector = #selector(getter: UIDevice.current)
-        let swizzledSelector = #selector(getter: UIDevice.swizzled_current)
+        let swizzledSelector = #selector(getter: UIDevice.swizzledCurrent)
         
         let originalMethod = class_getClassMethod(UIDevice.self, originalSelector)!
         let swizzledMethod = class_getClassMethod(UIDevice.self, swizzledSelector)!
@@ -69,6 +69,7 @@ class DuckPlayerSettingsTests: XCTestCase {
     private var mockPrivacyConfig: PrivacyConfigurationManagerMock!
     private var mockFeatureFlagger: MockFeatureFlagger!
     private var settings: DuckPlayerSettingsDefault!
+    private var internalUserDecider: MockInternalUserDecider!
 
     override func setUp() {
         super.setUp()
@@ -79,6 +80,7 @@ class DuckPlayerSettingsTests: XCTestCase {
         mockAppSettings = AppSettingsMock()
         mockPrivacyConfig = PrivacyConfigurationManagerMock()
         mockFeatureFlagger = MockFeatureFlagger()
+        internalUserDecider = MockInternalUserDecider()
         settings = DuckPlayerSettingsDefault(appSettings: mockAppSettings,
                                            privacyConfigManager: mockPrivacyConfig,
                                            featureFlagger: mockFeatureFlagger)
@@ -98,12 +100,22 @@ class DuckPlayerSettingsTests: XCTestCase {
         // Setup: Device is phone, feature flag disabled
         MockUIDevice.mockUserInterfaceIdiom = .phone
         mockFeatureFlagger.enabledFeatureFlags = [.duckPlayer] // DuckPlayerNativeUI not enabled
+        // Use the correct internal user decider mock and set to false
+        let mockInternalUserDecider = MockDuckPlayerInternalUserDecider()
+        mockInternalUserDecider.mockIsInternalUser = false
+        mockFeatureFlagger.internalUserDecider = mockInternalUserDecider
         
         // Configure app settings with defaults
         mockAppSettings.duckPlayerNativeUI = true
         mockAppSettings.duckPlayerNativeUISERPEnabled = true
         mockAppSettings.duckPlayerAutoplay = true
         mockAppSettings.duckPlayerNativeYoutubeMode = .ask
+        
+        // Re-initialize settings with the updated feature flagger and internal user decider
+        settings = DuckPlayerSettingsDefault(appSettings: mockAppSettings,
+                                           privacyConfigManager: mockPrivacyConfig,
+                                           featureFlagger: mockFeatureFlagger,
+                                           internalUserDecider: mockInternalUserDecider)
         
         // Test that nativeUI is disabled when feature flag is off
         XCTAssertFalse(settings.nativeUI, "nativeUI should be false when feature flag is disabled")
@@ -123,7 +135,8 @@ class DuckPlayerSettingsTests: XCTestCase {
         // Re-initialize settings with updated feature flags
         settings = DuckPlayerSettingsDefault(appSettings: mockAppSettings,
                                            privacyConfigManager: mockPrivacyConfig,
-                                           featureFlagger: mockFeatureFlagger)
+                                           featureFlagger: mockFeatureFlagger,
+                                           internalUserDecider: mockInternalUserDecider)
         
         // Test that nativeUI is now enabled
         XCTAssertTrue(settings.nativeUI, "nativeUI should be true when feature flag is enabled")

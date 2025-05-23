@@ -67,8 +67,7 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
 
     public init(code: String) {
         self.code = code
-        showQRCodeModel = ShowQRCodeViewModel()
-        showQRCodeModel.code = code
+        showQRCodeModel = ShowQRCodeViewModel(code: code)
     }
 
     func codeScanned(_ code: String) async -> Bool {

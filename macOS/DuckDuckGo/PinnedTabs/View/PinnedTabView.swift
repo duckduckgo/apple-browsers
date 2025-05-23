@@ -50,7 +50,8 @@ struct PinnedTabView: View, DropDelegate {
                     separatorColor: Color(tabStyleProvider.separatorColor),
                     separatorHeight: tabStyleProvider.separatorHeight,
                     drawSeparator: !collectionModel.itemsWithoutSeparator.contains(model),
-                    showSShaped: tabStyleProvider.shouldShowSShapedTab
+                    showSShaped: tabStyleProvider.shouldShowSShapedTab,
+                    applyTabShadow: tabStyleProvider.applyTabShadow
                 )
                 .environmentObject(model)
                 .environmentObject(model.crashIndicatorModel)
@@ -228,6 +229,7 @@ struct PinnedTabInnerView: View {
     var separatorHeight: CGFloat
     var drawSeparator: Bool = true
     var showSShaped: Bool
+    var applyTabShadow: Bool
 
     @Environment(\.colorScheme) var colorScheme
     @EnvironmentObject var model: Tab
@@ -274,6 +276,10 @@ struct PinnedTabInnerView: View {
             width: showSShaped ? width + rampSize + 4 : width,
             height: height
         )
+        .shadow(color: isSelected && applyTabShadow ? Color.shadowPrimary : .clear,
+                radius: isSelected && applyTabShadow ? 4 : 0,
+                x: 0,
+                y: isSelected && applyTabShadow ? -2 : 0)
     }
 
     @ViewBuilder

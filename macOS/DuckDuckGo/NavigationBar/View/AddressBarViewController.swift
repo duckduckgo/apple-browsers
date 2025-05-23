@@ -425,6 +425,14 @@ final class AddressBarViewController: NSViewController {
         activeBackgroundView.borderColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.2) : visualStyle.colorsProvider.accentPrimaryColor
 
         setupAddressBarPlaceHolder()
+        setupAddressBarCornerRadius()
+    }
+
+    private func setupAddressBarCornerRadius() {
+        activeBackgroundView.setCornerRadius(visualStyle.addressBarActiveBackgroundViewRadius)
+        inactiveBackgroundView.setCornerRadius(visualStyle.addressBarInactiveBackgroundViewRadius)
+        innerBorderView.setCornerRadius(visualStyle.addressBarInnerBorderViewRadius)
+        activeOuterBorderView.setCornerRadius(visualStyle.addressBarActiveOuterBorderViewRadius)
     }
 
     private func setupAddressBarPlaceHolder() {

@@ -42,6 +42,7 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
     private var mockNativeUIPresenter: MockDuckPlayerNativeUIPresenting!
     private var cancellables = Set<AnyCancellable>()
     private var mockDelayHandler: MockDelayHandler!
+    private var mockInternalUserdecider: MockInternalUserDecider!
 
     // MARK: - Setup
     override func setUp() {
@@ -51,11 +52,13 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         mockPrivacyConfig = PrivacyConfigurationManagerMock()
         mockFeatureFlagger = MockDuckPlayerFeatureFlagger()
         mockDelayHandler = MockDelayHandler()
+        mockInternalUserdecider = MockInternalUserDecider()
 
         playerSettings = MockDuckPlayerSettings(
             appSettings: mockAppSettings,
             privacyConfigManager: mockPrivacyConfig,
-            featureFlagger: mockFeatureFlagger
+            featureFlagger: mockFeatureFlagger,
+            internalUserDecider: mockInternalUserdecider
         )
         playerSettings.variant = .nativeOptIn
         
@@ -88,7 +91,7 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         mockFeatureFlagger = nil
         mockTabNavigator = nil
         sut = nil
-        mockNativeUIPresenter = nil        
+        mockNativeUIPresenter = nil
         mockDelayHandler = nil
         super.tearDown()
     }

@@ -135,7 +135,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
     func testWhenMatchingMessageShouldBeExcludedThenReturnNull() {
         matcher = RemoteMessagingConfigMatcher(
                 appAttributeMatcher: MobileAppAttributeMatcher(statisticsStore: MockStatisticsStore(), variantManager: MockVariantManager()),
-                deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersion, locale: "en-US"),
+                deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersion, locale: "en-US", formFactor: "phone"),
                 userAttributeMatcher: MobileUserAttributeMatcher(
                     statisticsStore: MockStatisticsStore(),
                     variantManager: MockVariantManager(),
@@ -294,7 +294,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
         let os = ProcessInfo().operatingSystemVersion
         matcher = RemoteMessagingConfigMatcher(
                 appAttributeMatcher: MobileAppAttributeMatcher(statisticsStore: MockStatisticsStore(), variantManager: MockVariantManager()),
-                deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersion, locale: "en-US"),
+                deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersion, locale: "en-US", formFactor: "phone"),
                 userAttributeMatcher: MobileUserAttributeMatcher(
                     statisticsStore: MockStatisticsStore(),
                     variantManager: MockVariantManager(),
@@ -341,7 +341,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
 
         matcher = RemoteMessagingConfigMatcher(
                 appAttributeMatcher: MobileAppAttributeMatcher(statisticsStore: MockStatisticsStore(), variantManager: MockVariantManager()),
-                deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersion, locale: "en-US"),
+                deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersion, locale: "en-US", formFactor: "phone"),
                 userAttributeMatcher: MobileUserAttributeMatcher(
                     statisticsStore: MockStatisticsStore(),
                     variantManager: MockVariantManager(),
@@ -386,7 +386,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
 
         matcher = RemoteMessagingConfigMatcher(
                 appAttributeMatcher: MobileAppAttributeMatcher(statisticsStore: MockStatisticsStore(), variantManager: MockVariantManager()),
-                deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersion, locale: "en-US"),
+                deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersion, locale: "en-US", formFactor: "phone"),
                 userAttributeMatcher: MobileUserAttributeMatcher(
                     statisticsStore: MockStatisticsStore(),
                     variantManager: MockVariantManager(),
@@ -431,7 +431,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
 
         matcher = RemoteMessagingConfigMatcher(
                 appAttributeMatcher: MobileAppAttributeMatcher(statisticsStore: MockStatisticsStore(), variantManager: MockVariantManager()),
-                deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersion, locale: "en-US"),
+                deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersion, locale: "en-US", formFactor: "phone"),
                 userAttributeMatcher: MobileUserAttributeMatcher(
                     statisticsStore: MockStatisticsStore(),
                     variantManager: MockVariantManager(),
@@ -476,7 +476,7 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
 
         matcher = RemoteMessagingConfigMatcher(
                 appAttributeMatcher: MobileAppAttributeMatcher(statisticsStore: MockStatisticsStore(), variantManager: MockVariantManager()),
-                deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersion, locale: "en-US"),
+                deviceAttributeMatcher: DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersion, locale: "en-US", formFactor: "phone"),
                 userAttributeMatcher: MobileUserAttributeMatcher(
                     statisticsStore: MockStatisticsStore(),
                     variantManager: MockVariantManager(),

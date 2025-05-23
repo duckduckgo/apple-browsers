@@ -57,23 +57,26 @@ public protocol SyncConnectionControlling {
     /**
      Returns a device ID, public key and secret key ready for display and allows callers attempt to fetch the transmitted public key
      */
-    func startExchangeMode() async throws -> String
+    func startExchangeMode(shouldGenerateURLBasedCode: Bool)  async throws -> String
 
     /**
      Returns a device id and temporary secret key ready for display and allows callers attempt to fetch the transmitted recovery key.
      */
-    func startConnectMode() async throws -> String
+    func startConnectMode(shouldGenerateURLBasedCode: Bool) async throws -> String
 
     /**
      Cancels any in-flight connection flows
      */
     func cancel() async
 
+    @discardableResult
+    func startPairingMode(_ pairingInfo: PairingInfo) async -> Bool
+
     /**
      Handles a scanned or pasted key and starts excange, recovery or connect flow
      */
     @discardableResult
-    func syncCodeEntered(code: String) async -> Bool
+    func syncCodeEntered(code: String, canScanURLBarcodes: Bool) async -> Bool
 
     /**
      Logs in to an existing account using a recovery key.
@@ -109,19 +112,26 @@ public actor SyncConnectionController: SyncConnectionControlling {
         self.dependencies = dependencies
     }
 
-    public func startExchangeMode() throws -> String {
+    public func startExchangeMode(shouldGenerateURLBasedCode: Bool = false) throws -> String {
         let exchanger = try remoteExchange()
         self.exchanger = exchanger
         startExchangePolling()
-        return exchanger.code
+        guard shouldGenerateURLBasedCode else {
+            return exchanger.code
+        }
+        let pairingInfo = PairingInfo(base64Code: exchanger.code, deviceName: deviceName)
+        return pairingInfo.toURL(baseURL: URL(string: "https://duckduckgo.com")!).absoluteString
     }
 
-    public func startConnectMode() throws -> String {
+    public func startConnectMode(shouldGenerateURLBasedCode: Bool = false) throws -> String {
         let connector = try remoteConnect()
         self.connector = connector
         self.startConnectPolling()
-
-        return connector.code
+        guard shouldGenerateURLBasedCode else {
+            return connector.code
+        }
+        let pairingInfo = PairingInfo(base64Code: connector.code, deviceName: deviceName)
+        return pairingInfo.toURL(baseURL: URL(string: "https://duckduckgo.com")!).absoluteString
     }
 
     public func cancel() {
@@ -131,7 +141,29 @@ public actor SyncConnectionController: SyncConnectionControlling {
     }
 
     @discardableResult
-    public func syncCodeEntered(code: String) async -> Bool {
+    public func startPairingMode(_ pairingInfo: PairingInfo) async -> Bool {
+        let syncCode: SyncCode
+        do {
+            syncCode = try SyncCode.decodeBase64String(pairingInfo.base64Code)
+        } catch {
+            await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: error)
+            return false
+        }
+
+        await delegate?.controllerDidRecognizeScannedCode()
+
+        if let exchangeKey = syncCode.exchangeKey {
+            return await handleExchangeKey(exchangeKey)
+        } else if let connectKey = syncCode.connect {
+            return await handleConnectKey(connectKey)
+        } else {
+            await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: nil)
+            return false
+        }
+    }
+
+    @discardableResult
+    public func syncCodeEntered(code: String, canScanURLBarcodes: Bool = true) async -> Bool {
         guard !isCodeHandlingInFlight else {
             return false
         }
@@ -139,9 +171,14 @@ public actor SyncConnectionController: SyncConnectionControlling {
         defer {
             isCodeHandlingInFlight = false
         }
+
         let syncCode: SyncCode
         do {
-            syncCode = try SyncCode.decodeBase64String(code)
+            if canScanURLBarcodes, let url = URL(string: code), let pairingInfo = PairingInfo(url: url) {
+                return await startPairingMode(pairingInfo)
+            } else {
+                syncCode = try SyncCode.decodeBase64String(code)
+            }
         } catch {
             await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: error)
             return false
@@ -271,6 +308,7 @@ public actor SyncConnectionController: SyncConnectionControlling {
                 Task {
                     await delegate?.controllerDidError(.failedToCreateAccount, underlyingError: error)
                 }
+                return false
             }
         }
         do {

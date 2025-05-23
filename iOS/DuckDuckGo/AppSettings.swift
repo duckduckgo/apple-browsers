@@ -95,7 +95,7 @@ protocol AppSettings: AnyObject, OnboardingDebugAppSettings {
     var duckPlayerPrimingMessagePresented: Bool { get set }
     var duckPlayerVariant: DuckPlayerVariant { get set }
     var duckPlayerWelcomeMessageShown: Bool { get set }
-    var duckPlayerControlsVisible: Bool { get set }    
+    var duckPlayerControlsVisible: Bool { get set }
     var duckPlayerNativeUIWasUsed: Bool { get set }
     var duckPlayerNativeUISettingsMapped: Bool { get set }
 }

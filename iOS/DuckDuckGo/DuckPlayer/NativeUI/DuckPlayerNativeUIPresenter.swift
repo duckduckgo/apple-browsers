@@ -643,7 +643,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
 
         // Update State
         self.state.hasBeenShown = true
-        
+
         // Reset the presented pill type as we are transitioning to the full player
         self.presentedPillType = nil
 

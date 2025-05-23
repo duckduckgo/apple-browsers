@@ -233,7 +233,7 @@ protocol DuckPlayerSettings: AnyObject {
     /// - Parameters:
     ///   - appSettings: The application settings.
     ///   - privacyConfigManager: The privacy configuration manager.
-    init(appSettings: AppSettings, 
+    init(appSettings: AppSettings,
          privacyConfigManager: PrivacyConfigurationManaging,
          featureFlagger: FeatureFlagger,
          internalUserDecider: InternalUserDecider,
@@ -248,7 +248,7 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
 
     private var appSettings: AppSettings
     private let privacyConfigManager: PrivacyConfigurationManaging
-    private var isFeatureEnabledCancellable: AnyCancellable?    
+    private var isFeatureEnabledCancellable: AnyCancellable?
     private var featureFlagger: FeatureFlagger
     var pixelHandler: DuckPlayerPixelFiring.Type
 
@@ -303,13 +303,13 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
         
         // DuckPlayer Classic is enabled (Web Version)
         self._isDuckPlayerClassicEnabled = featureFlagger.isFeatureOn(.duckPlayer)
-        
+
         let isInternalUser = internalUserDecider.isInternalUser
-        let isFeatureEnabled = featureFlagger.isFeatureOn(.duckPlayer) && 
+        let isFeatureEnabled = featureFlagger.isFeatureOn(.duckPlayer) &&
                                      featureFlagger.isFeatureOn(.duckPlayerNativeUI)
 
         // DuckPlayer Native is only available on iPhone and only if DuckPlayer is enabled
-        self._isDuckPlayerNativeEnabled = (isInternalUser || isFeatureEnabled) && 
+        self._isDuckPlayerNativeEnabled = (isInternalUser || isFeatureEnabled) &&
                                           UIDevice.current.userInterfaceIdiom == .phone
         registerConfigPublisher()
         registerForNotificationChanges()
@@ -376,9 +376,9 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
 
     // Determines if we should use the native verion of DuckPlayer (Internal only)
     var nativeUI: Bool {
-        get {            
+        get {
             return isDuckPlayerNativeEnabled
-        }        
+        }
     }
 
     // Determines if DuckPlayer Native is enabled for SERP
@@ -561,7 +561,6 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
             triggerNotification()
         }
     }
-
 
     /// Registers a publisher to listen for changes in the privacy configuration.
     private func registerConfigPublisher() {

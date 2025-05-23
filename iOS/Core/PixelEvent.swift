@@ -1188,10 +1188,7 @@ extension Pixel {
         // MARK: - Duck Player Native pixels
         
         /// First time Duck Player is opened each day
-        /// - Parameters:
-        ///   - setting: The Duck Player setting (default | always)
-        ///   - toggle: The toggle state (visible | hidden)
-        case duckPlayerNativeDailyUniqueView(setting: String, toggle: String)
+        case duckPlayerNativeDailyUniqueView
         /// Duck Player is opened automatically on YouTube
         case duckPlayerNativeViewFromYoutubeAutomatic
         /// Duck Player is opened from the YouTube entry point
@@ -1200,8 +1197,6 @@ extension Pixel {
         case duckPlayerNativeViewFromYoutubeReEntryPoint
         /// Duck Player is opened from SERP
         case duckPlayerNativeViewFromSERP
-        /// Duck Player is opened from Other
-        case duckPlayerNativeViewFromOther
         /// Watch on YouTube button is tapped from Duck Player UI
         case duckPlayerNativeWatchOnYoutube
         /// Duck Player entry point is shown on YouTube video page
@@ -2345,11 +2340,8 @@ extension Pixel.Event {
         // MARK: - Duck Player Native pixels
 
         /// First time Duck Player is opened each day
-        /// - Parameters:
-        ///   - settings: The Duck Player setting (default | always)
-        ///   - toggle: The toggle state (visible | hidden)
         case .duckPlayerNativeDailyUniqueView:
-            return "duckplayer_native-daily-unique-view"
+            return "duckplayer_native_daily-unique-view"
         /// Duck Player is opened automatically on YouTube
         case .duckPlayerNativeViewFromYoutubeAutomatic:
             return "duckplayer_native_view-from_youtube_automatic"
@@ -2362,7 +2354,6 @@ extension Pixel.Event {
         /// Duck Player is opened from SERP
         case .duckPlayerNativeViewFromSERP:
             return "duckplayer_native_view-from_serp"
-        /// Duck Player is opened from Other
         /// Watch on YouTube button is tapped from Duck Player UI
         case .duckPlayerNativeWatchOnYoutube:
             return "duckplayer_native_watch-on-youtube"

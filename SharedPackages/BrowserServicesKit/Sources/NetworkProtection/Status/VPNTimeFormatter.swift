@@ -20,11 +20,13 @@ import Foundation
 
 public protocol VPNTimeFormatting {
     func string(from ti: TimeInterval) -> String
+    var zero: String { get }
 }
 
 public final class VPNTimeFormatter: VPNTimeFormatting {
 
     private let formatter: DateComponentsFormatter
+    public let zero = "0s"
 
     public init() {
         formatter = DateComponentsFormatter()
@@ -34,6 +36,6 @@ public final class VPNTimeFormatter: VPNTimeFormatting {
     }
 
     public func string(from ti: TimeInterval) -> String {
-        formatter.string(from: ti) ?? "0s"
+        formatter.string(from: ti) ?? zero
     }
 }

@@ -117,6 +117,7 @@ public final class TunnelControllerViewModel: ObservableObject {
         self.proxySettings = proxySettings
         self.locationFormatter = locationFormatter
         self.timeLapsedFormatter = timeLapsedFormatter
+        self.timeLapsed = timeLapsedFormatter.zero
         self.uiActionHandler = uiActionHandler
 
         connectionStatus = statusReporter.statusObserver.recentValue
@@ -364,7 +365,7 @@ public final class TunnelControllerViewModel: ObservableObject {
     /// The description for the current connection status.
     /// When the status is `connected` this description will also show the time lapsed since connection.
     ///
-    @Published var timeLapsed = UserText.networkProtectionStatusViewTimerZero
+    @Published var timeLapsed: String
 
     @MainActor
     private func refreshTimeLapsed() {
@@ -372,9 +373,9 @@ public final class TunnelControllerViewModel: ObservableObject {
         case .connected(let connectedDate):
             timeLapsed = timeLapsedString(since: connectedDate)
         case .disconnecting:
-            timeLapsed = UserText.networkProtectionStatusViewTimerZero
+            timeLapsed = timeLapsedFormatter.zero
         default:
-            timeLapsed = UserText.networkProtectionStatusViewTimerZero
+            timeLapsed = timeLapsedFormatter.zero
         }
     }
 
@@ -554,6 +555,7 @@ public final class TunnelControllerViewModel: ObservableObject {
         }
 
         Task { @MainActor in
+            timerOverride = .none
             await tunnelController.start()
             refreshInternalIsRunning()
         }

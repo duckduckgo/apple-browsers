@@ -39,6 +39,7 @@ public final class StorePurchaseManagerMock: StorePurchaseManager {
     public var updateAvailableProductsCalled: Bool = false
     public var mostRecentTransactionCalled: Bool = false
     public var purchaseSubscriptionCalled: Bool = false
+    public var isEligibleForFreeTrialResult: Bool = false
 
     public init() { }
 
@@ -75,5 +76,9 @@ public final class StorePurchaseManagerMock: StorePurchaseManager {
     public func purchaseSubscription(with identifier: String, externalID: String) async -> Result<TransactionJWS, StorePurchaseManagerError> {
         purchaseSubscriptionCalled = true
         return purchaseSubscriptionResult!
+    }
+
+    public func isUserEligibleForFreeTrial() async -> Bool {
+        isEligibleForFreeTrialResult
     }
 }

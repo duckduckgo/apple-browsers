@@ -2770,6 +2770,9 @@
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe" = "Apsaugokite savo ryšį ir tapatybę su „Privacy Pro“.";
 
+/* Try Privacy Pro Free button text for privacy pro */
+"settings.subscription.try.free" = "Išbandyk „Privacy Pro“ nemokamai";
+
 /* Privacy pro description subtitle in settings */
 "settings.subscription.us.description" = "Apima mūsų VPN, Asmens duomenų pašalinimą ir Tapatybės vagystės atkūrimą.";
 

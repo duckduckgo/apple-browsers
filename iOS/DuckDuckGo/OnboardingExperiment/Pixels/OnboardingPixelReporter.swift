@@ -22,6 +22,32 @@ import Core
 import BrowserServicesKit
 import Onboarding
 import PixelKit
+import PixelExperimentKit
+
+/// A protocol that defines a method for firing experiment-related analytics pixels.
+///
+/// Types conforming to this protocol can be used to send experiment data (e.g., metrics and user actions).
+/// This protocol is particularly useful for injecting dependencies to enable testing.
+protocol ExperimentPixelFiring {
+    /// Fires an experiment pixel with the specified parameters.
+    ///
+    /// - Parameters:
+    ///   - subfeatureID: The unique identifier of the subfeature associated with the experiment.
+    ///   - metric: The name of the metric being tracked (e.g., impressions, clicks, conversions).
+    ///   - conversionWindowDays: The time range (in days) to associate the pixel with conversion events.
+    ///   - value: A string representing the value associated with the metric, such as counts or statuses.
+    static func fireExperimentPixel(for subfeatureID: SubfeatureID,
+                                    metric: String,
+                                    conversionWindowDays: ConversionWindow,
+                                    value: String)
+}
+
+/// Conforming `PixelKit` to the `ExperimentPixelFiring` protocol.
+///
+/// `PixelKit` provides the concrete implementation for firing experiment pixels. By extending
+/// `PixelKit` to conform to `ExperimentPixelFiring`, its functionality can be injected and mocked
+/// for testing purposes.
+extension PixelKit: ExperimentPixelFiring {}
 
 // MARK: - Pixel Fire Interface
 

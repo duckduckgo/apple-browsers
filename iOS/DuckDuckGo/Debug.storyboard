@@ -691,10 +691,10 @@
             </objects>
             <point key="canvasLocation" x="5052" y="2565"/>
         </scene>
-        <!--DBP-->
+        <!--PIR-->
         <scene sceneID="7e3-9G-Tmg">
             <objects>
-                <tableViewController storyboardIdentifier="DataBrokerProtectionDebugViewController" title="DBP" id="9hN-Ou-TPj" customClass="DataBrokerProtectionDebugViewController" sceneMemberID="viewController">
+                <tableViewController storyboardIdentifier="DataBrokerProtectionDebugViewController" title="PIR" id="9hN-Ou-TPj" customClass="DataBrokerProtectionDebugViewController" sceneMemberID="viewController">
                     <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="insetGrouped" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="18" estimatedSectionHeaderHeight="-1" sectionFooterHeight="18" estimatedSectionFooterHeight="-1" id="FvF-lV-H4w">
                         <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>

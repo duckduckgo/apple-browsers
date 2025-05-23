@@ -146,6 +146,7 @@ public class DataBrokerProtectionIOSManagerProvider {
 
 public final class DataBrokerProtectionIOSManager {
 
+    public static let backgroundJobIdentifier = "com.duckduckgo.app.dbp.backgroundProcessing"
     public static var shared: DataBrokerProtectionIOSManager?
 
     private let queueManager: BrokerProfileJobQueueManager
@@ -177,7 +178,7 @@ public final class DataBrokerProtectionIOSManager {
     }
 
     private func registerBackgroundTaskHandler() {
-        BGTaskScheduler.shared.register(forTaskWithIdentifier: "com.duckduckgo.app.dbp.backgroundProcessing", using: nil) { task in
+        BGTaskScheduler.shared.register(forTaskWithIdentifier: Self.backgroundJobIdentifier, using: nil) { task in
             self.handleBGProcessingTask(task: task)
         }
     }
@@ -266,7 +267,7 @@ public final class DataBrokerProtectionIOSManager {
         }
     }
 
-    private func validateRunPrerequisites() async -> Bool {
+    public func validateRunPrerequisites() async -> Bool {
         do {
             if !(try meetsProfileRunPrequisite) || !meetsAuthenticationRunPrequisite {
                 Logger.dataBrokerProtection.log("Prerequisites are invalid")

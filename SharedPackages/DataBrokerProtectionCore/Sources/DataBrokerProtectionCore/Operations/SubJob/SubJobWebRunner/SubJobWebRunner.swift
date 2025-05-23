@@ -55,7 +55,7 @@ public protocol SubJobWebRunning: CCFCommunicationDelegate {
     ///
     /// Returns `true` if the action has been executed and we should early return, not passing it to the webViewHandler
     /// Returns `false` if the action should be passed to the webViewHandler to execute
-    func canPerformNextAction(_ action: Action) async -> Bool
+    func evaluateActionAndHaltIfNeeded(_ action: Action) async -> Bool
 
     func executeNextStep() async
     func executeCurrentAction() async
@@ -65,7 +65,7 @@ public extension SubJobWebRunning {
 
     // MARK: - Shared functions
 
-    func canPerformNextAction(_ action: Action) async -> Bool {
+    func evaluateActionAndHaltIfNeeded(_ action: Action) async -> Bool {
         false
     }
 
@@ -126,7 +126,7 @@ public extension SubJobWebRunning {
             }
         }
 
-        if await canPerformNextAction(action) {
+        if await evaluateActionAndHaltIfNeeded(action) {
             return
         }
 

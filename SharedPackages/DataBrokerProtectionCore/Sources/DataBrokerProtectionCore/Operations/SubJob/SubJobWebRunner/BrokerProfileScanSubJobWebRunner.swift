@@ -116,7 +116,7 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
         await executeNextStep()
     }
 
-    public func canPerformNextAction(_ action: Action) async -> Bool {
+    public func evaluateActionAndHaltIfNeeded(_ action: Action) async -> Bool {
         /// Certain brokers force a page reload with a random time interval when the user lands on the search result
         /// page. The first time the action runs the C-S-S context is lost as the page is reloading and C-S-S fails
         /// to respond to the native message. We will try to run the action one more time after the page has loaded

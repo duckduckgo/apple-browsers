@@ -51,7 +51,7 @@ public final class PrivacyInfo {
     public var privacyExperimentCohorts: String
     public private(set) var debugFlags: String = ""
 
-    public init(url: URL, parentEntity: Entity?, protectionStatus: ProtectionStatus, malicousSiteThreatKind: MaliciousSiteProtection.ThreatKind? = .none, shouldCheckServerTrust: Bool = false, allActiveContentScopeExperiments: Experiments) {
+    public init(url: URL, parentEntity: Entity?, protectionStatus: ProtectionStatus, malicousSiteThreatKind: MaliciousSiteProtection.ThreatKind? = .none, shouldCheckServerTrust: Bool = false, allActiveContentScopeExperiments: Experiments = [:]) {
         self.url = url
         self.parentEntity = parentEntity
         self.protectionStatus = protectionStatus

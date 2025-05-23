@@ -95,6 +95,60 @@ final class ScriptSourceProviderTests: XCTestCase {
         XCTAssertEqual(cohorts[0].cohort, "aCohort")
         XCTAssertFalse(experimentManager.resolveContentScopeScriptActiveExperimentsWasCalled)
     }
+
+    @MainActor
+    func testCohortsRegeneratedOnlyOnceWhenAppUsedToday() throws {
+        // Given
+        let todayCohortData = ExperimentData(parentID: "todayParent", cohortID: "todayCohort", enrollmentDate: Date())
+        experimentManager.setResolveResult(["today": todayCohortData])
+        experimentManager.allActiveContentScopeExperiments = ["test": testExperimentData]
+        statisticsStore.isAppRetentionFiredToday = true
+        
+        // When
+        let sourceProvider = DefaultScriptSourceProvider(
+            appSettings: AppSettingsMock(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            contentBlockingManager: MockContentBlockerRulesManagerProtocol(),
+            fireproofing: MockFireproofing(),
+            contentScopeExperimentsManager: experimentManager,
+            statisticsStore: statisticsStore
+        )
+
+        // Access cohorts multiple times
+        _ = sourceProvider.currentCohorts
+        _ = sourceProvider.currentCohorts
+        _ = sourceProvider.currentCohorts
+
+        // Then
+        XCTAssertEqual(experimentManager.resolveContentScopeScriptActiveExperimentsCallCount, 1)
+    }
+
+    @MainActor
+    func testCohortsNotRegeneratedWhenAppNotUsedToday() throws {
+        // Given
+        let todayCohortData = ExperimentData(parentID: "todayParent", cohortID: "todayCohort", enrollmentDate: Date())
+        experimentManager.setResolveResult(["today": todayCohortData])
+        experimentManager.allActiveContentScopeExperiments = ["test": testExperimentData]
+        statisticsStore.isAppRetentionFiredToday = false
+        
+        // When
+        let sourceProvider = DefaultScriptSourceProvider(
+            appSettings: AppSettingsMock(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            contentBlockingManager: MockContentBlockerRulesManagerProtocol(),
+            fireproofing: MockFireproofing(),
+            contentScopeExperimentsManager: experimentManager,
+            statisticsStore: statisticsStore
+        )
+
+        // Access cohorts multiple times
+        _ = sourceProvider.currentCohorts
+        _ = sourceProvider.currentCohorts
+        _ = sourceProvider.currentCohorts
+
+        // Then
+        XCTAssertEqual(experimentManager.resolveContentScopeScriptActiveExperimentsCallCount, 0)
+    }
 }
 
 class MockContentBlockerRulesManagerProtocol: ContentBlockerRulesManagerProtocol {

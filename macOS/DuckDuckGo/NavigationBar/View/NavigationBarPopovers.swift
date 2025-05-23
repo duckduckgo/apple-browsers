@@ -75,7 +75,6 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
 
     private let networkProtectionPopoverManager: NetPPopoverManager
     private let isBurner: Bool
-//    private let contentScopeExperimentsManager: ContentScopeExperimentsManaging
 
     private var popoverIsShownCancellables = Set<AnyCancellable>()
 

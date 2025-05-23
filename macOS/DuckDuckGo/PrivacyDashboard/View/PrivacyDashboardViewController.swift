@@ -45,7 +45,15 @@ final class PrivacyDashboardViewController: NSViewController {
 
     public let rulesUpdateObserver = ContentBlockingRulesUpdateObserver()
 
-    private let brokenSiteReporter: BrokenSiteReporter
+    private let brokenSiteReporter: BrokenSiteReporter = {
+        BrokenSiteReporter(pixelHandler: { parameters in
+            let privacyConfigurationManager = ContentBlocking.shared.privacyConfigurationManager
+            var updatedParameters = parameters
+            PixelKit.fire(NonStandardEvent(NonStandardPixel.brokenSiteReport),
+                          withAdditionalParameters: updatedParameters,
+                          allowedQueryReservedCharacters: BrokenSiteReport.allowedQueryReservedCharacters)
+        }, keyValueStoring: UserDefaults.standard)
+    }()
 
     private let toggleProtectionsOffReporter: BrokenSiteReporter = {
         BrokenSiteReporter(pixelHandler: { parameters in
@@ -63,11 +71,6 @@ final class PrivacyDashboardViewController: NSViewController {
     }
     var sizeDelegate: PrivacyDashboardViewControllerSizeDelegate?
     private weak var tabViewModel: TabViewModel?
-    private let pixelFiring: (
-        _ event: PixelKitEvent,
-        _ withAdditionalParameters: [String: String]?,
-        _ allowedQueryReservedCharacters: CharacterSet?
-    ) -> Void
 
     private let privacyDashboardEvents = EventMapping<PrivacyDashboardEvents> { event, _, parameters, _ in
         let domainEvent: NonStandardPixel
@@ -85,40 +88,14 @@ final class PrivacyDashboardViewController: NSViewController {
 
     init(privacyInfo: PrivacyInfo? = nil,
          entryPoint: PrivacyDashboardEntryPoint = .dashboard,
-         privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
-         pixelFiring: @escaping (
-            _ event: PixelKitEvent,
-            _ withAdditionalParameters: [String: String]?,
-            _ allowedQueryReservedCharacters: CharacterSet?
-         ) -> Void = { event, parameters, allowedCharacters in
-             PixelKit.fire(
-                 event,
-                 withAdditionalParameters: parameters,
-                 allowedQueryReservedCharacters: allowedCharacters
-             )
-         }
-    ) {
+         privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager) {
         let toggleReportingConfiguration = ToggleReportingConfiguration(privacyConfigurationManager: privacyConfigurationManager)
         let toggleReportingFeature = ToggleReportingFeature(toggleReportingConfiguration: toggleReportingConfiguration)
         let toggleReportingManager = ToggleReportingManager(feature: toggleReportingFeature)
-        self.pixelFiring = pixelFiring
         self.privacyDashboardController = PrivacyDashboardController(privacyInfo: privacyInfo,
                                                                      entryPoint: entryPoint,
                                                                      toggleReportingManager: toggleReportingManager,
                                                                      eventMapping: privacyDashboardEvents)
-        self.brokenSiteReporter = BrokenSiteReporter(
-            pixelHandler: { parameters in
-                let updatedParameters = parameters // You can add logic here if needed
-
-                // Fire the real pixel via the injected closure
-                pixelFiring(
-                    NonStandardEvent(NonStandardPixel.brokenSiteReport),
-                    updatedParameters,
-                    BrokenSiteReport.allowedQueryReservedCharacters
-                )
-            },
-            keyValueStoring: UserDefaults.standard
-        )
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -129,7 +106,6 @@ final class PrivacyDashboardViewController: NSViewController {
     public func updateTabViewModel(_ tabViewModel: TabViewModel) {
         self.tabViewModel = tabViewModel
         privacyDashboardController.updatePrivacyInfo(tabViewModel.tab.privacyInfo)
-        guard AppVersion.runType != .unitTests else { return }
         rulesUpdateObserver.updateTabViewModel(tabViewModel, onPendingUpdates: { [weak self] in
             self?.sendPendingUpdates()
         })

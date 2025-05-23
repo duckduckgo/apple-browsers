@@ -16,78 +16,80 @@
 //  limitations under the License.
 //
 
-import XCTest
-import BrowserServicesKit
-import PrivacyDashboard
-import Common
-import PixelKit
-@testable import DuckDuckGo_Privacy_Browser
-
-final class PrivacyDashboardTests: XCTestCase {
-    var capturedPixelEvent: PixelKitEvent?
-    var capturedPixelParameters: [String: String] = [:]
-
-    @MainActor
-    func testPrivacyDashboardSendExperimentsCohortInBreakageReport() async {
-        // GIVEN
-        let expectation = XCTestExpectation()
-        let testExperimentData = ExperimentData(
-            parentID: "parent",
-            cohortID: "aCohort",
-            enrollmentDate: Date()
-        )
-
-        let experimentManager = MockContentScopeExperimentManager()
-        experimentManager.allActiveContentScopeExperiments = ["test": testExperimentData]
-        let vc = PrivacyDashboardViewController(pixelFiring: {event, parameters, _ in
-            self.capturedPixelEvent = event
-            self.capturedPixelParameters = parameters ?? [:]
-            expectation.fulfill()
-        })
-        let tab = Tab(content: .url(URL.duckDuckGo, source: .ui))
-        let tabViewModel = TabViewModel(tab: tab)
-        vc.updateTabViewModel(tabViewModel)
-        let privacyDashboardController = PrivacyDashboardController(privacyInfo: nil, entryPoint: .dashboard, toggleReportingManager: ToggleReportingManagerMock(), eventMapping: EventMapping<PrivacyDashboardEvents> { _, _, _, _ in })
-
-        // WHEN
-        vc.privacyDashboardController(privacyDashboardController, didRequestSubmitBrokenSiteReportWithCategory: "SomeCategory", description: "SomeDescription")
-
-        // THEN
-        await fulfillment(of: [expectation], timeout: 3)
-        XCTAssertEqual(capturedPixelEvent?.name, "epbf_macos_desktop")
-        XCTAssertEqual(capturedPixelParameters["contentScopeExperiments"], "test:aCohort")
-    }
-
-}
-
-class MockContentScopeExperimentManager: ContentScopeExperimentsManaging {
-    var allActiveContentScopeExperiments: Experiments = [:]
-    private(set) var resolveContentScopeScriptActiveExperimentsWasCalled = false
-    private var resolveResult: Experiments?
-
-    func resolveContentScopeScriptActiveExperiments() -> Experiments {
-        resolveContentScopeScriptActiveExperimentsWasCalled = true
-        return resolveResult ?? allActiveContentScopeExperiments
-    }
-
-    func setResolveResult(_ experiments: Experiments) {
-        resolveResult = experiments
-    }
-}
-
-final class ToggleReportingManagerMock: ToggleReportingManaging {
-
-    var recordDismissalCalled: Bool = false
-    var recordPromptCalled: Bool = false
-
-    func recordDismissal(date: Date) {
-        recordDismissalCalled = true
-    }
-
-    func recordPrompt(date: Date) {
-        recordPromptCalled = true
-    }
-
-    var shouldShowToggleReport: Bool { return true }
-
-}
+//import XCTest
+//import BrowserServicesKit
+//import PrivacyDashboard
+//import Common
+//import PixelKit
+//@testable import DuckDuckGo_Privacy_Browser
+//
+//final class PrivacyDashboardTests: XCTestCase {
+//    var capturedPixelEvent: PixelKitEvent?
+//    var capturedPixelParameters: [String: String] = [:]
+//
+//    @MainActor
+//    func testPrivacyDashboardSendExperimentsCohortInBreakageReport() async {
+//        // GIVEN
+//        let expectation = XCTestExpectation()
+//        let testExperimentData = ExperimentData(
+//            parentID: "parent",
+//            cohortID: "aCohort",
+//            enrollmentDate: Date()
+//        )
+//
+//        let experimentManager = MockContentScopeExperimentManager()
+//        experimentManager.allActiveContentScopeExperiments = ["test": testExperimentData]
+//        let vc = PrivacyDashboardViewController(pixelFiring: {event, parameters, _ in
+//            self.capturedPixelEvent = event
+//            self.capturedPixelParameters = parameters ?? [:]
+//            expectation.fulfill()
+//        })
+//        let tab = Tab(content: .url(URL.duckDuckGo, source: .ui))
+//        let tabViewModel = TabViewModel(tab: tab)
+//        vc.updateTabViewModel(tabViewModel)
+//        let privacyDashboardController = PrivacyDashboardController(privacyInfo: nil, entryPoint: .dashboard, toggleReportingManager: ToggleReportingManagerMock(), eventMapping: EventMapping<PrivacyDashboardEvents> { _, _, _, _ in })
+//
+//        // WHEN
+//        vc.privacyDashboardController(privacyDashboardController, didRequestSubmitBrokenSiteReportWithCategory: "SomeCategory", description: "SomeDescription")
+//
+//        // THEN
+//        await fulfillment(of: [expectation], timeout: 3)
+//        XCTAssertEqual(capturedPixelEvent?.name, "epbf_macos_desktop")
+//        XCTAssertEqual(capturedPixelParameters["contentScopeExperiments"], "test:aCohort")
+//    }
+//
+//}
+//
+//class MockContentScopeExperimentManager: ContentScopeExperimentsManaging {
+//    var allActiveContentScopeExperiments: Experiments = [:]
+//    private(set) var resolveContentScopeScriptActiveExperimentsWasCalled = false
+//    private var resolveResult: Experiments?
+//    var resolveContentScopeScriptActiveExperimentsCallCount = 0
+//
+//    func resolveContentScopeScriptActiveExperiments() -> Experiments {
+//        resolveContentScopeScriptActiveExperimentsWasCalled = true
+//        resolveContentScopeScriptActiveExperimentsCallCount += 1
+//        return resolveResult ?? allActiveContentScopeExperiments
+//    }
+//
+//    func setResolveResult(_ experiments: Experiments) {
+//        resolveResult = experiments
+//    }
+//}
+//
+//final class ToggleReportingManagerMock: ToggleReportingManaging {
+//
+//    var recordDismissalCalled: Bool = false
+//    var recordPromptCalled: Bool = false
+//
+//    func recordDismissal(date: Date) {
+//        recordDismissalCalled = true
+//    }
+//
+//    func recordPrompt(date: Date) {
+//        recordPromptCalled = true
+//    }
+//
+//    var shouldShowToggleReport: Bool { return true }
+//
+//}

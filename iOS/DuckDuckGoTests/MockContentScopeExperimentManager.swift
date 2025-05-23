@@ -24,9 +24,11 @@ class MockContentScopeExperimentManager: ContentScopeExperimentsManaging {
     var allActiveContentScopeExperiments: Experiments = [:]
     private var resolveResult: Experiments = [:]
     var resolveContentScopeScriptActiveExperimentsWasCalled = false
+    private(set) var resolveContentScopeScriptActiveExperimentsCallCount = 0
 
     func resolveContentScopeScriptActiveExperiments() -> Experiments {
         resolveContentScopeScriptActiveExperimentsWasCalled = true
+        resolveContentScopeScriptActiveExperimentsCallCount += 1
         return resolveResult
     }
     

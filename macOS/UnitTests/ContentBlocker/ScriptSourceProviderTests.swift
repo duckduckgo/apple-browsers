@@ -96,4 +96,79 @@ final class ScriptSourceProviderTests: XCTestCase {
         XCTAssertEqual(cohorts[0].cohort, "aCohort")
         XCTAssertFalse(experimentManager.resolveContentScopeScriptActiveExperimentsWasCalled)
     }
+
+    @MainActor
+    func testCohortsRegeneratedOnlyOnceWhenAppUsedToday() throws {
+        // Given
+        let todayCohortData = ExperimentData(parentID: "todayParent", cohortID: "todayCohort", enrollmentDate: Date())
+        experimentManager.setResolveResult(["today": todayCohortData])
+        experimentManager.allActiveContentScopeExperiments = ["test": testExperimentData]
+        statisticsStore.lastAppRetentionRequestDate = Date()
+        
+        // When
+        let sourceProvider = ScriptSourceProvider(
+            configStorage: MockConfigurationStore(),
+            privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+            webTrackingProtectionPreferences: WebTrackingProtectionPreferences(),
+            contentBlockingManager: MockContentBlockerRulesManagerProtocol(),
+            trackerDataManager: TrackerDataManager(etag: nil, data: Data(), embeddedDataProvider: MockEmbeddedDataProvider()),
+            experimentManager: experimentManager,
+            statisticsStore: statisticsStore,
+            tld: TLD()
+        )
+
+        // Access cohorts multiple times
+        _ = sourceProvider.currentCohorts
+        _ = sourceProvider.currentCohorts
+        _ = sourceProvider.currentCohorts
+
+        // Then
+        XCTAssertEqual(experimentManager.resolveContentScopeScriptActiveExperimentsCallCount, 1)
+    }
+
+    @MainActor
+    func testCohortsNotRegeneratedWhenAppNotUsedToday() throws {
+        // Given
+        let todayCohortData = ExperimentData(parentID: "todayParent", cohortID: "todayCohort", enrollmentDate: Date())
+        experimentManager.setResolveResult(["today": todayCohortData])
+        experimentManager.allActiveContentScopeExperiments = ["test": testExperimentData]
+        statisticsStore.lastAppRetentionRequestDate = Calendar.current.date(byAdding: .day, value: -1, to: Date())
+        
+        // When
+        let sourceProvider = ScriptSourceProvider(
+            configStorage: MockConfigurationStore(),
+            privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+            webTrackingProtectionPreferences: WebTrackingProtectionPreferences(),
+            contentBlockingManager: MockContentBlockerRulesManagerProtocol(),
+            trackerDataManager: TrackerDataManager(etag: nil, data: Data(), embeddedDataProvider: MockEmbeddedDataProvider()),
+            experimentManager: experimentManager,
+            statisticsStore: statisticsStore,
+            tld: TLD()
+        )
+
+        // Access cohorts multiple times
+        _ = sourceProvider.currentCohorts
+        _ = sourceProvider.currentCohorts
+        _ = sourceProvider.currentCohorts
+
+        // Then
+        XCTAssertEqual(experimentManager.resolveContentScopeScriptActiveExperimentsCallCount, 0)
+    }
+}
+
+class MockContentScopeExperimentManager: ContentScopeExperimentsManaging {
+    var allActiveContentScopeExperiments: Experiments = [:]
+    private(set) var resolveContentScopeScriptActiveExperimentsWasCalled = false
+    private var resolveResult: Experiments?
+    var resolveContentScopeScriptActiveExperimentsCallCount = 0
+
+    func resolveContentScopeScriptActiveExperiments() -> Experiments {
+        resolveContentScopeScriptActiveExperimentsWasCalled = true
+        resolveContentScopeScriptActiveExperimentsCallCount += 1
+        return resolveResult ?? allActiveContentScopeExperiments
+    }
+
+    func setResolveResult(_ experiments: Experiments) {
+        resolveResult = experiments
+    }
 }

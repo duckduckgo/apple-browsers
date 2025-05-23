@@ -469,6 +469,11 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
             presentedPillType = nil
         }
 
+        // If the welcome pill is already presented, don't show the entry pill
+        if presentedPillType == .welcome {
+            return
+        }
+
         // Determine the pill type
         let pillType: PillType
 

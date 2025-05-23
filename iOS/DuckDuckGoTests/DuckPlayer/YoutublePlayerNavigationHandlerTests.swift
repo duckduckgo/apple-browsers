@@ -46,7 +46,8 @@ class DuckPlayerNavigationHandlerTests: XCTestCase {
         mockPrivacyConfig = PrivacyConfigurationManagerMock()
         playerSettings = MockDuckPlayerSettings(appSettings: mockAppSettings,
                                                 privacyConfigManager: mockPrivacyConfig,
-                                                featureFlagger: MockDuckPlayerFeatureFlagger())
+                                                featureFlagger: MockDuckPlayerFeatureFlagger(),
+                                                internalUserDecider: MockInternalUserDecider())
         featureFlagger = MockDuckPlayerFeatureFlagger()
         player = MockDuckPlayer(settings: playerSettings, featureFlagger: featureFlagger)
 

@@ -1,0 +1,41 @@
+<svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <path fill="url(#Cookie-Blocked-Color-24_svg__a)" d="M12 2.625c.372 0 .664.303.71.672a9.255 9.255 0 0 0 7.993 7.992c.37.047.672.339.672.711 0 .288.15.219.125.5-.162-.169-.499.025-.679-.124a6 6 0 0 0-8.472 8.411c.157.193-.18.375 0 .547-.282.025-.061.041-.349.041a9.375 9.375 0 1 1 0-18.75Z"/>
+  <path fill="url(#Cookie-Blocked-Color-24_svg__b)" d="M12 2c.74 0 1.251.592 1.331 1.218l.012.09a8.63 8.63 0 0 0 7.44 7.36C21.407 10.749 22 11.26 22 12c0 .556-.722.76-1.148.402a6.478 6.478 0 0 0-.11-.09c.003-.104.008-.208.008-.312 0-.01-.002-.023-.02-.042a.18.18 0 0 0-.105-.049 9.847 9.847 0 0 1-.62-.101 5.96 5.96 0 0 0-2.353-.772 9.883 9.883 0 0 1-5.548-7.557l-.013-.103a.182.182 0 0 0-.049-.105c-.019-.019-.032-.021-.042-.021a8.75 8.75 0 0 0 0 17.5c.104 0 .208-.005.312-.009l.09.111C12.76 21.278 12.556 22 12 22 6.477 22 2 17.523 2 12S6.477 2 12 2Z"/>
+  <path fill="url(#Cookie-Blocked-Color-24_svg__c)" d="M7.75 14.333a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z"/>
+  <path fill="url(#Cookie-Blocked-Color-24_svg__d)" d="M11.75 10.667a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z"/>
+  <path fill="url(#Cookie-Blocked-Color-24_svg__e)" d="M6.667 9.75a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z"/>
+  <path fill="url(#Cookie-Blocked-Color-24_svg__f)" d="M9.75 5.75a1 1 0 1 1 0 2 1 1 0 0 1 0-2Z"/>
+  <path fill="#DE5833" d="M21.375 17a4.375 4.375 0 1 1-8.75 0 4.375 4.375 0 0 1 8.75 0Z"/>
+  <path fill="url(#Cookie-Blocked-Color-24_svg__g)" d="M20.75 17A3.75 3.75 0 1 0 17 20.75V22a5 5 0 1 1 0-10 5 5 0 0 1 0 10v-1.25A3.75 3.75 0 0 0 20.75 17Z"/>
+  <path fill="#fff" d="M19 16.375h.032a.625.625 0 0 1 0 1.25H15a.625.625 0 1 1 0-1.25h4Z"/>
+  <defs>
+    <linearGradient id="Cookie-Blocked-Color-24_svg__a" x1="12" x2="12" y1="2.75" y2="21.25" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFE8A3"/>
+      <stop offset="1" stop-color="#FC3"/>
+    </linearGradient>
+    <linearGradient id="Cookie-Blocked-Color-24_svg__b" x1="12" x2="12" y1="2" y2="22" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C18010"/>
+      <stop offset="1" stop-color="#92540C"/>
+    </linearGradient>
+    <linearGradient id="Cookie-Blocked-Color-24_svg__c" x1="12" x2="12" y1="2" y2="22" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C18010"/>
+      <stop offset="1" stop-color="#92540C"/>
+    </linearGradient>
+    <linearGradient id="Cookie-Blocked-Color-24_svg__d" x1="12" x2="12" y1="2" y2="22" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C18010"/>
+      <stop offset="1" stop-color="#92540C"/>
+    </linearGradient>
+    <linearGradient id="Cookie-Blocked-Color-24_svg__e" x1="12" x2="12" y1="2" y2="22" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C18010"/>
+      <stop offset="1" stop-color="#92540C"/>
+    </linearGradient>
+    <linearGradient id="Cookie-Blocked-Color-24_svg__f" x1="12" x2="12" y1="2" y2="22" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C18010"/>
+      <stop offset="1" stop-color="#92540C"/>
+    </linearGradient>
+    <linearGradient id="Cookie-Blocked-Color-24_svg__g" x1="17" x2="17" y1="12" y2="22" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#BC4726"/>
+      <stop offset="1" stop-color="#9A3216"/>
+    </linearGradient>
+  </defs>
+</svg>

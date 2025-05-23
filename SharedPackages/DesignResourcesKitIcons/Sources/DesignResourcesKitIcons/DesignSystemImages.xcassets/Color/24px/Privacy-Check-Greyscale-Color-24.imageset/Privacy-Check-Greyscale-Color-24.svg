@@ -1,0 +1,22 @@
+<svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <path fill="url(#Privacy-Check-Greyscale-Color-24_svg__a)" d="M14.554 3.372a3.719 3.719 0 0 0-5.205-.025l-1.24 1.202a1.28 1.28 0 0 1-1.265.306l-.377-.114a3.406 3.406 0 0 0-4.396 3.143l-.083 2.44a11.375 11.375 0 0 0 6.61 10.717l1.78.82a3.875 3.875 0 0 0 1.622.355c.523 0 .5-.716.5-.716s.307-.183 0-.531a6 6 0 0 1 8.184-8.705c.386.3.514-.648.816-.264.224-.959.034-.985 0-2-.034-1.015 0-2 0-2-.075-2.226-1.803-3.93-3.939-3.3l-.558.164c-.448.131-.932.01-1.264-.319l-1.185-1.173Z"/>
+  <path fill="url(#Privacy-Check-Greyscale-Color-24_svg__b)" d="M21.5 11.5c-.293-.373-.409 1.086-.78.792A5.975 5.975 0 0 0 17 11a5.994 5.994 0 0 0-5 2.682V2.297a3.707 3.707 0 0 1 2.554 1.075l1.186 1.173c.331.329.815.45 1.263.319l.558-.165C19.697 4.07 21.425 5.774 21.5 8v2c.034 1.015.224.541 0 1.5Z"/>
+  <path fill="url(#Privacy-Check-Greyscale-Color-24_svg__c)" d="M10.366 4.118a2.344 2.344 0 0 1 3.221.032l1.2 1.157a2.656 2.656 0 0 0 2.577.642l.704-.203a2.031 2.031 0 0 1 2.592 1.895l.08 2.85a9.93 9.93 0 0 1-.101 1.738c.482.368 1.255.171 1.31-.433.04-.442.054-.89.041-1.34l-.08-2.85a3.281 3.281 0 0 0-4.187-3.061l-.704.202a1.406 1.406 0 0 1-1.365-.34L14.455 3.25a3.594 3.594 0 0 0-4.94-.048l-1.32 1.224c-.364.338-.88.458-1.356.317l-.52-.154a3.281 3.281 0 0 0-4.214 3.068l-.067 2.855a11.25 11.25 0 0 0 6.403 10.42l1.949.93a3.75 3.75 0 0 0 1.75.363c.637-.023.747-.81.33-1.291a2.5 2.5 0 0 1-1.542-.2l-1.948-.93a10 10 0 0 1-5.693-9.262l.068-2.856a2.031 2.031 0 0 1 2.609-1.899l.52.154c.9.267 1.874.04 2.562-.599l1.32-1.224Z"/>
+  <circle cx="17" cy="17" r="4.5" fill="#4CBA3C"/>
+  <path stroke="#D3FFCC" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.25" d="m15.25 17.225 1 .9 2.5-2.25"/>
+  <circle cx="17" cy="17" r="4.375" stroke="#288419" stroke-width="1.25"/>
+  <defs>
+    <linearGradient id="Privacy-Check-Greyscale-Color-24_svg__a" x1="3.98" x2="11.14" y1="4.714" y2="22.561" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#fff"/>
+      <stop offset="1" stop-color="#DDD"/>
+    </linearGradient>
+    <linearGradient id="Privacy-Check-Greyscale-Color-24_svg__b" x1="13.489" x2="16.973" y1="2.297" y2="22.222" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E5E5E5"/>
+      <stop offset="1" stop-color="#AAA"/>
+    </linearGradient>
+    <linearGradient id="Privacy-Check-Greyscale-Color-24_svg__c" x1="12.031" x2="12.031" y1="1.983" y2="21.782" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#AAA"/>
+      <stop offset="1" stop-color="#666"/>
+    </linearGradient>
+  </defs>
+</svg>

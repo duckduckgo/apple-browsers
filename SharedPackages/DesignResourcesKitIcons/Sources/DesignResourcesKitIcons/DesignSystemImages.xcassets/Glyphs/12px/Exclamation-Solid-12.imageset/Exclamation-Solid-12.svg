@@ -1,0 +1,10 @@
+<svg fill="none" viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg">
+  <g clip-path="url(#Exclamation-Solid-12_svg__a)">
+    <path fill="#000" fill-rule="evenodd" d="M12 6A6 6 0 1 1 0 6a6 6 0 0 1 12 0Zm-6.85.517a.5.5 0 0 0 .5.483h.7a.5.5 0 0 0 .5-.483l.133-4a.5.5 0 0 0-.5-.517h-.966a.5.5 0 0 0-.5.517l.134 4ZM7 9a1 1 0 1 1-2 0 1 1 0 0 1 2 0Z" clip-rule="evenodd"/>
+  </g>
+  <defs>
+    <clipPath id="Exclamation-Solid-12_svg__a">
+      <path fill="#fff" d="M0 0h12v12H0z"/>
+    </clipPath>
+  </defs>
+</svg>

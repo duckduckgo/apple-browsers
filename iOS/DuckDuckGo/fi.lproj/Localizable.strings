@@ -2769,6 +2769,9 @@
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe" = "Suojaa yhteytesi ja identiteettisi Privacy Prolla";
 
+/* Try Privacy Pro Free button text for privacy pro */
+"settings.subscription.try.free" = "Kokeile Privacy Pro -tilausta ilmaiseksi";
+
 /* Privacy pro description subtitle in settings */
 "settings.subscription.us.description" = "Seuraavat sisältyvät: VPN, Personal Information Removal ja Identity Theft Restoration.";
 

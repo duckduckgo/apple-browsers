@@ -338,9 +338,9 @@ extension TabContent {
 
     var canBeBookmarked: Bool {
         switch self {
-        case .newtab, .onboarding, .bookmarks, .settings, .none:
+        case .history, .newtab, .onboarding, .bookmarks, .settings, .none:
             return false
-        case .url, .history, .subscription, .identityTheftRestoration, .dataBrokerProtection, .releaseNotes, .webExtensionUrl:
+        case .url, .subscription, .identityTheftRestoration, .dataBrokerProtection, .releaseNotes, .webExtensionUrl:
             return true
         }
     }

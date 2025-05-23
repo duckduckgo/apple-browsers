@@ -146,6 +146,7 @@ public class DataBrokerProtectionIOSManagerProvider {
 
 public final class DataBrokerProtectionIOSManager {
 
+    public static let backgroundJobIdentifier = "com.duckduckgo.app.dbp.backgroundProcessing"
     public static var shared: DataBrokerProtectionIOSManager?
 
     private let queueManager: BrokerProfileJobQueueManager
@@ -177,7 +178,7 @@ public final class DataBrokerProtectionIOSManager {
     }
 
     private func registerBackgroundTaskHandler() {
-        BGTaskScheduler.shared.register(forTaskWithIdentifier: "com.duckduckgo.app.dbp.backgroundProcessing", using: nil) { task in
+        BGTaskScheduler.shared.register(forTaskWithIdentifier: Self.backgroundJobIdentifier, using: nil) { task in
             self.handleBGProcessingTask(task: task)
         }
     }
@@ -248,19 +249,32 @@ public final class DataBrokerProtectionIOSManager {
         }
     }
 
-    private func validateRunPrerequisites() async -> Bool {
+    // MARK: - Run Prerequisites
 
+    public var meetsProfileRunPrequisite: Bool {
+        get throws {
+            return try database.fetchProfile() != nil
+        }
+    }
+
+    public var meetsAuthenticationRunPrequisite: Bool {
+        return authenticationManager.isUserAuthenticated
+    }
+
+    public var meetsEntitlementRunPrequisite: Bool {
+        get async throws {
+            return try await authenticationManager.hasValidEntitlement()
+        }
+    }
+
+    public func validateRunPrerequisites() async -> Bool {
         do {
-            let hasProfile = try database.fetchProfile() != nil
-            let isAuthenticated = authenticationManager.isUserAuthenticated
-
-            if !hasProfile || !isAuthenticated {
+            if !(try meetsProfileRunPrequisite) || !meetsAuthenticationRunPrequisite {
                 Logger.dataBrokerProtection.log("Prerequisites are invalid")
                 return false
             }
 
-            let hasValidEntitlement = try await authenticationManager.hasValidEntitlement()
-            return hasValidEntitlement
+            return try await meetsEntitlementRunPrequisite
         } catch {
             Logger.dataBrokerProtection.error("Error validating prerequisites, error: \(error.localizedDescription, privacy: .public)")
             return false

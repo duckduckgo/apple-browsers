@@ -35,18 +35,21 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         bookmarksDatabase: CoreDataDatabase,
         appSettings: AppSettings,
         internalUserDecider: InternalUserDecider,
-        duckPlayerStorage: DuckPlayerStorage
+        duckPlayerStorage: DuckPlayerStorage,
+        featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.appSettings = appSettings
         self.internalUserDecider = internalUserDecider
         self.duckPlayerStorage = duckPlayerStorage
+        self.featureFlagger = featureFlagger
     }
 
     let bookmarksDatabase: CoreDataDatabase
     let appSettings: AppSettings
     let duckPlayerStorage: DuckPlayerStorage
     let internalUserDecider: InternalUserDecider
+    let featureFlagger: FeatureFlagger
 
     func refreshConfigMatcher(using store: RemoteMessagingStoring) async -> RemoteMessagingConfigMatcher {
 
@@ -111,6 +114,10 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         let dismissedMessageIds = store.fetchDismissedRemoteMessageIDs()
         let shownMessageIds = store.fetchShownRemoteMessageIDs()
 
+        let enabledFeatureFlags: [String] = FeatureFlag.allCases.filter { flag in
+            flag.cohortType == nil && featureFlagger.isFeatureOn(for: flag)
+        }.map(\.rawValue)
+
         return RemoteMessagingConfigMatcher(
             appAttributeMatcher: AppAttributeMatcher(statisticsStore: statisticsStore,
                                                      variantManager: variantManager,
@@ -133,7 +140,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                                                        isDuckPlayerOnboarded: isDuckPlayerOnboarded,
                                                        isDuckPlayerEnabled: isDuckPlayerEnabled,
                                                        dismissedMessageIds: dismissedMessageIds,
-                                                       shownMessageIds: shownMessageIds),
+                                                       shownMessageIds: shownMessageIds,
+                                                       enabledFeatureFlags: enabledFeatureFlags),
             percentileStore: RemoteMessagingPercentileUserDefaultsStore(keyValueStore: UserDefaults.standard),
             surveyActionMapper: surveyActionMapper,
             dismissedMessageIds: dismissedMessageIds

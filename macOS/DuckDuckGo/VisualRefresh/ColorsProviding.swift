@@ -46,8 +46,8 @@ final class LegacyColorsProviding: ColorsProviding {
     var textPrimaryColor: NSColor { .labelColor }
     var textSecondaryColor: NSColor { .secondaryLabelColor }
     var backgroundTertiaryColor: NSColor { .inactiveSearchBarBackground }
-    var accentPrimaryColor: NSColor { .controlAccentColor.withAlphaComponent(0.8) }
-    var addressBarOutlineShadow: NSColor { .controlColor.withAlphaComponent(0.2) }
+    var accentPrimaryColor: NSColor { .globalAccent.withAlphaComponent(0.8) }
+    var addressBarOutlineShadow: NSColor { .globalAccent.withAlphaComponent(0.2) }
     var iconsColor: NSColor { .button }
     var buttonMouseOverColor: NSColor { .buttonMouseOver }
     var addressBarSuffixTextColor: NSColor { .addressBarSuffix }

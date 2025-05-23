@@ -37,7 +37,7 @@ protocol ScriptSourceProviding {
 
 }
 
-class DefaultScriptSourceProvider: ScriptSourceProviding {
+struct DefaultScriptSourceProvider: ScriptSourceProviding {
 
     var loginDetectionEnabled: Bool { fireproofing.loginDetectionEnabled }
     let sendDoNotSell: Bool
@@ -53,23 +53,13 @@ class DefaultScriptSourceProvider: ScriptSourceProviding {
     let contentBlockingManager: ContentBlockerRulesManagerProtocol
     let fireproofing: Fireproofing
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
-    let statisticsStore: StatisticsStore
-    private var storedCohorts: [ContentScopeExperimentData] = []
-    private var cohortsUpdated: Bool = false
-
-    var currentCohorts: [ContentScopeExperimentData] {
-        if !cohortsUpdated {
-            storedCohorts = generateCurrentCohorts(experimentManager: contentScopeExperimentsManager, statisticsStore: statisticsStore)
-        }
-        return storedCohorts
-    }
+    var currentCohorts: [ContentScopeExperimentData] = []
 
     init(appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
          contentBlockingManager: ContentBlockerRulesManagerProtocol = ContentBlocking.shared.contentBlockingManager,
          fireproofing: Fireproofing,
-         contentScopeExperimentsManager: ContentScopeExperimentsManaging = AppDependencyProvider.shared.contentScopeExperimentsManager,
-         statisticsStore: StatisticsStore = StatisticsUserDefaults()) {
+         contentScopeExperimentsManager: ContentScopeExperimentsManaging = AppDependencyProvider.shared.contentScopeExperimentsManager) {
 
         sendDoNotSell = appSettings.sendDoNotSell
         
@@ -77,7 +67,6 @@ class DefaultScriptSourceProvider: ScriptSourceProviding {
         self.contentBlockingManager = contentBlockingManager
         self.fireproofing = fireproofing
         self.contentScopeExperimentsManager = contentScopeExperimentsManager
-        self.statisticsStore = statisticsStore
 
         contentBlockerRulesConfig = Self.buildContentBlockerRulesConfig(contentBlockingManager: contentBlockingManager,
                                                                         privacyConfigurationManager: privacyConfigurationManager)
@@ -85,16 +74,15 @@ class DefaultScriptSourceProvider: ScriptSourceProviding {
                                                       privacyConfigurationManager: privacyConfigurationManager)
         sessionKey = Self.generateSessionKey()
         messageSecret = Self.generateSessionKey()
+        currentCohorts = Self.generateCurrentCohorts(experimentManager: contentScopeExperimentsManager)
 
         contentScopeProperties = ContentScopeProperties(gpcEnabled: appSettings.sendDoNotSell,
                                                         sessionKey: sessionKey,
                                                         messageSecret: messageSecret,
                                                         featureToggles: ContentScopeFeatureToggles.supportedFeaturesOniOS,
-                                                        currentCohorts: storedCohorts)
+                                                        currentCohorts: currentCohorts)
         autofillSourceProvider = Self.makeAutofillSource(privacyConfigurationManager: privacyConfigurationManager,
                                                          properties: contentScopeProperties)
-        storedCohorts = generateCurrentCohorts(experimentManager: contentScopeExperimentsManager,
-                                                   statisticsStore: statisticsStore)
     }
 
     private static func generateSessionKey() -> String { UUID().uuidString }
@@ -138,15 +126,8 @@ class DefaultScriptSourceProvider: ScriptSourceProviding {
         return surrogatesConfig
     }
 
-    private func generateCurrentCohorts(experimentManager: ContentScopeExperimentsManaging, statisticsStore: StatisticsStore) -> [ContentScopeExperimentData] {
-        // Only generate new cohorts if the app was used today
-        let experiments: Experiments
-        if statisticsStore.isAppRetentionFiredToday {
-            experiments = experimentManager.resolveContentScopeScriptActiveExperiments()
-            cohortsUpdated = true
-        } else {
-            experiments = experimentManager.allActiveContentScopeExperiments
-        }
+    private static func generateCurrentCohorts(experimentManager: ContentScopeExperimentsManaging) -> [ContentScopeExperimentData] {
+        let experiments = experimentManager.resolveContentScopeScriptActiveExperiments()
         return experiments.map {
             ContentScopeExperimentData(feature: $0.value.parentID, subfeature: $0.key, cohort: $0.value.cohortID)
         }

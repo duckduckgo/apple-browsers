@@ -22,17 +22,10 @@ import BrowserServicesKit
 
 class MockContentScopeExperimentManager: ContentScopeExperimentsManaging {
     var allActiveContentScopeExperiments: Experiments = [:]
-    private var resolveResult: Experiments = [:]
-    var resolveContentScopeScriptActiveExperimentsWasCalled = false
-    private(set) var resolveContentScopeScriptActiveExperimentsCallCount = 0
+    var resolveContentScopeScriptActiveExperimentsCalled = false
 
     func resolveContentScopeScriptActiveExperiments() -> Experiments {
-        resolveContentScopeScriptActiveExperimentsWasCalled = true
-        resolveContentScopeScriptActiveExperimentsCallCount += 1
-        return resolveResult
-    }
-    
-    func setResolveResult(_ experiments: Experiments) {
-        resolveResult = experiments
+        resolveContentScopeScriptActiveExperimentsCalled = true
+        return allActiveContentScopeExperiments
     }
 }

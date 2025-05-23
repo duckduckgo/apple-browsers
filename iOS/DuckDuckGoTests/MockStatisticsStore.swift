@@ -21,7 +21,6 @@
 @testable import BrowserServicesKit
 
 class MockStatisticsStore: StatisticsStore {
-    var lastAppRetentionRequestDate: Date?
     var installDate: Date?
     var atb: String?
     var searchRetentionAtb: String?
@@ -32,6 +31,4 @@ class MockStatisticsStore: StatisticsStore {
     }
 
     var variant: String?
-    
-    var isAppRetentionFiredToday: Bool = false
 }

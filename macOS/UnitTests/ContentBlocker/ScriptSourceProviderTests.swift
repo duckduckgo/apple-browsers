@@ -24,7 +24,6 @@ import BrowserServicesKit
 final class ScriptSourceProviderTests: XCTestCase {
 
     var experimentManager: MockContentScopeExperimentManager!
-    var statisticsStore: MockStatisticsStore!
     let testExperimentData = ExperimentData(
         parentID: "parent",
         cohortID: "aCohort",
@@ -33,142 +32,34 @@ final class ScriptSourceProviderTests: XCTestCase {
 
     override func setUpWithError() throws {
         experimentManager = MockContentScopeExperimentManager()
-        statisticsStore = MockStatisticsStore()
     }
 
     override func tearDownWithError() throws {
         experimentManager = nil
-        statisticsStore = nil
     }
 
     @MainActor
-    func testCohortDataWhenAppUsedToday() throws {
-        // Given
-        let todayCohortData = ExperimentData(parentID: "todayParent", cohortID: "todayCohort", enrollmentDate: Date())
-        experimentManager.setResolveResult(["today": todayCohortData])
+    func testCohortDataInitialisedCorrectly() throws {
+        let expectedCohortData = ContentScopeExperimentData(feature: testExperimentData.parentID, subfeature: "test", cohort: testExperimentData.cohortID)
+        let experimentManager = MockContentScopeExperimentManager()
+
         experimentManager.allActiveContentScopeExperiments = ["test": testExperimentData]
-        statisticsStore.lastAppRetentionRequestDate = Date()
+        let sourceProvider = ScriptSourceProvider(configStorage: MockConfigurationStore(), privacyConfigurationManager: MockPrivacyConfigurationManaging(), webTrackingProtectionPreferences: WebTrackingProtectionPreferences(), contentBlockingManager: MockContentBlockerRulesManagerProtocol(), trackerDataManager: TrackerDataManager(etag: nil, data: Data(), embeddedDataProvider: MockEmbeddedDataProvider()), experimentManager: experimentManager, tld: TLD())
 
-        // When
-        let sourceProvider = ScriptSourceProvider(
-            configStorage: MockConfigurationStore(),
-            privacyConfigurationManager: MockPrivacyConfigurationManaging(),
-            webTrackingProtectionPreferences: WebTrackingProtectionPreferences(),
-            contentBlockingManager: MockContentBlockerRulesManagerProtocol(),
-            trackerDataManager: TrackerDataManager(etag: nil, data: Data(), embeddedDataProvider: MockEmbeddedDataProvider()),
-            experimentManager: experimentManager,
-            statisticsStore: statisticsStore,
-            tld: TLD()
-        )
-
-        // Then
         let cohorts = try XCTUnwrap(sourceProvider.currentCohorts)
         XCTAssertFalse(cohorts.isEmpty)
-        XCTAssertEqual(cohorts[0].feature, "todayParent")
-        XCTAssertEqual(cohorts[0].cohort, "todayCohort")
+        XCTAssertEqual(cohorts[0], expectedCohortData)
         XCTAssertTrue(experimentManager.resolveContentScopeScriptActiveExperimentsWasCalled)
     }
 
-    @MainActor
-    func testCohortDataWhenAppNotUsedToday() throws {
-        // Given
-        let todayCohortData = ExperimentData(parentID: "todayParent", cohortID: "todayCohort", enrollmentDate: Date())
-        experimentManager.setResolveResult(["today": todayCohortData])
-        experimentManager.allActiveContentScopeExperiments = ["test": testExperimentData]
-        statisticsStore.lastAppRetentionRequestDate = Calendar.current.date(byAdding: .day, value: -1, to: Date())
-
-        // When
-        let sourceProvider = ScriptSourceProvider(
-            configStorage: MockConfigurationStore(),
-            privacyConfigurationManager: MockPrivacyConfigurationManaging(),
-            webTrackingProtectionPreferences: WebTrackingProtectionPreferences(),
-            contentBlockingManager: MockContentBlockerRulesManagerProtocol(),
-            trackerDataManager: TrackerDataManager(etag: nil, data: Data(), embeddedDataProvider: MockEmbeddedDataProvider()),
-            experimentManager: experimentManager,
-            statisticsStore: statisticsStore,
-            tld: TLD()
-        )
-
-        // Then
-        let cohorts = try XCTUnwrap(sourceProvider.currentCohorts)
-        XCTAssertFalse(cohorts.isEmpty)
-        XCTAssertEqual(cohorts[0].feature, "parent")
-        XCTAssertEqual(cohorts[0].cohort, "aCohort")
-        XCTAssertFalse(experimentManager.resolveContentScopeScriptActiveExperimentsWasCalled)
-    }
-
-    @MainActor
-    func testCohortsRegeneratedOnlyOnceWhenAppUsedToday() throws {
-        // Given
-        let todayCohortData = ExperimentData(parentID: "todayParent", cohortID: "todayCohort", enrollmentDate: Date())
-        experimentManager.setResolveResult(["today": todayCohortData])
-        experimentManager.allActiveContentScopeExperiments = ["test": testExperimentData]
-        statisticsStore.lastAppRetentionRequestDate = Date()
-        
-        // When
-        let sourceProvider = ScriptSourceProvider(
-            configStorage: MockConfigurationStore(),
-            privacyConfigurationManager: MockPrivacyConfigurationManaging(),
-            webTrackingProtectionPreferences: WebTrackingProtectionPreferences(),
-            contentBlockingManager: MockContentBlockerRulesManagerProtocol(),
-            trackerDataManager: TrackerDataManager(etag: nil, data: Data(), embeddedDataProvider: MockEmbeddedDataProvider()),
-            experimentManager: experimentManager,
-            statisticsStore: statisticsStore,
-            tld: TLD()
-        )
-
-        // Access cohorts multiple times
-        _ = sourceProvider.currentCohorts
-        _ = sourceProvider.currentCohorts
-        _ = sourceProvider.currentCohorts
-
-        // Then
-        XCTAssertEqual(experimentManager.resolveContentScopeScriptActiveExperimentsCallCount, 1)
-    }
-
-    @MainActor
-    func testCohortsNotRegeneratedWhenAppNotUsedToday() throws {
-        // Given
-        let todayCohortData = ExperimentData(parentID: "todayParent", cohortID: "todayCohort", enrollmentDate: Date())
-        experimentManager.setResolveResult(["today": todayCohortData])
-        experimentManager.allActiveContentScopeExperiments = ["test": testExperimentData]
-        statisticsStore.lastAppRetentionRequestDate = Calendar.current.date(byAdding: .day, value: -1, to: Date())
-        
-        // When
-        let sourceProvider = ScriptSourceProvider(
-            configStorage: MockConfigurationStore(),
-            privacyConfigurationManager: MockPrivacyConfigurationManaging(),
-            webTrackingProtectionPreferences: WebTrackingProtectionPreferences(),
-            contentBlockingManager: MockContentBlockerRulesManagerProtocol(),
-            trackerDataManager: TrackerDataManager(etag: nil, data: Data(), embeddedDataProvider: MockEmbeddedDataProvider()),
-            experimentManager: experimentManager,
-            statisticsStore: statisticsStore,
-            tld: TLD()
-        )
-
-        // Access cohorts multiple times
-        _ = sourceProvider.currentCohorts
-        _ = sourceProvider.currentCohorts
-        _ = sourceProvider.currentCohorts
-
-        // Then
-        XCTAssertEqual(experimentManager.resolveContentScopeScriptActiveExperimentsCallCount, 0)
-    }
 }
 
 class MockContentScopeExperimentManager: ContentScopeExperimentsManaging {
     var allActiveContentScopeExperiments: Experiments = [:]
     private(set) var resolveContentScopeScriptActiveExperimentsWasCalled = false
-    private var resolveResult: Experiments?
-    var resolveContentScopeScriptActiveExperimentsCallCount = 0
 
     func resolveContentScopeScriptActiveExperiments() -> Experiments {
         resolveContentScopeScriptActiveExperimentsWasCalled = true
-        resolveContentScopeScriptActiveExperimentsCallCount += 1
-        return resolveResult ?? allActiveContentScopeExperiments
-    }
-
-    func setResolveResult(_ experiments: Experiments) {
-        resolveResult = experiments
+        return allActiveContentScopeExperiments
     }
 }

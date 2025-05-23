@@ -61,7 +61,6 @@ final class UserContentUpdating {
                                                       contentBlockingManager: contentBlockerRulesManager,
                                                       trackerDataManager: trackerDataManager,
                                                       experimentManager: Application.appDelegate.contentScopeExperimentsManager,
-                                                      statisticsStore: LocalStatisticsStore(),
                                                       tld: tld)
             return NewContent(rulesUpdate: rulesUpdate, sourceProvider: sourceProvider)
         }

@@ -30,7 +30,6 @@ public class StatisticsUserDefaults: StatisticsStore {
         static let searchRetentionAtb = "com.duckduckgo.statistics.retentionatb.key"
         static let appRetentionAtb = "com.duckduckgo.statistics.appretentionatb.key"
         static let variant = "com.duckduckgo.statistics.variant.key"
-        static let lastAppRetentionRequestDate = "com.duckduckgo.statistics.lastappretentionrequestdate.key"
     }
 
     private var userDefaults: UserDefaults? {
@@ -96,21 +95,5 @@ public class StatisticsUserDefaults: StatisticsStore {
         set {
             userDefaults?.setValue(newValue, forKey: Keys.variant)
         }
-    }
-
-    public var lastAppRetentionRequestDate: Date? {
-        get {
-            guard let interval = userDefaults?.double(forKey: Keys.lastAppRetentionRequestDate), interval > 0 else {
-                return nil
-            }
-            return Date(timeIntervalSince1970: interval)
-        }
-        set {
-            userDefaults?.setValue(newValue?.timeIntervalSince1970, forKey: Keys.lastAppRetentionRequestDate)
-        }
-    }
-    
-    public var isAppRetentionFiredToday: Bool {
-        Date.startOfDayToday == lastAppRetentionRequestDate.map(Calendar.current.startOfDay)
     }
 }

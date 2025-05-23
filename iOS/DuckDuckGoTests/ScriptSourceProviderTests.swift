@@ -27,7 +27,6 @@ import Combine
 final class ScriptSourceProviderTests: XCTestCase {
 
     var experimentManager: MockContentScopeExperimentManager!
-    var statisticsStore: MockStatisticsStore!
     let testExperimentData = ExperimentData(
         parentID: "parent",
         cohortID: "aCohort",
@@ -36,119 +35,26 @@ final class ScriptSourceProviderTests: XCTestCase {
 
     override func setUpWithError() throws {
         experimentManager = MockContentScopeExperimentManager()
-        statisticsStore = MockStatisticsStore()
     }
 
     override func tearDownWithError() throws {
         experimentManager = nil
-        statisticsStore = nil
     }
 
     @MainActor
-    func testCohortDataWhenAppUsedToday() throws {
-        // Given
-        let todayCohortData = ExperimentData(parentID: "todayParent", cohortID: "todayCohort", enrollmentDate: Date())
-        experimentManager.setResolveResult(["today": todayCohortData])
+    func testCohortDataInitialisedCorrectly() throws {
+        let expectedCohortData = ContentScopeExperimentData(feature: testExperimentData.parentID, subfeature: "test", cohort: testExperimentData.cohortID)
+        let experimentManager = MockContentScopeExperimentManager()
         experimentManager.allActiveContentScopeExperiments = ["test": testExperimentData]
-        statisticsStore.isAppRetentionFiredToday = true
-        
-        // When
-        let sourceProvider = DefaultScriptSourceProvider(
-            appSettings: AppSettingsMock(),
-            privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            contentBlockingManager: MockContentBlockerRulesManagerProtocol(),
-            fireproofing: MockFireproofing(),
-            contentScopeExperimentsManager: experimentManager,
-            statisticsStore: statisticsStore
-        )
 
-        // Then
+        let sourceProvider = DefaultScriptSourceProvider(appSettings: AppSettingsMock(), privacyConfigurationManager: MockPrivacyConfigurationManager(), contentBlockingManager: MockContentBlockerRulesManagerProtocol(), fireproofing: MockFireproofing(), contentScopeExperimentsManager: experimentManager)
+
         let cohorts = try XCTUnwrap(sourceProvider.currentCohorts)
         XCTAssertFalse(cohorts.isEmpty)
-        XCTAssertEqual(cohorts[0].feature, "todayParent")
-        XCTAssertEqual(cohorts[0].cohort, "todayCohort")
-        XCTAssertTrue(experimentManager.resolveContentScopeScriptActiveExperimentsWasCalled)
-    }
-    
-    @MainActor
-    func testCohortDataWhenAppNotUsedToday() throws {
-        // Given
-        let todayCohortData = ExperimentData(parentID: "todayParent", cohortID: "todayCohort", enrollmentDate: Date())
-        experimentManager.setResolveResult(["today": todayCohortData])
-        experimentManager.allActiveContentScopeExperiments = ["test": testExperimentData]
-        statisticsStore.isAppRetentionFiredToday = false
-        
-        // When
-        let sourceProvider = DefaultScriptSourceProvider(
-            appSettings: AppSettingsMock(),
-            privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            contentBlockingManager: MockContentBlockerRulesManagerProtocol(),
-            fireproofing: MockFireproofing(),
-            contentScopeExperimentsManager: experimentManager,
-            statisticsStore: statisticsStore
-        )
-
-        // Then
-        let cohorts = try XCTUnwrap(sourceProvider.currentCohorts)
-        XCTAssertFalse(cohorts.isEmpty)
-        XCTAssertEqual(cohorts[0].feature, "parent")
-        XCTAssertEqual(cohorts[0].cohort, "aCohort")
-        XCTAssertFalse(experimentManager.resolveContentScopeScriptActiveExperimentsWasCalled)
+        XCTAssertEqual(cohorts[0], expectedCohortData)
+        XCTAssertTrue(experimentManager.resolveContentScopeScriptActiveExperimentsCalled)
     }
 
-    @MainActor
-    func testCohortsRegeneratedOnlyOnceWhenAppUsedToday() throws {
-        // Given
-        let todayCohortData = ExperimentData(parentID: "todayParent", cohortID: "todayCohort", enrollmentDate: Date())
-        experimentManager.setResolveResult(["today": todayCohortData])
-        experimentManager.allActiveContentScopeExperiments = ["test": testExperimentData]
-        statisticsStore.isAppRetentionFiredToday = true
-        
-        // When
-        let sourceProvider = DefaultScriptSourceProvider(
-            appSettings: AppSettingsMock(),
-            privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            contentBlockingManager: MockContentBlockerRulesManagerProtocol(),
-            fireproofing: MockFireproofing(),
-            contentScopeExperimentsManager: experimentManager,
-            statisticsStore: statisticsStore
-        )
-
-        // Access cohorts multiple times
-        _ = sourceProvider.currentCohorts
-        _ = sourceProvider.currentCohorts
-        _ = sourceProvider.currentCohorts
-
-        // Then
-        XCTAssertEqual(experimentManager.resolveContentScopeScriptActiveExperimentsCallCount, 1)
-    }
-
-    @MainActor
-    func testCohortsNotRegeneratedWhenAppNotUsedToday() throws {
-        // Given
-        let todayCohortData = ExperimentData(parentID: "todayParent", cohortID: "todayCohort", enrollmentDate: Date())
-        experimentManager.setResolveResult(["today": todayCohortData])
-        experimentManager.allActiveContentScopeExperiments = ["test": testExperimentData]
-        statisticsStore.isAppRetentionFiredToday = false
-        
-        // When
-        let sourceProvider = DefaultScriptSourceProvider(
-            appSettings: AppSettingsMock(),
-            privacyConfigurationManager: MockPrivacyConfigurationManager(),
-            contentBlockingManager: MockContentBlockerRulesManagerProtocol(),
-            fireproofing: MockFireproofing(),
-            contentScopeExperimentsManager: experimentManager,
-            statisticsStore: statisticsStore
-        )
-
-        // Access cohorts multiple times
-        _ = sourceProvider.currentCohorts
-        _ = sourceProvider.currentCohorts
-        _ = sourceProvider.currentCohorts
-
-        // Then
-        XCTAssertEqual(experimentManager.resolveContentScopeScriptActiveExperimentsCallCount, 0)
-    }
 }
 
 class MockContentBlockerRulesManagerProtocol: ContentBlockerRulesManagerProtocol {

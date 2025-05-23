@@ -33,8 +33,4 @@ public class MockStatisticsStore: StatisticsStore {
     }
 
     public var variant: String?
-
-    public var lastAppRetentionRequestDate: Date?
-
-    public var isAppRetentionFiredToday: Bool = false
 }

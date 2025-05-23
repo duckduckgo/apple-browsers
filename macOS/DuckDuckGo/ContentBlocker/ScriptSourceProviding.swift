@@ -35,7 +35,7 @@ protocol ScriptSourceProviding {
     var messageSecret: String? { get }
     var onboardingActionsManager: OnboardingActionsManaging? { get }
     var historyViewActionsManager: HistoryViewActionsManager? { get }
-    var currentCohorts: [ContentScopeExperimentData] { get }
+    var currentCohorts: [ContentScopeExperimentData]? { get }
     func buildAutofillSource() -> AutofillUserScriptSourceProvider
 
 }
@@ -43,10 +43,10 @@ protocol ScriptSourceProviding {
 // refactor: ScriptSourceProvider to be passed to init methods as `some ScriptSourceProviding`, DefaultScriptSourceProvider to be killed
 // swiftlint:disable:next identifier_name
 @MainActor func DefaultScriptSourceProvider() -> ScriptSourceProviding {
-    ScriptSourceProvider(configStorage: Application.appDelegate.configurationStore, privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager, webTrackingProtectionPreferences: WebTrackingProtectionPreferences.shared, contentBlockingManager: ContentBlocking.shared.contentBlockingManager, trackerDataManager: ContentBlocking.shared.trackerDataManager, experimentManager: Application.appDelegate.contentScopeExperimentsManager, statisticsStore: LocalStatisticsStore(), tld: ContentBlocking.shared.tld)
+    ScriptSourceProvider(configStorage: Application.appDelegate.configurationStore, privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager, webTrackingProtectionPreferences: WebTrackingProtectionPreferences.shared, contentBlockingManager: ContentBlocking.shared.contentBlockingManager, trackerDataManager: ContentBlocking.shared.trackerDataManager, experimentManager: Application.appDelegate.contentScopeExperimentsManager, tld: ContentBlocking.shared.tld)
 }
 
-final class ScriptSourceProvider: ScriptSourceProviding {
+struct ScriptSourceProvider: ScriptSourceProviding {
     private(set) var contentBlockerRulesConfig: ContentBlockerUserScriptConfig?
     private(set) var surrogatesConfig: SurrogatesUserScriptConfig?
     private(set) var onboardingActionsManager: OnboardingActionsManaging?
@@ -54,15 +54,7 @@ final class ScriptSourceProvider: ScriptSourceProviding {
     private(set) var autofillSourceProvider: AutofillUserScriptSourceProvider?
     private(set) var sessionKey: String?
     private(set) var messageSecret: String?
-    private var storedCohorts: [ContentScopeExperimentData] = []
-    private var cohortsUpdated: Bool = false
-
-    var currentCohorts: [ContentScopeExperimentData] {
-        if !cohortsUpdated {
-            storedCohorts = generateCurrentCohorts()
-        }
-        return storedCohorts
-    }
+    private(set) var currentCohorts: [ContentScopeExperimentData]?
 
     let configStorage: ConfigurationStoring
     let privacyConfigurationManager: PrivacyConfigurationManaging
@@ -71,7 +63,6 @@ final class ScriptSourceProvider: ScriptSourceProviding {
     let webTrakcingProtectionPreferences: WebTrackingProtectionPreferences
     let tld: TLD
     let experimentManager: ContentScopeExperimentsManaging
-    let statisticsStore: StatisticsStore
 
     @MainActor
     init(configStorage: ConfigurationStoring,
@@ -80,7 +71,6 @@ final class ScriptSourceProvider: ScriptSourceProviding {
          contentBlockingManager: ContentBlockerRulesManagerProtocol,
          trackerDataManager: TrackerDataManager,
          experimentManager: ContentScopeExperimentsManaging,
-         statisticsStore: StatisticsStore,
          tld: TLD) {
 
         self.configStorage = configStorage
@@ -89,7 +79,6 @@ final class ScriptSourceProvider: ScriptSourceProviding {
         self.contentBlockingManager = contentBlockingManager
         self.trackerDataManager = trackerDataManager
         self.experimentManager = experimentManager
-        self.statisticsStore = statisticsStore
         self.tld = tld
 
         self.contentBlockerRulesConfig = buildContentBlockerRulesConfig()
@@ -99,7 +88,7 @@ final class ScriptSourceProvider: ScriptSourceProviding {
         self.autofillSourceProvider = buildAutofillSource()
         self.onboardingActionsManager = buildOnboardingActionsManager()
         self.historyViewActionsManager = buildHistoryViewActionsManager()
-        self.storedCohorts = generateCurrentCohorts()
+        self.currentCohorts = generateCurrentCohorts()
     }
 
     private func generateSessionKey() -> String {
@@ -219,14 +208,7 @@ final class ScriptSourceProvider: ScriptSourceProviding {
     }
 
     private func generateCurrentCohorts() -> [ContentScopeExperimentData] {
-        // Only generate new cohorts if the app was used today
-        let experiments: Experiments
-        if statisticsStore.isAppRetentionFiredToday {
-            experiments = experimentManager.resolveContentScopeScriptActiveExperiments()
-            cohortsUpdated = true
-        } else {
-            experiments = experimentManager.allActiveContentScopeExperiments
-        }
+        let experiments = experimentManager.resolveContentScopeScriptActiveExperiments()
         return experiments.map {
             ContentScopeExperimentData(feature: $0.value.parentID, subfeature: $0.key, cohort: $0.value.cohortID)
         }

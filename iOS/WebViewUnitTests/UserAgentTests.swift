@@ -24,6 +24,7 @@ import XCTest
 @testable import Core
 
 class MockStatisticsStore: StatisticsStore {
+
     var installDate: Date?
     var atb: String?
     var searchRetentionAtb: String?

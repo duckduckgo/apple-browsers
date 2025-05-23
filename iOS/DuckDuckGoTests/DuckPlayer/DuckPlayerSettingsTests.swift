@@ -38,13 +38,13 @@ extension UIDevice {
     static let originalDevice = UIDevice.current
     static var mockDevice = MockUIDevice()
     
-    @objc static var swizzled_current: UIDevice {
+    @objc static var swizzledCurrent: UIDevice {
         return mockDevice
     }
     
     static func swizzleCurrent() {
         let originalSelector = #selector(getter: UIDevice.current)
-        let swizzledSelector = #selector(getter: UIDevice.swizzled_current)
+        let swizzledSelector = #selector(getter: UIDevice.swizzledCurrent)
         
         let originalMethod = class_getClassMethod(UIDevice.self, originalSelector)!
         let swizzledMethod = class_getClassMethod(UIDevice.self, swizzledSelector)!
@@ -54,7 +54,7 @@ extension UIDevice {
     
     static func unswizzleCurrent() {
         let originalSelector = #selector(getter: UIDevice.current)
-        let swizzledSelector = #selector(getter: UIDevice.swizzled_current)
+        let swizzledSelector = #selector(getter: UIDevice.swizzledCurrent)
         
         let originalMethod = class_getClassMethod(UIDevice.self, originalSelector)!
         let swizzledMethod = class_getClassMethod(UIDevice.self, swizzledSelector)!

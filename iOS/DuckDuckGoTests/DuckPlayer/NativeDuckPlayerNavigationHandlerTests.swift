@@ -88,7 +88,7 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         mockFeatureFlagger = nil
         mockTabNavigator = nil
         sut = nil
-        mockNativeUIPresenter = nil        
+        mockNativeUIPresenter = nil
         mockDelayHandler = nil
         super.tearDown()
     }

@@ -86,23 +86,23 @@ struct SettingsDuckPlayerView: View {
             } else {
                 // Duck Player Native UI
                 Section(footer: Text(UserText.duckPlayerSearchResultsFooter)) {
-                        SettingsCellView(label: UserText.duckPlayerSearchResultsLabel,
-                                        accessory: .toggle(isOn: viewModel.duckPlayerNativeUISERPEnabled))
-                                        .disabled(viewModel.shouldDisplayDuckPlayerContingencyMessage)
-                    }
+                    SettingsCellView(label: UserText.duckPlayerSearchResultsLabel,
+                                     accessory: .toggle(isOn: viewModel.duckPlayerNativeUISERPEnabled))
+                                     .disabled(viewModel.shouldDisplayDuckPlayerContingencyMessage)
+                }
 
-                    Section(footer: Text(UserText.duckPlayerYoutubeFooter)) {
-                    SettingsPickerCellView(label: UserText.duckPlayerYoutubeLabel,
-                                        options: NativeDuckPlayerYoutubeMode.allCases,
-                                        selectedOption: viewModel.duckPlayerNativeYoutubeModeBinding)
-                                        .disabled(viewModel.shouldDisplayDuckPlayerContingencyMessage)
-                    }
+                Section(footer: Text(UserText.duckPlayerYoutubeFooter)) {
+                SettingsPickerCellView(label: UserText.duckPlayerYoutubeLabel,
+                                    options: NativeDuckPlayerYoutubeMode.allCases,
+                                    selectedOption: viewModel.duckPlayerNativeYoutubeModeBinding)
+                                    .disabled(viewModel.shouldDisplayDuckPlayerContingencyMessage)
+                }
 
-                    Section(footer: Text(UserText.duckPlayerAutoplayFooter)) {
-                        SettingsCellView(label: UserText.duckPlayerAutoplayLabel,
-                                        accessory: .toggle(isOn: viewModel.duckPlayerAutoplay))
-                                        .disabled(viewModel.shouldDisplayDuckPlayerContingencyMessage)
-                    }
+                Section(footer: Text(UserText.duckPlayerAutoplayFooter)) {
+                    SettingsCellView(label: UserText.duckPlayerAutoplayLabel,
+                                    accessory: .toggle(isOn: viewModel.duckPlayerAutoplay))
+                                    .disabled(viewModel.shouldDisplayDuckPlayerContingencyMessage)
+                }
             }
 
         }

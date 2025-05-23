@@ -68,7 +68,7 @@ extension DefaultBrowserAndDockPromptStorageReading {
     var hasSeenBanner: Bool {
         bannerShownDate != nil
     }
-    
+
 }
 
 typealias DefaultBrowserAndDockPromptStorage = DefaultBrowserAndDockPromptStorageReading & DefaultBrowserAndDockPromptStorageWriting

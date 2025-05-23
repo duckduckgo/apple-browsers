@@ -55,7 +55,6 @@ protocol DefaultBrowserAndDockPrompt {
     /// - Parameter prompt: The type of prompt the user interacted with.
     func confirmAction(for prompt: DefaultBrowserAndDockPromptPresentationType)
 
-    
     /// Called when the cancel CTA is clicked
     /// - Parameters:
     ///   - prompt: The type of prompt the user interacted with.
@@ -196,10 +195,10 @@ private extension DefaultBrowserAndDockPromptCoordinator {
     func handleUserInputDismissAction(for prompt: DefaultBrowserAndDockPromptPresentationType, shouldHidePermanently: Bool) {
         switch prompt {
         case .popover:
-            // TODO: Send Pixel
+            // Send Pixel
             break
         case .banner:
-            // TODO: Send Pixel
+            // Send Pixel
             // Set the banner seen only when the user interact with it because we want to show it in every windows.
             setBannerSeen(shouldHidePermanently: shouldHidePermanently)
         }

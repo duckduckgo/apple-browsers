@@ -25,7 +25,6 @@ final class MockDefaultBrowserAndDockPromptStatusUpdateNotifier: DefaultBrowserA
     private(set) var didCallStartNotifyingStatus = false
     private(set) var didCallStopNotifyingStatus = false
 
-
     var statusPublisher: AnyPublisher<DefaultBrowserAndDockPromptStatusInfo, Never> {
         subject.eraseToAnyPublisher()
     }

@@ -161,12 +161,12 @@ final class ConfigurationURLDebugViewController: UITableViewController {
         cell.subtitle.textColor = customURL(for: row) != nil ? UIColor(designSystemColor: .accent) : .label
         cell.ternary.text = lastConfigurationUpdateDate != nil ? dateFormatter.string(from: lastConfigurationUpdateDate!) : "-"
 
-        cell.refresh.addAction(UIAction() { [weak self] _ in
+        cell.refresh.addAction(UIAction { [weak self] _ in
             self?.fetchAssets(for: row)
             self?.tableView.reloadRows(at: [indexPath], with: .automatic)
         }, for: .primaryActionTriggered)
 
-        cell.trash.addAction(UIAction() { [weak self] _ in
+        cell.trash.addAction(UIAction { [weak self] _ in
             self?.setCustomURL(nil, for: row)
             self?.tableView.reloadRows(at: [indexPath], with: .automatic)
         }, for: .primaryActionTriggered)

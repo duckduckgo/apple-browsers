@@ -23,18 +23,18 @@ public protocol ArrayContainsAllMatching: MatchingAttribute, Equatable {
 
     var value: [Value]? { get set }
     var fallback: Bool? { get set }
-    
+
     init(value: [Value]?, fallback: Bool?)
 }
 
 public extension ArrayContainsAllMatching {
-    
+
     init(jsonMatchingAttribute: AnyDecodable) {
         guard let jsonMatchingAttribute = jsonMatchingAttribute.value as? [String: Any] else {
             self.init(value: nil, fallback: nil)
             return
         }
-        
+
         let value = jsonMatchingAttribute[RuleAttributes.value] as? [Value]
         let fallback = jsonMatchingAttribute[RuleAttributes.fallback] as? Bool
         self.init(value: value, fallback: fallback)

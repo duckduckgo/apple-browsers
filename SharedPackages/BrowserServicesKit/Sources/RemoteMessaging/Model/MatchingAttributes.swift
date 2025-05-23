@@ -303,18 +303,18 @@ struct StringArrayMatchingAttribute: Equatable {
 
 struct StringArrayContainsAllMatchingAttribute: Equatable {
     var requiredValues: [String]
-    
+
     init(_ requiredValues: [String]?) {
         self.requiredValues = (requiredValues ?? []).map { $0.lowercased() }
     }
-    
+
     func matches(value: [String]) -> EvaluationResult {
         let providedValues = value.map { $0.lowercased() }
-        
+
         let containsAllRequired = requiredValues.allSatisfy { requiredValue in
             providedValues.contains(requiredValue)
         }
-        
+
         return EvaluationResultModel.result(value: containsAllRequired)
     }
 }

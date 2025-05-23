@@ -40,8 +40,8 @@ final class SubscriptionFreeTrialsHelperTests: XCTestCase {
         mockFeatureFlagger.enabledFeatureFlags = [.privacyProFreeTrial]
         
         // When
-        let result = sut.areFreeTrialsAvailable
-        
+        let result = sut.areFreeTrialsEnabled
+
         // Then
         XCTAssertTrue(result)
     }
@@ -51,7 +51,7 @@ final class SubscriptionFreeTrialsHelperTests: XCTestCase {
         mockFeatureFlagger.enabledFeatureFlags = []
         
         // When
-        let result = sut.areFreeTrialsAvailable
+        let result = sut.areFreeTrialsEnabled
         
         // Then
         XCTAssertFalse(result)

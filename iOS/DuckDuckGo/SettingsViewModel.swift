@@ -1044,7 +1044,7 @@ extension SettingsViewModel {
     /// Checks if the user is eligible for a free trial subscription offer.
     /// - Returns: `true` if free trials are available and the user is eligible for a free trial, `false` otherwise.
     private func isUserEligibleForTrialOffer() async -> Bool {
-        guard subscriptionFreeTrialsHelper.areFreeTrialsAvailable else { return false }
+        guard subscriptionFreeTrialsHelper.areFreeTrialsEnabled else { return false }
         if isAuthV2Enabled {
             return await subscriptionManagerV2?.storePurchaseManager().isUserEligibleForFreeTrial() ?? false
         } else {

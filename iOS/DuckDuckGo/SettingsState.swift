@@ -153,7 +153,7 @@ struct SettingsState {
                                        platform: .unknown,
                                        isShowingStripeView: false,
                                        isActiveTrialOffer: false,
-                                      isEligibleForTrialOffer: false),
+                                       isEligibleForTrialOffer: false),
             sync: SyncSettings(enabled: false, title: ""),
             syncSource: nil,
             duckPlayerEnabled: false,

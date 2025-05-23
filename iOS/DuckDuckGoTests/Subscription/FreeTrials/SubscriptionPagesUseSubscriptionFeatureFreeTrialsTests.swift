@@ -62,7 +62,7 @@ final class SubscriptionPagesUseSubscriptionFeatureFreeTrialsTests: XCTestCase {
         // Given
         mockAccountManager.accessToken = nil
         mockSubscriptionManager.canPurchase = true
-        mockSubscriptionFreeTrialsHelper.areFreeTrialsAvailableValue = false
+        mockSubscriptionFreeTrialsHelper.areFreeTrialsEnabledValue = false
         mockStorePurchaseManager.subscriptionOptionsResult = .mockStandard
 
         // When
@@ -76,7 +76,7 @@ final class SubscriptionPagesUseSubscriptionFeatureFreeTrialsTests: XCTestCase {
         // Given
         mockAccountManager.accessToken = nil
         mockSubscriptionManager.canPurchase = true
-        mockSubscriptionFreeTrialsHelper.areFreeTrialsAvailableValue = true
+        mockSubscriptionFreeTrialsHelper.areFreeTrialsEnabledValue = true
         mockStorePurchaseManager.freeTrialSubscriptionOptionsResult = .mockFreeTrial
 
         // When
@@ -90,7 +90,7 @@ final class SubscriptionPagesUseSubscriptionFeatureFreeTrialsTests: XCTestCase {
         // Given
         mockAccountManager.accessToken = nil
         mockSubscriptionManager.canPurchase = true
-        mockSubscriptionFreeTrialsHelper.areFreeTrialsAvailableValue = false
+        mockSubscriptionFreeTrialsHelper.areFreeTrialsEnabledValue = false
         mockStorePurchaseManager.subscriptionOptionsResult = nil
 
         // When
@@ -105,7 +105,7 @@ final class SubscriptionPagesUseSubscriptionFeatureFreeTrialsTests: XCTestCase {
         // Given
         mockAccountManager.accessToken = nil
         mockSubscriptionManager.canPurchase = true
-        mockSubscriptionFreeTrialsHelper.areFreeTrialsAvailableValue = true
+        mockSubscriptionFreeTrialsHelper.areFreeTrialsEnabledValue = true
         mockStorePurchaseManager.freeTrialSubscriptionOptionsResult = nil
         mockStorePurchaseManager.subscriptionOptionsResult = .mockStandard
 
@@ -144,9 +144,9 @@ private extension SubscriptionOptions {
 }
 
 final class MockSubscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping {
-    var areFreeTrialsAvailableValue = false
-    var areFreeTrialsAvailable: Bool {
-        areFreeTrialsAvailableValue
+    var areFreeTrialsEnabledValue = false
+    var areFreeTrialsEnabled: Bool {
+        areFreeTrialsEnabledValue
     }
     var origin: String = ""
 }

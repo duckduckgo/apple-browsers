@@ -260,7 +260,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeature: SubscriptionPagesUse
 
         var subscriptionOptions: SubscriptionOptions?
 
-        if subscriptionFreeTrialsHelper.areFreeTrialsAvailable {
+        if subscriptionFreeTrialsHelper.areFreeTrialsEnabled {
             subscriptionOptions = await freeTrialSubscriptionOptions()
         } else {
             subscriptionOptions = await subscriptionManager.storePurchaseManager().subscriptionOptions()
@@ -748,7 +748,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
 
         var subscriptionOptions: SubscriptionOptionsV2?
 
-        if subscriptionFreeTrialsHelper.areFreeTrialsAvailable {
+        if subscriptionFreeTrialsHelper.areFreeTrialsEnabled {
             subscriptionOptions = await freeTrialSubscriptionOptions()
         } else {
             subscriptionOptions = await subscriptionManager.storePurchaseManager().subscriptionOptions()

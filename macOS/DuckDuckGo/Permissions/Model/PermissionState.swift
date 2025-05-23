@@ -95,12 +95,15 @@ extension Optional where Wrapped == PermissionState {
         }
     }
 
-    mutating func authorizationQueried(_ query: PermissionAuthorizationQuery) {
+    mutating func authorizationQueried(_ query: PermissionAuthorizationQuery, updatesRequest: Bool) {
         switch self {
-        case .disabled, .requested:
+        case .disabled:
             // stay in disabled state if the App is disabled to use the permission
-            // stay in requested state for already queried permission
             return
+        case .requested where !updatesRequest:
+            return
+        case .requested where updatesRequest:
+            self = .requested(query)
         default:
             self = .requested(query)
         }

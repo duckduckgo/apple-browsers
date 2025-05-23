@@ -497,6 +497,7 @@ final class AddressBarButtonsViewController: NSViewController {
             case .geolocation:
                 button = geolocationButton
             case .popups:
+                guard !query.wasShownOnce else { return }
                 button = popupsButton
                 popover = popupBlockedPopoverCreatingIfNeeded()
             case .externalScheme:

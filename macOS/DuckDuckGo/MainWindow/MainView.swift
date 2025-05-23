@@ -285,7 +285,6 @@ final class MainView: NSView {
     override func updateTrackingAreas() {
         if let mouseAboveWebViewTrackingArea {
             removeTrackingArea(mouseAboveWebViewTrackingArea)
-            isMouseAboveWebView = false
             let trackingArea = makeMouseAboveViewTrackingArea()
             self.mouseAboveWebViewTrackingArea = trackingArea
             addTrackingArea(trackingArea)

@@ -2770,6 +2770,9 @@
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe" = "Kapcsolat és a személyazonosság védelme a Privacy Pro segítségével";
 
+/* Try Privacy Pro Free button text for privacy pro */
+"settings.subscription.try.free" = "Próbáld ki a Privacy Prót ingyen";
+
 /* Privacy pro description subtitle in settings */
 "settings.subscription.us.description" = "Tartalmazza a VPN-megoldásunkat, a személyes adatok eltávolítására szolgáló Personal Information Removal és a személyazonosság helyreállításához használható Identity Theft Restoration funkciókat.";
 

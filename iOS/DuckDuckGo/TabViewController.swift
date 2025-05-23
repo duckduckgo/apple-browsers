@@ -51,7 +51,9 @@ class TabViewController: UIViewController {
         static let secGPCHeader = "Sec-GPC"
         static let navigationExpectationInterval = 3.0
     }
-    
+
+    private lazy var borderView = TabBorderView()
+
     @IBOutlet private(set) weak var error: UIView!
     @IBOutlet private(set) weak var errorInfoImage: UIImageView!
     @IBOutlet private(set) weak var errorHeader: UILabel!
@@ -93,6 +95,9 @@ class TabViewController: UIViewController {
     var isLoading: Bool {
         webView.isLoading && !wasLoadingStoppedExternally
     }
+
+    private lazy var isExperimentalThemingEnabled = ExperimentalThemingManager(featureFlagger: featureFlagger).isExperimentalThemingEnabled
+    private lazy var isRounderCornersEnabled: Bool = ExperimentalThemingManager(featureFlagger: featureFlagger).isRoundedCornersTreatmentEnabled
 
     var openedByPage = false
     weak var openingTab: TabViewController? {
@@ -619,8 +624,19 @@ class TabViewController: UIViewController {
         adClickAttributionLogic.applyInheritedAttribution(state: attribution)
     }
 
+    private func updateBorder(for webView: WKWebView) {
+        guard isExperimentalThemingEnabled else { return }
+
+        if !borderView.isDescendant(of: webView) {
+            webView.addSubview(borderView)
+
+            borderView.frame = webView.bounds
+            borderView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        }
+    }
+
     @objc func updateRoundedCorners() {
-        if ExperimentalThemingManager().isRoundedCornersTreatmentEnabled {
+        if isRounderCornersEnabled {
             webViewContainer.clipsToBounds = true
             webViewContainer.layer.cornerRadius = isPortrait ? 12 : 0
         }
@@ -682,7 +698,7 @@ class TabViewController: UIViewController {
             webView.trailingAnchor.constraint(equalTo: webViewContainer.trailingAnchor)
         ])
 
-        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+        if isExperimentalThemingEnabled {
             pullToRefreshViewAdapter = PullToRefreshViewAdapter(with: webView.scrollView,
                                                                 pullableView: webViewContainerView,
                                                                 onRefresh: { [weak self] in
@@ -746,6 +762,7 @@ class TabViewController: UIViewController {
 #endif
 
         updateRoundedCorners()
+        updateBorder(for: webView)
     }
 
     private func addObservers() {
@@ -1138,7 +1155,7 @@ class TabViewController: UIViewController {
     }
 
     func setRefreshControlEnabled(_ isEnabled: Bool) {
-        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+        if isExperimentalThemingEnabled {
             pullToRefreshViewAdapter?.setRefreshControlEnabled(isEnabled)
         } else {
             webView.scrollView.refreshControl = isEnabled ? refreshControl : nil

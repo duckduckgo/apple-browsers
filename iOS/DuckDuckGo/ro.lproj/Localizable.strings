@@ -2770,6 +2770,9 @@
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe" = "Protejează-ți conexiunea și identitatea cu Privacy Pro";
 
+/* Try Privacy Pro Free button text for privacy pro */
+"settings.subscription.try.free" = "Încearcă Privacy Pro gratuit";
+
 /* Privacy pro description subtitle in settings */
 "settings.subscription.us.description" = "Include VPN, Personal Information Removal și Identity Theft Restoration.";
 

@@ -49,8 +49,8 @@ final class BookmarksBarViewController: NSViewController {
     private var dragDestination: (folder: BookmarkFolder, mouseLocation: NSPoint, hoverStarted: Date)?
 
     fileprivate var clipThreshold: CGFloat {
-        let viewWidthWithoutClipIndicator = view.frame.width - clippedItemsIndicator.frame.minX
-        return view.frame.width - viewWidthWithoutClipIndicator - 3
+        let indicatorFrameInCollectionView = bookmarksBarCollectionView.convert(clippedItemsIndicator.frame, from: clippedItemsIndicator.superview)
+        return indicatorFrameInCollectionView.minX - 3
     }
 
     @UserDefaultsWrapper(key: .bookmarksBarPromptShown, defaultValue: false)

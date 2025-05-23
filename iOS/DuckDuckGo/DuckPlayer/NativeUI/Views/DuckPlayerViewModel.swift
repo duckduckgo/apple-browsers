@@ -156,7 +156,7 @@ final class DuckPlayerViewModel: ObservableObject {
         self.autoOpenOnYoutube = duckPlayerSettings.nativeUIYoutubeMode == .auto
         self.pixelHandler = pixelHandler
         self.url = getVideoURL()
-        
+
     }
 
     /// Gets the current video URL with the current timestamp
@@ -174,7 +174,7 @@ final class DuckPlayerViewModel: ObservableObject {
     /// Handles navigation requests to YouTube
     /// - Parameter url: The YouTube video URL to navigate to
     func handleYouTubeNavigation(_ url: URL) {
-        if let (videoID, _) = url.youtubeVideoParams {            
+        if let (videoID, _) = url.youtubeVideoParams {
             youtubeNavigationRequestPublisher.send(videoID)
         }
     }

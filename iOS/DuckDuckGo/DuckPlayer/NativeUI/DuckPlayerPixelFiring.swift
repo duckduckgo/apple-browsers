@@ -22,16 +22,16 @@ import Core
 
 /// Protocol defining the interface for firing DuckPlayer-related pixels
 public protocol DuckPlayerPixelFiring {
-    
+
     /// Fires a DuckPlayer pixel
     /// - Parameters:
     ///   - pixel: The pixel event to fire
     ///   - parameters: Additional parameters to include with the pixel
     ///   - debounceTime: Time in seconds to debounce identical pixel events
-    static func fire(_ pixel: Pixel.Event, 
-                     withAdditionalParameters parameters: [String: String], 
+    static func fire(_ pixel: Pixel.Event,
+                     withAdditionalParameters parameters: [String: String],
                      debounceTime: Int)
-    
+
     /// Fires a daily DuckPlayer pixel
     /// - Parameters:
     ///   - pixel: The pixel event to fire
@@ -84,4 +84,3 @@ public final class DuckPlayerPixelHandler: DuckPlayerPixelFiring {
         DailyPixel.fire(pixel: pixel, withAdditionalParameters: parameters)
     }
 }
-

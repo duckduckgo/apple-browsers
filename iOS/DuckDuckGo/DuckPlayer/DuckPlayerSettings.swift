@@ -382,7 +382,7 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
         }
         set {
             if newValue != appSettings.duckPlayerNativeUISERPEnabled {
-                appSettings.duckPlayerNativeUISERPEnabled = newValue                
+                appSettings.duckPlayerNativeUISERPEnabled = newValue
                 triggerNotification()
             }
         }

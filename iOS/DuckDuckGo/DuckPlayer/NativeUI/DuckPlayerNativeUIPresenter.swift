@@ -435,7 +435,7 @@ final class DuckPlayerNativeUIPresenter {
     }
 
     /// Fires pill impression pixels
-    private func firePillImpressionPixels(for pillType: PillType) {        
+    private func firePillImpressionPixels(for pillType: PillType) {
         switch pillType {
         case .welcome:
             if duckPlayerSettings.nativeUIYoutubeMode == .ask {
@@ -624,7 +624,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
         if duckPlayerSettings.pillDismissCount < 3 {
             duckPlayerSettings.pillDismissCount = 0
         }
-        
+
         // Fire pixels as needed
         fireDuckPlayerPresentationPixels(for: source)
 

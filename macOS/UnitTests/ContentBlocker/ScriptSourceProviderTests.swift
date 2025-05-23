@@ -76,7 +76,7 @@ final class ScriptSourceProviderTests: XCTestCase {
         experimentManager.setResolveResult(["today": todayCohortData])
         experimentManager.allActiveContentScopeExperiments = ["test": testExperimentData]
         statisticsStore.lastAppRetentionRequestDate = Calendar.current.date(byAdding: .day, value: -1, to: Date())
-    
+
         // When
         let sourceProvider = ScriptSourceProvider(
             configStorage: MockConfigurationStore(),

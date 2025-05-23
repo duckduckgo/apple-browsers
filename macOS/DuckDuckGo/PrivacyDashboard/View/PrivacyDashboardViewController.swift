@@ -63,7 +63,6 @@ final class PrivacyDashboardViewController: NSViewController {
     }
     var sizeDelegate: PrivacyDashboardViewControllerSizeDelegate?
     private weak var tabViewModel: TabViewModel?
-//    private let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     private let pixelFiring: (
         _ event: PixelKitEvent,
         _ withAdditionalParameters: [String: String]?,
@@ -87,7 +86,6 @@ final class PrivacyDashboardViewController: NSViewController {
     init(privacyInfo: PrivacyInfo? = nil,
          entryPoint: PrivacyDashboardEntryPoint = .dashboard,
          privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
-//         contentScopeExperimentsManager: ContentScopeExperimentsManaging,
          pixelFiring: @escaping (
             _ event: PixelKitEvent,
             _ withAdditionalParameters: [String: String]?,
@@ -103,7 +101,6 @@ final class PrivacyDashboardViewController: NSViewController {
         let toggleReportingConfiguration = ToggleReportingConfiguration(privacyConfigurationManager: privacyConfigurationManager)
         let toggleReportingFeature = ToggleReportingFeature(toggleReportingConfiguration: toggleReportingConfiguration)
         let toggleReportingManager = ToggleReportingManager(feature: toggleReportingFeature)
-//        self.contentScopeExperimentsManager = contentScopeExperimentsManager
         self.pixelFiring = pixelFiring
         self.privacyDashboardController = PrivacyDashboardController(privacyInfo: privacyInfo,
                                                                      entryPoint: entryPoint,
@@ -381,17 +378,6 @@ extension PrivacyDashboardViewController {
         if let httpStatusCode = currentTab.brokenSiteInfo?.lastHttpStatusCode {
             statusCodes = [httpStatusCode]
         }
-
-//        var privacyExperimentCohorts: String {
-//            var experiments: [String: String] = [:]
-//            for feature in contentScopeExperimentsManager.allActiveContentScopeExperiments {
-//                experiments[feature.key] = feature.value.cohortID
-//            }
-//            return experiments
-//                .sorted { $0.key < $1.key }
-//                .map { "\($0.key):\($0.value)" }
-//                .joined(separator: ",")
-//        }
 
         let isPirEnabled = await isPirEnabledAndUserHasProfile()
 

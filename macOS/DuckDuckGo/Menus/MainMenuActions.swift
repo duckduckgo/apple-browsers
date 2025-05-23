@@ -385,13 +385,13 @@ extension AppDelegate {
         HomePage.Models.ContinueSetUpModel.Settings().clear()
         NotificationCenter.default.post(name: NSApplication.didBecomeActiveNotification, object: NSApp)
     }
-    
+
     @objc func showContentScopeExperiments(_ sender: Any?) {
         let experiments = contentScopeExperimentsManager.allActiveContentScopeExperiments
-        
+
         let alert = NSAlert()
         alert.messageText = "Content Scope Experiments"
-        
+
         var infoText = "Active Experiments:\n"
         if experiments.isEmpty {
             infoText += "No active experiments\n"
@@ -403,7 +403,7 @@ extension AppDelegate {
                 infoText += "Enrollment Date: \(data.enrollmentDate)\n"
             }
         }
-        
+
         alert.informativeText = infoText
         alert.addButton(withTitle: "OK")
         alert.runModal()

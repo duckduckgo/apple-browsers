@@ -54,14 +54,12 @@ class DefaultScriptSourceProvider: ScriptSourceProviding {
     let fireproofing: Fireproofing
     let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     let statisticsStore: StatisticsStore
-    private var storedCohorts: [ContentScopeExperimentData]
+    private var storedCohorts: [ContentScopeExperimentData] = []
     private var cohortsUpdated: Bool = false
 
     var currentCohorts: [ContentScopeExperimentData] {
-        if !cohortsUpdated && statisticsStore.isAppRetentionFiredToday {
-            storedCohorts = Self.generateCurrentCohorts(experimentManager: contentScopeExperimentsManager,
-                                                       statisticsStore: statisticsStore)
-            cohortsUpdated = true
+        if !cohortsUpdated {
+            storedCohorts = generateCurrentCohorts(experimentManager: contentScopeExperimentsManager, statisticsStore: statisticsStore)
         }
         return storedCohorts
     }
@@ -87,8 +85,7 @@ class DefaultScriptSourceProvider: ScriptSourceProviding {
                                                       privacyConfigurationManager: privacyConfigurationManager)
         sessionKey = Self.generateSessionKey()
         messageSecret = Self.generateSessionKey()
-        storedCohorts = Self.generateCurrentCohorts(experimentManager: contentScopeExperimentsManager,
-                                                   statisticsStore: statisticsStore)
+
         contentScopeProperties = ContentScopeProperties(gpcEnabled: appSettings.sendDoNotSell,
                                                         sessionKey: sessionKey,
                                                         messageSecret: messageSecret,
@@ -96,6 +93,8 @@ class DefaultScriptSourceProvider: ScriptSourceProviding {
                                                         currentCohorts: storedCohorts)
         autofillSourceProvider = Self.makeAutofillSource(privacyConfigurationManager: privacyConfigurationManager,
                                                          properties: contentScopeProperties)
+        storedCohorts = generateCurrentCohorts(experimentManager: contentScopeExperimentsManager,
+                                                   statisticsStore: statisticsStore)
     }
 
     private static func generateSessionKey() -> String { UUID().uuidString }
@@ -139,14 +138,15 @@ class DefaultScriptSourceProvider: ScriptSourceProviding {
         return surrogatesConfig
     }
 
-    private static func generateCurrentCohorts(experimentManager: ContentScopeExperimentsManaging, statisticsStore: StatisticsStore) -> [ContentScopeExperimentData] {
+    private func generateCurrentCohorts(experimentManager: ContentScopeExperimentsManaging, statisticsStore: StatisticsStore) -> [ContentScopeExperimentData] {
         // Only generate new cohorts if the app was used today
-        let experiments = if statisticsStore.isAppRetentionFiredToday {
-            experimentManager.resolveContentScopeScriptActiveExperiments()
+        let experiments: Experiments
+        if statisticsStore.isAppRetentionFiredToday {
+            experiments = experimentManager.resolveContentScopeScriptActiveExperiments()
+            cohortsUpdated = true
         } else {
-            experimentManager.allActiveContentScopeExperiments
+            experiments = experimentManager.allActiveContentScopeExperiments
         }
-        
         return experiments.map {
             ContentScopeExperimentData(feature: $0.value.parentID, subfeature: $0.key, cohort: $0.value.cohortID)
         }

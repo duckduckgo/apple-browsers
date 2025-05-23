@@ -70,4 +70,4 @@ class ContentScopeExperimentsDebugViewModel: ObservableObject {
         let experimentsManager = AppDependencyProvider.shared.contentScopeExperimentsManager
         activeExperiments = experimentsManager.allActiveContentScopeExperiments
     }
-} 
+}

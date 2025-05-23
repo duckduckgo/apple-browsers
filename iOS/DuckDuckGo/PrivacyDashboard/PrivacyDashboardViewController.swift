@@ -38,7 +38,6 @@ final class PrivacyDashboardViewController: UIViewController {
     private let contentBlockingManager: ContentBlockerRulesManager
     private var privacyDashboardDidTriggerDismiss: Bool = false
     private let entryPoint: PrivacyDashboardEntryPoint
-//    private let contentScopeExperimentsManager: ContentScopeExperimentsManaging
 
     private let brokenSiteReporter: BrokenSiteReporter = {
         BrokenSiteReporter(pixelHandler: { parameters in
@@ -88,7 +87,6 @@ final class PrivacyDashboardViewController: UIViewController {
         self.contentBlockingManager = contentBlockingManager
         self.breakageAdditionalInfo = breakageAdditionalInfo
         self.entryPoint = entryPoint
-//        self.contentScopeExperimentsManager = contentScopeExperimentsManager
         super.init(coder: coder)
         
         privacyDashboardController.delegate = self
@@ -333,18 +331,6 @@ extension PrivacyDashboardViewController {
         if let httpStatusCode = breakageAdditionalInfo.httpStatusCode {
             statusCodes = [httpStatusCode]
         }
-
-//        var privacyExperimentCohorts: String {
-//            var experiments: [String: String] = [:]
-//            for feature in contentScopeExperimentsManager.allActiveContentScopeExperiments {
-//                experiments[feature.key] = feature.value.cohortID
-//            }
-//            return experiments
-//                .sorted { $0.key < $1.key }
-//                .map { "\($0.key):\($0.value)" }
-//                .joined(separator: ",")
-//        }
-
 
         return BrokenSiteReport(siteUrl: breakageAdditionalInfo.currentURL,
                                 category: category,

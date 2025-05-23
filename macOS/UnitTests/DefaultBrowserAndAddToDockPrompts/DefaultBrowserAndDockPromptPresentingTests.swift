@@ -21,18 +21,26 @@ import Combine
 @testable import DuckDuckGo_Privacy_Browser
 
 final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
-
+    private var coordinatorMock: MockDefaultBrowserAndDockPromptCoordinator!
+    private var statusUpdateNotifierMock: MockDefaultBrowserAndDockPromptStatusUpdateNotifier!
+    private var sut: DefaultBrowserAndDockPromptPresenter!
     private var cancellables: Set<AnyCancellable>!
 
     override func setUpWithError() throws {
         try super.setUpWithError()
 
+        coordinatorMock = MockDefaultBrowserAndDockPromptCoordinator()
+        statusUpdateNotifierMock = MockDefaultBrowserAndDockPromptStatusUpdateNotifier()
+        sut = DefaultBrowserAndDockPromptPresenter(coordinator: coordinatorMock, statusUpdateNotifier: statusUpdateNotifierMock)
         cancellables = []
     }
 
     override func tearDownWithError() throws {
         try super.tearDownWithError()
 
+        coordinatorMock = nil
+        statusUpdateNotifierMock = nil
+        sut = nil
         cancellables = nil
     }
 
@@ -40,9 +48,7 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
         // GIVEN
         var popoverAnchorProviderCalled = false
         var bannerViewHandlerCalled = false
-        let coordinator = MockDefaultBrowserAndDockPromptCoordinator()
-        let sut = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator)
-        coordinator.getPromptTypeResult = nil
+        coordinatorMock.getPromptTypeResult = nil
 
         // WHEN
         sut.tryToShowPrompt(
@@ -62,11 +68,8 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
 
     func testTryToShowPromptShowsBannerWhenPromptTypeIsBanner() {
         // GIVEN
-        let coordinator = MockDefaultBrowserAndDockPromptCoordinator()
-        let sut = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator)
-
-        coordinator.getPromptTypeResult = .banner
-        coordinator.evaluatePromptEligibility = .bothDefaultBrowserAndDockPrompt
+        coordinatorMock.getPromptTypeResult = .banner
+        coordinatorMock.evaluatePromptEligibility = .bothDefaultBrowserAndDockPrompt
 
         var bannerShown = false
         let bannerViewHandler: (BannerMessageViewController) -> Void = { _ in
@@ -83,10 +86,7 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
     func testTryToShowPromptShowsPopoverWhenPromptTypeIsPopover() {
         // GIVEN
         var popoverShown = false
-        let coordinator = MockDefaultBrowserAndDockPromptCoordinator()
-        let sut = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator)
-
-        coordinator.getPromptTypeResult = .popover
+        coordinatorMock.getPromptTypeResult = .popover
 
         let popoverAnchorProvider: () -> NSView? = {
             popoverShown = true
@@ -100,13 +100,64 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
         XCTAssertTrue(popoverShown)
     }
 
+    func testTryToShowPromptKeepsTrackOfPromptShownWhenPopoverIsReturned() {
+        // GIVEN
+        coordinatorMock.getPromptTypeResult = .popover
+        XCTAssertNil(sut.currentShownPrompt)
+
+        // WHEN
+        sut.tryToShowPrompt(popoverAnchorProvider: { NSView() }, bannerViewHandler: { _ in })
+
+        // THEN
+        XCTAssertEqual(sut.currentShownPrompt, .popover)
+    }
+
+    func testTryToShowPromptKeepsTrackOfPromptShownWhenBannerIsReturned() {
+        // GIVEN
+        coordinatorMock.getPromptTypeResult = .banner
+        coordinatorMock.evaluatePromptEligibility = .bothDefaultBrowserAndDockPrompt
+        XCTAssertNil(sut.currentShownPrompt)
+
+        // WHEN
+        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: { _ in })
+
+        // THEN
+        XCTAssertEqual(sut.currentShownPrompt, .banner)
+    }
+
+    func testTryToShowPromptStartsUpdateNotifierWhenPopoverIsReturned() {
+        // GIVEN
+        coordinatorMock.getPromptTypeResult = .popover
+
+        let popoverAnchorProvider: () -> NSView? = {
+            return NSView()
+        }
+        XCTAssertFalse(statusUpdateNotifierMock.didCallStartNotifyingStatus)
+
+        // WHEN
+        sut.tryToShowPrompt(popoverAnchorProvider: popoverAnchorProvider, bannerViewHandler: { _ in })
+
+        // THEN
+        XCTAssertTrue(statusUpdateNotifierMock.didCallStartNotifyingStatus)
+    }
+
+    func testTryToShowPromptStartsUpdateNotifierWhenBannerIsReturned() {
+        // GIVEN
+        coordinatorMock.getPromptTypeResult = .banner
+        coordinatorMock.evaluatePromptEligibility = .bothDefaultBrowserAndDockPrompt
+        XCTAssertFalse(statusUpdateNotifierMock.didCallStartNotifyingStatus)
+
+        // WHEN
+        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: { _ in })
+
+        // THEN
+        XCTAssertTrue(statusUpdateNotifierMock.didCallStartNotifyingStatus)
+    }
+
     func testBannerConfirmationCallsCoordinatorConfirmationActionForBannerPrompt() {
         // GIVEN
-        let coordinator = MockDefaultBrowserAndDockPromptCoordinator()
-        let sut = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator)
-
-        coordinator.getPromptTypeResult = .banner
-        coordinator.evaluatePromptEligibility = .bothDefaultBrowserAndDockPrompt
+        coordinatorMock.getPromptTypeResult = .banner
+        coordinatorMock.evaluatePromptEligibility = .bothDefaultBrowserAndDockPrompt
 
         let bannerViewHandler: (BannerMessageViewController) -> Void = { banner in
             banner.viewModel.buttonAction()
@@ -116,47 +167,20 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
         sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: bannerViewHandler)
 
         // THEN
-        XCTAssertTrue(coordinator.wasPromptConfirmationCalled)
-        XCTAssertEqual(coordinator.capturedPrompt, .banner)
+        XCTAssertTrue(coordinatorMock.wasPromptConfirmationCalled)
+        XCTAssertEqual(coordinatorMock.capturedConfirmationPrompt, .banner)
     }
-
-    func testPromptShouldBeDismissedBeforePresentingNewOne() {
-        let coordinator = MockDefaultBrowserAndDockPromptCoordinator()
-        let sut = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator)
-        let expectation = expectation(description: "Banner dismissed")
-
-        coordinator.getPromptTypeResult = .banner
-        coordinator.evaluatePromptEligibility = .bothDefaultBrowserAndDockPrompt
-
-        var didReceiveBannerDismissed = false
-        sut.bannerDismissedPublisher.sink { _ in
-            didReceiveBannerDismissed = true
-            expectation.fulfill()
-        }.store(in: &cancellables)
-
-        // WHEN
-        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: { banner in })
-
-        // THEN
-        wait(for: [expectation], timeout: 1.0)
-        XCTAssertTrue(didReceiveBannerDismissed)
-    }
-
+    
     func testBannerDismissedPublisherEmitsWhenBannerIsDismissed() {
         // GIVEN
-        let coordinator = MockDefaultBrowserAndDockPromptCoordinator()
-        let sut = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator)
         let expectation = expectation(description: "Banner dismissed")
-        expectation.expectedFulfillmentCount = 2 // When we present a prompt we ensure we dismiss any already presented ones.
 
-        coordinator.getPromptTypeResult = .banner
-        coordinator.evaluatePromptEligibility = .bothDefaultBrowserAndDockPrompt
+        coordinatorMock.getPromptTypeResult = .banner
+        coordinatorMock.evaluatePromptEligibility = .bothDefaultBrowserAndDockPrompt
 
         var didReceiveBannerDismissed = false
-        var didReceiveBannerDismissedCount = 0
         sut.bannerDismissedPublisher.sink { _ in
             didReceiveBannerDismissed = true
-            didReceiveBannerDismissedCount += 1
             expectation.fulfill()
         }.store(in: &cancellables)
 
@@ -170,24 +194,18 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
         // THEN
         wait(for: [expectation], timeout: 1.0)
         XCTAssertTrue(didReceiveBannerDismissed)
-        XCTAssertEqual(didReceiveBannerDismissedCount, 2)
     }
 
     func testBannerDismissedPublisherEmitsWhenBannerIsActioned() {
         // GIVEN
-        let coordinator = MockDefaultBrowserAndDockPromptCoordinator()
-        let sut = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator)
         let expectation = expectation(description: "Banner dismissed")
-        expectation.expectedFulfillmentCount = 2 // When we present a prompt we ensure we dismiss any already presented ones.
 
-        coordinator.getPromptTypeResult = .banner
-        coordinator.evaluatePromptEligibility = .bothDefaultBrowserAndDockPrompt
+        coordinatorMock.getPromptTypeResult = .banner
+        coordinatorMock.evaluatePromptEligibility = .bothDefaultBrowserAndDockPrompt
 
         var didReceiveBannerDismissed = false
-        var didReceiveBannerDismissedCount = 0
         sut.bannerDismissedPublisher.sink { _ in
             didReceiveBannerDismissed = true
-            didReceiveBannerDismissedCount += 1
             expectation.fulfill()
         }.store(in: &cancellables)
 
@@ -201,6 +219,106 @@ final class DefaultBrowserAndDockPromptPresentingTests: XCTestCase {
         // THEN
         wait(for: [expectation], timeout: 1.0)
         XCTAssertTrue(didReceiveBannerDismissed)
-        XCTAssertEqual(didReceiveBannerDismissedCount, 2)
     }
+
+    // MARK: - Status Updates
+
+    func testSubscribeToStatusUpdatesStopMonitoringAndResetShowPromptWhenReceiveEvent() {
+        // GIVEN
+        coordinatorMock.getPromptTypeResult = .banner
+        coordinatorMock.evaluatePromptEligibility = .bothDefaultBrowserAndDockPrompt
+        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: { _ in })
+        statusUpdateNotifierMock.sendValue(.init(isDefaultBrowser: false, isAddedToDock: false))
+        XCTAssertTrue(statusUpdateNotifierMock.didCallStartNotifyingStatus)
+        XCTAssertFalse(statusUpdateNotifierMock.didCallStopNotifyingStatus)
+        XCTAssertEqual(sut.currentShownPrompt, .banner)
+
+        // WHEN
+        statusUpdateNotifierMock.sendValue(.init(isDefaultBrowser: false, isAddedToDock: true))
+
+        // THEN
+        XCTAssertTrue(statusUpdateNotifierMock.didCallStopNotifyingStatus)
+        XCTAssertNil(sut.currentShownPrompt)
+    }
+
+    func testSubscribeToStatusUpdatesDoesDismissBannerWhenReceiveEvent() {
+        // GIVEN
+        coordinatorMock.getPromptTypeResult = .banner
+        coordinatorMock.evaluatePromptEligibility = .bothDefaultBrowserAndDockPrompt
+        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: { _ in })
+        statusUpdateNotifierMock.sendValue(.init(isDefaultBrowser: false, isAddedToDock: false))
+
+        var didReceiveBannerDismissed = false
+        var didReceiveBannerDismissedCount = 0
+        sut.bannerDismissedPublisher.sink { _ in
+            didReceiveBannerDismissed = true
+            didReceiveBannerDismissedCount += 1
+        }
+        .store(in: &cancellables)
+
+        // WHEN
+        statusUpdateNotifierMock.sendValue(.init(isDefaultBrowser: false, isAddedToDock: true))
+
+        // THEN
+        XCTAssertTrue(didReceiveBannerDismissed)
+        XCTAssertEqual(didReceiveBannerDismissedCount, 1)
+    }
+
+    func testSubscribeToStatusUpdatesDispatchesDismissActionStatusUpdate() {
+        // GIVEN
+        coordinatorMock.getPromptTypeResult = .banner
+        coordinatorMock.evaluatePromptEligibility = .bothDefaultBrowserAndDockPrompt
+        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: { _ in })
+        statusUpdateNotifierMock.sendValue(.init(isDefaultBrowser: false, isAddedToDock: false))
+        XCTAssertNil(coordinatorMock.capturedDismissAction)
+
+        // WHEN
+        statusUpdateNotifierMock.sendValue(.init(isDefaultBrowser: false, isAddedToDock: true))
+
+        // THEN
+        XCTAssertEqual(coordinatorMock.capturedDismissAction, .statusUpdate(prompt: .banner))
+    }
+
+    func testBannerConfirmationStopMonitoringNotifierAndCleanCurrentShownPrompt() {
+        // GIVEN
+        coordinatorMock.getPromptTypeResult = .banner
+        coordinatorMock.evaluatePromptEligibility = .bothDefaultBrowserAndDockPrompt
+        var bannerVC: BannerMessageViewController?
+        let bannerViewHandler: (BannerMessageViewController) -> Void = { banner in
+            bannerVC = banner
+        }
+        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: bannerViewHandler)
+        XCTAssertTrue(statusUpdateNotifierMock.didCallStartNotifyingStatus)
+        XCTAssertFalse(statusUpdateNotifierMock.didCallStopNotifyingStatus)
+        XCTAssertEqual(sut.currentShownPrompt, .banner)
+
+        // WHEN
+        bannerVC?.viewModel.buttonAction()
+
+        // THEN
+        XCTAssertTrue(statusUpdateNotifierMock.didCallStopNotifyingStatus)
+        XCTAssertNil(sut.currentShownPrompt)
+    }
+
+    func testBannerDismissalStopMonitoringNotifierAndCleanCurrentShownPrompt() {
+        // GIVEN
+        coordinatorMock.getPromptTypeResult = .banner
+        coordinatorMock.evaluatePromptEligibility = .bothDefaultBrowserAndDockPrompt
+        var bannerVC: BannerMessageViewController?
+        let bannerViewHandler: (BannerMessageViewController) -> Void = { banner in
+            bannerVC = banner
+        }
+        sut.tryToShowPrompt(popoverAnchorProvider: { nil }, bannerViewHandler: bannerViewHandler)
+        XCTAssertTrue(statusUpdateNotifierMock.didCallStartNotifyingStatus)
+        XCTAssertFalse(statusUpdateNotifierMock.didCallStopNotifyingStatus)
+        XCTAssertEqual(sut.currentShownPrompt, .banner)
+
+        // WHEN
+        bannerVC?.viewModel.closeAction()
+
+        // THEN
+        XCTAssertTrue(statusUpdateNotifierMock.didCallStopNotifyingStatus)
+        XCTAssertNil(sut.currentShownPrompt)
+    }
+
 }

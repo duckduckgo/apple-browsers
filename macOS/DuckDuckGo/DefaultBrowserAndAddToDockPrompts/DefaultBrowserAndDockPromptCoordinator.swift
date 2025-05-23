@@ -23,6 +23,11 @@ import BrowserServicesKit
 import FeatureFlags
 import PixelKit
 
+enum DefaultBrowserAndDockPromptDismissAction: Equatable {
+    case userInput(prompt: DefaultBrowserAndDockPromptPresentationType, shouldHidePermanently: Bool)
+    case statusUpdate(prompt: DefaultBrowserAndDockPromptPresentationType)
+}
+
 protocol DefaultBrowserAndDockPrompt {
     /// Evaluates the user's eligibility for the default browser and dock prompt, and returns the appropriate
     /// `DefaultBrowserAndDockPromptType` value based on the user's current state (default browser status, dock status, and whether it's a Sparkle build).
@@ -55,7 +60,7 @@ protocol DefaultBrowserAndDockPrompt {
     /// - Parameters:
     ///   - prompt: The type of prompt the user interacted with.
     ///   - shouldHidePermanently: A boolean flag indicating whether the user has decided not to see the prompt again.
-    func dismissAction(for prompt: DefaultBrowserAndDockPromptPresentationType, shouldHidePermanently: Bool)
+    func dismissAction(_ action: DefaultBrowserAndDockPromptDismissAction)
 }
 
 final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt {
@@ -154,15 +159,12 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         fireActionPixel()
     }
 
-    func dismissAction(for prompt: DefaultBrowserAndDockPromptPresentationType, shouldHidePermanently: Bool) {
-        switch prompt {
-        case .popover:
-            // TODO: Send Pixel
-            break
-        case .banner:
-            // TODO: Send Pixel
-            // Set the banner seen only when the user interact with it because we want to show it in every windows.
-            setBannerSeen(shouldHidePermanently: shouldHidePermanently)
+    func dismissAction(_ action: DefaultBrowserAndDockPromptDismissAction) {
+        switch action {
+        case let .userInput(prompt, shouldHidePermanently):
+            handleUserInputDismissAction(for: prompt, shouldHidePermanently: shouldHidePermanently)
+        case let .statusUpdate(prompt: prompt):
+            handleSystemUpdateDismissAction(for: prompt)
         }
     }
 
@@ -189,5 +191,23 @@ private extension DefaultBrowserAndDockPromptCoordinator {
         if shouldHidePermanently {
             store.isBannerPermanentlyDismissed = true
         }
+    }
+
+    func handleUserInputDismissAction(for prompt: DefaultBrowserAndDockPromptPresentationType, shouldHidePermanently: Bool) {
+        switch prompt {
+        case .popover:
+            // TODO: Send Pixel
+            break
+        case .banner:
+            // TODO: Send Pixel
+            // Set the banner seen only when the user interact with it because we want to show it in every windows.
+            setBannerSeen(shouldHidePermanently: shouldHidePermanently)
+        }
+    }
+
+    func handleSystemUpdateDismissAction(for prompt: DefaultBrowserAndDockPromptPresentationType) {
+        // The popover is set seen when is presented as we don't want to show it in every windows.
+        guard prompt == .banner else { return }
+        setBannerSeen(shouldHidePermanently: false)
     }
 }

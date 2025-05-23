@@ -303,7 +303,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         XCTAssertNil(storeMock.popoverShownDate)
 
         // WHEN
-        sut.dismissAction(for: .banner, shouldHidePermanently: false)
+        sut.dismissAction(.userInput(prompt: .banner, shouldHidePermanently: false))
 
         // THEN
         XCTAssertEqual(storeMock.bannerShownDate, Self.now.timeIntervalSince1970)
@@ -322,7 +322,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         XCTAssertNil(storeMock.popoverShownDate)
 
         // WHEN
-        sut.dismissAction(for: .banner, shouldHidePermanently: true)
+        sut.dismissAction(.userInput(prompt: .banner, shouldHidePermanently: true))
 
         // THEN
         XCTAssertEqual(storeMock.bannerShownDate, Self.now.timeIntervalSince1970)
@@ -341,12 +341,40 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         XCTAssertNil(storeMock.popoverShownDate)
 
         // WHEN
-        sut.dismissAction(for: .popover, shouldHidePermanently: true)
+        sut.dismissAction(.userInput(prompt: .popover, shouldHidePermanently: true))
 
         // THEN
         XCTAssertNil(storeMock.bannerShownDate)
         XCTAssertFalse(storeMock.isBannerPermanentlyDismissed)
         XCTAssertNil(storeMock.popoverShownDate)
+    }
+
+    func testDismissActionStatusUpdateForBannerPromptSetBannerSeenAndSetPermanentlyHiddenFlagToFalse() {
+        // GIVEN
+        let sut = makeSUT()
+        XCTAssertNil(storeMock.bannerShownDate)
+        XCTAssertFalse(storeMock.isBannerPermanentlyDismissed)
+
+        // WHEN
+        sut.dismissAction(.statusUpdate(prompt: .banner))
+
+        // THEN
+        XCTAssertEqual(storeMock.bannerShownDate, Self.now.timeIntervalSince1970)
+        XCTAssertFalse(storeMock.isBannerPermanentlyDismissed)
+    }
+
+    func testDismissActionStatusUpdateForPopoverDoesNotSetPopoverSeen() {
+        // GIVEN
+        let sut = makeSUT()
+        XCTAssertNil(storeMock.popoverShownDate)
+        XCTAssertFalse(storeMock.isBannerPermanentlyDismissed)
+
+        // WHEN
+        sut.dismissAction(.statusUpdate(prompt: .popover))
+
+        // THEN
+        XCTAssertNil(storeMock.popoverShownDate)
+        XCTAssertFalse(storeMock.isBannerPermanentlyDismissed)
     }
 }
 

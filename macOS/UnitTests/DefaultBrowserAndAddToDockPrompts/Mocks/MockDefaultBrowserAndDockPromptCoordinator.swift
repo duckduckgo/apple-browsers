@@ -25,8 +25,8 @@ final class MockDefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPro
 
     private(set) var wasPromptConfirmationCalled = false
     private(set) var wasDismissPromptCalled = false
-    private(set) var capturedPrompt: DefaultBrowserAndDockPromptPresentationType?
-    private(set) var capturedShouldHidePermanently = false
+    private(set) var capturedConfirmationPrompt: DefaultBrowserAndDockPromptPresentationType?
+    private(set) var capturedDismissAction: DefaultBrowserAndDockPromptDismissAction?
 
     func getPromptType() -> DefaultBrowserAndDockPromptPresentationType? {
         getPromptTypeResult
@@ -34,12 +34,11 @@ final class MockDefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPro
 
     func confirmAction(for prompt: DefaultBrowserAndDockPromptPresentationType) {
         wasPromptConfirmationCalled = true
-        capturedPrompt = prompt
+        capturedConfirmationPrompt = prompt
     }
 
-    func dismissAction(for prompt: DefaultBrowserAndDockPromptPresentationType, shouldHidePermanently: Bool) {
+    func dismissAction(_ action: DefaultBrowserAndDockPromptDismissAction) {
         wasDismissPromptCalled = true
-        capturedPrompt = prompt
-        capturedShouldHidePermanently = shouldHidePermanently
+        capturedDismissAction = action
     }
 }

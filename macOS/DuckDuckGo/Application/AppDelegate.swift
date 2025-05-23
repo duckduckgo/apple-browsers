@@ -546,7 +546,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             store: defaultBrowserAndDockPromptKeyValueStore,
             isOnboardingCompleted: onboardingContextualDialogsManager.state == .onboardingCompleted
         )
-        defaultBrowserAndDockPromptPresenter = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator)
+        let statusUpdateNotifier = DefaultBrowserAndDockPromptStatusUpdateNotifier()
+        defaultBrowserAndDockPromptPresenter = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, statusUpdateNotifier: statusUpdateNotifier)
 
         startupSync()
 

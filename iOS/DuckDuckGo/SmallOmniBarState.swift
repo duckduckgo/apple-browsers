@@ -212,7 +212,7 @@ struct SmallOmniBarState {
         let showBackground = true
         let showClear = false
         var showAbort: Bool { isLoading }
-        var showRefresh: Bool { false }
+        let showRefresh = true
         var showShare: Bool { !isLoading }
         let showMenu = false
         let showSettings = false

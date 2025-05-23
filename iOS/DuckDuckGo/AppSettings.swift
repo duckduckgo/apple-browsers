@@ -87,8 +87,7 @@ protocol AppSettings: AnyObject, OnboardingDebugAppSettings {
     var duckPlayerAskModeOverlayHidden: Bool { get set }
     var duckPlayerOpenInNewTab: Bool { get set }
     
-    // DuckPlayer Native UI
-    var duckPlayerNativeUI: Bool { get set }
+    // DuckPlayer Native UI    
     var duckPlayerAutoplay: Bool { get set }
     var duckPlayerNativeUISERPEnabled: Bool { get set }
     var duckPlayerNativeYoutubeMode: NativeDuckPlayerYoutubeMode { get set }
@@ -97,6 +96,8 @@ protocol AppSettings: AnyObject, OnboardingDebugAppSettings {
     var duckPlayerVariant: DuckPlayerVariant { get set }
     var duckPlayerWelcomeMessageShown: Bool { get set }
     var duckPlayerControlsVisible: Bool { get set }
+    var duckPlayerNativeUIWasUsed: Bool { get set }
+    var duckPlayerNativeUISettingsMapped: Bool { get set }
 }
 
 // MARK: - AppSettings + OnboardingDebugSettings

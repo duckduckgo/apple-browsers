@@ -178,6 +178,7 @@ class AppConfigurationFetch {
                 self.markFetchCompleted(isBackground: isBackground, hasNewData: false)
             case .assetsUpdated:
                 self.markFetchCompleted(isBackground: isBackground, hasNewData: true)
+                NotificationCenter.default.post(name: .remoteMessagesShouldRefresh, object: nil)
             }
 
             onDidComplete(result)

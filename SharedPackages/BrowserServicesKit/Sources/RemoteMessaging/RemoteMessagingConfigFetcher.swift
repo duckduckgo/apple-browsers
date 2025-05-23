@@ -19,6 +19,7 @@
 import Configuration
 import Foundation
 import Networking
+import OSLog
 
 /**
  * This protocol defines API for fetching RMF config from the server
@@ -56,6 +57,7 @@ public struct RemoteMessagingConfigFetcher: RemoteMessagingConfigFetching {
         do {
             return try JSONDecoder().decode(RemoteMessageResponse.JsonRemoteMessagingConfig.self, from: responseData)
         } catch {
+            Logger.remoteMessaging.error("PARSING ERROR: \(error)")
             throw RemoteMessageResponse.StatusError.parsingFailed
         }
     }

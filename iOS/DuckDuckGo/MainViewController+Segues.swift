@@ -263,7 +263,15 @@ extension MainViewController {
             }
         }
     }
-    
+
+    func segueToFeedback() {
+        Logger.lifecycle.debug(#function)
+        hideAllHighlightsIfNeeded()
+        launchSettings {
+            $0.presentLegacyView(.feedback)
+        }
+   }
+
     func launchSettings(completion: ((SettingsViewModel) -> Void)? = nil,
                         deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection? = nil) {
         let legacyViewProvider = SettingsLegacyViewProvider(syncService: syncService,

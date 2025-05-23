@@ -91,8 +91,9 @@ struct SettingsSubscriptionView: View {
             .disabled(true)
 
             // Get privacy pro
+            let getText = settingsViewModel.state.subscription.isEligibleForTrialOffer ? UserText.settingsPProTryFree : UserText.settingsPProLearnMore
             SettingsCustomCell(content: {
-                Text(UserText.settingsPProLearnMore)
+                Text(getText)
                     .daxBodyRegular()
                     .foregroundColor(Color.init(designSystemColor: .accent))
                     .padding(.leading, 32.0)

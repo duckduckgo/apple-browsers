@@ -1,5 +1,5 @@
 //
-//  ToolbarButton.swift
+//  BrowserChromeButton.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -20,7 +20,7 @@
 import UIKit
 import DesignResourcesKit
 
-class ToolbarButton: UIButton {
+class BrowserChromeButton: UIButton {
 
     enum ButtonType {
         case primary
@@ -68,7 +68,7 @@ class ToolbarButton: UIButton {
     }
 }
 
-private extension ToolbarButton.ButtonType {
+private extension BrowserChromeButton.ButtonType {
 
     func backgroundColor(for state: UIButton.State) -> UIColor {
 

@@ -93,7 +93,8 @@ class MobileUserAttributeMatcherTests: XCTestCase {
             isDuckPlayerOnboarded: false,
             isDuckPlayerEnabled: false,
             dismissedMessageIds: dismissedMessageIds,
-            shownMessageIds: []
+            shownMessageIds: [],
+            enabledFeatureFlags: []
         )
     }
 }

@@ -522,11 +522,15 @@ class MainViewController: UIViewController {
         guard isPad else { return }
 
         let storyboard = UIStoryboard(name: "TabSwitcher", bundle: nil)
-        let controller: TabsBarViewController = storyboard.instantiateViewController(identifier: "TabsBar")
+        let controller: TabsBarViewController = storyboard.instantiateViewController(identifier: "TabsBar") { coder in
+            TabsBarViewController(coder: coder, featureFlagger: self.featureFlagger)
+        }
+        addChild(controller)
         controller.view.frame = viewCoordinator.tabBarContainer.bounds
         controller.delegate = self
         viewCoordinator.tabBarContainer.addSubview(controller.view)
         tabsBarController = controller
+        controller.didMove(toParent: self)
     }
 
     func startAddFavoriteFlow() {
@@ -3381,7 +3385,12 @@ extension MainViewController: AutofillLoginListViewControllerDelegate {
 // MARK: - AIChatViewControllerManagerDelegate
 extension MainViewController: AIChatViewControllerManagerDelegate {
     func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didRequestToLoad url: URL) {
-        loadUrlInNewTab(url, inheritedAttribution: nil)
+        if let tabSwitcher = tabSwitcherController {
+            loadUrlInNewTab(url, inheritedAttribution: nil)
+            tabSwitcher.dismiss(animated: true)
+        } else {
+            loadUrlInNewTab(url, inheritedAttribution: nil)
+        }
     }
 
     func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didSubmitQuery query: String) {

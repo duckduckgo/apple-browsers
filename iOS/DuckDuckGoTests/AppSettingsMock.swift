@@ -112,4 +112,6 @@ class AppSettingsMock: AppSettings {
     var duckPlayerVariant: DuckDuckGo.DuckPlayerVariant = .classicWeb
     var duckPlayerPrimingMessagePresented: Bool = false
     var duckPlayerControlsVisible: Bool = true
+    var duckPlayerNativeUIWasUsed: Bool = false
+    var duckPlayerNativeUISettingsMapped: Bool = false
 }

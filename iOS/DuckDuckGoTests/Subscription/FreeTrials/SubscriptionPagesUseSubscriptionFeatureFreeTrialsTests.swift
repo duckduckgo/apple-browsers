@@ -32,7 +32,7 @@ final class SubscriptionPagesUseSubscriptionFeatureFreeTrialsTests: XCTestCase {
     private var mockSubscriptionManager: SubscriptionManagerMock!
     private var mockAccountManager: AccountManagerMock!
     private var mockStorePurchaseManager: StorePurchaseManagerMock!
-    private var mockFreeTrialsFeatureFlagExperiment: MockFreeTrialsFeatureFlagExperiment!
+    private var mockSubscriptionFreeTrialsHelper: MockSubscriptionFreeTrialsHelper!
     private var mockAppStorePurchaseFlow: AppStorePurchaseFlowMock!
 
     override func setUpWithError() throws {
@@ -47,22 +47,22 @@ final class SubscriptionPagesUseSubscriptionFeatureFreeTrialsTests: XCTestCase {
                                                       subscriptionFeatureMappingCache: SubscriptionFeatureMappingCacheMock())
 
         mockAppStorePurchaseFlow = AppStorePurchaseFlowMock()
-        mockFreeTrialsFeatureFlagExperiment = MockFreeTrialsFeatureFlagExperiment()
-        
+        mockSubscriptionFreeTrialsHelper = MockSubscriptionFreeTrialsHelper()
+
         sut = DefaultSubscriptionPagesUseSubscriptionFeature(subscriptionManager: mockSubscriptionManager,
                                                              subscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock.enabled,
                                                              subscriptionAttributionOrigin: nil,
                                                              appStorePurchaseFlow: mockAppStorePurchaseFlow,
                                                              appStoreRestoreFlow: AppStoreRestoreFlowMock(),
                                                              appStoreAccountManagementFlow: AppStoreAccountManagementFlowMock(),
-                                                             freeTrialsExperiment: mockFreeTrialsFeatureFlagExperiment)
+                                                             subscriptionFreeTrialsHelper: mockSubscriptionFreeTrialsHelper)
     }
 
-    func testWhenFreeTrialsCohortIsControl_thenStandardSubscriptionOptionsAreReturned() async throws {
+    func testWhenFreeTrialsNotAvailable_thenStandardSubscriptionOptionsAreReturned() async throws {
         // Given
         mockAccountManager.accessToken = nil
         mockSubscriptionManager.canPurchase = true
-        mockFreeTrialsFeatureFlagExperiment.cohortToReturn = PrivacyProFreeTrialExperimentCohort.control
+        mockSubscriptionFreeTrialsHelper.areFreeTrialsEnabledValue = false
         mockStorePurchaseManager.subscriptionOptionsResult = .mockStandard
 
         // When
@@ -70,15 +70,13 @@ final class SubscriptionPagesUseSubscriptionFeatureFreeTrialsTests: XCTestCase {
 
         // Then
         XCTAssertEqual(result as? SubscriptionOptions, .mockStandard)
-        XCTAssertTrue(mockFreeTrialsFeatureFlagExperiment.incrementPaywallViewCountCalled)
-        XCTAssertTrue(mockFreeTrialsFeatureFlagExperiment.firePaywallImpressionPixelCalled)
     }
 
-    func testWhenFreeTrialsCohortIsTreatment_thenFreeTrialSubscriptionOptionsAreReturned() async throws {
+    func testWhenFreeTrialsAreAvailable_thenFreeTrialSubscriptionOptionsAreReturned() async throws {
         // Given
         mockAccountManager.accessToken = nil
         mockSubscriptionManager.canPurchase = true
-        mockFreeTrialsFeatureFlagExperiment.cohortToReturn = PrivacyProFreeTrialExperimentCohort.treatment
+        mockSubscriptionFreeTrialsHelper.areFreeTrialsEnabledValue = true
         mockStorePurchaseManager.freeTrialSubscriptionOptionsResult = .mockFreeTrial
 
         // When
@@ -86,45 +84,13 @@ final class SubscriptionPagesUseSubscriptionFeatureFreeTrialsTests: XCTestCase {
 
         // Then
         XCTAssertEqual(result as? SubscriptionOptions, .mockFreeTrial)
-        XCTAssertTrue(mockFreeTrialsFeatureFlagExperiment.incrementPaywallViewCountCalled)
-        XCTAssertTrue(mockFreeTrialsFeatureFlagExperiment.firePaywallImpressionPixelCalled)
-    }
-
-    func testWhenUserIsAuthenticated_thenStandardSubscriptionOptionsAreReturned() async throws {
-        // Given
-        mockAccountManager.accessToken = "token"
-        mockSubscriptionManager.canPurchase = true
-        mockStorePurchaseManager.subscriptionOptionsResult = .mockStandard
-
-        // When
-        let result = await sut.getSubscriptionOptions(params: "", original: MockWKScriptMessage(name: "", body: ""))
-
-        // Then
-        XCTAssertEqual(result as? SubscriptionOptions, .mockStandard)
-        XCTAssertFalse(mockFreeTrialsFeatureFlagExperiment.incrementPaywallViewCountCalled)
-        XCTAssertFalse(mockFreeTrialsFeatureFlagExperiment.firePaywallImpressionPixelCalled)
-    }
-
-    func testWhenUserCannotPurchase_thenStandardSubscriptionOptionsAreReturned() async throws {
-        // Given
-        mockAccountManager.accessToken = nil
-        mockSubscriptionManager.canPurchase = false
-        mockStorePurchaseManager.subscriptionOptionsResult = .mockStandard
-
-        // When
-        let result = await sut.getSubscriptionOptions(params: "", original: MockWKScriptMessage(name: "", body: ""))
-
-        // Then
-        XCTAssertEqual(result as? SubscriptionOptions, .mockStandard)
-        XCTAssertFalse(mockFreeTrialsFeatureFlagExperiment.incrementPaywallViewCountCalled)
-        XCTAssertFalse(mockFreeTrialsFeatureFlagExperiment.firePaywallImpressionPixelCalled)
     }
 
     func testWhenFailedToFetchSubscriptionOptions_thenEmptyOptionsAreReturned() async throws {
         // Given
         mockAccountManager.accessToken = nil
         mockSubscriptionManager.canPurchase = true
-        mockFreeTrialsFeatureFlagExperiment.cohortToReturn = PrivacyProFreeTrialExperimentCohort.control
+        mockSubscriptionFreeTrialsHelper.areFreeTrialsEnabledValue = false
         mockStorePurchaseManager.subscriptionOptionsResult = nil
 
         // When
@@ -135,11 +101,11 @@ final class SubscriptionPagesUseSubscriptionFeatureFreeTrialsTests: XCTestCase {
         XCTAssertEqual(sut.transactionError, .failedToGetSubscriptionOptions)
     }
 
-    func testWhenFreeTrialsCohortIsTreatmentAndFreeTrialOptionsAreNil_thenFallbackToStandardOptions() async throws {
+    func testWhenFreeTrialsAreAvailableAndFreeTrialOptionsAreNil_thenFallbackToStandardOptions() async throws {
         // Given
         mockAccountManager.accessToken = nil
         mockSubscriptionManager.canPurchase = true
-        mockFreeTrialsFeatureFlagExperiment.cohortToReturn = PrivacyProFreeTrialExperimentCohort.treatment
+        mockSubscriptionFreeTrialsHelper.areFreeTrialsEnabledValue = true
         mockStorePurchaseManager.freeTrialSubscriptionOptionsResult = nil
         mockStorePurchaseManager.subscriptionOptionsResult = .mockStandard
 
@@ -148,8 +114,6 @@ final class SubscriptionPagesUseSubscriptionFeatureFreeTrialsTests: XCTestCase {
 
         // Then
         XCTAssertEqual(result as? SubscriptionOptions, .mockStandard, "Should return standard subscription options as a fallback when free trial options are nil.")
-        XCTAssertTrue(mockFreeTrialsFeatureFlagExperiment.incrementPaywallViewCountCalled, "Paywall view count should be incremented.")
-        XCTAssertTrue(mockFreeTrialsFeatureFlagExperiment.firePaywallImpressionPixelCalled, "Paywall impression pixel should be fired.")
     }
 }
 
@@ -179,52 +143,10 @@ private extension SubscriptionOptions {
                                                     ])
 }
 
-private final class MockFreeTrialsFeatureFlagExperiment: FreeTrialsFeatureFlagExperimenting {
-    
-    typealias CohortType = PrivacyProFreeTrialExperimentCohort
-    var rawValue: String = "MockFreeTrialsFeatureFlagExperiment"
-    var source: FeatureFlagSource = .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProFreeTrialJan25))
-
-    var incrementPaywallViewCountCalled = false
-    var firePaywallImpressionPixelCalled = false
-    var fireOfferSelectionMonthlyPixelCalled = false
-    var fireOfferSelectionYearlyPixelCalled = false
-    var fireSubscriptionStartedMonthlyPixelCalled = false
-    var fireSubscriptionStartedYearlyPixelCalled = false
-    var cohortToReturn = PrivacyProFreeTrialExperimentCohort.treatment
-
-    func getCohortIfEnabled() -> (any FeatureFlagCohortDescribing)? {
-        cohortToReturn
+final class MockSubscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping {
+    var areFreeTrialsEnabledValue = false
+    var areFreeTrialsEnabled: Bool {
+        areFreeTrialsEnabledValue
     }
-
-    func oneTimeParameters(for cohort: any FeatureFlagCohortDescribing) -> [String: String]? {
-        [
-            FreeTrialsFeatureFlagExperiment.Constants.freeTrialParameterExperimentName: rawValue,
-            FreeTrialsFeatureFlagExperiment.Constants.freeTrialParameterExperimentCohort: cohortToReturn.rawValue
-        ]
-    }
-
-    func incrementPaywallViewCountIfWithinConversionWindow() {
-        incrementPaywallViewCountCalled = true
-    }
-
-    func firePaywallImpressionPixel() {
-        firePaywallImpressionPixelCalled = true
-    }
-
-    func fireOfferSelectionMonthlyPixel() {
-        fireOfferSelectionMonthlyPixelCalled = true
-    }
-
-    func fireOfferSelectionYearlyPixel() {
-        fireOfferSelectionYearlyPixelCalled = true
-    }
-
-    func fireSubscriptionStartedMonthlyPixel() {
-        fireSubscriptionStartedMonthlyPixelCalled = true
-    }
-
-    func fireSubscriptionStartedYearlyPixel() {
-        fireSubscriptionStartedYearlyPixelCalled = true
-    }
+    var origin: String = ""
 }

@@ -53,6 +53,7 @@ private enum AttributesKey: String, CaseIterable {
     case duckPlayerEnabled
     case messageShown
     case isCurrentFreemiumPIRUser
+    case allFeatureFlagsEnabled
 
     func matchingAttribute(jsonMatchingAttribute: AnyDecodable) -> MatchingAttribute {
         switch self {
@@ -90,6 +91,7 @@ private enum AttributesKey: String, CaseIterable {
         case .duckPlayerEnabled: return DuckPlayerEnabledMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .messageShown: return MessageShownMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         case .isCurrentFreemiumPIRUser: return FreemiumPIRCurrentUserMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
+        case .allFeatureFlagsEnabled: return AllFeatureFlagsEnabledMatchingAttribute(jsonMatchingAttribute: jsonMatchingAttribute)
         }
     }
 }
@@ -254,6 +256,8 @@ struct JsonToRemoteMessageModelMapper {
             return .privacyShield
         case .aiChat:
             return .aiChat
+        case .visualDesignUpdate:
+            return .visualDesignUpdate
         case .none:
             return .announce
         }

@@ -152,6 +152,8 @@ final class DuckPlayerNativeUIPresenter {
         setupNotificationObservers(notificationCenter: notificationCenter)
     }
 
+    // To be replaced with AppUserDefaults.Notifications.addressBarPositionChanged after release
+    // https://app.asana.com/1/137249556945/project/1207252092703676/task/1210323588862346?focus=true
     private func setupNotificationObservers(notificationCenter: NotificationCenter) {
         notificationCenter.addObserver(
             self,
@@ -179,10 +181,12 @@ final class DuckPlayerNativeUIPresenter {
 
     /// Updates the UI based on Ombibar Notification
     @objc func handleOmnibarDidLayout(_ notification: Notification) {
-        guard let omniBar = notification.object as? DefaultOmniBarView else { return }
-        omniBarHeight = omniBar.frame.height
+        guard let height = notification.object as? CGFloat else { return }
+        omniBarHeight = height
         guard let bottomConstraint = bottomConstraint else { return }
-        bottomConstraint.constant = appSettings.currentAddressBarPosition == .bottom ? -omniBarHeight : 0
+        // To be replaced with AppUserDefaults.Notifications.addressBarPositionChanged after release
+        // https://app.asana.com/1/137249556945/project/1207252092703676/task/1210323588862346?focus=true
+        bottomConstraint.constant = appSettings.currentAddressBarPosition == .bottom ? -height : 0
     }
 
         /// Updates the UI based on Ombibar Notification
@@ -559,7 +563,7 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
 
         // Update State
         self.state.hasBeenShown = true
-        
+
         // Reset the presented pill type as we are transitioning to the full player
         self.presentedPillType = nil
 

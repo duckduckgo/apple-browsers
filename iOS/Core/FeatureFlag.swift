@@ -102,6 +102,7 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210055762484807?focus=true
     case experimentalAIChat
 
+    /// https://app.asana.com/1/137249556945/task/1210139454006070
     case privacyProOnboardingPromotion
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210081345713964?focus=true
@@ -109,6 +110,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210081345713964?focus=true
     case canScanUrlBasedSyncSetupBarcodes
+
+    /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1210001506953718
+    case privacyProFreeTrial
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -147,7 +151,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .exchangeKeysToSyncWithAnotherDevice,
                 .privacyProOnboardingPromotion,
                 .syncSetupBarcodeIsUrlBased,
-                .canScanUrlBasedSyncSetupBarcodes:
+                .canScanUrlBasedSyncSetupBarcodes,
+                .privacyProFreeTrial:
             return true
         case .onboardingSetAsDefaultBrowser:
             if #available(iOS 18.3, *) {
@@ -258,6 +263,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .canScanUrlBasedSyncSetupBarcodes:
             return .remoteReleasable(.subfeature(SyncSubfeature.canScanUrlBasedSyncSetupBarcodes))
+        case .privacyProFreeTrial:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProFreeTrial))
         }
     }
 }

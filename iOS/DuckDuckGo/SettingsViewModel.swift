@@ -78,6 +78,9 @@ final class SettingsViewModel: ObservableObject {
     private var appDataClearingObserver: Any?
     private var textZoomObserver: Any?
 
+    // Subscription Free Trials
+    private let subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping
+
     // Closures to interact with legacy view controllers through the container
     var onRequestPushLegacyView: ((UIViewController) -> Void)?
     var onRequestPresentLegacyView: ((UIViewController, _ modal: Bool) -> Void)?
@@ -477,7 +480,8 @@ final class SettingsViewModel: ObservableObject {
          experimentalThemingManager: ExperimentalThemingManager,
          experimentalAIChatManager: ExperimentalAIChatManager,
          duckPlayerSettings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
-         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()
+         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
+         subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping = SubscriptionFreeTrialsHelper()
     ) {
 
         self.state = SettingsState.defaults
@@ -499,6 +503,7 @@ final class SettingsViewModel: ObservableObject {
         self.experimentalAIChatManager = experimentalAIChatManager
         self.duckPlayerSettings = duckPlayerSettings
         self.featureDiscovery = featureDiscovery
+        self.subscriptionFreeTrialsHelper = subscriptionFreeTrialsHelper
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
     }
@@ -866,6 +871,8 @@ extension SettingsViewModel {
             state.subscription.platform = .unknown
             state.subscription.isActiveTrialOffer = false
 
+            state.subscription.isEligibleForTrialOffer = await isUserEligibleForTrialOffer()
+
             subscriptionStateCache.set(state.subscription) // Sync cache
             return
         }
@@ -1031,6 +1038,17 @@ extension SettingsViewModel {
             case .subscriptionExpired:
                 DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorSubscriptionExpired)
             }
+        }
+    }
+
+    /// Checks if the user is eligible for a free trial subscription offer.
+    /// - Returns: `true` if free trials are available and the user is eligible for a free trial, `false` otherwise.
+    private func isUserEligibleForTrialOffer() async -> Bool {
+        guard subscriptionFreeTrialsHelper.areFreeTrialsEnabled else { return false }
+        if isAuthV2Enabled {
+            return await subscriptionManagerV2?.storePurchaseManager().isUserEligibleForFreeTrial() ?? false
+        } else {
+            return await subscriptionManagerV1?.storePurchaseManager().isUserEligibleForFreeTrial() ?? false
         }
     }
 

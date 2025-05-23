@@ -48,6 +48,8 @@ struct SettingsState {
         var platform: PrivacyProSubscription.Platform
         var isShowingStripeView: Bool
         var isActiveTrialOffer: Bool
+        /// Whether the user is eligible for a free trial subscription offer
+        var isEligibleForTrialOffer: Bool
     }
 
     struct SyncSettings {
@@ -150,7 +152,8 @@ struct SettingsState {
                                        entitlements: [],
                                        platform: .unknown,
                                        isShowingStripeView: false,
-                                       isActiveTrialOffer: false),
+                                       isActiveTrialOffer: false,
+                                       isEligibleForTrialOffer: false),
             sync: SyncSettings(enabled: false, title: ""),
             syncSource: nil,
             duckPlayerEnabled: false,

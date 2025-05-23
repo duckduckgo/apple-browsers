@@ -2770,6 +2770,9 @@
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe" = "Schütze deine Verbindung und Identität mit Privacy Pro";
 
+/* Try Privacy Pro Free button text for privacy pro */
+"settings.subscription.try.free" = "Privacy Pro kostenlos testen";
+
 /* Privacy pro description subtitle in settings */
 "settings.subscription.us.description" = "Dazu gehört unsere VPN, Personal Information Removal und Identity Theft Restoration.";
 

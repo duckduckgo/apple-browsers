@@ -55,7 +55,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
     private var mockAppSettings: AppSettingsMock!
     private var mockDuckPlayerSettings: MockDuckPlayerSettings!
     private var mockPrivacyConfig: PrivacyConfigurationManagerMock!
-    private var mockInternalUserDecider: MockDuckPlayerInternalUserDecider!
+    private var mockFeatureFlagger: MockDuckPlayerFeatureFlagger!
     private var cancellables: Set<AnyCancellable>!
     private var testNotificationCenter: TestNotificationCenter!
     private var constraintUpdates: [DuckPlayerConstraintUpdate] = []
@@ -77,11 +77,12 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
 
         mockAppSettings = AppSettingsMock()
         mockPrivacyConfig = PrivacyConfigurationManagerMock()
-        mockInternalUserDecider = MockDuckPlayerInternalUserDecider()
+        mockFeatureFlagger = MockDuckPlayerFeatureFlagger()
         mockDuckPlayerSettings = MockDuckPlayerSettings(
             appSettings: mockAppSettings,
             privacyConfigManager: mockPrivacyConfig,
-            internalUserDecider: mockInternalUserDecider
+            featureFlagger: mockFeatureFlagger,
+            internalUserDecider: MockInternalUserDecider()
         )
 
         sut = DuckPlayerNativeUIPresenter(
@@ -104,7 +105,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         mockAppSettings = nil
         mockDuckPlayerSettings = nil
         mockPrivacyConfig = nil
-        mockInternalUserDecider = nil
+        mockFeatureFlagger = nil
         cancellables = nil
         constraintUpdates = []
         super.tearDown()

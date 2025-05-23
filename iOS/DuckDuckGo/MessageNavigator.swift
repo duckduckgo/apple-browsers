@@ -30,6 +30,7 @@ protocol MessageNavigationDelegate: AnyObject {
 
     func segueToSettingsAIChat()
     func segueToSettings()
+    func segueToFeedback()
 
 }
 
@@ -48,6 +49,8 @@ class DefaultMessageNavigator: MessageNavigator {
             delegate?.segueToSettingsAIChat()
         case .settings:
             delegate?.segueToSettings()
+        case .feedback:
+            delegate?.segueToFeedback()
         }
     }
 

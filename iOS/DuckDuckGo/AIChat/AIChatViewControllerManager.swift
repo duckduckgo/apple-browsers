@@ -202,8 +202,9 @@ extension AIChatViewControllerManager: UserContentControllerDelegate {
 
 extension AIChatViewControllerManager: AIChatViewControllerDelegate {
     func aiChatViewController(_ viewController: AIChatViewController, didRequestToLoad url: URL) {
-        delegate?.aiChatViewControllerManager(self, didRequestToLoad: url)
-        viewController.dismiss(animated: true)
+        viewController.dismiss(animated: true) {
+            self.delegate?.aiChatViewControllerManager(self, didRequestToLoad: url)
+        }
     }
 
     func aiChatViewControllerDidFinish(_ viewController: AIChatViewController) {

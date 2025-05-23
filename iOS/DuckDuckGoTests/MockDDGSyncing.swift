@@ -127,21 +127,25 @@ final class MockDDGSyncing: DDGSyncing {
 }
 
 final class MockSyncConnectionControlling: SyncConnectionControlling {
-    func startExchangeMode() throws -> String {
+    func cancel() async {
+    }
+
+    func startExchangeMode(shouldGenerateURLBasedCode: Bool) async throws -> String {
         ""
     }
-    
-    func cancel() {
-    }
-    
-    func startConnectMode() throws -> String {
+
+    func startConnectMode(shouldGenerateURLBasedCode: Bool) async throws -> String {
         ""
     }
-    
-    func syncCodeEntered(code: String) async -> Bool {
+
+    func startPairingMode(_ pairingInfo: PairingInfo) async -> Bool {
         true
     }
-    
+
+    func syncCodeEntered(code: String, canScanURLBarcodes: Bool) async -> Bool {
+        true
+    }
+
     func loginAndShowDeviceConnected(recoveryKey: SyncCode.RecoveryKey, isRecovery: Bool) async throws {
     }
 }

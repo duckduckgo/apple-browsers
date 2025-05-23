@@ -50,6 +50,7 @@ class TabSwitcherAnimatedButton: UIView, TabSwitcherButton {
 
     let anim = LottieAnimationView(name: "new_tab")
     let label = UILabel()
+    var pointer: UIView? { pointerView }
     let pointerView: UIView = UIView(frame: CGRect(x: 0,
                                                    y: 0,
                                                    width: Constants.pointerViewWidth,

@@ -2770,6 +2770,9 @@
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe" = "Тариф Privacy Pro для защиты соединения и личных данных";
 
+/* Try Privacy Pro Free button text for privacy pro */
+"settings.subscription.try.free" = "Попробуйте Privacy Pro бесплатно";
+
 /* Privacy pro description subtitle in settings */
 "settings.subscription.us.description" = "Включает услуги: VPN, Personal Information Removal (удаление личной информации) и Identity Theft Restoration (восстановление данных после «кражи личности»).";
 

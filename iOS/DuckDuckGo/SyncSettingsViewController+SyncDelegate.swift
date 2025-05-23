@@ -323,16 +323,17 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     private func newCollectCode(showQRCode: Bool) {
         Task { @MainActor in
             let code: String
+            let shouldGenerateURLBasedCode = featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased)
             if isSyncEnabled {
                 do {
-                    code = try await connectionController.startExchangeMode()
+                    code = try await connectionController.startExchangeMode(shouldGenerateURLBasedCode: shouldGenerateURLBasedCode)
                 } catch {
                     self.handleError(SyncErrorMessage.unableToSyncWithDevice, error: error, event: .syncLoginError)
                     return
                 }
             } else {
                 do {
-                    code = try await connectionController.startConnectMode()
+                    code = try await connectionController.startConnectMode(shouldGenerateURLBasedCode: shouldGenerateURLBasedCode)
                 } catch {
                     self.handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
                     return

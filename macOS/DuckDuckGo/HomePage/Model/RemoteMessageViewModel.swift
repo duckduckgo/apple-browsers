@@ -153,6 +153,8 @@ private extension RemoteMessageModelType {
                 return .remoteMessageDuckAi
             case .macComputer, .newForMacAndWindows:
                 return nil
+            case .visualDesignUpdate:
+                return nil
             }
         case .promoSingleAction:
             assertionFailure("promoSingleAction is not supported on macOS")

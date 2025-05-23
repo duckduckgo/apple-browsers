@@ -22,4 +22,5 @@
 class MockMessageNavigationDelegate: MessageNavigationDelegate {
     func segueToSettingsAIChat() {}
     func segueToSettings() {}
+    func segueToFeedback() {}
 }

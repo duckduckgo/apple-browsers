@@ -42,6 +42,7 @@ public enum FeatureFlag: String {
         
     // Duckplayer 'Web based' UI
     case duckPlayer
+
     // Open Duckplayer in a new tab for 'Web based' UI
     case duckPlayerOpenInNewTab
     
@@ -102,13 +103,23 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210055762484807?focus=true
     case experimentalAIChat
 
+    /// https://app.asana.com/1/137249556945/task/1210139454006070
     case privacyProOnboardingPromotion
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210081345713964?focus=true
+    case syncSetupBarcodeIsUrlBased
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210081345713964?focus=true
+    case canScanUrlBasedSyncSetupBarcodes
+
+    /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1210001506953718
+    case privacyProFreeTrial
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
     public var defaultValue: Bool {
         switch self {
-        case .failsafeExampleCrossPlatformFeature, .failsafeExamplePlatformSpecificSubfeature:
+        case .failsafeExampleCrossPlatformFeature, .failsafeExamplePlatformSpecificSubfeature, .canScanUrlBasedSyncSetupBarcodes:
             true
         default:
             false
@@ -131,15 +142,19 @@ extension FeatureFlag: FeatureFlagDescribing {
     public var supportsLocalOverriding: Bool {
         switch self {
         case .textZoom,
-                .experimentalBrowserTheming,
-                .networkProtectionRiskyDomainsProtection,
-                .privacyProAuthV2,
-                .scamSiteProtection,
-                .maliciousSiteProtection,
-                .autofillCreditCards,
-                .autofillCreditCardsOnByDefault,
-                .exchangeKeysToSyncWithAnotherDevice,
-                .privacyProOnboardingPromotion:
+             .experimentalBrowserTheming,
+             .networkProtectionRiskyDomainsProtection,
+             .privacyProAuthV2,
+             .scamSiteProtection,
+             .maliciousSiteProtection,
+             .autofillCreditCards,
+             .autofillCreditCardsOnByDefault,
+             .exchangeKeysToSyncWithAnotherDevice,
+             .privacyProOnboardingPromotion,
+             .syncSetupBarcodeIsUrlBased,
+             .canScanUrlBasedSyncSetupBarcodes,
+             .duckPlayerNativeUI,
+             .privacyProFreeTrial:
             return true
         case .onboardingSetAsDefaultBrowser:
             if #available(iOS 18.3, *) {
@@ -246,6 +261,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .privacyProOnboardingPromotion:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProOnboardingPromotion))
+        case .syncSetupBarcodeIsUrlBased:
+            return .disabled
+        case .canScanUrlBasedSyncSetupBarcodes:
+            return .remoteReleasable(.subfeature(SyncSubfeature.canScanUrlBasedSyncSetupBarcodes))
+        case .privacyProFreeTrial:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProFreeTrial))
         }
     }
 }

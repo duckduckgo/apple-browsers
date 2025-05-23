@@ -223,7 +223,7 @@ protocol DuckPlayerSettings: AnyObject {
     var nativeUIWasUsed: Bool { get set }
 
     // Whether the Native UI settings were mapped
-    var nativeUISettingsMapped: Bool { get set }    
+    var nativeUISettingsMapped: Bool { get set }
 
     /// Initializes a new instance with the provided app settings and privacy configuration manager.
     ///
@@ -245,7 +245,7 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
     private var appSettings: AppSettings
     private let privacyConfigManager: PrivacyConfigurationManaging
     private var isFeatureEnabledCancellable: AnyCancellable?
-    private var featureFlagger: FeatureFlagger    
+    private var featureFlagger: FeatureFlagger
 
     // DuckPlayer Classic is enabled (Web Version)
     private var _isDuckPlayerClassicEnabled: Bool
@@ -292,8 +292,8 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
          internalUserDecider: InternalUserDecider = AppDependencyProvider.shared.internalUserDecider) {
         self.appSettings = appSettings
         self.privacyConfigManager = privacyConfigManager
-        self.featureFlagger = featureFlagger        
-        
+        self.featureFlagger = featureFlagger
+
         // DuckPlayer Classic is enabled (Web Version)
         self._isDuckPlayerClassicEnabled = featureFlagger.isFeatureOn(.duckPlayer)
 
@@ -396,7 +396,7 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
             return appSettings.duckPlayerNativeYoutubeMode
         }
         set {
-            // Allow d  irect setting if needed, potentially overridden by variant change
+            // Allow direct setting if needed, potentially overridden by variant change
             if newValue != appSettings.duckPlayerNativeYoutubeMode {
                 appSettings.duckPlayerNativeYoutubeMode = newValue
                 triggerNotification()

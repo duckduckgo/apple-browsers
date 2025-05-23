@@ -285,7 +285,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         static let chromeShowHideAnimationDuration: CGFloat = 0.4
     }
 
-    private(set) var settings: DuckPlayerSettings    
+    private(set) var settings: DuckPlayerSettings
     private(set) weak var hostView: DuckPlayerHosting?
 
     private var featureFlagger: FeatureFlagger
@@ -350,7 +350,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
         self.youtubeNavigationRequest = PassthroughSubject<URL, Never>()
         self.playerDismissedPublisher = PassthroughSubject<Void, Never>()
         self.nativeUIPresenter = nativeUIPresenter
-        self.featureDiscovery = featureDiscovery        
+        self.featureDiscovery = featureDiscovery
         super.init()
         setupSubscriptions()
 

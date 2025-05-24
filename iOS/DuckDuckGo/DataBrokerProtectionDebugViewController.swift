@@ -215,6 +215,21 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         tableView.deselectRow(at: indexPath, animated: true)
     }
 
+    override func tableView(_ tableView: UITableView, contextMenuConfigurationForRowAt indexPath: IndexPath, point: CGPoint) -> UIContextMenuConfiguration? {
+        guard let section = Sections(rawValue: indexPath.section), section == .database,
+              let row = DatabaseRows(rawValue: indexPath.row), row == .deviceIdentifier else {
+            return nil
+        }
+
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: nil) { _ in
+            let copyAction = UIAction(title: "Copy", image: UIImage(systemName: "doc.on.doc")) { _ in
+                UIPasteboard.general.string = DataBrokerProtectionSettings.deviceIdentifier
+            }
+
+            return UIMenu(title: "", children: [copyAction])
+        }
+    }
+
     // MARK: - Database Rows
 
     private func didSelectDatabaseRow(at indexPath: IndexPath) {

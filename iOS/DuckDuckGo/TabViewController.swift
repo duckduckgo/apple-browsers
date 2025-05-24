@@ -183,9 +183,9 @@ class TabViewController: UIViewController {
     // Required to prevent fireproof prompt presenting before autofill save login prompt
     private var saveLoginPromptLastDismissed: Date?
     private var saveLoginPromptIsPresenting: Bool = false
-    var firstLoad: Bool = true
-    // handle spurious keyboard events when the initial card fill prompt is presenting
+    // Required to determine whether to show credit card prompt or keyboard accessory
     private var fillCreditCardsPromptIsPresenting: Bool = false
+    private var shouldShowCreditCardPrompt: Bool = true
 
     private var cachedRuntimeConfigurationForDomain: [String: String?] = [:]
 
@@ -223,6 +223,18 @@ class TabViewController: UIViewController {
 
     private let daxDialogsDebouncer = Debouncer(mode: .common)
     var pullToRefreshViewAdapter: PullToRefreshViewAdapter?
+
+    lazy var autofillCreditCardAccessoryView: CreditCardInputAccessoryView? = {
+        let screenWidth = view.frame.width
+        let initialFrame = CGRect(x: 0, y: 0, width: screenWidth, height: 52)
+        let creditCardInputAccessoryView = CreditCardInputAccessoryView(frame: initialFrame)
+        creditCardInputAccessoryView.onCardManagementSelected = { [weak self] in
+            guard let self = self else { return }
+            self.webView.resignFirstResponder()
+            self.delegate?.tab(self, didRequestSettingsToCreditCardManagement: .creditCardKeyboardShortcut)
+        }
+        return creditCardInputAccessoryView
+    }()
 
     public var url: URL? {
         willSet {
@@ -491,7 +503,6 @@ class TabViewController: UIViewController {
         registerForAddressBarLocationNotifications()
         registerForOrientationDidChangeNotification()
         registerForAutofillNotifications()
-        registerForKeyboardNotifications()
 
         if #available(iOS 16.4, *) {
             registerForInspectableWebViewNotifications()
@@ -507,6 +518,7 @@ class TabViewController: UIViewController {
         super.viewWillAppear(animated)
         
         registerForResignActive()
+        registerForKeyboardNotifications()
     }
 
     override func viewWillDisappear(_ animated: Bool) {
@@ -515,10 +527,9 @@ class TabViewController: UIViewController {
         duckPlayerNavigationHandler.updateDuckPlayerForWebViewDisappearance(self)
 
         unregisterFromResignActive()
+        unregisterFromKeyboardNotifications()
         tabInteractionStateSource?.saveState(webView.interactionState, for: tabModel)
-        domainFillCreditCardPromptLastShownOn = nil
-        firstLoad = true
-        cleanupAutofillAccessoryView()
+        cleanupInputAccessoryView()
     }
 
     private func registerForAddressBarLocationNotifications() {
@@ -973,7 +984,8 @@ class TabViewController: UIViewController {
         cachedRuntimeConfigurationForDomain = [:]
         duckPlayerNavigationHandler.handleReload(webView: webView)
         delegate?.tabLoadingStateDidChange(tab: self)
-
+        cleanupInputAccessoryView()
+        resetCreditCardPrompt()
     }
     
     func updateContentMode() {
@@ -1203,8 +1215,6 @@ class TabViewController: UIViewController {
     
     func didLaunchBrowsingMenu() {
         DaxDialogs.shared.resumeRegularFlow()
-        domainFillCreditCardPromptLastShownOn = nil
-        firstLoad = true
     }
 
     private func openExternally(url: URL) {
@@ -1538,7 +1548,6 @@ extension TabViewController: WKNavigationDelegate {
         linkProtection.setMainFrameUrl(webView.url)
         referrerTrimming.onBeginNavigation(to: webView.url)
         adClickAttributionDetection.onStartNavigation(url: webView.url)
-        cleanupAutofillAccessoryView()
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
@@ -1731,6 +1740,8 @@ extension TabViewController: WKNavigationDelegate {
             saveLoginPromptLastDismissed = nil
             saveLoginPromptIsPresenting = false
         }
+
+        cleanupInputAccessoryView()
     }
 
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
@@ -2206,6 +2217,21 @@ extension TabViewController: WKNavigationDelegate {
         )
     }
 
+    private func registerForKeyboardNotifications() {
+        NotificationCenter.default.addObserver(self,
+                                               selector: #selector(keyboardWillHide),
+                                               name: UIResponder.keyboardWillHideNotification,
+                                               object: nil)
+    }
+
+    private func unregisterFromKeyboardNotifications() {
+        NotificationCenter.default.removeObserver(
+            self,
+            name: UIResponder.keyboardWillHideNotification,
+            object: nil
+        )
+    }
+
     @objc private func autofillBreakageReport(_ notification: Notification) {
         guard let tabUid = notification.userInfo?[AutofillLoginListViewModel.UserInfoKeys.tabUid] as? String,
               tabUid == tabModel.uid,
@@ -2226,6 +2252,15 @@ extension TabViewController: WKNavigationDelegate {
 
         ActionMessageView.present(message: UserText.autofillSettingsReportNotWorkingSentConfirmation)
     }
+
+    @objc private func keyboardWillHide(_ notification: Notification) {
+        // TODO - improve logic here
+        if !fillCreditCardsPromptIsPresenting && isTabCurrentlyPresented() {
+            autofillUserScript?.clearAllHandlers()
+            cleanupInputAccessoryView()
+        }
+    }
+
 }
 
 // MARK: - Downloads
@@ -2626,22 +2661,6 @@ extension TabViewController: UIGestureRecognizerDelegate {
         }
     }
 
-    private func registerForKeyboardNotifications() {
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(keyboardWillHide),
-                                               name: UIResponder.keyboardWillHideNotification,
-                                               object: nil)
-    }
-    
-    @objc private func keyboardWillHide(_ notification: Notification) {
-        if !fillCreditCardsPromptIsPresenting {
-            // Clear any pending autofill handlers when keyboard is dismissed
-            autofillUserScript?.clearAllHandlers()
-            
-            // Also clean up the accessory view if needed
-            cleanupAutofillAccessoryView(resetFirstLoadStatus: false)
-        }
-    }
 }
 
 // MARK: - UserContentControllerDelegate
@@ -3027,80 +3046,57 @@ extension TabViewController: SecureVaultManagerDelegate {
             return
         }
 
-        if creditCards.count > 0 {
-            if domainFillCreditCardPromptLastShownOn != url?.host {
-                firstLoad = true
-                AppDependencyProvider.shared.autofillLoginSession.endSession()
-                self.domainFillCreditCardPromptLastShownOn = self.url?.host
-            }
-            
-            if firstLoad {
-                firstLoad = false
-                fillCreditCardsPromptIsPresenting = true
-                presentAutofillPromptViewController(creditCards: creditCards, trigger: trigger) { creditCard in
-                    completionHandler(creditCard)
-                }
-            } else {
-                fillCreditCardsPromptIsPresenting = false
-                
-                guard let creditCardInputAccessoryView = setupAutofillAccessoryViewWithCustomWebView() else {
-                    completionHandler(nil)
-                    return
-                }
-                
-                let cards = creditCards.asCardRowViewModels
-               
-                creditCardInputAccessoryView.updateSuggestions(cards)
-                creditCardInputAccessoryView.onCardSelected = { [weak self] card in
-                    completionHandler(card)
-                    if card == nil {
-                        self?.webView.resignFirstResponder()
-                    }
-//                    self?.cleanupAutofillAccessoryView(resetFirstLoadStatus: false)
-                }
-
-                creditCardInputAccessoryView.isHidden = false
-                            
-                // Force the input system to refresh
-                webView.reloadInputViews()
-            }
-        } else {
+        guard creditCards.count > 0 else {
             completionHandler(nil)
-        }
-        
-    }
-
-    func setupAutofillAccessoryViewWithCustomWebView() -> CreditCardInputAccessoryView? {
-        guard let autofillWebView = webView as? WebView else {
-            return nil
-        }
-        
-        if let creditCardInputAccessoryView = autofillWebView.inputAccessoryView as? CreditCardInputAccessoryView {
-            return creditCardInputAccessoryView
-        }
-        
-        let creditCardInputAccessoryView = CreditCardInputAccessoryView(frame: .zero)
-        creditCardInputAccessoryView.isHidden = true
-        
-        // Set as the input accessory view
-        autofillWebView.setInputAccessoryView(creditCardInputAccessoryView)
-        return creditCardInputAccessoryView
-    }
-    
-    func cleanupAutofillAccessoryView(resetFirstLoadStatus: Bool = true) {
-        guard let webView = webView as? WebView, let suggestionsView = webView.inputAccessoryView as? CreditCardInputAccessoryView else {
+            cleanupInputAccessoryView()
             return
         }
 
-        if resetFirstLoadStatus {
-            firstLoad = true
+        if domainFillCreditCardPromptLastShownOn != url?.host {
+            AppDependencyProvider.shared.autofillLoginSession.endSession()
+            self.domainFillCreditCardPromptLastShownOn = self.url?.host
+            resetCreditCardPrompt()
         }
-        suggestionsView.updateSuggestions([])
-        suggestionsView.isHidden = true
-        webView.reloadInputViews()
+
+        if shouldShowCreditCardPrompt {
+            fillCreditCardsPromptIsPresenting = true
+            shouldShowCreditCardPrompt = false
+            presentAutofillPromptViewController(creditCards: creditCards, trigger: trigger) { creditCard in
+                completionHandler(creditCard)
+            }
+        } else {
+            fillCreditCardsPromptIsPresenting = false
+
+            guard let webView = webView as? WebView, let autofillCreditCardAccessoryView = autofillCreditCardAccessoryView else {
+                return
+            }
+
+            autofillCreditCardAccessoryView.updateCreditCards(creditCards)
+            webView.setAccessoryContentView(autofillCreditCardAccessoryView, height: 52.0)
+
+            autofillCreditCardAccessoryView.onCardSelected = { [weak self] card in
+                completionHandler(card)
+                if card == nil {
+                    self?.webView.resignFirstResponder()
+                }
+                self?.cleanupInputAccessoryView()
+            }
+        }
     }
 
-    func presentAutofillPromptViewController(creditCards: [SecureVaultModels.CreditCard],
+    private func cleanupInputAccessoryView() {
+        guard let webView = webView as? WebView, webView.inputAccessoryView != nil else {
+            return
+        }
+
+        webView.removeAccessoryContentView()
+    }
+
+    private func resetCreditCardPrompt() {
+        shouldShowCreditCardPrompt = true
+    }
+
+    private func presentAutofillPromptViewController(creditCards: [SecureVaultModels.CreditCard],
                                              trigger: AutofillUserScript.GetTriggerType,
                                              completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
 

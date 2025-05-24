@@ -63,6 +63,27 @@ struct CreditCardRowViewModel: Identifiable, Hashable {
         }
     }
     
+    var uiIcon: UIImage? {
+        switch type {
+        case .amex:
+            return UIImage(named: "Credit-Card-Bank-Amex-Color-32")
+        case .dinersClub:
+            return UIImage(named: "Credit-Card-Bank-Diners-Club-Color-32")
+        case .discover:
+            return UIImage(named: "Credit-Card-Bank-Discover-Color-32")
+        case .mastercard:
+            return UIImage(named: "Credit-Card-Bank-Mastercard-Color-32")
+        case .jcb:
+            return UIImage(named: "Credit-Card-Bank-JCB-Color-32")
+        case .unionPay:
+            return UIImage(named: "Credit-Card-Bank-Unionpay-Color-32")
+        case .visa:
+            return UIImage(named: "Credit-Card-Bank-Visa-Color-32")
+        case .unknown:
+            return UIImage(named: "Credit-Card-Color-32")
+        }
+    }
+
     var lastFourDigits: String {
         return creditCard.cardSuffix
     }
@@ -76,6 +97,15 @@ struct CreditCardRowViewModel: Identifiable, Hashable {
         return "  \(UserText.autofillCreditCardItemExpiry) \(Self.dateFormatter.string(from: date))"
     }
     
+    var compactExpirationDate: String {
+        guard let month = creditCard.expirationMonth,
+              let year = creditCard.expirationYear,
+              let date = DateComponents(calendar: Calendar.current, year: year, month: month).date else {
+            return ""
+        }
+        return "\(Self.dateFormatter.string(from: date))"
+    }
+
     func hash(into hasher: inout Hasher) {
         hasher.combine(id)
     }

@@ -21,21 +21,31 @@ import UIKit
 import WebKit
 
 final class WebView: WKWebView {
-    private var _inputAccessoryView: UIView?
+    private var accessory = KeyboardInputAccessoryView()
     
     override var inputAccessoryView: UIView? {
-        return _inputAccessoryView
-    }
-    
-    func setInputAccessoryView(_ view: UIView?) {
-        _inputAccessoryView = view
-
-        if isFirstResponder {
-            reloadInputViews()
-        }
+        return accessory
     }
     
     override var canBecomeFirstResponder: Bool {
         return true
+    }
+
+    func setAccessoryContentView(_ contentView: UIView, height: CGFloat) {
+        accessory.setContentView(contentView, contentHeight: height)
+        reloadContentViewInputViews()
+    }
+
+    func removeAccessoryContentView() {
+        accessory.setContentView(nil)
+        reloadContentViewInputViews()
+    }
+
+    private func reloadContentViewInputViews() {
+        guard let content = scrollView.subviews.first(
+            where: { String(describing: type(of: $0))
+                .hasPrefix("WKContent") })
+        else { return }
+        content.reloadInputViews()
     }
 }

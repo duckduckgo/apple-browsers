@@ -43,6 +43,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         case databaseBrowser
         case saveProfile
         case deviceIdentifier
+        case deleteAllData
 
         var title: String {
             switch self {
@@ -56,6 +57,8 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
 #else
                 return "No UUID due to wrong build type"
 #endif
+            case .deleteAllData:
+                return "Delete All Data"
             }
         }
     }
@@ -135,8 +138,9 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         let cell = tableView.dequeueReusableCell(withIdentifier: "Cell", for: indexPath)
 
         cell.textLabel?.font = .daxBodyRegular()
+        cell.textLabel?.textColor = nil
         cell.detailTextLabel?.text = nil
-        cell.detailTextLabel?.font = UIFont.systemFont(ofSize: 17)
+        cell.detailTextLabel?.font = nil
         cell.accessoryType = .none
 
         switch Sections(rawValue: indexPath.section) {
@@ -150,6 +154,8 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
             case .deviceIdentifier:
                 cell.detailTextLabel?.font = UIFont.monospacedSystemFont(ofSize: 17, weight: .regular)
                 cell.detailTextLabel?.text = DataBrokerProtectionSettings.deviceIdentifier
+            case .deleteAllData:
+                cell.textLabel?.textColor = .systemRed
             }
 
         case .healthOverview:
@@ -199,7 +205,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         switch Sections(rawValue: indexPath.section) {
         case .database:
-            didSelectDatabase(at: indexPath)
+            didSelectDatabaseRow(at: indexPath)
         case .healthOverview:
             break
         case .none:
@@ -211,7 +217,7 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
 
     // MARK: - Database Rows
 
-    private func didSelectDatabase(at indexPath: IndexPath) {
+    private func didSelectDatabaseRow(at indexPath: IndexPath) {
         guard let dbpManager = DataBrokerProtectionIOSManager.shared else {
             assertionFailure("DataBrokerProtectionIOSManager not initialized")
             return
@@ -229,9 +235,25 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
         case .deviceIdentifier:
             break
 
+        case .deleteAllData:
+            presentDeleteAllDataAlertController()
+
         case .none:
             return
         }
+    }
+
+    private func presentDeleteAllDataAlertController() {
+        let alert = UIAlertController(title: "Delete All PIR Data?", message: "This will remove all data and statistics from the PIR database, and reset your Tester ID.", preferredStyle: .alert)
+        alert.addAction(title: "Delete All Data", style: .destructive) { [weak self] in
+            try? self?.manager.database.deleteProfileData()
+            DataBrokerProtectionSettings.rotateDeviceIdentifier()
+            self?.tableView.reloadData()
+        }
+
+        alert.addAction(title: "Cancel", style: .cancel)
+
+        present(alert, animated: true)
     }
 
     // MARK: - Database Rows

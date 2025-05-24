@@ -172,6 +172,12 @@ extension DataBrokerProtectionSettings {
         }
     }
 
+    @discardableResult
+    public static func rotateDeviceIdentifier() -> String {
+        defaults.removeObject(forKey: deviceIdentifierKey)
+        return deviceIdentifier
+    }
+
     public static var modelName: String {
         var systemInfo = utsname()
         uname(&systemInfo)

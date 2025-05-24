@@ -237,11 +237,12 @@ extension MainViewController {
 
     func segueToSettingsAutofillWith(account: SecureVaultModels.WebsiteAccount?,
                                      card: SecureVaultModels.CreditCard?,
+                                     showCardManagement: Bool = false,
                                      source: AutofillSettingsSource?) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
         launchSettings {
-            $0.shouldPresentAutofillViewWith(accountDetails: account, card: card, source: source)
+            $0.shouldPresentAutofillViewWith(accountDetails: account, card: card, showCreditCardManagement: showCardManagement, source: source)
         }
     }
 

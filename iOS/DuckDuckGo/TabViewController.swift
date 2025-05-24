@@ -231,7 +231,7 @@ class TabViewController: UIViewController {
         creditCardInputAccessoryView.onCardManagementSelected = { [weak self] in
             guard let self = self else { return }
             self.webView.resignFirstResponder()
-            self.delegate?.tab(self, didRequestSettingsToCreditCardManagement: .creditCardKeyboardShortcut)
+            self.delegate?.tabDidRequestSettingsToCreditCardManagement(self, source: .creditCardKeyboardShortcut)
         }
         return creditCardInputAccessoryView
     }()
@@ -3364,7 +3364,7 @@ extension TabViewController: SaveCreditCardViewControllerDelegate {
                                   presentationLocation: .withBottomBar(andAddressBarBottom: addressBarBottom),
                                   onAction: { [weak self] in
             guard let self = self else { return }
-            self.delegate?.tab(self, didRequestSettingsToCreditCards: card)
+            self.delegate?.tab(self, didRequestSettingsToCreditCards: card, source: .viewSavedCreditCardPrompt)
         })
     }
     

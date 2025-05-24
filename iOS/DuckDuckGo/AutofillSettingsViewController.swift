@@ -38,6 +38,8 @@ enum AutofillSettingsSource: String {
     case saveCreditCardDisablePrompt = "save_credit_card_disable_prompt"
     case viewSavedLoginPrompt = "view_saved_login_prompt"
     case newTabPageToolbar = "new_tab_page_toolbar"
+    case viewSavedCreditCardPrompt = "view_saved_credit_card_prompt"
+    case creditCardKeyboardShortcut = "credit_card_keyboard_shortcut"
 }
 
 protocol AutofillSettingsViewControllerDelegate: AnyObject {
@@ -54,6 +56,7 @@ final class AutofillSettingsViewController: UIViewController {
     private let syncDataProviders: SyncDataProviders
     private let selectedAccount: SecureVaultModels.WebsiteAccount?
     private let selectedCard: SecureVaultModels.CreditCard?
+    private let showCardManagement: Bool
     private let source: AutofillSettingsSource
     private let bookmarksDatabase: CoreDataDatabase
     private let favoritesDisplayMode: FavoritesDisplayMode
@@ -63,6 +66,7 @@ final class AutofillSettingsViewController: UIViewController {
          syncDataProviders: SyncDataProviders,
          selectedAccount: SecureVaultModels.WebsiteAccount?,
          selectedCard: SecureVaultModels.CreditCard?,
+         showCardManagement: Bool = false,
          source: AutofillSettingsSource,
          bookmarksDatabase: CoreDataDatabase,
          favoritesDisplayMode: FavoritesDisplayMode
@@ -72,6 +76,7 @@ final class AutofillSettingsViewController: UIViewController {
         self.syncDataProviders = syncDataProviders
         self.selectedAccount = selectedAccount
         self.selectedCard = selectedCard
+        self.showCardManagement = showCardManagement
         self.source = source
         self.bookmarksDatabase = bookmarksDatabase
         self.favoritesDisplayMode = favoritesDisplayMode
@@ -93,7 +98,7 @@ final class AutofillSettingsViewController: UIViewController {
         
         if selectedAccount != nil {
             segueToPasswords()
-        } else if selectedCard != nil {
+        } else if selectedCard != nil || showCardManagement {
             segueToCreditCards()
         }
         

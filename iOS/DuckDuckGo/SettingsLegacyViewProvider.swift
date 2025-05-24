@@ -140,12 +140,14 @@ class SettingsLegacyViewProvider: ObservableObject {
     func loginSettings(delegate: AutofillSettingsViewControllerDelegate,
                        selectedAccount: SecureVaultModels.WebsiteAccount?,
                        selectedCard: SecureVaultModels.CreditCard?,
+                       showCreditCardManagement: Bool,
                        source: AutofillSettingsSource?) -> AutofillSettingsViewController {
         return AutofillSettingsViewController(appSettings: self.appSettings,
                                               syncService: self.syncService,
                                               syncDataProviders: self.syncDataProviders,
                                               selectedAccount: selectedAccount,
                                               selectedCard: selectedCard,
+                                              showCardManagement: showCreditCardManagement,
                                               source: source ?? .settings,
                                               bookmarksDatabase: self.bookmarksDatabase,
                                               favoritesDisplayMode: self.appSettings.favoritesDisplayMode)

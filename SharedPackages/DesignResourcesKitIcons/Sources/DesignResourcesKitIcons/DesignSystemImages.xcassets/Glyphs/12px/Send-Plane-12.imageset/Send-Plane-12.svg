@@ -1,0 +1,10 @@
+<svg fill="none" viewBox="0 0 12 12" xmlns="http://www.w3.org/2000/svg">
+  <g clip-path="url(#Send-Plane-12_svg__a)">
+    <path fill="#000" fill-rule="evenodd" d="M10.485 6.2a.219.219 0 0 0 0-.4L2.307 2.216a.219.219 0 0 0-.307.2V4.28l2.47.945c.712.272.712 1.28 0 1.553L2 7.72v1.863c0 .158.162.264.307.2L10.485 6.2Zm.502-1.545c1.172.513 1.172 2.177 0 2.69L2.808 10.93A1.469 1.469 0 0 1 .75 9.584V7.29c0-.259.16-.49.402-.583L3 6l-1.848-.707A.625.625 0 0 1 .75 4.71V2.416c0-1.06 1.088-1.77 2.058-1.345l8.179 3.584Z" clip-rule="evenodd"/>
+  </g>
+  <defs>
+    <clipPath id="Send-Plane-12_svg__a">
+      <path fill="#fff" d="M0 0h12v12H0z"/>
+    </clipPath>
+  </defs>
+</svg>

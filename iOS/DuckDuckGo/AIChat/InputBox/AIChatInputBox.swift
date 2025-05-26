@@ -23,12 +23,6 @@ import UIKit
 struct AIChatInputBox: View {
     @ObservedObject var viewModel: AIChatInputBoxViewModel
 
-    enum FocusState {
-        case focused
-        case unfocused
-    }
-
-    @State private var focusState: FocusState = .unfocused
     @State private var text = ""
     @State private var textHeight: CGFloat = 40
     @State private var showingDeleteConfirmation = false
@@ -45,10 +39,14 @@ struct AIChatInputBox: View {
             case .unknown:
                 EmptyView()
             default:
-                inputViews
-                    .opacity(viewModel.visibility == .hidden ? 0 : 1)
+                VStack {
+                    inputViews
+                    Spacer()
+                }
+                .opacity(viewModel.visibility == .hidden ? 0 : 1)
             }
         }
+        .frame(maxWidth: .infinity)
         .background(Color(uiColor: viewModel.visibility == .hidden ? .clear : .secondarySystemBackground))
     }
 
@@ -56,13 +54,13 @@ struct AIChatInputBox: View {
 
     private var inputViews: some View {
         VStack {
-            if focusState == .focused {
+            if viewModel.focusState == .focused {
                 pickerView
                     .padding(.horizontal)
                     .padding(.top)
             }
             HStack {
-                if focusState == .focused {
+                if viewModel.focusState == .focused {
                     selectedBarView
                 } else {
                     unselectedBarView
@@ -75,7 +73,7 @@ struct AIChatInputBox: View {
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(focusState == .focused ? Color.blue : Color.clear, lineWidth: 2)
+                    .stroke(viewModel.focusState == .focused ? Color.blue : Color.clear, lineWidth: 2)
             )
             .padding()
         }
@@ -106,7 +104,7 @@ struct AIChatInputBox: View {
                 .frame(maxWidth: .infinity)
                 .onTapGesture {
                     withAnimation {
-                        focusState = .focused
+                        viewModel.focusState = .focused
                     }
                 }
             Spacer()
@@ -122,8 +120,8 @@ struct AIChatInputBox: View {
     private var pickerView: some View {
         HStack(alignment: .center) {
             Button {
-                focusState = .unfocused
-
+                viewModel.focusState = .unfocused
+                viewModel.didPressBackButton.send()
             } label: {
                 Image(systemName: "arrow.left")
                     .font(.system(size: 20, weight: .medium))
@@ -136,7 +134,7 @@ struct AIChatInputBox: View {
 
             Picker("", selection: $viewModel.inputMode) {
                 ForEach(AIChatInputBoxViewModel.InputMode.allCases) { mode in
-                    Text(mode.rawValue.capitalized)
+                    Text(mode.rawValue)
                 }
             }
             .pickerStyle(.segmented)
@@ -178,7 +176,7 @@ struct AIChatInputBox: View {
     // MARK: - Actions
 
     private func submitText() {
-        focusState = .unfocused
+        viewModel.focusState = .unfocused
         viewModel.submitText(viewModel.inputText)
         viewModel.clearText()
     }
@@ -186,7 +184,7 @@ struct AIChatInputBox: View {
     private func newChatPressed() {
         viewModel.newChatButtonPressed()
         withAnimation {
-            focusState = .focused
+            viewModel.focusState = .focused
         }
     }
 }

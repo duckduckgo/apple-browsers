@@ -143,8 +143,10 @@ final class MainView: NSView {
 
     // PDF Plugin context menu
     override func willOpenMenu(_ menu: NSMenu, with event: NSEvent) {
+        // note, this will also handle the New Tab Page context menu
         setupSearchContextMenuItem(menu: menu)
         setupSaveAsAndPrintMenuItems(menu: menu, with: event)
+
         super.willOpenMenu(menu, with: event)
     }
 
@@ -187,7 +189,7 @@ final class MainView: NSView {
             }
             return (self.hitTest(bounds.center) as? WKWebView)?.hudView()
         }()
-        assert(hudView != nil)
+        guard let hudView else { return }
 
         // insert Save As… and Print… items after `Open with Preview`
         // 1. find `Copy`
@@ -283,7 +285,6 @@ final class MainView: NSView {
     override func updateTrackingAreas() {
         if let mouseAboveWebViewTrackingArea {
             removeTrackingArea(mouseAboveWebViewTrackingArea)
-            isMouseAboveWebView = false
             let trackingArea = makeMouseAboveViewTrackingArea()
             self.mouseAboveWebViewTrackingArea = trackingArea
             addTrackingArea(trackingArea)

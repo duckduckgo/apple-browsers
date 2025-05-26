@@ -370,7 +370,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 remoteMessagingAvailabilityProvider: PrivacyConfigurationRemoteMessagingAvailabilityProvider(
                     privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager
                 ),
-                subscriptionManager: subscriptionAuthV1toV2Bridge
+                subscriptionManager: subscriptionAuthV1toV2Bridge,
+                featureFlagger: self.featureFlagger
             )
             activeRemoteMessageModel = ActiveRemoteMessageModel(remoteMessagingClient: remoteMessagingClient, openURLHandler: { url in
                 WindowControllersManager.shared.showTab(with: .contentFromURL(url, source: .appOpenUrl))
@@ -546,6 +547,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             stateRestorationManager.applicationDidFinishLaunching()
         }
 
+        setUpAutoClearHandler()
+
         BWManager.shared.initCommunication()
 
         if WindowsManager.windows.first(where: { $0 is MainWindow }) == nil,
@@ -599,8 +602,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         DataBrokerProtectionAppEvents(featureGatekeeper: pirGatekeeper).applicationDidFinishLaunching()
 
         TipKitAppEventHandler(featureFlagger: featureFlagger).appDidFinishLaunching()
-
-        setUpAutoClearHandler()
 
         setUpAutofillPixelReporter()
 
@@ -954,6 +955,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 NSApplication.shared.reply(toApplicationShouldTerminate: true)
             }
         }
+        self.autoClearHandler.restoreTabsIfNeeded()
     }
 
     private func setUpAutofillPixelReporter() {

@@ -291,7 +291,7 @@ struct DuckPlayerView: View {
             .minimumScaleFactor(0.9)
             .fixedSize(horizontal: false, vertical: true)
             .multilineTextAlignment(.leading)
- 
+
         Text(UserText.duckPlayerWelcomeMessageContent)
             .daxBodyRegular()
             .foregroundColor(.white.opacity(0.8))
@@ -299,7 +299,7 @@ struct DuckPlayerView: View {
             .lineLimit(3)
             .fixedSize(horizontal: false, vertical: true)
             .padding(.top, 4)
- 
+
         // Toggle
         ZStack {
             RoundedRectangle(cornerRadius: 8)

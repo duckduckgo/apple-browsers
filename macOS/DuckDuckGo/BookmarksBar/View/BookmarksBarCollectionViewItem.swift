@@ -122,9 +122,9 @@ final class BookmarksBarCollectionViewItem: NSCollectionViewItem {
         case .bookmark(_, let url, let storedFavicon, _):
             let host = URL(string: url)?.host ?? ""
             let favicon = storedFavicon ?? NSApp.delegateTyped.faviconManager.getCachedFavicon(for: host, sizeCategory: .small)?.image
-            faviconView.image = favicon ?? visualStyle.bookmarksBarMenuBookmarkIcon
+            faviconView.image = favicon ?? visualStyle.iconsProvider.bookmarksIconsProvider.bookmarkIcon
         case .folder:
-            faviconView.image = visualStyle.bookmarksBarMenuFolderIcon
+            faviconView.image = visualStyle.iconsProvider.bookmarksIconsProvider.bookmarkFolderIcon
         }
         mouseOverView.isEnabled = !isInteractionPrevented
         faviconView.isEnabled = !isInteractionPrevented

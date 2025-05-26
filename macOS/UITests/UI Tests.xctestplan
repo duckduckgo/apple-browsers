@@ -36,13 +36,6 @@
   "testTargets" : [
     {
       "skippedTests" : [
-        "BookmarksAndFavoritesTests\/test_bookmark_canBeRemovedViaAddressBarIconClick()",
-        "BookmarksAndFavoritesTests\/test_bookmarks_canBeAddedTo_byClickingBookmarksButtonInAddressBar()",
-        "BookmarksAndFavoritesTests\/test_bookmarks_canBeViewedInAddressBarBookmarkDialog()",
-        "BookmarksAndFavoritesTests\/test_bookmarks_canBeViewedInBookmarkMenuItem()",
-        "BookmarksAndFavoritesTests\/test_favorites_canBeAddedTo_byClickingAddFavoriteInAddBookmarkPopover()",
-        "BookmarksAndFavoritesTests\/test_favorites_canBeRemovedFromAddressBarBookmarkDialog()",
-        "BookmarksAndFavoritesTests\/test_favorites_canBeRemovedFromNewTabViaContextClick()",
         "FireWindowTests\/testCrendentialsAreAutoFilledInFireWindows()",
         "PermissionsTests"
       ],

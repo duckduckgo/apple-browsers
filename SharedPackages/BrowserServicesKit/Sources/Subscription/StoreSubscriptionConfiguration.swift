@@ -46,7 +46,9 @@ final class DefaultStoreSubscriptionConfiguration: StoreSubscriptionConfiguratio
                                                "ddg.privacy.pro.monthly.renews.us.\(StoreSubscriptionConstants.freeTrialIdentifer)",
                                                "ddg.privacy.pro.yearly.renews.us.\(StoreSubscriptionConstants.freeTrialIdentifer)"],
                                         .restOfWorld: ["ddg.privacy.pro.monthly.renews.row",
-                                                       "ddg.privacy.pro.yearly.renews.row"]]),
+                                                       "ddg.privacy.pro.yearly.renews.row",
+                                                       "ddg.privacy.pro.monthly.renews.row.\(StoreSubscriptionConstants.freeTrialIdentifer)",
+                                                       "ddg.privacy.pro.yearly.renews.row.\(StoreSubscriptionConstants.freeTrialIdentifer)"]]),
             // iOS debug Alpha build
             .init(name: "DuckDuckGo Alpha",
                   appIdentifier: "com.duckduckgo.mobile.ios.alpha",
@@ -56,7 +58,9 @@ final class DefaultStoreSubscriptionConfiguration: StoreSubscriptionConfiguratio
                                                "ios.subscription.1month.\(StoreSubscriptionConstants.freeTrialIdentifer).dev",
                                                "ios.subscription.1year.\(StoreSubscriptionConstants.freeTrialIdentifer).dev"],
                                         .restOfWorld: ["ios.subscription.1month.row",
-                                                       "ios.subscription.1year.row"]]),
+                                                       "ios.subscription.1year.row",
+                                                       "ios.subscription.1month.row.\(StoreSubscriptionConstants.freeTrialIdentifer).dev",
+                                                       "ios.subscription.1year.row.\(StoreSubscriptionConstants.freeTrialIdentifer).dev"]]),
             // macOS debug build
             .init(name: "IAP debug - DDG for macOS",
                   appIdentifier: "com.duckduckgo.macos.browser.debug",

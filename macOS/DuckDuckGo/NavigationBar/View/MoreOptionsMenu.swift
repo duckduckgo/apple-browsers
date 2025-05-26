@@ -125,7 +125,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         self.freemiumDBPExperimentPixelHandler = freemiumDBPExperimentPixelHandler
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
         self.featureFlagger = featureFlagger
-        self.moreOptionsMenuIconsProvider = visualStyleManager.style.moreOptionsMenuIconsProvider
+        self.moreOptionsMenuIconsProvider = visualStyleManager.style.iconsProvider.moreOptionsMenuIconsProvider
 
         super.init(title: "")
 

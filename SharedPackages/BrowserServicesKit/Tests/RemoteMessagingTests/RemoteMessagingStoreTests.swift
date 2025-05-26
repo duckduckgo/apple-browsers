@@ -414,7 +414,8 @@ class RemoteMessagingStoreTests: XCTestCase {
                     isDuckPlayerOnboarded: false,
                     isDuckPlayerEnabled: false,
                     dismissedMessageIds: [],
-                    shownMessageIds: []
+                    shownMessageIds: [],
+                    enabledFeatureFlags: []
                 ),
                 percentileStore: RemoteMessagingPercentileUserDefaultsStore(keyValueStore: self.defaults),
                 surveyActionMapper: MockRemoteMessagingSurveyActionMapper(),

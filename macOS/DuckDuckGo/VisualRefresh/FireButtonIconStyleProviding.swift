@@ -15,6 +15,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
+import DesignResourcesKitIcons
 
 protocol FireButtonIconStyleProviding {
     var icon: NSImage { get }
@@ -28,8 +29,8 @@ final class LegacyFireButtonIconStyleProvider: FireButtonIconStyleProviding {
     var darkAnimation = "dark-flame-mouse-over"
 }
 
-final class NewFireButtonIconStyleProvider: FireButtonIconStyleProviding {
-    var icon: NSImage = .fireNew
+final class CurrentFireButtonIconStyleProvider: FireButtonIconStyleProviding {
+    var icon: NSImage = DesignSystemImages.Glyphs.Size16.fireSolid
     var lightAnimation = "fire-icon"
     var darkAnimation = "fire-icon"
 }

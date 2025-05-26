@@ -48,6 +48,25 @@ final class RemoteMessagingService {
             duckPlayerStorage: DefaultDuckPlayerStorage()
         )
         remoteMessagingClient.registerBackgroundRefreshTaskHandler()
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(handleResumeNotification),
+            name: .remoteMessagesShouldRefresh,
+            object: nil
+        )
+    }
+
+    deinit {
+        NotificationCenter.default.removeObserver(self, name: .remoteMessagesShouldRefresh, object: nil)
+    }
+    
+    // MARK: - Notification Handler
+    
+    @objc private func handleResumeNotification(_ notification: Notification) {
+        DispatchQueue.main.async {
+            self.resume()
+        }
     }
 
     // MARK: - Resume
@@ -77,4 +96,8 @@ final class RemoteMessagingService {
         }
     }
 
+}
+
+extension NSNotification.Name {
+    static let remoteMessagesShouldRefresh: NSNotification.Name = Notification.Name(rawValue: "com.duckduckgo.notification.trigger-rmf-refresh")
 }

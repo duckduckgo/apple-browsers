@@ -1282,17 +1282,26 @@
 /* Text displayed when DuckPlayer is in 'Ask' mode. */
 "duckPlayer.ask.label" = "Küsi iga kord";
 
-/* Subtitle explaining how Duck Player protects privacy */
-"duckplayer.blocks.ads.keeps.history.private" = "Duck Player blokeerib sihitud reklaamid ja hoiab su vaatamisajaloo privaatsena.";
-
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Mitte kunagi";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";
 
-/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
-"duckplayer.open.youtube.videos.here" = "Ava YouTube'i videod siin";
+/* Content for Duck Player opt-in message */
+"duckplayer.opt-in.message.content" = "Duck Player blokeerib sihitud reklaamid ja hoiab su vaatamisajaloo kaitstuna.";
+
+/* Title for Duck Player opt-in message */
+"duckplayer.opt-in.message.title" = "YouTube, aga vähemate reklaamide ja suurema privaatsusega";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.opt-in.pill.subtitle" = "Vaata ilma sihitud reklaamideta";
+
+/* Button text to play a video in Duck Player */
+"duckplayer.opt-in.pill.title" = "Esita see video Duck Playeris";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.pill.subtitle" = "Vaata ilma sihitud reklaamideta";
 
 /* Button text to play a video in Duck Player */
 "duckplayer.play.in.duck.player" = "Esita see video Duck Playeris";
@@ -1354,6 +1363,9 @@
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.title" = "Duck Player";
 
+/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
+"duckplayer.settings.toggle" = "Ava YouTube'i videod siin";
+
 /* Label for the Duck Player variant picker in Duck Player settings */
 "duckplayer.settings.variant.label" = "Duck Player Variant";
 
@@ -1363,20 +1375,29 @@
 /* Label for the YouTube.com option in Duck Player settings */
 "duckplayer.settings.youtube.label" = "YouTube.com";
 
+/* Text for the ask mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.ask" = "Lase mul valida";
+
+/* Text for the auto mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.auto" = "Ava automaatselt";
+
+/* Text for the never mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.never" = "Ära näita";
+
 /* Button text to open Duck Player settings */
 "duckplayer.toast.open.settings" = "Ava seaded";
 
 /* Toast message informing user they can disable Duck Player in settings */
-"duckplayer.toast.turn.off.anytime" = "Saad Duck Player'i seadetes igal ajal välja lülitada.";
+"duckplayer.toast.turn.off.anytime" = "Saad Duck Player'i igal ajal välja lülitada";
 
 /* Button text to watch video on YouTube */
 "duckplayer.watch.on.youtube" = "Vaata YouTube'is";
 
-/* Subtitle explaining Duck Player blocks targeted ads */
-"duckplayer.watch.without.targeted.ads" = "Vaata ilma sihitud reklaamideta";
+/* Subtitle explaining how Duck Player protects privacy */
+"duckplayer.welcome.message.content" = "YouTube'i naasmiseks sulge Duck Player.\nPole sinu jaoks? Lülita see allpool välja!";
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
-"duckplayer.youtube.no.ads.privacy" = "Vaadake YouTube'i vähemate reklaamide ja suurema privaatsusega";
+"duckplayer.welcome.message.text" = "Sa vaatad Duck Playeris!\nSiin pole suunatud reklaame.";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "E-posti kaitse";
@@ -2769,6 +2790,9 @@
 
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe" = "Kaitse oma ühendust ja identiteeti rakendusega Privacy Pro";
+
+/* Try Privacy Pro Free button text for privacy pro */
+"settings.subscription.try.free" = "Proovi Privacy Pro'd tasuta";
 
 /* Privacy pro description subtitle in settings */
 "settings.subscription.us.description" = "Sisaldab meie VPN-i, rakendusi Personal Information Removal ja Identity Theft Restoration.";

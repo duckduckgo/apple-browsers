@@ -187,7 +187,7 @@ protocol DuckPlayerSettings: AnyObject {
     var openInNewTab: Bool { get set }
 
     /// Determines if the native UI should be used
-    var nativeUI: Bool { get set }
+    var nativeUI: Bool { get }
 
     /// Determines if the native UI should be used for SERP
     var nativeUISERPEnabled: Bool { get set }
@@ -219,12 +219,21 @@ protocol DuckPlayerSettings: AnyObject {
     // Whether the View controls are visible
     var duckPlayerControlsVisible: Bool { get set }
 
+    // Whether the Native UI was used
+    var nativeUIWasUsed: Bool { get set }
+
+    // Whether the Native UI settings were mapped
+    var nativeUISettingsMapped: Bool { get set }
+
     /// Initializes a new instance with the provided app settings and privacy configuration manager.
     ///
     /// - Parameters:
     ///   - appSettings: The application settings.
     ///   - privacyConfigManager: The privacy configuration manager.
-    init(appSettings: AppSettings, privacyConfigManager: PrivacyConfigurationManaging, internalUserDecider: InternalUserDecider)
+    init(appSettings: AppSettings,
+         privacyConfigManager: PrivacyConfigurationManaging,
+         featureFlagger: FeatureFlagger,
+         internalUserDecider: InternalUserDecider)
 
     /// Triggers a notification to update subscribers about settings changes.
     func triggerNotification()
@@ -236,21 +245,37 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
     private var appSettings: AppSettings
     private let privacyConfigManager: PrivacyConfigurationManaging
     private var isFeatureEnabledCancellable: AnyCancellable?
-    private var internalUserDecider: InternalUserDecider
+    private var featureFlagger: FeatureFlagger
 
-    private var _isFeatureEnabled: Bool
-    private var isFeatureEnabled: Bool {
+    // DuckPlayer Classic is enabled (Web Version)
+    private var _isDuckPlayerClassicEnabled: Bool
+    private var isDuckPlayerClassicEnabled: Bool {
         get {
-            return _isFeatureEnabled
+            return _isDuckPlayerClassicEnabled
         }
         set {
-            if _isFeatureEnabled != newValue {
-                _isFeatureEnabled = newValue
+            if _isDuckPlayerClassicEnabled != newValue {
+                _isDuckPlayerClassicEnabled = newValue
                 duckPlayerSettingsSubject.send()
             }
         }
     }
 
+    // DuckPlayer Native is enabled (Native Version)
+    private var _isDuckPlayerNativeEnabled: Bool
+    private var isDuckPlayerNativeEnabled: Bool {
+        get {
+            return _isDuckPlayerNativeEnabled
+        }
+        set {
+            if _isDuckPlayerNativeEnabled != newValue {
+                _isDuckPlayerNativeEnabled = newValue
+                duckPlayerSettingsSubject.send()
+            }
+        }
+    }
+
+    // Publisher for DuckPlayer settings changes
     private let duckPlayerSettingsSubject = PassthroughSubject<Void, Never>()
     var duckPlayerSettingsPublisher: AnyPublisher<Void, Never> {
         duckPlayerSettingsSubject.eraseToAnyPublisher()
@@ -260,14 +285,25 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
     ///
     /// - Parameters:
     ///   - appSettings: The application settings.
-    ///   - privacyConfigManager: The privacy configuration manager.
+    ///   - featureFlagger: The feature flagger.
     init(appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
          privacyConfigManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          internalUserDecider: InternalUserDecider = AppDependencyProvider.shared.internalUserDecider) {
         self.appSettings = appSettings
         self.privacyConfigManager = privacyConfigManager
-        self._isFeatureEnabled = privacyConfigManager.privacyConfig.isEnabled(featureKey: .duckPlayer)
-        self.internalUserDecider = internalUserDecider
+        self.featureFlagger = featureFlagger
+
+        // DuckPlayer Classic is enabled (Web Version)
+        self._isDuckPlayerClassicEnabled = featureFlagger.isFeatureOn(.duckPlayer)
+
+        let isInternalUser = internalUserDecider.isInternalUser
+        let isFeatureEnabled = featureFlagger.isFeatureOn(.duckPlayer) &&
+                                     featureFlagger.isFeatureOn(.duckPlayerNativeUI)
+
+        // DuckPlayer Native is only available on iPhone and only if DuckPlayer is enabled
+        self._isDuckPlayerNativeEnabled = (isInternalUser || isFeatureEnabled) &&
+                                          UIDevice.current.userInterfaceIdiom == .phone
         registerConfigPublisher()
         registerForNotificationChanges()
     }
@@ -283,7 +319,7 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
     /// The current mode of Duck Player.
     var mode: DuckPlayerMode {
         get {
-            guard isFeatureEnabled else { return .disabled }
+            guard isDuckPlayerClassicEnabled else { return .disabled }
             // Return the underlying setting, reflecting user choice or variant default
             return appSettings.duckPlayerMode
         }
@@ -299,7 +335,7 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
     /// Indicates if the "Always Ask" overlay has been hidden.
     var askModeOverlayHidden: Bool {
         get {
-            if isFeatureEnabled {
+            if isDuckPlayerClassicEnabled {
                 return appSettings.duckPlayerAskModeOverlayHidden
             } else {
                 return false
@@ -334,23 +370,15 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
     // Determines if we should use the native verion of DuckPlayer (Internal only)
     var nativeUI: Bool {
         get {
-            guard internalUserDecider.isInternalUser, UIDevice.current.userInterfaceIdiom == .phone else { return false }
-            return appSettings.duckPlayerNativeUI
-        }
-        set {
-             // Allow direct setting if needed, potentially overridden by variant change
-            if newValue != appSettings.duckPlayerNativeUI {
-                appSettings.duckPlayerNativeUI = newValue
-                triggerNotification()
-            }
+            return isDuckPlayerNativeEnabled
         }
     }
 
     // Determines if DuckPlayer Native is enabled for SERP
     var nativeUISERPEnabled: Bool {
         get {
-            guard internalUserDecider.isInternalUser, UIDevice.current.userInterfaceIdiom == .phone else { return false }
-            return appSettings.duckPlayerNativeUI && appSettings.duckPlayerNativeUISERPEnabled
+            guard isDuckPlayerNativeEnabled else { return false }
+            return appSettings.duckPlayerNativeUISERPEnabled
         }
         set {
             if newValue != appSettings.duckPlayerNativeUISERPEnabled {
@@ -363,7 +391,7 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
     // Determines the Youtube mode for DuckPlayer Native
     var nativeUIYoutubeMode: NativeDuckPlayerYoutubeMode {
         get {
-            guard isFeatureEnabled else { return .never }
+            guard isDuckPlayerNativeEnabled else { return .never }
             // Return the underlying AppSetting value
             return appSettings.duckPlayerNativeYoutubeMode
         }
@@ -379,7 +407,7 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
     // Determines if we should use the native verion of DuckPlayer (Internal only)
     var autoplay: Bool {
         get {
-            guard internalUserDecider.isInternalUser, UIDevice.current.userInterfaceIdiom == .phone else { return false }
+            guard isDuckPlayerNativeEnabled else { return false }
             return appSettings.duckPlayerAutoplay
         }
         set {
@@ -389,6 +417,7 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
             }
         }
     }
+
     // Determines if we should show a custom view when YouTube returns an error
     var customError: Bool {
         return privacyConfigManager.privacyConfig.isSubfeatureEnabled(DuckPlayerSubfeature.customError)
@@ -433,7 +462,6 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
                 switch newValue {
                 case .classicWeb:
                     // Set Classic A specific settings
-                    self.nativeUI = false
                     self.nativeUISERPEnabled = false
                     self.mode = .alwaysAsk
                     self.nativeUIYoutubeMode = .never
@@ -442,7 +470,6 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
 
                 case .nativeOptIn:
                     // Set Native B specific settings
-                    self.nativeUI = true
                     self.nativeUISERPEnabled = true
                     self.nativeUIYoutubeMode = .ask
                     self.autoplay = true
@@ -451,7 +478,6 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
 
                 case .nativeOptOut:
                     // Set Native C specific settings
-                    self.nativeUI = true
                     self.nativeUISERPEnabled = true
                     self.nativeUIYoutubeMode = .auto
                     self.autoplay = true
@@ -498,6 +524,28 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
         }
     }
 
+    // Whether the Native UI was used
+    var nativeUIWasUsed: Bool {
+        get {
+            return appSettings.duckPlayerNativeUIWasUsed
+        }
+        set {
+            appSettings.duckPlayerNativeUIWasUsed = newValue
+            triggerNotification()
+        }
+    }
+
+    // Whether the Native UI settings were mapped
+    var nativeUISettingsMapped: Bool {
+        get {
+            return appSettings.duckPlayerNativeUISettingsMapped
+        }
+        set {
+            appSettings.duckPlayerNativeUISettingsMapped = newValue
+            triggerNotification()
+        }
+    }
+
     /// Registers a publisher to listen for changes in the privacy configuration.
     private func registerConfigPublisher() {
         isFeatureEnabledCancellable = privacyConfigManager.updatesPublisher
@@ -506,7 +554,7 @@ final class DuckPlayerSettingsDefault: DuckPlayerSettings {
             }
             .receive(on: DispatchQueue.main)
             .sink { [weak self] isEnabled in
-                self?.isFeatureEnabled = isEnabled
+                self?.isDuckPlayerClassicEnabled = isEnabled
             }
     }
 

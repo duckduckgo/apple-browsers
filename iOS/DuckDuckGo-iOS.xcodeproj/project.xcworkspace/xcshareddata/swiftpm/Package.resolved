@@ -50,7 +50,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/DesignResourcesKit",
       "state" : {
-        "revision" : "ac36c6e467118cc8e2607c42583b6dff25bfdfd1"
+        "revision" : "fed494b3f8603537fcd115ceaf3cb2ae4b5518d7",
+        "version" : "5.0.0"
       }
     },
     {

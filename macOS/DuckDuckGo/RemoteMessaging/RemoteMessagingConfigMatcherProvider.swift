@@ -24,6 +24,7 @@ import RemoteMessaging
 import NetworkProtection
 import Subscription
 import Freemium
+import FeatureFlags
 
 extension DefaultWaitlistActivationDateStore: VPNActivationDateProviding {}
 
@@ -38,7 +39,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         internalUserDecider: InternalUserDecider,
         statisticsStore: StatisticsStore = LocalStatisticsStore(),
         variantManager: VariantManager = DefaultVariantManager(),
-        subscriptionManager: any SubscriptionAuthV1toV2Bridge
+        subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+        featureFlagger: FeatureFlagger
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.appearancePreferences = appearancePreferences
@@ -49,6 +51,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         self.statisticsStore = statisticsStore
         self.variantManager = variantManager
         self.subscriptionManager = subscriptionManager
+        self.featureFlagger = featureFlagger
     }
 
     let bookmarksDatabase: CoreDataDatabase
@@ -60,6 +63,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
     let statisticsStore: StatisticsStore
     let variantManager: VariantManager
     let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    let featureFlagger: FeatureFlagger
 
     func refreshConfigMatcher(using store: RemoteMessagingStoring) async -> RemoteMessagingConfigMatcher {
 
@@ -136,6 +140,10 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
             pinnedTabsManagerProvider.currentPinnedTabManagers.map { $0.tabCollection.tabs.count }.reduce(0, +)
         }
 
+        let enabledFeatureFlags: [String] = FeatureFlag.allCases.filter { flag in
+            flag.cohortType == nil && featureFlagger.isFeatureOn(for: flag)
+        }.map(\.rawValue)
+
         return RemoteMessagingConfigMatcher(
             appAttributeMatcher: AppAttributeMatcher(statisticsStore: statisticsStore,
                                                      variantManager: variantManager,
@@ -162,7 +170,8 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                                                        isDuckPlayerOnboarded: duckPlayerPreferencesPersistor.youtubeOverlayAnyButtonPressed,
                                                        isDuckPlayerEnabled: duckPlayerPreferencesPersistor.duckPlayerModeBool != false,
                                                        isCurrentFreemiumPIRUser: isCurrentFreemiumDBPUser,
-                                                       dismissedDeprecatedMacRemoteMessageIds: deprecatedRemoteMessageStorage.dismissedMessageIDs()
+                                                       dismissedDeprecatedMacRemoteMessageIds: deprecatedRemoteMessageStorage.dismissedMessageIDs(),
+                                                       enabledFeatureFlags: enabledFeatureFlags
                                                       ),
             percentileStore: RemoteMessagingPercentileUserDefaultsStore(keyValueStore: UserDefaults.standard),
             surveyActionMapper: surveyActionMapper,

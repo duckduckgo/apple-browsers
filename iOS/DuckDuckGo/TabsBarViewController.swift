@@ -20,6 +20,7 @@
 import UIKit
 import Core
 import DesignResourcesKit
+import BrowserServicesKit
 
 protocol TabsBarDelegate: NSObjectProtocol {
     
@@ -40,20 +41,43 @@ class TabsBarViewController: UIViewController {
     struct Constants {
         
         static let minItemWidth: CGFloat = 68
+        static let buttonSize: CGFloat = 34
+        static let experimentalButtonSize: CGFloat = 40
+        static let stackSpacing: CGFloat = 24
+        static let experimentalStackSpacing: CGFloat = 12
 
     }
     
     @IBOutlet weak var collectionView: UICollectionView!
     @IBOutlet weak var buttonsStack: UIStackView!
-    @IBOutlet weak var fireButton: UIButton!
-    @IBOutlet weak var addTabButton: UIButton!
-    @IBOutlet weak var tabSwitcherContainer: UIView!
     @IBOutlet weak var buttonsBackground: UIView!
+
+    lazy var fireButton: UIButton = {
+        createButton(resource: isExperimentalThemingEnabled ? .fireNew24 : .fire)
+    }()
+
+    lazy var addTabButton: UIButton = {
+        createButton(resource: .add24)
+    }()
 
     weak var delegate: TabsBarDelegate?
     private weak var tabsModel: TabsModel?
+    let featureFlagger: FeatureFlagger
+    private lazy var isExperimentalThemingEnabled: Bool = {
+        ExperimentalThemingManager(featureFlagger: featureFlagger).isExperimentalThemingEnabled
+    }()
 
-    var tabSwitcherButton: TabSwitcherAnimatedButton!
+    private lazy var tabSwitcherButton: TabSwitcherButton = {
+        let switcher: TabSwitcherButton
+        if isExperimentalThemingEnabled {
+            switcher = TabSwitcherStaticButton()
+        } else {
+            switcher = TabSwitcherAnimatedButton()
+        }
+
+        return switcher
+    }()
+
     private let longPressTabGesture = UILongPressGestureRecognizer()
     
     private weak var pressedCell: TabsBarCell?
@@ -69,27 +93,52 @@ class TabsBarViewController: UIViewController {
     var maxItems: Int {
         return Int(collectionView.frame.size.width / Constants.minItemWidth)
     }
+
+    required init?(coder: NSCoder, featureFlagger: FeatureFlagger) {
+        self.featureFlagger = featureFlagger
+        
+        super.init(coder: coder)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        tabSwitcherButton = TabSwitcherAnimatedButton()
-
+        setUpSubviews()
         decorate()
+        configureGestures()
+        enableInteractionsWithPointer()
+    }
 
-        tabSwitcherButton.delegate = self
-        tabSwitcherContainer.addSubview(tabSwitcherButton)
+    private func setUpSubviews() {
 
         collectionView.clipsToBounds = false
         collectionView.delegate = self
         collectionView.dataSource = self
-        
-        configureGestures()
-        
-        enableInteractionsWithPointer()
 
         addTabButton.setImage(DesignSystemImages.Glyphs.Size24.add, for: .normal)
         fireButton.setImage(DesignSystemImages.Glyphs.Size24.fireSolid, for: .normal)
+
+        buttonsStack.spacing = isExperimentalThemingEnabled ? Constants.experimentalStackSpacing : Constants.stackSpacing
+
+        buttonsStack.addArrangedSubview(addTabButton)
+        buttonsStack.addArrangedSubview(fireButton)
+        buttonsStack.addArrangedSubview(tabSwitcherButton)
+
+        addTabButton.addTarget(self, action: #selector(onNewTabPressed), for: .touchUpInside)
+        fireButton.addTarget(self, action: #selector(onFireButtonPressed), for: .touchUpInside)
+        tabSwitcherButton.delegate = self
+
+        // Set width equal to height for all buttons
+        [addTabButton, fireButton, tabSwitcherButton].forEach { button in
+            let size = isExperimentalThemingEnabled ? Constants.experimentalButtonSize : Constants.buttonSize
+            button.widthAnchor.constraint(equalTo: button.heightAnchor).isActive = true
+            button.widthAnchor.constraint(equalToConstant: size).isActive = true
+        }
     }
 
     override func viewWillAppear(_ animated: Bool) {
@@ -119,9 +168,9 @@ class TabsBarViewController: UIViewController {
     func refresh(tabsModel: TabsModel?, scrollToSelected: Bool = false) {
         self.tabsModel = tabsModel
         
-        tabSwitcherContainer.isAccessibilityElement = true
-        tabSwitcherContainer.accessibilityLabel = UserText.tabSwitcherAccessibilityLabel
-        tabSwitcherContainer.accessibilityHint = UserText.numberOfTabs(tabsCount)
+        tabSwitcherButton.isAccessibilityElement = true
+        tabSwitcherButton.accessibilityLabel = UserText.tabSwitcherAccessibilityLabel
+        tabSwitcherButton.accessibilityHint = UserText.numberOfTabs(tabsCount)
 
         let availableWidth = collectionView.frame.size.width
         let maxVisibleItems = min(maxItems, tabsCount)
@@ -198,13 +247,26 @@ class TabsBarViewController: UIViewController {
     private func enableInteractionsWithPointer() {
         fireButton.isPointerInteractionEnabled = true
         addTabButton.isPointerInteractionEnabled = true
-        tabSwitcherButton.pointerView.frame.size.width = 34
+        tabSwitcherButton.pointer?.frame.size.width = 34
     }
     
     private func requestNewTab() {
         delegate?.tabsBarDidRequestNewTab(self)
         DispatchQueue.main.async {
             self.collectionView.scrollToItem(at: IndexPath(row: self.currentIndex, section: 0), at: .right, animated: true)
+        }
+    }
+
+    private func createButton(resource: ImageResource) -> UIButton {
+        let image = UIImage(resource: resource)
+        if isExperimentalThemingEnabled {
+            let button = BrowserChromeButton()
+            button.setImage(image)
+            return button
+        } else {
+            let button = UIButton(type: .system)
+            button.setImage(image, for: .normal)
+            return button
         }
     }
 

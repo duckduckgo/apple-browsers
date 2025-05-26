@@ -2735,6 +2735,9 @@ Take back control of your personal information with the browser designed for dat
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe" = "Protect your connection and identity with Privacy Pro";
 
+/* Try Privacy Pro Free button text for privacy pro */
+"settings.subscription.try.free" = "Try Privacy Pro Free";
+
 /* Privacy pro description subtitle in settings */
 "settings.subscription.us.description" = "Includes our VPN, Personal Information Removal, and Identity Theft Restoration.";
 

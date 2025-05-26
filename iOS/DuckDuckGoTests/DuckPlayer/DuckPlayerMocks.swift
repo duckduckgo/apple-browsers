@@ -186,9 +186,12 @@ final class MockDuckPlayerSettings: DuckPlayerSettings {
     var pillDismissCount: Int = 0
     var primingMessagePresented: Bool = false
     var duckPlayerControlsVisible: Bool = false
+    var nativeUIWasUsed: Bool = false
+    var nativeUISettingsMapped: Bool = false
     
-
-    init(appSettings: any DuckDuckGo.AppSettings, privacyConfigManager: any BrowserServicesKit.PrivacyConfigurationManaging, internalUserDecider: any BrowserServicesKit.InternalUserDecider) {}
+    init(appSettings: any DuckDuckGo.AppSettings, privacyConfigManager: any BrowserServicesKit.PrivacyConfigurationManaging, featureFlagger: any BrowserServicesKit.FeatureFlagger, internalUserDecider: any BrowserServicesKit.InternalUserDecider) {
+      // NOOP
+    }
 
     func triggerNotification() {}
 
@@ -253,7 +256,7 @@ final class MockDuckPlayerHosting: UIViewController, DuckPlayerHosting {
 
 final class MockDuckPlayer: DuckPlayerControlling {
 
-    // MARK: - Required Properties
+  // MARK: - Required Properties
     var settings: DuckPlayerSettings
     var hostView: DuckPlayerHosting?
     var youtubeNavigationRequest: PassthroughSubject<URL, Never>
@@ -357,11 +360,16 @@ final class MockDuckPlayer: DuckPlayerControlling {
     func showPillForVisibleChrome() {
         // Mock implementation
     }
+  
+    func mapLegacySettings() {
+      // NOOP
+    }
+  
 
 }
 
 enum MockFeatureFlag: Hashable {
-    case duckPlayer, duckPlayerOpenInNewTab
+    case duckPlayer, duckPlayerOpenInNewTab, nativeUI
 }
 
 final class MockDuckPlayerFeatureFlagger: FeatureFlagger {
@@ -427,11 +435,13 @@ final class MockDuckPlayerInternalUserDecider: InternalUserDecider {
 }
 
 final class MockDuckPlayerNativeUIPresenting: DuckPlayerNativeUIPresenting {
-
+  
     var presentPillCalled = false
     var dismissPillCalled = false
     var presentDuckPlayerCalled = false
     var lastTimestampValue: TimeInterval?
+    var pixelHandler: any DuckDuckGo.DuckPlayerPixelFiring.Type  =  DuckPlayerPixelHandler.self
+
 
     @MainActor
     func presentPill(for videoID: String, in hostViewController: any DuckDuckGo.DuckPlayerHosting, timestamp: TimeInterval?) {

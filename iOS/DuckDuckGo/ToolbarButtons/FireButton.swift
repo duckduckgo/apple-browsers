@@ -20,7 +20,7 @@
 import UIKit
 import DesignResourcesKit
 
-class FireButton: ToolbarButton {
+class FireButton: BrowserChromeButton {
     convenience init() {
         self.init(.fire)
 

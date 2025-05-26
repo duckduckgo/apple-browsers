@@ -50,8 +50,8 @@ final class BookmarksBarMenuViewController: NSViewController {
 
     private let bookmarkManager: BookmarkManager
     private let treeControllerDataSource: BookmarkListTreeControllerDataSource
-
     private let treeController: BookmarkTreeController
+    private let visualStyle: VisualStyleProviding
 
     private var submenuPopover: BookmarksBarMenuPopover?
     private(set) var preferredContentOffset: CGPoint = .zero
@@ -88,14 +88,16 @@ final class BookmarksBarMenuViewController: NSViewController {
         return .init(syncService: syncService, syncBookmarksAdapter: syncBookmarksAdapter)
     }()
 
-    init(bookmarkManager: BookmarkManager = LocalBookmarkManager.shared, rootFolder: BookmarkFolder? = nil) {
+    init(bookmarkManager: BookmarkManager = LocalBookmarkManager.shared,
+         rootFolder: BookmarkFolder? = nil,
+         visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
         self.bookmarkManager = bookmarkManager
         self.treeControllerDataSource = BookmarkListTreeControllerDataSource(bookmarkManager: bookmarkManager)
         self.treeController = BookmarkTreeController(dataSource: treeControllerDataSource,
                                                      sortMode: .manual,
                                                      rootFolder: rootFolder,
                                                      isBookmarksBarMenu: true)
-
+        self.visualStyle = visualStyleManager.style
         super.init(nibName: nil, bundle: nil)
         self.representedObject = rootFolder
     }
@@ -552,7 +554,7 @@ final class BookmarksBarMenuViewController: NSViewController {
 
             // desired width (limited to maxMenuPopoverContentWidth)
             if contentSize.width < Constants.maxMenuPopoverContentWidth {
-                let cellWidth = BookmarkOutlineCellView.preferredContentWidth(for: node) + contentInsets.left + contentInsets.right
+                let cellWidth = BookmarkOutlineCellView.preferredContentWidth(for: node, visualStyle: visualStyle) + contentInsets.left + contentInsets.right
                 if cellWidth > contentSize.width {
                     contentSize.width = min(Constants.maxMenuPopoverContentWidth, cellWidth)
                 }

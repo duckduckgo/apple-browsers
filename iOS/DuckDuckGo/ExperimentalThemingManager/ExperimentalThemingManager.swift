@@ -30,7 +30,8 @@ struct ExperimentalThemingManager {
     }
 
     var isExperimentalThemingEnabled: Bool {
-        featureFlagger.isFeatureOn(for: FeatureFlag.experimentalBrowserTheming, allowOverride: true)
+        true
+//        featureFlagger.isFeatureOn(for: FeatureFlag.experimentalBrowserTheming, allowOverride: true)
     }
 
     let isRoundedCornersTreatmentEnabled = false

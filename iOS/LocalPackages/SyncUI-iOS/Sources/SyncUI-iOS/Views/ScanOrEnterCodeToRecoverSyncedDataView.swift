@@ -20,6 +20,7 @@
 import SwiftUI
 import DuckUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 public struct ScanOrEnterCodeToRecoverSyncedDataView: View {
 

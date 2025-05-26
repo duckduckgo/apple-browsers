@@ -23,6 +23,7 @@ import PrivacyDashboard
 import SwiftUI
 import BrowserServicesKit
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 protocol AutofillSettingsViewModelDelegate: AnyObject {
     func navigateToPasswords(viewModel: AutofillSettingsViewModel)

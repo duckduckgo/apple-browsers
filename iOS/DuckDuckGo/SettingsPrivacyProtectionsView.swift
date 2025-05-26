@@ -21,6 +21,7 @@ import SwiftUI
 import UIKit
 import Core
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct SettingsPrivacyProtectionsView: View {
 

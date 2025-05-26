@@ -19,6 +19,7 @@
 
 import Combine
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import SwiftUI
 import BrowserServicesKit
 

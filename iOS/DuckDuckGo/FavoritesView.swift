@@ -22,6 +22,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 import DuckUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct FavoritesView<Model: FavoritesViewModel>: View {
     @Environment(\.horizontalSizeClass) var horizontalSizeClass

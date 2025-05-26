@@ -21,6 +21,7 @@ import SwiftUI
 import WidgetKit
 import AppIntents
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 @available(iOS 17.0, *)
 struct QuickActionsMediumWidget: Widget {

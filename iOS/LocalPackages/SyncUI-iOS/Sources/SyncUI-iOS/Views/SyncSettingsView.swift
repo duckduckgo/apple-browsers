@@ -18,6 +18,7 @@
 //
 
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import DuckUI
 import SwiftUI
 

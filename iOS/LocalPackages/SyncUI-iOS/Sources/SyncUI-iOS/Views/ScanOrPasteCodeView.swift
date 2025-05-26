@@ -19,6 +19,7 @@
 
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 public struct ScanOrSeeCode: View {
     @ObservedObject var model: ScanOrPasteCodeViewModel

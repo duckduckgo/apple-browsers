@@ -20,6 +20,7 @@
 import SwiftUI
 import Combine
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct OngoingDownloadRow: View {
     @ObservedObject var rowModel: OngoingDownloadRowViewModel

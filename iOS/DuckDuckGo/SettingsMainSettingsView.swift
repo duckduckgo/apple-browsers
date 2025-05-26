@@ -21,6 +21,7 @@ import SwiftUI
 import UIKit
 import SyncUI_iOS
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct SettingsMainSettingsView: View {
 

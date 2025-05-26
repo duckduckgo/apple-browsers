@@ -21,6 +21,7 @@ import SwiftUI
 import DuckUI
 import BrowserServicesKit
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct SaveLoginView: View {
     enum LayoutType {

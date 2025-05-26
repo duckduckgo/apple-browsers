@@ -41,6 +41,7 @@ import BrokenSitePrompt
 import AIChat
 import NetworkExtension
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 class MainViewController: UIViewController {
 

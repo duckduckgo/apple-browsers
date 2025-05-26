@@ -669,6 +669,8 @@
 		8558D0CD2DCBC6660031BA40 /* MockMessageNavigationDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8558D0CC2DCBC65F0031BA40 /* MockMessageNavigationDelegate.swift */; };
 		855BF0E92DC11C0B005874D8 /* MockFeatureDiscovery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 855BF0E82DC11C01005874D8 /* MockFeatureDiscovery.swift */; };
 		855D914D2063EF6A00C4B448 /* TabSwitcherTransition.swift in Sources */ = {isa = PBXBuildFile; fileRef = 855D914C2063EF6A00C4B448 /* TabSwitcherTransition.swift */; };
+		856086612DE47E5600AA3DC7 /* DesignResourcesKitIcons in Frameworks */ = {isa = PBXBuildFile; productRef = 856086602DE47E5600AA3DC7 /* DesignResourcesKitIcons */; };
+		856086632DE47E7700AA3DC7 /* DesignResourcesKitIcons in Frameworks */ = {isa = PBXBuildFile; productRef = 856086622DE47E7700AA3DC7 /* DesignResourcesKitIcons */; };
 		8562CE152B9B645C00E1D399 /* CachedBookmarkSuggestions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8562CE142B9B645C00E1D399 /* CachedBookmarkSuggestions.swift */; };
 		8563A03C1F9288D600F04442 /* BrowserChromeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8563A03B1F9288D600F04442 /* BrowserChromeManager.swift */; };
 		8565A34B1FC8D96B00239327 /* LaunchTabNotification.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8565A34A1FC8D96B00239327 /* LaunchTabNotification.swift */; };
@@ -3730,6 +3732,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				856086632DE47E7700AA3DC7 /* DesignResourcesKitIcons in Frameworks */,
 				8512EA5124ED30D20073EE19 /* SwiftUI.framework in Frameworks */,
 				4BC95EC32D74183F002FAB32 /* NetworkProtection in Frameworks */,
 				4BD96E062C4DBC93003BC32C /* NetworkExtension.framework in Frameworks */,
@@ -3808,6 +3811,7 @@
 			files = (
 				C1CAAA812CF8C8F400C37EE6 /* DuckUI in Frameworks */,
 				C1EF5B232CC0457B002980E6 /* AuthenticationServices.framework in Frameworks */,
+				856086612DE47E5600AA3DC7 /* DesignResourcesKitIcons in Frameworks */,
 				C1CAAA7B2CF8C8ED00C37EE6 /* Core.framework in Frameworks */,
 				C1CAAA832CF8C8FF00C37EE6 /* DesignResourcesKit in Frameworks */,
 			);
@@ -8158,6 +8162,7 @@
 				4BBBBA862B02E85400D965DA /* DesignResourcesKit */,
 				7B2CCBA22D11ABB100FE5852 /* VPNWidgetSupport */,
 				4BC95EC22D74183F002FAB32 /* NetworkProtection */,
+				856086622DE47E7700AA3DC7 /* DesignResourcesKitIcons */,
 			);
 			productName = WidgetsExtension;
 			productReference = 8512EA4D24ED30D20073EE19 /* WidgetsExtension.appex */;
@@ -13477,6 +13482,14 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 84EFBCCA2D817CB500706739 /* XCRemoteSwiftPackageReference "swift-snapshot-testing" */;
 			productName = SnapshotTesting;
+		};
+		856086602DE47E5600AA3DC7 /* DesignResourcesKitIcons */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = DesignResourcesKitIcons;
+		};
+		856086622DE47E7700AA3DC7 /* DesignResourcesKitIcons */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = DesignResourcesKitIcons;
 		};
 		984249C02CED4F430071C7DB /* OHHTTPStubs */ = {
 			isa = XCSwiftPackageProductDependency;

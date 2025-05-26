@@ -22,6 +22,7 @@ import Subscription
 import SwiftUI
 import UIKit
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct SettingsSubscriptionView: View {
 

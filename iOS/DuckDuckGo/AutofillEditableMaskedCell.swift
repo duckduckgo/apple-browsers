@@ -18,6 +18,7 @@
 //
 
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import SwiftUI
 
 struct AutofillEditableMaskedCell: View {

@@ -18,6 +18,7 @@
 
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 // MARK: - Metrics
 
@@ -227,7 +228,7 @@ struct OnboardingDismissButton: View {
 
     var body: some View {
         Button(action: action) {
-            Image(uiImage: DesignSystemImages.Glyphs.Size16.close)
+            Image(.close16)
                 .foregroundColor(.primary)
                 .padding(DaxDialogMetrics.dismissButtonPadding)
                 .background(backgroundColor)

@@ -27,6 +27,7 @@ import Common
 import PrivacyDashboard
 import PixelExperimentKit
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 extension TabViewController {
 

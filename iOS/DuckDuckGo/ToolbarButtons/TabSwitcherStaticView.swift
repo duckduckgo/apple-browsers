@@ -19,6 +19,7 @@
 
 import UIKit
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 final class TabSwitcherStaticView: UIView {
     private let iconImageView = UIImageView(image: DesignSystemImages.Glyphs.Size24.tabMobile)

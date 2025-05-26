@@ -22,6 +22,7 @@ import BrowserServicesKit
 import Combine
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 final class AutofillCreditCardListViewController: UIViewController {
     

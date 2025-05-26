@@ -21,6 +21,7 @@ import UIKit
 import BrowserServicesKit
 import SwiftUICore
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 enum ToolbarContentState: Equatable {
     case newTab

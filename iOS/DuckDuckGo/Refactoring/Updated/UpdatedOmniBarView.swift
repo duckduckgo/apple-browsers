@@ -19,6 +19,7 @@
 
 import UIKit
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import SwiftUI
 
 final class UpdatedOmniBarView: UIView, OmniBarView {

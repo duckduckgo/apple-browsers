@@ -22,6 +22,7 @@ import BrowserServicesKit
 import SwiftUI
 import Core
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 protocol ZipContentSelectionViewModelDelegate: AnyObject {
     func zipContentSelectionViewModelDidSelectOptions(_ viewModel: ZipContentSelectionViewModel, selectedTypes: [DataImport.DataType])

@@ -21,6 +21,7 @@ import UIKit
 import Core
 import BrowserServicesKit
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 class UnprotectedSitesViewController: UITableViewController {
     

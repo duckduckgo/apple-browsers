@@ -31,6 +31,7 @@ import WidgetKit
 import os.log
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 class BookmarksViewController: UIViewController, UITableViewDelegate {
 

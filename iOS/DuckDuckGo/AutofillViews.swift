@@ -20,6 +20,7 @@
 import Foundation
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct AutofillViews {
 

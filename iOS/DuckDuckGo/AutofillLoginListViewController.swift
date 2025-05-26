@@ -24,6 +24,7 @@ import BrowserServicesKit
 import Common
 import DDGSync
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import SwiftUI
 import os.log
 import Persistence

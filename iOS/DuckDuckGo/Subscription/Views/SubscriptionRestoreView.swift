@@ -20,6 +20,7 @@
 import Foundation
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import Core
 
 struct SubscriptionRestoreView: View {

@@ -21,6 +21,7 @@ import Foundation
 import UIKit
 import Lottie
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 enum PrivacyIcon {
     case daxLogo, shield, shieldWithDot, alert

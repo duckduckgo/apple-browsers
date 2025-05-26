@@ -20,6 +20,7 @@
 import SwiftUI
 import UIKit
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct SettingsNextStepsView: View {
 

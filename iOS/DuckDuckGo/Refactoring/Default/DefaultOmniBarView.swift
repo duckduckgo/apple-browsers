@@ -22,6 +22,7 @@ import UIKit
 import Core
 import PrivacyDashboard
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import DuckPlayer
 import os.log
 import BrowserServicesKit

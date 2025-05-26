@@ -20,6 +20,7 @@
 import UIKit
 import Core
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 class TabsBarCell: UICollectionViewCell {
 

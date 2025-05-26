@@ -19,6 +19,7 @@
 #if os(iOS)
 import UIKit
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 final class TitleBarView: UIView {
     private let titleLabel: UILabel

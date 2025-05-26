@@ -21,6 +21,7 @@ import SwiftUI
 import UIKit
 import Networking
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct SettingsOthersView: View {
 

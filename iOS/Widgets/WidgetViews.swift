@@ -20,6 +20,7 @@
 import SwiftUI
 import WidgetKit
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct FavoriteView: View {
 

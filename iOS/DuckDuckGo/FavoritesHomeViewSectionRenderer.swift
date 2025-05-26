@@ -22,6 +22,7 @@ import Core
 import Bookmarks
 import WidgetKit
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 protocol FavoritesHomeViewSectionRendererDelegate: AnyObject {
     

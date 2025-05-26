@@ -21,6 +21,7 @@ import UIKit
 import Core
 import Bookmarks
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 class BookmarkFolderCell: UITableViewCell {
 

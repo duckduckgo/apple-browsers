@@ -20,6 +20,7 @@
 import SwiftUI
 import GRDB
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 private struct ShareButtonFramePreferenceKey: PreferenceKey {
     static var defaultValue: CGRect = .zero

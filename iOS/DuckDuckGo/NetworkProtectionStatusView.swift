@@ -22,6 +22,7 @@ import NetworkProtection
 import TipKit
 import Networking
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct NetworkProtectionStatusView: View {
 

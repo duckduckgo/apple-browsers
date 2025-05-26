@@ -19,6 +19,7 @@
 
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct NetworkProtectionVPNSettingsView: View {
     @StateObject var viewModel = NetworkProtectionVPNSettingsViewModel()

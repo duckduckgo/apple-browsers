@@ -23,6 +23,7 @@ import Common
 import BrowserServicesKit
 import Core
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 /// Central point for coordinating text zoom activities.
 /// * Host is used to represent unaltered host from a URL. Domain is a normalised host.

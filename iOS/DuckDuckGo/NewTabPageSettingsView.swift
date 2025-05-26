@@ -20,6 +20,7 @@
 import SwiftUI
 import Common
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct NewTabPageSettingsView: View {
     @Environment(\.dismiss) var dismiss

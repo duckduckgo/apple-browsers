@@ -23,6 +23,7 @@ import LinkPresentation
 import DuckUI
 import Core
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct DesktopDownloadView: View {
 

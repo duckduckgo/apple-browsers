@@ -19,6 +19,7 @@
 
 import UIKit
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 final class UpdatedOmniBarSearchView: UIView {
 

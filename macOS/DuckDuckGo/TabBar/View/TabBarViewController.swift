@@ -51,6 +51,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     @IBOutlet weak var windowDraggingViewLeadingConstraint: NSLayoutConstraint!
     @IBOutlet weak var burnerWindowBackgroundView: NSImageView!
 
+    @IBOutlet weak var fireButtonWidthConstraint: NSLayoutConstraint!
+    @IBOutlet weak var fireButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var addTabButton: MouseOverButton!
 
     private var fireButtonMouseOverCancellable: AnyCancellable?
@@ -188,11 +190,11 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         // https://app.asana.com/0/1177771139624306/1202033879471339
         addMouseMonitors()
         addTabBarRemoteMessageListener()
-        subscribeToChildWindows()
     }
 
     override func viewDidAppear() {
         enableScrollButtons()
+        subscribeToChildWindows()
     }
 
     override func viewWillDisappear() {
@@ -262,16 +264,20 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     private func setupFireButton() {
-        fireButton.image = visualStyle.fireButtonStyleProvider.icon
+        let style = visualStyle.iconsProvider.fireButtonStyleProvider
+        fireButton.image = style.icon
         fireButton.toolTip = UserText.clearBrowsingHistoryTooltip
-        fireButton.animationNames = MouseOverAnimationButton.AnimationNames(aqua: visualStyle.fireButtonStyleProvider.lightAnimation,
-                                                                            dark: visualStyle.fireButtonStyleProvider.darkAnimation)
+        fireButton.animationNames = MouseOverAnimationButton.AnimationNames(aqua: style.lightAnimation,
+                                                                            dark: style.darkAnimation)
         fireButton.sendAction(on: .leftMouseDown)
         fireButtonMouseOverCancellable = fireButton.publisher(for: \.isMouseOver)
             .first(where: { $0 }) // only interested when mouse is over
             .sink(receiveValue: { [weak self] _ in
                 self?.stopFireButtonPulseAnimation()
             })
+
+        fireButtonWidthConstraint.constant = visualStyle.fireButtonSize
+        fireButtonHeightConstraint.constant = visualStyle.fireButtonSize
     }
 
     private func setupAsBurnerWindowIfNeeded() {
@@ -603,7 +609,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             if dividedWidth < TabBarViewItem.Width.minimumSelected {
                 dividedWidth = (tabsWidth - TabBarViewItem.Width.minimumSelected) / (numberOfItems - 1)
             }
-            return min(TabBarViewItem.Width.maximum, max(minimumWidth, dividedWidth)).rounded()
+            return floor(min(TabBarViewItem.Width.maximum, max(minimumWidth, dividedWidth)))
         } else {
             return minimumWidth
         }

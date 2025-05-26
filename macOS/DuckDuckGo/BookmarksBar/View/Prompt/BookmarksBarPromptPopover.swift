@@ -26,6 +26,7 @@ final class BookmarksBarPromptPopover: NSPopover {
         super.init()
         self.behavior = .semitransient
         self.delegate = self
+        self.setAccessibilityTitle(UserText.bookmarksBarPromptTitle)
         setupContentController()
     }
 

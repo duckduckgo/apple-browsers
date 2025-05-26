@@ -129,7 +129,7 @@ final class ToolbarHandler: ToolbarStateHandling {
 
     private func createBarButtonItem(title: String, imageResource: ImageResource) -> UIBarButtonItem {
         if self.isExperimentalThemingEnabled {
-            let button = ToolbarButton(.primary)
+            let button = BrowserChromeButton(.primary)
             button.setImage(UIImage(resource: imageResource))
             button.frame = CGRect(x: 0, y: 0, width: 34, height: 44)
 

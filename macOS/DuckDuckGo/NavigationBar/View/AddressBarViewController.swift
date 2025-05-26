@@ -420,18 +420,26 @@ final class AddressBarViewController: NSViewController {
 
         let isKey = self.view.window?.isKeyWindow == true
 
-        activeOuterBorderView.alphaValue = isKey && isFirstResponder && visualStyle.shouldShowOutlineBorder(isHomePage: isHomePage) ? 1 : 0
+        activeOuterBorderView.alphaValue = isKey && isFirstResponder && visualStyle.addressBarStyleProvider.shouldShowOutlineBorder(isHomePage: isHomePage) ? 1 : 0
         activeOuterBorderView.backgroundColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.2) : visualStyle.colorsProvider.addressBarOutlineShadow
-        activeBackgroundView.borderColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.2) : visualStyle.colorsProvider.accentPrimaryColor
+        activeBackgroundView.borderColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.8) : visualStyle.colorsProvider.accentPrimaryColor
 
         setupAddressBarPlaceHolder()
+        setupAddressBarCornerRadius()
+    }
+
+    private func setupAddressBarCornerRadius() {
+        activeBackgroundView.setCornerRadius(visualStyle.addressBarActiveBackgroundViewRadius)
+        inactiveBackgroundView.setCornerRadius(visualStyle.addressBarInactiveBackgroundViewRadius)
+        innerBorderView.setCornerRadius(visualStyle.addressBarInnerBorderViewRadius)
+        activeOuterBorderView.setCornerRadius(visualStyle.addressBarActiveOuterBorderViewRadius)
     }
 
     private func setupAddressBarPlaceHolder() {
         let isNewTab = tabViewModel?.tab.content == .newtab
         let addressBarPlaceholder = isNewTab ? UserText.addressBarPlaceholder : ""
 
-        let font = NSFont.systemFont(ofSize: isNewTab ? visualStyle.newTabOrHomePageAddressBarFontSize : visualStyle.defaultAddressBarFontSize, weight: .regular)
+        let font = NSFont.systemFont(ofSize: isNewTab ? visualStyle.addressBarStyleProvider.newTabOrHomePageAddressBarFontSize : visualStyle.addressBarStyleProvider.defaultAddressBarFontSize, weight: .regular)
         let attributes: [NSAttributedString.Key: Any] = [
             .foregroundColor: visualStyle.colorsProvider.textSecondaryColor,
             .font: font
@@ -519,7 +527,7 @@ final class AddressBarViewController: NSViewController {
                 activeBackgroundView.backgroundColor = NSColor.addressBarBackground
                 switchToTabBox.backgroundColor = navigationBarBackgroundColor.blended(with: .addressBarBackground)
 
-                activeOuterBorderView.isHidden = !visualStyle.shouldShowOutlineBorder(isHomePage: isHomePage)
+                activeOuterBorderView.isHidden = !visualStyle.addressBarStyleProvider.shouldShowOutlineBorder(isHomePage: isHomePage)
             } else {
                 activeBackgroundView.borderWidth = 0
                 activeBackgroundView.borderColor = nil

@@ -24,11 +24,13 @@ import BrowserServicesKit
 import WebKit
 import Core
 import SwiftUI
+import Combine
 
 protocol AIChatViewControllerManagerDelegate: AnyObject {
     func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didRequestToLoad url: URL)
     func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didRequestOpenDownloadWithFileName fileName: String)
     func aiChatViewControllerManagerDidReceiveOpenSettingsRequest(_ manager: AIChatViewControllerManager)
+    func aiChatViewControllerManager(_ manager: AIChatViewControllerManager, didSubmitQuery query: String)
 }
 
 final class AIChatViewControllerManager {
@@ -51,6 +53,7 @@ final class AIChatViewControllerManager {
     private let downloadsDirectoryHandler: DownloadsDirectoryHandling
     private let userAgentManager: AIChatUserAgentProviding
     private let experimentalAIChatManager: ExperimentalAIChatManager
+    private var cancellables = Set<AnyCancellable>()
 
     // MARK: - Initialization
 
@@ -100,7 +103,8 @@ final class AIChatViewControllerManager {
             inspectableWebView: inspectableWebView,
             downloadsPath: downloadsDirectoryHandler.downloadsDirectory,
             userAgentManager: userAgentManager,
-            chatInputBox: chatInputBox
+            chatInputBoxViewController: chatInputBox,
+            chatInputBoxHandler: inputBoxHandler
         )
 
         aiChatViewController.delegate = self
@@ -136,22 +140,39 @@ final class AIChatViewControllerManager {
 #endif
     }
 
-    private func setupChatInputBoxIfNeeded() -> AnyView? {
+    private func setupChatInputBoxIfNeeded() -> UIViewController? {
         guard experimentalAIChatManager.isExperimentalAIChatSettingsEnabled else { return nil }
-
         let viewModel = AIChatInputBoxViewModel()
         let handler = AIChatInputBoxHandler(inputBoxViewModel: viewModel)
 
         inputBoxViewModel = viewModel
         inputBoxHandler = handler
+        setupAIChatSubscriptions()
+        return ChatInputBoxViewController(viewModel: viewModel)
+    }
 
-        return AnyView(AIChatInputBox(viewModel: viewModel))
+    private func setupAIChatSubscriptions() {
+        guard let inputBoxHandler = inputBoxHandler else { return }
+
+        inputBoxHandler.didSubmitQuery
+            .sink { [weak self] submittedText in
+                guard let self = self else { return }
+                self.loadQuery(submittedText)
+            }
+            .store(in: &cancellables)
     }
 
     private func cleanUpUserContent() {
         Task {
             await userContentController?.removeAllContentRuleLists()
             await userContentController?.cleanUpBeforeClosing()
+        }
+    }
+
+    private func loadQuery(_ query: String) {
+        chatViewController?.dismiss(animated: true) { [weak self] in
+            guard let self = self else { return }
+            self.delegate?.aiChatViewControllerManager(self, didSubmitQuery: query)
         }
     }
 }
@@ -181,8 +202,9 @@ extension AIChatViewControllerManager: UserContentControllerDelegate {
 
 extension AIChatViewControllerManager: AIChatViewControllerDelegate {
     func aiChatViewController(_ viewController: AIChatViewController, didRequestToLoad url: URL) {
-        delegate?.aiChatViewControllerManager(self, didRequestToLoad: url)
-        viewController.dismiss(animated: true)
+        viewController.dismiss(animated: true) {
+            self.delegate?.aiChatViewControllerManager(self, didRequestToLoad: url)
+        }
     }
 
     func aiChatViewControllerDidFinish(_ viewController: AIChatViewController) {

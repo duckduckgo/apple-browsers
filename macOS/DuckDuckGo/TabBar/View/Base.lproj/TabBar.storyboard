@@ -295,6 +295,8 @@
                         <outlet property="collectionView" destination="OEu-5P-cRF" id="b95-c4-JM0"/>
                         <outlet property="draggingSpace" destination="Ako-KX-AM9" id="yya-hb-te7"/>
                         <outlet property="fireButton" destination="XV4-Ze-5j7" id="ZCC-wX-7hC"/>
+                        <outlet property="fireButtonHeightConstraint" destination="Dea-ni-6y6" id="Kiz-yu-ppN"/>
+                        <outlet property="fireButtonWidthConstraint" destination="9Ii-rC-Eca" id="nke-9d-5t2"/>
                         <outlet property="leftScrollButton" destination="7XG-Qm-Ksx" id="yre-8P-vb9"/>
                         <outlet property="leftShadowImageView" destination="zsA-or-9Xo" id="wVp-jj-2UD"/>
                         <outlet property="leftSideStackLeadingConstraint" destination="qU6-dU-yJw" id="eFI-TI-wxX"/>

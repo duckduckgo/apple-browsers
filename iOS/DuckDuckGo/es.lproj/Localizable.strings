@@ -1282,17 +1282,26 @@
 /* Text displayed when DuckPlayer is in 'Ask' mode. */
 "duckPlayer.ask.label" = "Preguntar cada vez";
 
-/* Subtitle explaining how Duck Player protects privacy */
-"duckplayer.blocks.ads.keeps.history.private" = "Duck Player bloquea los anuncios personalizados y hace que tu historial de visualización se mantenga privado.";
-
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Nunca";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";
 
-/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
-"duckplayer.open.youtube.videos.here" = "Abre los vídeos de YouTube aquí";
+/* Content for Duck Player opt-in message */
+"duckplayer.opt-in.message.content" = "Duck Player bloquea los anuncios personalizados y hace que tu historial de visualización se mantenga protegido.";
+
+/* Title for Duck Player opt-in message */
+"duckplayer.opt-in.message.title" = "YouTube, pero con menos anuncios y más privacidad";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.opt-in.pill.subtitle" = "Ver sin anuncios dirigidos";
+
+/* Button text to play a video in Duck Player */
+"duckplayer.opt-in.pill.title" = "Reproduce este vídeo en Duck Player";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.pill.subtitle" = "Ver sin anuncios dirigidos";
 
 /* Button text to play a video in Duck Player */
 "duckplayer.play.in.duck.player" = "Reproduce este vídeo en Duck Player";
@@ -1354,6 +1363,9 @@
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.title" = "Duck Player";
 
+/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
+"duckplayer.settings.toggle" = "Abre los vídeos de YouTube aquí";
+
 /* Label for the Duck Player variant picker in Duck Player settings */
 "duckplayer.settings.variant.label" = "Variante de Duck Player";
 
@@ -1363,20 +1375,29 @@
 /* Label for the YouTube.com option in Duck Player settings */
 "duckplayer.settings.youtube.label" = "YouTube.com";
 
+/* Text for the ask mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.ask" = "Déjame elegir";
+
+/* Text for the auto mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.auto" = "Abrir automáticamente";
+
+/* Text for the never mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.never" = "No mostrar";
+
 /* Button text to open Duck Player settings */
 "duckplayer.toast.open.settings" = "Abrir ajustes";
 
 /* Toast message informing user they can disable Duck Player in settings */
-"duckplayer.toast.turn.off.anytime" = "Puedes desactivar Duck Player en cualquier momento en los ajustes";
+"duckplayer.toast.turn.off.anytime" = "Puedes desactivar Duck Player en cualquier momento";
 
 /* Button text to watch video on YouTube */
 "duckplayer.watch.on.youtube" = "Ver en YouTube";
 
-/* Subtitle explaining Duck Player blocks targeted ads */
-"duckplayer.watch.without.targeted.ads" = "Ver sin anuncios dirigidos";
+/* Subtitle explaining how Duck Player protects privacy */
+"duckplayer.welcome.message.content" = "Para volver a YouTube, cierra Duck Player.\n¿No es para ti? ¡Desactívalo más abajo!";
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
-"duckplayer.youtube.no.ads.privacy" = "Ve YouTube con menos anuncios y más privacidad";
+"duckplayer.welcome.message.text" = "¡Estás viendo en Duck Player!\nSin anuncios segmentados aquí.";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Protección del correo electrónico";
@@ -2769,6 +2790,9 @@
 
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe" = "Protege tu conexión e identidad con Privacy Pro";
+
+/* Try Privacy Pro Free button text for privacy pro */
+"settings.subscription.try.free" = "Prueba Privacy Pro gratis";
 
 /* Privacy pro description subtitle in settings */
 "settings.subscription.us.description" = "Incluye nuestras VPN, Personal Information Removal, e Identity Theft Restoration.";

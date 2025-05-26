@@ -149,3 +149,38 @@ extension UserDefaults {
         }
     }
 }
+
+// This should never ever go to production and only exists for internal testing
+#if os(iOS)
+extension DataBrokerProtectionSettings {
+    static let deviceIdentifierKey = "dbp.deviceIdentifier"
+    static let defaults = UserDefaults.standard
+
+    public static var deviceIdentifier: String {
+        get {
+            let id = defaults.string(forKey: deviceIdentifierKey)
+            if let id = id {
+                return id
+            } else {
+                let newID = UUID().uuidString
+                self.deviceIdentifier = newID
+                return newID
+            }
+        }
+        set {
+            defaults.set(newValue, forKey: deviceIdentifierKey)
+        }
+    }
+
+    public static var modelName: String {
+        var systemInfo = utsname()
+        uname(&systemInfo)
+        let machineMirror = Mirror(reflecting: systemInfo.machine)
+        let identifier = machineMirror.children.reduce("") { identifier, element in
+            guard let value = element.value as? Int8, value != 0 else { return identifier }
+            return identifier + String(UnicodeScalar(UInt8(value)))
+        }
+        return identifier
+    }
+}
+#endif

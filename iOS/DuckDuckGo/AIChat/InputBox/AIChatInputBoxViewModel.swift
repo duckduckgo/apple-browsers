@@ -19,6 +19,7 @@
 
 import Combine
 import SwiftUI
+import AIChat
 
 final class AIChatInputBoxViewModel: ObservableObject {
 
@@ -28,16 +29,42 @@ final class AIChatInputBoxViewModel: ObservableObject {
         case unknown
     }
 
-    @Published var state: ChatState = .unknown
-    @Published var visibility: AIChatInputBoxVisibility = .unknown
+    enum InputMode: String, CaseIterable, Identifiable {
+         case search = "Search"
+         case chat = "Duck.ai"
+
+         var id: Self { self }
+     }
+
+    enum FocusState {
+        case focused
+        case unfocused
+    }
+
+    @Published var inputText: String = ""
+    @Published var state: ChatState
+    @Published var visibility: AIChatInputBoxVisibility
+    @Published var focusState: FocusState = .unfocused
+    @Published var inputMode: InputMode = .chat
+
+    init(state: ChatState = .unknown, visibility: AIChatInputBoxVisibility = .unknown) {
+        self.state = state
+        self.visibility = visibility
+    }
 
     // MARK: - Publishers
     let didPressFireButton = PassthroughSubject<Void, Never>()
     let didPressNewChatButton = PassthroughSubject<Void, Never>()
-    let didSubmitText = PassthroughSubject<String, Never>()
+    let didSubmitPrompt = PassthroughSubject<String, Never>()
+    let didSubmitQuery = PassthroughSubject<String, Never>()
     let didPressStopGenerating = PassthroughSubject<Void, Never>()
+    let didPressBackButton = PassthroughSubject<Void, Never>()
 
     // MARK: - Public Methods
+    func clearText() {
+        inputText = ""
+    }
+
     func fireButtonPressed() {
         didPressFireButton.send()
     }
@@ -47,9 +74,13 @@ final class AIChatInputBoxViewModel: ObservableObject {
     }
 
     func submitText(_ text: String) {
-        didSubmitText.send(text)
+        if inputMode == .chat {
+            didSubmitPrompt.send(text)
+        } else {
+            didSubmitQuery.send(text)
+        }
     }
-    
+
     func stopGenerating() {
         didPressStopGenerating.send()
     }

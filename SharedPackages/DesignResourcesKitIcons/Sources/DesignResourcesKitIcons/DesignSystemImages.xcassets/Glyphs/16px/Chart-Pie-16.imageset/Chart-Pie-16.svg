@@ -1,0 +1,11 @@
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <g fill="#000" clip-path="url(#Chart-Pie-16_svg__a)">
+    <path d="M9.451 12.785a4.999 4.999 0 0 0 2.085-1.25L8 8V3a5 5 0 1 0 1.451 9.785Z"/>
+    <path fill-rule="evenodd" d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0ZM1.25 8a6.75 6.75 0 1 1 13.5 0 6.75 6.75 0 0 1-13.5 0Z" clip-rule="evenodd"/>
+  </g>
+  <defs>
+    <clipPath id="Chart-Pie-16_svg__a">
+      <path fill="#fff" d="M0 0h16v16H0z"/>
+    </clipPath>
+  </defs>
+</svg>

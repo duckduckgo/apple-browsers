@@ -1,0 +1,12 @@
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <path fill="#DE5833" d="M.5 4A2.5 2.5 0 0 1 3 1.5h10A2.5 2.5 0 0 1 15.5 4v8a2.5 2.5 0 0 1-2.5 2.5H3A2.5 2.5 0 0 1 .5 12V4Z"/>
+  <path fill="#fff" d="M1 6a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v6a2.5 2.5 0 0 1-2.5 2.5h-9A2.5 2.5 0 0 1 1 12V6Z"/>
+  <path fill="url(#Calendar-Today-Color-16_svg__a)" fill-rule="evenodd" d="M5 .5a.5.5 0 0 0-1 0V1H3a3 3 0 0 0-3 3v8a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V4a3 3 0 0 0-3-3h-1V.5a.5.5 0 0 0-1 0V1H5V.5Zm6 2V2H5v.5a.5.5 0 0 1-1 0V2H3a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2h-1v.5a.5.5 0 0 1-1 0ZM2.5 4a.5.5 0 0 0 0 1h11a.5.5 0 0 0 0-1h-11Z" clip-rule="evenodd"/>
+  <path fill="#DE5833" fill-rule="evenodd" d="M11.312 6.61a.5.5 0 0 1 .079.702l-4 5a.5.5 0 0 1-.745.042l-2-2a.5.5 0 1 1 .708-.708l1.605 1.605 3.65-4.563a.5.5 0 0 1 .703-.078Z" clip-rule="evenodd"/>
+  <defs>
+    <linearGradient id="Calendar-Today-Color-16_svg__a" x1="8" x2="8" y1="0" y2="15" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#9A3216"/>
+      <stop offset="1" stop-color="#551605"/>
+    </linearGradient>
+  </defs>
+</svg>

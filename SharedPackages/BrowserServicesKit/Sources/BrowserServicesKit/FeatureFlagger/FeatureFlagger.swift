@@ -27,6 +27,8 @@ public protocol FeatureFlagDescribing: CaseIterable {
     /// Returns a string representation of the flag, suitable for persisting the flag state to disk.
     var rawValue: String { get }
 
+    /// To be used to determine what the state of the feature flag should be when no remote definition exists
+    /// This is NOT to be used by the apps themselves, only the internal FeatureFlagger logic.
     var defaultValue: Bool { get }
 
     /// Return `true` here if a flag can be locally overridden.

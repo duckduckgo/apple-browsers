@@ -5,6 +5,9 @@
       location = "group:SharedPackages"
       name = "SharedPackages">
       <FileRef
+         location = "group:DesignResourcesKitIcons">
+      </FileRef>
+      <FileRef
          location = "group:UIComponents">
       </FileRef>
       <FileRef

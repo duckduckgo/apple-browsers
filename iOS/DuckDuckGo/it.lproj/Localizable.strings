@@ -1282,17 +1282,26 @@
 /* Text displayed when DuckPlayer is in 'Ask' mode. */
 "duckPlayer.ask.label" = "Chiedi ogni volta";
 
-/* Subtitle explaining how Duck Player protects privacy */
-"duckplayer.blocks.ads.keeps.history.private" = "Duck Player blocca gli annunci mirati e mantiene privata la cronologia delle visualizzazioni.";
-
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Mai";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";
 
-/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
-"duckplayer.open.youtube.videos.here" = "Apri i video di YouTube qui";
+/* Content for Duck Player opt-in message */
+"duckplayer.opt-in.message.content" = "Duck Player blocca gli annunci mirati e protegge la cronologia delle visualizzazioni.";
+
+/* Title for Duck Player opt-in message */
+"duckplayer.opt-in.message.title" = "YouTube, ma con meno annunci e più privacy";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.opt-in.pill.subtitle" = "Guarda senza annunci mirati";
+
+/* Button text to play a video in Duck Player */
+"duckplayer.opt-in.pill.title" = "Riproduci questo video in Duck Player";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.pill.subtitle" = "Guarda senza annunci mirati";
 
 /* Button text to play a video in Duck Player */
 "duckplayer.play.in.duck.player" = "Riproduci questo video in Duck Player";
@@ -1354,6 +1363,9 @@
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.title" = "Duck Player";
 
+/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
+"duckplayer.settings.toggle" = "Apri i video di YouTube qui";
+
 /* Label for the Duck Player variant picker in Duck Player settings */
 "duckplayer.settings.variant.label" = "Variante Duck Player";
 
@@ -1363,20 +1375,29 @@
 /* Label for the YouTube.com option in Duck Player settings */
 "duckplayer.settings.youtube.label" = "YouTube.com";
 
+/* Text for the ask mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.ask" = "Fammi scegliere";
+
+/* Text for the auto mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.auto" = "Apri automaticamente";
+
+/* Text for the never mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.never" = "Non mostrare";
+
 /* Button text to open Duck Player settings */
 "duckplayer.toast.open.settings" = "Apri Impostazioni";
 
 /* Toast message informing user they can disable Duck Player in settings */
-"duckplayer.toast.turn.off.anytime" = "Puoi disattivare Duck Player in qualsiasi momento nelle Impostazioni";
+"duckplayer.toast.turn.off.anytime" = "Puoi disattivare Duck Player in qualsiasi momento";
 
 /* Button text to watch video on YouTube */
 "duckplayer.watch.on.youtube" = "Guarda su YouTube";
 
-/* Subtitle explaining Duck Player blocks targeted ads */
-"duckplayer.watch.without.targeted.ads" = "Guarda senza annunci mirati";
+/* Subtitle explaining how Duck Player protects privacy */
+"duckplayer.welcome.message.content" = "Per tornare a YouTube, chiudi Duck Player.\nNon fa per te? Disattivalo qui sotto.";
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
-"duckplayer.youtube.no.ads.privacy" = "Guarda YouTube con meno annunci e più privacy";
+"duckplayer.welcome.message.text" = "Stai guardando in Duck Player!\nNon riceverai annunci mirati.";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Protezione email";
@@ -2769,6 +2790,9 @@
 
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe" = "Proteggi la tua connessione e la tua identità con Privacy Pro";
+
+/* Try Privacy Pro Free button text for privacy pro */
+"settings.subscription.try.free" = "Prova Privacy Pro gratis";
 
 /* Privacy pro description subtitle in settings */
 "settings.subscription.us.description" = "Includi VPN, Personal Information Removal e Identity Theft Restoration.";

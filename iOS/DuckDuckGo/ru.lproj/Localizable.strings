@@ -1282,17 +1282,26 @@
 /* Text displayed when DuckPlayer is in 'Ask' mode. */
 "duckPlayer.ask.label" = "Спрашивать каждый раз";
 
-/* Subtitle explaining how Duck Player protects privacy */
-"duckplayer.blocks.ads.keeps.history.private" = "Проигрыватель Duck Player блокирует целевую рекламу и хранит вашу историю просмотров в тайне.";
-
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Никогда";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Проигрыватель Duck Player";
 
-/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
-"duckplayer.open.youtube.videos.here" = "Открывать видео из YouTube здесь";
+/* Content for Duck Player opt-in message */
+"duckplayer.opt-in.message.content" = "Проигрыватель Duck Player блокирует целевую рекламу и защищает вашу историю просмотров.";
+
+/* Title for Duck Player opt-in message */
+"duckplayer.opt-in.message.title" = "Меньше рекламы и больше приватности при просмотре YouTube-роликов";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.opt-in.pill.subtitle" = "Видео без целевой рекламы";
+
+/* Button text to play a video in Duck Player */
+"duckplayer.opt-in.pill.title" = "Воспроизвести в Duck Player";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.pill.subtitle" = "Видео без целевой рекламы";
 
 /* Button text to play a video in Duck Player */
 "duckplayer.play.in.duck.player" = "Воспроизвести в Duck Player";
@@ -1354,6 +1363,9 @@
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.title" = "Проигрыватель Duck Player";
 
+/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
+"duckplayer.settings.toggle" = "Открывать видео из YouTube здесь";
+
 /* Label for the Duck Player variant picker in Duck Player settings */
 "duckplayer.settings.variant.label" = "Опции Duck Player";
 
@@ -1363,20 +1375,29 @@
 /* Label for the YouTube.com option in Duck Player settings */
 "duckplayer.settings.youtube.label" = "YouTube.com";
 
+/* Text for the ask mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.ask" = "Разрешить мне выбрать";
+
+/* Text for the auto mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.auto" = "Открывать автоматически";
+
+/* Text for the never mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.never" = "Не показывать";
+
 /* Button text to open Duck Player settings */
 "duckplayer.toast.open.settings" = "Открыть Настройки";
 
 /* Toast message informing user they can disable Duck Player in settings */
-"duckplayer.toast.turn.off.anytime" = "Duck Player можно в любой момент отключить в настройках.";
+"duckplayer.toast.turn.off.anytime" = "Duck Player можно отключить в любой момент";
 
 /* Button text to watch video on YouTube */
 "duckplayer.watch.on.youtube" = "Смотреть на YouTube";
 
-/* Subtitle explaining Duck Player blocks targeted ads */
-"duckplayer.watch.without.targeted.ads" = "Видео без целевой рекламы";
+/* Subtitle explaining how Duck Player protects privacy */
+"duckplayer.welcome.message.content" = "Чтобы вернуться на YouTube, закройте Duck Player.\nНе для вас? Выключите его внизу!";
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
-"duckplayer.youtube.no.ads.privacy" = "Меньше рекламы и больше приватности при просмотре YouTube-роликов";
+"duckplayer.welcome.message.text" = "Вы просматриваете в Duck Player!\nЗдесь нет целевой рекламы.";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Защита электронной почты";
@@ -2769,6 +2790,9 @@
 
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe" = "Тариф Privacy Pro для защиты соединения и личных данных";
+
+/* Try Privacy Pro Free button text for privacy pro */
+"settings.subscription.try.free" = "Попробуйте Privacy Pro бесплатно";
 
 /* Privacy pro description subtitle in settings */
 "settings.subscription.us.description" = "Включает услуги: VPN, Personal Information Removal (удаление личной информации) и Identity Theft Restoration (восстановление данных после «кражи личности»).";

@@ -48,6 +48,12 @@ extension Preferences {
                     UpdatesSection(areAutomaticUpdatesEnabled: $areAutomaticUpdatesEnabled, model: model)
 #endif
                 }
+            }.task {
+#if SPARKLE
+                if model.mustCheckForUpdatesBeforeUserCanTakeAction {
+                    model.checkForUpdate(userInitiated: false)
+                }
+#endif
             }
         }
     }
@@ -292,30 +298,38 @@ extension Preferences {
 
         @ViewBuilder
         private var updateButton: some View {
-            switch model.updateState {
-            case .upToDate:
-                Button(UserText.checkForUpdate) {
-                    model.checkForUpdate()
-                }
-                .buttonStyle(UpdateButtonStyle(enabled: true))
-            case .updateCycle(let progress):
-                if hasPendingUpdate {
-                    Button(model.areAutomaticUpdatesEnabled ? UserText.restartToUpdate : UserText.runUpdate) {
-                        model.runUpdate()
-                    }
-                    .buttonStyle(UpdateButtonStyle(enabled: true))
-                } else if progress.isFailed {
-                    Button(UserText.retryUpdate) {
-                        model.checkForUpdate()
-                    }
-                    .buttonStyle(UpdateButtonStyle(enabled: true))
-                } else {
+            if model.useLegacyAutoRestartLogic {
+                switch model.updateState {
+                case .upToDate:
                     Button(UserText.checkForUpdate) {
-                        model.checkForUpdate()
+                        model.checkForUpdate(userInitiated: true)
                     }
-                    .buttonStyle(UpdateButtonStyle(enabled: false))
-                    .disabled(true)
+                    .buttonStyle(UpdateButtonStyle(enabled: true))
+                case .updateCycle(let progress):
+                    if hasPendingUpdate {
+                        Button(model.areAutomaticUpdatesEnabled ? UserText.restartToUpdate : UserText.runUpdate) {
+                            model.runUpdate()
+                        }
+                        .buttonStyle(UpdateButtonStyle(enabled: true))
+                    } else if progress.isFailed {
+                        Button(UserText.retryUpdate) {
+                            model.checkForUpdate(userInitiated: true)
+                        }
+                        .buttonStyle(UpdateButtonStyle(enabled: true))
+                    } else {
+                        Button(UserText.checkForUpdate) {
+                            model.checkForUpdate(userInitiated: true)
+                        }
+                        .buttonStyle(UpdateButtonStyle(enabled: false))
+                        .disabled(true)
+                    }
                 }
+            } else {
+                let configuration = model.updateButtonConfiguration
+
+                Button(configuration.title, action: configuration.action)
+                    .buttonStyle(UpdateButtonStyle(enabled: configuration.enabled))
+                    .disabled(!configuration.enabled)
             }
         }
 #endif

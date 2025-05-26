@@ -122,9 +122,9 @@ final class BookmarksBarCollectionViewItem: NSCollectionViewItem {
         case .bookmark(_, let url, let storedFavicon, _):
             let host = URL(string: url)?.host ?? ""
             let favicon = storedFavicon ?? NSApp.delegateTyped.faviconManager.getCachedFavicon(for: host, sizeCategory: .small)?.image
-            faviconView.image = favicon ?? visualStyle.bookmarksBarMenuBookmarkIcon
+            faviconView.image = favicon ?? visualStyle.iconsProvider.bookmarksIconsProvider.bookmarkIcon
         case .folder:
-            faviconView.image = visualStyle.bookmarksBarMenuFolderIcon
+            faviconView.image = visualStyle.iconsProvider.bookmarksIconsProvider.bookmarkFolderIcon
         }
         mouseOverView.isEnabled = !isInteractionPrevented
         faviconView.isEnabled = !isInteractionPrevented
@@ -137,7 +137,7 @@ final class BookmarksBarCollectionViewItem: NSCollectionViewItem {
     }
 
     deinit {
-        // Sometimes the ItemCachingCollectionView doesn‘t remove the cell views
+        // Sometimes the BookmarksBarCollectionView doesn‘t remove the cell views
         // when the BookmarksBarCollectionViewItem is deallocated
         // Steps to reproduce:
         // 1. Create 1 folder and 4 bookmarks on the bookmarks bar

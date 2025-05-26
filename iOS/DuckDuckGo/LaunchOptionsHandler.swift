@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import enum Common.DevicePlatform
 
 public final class LaunchOptionsHandler {
 
@@ -30,12 +31,28 @@ public final class LaunchOptionsHandler {
     private let environment: [String: String]
     private let userDefaults: UserDefaults
 
-    public init(environment: [String: String] = ProcessInfo.processInfo.environment, userDefaults: UserDefaults = .app) {
+    private let isIpad: Bool
+    private let systemVersion: String
+
+    public init(
+        environment: [String: String] = ProcessInfo.processInfo.environment,
+        userDefaults: UserDefaults = .app,
+        isIpad: Bool = DevicePlatform.isIpad,
+        systemVersion: String = UIDevice.current.systemVersion
+    ) {
         self.environment = environment
         self.userDefaults = userDefaults
+        self.isIpad = isIpad
+        self.systemVersion = systemVersion
     }
 
     public var onboardingStatus: OnboardingStatus {
+        // Apple Issue affecting persistence storage on iPad 17.7.7
+        // See: https://app.asana.com/1/137249556945/project/414709148257752/task/1210267814606214
+        if isIpad && systemVersion == "17.7.7" {
+            return .overridden(.developer(completed: true))
+        }
+
         // If we're running UI Tests override onboarding settings permanently to keep state consistency across app launches. Some test re-launch the app within the same tests.
         // Launch Arguments can be read via userDefaults for easy value access.
         if let uiTestingOnboardingOverride = userDefaults.string(forKey: Self.isOnboardingCompleted) {

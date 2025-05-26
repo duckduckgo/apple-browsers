@@ -42,13 +42,24 @@ final class ScriptSourceProviderTests: XCTestCase {
     func testCohortDataInitialisedCorrectly() throws {
         let expectedCohortData = ContentScopeExperimentData(feature: testExperimentData.parentID, subfeature: "test", cohort: testExperimentData.cohortID)
         let experimentManager = MockContentScopeExperimentManager()
+
         experimentManager.allActiveContentScopeExperiments = ["test": testExperimentData]
         let sourceProvider = ScriptSourceProvider(configStorage: MockConfigurationStore(), privacyConfigurationManager: MockPrivacyConfigurationManaging(), webTrackingProtectionPreferences: WebTrackingProtectionPreferences(), contentBlockingManager: MockContentBlockerRulesManagerProtocol(), trackerDataManager: TrackerDataManager(etag: nil, data: Data(), embeddedDataProvider: MockEmbeddedDataProvider()), experimentManager: experimentManager, tld: TLD())
 
         let cohorts = try XCTUnwrap(sourceProvider.currentCohorts)
         XCTAssertFalse(cohorts.isEmpty)
         XCTAssertEqual(cohorts[0], expectedCohortData)
-
+        XCTAssertTrue(experimentManager.resolveContentScopeScriptActiveExperimentsWasCalled)
     }
 
+}
+
+class MockContentScopeExperimentManager: ContentScopeExperimentsManaging {
+    var allActiveContentScopeExperiments: Experiments = [:]
+    private(set) var resolveContentScopeScriptActiveExperimentsWasCalled = false
+
+    func resolveContentScopeScriptActiveExperiments() -> Experiments {
+        resolveContentScopeScriptActiveExperimentsWasCalled = true
+        return allActiveContentScopeExperiments
+    }
 }

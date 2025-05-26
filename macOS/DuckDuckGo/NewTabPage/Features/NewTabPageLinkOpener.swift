@@ -21,7 +21,7 @@ import NewTabPage
 struct NewTabPageLinkOpener: NewTabPageLinkOpening {
 
     @MainActor
-    static func open(_ url: URL, source: Tab.Content.URLSource, sender: LinkOpenSender, target: LinkOpenTarget, sourceWindow: NSWindow?) {
+    static func open(_ url: URL, source: Tab.Content.URLSource, setBurner: Bool? = nil, sender: LinkOpenSender, target: LinkOpenTarget, sourceWindow: NSWindow?) {
         var tabCollectionViewModel: TabCollectionViewModel? {
             WindowControllersManager.shared.mainWindowController(for: sourceWindow)?.mainViewController.tabCollectionViewModel
         }
@@ -48,7 +48,7 @@ struct NewTabPageLinkOpener: NewTabPageLinkOpening {
         }()
         let targetWindowController = WindowControllersManager.shared.mainWindowController(for: sourceWindow ?? NSApp.currentEvent?.window)
 
-        WindowControllersManager.shared.open(url, with: linkOpenBehavior, source: source, target: targetWindowController)
+        WindowControllersManager.shared.open(url, with: linkOpenBehavior, setBurner: setBurner, source: source, target: targetWindowController)
     }
 
     func openLink(_ target: NewTabPageDataModel.OpenAction.Target) async {

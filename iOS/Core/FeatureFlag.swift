@@ -114,6 +114,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1210001506953718
     case privacyProFreeTrial
+
+    /// https://app.asana.com/1/137249556945/project/1198964220583541/task/1210272333893232?focus=true
+    case autofillPasswordVariantCategorization
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -154,7 +157,8 @@ extension FeatureFlag: FeatureFlagDescribing {
              .syncSetupBarcodeIsUrlBased,
              .canScanUrlBasedSyncSetupBarcodes,
              .duckPlayerNativeUI,
-             .privacyProFreeTrial:
+             .privacyProFreeTrial,
+             .autofillPasswordVariantCategorization:
             return true
         case .onboardingSetAsDefaultBrowser:
             if #available(iOS 18.3, *) {
@@ -267,6 +271,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.canScanUrlBasedSyncSetupBarcodes))
         case .privacyProFreeTrial:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProFreeTrial))
+        case .autofillPasswordVariantCategorization:
+            return .remoteReleasable(.subfeature(AutofillSubfeature.passwordVariantCategorization))
         }
     }
 }

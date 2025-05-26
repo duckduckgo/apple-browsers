@@ -43752,6 +43752,66 @@
         }
       }
     },
+    "open.link.in.new.burner.window" : {
+      "comment" : "Context menu item",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Link in neuem Fire Window öffnen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open Link in New Fire Window"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir el enlace en una nueva Fire Window"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir le lien dans une nouvelle Fire Window"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri link in una nuova Fire Window"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Link openen in nieuw Fire Window"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwórz link w nowym oknie Fire Window"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir link numa nova Fire Window"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть ссылку в новом окне Fire Window"
+          }
+        }
+      }
+    },
     "open.link.in.new.tab" : {
       "comment" : "Context menu item",
       "extractionState" : "extracted_with_value",
@@ -66514,7 +66574,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Выбор варианта «Не разрешать» может нарушить работу некоторых функций сайта, но ограничит отслеживание сервисом %@."
+            "value" : "Выбор варианта «Не разрешать» может нарушить работу некоторых функций сайта, но ограничит отслеживание со стороны %@."
           }
         }
       }
@@ -70912,7 +70972,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "New version available - Update DuckDuckGo"
+            "value" : "Доступна новая версия — обновите DuckDuckGo"
           }
         }
       }

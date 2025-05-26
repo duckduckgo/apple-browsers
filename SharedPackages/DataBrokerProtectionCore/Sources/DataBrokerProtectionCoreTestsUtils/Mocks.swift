@@ -287,7 +287,8 @@ public extension ContentScopeFeatureToggles {
             inlineIconCredentials: false,
             thirdPartyCredentialsProvider: false,
             unknownUsernameCategorization: false,
-            partialFormSaves: false
+            partialFormSaves: false,
+            passwordVariantCategorization: false
         )
     }
 }

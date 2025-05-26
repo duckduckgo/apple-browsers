@@ -109,8 +109,8 @@ final class NetworkProtectionStatusViewModelTests: XCTestCase {
 
     func testStatusUpdate_connected_updatesStatusMessageEverySecond_withTimeLapsed() throws {
         statusObserver.subject.send(.connected(connectedDate: Date()))
-        try waitForPublisher(viewModel.$statusMessage, toEmit: "Connected · 00:00:00")
-        try waitForPublisher(viewModel.$statusMessage, toEmit: "Connected · 00:00:01")
+        try waitForPublisher(viewModel.$statusMessage, toEmit: "Connected · 0s")
+        try waitForPublisher(viewModel.$statusMessage, toEmit: "Connected · 1s")
     }
 
     func testStatusUpdate_disconnecting_updateStatusToDisconnecting() throws {

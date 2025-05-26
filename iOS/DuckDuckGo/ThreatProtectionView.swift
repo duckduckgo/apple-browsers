@@ -26,7 +26,7 @@ struct ThreatProtectionView: View {
     @EnvironmentObject var viewModel: SettingsViewModel
 
     var description: PrivacyProtectionDescription {
-        PrivacyProtectionDescription(imageName: "SettingsWebTrackingProtectionContent",
+        PrivacyProtectionDescription(imageName: "Radar-Check",
                                      title: UserText.threatProtection,
                                      status: .on,
                                      explanation: UserText.threatProtectionCaption)

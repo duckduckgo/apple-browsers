@@ -51,7 +51,7 @@ struct SettingsPrivacyProtectionsView: View {
             // Threat Protection
             NavigationLink(destination: ThreatProtectionView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.threatProtection,
-                                 image: Image("SettingsWebTrackingProtection"),
+                                 image: Image(.radarColor24),
                                  statusIndicator: StatusIndicatorView(status: .on))
             }
 

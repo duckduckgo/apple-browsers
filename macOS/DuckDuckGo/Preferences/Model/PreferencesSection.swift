@@ -231,7 +231,7 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
         case .webTrackingProtection:
             return "WebTrackingProtectionIcon"
         case .threatProtection:
-            return "WebTrackingProtectionIcon"
+            return "Radar-Color-24"
         case .cookiePopupProtection:
             return "CookieProtectionIcon"
         case .emailProtection:

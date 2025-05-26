@@ -74,7 +74,10 @@ final class BookmarksBarViewController: NSViewController {
         self.visualStyleManager = visualStyleManager
 
         self.tabCollectionViewModel = tabCollectionViewModel
-        self.viewModel = BookmarksBarViewModel(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, tabCollectionViewModel: tabCollectionViewModel)
+        self.viewModel = BookmarksBarViewModel(bookmarkManager: bookmarkManager,
+                                               dragDropManager: dragDropManager,
+                                               tabCollectionViewModel: tabCollectionViewModel,
+                                               visualStyleManager: visualStyleManager)
 
         super.init(coder: coder)
     }

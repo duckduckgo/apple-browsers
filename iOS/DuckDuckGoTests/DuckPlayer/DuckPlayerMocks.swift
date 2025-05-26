@@ -435,11 +435,13 @@ final class MockDuckPlayerInternalUserDecider: InternalUserDecider {
 }
 
 final class MockDuckPlayerNativeUIPresenting: DuckPlayerNativeUIPresenting {
-
+  
     var presentPillCalled = false
     var dismissPillCalled = false
     var presentDuckPlayerCalled = false
     var lastTimestampValue: TimeInterval?
+    var pixelHandler: any DuckDuckGo.DuckPlayerPixelFiring.Type  =  DuckPlayerPixelHandler.self
+
 
     @MainActor
     func presentPill(for videoID: String, in hostViewController: any DuckDuckGo.DuckPlayerHosting, timestamp: TimeInterval?) {

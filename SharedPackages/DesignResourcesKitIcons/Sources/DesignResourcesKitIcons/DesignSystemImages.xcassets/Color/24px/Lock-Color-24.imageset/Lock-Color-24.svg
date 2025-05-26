@@ -1,0 +1,12 @@
+<svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <path fill="#888" d="M16.75 8a4.75 4.75 0 1 0-9.5 0v7.75H6V8a6 6 0 1 1 12 0v7.75h-1.25V8Z"/>
+  <path fill="#F9BE1A" d="M4.5 12h15.25v8.75H4.5V12Z"/>
+  <path fill="#FFDE7A" d="M4.25 12H12v8.75H4.25V12Z"/>
+  <path fill="url(#Lock-Color-24_svg__a)" d="M19.75 13.813c0-.863-.7-1.563-1.563-1.563H5.813c-.862 0-1.562.7-1.562 1.563V17A3.75 3.75 0 0 0 8 20.75h8A3.75 3.75 0 0 0 19.75 17v-3.188ZM21 17a5 5 0 0 1-5 5H8a5 5 0 0 1-5-5v-3.188A2.813 2.813 0 0 1 5.813 11h12.375A2.813 2.813 0 0 1 21 13.813V17Z"/>
+  <defs>
+    <linearGradient id="Lock-Color-24_svg__a" x1="12" x2="12" y1="11.375" y2="21.375" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C18010"/>
+      <stop offset="1" stop-color="#92540C"/>
+    </linearGradient>
+  </defs>
+</svg>

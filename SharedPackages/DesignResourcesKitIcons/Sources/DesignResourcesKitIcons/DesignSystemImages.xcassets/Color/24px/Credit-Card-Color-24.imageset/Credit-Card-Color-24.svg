@@ -1,0 +1,12 @@
+<svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <path fill="#fff" d="M2 8a5 5 0 0 1 5-5h10a5 5 0 0 1 5 5v8a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V8Z"/>
+  <path fill="url(#Credit-Card-Color-24_svg__a)" d="M17 19.75V21H7v-1.25h10ZM20.75 16V8A3.75 3.75 0 0 0 17 4.25H7A3.75 3.75 0 0 0 3.25 8v8A3.75 3.75 0 0 0 7 19.75V21l-.129-.002a5 5 0 0 1-4.87-4.869L2 16V8a5 5 0 0 1 4.871-4.998L7 3h10l.129.002A5 5 0 0 1 22 8v8l-.002.129A5 5 0 0 1 17 21v-1.25A3.75 3.75 0 0 0 20.75 16Z"/>
+  <path fill="#888" d="M8.289 15.001a.75.75 0 0 1 0 1.498l-.039.001h-3a.75.75 0 0 1 0-1.5h3l.039.001Zm3 0a.75.75 0 0 1 0 1.498l-.039.001h-.5a.75.75 0 0 1 0-1.5h.5l.039.001Zm7.5 0a.75.75 0 0 1 0 1.498l-.039.001h-5a.75.75 0 0 1 0-1.5h5l.039.001Z"/>
+  <path fill="#FC3" d="M4.5 11.25a.75.75 0 0 1 .75-.75h3a.75.75 0 0 1 .75.75v1.5a.75.75 0 0 1-.75.75h-3a.75.75 0 0 1-.75-.75v-1.5Z"/>
+  <defs>
+    <linearGradient id="Credit-Card-Color-24_svg__a" x1="12" x2="12" y1="3" y2="21" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#888"/>
+      <stop offset="1" stop-color="#444"/>
+    </linearGradient>
+  </defs>
+</svg>

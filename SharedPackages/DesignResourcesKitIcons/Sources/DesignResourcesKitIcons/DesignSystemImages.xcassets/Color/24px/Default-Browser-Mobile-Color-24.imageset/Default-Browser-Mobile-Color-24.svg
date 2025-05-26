@@ -1,0 +1,22 @@
+<svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <path fill="#EEE" d="M16.917 2.875c.736 0 1.333.597 1.333 1.333V10.5c-.154-.033-.31.571-.469.55a6 6 0 0 0-5.452 9.713c.101.125-.44.246-.329.362H7.083A1.326 1.326 0 0 1 5.75 19.8V4.2c0-.736.597-1.325 1.333-1.325h9.834Z"/>
+  <path fill="url(#Default-Browser-Mobile-Color-24_svg__a)" d="M16.188 2A2.813 2.813 0 0 1 19 4.813v5.242c0 .628-.627 1.07-1.25.993V4.812c0-.862-.7-1.562-1.563-1.562H7.813c-.862 0-1.562.7-1.562 1.563v14.375c0 .862.7 1.562 1.563 1.562h4.505c.348.433.063 1.25-.493 1.25H7.813A2.813 2.813 0 0 1 5 19.187V4.813A2.813 2.813 0 0 1 7.813 2h8.375Z"/>
+  <path fill="url(#Default-Browser-Mobile-Color-24_svg__b)" d="M13.375 4a.625.625 0 1 1 0 1.25h-2.75a.625.625 0 1 1 0-1.25h2.75Z"/>
+  <path fill="#4CBA3C" d="M22 17a5 5 0 1 1-10 0 5 5 0 0 1 10 0Z"/>
+  <path fill="url(#Default-Browser-Mobile-Color-24_svg__c)" d="M20.75 17A3.75 3.75 0 1 0 17 20.75V22a5 5 0 1 1 0-10 5 5 0 0 1 0 10v-1.25A3.75 3.75 0 0 0 20.75 17Z"/>
+  <path fill="#fff" d="M18.433 15.464a.625.625 0 1 1 .884.884l-2.344 2.344a.625.625 0 0 1-.86.022l-.024-.022-1.406-1.406-.022-.024a.625.625 0 0 1 .883-.882l.023.022.964.964 1.902-1.902Z"/>
+  <defs>
+    <linearGradient id="Default-Browser-Mobile-Color-24_svg__a" x1="12" x2="12" y1="2" y2="22" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#888"/>
+      <stop offset="1" stop-color="#333"/>
+    </linearGradient>
+    <linearGradient id="Default-Browser-Mobile-Color-24_svg__b" x1="12" x2="12" y1="2" y2="22" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#888"/>
+      <stop offset="1" stop-color="#333"/>
+    </linearGradient>
+    <linearGradient id="Default-Browser-Mobile-Color-24_svg__c" x1="17" x2="17" y1="12" y2="22" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#399F29"/>
+      <stop offset="1" stop-color="#288419"/>
+    </linearGradient>
+  </defs>
+</svg>

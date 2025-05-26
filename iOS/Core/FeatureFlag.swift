@@ -103,6 +103,9 @@ public enum FeatureFlag: String {
     case experimentalAIChat
 
     case privacyProOnboardingPromotion
+
+    /// https://app.asana.com/1/137249556945/project/1198964220583541/task/1210272333893232?focus=true
+    case autofillPasswordVariantCategorization
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -139,7 +142,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .autofillCreditCards,
                 .autofillCreditCardsOnByDefault,
                 .exchangeKeysToSyncWithAnotherDevice,
-                .privacyProOnboardingPromotion:
+                .privacyProOnboardingPromotion,
+                .autofillPasswordVariantCategorization:
             return true
         case .onboardingSetAsDefaultBrowser:
             if #available(iOS 18.3, *) {
@@ -246,6 +250,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .privacyProOnboardingPromotion:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProOnboardingPromotion))
+        case .autofillPasswordVariantCategorization:
+            return .remoteReleasable(.subfeature(AutofillSubfeature.passwordVariantCategorization))
         }
     }
 }

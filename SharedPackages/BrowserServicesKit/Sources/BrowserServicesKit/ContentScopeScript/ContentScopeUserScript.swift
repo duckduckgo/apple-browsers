@@ -113,6 +113,8 @@ public struct ContentScopeFeatureToggles: Encodable {
 
     public let partialFormSaves: Bool
 
+    public let passwordVariantCategorization: Bool
+
     // Explicitly defined memberwise init only so it can be public
     public init(emailProtection: Bool,
                 emailProtectionIncontextSignup: Bool,
@@ -124,7 +126,8 @@ public struct ContentScopeFeatureToggles: Encodable {
                 inlineIconCredentials: Bool,
                 thirdPartyCredentialsProvider: Bool,
                 unknownUsernameCategorization: Bool,
-                partialFormSaves: Bool) {
+                partialFormSaves: Bool,
+                passwordVariantCategorization: Bool) {
 
         self.emailProtection = emailProtection
         self.emailProtectionIncontextSignup = emailProtectionIncontextSignup
@@ -137,6 +140,7 @@ public struct ContentScopeFeatureToggles: Encodable {
         self.thirdPartyCredentialsProvider = thirdPartyCredentialsProvider
         self.unknownUsernameCategorization = unknownUsernameCategorization
         self.partialFormSaves = partialFormSaves
+        self.passwordVariantCategorization = passwordVariantCategorization
     }
 
     enum CodingKeys: String, CodingKey {
@@ -155,6 +159,7 @@ public struct ContentScopeFeatureToggles: Encodable {
         case thirdPartyCredentialsProvider = "third_party_credentials_provider"
         case unknownUsernameCategorization = "unknown_username_categorization"
         case partialFormSaves = "partial_form_saves"
+        case passwordVariantCategorization = "password_variant_categorization"
     }
 }
 

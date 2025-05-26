@@ -34,7 +34,7 @@ public struct ScanOrSeeCode: View {
     public var body: some View {
         GeometryReader { geometry in
             ScrollView {
-                VStack(spacing: 10) {
+                VStack(spacing: 8) {
                     let heightFactor = geometry.size.width < 380 ? 1 : 0.84
                     titleView()
                     CameraView(model: model)
@@ -60,15 +60,15 @@ public struct ScanOrSeeCode: View {
 
     @ViewBuilder
     func titleView() -> some View {
-        VStack(spacing: 5) {
+        VStack(spacing: 10) {
             Text(UserText.scanOrSeeCodeTitle)
-                .daxSubheadSemibold()
+                .daxTitle2()
             instructionsText()
                 .daxFootnoteRegular()
-                .padding(.horizontal, 16)
-                .multilineTextAlignment(.leading)
+                .padding(.horizontal, 20)
+                .multilineTextAlignment(.center)
         }
-        .padding(.top, 10)
+        .padding(.bottom, 8)
     }
 
     func instructionsText() -> some View {
@@ -93,30 +93,32 @@ public struct ScanOrSeeCode: View {
             }
             return 180
         }
-        VStack(spacing: 8) {
+        VStack(spacing: 4) {
             HStack(alignment: .center, spacing: 20) {
-                QRCodeView(string: qrCodeModel.qrCodeString, desiredSize: 120)
+                QRCodeView(string: qrCodeModel.qrCodeString, desiredSize: 180)
                 VStack(alignment: .leading, spacing: 10) {
                     HStack {
                         Text(UserText.scanOrSeeCodeScanCodeQRInstructionsTitle)
-                            .daxBodyBold()
+                            .daxFootnoteSemibold()
+                            .foregroundColor(.primary)
                             .fixedSize(horizontal: false, vertical: true)
                             .multilineTextAlignment(.leading)
                     }
                     Text(UserText.scanOrSeeCodeScanCodeQRInstructionsBody)
+                        .daxFootnoteRegular()
                         .foregroundColor(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                         .multilineTextAlignment(.leading)
                 }
                 .frame(maxWidth: maxWidth)
             }
-            .padding(20)
+            .padding(12)
             .background(
                 RoundedRectangle(cornerRadius: 16)
                     .fill(Color(designSystemColor: .container))
                     .preferredColorScheme(.dark)
             )
-            .padding(20)
+            .padding(.vertical, 4)
             cantScanView()
         }
         .padding(.bottom, 40)

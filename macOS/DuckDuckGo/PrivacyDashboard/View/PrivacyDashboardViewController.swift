@@ -45,15 +45,7 @@ final class PrivacyDashboardViewController: NSViewController {
 
     public let rulesUpdateObserver = ContentBlockingRulesUpdateObserver()
 
-    private let brokenSiteReporter: BrokenSiteReporter = {
-        BrokenSiteReporter(pixelHandler: { parameters in
-            let privacyConfigurationManager = ContentBlocking.shared.privacyConfigurationManager
-            var updatedParameters = parameters
-            PixelKit.fire(NonStandardEvent(NonStandardPixel.brokenSiteReport),
-                          withAdditionalParameters: updatedParameters,
-                          allowedQueryReservedCharacters: BrokenSiteReport.allowedQueryReservedCharacters)
-        }, keyValueStoring: UserDefaults.standard)
-    }()
+    private let brokenSiteReporter: BrokenSiteReporter
 
     private let toggleProtectionsOffReporter: BrokenSiteReporter = {
         BrokenSiteReporter(pixelHandler: { parameters in
@@ -96,6 +88,14 @@ final class PrivacyDashboardViewController: NSViewController {
                                                                      entryPoint: entryPoint,
                                                                      toggleReportingManager: toggleReportingManager,
                                                                      eventMapping: privacyDashboardEvents)
+        brokenSiteReporter = {
+            BrokenSiteReporter(pixelHandler: { parameters in
+                var updatedParameters = parameters
+                PixelKit.fire(NonStandardEvent(NonStandardPixel.brokenSiteReport),
+                              withAdditionalParameters: updatedParameters,
+                              allowedQueryReservedCharacters: BrokenSiteReport.allowedQueryReservedCharacters)
+            }, keyValueStoring: UserDefaults.standard)
+        }()
         super.init(nibName: nil, bundle: nil)
     }
 

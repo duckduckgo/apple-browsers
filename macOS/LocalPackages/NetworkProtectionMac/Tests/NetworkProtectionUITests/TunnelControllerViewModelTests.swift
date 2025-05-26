@@ -166,7 +166,7 @@ final class TunnelControllerViewModelTests: XCTestCase {
     func testProperlyReflectsStatusConnected() async throws {
         let mockServerIP = "127.0.0.1"
         let mockDate = Date().addingTimeInterval(-59)
-        let mockDateString = "00:00:59"
+        let mockDateString = "59s"
 
         let controller = MockTunnelController()
         let serverInfo = NetworkProtectionStatusServerInfo(

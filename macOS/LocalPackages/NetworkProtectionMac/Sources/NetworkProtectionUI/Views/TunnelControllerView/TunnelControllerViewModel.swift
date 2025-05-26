@@ -117,7 +117,7 @@ public final class TunnelControllerViewModel: ObservableObject {
         self.proxySettings = proxySettings
         self.locationFormatter = locationFormatter
         self.timeLapsedFormatter = timeLapsedFormatter
-        self.timeLapsed = timeLapsedFormatter.zero
+        self.timeLapsed = timeLapsedFormatter.string(from: 0)
         self.uiActionHandler = uiActionHandler
 
         connectionStatus = statusReporter.statusObserver.recentValue
@@ -373,9 +373,9 @@ public final class TunnelControllerViewModel: ObservableObject {
         case .connected(let connectedDate):
             timeLapsed = timeLapsedString(since: connectedDate)
         case .disconnecting:
-            timeLapsed = timeLapsedFormatter.zero
+            timeLapsed = timeLapsedFormatter.string(from: 0)
         default:
-            timeLapsed = timeLapsedFormatter.zero
+            timeLapsed = timeLapsedFormatter.string(from: 0)
         }
     }
 

@@ -36,6 +36,7 @@ let extensionsInputFiles: [InputFile] = [
 ]
 
 let nonSandboxedExtraInputFiles: Set<InputFile> = Set([
+    .init("InfoPlist.xcstrings", .resource),
     .init("DeveloperID.xcstrings", .resource),
     .init("BWEncryption.m", .source),
     .init("BWEncryptionOutput.m", .source),
@@ -50,6 +51,7 @@ let nonSandboxedExtraInputFiles: Set<InputFile> = Set([
 
 let sandboxedExtraInputFiles: Set<InputFile> = Set([
     .init("AppStore.xcstrings", .resource),
+    .init("AppStoreInfoPlist.xcstrings", .resource),
 ])
 
 /**

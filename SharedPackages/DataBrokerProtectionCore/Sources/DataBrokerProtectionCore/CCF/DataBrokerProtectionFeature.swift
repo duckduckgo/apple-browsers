@@ -48,7 +48,7 @@ public class DataBrokerProtectionFeature: Subfeature {
 
     weak var delegate: CCFCommunicationDelegate?
 
-    private var timer: Timer?
+    private var actionResponseTimer: Timer?
     private let actionResponseTimeout: TimeInterval
 
     public init(delegate: CCFCommunicationDelegate, actionResponseTimeout: TimeInterval = .seconds(60)) {
@@ -151,7 +151,7 @@ public class DataBrokerProtectionFeature: Subfeature {
         guard let action else { return }
 
         removeTimer()
-        timer = Timer.scheduledTimer(withTimeInterval: actionResponseTimeout, repeats: false) { [weak self] _ in
+        actionResponseTimer = Timer.scheduledTimer(withTimeInterval: actionResponseTimeout, repeats: false) { [weak self] _ in
             self?.handleTimeout(for: action)
         }
     }
@@ -167,7 +167,7 @@ public class DataBrokerProtectionFeature: Subfeature {
     }
 
     private func removeTimer() {
-        timer?.invalidate()
-        timer = nil
+        actionResponseTimer?.invalidate()
+        actionResponseTimer = nil
     }
 }

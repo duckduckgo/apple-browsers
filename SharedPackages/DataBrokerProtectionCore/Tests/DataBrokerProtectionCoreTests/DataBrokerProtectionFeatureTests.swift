@@ -114,84 +114,102 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
         XCTAssertEqual(mockCSSDelegate.captchaInfo?.type, "g-captcha")
     }
 
-    func testWhenExpectationActionTimesOut_thenDelegateReceivesTimeoutError() {
+    @MainActor
+    func testWhenExpectationActionTimesOut_thenDelegateReceivesTimeoutError() async {
         let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, actionResponseTimeout: 0.1)
         sut.with(broker: mockBroker)
         let action = ExpectationAction(id: "expectation-1", actionType: .expectation, expectations: [], dataSource: nil, actions: nil)
         let params = Params(state: ActionRequest(action: action, data: mockCCFRequestData))
 
+        let timeoutExpectation = expectation(description: "Timeout error received")
+
+        mockCSSDelegate.onErrorCallback = { error in
+            if let error = error as? DataBrokerProtectionError,
+               case .actionFailed(let actionID, let message) = error,
+               actionID == "expectation-1" && message == "Request timed out" {
+                timeoutExpectation.fulfill()
+            }
+        }
+
         sut.pushAction(method: .onActionReceived, webView: mockWebView, params: params, canTimeOut: true)
 
-        let testPeriod = Date(timeIntervalSinceNow: 0.2)
-        while Date() < testPeriod {
-            RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.1))
-        }
+        await fulfillment(of: [timeoutExpectation], timeout: 0.3)
 
         XCTAssertEqual(mockCSSDelegate.lastError as? DataBrokerProtectionError, DataBrokerProtectionError.actionFailed(actionID: "expectation-1", message: "Request timed out"))
     }
 
-    func testWhenNonExpectationActionTimeOut_thenDelegateDoesNotReceiveTimeoutError() {
+    @MainActor
+    func testWhenNonExpectationActionTimeOut_thenDelegateDoesNotReceiveTimeoutError() async {
         let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, actionResponseTimeout: 0.1)
         sut.with(broker: mockBroker)
         let action = NavigateAction(id: "navigate-1", actionType: .navigate, url: "", ageRange: nil, dataSource: nil)
         let params = Params(state: ActionRequest(action: action, data: mockCCFRequestData))
 
-        sut.pushAction(method: .onActionReceived, webView: mockWebView, params: params, canTimeOut: false)
+        let noErrorExpectation = expectation(description: "No error received")
+        noErrorExpectation.isInverted = true
 
-        let testPeriod = Date(timeIntervalSinceNow: 0.3)
-        while Date() < testPeriod {
-            RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.1))
+        mockCSSDelegate.onErrorCallback = { _ in
+            noErrorExpectation.fulfill()
         }
 
+        sut.pushAction(method: .onActionReceived, webView: mockWebView, params: params, canTimeOut: false)
+
+        // Wait for a reasonable time to ensure no error is received
+        await fulfillment(of: [noErrorExpectation], timeout: 0.3)
         XCTAssertNil(mockCSSDelegate.lastError)
     }
 
-    func testWhenExpectationActionCompletesBeforeTimeout_thenNoTimeoutErrorIsSent() {
+    @MainActor
+    func testWhenExpectationActionCompletesBeforeTimeout_thenNoTimeoutErrorIsSent() async {
         let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, actionResponseTimeout: 0.1)
         sut.with(broker: mockBroker)
         let action = ExpectationAction(id: "expectation-1", actionType: .expectation, expectations: [], dataSource: nil, actions: nil)
         let params = Params(state: ActionRequest(action: action, data: mockCCFRequestData))
 
+        let noErrorExpectation = expectation(description: "No error received")
+        noErrorExpectation.isInverted = true
+
+        mockCSSDelegate.onErrorCallback = { _ in
+            noErrorExpectation.fulfill()
+        }
+
         sut.pushAction(method: .onActionReceived, webView: mockWebView, params: params, canTimeOut: true)
 
-        Task {
-            let completionParams = ["result": ["success": ["actionID": "expectation-1", "actionType": "expectation"] as [String: Any]]]
-            _ = try? await sut.onActionCompleted(params: completionParams, original: MockWKScriptMessage())
-        }
+        // Complete the action before timeout
+        let completionParams = ["result": ["success": ["actionID": "expectation-1", "actionType": "expectation"] as [String: Any]]]
+        _ = try? await sut.onActionCompleted(params: completionParams, original: MockWKScriptMessage())
 
-        let testPeriod = Date(timeIntervalSinceNow: 0.3)
-        while Date() < testPeriod {
-            RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.1))
-            if mockCSSDelegate.lastError != nil {
-                XCTFail("Unexpected error")
-            }
-        }
+        await fulfillment(of: [noErrorExpectation], timeout: 0.3)
 
         XCTAssertNil(mockCSSDelegate.lastError)
         XCTAssertEqual(mockCSSDelegate.successActionId, "expectation-1")
     }
 
-    func testWhenExpectationActionFailsBeforeTimeout_thenNoTimeoutErrorIsSent() {
+    @MainActor
+    func testWhenExpectationActionFailsBeforeTimeout_thenNoTimeoutErrorIsSent() async {
         let sut = DataBrokerProtectionFeature(delegate: mockCSSDelegate, actionResponseTimeout: 0.1)
         sut.with(broker: mockBroker)
         let action = ExpectationAction(id: "expectation-1", actionType: .expectation, expectations: [], dataSource: nil, actions: nil)
         let params = Params(state: ActionRequest(action: action, data: mockCCFRequestData))
 
-        sut.pushAction(method: .onActionReceived, webView: mockWebView, params: params, canTimeOut: true)
+        let noTimeoutErrorExpectation = expectation(description: "No timeout error received")
+        noTimeoutErrorExpectation.isInverted = true
 
-        Task {
-            let errorParams = ["error": "No action found."]
-            _ = try? await sut.onActionError(params: errorParams, original: MockWKScriptMessage())
-        }
-
-        let testPeriod = Date(timeIntervalSinceNow: 0.3)
-        while Date() < testPeriod {
-            RunLoop.current.run(until: Date(timeIntervalSinceNow: 0.1))
-            if let error = mockCSSDelegate.lastError as? DataBrokerProtectionError,
-               error != .noActionFound {
-                XCTFail("Unexpected error")
+        mockCSSDelegate.onErrorCallback = { error in
+            if let error = error as? DataBrokerProtectionError,
+               case .actionFailed(let actionID, let message) = error,
+               actionID == "expectation-1" && message == "Request timed out" {
+                noTimeoutErrorExpectation.fulfill()
             }
         }
+
+        sut.pushAction(method: .onActionReceived, webView: mockWebView, params: params, canTimeOut: true)
+
+        // Fail the action before timeout
+        let errorParams = ["error": "No action found."]
+        _ = try? await sut.onActionError(params: errorParams, original: MockWKScriptMessage())
+
+        await fulfillment(of: [noTimeoutErrorExpectation], timeout: 0.3)
 
         XCTAssertEqual(mockCSSDelegate.lastError as? DataBrokerProtectionError, .noActionFound)
     }
@@ -204,6 +222,7 @@ final class MockCSSCommunicationDelegate: CCFCommunicationDelegate {
     var captchaInfo: GetCaptchaInfoResponse?
     var solveCaptchaResponse: SolveCaptchaResponse?
     var successActionId: String?
+    var onErrorCallback: ((Error) -> Void)?
 
     func loadURL(url: URL) {
         self.url = url
@@ -223,6 +242,7 @@ final class MockCSSCommunicationDelegate: CCFCommunicationDelegate {
 
     func onError(error: Error) {
         self.lastError = error
+        onErrorCallback?(error)
     }
 
     func solveCaptcha(with response: SolveCaptchaResponse) async {
@@ -236,6 +256,7 @@ final class MockCSSCommunicationDelegate: CCFCommunicationDelegate {
         successActionId = nil
         captchaInfo = nil
         solveCaptchaResponse = nil
+        onErrorCallback = nil
     }
 }
 

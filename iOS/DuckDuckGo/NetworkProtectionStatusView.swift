@@ -99,9 +99,6 @@ struct NetworkProtectionStatusView: View {
                         Text(statusModel.statusMessage)
                             .daxFootnoteRegular()
                             .foregroundColor(.init(designSystemColor: .textSecondary))
-                            .onTapGesture {
-                                statusModel.overrideConnectionStartDate()
-                            }
                     }
                 }
                 .layoutPriority(1)

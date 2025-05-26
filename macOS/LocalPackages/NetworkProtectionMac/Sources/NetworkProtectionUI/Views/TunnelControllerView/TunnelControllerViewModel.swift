@@ -409,34 +409,8 @@ public final class TunnelControllerViewModel: ObservableObject {
         }
     }
 
-    enum TimerOverride {
-        case none
-        case minute
-        case hour
-        case day
-    }
-    private var timerDateOverride: Date?
-    private var timerOverride: TimerOverride = .none
-
-    func overrideConnectionStartDate() {
-        switch timerOverride {
-        case .none:
-            timerOverride = .minute
-            timerDateOverride = Date().addingTimeInterval(-TimeInterval.minutes(1).advanced(by: -4))
-        case .minute:
-            timerOverride = .hour
-            timerDateOverride = Date().addingTimeInterval(-TimeInterval.hours(1).advanced(by: -4))
-        case .hour:
-            timerOverride = .day
-            timerDateOverride = Date().addingTimeInterval(-TimeInterval.day.advanced(by: -4))
-        case .day:
-            timerOverride = .none
-            timerDateOverride = nil
-        }
-    }
-
     private func timeLapsedString(since date: Date) -> String {
-        let secondsLapsed = Date().timeIntervalSince(timerDateOverride ?? date)
+        let secondsLapsed = Date().timeIntervalSince(date)
         return timeLapsedFormatter.string(from: secondsLapsed)
     }
 
@@ -555,7 +529,6 @@ public final class TunnelControllerViewModel: ObservableObject {
         }
 
         Task { @MainActor in
-            timerOverride = .none
             await tunnelController.start()
             refreshInternalIsRunning()
         }

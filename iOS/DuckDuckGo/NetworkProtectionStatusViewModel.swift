@@ -75,31 +75,6 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
     }
 
     private let timeLapsedFormatter: VPNTimeFormatting
-    enum TimerOverride {
-        case none
-        case minute
-        case hour
-        case day
-    }
-    private var timerDateOverride: Date?
-    private var timerOverride: TimerOverride = .none
-
-    func overrideConnectionStartDate() {
-        switch timerOverride {
-        case .none:
-            timerOverride = .minute
-            timerDateOverride = Date().addingTimeInterval(-TimeInterval.minutes(1).advanced(by: -4))
-        case .minute:
-            timerOverride = .hour
-            timerDateOverride = Date().addingTimeInterval(-TimeInterval.hours(1).advanced(by: -4))
-        case .hour:
-            timerOverride = .day
-            timerDateOverride = Date().addingTimeInterval(-TimeInterval.day.advanced(by: -4))
-        case .day:
-            timerOverride = .none
-            timerDateOverride = nil
-        }
-    }
 
     private static var snoozeRemainingDateFormatter: DateComponentsFormatter = {
         let formatter = DateComponentsFormatter()
@@ -494,7 +469,6 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
 
     @MainActor
     private func enableNetP() async {
-        timerOverride = .none
         await tunnelController.start()
     }
 
@@ -584,7 +558,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
     }
 
     private func connectedMessage(for connectedDate: Date, currentDate: Date = Date()) -> String {
-        let timeLapsedInterval = currentDate.timeIntervalSince(timerDateOverride ?? connectedDate)
+        let timeLapsedInterval = currentDate.timeIntervalSince(connectedDate)
         let timeLapsed = timeLapsedFormatter.string(from: timeLapsedInterval)
         return UserText.netPStatusConnected(since: timeLapsed)
     }

@@ -389,7 +389,11 @@ final class DuckPlayerNativeUIPresenter {
         // Daily Pixel
         let setting = duckPlayerSettings.nativeUIYoutubeMode == .auto ? "auto" : "ask"
         let toggle = duckPlayerSettings.duckPlayerControlsVisible ? "visible" : "hidden"
-        pixelHandler.fireDaily(.duckPlayerNativeDailyUniqueView(setting: setting, toggle: toggle))
+        let parameters: [String: String] = [
+            "setting": setting,
+            "toggle": toggle
+        ]
+        pixelHandler.fireDaily(.duckPlayerNativeDailyUniqueView, withAdditionalParameters: parameters)
 
         if source == .youtube {
             switch duckPlayerSettings.nativeUIYoutubeMode {
@@ -415,9 +419,6 @@ final class DuckPlayerNativeUIPresenter {
             pixelHandler.fire(.duckPlayerNativeViewFromSERP)
         }
 
-        if source == .other {
-            pixelHandler.fire(.duckPlayerNativeViewFromOther)
-        }
     }
 
     /// Fires Pill Dismissal pixels

@@ -1188,10 +1188,7 @@ extension Pixel {
         // MARK: - Duck Player Native pixels
         
         /// First time Duck Player is opened each day
-        /// - Parameters:
-        ///   - setting: The Duck Player setting (default | always)
-        ///   - toggle: The toggle state (visible | hidden)
-        case duckPlayerNativeDailyUniqueView(setting: String, toggle: String)
+        case duckPlayerNativeDailyUniqueView
         /// Duck Player is opened automatically on YouTube
         case duckPlayerNativeViewFromYoutubeAutomatic
         /// Duck Player is opened from the YouTube entry point
@@ -1200,8 +1197,6 @@ extension Pixel {
         case duckPlayerNativeViewFromYoutubeReEntryPoint
         /// Duck Player is opened from SERP
         case duckPlayerNativeViewFromSERP
-        /// Duck Player is opened from Other
-        case duckPlayerNativeViewFromOther
         /// Watch on YouTube button is tapped from Duck Player UI
         case duckPlayerNativeWatchOnYoutube
         /// Duck Player entry point is shown on YouTube video page
@@ -2345,68 +2340,62 @@ extension Pixel.Event {
         // MARK: - Duck Player Native pixels
 
         /// First time Duck Player is opened each day
-        /// - Parameters:
-        ///   - settings: The Duck Player setting (default | always)
-        ///   - toggle: The toggle state (visible | hidden)
         case .duckPlayerNativeDailyUniqueView:
-            return "duckplayer.native-daily-unique-view"
+            return "duckplayer_native_daily-unique-view"
         /// Duck Player is opened automatically on YouTube
         case .duckPlayerNativeViewFromYoutubeAutomatic:
-            return "duckplayer.native-view-from-youtube-automatic-ios-iphone"
+            return "duckplayer_native_view-from_youtube_automatic"
         /// Duck Player is opened from the YouTube entry point
         case .duckPlayerNativeViewFromYoutubeEntryPoint:
-            return "duckplayer.native-view-from-youtube-entry-point-ios-iphone"
+            return "duckplayer_native_view-from_youtube_entry-point"
         /// Duck Player is opened from the YouTube re-entry point
         case .duckPlayerNativeViewFromYoutubeReEntryPoint:
-            return "duckplayer.native-view-from-youtube-re-entry-point-ios-iphone"
+            return "duckplayer_native_view-from_youtube_re-entry-point"
         /// Duck Player is opened from SERP
         case .duckPlayerNativeViewFromSERP:
-            return "duckplayer.native-view-from-serp-ios-iphone"
-        /// Duck Player is opened from Other
-        case .duckPlayerNativeViewFromOther:
-            return "duckplayer.native-view-from-other-ios-iphone"
+            return "duckplayer_native_view-from_serp"
         /// Watch on YouTube button is tapped from Duck Player UI
         case .duckPlayerNativeWatchOnYoutube:
-            return "duckplayer.native-watch-on-youtube-ios-iphone"
+            return "duckplayer_native_watch-on-youtube"
         /// Duck Player entry point is shown on YouTube video page
         case .duckPlayerNativeEntryPointImpression:
-            return "duckplayer.native-entry-point-impression-ios-iphone"
+            return "duckplayer_native_entry-point_impression"
         /// Duck Player entry point is dismissed on YouTube video page
         case .duckPlayerNativeEntryPointDismissed:
-            return "duckplayer.native-entry-point-dismissed-ios-iphone"
+            return "duckplayer_native_entry-point_dismissed"
         /// Duck Player re-entry point is shown on YouTube video page
         case .duckPlayerNativeReEntryPointImpression:
-            return "duckplayer.native-re-entry-point-impression-ios-iphone"
+            return "duckplayer_native_re-entry-point_impression"
         /// Duck Player re-entry point is dismissed on YouTube video page
         case .duckPlayerNativeReEntryPointDismissed:
-            return "duckplayer.native-re-entry-point-dismissed-ios-iphone"
+            return "duckplayer_native_re-entry-point_dismissed"
         /// Setting for SERP is changed to off
         case .duckPlayerNativeSettingsSerpOff:
-            return "duckplayer.native-serp-off-ios-iphone"
+            return "duckplayer_native_settings_serp_off"
         /// Setting for SERP is changed to on
         case .duckPlayerNativeSettingsSerpOn:
-            return "duckplayer.native-serp-on-ios-iphone"
+            return "duckplayer_native_settings_serp_on"
         /// Setting for YouTube is changed to automatic
         case .duckPlayerNativeSettingsYoutubeAutomatic:
-            return "duckplayer.native-youtube-automatic-ios-iphone"
+            return "duckplayer_native_settings_youtube_automatic"
         /// Setting for YouTube is changed to let me choose
         case .duckPlayerNativeSettingsYoutubeChoose:
-            return "duckplayer.native-youtube-choose-ios-iphone"
+            return "duckplayer_native_settings_youtube_choose"
         /// Setting for YouTube is changed to don't show
         case .duckPlayerNativeSettingsYoutubeDontShow:
-            return "duckplayer.native-youtube-dont-show-ios-iphone"
+            return "duckplayer_native_settings_youtube_dont-show"
         /// Priming modal is shown
         case .duckPlayerNativePrimingModalImpression:
-            return "duckplayer.native-priming-modal-impression-ios-iphone"
+            return "duckplayer_native_priming-modal_impression"
         /// Priming modal is dismissed
         case .duckPlayerNativePrimingModalDismissed:
-            return "duckplayer.native-priming-modal-dismissed-ios-iphone"
+            return "duckplayer_native_priming-modal_dismissed"
         /// Priming modal CTA is tapped
         case .duckPlayerNativePrimingModalCTA:
-            return "duckplayer.native-priming-modal-cta-ios-iphone"
+            return "duckplayer_native_priming-modal_cta"
         /// Settings gear icon is tapped from Duck Player UI
         case .duckPlayerNativeDuckPlayerSettingsOpened:
-            return "duckplayer.native-duckplayer-settings-opened-ios-iphone"
+            return "duckplayer_native_duckplayer_settings_opened"
         }
     }
 }

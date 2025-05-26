@@ -1,0 +1,20 @@
+<svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <path fill="url(#Shield-Neutral-Alert-Color-24_svg__a)" d="M14.782 4.48a4.25 4.25 0 0 0 5.968 4.393v5.002L17 19.5l-5 1.875L7 19.5l-3.75-5.625v-7.5l1.875-1.25H8.25l3.75-2.5 2.782 1.854Z"/>
+  <path fill="url(#Shield-Neutral-Alert-Color-24_svg__b)" d="M14.782 4.48a4.25 4.25 0 0 0 5.968 4.393v5.002L17 19.5l-3.75 1.25H12V2.625l2.782 1.854Z"/>
+  <path fill="url(#Shield-Neutral-Alert-Color-24_svg__c)" d="M9.65 2.834A3.594 3.594 0 0 1 14.454 3l.18.173c.227.22.297.553.225.862a4.25 4.25 0 0 0-.11.965v.023L13.587 3.9a2.343 2.343 0 0 0-3.221-.033l-1.32 1.225a2.657 2.657 0 0 1-2.563.599l-.52-.155a2.031 2.031 0 0 0-2.608 1.9l-.067 2.855a10 10 0 0 0 5.691 9.263l1.949.929a2.502 2.502 0 0 0 2.147.003l1.952-.925.332-.165a10 10 0 0 0 5.382-9.155l-.04-1.348.124-.056c.469-.224 1.128.066 1.143.585l.022.782a11.25 11.25 0 0 1-6.055 10.301l-.373.186-1.952.924a3.751 3.751 0 0 1-3.22-.003l-1.949-.93a11.25 11.25 0 0 1-6.403-10.42l.067-2.855A3.282 3.282 0 0 1 6.32 4.339l.52.154.18.042c.423.067.858-.063 1.177-.359l1.32-1.224.133-.118Z"/>
+  <path fill="#EE1025" d="M22 5a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+  <defs>
+    <linearGradient id="Shield-Neutral-Alert-Color-24_svg__a" x1="12.005" x2="12.11" y1="3.25" y2="21.374" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#F5F5F5"/>
+      <stop offset="1" stop-color="#DDD"/>
+    </linearGradient>
+    <linearGradient id="Shield-Neutral-Alert-Color-24_svg__b" x1="16.375" x2="16.375" y1="2.625" y2="21.354" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#DDD"/>
+      <stop offset="1" stop-color="#AAA"/>
+    </linearGradient>
+    <linearGradient id="Shield-Neutral-Alert-Color-24_svg__c" x1="11.999" x2="11.999" y1="3.25" y2="20.75" gradientUnits="userSpaceOnUse">
+      <stop offset=".008" stop-color="#CCC"/>
+      <stop offset="1" stop-color="#888"/>
+    </linearGradient>
+  </defs>
+</svg>

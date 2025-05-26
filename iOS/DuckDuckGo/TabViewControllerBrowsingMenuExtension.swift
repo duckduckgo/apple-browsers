@@ -83,7 +83,6 @@ extension TabViewController {
         return entries
     }
 
-
     var favoriteEntryIndex: Int { 1 }
 
     func buildShortcutsMenu() -> [BrowsingMenuEntry] {

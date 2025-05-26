@@ -29,7 +29,7 @@ public enum OptOutType: String, Codable, Equatable, Sendable {
 }
 
 public struct Step: Codable, Sendable {
-    let type: StepType
+    public let type: StepType
     let optOutType: OptOutType?
     let actions: [Action]
 

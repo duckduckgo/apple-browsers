@@ -27,16 +27,19 @@ extension ContentScopeFeatureToggles {
 
     static var supportedFeaturesOniOS: ContentScopeFeatureToggles {
         let isAutofillEnabledInSettings = AutofillSettingStatus.isAutofillEnabledInSettings
-        return ContentScopeFeatureToggles(emailProtection: true,
-                                   emailProtectionIncontextSignup: featureFlagger.isFeatureOn(.incontextSignup) && Locale.current.isEnglishLanguage,
-                                   credentialsAutofill: featureFlagger.isFeatureOn(.autofillCredentialInjecting) && isAutofillEnabledInSettings,
-                                   identitiesAutofill: false,
-                                   creditCardsAutofill: false,
-                                   credentialsSaving: featureFlagger.isFeatureOn(.autofillCredentialsSaving) && isAutofillEnabledInSettings,
-                                   passwordGeneration: featureFlagger.isFeatureOn(.autofillPasswordGeneration) && isAutofillEnabledInSettings,
-                                   inlineIconCredentials: featureFlagger.isFeatureOn(.autofillInlineIconCredentials) && isAutofillEnabledInSettings,
-                                   thirdPartyCredentialsProvider: false,
-                                   unknownUsernameCategorization: featureFlagger.isFeatureOn(.autofillUnknownUsernameCategorization) && isAutofillEnabledInSettings,
-                                   partialFormSaves: featureFlagger.isFeatureOn(.autofillPartialFormSaves) && isAutofillEnabledInSettings)
+        return ContentScopeFeatureToggles(
+            emailProtection: true,
+            emailProtectionIncontextSignup: featureFlagger.isFeatureOn(.incontextSignup) && Locale.current.isEnglishLanguage,
+            credentialsAutofill: featureFlagger.isFeatureOn(.autofillCredentialInjecting) && isAutofillEnabledInSettings,
+            identitiesAutofill: false,
+            creditCardsAutofill: false,
+            credentialsSaving: featureFlagger.isFeatureOn(.autofillCredentialsSaving) && isAutofillEnabledInSettings,
+            passwordGeneration: featureFlagger.isFeatureOn(.autofillPasswordGeneration) && isAutofillEnabledInSettings,
+            inlineIconCredentials: featureFlagger.isFeatureOn(.autofillInlineIconCredentials) && isAutofillEnabledInSettings,
+            thirdPartyCredentialsProvider: false,
+            unknownUsernameCategorization: featureFlagger.isFeatureOn(.autofillUnknownUsernameCategorization) && isAutofillEnabledInSettings,
+            partialFormSaves: featureFlagger.isFeatureOn(.autofillPartialFormSaves) && isAutofillEnabledInSettings,
+            passwordVariantCategorization: featureFlagger.isFeatureOn(.autofillPasswordVariantCategorization) && isAutofillEnabledInSettings
+        )
     }
 }

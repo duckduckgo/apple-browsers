@@ -85,6 +85,7 @@ public final class TunnelControllerViewModel: ObservableObject {
         return formatter
     }()
 
+    private let timeLapsedFormatter: VPNTimeFormatting
     private let uiActionHandler: VPNUIActionHandling
 
     // MARK: - Misc
@@ -104,6 +105,7 @@ public final class TunnelControllerViewModel: ObservableObject {
                 vpnSettings: VPNSettings,
                 proxySettings: TransparentProxySettings,
                 locationFormatter: VPNLocationFormatting,
+                timeLapsedFormatter: VPNTimeFormatting = VPNTimeFormatter(),
                 uiActionHandler: VPNUIActionHandling) {
 
         self.tunnelController = controller
@@ -114,6 +116,8 @@ public final class TunnelControllerViewModel: ObservableObject {
         self.vpnSettings = vpnSettings
         self.proxySettings = proxySettings
         self.locationFormatter = locationFormatter
+        self.timeLapsedFormatter = timeLapsedFormatter
+        self.timeLapsed = timeLapsedFormatter.string(from: 0)
         self.uiActionHandler = uiActionHandler
 
         connectionStatus = statusReporter.statusObserver.recentValue
@@ -361,7 +365,7 @@ public final class TunnelControllerViewModel: ObservableObject {
     /// The description for the current connection status.
     /// When the status is `connected` this description will also show the time lapsed since connection.
     ///
-    @Published var timeLapsed = UserText.networkProtectionStatusViewTimerZero
+    @Published var timeLapsed: String
 
     @MainActor
     private func refreshTimeLapsed() {
@@ -369,9 +373,9 @@ public final class TunnelControllerViewModel: ObservableObject {
         case .connected(let connectedDate):
             timeLapsed = timeLapsedString(since: connectedDate)
         case .disconnecting:
-            timeLapsed = UserText.networkProtectionStatusViewTimerZero
+            timeLapsed = timeLapsedFormatter.string(from: 0)
         default:
-            timeLapsed = UserText.networkProtectionStatusViewTimerZero
+            timeLapsed = timeLapsedFormatter.string(from: 0)
         }
     }
 
@@ -407,12 +411,7 @@ public final class TunnelControllerViewModel: ObservableObject {
 
     private func timeLapsedString(since date: Date) -> String {
         let secondsLapsed = Date().timeIntervalSince(date)
-
-        let hours   = Int(secondsLapsed) / 3600
-        let minutes = Int(secondsLapsed) / 60 % 60
-        let seconds = Int(secondsLapsed) % 60
-
-        return String(format: "%02i:%02i:%02i", hours, minutes, seconds)
+        return timeLapsedFormatter.string(from: secondsLapsed)
     }
 
     /// The feature status (ON/OFF) right below the main icon.

@@ -1101,8 +1101,7 @@ class TabViewController: UIViewController {
                                        entryPoint: .dashboard,
                                        privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
                                        contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
-                                              breakageAdditionalInfo: makeBreakageAdditionalInfo(),
-                                              contentScopeExperimentsManager: contentScopeExperimentsManager)
+                                              breakageAdditionalInfo: makeBreakageAdditionalInfo())
     }
     
     private func addTextZoomObserver() {
@@ -1193,7 +1192,8 @@ class TabViewController: UIViewController {
                                       parentEntity: entity,
                                       protectionStatus: makeProtectionStatus(for: host),
                                       malicousSiteThreatKind: specialErrorPageNavigationHandler.currentThreatKind,
-                                      shouldCheckServerTrust: shouldCheckServerTrust)
+                                      shouldCheckServerTrust: shouldCheckServerTrust,
+                                      allActiveContentScopeExperiments: contentScopeExperimentsManager.allActiveContentScopeExperiments)
         let isCertificateInvalid = certificateTrustEvaluator
             .evaluateCertificateTrust(trust: webView.serverTrust)
             .map { !$0 }

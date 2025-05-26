@@ -36,10 +36,8 @@ final class PrivacyDashboardPopover: NSPopover {
     var viewController: PrivacyDashboardViewController {
         (contentViewController as? PrivacyDashboardViewController)!
     }
-    private let contentScopeExperimentsManager: ContentScopeExperimentsManaging
 
-    init(entryPoint: PrivacyDashboardEntryPoint = .dashboard, contentScopeExperimentsManager: ContentScopeExperimentsManaging) {
-        self.contentScopeExperimentsManager = contentScopeExperimentsManager
+    init(entryPoint: PrivacyDashboardEntryPoint = .dashboard) {
         super.init()
 #if DEBUG
         self.behavior = .semitransient
@@ -54,7 +52,7 @@ final class PrivacyDashboardPopover: NSPopover {
     }
 
     private func setupContentController(entryPoint: PrivacyDashboardEntryPoint) {
-        let controller = PrivacyDashboardViewController(entryPoint: entryPoint, contentScopeExperimentsManager: contentScopeExperimentsManager)
+        let controller = PrivacyDashboardViewController(entryPoint: entryPoint)
         controller.sizeDelegate = self
         contentViewController = controller
     }

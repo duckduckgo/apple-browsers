@@ -74,12 +74,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
         static let defaultUploadVolume = "0 KB"
     }
 
-    private static var dateFormatter: DateComponentsFormatter = {
-        let formatter = DateComponentsFormatter()
-        formatter.allowedUnits = [.hour, .minute, .second]
-        formatter.zeroFormattingBehavior = .pad
-        return formatter
-    }()
+    private let timeLapsedFormatter: VPNTimeFormatting
 
     private static var snoozeRemainingDateFormatter: DateComponentsFormatter = {
         let formatter = DateComponentsFormatter()
@@ -151,7 +146,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
     }
 
     @Published public var snoozeRequestPending = false
-    @Published public var statusMessage: String
+    @Published public var statusMessage: String = ""
     @Published public var shouldDisableToggle: Bool = false
 
     // MARK: Location
@@ -179,6 +174,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
                 statusObserver: ConnectionStatusObserver,
                 serverInfoObserver: ConnectionServerInfoObserver,
                 errorObserver: ConnectionErrorObserver = ConnectionErrorObserverThroughSession(),
+                timeLapsedFormatter: VPNTimeFormatting = VPNTimeFormatter(),
                 locationListRepository: NetworkProtectionLocationListRepository,
                 enablesUnifiedFeedbackForm: Bool,
                 featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()) {
@@ -187,10 +183,10 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
         self.statusObserver = statusObserver
         self.serverInfoObserver = serverInfoObserver
         self.errorObserver = errorObserver
+        self.timeLapsedFormatter = timeLapsedFormatter
         self.enablesUnifiedFeedbackForm = enablesUnifiedFeedbackForm
         self.featureDiscovery = featureDiscovery
 
-        statusMessage = Self.message(for: statusObserver.recentValue)
         self.headerTitle = Self.titleText(status: statusObserver.recentValue)
         self.statusImageID = Self.statusImageID(connected: statusObserver.recentValue.isConnected)
 
@@ -201,6 +197,8 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
         self.tipsModel = VPNTipsModel(
             statusObserver: statusObserver,
             vpnSettings: settings)
+
+        statusMessage = message(for: statusObserver.recentValue)
 
         updateViewModel(withStatus: statusObserver.recentValue)
 
@@ -262,14 +260,19 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
     private func setUpStatusMessagePublishers() {
         statusObserver.publisher
             .removeDuplicates()
-            .flatMap(maxPublishers: .max(1)) { status in
+            .flatMap(maxPublishers: .max(1)) { [weak self] status in
+
+                guard let self else {
+                    return [Just("").eraseToAnyPublisher()].publisher
+                }
+
                 // As soon as the connection status changes, we should update the status message
-                var statusUpdatePublishers = [Just(Self.message(for: status)).eraseToAnyPublisher()]
+                var statusUpdatePublishers = [Just(message(for: status)).eraseToAnyPublisher()]
                 switch status {
                 case .connected(let connectedDate):
                     // In the case that the status is connected, we should then provide timed updates
                     // If we rely on the timed updates alone, there will be a delay to the initial update
-                    statusUpdatePublishers.append(Self.timedConnectedStatusMessagePublisher(forConnectedDate: connectedDate))
+                    statusUpdatePublishers.append(timedConnectedStatusMessagePublisher(forConnectedDate: connectedDate))
                 case .snoozing:
                     let timingStore = NetworkProtectionSnoozeTimingStore(userDefaults: .networkProtectionGroupDefaults)
                     guard let endDate = timingStore.activeTiming?.endDate else {
@@ -521,11 +524,11 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
         isConnected ? "VPN" : "VPNDisabled"
     }
 
-    private static func timedConnectedStatusMessagePublisher(forConnectedDate connectedDate: Date) -> AnyPublisher<String, Never> {
+    private func timedConnectedStatusMessagePublisher(forConnectedDate connectedDate: Date) -> AnyPublisher<String, Never> {
         Timer.publish(every: .seconds(1), on: .main, in: .default)
             .autoconnect()
-            .map {
-                Self.connectedMessage(for: connectedDate, currentDate: $0)
+            .compactMap { [weak self] in
+                self?.connectedMessage(for: connectedDate, currentDate: $0)
             }
             .eraseToAnyPublisher()
     }
@@ -539,7 +542,7 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
             .eraseToAnyPublisher()
     }
 
-    private static func message(for status: ConnectionStatus) -> String {
+    private func message(for status: ConnectionStatus) -> String {
         switch status {
         case .disconnected, .notConfigured:
             return UserText.netPStatusDisconnected
@@ -554,9 +557,9 @@ final class NetworkProtectionStatusViewModel: ObservableObject {
         }
     }
 
-    private static func connectedMessage(for connectedDate: Date, currentDate: Date = Date()) -> String {
+    private func connectedMessage(for connectedDate: Date, currentDate: Date = Date()) -> String {
         let timeLapsedInterval = currentDate.timeIntervalSince(connectedDate)
-        let timeLapsed = Self.dateFormatter.string(from: timeLapsedInterval) ?? "00:00:00"
+        let timeLapsed = timeLapsedFormatter.string(from: timeLapsedInterval)
         return UserText.netPStatusConnected(since: timeLapsed)
     }
 

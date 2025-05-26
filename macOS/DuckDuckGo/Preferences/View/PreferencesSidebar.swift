@@ -44,20 +44,28 @@ extension Preferences {
         let isSelected: Bool
         let isEnabled: Bool
         let action: () -> Void
+        let settingsIconProvider: SettingsIconsProviding
         @ObservedObject var protectionStatus: PrivacyProtectionStatus
 
-        init(pane: PreferencePaneIdentifier, isSelected: Bool, isEnabled: Bool = true, status: PrivacyProtectionStatus?, action: @escaping () -> Void) {
+        init(pane: PreferencePaneIdentifier,
+             isSelected: Bool,
+             isEnabled: Bool = true,
+             status: PrivacyProtectionStatus?,
+             settingsIconProvider: SettingsIconsProviding,
+             action: @escaping () -> Void) {
             self.pane = pane
             self.isSelected = isSelected
             self.isEnabled = isEnabled
             self.action = action
             self.protectionStatus = status ?? PrivacyProtectionStatus()
+            self.settingsIconProvider = settingsIconProvider
         }
 
         var body: some View {
             Button(action: action) {
                 HStack(spacing: 6) {
-                    Image(pane.preferenceIconName).frame(width: 16, height: 16)
+                    Image(nsImage: pane.preferenceIconName(for: settingsIconProvider))
+                        .frame(width: 16, height: 16)
                         .if(!isEnabled) {
                             $0.grayscale(1.0).opacity(0.5)
                         }
@@ -125,7 +133,7 @@ extension Preferences {
                     VStack(spacing: 0) {
                         ForEach(model.sections) { section in
                             SidebarSectionHeader(section: section.id)
-                            sidebarSection(section)
+                            sidebarSection(section, settingsIconProvider: model.settingsIconProvider)
                         }
                     }.padding(.bottom, 16)
                 }
@@ -139,12 +147,14 @@ extension Preferences {
         }
 
         @ViewBuilder
-        private func sidebarSection(_ section: PreferencesSection) -> some View {
+        private func sidebarSection(_ section: PreferencesSection,
+                                    settingsIconProvider: SettingsIconsProviding) -> some View {
             ForEach(section.panes) { pane in
                 PaneSidebarItem(pane: pane,
                                 isSelected: model.selectedPane == pane,
                                 isEnabled: model.isSidebarItemEnabled(for: pane),
-                                status: model.protectionStatus(for: pane)) {
+                                status: model.protectionStatus(for: pane),
+                                settingsIconProvider: settingsIconProvider) {
                     model.selectPane(pane)
                 }
             }

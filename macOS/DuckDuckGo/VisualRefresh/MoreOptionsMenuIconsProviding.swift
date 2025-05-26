@@ -15,6 +15,7 @@
 //  See the License for the specific language governing permissions and
 //  limitations under the License.
 //
+import DesignResourcesKitIcons
 
 protocol MoreOptionsMenuIconsProviding {
     var sendFeedbackIcon: NSImage { get }
@@ -33,7 +34,6 @@ protocol MoreOptionsMenuIconsProviding {
     var downloadsIcon: NSImage { get }
     var historyIcon: NSImage { get }
     var passwordsIcon: NSImage { get }
-    var syncIcon: NSImage { get }
     var emailProtectionIcon: NSImage { get }
     var privacyProIcon: NSImage { get }
     var fireproofSiteIcon: NSImage { get }
@@ -55,7 +55,7 @@ protocol MoreOptionsMenuIconsProviding {
     var creditCardsIcon: NSImage { get }
 
     /// PrivacyPro Sub-Menu
-    var vpnIcon: NSImage { get }
+    var vpnIcon: NSImage? { get }
     var personalInformationRemovalIcon: NSImage { get }
     var identityTheftRestorationIcon: NSImage { get }
 
@@ -86,7 +86,6 @@ final class LegacyMoreOptionsMenuIcons: MoreOptionsMenuIconsProviding {
     let downloadsIcon: NSImage = .downloads
     let historyIcon: NSImage = .history
     let passwordsIcon: NSImage = .passwordManagement
-    let syncIcon: NSImage = .syncMenuNew
     let emailProtectionIcon: NSImage = .optionsButtonMenuEmail
     let privacyProIcon: NSImage = .subscriptionIcon
     let fireproofSiteIcon: NSImage = .fireproof
@@ -102,7 +101,7 @@ final class LegacyMoreOptionsMenuIcons: MoreOptionsMenuIconsProviding {
     let passwordsSubMenuIcon: NSImage = .loginGlyph
     let identitiesIcon: NSImage = .identityGlyph
     let creditCardsIcon: NSImage = .creditCardGlyph
-    let vpnIcon: NSImage = .image(for: .vpnIcon) ?? .vpnMenuNew
+    let vpnIcon: NSImage? = .image(for: .vpnIcon)
     let personalInformationRemovalIcon: NSImage = .dbpIcon
     let identityTheftRestorationIcon: NSImage = .itrIcon
     let emailGenerateAddressIcon: NSImage = .optionsButtonMenuEmailGenerateAddress
@@ -112,45 +111,44 @@ final class LegacyMoreOptionsMenuIcons: MoreOptionsMenuIconsProviding {
     let favoritesIcon: NSImage = .favorite
 }
 
-final class NewMoreOptionsMenuIcons: MoreOptionsMenuIconsProviding {
-    let sendFeedbackIcon: NSImage = .sendFeedbackMenuNew
-    let addToDockIcon: NSImage = .addToDockMenuNew
-    let setAsDefaultBrowserIcon: NSImage = .setAsDefaultMenuNew
-    let newTabIcon: NSImage = .newTabMenuNew
-    let newWindowIcon: NSImage = .newWindowMenuNew
-    let newFireWindowIcon: NSImage = .newFireWindowMenuNew
-    let newAIChatIcon: NSImage = .newAiChatMenuNew
-    let zoomIcon: NSImage = .zoomInMenuNew
-    let zoomInIcon: NSImage = .zoomInMenuNew
-    let zoomOutIcon: NSImage = .zoomOutMenuNew
-    let enterFullscreenIcon: NSImage = .enterFullScreenMenuNew
-    let changeDefaultZoomIcon: NSImage = .changeDefaultPageZoomNew
-    let bookmarksIcon: NSImage = .bookmarsMenuNew
-    let downloadsIcon: NSImage = .downloadsMenuNew
-    let historyIcon: NSImage = .historyMenuNew
-    let passwordsIcon: NSImage = .passwordMenuNew
-    let syncIcon: NSImage = .syncMenuNew
-    let emailProtectionIcon: NSImage = .emailProtectionMenuNew
-    let privacyProIcon: NSImage = .privacyProMenuNew
-    let fireproofSiteIcon: NSImage = .fireproofSiteMenuNew
-    let removeFireproofIcon: NSImage = .fireNew
-    let findInPageIcon: NSImage = .findInPageMenuNew
-    let shareIcon: NSImage = .shareMenuNew
-    let printIcon: NSImage = .printMenuNew
-    let helpIcon: NSImage = .helpMenuNew
-    let settingsIcon: NSImage = .settingsMenuNew
-    let browserFeedbackIcon: NSImage = .sendBrowserFeedbackMenuNew
-    let reportBrokenSiteIcon: NSImage = .reportBrokenSiteMenuNew
-    let sendPrivacyProFeedbackIcon: NSImage = .sendPrivacyProFeedbackMenuNew
-    let passwordsSubMenuIcon: NSImage = .passwordMenuNew
-    let identitiesIcon: NSImage = .identitiesMenuNew
-    let creditCardsIcon: NSImage = .creditCardsMenuNew
-    let vpnIcon: NSImage = .vpnNew
-    let personalInformationRemovalIcon: NSImage = .personalInformationRemovalMenuNew
-    let identityTheftRestorationIcon: NSImage = .identityTheftRestorationMenuNew
-    let emailGenerateAddressIcon: NSImage = .emailGenerateAddressMenuNew
-    let emailManageAccount: NSImage = .emailManageAccountMenuNew
-    let emailProtectionTurnOffIcon: NSImage = .emailDisabledMenuNew
-    let emailProtectionTurnOnIcon: NSImage = .emailOptionsMenuNew
-    let favoritesIcon: NSImage = .favoriteMenuNew
+final class CurrentMoreOptionsMenuIcons: MoreOptionsMenuIconsProviding {
+    let sendFeedbackIcon: NSImage = DesignSystemImages.Glyphs.Size16.feedback
+    let addToDockIcon: NSImage = DesignSystemImages.Glyphs.Size16.addToHome
+    let setAsDefaultBrowserIcon: NSImage = DesignSystemImages.Glyphs.Size16.setAsDefault
+    let newTabIcon: NSImage = DesignSystemImages.Glyphs.Size16.add
+    let newWindowIcon: NSImage = DesignSystemImages.Glyphs.Size16.windowNew
+    let newFireWindowIcon: NSImage = DesignSystemImages.Glyphs.Size16.fireWindow
+    let newAIChatIcon: NSImage = DesignSystemImages.Glyphs.Size16.aiChat
+    let zoomIcon: NSImage = DesignSystemImages.Glyphs.Size16.zoomIn
+    let zoomInIcon: NSImage = DesignSystemImages.Glyphs.Size16.zoomIn
+    let zoomOutIcon: NSImage = DesignSystemImages.Glyphs.Size16.zoomOut
+    let enterFullscreenIcon: NSImage = DesignSystemImages.Glyphs.Size16.expand
+    let changeDefaultZoomIcon: NSImage = DesignSystemImages.Glyphs.Size16.accessibility
+    let bookmarksIcon: NSImage = DesignSystemImages.Glyphs.Size16.bookmarks
+    let downloadsIcon: NSImage = DesignSystemImages.Glyphs.Size16.downloads
+    let historyIcon: NSImage = DesignSystemImages.Glyphs.Size16.history
+    let passwordsIcon: NSImage = DesignSystemImages.Glyphs.Size16.keyLogin
+    let emailProtectionIcon: NSImage = DesignSystemImages.Glyphs.Size16.email
+    let privacyProIcon: NSImage = DesignSystemImages.Glyphs.Size16.privacyPro
+    let fireproofSiteIcon: NSImage = DesignSystemImages.Glyphs.Size16.fireproof
+    let removeFireproofIcon: NSImage = DesignSystemImages.Glyphs.Size16.fire
+    let findInPageIcon: NSImage = DesignSystemImages.Glyphs.Size16.findSearch
+    let shareIcon: NSImage = DesignSystemImages.Glyphs.Size16.shareApple
+    let printIcon: NSImage = DesignSystemImages.Glyphs.Size16.print
+    let helpIcon: NSImage = DesignSystemImages.Glyphs.Size16.help
+    let settingsIcon: NSImage = DesignSystemImages.Glyphs.Size16.settings
+    let browserFeedbackIcon: NSImage = DesignSystemImages.Glyphs.Size16.browser
+    let reportBrokenSiteIcon: NSImage = DesignSystemImages.Glyphs.Size16.siteBreakage
+    let sendPrivacyProFeedbackIcon: NSImage = DesignSystemImages.Glyphs.Size16.privacyPro
+    let passwordsSubMenuIcon: NSImage = DesignSystemImages.Glyphs.Size16.keyLogin
+    let identitiesIcon: NSImage = DesignSystemImages.Glyphs.Size16.profile
+    let creditCardsIcon: NSImage = DesignSystemImages.Glyphs.Size16.creditCard
+    let vpnIcon: NSImage? = DesignSystemImages.Glyphs.Size16.vpnOn
+    let personalInformationRemovalIcon: NSImage = DesignSystemImages.Glyphs.Size16.profileBlocked
+    let identityTheftRestorationIcon: NSImage = DesignSystemImages.Glyphs.Size16.identityTheftRestoration
+    let emailGenerateAddressIcon: NSImage = DesignSystemImages.Glyphs.Size16.wand
+    let emailManageAccount: NSImage = DesignSystemImages.Glyphs.Size16.profile
+    let emailProtectionTurnOffIcon: NSImage = DesignSystemImages.Glyphs.Size16.emailDisabled
+    let emailProtectionTurnOnIcon: NSImage = DesignSystemImages.Glyphs.Size16.email
+    let favoritesIcon: NSImage = DesignSystemImages.Glyphs.Size16.favorite
 }

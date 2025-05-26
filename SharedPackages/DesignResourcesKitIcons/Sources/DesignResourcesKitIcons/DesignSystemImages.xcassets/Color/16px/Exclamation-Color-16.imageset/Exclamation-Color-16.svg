@@ -1,0 +1,11 @@
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <path fill="#7295F6" d="M15.5 8a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z"/>
+  <path fill="url(#Exclamation-Color-16_svg__a)" d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm0 1a7 7 0 1 0 0 14A7 7 0 0 0 8 1Z"/>
+  <path fill="#fff" d="M8 10.7a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8Zm.159-7.2c.455 0 .816.385.786.84l-.3 4.555a.648.648 0 0 1-1.292 0l-.298-4.556A.787.787 0 0 1 7.84 3.5h.318Z"/>
+  <defs>
+    <linearGradient id="Exclamation-Color-16_svg__a" x1="8" x2="8" y1="0" y2="16" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#557FF3"/>
+      <stop offset="1" stop-color="#2B55CA"/>
+    </linearGradient>
+  </defs>
+</svg>

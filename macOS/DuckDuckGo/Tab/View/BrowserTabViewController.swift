@@ -269,7 +269,7 @@ final class BrowserTabViewController: NSViewController {
             self.previouslySelectedTab = nil
         }
 
-        openNewTab(with: .settings(pane: .subscription))
+        openNewTab(with: .settings(pane: .subscriptionSettings))
     }
 
     @objc
@@ -309,6 +309,9 @@ final class BrowserTabViewController: NSViewController {
                 subscribeToTabContent(of: selectedTabViewModel)
                 subscribeToHoveredLink(of: selectedTabViewModel)
                 subscribeToUserDialogs(of: selectedTabViewModel)
+
+                // changing tab is considered equivalent to dismissing the dialog
+                wasContextualOnboardingDialogDismissed = true
 
                 adjustFirstResponder(force: true)
             }
@@ -472,11 +475,14 @@ final class BrowserTabViewController: NSViewController {
             delegate?.dismissViewHighlight()
             return
         }
+        // once a dialog is presented we reset the is dismissed flag
+        self.wasContextualOnboardingDialogDismissed = false
 
         var onDismissAction: () -> Void = {}
         if let webViewContainer {
             onDismissAction = { [weak self] in
                 guard let self else { return }
+                // we mark the flag for dialog dismissed
                 wasContextualOnboardingDialogDismissed = true
                 delegate?.dismissViewHighlight()
                 self.removeChild(in: self.containerStackView, webViewContainer: webViewContainer)
@@ -598,26 +604,42 @@ final class BrowserTabViewController: NSViewController {
                 }
                 return old == new
             })
-            .map { [weak tabViewModel] tabContent -> AnyPublisher<Void, Never> in
+            .map { [weak self, tabViewModel] tabContent -> AnyPublisher<Void, Never> in
                 // For non-URL tabs, just emit an event displaying the tab content
                 guard let tabViewModel, tabContent.isUrl else {
                     return Just(()).eraseToAnyPublisher()
                 }
 
-                // For URL tabs, we only want to show tab content (webView) when
-                // it has content to display (first navigation had been committed)
-                // or starts navigation.
-                return Publishers.Merge(
-                    tabViewModel.tab.$hasCommittedContent
-                        .filter { $0 == true }
-                        .asVoid(),
-                    tabViewModel.tab.navigationStatePublisher.compactMap { $0 }
-                        .filter{ $0 >= .started }
-                        .asVoid()
-                )
-                // take the first such event and move forward.
-                .prefix(1)
-                .eraseToAnyPublisher()
+                // If the current content is the native internal site, delay the webview presentation
+                // until a website renders (or edge cases) to avoid white flash
+                if [URL.newtab, URL.settings, URL.bookmarks].contains(self?.lastURL) &&
+                    self?.featureFlagger.isFeatureOn(.delayedWebviewPresentation) == true {
+                    return Publishers.Merge5(
+                        tabViewModel.tab.webViewDidReceiveRedirectPublisher,
+                        tabViewModel.tab.webViewRenderingProgressDidChangePublisher,
+                        tabViewModel.tab.webViewDidFailNavigationPublisher,
+                        tabViewModel.tab.webViewDidReceiveUserInteractiveChallengePublisher,
+                        tabViewModel.tab.webViewDidFinishNavigationPublisher
+                        )
+                    // take the first such event and move forward.
+                    .prefix(1)
+                    .eraseToAnyPublisher()
+                } else {
+                    // For URL tabs, we only want to show tab content (webView) when
+                    // it has content to display (first navigation had been committed)
+                    // or starts navigation.
+                    return Publishers.Merge(
+                        tabViewModel.tab.$hasCommittedContent
+                            .filter { $0 == true }
+                            .asVoid(),
+                        tabViewModel.tab.navigationStatePublisher.compactMap { $0 }
+                            .filter{ $0 >= .started }
+                            .asVoid()
+                    )
+                    // take the first such event and move forward.
+                    .prefix(1)
+                    .eraseToAnyPublisher()
+                }
             }
             .switchToLatest()
             .receive(on: DispatchQueue.main)
@@ -638,7 +660,6 @@ final class BrowserTabViewController: NSViewController {
             self.presentContextualOnboarding()
             self.lastURL = self.tabViewModel?.tab.url
             self.lastTab = self.tabViewModel?.tab
-            self.wasContextualOnboardingDialogDismissed = false
         }.store(in: &tabViewModelCancellables)
     }
 
@@ -1031,7 +1052,7 @@ final class BrowserTabViewController: NSViewController {
 extension BrowserTabViewController: NSDraggingDestination {
 
     func draggingEntered(_ draggingInfo: NSDraggingInfo) -> NSDragOperation {
-        return .copy
+        return draggingUpdated(draggingInfo)
     }
 
     func draggingUpdated(_ draggingInfo: NSDraggingInfo) -> NSDragOperation {
@@ -1155,7 +1176,7 @@ extension BrowserTabViewController: TabDelegate {
         // This helps keep dialogs consistent when moving between Windows
         //  - If the dialog was dismissed it will not reload when leaving and coming back to the Window
         //  - It tells presentContextualOnboarding that should show the lastDialog if possible
-        if !wasContextualOnboardingDialogDismissed {
+        if !wasContextualOnboardingDialogDismissed && onboardingDialogTypeProvider.state != .onboardingCompleted {
             presentContextualOnboarding(showLastDialog: true)
         }
     }

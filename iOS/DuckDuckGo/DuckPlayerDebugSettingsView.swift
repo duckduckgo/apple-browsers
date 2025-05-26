@@ -59,11 +59,9 @@ struct DuckPlayerDebugSettingsView: View {
     }
     
     private func resetPrimingModalSettings() {
-        if appSettings.duckPlayerVariant == .nativeOptIn {
-            appSettings.duckPlayerPrimingMessagePresented = false
-        } else if  appSettings.duckPlayerVariant == .nativeOptOut {
-            appSettings.duckPlayerWelcomeMessageShown = false
-        }
+        appSettings.duckPlayerPrimingMessagePresented = false
+        appSettings.duckPlayerWelcomeMessageShown = false
+        
     }
 
     private func resetEntryPillSettings() {

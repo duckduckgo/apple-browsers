@@ -60,6 +60,7 @@ final class UserContentUpdating {
                                                       webTrackingProtectionPreferences: webTrackingProtectionPreferences,
                                                       contentBlockingManager: contentBlockerRulesManager,
                                                       trackerDataManager: trackerDataManager,
+                                                      experimentManager: Application.appDelegate.contentScopeExperimentsManager,
                                                       tld: tld)
             return NewContent(rulesUpdate: rulesUpdate, sourceProvider: sourceProvider)
         }

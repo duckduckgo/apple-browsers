@@ -1150,41 +1150,8 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "I går";
 
-/* No comment provided by engineer. */
-"dax.hide.button" = "Skjul tip for evigt";
-
-/* No comment provided by engineer. */
-"dax.hide.cancel" = "Annullér";
-
-/* Subtitle in Hide Dax dialog */
-"dax.hide.message" = "Der er kun få, og vi forsøgte at gøre dem oplysende.";
-
-/* Title in Hide Dax dialog */
-"dax.hide.title" = "Skjul de resterende tip?";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search" = "Dine DuckDuckGo-søgninger er anonyme. Altid 🙌";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search.cta" = "Pyha!";
-
-/* First parameter is a count of additional trackers, second and third are names of the tracker networks (strings) */
-"dax.onboarding.browsing.multiple.trackers" = "dax.onboarding.browsing.multiple.trackers";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.multiple.trackers.cta" = "Giv mig fem!";
-
-/* Parameter is domain name (string) */
-"dax.onboarding.browsing.one.tracker" = "*%1$@* prøvede at spore dig her.\n\nJeg blokerede dem!\n\n☝️ Du kan kontrollere adresselinjen for at se, hvem der prøver at spore dig, når du besøger et nyt websted.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.one.tracker.cta" = "Giv mig fem!";
-
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Bemærk! Jeg kan ikke forhindre %1$@ i at se din aktivitet på %2$@.\n\nMen gennemsøg sammen med mig, så kan jeg reducere det, som %1$@ kender til dig samlet set ved at blokere vedkommendes trackere på mange andre sider.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.site.is.major.tracker.cta" = "Forstået";
 
 /* Parameters are domain names (strings) */
 "dax.onboarding.browsing.site.owned.by.major.tracker" = "Bemærk! Da %2$@ ejer %1$@, kan jeg ikke forhindre dem i at se din aktivitet her. \n\nMen gennemsøg sammen med mig, så kan jeg reducere det, som %2$@ kender til dig samlet set ved at blokere deres trackere på mange andre sider.";
@@ -1195,29 +1162,8 @@
 /* No comment provided by engineer. */
 "dax.onboarding.browsing.without.trackers" = "Når du trykker og ruller, blokerer jeg irriterende trackere.\n\nGå videre - fortsæt med at browse!";
 
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.without.trackers.cta" = "Forstået";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button" = "Personoplysninger kan opbygges i din browser. Adr. Brug Ildknappen til at brænde det hele væk. Prøv det nu! 👇";
-
-/* Cancel action */
-"dax.onboarding.fire.button.cancelAction" = "Annullér";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button.confirmAction" = "Luk faner og ryd data";
-
 /* Encourage user to add favorite site using the browsing menu. */
 "dax.onboarding.home.add.favorite" = "Besøg dine foretrukne websteder på et splitsekund!\n\nGå til et websted, du elsker. Tryk derefter på ikonet \"⋯\", og vælg *Føj til favoritter*.";
-
-/* Accessible version of dax.onboarding.home.add.favorite */
-"dax.onboarding.home.add.favorite.accessible" = "Besøg dine foretrukne websteder på et splitsekund! Besøg et af dine foretrukne websteder. Tryk derefter på det åbne menu-ikon, og vælg Føj til favoritter.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.home.initial" = "Prøv derefter at besøge et af dine foretrukne websteder!\n\nJeg blokerer trackere, så de ikke kan udspionere dig. Jeg opgraderer også din forbindelsessikkerhed, hvis det er muligt. 🔒";
-
-/* ad = advertisment */
-"dax.onboarding.home.subsequent" = "Du har den!\n\nHusk: hver gang du browser med mig, mister en uhyggelig annonce sine vinger. 👍";
 
 /* No comment provided by engineer. */
 "Debug" = "Fejlfinding";
@@ -1313,16 +1259,16 @@
 "duckai.preferences.text.markdown" = "Duck.ai er en valgfri funktion, der giver dig mulighed for at chatte anonymt med populære tredjeparts AI-chatmodeller. Dine chats bruges ikke til at træne AI.\n [Læs mere](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
-"duckai.settings.enable.address-bar-toggle" = "Vis Duck.ai i adresselinjen";
+"duckai.settings.enable.address-bar-toggle" = "Adresselinje";
 
 /* Toggle text to enable/disable AI Chat in the browsing menu */
-"duckai.settings.enable.browsing-menu-toggle" = "Vis Duck.ai i browsermenuen";
+"duckai.settings.enable.browsing-menu-toggle" = "Browsermenu";
 
 /* Toggle text to enable/disable Duck.ai in tab manager */
-"duckai.settings.enable.tab-switcher-toggle" = "Vis Duck.ai på faneskærmen";
+"duckai.settings.enable.tab-switcher-toggle" = "Faneskærm";
 
 /* Toggle text to enable/disable Duck.ai in voice search */
-"duckai.settings.enable.voice-search-toggle" = "Vis Duck.ai i stemmesøgning";
+"duckai.settings.enable.voice-search-toggle" = "Stemmesøgning";
 
 /* Settings screen cell text for AI Chat settings */
 "duckai.settings.title" = "Duck.ai";
@@ -1342,6 +1288,24 @@
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";
 
+/* Content for Duck Player opt-in message */
+"duckplayer.opt-in.message.content" = "Duck Player blokerer målrettede annoncer og holder din visningshistorik beskyttet.";
+
+/* Title for Duck Player opt-in message */
+"duckplayer.opt-in.message.title" = "YouTube, men med færre reklamer og mere privatliv";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.opt-in.pill.subtitle" = "Se uden målrettede reklamer";
+
+/* Button text to play a video in Duck Player */
+"duckplayer.opt-in.pill.title" = "Afspil denne video i Duck Player";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.pill.subtitle" = "Se uden målrettede reklamer";
+
+/* Button text to play a video in Duck Player */
+"duckplayer.play.in.duck.player" = "Afspil denne video i Duck Player";
+
 /* Body text for the modal feature explanation */
 "duckplayer.presentation.modal.body" = "Duck Player giver dig mulighed for at se YouTube uden målrettede annoncer i DuckDuckGo, og det, du ser, påvirker ikke dine anbefalinger.";
 
@@ -1353,6 +1317,18 @@
 
 /* Two line title (separated by \n) for the feature explanation */
 "duckplayer.presentation.modal.title.youtube" = "Drukner du i annoncer på YouTube? Ikke med Duck Player!";
+
+/* Button text to resume video in Duck Player */
+"duckplayer.resume.in.duck.player" = "Genoptag i Duck Player";
+
+/* Footer text explaining the auto-play toggle in Duck Player settings */
+"duckplayer.settings.autoplay.footer" = "Videoer, der åbnes i Duck Player, vil automatisk begynde at afspille. Slå dette fra, hvis du manuelt vil starte afspilning af videoer, der åbnes i Duck Player.";
+
+/* Label for the auto-play toggle in Duck Player settings */
+"duckplayer.settings.autoplay.label" = "Automatisk afspilning af videoer";
+
+/* Label for the experimental section in Duck Player settings */
+"duckplayer.settings.experimental.label" = "Eksperimentel";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "DuckDuckGo giver dig de Privacy Essentials, du har brug for for at beskytte dig selv, når du surfer på nettet.";
@@ -1369,8 +1345,59 @@
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.open-videos-in" = "Åbn YouTube-videoer i Duck Player";
 
+/* Footer text explaining the search results toggle in Duck Player settings */
+"duckplayer.settings.search.results.footer" = "Hvis du klikker på YouTube-videoer fra DuckDuckGo søgeresultater åbnes de i Duck Player.";
+
+/* Label for the search results toggle in Duck Player settings */
+"duckplayer.settings.search.results.label" = "DuckDuckGo Search-resultater";
+
+/* Message for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.message" = "Luk alle faner for, at denne indstilling kan træde i kraft.";
+
+/* OK button text for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.ok" = "Okay";
+
+/* Title for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.title" = "Vigtigt!";
+
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.title" = "Duck Player";
+
+/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
+"duckplayer.settings.toggle" = "Åbn YouTube-videoer her";
+
+/* Label for the Duck Player variant picker in Duck Player settings */
+"duckplayer.settings.variant.label" = "Duck Player-variant";
+
+/* Footer text explaining the YouTube.com option in Duck Player settings */
+"duckplayer.settings.youtube.footer" = "Når du klikker på YouTube-videoer, mens du browser på YouTube.com, åbnes de i Duck Player.";
+
+/* Label for the YouTube.com option in Duck Player settings */
+"duckplayer.settings.youtube.label" = "YouTube.com";
+
+/* Text for the ask mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.ask" = "Lad mig vælge";
+
+/* Text for the auto mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.auto" = "Åbn automatisk";
+
+/* Text for the never mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.never" = "Vis ikke";
+
+/* Button text to open Duck Player settings */
+"duckplayer.toast.open.settings" = "Åbn Indstillinger";
+
+/* Toast message informing user they can disable Duck Player in settings */
+"duckplayer.toast.turn.off.anytime" = "Du kan til enhver tid slå Duck Player fra";
+
+/* Button text to watch video on YouTube */
+"duckplayer.watch.on.youtube" = "Se på YouTube";
+
+/* Subtitle explaining how Duck Player protects privacy */
+"duckplayer.welcome.message.content" = "For at vende tilbage til YouTube, luk Duck Player.\nIkke til dig? Sluk det nedenfor!";
+
+/* Title for Duck Player welcome message highlighting privacy benefits */
+"duckplayer.welcome.message.text" = "Du ser i Duck Player!\nIngen målrettede annoncer her.";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "E-mailbeskyttelse";
@@ -2332,9 +2359,6 @@
 /* No comment provided by engineer. */
 "onboardingWelcomeHeader" = "Velkommen til DuckDuckGo!";
 
-/* No comment provided by engineer. */
-"Open tabs remain unaffected by this change.  Please close all tabs for this setting to take effect." = "Åbne faner påvirkes ikke af denne ændring.  Luk alle faner for, at denne indstilling kan træde i kraft.";
-
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Den app, der kræves for at åbne dette link, kan ikke findes";
 
@@ -2560,6 +2584,9 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Vis hele webstedsadressen";
 
+/* Settings screen text for showing AI Chat in various places in the app */
+"settings.aichat.shortcuts" = "Genveje";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Altid aktiv";
 
@@ -2631,6 +2658,9 @@
 
 /* Settings cell for Email Protection */
 "settings.emailProtection.description" = "Bloker e-mailtrackere, og skjul din adresse";
+
+/* Settings screen cell text for enabling AI chat */
+"settings.enable.aichat" = "Aktiver Duck.ai";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Aktivér Email Protection";
@@ -2760,6 +2790,9 @@
 
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe" = "Beskyt din forbindelse og identitet med Privacy Pro";
+
+/* Try Privacy Pro Free button text for privacy pro */
+"settings.subscription.try.free" = "Prøv Privacy Pro gratis";
 
 /* Privacy pro description subtitle in settings */
 "settings.subscription.us.description" = "Inkluderer vores VPN, Personal Information Removal og Identity Theft Restoration.";

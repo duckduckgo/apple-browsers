@@ -1,0 +1,7 @@
+appId: com.duckduckgo.mobile.ios
+---
+
+# Pull to refresh
+- swipe:  
+    start: 50%, 50%
+    end: 50%, 90%

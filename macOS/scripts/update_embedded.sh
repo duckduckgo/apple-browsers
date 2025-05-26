@@ -11,6 +11,30 @@ base_dir="${script_dir}/.."
 TDS_URL="https://staticcdn.duckduckgo.com/trackerblocking/v6/current/macos-tds.json"
 CONFIG_URL="https://staticcdn.duckduckgo.com/trackerblocking/config/v4/macos-config.json"
 
+DBP_BROKER_URL="https://dbp.duckduckgo.com/dbp/remote/v0?name=all.zip&type=combined"
+
+# Broker names must be unique across all files.
+checkUniqueBrokerNames() {
+	local dir=$1
+	local temp_file
+	temp_file=$(mktemp)
+	local error_found=0
+
+	find "$dir" -name '*.json' -exec jq -r '.name' {} \; > "$temp_file"
+
+	if sort "$temp_file" | uniq -d | grep -q .; then
+		printf "Error: Duplicate broker names found:\n"
+		sort "$temp_file" | uniq -d | while read -r name; do
+			printf "\nBroker name '%s' found in:\n" "$name"
+			find "$dir" -name '*.json' -exec sh -c 'if jq -e --arg name "$1" ".name == \$name" "$2" >/dev/null; then printf "  - %s\n" "$2"; fi' _ "$name" {} \;
+		done
+		error_found=1
+	fi
+
+	rm "$temp_file"
+	return $error_found
+}
+
 # If -c is passed, then check the URLs in the Configuration files are correct.
 if [ "$1" == "-c" ]; then
 	grep http "$base_dir/DuckDuckGo/Application/AppConfigurationURLProvider.swift" | while read -r line
@@ -85,9 +109,50 @@ performUpdate() {
 	rm -f "$temp_etag_filename"
 }
 
+performDBPBrokerUpdate() {
+	local file_url=$1
+	local target_dir=$2
+
+	printf "Processing DBP broker data: %s\n" "${file_url}"
+
+	local dbp_zip="dbp_broker_data.zip"
+	local dbp_extract_dir="dbp_broker_data"
+
+	if [ -z "$DBP_API_AUTH_TOKEN" ]; then
+		printf "Error: DBP_API_AUTH_TOKEN is not set. Aborting.\n"
+		exit 1
+	fi
+
+	printf "Downloading DBP broker JSONs...\n"
+	curl -s -H "Authorization: Bearer $DBP_API_AUTH_TOKEN" -L "$file_url" -o "$dbp_zip"
+
+	rm -rf "$dbp_extract_dir"
+	mkdir "$dbp_extract_dir"
+
+	unzip -o "$dbp_zip" -d "$dbp_extract_dir" >/dev/null
+
+	# Ignore unrelated files
+	find "$dbp_extract_dir" -type f -name '*_etag.json' -delete
+
+	find "$dbp_extract_dir" -name '*.json' -exec cp {} "$target_dir" \;
+
+	printf "DBP broker JSON files updated\n\n"
+
+	rm -rf "$dbp_zip" "$dbp_extract_dir"
+}
+
 performUpdate $TDS_URL \
 		"$base_dir/DuckDuckGo/ContentBlocker/AppTrackerDataSetProvider.swift" \
 		"$base_dir/DuckDuckGo/ContentBlocker/trackerData.json"
 performUpdate $CONFIG_URL \
 		"$base_dir/DuckDuckGo/ContentBlocker/AppPrivacyConfigurationDataProvider.swift" \
 		"$base_dir/DuckDuckGo/ContentBlocker/macos-config.json"
+
+performDBPBrokerUpdate "$DBP_BROKER_URL" \
+		"$base_dir/../SharedPackages/DataBrokerProtectionCore/Sources/DataBrokerProtectionCore/BundleResources/JSON/"
+
+# Check for unique broker names after all updates
+if ! checkUniqueBrokerNames "$base_dir/../SharedPackages/DataBrokerProtectionCore/Sources/DataBrokerProtectionCore/BundleResources/JSON/"; then
+	printf "Error: Duplicate broker names. Aborting.\n"
+	exit 1
+fi

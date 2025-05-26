@@ -97,7 +97,8 @@ final class SuggestionTableCellView: NSTableCellView {
             suffixTextField.stringValue = ""
         }
         setRemoveButtonHidden(true)
-        if case .openTab = suggestionViewModel.suggestion {
+        if case .openTab = suggestionViewModel.suggestion,
+           frame.size.width > 272 {
             switchToTabBox.isHidden = false
         } else {
             switchToTabBox.isHidden = true
@@ -122,14 +123,14 @@ final class SuggestionTableCellView: NSTableCellView {
             switchToTabBox.backgroundColor = .white.withAlphaComponent(0.09)
         } else {
             textField?.attributedStringValue = attributedString
-            textField?.textColor = visualStyle?.addressBarTextFieldColor ?? Constants.textColor
+            textField?.textColor = visualStyle?.colorsProvider.addressBarTextFieldColor ?? Constants.textColor
             switchToTabLabel.textColor = Constants.textColor
             switchToTabArrowView.contentTintColor = Constants.textColor
             switchToTabBox.backgroundColor = .buttonMouseOver
             if isBurner {
                 suffixTextField.textColor = Constants.burnerSuffixColor
             } else {
-                suffixTextField.textColor = visualStyle?.addressBarSuffixTextColor ?? Constants.suffixColor
+                suffixTextField.textColor = visualStyle?.colorsProvider.addressBarSuffixTextColor ?? Constants.suffixColor
             }
         }
     }

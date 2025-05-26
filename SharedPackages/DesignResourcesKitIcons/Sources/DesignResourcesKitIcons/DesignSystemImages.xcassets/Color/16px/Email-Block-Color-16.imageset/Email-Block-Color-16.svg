@@ -1,0 +1,18 @@
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <path fill="#F9BE1A" d="M13.238 1.7c1.028 0 1.862.834 1.862 1.862v4.516A5 5 0 0 0 7.56 14.3H2.763A1.862 1.862 0 0 1 .9 12.438V3.562C.9 2.534 1.734 1.7 2.762 1.7h10.476Z"/>
+  <path fill="#FFE8A3" d="m13.6 1.6 1.65 1.6-3.835 3.835A4.99 4.99 0 0 0 8.159 8.8H6.5L.8 3.2l1.6-1.6h11.2Z"/>
+  <path fill="url(#Email-Block-Color-16_svg__a)" d="M12 1a4 4 0 0 1 4 4v2.801c0 .384-.53.579-.827.335A5.079 5.079 0 0 0 15 8V5a2.99 2.99 0 0 0-.108-.797L12.033 7H12a4.99 4.99 0 0 0-1.697.295l4.132-4.045A2.995 2.995 0 0 0 12 2H4a2.996 2.996 0 0 0-2.437 1.25l4.338 4.246c.754.738 1.8.998 2.761.781-.346.311-.649.67-.898 1.066a3.992 3.992 0 0 1-1.545-.41l-3.86 4.578A2.998 2.998 0 0 0 4 14h3.417c.049.11.1.218.156.324.153.292-.044.676-.374.676H4a4 4 0 0 1-4-4V5a4 4 0 0 1 4-4h8ZM1.107 4.203C1.037 4.456 1 4.724 1 5v6c0 .69.233 1.325.625 1.832l3.757-4.457a4.062 4.062 0 0 1-.18-.165L1.107 4.203Z"/>
+  <path fill="#DE5833" d="M15.5 12a3.5 3.5 0 1 1-7 0 3.5 3.5 0 0 1 7 0Z"/>
+  <path fill="url(#Email-Block-Color-16_svg__b)" d="M15 12a3 3 0 1 0-6 0 3 3 0 0 0 6 0Zm1 0a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"/>
+  <path fill="#fff" d="m13.5 11.5.051.002a.5.5 0 0 1 0 .996l-.051.002h-3a.5.5 0 0 1 0-1h3Z"/>
+  <defs>
+    <linearGradient id="Email-Block-Color-16_svg__a" x1="8.001" x2="8.001" y1=".8" y2="15.2" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C18010"/>
+      <stop offset="1" stop-color="#92540C"/>
+    </linearGradient>
+    <linearGradient id="Email-Block-Color-16_svg__b" x1="12" x2="12" y1="8.5" y2="15.5" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#BC4726"/>
+      <stop offset="1" stop-color="#9A3216"/>
+    </linearGradient>
+  </defs>
+</svg>

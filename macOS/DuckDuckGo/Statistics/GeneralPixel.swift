@@ -263,6 +263,7 @@ enum GeneralPixel: PixelKitEventV2 {
 
     case assertionFailure(message: String, file: StaticString, line: UInt)
 
+    case keyValueFileStoreInitError
     case dbMakeDatabaseError(error: Error?)
     case dbContainerInitializationError(error: Error)
     case dbInitializationError(error: Error)
@@ -406,6 +407,9 @@ enum GeneralPixel: PixelKitEventV2 {
     case syncSettingsFailed
     case syncSettingsMetadataUpdateFailed
     case syncSettingsPatchCompressionFailed
+    case syncMigratedToFileStore
+    case syncFailedToMigrateToFileStore
+    case syncFailedToInitFileStore
     case syncSignupError(error: Error)
     case syncLoginError(error: Error)
     case syncLogoutError(error: Error)
@@ -836,6 +840,8 @@ enum GeneralPixel: PixelKitEventV2 {
         case .assertionFailure:
             return "assertion_failure"
 
+        case .keyValueFileStoreInitError:
+            return "key_value_file_store_init_error"
         case .dbMakeDatabaseError:
             return "database_make_database_error"
         case .dbContainerInitializationError:
@@ -1079,6 +1085,9 @@ enum GeneralPixel: PixelKitEventV2 {
         case .syncSettingsFailed: return "sync_settings_failed"
         case .syncSettingsMetadataUpdateFailed: return "sync_settings_metadata_update_failed"
         case .syncSettingsPatchCompressionFailed: return "sync_settings_patch_compression_failed"
+        case .syncMigratedToFileStore: return "sync_migrated_to_file_store"
+        case .syncFailedToMigrateToFileStore: return "sync_failed_to_migrate_to_file_store"
+        case .syncFailedToInitFileStore: return "sync_failed_to_init_file_store"
         case .syncSignupError: return "sync_signup_error"
         case .syncLoginError: return "sync_login_error"
         case .syncLogoutError: return "sync_logout_error"

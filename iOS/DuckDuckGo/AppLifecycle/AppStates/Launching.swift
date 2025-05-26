@@ -40,6 +40,7 @@ struct Launching: LaunchingHandling {
     private let voiceSearchHelper = VoiceSearchHelper()
     private let fireproofing = UserDefaultsFireproofing.xshared
     private let featureFlagger = AppDependencyProvider.shared.featureFlagger
+    private let contentScopeExperimentsManager = AppDependencyProvider.shared.contentScopeExperimentsManager
     private let aiChatSettings = AIChatSettings()
     private let privacyConfigurationManager = ContentBlocking.shared.privacyConfigurationManager
 
@@ -67,6 +68,7 @@ struct Launching: LaunchingHandling {
         // 2. To potentially complete their tasks before the app becomes visible to the user
         // This approach aims to optimize performance and ensure critical functionalities are ready ASAP
 
+        let appKeyValueFileStoreService = try AppKeyValueFileStoreService()
         let autofillService = AutofillService()
 
         let dbpService = DBPService(appDependencies: AppDependencyProvider.shared)
@@ -74,7 +76,8 @@ struct Launching: LaunchingHandling {
         let crashCollectionService = CrashCollectionService()
         let statisticsService = StatisticsService()
         let reportingService = ReportingService(fireproofing: fireproofing)
-        let syncService = SyncService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase)
+        let syncService = SyncService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
+                                      keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
         reportingService.syncService = syncService
         autofillService.syncService = syncService
         let remoteMessagingService = RemoteMessagingService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
@@ -99,6 +102,7 @@ struct Launching: LaunchingHandling {
                                               subscriptionService: subscriptionService,
                                               voiceSearchHelper: voiceSearchHelper,
                                               featureFlagger: featureFlagger,
+                                              contentScopeExperimentManager: contentScopeExperimentsManager,
                                               aiChatSettings: aiChatSettings,
                                               fireproofing: fireproofing,
                                               maliciousSiteProtectionService: maliciousSiteProtectionService,
@@ -138,7 +142,7 @@ struct Launching: LaunchingHandling {
                                crashCollectionService: crashCollectionService,
                                maliciousSiteProtectionService: maliciousSiteProtectionService,
                                statisticsService: statisticsService,
-                               keyValueFileStoreTestService: KeyValueFileStoreTestService())
+                               keyValueFileStoreService: appKeyValueFileStoreService)
 
         // MARK: - Final Configuration
         // Complete the configuration process and set up the main window

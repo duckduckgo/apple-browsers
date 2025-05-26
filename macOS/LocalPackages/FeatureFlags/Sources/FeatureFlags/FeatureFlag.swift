@@ -39,9 +39,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     case credentialsImportPromotionForExistingUsers
 
-    /// https://app.asana.com/0/0/1209150117333883/f
-    case networkProtectionAppExclusions
-
     /// https://app.asana.com/0/0/1209402073283584
     case networkProtectionAppStoreSysex
 
@@ -55,6 +52,7 @@ public enum FeatureFlag: String, CaseIterable {
     case historyView
 
     case autoUpdateInDEBUG
+    case updatesWontAutomaticallyRestartApp
 
     case autofillPartialFormSaves
     case autocompleteTabs
@@ -81,12 +79,24 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1209227311680179?focus=true
     case tabCrashRecovery
+
+    /// https://app.asana.com/1/137249556945/project/1148564399326804/task/1209499005452053?focus=true
+    case delayedWebviewPresentation
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1205508328452434?focus=true
+    case dbpRemoteBrokerDelivery
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210081345713964?focus=true
+    case syncSetupBarcodeIsUrlBased
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210081345713964?focus=true
+    case canScanUrlBasedSyncSetupBarcodes
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
     public var defaultValue: Bool {
         switch self {
-        case .failsafeExampleCrossPlatformFeature, .failsafeExamplePlatformSpecificSubfeature:
+        case .failsafeExampleCrossPlatformFeature, .failsafeExamplePlatformSpecificSubfeature, .canScanUrlBasedSyncSetupBarcodes:
             true
         default:
             false
@@ -112,7 +122,6 @@ extension FeatureFlag: FeatureFlagDescribing {
         switch self {
         case .autofillPartialFormSaves,
                 .autocompleteTabs,
-                .networkProtectionAppExclusions,
                 .networkProtectionAppStoreSysex,
                 .networkProtectionAppStoreSysexMessage,
                 .networkProtectionRiskyDomainsProtection,
@@ -120,6 +129,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .historyView,
                 .webExtensions,
                 .autoUpdateInDEBUG,
+                .updatesWontAutomaticallyRestartApp,
                 .popoverVsBannerExperiment,
                 .privacyProAuthV2,
                 .scamSiteProtection,
@@ -128,7 +138,10 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .failsafeExamplePlatformSpecificSubfeature,
                 .visualRefresh,
                 .tabCrashDebugging,
-                .tabCrashRecovery:
+                .tabCrashRecovery,
+                .delayedWebviewPresentation,
+                .syncSetupBarcodeIsUrlBased,
+                .canScanUrlBasedSyncSetupBarcodes:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -137,7 +150,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .contextualOnboarding,
                 .unknownUsernameCategorization,
                 .credentialsImportPromotionForExistingUsers,
-                .maliciousSiteProtection:
+                .maliciousSiteProtection,
+                .dbpRemoteBrokerDelivery:
             return false
         }
     }
@@ -160,8 +174,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.contextualOnboarding))
         case .credentialsImportPromotionForExistingUsers:
             return .remoteReleasable(.subfeature(AutofillSubfeature.credentialsImportPromotionForExistingUsers))
-        case .networkProtectionAppExclusions:
-            return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appExclusions))
         case .networkProtectionAppStoreSysex:
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtension))
         case .networkProtectionAppStoreSysexMessage:
@@ -170,6 +182,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(HTMLHistoryPageSubfeature.isLaunched))
         case .autoUpdateInDEBUG:
             return .disabled
+        case .updatesWontAutomaticallyRestartApp:
+            return .internalOnly()
         case .autofillPartialFormSaves:
             return .remoteReleasable(.subfeature(AutofillSubfeature.partialFormSaves))
         case .autocompleteTabs:
@@ -198,6 +212,14 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .tabCrashRecovery:
             return .remoteReleasable(.feature(.tabCrashRecovery))
+        case .delayedWebviewPresentation:
+            return .remoteReleasable(.feature(.delayedWebviewPresentation))
+        case .dbpRemoteBrokerDelivery:
+            return .remoteReleasable(.subfeature(DBPSubfeature.remoteBrokerDelivery))
+        case .syncSetupBarcodeIsUrlBased:
+            return .disabled
+        case .canScanUrlBasedSyncSetupBarcodes:
+            return .remoteReleasable(.subfeature(SyncSubfeature.canScanUrlBasedSyncSetupBarcodes))
         }
     }
 }

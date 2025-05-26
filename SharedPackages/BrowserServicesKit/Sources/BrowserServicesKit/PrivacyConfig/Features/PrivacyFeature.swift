@@ -77,6 +77,7 @@ public enum PrivacyFeature: String {
     // Demonstrative case for default value. Remove once a real-world feature is added
     case intentionallyLocalOnlyFeatureForTests
     case tabCrashRecovery
+    case delayedWebviewPresentation
 }
 
 /// An abstraction to be implemented by any "subfeature" of a given `PrivacyConfiguration` feature.
@@ -141,6 +142,7 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case waitlist
     case waitlistBetaActive
     case freemium
+    case remoteBrokerDelivery
 }
 
 public enum ContentScopeExperimentsSubfeatures: String, Equatable, PrivacySubfeature {
@@ -207,6 +209,7 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case level3AllowCreateAccount
     case seamlessAccountSwitching
     case exchangeKeysToSyncWithAnotherDevice
+    case canScanUrlBasedSyncSetupBarcodes
 }
 
 public enum AutoconsentSubfeature: String, PrivacySubfeature {
@@ -226,8 +229,9 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case useUnifiedFeedback
     case setAccessTokenCookieForSubscriptionDomains
     case privacyProFreeTrialJan25
-    case privacyProOnboardingCTAMarch25
     case privacyProAuthV2
+    case privacyProOnboardingPromotion
+    case privacyProFreeTrial
 }
 
 public enum SslCertificatesSubfeature: String, PrivacySubfeature {

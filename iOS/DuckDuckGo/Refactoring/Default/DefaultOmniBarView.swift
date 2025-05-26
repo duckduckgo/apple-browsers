@@ -35,6 +35,8 @@ public enum OmniBarIcon: String {
 
 final class DefaultOmniBarView: UIView {
 
+    // To be replaced with AppUserDefaults.Notifications.addressBarPositionChanged after release
+    // https://app.asana.com/1/137249556945/project/1207252092703676/task/1210323588862346?focus=true
     public static let didLayoutNotification = Notification.Name("com.duckduckgo.app.OmniBarDidLayout")
     
     @IBOutlet weak var searchLoupe: UIView!
@@ -51,6 +53,7 @@ final class DefaultOmniBarView: UIView {
     @IBOutlet weak var separatorView: UIView!
     @IBOutlet weak var cancelButton: UIButton!
     @IBOutlet weak var refreshButton: UIButton!
+    @IBOutlet weak var shareButton: UIButton!
     @IBOutlet weak var voiceSearchButton: UIButton!
     @IBOutlet weak var abortButton: UIButton!
 
@@ -90,6 +93,7 @@ final class DefaultOmniBarView: UIView {
     var onSettingsButtonPressed: (() -> Void)?
     var onCancelPressed: (() -> Void)?
     var onRefreshPressed: (() -> Void)?
+    var onSharePressed: (() -> Void)?
     var onBackPressed: (() -> Void)?
     var onForwardPressed: (() -> Void)?
     var onBookmarksPressed: (() -> Void)?
@@ -98,13 +102,12 @@ final class DefaultOmniBarView: UIView {
     var onSettingsLongPress: (() -> Void)?
     var onAccessoryLongPress: (() -> Void)?
 
-    var accessoryType: OmniBarAccessoryType = .share {
+    var accessoryType: OmniBarAccessoryType = .chat {
         didSet {
             switch accessoryType {
             case .chat:
                 accessoryButton.setImage(UIImage(named: "AIChat-24"), for: .normal)
-            case .share:
-                accessoryButton.setImage(UIImage(named: "Share-24"), for: .normal)
+                accessoryButton.accessibilityLabel = UserText.aiChatFeatureName
             }
         }
     }
@@ -250,9 +253,15 @@ final class DefaultOmniBarView: UIView {
         onDismissPressed?()
     }
 
+    @IBAction private func onSharePressed(_ sender: Any) {
+        onSharePressed?()
+    }
+
     override func layoutSubviews() {
         super.layoutSubviews()
-        NotificationCenter.default.post(name: DefaultOmniBarView.didLayoutNotification, object: self)
+        // To be removed in favor of AppUserDefaults.Notifications.addressBarPositionChanged subscription
+        // https://app.asana.com/1/137249556945/project/1207252092703676/task/1210323588862346?focus=true
+        NotificationCenter.default.post(name: DefaultOmniBarView.didLayoutNotification, object: self.frame.height)
     }
 }
 
@@ -331,6 +340,11 @@ extension DefaultOmniBarView {
     var isRefreshButtonHidden: Bool {
         get { refreshButton.isHidden }
         set { setVisibility(refreshButton, hidden: newValue) }
+    }
+
+    var isShareButtonHidden: Bool {
+        get { shareButton.isHidden }
+        set { setVisibility(shareButton, hidden: newValue) }
     }
 
     var isVoiceSearchButtonHidden: Bool {

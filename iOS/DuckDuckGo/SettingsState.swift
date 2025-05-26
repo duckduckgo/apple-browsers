@@ -48,6 +48,8 @@ struct SettingsState {
         var platform: PrivacyProSubscription.Platform
         var isShowingStripeView: Bool
         var isActiveTrialOffer: Bool
+        /// Whether the user is eligible for a free trial subscription offer
+        var isEligibleForTrialOffer: Bool
     }
 
     struct SyncSettings {
@@ -63,6 +65,7 @@ struct SettingsState {
     var addressBar: AddressBar
     var showsFullURL: Bool
     var isExperimentalThemingEnabled: Bool
+    var isExperimentalAIChatEnabled: Bool
 
     // Privacy properties
     var sendDoNotSell: Bool
@@ -106,8 +109,7 @@ struct SettingsState {
     var duckPlayerOpenInNewTab: Bool
     var duckPlayerOpenInNewTabEnabled: Bool
     
-    // Duck Player Native UI
-    var duckPlayerNativeUI: Bool
+    // Duck Player Native UI    
     var duckPlayerAutoplay: Bool
     var duckPlayerNativeUISERPEnabled: Bool
     var duckPlayerNativeYoutubeMode: NativeDuckPlayerYoutubeMode
@@ -121,6 +123,7 @@ struct SettingsState {
             addressBar: AddressBar(enabled: false, position: .top),
             showsFullURL: false,
             isExperimentalThemingEnabled: false,
+            isExperimentalAIChatEnabled: false,
             sendDoNotSell: true,
             autoconsentEnabled: false,
             autoclearDataEnabled: false,
@@ -148,14 +151,14 @@ struct SettingsState {
                                        entitlements: [],
                                        platform: .unknown,
                                        isShowingStripeView: false,
-                                       isActiveTrialOffer: false),
+                                       isActiveTrialOffer: false,
+                                       isEligibleForTrialOffer: false),
             sync: SyncSettings(enabled: false, title: ""),
             syncSource: nil,
             duckPlayerEnabled: false,
             duckPlayerMode: .alwaysAsk,
             duckPlayerOpenInNewTab: true,
             duckPlayerOpenInNewTabEnabled: false,
-            duckPlayerNativeUI: false,
             duckPlayerAutoplay: true,
             duckPlayerNativeUISERPEnabled: true,
             duckPlayerNativeYoutubeMode: .ask

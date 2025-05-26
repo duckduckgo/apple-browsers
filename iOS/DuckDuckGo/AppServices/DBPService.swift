@@ -20,6 +20,9 @@
 import DataBrokerProtectionCore
 import DataBrokerProtection_iOS
 import Core
+import Common
+import BrowserServicesKit
+import PixelKit
 
 final class DBPService: NSObject {
 
@@ -31,9 +34,20 @@ final class DBPService: NSObject {
                                                                           runTypeProvider: appDependencies.dbpSettings,
                                                                           isAuthV2Enabled: appDependencies.isAuthV2Enabled)
         let authManager = DataBrokerProtectionAuthenticationManager(subscriptionManager: dbpSubscriptionManager)
-        self.dbpIOSManager = DataBrokerProtectionIOSManagerProvider.iOSManager(authenticationManager: authManager,
-                                                                          privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager)
-        DataBrokerProtectionIOSManager.shared = self.dbpIOSManager
+        let featureFlagger = DBPFeatureFlagger(appDependencies: appDependencies)
+
+        if let pixelKit = PixelKit.shared {
+            self.dbpIOSManager = DataBrokerProtectionIOSManagerProvider.iOSManager(
+                authenticationManager: authManager,
+                privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
+                featureFlagger: featureFlagger,
+                pixelKit: pixelKit)
+
+            DataBrokerProtectionIOSManager.shared = self.dbpIOSManager
+        } else {
+            assertionFailure("PixelKit not set up")
+            self.dbpIOSManager = nil
+        }
 #else
         self.dbpIOSManager = nil
 #endif
@@ -42,5 +56,17 @@ final class DBPService: NSObject {
 
     func onBackground() {
         dbpIOSManager?.scheduleBGProcessingTask()
+    }
+}
+
+private final class DBPFeatureFlagger: RemoteBrokerDeliveryFeatureFlagging {
+    private let appDependencies: DependencyProvider
+
+    var isRemoteBrokerDeliveryFeatureOn: Bool {
+        appDependencies.featureFlagger.isFeatureOn(.dbpRemoteBrokerDelivery)
+    }
+
+    init(appDependencies: DependencyProvider) {
+        self.appDependencies = appDependencies
     }
 }

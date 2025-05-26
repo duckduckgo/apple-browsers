@@ -46,6 +46,8 @@ public final class ProgressViewController: NSViewController {
         hostingView.translatesAutoresizingMaskIntoConstraints = true
 
         view.addSubview(hostingView)
+
+        self.preferredContentSize = view.frame.size
     }
 
     public func updateTitleText(_ text: String) {

@@ -45,15 +45,7 @@ final class PrivacyDashboardViewController: NSViewController {
 
     public let rulesUpdateObserver = ContentBlockingRulesUpdateObserver()
 
-    private let brokenSiteReporter: BrokenSiteReporter = {
-        BrokenSiteReporter(pixelHandler: { parameters in
-            let privacyConfigurationManager = ContentBlocking.shared.privacyConfigurationManager
-            var updatedParameters = parameters
-            PixelKit.fire(NonStandardEvent(NonStandardPixel.brokenSiteReport),
-                          withAdditionalParameters: updatedParameters,
-                          allowedQueryReservedCharacters: BrokenSiteReport.allowedQueryReservedCharacters)
-        }, keyValueStoring: UserDefaults.standard)
-    }()
+    private let brokenSiteReporter: BrokenSiteReporter
 
     private let toggleProtectionsOffReporter: BrokenSiteReporter = {
         BrokenSiteReporter(pixelHandler: { parameters in
@@ -71,7 +63,12 @@ final class PrivacyDashboardViewController: NSViewController {
     }
     var sizeDelegate: PrivacyDashboardViewControllerSizeDelegate?
     private weak var tabViewModel: TabViewModel?
-    let featureFlagger: FeatureFlagger
+    private let contentScopeExperimentsManager: ContentScopeExperimentsManaging
+    private let pixelFiring: (
+        _ event: PixelKitEvent,
+        _ withAdditionalParameters: [String: String]?,
+        _ allowedQueryReservedCharacters: CharacterSet?
+    ) -> Void
 
     private let privacyDashboardEvents = EventMapping<PrivacyDashboardEvents> { event, _, parameters, _ in
         let domainEvent: NonStandardPixel
@@ -90,15 +87,41 @@ final class PrivacyDashboardViewController: NSViewController {
     init(privacyInfo: PrivacyInfo? = nil,
          entryPoint: PrivacyDashboardEntryPoint = .dashboard,
          privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
-         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger) {
+         contentScopeExperimentsManager: ContentScopeExperimentsManaging,
+         pixelFiring: @escaping (
+            _ event: PixelKitEvent,
+            _ withAdditionalParameters: [String: String]?,
+            _ allowedQueryReservedCharacters: CharacterSet?
+         ) -> Void = { event, parameters, allowedCharacters in
+             PixelKit.fire(
+                 event,
+                 withAdditionalParameters: parameters,
+                 allowedQueryReservedCharacters: allowedCharacters
+             )
+         }
+    ) {
         let toggleReportingConfiguration = ToggleReportingConfiguration(privacyConfigurationManager: privacyConfigurationManager)
         let toggleReportingFeature = ToggleReportingFeature(toggleReportingConfiguration: toggleReportingConfiguration)
         let toggleReportingManager = ToggleReportingManager(feature: toggleReportingFeature)
-        self.featureFlagger = featureFlagger
+        self.contentScopeExperimentsManager = contentScopeExperimentsManager
+        self.pixelFiring = pixelFiring
         self.privacyDashboardController = PrivacyDashboardController(privacyInfo: privacyInfo,
                                                                      entryPoint: entryPoint,
                                                                      toggleReportingManager: toggleReportingManager,
                                                                      eventMapping: privacyDashboardEvents)
+        self.brokenSiteReporter = BrokenSiteReporter(
+            pixelHandler: { parameters in
+                let updatedParameters = parameters // You can add logic here if needed
+
+                // Fire the real pixel via the injected closure
+                pixelFiring(
+                    NonStandardEvent(NonStandardPixel.brokenSiteReport),
+                    updatedParameters,
+                    BrokenSiteReport.allowedQueryReservedCharacters
+                )
+            },
+            keyValueStoring: UserDefaults.standard
+        )
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -109,9 +132,11 @@ final class PrivacyDashboardViewController: NSViewController {
     public func updateTabViewModel(_ tabViewModel: TabViewModel) {
         self.tabViewModel = tabViewModel
         privacyDashboardController.updatePrivacyInfo(tabViewModel.tab.privacyInfo)
+        guard AppVersion.runType != .unitTests else { return }
         rulesUpdateObserver.updateTabViewModel(tabViewModel, onPendingUpdates: { [weak self] in
             self?.sendPendingUpdates()
         })
+
         permissionHandler.updateTabViewModel(tabViewModel) { [weak self] allowedPermissions in
             self?.privacyDashboardController.allowedPermissions = allowedPermissions
         }
@@ -339,8 +364,8 @@ extension PrivacyDashboardViewController {
         }
         let blockedTrackerDomains = currentTab.privacyInfo?.trackerInfo.trackersBlocked.compactMap { $0.domain } ?? []
         let installedSurrogates = currentTab.privacyInfo?.trackerInfo.installedSurrogates.map {$0} ?? []
-        let ampURL = currentTab.linkProtection.lastAMPURLString ?? ""
-        let urlParametersRemoved = currentTab.linkProtection.urlParametersRemoved
+        let ampURL = currentTab.linkProtection?.lastAMPURLString ?? ""
+        let urlParametersRemoved = currentTab.linkProtection?.urlParametersRemoved ?? false
 
         // current domain's protection status
         let configuration = ContentBlocking.shared.privacyConfigurationManager.privacyConfig
@@ -357,13 +382,15 @@ extension PrivacyDashboardViewController {
             statusCodes = [httpStatusCode]
         }
 
-        var privacyExperimentCohorts: [String: String] {
+        var privacyExperimentCohorts: String {
             var experiments: [String: String] = [:]
-            for feature in ContentScopeExperimentsFeatureFlag.allCases {
-                let cohort = featureFlagger.resolveCohort(for: feature)
-                experiments[feature.rawValue] = cohort?.rawValue
+            for feature in contentScopeExperimentsManager.allActiveContentScopeExperiments {
+                experiments[feature.key] = feature.value.cohortID
             }
             return experiments
+                .sorted { $0.key < $1.key }
+                .map { "\($0.key):\($0.value)" }
+                .joined(separator: ",")
         }
 
         let isPirEnabled = await isPirEnabledAndUserHasProfile()

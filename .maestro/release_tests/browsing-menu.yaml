@@ -1,0 +1,26 @@
+# bookmarks.yaml
+appId: com.duckduckgo.mobile.ios
+tags:
+    - release
+
+---
+
+# Set up 
+- runFlow: 
+    file: ../shared/setup.yaml
+
+# Load Site
+- assertVisible:
+    id: "searchEntry"
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://privacy-test-pages.site"
+- pressKey: Enter
+
+- assertVisible: ".*Privacy Test Pages.*"
+ 
+# Reload page
+- assertVisible: "Browsing menu"
+- tapOn: "Browsing menu"
+- assertVisible: "Refresh"
+- tapOn: "Refresh"

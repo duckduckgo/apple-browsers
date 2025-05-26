@@ -51,6 +51,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     @IBOutlet weak var windowDraggingViewLeadingConstraint: NSLayoutConstraint!
     @IBOutlet weak var burnerWindowBackgroundView: NSImageView!
 
+    @IBOutlet weak var fireButtonWidthConstraint: NSLayoutConstraint!
+    @IBOutlet weak var fireButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var addTabButton: MouseOverButton!
 
     private var fireButtonMouseOverCancellable: AnyCancellable?
@@ -71,7 +73,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     private let bookmarkManager: BookmarkManager = LocalBookmarkManager.shared
-    private let visualStyleManager: VisualStyleManagerProviding
+    private let visualStyle: VisualStyleProviding
     private var pinnedTabsViewModel: PinnedTabsViewModel?
     private var pinnedTabsView: PinnedTabsView?
     private var pinnedTabsHostingView: PinnedTabsHostingView?
@@ -120,6 +122,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
 
     @IBOutlet weak var shadowView: TabShadowView!
 
+    @IBOutlet weak var leftSideStackLeadingConstraint: NSLayoutConstraint!
     @IBOutlet weak var rightSideStackView: NSStackView!
     var footerCurrentWidthDimension: CGFloat {
         if tabMode == .overflow {
@@ -146,7 +149,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         let tabBarActiveRemoteMessageModel = TabBarActiveRemoteMessage(activeRemoteMessageModel: activeRemoteMessageModel)
         self.tabBarRemoteMessageViewModel = TabBarRemoteMessageViewModel(activeRemoteMessageModel: tabBarActiveRemoteMessageModel,
                                                                          isFireWindow: tabCollectionViewModel.isBurner)
-        self.visualStyleManager = visualStyleManager
+        self.visualStyle = visualStyleManager.style
         if !tabCollectionViewModel.isBurner, let pinnedTabCollection = tabCollectionViewModel.pinnedTabsManager?.tabCollection {
             let pinnedTabsViewModel = PinnedTabsViewModel(collection: pinnedTabCollection)
             let pinnedTabsView = PinnedTabsView(model: pinnedTabsViewModel)
@@ -165,7 +168,8 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     override func viewDidLoad() {
-        backgroundColorView.backgroundColor = visualStyleManager.style.baseBackgroundColor
+        shadowView.isHidden = visualStyle.tabStyleProvider.shouldShowSShapedTab
+        backgroundColorView.backgroundColor = visualStyle.colorsProvider.baseBackgroundColor
         scrollView.updateScrollElasticity(with: tabMode)
         observeToScrollNotifications()
         subscribeToSelectionIndex()
@@ -186,11 +190,11 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         // https://app.asana.com/0/1177771139624306/1202033879471339
         addMouseMonitors()
         addTabBarRemoteMessageListener()
-        subscribeToChildWindows()
     }
 
     override func viewDidAppear() {
         enableScrollButtons()
+        subscribeToChildWindows()
     }
 
     override func viewWillDisappear() {
@@ -260,20 +264,25 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     private func setupFireButton() {
-        fireButton.image = visualStyleManager.style.fireButtonStyleProvider.icon
+        let style = visualStyle.iconsProvider.fireButtonStyleProvider
+        fireButton.image = style.icon
         fireButton.toolTip = UserText.clearBrowsingHistoryTooltip
-        fireButton.animationNames = MouseOverAnimationButton.AnimationNames(aqua: visualStyleManager.style.fireButtonStyleProvider.lightAnimation,
-                                                                            dark: visualStyleManager.style.fireButtonStyleProvider.darkAnimation)
+        fireButton.animationNames = MouseOverAnimationButton.AnimationNames(aqua: style.lightAnimation,
+                                                                            dark: style.darkAnimation)
         fireButton.sendAction(on: .leftMouseDown)
         fireButtonMouseOverCancellable = fireButton.publisher(for: \.isMouseOver)
             .first(where: { $0 }) // only interested when mouse is over
             .sink(receiveValue: { [weak self] _ in
                 self?.stopFireButtonPulseAnimation()
             })
+
+        fireButtonWidthConstraint.constant = visualStyle.fireButtonSize
+        fireButtonHeightConstraint.constant = visualStyle.fireButtonSize
     }
 
     private func setupAsBurnerWindowIfNeeded() {
         if tabCollectionViewModel.isBurner {
+            burnerWindowBackgroundView.image = visualStyle.fireWindowGraphic
             burnerWindowBackgroundView.isHidden = false
             fireButton.isAnimationEnabled = false
             fireButton.backgroundColor = NSColor.fireButtonRedBackground
@@ -300,11 +309,13 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         pinnedTabsHostingView.translatesAutoresizingMaskIntoConstraints = false
         pinnedTabsContainerView.addSubview(pinnedTabsHostingView)
 
+        let trailingConstant: CGFloat = visualStyle.tabStyleProvider.shouldShowSShapedTab ? 12 : 0
+
         NSLayoutConstraint.activate([
             pinnedTabsHostingView.leadingAnchor.constraint(equalTo: pinnedTabsContainerView.leadingAnchor),
             pinnedTabsHostingView.topAnchor.constraint(lessThanOrEqualTo: pinnedTabsContainerView.topAnchor),
             pinnedTabsHostingView.bottomAnchor.constraint(equalTo: pinnedTabsContainerView.bottomAnchor),
-            pinnedTabsHostingView.trailingAnchor.constraint(equalTo: pinnedTabsContainerView.trailingAnchor)
+            pinnedTabsHostingView.trailingAnchor.constraint(equalTo: pinnedTabsContainerView.trailingAnchor, constant: trailingConstant)
         ])
     }
 
@@ -598,7 +609,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             if dividedWidth < TabBarViewItem.Width.minimumSelected {
                 dividedWidth = (tabsWidth - TabBarViewItem.Width.minimumSelected) / (numberOfItems - 1)
             }
-            return min(TabBarViewItem.Width.maximum, max(minimumWidth, dividedWidth)).rounded()
+            return floor(min(TabBarViewItem.Width.maximum, max(minimumWidth, dividedWidth)))
         } else {
             return minimumWidth
         }
@@ -675,6 +686,14 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         rightShadowImageView.isHidden = scrollViewsAreHidden
         leftShadowImageView.isHidden = scrollViewsAreHidden
         addTabButton.isHidden = scrollViewsAreHidden
+
+        /// When we need to show the s-shaped tabs, given that the pinned tabs view is moved 12 points to the left
+        /// we needd to do the same with the left side scroll view (when on overflow), if not the pinned tabs container
+        /// will overlap the arrow button.
+        leftSideStackLeadingConstraint.constant =
+            visualStyle.tabStyleProvider.shouldShowSShapedTab
+            && !leftScrollButton.isHidden
+            && (pinnedTabsViewModel?.items.isEmpty == false) ? 12 : 0
     }
 
     /// Adjust the right edge scroll position to keep Selected Tab visible when resizing (or bring it into view expanding the right edge when it‘s behind the edge)
@@ -768,7 +787,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             return
         }
 
-        let pinnedTabWidth = visualStyleManager.style.tabStyleProvider.pinnedTabWidth
+        let pinnedTabWidth = visualStyle.tabStyleProvider.pinnedTabWidth
         let position = pinnedTabsContainerView.frame.minX + pinnedTabWidth * CGFloat(index)
         showTabPreview(for: tabViewModel, from: position)
     }
@@ -1033,6 +1052,15 @@ extension TabBarViewController: NSCollectionViewDelegateFlowLayout {
         return NSSize(width: self.currentTabWidth(selected: isItemSelected), height: standardTabHeight)
     }
 
+    func collectionView(_ collectionView: NSCollectionView, layout collectionViewLayout: NSCollectionViewLayout, insetForSectionAt section: Int) -> NSEdgeInsets {
+        if visualStyle.tabStyleProvider.shouldShowSShapedTab {
+            return NSEdgeInsets(top: 0, left: 12, bottom: 0, right: 0)
+        } else if let flowLayout = collectionViewLayout as? NSCollectionViewFlowLayout {
+            return flowLayout.sectionInset
+        } else {
+            return NSEdgeInsetsZero
+        }
+    }
 }
 
 // MARK: - NSCollectionViewDataSource
@@ -1173,6 +1201,7 @@ extension TabBarViewController: NSCollectionViewDelegate {
         defer {
             TabDragAndDropManager.shared.clear()
         }
+
         if case .private = operation {
             // Perform the drag and drop between multiple windows
             TabDragAndDropManager.shared.performDragAndDropIfNeeded()
@@ -1321,7 +1350,7 @@ extension TabBarViewController: TabBarViewItemDelegate {
             self.pinnedTabsDiscoveryPopover = popover
 
             guard let view = self.pinnedTabsHostingView else { return }
-            let pinnedTabWidth = visualStyleManager.style.tabStyleProvider.pinnedTabWidth
+            let pinnedTabWidth = visualStyle.tabStyleProvider.pinnedTabWidth
             popover.show(relativeTo: NSRect(x: view.bounds.maxX - pinnedTabWidth,
                                             y: view.bounds.minY,
                                             width: pinnedTabWidth,

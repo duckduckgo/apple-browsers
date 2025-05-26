@@ -307,7 +307,6 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
             lhs.isThisDevice
         })
     }
-
 }
 
 extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
@@ -319,8 +318,9 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
     func endConnectMode() {
         connector?.stopPolling()
         connector = nil
-        connectionController.stopConnectMode()
-        connectionController.stopExchangeMode()
+        Task {
+            await connectionController.cancel()
+        }
     }
 
     func startConnectMode() throws -> String {
@@ -359,7 +359,7 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
     
     func syncCodeEntered(code: String) async -> Bool {
         if featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) {
-            return await connectionController.syncCodeEntered(code: code)
+            return await connectionController.syncCodeEntered(code: code, canScanURLBarcodes: featureFlagger.isFeatureOn(.canScanUrlBasedSyncSetupBarcodes))
         } else {
             return await legacySyncCodeEntered(code: code)
         }

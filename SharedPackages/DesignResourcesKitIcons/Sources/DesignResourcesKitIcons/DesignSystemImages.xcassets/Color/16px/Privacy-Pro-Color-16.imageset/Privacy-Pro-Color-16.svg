@@ -1,0 +1,25 @@
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <g clip-path="url(#Privacy-Pro-Color-16_svg__a)">
+    <path fill="url(#Privacy-Pro-Color-16_svg__b)" d="M1 9.5v-6l1.5-1H5l3-2 3 2h2.5l1.5 1v6L12 14l-4 1.5L4 14 1 9.5Z"/>
+    <path fill="url(#Privacy-Pro-Color-16_svg__c)" d="m12 14-4 1V.5l3 2h2.5l1.5 1v6L12 14Z"/>
+    <path fill="url(#Privacy-Pro-Color-16_svg__d)" d="M6.012.761a2.876 2.876 0 0 1 3.952.04l.96.925c.289.28.705.382 1.091.271l.564-.16a2.625 2.625 0 0 1 3.348 2.448l.066 2.279.003.334a9 9 0 0 1-5.146 8.055l-1.562.74a3 3 0 0 1-2.576-.003l-1.56-.744A9 9 0 0 1 .03 6.61l.055-2.284a2.625 2.625 0 0 1 3.37-2.455l.417.124c.38.113.793.016 1.085-.254L6.012.76Zm3.258.759a1.875 1.875 0 0 0-2.577-.025l-1.057.979c-.55.51-1.329.693-2.049.48l-.416-.125a1.625 1.625 0 0 0-2.086 1.52L1.03 6.633a8 8 0 0 0 4.554 7.41l1.558.745.208.084a2 2 0 0 0 1.51-.083l1.562-.74a8 8 0 0 0 4.574-7.16l-.003-.296-.065-2.28a1.625 1.625 0 0 0-2.073-1.516l-.563.162c-.73.21-1.517.014-2.063-.513L9.27 1.52Z"/>
+    <path fill="#92540C" d="M8 4.567a.5.5 0 0 1 .5.5V7.5h2.433a.5.5 0 0 1 0 1H8.5v2.433a.5.5 0 0 1-1 0V8.5H5.067a.5.5 0 0 1 0-1H7.5V5.067a.5.5 0 0 1 .5-.5Z"/>
+  </g>
+  <defs>
+    <linearGradient id="Privacy-Pro-Color-16_svg__b" x1="8.004" x2="8.088" y1="1" y2="15.499" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF0C2"/>
+      <stop offset="1" stop-color="#FFDE7A"/>
+    </linearGradient>
+    <linearGradient id="Privacy-Pro-Color-16_svg__c" x1="11.5" x2="11.5" y1=".5" y2="15.483" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFDE7A"/>
+      <stop offset="1" stop-color="#FC3"/>
+    </linearGradient>
+    <linearGradient id="Privacy-Pro-Color-16_svg__d" x1="8" x2="8" y1="1" y2="15" gradientUnits="userSpaceOnUse">
+      <stop offset=".008" stop-color="#C18010"/>
+      <stop offset="1" stop-color="#92540C"/>
+    </linearGradient>
+    <clipPath id="Privacy-Pro-Color-16_svg__a">
+      <path fill="#fff" d="M0 0h16v16H0z"/>
+    </clipPath>
+  </defs>
+</svg>

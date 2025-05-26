@@ -175,6 +175,19 @@ jobs:
         name: DuckDuckGo-${{ env.release-type }}-dSYM-${{ env.app-version }}
         path: ${{ github.workspace }}/macOS/release/${{ steps.set-outputs.outputs.dsym-name }}
 
+    - name: Update Sentry grouping rules
+      if: ${{ env.upload-to == 's3' }}
+      id: update-grouping-rules
+      continue-on-error: true
+      env:
+        AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        AWS_DEFAULT_REGION: ${{ vars.AWS_DEFAULT_REGION }}
+        DSYM_S3_PATH: s3://${{ vars.DSYM_BUCKET_NAME }}/${{ vars.MACOS_DSYM_BUCKET_RULES_PREFIX }}/
+      run: |
+        bundle exec fastlane run generate_sentry_grouping_rules platform:macos output_file:grouping-rules.txt
+        aws s3 cp grouping-rules.txt ${{ env.DSYM_S3_PATH }}
+
     - name: Upload dSYMs to S3
       if: ${{ env.upload-to == 's3' }}
       id: upload-dsyms-to-s3

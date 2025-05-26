@@ -35,6 +35,7 @@ struct LargeOmniBarState {
         let showClear = false
         let showAbort = false
         let showRefresh = false
+        let showShare = false
         let showMenu = true
         let showSettings = false
         let showCancel = false
@@ -77,6 +78,7 @@ struct LargeOmniBarState {
         let showClear = true
         let showAbort = false
         let showRefresh = false
+        let showShare = false
         let showMenu = true
         let showSettings = false
         let showCancel = false
@@ -112,6 +114,7 @@ struct LargeOmniBarState {
         let showClear = false
         let showAbort = false
         let showRefresh = false
+        let showShare = false
         let showMenu = true
         let showSettings = false
         let showCancel = false
@@ -145,6 +148,7 @@ struct LargeOmniBarState {
         let showClear = false
         let showAbort = false
         let showRefresh = false
+        let showShare = false
         let showMenu = true
         let showSettings = false
         let showCancel = false
@@ -179,6 +183,7 @@ struct LargeOmniBarState {
         let showClear = true
         let showAbort = false
         let showRefresh = false
+        let showShare = false
         let showMenu = true
         let showSettings = false
         let showCancel = false
@@ -213,7 +218,10 @@ struct LargeOmniBarState {
         let showBackground = true
         let showClear = false
         var showAbort: Bool { isLoading }
-        var showRefresh: Bool { !isLoading }
+
+        // To be removed
+        var showRefresh: Bool { false }
+        var showShare: Bool { !isLoading }
         let showMenu = true
         let showSettings = false
         let showCancel = false

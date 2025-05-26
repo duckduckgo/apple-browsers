@@ -42,13 +42,15 @@ class DiagnosticReportDataSource: UIActivityItemProvider {
 
     weak var delegate: DiagnosticReportDataSourceDelegate?
     var fireproofing: Fireproofing?
+    var tabManager: TabManager?
 
     @UserDefaultsWrapper(key: .lastConfigurationRefreshDate, defaultValue: .distantPast)
     private var lastRefreshDate: Date
 
-    convenience init(delegate: DiagnosticReportDataSourceDelegate, fireproofing: Fireproofing) {
+    convenience init(delegate: DiagnosticReportDataSourceDelegate, tabManager: TabManager, fireproofing: Fireproofing) {
         self.init(placeholderItem: "")
         self.delegate = delegate
+        self.tabManager = tabManager
         self.fireproofing = fireproofing
     }
 
@@ -131,7 +133,7 @@ class DiagnosticReportDataSource: UIActivityItemProvider {
     func tabsReport() -> String {
         """
         ### Tabs Report
-        Tabs: \(TabsModel.get()?.count ?? -1)
+        Tabs: \(tabManager?.count ?? -1)
         """
     }
 

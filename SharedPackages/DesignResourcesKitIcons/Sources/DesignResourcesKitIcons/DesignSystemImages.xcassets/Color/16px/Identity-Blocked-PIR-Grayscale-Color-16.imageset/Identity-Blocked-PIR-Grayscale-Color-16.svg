@@ -1,0 +1,28 @@
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <g clip-path="url(#Identity-Blocked-PIR-Grayscale-Color-16_svg__a)">
+    <path fill="#DDD" d="M8 1a7 7 0 0 1 7 7 5 5 0 0 0-7 7A7 7 0 1 1 8 1Z"/>
+    <path fill="url(#Identity-Blocked-PIR-Grayscale-Color-16_svg__b)" d="M7.665 9.509A4.976 4.976 0 0 0 7 12a4.97 4.97 0 0 0 1 2.998c.055.073.2.547-.597.485a7.482 7.482 0 0 1-4.949-2.428c.86-1.992 2.854-3.422 5.211-3.546ZM8 3.5a2.5 2.5 0 0 1 2.083 3.88 5.006 5.006 0 0 0-1.606 1.073A2.5 2.5 0 1 1 8 3.5Z"/>
+    <path fill="url(#Identity-Blocked-PIR-Grayscale-Color-16_svg__c)" d="M8 0a8.001 8.001 0 0 1 7.99 7.603c.022.486-.6.69-.99.397a7 7 0 1 0-12.64 4.146 6.346 6.346 0 0 1 1.906-2.011l.191-.125A6.681 6.681 0 0 1 7.999 9c-.238.317-.44.662-.598 1.031a5.673 5.673 0 0 0-2.414.826l-.162.106a5.324 5.324 0 0 0-1.77 1.99A6.978 6.978 0 0 0 8 15c.293.39.09 1.012-.397.99A8.001 8.001 0 0 1 8 0Zm0 3a3 3 0 0 1 2.77 4.152A5.004 5.004 0 0 0 8 9a3 3 0 0 1 0-6Zm0 1a2 2 0 1 0 0 4 2 2 0 0 0 0-4Z"/>
+    <path fill="#888" d="M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"/>
+    <path fill="#666" d="M15 12a3 3 0 1 0-3 3v1a4 4 0 1 1 0-8 4 4 0 0 1 0 8v-1a3 3 0 0 0 3-3Z"/>
+    <path fill="url(#Identity-Blocked-PIR-Grayscale-Color-16_svg__d)" d="M15 12a3 3 0 1 0-3 3v1a4 4 0 1 1 0-8 4 4 0 0 1 0 8v-1a3 3 0 0 0 3-3Z"/>
+    <path fill="#fff" d="m13.5 11.5.051.002a.5.5 0 0 1 0 .996l-.051.002h-3a.5.5 0 0 1 0-1h3Z"/>
+  </g>
+  <defs>
+    <linearGradient id="Identity-Blocked-PIR-Grayscale-Color-16_svg__b" x1="8" x2="8" y1="3.5" y2="15.506" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#CCC"/>
+      <stop offset="1" stop-color="#888"/>
+    </linearGradient>
+    <linearGradient id="Identity-Blocked-PIR-Grayscale-Color-16_svg__c" x1="8" x2="8" y1="0" y2="16" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#888"/>
+      <stop offset="1" stop-color="#444"/>
+    </linearGradient>
+    <linearGradient id="Identity-Blocked-PIR-Grayscale-Color-16_svg__d" x1="12" x2="12" y1="8" y2="16" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#666"/>
+      <stop offset="1" stop-color="#444"/>
+    </linearGradient>
+    <clipPath id="Identity-Blocked-PIR-Grayscale-Color-16_svg__a">
+      <path fill="#fff" d="M0 0h16v16H0z"/>
+    </clipPath>
+  </defs>
+</svg>

@@ -17,8 +17,8 @@
 //
 
 import Foundation
-import DataBrokerProtection
-import DataBrokerProtectionShared
+import DataBrokerProtection_macOS
+import DataBrokerProtectionCore
 import Subscription
 
 final public class DataBrokerAuthenticationManagerBuilder {

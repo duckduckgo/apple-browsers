@@ -8,12 +8,13 @@ on:
   push:
     branches: [ main, "release/ios/**" ]
     paths:
-      - 'BrowserServicesKit/**'
+      - 'SharedPackages/**'
       - 'iOS/**'
   pull_request:
     paths:
       - '.github/**'
-      - 'BrowserServicesKit/**'
+      - '.xcode-version'
+      - 'SharedPackages/**'
       - 'iOS/**'
   workflow_call:
     inputs:
@@ -111,9 +112,10 @@ jobs:
       run: brew install xcbeautify
 
     - name: Select Xcode
-      run: sudo xcode-select -s /Applications/Xcode_$(<.xcode-version).app/Contents/Developer
+      uses: ./.github/actions/select-xcode-version
 
     - name: Build and test
+      id: run-unit-tests
       run: |
         set -o pipefail && xcodebuild test \
           -scheme "iOS Browser" \
@@ -124,6 +126,15 @@ jobs:
           DDG_SLOW_COMPILE_CHECK_THRESHOLD=250 \
           | tee xcodebuild.log \
           | xcbeautify --report junit --report-path . --junit-report-filename unittests.xml
+
+    - name: Upload JUnit XML as artifact
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: ios-unittests.xml
+        path: |
+          iOS/unittests.xml
+        retention-days: 7
 
     - name: Upload logs if workflow failed
       uses: actions/upload-artifact@v4
@@ -141,7 +152,7 @@ jobs:
         report_paths: iOS/unittests.xml
 
     - name: Update Asana with failed unit tests
-      if: always() # always run even if the previous step fails
+      if: always() && steps.run-unit-tests.outcome == 'failure'
       env:
         ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
         WORKFLOW_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
@@ -212,7 +223,7 @@ jobs:
       run: brew install xcbeautify
 
     - name: Select Xcode
-      run: sudo xcode-select -s /Applications/Xcode_$(<.xcode-version).app/Contents/Developer
+      uses: ./.github/actions/select-xcode-version
 
     - name: Prepare fastlane
       run: bundle install

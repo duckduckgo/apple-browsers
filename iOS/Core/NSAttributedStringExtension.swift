@@ -57,6 +57,21 @@ extension NSAttributedString {
         with(attribute: .foregroundColor, value: color)
     }
 
+    /// Returns a new `NSAttributedString` with the specified font applied to the given text, if found.
+    ///
+    /// - Parameters:
+    ///   - font: The `UIFont` to apply.
+    ///   - text: The substring within the current `NSAttributedString` to which the `font` should be applied.
+    /// - Returns: A new `NSAttributedString` with the `font` applied to occurrences of `text`, or the original string if `text` is not found.
+    public func withFont(_ font: UIFont, forText text: String) -> NSAttributedString {
+        let range = self.string.range(of: text)
+        guard range.location != NSNotFound else {
+            return self
+        }
+
+        return with(attribute: .font, value: font, in: range)
+    }
+
     /// Creates a new `NSAttributedString` initialized with the characters and attributes of the current attributed string plus the specified attribute
     ///
     /// - Parameters:

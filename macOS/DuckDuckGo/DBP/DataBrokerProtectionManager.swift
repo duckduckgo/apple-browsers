@@ -18,13 +18,14 @@
 
 import Foundation
 import BrowserServicesKit
-import DataBrokerProtection
-import DataBrokerProtectionShared
+import DataBrokerProtection_macOS
+import DataBrokerProtectionCore
 import PixelKit
 import LoginItems
 import Common
 import Freemium
 import NetworkProtectionIPC
+import Subscription
 
 public final class DataBrokerProtectionManager {
 
@@ -42,27 +43,61 @@ public final class DataBrokerProtectionManager {
         return freemiumDBPFirstProfileSavedNotifier
     }()
 
-    lazy var dataManager: DataBrokerProtectionDataManager = {
-        let fakeBroker = DataBrokerDebugFlagFakeBroker()
-        let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
-        let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
-
+    private lazy var sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>? = {
         guard let pixelKit = PixelKit.shared else {
-            fatalError("PixelKit not set up")
+            assertionFailure("PixelKit not set up")
+            return nil
         }
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .macOS)
+        return sharedPixelsHandler
+    }()
+
+    private lazy var vault: (any DataBrokerProtectionSecureVault)? = {
+        guard let sharedPixelsHandler else { return nil }
+
+        let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
+        let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
         let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler)
-        guard let vault = try? vaultFactory.makeVault(reporter: reporter) else {
-            fatalError("Failed to make secure storage vault")
+
+        let vault: DefaultDataBrokerProtectionSecureVault<DefaultDataBrokerProtectionDatabaseProvider>
+        do {
+            vault = try vaultFactory.makeVault(reporter: reporter)
+        } catch let error {
+            assertionFailure("Failed to make secure storage vault")
+            pixelHandler.fire(.mainAppSetUpFailedSecureVaultInitFailed(error: error))
+            return nil
         }
 
-        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker, pixelHandler: sharedPixelsHandler, vault: vault)
+        return vault
+    }()
 
+    lazy var dataManager: DataBrokerProtectionDataManager? = {
+        guard let vault, let sharedPixelsHandler, let brokerUpdater else { return nil }
+
+        let fakeBroker = DataBrokerDebugFlagFakeBroker()
+        let database = DataBrokerProtectionDatabase(fakeBrokerFlag: fakeBroker,
+                                                    pixelHandler: sharedPixelsHandler,
+                                                    vault: vault,
+                                                    localBrokerService: brokerUpdater)
         let dataManager = DataBrokerProtectionDataManager(database: database,
                                                           profileSavedNotifier: freemiumDBPFirstProfileSavedNotifier)
 
         dataManager.delegate = self
         return dataManager
+    }()
+
+    lazy var brokerUpdater: BrokerJSONServiceProvider? = {
+        guard let vault, let sharedPixelsHandler else { return nil }
+
+        let featureFlagger = DBPFeatureFlagger(featureFlagger: Application.appDelegate.featureFlagger)
+        let localBrokerService = LocalBrokerJSONService(vault: vault, pixelHandler: sharedPixelsHandler)
+        let brokerUpdater = RemoteBrokerJSONService(featureFlagger: featureFlagger,
+                                                    settings: DataBrokerProtectionSettings(defaults: .dbp),
+                                                    vault: vault,
+                                                    authenticationManager: authenticationManager,
+                                                    pixelHandler: sharedPixelsHandler,
+                                                    localBrokerProvider: localBrokerService)
+        return brokerUpdater
     }()
 
     private lazy var ipcClient: DataBrokerProtectionIPCClient = {
@@ -84,6 +119,12 @@ public final class DataBrokerProtectionManager {
 
     public func isUserAuthenticated() -> Bool {
         authenticationManager.isUserAuthenticated
+    }
+
+    public func checkForBrokerUpdates() {
+        Task {
+            try await brokerUpdater?.checkForUpdates()
+        }
     }
 
     // MARK: - Debugging Features

@@ -91,6 +91,12 @@ public class SyncErrorHandler: EventMapping<SyncError>, ObservableObject {
     static var errorHandlerMapping: Mapping {
         return { event, _, _, _ in
             switch event {
+            case .migratedToFileStore:
+                PixelKit.fire(DebugEvent(GeneralPixel.syncMigratedToFileStore))
+            case .failedToMigrateToFileStore:
+                PixelKit.fire(DebugEvent(GeneralPixel.syncFailedToMigrateToFileStore, error: event))
+            case .failedToInitFileStore:
+                PixelKit.fire(DebugEvent(GeneralPixel.syncFailedToInitFileStore, error: event))
             case .failedToReadSecureStore:
                 PixelKit.fire(DebugEvent(GeneralPixel.syncSecureStorageReadError(error: event), error: event))
             case .failedToDecodeSecureStoreData(let error):

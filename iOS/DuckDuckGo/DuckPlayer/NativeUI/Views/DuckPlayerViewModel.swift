@@ -49,6 +49,11 @@ final class DuckPlayerViewModel: ObservableObject {
         static let disabled = "0"
         // Used to set the start time of the video
         static let startParameter = "start"
+
+        // Used to force the player to use a stable version of the player
+        // https://app.asana.com/0/1204099484721401/1209718564423105/f
+        static let colorSchemeParameter = "color"
+        static let colorSchemeValue = "white"
     }
 
     /// A publisher to notify when Youtube navigation is required.
@@ -64,17 +69,18 @@ final class DuckPlayerViewModel: ObservableObject {
     /// The YouTube video ID to be played
     let videoID: String
 
+    /// DuckPlayer settings instance for accessing user preferences
+    private var duckPlayerSettings: DuckPlayerSettings
+
     /// Default parameters applied to all YouTube video URLs
     let defaultParameters: [String: String] = [
         Constants.relParameter: Constants.disabled,
-        Constants.playsInlineParameter: Constants.enabled
+        Constants.playsInlineParameter: Constants.enabled,
+        Constants.colorSchemeParameter: Constants.colorSchemeValue
     ]
 
     /// The referrer for the DuckPlayer
-    let source: DuckPlayer.VideoNavigationSource
-
-    /// App settings instance for accessing user preferences
-    var appSettings: AppSettings
+    var source: DuckPlayer.VideoNavigationSource
 
     /// Whether the "Watch in YouTube" button should be visible
     /// This is only shown for SERP videos as otherwise the video is already on YouTube    
@@ -88,6 +94,22 @@ final class DuckPlayerViewModel: ObservableObject {
         !isLandscape && showAutoOpenOnYoutubeToggle
     }
 
+    var shouldShowWelcomeMessage: Bool {
+        !isLandscape &&
+        !duckPlayerSettings.welcomeMessageShown &&
+        duckPlayerSettings.variant == .nativeOptOut &&
+        source == .youtube
+    }
+
+    // Controls visibility
+    var controlsVisible: Bool {
+        get {
+            duckPlayerSettings.duckPlayerControlsVisible
+        }
+        set {
+            duckPlayerSettings.duckPlayerControlsVisible = newValue
+        }
+    }
     var cancellables = Set<AnyCancellable>()
 
     /// The DuckPlayer instance
@@ -95,13 +117,13 @@ final class DuckPlayerViewModel: ObservableObject {
 
     /// The generated URL for the embedded YouTube player
     @Published private(set) var url: URL?
-    @Published private(set) var timestamp: TimeInterval = 0
+    @Published internal var timestamp: TimeInterval = 0
 
     // Automatic open on Youtube toggle
     @Published var showAutoOpenOnYoutubeToggle: Bool = true
     @Published var autoOpenOnYoutube: Bool = false {
         didSet {
-            appSettings.duckPlayerNativeYoutubeMode = autoOpenOnYoutube ? .auto : .ask
+            duckPlayerSettings.nativeUIYoutubeMode = autoOpenOnYoutube ? .auto : .ask
         }
     }
 
@@ -115,17 +137,26 @@ final class DuckPlayerViewModel: ObservableObject {
     private var webView: WKWebView?
     private var coordinator: DuckPlayerWebView.Coordinator?
 
+    // Pixel handling
+    var pixelHandler: DuckPlayerPixelFiring.Type
+
     /// Creates a new DuckPlayerViewModel instance
     /// - Parameters:
     ///   - videoID: The YouTube video ID to be played
     ///   - appSettings: App settings instance for accessing user preferences
-    init(videoID: String, timestamp: TimeInterval? = nil, appSettings: AppSettings = AppDependencyProvider.shared.appSettings, source: DuckPlayer.VideoNavigationSource = .other) {
+    init(videoID: String,
+         timestamp: TimeInterval? = nil,
+         duckPlayerSettings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
+         source: DuckPlayer.VideoNavigationSource = .other,
+         pixelHandler: DuckPlayerPixelFiring.Type = DuckPlayerPixelHandler.self) {
         self.videoID = videoID
-        self.appSettings = appSettings
+        self.duckPlayerSettings = duckPlayerSettings
         self.timestamp = timestamp ?? 0
         self.source = source
-        self.autoOpenOnYoutube = appSettings.duckPlayerNativeYoutubeMode == .auto
+        self.autoOpenOnYoutube = duckPlayerSettings.nativeUIYoutubeMode == .auto
+        self.pixelHandler = pixelHandler
         self.url = getVideoURL()
+
     }
 
     /// Gets the current video URL with the current timestamp
@@ -150,6 +181,7 @@ final class DuckPlayerViewModel: ObservableObject {
 
     /// Opens the current video in the YouTube app or website
     func openInYouTube() {
+        pixelHandler.fire(.duckPlayerNativeWatchOnYoutube)
         youtubeNavigationRequestPublisher.send(videoID)
     }
 
@@ -188,7 +220,7 @@ final class DuckPlayerViewModel: ObservableObject {
             if newIsLandscape {
                 // Hide toggle in landscape mode
                 showAutoOpenOnYoutubeToggle = false
-            } else if !showAutoOpenOnYoutubeToggle && !autoOpenOnYoutube {
+            } else if !showAutoOpenOnYoutubeToggle {
                 // Restore toggle visibility in portrait mode if it wasn't explicitly hidden
                 // and auto-open is not enabled
                 showAutoOpenOnYoutubeToggle = true
@@ -198,6 +230,7 @@ final class DuckPlayerViewModel: ObservableObject {
 
     // Opens the settings view
     func openSettings() {
+        pixelHandler.fire(.duckPlayerNativeDuckPlayerSettingsOpened)
         settingsRequestPublisher.send()
     }
 
@@ -229,10 +262,10 @@ final class DuckPlayerViewModel: ObservableObject {
     }
 
     // MARK: - Public Methods
-    
-    /// Hides the auto-open toggle UI element
-    func hideAutoOpenToggle() {
-        showAutoOpenOnYoutubeToggle = false
+
+    /// Hides the welcome message
+    func hideWelcomeMessage() {
+        duckPlayerSettings.welcomeMessageShown = true
     }
 
     // MARK: - Private Methods
@@ -246,7 +279,7 @@ final class DuckPlayerViewModel: ObservableObject {
     /// - Returns: A URL configured for the embedded YouTube player with privacy-preserving parameters
     private func getVideoURLWithParameters() -> URL? {
         var parameters = defaultParameters
-        parameters[Constants.autoplayParameter] = appSettings.duckPlayerAutoplay ? Constants.enabled : Constants.disabled
+        parameters[Constants.autoplayParameter] = duckPlayerSettings.autoplay ? Constants.enabled : Constants.disabled
         let queryString = parameters.map { "\($0.key)=\($0.value)" }.joined(separator: "&")
         return URL(string: "\(Constants.baseURL)\(videoID)?\(queryString)")
     }

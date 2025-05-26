@@ -443,6 +443,4 @@ final class MockFreemiumDBPExperimentManager: FreemiumDBPPixelExperimentManaging
     var pixelParameters: [String: String]?
 
     func assignUserToCohort() {}
-
-    func sendOneTimeCohortSubscriptionStatusPixel() {}
 }

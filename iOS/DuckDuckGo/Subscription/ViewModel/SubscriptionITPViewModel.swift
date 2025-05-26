@@ -29,7 +29,7 @@ final class SubscriptionITPViewModel: ObservableObject {
     var subFeature: IdentityTheftRestorationPagesFeature?
     let manageITPURL: URL
     var viewTitle = UserText.settingsPProITRTitle
-    
+
     enum Constants {
         static let downloadableContent = ["application/pdf"]
         static let blankURL = "about:blank"
@@ -60,12 +60,13 @@ final class SubscriptionITPViewModel: ObservableObject {
 
     private let webViewSettings: AsyncHeadlessWebViewSettings
 
-    init(subscriptionManager: any SubscriptionAuthV1toV2Bridge, isInternalUser: Bool = false) {
+    init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
+         isInternalUser: Bool = false,
+         isAuthV2Enabled: Bool) {
         self.itpURL = subscriptionManager.url(for: .identityTheftRestoration)
         self.manageITPURL = self.itpURL
         self.userScript = IdentityTheftRestorationPagesUserScript()
-        self.subFeature = IdentityTheftRestorationPagesFeature(subscriptionManager: subscriptionManager)
-
+        self.subFeature = IdentityTheftRestorationPagesFeature(subscriptionManager: subscriptionManager, isAuthV2Enabled: isAuthV2Enabled)
         let allowedDomains = AsyncHeadlessWebViewSettings.makeAllowedDomains(baseURL: subscriptionManager.url(for: .identityTheftRestoration),
                                                                              isInternalUser: isInternalUser)
 

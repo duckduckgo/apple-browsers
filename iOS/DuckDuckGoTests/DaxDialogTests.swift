@@ -152,7 +152,6 @@ final class DaxDialog: XCTestCase {
 
         // THEN
         XCTAssertEqual(result.type, .withOneTracker)
-        XCTAssertFalse(result.highlightAddressBar)
     }
 
     func testWhenBrowsingSpecIsWithMultipleTrackerThenHighlightAddressBarIsFalse() throws {
@@ -169,7 +168,6 @@ final class DaxDialog: XCTestCase {
 
         // THEN
         XCTAssertEqual(result.type, .withMultipleTrackers)
-        XCTAssertFalse(result.highlightAddressBar)
     }
 
     func testWhenURLIsDuckDuckGoSearchAndSearchDialogHasNotBeenSeenThenReturnSpecTypeAfterSearch() {
@@ -736,19 +734,18 @@ final class DaxDialog: XCTestCase {
 
     func testWhenNextHomeScreenMessageNewIsCalled_ThenLastVisitedOnboardingWebsiteAndLastShownDaxDialogAreSetToNil() {
         // GIVEN
-        let settings = MockDaxDialogsSettings()
-        settings.lastShownContextualOnboardingDialogType = DaxDialogs.BrowsingSpec.fire.type.rawValue
-        settings.lastVisitedOnboardingWebsiteURLPath = "https://www.example.com"
-        let sut = makeSUT(settings: settings)
-        XCTAssertNotNil(settings.lastShownContextualOnboardingDialogType)
-        XCTAssertNotNil(settings.lastVisitedOnboardingWebsiteURLPath)
+        let sut = makeSUT(settings: MockDaxDialogsSettings())
+        sut.setLastShownDialog(type: DaxDialogs.BrowsingSpec.fire.type)
+        sut.setLastVisitedURL(URL(string: "https://www.example.com"))
+        XCTAssertNotNil(sut.lastShownDaxDialogType)
+        XCTAssertNotNil(sut.lastVisitedOnboardingWebsiteURL)
 
         // WHEN
         _ = sut.nextHomeScreenMessageNew()
 
         // THEN
-        XCTAssertNil(settings.lastShownContextualOnboardingDialogType)
-        XCTAssertNil(settings.lastVisitedOnboardingWebsiteURLPath)
+        XCTAssertNil(sut.lastShownDaxDialogType)
+        XCTAssertNil(sut.lastVisitedOnboardingWebsiteURL)
     }
 
     func testWhenEnableAddFavoritesFlowIsCalled_ThenIsAddFavoriteFlowIsTrue() {
@@ -821,63 +818,59 @@ final class DaxDialog: XCTestCase {
 
     func testWhenDismissIsCalled_ThenLastVisitedOnboardingWebsiteAndLastShownDaxDialogAreSetToNil() {
         // GIVEN
-        let settings = MockDaxDialogsSettings()
-        settings.lastShownContextualOnboardingDialogType = DaxDialogs.BrowsingSpec.fire.type.rawValue
-        settings.lastVisitedOnboardingWebsiteURLPath = "https://www.example.com"
-        let sut = makeSUT(settings: settings)
-        XCTAssertNotNil(settings.lastShownContextualOnboardingDialogType)
-        XCTAssertNotNil(settings.lastVisitedOnboardingWebsiteURLPath)
+        let sut = makeSUT(settings: MockDaxDialogsSettings())
+        sut.setLastShownDialog(type: DaxDialogs.BrowsingSpec.fire.type)
+        sut.setLastVisitedURL(URL(string: "https://www.example.com"))
+        XCTAssertNotNil(sut.lastShownDaxDialogType)
+        XCTAssertNotNil(sut.lastVisitedOnboardingWebsiteURL)
 
         // WHEN
         sut.dismiss()
 
         // THEN
-        XCTAssertNil(settings.lastShownContextualOnboardingDialogType)
-        XCTAssertNil(settings.lastVisitedOnboardingWebsiteURLPath)
+        XCTAssertNil(sut.lastShownDaxDialogType)
+        XCTAssertNil(sut.lastVisitedOnboardingWebsiteURL)
     }
 
     func testWhenSetDaxDialogDismiss_ThenLastVisitedOnboardingWebsiteAndLastShownDaxDialogAreSetToNil() {
         // GIVEN
-        let settings = MockDaxDialogsSettings()
-        settings.lastShownContextualOnboardingDialogType = DaxDialogs.BrowsingSpec.fire.type.rawValue
-        settings.lastVisitedOnboardingWebsiteURLPath = "https://www.example.com"
-        let sut = makeSUT(settings: settings)
-        XCTAssertNotNil(settings.lastShownContextualOnboardingDialogType)
-        XCTAssertNotNil(settings.lastVisitedOnboardingWebsiteURLPath)
+        let sut = makeSUT(settings: MockDaxDialogsSettings())
+        sut.setLastShownDialog(type: DaxDialogs.BrowsingSpec.fire.type)
+        sut.setLastVisitedURL(URL(string: "https://www.example.com"))
+        XCTAssertNotNil(sut.lastShownDaxDialogType)
+        XCTAssertNotNil(sut.lastVisitedOnboardingWebsiteURL)
 
         // WHEN
         sut.setDaxDialogDismiss()
 
         // THEN
-        XCTAssertNil(settings.lastShownContextualOnboardingDialogType)
-        XCTAssertNil(settings.lastVisitedOnboardingWebsiteURLPath)
+        XCTAssertNil(sut.lastShownDaxDialogType)
+        XCTAssertNil(sut.lastVisitedOnboardingWebsiteURL)
     }
 
     func testWhenClearedBrowserDataIsCalled_ThenLastVisitedOnboardingWebsiteAndLastShownDaxDialogAreSetToNil() throws {
         // GIVEN
-        let settings = MockDaxDialogsSettings()
-        settings.lastShownContextualOnboardingDialogType = DaxDialogs.BrowsingSpec.fire.type.rawValue
-        settings.lastVisitedOnboardingWebsiteURLPath = "https://www.example.com"
-        let sut = makeSUT(settings: settings)
-        XCTAssertNotNil(settings.lastShownContextualOnboardingDialogType)
-        XCTAssertNotNil(settings.lastVisitedOnboardingWebsiteURLPath)
+        let sut = makeSUT(settings: MockDaxDialogsSettings())
+        sut.setLastShownDialog(type: DaxDialogs.BrowsingSpec.fire.type)
+        sut.setLastVisitedURL(URL(string: "https://www.example.com"))
+        XCTAssertNotNil(sut.lastShownDaxDialogType)
+        XCTAssertNotNil(sut.lastVisitedOnboardingWebsiteURL)
 
         // WHEN
         sut.clearedBrowserData()
 
         // THEN
-        XCTAssertNil(settings.lastShownContextualOnboardingDialogType)
-        XCTAssertNil(settings.lastVisitedOnboardingWebsiteURLPath)
+        XCTAssertNil(sut.lastShownDaxDialogType)
+        XCTAssertNil(sut.lastVisitedOnboardingWebsiteURL)
     }
 
     func testWhenIsEnabledIsFalse_AndReloadWebsite_ThenReturnNilBrowsingSpec() throws {
         // GIVEN
         let lastVisitedWebsitePath = "https://www.example.com"
         let lastVisitedWebsiteURL = try XCTUnwrap(URL(string: lastVisitedWebsitePath))
-        let settings = MockDaxDialogsSettings()
-        settings.lastShownContextualOnboardingDialogType = DaxDialogs.BrowsingSpec.fire.type.rawValue
-        settings.lastVisitedOnboardingWebsiteURLPath = lastVisitedWebsitePath
-        let sut = makeSUT(settings: settings)
+        let sut = makeSUT(settings: MockDaxDialogsSettings())
+        sut.setLastShownDialog(type: DaxDialogs.BrowsingSpec.fire.type)
+        sut.setLastVisitedURL(lastVisitedWebsiteURL)
         sut.dismiss()
 
         // WHEN
@@ -900,13 +893,14 @@ final class DaxDialog: XCTestCase {
 
     // MARK: - States
 
-    func testWhenUserIsInTreatmentCohortAndHasNotSeenPromotion_OnNextHomeScreenMessageNew_ReturnsPrivacyProPromotion() {
+    func testWhenShouldDisplayPromotionAndHasNotSeenPromotion_OnNextHomeScreenMessageNew_ReturnsPrivacyProPromotion() {
         // GIVEN
         let settings = MockDaxDialogsSettings()
         settings.browsingFinalDialogShown = true
         settings.privacyProPromotionDialogShown = false
-        let mockExperiment = MockOnboardingPrivacyProPromoExperimenting(cohort: .treatment)
-        let sut = makeSUT(settings: settings, onboardingPrivacyProPromoExperiment: mockExperiment)
+        let mockOnboardingPromotionHelper = MockOnboardingPrivacyProPromotionHelper()
+        mockOnboardingPromotionHelper.shouldDisplayValue = true
+        let sut = makeSUT(settings: settings, onboardingPrivacyProPromotionHelper: mockOnboardingPromotionHelper)
 
         // WHEN
         let result = sut.nextHomeScreenMessageNew()
@@ -915,13 +909,14 @@ final class DaxDialog: XCTestCase {
         XCTAssertEqual(result, .privacyProPromotion)
     }
 
-    func testWhenUserIsInControlCohort_OnNextHomeScreenMessageNew_DoesNotReturnPrivacyProPromotion() {
+    func testWhenShouldNotDisplayPromotion_OnNextHomeScreenMessageNew_DoesNotReturnPrivacyProPromotion() {
         // GIVEN
         let settings = MockDaxDialogsSettings()
         settings.browsingFinalDialogShown = true
         settings.privacyProPromotionDialogShown = false
-        let mockExperiment = MockOnboardingPrivacyProPromoExperimenting(cohort: .control)
-        let sut = makeSUT(settings: settings, onboardingPrivacyProPromoExperiment: mockExperiment)
+        let mockOnboardingPromotionHelper = MockOnboardingPrivacyProPromotionHelper()
+        mockOnboardingPromotionHelper.shouldDisplayValue = false
+        let sut = makeSUT(settings: settings, onboardingPrivacyProPromotionHelper: mockOnboardingPromotionHelper)
 
         // WHEN
         let result = sut.nextHomeScreenMessageNew()
@@ -935,8 +930,9 @@ final class DaxDialog: XCTestCase {
         let settings = MockDaxDialogsSettings()
         settings.browsingFinalDialogShown = true
         settings.privacyProPromotionDialogShown = true
-        let mockExperiment = MockOnboardingPrivacyProPromoExperimenting(cohort: .treatment)
-        let sut = makeSUT(settings: settings, onboardingPrivacyProPromoExperiment: mockExperiment)
+        let mockOnboardingPromotionHelper = MockOnboardingPrivacyProPromotionHelper()
+        mockOnboardingPromotionHelper.shouldDisplayValue = true
+        let sut = makeSUT(settings: settings, onboardingPrivacyProPromotionHelper: mockOnboardingPromotionHelper)
 
         // WHEN
         let result = sut.nextHomeScreenMessageNew()
@@ -950,8 +946,9 @@ final class DaxDialog: XCTestCase {
         let settings = MockDaxDialogsSettings()
         settings.browsingFinalDialogShown = false
         settings.privacyProPromotionDialogShown = false
-        let mockExperiment = MockOnboardingPrivacyProPromoExperimenting(cohort: .treatment)
-        let sut = makeSUT(settings: settings, onboardingPrivacyProPromoExperiment: mockExperiment)
+        let mockOnboardingPromotionHelper = MockOnboardingPrivacyProPromotionHelper()
+        mockOnboardingPromotionHelper.shouldDisplayValue = true
+        let sut = makeSUT(settings: settings, onboardingPrivacyProPromotionHelper: mockOnboardingPromotionHelper)
 
         // WHEN
         let result = sut.nextHomeScreenMessageNew()
@@ -991,8 +988,9 @@ final class DaxDialog: XCTestCase {
         let settings = MockDaxDialogsSettings()
         settings.browsingFinalDialogShown = true
         settings.privacyProPromotionDialogShown = false
-        let mockExperiment = MockOnboardingPrivacyProPromoExperimenting(cohort: .treatment)
-        let sut = makeSUT(settings: settings, onboardingPrivacyProPromoExperiment: mockExperiment)
+        let mockOnboardingPromotionHelper = MockOnboardingPrivacyProPromotionHelper()
+        mockOnboardingPromotionHelper.shouldDisplayValue = true
+        let sut = makeSUT(settings: settings, onboardingPrivacyProPromotionHelper: mockOnboardingPromotionHelper)
 
         // WHEN
         _ = sut.nextHomeScreenMessageNew()
@@ -1027,6 +1025,92 @@ final class DaxDialog: XCTestCase {
         XCTAssertFalse(result)
     }
 
+    func testWhenURLVisitedIsMajorTracker_ThenSetTryVisitSuggestionSeenTrue() {
+        // GIVEN
+        let settings = MockDaxDialogsSettings()
+        settings.browsingMajorTrackingSiteShown = false
+        let sut = makeSUT(settings: settings)
+        let privacyInfo = makePrivacyInfo(url: URLs.facebook)
+        XCTAssertFalse(settings.tryVisitASiteShown)
+
+        // WHEN
+        let result = sut.nextBrowsingMessageIfShouldShow(for: privacyInfo)
+
+        // THEN
+        XCTAssertEqual(result?.type, .siteIsMajorTracker)
+        XCTAssertTrue(settings.tryVisitASiteShown)
+    }
+
+    func testWhenURLVisitedIsOwnedByMajorTracker_ThenSetTryVisitSuggestionSeenTrue() {
+        // GIVEN
+        let settings = MockDaxDialogsSettings()
+        settings.browsingMajorTrackingSiteShown = false
+        let sut = makeSUT(settings: settings)
+        let privacyInfo = makePrivacyInfo(url: URLs.ownedByFacebook)
+        XCTAssertFalse(settings.tryVisitASiteShown)
+
+        // WHEN
+        let result = sut.nextBrowsingMessageIfShouldShow(for: privacyInfo)
+
+        // THEN
+        XCTAssertEqual(result?.type, .siteOwnedByMajorTracker)
+        XCTAssertTrue(settings.tryVisitASiteShown)
+    }
+
+    func testWhenURLVisitedHasMultipleTrackers_ThenSetTryVisitSuggestionSeenFalse() {
+        // GIVEN
+        let settings = MockDaxDialogsSettings()
+        settings.browsingWithTrackersShown = false
+        let sut = makeSUT(settings: settings)
+        let privacyInfo = makePrivacyInfo(url: URLs.example)
+        [URLs.google, URLs.amazon].forEach { tracker in
+            let detectedTracker = detectedTrackerFrom(tracker, pageUrl: URLs.example.absoluteString)
+            privacyInfo.trackerInfo.addDetectedTracker(detectedTracker, onPageWithURL: URLs.example)
+        }
+        XCTAssertFalse(settings.tryVisitASiteShown)
+
+        // WHEN
+        let result = sut.nextBrowsingMessageIfShouldShow(for: privacyInfo)
+
+        // THEN
+        XCTAssertEqual(result?.type, .withMultipleTrackers)
+        XCTAssertTrue(settings.tryVisitASiteShown)
+    }
+
+    func testWhenURLVisitedHasOneTracker_ThenSetTryVisitSuggestionSeenFalse() {
+        // GIVEN
+        let settings = MockDaxDialogsSettings()
+        settings.browsingWithTrackersShown = false
+        let sut = makeSUT(settings: settings)
+        let privacyInfo = makePrivacyInfo(url: URLs.example)
+        let detectedTracker = detectedTrackerFrom(URLs.google, pageUrl: URLs.example.absoluteString)
+        privacyInfo.trackerInfo.addDetectedTracker(detectedTracker, onPageWithURL: URLs.example)
+        XCTAssertFalse(settings.tryVisitASiteShown)
+
+        // WHEN
+        let result = sut.nextBrowsingMessageIfShouldShow(for: privacyInfo)
+
+        // THEN
+        XCTAssertEqual(result?.type, .withOneTracker)
+        XCTAssertTrue(settings.tryVisitASiteShown)
+    }
+
+    func testWhenURLVisitedHasOneNoTrackers_ThenSetTryVisitSuggestionSeenFalse() {
+        // GIVEN
+        let settings = MockDaxDialogsSettings()
+        settings.browsingWithoutTrackersShown = false
+        let sut = makeSUT(settings: settings)
+        XCTAssertFalse(settings.tryVisitASiteShown)
+
+        // WHEN
+        let result = sut.nextBrowsingMessageIfShouldShow(for: makePrivacyInfo(url: URLs.example))
+
+        // THEN
+        XCTAssertEqual(result?.type, .withoutTrackers)
+        XCTAssertTrue(settings.tryVisitASiteShown)
+    }
+
+
     private func detectedTrackerFrom(_ url: URL, pageUrl: String) -> DetectedRequest {
         let entity = entityProvider.entity(forHost: url.host!)
         return DetectedRequest(url: url.absoluteString,
@@ -1050,45 +1134,29 @@ final class DaxDialog: XCTestCase {
                            protectionStatus: protectionStatus)
     }
 
-    private func makeSUT(settings: DaxDialogsSettings, onboardingPrivacyProPromoExperiment: OnboardingPrivacyProPromoExperimenting = MockOnboardingPrivacyProPromoExperimenting(cohort: .control)) -> DaxDialogs {
+    private func makeSUT(settings: DaxDialogsSettings, onboardingPrivacyProPromotionHelper: OnboardingPrivacyProPromotionHelping = MockOnboardingPrivacyProPromotionHelper()) -> DaxDialogs {
         DaxDialogs(settings: settings,
                    entityProviding: entityProvider,
                    variantManager: MockVariantManager(),
-                   onboardingPrivacyProPromoExperiment: onboardingPrivacyProPromoExperiment)
+                   onboardingPrivacyProPromotionHelper: onboardingPrivacyProPromotionHelper)
     }
 }
 
-class MockOnboardingPrivacyProPromoExperimenting: OnboardingPrivacyProPromoExperimenting {
-    private let cohort: PrivacyProOnboardingCTAMarch25Cohort?
-    private(set) var fireSubscriptionStartedMonthlyPixelCalled = false
-    private(set) var fireSubscriptionStartedYearlyPixelCalled = false
+final class MockOnboardingPrivacyProPromotionHelper: OnboardingPrivacyProPromotionHelping {
 
-    init(cohort: PrivacyProOnboardingCTAMarch25Cohort?) {
-        self.cohort = cohort
-    }
+    var shouldDisplayValue: Bool = false
 
-    func getCohortIfEnabled() -> PrivacyProOnboardingCTAMarch25Cohort? {
-        return cohort
+    var shouldDisplay: Bool {
+        shouldDisplayValue
     }
 
     func redirectURLComponents() -> URLComponents? {
         return nil
     }
 
-    func fireImpressionPixel() {
-    }
+    func fireImpressionPixel() {}
 
-    func fireTapPixel() {
-    }
+    func fireTapPixel() {}
 
-    func fireDismissPixel() {
-    }
-
-    func fireSubscriptionStartedMonthlyPixel() {
-        fireSubscriptionStartedMonthlyPixelCalled = true
-    }
-
-    func fireSubscriptionStartedYearlyPixel() {
-        fireSubscriptionStartedYearlyPixelCalled = true
-    }
+    func fireDismissPixel() {}
 }

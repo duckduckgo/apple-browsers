@@ -48,6 +48,12 @@ extension Preferences {
                     UpdatesSection(areAutomaticUpdatesEnabled: $areAutomaticUpdatesEnabled, model: model)
 #endif
                 }
+            }.task {
+#if SPARKLE
+                if model.mustCheckForUpdatesBeforeUserCanTakeAction {
+                    model.checkForUpdate(userInitiated: false)
+                }
+#endif
             }
         }
     }
@@ -91,7 +97,22 @@ extension Preferences {
         private var rightColumnContent: some View {
             Group {
                 #if APPSTORE
-                Text(UserText.duckDuckGoForMacAppStore).font(.companyName)
+                HStack(spacing: 8) {
+                    Text(UserText.duckDuckGoForMacAppStore)
+                        .font(.companyName)
+                    if model.isInternalUser {
+                        Text("BETA")
+                            .font(.caption2)
+                            .fontWeight(.bold)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 4)
+                            .background(
+                                RoundedRectangle(cornerRadius: 4)
+                                    .fill(Color.betaLabelBackground)
+                            )
+                            .foregroundColor(Color.betaLabelForeground)
+                    }
+                }
 
                 Text(UserText.duckduckgoTagline).font(.privacySimplified)
                     .fixedSize(horizontal: false, vertical: true)
@@ -104,7 +125,22 @@ extension Preferences {
                         })
                     }))
                 #else
-                Text(UserText.duckDuckGo).font(.companyName)
+                HStack(spacing: 8) {
+                    Text(UserText.duckDuckGo)
+                        .font(.companyName)
+                    if model.isInternalUser {
+                        Text("BETA")
+                            .font(.caption2)
+                            .fontWeight(.bold)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 4)
+                            .background(
+                                RoundedRectangle(cornerRadius: 4)
+                                    .fill(Color.betaLabelBackground)
+                            )
+                            .foregroundColor(Color.betaLabelForeground)
+                    }
+                }
 
                 Text(UserText.duckduckgoTagline).font(.privacySimplified)
                     .fixedSize(horizontal: false, vertical: true)
@@ -162,7 +198,7 @@ extension Preferences {
                 Text(UserText.versionLabel(version: model.appVersion.versionNumber, build: model.appVersion.buildNumber))
                     .contextMenu(ContextMenu(menuItems: {
                         Button(UserText.copy, action: {
-                            model.copy(UserText .versionLabel(version: model.appVersion.versionNumber, build: model.appVersion.buildNumber))
+                            model.copy(UserText.versionLabel(version: model.appVersion.versionNumber, build: model.appVersion.buildNumber))
                         })
                     }))
 #if SPARKLE
@@ -262,30 +298,38 @@ extension Preferences {
 
         @ViewBuilder
         private var updateButton: some View {
-            switch model.updateState {
-            case .upToDate:
-                Button(UserText.checkForUpdate) {
-                    model.checkForUpdate()
-                }
-                .buttonStyle(UpdateButtonStyle(enabled: true))
-            case .updateCycle(let progress):
-                if hasPendingUpdate {
-                    Button(model.areAutomaticUpdatesEnabled ? UserText.restartToUpdate : UserText.runUpdate) {
-                        model.runUpdate()
-                    }
-                    .buttonStyle(UpdateButtonStyle(enabled: true))
-                } else if progress.isFailed {
-                    Button(UserText.retryUpdate) {
-                        model.checkForUpdate()
-                    }
-                    .buttonStyle(UpdateButtonStyle(enabled: true))
-                } else {
+            if model.useLegacyAutoRestartLogic {
+                switch model.updateState {
+                case .upToDate:
                     Button(UserText.checkForUpdate) {
-                        model.checkForUpdate()
+                        model.checkForUpdate(userInitiated: true)
                     }
-                    .buttonStyle(UpdateButtonStyle(enabled: false))
-                    .disabled(true)
+                    .buttonStyle(UpdateButtonStyle(enabled: true))
+                case .updateCycle(let progress):
+                    if hasPendingUpdate {
+                        Button(model.areAutomaticUpdatesEnabled ? UserText.restartToUpdate : UserText.runUpdate) {
+                            model.runUpdate()
+                        }
+                        .buttonStyle(UpdateButtonStyle(enabled: true))
+                    } else if progress.isFailed {
+                        Button(UserText.retryUpdate) {
+                            model.checkForUpdate(userInitiated: true)
+                        }
+                        .buttonStyle(UpdateButtonStyle(enabled: true))
+                    } else {
+                        Button(UserText.checkForUpdate) {
+                            model.checkForUpdate(userInitiated: true)
+                        }
+                        .buttonStyle(UpdateButtonStyle(enabled: false))
+                        .disabled(true)
+                    }
                 }
+            } else {
+                let configuration = model.updateButtonConfiguration
+
+                Button(configuration.title, action: configuration.action)
+                    .buttonStyle(UpdateButtonStyle(enabled: configuration.enabled))
+                    .disabled(!configuration.enabled)
             }
         }
 #endif

@@ -31,7 +31,7 @@ class LargeOmniBarStateTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        mockFeatureFlagger = MockFeatureFlagger(enabledFeatureFlags: [.aiChatNewTabPage])
+        mockFeatureFlagger = MockFeatureFlagger(enabledFeatureFlags: [])
     }
 
     override func tearDown() {
@@ -467,7 +467,8 @@ class LargeOmniBarStateTests: XCTestCase {
         XCTAssertFalse(testee.showCancel)
         XCTAssertFalse(testee.showSearchLoupe)
         XCTAssertFalse(testee.showAbort)
-        XCTAssertTrue(testee.showRefresh)
+        XCTAssertFalse(testee.showRefresh)
+        XCTAssertTrue(testee.showShare)
 
         XCTAssertTrue(testee.hasLargeWidth)
         XCTAssertTrue(testee.showBackButton)

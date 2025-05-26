@@ -42,11 +42,13 @@ import NetworkProtection
 import PrivacyStats
 import Subscription
 import NetworkProtectionIPC
-import DataBrokerProtection
-import DataBrokerProtectionShared
+import DataBrokerProtection_macOS
+import DataBrokerProtectionCore
 import RemoteMessaging
 import os.log
 import Freemium
+import VPNAppState
+import AIChat
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
 
@@ -79,6 +81,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let crashReporter = CrashReporter()
 #endif
 
+    let keyValueStore: ThrowingKeyValueStoring
+
+    let faviconManager: FaviconManager
     let pinnedTabsManager = PinnedTabsManager()
     let pinnedTabsManagerProvider: PinnedTabsManagerProviding!
     private(set) var stateRestorationManager: AppStateRestorationManager!
@@ -86,6 +91,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let internalUserDecider: InternalUserDecider
     private var isInternalUserSharingCancellable: AnyCancellable?
     let featureFlagger: FeatureFlagger
+    let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     let featureFlagOverridesPublishingHandler = FeatureFlagOverridesPublishingHandler<FeatureFlag>()
     private var appIconChanger: AppIconChanger!
     private var autoClearHandler: AutoClearHandler!
@@ -110,12 +116,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         privacyStats: privacyStats,
         freemiumDBPPromotionViewCoordinator: freemiumDBPPromotionViewCoordinator
     )
+
+    private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(
+        promptHandler: AIChatPromptHandler.shared,
+        addressBarQueryExtractor: AIChatAddressBarPromptExtractor()
+    )
+
     let privacyStats: PrivacyStatsCollecting
     let activeRemoteMessageModel: ActiveRemoteMessageModel
-    let newTabPageCustomizationModel = NewTabPageCustomizationModel()
+    let newTabPageCustomizationModel: NewTabPageCustomizationModel
     let remoteMessagingClient: RemoteMessagingClient!
-    let onboardingStateMachine: ContextualOnboardingStateMachine & ContextualOnboardingStateUpdater
+    let onboardingContextualDialogsManager: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater
     let defaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPresenter
+    let visualStyleManager: VisualStyleManagerProviding
 
     let isAuthV2Enabled: Bool
     var subscriptionAuthV1toV2Bridge: any SubscriptionAuthV1toV2Bridge
@@ -178,6 +191,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         return firstLaunchDate.daysSinceNow() >= 2
     }
 
+    // swiftlint:disable cyclomatic_complexity
     @MainActor
     override init() {
         // will not add crash handlers and will fire pixel on applicationDidFinishLaunching if didCrashDuringCrashHandlersSetUp == true
@@ -189,6 +203,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             didCrashDuringCrashHandlersSetUp.wrappedValue = true
             CrashLogMessageExtractor.setUp(swapCxaThrow: false)
             didCrashDuringCrashHandlersSetUp.wrappedValue = false
+        }
+
+        do {
+            keyValueStore = try KeyValueFileStore(location: URL.sandboxApplicationSupportURL, name: "AppKeyValueStore")
+        } catch {
+            PixelKit.fire(DebugEvent(GeneralPixel.keyValueFileStoreInitError, error: error))
+            Thread.sleep(forTimeInterval: 1)
+            fatalError("Could not prepare key value store: \(error.localizedDescription)")
         }
 
         do {
@@ -259,7 +281,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         configurationManager = ConfigurationManager(store: configurationStore)
 
-        featureFlagger = DefaultFeatureFlagger(
+        let featureFlagger = DefaultFeatureFlagger(
             internalUserDecider: internalUserDecider,
             privacyConfigManager: AppPrivacyFeatures.shared.contentBlocking.privacyConfigurationManager,
             localOverrides: FeatureFlagLocalOverrides(
@@ -269,11 +291,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             experimentManager: ExperimentCohortsManager(store: ExperimentsDataStore(), fireCohortAssigned: PixelKit.fireExperimentEnrollmentPixel(subfeatureID:experiment:)),
             for: FeatureFlag.self
         )
+        self.featureFlagger = featureFlagger
+        self.contentScopeExperimentsManager = featureFlagger
 
         let coordinator =  DefaultBrowserAndDockPromptCoordinator(featureFlagger: featureFlagger)
         defaultBrowserAndDockPromptPresenter = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, featureFlagger: featureFlagger)
 
-        onboardingStateMachine = ContextualOnboardingStateMachine()
+        visualStyleManager = VisualStyleManager(featureFlagger: featureFlagger)
+        newTabPageCustomizationModel = NewTabPageCustomizationModel(visualStyleManager: visualStyleManager)
+
+        onboardingContextualDialogsManager = ContextualDialogsManager()
 
         // MARK: - Subscription configuration
 
@@ -303,17 +330,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                    featureFlagger: featureFlagger,
                                                                    userDefaults: subscriptionUserDefaults,
                                                                    canPerformAuthMigration: true,
-                                                                   canHandlePixels: true)
+                                                                   pixelHandlingSource: .mainApp)
 
             // Expired refresh token recovery
             if #available(iOS 15.0, macOS 12.0, *) {
                 let restoreFlow = DefaultAppStoreRestoreFlowV2(subscriptionManager: subscriptionManager, storePurchaseManager: subscriptionManager.storePurchaseManager())
                 subscriptionManager.tokenRecoveryHandler = {
-                    try await DeadTokenRecoverer.attemptRecoveryFromPastPurchase(subscriptionManager: subscriptionManager, restoreFlow: restoreFlow)
+                    do {
+                        try await DeadTokenRecoverer.attemptRecoveryFromPastPurchase(subscriptionManager: subscriptionManager, restoreFlow: restoreFlow)
+                        PixelKit.fire(PrivacyProPixel.privacyProInvalidRefreshTokenRecovered, frequency: .dailyAndCount)
+                    } catch {
+                        PixelKit.fire(PrivacyProPixel.privacyProInvalidRefreshTokenSignedOut, frequency: .dailyAndCount)
+                    }
                 }
             } else {
                 subscriptionManager.tokenRecoveryHandler = {
                     try await DeadTokenRecoverer.reportDeadRefreshToken()
+                    PixelKit.fire(PrivacyProPixel.privacyProInvalidRefreshTokenSignedOut, frequency: .dailyAndCount)
                 }
             }
 
@@ -324,7 +357,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             subscriptionManagerV1 = nil
             subscriptionAuthV1toV2Bridge = subscriptionManager
         }
-        vpnSettings.isAuthV2Enabled = isAuthV2Enabled
+        VPNAppState(defaults: .netP).isAuthV2Enabled = isAuthV2Enabled
 
         if AppVersion.runType.requiresEnvironment {
             remoteMessagingClient = RemoteMessagingClient(
@@ -337,7 +370,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 remoteMessagingAvailabilityProvider: PrivacyConfigurationRemoteMessagingAvailabilityProvider(
                     privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager
                 ),
-                subscriptionManager: subscriptionAuthV1toV2Bridge
+                subscriptionManager: subscriptionAuthV1toV2Bridge,
+                featureFlagger: self.featureFlagger
             )
             activeRemoteMessageModel = ActiveRemoteMessageModel(remoteMessagingClient: remoteMessagingClient, openURLHandler: { url in
                 WindowControllersManager.shared.showTab(with: .contentFromURL(url, source: .appOpenUrl))
@@ -388,7 +422,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         privacyStats = PrivacyStats(databaseProvider: PrivacyStatsDatabase())
 #endif
         PixelKit.configureExperimentKit(featureFlagger: featureFlagger, eventTracker: ExperimentEventTracker(store: UserDefaults.appConfiguration))
+
+#if DEBUG
+        faviconManager = FaviconManager(cacheType: AppVersion.runType.requiresEnvironment ? .standard : .inMemory)
+#else
+        faviconManager = FaviconManager(cacheType: .standard)
+#endif
+
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+        if #available(macOS 15.4, *) {
+            Task { @MainActor in
+                await WebExtensionManager.shared.loadInstalledExtensions()
+            }
+        }
+#endif
     }
+    // swiftlint:enable cyclomatic_complexity
 
     func applicationWillFinishLaunching(_ notification: Notification) {
         APIRequest.Headers.setUserAgent(UserAgent.duckDuckGoUserAgent())
@@ -416,7 +465,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // Freemium DBP
         freemiumDBPFeature.subscribeToDependencyUpdates()
 
+        // ignore popovers shown from a view not in view hierarchy
+        // https://app.asana.com/0/1201037661562251/1206407295280737/f
         _ = NSPopover.swizzleShowRelativeToRectOnce
+        // disable macOS system-wide window tabbing
+        NSWindow.allowsAutomaticWindowTabbing = false
+        // Fix SwifUI context menus and its owner View leaking
+        SwiftUIContextMenuRetainCycleFix.setUp()
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -428,6 +483,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Task {
             await subscriptionManagerV1?.loadInitialData()
             await subscriptionManagerV2?.loadInitialData()
+
+            vpnAppEventsHandler.applicationDidFinishLaunching()
         }
 
         HistoryCoordinator.shared.loadHistory {
@@ -442,17 +499,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // https://app.asana.com/0/1177771139624306/1207024603216659/f
         LottieConfiguration.shared.renderingEngine = .mainThread
 
-        if case .normal = AppVersion.runType {
-            FaviconManager.shared.loadFavicons()
-        }
         configurationManager.start()
         _ = DownloadListCoordinator.shared
         _ = RecentlyClosedCoordinator.shared
 
         if LocalStatisticsStore().atb == nil {
             AppDelegate.firstLaunchDate = Date()
-            // MARK: Enable pixel experiments here
-            PixelExperiment.install()
         }
         AtbAndVariantCleanup.cleanup()
         DefaultVariantManager().assignVariantIfNeeded { _ in
@@ -536,7 +588,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         UserDefaultsWrapper<Any>.clearRemovedKeys()
 
         networkProtectionSubscriptionEventHandler?.registerForSubscriptionAccountManagerEvents()
-        vpnAppEventsHandler.applicationDidFinishLaunching()
 
         UNUserNotificationCenter.current().delegate = self
 
@@ -567,12 +618,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         freemiumDBPScanResultPolling = DefaultFreemiumDBPScanResultPolling(dataManager: DataBrokerProtectionManager.shared.dataManager, freemiumDBPUserStateManager: freemiumDBPUserStateManager)
         freemiumDBPScanResultPolling?.startPollingOrObserving()
-
-#if SPARKLE
-        PixelKit.fire(NonStandardEvent(GeneralPixel.launch(isDefault: DefaultBrowserPreferences().isDefault, isAddedToDock: DockCustomizer().isAddedToDock)), frequency: .daily)
-#else
-        PixelKit.fire(NonStandardEvent(GeneralPixel.launch(isDefault: DefaultBrowserPreferences().isDefault, isAddedToDock: nil)), frequency: .daily)
-#endif
     }
 
     private func fireFailedCompilationsPixelIfNeeded() {
@@ -592,10 +637,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidBecomeActive(_ notification: Notification) {
         guard didFinishLaunching else { return }
 
-        PixelExperiment.fireOnboardingTestPixels()
-        initializeSync()
+        fireAppLaunchPixel()
 
-        vpnAppEventsHandler.applicationDidBecomeActive()
+        initializeSync()
 
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
         let pirGatekeeper = DefaultDataBrokerProtectionFeatureGatekeeper(subscriptionManager: subscriptionAuthV1toV2Bridge,
@@ -603,21 +647,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         DataBrokerProtectionAppEvents(featureGatekeeper: pirGatekeeper).applicationDidBecomeActive()
 
-        subscriptionManagerV1?.refreshCachedSubscriptionAndEntitlements { [weak self] isSubscriptionActive in
+        subscriptionManagerV1?.refreshCachedSubscriptionAndEntitlements { isSubscriptionActive in
             if isSubscriptionActive {
                 PixelKit.fire(PrivacyProPixel.privacyProSubscriptionActive, frequency: .daily)
-
-                // Temporary experiment pixel - https://app.asana.com/0/1206488453854252/1209643339074944
-                guard let self else { return }
-                let experimentManager = FreemiumDBPPixelExperimentManager(subscriptionManager: self.subscriptionAuthV1toV2Bridge)
-                experimentManager.sendOneTimeCohortSubscriptionStatusPixel()
-                // ----
             }
         }
 
         Task { @MainActor in
             await subscriptionCookieManager.refreshSubscriptionCookie()
         }
+    }
+
+    private func fireAppLaunchPixel() {
+#if SPARKLE
+        PixelKit.fire(NonStandardEvent(GeneralPixel.launch(isDefault: DefaultBrowserPreferences().isDefault, isAddedToDock: DockCustomizer().isAddedToDock)), frequency: .daily)
+#else
+        PixelKit.fire(NonStandardEvent(GeneralPixel.launch(isDefault: DefaultBrowserPreferences().isDefault, isAddedToDock: nil)), frequency: .daily)
+#endif
     }
 
     private func initializeSync() {
@@ -687,7 +733,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - PixelKit
 
     static func configurePixelKit() {
-#if DEBUG
+#if DEBUG || REVIEW
             Self.setUpPixelKit(dryRun: true)
 #else
             Self.setUpPixelKit(dryRun: false)
@@ -751,6 +797,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             dataProvidersSource: syncDataProviders,
             errorEvents: SyncErrorHandler(),
             privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
+            keyValueStore: keyValueStore,
             environment: environment
         )
         syncService.initializeIfNeeded()

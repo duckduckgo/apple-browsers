@@ -39,9 +39,6 @@ public enum FeatureFlag: String, CaseIterable {
 
     case credentialsImportPromotionForExistingUsers
 
-    /// https://app.asana.com/0/0/1209150117333883/f
-    case networkProtectionAppExclusions
-
     /// https://app.asana.com/0/0/1209402073283584
     case networkProtectionAppStoreSysex
 
@@ -55,9 +52,10 @@ public enum FeatureFlag: String, CaseIterable {
     case historyView
 
     case autoUpdateInDEBUG
+    case updatesWontAutomaticallyRestartApp
 
     case autofillPartialFormSaves
-    case autcompleteTabs
+    case autocompleteTabs
     case webExtensions
     case syncSeamlessAccountSwitching
     /// SAD & ATT Prompts experiiment: https://app.asana.com/0/1204006570077678/1209185383520514
@@ -68,9 +66,43 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/0/72649045549333/1209633877674689/f
     case exchangeKeysToSyncWithAnotherDevice
+
+    // Demonstrative cases for default value. Remove once a real-world feature/subfeature is added
+    case failsafeExampleCrossPlatformFeature
+    case failsafeExamplePlatformSpecificSubfeature
+
+    /// https://app.asana.com/0/72649045549333/1209793701087222/f
+    case visualRefresh
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1209227311680179?focus=true
+    case tabCrashDebugging
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1209227311680179?focus=true
+    case tabCrashRecovery
+
+    /// https://app.asana.com/1/137249556945/project/1148564399326804/task/1209499005452053?focus=true
+    case delayedWebviewPresentation
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1205508328452434?focus=true
+    case dbpRemoteBrokerDelivery
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210081345713964?focus=true
+    case syncSetupBarcodeIsUrlBased
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210081345713964?focus=true
+    case canScanUrlBasedSyncSetupBarcodes
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
+    public var defaultValue: Bool {
+        switch self {
+        case .failsafeExampleCrossPlatformFeature, .failsafeExamplePlatformSpecificSubfeature, .canScanUrlBasedSyncSetupBarcodes:
+            true
+        default:
+            false
+        }
+    }
+
     public var cohortType: (any FeatureFlagCohortDescribing.Type)? {
         switch self {
         case .popoverVsBannerExperiment:
@@ -89,8 +121,7 @@ extension FeatureFlag: FeatureFlagDescribing {
     public var supportsLocalOverriding: Bool {
         switch self {
         case .autofillPartialFormSaves,
-                .autcompleteTabs,
-                .networkProtectionAppExclusions,
+                .autocompleteTabs,
                 .networkProtectionAppStoreSysex,
                 .networkProtectionAppStoreSysexMessage,
                 .networkProtectionRiskyDomainsProtection,
@@ -98,10 +129,19 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .historyView,
                 .webExtensions,
                 .autoUpdateInDEBUG,
+                .updatesWontAutomaticallyRestartApp,
                 .popoverVsBannerExperiment,
                 .privacyProAuthV2,
                 .scamSiteProtection,
-                .exchangeKeysToSyncWithAnotherDevice:
+                .exchangeKeysToSyncWithAnotherDevice,
+                .failsafeExampleCrossPlatformFeature,
+                .failsafeExamplePlatformSpecificSubfeature,
+                .visualRefresh,
+                .tabCrashDebugging,
+                .tabCrashRecovery,
+                .delayedWebviewPresentation,
+                .syncSetupBarcodeIsUrlBased,
+                .canScanUrlBasedSyncSetupBarcodes:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -110,7 +150,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .contextualOnboarding,
                 .unknownUsernameCategorization,
                 .credentialsImportPromotionForExistingUsers,
-                .maliciousSiteProtection:
+                .maliciousSiteProtection,
+                .dbpRemoteBrokerDelivery:
             return false
         }
     }
@@ -133,8 +174,6 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.contextualOnboarding))
         case .credentialsImportPromotionForExistingUsers:
             return .remoteReleasable(.subfeature(AutofillSubfeature.credentialsImportPromotionForExistingUsers))
-        case .networkProtectionAppExclusions:
-            return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appExclusions))
         case .networkProtectionAppStoreSysex:
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.appStoreSystemExtension))
         case .networkProtectionAppStoreSysexMessage:
@@ -143,9 +182,11 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(HTMLHistoryPageSubfeature.isLaunched))
         case .autoUpdateInDEBUG:
             return .disabled
+        case .updatesWontAutomaticallyRestartApp:
+            return .internalOnly()
         case .autofillPartialFormSaves:
             return .remoteReleasable(.subfeature(AutofillSubfeature.partialFormSaves))
-        case .autcompleteTabs:
+        case .autocompleteTabs:
             return .remoteReleasable(.feature(.autocompleteTabs))
         case .webExtensions:
             return .internalOnly()
@@ -158,9 +199,27 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .popoverVsBannerExperiment:
             return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.popoverVsBannerExperiment))
         case .privacyProAuthV2:
-            return .disabled // .remoteDevelopment(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
         case .exchangeKeysToSyncWithAnotherDevice:
             return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
+        case .failsafeExampleCrossPlatformFeature:
+            return .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests))
+        case .failsafeExamplePlatformSpecificSubfeature:
+            return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests))
+        case .visualRefresh:
+            return .remoteDevelopment(.feature(.experimentalBrowserTheming))
+        case .tabCrashDebugging:
+            return .disabled
+        case .tabCrashRecovery:
+            return .remoteReleasable(.feature(.tabCrashRecovery))
+        case .delayedWebviewPresentation:
+            return .remoteReleasable(.feature(.delayedWebviewPresentation))
+        case .dbpRemoteBrokerDelivery:
+            return .remoteReleasable(.subfeature(DBPSubfeature.remoteBrokerDelivery))
+        case .syncSetupBarcodeIsUrlBased:
+            return .disabled
+        case .canScanUrlBasedSyncSetupBarcodes:
+            return .remoteReleasable(.subfeature(SyncSubfeature.canScanUrlBasedSyncSetupBarcodes))
         }
     }
 }

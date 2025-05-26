@@ -204,6 +204,7 @@ final class HistoryMenu: NSMenu {
         }
     }
 
+    @MainActor
     private func makeGroupingMenuItems(from groupings: [HistoryGrouping]) -> [NSMenuItem] {
 
         func makeGroupingRootMenuItem(from grouping: HistoryGrouping) -> NSMenuItem {
@@ -232,6 +233,7 @@ final class HistoryMenu: NSMenu {
         return rootMenuItem
     }
 
+    @MainActor
     private func makeMenuItems(from grouping: HistoryGrouping) -> [NSMenuItem] {
         let date = grouping.date
         let isToday = NSCalendar.current.isDateInToday(date)

@@ -161,26 +161,9 @@ final class DefaultRecentActivityActionsHandler: RecentActivityActionsHandling {
     }
 
     @MainActor
-    func open(_ url: URL, target: LinkOpenTarget) {
-        guard let tabCollectionViewModel else {
-            return
-        }
-
+    func openHistoryEntry(_ url: URL, sender: LinkOpenSender, target: LinkOpenTarget, sourceWindow: NSWindow?) {
         PixelKit.fire(NewTabPagePixel.privacyFeedHistoryLinkOpened, frequency: .dailyAndCount)
-
-        if target == .newWindow || NSApplication.shared.isCommandPressed && NSApplication.shared.isOptionPressed {
-            WindowsManager.openNewWindow(with: url, source: .bookmark, isBurner: tabCollectionViewModel.isBurner)
-        } else if target == .newTab || NSApplication.shared.isCommandPressed && NSApplication.shared.isShiftPressed {
-            tabCollectionViewModel.insertOrAppendNewTab(.contentFromURL(url, source: .bookmark), selected: true)
-        } else if NSApplication.shared.isCommandPressed {
-            tabCollectionViewModel.insertOrAppendNewTab(.contentFromURL(url, source: .bookmark), selected: false)
-        } else {
-            tabCollectionViewModel.selectedTabViewModel?.tab.setContent(.contentFromURL(url, source: .bookmark))
-        }
+        NewTabPageLinkOpener.open(url, source: .historyEntry, sender: sender, target: target, sourceWindow: sourceWindow)
     }
 
-    @MainActor
-    private var tabCollectionViewModel: TabCollectionViewModel? {
-        WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel
-    }
 }

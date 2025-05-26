@@ -40,8 +40,8 @@ final class PinnedTabsManager {
         if firePixel {
             PixelKit.fire(PinnedTabsPixel.userPinnedTab, frequency: .dailyAndStandard)
         }
-#if !APPSTORE
-        if #available(macOS 15.3, *) {
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+        if #available(macOS 15.4, *) {
             WebExtensionManager.shared.eventsListener.didChangeTabProperties([.pinned], for: tab)
         }
 #endif
@@ -49,11 +49,11 @@ final class PinnedTabsManager {
 
     func unpinTab(at index: Int, published: Bool = false, firePixel: Bool = true) -> Tab? {
         guard let tab = tabCollection.tabs[safe: index] else {
-            Logger.general.debug("PinnedTabsManager: unable to unpin a tab")
+            Logger.pinnedTabs.debug("PinnedTabsManager: unable to unpin a tab")
             return nil
         }
         guard tabCollection.removeTab(at: index, published: published) else {
-            Logger.general.debug("PinnedTabsManager: unable to unpin a tab")
+            Logger.pinnedTabs.debug("PinnedTabsManager: unable to unpin a tab")
             return nil
         }
         didUnpinTabSubject.send(index)
@@ -61,8 +61,8 @@ final class PinnedTabsManager {
         if firePixel {
             PixelKit.fire(PinnedTabsPixel.userUnpinnedTab, frequency: .dailyAndStandard)
         }
-#if !APPSTORE
-        if #available(macOS 15.3, *) {
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+        if #available(macOS 15.4, *) {
             WebExtensionManager.shared.eventsListener.didChangeTabProperties([.pinned], for: tab)
         }
 #endif
@@ -75,7 +75,7 @@ final class PinnedTabsManager {
 
     func tabViewModel(at index: Int) -> TabViewModel? {
         guard index >= 0, tabCollection.tabs.count > index else {
-            Logger.general.error("PinnedTabsManager: Index out of bounds")
+            Logger.pinnedTabs.error("PinnedTabsManager: Index out of bounds")
             return nil
         }
 

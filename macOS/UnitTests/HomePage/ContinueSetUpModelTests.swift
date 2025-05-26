@@ -46,7 +46,7 @@ final class ContinueSetUpModelTests: XCTestCase {
         duckPlayerPreferences = DuckPlayerPreferencesPersistorMock()
         privacyConfigManager = MockPrivacyConfigurationManager()
         let config = MockPrivacyConfiguration()
-        privacyConfigManager.privacyConfig = config
+        privacyConfigManager.mockPrivacyConfig = config
         dockCustomizer = DockCustomizerMock()
 
         vm = HomePage.Models.ContinueSetUpModel(
@@ -421,7 +421,7 @@ extension HomePage.Models.ContinueSetUpModel {
             "networkProtection": "disabled"
         ] as! [String: String]
         let manager = MockPrivacyConfigurationManager()
-        manager.privacyConfig = privacyConfig
+        manager.mockPrivacyConfig = privacyConfig
 
         return HomePage.Models.ContinueSetUpModel(
             defaultBrowserProvider: defaultBrowserProvider,

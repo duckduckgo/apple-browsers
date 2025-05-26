@@ -41,6 +41,7 @@ struct BookmarkViewModel {
 
     }
 
+    @MainActor
     var menuFavicon: NSImage? {
         if let bookmark = entity as? Bookmark {
             let favicon = bookmark.favicon(.small)?.copy() as? NSImage

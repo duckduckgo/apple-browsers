@@ -17,18 +17,25 @@
 //
 
 import Cocoa
+import Common
 import Suggestions
 
-struct SuggestionViewModel: Equatable {
-
+struct SuggestionViewModel {
     let isHomePage: Bool
     let suggestion: Suggestion
     let userStringValue: String
 
-    init(isHomePage: Bool, suggestion: Suggestion, userStringValue: String) {
+    init(isHomePage: Bool,
+         suggestion: Suggestion,
+         userStringValue: String,
+         visualStyle: VisualStyleProviding) {
         self.isHomePage = isHomePage
         self.suggestion = suggestion
         self.userStringValue = userStringValue
+
+        let fontSize = isHomePage ? visualStyle.addressBarStyleProvider.newTabOrHomePageAddressBarFontSize : visualStyle.addressBarStyleProvider.defaultAddressBarFontSize
+        self.tableRowViewStandardAttributes = Self.rowViewStandardAttributes(size: fontSize, isBold: false)
+        self.tableRowViewBoldAttributes = Self.rowViewStandardAttributes(size: fontSize, isBold: true)
     }
 
     // MARK: - Attributed Strings
@@ -39,33 +46,22 @@ struct SuggestionViewModel: Equatable {
         return style
     }()
 
-    private static let homePageTableRowViewStandardAttributes: [NSAttributedString.Key: Any] = [
-        .font: NSFont.systemFont(ofSize: 15, weight: .regular),
-        .paragraphStyle: Self.paragraphStyle
-    ]
-
-    private static let regularTableRowViewStandardAttributes: [NSAttributedString.Key: Any] = [
-        .font: NSFont.systemFont(ofSize: 13, weight: .regular),
-        .paragraphStyle: Self.paragraphStyle
-    ]
-
-    private static let homePageTableRowViewBoldAttributes: [NSAttributedString.Key: Any] = [
-        NSAttributedString.Key.font: NSFont.systemFont(ofSize: 15, weight: .bold),
-        .paragraphStyle: Self.paragraphStyle
-    ]
-
-    private static let regularTableRowViewBoldAttributes: [NSAttributedString.Key: Any] = [
-        NSAttributedString.Key.font: NSFont.systemFont(ofSize: 13, weight: .bold),
-        .paragraphStyle: Self.paragraphStyle
-    ]
-
-    var tableRowViewStandardAttributes: [NSAttributedString.Key: Any] {
-        isHomePage ? Self.homePageTableRowViewStandardAttributes : Self.regularTableRowViewStandardAttributes
+    private static func rowViewStandardAttributes(size: CGFloat, isBold: Bool) -> [NSAttributedString.Key: Any] {
+        if isBold {
+            return [
+                NSAttributedString.Key.font: NSFont.systemFont(ofSize: size, weight: .bold),
+                .paragraphStyle: Self.paragraphStyle
+            ]
+        } else {
+            return [
+                .font: NSFont.systemFont(ofSize: size, weight: .regular),
+                .paragraphStyle: Self.paragraphStyle
+            ]
+        }
     }
 
-    var tableRowViewBoldAttributes: [NSAttributedString.Key: Any] {
-        isHomePage ? Self.homePageTableRowViewBoldAttributes : Self.regularTableRowViewBoldAttributes
-    }
+    var tableRowViewStandardAttributes: [NSAttributedString.Key: Any]
+    var tableRowViewBoldAttributes: [NSAttributedString.Key: Any]
 
     var tableCellViewAttributedString: NSAttributedString {
         var firstPart = ""
@@ -88,15 +84,15 @@ struct SuggestionViewModel: Equatable {
             return phrase
         case .website(url: let url):
             return url.toString(forUserInput: userStringValue)
-        case .historyEntry(title: let title, url: let url, allowedInTopHits: _):
+        case .historyEntry(title: let title, url: let url, _):
             if url.isDuckDuckGoSearch {
                 return url.searchQuery ?? url.toString(forUserInput: userStringValue)
             } else {
                 return title ?? url.toString(forUserInput: userStringValue)
             }
-        case .bookmark(title: let title, url: _, isFavorite: _, allowedInTopHits: _),
-             .internalPage(title: let title, url: _),
-             .openTab(title: let title, url: _, _):
+        case .bookmark(title: let title, url: _, isFavorite: _, _),
+             .internalPage(title: let title, url: _, _),
+             .openTab(title: let title, url: _, _, _):
             return title
         case .unknown(value: let value):
             return value
@@ -109,23 +105,23 @@ struct SuggestionViewModel: Equatable {
              .website,
              .unknown:
             return nil
-        case .historyEntry(title: let title, url: let url, allowedInTopHits: _):
+        case .historyEntry(title: let title, url: let url, _):
             if url.isDuckDuckGoSearch {
                 return url.searchQuery
             } else {
                 return title
             }
-        case .bookmark(title: let title, url: _, isFavorite: _, allowedInTopHits: _),
-             .internalPage(title: let title, url: _),
-             .openTab(title: let title, url: _, _):
+        case .bookmark(title: let title, url: _, isFavorite: _, _),
+             .internalPage(title: let title, url: _, _),
+             .openTab(title: let title, url: _, _, _):
             return title
         }
     }
 
     var autocompletionString: String {
         switch suggestion {
-        case .historyEntry(title: _, url: let url, allowedInTopHits: _),
-             .bookmark(title: _, url: let url, isFavorite: _, allowedInTopHits: _):
+        case .historyEntry(title: _, url: let url, _),
+             .bookmark(title: _, url: let url, isFavorite: _, _):
 
             let userStringValue = self.userStringValue.lowercased()
             let urlString = url.toString(forUserInput: userStringValue)
@@ -150,17 +146,17 @@ struct SuggestionViewModel: Equatable {
 
         case .phrase, .unknown, .website:
             return nil
-        case .openTab(title: _, url: let url, _) where url.isDuckURLScheme:
+        case .openTab(title: _, url: let url, _, _) where url.isDuckURLScheme:
             return UserText.duckDuckGo
-        case .openTab(title: _, url: let url, _) where url.isDuckDuckGoSearch:
+        case .openTab(title: _, url: let url, _, _) where url.isDuckDuckGoSearch:
             return UserText.duckDuckGoSearchSuffix
-        case .historyEntry(title: _, url: let url, allowedInTopHits: _),
-             .bookmark(title: _, url: let url, isFavorite: _, allowedInTopHits: _),
-             .openTab(title: _, url: let url, _):
+        case .historyEntry(title: _, url: let url, _),
+             .bookmark(title: _, url: let url, isFavorite: _, _),
+             .openTab(title: _, url: let url, _, _):
             if url.isDuckDuckGoSearch {
                 return UserText.searchDuckDuckGoSuffix
             } else {
-                return url.toString(decodePunycode: true, dropScheme: true, dropTrailingSlash: true)
+                return url.toString(decodePunycode: true, dropScheme: true, needsWWW: false, dropTrailingSlash: true)
             }
         case .internalPage:
             return UserText.duckDuckGo
@@ -177,22 +173,22 @@ struct SuggestionViewModel: Equatable {
             return .web
         case .historyEntry:
             return .historySuggestion
-        case .bookmark(title: _, url: _, isFavorite: false, allowedInTopHits: _):
+        case .bookmark(title: _, url: _, isFavorite: false, _):
             return .bookmarkSuggestion
-        case .bookmark(title: _, url: _, isFavorite: true, allowedInTopHits: _):
+        case .bookmark(title: _, url: _, isFavorite: true, _):
             return .favoritedBookmarkSuggestion
         case .unknown:
             return .web
-        case .internalPage(title: _, url: let url) where url == .bookmarks,
-             .openTab(title: _, url: let url, _) where url == .bookmarks:
+        case .internalPage(title: _, url: let url, _) where url == .bookmarks,
+             .openTab(title: _, url: let url, _, _) where url == .bookmarks:
             return .bookmarksFolder
-        case .internalPage(title: _, url: let url) where url.isSettingsURL,
-             .openTab(title: _, url: let url, _) where url.isSettingsURL:
+        case .internalPage(title: _, url: let url, _) where url.isSettingsURL,
+             .openTab(title: _, url: let url, _, _) where url.isSettingsURL:
             return .settingsMulticolor16
-        case .internalPage(title: _, url: let url) where url.isHistory,
-             .openTab(title: _, url: let url, _) where url.isHistory:
+        case .internalPage(title: _, url: let url, _) where url.isHistory,
+             .openTab(title: _, url: let url, _, _) where url.isHistory:
             return .historyFavicon
-        case .internalPage(title: _, url: let url):
+        case .internalPage(title: _, url: let url, _):
             guard url == URL(string: StartupPreferences.shared.formattedCustomHomePageURL) else { return nil }
             return .home16
         case .openTab:
@@ -200,4 +196,10 @@ struct SuggestionViewModel: Equatable {
         }
     }
 
+}
+
+extension SuggestionViewModel: Equatable {
+    static func == (lhs: SuggestionViewModel, rhs: SuggestionViewModel) -> Bool {
+        return lhs.isHomePage == rhs.isHomePage && lhs.suggestion == rhs.suggestion && lhs.userStringValue == rhs.userStringValue
+    }
 }

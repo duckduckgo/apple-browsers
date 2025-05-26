@@ -16,9 +16,11 @@
 //  limitations under the License.
 //
 
+#if WEB_EXTENSIONS_ENABLED
+
 @testable import DuckDuckGo_Privacy_Browser
 
-@available(macOS 15.3, *)
+@available(macOS 15.4, *)
 final class WebExtensionPathsCachingMock: WebExtensionPathsCaching {
 
     var cache: [String] = []
@@ -39,3 +41,5 @@ final class WebExtensionPathsCachingMock: WebExtensionPathsCaching {
         cache.removeAll { $0 == url }
     }
 }
+
+#endif

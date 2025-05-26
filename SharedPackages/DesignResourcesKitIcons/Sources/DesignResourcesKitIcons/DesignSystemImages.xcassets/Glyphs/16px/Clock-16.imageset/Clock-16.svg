@@ -1,0 +1,11 @@
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <g fill="#000" clip-path="url(#Clock-16_svg__a)">
+    <path d="M12.375 5.5a.625.625 0 0 0-.75-1L7.964 7.246 5.763 5.904a.625.625 0 0 0-.65 1.067l2.562 1.563c.218.133.496.12.7-.034l4-3Z"/>
+    <path fill-rule="evenodd" d="M8-.01a8.01 8.01 0 1 0 0 16.02A8.01 8.01 0 0 0 8-.01ZM1.26 8a6.74 6.74 0 1 1 13.48 0A6.74 6.74 0 0 1 1.26 8Z" clip-rule="evenodd"/>
+  </g>
+  <defs>
+    <clipPath id="Clock-16_svg__a">
+      <path fill="#fff" d="M0 0h16v16H0z"/>
+    </clipPath>
+  </defs>
+</svg>

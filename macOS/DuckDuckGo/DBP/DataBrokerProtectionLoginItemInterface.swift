@@ -17,8 +17,13 @@
 //
 
 import Foundation
-import DataBrokerProtection
+import DataBrokerProtection_macOS
 import Common
+
+public extension Notification.Name {
+    static let dbpLoginItemEnabled = Notification.Name("com.duckduckgo.DBP.LoginItemEnabled")
+    static let dbpLoginItemDisabled = Notification.Name("com.duckduckgo.DBP.LoginItemDisabled")
+}
 
 protocol DataBrokerProtectionLoginItemInterface: DataBrokerProtectionAppToAgentInterface {
     func dataDeleted()
@@ -47,11 +52,13 @@ extension DefaultDataBrokerProtectionLoginItemInterface: DataBrokerProtectionLog
     private func disableLoginItem() {
         DataBrokerProtectionLoginItemPixels.fire(pixel: GeneralPixel.dataBrokerDisableLoginItemDaily, frequency: .daily)
         loginItemsManager.disableLoginItems([.dbpBackgroundAgent])
+        NotificationCenter.default.post(name: .dbpLoginItemDisabled, object: nil)
     }
 
     private func enableLoginItem() {
         DataBrokerProtectionLoginItemPixels.fire(pixel: GeneralPixel.dataBrokerEnableLoginItemDaily, frequency: .daily)
         loginItemsManager.enableLoginItems([.dbpBackgroundAgent])
+        NotificationCenter.default.post(name: .dbpLoginItemEnabled, object: nil)
     }
 
     // MARK: - DataBrokerProtectionLoginItemInterface
@@ -109,7 +116,7 @@ extension DefaultDataBrokerProtectionLoginItemInterface: DataBrokerProtectionLog
         ipcClient.runAllOptOuts(showWebView: showWebView)
     }
 
-    func getDebugMetadata() async -> DataBrokerProtection.DBPBackgroundAgentMetadata? {
+    func getDebugMetadata() async -> DBPBackgroundAgentMetadata? {
         return await ipcClient.getDebugMetadata()
     }
 }

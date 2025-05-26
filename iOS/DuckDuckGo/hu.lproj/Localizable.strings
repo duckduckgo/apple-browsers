@@ -241,6 +241,9 @@
 /* Description for unable to remove device error */
 "alert.unable-to-remove-device-description" = "Az eszközt nem sikerült eltávolítani a Szinkronizálás és biztonsági mentés funkcióból.";
 
+/* Description for unable to scan qr code error */
+"alert.unable-to-scan-qr-code-description" = "Ez a kód sajnos érvénytelen. Győződj meg róla, hogy a helyes kódot adtad meg vagy olvastad be.";
+
 /* Description for unable to sync to server error */
 "alert.unable-to-sync-to-server-description" = "Nem sikerült csatlakozni a szerverhez.";
 
@@ -304,6 +307,93 @@
 /* No comment provided by engineer. */
 "autoconsent.info.header" = "Amikor a DuckDuckGo a meglátogatott webhelyeken sütik elfogadására szolgáló felugró ablakokat észlel, a sütik minimalizálása és az adatvédelem maximalizálása érdekében automatikusan megpróbálhatjuk megadni a sütikre vonatkozó beállításaidat, és bezárhatjuk a felugró ablakokat. Egyes webhelyek nem adnak lehetőséget a sütikre vonatkozó beállítások kezelésére, így csak az ilyen felugró ablakokat tudjuk elrejteni.";
 
+/* Toast message when a credit card item is deleted */
+"autofill.creditcard.deleted-message-no-title" = "Kártya törölve";
+
+/* Card name label for credit card details on autofill */
+"autofill.creditcard.details.card-name" = "Kártyán szereplő név";
+
+/* Card nickname label for credit card details on autofill */
+"autofill.creditcard.details.card-nickname" = "Kártya elnevezése";
+
+/* Card number label for credit card details on autofill */
+"autofill.creditcard.details.card-number" = "Kártyaszám";
+
+/* Card number label for credit card details on autofill when editing */
+"autofill.creditcard.details.card-number.required" = "Kártyaszám";
+
+/* Title for toast when copying the credit card name */
+"autofill.creditcard.details.copy-toast.card-name-copied" = "Név másolva";
+
+/* Title for toast when copying the credit card number */
+"autofill.creditcard.details.copy-toast.card-number-copied" = "Kártyaszám másolva";
+
+/* Title for toast when copying the credit card cvv (security code) */
+"autofill.creditcard.details.copy-toast.cvv-copied" = "CVV másolva";
+
+/* Title for toast when copying the credit card expiration date */
+"autofill.creditcard.details.copy-toast.exp-date-copied" = "Lejárati dátum másolva";
+
+/* CVV (security code) label for credit card details on autofill */
+"autofill.creditcard.details.cvv" = "CVV";
+
+/* Title for autofill credit card details */
+"autofill.creditcard.details.default-title" = "Kártya";
+
+/* Delete button when deleting an autofill credit card */
+"autofill.creditcard.details.delete" = "Kártya törlése";
+
+/* Autofill alert button confirming delete credit card */
+"autofill.creditcard.details.delete-confirmation.button" = "Kártya törlése";
+
+/* Autofill message confirming delete credit card */
+"autofill.creditcard.details.delete-confirmation.message" = "Biztosan törlöd ezt a kártyát?";
+
+/* Title when editing autofill credit card details */
+"autofill.creditcard.details.edit-title" = "Kártya szerkesztése";
+
+/* Placeholder for card number field on autofill credit card details */
+"autofill.creditcard.details.edit.card-number-placeholder" = "1234 5678 1234 5678";
+
+/* Placeholder for CVV security code field on autofill credit card details */
+"autofill.creditcard.details.edit.cvv-placeholder" = "Biztonsági kód";
+
+/* Placeholder for expiration date field on autofill credit card details */
+"autofill.creditcard.details.edit.exp-date-placeholder" = "HH / ÉÉ";
+
+/* Expiration date label for credit card details on autofill */
+"autofill.creditcard.details.exp-date" = "Lejárati dátum";
+
+/* Title when adding new autofill credit card */
+"autofill.creditcard.details.new-title" = "Kártya hozzáadása";
+
+/* Placeholder for card name field on autofill credit card details */
+"autofill.creditcard.edit.card-name-placeholder" = "Kártyán szereplő név";
+
+/* Placeholder for card nickname field on autofill credit card details */
+"autofill.creditcard.edit.card-nickname-placeholder" = "(pl. munka)";
+
+/* Subtitle for view displayed when no autofill credit cards have been saved */
+"autofill.creditcard.empty-view.subtitle.first.paragraph" = "A hitelkártyaadatok biztonságosan kerülnek eltárolásra az eszközödön.";
+
+/* Title for view displayed when autofill has no credit cards saved */
+"autofill.creditcard.empty-view.title" = "Még nincs elmentett hitelkártya";
+
+/* Reason for auth when opening credit card list */
+"autofill.creditcard.list.auth.reason" = "Oldd fel az eszközt a hitelkártyák eléréséhez";
+
+/* Credit card row label for credit card expiry date */
+"autofill.creditcard.list.item.expiry" = "Lejárat:";
+
+/* Title for screen listing autofill credit cards */
+"autofill.creditcard.list.title" = "Hitelkártyák";
+
+/* Title for view displayed when autofill is locked on devices where a passcode has not been set */
+"autofill.creditcard.no-auth.subtitle" = "A hitelkártyái védelméhez jelszó szükséges.";
+
+/* Title for view displayed when autofill is locked on devices where a passcode has not been set */
+"autofill.creditcard.no-auth.title" = "Tedd biztonságossá az eszközödet a hitelkártyák mentéséhez";
+
 /* Do not translate - stringsdict entry */
 "autofill.delete.all.passwords.completion" = "autofill.delete.all.passwords.completion";
 
@@ -324,6 +414,9 @@
 
 /* Text link to email protection website */
 "autofill.enable.email.protection" = "E-mail-védelem engedélyezése";
+
+/* Accessibility title for a Hide CVV button replacing displayed credit card CVV (security code) with *** */
+"autofill.hide-card-cvv" = "CVV elrejtése";
 
 /* Accessibility title for a Hide Password button replacing displayed password with ***** */
 "autofill.hide-password" = "Jelszó elrejtése";
@@ -379,7 +472,7 @@
 /* Message displayed after updating an autofill login */
 "autofill.login-updated.toast" = "Jelszó frissítve";
 
-/* Menu item text for copying autofill login details */
+/* Menu item text for copying autofill details */
 "autofill.logins.copy-prompt" = "%@ másolása";
 
 /* Title for toast when copying address */
@@ -514,6 +607,9 @@
 /* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
 "autofill.logins.list.settings.footer" = "A jelszavak titkosítva vannak. Rajtad kívül senki sem láthatja őket, még mi sem.";
 
+/* Subtext under Autofill Settings briefly explaining security to alleviate user concerns. */
+"autofill.logins.list.settings.passwords.cards.footer" = "A jelszavak és a hitelkártyák titkosítva vannak. Rajtad kívül senki sem láthatja őket, még mi sem.";
+
 /* Section title for group of suggested saved logins */
 "autofill.logins.list.suggested" = "Javasolt";
 
@@ -556,9 +652,11 @@
 /* Do not translate - stringsdict entry */
 "autofill.number.of.passwords" = "autofill.number.of.passwords";
 
-/* Description of autofill onboarding prompt's secure storage feature
-   Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
-"autofill.onboarding.key-features.secure-storage.description" = "A jelszavak titkosítottak, az eszközön tárolódnak, és %@ használatával zároltak.";
+/* Description of autofill onboarding prompt's secure storage feature with a string describing the available biometry + passcode as a parameter */
+"autofill.onboarding.key-features.secure-storage.biometric.description" = "A jelszavak titkosítottak, az eszközön tárolódnak, és %@ használatával zároltak.";
+
+/* Description of autofill onboarding prompt's secure storage feature */
+"autofill.onboarding.key-features.secure-storage.description" = "Passwords are encrypted, stored on device, and locked with Face ID or passcode.";
 
 /* Parameter for the description of autofill onboarding prompt's secure storage feature describing Face ID biometry + passcode */
 "autofill.onboarding.key-features.secure-storage.description.parameter.face-id" = "Face ID vagy jelkód";
@@ -679,6 +777,9 @@
 
 /* Section header for the autofill settings screen */
 "autofill.settings.view.section-header" = "Megtekintés";
+
+/* Accessibility title for a Show CVV button displaying actual credit card CVV (security code) instead of *** */
+"autofill.show-card-cvv" = "CVV megjelenítése";
 
 /* Accessibility title for a Show Password button displaying actial password instead of ***** */
 "autofill.show-password" = "Jelszó megjelenítése";
@@ -932,6 +1033,9 @@
 /* Crash Report dialog title */
 "crash.report.dialog.title" = "Hibajelentések automatikus küldése?";
 
+/* No comment provided by engineer. */
+"Current Dismiss Count: %@" = "Current Dismiss Count: %@";
+
 /* Button label to select zip or html file for importing */
 "data.import.bookmarks.file-button" = "Könyvjelzőfájl importálása…";
 
@@ -1046,41 +1150,8 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Tegnap";
 
-/* No comment provided by engineer. */
-"dax.hide.button" = "Ötletek elrejtése örökre";
-
-/* No comment provided by engineer. */
-"dax.hide.cancel" = "Mégsem";
-
-/* Subtitle in Hide Dax dialog */
-"dax.hide.message" = "Csak néhány van, és megpróbáltuk őket informatívvá tenni.";
-
-/* Title in Hide Dax dialog */
-"dax.hide.title" = "Elrejti a többi tippet?";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search" = "A DuckDuckGo keresések névtelenek. Mindig. 🙌";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search.cta" = "Pfuj!";
-
-/* First parameter is a count of additional trackers, second and third are names of the tracker networks (strings) */
-"dax.onboarding.browsing.multiple.trackers" = "dax.onboarding.browsing.multiple.trackers";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.multiple.trackers.cta" = "Pacsi!";
-
-/* Parameter is domain name (string) */
-"dax.onboarding.browsing.one.tracker" = "*%1$@* itt próbált követni.\n\nBlokkoltam!\n\n☝️ Ellenőrizheted a címsort, hogy megtudhasd, ki próbál nyomon követni, amikor új webhelyre látogatsz.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.one.tracker.cta" = "Pacsi!";
-
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Figyelem! Nem tudom megakadályozni, hogy %1$@ láthassa a tevékenységedet itt: %2$@.\n\nHa azonban velem böngészel, a sok más weboldalon is használt nyomkövetőjük blokkolásával korlátozni tudom azt, amit %1$@ megtudhat rólad.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.site.is.major.tracker.cta" = "Megvan";
 
 /* Parameters are domain names (strings) */
 "dax.onboarding.browsing.site.owned.by.major.tracker" = "Figyelem! Mivel %2$@ tulajdonában van a(z) %1$@, nem tudom megakadályozni, hogy lássák az itteni tevékenységedet.\n\nHa azonban velem böngészel, a sok más weboldalon is használt nyomkövetőjük blokkolásával korlátozni tudom azt, amit %2$@ megtudhat rólad.";
@@ -1091,29 +1162,8 @@
 /* No comment provided by engineer. */
 "dax.onboarding.browsing.without.trackers" = "Miközben koppintasz és görgetsz, blokkolni fogom a bosszantó nyomkövetőket.\n\nCsak folytasd a böngészést!";
 
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.without.trackers.cta" = "Megvan";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button" = "Személyes adatok halmozódhatnak fel a böngésződben. Fúj. A Tűz gombbal mindet elégetheted. Próbáld ki most! 👇";
-
-/* Cancel action */
-"dax.onboarding.fire.button.cancelAction" = "Mégsem";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button.confirmAction" = "Lapok bezárása és adattörlés";
-
 /* Encourage user to add favorite site using the browsing menu. */
 "dax.onboarding.home.add.favorite" = "Látogasd meg a kedvenc weboldalaidat egy pillanat alatt!\n\nLépj egy olyan weboldalra, amelyet szeretsz. Ezután koppints a(z) „⋯” ikonra, és válaszd a *Hozzáadás a kedvencekhez* elemet.";
-
-/* Accessible version of dax.onboarding.home.add.favorite */
-"dax.onboarding.home.add.favorite.accessible" = "Látogasd meg a kedvenc weboldalaidat egy pillanat alatt! Látogass el az egyik kedvenc webhelyedre. Ezután koppints a menü megnyitása gombra, és válaszd a Hozzáadás a kedvencekhez elemet.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.home.initial" = "A következő lépésben próbálj ellátogatni az egyik kedvenc webhelyedre!\n\nÉn blokkolom a nyomkövetőket, hogy ne tudjanak kémkedni utánad. Ha lehet, a kapcsolatod biztonságát is javítom. 🔒";
-
-/* ad = advertisment */
-"dax.onboarding.home.subsequent" = "Megvan, ez az!\n\nNe feledd: minden alkalommal, amikor velem végzed a böngészést, egy hátborzongató hirdetés elveszíti az erejét. 👍";
 
 /* No comment provided by engineer. */
 "Debug" = "Hibakeresés";
@@ -1199,15 +1249,6 @@
 /* Title for message explaining to the user that Duck Player is not available */
 "duck-player.contingency-title" = "A Duck Player nem érhető el";
 
-/* Text for the toggle to autoplay videos */
-"duck-player.native-autoplay-videos" = "Autoplay Videos";
-
-/* Text for the button to watch a video on DuckPlayer */
-"duck-player.native-open-in-duckplayer" = "Duck Player";
-
-/* Text for the button to watch a video on YouTube */
-"duck-player.native-watch-on-youtube" = "Watch in Youtube";
-
 /* Button for the message explaining to the user that Duck Player is not available so the user can learn more */
 "duck-player.video-contingency-cta" = "További részletek";
 
@@ -1218,13 +1259,16 @@
 "duckai.preferences.text.markdown" = "A Duck.ai egy opcionális funkció, amely lehetővé teszi a harmadik féltől származó népszerű AI-csevegési modellekkel való névtelen csevegést. A csevegéseidet nem használjuk fel az AI tanítására.\n[Learn More](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
-"duckai.settings.enable.address-bar-toggle" = "Duck.ai megjelenítése a címsorban";
+"duckai.settings.enable.address-bar-toggle" = "Címsor";
 
 /* Toggle text to enable/disable AI Chat in the browsing menu */
-"duckai.settings.enable.browsing-menu-toggle" = "Duck.ai megjelenítése a böngésző menüjében";
+"duckai.settings.enable.browsing-menu-toggle" = "Böngészési menü";
+
+/* Toggle text to enable/disable Duck.ai in tab manager */
+"duckai.settings.enable.tab-switcher-toggle" = "Lapok képernyője";
 
 /* Toggle text to enable/disable Duck.ai in voice search */
-"duckai.settings.enable.voice-search-toggle" = "Duck.ai megjelenítése a beszédhangalapú keresésben";
+"duckai.settings.enable.voice-search-toggle" = "Beszédhangalapú keresés";
 
 /* Settings screen cell text for AI Chat settings */
 "duckai.settings.title" = "Duck.ai";
@@ -1241,8 +1285,26 @@
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Soha";
 
-/* Caption for Duck Player entry point */
-"duckplayer.pill.watch.without.ads" = "Tap to watch without targeted ads";
+/* Settings screen cell text for DuckPlayer settings */
+"duckplayer.open.video.settings.title" = "Duck Player";
+
+/* Content for Duck Player opt-in message */
+"duckplayer.opt-in.message.content" = "A Duck Player blokkolja a célzott hirdetéseket, és megóvja a megtekintési előzményeidet.";
+
+/* Title for Duck Player opt-in message */
+"duckplayer.opt-in.message.title" = "YouTube, kevesebb reklámmal és erősebb adatvédelemmel";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.opt-in.pill.subtitle" = "Megtekintés célzott hirdetések nélkül";
+
+/* Button text to play a video in Duck Player */
+"duckplayer.opt-in.pill.title" = "Videó lejátszása a Duck Playerben";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.pill.subtitle" = "Megtekintés célzott hirdetések nélkül";
+
+/* Button text to play a video in Duck Player */
+"duckplayer.play.in.duck.player" = "Videó lejátszása a Duck Playerben";
 
 /* Body text for the modal feature explanation */
 "duckplayer.presentation.modal.body" = "A Duck Player segítségével a DuckDuckGóban célzott hirdetések nélkül nézheted a YouTube-ot, és a megtekintett tartalmak nem befolyásolják a neked szóló ajánlásokat.";
@@ -1255,6 +1317,18 @@
 
 /* Two line title (separated by \n) for the feature explanation */
 "duckplayer.presentation.modal.title.youtube" = "Elárasztanak a YouTube-hirdetések? A Duck Player használatakor nem!";
+
+/* Button text to resume video in Duck Player */
+"duckplayer.resume.in.duck.player" = "Folytatás a Duck Playerben";
+
+/* Footer text explaining the auto-play toggle in Duck Player settings */
+"duckplayer.settings.autoplay.footer" = "A Duck Playerben megnyitott videók automatikusan elindulnak. Kapcsold ki, ha a Duck Playerben megnyitott videók lejátszását manuálisan szeretnéd elindítani.";
+
+/* Label for the auto-play toggle in Duck Player settings */
+"duckplayer.settings.autoplay.label" = "Videók automatikus lejátszása";
+
+/* Label for the experimental section in Duck Player settings */
+"duckplayer.settings.experimental.label" = "Kísérleti";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "A DuckDuckGóban minden olyan alapvető adatvédelmi funkciót megtalálsz, amellyel a webes böngészés során gondoskodhatsz saját védelmedről.";
@@ -1271,8 +1345,59 @@
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.open-videos-in" = "YouTube-videók megnyitása a Duck Playerrel";
 
+/* Footer text explaining the search results toggle in Duck Player settings */
+"duckplayer.settings.search.results.footer" = "A DuckDuckGo keresési eredményeiben található YouTube-videókra kattintva azok a Duck Playerben nyílnak meg.";
+
+/* Label for the search results toggle in Duck Player settings */
+"duckplayer.settings.search.results.label" = "DuckDuckGo keresési eredmények";
+
+/* Message for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.message" = "A módosítás érvénybe léptetéséhez zárd be az összes lapot.";
+
+/* OK button text for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.ok" = "OK";
+
+/* Title for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.title" = "Fontos!";
+
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.title" = "Duck Player";
+
+/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
+"duckplayer.settings.toggle" = "YouTube-videók megnyitása itt";
+
+/* Label for the Duck Player variant picker in Duck Player settings */
+"duckplayer.settings.variant.label" = "Duck Player változat";
+
+/* Footer text explaining the YouTube.com option in Duck Player settings */
+"duckplayer.settings.youtube.footer" = "Ha a YouTube.com webhelyen böngészve YouTube-videókra kattintasz, azok a Duck Playerben nyílnak meg.";
+
+/* Label for the YouTube.com option in Duck Player settings */
+"duckplayer.settings.youtube.label" = "YouTube.com";
+
+/* Text for the ask mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.ask" = "Én választhassak";
+
+/* Text for the auto mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.auto" = "Automatikus megnyitás";
+
+/* Text for the never mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.never" = "Ne jelenjen meg";
+
+/* Button text to open Duck Player settings */
+"duckplayer.toast.open.settings" = "Beállítások megnyitása";
+
+/* Toast message informing user they can disable Duck Player in settings */
+"duckplayer.toast.turn.off.anytime" = "A Duck Playert bármikor kikapcsolhatod";
+
+/* Button text to watch video on YouTube */
+"duckplayer.watch.on.youtube" = "Lejátszás YouTube-on";
+
+/* Subtitle explaining how Duck Player protects privacy */
+"duckplayer.welcome.message.content" = "Ha szeretnél visszatérni a YouTube-ra, zárd be a Duck Playert.\nNem tetszik? Kapcsold ki alább!";
+
+/* Title for Duck Player welcome message highlighting privacy benefits */
+"duckplayer.welcome.message.text" = "A Duck Playerben nézed!\nItt nincsenek célzott hirdetések.";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "E-mail védelem";
@@ -1348,6 +1473,9 @@
 
 /* Empty search placeholder on bookmarks search */
 "empty.search" = "Nincs találat";
+
+/* No comment provided by engineer. */
+"Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
 "error.email-protection-sign-in.action" = "Bejelentkezés";
@@ -2153,7 +2281,7 @@
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Böngészési adatok törlése gombnyomásra";
 
-/* Message to highlight browser capability ofblocking 3rd party trackers */
+/* Message to highlight browser capability of blocking 3rd party trackers */
 "onboarding.highlights.browsers.features.trackerBlocker.title" = "Harmadik féltől származó nyomkövetők blokkolása";
 
 /* The title of the dialog to show the privacy features that DuckDuckGo offers */
@@ -2167,6 +2295,9 @@
 
 /* Button to continue the onboarding process */
 "onboarding.intro.cta" = "Rajta, csináljuk!";
+
+/* Button to skip the onboarding process */
+"onboarding.intro.cta.skip" = "Már jártam itt korábban";
 
 /* Button on the Privacy Pro promotion onboarding step. Tapping the button navigates to the Privacy Pro paywall. */
 "onboarding.privacypro.promo.buttons.learnMore" = "További részletek";
@@ -2185,6 +2316,18 @@
 
 /* Bold text 'VPN'. This will replace the first placeholder (%1$@) in the following string - onboarding.privacypro.promo.vpn.message. */
 "onboarding.privacypro.promo.vpn.message.vpn-bold" = "VPN";
+
+/* The title of the button to skip the onboarding and start browsing. */
+"onboarding.skip.cta.confirmSkip" = "Böngészés indítása";
+
+/* The title of the button to resume the onboarding. */
+"onboarding.skip.cta.resumeOnboarding" = "Útmutató megjelenítése";
+
+/* The message of the skip onboarding dialog popup. */
+"onboarding.skip.message" = "Ne feledd: a Fire Button 🔥 segítségével két érintéssel törölheted az összes lapodat, előzményedet és böngészési adatodat";
+
+/* The title of the skip onboarding dialog popup */
+"onboarding.skip.title" = "Értem! Kihagyom a többi tippet.";
 
 /* No comment provided by engineer. */
 "onboarding.widgets.continueButton" = "Minialkalmazás hozzáadása";
@@ -2288,6 +2431,9 @@
 /* Title for the Privacy Pro feedback form */
 "ppro.feedback-form.title" = "Visszajelzés küldése";
 
+/* Description of incorrectly formatted data error when syncing. */
+"prefrences.sync.bad-request.description" = "Egyes könyvjelzők vagy jelszavak helytelen formátumúak vagy túl hosszúak, és nem lettek szinkronizálva.";
+
 /* Button title for sync bookmarks limits exceeded warning to go to manage bookmarks */
 "prefrences.sync.bookmarks-limit-exceeded-action" = "Könyvjelzők kezelése";
 
@@ -2300,13 +2446,14 @@
 /* Description for sync credentials limits exceeded warning */
 "prefrences.sync.credentials-limit-exceeded-description" = "Elérted a jelszavak maximális számát. A szinkronizálás folytatásához törölj néhányat.";
 
-/* Description invalid credentials error when syncing.
-   Description of incorrectly formatted data error when syncing.
-   Description of too many requests error when syncing. */
+/* Description invalid credentials error when syncing. */
 "prefrences.sync.invalid-login-description" = "Szinkronizálási hiba történt. Próbáld meg kikapcsolni a szinkronizálást ezen az eszközön, majd csatlakozz újra egy másik eszközzel vagy a helyreállítási kóddal.";
 
 /* Title for sync limits exceeded warning */
 "prefrences.sync.limit-exceeded-title" = "Szinkronizálás szüneteltetve";
+
+/* Description of too many requests error when syncing. */
+"prefrences.sync.too-many-requests.description" = "A szinkronizálás és biztonsági mentés átmenetileg nem érhető el.";
 
 /* No comment provided by engineer. */
 "preserveLogins.domain.list.footer" = "A webhelyek sütik segítségével teszik lehetővé, hogy bejelentkezve maradhass. Ha tűzállóvá teszel egy weboldalt, a sütik nem törlődnek, és még a Tűz gomb használata után is bejelentkezve maradsz. A tűzálló webhelyeken a külső felek nyomkövetőit azonban blokkoljuk.";
@@ -2348,6 +2495,9 @@
 "Primary / First Action" = "Elsődleges/első művelet";
 
 /* No comment provided by engineer. */
+"Priming Modal" = "Priming Modal";
+
+/* No comment provided by engineer. */
 "Privacy Protections" = "Adatvédelem";
 
 /* Privacy Icon accessibility title */
@@ -2373,6 +2523,12 @@
 
 /* No comment provided by engineer. */
 "Reset" = "Visszaállítás";
+
+/* No comment provided by engineer. */
+"Reset Pill Dismiss Count" = "Reset Pill Dismiss Count";
+
+/* No comment provided by engineer. */
+"Reset Priming Modal State" = "Reset Priming Modal State";
 
 /* No comment provided by engineer. */
 "search.hint.duckduckgo" = "Keresés vagy cím megadása";
@@ -2422,18 +2578,23 @@
 /* Title for the settings VPN subsection where the user can learn how to add the VPN to their home screen */
 "settings.add.widget.vpn" = "Add hozzá a DuckDuckGo VPN widgetet a főképernyőhöz";
 
-/* Name of the settings subsection related to the address bar
-   Settings screen cell text for addess bar position */
+/* Name of the settings subsection related to the address bar */
 "settings.address.bar" = "Címsor";
 
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Teljes webhelycím megjelenítése";
+
+/* Settings screen text for showing AI Chat in various places in the app */
+"settings.aichat.shortcuts" = "Gyorsparancsok";
 
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Mindig be van kapcsolva";
 
 /* Settings screen appearance section title */
 "settings.appearance" = "Megjelenés";
+
+/* Settings screen cell text for addess bar position */
+"settings.appearance.address.bar" = "Címsor elhelyezkedése";
 
 /* Settings screen cell for opening links in associated apps */
 "settings.associated.apps" = "Hivatkozások megnyitása társított alkalmazásokban";
@@ -2480,8 +2641,7 @@
 /* The name of a settings subsection related to the data clearing */
 "settings.data.clearing" = "Adattörlés";
 
-/* Settings screen cell text for setting the app as default browser
-   The name of Settings category in Privacy Features related to configuration of the default browser */
+/* The name of Settings category in Privacy Features related to configuration of the default browser */
 "settings.default.browser" = "Alapértelmezett böngésző";
 
 /* Label of a button disabling email protection */
@@ -2498,6 +2658,9 @@
 
 /* Settings cell for Email Protection */
 "settings.emailProtection.description" = "E-mail nyomkövetők letiltása, és a cím elrejtése";
+
+/* Settings screen cell text for enabling AI chat */
+"settings.enable.aichat" = "Duck.ai engedélyezése";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "E-mail-védelem engedélyezése";
@@ -2516,6 +2679,9 @@
 
 /* The name of the settings subsection containing general settings */
 "settings.general" = "Általános";
+
+/* Settings screen cell text for setting the app as default browser */
+"settings.general.default.browser" = "Beállítás alapértelmezett böngészőként";
 
 /* Settings screen cell text for GPC */
 "settings.gpc" = "Nemzetközi adatvédelmi szabályozás (Global Privacy Control, GPC)";
@@ -2625,6 +2791,9 @@
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe" = "Kapcsolat és a személyazonosság védelme a Privacy Pro segítségével";
 
+/* Try Privacy Pro Free button text for privacy pro */
+"settings.subscription.try.free" = "Próbáld ki a Privacy Prót ingyen";
+
 /* Privacy pro description subtitle in settings */
 "settings.subscription.us.description" = "Tartalmazza a VPN-megoldásunkat, a személyes adatok eltávolítására szolgáló Personal Information Removal és a személyazonosság helyreállításához használható Identity Theft Restoration funkciókat.";
 
@@ -2658,15 +2827,8 @@
 /* The name of Settings category in Privacy Features related to configuration of the web tracking protection feature */
 "settings.web.tracking.protection" = "Webes követés elleni védelem";
 
-/* Explanation in Settings how the vpn blocks risky sites (do not remove the link)
-   Explanation in Settings how the web tracking protection feature works */
-"settings.web.tracking.protection.explanation" = "Több mint 150 000 olyan domaint blokkolhatsz DNS-szintű tiltólistával, amelyeket rosszindulatú programok terjesztésével, adathalász támadásokkal és online csalásokkal hoztak kapcsolatba. [További információk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
-
-/* Header of the vpn blocks risky sites feature settings */
-"settings.web.tracking.protection.header" = "Tartalom blokkolása és szűrése";
-
-/* Title of the vpn blocks risky sites feature settings */
-"settings.web.tracking.protection.title" = "Kockázatos domainek blokkolása";
+/* Explanation in Settings how the web tracking protection feature works */
+"settings.web.tracking.protection.explanation" = "A DuckDuckGo böngészés közben automatikusan blokkolja a rejtett nyomkövetőket.\n[További információ](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/web-tracking-protections/)";
 
 /* Description on a report broken site page. */
 "site.not.working.description" = "Válaszd ki azt a lehetőséget, amelyik a legjobban leírja a tapasztalt problémát.";
@@ -2704,23 +2866,8 @@
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Tárolt állomásnév: %@";
 
-/* Subscription Activation Info */
-"subscription.activate..header.description" = "Az eszközön Apple-fiókkal vagy e-mail-címmel férhetsz hozzá a Privacy Pro-előfizetésedhez.";
-
-/* Button for adding email address to subscription */
-"subscription.activate.add.email.button" = "E-mail-cím hozzáadása";
-
-/* Apple Account option for activation */
-"subscription.activate.appleid" = "Apple-fiók";
-
-/* Button text for restoring purchase via Apple Account */
-"subscription.activate.appleid.button" = "Vásárlás visszaállítása";
-
-/* Description for Apple Account activation */
-"subscription.activate.appleid.description" = "Előfizetésedet a vásárlás visszaállításával aktiválhatod ezen az eszközön.";
-
-/* Subscription Activation Info */
-"subscription.activate.description" = "Az előfizetésed automatikusan elérhető a DuckDuckGo-ban minden olyan eszközön, amelyen be vagy jelentkezve az Apple-fiókodba.";
+/* Button for adding this subscription to another device */
+"subscription.activate.add.to.device.button" = "Hozzáadás az eszközhöz";
 
 /* Button for editing email address added to subscription */
 "subscription.activate.edit.email.button" = "E-mail-cím szerkesztése";
@@ -2728,17 +2875,8 @@
 /* View Title for editing your email account */
 "subscription.activate.edit.email.title" = "E-mail-cím szerkesztése";
 
-/* Email option for activation */
-"subscription.activate.email" = "E-mail";
-
-/* Restore button title for Email */
-"subscription.activate.email.button" = "E-mail-cím megadása";
-
-/* Description for Email activation */
-"subscription.activate.email.description" = "Előfizetésedet az e-mail-címed használatával aktiválhatod ezen az eszközön.";
-
-/* Activate subscription title */
-"subscription.activate.email.title" = "Előfizetés aktiválása";
+/* Header title for the subscription activation view */
+"subscription.activate.header.title" = "Add hozzá a Privacy Pro-előfizetésedet ehhez az eszközhöz";
 
 /* Button title for cancelling email deletion */
 "subscription.activate.manage.email.cancel" = "Mégsem";
@@ -2746,11 +2884,26 @@
 /* Button title for confirming email deletion */
 "subscription.activate.manage.email.OK" = "OK";
 
-/* Restore button title for AppleID */
-"subscription.activate.restore.apple" = "Vásárlás visszaállítása";
+/* Button title for starting the process of adding subscription via Apple Account */
+"subscription.activate.via.apple.account.button" = "Vásárlás visszaállítása";
 
-/* Subscription Activation Title */
-"subscription.activate.title" = "Előfizetés aktiválása ezen az eszközön";
+/* Description for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.description" = "Az Apple-eszközökön az Apple-fiókod használatával állíthatod vissza az előfizetést.";
+
+/* Title for adding subscription via Apple Account */
+"subscription.activate.via.apple.account.title" = "Hozzáadás Apple-fiókkal";
+
+/* Button title for starting the process of adding subscription via email address */
+"subscription.activate.via.email.button" = "Első lépések";
+
+/* Description for adding subscription via email address */
+"subscription.activate.via.email.description" = "Egy e-mail-cím megadásával adhatod hozzá a Privacy Pro szolgáltatást ehhez az eszközhöz.";
+
+/* Title for adding subscription via email address */
+"subscription.activate.via.email.title" = "Hozzáadás e-mail-címmel";
+
+/* View title for activating subscription */
+"subscription.activate.view.title" = "Van előfizetésem";
 
 /* Resend activation instructions button */
 "subscription.add.device.resend.instructions" = "Útmutató újraküldése";
@@ -2760,6 +2913,15 @@
 
 /* View title for adding email to subscription */
 "subscription.add.email.title" = "E-mail-cím hozzáadása";
+
+/* Header for section for activating subscription on other devices */
+"subscription.add.to.devices.header" = "Privacy Pro hozzáadása más eszközökhöz";
+
+/* Footer for section for activating subscription on other devices when email was not yet added */
+"subscription.add.to.devices.no.email.footer" = "Add hozzá a Privacy Prót a többi eszközödhöz Apple ID-n keresztül vagy egy e-mail-cím hozzákapcsolásával. **[További információ](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
+
+/* Footer for section for activating subscription on other devices when email is added */
+"subscription.add.to.devices.with.email.footer" = "A DuckDuckGo-alkalmazásban hozzáadhatod az előfizetésedet a többi eszközödön ezzel az e-mail-címmel. Ezt a Beállítások > Privacy Pro > Van előfizetésem menüpontban tudod megtenni. **[További információ](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Subscription availability message on Apple devices */
 "subscription.available.apple" = "A Privacy Pro az ugyanabba az Apple-fiókba bejelentkezett minden eszközön elérhető.";
@@ -2781,15 +2943,6 @@
 
 /* Title for Confirm messages */
 "subscription.confirm.title" = "Biztos vagy benne?";
-
-/* Header for section for activating subscription on other devices */
-"subscription.devices.header" = "Aktiválás más eszközökön";
-
-/* Footer for section for activating subscription on other devices when email was not yet added */
-"subscription.devices.no.email.footer" = "Egy opcionális e-mail-címnek az előfizetéshez való hozzáadásával más eszközökön is hozzáférhetsz a Privacy Pro-előfizetésedhez. **[További információ](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
-
-/* Footer for section for activating subscription on other devices when email is added */
-"subscription.devices.with.email.footer" = "Ezzel az e-mail-címmel aktiválhatod az előfizetésedet a többi eszközödön a DuckDuckGo alkalmazás Beállítások > Privacy Pro menüpontjában. **[További információ](https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/adding-email/)**";
 
 /* Alert content for not found subscription */
 "subscription.email.inactive.alert.message" = "Az ehhez az e-mail-címhez tartozó előfizetés már nem aktív.";
@@ -2934,6 +3087,9 @@
 
 /* Unknown period subscription renewal info where parameter is renewal date. This reads as 'Your subscription renews on (date)' */
 "subscription.subscription.renewing.unknown.caption" = "Az előfizetésed megújul ekkor: %@.";
+
+/* Unknown period subscription renewal info where parameter is renewal date. This reads as 'Your subscription renews on (date)' */
+"subscription.subscription.renewing.unknown.trial.caption" = "Az előfizetésed megújul ekkor: %@.";
 
 /* Annual subscription renewal info where parameter is renewal date. This reads as 'Your annual subscription renews on (date)' */
 "subscription.subscription.renewing.yearly.caption" = "Az éves előfizetésed megújul ekkor: %@.";
@@ -3228,6 +3384,15 @@
 
 /* Title for the Apply button on the DNS Server setting screen */
 "vpn.settings.dns.server.apply.button.title" = "Alkalmaz";
+
+/* Explanation in Settings how the vpn blocks risky sites (do not remove the link) */
+"vpn.settings.dns.server.content.blocking.explanation" = "Több mint 150 000 olyan domaint blokkolhatsz DNS-szintű tiltólistával, amelyeket rosszindulatú programok terjesztésével, adathalász támadásokkal és online csalásokkal hoztak kapcsolatba. [További információk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
+
+/* Header of the vpn blocks risky sites feature settings */
+"vpn.settings.dns.server.content.blocking.header" = "Tartalom blokkolása és szűrése";
+
+/* Title of the vpn blocks risky sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Kockázatos domainek blokkolása";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";

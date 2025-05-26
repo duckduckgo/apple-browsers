@@ -18,6 +18,7 @@
 
 import Cocoa
 import WebKit
+import Carbon.HIToolbox
 
 protocol WebViewContextMenuDelegate: AnyObject {
     func webView(_ webView: WebView, willOpenContextMenu menu: NSMenu, with event: NSEvent)
@@ -178,6 +179,13 @@ final class WebView: WKWebView {
     }
 
     override func keyDown(with event: NSEvent) {
+        if Int(event.keyCode) == kVK_Escape,
+           let window,
+           window.styleMask.contains(.fullScreen),
+           let fullscreenController {
+            fullscreenController.handleEscapePress(host: url?.host)
+        }
+
         super.keyDown(with: event)
         interactionEventsDelegate?.webView(self, keyDown: event)
     }
@@ -264,6 +272,10 @@ final class WebView: WKWebView {
             return nil
         }
         return fullscreenWindowController
+    }
+
+    var fullscreenController: FullscreenController? {
+        return (window?.windowController as? MainWindowController)?.fullscreenController
     }
 
     // MARK: - NSDraggingDestination

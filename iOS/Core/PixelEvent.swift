@@ -31,6 +31,14 @@ extension Pixel {
 
         case appInstall
         case appLaunch
+        /// Fires when the app launches as a result of tapping an http/https link outside the DDG browser.
+        ///
+        /// For more info check the [Asana Task](https://app.asana.com/0/72649045549333/1209593812414962/f)
+        case appLaunchFromExternalLink
+        /// Fires when the app launches as a result of an external app sharing a link with the DDG browser.
+        ///
+        /// For more info check the [Asana Task](https://app.asana.com/0/72649045549333/1209593812414962/f)
+        case appLaunchFromShareExtension
         case refreshPressed
         case pullToRefresh
 
@@ -62,6 +70,15 @@ extension Pixel {
         case tabSwitcherSwipeCloseTab
         case tabSwitchLongPressNewTab
         case tabSwitcherOpenedDaily
+
+        // MARK: KeyValueFiles Store
+        case keyValueFileStoreSupportDirAccessError
+        case keyValueFileStoreInitError
+
+        // MARK: Tabs Store
+        case tabsStoreSupportDirAccessError
+        case tabsStoreInitError
+        case tabsStoreSaveError
 
         // MARK: Tabswitcher improvements
         case tabSwitcherEditMenuClicked
@@ -118,6 +135,7 @@ extension Pixel {
         case browsingMenuShare
         case browsingMenuCopy
         case browsingMenuPrint
+        case browsingMenuReload
         case browsingMenuListPrint
         case browsingMenuFindInPage
         case browsingMenuZoom
@@ -190,6 +208,9 @@ extension Pixel {
         // MARK: - Onboarding
 
         case onboardingIntroShownUnique
+        case onboardingIntroSkipOnboardingCTAPressed
+        case onboardingIntroConfirmSkipOnboardingCTAPressed
+        case onboardingIntroResumeOnboardingCTAPressed
         case onboardingIntroComparisonChartShownUnique
         case onboardingIntroChooseBrowserCTAPressed
         case onboardingIntroChooseAppIconImpressionUnique
@@ -211,13 +232,52 @@ extension Pixel {
         case daxDialogsWithTrackersUnique
         case daxDialogsSiteIsMajorUnique
         case daxDialogsSiteOwnedByMajorUnique
-        case daxDialogsHiddenUnique
         case daxDialogsFireEducationShownUnique
         case daxDialogsFireEducationConfirmedUnique
         case daxDialogsFireEducationCancelledUnique
         case daxDialogsEndOfJourneyTabUnique
         case daxDialogsEndOfJourneyNewTabUnique
         case daxDialogsEndOfJourneyDismissed
+
+        // MARK: - Dismiss Dax Dialog
+        // [Pixel Triage](https://app.asana.com/0/69071770703008/1209886067589853)
+        // [Pixels description](https://app.asana.com/0/1206329551987282/1209878560708456/f)
+
+        /// Event Trigger: Triggered when the users dismiss the “Try Search” dialog prompted from a new tab.
+        /// Anomaly Investigation: It is normal for this pixel to spike as the number of installs grows. Ensure that the number of dismiss is not greater than the dialog number of impressions.
+        case onboardingTrySearchDialogNewTabDismissButtonTapped
+
+        /// Event Trigger: Triggered when the users dismiss the "Search Result" dialog upon performing an anonymous search.
+        /// Anomaly Investigation: It is normal for this pixel to spike as the number of installs grows. Ensure that the number of dismiss is not greater than the dialog number of impressions.
+        case onboardingSearchResultDialogDismissButtonTapped
+
+        /// Event Trigger: Triggered when the users dismiss the "Try Visit Site" dialog prompted from a new tab.
+        /// Anomaly Investigation: It is normal for this pixel to spike as the number of installs grows. Ensure that the number of dismiss is not greater than the dialog number of impressions.
+        case onboardingTryVisitSiteDialogNewTabDismissButtonTapped
+
+        /// Event Trigger: Triggered when the users dismiss the "Try Visit Site" dialog prompted from in-context navigation.
+        /// Anomaly Investigation: It is normal for this pixel to spike as the number of installs grows. Ensure that the number of dismiss is not greater than the dialog number of impressions.
+        case onboardingTryVisitSiteDialogDismissButtonTapped
+
+        /// Event Trigger: Triggered when the users dismiss the "Blocked Trackers dialog".
+        /// Anomaly Investigation: Check that
+        case onboardingTrackersDialogDismissButtonTapped
+
+        /// Event Trigger: Triggered when the users dismiss the "Fire Button" dialog prompted from in-context navigation.
+        /// Anomaly Investigation: It is normal for this pixel to spike as the number of installs grows. Ensure that the number of dismiss is not greater than the dialog number of impressions.
+        case onboardingFireDialogDismissButtonTapped
+
+        /// Event Trigger: Triggered when the users dismiss the "End of Journey" dialog prompted from a new tab.
+        /// Anomaly Investigation: It is normal for this pixel to spike as the number of installs grows. Ensure that the number of dismiss is not greater than the dialog number of impressions.
+        case onboardingEndOfJourneyDialogNewTabDismissButtonTapped
+
+        /// Event Trigger: Triggered when the users dismiss the "End of Journey" dialog prompted from in-context navigation.
+        /// Anomaly Investigation: It is normal for this pixel to spike as the number of installs grows. Ensure that the number of dismiss is not greater than the dialog number of impressions.
+        case onboardingEndOfJourneyDialogDismissButtonTapped
+
+        /// Event Trigger: Triggered when the users dismiss the "Privacy Pro" dialog prompted from a new tab.
+        /// Anomaly Investigation: It is normal for this pixel to spike as the number of installs grows. Ensure that the number of dismiss is not greater than the dialog number of impressions.
+        case onboardingPrivacyPromoDialogDismissButtonTapped
 
         // MARK: - Onboarding Add To Dock
 
@@ -353,6 +413,8 @@ extension Pixel {
         case autofillExtensionToggledOn
         case autofillExtensionToggledOff
         case autofillLoginsStacked
+        
+        case autofillDeviceCapabilityDeviceAuthDisabled
         
         case autofillSettingsOpened
 
@@ -703,6 +765,11 @@ extension Pixel {
 
         case debugBreakageExperiment
 
+        case debugWebViewNotInVisibleTabHierarchy
+        case debugWebViewInVisibleTabHidden
+        case debugWebViewNotAttachedToWindow
+        case debugWebViewHasZeroFrameSize
+
         // Return user measurement
         case debugReturnUserAddATB
         case debugReturnUserUpdateATB
@@ -735,7 +802,9 @@ extension Pixel {
         case syncDuckAddressOverride
         case syncSuccessRateDaily
         case syncLocalTimestampResolutionTriggered(Feature)
-        case syncFailedToMigrate
+        case syncMigratedToFileStore
+        case syncFailedToMigrateToFileStore
+        case syncFailedToInitFileStore
         case syncFailedToLoadAccount
         case syncFailedToSetupEngine
         case syncBookmarksObjectLimitExceededDaily
@@ -850,7 +919,7 @@ extension Pixel {
         case privacyProSubscriptionActive
         case privacyProOfferScreenImpression
         case privacyProPurchaseAttempt
-        case privacyProPurchaseFailure
+        case privacyProPurchaseFailureOther
         case privacyProPurchaseFailureStoreError
         case privacyProPurchaseFailureBackendError
         case privacyProPurchaseFailureAccountNotCreated
@@ -866,7 +935,6 @@ extension Pixel {
         case privacyProRestoreAfterPurchaseAttempt
         case privacyProSubscriptionActivated
         case privacyProWelcomeAddDevice
-        case privacyProAddDeviceEnterEmail
         case privacyProWelcomeVPN
         case privacyProWelcomePersonalInformationRemoval
         case privacyProWelcomeIdentityRestoration
@@ -877,7 +945,6 @@ extension Pixel {
         case privacyProSubscriptionManagementEmail
         case privacyProSubscriptionManagementPlanBilling
         case privacyProSubscriptionManagementRemoval
-        case privacyProTransactionProgressNotHiddenAfter60s
         case privacyProSuccessfulSubscriptionAttribution
         case privacyProKeychainAccessError
         case privacyProSubscriptionCookieMissingTokenOnSignIn
@@ -885,9 +952,13 @@ extension Pixel {
         case privacyProSubscriptionCookieRefreshedWithAccessToken
         case privacyProSubscriptionCookieRefreshedWithEmptyValue
         case privacyProSubscriptionCookieFailedToSetSubscriptionCookie
-        case privacyProDeadTokenDetected
-        case authV1MigrationFailed
-        case authV1MigrationSucceeded
+        // AUth V2
+        case privacyProInvalidRefreshTokenDetected
+        case privacyProInvalidRefreshTokenSignedOut
+        case privacyProInvalidRefreshTokenRecovered
+        case privacyProAuthV2MigrationFailed
+        case privacyProAuthV2MigrationSucceeded
+        case privacyProAuthV2GetTokensError
 
         case settingsPrivacyProAccountWithNoSubscriptionFound
 
@@ -897,6 +968,30 @@ extension Pixel {
         case privacyProActivatingRestoreErrorFailedToFetchAccountDetails
         case privacyProActivatingRestoreErrorFailedToFetchSubscriptionDetails
         case privacyProActivatingRestoreErrorSubscriptionExpired
+
+        /**
+         * Event Trigger: The Privacy Pro onboarding promotion is displayed to the user
+         *
+         * Anomaly Investigation:
+         * - This should only be fired during app onboarding. See `OnboardingPrivacyProPromotionHelper`
+         */
+        case privacyProOnboardingPromotionImpression
+
+        /**
+         * Event Trigger: The user tapped the 'Learn More' button on the Privacy Pro onboarding promotion
+         *
+         * Anomaly Investigation:
+         * - This should only be fired during app onboarding. See `OnboardingPrivacyProPromotionHelper`
+         */
+        case privacyProOnboardingPromotionTap
+
+        /**
+         * Event Trigger: The user tapped the 'Skip' button on the Privacy Pro onboarding promotion
+         *
+         * Anomaly Investigation:
+         * - This should only be fired during app onboarding. See `OnboardingPrivacyProPromotionHelper`
+         */
+        case privacyProOnboardingPromotionDismiss
 
         // MARK: Pixel Experiment
         case pixelExperimentEnrollment
@@ -938,6 +1033,9 @@ extension Pixel {
         case settingsNextStepsAddAppToDock
         case settingsNextStepsAddWidget
         case settingsMoreSearchSettings
+
+        /// [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210068471808737)
+        case settingsPresentedFromMenu
 
         // Web pixels
         case privacyProOfferMonthlyPriceClick
@@ -984,7 +1082,11 @@ extension Pixel {
         case newTabPageCustomizeShortcutRemoved(_ shortcutName: String)
         case newTabPageCustomizeShortcutAdded(_ shortcutName: String)
 
-        // MARK: DuckPlayer        
+        // MARK: DuckPlayer
+
+        /// [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210068471808737)
+        case duckPlayerSettingsOpen
+
         case duckPlayerDailyUniqueView
         case duckPlayerViewFromYoutubeViaMainOverlay
         case duckPlayerViewFromYoutubeViaHoverButton
@@ -1056,6 +1158,7 @@ extension Pixel {
         case openAIChatFromWidgetControlCenter
         case openAIChatFromWidgetLockScreenComplication
         case openAIChatFromIconShortcut
+        case openAIChatFromTabManager
 
         case aiChatSettingsVoiceTurnedOff
         case aiChatSettingsVoiceTurnedOn
@@ -1063,7 +1166,11 @@ extension Pixel {
         case aiChatSettingsAddressBarTurnedOn
         case aiChatSettingsBrowserMenuTurnedOff
         case aiChatSettingsBrowserMenuTurnedOn
+        case aiChatSettingsTabManagerTurnedOff
+        case aiChatSettingsTabManagerTurnedOn
         case aiChatSettingsDisplayed
+        case aiChatSettingsEnabled
+        case aiChatSettingsDisabled
 
         // MARK: Lifecycle
         case appDidTransitionToUnexpectedState
@@ -1077,6 +1184,47 @@ extension Pixel {
 
         // MARK: Malicious Site Protection
         case maliciousSiteProtection(event: MaliciousSiteProtectionEvent)
+
+        // MARK: - Duck Player Native pixels
+        
+        /// First time Duck Player is opened each day
+        case duckPlayerNativeDailyUniqueView
+        /// Duck Player is opened automatically on YouTube
+        case duckPlayerNativeViewFromYoutubeAutomatic
+        /// Duck Player is opened from the YouTube entry point
+        case duckPlayerNativeViewFromYoutubeEntryPoint
+        /// Duck Player is opened from the YouTube re-entry point
+        case duckPlayerNativeViewFromYoutubeReEntryPoint
+        /// Duck Player is opened from SERP
+        case duckPlayerNativeViewFromSERP
+        /// Watch on YouTube button is tapped from Duck Player UI
+        case duckPlayerNativeWatchOnYoutube
+        /// Duck Player entry point is shown on YouTube video page
+        case duckPlayerNativeEntryPointImpression
+        /// Duck Player entry point is dismissed on YouTube video page
+        case duckPlayerNativeEntryPointDismissed
+        /// Duck Player re-entry point is shown on YouTube video page
+        case duckPlayerNativeReEntryPointImpression
+        /// Duck Player re-entry point is dismissed on YouTube video page
+        case duckPlayerNativeReEntryPointDismissed
+        /// Setting for SERP is changed to off
+        case duckPlayerNativeSettingsSerpOff
+        /// Setting for SERP is changed to on
+        case duckPlayerNativeSettingsSerpOn
+        /// Setting for YouTube is changed to automatic
+        case duckPlayerNativeSettingsYoutubeAutomatic
+        /// Setting for YouTube is changed to let me choose
+        case duckPlayerNativeSettingsYoutubeChoose
+        /// Setting for YouTube is changed to don't show
+        case duckPlayerNativeSettingsYoutubeDontShow
+        /// Priming modal is shown
+        case duckPlayerNativePrimingModalImpression
+        /// Priming modal is dismissed
+        case duckPlayerNativePrimingModalDismissed
+        /// Priming modal CTA is tapped
+        case duckPlayerNativePrimingModalCTA
+        /// Settings gear icon is tapped from Duck Player UI
+        case duckPlayerNativeDuckPlayerSettingsOpened
     }
 
 }
@@ -1089,6 +1237,8 @@ extension Pixel.Event {
         switch self {
         case .appInstall: return "m_install"
         case .appLaunch: return "ml"
+        case .appLaunchFromExternalLink: return "m_app-launch_tapped-external-link"
+        case .appLaunchFromShareExtension: return "m_app-launch_shared-link"
         case .refreshPressed: return "m_r"
         case .pullToRefresh: return "m_pull-to-reload"
 
@@ -1110,7 +1260,14 @@ extension Pixel.Event {
         case .dashboardProtectionAllowlistRemove: return "mp_wlr"
             
         case .privacyDashboardReportBrokenSite: return "mp_rb"
-            
+
+        case .keyValueFileStoreSupportDirAccessError: return "m_debug_key_value_file_store_support_dir_access_error"
+        case .keyValueFileStoreInitError: return "m_debug_key_value_file_store_init_error"
+
+        case .tabsStoreSupportDirAccessError: return "m_debug_tabs_store_support_dir_access_error"
+        case .tabsStoreInitError: return "m_debug_tabs_store_init_error"
+        case .tabsStoreSaveError: return "m_debug_tabs_store_save_error"
+
         case .tabSwitcherNewLayoutSeen: return "m_ts_n"
         case .tabSwitcherListEnabled: return "m_ts_l"
         case .tabSwitcherGridEnabled: return "m_ts_g"
@@ -1160,6 +1317,7 @@ extension Pixel.Event {
         case .browsingMenuToggleBrowsingMode: return "mb_dm"
         case .browsingMenuCopy: return "mb_cp"
         case .browsingMenuPrint: return "mb_pr"
+        case .browsingMenuReload: return "m_nav_menu_reload"
 
         case .browsingMenuFindInPage: return "mb_fp"
         case .browsingMenuZoom: return "m_menu_page_zoom_taps"
@@ -1237,6 +1395,9 @@ extension Pixel.Event {
         case .brokenSiteReport: return "epbf"
             
         case .onboardingIntroShownUnique: return "m_preonboarding_intro_shown_unique"
+        case .onboardingIntroSkipOnboardingCTAPressed: return "m_preonboarding_skip-onboarding-pressed"
+        case .onboardingIntroConfirmSkipOnboardingCTAPressed: return "m_preonboarding_confirm-skip-onboarding-pressed"
+        case .onboardingIntroResumeOnboardingCTAPressed: return "m_preonboarding_resume-onboarding-pressed"
         case .onboardingIntroComparisonChartShownUnique: return "m_preonboarding_comparison_chart_shown_unique"
         case .onboardingIntroChooseBrowserCTAPressed: return "m_preonboarding_choose_browser_pressed"
         case .onboardingIntroChooseAppIconImpressionUnique: return "m_preonboarding_choose_icon_impressions_unique"
@@ -1258,13 +1419,22 @@ extension Pixel.Event {
         case .daxDialogsWithTrackersUnique: return "m_dx_wt_unique"
         case .daxDialogsSiteIsMajorUnique: return "m_dx_sm_unique"
         case .daxDialogsSiteOwnedByMajorUnique: return "m_dx_so_unique"
-        case .daxDialogsHiddenUnique: return "m_dx_h_unique"
         case .daxDialogsFireEducationShownUnique: return "m_dx_fe_s_unique"
         case .daxDialogsFireEducationConfirmedUnique: return "m_dx_fe_co_unique"
         case .daxDialogsFireEducationCancelledUnique: return "m_dx_fe_ca_unique"
         case .daxDialogsEndOfJourneyTabUnique: return "m_dx_end_tab_unique"
         case .daxDialogsEndOfJourneyNewTabUnique: return "m_dx_end_new_tab_unique"
         case .daxDialogsEndOfJourneyDismissed: return "m_dx_end_dialog_dismissed"
+
+        case .onboardingTrySearchDialogNewTabDismissButtonTapped: return "m_onboarding_try-search-dialog-new-tab_dismiss-button-tapped"
+        case .onboardingSearchResultDialogDismissButtonTapped: return "m_onboarding_search-result-dialog_dismiss-button-tapped"
+        case .onboardingTryVisitSiteDialogNewTabDismissButtonTapped: return "m_onboarding_try-visit-site-dialog-new-tab_dismiss-button-tapped"
+        case .onboardingTryVisitSiteDialogDismissButtonTapped: return "m_onboarding_try-visit-site-dialog_dismiss-button-tapped"
+        case .onboardingTrackersDialogDismissButtonTapped: return "m_onboarding_trackers-dialog_dismiss-button-tapped"
+        case .onboardingFireDialogDismissButtonTapped: return "m_onboarding_fire-dialog_dismiss-button-tapped"
+        case .onboardingEndOfJourneyDialogNewTabDismissButtonTapped: return "m_onboarding_end-dialog-new-tab_dismiss-button-tapped"
+        case .onboardingEndOfJourneyDialogDismissButtonTapped: return "m_onboarding_end-dialog_dismiss-button-tapped"
+        case .onboardingPrivacyPromoDialogDismissButtonTapped: return "m_onboarding_privacy-promo-dialog_dismiss-button-tapped"
 
         case .onboardingAddToDockPromoImpressionsUnique: return "m_onboarding_add_to_dock_promo_impressions_unique"
         case .onboardingAddToDockPromoShowTutorialCTATapped: return "m_onboarding_add_to_dock_promo_show_tutorial_button_tapped"
@@ -1397,6 +1567,8 @@ extension Pixel.Event {
         case .autofillExtensionToggledOff: return "m_autofill_extension_toggled_off"
 
         case .autofillLoginsStacked: return "m_autofill_logins_stacked"
+            
+        case .autofillDeviceCapabilityDeviceAuthDisabled: return "m_autofill_device_capability_device_auth_disabled"
 
         case .autofillSettingsOpened: return "autofill_settings_opened"
             
@@ -1440,18 +1612,18 @@ extension Pixel.Event {
 
         case .autofillJSPixelFired(let pixel):
             return "m_ios_\(pixel.pixelName)"
-            
+
         case .secureVaultError: return "m_secure_vault_error"
-            
+
         case .secureVaultInitFailedError: return "m_secure-vault_error_init-failed"
         case .secureVaultFailedToOpenDatabaseError: return "m_secure-vault_error_failed-to-open-database"
-            
+
         case .secureVaultIsEnabledCheckedWhenEnabledAndDataProtected: return "m_secure-vault_is-enabled-checked_when-enabled-and-data-protected"
 
         case .secureVaultV4Migration: return "m_secure-vault_v4-migration"
         case .secureVaultV4MigrationSkipped: return "m_secure-vault_v4-migration-skipped"
 
-            // MARK: Data Import pixels
+        // MARK: Data Import pixels
 
         case .autofillImportPasswordsImportButtonTapped: return "autofill_import_passwords_import_button_tapped"
         case .autofillImportPasswordsImportButtonShown: return "autofill_import_passwords_import_button_shown"
@@ -1714,6 +1886,11 @@ extension Pixel.Event {
         case .debugSetAsDefaultBrowserMaxNumberOfAttemptsNoExistingResultPersistedFailure: return "m_debug_set-default-browser_failure-max-number-of-attempts-reached-no-persisted-result"
         case .debugSetAsDefaultBrowserUnknownFailure: return "m_debug_set-default-browser_failure-unknown-error"
 
+        case .debugWebViewInVisibleTabHidden: return "m_debug_webview_in_visible_tab_hidden"
+        case .debugWebViewNotInVisibleTabHierarchy: return "m_debug_webview_not_in_visible_tab_hierarchy"
+        case .debugWebViewNotAttachedToWindow: return "m_debug_webview_not_attached_to_window"
+        case .debugWebViewHasZeroFrameSize: return "m_debug_webview_has_zero_frame_size"
+
             // MARK: Ad Attribution
 
         case .adAttributionGlobalAttributedRulesDoNotExist: return "m_attribution_global_attributed_rules_do_not_exist"
@@ -1755,8 +1932,10 @@ extension Pixel.Event {
         case .syncDuckAddressOverride: return "m_sync_duck_address_override"
         case .syncSuccessRateDaily: return "m_sync_success_rate_daily"
         case .syncLocalTimestampResolutionTriggered(let feature): return "m_sync_\(feature.name)_local_timestamp_resolution_triggered"
-        case .syncFailedToMigrate: return "m_d_sync_failed_to_migrate"
-        case .syncFailedToLoadAccount: return "m_d_sync_failed_to_load_account"
+        case .syncMigratedToFileStore: return "m_debug_sync_migrated_to_file_store"
+        case .syncFailedToInitFileStore: return "m_debug_sync_failed_to_init_file_store"
+        case .syncFailedToMigrateToFileStore: return "m_debug_sync_failed_to_migrate_to_file_store"
+        case .syncFailedToLoadAccount: return "m_d_sync_failed_to_load_account2"
         case .syncFailedToSetupEngine: return "m_d_sync_failed_to_setup_engine"
         case .syncBookmarksObjectLimitExceededDaily: return "m_sync_bookmarks_object_limit_exceeded_daily"
         case .syncCredentialsObjectLimitExceededDaily: return "m_sync_credentials_object_limit_exceeded_daily"
@@ -1863,7 +2042,7 @@ extension Pixel.Event {
         case .privacyProSubscriptionActive: return "m_privacy-pro_app_subscription_active"
         case .privacyProOfferScreenImpression: return "m_privacy-pro_offer_screen_impression"
         case .privacyProPurchaseAttempt: return "m_privacy-pro_terms-conditions_subscribe_click"
-        case .privacyProPurchaseFailure: return "m_privacy-pro_app_subscription-purchase_failure_other"
+        case .privacyProPurchaseFailureOther: return "m_privacy-pro_app_subscription-purchase_failure_other"
         case .privacyProPurchaseFailureStoreError: return "m_privacy-pro_app_subscription-purchase_failure_store"
         case .privacyProPurchaseFailureAccountNotCreated: return "m_privacy-pro_app_subscription-purchase_failure_account-creation"
         case .privacyProPurchaseFailureBackendError: return "m_privacy-pro_app_subscription-purchase_failure_backend"
@@ -1879,7 +2058,6 @@ extension Pixel.Event {
         case .privacyProRestoreAfterPurchaseAttempt: return "m_privacy-pro_app_subscription-restore-after-purchase-attempt_success"
         case .privacyProSubscriptionActivated: return "m_privacy-pro_app_subscription_activated_u"
         case .privacyProWelcomeAddDevice: return "m_privacy-pro_welcome_add-device_click_u"
-        case .privacyProAddDeviceEnterEmail: return "m_privacy-pro_add-device_enter-email_click"
         case .privacyProWelcomeVPN: return "m_privacy-pro_welcome_vpn_click_u"
         case .privacyProWelcomePersonalInformationRemoval: return "m_privacy-pro_welcome_personal-information-removal_click_u"
         case .privacyProWelcomeIdentityRestoration: return "m_privacy-pro_welcome_identity-theft-restoration_click_u"
@@ -1890,7 +2068,6 @@ extension Pixel.Event {
         case .privacyProSubscriptionManagementEmail: return "m_privacy-pro_manage-email_edit_click"
         case .privacyProSubscriptionManagementPlanBilling: return "m_privacy-pro_settings_change-plan-or-billing_click"
         case .privacyProSubscriptionManagementRemoval: return "m_privacy-pro_settings_remove-from-device_click"
-        case .privacyProTransactionProgressNotHiddenAfter60s: return "m_privacy-pro_progress_not_hidden_after_60s"
         case .privacyProSuccessfulSubscriptionAttribution: return "m_subscribe"
         case .privacyProKeychainAccessError: return "m_privacy-pro_keychain_access_error"
         case .privacyProSubscriptionCookieMissingTokenOnSignIn: return "m_privacy-pro_subscription-cookie-missing_token_on_sign_in"
@@ -1898,9 +2075,13 @@ extension Pixel.Event {
         case .privacyProSubscriptionCookieRefreshedWithAccessToken: return "m_privacy-pro_subscription-cookie-refreshed_with_access_token"
         case .privacyProSubscriptionCookieRefreshedWithEmptyValue: return "m_privacy-pro_subscription-cookie-refreshed_with_empty_value"
         case .privacyProSubscriptionCookieFailedToSetSubscriptionCookie: return "m_privacy-pro_subscription-cookie-failed_to_set_subscription_cookie"
-        case .privacyProDeadTokenDetected: return "m_privacy-pro_dead_token_detected"
-        case .authV1MigrationFailed: return "m_privacy-pro_v1migration_failed"
-        case .authV1MigrationSucceeded: return "m_privacy-pro_v1migration_succeeded"
+        // AUth V2
+        case .privacyProInvalidRefreshTokenDetected: return "m_privacy-pro_auth_invalid_refresh_token_detected"
+        case .privacyProInvalidRefreshTokenSignedOut: return "m_privacy-pro_auth_invalid_refresh_token_signed_out"
+        case .privacyProInvalidRefreshTokenRecovered: return "m_privacy-pro_auth_invalid_refresh_token_recovered"
+        case .privacyProAuthV2MigrationFailed: return "m_privacy-pro_auth_v2_migration_failure"
+        case .privacyProAuthV2MigrationSucceeded: return "m_privacy-pro_auth_v2_migration_success"
+        case .privacyProAuthV2GetTokensError: return "m_privacy-pro_auth_v2_get_tokens_error"
 
         case .settingsPrivacyProAccountWithNoSubscriptionFound: return "m_settings_privacy-pro_account_with_no_subscription_found"
 
@@ -1911,11 +2092,18 @@ extension Pixel.Event {
         case .privacyProActivatingRestoreErrorFailedToFetchSubscriptionDetails: return "m_privacy-pro_activating_restore_error_failed_to_fetch_subscription_details"
         case .privacyProActivatingRestoreErrorSubscriptionExpired: return "m_privacy-pro_activating_restore_error_subscription_expired"
 
+        case .privacyProOnboardingPromotionImpression: return "m_privacy-pro_onboarding_promotion_impression"
+
+        case .privacyProOnboardingPromotionTap: return "m_privacy-pro_onboarding_promotion_tap"
+
+        case .privacyProOnboardingPromotionDismiss: return "m_privacy-pro_onboarding_promotion_dismiss"
+
         // MARK: Pixel Experiment
         case .pixelExperimentEnrollment: return "pixel_experiment_enrollment"
 
         // MARK: Settings
         case .settingsPresented: return "m_settings_presented"
+        case .settingsPresentedFromMenu: return "m_settings_presented-from-menu"
         case .settingsSetAsDefault: return "m_settings_set_as_default"
         case .settingsVoiceSearchOn: return "m_settings_voice_search_on"
         case .settingsVoiceSearchOff: return "m_settings_voice_search_off"
@@ -2015,6 +2203,7 @@ extension Pixel.Event {
             return "m_new_tab_page_customize_shortcut_added_\(shortcutName)"
 
         // MARK: DuckPlayer
+        case .duckPlayerSettingsOpen: return "m_settings_duckplayer_open"
         case .duckPlayerDailyUniqueView: return "duckplayer_daily-unique-view"
         case .duckPlayerViewFromYoutubeViaMainOverlay: return "duckplayer_view-from_youtube_main-overlay"
         case .duckPlayerViewFromYoutubeViaHoverButton: return "duckplayer_view-from_youtube_hover-button"
@@ -2092,13 +2281,18 @@ extension Pixel.Event {
         case .browsingMenuAIChat: return "m_aichat_menu_tab_icon"
         case .browsingMenuListAIChat: return "m_browsing_menu_list_aichat"
         case .openAIChatFromIconShortcut: return "m_aichat-icon-shortcut"
+        case .openAIChatFromTabManager: return "m_aichat_tabmanager_icon"
         case .aiChatSettingsVoiceTurnedOff: return "m_aichat_settings_voice_turned_off"
         case .aiChatSettingsVoiceTurnedOn: return "m_aichat_settings_voice_turned_on"
         case .aiChatSettingsAddressBarTurnedOff: return "m_aichat_settings_address_bar_turned_off"
         case .aiChatSettingsAddressBarTurnedOn: return "m_aichat_settings_address_bar_turned_on"
         case .aiChatSettingsBrowserMenuTurnedOff: return "m_aichat_settings_browser_menu_turned_off"
         case .aiChatSettingsBrowserMenuTurnedOn: return "m_aichat_settings_browser_menu_turned_on"
+        case .aiChatSettingsTabManagerTurnedOff: return "m_aichat_settings_tab_manager_turned_off"
+        case .aiChatSettingsTabManagerTurnedOn: return "m_aichat_settings_tab_manager_turned_on"
         case .aiChatSettingsDisplayed: return "m_aichat_settings_displayed"
+        case .aiChatSettingsEnabled: return "m_aichat_settings_enabled"
+        case .aiChatSettingsDisabled: return "m_aichat_settings_disabled"
 
         // MARK: Lifecycle
         case .appDidTransitionToUnexpectedState: return "m_debug_app-did-transition-to-unexpected-state-4"
@@ -2142,6 +2336,66 @@ extension Pixel.Event {
         case .tabSwitcherLongPressCloseTab: return "m_tab_manager_long_press_close_tab"
         case .tabSwitcherLongPressCloseOtherTabs: return "m_tab_manager_long_press_close_other_tabs"
         case .tabSwitcherLongPressCloseOtherTabsDaily: return "m_tab_manager_long_press_close_other_tabs_daily"
+
+        // MARK: - Duck Player Native pixels
+
+        /// First time Duck Player is opened each day
+        case .duckPlayerNativeDailyUniqueView:
+            return "duckplayer_native_daily-unique-view"
+        /// Duck Player is opened automatically on YouTube
+        case .duckPlayerNativeViewFromYoutubeAutomatic:
+            return "duckplayer_native_view-from_youtube_automatic"
+        /// Duck Player is opened from the YouTube entry point
+        case .duckPlayerNativeViewFromYoutubeEntryPoint:
+            return "duckplayer_native_view-from_youtube_entry-point"
+        /// Duck Player is opened from the YouTube re-entry point
+        case .duckPlayerNativeViewFromYoutubeReEntryPoint:
+            return "duckplayer_native_view-from_youtube_re-entry-point"
+        /// Duck Player is opened from SERP
+        case .duckPlayerNativeViewFromSERP:
+            return "duckplayer_native_view-from_serp"
+        /// Watch on YouTube button is tapped from Duck Player UI
+        case .duckPlayerNativeWatchOnYoutube:
+            return "duckplayer_native_watch-on-youtube"
+        /// Duck Player entry point is shown on YouTube video page
+        case .duckPlayerNativeEntryPointImpression:
+            return "duckplayer_native_entry-point_impression"
+        /// Duck Player entry point is dismissed on YouTube video page
+        case .duckPlayerNativeEntryPointDismissed:
+            return "duckplayer_native_entry-point_dismissed"
+        /// Duck Player re-entry point is shown on YouTube video page
+        case .duckPlayerNativeReEntryPointImpression:
+            return "duckplayer_native_re-entry-point_impression"
+        /// Duck Player re-entry point is dismissed on YouTube video page
+        case .duckPlayerNativeReEntryPointDismissed:
+            return "duckplayer_native_re-entry-point_dismissed"
+        /// Setting for SERP is changed to off
+        case .duckPlayerNativeSettingsSerpOff:
+            return "duckplayer_native_settings_serp_off"
+        /// Setting for SERP is changed to on
+        case .duckPlayerNativeSettingsSerpOn:
+            return "duckplayer_native_settings_serp_on"
+        /// Setting for YouTube is changed to automatic
+        case .duckPlayerNativeSettingsYoutubeAutomatic:
+            return "duckplayer_native_settings_youtube_automatic"
+        /// Setting for YouTube is changed to let me choose
+        case .duckPlayerNativeSettingsYoutubeChoose:
+            return "duckplayer_native_settings_youtube_choose"
+        /// Setting for YouTube is changed to don't show
+        case .duckPlayerNativeSettingsYoutubeDontShow:
+            return "duckplayer_native_settings_youtube_dont-show"
+        /// Priming modal is shown
+        case .duckPlayerNativePrimingModalImpression:
+            return "duckplayer_native_priming-modal_impression"
+        /// Priming modal is dismissed
+        case .duckPlayerNativePrimingModalDismissed:
+            return "duckplayer_native_priming-modal_dismissed"
+        /// Priming modal CTA is tapped
+        case .duckPlayerNativePrimingModalCTA:
+            return "duckplayer_native_priming-modal_cta"
+        /// Settings gear icon is tapped from Duck Player UI
+        case .duckPlayerNativeDuckPlayerSettingsOpened:
+            return "duckplayer_native_duckplayer_settings_opened"
         }
     }
 }

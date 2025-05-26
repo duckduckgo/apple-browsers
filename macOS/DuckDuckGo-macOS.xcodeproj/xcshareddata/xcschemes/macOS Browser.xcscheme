@@ -56,10 +56,10 @@
             buildForAnalyzing = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "DataBrokerProtectionTests"
-               BuildableName = "DataBrokerProtectionTests"
-               BlueprintName = "DataBrokerProtectionTests"
-               ReferencedContainer = "container:LocalPackages/DataBrokerProtection">
+               BlueprintIdentifier = "UDSHelperTests"
+               BuildableName = "UDSHelperTests"
+               BlueprintName = "UDSHelperTests"
+               ReferencedContainer = "container:LocalPackages/UDSHelper">
             </BuildableReference>
          </BuildActionEntry>
          <BuildActionEntry
@@ -70,10 +70,10 @@
             buildForAnalyzing = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "UDSHelperTests"
-               BuildableName = "UDSHelperTests"
-               BlueprintName = "UDSHelperTests"
-               ReferencedContainer = "container:LocalPackages/UDSHelper">
+               BlueprintIdentifier = "DataBrokerProtection-macOSTests"
+               BuildableName = "DataBrokerProtection-macOSTests"
+               BlueprintName = "DataBrokerProtection-macOSTests"
+               ReferencedContainer = "container:LocalPackages/DataBrokerProtection-macOS">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -193,40 +193,10 @@
                   Identifier = "HTTPSUpgradeIntegrationTests">
                </Test>
                <Test
-                  Identifier = "MaliciousSiteProtectionIntegrationTests/testFeatureDisabledAndMalwareDetection_tabIsNotMarkedMalware()">
-               </Test>
-               <Test
-                  Identifier = "MaliciousSiteProtectionIntegrationTests/testFeatureDisabledAndScamDetection_tabIsNotMarkedScam()">
-               </Test>
-               <Test
                   Identifier = "NavigationProtectionIntegrationTests/testAMPLinks()">
                </Test>
                <Test
                   Identifier = "NavigationProtectionIntegrationTests/testReferrerTrimming()">
-               </Test>
-               <Test
-                  Identifier = "PhishingDetectionIntegrationTests">
-               </Test>
-               <Test
-                  Identifier = "PhishingDetectionIntegrationTests/testFeatureDisabledAndPhishingDetection_tabIsNotMarkedPhishing()">
-               </Test>
-               <Test
-                  Identifier = "PhishingDetectionIntegrationTests/testPhishingDetectedThenDDGLoaded_tabIsNotMarkedPhishing()">
-               </Test>
-               <Test
-                  Identifier = "PhishingDetectionIntegrationTests/testPhishingDetectedThenNotDetected_tabIsNotMarkedPhishing()">
-               </Test>
-               <Test
-                  Identifier = "PhishingDetectionIntegrationTests/testPhishingDetectedViaHTTPRedirectChain_tabIsMarkedPhishing()">
-               </Test>
-               <Test
-                  Identifier = "PhishingDetectionIntegrationTests/testPhishingDetectedViaJSRedirectChain_tabIsMarkedPhishing()">
-               </Test>
-               <Test
-                  Identifier = "PhishingDetectionIntegrationTests/testPhishingDetected_tabIsMarkedPhishing()">
-               </Test>
-               <Test
-                  Identifier = "PhishingDetectionIntegrationTests/testPhishingNotDetected_tabIsNotMarkedPhishing()">
                </Test>
                <Test
                   Identifier = "TabContentTests/testWhenPDFContextMenuPrintChosen_printDialogOpens()">
@@ -247,16 +217,6 @@
                BuildableName = "NetworkProtectionUITests"
                BlueprintName = "NetworkProtectionUITests"
                ReferencedContainer = "container:LocalPackages/NetworkProtectionMac">
-            </BuildableReference>
-         </TestableReference>
-         <TestableReference
-            skipped = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "DataBrokerProtectionTests"
-               BuildableName = "DataBrokerProtectionTests"
-               BlueprintName = "DataBrokerProtectionTests"
-               ReferencedContainer = "container:LocalPackages/DataBrokerProtection">
             </BuildableReference>
          </TestableReference>
          <TestableReference
@@ -323,10 +283,10 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "DataBrokerProtectionSharedTests"
-               BuildableName = "DataBrokerProtectionSharedTests"
-               BlueprintName = "DataBrokerProtectionSharedTests"
-               ReferencedContainer = "container:LocalPackages/DataBrokerProtectionShared">
+               BlueprintIdentifier = "DataBrokerProtection-macOSTests"
+               BuildableName = "DataBrokerProtection-macOSTests"
+               BlueprintName = "DataBrokerProtection-macOSTests"
+               ReferencedContainer = "container:LocalPackages/DataBrokerProtection-macOS">
             </BuildableReference>
          </TestableReference>
       </Testables>

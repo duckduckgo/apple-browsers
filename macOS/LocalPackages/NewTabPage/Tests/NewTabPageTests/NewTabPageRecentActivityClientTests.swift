@@ -167,9 +167,9 @@ final class NewTabPageRecentActivityClientTests: XCTestCase {
 
     func testThatOpenIsPassedToTheModel() async throws {
         let url = try XCTUnwrap(URL(string: "https://en.wikipedia.org/wiki/index.html"))
-        let action: NewTabPageDataModel.ActivityOpenAction = .init(id: "abcd", target: .sameTab, url: url.absoluteString)
+        let action: NewTabPageDataModel.ActivityOpenAction = .init(id: "abcd", url: url.absoluteString, target: .sameTab)
 
         try await messageHelper.handleMessageExpectingNilResponse(named: .open, parameters: action)
-        XCTAssertEqual(actionsHandler.openCalls, [.init(url: url, target: .current)])
+        XCTAssertEqual(actionsHandler.openCalls, [.init(url: url, sender: .userScript, target: .current)])
     }
 }

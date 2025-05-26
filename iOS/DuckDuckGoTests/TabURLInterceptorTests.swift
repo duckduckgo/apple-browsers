@@ -111,7 +111,7 @@ class TabURLInterceptorDefaultTests: XCTestCase {
     }
 
     func testNotificationForInterceptedAIChatPathWhenFeatureFlagIsOn() {
-        urlInterceptor = TabURLInterceptorDefault(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: [.aiChatDeepLink]), canPurchase: { true })
+        urlInterceptor = TabURLInterceptorDefault(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []), canPurchase: { true })
 
         _ = self.expectation(forNotification: .urlInterceptAIChat, object: nil, handler: nil)
 
@@ -127,11 +127,11 @@ class TabURLInterceptorDefaultTests: XCTestCase {
         }
     }
 
-    func testAllowsNavigationForAIChatPathWhenFeatureFlagIsOff() {
+    func testDoesNotAllowNavigationForAIChatPath() {
         urlInterceptor = TabURLInterceptorDefault(featureFlagger: MockFeatureFlagger(enabledFeatureFlags: []), canPurchase: { true })
 
         let url = URL(string: "https://duckduckgo.com/?ia=chat")!
-        XCTAssertTrue(urlInterceptor.allowsNavigatingTo(url: url))
+        XCTAssertFalse(urlInterceptor.allowsNavigatingTo(url: url))
     }
 
     func testWhenURLBelongsToTestDomainAndInternalModeIsDisabledThenNavigationIsNotIntercepted() async throws {

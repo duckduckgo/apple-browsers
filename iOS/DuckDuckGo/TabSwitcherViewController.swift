@@ -27,6 +27,8 @@ import Persistence
 import os.log
 import SwiftUI
 import BrowserServicesKit
+import AIChat
+import Combine
 
 class TabSwitcherViewController: UIViewController {
 
@@ -45,28 +47,18 @@ class TabSwitcherViewController: UIViewController {
 
     enum InterfaceMode {
 
-        var isMultiSelection: Bool {
-            return !isSingleSelection
-        }
-
-        var isSingleSelection: Bool {
-            return [InterfaceMode.singleSelectNormal, .singleSelectLarge].contains(self)
-        }
-
         var isLarge: Bool {
-            return [InterfaceMode.singleSelectLarge, .multiSelectAvailableLarge, .multiSelectedEditingLarge].contains(self)
+            return [.largeSize, .editingLargeSize].contains(self)
         }
 
         var isNormal: Bool {
             return !isLarge
         }
 
-        case singleSelectNormal
-        case singleSelectLarge
-        case multiSelectAvailableNormal
-        case multiSelectAvailableLarge
-        case multiSelectEditingNormal
-        case multiSelectedEditingLarge
+        case regularSize
+        case largeSize
+        case editingRegularSize
+        case editingLargeSize
 
     }
 
@@ -109,27 +101,32 @@ class TabSwitcherViewController: UIViewController {
     let favicons: Favicons
 
     var tabsStyle: TabsStyle = .list
-    var interfaceMode: InterfaceMode = .singleSelectNormal
+    var interfaceMode: InterfaceMode = .regularSize
+    var canShowSelectionMenu = false
 
     let featureFlagger: FeatureFlagger
     let tabManager: TabManager
+    let aiChatSettings: AIChatSettingsProvider
     var tabsModel: TabsModel {
         tabManager.model
     }
 
     let barsHandler = TabSwitcherBarsStateHandler()
+    private var tabObserverCancellable: AnyCancellable?
 
     required init?(coder: NSCoder,
                    bookmarksDatabase: CoreDataDatabase,
                    syncService: DDGSyncing,
                    featureFlagger: FeatureFlagger,
                    favicons: Favicons = Favicons.shared,
-                   tabManager: TabManager) {
+                   tabManager: TabManager,
+                   aiChatSettings: AIChatSettingsProvider) {
         self.bookmarksDatabase = bookmarksDatabase
         self.syncService = syncService
         self.featureFlagger = featureFlagger
         self.favicons = favicons
         self.tabManager = tabManager
+        self.aiChatSettings = aiChatSettings
         super.init(coder: coder)
     }
 
@@ -163,6 +160,10 @@ class TabSwitcherViewController: UIViewController {
         if !tabSwitcherSettings.hasSeenNewLayout {
             Pixel.fire(pixel: .tabSwitcherNewLayoutSeen)
             tabSwitcherSettings.hasSeenNewLayout = true
+        }
+
+        tabObserverCancellable = tabsModel.$tabs.receive(on: DispatchQueue.main).sink { [weak self] _ in
+            self?.collectionView.reloadData()
         }
     }
 
@@ -220,9 +221,6 @@ class TabSwitcherViewController: UIViewController {
 
     func refreshTitle() {
         topBarView.topItem?.title = UserText.numberOfTabs(tabsModel.count)
-
-        guard interfaceMode.isMultiSelection else { return }
-
         if !selectedTabs.isEmpty {
             topBarView.topItem?.title = UserText.numberOfSelectedTabs(withCount: selectedTabs.count)
         }
@@ -293,7 +291,7 @@ class TabSwitcherViewController: UIViewController {
         if let current = currentSelection {
             let tab = tabsModel.get(tabAt: current)
             tab.viewed = true
-            tabsModel.save()
+            tabManager.save()
             delegate?.tabSwitcher(self, didSelectTab: tab)
         }
         dismiss()
@@ -431,9 +429,6 @@ extension TabSwitcherViewController: UICollectionViewDelegate {
     }
 
     func collectionView(_ collectionView: UICollectionView, contextMenuConfigurationForItemsAt indexPaths: [IndexPath], point: CGPoint) -> UIContextMenuConfiguration? {
-
-        guard interfaceMode.isMultiSelection else { return nil }
-
         // This can happen if you long press in the whitespace
         guard !indexPaths.isEmpty else { return nil }
         

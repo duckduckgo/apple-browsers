@@ -34,13 +34,13 @@ final class TabTests: XCTestCase {
     }
     let urls = URLs()
 
+    var tab: Tab!
     var contentBlockingMock: ContentBlockingMock!
     var privacyFeaturesMock: AnyPrivacyFeatures!
     var privacyConfiguration: MockPrivacyConfiguration {
         contentBlockingMock.privacyConfigurationManager.privacyConfig as! MockPrivacyConfiguration
     }
 
-    var webViewConfiguration: WKWebViewConfiguration!
     var schemeHandler: TestSchemeHandler!
     private var cancellables: Set<AnyCancellable>!
 
@@ -53,28 +53,22 @@ final class TabTests: XCTestCase {
         }
 
         schemeHandler = TestSchemeHandler()
-        WKWebView.customHandlerSchemes = [.http, .https]
-
-        webViewConfiguration = WKWebViewConfiguration()
-        webViewConfiguration.setURLSchemeHandler(schemeHandler, forURLScheme: URL.NavigationalScheme.http.rawValue)
-        webViewConfiguration.setURLSchemeHandler(schemeHandler, forURLScheme: URL.NavigationalScheme.https.rawValue)
         cancellables = []
     }
 
     override func tearDown() {
+        tab = nil
         TestTabExtensionsBuilder.shared = .default
         contentBlockingMock = nil
         privacyFeaturesMock = nil
-        webViewConfiguration = nil
         schemeHandler = nil
-        WKWebView.customHandlerSchemes = []
         cancellables = nil
     }
 
     // MARK: - Tab Content
 
     @MainActor func testWhenSettingURLThenTabTypeChangesToStandard() {
-        let tab = Tab(content: .settings(pane: .autofill))
+        tab = Tab(content: .settings(pane: .autofill), webViewConfiguration: schemeHandler.webViewConfiguration())
         XCTAssertEqual(tab.content, .settings(pane: .autofill))
 
         tab.url = URL.duckDuckGo
@@ -84,25 +78,57 @@ final class TabTests: XCTestCase {
     // MARK: - Equality
 
     @MainActor func testWhenTabsAreIdenticalThenTheyAreEqual() {
-        let tab = Tab()
+        tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration())
         let tab2 = tab
 
         XCTAssert(tab == tab2)
     }
 
     @MainActor func testWhenTabsArentIdenticalThenTheyArentEqual() {
-        let tab = Tab()
+        tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration())
         tab.url = URL.duckDuckGo
-        let tab2 = Tab()
+        let tab2 = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration())
         tab2.url = URL.duckDuckGo
 
         XCTAssert(tab != tab2)
     }
 
+    // MARK: - "Crash Tab" functionality
+
+    @MainActor func testWhenUserIsNotInternalThenTabCannotBeCrashed() {
+        let internalUserDecider = InternalUserDeciderMock()
+        internalUserDecider.isInternalUser = false
+
+        let featureFlagger = FeatureFlaggerMock(internalUserDecider: internalUserDecider)
+
+        let tab = Tab(content: .newtab, featureFlagger: featureFlagger)
+        XCTAssertFalse(tab.canKillWebContentProcess)
+    }
+
+    @MainActor func testWhenTabCrashDebugToolsFeatureFlagIsDisabledThenTabCannotBeCrashed() {
+        let internalUserDecider = InternalUserDeciderMock()
+        internalUserDecider.isInternalUser = true
+
+        let featureFlagger = FeatureFlaggerMock(internalUserDecider: internalUserDecider)
+
+        let tab = Tab(content: .newtab, featureFlagger: featureFlagger)
+        XCTAssertFalse(tab.canKillWebContentProcess)
+    }
+
+    @MainActor func testWhenTabCrashDebugToolsFeatureFlagIsEnabledThenTabCanBeCrashed() {
+        let internalUserDecider = InternalUserDeciderMock()
+        internalUserDecider.isInternalUser = true
+
+        let featureFlagger = FeatureFlaggerMock(internalUserDecider: internalUserDecider, enabledFeatureFlags: [.tabCrashDebugging])
+
+        let tab = Tab(content: .newtab, featureFlagger: featureFlagger)
+        XCTAssertTrue(tab.canKillWebContentProcess)
+    }
+
     // MARK: - Dialogs
 
     @MainActor func testWhenAlertDialogIsShowingChangingURLClearsDialog() {
-        let tab = Tab()
+        tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration())
         tab.url = .duckDuckGo
         let webViewMock = WebViewMock()
         let frameInfo = WKFrameInfoMock(webView: webViewMock, securityOrigin: WKSecurityOriginMock.new(url: .duckDuckGo), request: URLRequest(url: .duckDuckGo), isMainFrame: true)
@@ -114,7 +140,7 @@ final class TabTests: XCTestCase {
 
     @MainActor func testWhenDownloadDialogIsShowingChangingURLDoesNOTClearDialog() {
         // GIVEN
-        let tab = Tab(content: .none, extensionsBuilder: TestTabExtensionsBuilder(load: [DownloadsTabExtension.self]))
+        tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration(), extensionsBuilder: TestTabExtensionsBuilder(load: [DownloadsTabExtension.self]))
         tab.url = .duckDuckGo
         DownloadsPreferences(persistor: DownloadsPreferencesUserDefaultsPersistor()).alwaysRequestDownloadLocation = true
         tab.webView(WebViewMock(), saveDataToFile: Data(), suggestedFilename: "anything", mimeType: "application/pdf", originatingURL: .duckDuckGo)
@@ -139,7 +165,7 @@ final class TabTests: XCTestCase {
 
     @MainActor
     func testCanGoBack() throws {
-        let tab = Tab(content: .none, webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock)
+        tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock)
 
         var eCantGoBack = expectation(description: "canGoBack: false")
         var eCanGoBack: XCTestExpectation!
@@ -222,7 +248,7 @@ final class TabTests: XCTestCase {
             }
         }}
 
-        let tab = Tab(content: .none, webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock, extensionsBuilder: extensionsBuilder)
+        tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock, extensionsBuilder: extensionsBuilder)
 
         schemeHandler.middleware = [{ [urls] request in
             guard request.url!.path == urls.url1.path else { return nil }
@@ -298,7 +324,7 @@ final class TabTests: XCTestCase {
             }
         }}
 
-        let tab = Tab(content: .none, webViewConfiguration: webViewConfiguration, privacyFeatures: privacyFeaturesMock, extensionsBuilder: extensionsBuilder)
+        tab = Tab(content: .none, webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock, extensionsBuilder: extensionsBuilder)
 
         schemeHandler.middleware = [{ [urls] request in
             guard request.url!.path == urls.url1.path else { return nil }
@@ -363,32 +389,33 @@ final class TabTests: XCTestCase {
         }
         builder.buildCalls = []
 
-        let tab = Tab(content: .newtab)
+        _ = Tab(content: .newtab)
         let faviconManagement = try XCTUnwrap(builder.buildCalls[safe: 0]?.1.faviconManagement)
-        XCTAssertTrue(faviconManagement === FaviconManager.shared)
+        XCTAssertTrue(faviconManagement === NSApp.delegateTyped.faviconManager)
 
-        let burnerTab = Tab(content: .newtab, burnerMode: BurnerMode(isBurner: true))
+        _ = Tab(content: .newtab, burnerMode: BurnerMode(isBurner: true))
         let burnerFaviconManagement = try XCTUnwrap(builder.buildCalls[safe: 1]?.1.faviconManagement)
-        XCTAssertTrue(burnerFaviconManagement !== FaviconManager.shared)
+        XCTAssertTrue(burnerFaviconManagement !== NSApp.delegateTyped.faviconManager)
     }
 
     // MARK: - Control Center Media Session enabled
 
     @MainActor func testWhenRegularWindow_mediaSessionEnabled() {
-        let tab = Tab(content: .url(.empty, source: .ui), burnerMode: .regular)
+        tab = Tab(content: .url(.empty, source: .ui), webViewConfiguration: schemeHandler.webViewConfiguration(), burnerMode: .regular)
 
         XCTAssertTrue(tab.webView.configuration.preferences[.mediaSessionEnabled])
     }
 
     @MainActor func testWhenFireWindow_mediaSessionDisabled() {
-        let tab = Tab(content: .url(.empty, source: .ui), burnerMode: BurnerMode(isBurner: true))
+        tab = Tab(content: .url(.empty, source: .ui), webViewConfiguration: schemeHandler.webViewConfiguration(), burnerMode: BurnerMode(isBurner: true))
 
         XCTAssertFalse(tab.webView.configuration.preferences[.mediaSessionEnabled])
     }
 
 }
 
-extension Tab {
+private extension Tab {
+
     var url: URL? {
         get {
             content.userEditableUrl

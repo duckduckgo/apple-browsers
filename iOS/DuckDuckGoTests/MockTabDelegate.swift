@@ -134,18 +134,20 @@ extension TabViewController {
             bookmarksDatabase: CoreDataDatabase.bookmarksMock,
             historyManager: MockHistoryManager(historyCoordinator: MockHistoryCoordinator(), isEnabledByUser: true, historyFeatureEnabled: true),
             syncService: MockDDGSyncing(authState: .active, isSyncInProgress: false),
-            duckPlayer: MockDuckPlayer(settings: MockDuckPlayerSettings(appSettings: AppSettingsMock(), privacyConfigManager: PrivacyConfigurationManagerMock(), internalUserDecider: MockDuckPlayerInternalUserDecider()), featureFlagger: featureFlagger),
+            duckPlayer: MockDuckPlayer(settings: MockDuckPlayerSettings(appSettings: AppSettingsMock(), privacyConfigManager: PrivacyConfigurationManagerMock(), featureFlagger: MockDuckPlayerFeatureFlagger(), internalUserDecider: MockInternalUserDecider()), featureFlagger: featureFlagger),
             privacyProDataReporter: MockPrivacyProDataReporter(),
             contextualOnboardingPresenter: contextualOnboardingPresenter,
             contextualOnboardingLogic: contextualOnboardingLogic,
             onboardingPixelReporter: contextualOnboardingPixelReporter,
             featureFlagger: featureFlagger,
+            contentScopeExperimentManager: MockContentScopeExperimentManager(),
             subscriptionCookieManager: SubscriptionCookieManagerMock(),
             textZoomCoordinator: MockTextZoomCoordinator(),
             websiteDataManager: MockWebsiteDataManager(),
             fireproofing: MockFireproofing(),
             tabInteractionStateSource: MockTabInteractionStateSource(),
-            specialErrorPageNavigationHandler: DummySpecialErrorPageNavigationHandler()
+            specialErrorPageNavigationHandler: DummySpecialErrorPageNavigationHandler(),
+            featureDiscovery: MockFeatureDiscovery()
         )
         tab.attachWebView(configuration: .nonPersistent(), andLoadRequest: nil, consumeCookies: false, customWebView: customWebView)
         return tab

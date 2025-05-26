@@ -200,7 +200,7 @@ extension BookmarksContextMenu {
     }
 
     static func copyBookmarkMenuItem(bookmark: Bookmark?, target: AnyObject?) -> NSMenuItem {
-        NSMenuItem(title: UserText.copy, action: #selector(BookmarkMenuItemSelectors.copyBookmark(_:)), target: target, representedObject: bookmark)
+        NSMenuItem(title: UserText.copyLink, action: #selector(BookmarkMenuItemSelectors.copyBookmark(_:)), target: target, representedObject: bookmark)
     }
 
     static func deleteBookmarkMenuItem(bookmark: Bookmark?, target: AnyObject?) -> NSMenuItem {
@@ -290,7 +290,7 @@ extension BookmarksContextMenu: BookmarkMenuItemSelectors {
             return
         }
 
-        windowControllersManager.show(url: bookmark.urlObject, source: .bookmark, newTab: true)
+        windowControllersManager.show(url: bookmark.urlObject, source: .bookmark, newTab: true, selected: nil /* depending on the setting */)
     }
 
     @MainActor
@@ -435,12 +435,10 @@ extension BookmarksContextMenu: FolderMenuItemSelectors {
 
         if let folder = sender.representedObject as? BookmarkFolder {
             let tabs = Tab.withContentOfBookmark(folder: folder, burnerMode: tabCollection.burnerMode)
-            tabCollection.append(tabs: tabs)
-            PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
+            tabCollection.append(tabs: tabs, andSelect: true)
         } else if let bookmarks = sender.representedObject as? [Bookmark] {
             let tabs = Tab.with(contentsOf: bookmarks, burnerMode: tabCollection.burnerMode)
-            tabCollection.append(tabs: tabs)
-            PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
+            tabCollection.append(tabs: tabs, andSelect: true)
         }
     }
 
@@ -456,7 +454,6 @@ extension BookmarksContextMenu: FolderMenuItemSelectors {
         let newTabCollection = TabCollection.withContentOfBookmark(folder: folder, burnerMode: tabCollection.burnerMode)
         let tabCollectionViewModel = TabCollectionViewModel(tabCollection: newTabCollection, burnerMode: tabCollection.burnerMode)
         windowControllersManager.openNewWindow(with: tabCollectionViewModel, burnerMode: tabCollection.burnerMode)
-        PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
     }
 
 }

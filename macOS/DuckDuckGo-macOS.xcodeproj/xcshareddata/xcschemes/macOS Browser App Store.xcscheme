@@ -48,6 +48,20 @@
                ReferencedContainer = "container:DuckDuckGo-macOS.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "DataBrokerProtection-macOSTests"
+               BuildableName = "DataBrokerProtection-macOSTests"
+               BlueprintName = "DataBrokerProtection-macOSTests"
+               ReferencedContainer = "container:LocalPackages/DataBrokerProtection-macOS">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -164,40 +178,10 @@
                   Identifier = "HTTPSUpgradeIntegrationTests">
                </Test>
                <Test
-                  Identifier = "MaliciousSiteProtectionIntegrationTests/testFeatureDisabledAndMalwareDetection_tabIsNotMarkedMalware()">
-               </Test>
-               <Test
-                  Identifier = "MaliciousSiteProtectionIntegrationTests/testFeatureDisabledAndScamDetection_tabIsNotMarkedScam()">
-               </Test>
-               <Test
                   Identifier = "NavigationProtectionIntegrationTests/testAMPLinks()">
                </Test>
                <Test
                   Identifier = "NavigationProtectionIntegrationTests/testReferrerTrimming()">
-               </Test>
-               <Test
-                  Identifier = "PhishingDetectionIntegrationTests">
-               </Test>
-               <Test
-                  Identifier = "PhishingDetectionIntegrationTests/testFeatureDisabledAndPhishingDetection_tabIsNotMarkedPhishing()">
-               </Test>
-               <Test
-                  Identifier = "PhishingDetectionIntegrationTests/testPhishingDetectedThenDDGLoaded_tabIsNotMarkedPhishing()">
-               </Test>
-               <Test
-                  Identifier = "PhishingDetectionIntegrationTests/testPhishingDetectedThenNotDetected_tabIsNotMarkedPhishing()">
-               </Test>
-               <Test
-                  Identifier = "PhishingDetectionIntegrationTests/testPhishingDetectedViaHTTPRedirectChain_tabIsMarkedPhishing()">
-               </Test>
-               <Test
-                  Identifier = "PhishingDetectionIntegrationTests/testPhishingDetectedViaJSRedirectChain_tabIsMarkedPhishing()">
-               </Test>
-               <Test
-                  Identifier = "PhishingDetectionIntegrationTests/testPhishingDetected_tabIsMarkedPhishing()">
-               </Test>
-               <Test
-                  Identifier = "PhishingDetectionIntegrationTests/testPhishingNotDetected_tabIsNotMarkedPhishing()">
                </Test>
                <Test
                   Identifier = "TabContentTests">
@@ -258,20 +242,10 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "DataBrokerProtectionTests"
-               BuildableName = "DataBrokerProtectionTests"
-               BlueprintName = "DataBrokerProtectionTests"
-               ReferencedContainer = "container:LocalPackages/DataBrokerProtection">
-            </BuildableReference>
-         </TestableReference>
-         <TestableReference
-            skipped = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "DataBrokerProtectionSharedTests"
-               BuildableName = "DataBrokerProtectionSharedTests"
-               BlueprintName = "DataBrokerProtectionSharedTests"
-               ReferencedContainer = "container:LocalPackages/DataBrokerProtectionShared">
+               BlueprintIdentifier = "DataBrokerProtection-macOSTests"
+               BuildableName = "DataBrokerProtection-macOSTests"
+               BlueprintName = "DataBrokerProtection-macOSTests"
+               ReferencedContainer = "container:LocalPackages/DataBrokerProtection-macOS">
             </BuildableReference>
          </TestableReference>
       </Testables>

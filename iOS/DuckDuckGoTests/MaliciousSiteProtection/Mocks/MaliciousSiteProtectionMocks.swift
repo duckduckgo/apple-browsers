@@ -30,17 +30,35 @@ final class MockMaliciousSiteProtectionUpdateManager: MaliciousSiteUpdateManagin
         .hashPrefixSet: false,
         .filterSet: false
     ]
+    private(set) var updateCallCount = 0
 
     var lastHashPrefixSetUpdateDate: Date = .distantPast
     var lastFilterSetUpdateDate: Date = .distantPast
+
+    var onUpdateDatasets: (() -> Void)?
+    var onHashPrefixUpdate: (() -> Void)?
+    var onFilterSetUpdate: (() -> Void)?
+
+    var updateDataTaskExecutionTime: TimeInterval = 0
 
     func startPeriodicUpdates() -> Task<Void, any Error> {
         Task { }
     }
     
-    func updateData(datasetType: MaliciousSiteProtection.DataManager.StoredDataType.Kind) -> Task<Void, any Error> {
+    func updateData(datasetType: MaliciousSiteProtection.DataManager.StoredDataType.Kind) -> Task<Void, Never> {
+        updateCallCount += 1
         updateDatasets[datasetType] = true
-        return Task { }
+        if datasetType == .hashPrefixSet {
+            onHashPrefixUpdate?()
+        } else if datasetType == .filterSet {
+            onFilterSetUpdate?()
+        }
+        onUpdateDatasets?()
+        return Task {
+            if updateDataTaskExecutionTime > 0 {
+                try? await Task.sleep(interval: updateDataTaskExecutionTime)
+            }
+        }
     }
 }
 
@@ -76,7 +94,7 @@ final class MockMaliciousSiteProtectionFeatureFlags: MaliciousSiteProtectionFeat
 }
 
 final class MockBackgroundScheduler: BGTaskScheduling {
-    private(set) var capturedRegisteredTaskIdentifiers: [String] = []
+    private(set) var capturedRegisteredTaskIdentifiers: [String: Int] = [:]
 
     private(set) var didCallSubmitTaskRequest = false
     private(set) var capturedSubmittedTaskRequest: BGTaskRequest?
@@ -90,7 +108,9 @@ final class MockBackgroundScheduler: BGTaskScheduling {
     var launchHandlers: [String: ((BGTaskInterface) -> Void)?] = [:]
 
     func register(forTaskWithIdentifier identifier: String, launchHandler: @escaping (BGTaskInterface) -> Void) -> Bool {
-        capturedRegisteredTaskIdentifiers.append(identifier)
+        var counterForTaskIdentifier = capturedRegisteredTaskIdentifiers[identifier] ?? 0
+        counterForTaskIdentifier += 1
+        capturedRegisteredTaskIdentifiers[identifier] = counterForTaskIdentifier
         self.launchHandlers[identifier] = launchHandler
         return true
     }
@@ -137,8 +157,11 @@ final class MockMaliciousSiteProtectionDataFetcher: MaliciousSiteProtectionDatas
     private(set) var didCallStartFetching = false
     private(set) var didCallRegisterBackgroundRefreshTaskHandler = false
 
-    func startFetching() {
+    @MainActor
+    @discardableResult
+    func startFetching() -> Task<Void, Error> {
         didCallStartFetching = true
+        return Task {}
     }
     
     func registerBackgroundRefreshTaskHandler() {

@@ -49,6 +49,10 @@ final class SettingsViewModel: ObservableObject {
     let aiChatSettings: AIChatSettingsProvider
     let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
     let experimentalThemingManager: ExperimentalThemingManager
+    var experimentalAIChatManager: ExperimentalAIChatManager
+    private let duckPlayerSettings: DuckPlayerSettings
+    private let duckPlayerPixelHandler: DuckPlayerPixelFiring.Type
+    let featureDiscovery: FeatureDiscovery
 
     // Subscription Dependencies
     let isAuthV2Enabled: Bool
@@ -74,6 +78,9 @@ final class SettingsViewModel: ObservableObject {
     // App Data State Notification Observer
     private var appDataClearingObserver: Any?
     private var textZoomObserver: Any?
+
+    // Subscription Free Trials
+    private let subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping
 
     // Closures to interact with legacy view controllers through the container
     var onRequestPushLegacyView: ((UIViewController) -> Void)?
@@ -335,11 +342,11 @@ final class SettingsViewModel: ObservableObject {
     
     var duckPlayerNativeUI: Binding<Bool> {
         Binding<Bool>(
-            get: { self.state.duckPlayerNativeUI },
-            set: {
-                self.appSettings.duckPlayerNativeUI = $0
-                self.state.duckPlayerNativeUI = $0
-            }
+            get: {
+                (self.featureFlagger.isFeatureOn(.duckPlayerNativeUI) || self.isInternalUser) &&
+                UIDevice.current.userInterfaceIdiom == .phone
+            },
+            set: { _ in }
         )
     }
     
@@ -359,6 +366,7 @@ final class SettingsViewModel: ObservableObject {
             set: {
                 self.appSettings.duckPlayerNativeUISERPEnabled = $0
                 self.state.duckPlayerNativeUISERPEnabled = $0
+                self.duckPlayerPixelHandler.fire($0 ? .duckPlayerNativeSettingsSerpOn : .duckPlayerNativeSettingsSerpOff)
             }
         )
     }
@@ -371,6 +379,26 @@ final class SettingsViewModel: ObservableObject {
             set: {
                 self.appSettings.duckPlayerNativeYoutubeMode = $0
                 self.state.duckPlayerNativeYoutubeMode = $0
+
+                switch $0 {
+                case .auto:
+                    self.duckPlayerPixelHandler.fire(.duckPlayerNativeSettingsYoutubeAutomatic)
+                case .ask:
+                    self.duckPlayerPixelHandler.fire(.duckPlayerNativeSettingsYoutubeChoose)
+                case .never:
+                    self.duckPlayerPixelHandler.fire(.duckPlayerNativeSettingsYoutubeDontShow)
+                }
+            }
+        )
+    }
+
+    var duckPlayerVariantBinding: Binding<DuckPlayerVariant> {
+        Binding<DuckPlayerVariant>(
+            get: {
+                return self.duckPlayerSettings.variant
+            },
+            set: {
+                self.duckPlayerSettings.variant = $0
             }
         )
     }
@@ -460,7 +488,12 @@ final class SettingsViewModel: ObservableObject {
          textZoomCoordinator: TextZoomCoordinating,
          aiChatSettings: AIChatSettingsProvider,
          maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
-         experimentalThemingManager: ExperimentalThemingManager
+         experimentalThemingManager: ExperimentalThemingManager,
+         experimentalAIChatManager: ExperimentalAIChatManager,
+         duckPlayerSettings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
+         duckPlayerPixelHandler: DuckPlayerPixelFiring.Type = DuckPlayerPixelHandler.self,
+         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
+         subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping = SubscriptionFreeTrialsHelper()
     ) {
 
         self.state = SettingsState.defaults
@@ -479,6 +512,11 @@ final class SettingsViewModel: ObservableObject {
         self.aiChatSettings = aiChatSettings
         self.maliciousSiteProtectionPreferencesManager = maliciousSiteProtectionPreferencesManager
         self.experimentalThemingManager = experimentalThemingManager
+        self.experimentalAIChatManager = experimentalAIChatManager
+        self.duckPlayerSettings = duckPlayerSettings
+        self.duckPlayerPixelHandler = duckPlayerPixelHandler
+        self.featureDiscovery = featureDiscovery
+        self.subscriptionFreeTrialsHelper = subscriptionFreeTrialsHelper
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
     }
@@ -506,6 +544,7 @@ extension SettingsViewModel {
             addressBar: SettingsState.AddressBar(enabled: !isPad, position: appSettings.currentAddressBarPosition),
             showsFullURL: appSettings.showFullSiteAddress,
             isExperimentalThemingEnabled: experimentalThemingManager.isExperimentalThemingEnabled,
+            isExperimentalAIChatEnabled: experimentalAIChatManager.isExperimentalAIChatSettingsEnabled,
             sendDoNotSell: appSettings.sendDoNotSell,
             autoconsentEnabled: appSettings.autoconsentEnabled,
             autoclearDataEnabled: AutoClearSettingsModel(settings: appSettings) != nil,
@@ -526,18 +565,21 @@ extension SettingsViewModel {
             sync: getSyncState(),
             syncSource: nil,
             duckPlayerEnabled: featureFlagger.isFeatureOn(.duckPlayer) || shouldDisplayDuckPlayerContingencyMessage,
-            duckPlayerMode: appSettings.duckPlayerMode,
-            duckPlayerOpenInNewTab: appSettings.duckPlayerOpenInNewTab,
+            duckPlayerMode: duckPlayerSettings.mode,
+            duckPlayerOpenInNewTab: duckPlayerSettings.openInNewTab,
             duckPlayerOpenInNewTabEnabled: featureFlagger.isFeatureOn(.duckPlayerOpenInNewTab),
-            duckPlayerNativeUI: appSettings.duckPlayerNativeUI,
-            duckPlayerAutoplay: appSettings.duckPlayerAutoplay,
-            duckPlayerNativeUISERPEnabled: appSettings.duckPlayerNativeUISERPEnabled,
-            duckPlayerNativeYoutubeMode: appSettings.duckPlayerNativeYoutubeMode,
-            aiChat: SettingsState.AIChat(enabled: aiChatSettings.isAIChatFeatureEnabled,
-                                         isAIChatBrowsingMenuFeatureFlagEnabled: aiChatSettings.isAIChatBrowsingMenubarShortcutFeatureEnabled,
-                                         isAIChatAddressBarFeatureFlagEnabled: aiChatSettings.isAIChatAddressBarShortcutFeatureEnabled,
-                                         isAIChatVoiceSearchFeatureFlagEnabled: aiChatSettings.isAIChatVoiceSearchFeatureEnabled)
+            duckPlayerAutoplay: duckPlayerSettings.autoplay,
+            duckPlayerNativeUISERPEnabled: duckPlayerSettings.nativeUISERPEnabled,
+            duckPlayerNativeYoutubeMode: duckPlayerSettings.nativeUIYoutubeMode
         )
+
+        // Subscribe to DuckPlayerSettings updates
+        duckPlayerSettings.duckPlayerSettingsPublisher
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.updateDuckPlayerState()
+            }
+            .store(in: &cancellables)
 
         updateRecentlyVisitedSitesVisibility()
         setupSubscribers()
@@ -598,6 +640,14 @@ extension SettingsViewModel {
         }
     }
     
+    // Function to update local state from DuckPlayerSettings
+    private func updateDuckPlayerState() {
+        state.duckPlayerMode = duckPlayerSettings.mode
+        state.duckPlayerOpenInNewTab = duckPlayerSettings.openInNewTab
+        state.duckPlayerAutoplay = duckPlayerSettings.autoplay
+        state.duckPlayerNativeUISERPEnabled = duckPlayerSettings.nativeUISERPEnabled
+        state.duckPlayerNativeYoutubeMode = duckPlayerSettings.nativeUIYoutubeMode
+    }
 }
 
 // MARK: Subscribers
@@ -832,6 +882,8 @@ extension SettingsViewModel {
             state.subscription.platform = .unknown
             state.subscription.isActiveTrialOffer = false
 
+            state.subscription.isEligibleForTrialOffer = await isUserEligibleForTrialOffer()
+
             subscriptionStateCache.set(state.subscription) // Sync cache
             return
         }
@@ -973,13 +1025,41 @@ extension SettingsViewModel {
             }
             await self.setupSubscriptionEnvironment()
 
-        case .failure:
+        case .failure(let restoreFlowError):
             DispatchQueue.main.async {
                 self.state.subscription.isRestoring = false
                 self.state.subscription.shouldDisplayRestoreSubscriptionError = true
-                self.state.subscription.shouldDisplayRestoreSubscriptionError = false
 
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    self.state.subscription.shouldDisplayRestoreSubscriptionError = false
+                }
             }
+
+            switch restoreFlowError {
+            case .missingAccountOrTransactions:
+                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorMissingAccountOrTransactions)
+            case .pastTransactionAuthenticationError:
+                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorPastTransactionAuthenticationError)
+            case .failedToObtainAccessToken:
+                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorFailedToObtainAccessToken)
+            case .failedToFetchAccountDetails:
+                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorFailedToFetchAccountDetails)
+            case .failedToFetchSubscriptionDetails:
+                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorFailedToFetchSubscriptionDetails)
+            case .subscriptionExpired:
+                DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorSubscriptionExpired)
+            }
+        }
+    }
+
+    /// Checks if the user is eligible for a free trial subscription offer.
+    /// - Returns: `true` if free trials are available and the user is eligible for a free trial, `false` otherwise.
+    private func isUserEligibleForTrialOffer() async -> Bool {
+        guard subscriptionFreeTrialsHelper.areFreeTrialsEnabled else { return false }
+        if isAuthV2Enabled {
+            return await subscriptionManagerV2?.storePurchaseManager().isUserEligibleForFreeTrial() ?? false
+        } else {
+            return await subscriptionManagerV1?.storePurchaseManager().isUserEligibleForFreeTrial() ?? false
         }
     }
 
@@ -992,6 +1072,18 @@ extension NSNotification.Name {
 
 // MARK: - AI Chat
 extension SettingsViewModel {
+
+    var isAiChatEnabledBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.aiChatSettings.isAIChatEnabled },
+            set: { newValue in
+                withAnimation {
+                    self.objectWillChange.send()
+                    self.aiChatSettings.enableAIChat(enable: newValue)
+                }
+            }
+        )
+    }
 
     var aiChatBrowsingMenuEnabledBinding: Binding<Bool> {
         Binding<Bool>(
@@ -1018,6 +1110,24 @@ extension SettingsViewModel {
                 self.aiChatSettings.enableAIChatVoiceSearchUserSettings(enable: newValue)
             }
         )
+    }
+
+    var aiChatTabSwitcherEnabledBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.aiChatSettings.isAIChatTabSwitcherUserSettingsEnabled },
+            set: { newValue in
+                self.aiChatSettings.enableAIChatTabSwitcherUserSettings(enable: newValue)
+            }
+        )
+    }
+
+    var aiChatExperimentalBinding: Binding<Bool> {
+        Binding<Bool>(
+            get: { self.state.isExperimentalAIChatEnabled },
+            set: { _ in
+                self.experimentalAIChatManager.toggleExperimentalTheming()
+                self.state.isExperimentalAIChatEnabled = self.experimentalAIChatManager.isExperimentalAIChatSettingsEnabled
+            })
     }
 
 }

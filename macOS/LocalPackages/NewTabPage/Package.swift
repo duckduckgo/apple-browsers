@@ -32,7 +32,7 @@ let package = Package(
             targets: ["NewTabPage"]),
     ],
     dependencies: [
-        .package(path: "../../BrowserServicesKit"),
+        .package(path: "../../SharedPackages/BrowserServicesKit"),
         .package(path: "../WebKitExtensions"),
         .package(path: "../UserScriptActionsManager"),
         .package(path: "../Utilities"),

@@ -35,7 +35,7 @@ struct TabsPreferencesUserDefaultsPersistor: TabsPreferencesPersistor {
     @UserDefaultsWrapper(key: .newTabPosition, defaultValue: .atEnd)
     var newTabPosition: NewTabPosition
 
-    @UserDefaultsWrapper(key: .sharedPinnedTabs, defaultValue: false)
+    @UserDefaultsWrapper(key: .sharedPinnedTabs, defaultValue: true)
     var sharedPinnedTabs: Bool
 }
 
@@ -76,6 +76,23 @@ final class TabsPreferences: ObservableObject, PreferencesTabOpening {
     }
 
     private var persistor: TabsPreferencesPersistor
+
+    // MARK: - Pinned Tabs Setting Migration
+
+    @UserDefaultsWrapper(key: .pinnedTabsMigrated, defaultValue: false)
+    var pinnedTabsMigrated: Bool
+
+    func migratePinnedTabsSettingIfNecessary(_ collection: TabCollection?) {
+        guard !pinnedTabsMigrated else { return }
+        pinnedTabsMigrated = true
+
+        // Set the shared pinned tabs setting only in case shared pinned tabs are restored
+        if let collection, !collection.tabs.isEmpty {
+            pinnedTabsMode = .shared
+        } else {
+            pinnedTabsMode = .separate
+        }
+    }
 }
 
 enum NewTabPosition: String, CaseIterable {

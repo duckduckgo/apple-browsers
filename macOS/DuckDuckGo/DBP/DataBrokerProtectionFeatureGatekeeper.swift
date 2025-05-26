@@ -19,7 +19,7 @@
 import Foundation
 import BrowserServicesKit
 import Common
-import DataBrokerProtection
+import DataBrokerProtection_macOS
 import Subscription
 import os.log
 import Freemium

@@ -255,7 +255,9 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
-        Pixel.fire(pixel: .settingsSyncOpen)
+        Pixel.fire(pixel: .settingsSyncOpen, withAdditionalParameters: [
+            "is_enabled": isSyncEnabled ? "1" : "0"
+        ])
     }
 
     func updateOptions() {
@@ -305,7 +307,6 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
             lhs.isThisDevice
         })
     }
-
 }
 
 extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
@@ -317,8 +318,9 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
     func endConnectMode() {
         connector?.stopPolling()
         connector = nil
-        connectionController.stopConnectMode()
-        connectionController.stopExchangeMode()
+        Task {
+            await connectionController.cancel()
+        }
     }
 
     func startConnectMode() throws -> String {
@@ -357,7 +359,7 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
     
     func syncCodeEntered(code: String) async -> Bool {
         if featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) {
-            return await connectionController.syncCodeEntered(code: code)
+            return await connectionController.syncCodeEntered(code: code, canScanURLBarcodes: featureFlagger.isFeatureOn(.canScanUrlBasedSyncSetupBarcodes))
         } else {
             return await legacySyncCodeEntered(code: code)
         }
@@ -499,11 +501,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         mapDevices(registeredDevices)
         Pixel.fire(pixel: .syncLogin, includedParameters: [.appVersion])
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            if isRecovery {
-                self.dismissPresentedViewController()
-            } else {
-                self.dismissVCAndShowRecoveryPDF()
-            }
+            self.dismissVCAndShowRecoveryPDF()
         }
     }
     
@@ -515,8 +513,6 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
             handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncLoginError)
         case .failedToCreateAccount:
             handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncSignupError)
-        case .foundExistingAccount:
-            handleError(.unableToMergeTwoAccounts, error: error, event: .syncLoginExistingAccountError)
         }
     }
 }
@@ -527,15 +523,7 @@ extension SyncSettingsViewController {
         let theme = ThemeManager.shared.currentTheme
         view.backgroundColor = theme.backgroundColor
 
-        navigationController?.navigationBar.barTintColor = theme.barBackgroundColor
-        navigationController?.navigationBar.tintColor = theme.navigationBarTintColor
-
-        let appearance = UINavigationBarAppearance()
-        appearance.shadowColor = .clear
-        appearance.backgroundColor = theme.backgroundColor
-
-        navigationController?.navigationBar.standardAppearance = appearance
-        navigationController?.navigationBar.scrollEdgeAppearance = appearance
+        decorateNavigationBar()
 
     }
 

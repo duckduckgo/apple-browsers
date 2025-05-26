@@ -163,8 +163,9 @@ final class TabViewModelTests: XCTestCase {
     // MARK: - Title
 
     @MainActor
-    func testWhenURLIsNilThenTitleIsNewTab() {
-        let tabViewModel = TabViewModel.aTabViewModel
+    func testWhenNewTabPageIsOpenThenTitleIsNewTab() {
+        let tab = Tab(content: .newtab)
+        let tabViewModel = TabViewModel(tab: tab)
 
         XCTAssertEqual(tabViewModel.title, UserText.tabHomeTitle)
     }
@@ -446,15 +447,12 @@ final class TabViewModelTests: XCTestCase {
         let hostURL = "https://app.asana.com/"
         UserDefaultsWrapper<Any>.clearAll()
         let (randomZoomLevel, nextZoomLevel, _) = randomLevelAndAdjacent()
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
-                              styleMask: [.titled, .closable, .resizable],
-                              backing: .buffered, defer: false)
+        let window = MockWindow()
         window.contentView = NSView(frame: window.contentRect(forFrameRect: window.frame))
         AccessibilityPreferences.shared.updateZoomPerWebsite(zoomLevel: randomZoomLevel, url: hostURL)
         let tab = Tab(url: url)
         window.contentView?.addSubview(tab.webView)
         tab.webView.frame = window.contentView!.bounds
-        window.makeKeyAndOrderFront(nil)
         let tabView = TabViewModel(tab: tab)
 
         // WHEN
@@ -475,15 +473,12 @@ final class TabViewModelTests: XCTestCase {
         let hostURL = "https://app.asana.com/"
         UserDefaultsWrapper<Any>.clearAll()
         let (randomZoomLevel, _, previousZoomLevel) = randomLevelAndAdjacent()
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
-                              styleMask: [.titled, .closable, .resizable],
-                              backing: .buffered, defer: false)
+        let window = MockWindow()
         window.contentView = NSView(frame: window.contentRect(forFrameRect: window.frame))
         AccessibilityPreferences.shared.updateZoomPerWebsite(zoomLevel: randomZoomLevel, url: hostURL)
         let tab = Tab(url: url)
         window.contentView?.addSubview(tab.webView)
         tab.webView.frame = window.contentView!.bounds
-        window.makeKeyAndOrderFront(nil)
         let tabView = TabViewModel(tab: tab)
 
         // WHEN
@@ -532,4 +527,11 @@ extension TabViewModel {
         self.tab.didCommit(navigation)
     }
 
+}
+
+private extension Tab {
+    @MainActor
+    convenience init(url: URL? = nil) {
+        self.init(content: url.map { TabContent.url($0, source: .link) } ?? .none)
+    }
 }

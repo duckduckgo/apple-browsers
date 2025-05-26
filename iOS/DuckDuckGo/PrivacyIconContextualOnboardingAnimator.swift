@@ -21,7 +21,7 @@ import Foundation
 
 final class PrivacyIconContextualOnboardingAnimator {
 
-    func showPrivacyIconAnimation(in omniBar: DefaultOmniBarView) {
+    func showPrivacyIconAnimation(in omniBar: any OmniBarView) {
         guard let window = omniBar.window else { return }
         ViewHighlighter.showIn(window, focussedOnView: omniBar.privacyInfoContainer.privacyIcon, scale: .custom(3))
     }

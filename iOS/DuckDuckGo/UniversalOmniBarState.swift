@@ -33,13 +33,14 @@ enum UniversalOmniBarState {
         var clearTextOnStart: Bool { baseState.clearTextOnStart }
         var allowsTrackersAnimation: Bool { baseState.allowsTrackersAnimation }
         var showSearchLoupe: Bool { baseState.showSearchLoupe }
-        var showCancel: Bool { dependencies.featureFlagger.isFeatureOn(.aiChatNewTabPage) ? false : true }
+        let showCancel = false
         var showPrivacyIcon: Bool { baseState.showPrivacyIcon }
         var showBackground: Bool { baseState.showBackground }
-        var showClear: Bool {  dependencies.featureFlagger.isFeatureOn(.aiChatNewTabPage) ? baseState.showClear : false  }
+        var showClear: Bool { baseState.showClear }
         var showDismiss: Bool { baseState.showDismiss }
         var showAbort: Bool { baseState.showAbort }
         var showRefresh: Bool { baseState.showRefresh }
+        var showShare: Bool { baseState.showShare }
         var showMenu: Bool { baseState.showMenu }
         var showSettings: Bool { baseState.showSettings }
         var showVoiceSearch: Bool { baseState.showVoiceSearch }

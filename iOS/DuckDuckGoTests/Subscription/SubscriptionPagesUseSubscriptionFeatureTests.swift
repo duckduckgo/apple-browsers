@@ -34,10 +34,14 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     private struct Constants {
         static let userDefaultsSuiteName = "SubscriptionPagesUseSubscriptionFeatureTests"
 
+        // Auth V1
         static let authToken = UUID().uuidString
         static let accessToken = UUID().uuidString
-        static let externalID = UUID().uuidString
 
+        // Auth V2
+        static let refreshToken = UUID().uuidString
+
+        static let externalID = UUID().uuidString
         static let email = "dax@duck.com"
 
         static let entitlements = [Entitlement(product: .dataBrokerProtection),
@@ -92,8 +96,14 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
     var subscriptionFeatureAvailability = SubscriptionFeatureAvailabilityMock.enabled
 
     var feature: (any SubscriptionPagesUseSubscriptionFeature)!
+    var featureAuthV2: (any SubscriptionPagesUseSubscriptionFeature)!
 
     var pixelsFired: [String] = []
+
+    // V2
+    var subscriptionManagerV2: SubscriptionManagerMockV2!
+    var purchaseFlow: AppStorePurchaseFlowMockV2!
+    var restoreFlow: AppStoreRestoreFlowMockV2!
 
     override func setUpWithError() throws {
         throw XCTSkip("Potentially flaky")
@@ -115,7 +125,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
             storage.dictionaryRepresentation().keys.forEach(storage.removeObject(forKey:))
         }
 
-        // Mocks
+        // Auth V1 mocks
         subscriptionService = SubscriptionEndpointServiceMock()
         authService = AuthEndpointServiceMock()
 
@@ -170,6 +180,17 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                                                                  appStorePurchaseFlow: appStorePurchaseFlow,
                                                                  appStoreRestoreFlow: appStoreRestoreFlow,
                                                                  appStoreAccountManagementFlow: appStoreAccountManagementFlow)
+
+        // Auth V2 mocks
+        subscriptionManagerV2 = SubscriptionManagerMockV2()
+        purchaseFlow = AppStorePurchaseFlowMockV2()
+        restoreFlow = AppStoreRestoreFlowMockV2()
+        featureAuthV2 = DefaultSubscriptionPagesUseSubscriptionFeatureV2(subscriptionManager: subscriptionManagerV2,
+                                                                         subscriptionFeatureAvailability: subscriptionFeatureAvailability,
+                                                                         subscriptionAttributionOrigin: nil,
+                                                                         appStorePurchaseFlow: purchaseFlow,
+                                                                         appStoreRestoreFlow: restoreFlow)
+
     }
 
     override func tearDownWithError() throws {
@@ -200,6 +221,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         subscriptionManager = nil
 
         feature = nil
+        featureAuthV2 = nil
     }
 
     // MARK: - Tests for getSubscription
@@ -471,7 +493,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertNil(result)
 
         XCTAssertEqual(feature.transactionStatus, .idle)
-        XCTAssertEqual(feature.transactionError, .hasActiveSubscription)
+        XCTAssertEqual(feature.transactionError, .activeSubscriptionAlreadyPresent)
 
         await XCTAssertPrivacyPixelsFired([Pixel.Event.privacyProPurchaseAttempt.name + "_d",
                                            Pixel.Event.privacyProPurchaseAttempt.name + "_c",
@@ -494,7 +516,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
         XCTAssertNil(result)
 
         XCTAssertEqual(feature.transactionStatus, .idle)
-        XCTAssertEqual(feature.transactionError, .hasActiveSubscription)
+        XCTAssertEqual(feature.transactionError, .activeSubscriptionAlreadyPresent)
 
         await XCTAssertPrivacyPixelsFired([Pixel.Event.privacyProPurchaseAttempt.name + "_d",
                                            Pixel.Event.privacyProPurchaseAttempt.name + "_c",
@@ -968,7 +990,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                 return
             }
 
-            XCTAssertEqual(error, .subscriptionExpired)
+            XCTAssertEqual(error, .restoreFailedDueToExpiredSubscription)
             XCTAssertFalse(accountManager.isUserAuthenticated)
 
             XCTAssertEqual(feature.transactionStatus, .idle)
@@ -995,7 +1017,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                 return
             }
 
-            XCTAssertEqual(error, .subscriptionNotFound)
+            XCTAssertEqual(error, .restoreFailedDueToNoSubscription)
             XCTAssertFalse(accountManager.isUserAuthenticated)
 
             XCTAssertEqual(feature.transactionStatus, .idle)
@@ -1023,7 +1045,7 @@ final class SubscriptionPagesUseSubscriptionFeatureTests: XCTestCase {
                 return
             }
 
-            XCTAssertEqual(error, .failedToRestorePastPurchase)
+            XCTAssertEqual(error, .otherRestoreError)
             XCTAssertFalse(accountManager.isUserAuthenticated)
 
             XCTAssertEqual(feature.transactionStatus, .idle)

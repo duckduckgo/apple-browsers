@@ -113,12 +113,14 @@ extension TabViewController {
             contextualOnboardingLogic: contextualOnboardingLogic,
             onboardingPixelReporter: onboardingPixelReporter,
             featureFlagger: featureFlagger,
+            contentScopeExperimentManager: contentScopeExperimentsManager,
             subscriptionCookieManager: subscriptionCookieManager,
             textZoomCoordinator: textZoomCoordinator,
             websiteDataManager: websiteDataManager,
             fireproofing: fireproofing,
             tabInteractionStateSource: tabInteractionStateSource,
-            specialErrorPageNavigationHandler: specialErrorPageNavigationHandler)
+            specialErrorPageNavigationHandler: specialErrorPageNavigationHandler,
+            featureDiscovery: featureDiscovery)
 
         tabController.isLinkPreview = true
         let configuration = WKWebViewConfiguration.nonPersistent()

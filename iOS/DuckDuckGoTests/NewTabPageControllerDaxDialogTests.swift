@@ -52,12 +52,14 @@ final class NewTabPageControllerDaxDialogTests: XCTestCase {
         hvc = NewTabPageViewController(
             tab: Tab(),
             isNewTabPageCustomizationEnabled: false,
+            isExperimentalAppearanceEnabled: false,
             interactionModel: MockFavoritesListInteracting(),
             homePageMessagesConfiguration: homePageConfiguration,
             variantManager: variantManager,
             newTabDialogFactory: dialogFactory,
             newTabDialogTypeProvider: specProvider,
-            faviconLoader: EmptyFaviconLoading()
+            faviconLoader: EmptyFaviconLoading(),
+            messageNavigationDelegate: MockMessageNavigationDelegate()
         )
 
         let window = UIWindow(frame: UIScreen.main.bounds)
@@ -157,9 +159,9 @@ class MockFavoritesListInteracting: FavoritesListInteracting {
 class CapturingNewTabDaxDialogProvider: NewTabDaxDialogProvider {
     var homeDialog: DaxDialogs.HomeScreenSpec?
     var onDismiss: ((_ activateSearch: Bool) -> Void)?
-    func createDaxDialog(for homeDialog: DaxDialogs.HomeScreenSpec, onDismiss: @escaping (_ activateSearch: Bool) -> Void) -> some View {
+    func createDaxDialog(for homeDialog: DaxDialogs.HomeScreenSpec, onCompletion: @escaping (_ activateSearch: Bool) -> Void, onManualDismiss: @escaping () -> Void) -> some View {
         self.homeDialog = homeDialog
-        self.onDismiss = onDismiss
+        self.onDismiss = onCompletion
         return EmptyView()
     }
 }

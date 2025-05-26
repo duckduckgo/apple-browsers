@@ -102,8 +102,9 @@ tags:
     text: "About our Web Tracking Protections"
 - tapOn: "Back"
 - tapOn: "Done"  
-- assertVisible: "Refresh Page"
-- tapOn: "Refresh Page"
+- assertVisible: "Browsing Menu"
+- tapOn: "Browsing Menu"
+- tapOn: "Refresh"
 - assertVisible:
     text: "Pay"
 - tapOn:

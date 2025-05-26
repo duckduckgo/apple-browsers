@@ -37,21 +37,20 @@ public enum HistoryViewEvent: Equatable {
 
 public final class DataClient: HistoryViewUserScriptClient {
 
-    private var cancellables = Set<AnyCancellable>()
     private let dataProvider: DataProviding
     private let actionsHandler: ActionsHandling
-    private let contextMenuPresenter: ContextMenuPresenting
+    private let contextMenuPresenterProvider: ContextMenuPresenterProvider
     private let errorHandler: EventMapping<HistoryViewEvent>?
 
     public init(
         dataProvider: DataProviding,
         actionsHandler: ActionsHandling,
-        contextMenuPresenter: ContextMenuPresenting = DefaultContextMenuPresenter(),
+        contextMenuPresenterProvider: @escaping ContextMenuPresenterProvider = DefaultContextMenuPresenterProvider(),
         errorHandler: EventMapping<HistoryViewEvent>?
     ) {
         self.dataProvider = dataProvider
         self.actionsHandler = actionsHandler
-        self.contextMenuPresenter = contextMenuPresenter
+        self.contextMenuPresenterProvider = contextMenuPresenterProvider
         self.errorHandler = errorHandler
         super.init()
     }
@@ -111,21 +110,21 @@ public final class DataClient: HistoryViewUserScriptClient {
     @MainActor
     private func deleteDomain(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         guard let request: DataModel.DeleteDomainRequest = DecodableHelper.decode(from: params) else { return nil }
-        let action = await actionsHandler.showDeleteDialog(for: .domainFilter(request.domain))
+        let action = await actionsHandler.showDeleteDialog(for: .domainFilter(request.domain), in: original.webView?.window)
         return DataModel.DeleteRangeResponse(action: action)
     }
 
     @MainActor
     private func deleteRange(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         guard let request: DataModel.DeleteRangeRequest = DecodableHelper.decode(from: params) else { return nil }
-        let action = await actionsHandler.showDeleteDialog(for: .rangeFilter(request.range))
+        let action = await actionsHandler.showDeleteDialog(for: .rangeFilter(request.range), in: original.webView?.window)
         return DataModel.DeleteRangeResponse(action: action)
     }
 
     @MainActor
     private func deleteTerm(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         guard let request: DataModel.DeleteTermRequest = DecodableHelper.decode(from: params) else { return nil }
-        let action = await actionsHandler.showDeleteDialog(for: .searchTerm(request.term))
+        let action = await actionsHandler.showDeleteDialog(for: .searchTerm(request.term), in: original.webView?.window)
         return DataModel.DeleteRangeResponse(action: action)
     }
 
@@ -143,21 +142,21 @@ public final class DataClient: HistoryViewUserScriptClient {
             return nil
         }
         guard let url = URL(string: action.url), url.isValid else { return nil }
-        await actionsHandler.open(url)
+        await actionsHandler.open(url, window: original.webView?.window)
         return nil
     }
 
     @MainActor
     private func entriesMenu(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         guard let request: DataModel.EntriesMenuRequest = DecodableHelper.decode(from: params) else { return nil }
-        let action = await actionsHandler.showContextMenu(for: request.ids, using: contextMenuPresenter)
+        let action = await actionsHandler.showContextMenu(for: request.ids, using: contextMenuPresenterProvider(original.webView?.window))
         return DataModel.DeleteRangeResponse(action: action)
     }
 
     @MainActor
     private func entriesDelete(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         guard let request: DataModel.EntriesMenuRequest = DecodableHelper.decode(from: params) else { return nil }
-        let action = await actionsHandler.showDeleteDialog(for: request.ids)
+        let action = await actionsHandler.showDeleteDialog(for: request.ids, in: original.webView?.window)
         return DataModel.DeleteRangeResponse(action: action)
     }
 

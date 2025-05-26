@@ -30,7 +30,7 @@ final class NavigationBarPopoversTests: XCTestCase {
     @MainActor
     override func setUpWithError() throws {
         autofillPopoverPresenter = MockAutofillPopoverPresenter()
-        sut = NavigationBarPopovers(networkProtectionPopoverManager: NetPPopoverManagerMock(), autofillPopoverPresenter: autofillPopoverPresenter, isBurner: false)
+        sut = NavigationBarPopovers(networkProtectionPopoverManager: NetPPopoverManagerMock(), autofillPopoverPresenter: autofillPopoverPresenter, isBurner: false, contentScopeExperimentsManager: MockContentScopeExperimentManager())
     }
 
     func testSetsPasswordPopoverDomainOnPopover() throws {

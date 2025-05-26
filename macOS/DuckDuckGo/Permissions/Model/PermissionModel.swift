@@ -80,7 +80,9 @@ final class PermissionModel {
     }
 
     private func subscribe(to permissionManager: PermissionManagerProtocol) {
-        permissionManager.permissionPublisher.sink { [weak self] value in
+        permissionManager.permissionPublisher.sink { [weak self, weak permissionManager] value in
+            guard let permissionManager else { return }
+
             self?.permissionManager(permissionManager,
                                     didChangePermanentDecisionFor: value.permissionType,
                                     forDomain: value.domain,

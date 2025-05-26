@@ -19,6 +19,7 @@
 import BrowserServicesKit
 import Combine
 import Common
+import FeatureFlags
 import Foundation
 import History
 import MaliciousSiteProtection
@@ -57,6 +58,7 @@ protocol NewWindowPolicyDecisionMaker {
         var tunnelController: NetworkProtectionIPCTunnelController?
         var maliciousSiteDetector: MaliciousSiteDetecting
         var faviconManagement: FaviconManagement?
+        var featureFlagger: FeatureFlagger
     }
 
     fileprivate weak var delegate: TabDelegate?
@@ -71,6 +73,7 @@ protocol NewWindowPolicyDecisionMaker {
     private let internalUserDecider: InternalUserDecider?
     private let pageRefreshMonitor: PageRefreshMonitoring
     private let featureFlagger: FeatureFlagger
+    let crashIndicatorModel = TabCrashIndicatorModel()
     let pinnedTabsManagerProvider: PinnedTabsManagerProviding
 
     private let webViewConfiguration: WKWebViewConfiguration
@@ -140,7 +143,7 @@ protocol NewWindowPolicyDecisionMaker {
 
         self.init(id: id,
                   content: content,
-                  faviconManagement: faviconManager ?? FaviconManager.shared,
+                  faviconManagement: faviconManager ?? NSApp.delegateTyped.faviconManager,
                   webCacheManager: webCacheManager,
                   webViewConfiguration: webViewConfiguration,
                   historyCoordinating: historyCoordinating,
@@ -271,6 +274,7 @@ protocol NewWindowPolicyDecisionMaker {
                 tab.delegate?.closeTab(tab)
             },
                           titlePublisher: _title.projectedValue.eraseToAnyPublisher(),
+                          errorPublisher: _error.projectedValue.eraseToAnyPublisher(),
                           userScriptsPublisher: userScriptsPublisher,
                           inheritedAttribution: parentTab?.adClickAttribution?.currentAttributionState,
                           userContentControllerFuture: userContentControllerPromise.future,
@@ -286,7 +290,8 @@ protocol NewWindowPolicyDecisionMaker {
                                                        certificateTrustEvaluator: certificateTrustEvaluator,
                                                        tunnelController: tunnelController,
                                                        maliciousSiteDetector: maliciousSiteDetector,
-                                                       faviconManagement: faviconManagement))
+                                                       faviconManagement: faviconManagement,
+                                                       featureFlagger: featureFlagger))
 
         super.init()
         tabGetter = { [weak self] in self }
@@ -309,10 +314,28 @@ protocol NewWindowPolicyDecisionMaker {
             }
 
         addDeallocationChecks(for: webView)
+
+        if let crashRecoveryExtension = extensions.tabCrashRecovery {
+            tabCrashRecoveryCancellable = crashRecoveryExtension.tabCrashErrorPayloadPublisher
+                .sink { [weak self] errorPayload in
+                    guard let self else {
+                        return
+                    }
+                    error = errorPayload.error
+                    loadErrorHTML(errorPayload.error, header: UserText.webProcessCrashPageHeader, forUnreachableURL: errorPayload.url, alternate: true)
+                }
+
+            crashIndicatorModel.setUp(with: crashRecoveryExtension.tabDidCrashPublisher)
+        }
     }
 
 #if DEBUG
     func addDeallocationChecks(for webView: WKWebView) {
+        /// Deallocation checks cause random crashes in CI for integration tests.
+        /// https://app.asana.com/0/1201037661562251/1209884224558923/f
+        guard AppVersion.runType != .integrationTests else {
+            return
+        }
         let processPool = webView.configuration.processPool
         let webViewValue = NSValue(nonretainedObject: webView)
 
@@ -330,7 +353,7 @@ protocol NewWindowPolicyDecisionMaker {
                 let knownUserContentControllers = processPool.knownUserContentControllers
                 processPool.onDeinit {
                     for controller in knownUserContentControllers {
-                        assert(controller.userContentController == nil, "\(controller) has not been deallocated")
+                        assert(controller.userContentController == nil, "\(controller.userContentController!) has not been deallocated")
                     }
                 }
             }
@@ -435,6 +458,10 @@ protocol NewWindowPolicyDecisionMaker {
             .map { _ in () }
             .eraseToAnyPublisher()
     }
+    let webViewDidReceiveUserInteractiveChallengePublisher = PassthroughSubject<Void, Never>()
+    let webViewDidReceiveRedirectPublisher = PassthroughSubject<Void, Never>()
+    let webViewDidFailNavigationPublisher = PassthroughSubject<Void, Never>()
+    let webViewRenderingProgressDidChangePublisher = PassthroughSubject<Void, Never>()
 
     // MARK: - Properties
 
@@ -467,8 +494,8 @@ protocol NewWindowPolicyDecisionMaker {
             if navigationDelegate.currentNavigation == nil {
                 updateCanGoBackForward(withCurrentNavigation: nil)
             }
-#if !APPSTORE
-            if #available(macOS 15.3, *) {
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+            if #available(macOS 15.4, *) {
                 WebExtensionManager.shared.eventsListener.didChangeTabProperties([.URL], for: self)
             }
 #endif
@@ -544,8 +571,8 @@ protocol NewWindowPolicyDecisionMaker {
 
     @Published var title: String? {
         didSet {
-#if !APPSTORE
-            if #available(macOS 15.3, *) {
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+            if #available(macOS 15.4, *) {
                 WebExtensionManager.shared.eventsListener.didChangeTabProperties([.title], for: self)
             }
 #endif
@@ -579,8 +606,8 @@ protocol NewWindowPolicyDecisionMaker {
 
     @Published private(set) var isLoading: Bool = false {
         didSet {
-#if !APPSTORE
-            if #available(macOS 15.3, *) {
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+            if #available(macOS 15.4, *) {
                 WebExtensionManager.shared.eventsListener.didChangeTabProperties([.loading], for: self)
             }
 #endif
@@ -840,12 +867,10 @@ protocol NewWindowPolicyDecisionMaker {
             return
         }
 #endif
-        if PixelExperiment.cohort == .newOnboarding {
-            Application.appDelegate.onboardingStateMachine.state = .notStarted
-            setContent(.onboarding)
-        } else {
-            setContent(.onboardingDeprecated)
+        if #available(macOS 12.0, *) {
+            Application.appDelegate.onboardingContextualDialogsManager.state = .notStarted
         }
+        setContent(.onboarding)
     }
 
     @MainActor(unsafe)
@@ -886,8 +911,8 @@ protocol NewWindowPolicyDecisionMaker {
         webView.audioState.toggle()
         objectWillChange.send()
 
-#if !APPSTORE
-        if #available(macOS 15.3, *) {
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+        if #available(macOS 15.4, *) {
             WebExtensionManager.shared.eventsListener.didChangeTabProperties([.muted], for: self)
         }
 #endif
@@ -961,6 +986,10 @@ protocol NewWindowPolicyDecisionMaker {
         case .loadInBackgroundIfNeeded(shouldLoadInBackground: let shouldLoadInBackground):
             switch content {
             case .newtab, .bookmarks, .settings:
+#if DEBUG
+                // prevent auto loading when running Unit Tests
+                guard AppVersion.runType.requiresEnvironment else { return false }
+#endif
                 return webView.url == nil // navigate to empty pages loaded for duck:// urls
             default:
                 return shouldLoadInBackground
@@ -1029,6 +1058,7 @@ protocol NewWindowPolicyDecisionMaker {
     private var webViewCancellables = Set<AnyCancellable>()
     private var emailDidSignOutCancellable: AnyCancellable?
     private var faviconCancellable: AnyCancellable?
+    private var tabCrashRecoveryCancellable: AnyCancellable?
 
     private func setupWebView(shouldLoadInBackground: Bool) {
         webView.navigationDelegate = navigationDelegate
@@ -1104,6 +1134,28 @@ protocol NewWindowPolicyDecisionMaker {
     @Published var favicon: NSImage?
 }
 
+// MARK: - Forcing Tab Crash
+
+extension Tab {
+    static let crashTabMenuOptionTitle = "Crash Tab"
+
+    private enum Selector {
+        static let killWebContentProcessAndResetState = NSSelectorFromString("_killWebContentProcessAndResetState")
+    }
+
+    var canKillWebContentProcess: Bool {
+        featureFlagger.isFeatureOn(.tabCrashDebugging)
+    }
+
+    func killWebContentProcess() {
+        if webView.responds(to: Selector.killWebContentProcessAndResetState) {
+            webView.perform(Selector.killWebContentProcessAndResetState)
+        }
+    }
+}
+
+// MARK: -
+
 extension Tab: UserContentControllerDelegate {
 
     @MainActor
@@ -1133,6 +1185,9 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
     func didReceive(_ challenge: URLAuthenticationChallenge, for navigation: Navigation?) async -> AuthChallengeDisposition? {
         guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodHTTPBasic else { return nil }
 
+        // send this event only when we're interrupting loading and showing extra UI to the user
+        webViewDidReceiveUserInteractiveChallengePublisher.send()
+
         // when navigating to a URL with basic auth username/password, cache it and redirect to a trimmed URL
         if case .url(let url, credential: .some(let credential), source: let source) = content,
            url.matches(challenge.protectionSpace),
@@ -1154,6 +1209,10 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
         } catch {
             return .cancel
         }
+    }
+
+    func didReceiveRedirect(_ navigationAction: NavigationAction, for navigation: Navigation) {
+        webViewDidReceiveRedirectPublisher.send()
     }
 
     @MainActor
@@ -1200,6 +1259,16 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
 
     @MainActor
     func willStart(_ navigation: Navigation) {
+#if DEBUG
+        // prevent real navigation actions when running Unit Tests
+        if AppVersion.runType == .unitTests
+            && !(navigation.url.isDuckURLScheme
+                 || ([.http, .https].contains(navigation.url.navigationalScheme)
+                     && self.webView.configuration.urlSchemeHandler(forURLScheme: navigation.url.scheme!) != nil)) {
+            fatalError("The Unit Test is causing a real navigation action")
+        }
+#endif
+
         if error != nil { error = nil }
 
         /*
@@ -1261,6 +1330,9 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
 
     @MainActor
     func navigation(_ navigation: Navigation, didFailWith error: WKError) {
+        guard !error.isWebContentProcessTerminated else {
+            return
+        }
         let url = error.failingUrl ?? navigation.url
         guard navigation.isCurrent else { return }
         invalidateInteractionStateData()
@@ -1269,8 +1341,9 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
               !error.isFrameLoadInterrupted /* navigation cancelled by a Navigation Responder */ else { return }
 
         // don‘t show an error page if the error was already handled
-        // (by SearchNonexistentDomainNavigationResponder) or another navigation was triggered by `setContent`
-        guard self.content.urlForWebView == url
+        // (by SearchNonexistentDomainNavigationResponder) or another navigation was triggered by `setContent`.
+        // When comparing URL, also try removing text fragment, because WebKit may drop it from the URL on failed loads.
+        guard self.content.urlForWebView == url || self.content.urlForWebView?.removingTextFragment() == url
                 || self.content == .none /* when navigation fails instantly we may have no content set yet */
                 // navigation failure with MaliciousSiteError is achieved by redirecting to a special token-protected
                 // duck://error?.. URL performed in SpecialErrorPageTabExtension.swift
@@ -1284,41 +1357,6 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
     }
 
     @MainActor
-    func webContentProcessDidTerminate(with reason: WKProcessTerminationReason?) {
-        guard (error?.code.rawValue ?? WKError.Code.unknown.rawValue) != WKError.Code.webContentProcessTerminated.rawValue else { return }
-
-        let terminationReason = reason?.rawValue ?? -1
-
-        let error = WKError(.webContentProcessTerminated, userInfo: [
-            WKProcessTerminationReason.userInfoKey: terminationReason,
-            NSLocalizedDescriptionKey: UserText.webProcessCrashPageMessage,
-            NSUnderlyingErrorKey: NSError(domain: WKErrorDomain, code: terminationReason)
-        ])
-
-        let isInternalUser = internalUserDecider?.isInternalUser == true
-
-        if isInternalUser {
-            self.webView.reload()
-        } else {
-            if case.url(let url, _, _) = content {
-                self.error = error
-
-                loadErrorHTML(error, header: UserText.webProcessCrashPageHeader, forUnreachableURL: url, alternate: true)
-            }
-        }
-
-        Task {
-#if APPSTORE
-            let additionalParameters = [String: String]()
-#else
-            let additionalParameters = await SystemInfo.pixelParameters()
-#endif
-
-            PixelKit.fire(DebugEvent(GeneralPixel.webKitDidTerminate, error: error), frequency: .dailyAndStandard, withAdditionalParameters: additionalParameters)
-        }
-    }
-
-    @MainActor
     private func loadErrorHTML(_ error: WKError, header: String, forUnreachableURL url: URL, alternate: Bool) {
         let html = ErrorPageHTMLFactory.html(for: error, featureFlagger: featureFlagger, header: header)
         if alternate {
@@ -1328,6 +1366,15 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
             webView.setDocumentHtml(html)
         }
     }
+
+    func renderingProgressDidChange(progressEvents: UInt) {
+        // Emit only after first paint event, when the white background content is not visible anymore
+        // https://github.com/WebKit/WebKit/blob/407a96d094af6d48100f4524d964667336d962b4/Source/WebKit/Shared/API/Cocoa/_WKRenderingProgressEvents.h
+        if progressEvents >= 4 {
+            webViewRenderingProgressDidChangePublisher.send()
+        }
+    }
+
 }
 
 extension Tab: NewWindowPolicyDecisionMaker {

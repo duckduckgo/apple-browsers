@@ -41,6 +41,7 @@ struct UserText {
     static let update = NSLocalizedString("update", value: "Update", comment: "Update button")
     static let dontUpdate = NSLocalizedString("dont.update", value: "Don't Update", comment: "Don't Update button")
     static let copy = NSLocalizedString("copy", value: "Copy", comment: "Copy button")
+    static let copyLink = NSLocalizedString("copy.link", value: "Copy Link", comment: "Copy Link button")
     static let details = NSLocalizedString("details", value: "Details", comment: "details button")
     static let submit = NSLocalizedString("submit", value: "Submit", comment: "Submit button")
     static let submitReport = NSLocalizedString("submit.report", value: "Submit Report", comment: "Submit Report button")
@@ -313,6 +314,9 @@ struct UserText {
     static let sslErrorPageTabTitle = NSLocalizedString("ssl.error.page.tab.title", value: "Warning: Site May Be Insecure", comment: "Title shown in an error page tab that warn users of security risks on a website due to SSL issues")
     static let maliciousSiteErrorPageTabTitle = NSLocalizedString("malicious.site.error.page.tab.title", value: "Warning: Security Risk", comment: "Title shown in an error page tab that warn users of security risks on a website that has been flagged as Malicious.")
 
+    static let tabCrashPopoverTitle = NSLocalizedString("tab.crash.popover.title", value: "This tab has crashed", comment: "The title of an info popover informing the user about a tab crash")
+    static let tabCrashPopoverMessage = NSLocalizedString("tab.crash.popover.message", value: "This page was reloaded automatically. Tab history and any info entered in a form have been lost.", comment: "The message in an info popover informing the user about a tab crash")
+
     static let openSystemPreferences = NSLocalizedString("open.preferences", value: "Open System Preferences", comment: "Open System Preferences (to re-enable permission for the App) (up to and including macOS 12")
     static let openSystemSettings = NSLocalizedString("open.settings", value: "Open System Settings…", comment: "This string represents a prompt or button label prompting the user to open system settings")
     static let checkForUpdate = NSLocalizedString("check.for.update", value: "Check for Update", comment: "Button users can use to check for a new update")
@@ -433,15 +437,7 @@ struct UserText {
 
     // Misc
 
-    // AI Chat
-    static let aiChatOnboardingPopoverTitle = NSLocalizedString("duckai.onboarding.popover.title", value: "Launch Duck.ai directly from your toolbar", comment: "AI Chat onboarding popover title")
-    static let aiChatOnboardingPopoverMessageMarkdown = NSLocalizedString("duck.ai.onboarding.popover.message-markdown", value: "You can adjust this and other Duck.ai features in **Settings** > **Duck.ai**.", comment: "AI Chat onboarding popover message, make sure to keep Settings and AI Chat inside ** **")
-    static let aiChatOnboardingPopoverMessageFallback = NSLocalizedString("ai-chat.onboarding.popover.message-fallback", value: "You can adjust this and other AI Chat features in Settings > AI Chat", comment: "AI Chat onboarding popover message continuation")
-    static let aiChatOnboardingPopoverCTAReject = NSLocalizedString("ai-chat.onboarding.popover.reject", value: "No Thanks", comment: "AI Chat onboarding CTA for rejection")
-    static let aiChatOnboardingPopoverCTAAccept = NSLocalizedString("ai-chat.onboarding.popover.accept", value: "Add Shortcut", comment: "AI Chat onboarding CTA for approval")
-    static let aiChatOnboardingPopoverConfirmation = NSLocalizedString("duckai.onboarding.popover.confirmation", value: "Duck.ai shortcut added!", comment: "Confirmation for accepting the AI Chat onboarding popover")
-
-    static let aiChatShowInToolbarToggle = NSLocalizedString("duckai.show-in-toolbar.toggle", value: "Show Duck.ai shortcut in browser toolbar", comment: "Show AI Chat in toolbar")
+    static let aiChatShowInAddressBarToggle = NSLocalizedString("duckai.show-in-address-bar.toggle", value: "Show Duck.ai shortcut in the address bar", comment: "Show AI Chat in the address bar")
 
     static let aiChatShowInApplicationMenuToggle = NSLocalizedString("duckai.show-in-application-menu.toggle-setting", value: "Show “New AI Chat” in File and application menus", comment: "Show Duck.ai in application menus")
 
@@ -450,6 +446,12 @@ struct UserText {
     static let aiChatPreferencesLearnMoreButton = NSLocalizedString("ai-chat.preferences.learn-more", value: "Learn More", comment: "AI Chat preferences button to learn more about it")
 
     static let newAIChatMenuItem = NSLocalizedString("duckai.menu.new", value: "New AI Chat", comment: "Menu item to launch AI Chat")
+
+    static let aiChatAddressBarShortcutTooltip = NSLocalizedString("tooltip.aichat.address-bar-shortcut", value: "Duck.ai ⇧↵", comment: "Tooltip With Shortcut for the AI Chat address bar button")
+
+    static let aiChatAddressBarTooltip = NSLocalizedString("tooltip.aichat.address-bar", value: "Duck.ai", comment: "Tooltip for the AI Chat address bar button")
+
+    static let aiChatAddressBarHideButton = NSLocalizedString("aichat.address-bar.hide-button", value: "Hide Duck.ai Shortcut", comment: "Button to hide duck.ai shortcut in address bar")
 
     // Duck Player Preferences
     static let duckPlayerSettingsTitle = NSLocalizedString("duck-player.title", value: "Duck Player", comment: "Private YouTube Player settings title")
@@ -705,9 +707,6 @@ struct UserText {
 
     static let privacyProtections = NSLocalizedString("preferences.privacy-protections", value: "Privacy Protections", comment: "The section header in Preferences representing browser features related to privacy protection")
     static let mainSettings = NSLocalizedString("preferences.main-settings", value: "Main Settings", comment: "Section header in Preferences for main settings")
-    static let preferencesOn = NSLocalizedString("preferences.on", value: "On", comment: "Status indicator of a browser privacy protection feature.")
-    static let preferencesOff = NSLocalizedString("preferences.off", value: "Off", comment: "Status indicator of a browser privacy protection feature.")
-    static let preferencesAlwaysOn = NSLocalizedString("preferences.always-on", value: "Always On", comment: "Status indicator of a browser privacy protection feature.")
     static let duckduckgoOnOtherPlatforms = NSLocalizedString("preferences.duckduckgo-on-other-platforms", value: "DuckDuckGo on Other Platforms", comment: "Button presented to users to navigate them to our product page which presents all other products for other platforms")
     static let defaultBrowser = NSLocalizedString("preferences.default-browser", value: "Default Browser", comment: "Title of the option to show the Default Browser Preferences")
     static let privateSearch = NSLocalizedString("preferences.private-search", value: "Private Search", comment: "Title of the option to show the Private Search preferences")
@@ -718,6 +717,9 @@ struct UserText {
     static let autofillEnabledFor = NSLocalizedString("preferences.autofill-enabled-for", value: "Autofill enabled in this browser for:", comment: "Label presented before the email account in email protection preferences")
 
     static let vpn = NSLocalizedString("preferences.vpn", value: "VPN", comment: "Title of the option to show the VPN preferences")
+    static let personalInformationRemoval = NSLocalizedString("preferences.personalInformationRemoval", value: "Personal Information Removal", comment: "Title of the option to show the Personal Information Removal preferences")
+    static let identityTheftRestoration = NSLocalizedString("preferences.identityTheftRestoration", value: "Identity Theft Restoration", comment: "Title of the option to show the Identity Theft Restoration preferences")
+    static let subscriptionSettings = NSLocalizedString("preferences.subscriptionSettings", value: "Subscription Settings", comment: "Title of the option to show the Subscription Settings preferences")
     static let duckPlayer = NSLocalizedString("preferences.duck-player", value: "Duck Player", comment: "Title of the option to show the Duck Player browser preferences")
     static let about = NSLocalizedString("preferences.about", value: "About", comment: "Title of the option to show the About screen")
     static let aiChat = NSLocalizedString("preferences.duckai", value: "Duck.ai", comment: "Title of the option to show Duck.ai in preferences")
@@ -734,14 +736,14 @@ struct UserText {
     static let isAddedToDock = NSLocalizedString("preferences.is-added-to-dock", value: "DuckDuckGo is added to the Dock.", comment: "Indicates that the browser is added to the macOS system Dock")
     static let isNotAddedToDock = NSLocalizedString("preferences.not-added-to-dock", value: "DuckDuckGo is not added to the Dock.", comment: "Indicate that the browser is not added to macOS system Dock")
     static let addToDock = NSLocalizedString("preferences.add-to-dock", value: "Add to Dock…", comment: "Action button to add the app to the Dock")
-    static let addDuckDuckGoToDock = NSLocalizedString("preferences.add-to-dock", value: "Add DuckDuckGo To Dock…", comment: "Action button to add the app to the Dock")
+    static let addDuckDuckGoToDock = NSLocalizedString("preferences.add-DuckDuckGo-to-dock", value: "Add DuckDuckGo To Dock…", comment: "Action button to add the app to the Dock")
     static let onStartup = NSLocalizedString("preferences.on-startup", value: "On Startup", comment: "Name of the preferences section related to app startup")
     static let reopenAllWindowsFromLastSession = NSLocalizedString("preferences.reopen-windows", value: "Reopen all windows from last session", comment: "Option to control session restoration")
     static let showHomePage = NSLocalizedString("preferences.show-home", value: "Open a new window", comment: "Option to control session startup")
 
     static let pinnedTabs = NSLocalizedString("preferences-pinned-tabs.title", value: "Pinned tabs are", comment: "Beginning of the setting for pinned tabs. It's either 'Pinned tabs are shared across all windows' or 'Pinned tabs are different in each window'")
-    static let pinnedTabsWarningTitle = NSLocalizedString("preferences-pinned-tabs-warning", value: "Are you sure you want to share pinned tabs across all windows?", comment: "Title of warning before switching from per window pinned tabs to shared pinned tabs")
-    static let pinnedTabsWarningMessage = NSLocalizedString("preferences-pinned-tabs-warning", value: "This can only be undone by switching back to \"Separate in each window\" and manually pinning the tabs in each window again.", comment: "Content of warning before switching from per window pinned tabs to shared pinned tabs")
+    static let pinnedTabsWarningTitle = NSLocalizedString("preferences-pinned-tabs-warning-title", value: "Are you sure you want to share pinned tabs across all windows?", comment: "Title of warning before switching from per window pinned tabs to shared pinned tabs")
+    static let pinnedTabsWarningMessage = NSLocalizedString("preferences-pinned-tabs-warning-message", value: "This can only be undone by switching back to \"Separate in each window\" and manually pinning the tabs in each window again.", comment: "Content of warning before switching from per window pinned tabs to shared pinned tabs")
     static let pinnedTabsDiscoveryPopoverTitle = NSLocalizedString("pinned-tabs.discovery.popover.title", value: "New Pinned Tab Settings", comment: "Title for pinned tabs discovery dialog")
     static let pinnedTabsDiscoveryPopoverMessage = NSLocalizedString("pinned-tabs.discovery.popover.message", value: "You can now choose to have shared or separate pinned tabs across multiple browser windows.", comment: "Info message to users about option to adjust behavior of pinned tabs")
     static let pinnedTabsDiscoveryPopoverMessage2 = NSLocalizedString("pinned-tabs.discovery.popover.message.2", value: "You can change this anytime in Settings.", comment: "Info message to users about option to adjust behavior of pinned tabs")
@@ -796,6 +798,8 @@ struct UserText {
     static let themeDark = NSLocalizedString("preferences.appearance.theme.dark", value: "Dark", comment: "In the preferences for themes, the option to select for activating dark mode in the app.")
     static let themeSystem = NSLocalizedString("preferences.appearance.theme.system", value: "System", comment: "In the preferences for themes, the option to select for use the change the mode based on the system preferences.")
     static let addressBar = NSLocalizedString("preferences.appearance.address-bar", value: "Address Bar", comment: "Theme preferences")
+    static let showAIChatInAddress = NSLocalizedString("preferences.appearance.show-aichat", value: "Duck.ai", comment: "Option to show AI Chat the address bar")
+
     static let showFullWebsiteAddress = NSLocalizedString("preferences.appearance.show-full-url", value: "Full website address", comment: "Option to show full URL in the address bar")
     static let showAutocompleteSuggestions = NSLocalizedString("preferences.appearance.show-autocomplete-suggestions", value: "Autocomplete suggestions", comment: "Option to show autocomplete suggestions in the address bar")
     static let customizeBackground = NSLocalizedString("preferences.appearance.customize-background", value: "Customize Background", comment: "Button to open home page background customization options")
@@ -840,6 +844,8 @@ struct UserText {
     }
 
     static let privacyPolicy = NSLocalizedString("preferences.about.privacy-policy", value: "Privacy Policy", comment: "Link to privacy policy page")
+    static let clickToCopyVersion = NSLocalizedString("click.to.copy.version", value: "Click to copy version", comment: "Description of a button which copies version to clipboard when clicked")
+
 
     // MARK: - Login Import & Export
 
@@ -1047,7 +1053,6 @@ struct UserText {
     static let showBookmarksBarAlways = NSLocalizedString("bookmarks.bar.show.always", value: "Always show", comment: "Preference for always showing the bookmarks bar")
     static let showBookmarksBarNewTabOnly = NSLocalizedString("bookmarks.bar.show.new-tab-only", value: "Only show on New Tab", comment: "Preference for only showing the bookmarks bar on new tab")
     static let bookmarksBarFolderEmpty = NSLocalizedString("bookmarks.bar.folder.empty", value: "Empty", comment: "Empty state for a bookmarks bar folder")
-    static let bookmarksBarContextMenuCopy = NSLocalizedString("bookmarks.bar.context-menu.copy", value: "Copy", comment: "Copy menu item for the bookmarks bar context menu")
     static let bookmarksBarContextMenuDelete = NSLocalizedString("bookmarks.bar.context-menu.delete", value: "Delete", comment: "Delete menu item for the bookmarks bar context menu")
     static let bookmarksBarContextMenuMoveToEnd = NSLocalizedString("bookmarks.bar.context-menu.move-to-end", value: "Move to End", comment: "Move to End menu item for the bookmarks bar context menu")
 
@@ -1101,9 +1106,6 @@ struct UserText {
     static let bitwardenCommunicationInfo = NSLocalizedString("bitwarden.connect.communication-info", value: "All communication between Bitwarden and DuckDuckGo is encrypted and the data never leaves your device.", comment: "Warns users that all communication between the DuckDuckGo browser and the password manager Bitwarden is encrypted and doesn't leave the user device")
     static let bitwardenHistoryInfo = NSLocalizedString("bitwarden.connect.history-info", value: "Bitwarden will have access to your browsing history.", comment: "Warn users that the password Manager Bitwarden will have access to their browsing history")
 
-    static let showAIChatShortcut = NSLocalizedString("pinning.show-duckai-shortcut", value: "Show Duck.ai Shortcut", comment: "Menu item for showing the AI Chat shortcut")
-    static let hideAIChatShortcut = NSLocalizedString("pinning.hide-duckai-shortcut", value: "Hide Duck.ai Shortcut", comment: "Menu item for hiding the AI Chat shortcut")
-
     static let showAutofillShortcut = NSLocalizedString("pinning.show-autofill-shortcut", value: "Show Passwords Shortcut", comment: "Menu item for showing the passwords shortcut")
     static let hideAutofillShortcut = NSLocalizedString("pinning.hide-autofill-shortcut", value: "Hide Passwords Shortcut", comment: "Menu item for hiding the passwords shortcut")
 
@@ -1118,7 +1120,7 @@ struct UserText {
 
     // MARK: - Tooltips
 
-    static let autofillShortcutTooltip = NSLocalizedString("tooltip.autofill.shortcut", value: "Autofill", comment: "Tooltip for the autofill shortcut")
+    static let passwordsShortcutTooltip = NSLocalizedString("tooltip.passwords.shortcut", value: "Passwords", comment: "Tooltip for the passwords shortcut")
 
     static let homeButtonTooltip = NSLocalizedString("tooltip.home.button", value: "Home", comment: "Tooltip for the home button")
 
@@ -1151,8 +1153,12 @@ struct UserText {
 
     static let newTabTooltip = NSLocalizedString("tooltip.tab.new-tab", value: "Open a new tab", comment: "Tooltip for the New Tab button")
     static let clearBrowsingHistoryTooltip = NSLocalizedString("tooltip.fire.clear-browsing-history", value: "Clear browsing history", comment: "Tooltip for the Fire button")
-    static let navigateBackTooltip = NSLocalizedString("tooltip.navigation.back", value: "Show the previous page\nHold to show history", comment: "Tooltip for the Back button")
-    static let navigateForwardTooltip = NSLocalizedString("tooltip.navigation.forward", value: "Show the next page\nHold to show history", comment: "Tooltip for the Forward button")
+    static let navigateBackTooltipHeader = NSLocalizedString("tooltip.navigation.back.header", value: "Show the previous page", comment: "Tooltip for the Back button header")
+    static let navigateBackTooltipFooter = NSLocalizedString("tooltip.navigation.back.footer", value: "Click and hold to show history", comment: "Tooltip for the Back button footer")
+
+    static let navigateForwardTooltipHeader = NSLocalizedString("tooltip.navigation.forward.header", value: "Show the next page", comment: "Tooltip for the Forward button header")
+    static let navigateForwardTooltipFooter = NSLocalizedString("tooltip.navigation.forward.footer", value: "Click and hold to show history", comment: "Tooltip for the Forward button footer")
+
     static let refreshPageTooltip = NSLocalizedString("tooltip.navigation.refresh", value: "Reload this page", comment: "Tooltip for the Refresh button")
     static let stopLoadingTooltip = NSLocalizedString("tooltip.navigation.stop", value: "Stop loading this page", comment: "Tooltip for the Stop Navigation button")
     static let applicationMenuTooltip = NSLocalizedString("tooltip.application-menu.show", value: "Open application menu", comment: "Tooltip for the Application Menu button")
@@ -1291,8 +1297,8 @@ struct UserText {
 
     // Bookmarks bar prompt
     static let bookmarksBarPromptTitle = NSLocalizedString("bookmarks.bar.prompt.title", value: "Show Bookmarks Bar?", comment: "Title for bookmarks bar prompt")
-    static let bookmarksBarPromptMessageMarkdown = NSLocalizedString("bookmarks.bar.prompt.message1", value: "Show the Bookmarks Bar for quick access to your favorite bookmarks. You can adjust this later in **Settings** > **Appearance**.", comment: " message with markdown show for bookmarks bar prompt, make sure to keep the ** ** for the translated words Settings and Appearance")
-    static let bookmarksBarPromptMessageFallback = NSLocalizedString("bookmarks.bar.prompt.message1", value: "Show the Bookmarks Bar for quick access to your favorite bookmarks. You can adjust this later in Settings > Appearance.", comment: " message show for bookmarks bar prompt")
+    static let bookmarksBarPromptMessageMarkdown = NSLocalizedString("bookmarks.bar.prompt.message", value: "Show the Bookmarks Bar for quick access to your favorite bookmarks. You can adjust this later in **Settings** > **Appearance**.", comment: " message with markdown show for bookmarks bar prompt, make sure to keep the ** ** for the translated words Settings and Appearance")
+    static let bookmarksBarPromptMessageFallback = NSLocalizedString("bookmarks.bar.prompt.message.fallback", value: "Show the Bookmarks Bar for quick access to your favorite bookmarks. You can adjust this later in Settings > Appearance.", comment: " message show for bookmarks bar prompt")
 
     static let bookmarksBarPromptDismiss = NSLocalizedString("bookmarks.bar.prompt.dismiss", value: "Hide", comment: "Dismiss button label on bookmarks bar prompt")
     static let bookmarksBarPromptAccept = NSLocalizedString("bookmarks.bar.prompt.accept", value: "Show", comment: "Accept button label on bookmarks bar prompt")
@@ -1350,7 +1356,9 @@ struct UserText {
     static let downloadsOpenDownloadsFolder = NSLocalizedString("downloads.open-downloads-folder", value: "Open Downloads Folder", comment: "Button in the downloads manager that allows the user to open the downloads folder")
 
     // MARK: Updates
+    static let updateNewVersionAvailableMenuItem = NSLocalizedString("update.new.version.available.menu.item", value: "New version available - Update DuckDuckGo", comment: "Title of the menu item that informs user that a new update is available. Clicking on the menu item installs the update")
     static let updateAvailableMenuItem = NSLocalizedString("update.available.menu.item", value: "Update Available - Install Now", comment: "Title of the menu item that informs user that a new update is available. Clicking on the menu item installs the update")
+    static let updateReadyMenuItem = NSLocalizedString("update.ready.menu.item", value: "Update Ready - Restart to Update", comment: "Title of the menu item that informs user that a new update has been downloaded and the user should restart the app to update. Clicking on the menu item restarts the app")
     static let releaseNotesMenuItem = NSLocalizedString("release.notes.menu.item", value: "Release Notes", comment: "Title of the dialog menu item that opens release notes")
     static let whatsNewMenuItem = NSLocalizedString("whats.new.menu.item", value: "What's New", comment: "Title of the dialog menu item that opens the 'What's New' page")
     static let browserUpdatesTitle = NSLocalizedString("settings.browser.updates.title", value: "Browser Updates", comment: "Title of the section in Settings where people set up automatic vs manual updates")
@@ -1460,7 +1468,7 @@ struct UserText {
     static let bothSetAsDefaultAndAddToDockPopoverTitle = NSLocalizedString("sad.att.both.popover.title", value: "Make DuckDuckGo Your Primary Browser", comment: "Title of the popover that invites users to set DuckDuckGo as their default browser and add to their Dock")
     static let bothSetAsDefaultAndAddToDockPopoverMessage = NSLocalizedString("sad.att.both.popover.message", value: "Add DuckDuckGo to your Dock and set as your default browser to protect more of what you do online.", comment: "Body of the popover that invites users to set DuckDuckGo as their default browser and add to their Dock")
     static let bothSetAsDefaultPopoverAndAddToDockPopoverPrimaryAction = NSLocalizedString("sad.att.both.popover.primary", value: "Set As Primary Browser", comment: "Button primary action title that appears on a popover inviting users to set DuckDuckGo as their default browser and add it to their Dock")
-    static let bothSetAsDefaultAndAddToDockBannerMessage = NSLocalizedString("sad.att.add-to-dock.popover.message", value: "Make DuckDuckGo your default browser and add to Dock", comment: "Body of the banner view that invites users to set DuckDuckGo as their default browser and add to their Dock")
+    static let bothSetAsDefaultAndAddToDockBannerMessage = NSLocalizedString("sad.att.add-to-dock.banner.message", value: "Make DuckDuckGo your default browser and add to Dock", comment: "Body of the banner view that invites users to set DuckDuckGo as their default browser and add to their Dock")
 
     // MARK: - Privacy Pro
 
@@ -1545,4 +1553,31 @@ struct UserText {
     static let removeSuggestionTooltip = NSLocalizedString("remove.suggestion.tooltip", value: "Remove from browsing history", comment: "Tooltip for the button which removes the history entry from the history")
 
     static let switchToTab = NSLocalizedString("switch.to.tab", value: "Switch to Tab", comment: "Suggestion to switch to an open tab button title")
+
+    // MARK: - Storage Access
+
+    static let storageAccessPromptAllow = NSLocalizedString("storage.access.prompt.allow", value: "Allow", comment: "Allow sharing data between sites")
+    static let storageAccessPromptDontAllow = NSLocalizedString("storage.access.prompt.dont.allow", value: "Don't Allow", comment: "Don't allow sharing data between sites")
+    static let storageAccessPromptHeader = NSLocalizedString("storage.access.prompt.header", value: "Share data like login info between two sites?", comment: "Header of an alert asking users whether to share data between websites")
+    static let storageAccessPromptQuirkDomainsHeader = NSLocalizedString("storage.access.prompt.quirk.domains.header", value: "Share site data like login info between related sites?", comment: "Header of an alert asking users whether to share data between websites")
+
+    static func storageAccessPromptLabel1(currentDomain: String, requestingDomain: String) -> String {
+        let localized = NSLocalizedString("storage.access.prompt.label.1",
+                                          value: "%@ wants to use cookies and data from %@.",
+                                          comment: "Part 1 of an alert asking users whether to share cookies: [requestingdomain.com] wants to use cookies and data from [currentdomain.com].")
+        return String(format: localized, requestingDomain, currentDomain)
+    }
+    static func storageAccessPromptQuirkDomainsLabel1(requestingDomain: String) -> String {
+        let localized = NSLocalizedString("storage.access.prompt.quirk.domains.label.1",
+                                          value: "%@ wants to use cookies and data across sites they own, including:",
+                                          comment: "Part 1 of an alert for quirk domains asking users whether to share cookies: requestingDomain wants to use cookies and data across sites they own, including:")
+        return String(format: localized, requestingDomain)
+    }
+    static func storageAccessPromptLabel2(entity: String) -> String {
+        let localized = NSLocalizedString("storage.access.prompt.quirk.domains.label.2",
+                                          value: "If you pick “Don’t Allow” some site features may not work as expected, but it will reduce tracking by %@.",
+                                          comment: "Part 2 of an alert asking users whether to share cookies: If you pick “Don’t Allow” some site features may not work as expected, but it will reduce tracking by [requestingdomain].")
+        return String(format: localized, entity)
+    }
+    static let storageAccessPromptLabel3 = NSLocalizedString("storage.access.prompt.label.3", value: "DuckDuckGo protections still apply either way.", comment: "Part 3 of an alert asking users whether to share cookies: DuckDuckGo protections still apply either way.")
 }

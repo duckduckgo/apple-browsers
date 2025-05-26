@@ -29,22 +29,12 @@ final class DefaultFavoritesActionsHandler: FavoritesActionsHandling {
     }
 
     @MainActor
-    func open(_ url: URL, target: LinkOpenTarget) {
-        guard let tabCollectionViewModel else {
-            return
-        }
+    func open(_ url: URL, sender: LinkOpenSender, target: LinkOpenTarget, in window: NSWindow?) {
+        NewTabPageLinkOpener.open(url, source: .bookmark, sender: sender, target: target, sourceWindow: window)
+    }
 
-        PixelExperiment.fireOnboardingBookmarkUsed5to7Pixel()
-
-        if target == .newWindow || NSApplication.shared.isCommandPressed && NSApplication.shared.isOptionPressed {
-            WindowsManager.openNewWindow(with: url, source: .bookmark, isBurner: tabCollectionViewModel.isBurner)
-        } else if target == .newTab || NSApplication.shared.isCommandPressed && NSApplication.shared.isShiftPressed {
-            tabCollectionViewModel.insertOrAppendNewTab(.contentFromURL(url, source: .bookmark), selected: true)
-        } else if NSApplication.shared.isCommandPressed {
-            tabCollectionViewModel.insertOrAppendNewTab(.contentFromURL(url, source: .bookmark), selected: false)
-        } else {
-            tabCollectionViewModel.selectedTabViewModel?.tab.setContent(.contentFromURL(url, source: .bookmark))
-        }
+    func copyLink(_ favorite: Bookmark) {
+        favorite.copyUrlToPasteboard()
     }
 
     func removeFavorite(_ favorite: Bookmark) {
@@ -57,13 +47,13 @@ final class DefaultFavoritesActionsHandler: FavoritesActionsHandling {
     }
 
     @MainActor
-    func addNewFavorite() {
+    func addNewFavorite(in window: NSWindow?) {
         guard let window else { return }
         BookmarksDialogViewFactory.makeAddFavoriteView().show(in: window)
     }
 
     @MainActor
-    func edit(_ favorite: Bookmark) {
+    func edit(_ favorite: Bookmark, in window: NSWindow?) {
         guard let window else { return }
         BookmarksDialogViewFactory.makeEditBookmarkView(bookmark: favorite).show(in: window)
     }
@@ -72,15 +62,6 @@ final class DefaultFavoritesActionsHandler: FavoritesActionsHandling {
         bookmarkManager.moveFavorites(with: [bookmarkID], toIndex: index) { _ in }
     }
 
-    @MainActor
-    private var window: NSWindow? {
-        WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController.view.window
-    }
-
-    @MainActor
-    private var tabCollectionViewModel: TabCollectionViewModel? {
-        WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel
-    }
 }
 
 extension Bookmark: NewTabPageFavorite {

@@ -31,8 +31,6 @@ protocol VPNFeatureGatekeeper {
 
     func canStartVPN() async throws -> Bool
     func isVPNVisible() -> Bool
-    func shouldUninstallAutomatically() -> Bool
-    func disableIfUserHasNoAccess() async
 
     var onboardStatusPublisher: AnyPublisher<OnboardingStatus, Never> { get }
 }
@@ -70,13 +68,7 @@ struct DefaultVPNFeatureGatekeeper: VPNFeatureGatekeeper {
     /// For subscription users this means they are authenticated.
     ///
     func isVPNVisible() -> Bool {
-        subscriptionManager.isUserAuthenticated
-    }
-
-    /// Returns whether the VPN should be uninstalled automatically.
-    /// This is only true when the user is not an Easter Egg user, the waitlist test has ended, and the user is onboarded.
-    func shouldUninstallAutomatically() -> Bool {
-        !subscriptionManager.isUserAuthenticated && LoginItem.vpnMenu.status.isInstalled
+        return subscriptionManager.isSubscriptionPresent()
     }
 
     /// Whether the user is fully onboarded
@@ -89,17 +81,5 @@ struct DefaultVPNFeatureGatekeeper: VPNFeatureGatekeeper {
     ///
     var onboardStatusPublisher: AnyPublisher<OnboardingStatus, Never> {
         defaults.networkProtectionOnboardingStatusPublisher
-    }
-
-    /// A method meant to be called safely from different places to disable the VPN if the user isn't meant to have access to it.
-    ///
-    func disableIfUserHasNoAccess() async {
-        guard shouldUninstallAutomatically() else {
-            return
-        }
-
-        /// There's not much to be done for this error here.
-        /// The uninstall call already fires pixels to allow us to anonymously track success rate and see the errors.
-        try? await vpnUninstaller.uninstall(removeSystemExtension: false, showNotification: true)
     }
 }

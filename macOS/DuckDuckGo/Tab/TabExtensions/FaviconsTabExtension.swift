@@ -45,7 +45,7 @@ final class FaviconsTabExtension {
         contentPublisher: some Publisher<Tab.TabContent, Never>,
         faviconManagement: FaviconManagement? = nil
     ) {
-        self.faviconManagement = faviconManagement ?? FaviconManager.shared
+        self.faviconManagement = faviconManagement ?? NSApp.delegateTyped.faviconManager
 
         scriptsPublisher.sink { [weak self] scripts in
             Task { @MainActor in
@@ -72,7 +72,7 @@ final class FaviconsTabExtension {
             return
         }
 
-        guard faviconManagement.areFaviconsLoaded else { return }
+        guard faviconManagement.isCacheLoaded else { return }
 
         if let cachedFavicon = faviconManagement.getCachedFavicon(for: url, sizeCategory: .small)?.image {
             if cachedFavicon != favicon {

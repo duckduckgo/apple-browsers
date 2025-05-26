@@ -64,7 +64,6 @@ final class JSAlertController: NSViewController {
     }
 
     override func viewDidLoad() {
-        super.viewDidLoad()
         alertView.layer?.cornerRadius = 10.0
         alertView.applyDropShadow()
 
@@ -73,23 +72,22 @@ final class JSAlertController: NSViewController {
     }
 
     override func viewWillAppear() {
-        super.viewWillAppear()
         presentData()
     }
 
     override func viewDidAppear() {
-        super.viewDidAppear()
         view.makeMeFirstResponder()
         // Needed to handle key presses after AddressBar resigns first responder
-        view.window?.publisher(for: \.firstResponder).sink(receiveValue: { [weak self] firstResponder in
-            if firstResponder is WebView {
-                self?.view.makeMeFirstResponder()
+        NotificationCenter.default.publisher(for: MainWindow.firstResponderDidChangeNotification, object: view.window)
+            .sink { [weak self] _ in
+                if let firstResponder = self?.view.window?.firstResponder, firstResponder is WebView {
+                    self?.view.makeMeFirstResponder()
+                }
             }
-        }).store(in: &cancellables)
+            .store(in: &cancellables)
     }
 
     override func viewDidDisappear() {
-        super.viewDidDisappear()
         // Defensive action in case of erroneous failure to deinit
         cancellables.removeAll()
     }

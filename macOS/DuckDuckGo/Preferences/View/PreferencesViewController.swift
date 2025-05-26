@@ -23,6 +23,8 @@ import SwiftUIExtensions
 import Combine
 import DDGSync
 import NetworkProtection
+import AIChat
+import Subscription
 
 final class PreferencesViewController: NSViewController {
 
@@ -41,14 +43,16 @@ final class PreferencesViewController: NSViewController {
         duckPlayer: DuckPlayer = DuckPlayer.shared,
         tabCollectionViewModel: TabCollectionViewModel,
         privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
-        aiChatRemoteSettings: AIChatRemoteSettingsProvider = AIChatRemoteSettings()
+        aiChatRemoteSettings: AIChatRemoteSettingsProvider = AIChatRemoteSettings(),
+        subscriptionManager: any SubscriptionAuthV1toV2Bridge = Application.appDelegate.subscriptionAuthV1toV2Bridge
     ) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.privacyConfigurationManager = privacyConfigurationManager
         model = PreferencesSidebarModel(syncService: syncService,
-                                        vpnGatekeeper: DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge),
+                                        vpnGatekeeper: DefaultVPNFeatureGatekeeper(subscriptionManager: subscriptionManager),
                                         includeDuckPlayer: duckPlayer.shouldDisplayPreferencesSideBar,
-                                        includeAIChat: aiChatRemoteSettings.isAIChatEnabled)
+                                        includeAIChat: aiChatRemoteSettings.isAIChatEnabled,
+                                        subscriptionManager: subscriptionManager)
         super.init(nibName: nil, bundle: nil)
     }
 

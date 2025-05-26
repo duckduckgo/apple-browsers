@@ -54,7 +54,7 @@ extension DebugScreensViewModel {
                     }
                 }
 
-                controller.presentShareSheet(withItems: [DiagnosticReportDataSource(delegate: Delegate(), fireproofing: d.fireproofing)], fromView: controller.view)
+                controller.presentShareSheet(withItems: [DiagnosticReportDataSource(delegate: Delegate(), tabManager: d.tabManager, fireproofing: d.fireproofing)], fromView: controller.view)
             }),
 
             // MARK: SwiftUI Views
@@ -113,6 +113,7 @@ extension DebugScreensViewModel {
                 return storyboard.instantiateViewController(identifier: "ImageCacheDebugViewController") { coder in
                     ImageCacheDebugViewController(coder: coder,
                                                   bookmarksDatabase: d.bookmarksDatabase,
+                                                  tabsModel: d.tabManager.model,
                                                   fireproofing: d.fireproofing)
                 }
             }),
@@ -134,6 +135,12 @@ extension DebugScreensViewModel {
                 let storyboard = UIStoryboard(name: "Debug", bundle: nil)
                 return storyboard.instantiateViewController(identifier: "NetworkProtectionDebugViewController") { coder in
                     NetworkProtectionDebugViewController(coder: coder)
+                }
+            }),
+            .controller(title: "PIR", { _ in
+                let storyboard = UIStoryboard(name: "Debug", bundle: nil)
+                return storyboard.instantiateViewController(identifier: "DataBrokerProtectionDebugViewController") { coder in
+                    DataBrokerProtectionDebugViewController(coder: coder)
                 }
             }),
             .controller(title: "File Size Inspector", { _ in

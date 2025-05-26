@@ -16,6 +16,8 @@ tags:
     id: "searchEntry"
 - inputText: "https://privacy-test-pages.site"
 - pressKey: Enter
+
+- assertVisible: ".*Privacy Test Pages.*"
  
 # Bookmark site
 - assertVisible: "Browsing menu"
@@ -34,7 +36,7 @@ tags:
 - assertVisible: "Privacy Test Pages - Home"
 - assertVisible: "privacy-test-pages.site"
 - tapOn: "Privacy Test Pages - Home"
-- tapOn: "Refresh Page"
+- runFlow: ../shared/pull_to_refresh.yaml
 
 # Verify site has been bookmarked
 - assertVisible: "Browsing menu"

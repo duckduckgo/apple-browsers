@@ -4,6 +4,7 @@
     <dependencies>
         <deployment identifier="iOS"/>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="23506"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -106,10 +107,10 @@
                                     </constraints>
                                 </view>
                                 <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="sek-4Y-GoT" customClass="SearchFieldContainerView" customModule="DuckDuckGo" customModuleProvider="target">
-                                    <rect key="frame" x="30" y="0.0" width="313" height="40"/>
+                                    <rect key="frame" x="30" y="0.0" width="283" height="40"/>
                                     <subviews>
                                         <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="yEJ-P3-HpO" customClass="OmniBarNotificationContainerView" customModule="DuckDuckGo" customModuleProvider="target">
-                                            <rect key="frame" x="-4" y="0.0" width="317" height="40"/>
+                                            <rect key="frame" x="-4" y="0.0" width="287" height="40"/>
                                         </view>
                                         <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="yGG-5L-D8Q" customClass="PrivacyInfoContainerView" customModule="DuckDuckGo" customModuleProvider="target">
                                             <rect key="frame" x="0.0" y="0.0" width="138" height="40"/>
@@ -241,7 +242,7 @@
                                             </connections>
                                         </view>
                                         <textField opaque="NO" clipsSubviews="YES" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" textAlignment="natural" adjustsFontSizeToFit="NO" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="fqM-N4-jNd" customClass="TextFieldWithInsets" customModule="DuckDuckGo" customModuleProvider="target">
-                                            <rect key="frame" x="30" y="0.0" width="283" height="40"/>
+                                            <rect key="frame" x="30" y="0.0" width="253" height="40"/>
                                             <color key="tintColor" red="1" green="1" blue="1" alpha="1" colorSpace="calibratedRGB"/>
                                             <accessibility key="accessibilityConfiguration" identifier="searchEntry">
                                                 <accessibilityTraits key="traits" searchField="YES"/>
@@ -284,7 +285,7 @@
                                     </connections>
                                 </view>
                                 <button opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" reversesTitleShadowWhenHighlighted="YES" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="ita-iD-8ad" userLabel="Voice Button">
-                                    <rect key="frame" x="343" y="5" width="30" height="30"/>
+                                    <rect key="frame" x="313" y="5" width="30" height="30"/>
                                     <accessibility key="accessibilityConfiguration" label="Voice Search"/>
                                     <constraints>
                                         <constraint firstAttribute="width" priority="900" constant="30" id="80Y-p8-kj7"/>
@@ -296,8 +297,8 @@
                                     </connections>
                                 </button>
                                 <button opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" reversesTitleShadowWhenHighlighted="YES" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Dt8-We-5tV">
-                                    <rect key="frame" x="373" y="0.0" width="30" height="40"/>
-                                    <accessibility key="accessibilityConfiguration" label="Clear Text"/>
+                                    <rect key="frame" x="343" y="0.0" width="30" height="40"/>
+                                    <accessibility key="accessibilityConfiguration" label="Clear text"/>
                                     <constraints>
                                         <constraint firstAttribute="width" priority="900" constant="30" id="Ym5-FI-uOP"/>
                                     </constraints>
@@ -307,7 +308,7 @@
                                     </connections>
                                 </button>
                                 <button opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" reversesTitleShadowWhenHighlighted="YES" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Qea-QY-LVl">
-                                    <rect key="frame" x="403" y="8" width="30" height="24"/>
+                                    <rect key="frame" x="373" y="8" width="30" height="24"/>
                                     <accessibility key="accessibilityConfiguration" label="Refresh Page"/>
                                     <constraints>
                                         <constraint firstAttribute="width" priority="900" constant="30" id="PHR-dd-ThY"/>
@@ -317,9 +318,20 @@
                                         <action selector="onRefreshPressed:" destination="ojX-nM-dyN" eventType="touchUpInside" id="4Dg-IX-SdK"/>
                                     </connections>
                                 </button>
+                                <button opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" reversesTitleShadowWhenHighlighted="YES" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="eR6-Vx-MAY">
+                                    <rect key="frame" x="403" y="8" width="30" height="24"/>
+                                    <accessibility key="accessibilityConfiguration" label="Refresh Page"/>
+                                    <constraints>
+                                        <constraint firstAttribute="width" priority="900" constant="30" id="fjl-fd-cK0"/>
+                                    </constraints>
+                                    <state key="normal" image="Share-24"/>
+                                    <connections>
+                                        <action selector="onSharePressed:" destination="ojX-nM-dyN" eventType="touchUpInside" id="1pO-tU-wuk"/>
+                                    </connections>
+                                </button>
                                 <button opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" reversesTitleShadowWhenHighlighted="YES" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="gb5-wL-4OW" userLabel="Abort Button">
                                     <rect key="frame" x="433" y="8" width="30" height="24"/>
-                                    <accessibility key="accessibilityConfiguration" label="Clear Text"/>
+                                    <accessibility key="accessibilityConfiguration" label="Stop Loading"/>
                                     <constraints>
                                         <constraint firstAttribute="width" priority="900" constant="30" id="MmC-kg-OHF"/>
                                     </constraints>
@@ -411,13 +423,14 @@
                     </constraints>
                 </view>
             </subviews>
+            <viewLayoutGuide key="safeArea" id="uhZ-0m-JYm"/>
             <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="calibratedWhite"/>
             <color key="tintColor" red="0.66666666669999997" green="0.66666666669999997" blue="0.66666666669999997" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
             <gestureRecognizers/>
             <constraints>
                 <constraint firstAttribute="bottom" secondItem="5D5-iT-bUk" secondAttribute="bottom" constant="6" id="0Dd-A4-H8W"/>
                 <constraint firstItem="Xrl-6Y-ll0" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="5D5-iT-bUk" secondAttribute="trailing" constant="24" id="4w4-aZ-P7u"/>
-                <constraint firstItem="pg8-E6-C14" firstAttribute="leading" secondItem="ojX-nM-dyN" secondAttribute="leading" constant="16" id="D0r-SA-Vnj"/>
+                <constraint firstItem="pg8-E6-C14" firstAttribute="leading" secondItem="uhZ-0m-JYm" secondAttribute="leading" constant="16" id="D0r-SA-Vnj"/>
                 <constraint firstItem="5D5-iT-bUk" firstAttribute="centerX" secondItem="ojX-nM-dyN" secondAttribute="centerX" id="G7B-Lp-iiF"/>
                 <constraint firstItem="Xrl-6Y-ll0" firstAttribute="centerY" secondItem="ojX-nM-dyN" secondAttribute="centerY" id="LCm-Yc-6uf"/>
                 <constraint firstItem="pg8-E6-C14" firstAttribute="centerY" secondItem="ojX-nM-dyN" secondAttribute="centerY" id="MT8-di-IJA"/>
@@ -428,7 +441,7 @@
                 <constraint firstAttribute="bottom" secondItem="hD7-j4-fpl" secondAttribute="top" id="nfs-pA-DD4"/>
                 <constraint firstItem="5D5-iT-bUk" firstAttribute="leading" relation="greaterThanOrEqual" secondItem="pg8-E6-C14" secondAttribute="trailing" constant="24" id="qCb-MN-wKZ"/>
                 <constraint firstItem="hD7-j4-fpl" firstAttribute="leading" secondItem="ojX-nM-dyN" secondAttribute="leading" id="xxj-zc-Sw3"/>
-                <constraint firstAttribute="trailing" secondItem="Xrl-6Y-ll0" secondAttribute="trailing" constant="16" id="yKn-ev-mu1"/>
+                <constraint firstItem="uhZ-0m-JYm" firstAttribute="trailing" secondItem="Xrl-6Y-ll0" secondAttribute="trailing" constant="16" id="yKn-ev-mu1"/>
             </constraints>
             <nil key="simulatedStatusBarMetrics"/>
             <freeformSimulatedSizeMetrics key="simulatedDestinationMetrics"/>
@@ -461,7 +474,8 @@
                 <outlet property="separatorToBottom" destination="nfs-pA-DD4" id="hfJ-iR-yz8"/>
                 <outlet property="separatorView" destination="hD7-j4-fpl" id="xlg-WZ-peq"/>
                 <outlet property="settingsButton" destination="1rB-5w-de3" id="KCF-tv-9xx"/>
-                <outlet property="textField" destination="fqM-N4-jNd" id="wRU-Ha-HpH"/>
+                <outlet property="shareButton" destination="eR6-Vx-MAY" id="3jb-za-Z5p"/>
+                <outlet property="textField" destination="fqM-N4-jNd" id="GPH-ya-Acx"/>
                 <outlet property="voiceSearchButton" destination="ita-iD-8ad" id="6ms-wg-lln"/>
             </connections>
             <point key="canvasLocation" x="-229.06295754026354" y="-108.3984375"/>
@@ -490,10 +504,10 @@
         <image name="Settings-24" width="24" height="24"/>
         <image name="Share-24" width="24" height="24"/>
         <systemColor name="systemGreenColor">
-            <color red="0.20392156859999999" green="0.78039215689999997" blue="0.34901960780000002" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <color red="0.20392156862745098" green="0.7803921568627451" blue="0.34901960784313724" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
         <systemColor name="systemPurpleColor">
-            <color red="0.68627450980000004" green="0.32156862749999998" blue="0.87058823529999996" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <color red="0.68627450980392157" green="0.32156862745098042" blue="0.87058823529411766" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
         <systemColor name="systemYellowColor">
             <color red="1" green="0.80000000000000004" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>

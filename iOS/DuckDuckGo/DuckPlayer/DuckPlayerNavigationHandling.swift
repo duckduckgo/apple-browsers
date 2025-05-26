@@ -39,10 +39,10 @@ extension DuckPlayerReferrer {
 }
 
 /// Represents the result of handling a URL change in the Duck Player navigation handler.
-enum DuckPlayerNavigationHandlerURLChangeResult {
+enum DuckPlayerNavigationHandlerURLChangeResult: Equatable {
 
     /// Possible reasons for not handling a URL change.
-    enum NotHandledResult {
+    enum NotHandledResult: Equatable {
         case featureOff
         case invalidURL
         case duckPlayerDisabled
@@ -50,10 +50,11 @@ enum DuckPlayerNavigationHandlerURLChangeResult {
         case disabledForVideo
         case duplicateNavigation
         case isLinkPreview
+        case isYoutubeInternalNavigation
     }
 
     /// Possible reasons for handling a URL change.
-    enum HandledResult {
+    enum HandledResult: Equatable {
         case newVideo
         case allowFirstVideo
         case duckPlayerEnabled
@@ -92,6 +93,11 @@ protocol DuckPlayerNavigationHandling: AnyObject {
     ///
     /// - Parameter webView: The web view to navigate back in.
     func handleGoBack(webView: WKWebView)
+
+    /// Handles the forward navigation action in the web view.
+    ///
+    /// - Parameter webView: The web view to navigate back in.
+    func handleGoForward(webView: WKWebView)
 
     /// Handles the reload action in the web view.
     ///

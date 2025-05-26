@@ -420,10 +420,9 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
         onEndFlow = { [weak self] in
             self?.connector?.stopPolling()
             self?.connector = nil
-            self?.connectionController.stopConnectMode()
-            self?.connectionController.stopExchangeMode()
 
             Task { @MainActor in
+                await self?.connectionController.cancel()
                 guard let window = syncWindowController.window, let sheetParent = window.sheetParent else {
                     assertionFailure("window or sheet parent not present")
                     return
@@ -568,7 +567,8 @@ extension SyncPreferences: ManagementDialogModelDelegate {
     private func newStartPollingForRecoveryKey(isRecovery: Bool) {
         Task { @MainActor in
             do {
-                self.codeToDisplay = try connectionController.startConnectMode()
+                let shouldGenerateURLBasedCode = featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased)
+                self.codeToDisplay = try await connectionController.startConnectMode(shouldGenerateURLBasedCode: shouldGenerateURLBasedCode)
                 if isRecovery {
                     self.presentDialog(for: .enterRecoveryCode(code: codeToDisplay ?? ""))
                 } else {
@@ -641,7 +641,7 @@ extension SyncPreferences: ManagementDialogModelDelegate {
             return
         }
         Task {
-            await connectionController.syncCodeEntered(code: recoveryCode)
+            await connectionController.syncCodeEntered(code: recoveryCode, canScanURLBarcodes: false)
         }
     }
 
@@ -815,7 +815,9 @@ extension SyncPreferences: ManagementDialogModelDelegate {
         if isSyncEnabled && !featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) {
             code = recoveryCode
         } else {
-            code = codeToDisplay
+            // Fall back to recovery code if no other codeToDisplay is set as, if available,
+            // a recovery code will always work for connection
+            code = codeToDisplay ?? recoveryCode
         }
         guard let code else { return }
         let pasteboard = NSPasteboard.general
@@ -881,7 +883,8 @@ extension SyncPreferences: ManagementDialogModelDelegate {
     private func startPollingForPublicKey() {
         Task { @MainActor in
             do {
-                self.codeToDisplay = try connectionController.startExchangeMode()
+                let shouldGenerateURLBasedCode = featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased)
+                self.codeToDisplay = try await connectionController.startExchangeMode(shouldGenerateURLBasedCode: shouldGenerateURLBasedCode)
                 self.presentDialog(for: .syncWithAnotherDevice(code: codeToDisplay ?? ""))
             } catch {
                 managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToOtherDevice, description: error.localizedDescription)
@@ -955,11 +958,7 @@ extension SyncPreferences: SyncConnectionControllerDelegate {
         mapDevices(registeredDevices)
         PixelKit.fire(GeneralPixel.syncLogin)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            if isRecovery {
-                self.showDevicesSynced()
-            } else {
-                self.presentDialog(for: .saveRecoveryCode(self.recoveryCode ?? ""))
-            }
+            self.presentDialog(for: .saveRecoveryCode(self.recoveryCode ?? ""))
             self.stopPollingForRecoveryKey()
         }
     }
@@ -973,11 +972,9 @@ extension SyncPreferences: SyncConnectionControllerDelegate {
         case .unableToRecognizeCode:
             handleError(.unableToRecognizeCode, error: underlyingError, pixelEvent: nil)
         case .failedToFetchPublicKey, .failedToTransmitExchangeRecoveryKey, .failedToFetchConnectRecoveryKey, .failedToLogIn, .failedToTransmitExchangeKey, .failedToFetchExchangeRecoveryKey, .failedToTransmitConnectRecoveryKey:
-            handleError(.unableToSyncToOtherDevice, error: error, pixelEvent: GeneralPixel.syncLoginError(error: error))
+            handleError(.unableToSyncToOtherDevice, error: underlyingError, pixelEvent: GeneralPixel.syncLoginError(error: underlyingError ?? error))
         case .failedToCreateAccount:
-            handleError(.unableToSyncToOtherDevice, error: underlyingError, pixelEvent: GeneralPixel.syncSignupError(error: error))
-        case .foundExistingAccount:
-            handleError(.unableToMergeTwoAccounts, error: underlyingError, pixelEvent: nil)
+            handleError(.unableToSyncToOtherDevice, error: underlyingError, pixelEvent: GeneralPixel.syncSignupError(error: underlyingError ?? error))
         }
     }
 }

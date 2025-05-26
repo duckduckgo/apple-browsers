@@ -87,8 +87,6 @@ final class MainMenu: NSMenu {
     var aiChatMenu = NSMenuItem(title: UserText.newAIChatMenuItem, action: #selector(AppDelegate.newAIChat), keyEquivalent: [.option, .command, "n"])
     let toggleNetworkProtectionShortcutMenuItem = NSMenuItem(title: UserText.showNetworkProtectionShortcut, action: #selector(MainViewController.toggleNetworkProtectionShortcut), keyEquivalent: "N")
 
-    let toggleAIChatShortcutMenuItem = NSMenuItem(title: UserText.showAIChatShortcut, action: #selector(MainViewController.toggleAIChatShortcut), keyEquivalent: "L")
-
     // MARK: Window
     let windowsMenu = NSMenu(title: UserText.mainMenuWindow)
 
@@ -110,10 +108,13 @@ final class MainMenu: NSMenu {
     let releaseNotesMenuItem = NSMenuItem(title: UserText.releaseNotesMenuItem, action: #selector(AppDelegate.showReleaseNotes))
     let whatIsNewMenuItem = NSMenuItem(title: UserText.whatsNewMenuItem, action: #selector(AppDelegate.showWhatIsNew))
     let sendFeedbackMenuItem = NSMenuItem(title: UserText.sendFeedback, action: #selector(AppDelegate.openFeedback))
+    let appAboutDDGMenuItem = NSMenuItem(title: UserText.aboutDuckDuckGo, action: #selector(AppDelegate.openAbout))
 
     private let dockCustomizer: DockCustomization
     private let defaultBrowserPreferences: DefaultBrowserPreferences
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
+    private let internalUserDecider: InternalUserDecider
+    private let appVersion: AppVersion
 
     // MARK: - Initialization
 
@@ -123,8 +124,12 @@ final class MainMenu: NSMenu {
          faviconManager: FaviconManagement,
          dockCustomizer: DockCustomization = DockCustomizer(),
          defaultBrowserPreferences: DefaultBrowserPreferences = .shared,
-         aiChatMenuConfig: AIChatMenuVisibilityConfigurable) {
+         aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
+         internalUserDecider: InternalUserDecider,
+         appVersion: AppVersion = .shared) {
 
+        self.internalUserDecider = internalUserDecider
+        self.appVersion = appVersion
         self.dockCustomizer = dockCustomizer
         self.defaultBrowserPreferences = defaultBrowserPreferences
         self.aiChatMenuConfig = aiChatMenuConfig
@@ -151,7 +156,8 @@ final class MainMenu: NSMenu {
 
     func buildDuckDuckGoMenu() -> NSMenuItem {
         NSMenuItem(title: UserText.duckDuckGo) {
-            NSMenuItem(title: UserText.aboutDuckDuckGo, action: #selector(AppDelegate.openAbout))
+            appAboutDDGMenuItem
+
             NSMenuItem.separator()
 
             preferencesMenuItem
@@ -296,8 +302,6 @@ final class MainMenu: NSMenu {
             toggleDownloadsShortcutMenuItem
 
             toggleNetworkProtectionShortcutMenuItem
-
-            toggleAIChatShortcutMenuItem
 
             NSMenuItem.separator()
 
@@ -454,8 +458,8 @@ final class MainMenu: NSMenu {
 
         // To be safe, hide the NetP shortcut menu item by default.
         toggleNetworkProtectionShortcutMenuItem.isHidden = true
-        toggleAIChatShortcutMenuItem.isHidden = true
 
+        updateAppAboutDDGMenuItem()
         updateHomeButtonMenuItem()
         updateBookmarksBarMenuItem()
         updateShortcutMenuItems()
@@ -464,6 +468,14 @@ final class MainMenu: NSMenu {
         updateRemoteConfigurationInfo()
         updateAutofillDebugScriptMenuItem()
         updateShowToolbarsOnFullScreenMenuItem()
+    }
+
+    private func updateAppAboutDDGMenuItem() {
+        if internalUserDecider.isInternalUser {
+            appAboutDDGMenuItem.title = "\(UserText.aboutDuckDuckGo) (version: \(appVersion.versionAndBuildNumber))"
+        } else {
+            appAboutDDGMenuItem.title = UserText.aboutDuckDuckGo
+        }
     }
 
     // MARK: - Bookmarks
@@ -481,6 +493,7 @@ final class MainMenu: NSMenu {
             }
     }
 
+    @MainActor
     private func updateFavicons(in menu: NSMenu) {
         for menuItem in menu.items {
             if let bookmark = menuItem.representedObject as? Bookmark {
@@ -501,9 +514,10 @@ final class MainMenu: NSMenu {
 
                 return (favorites, topLevelEntities)
             }
-            .receive(on: DispatchQueue.main)
             .sink { [weak self] favorites, topLevel in
-                self?.updateBookmarksMenu(favoriteViewModels: favorites, topLevelBookmarkViewModels: topLevel)
+                Task { @MainActor in
+                    self?.updateBookmarksMenu(favoriteViewModels: favorites, topLevelBookmarkViewModels: topLevel)
+                }
             }
     }
 
@@ -517,6 +531,7 @@ final class MainMenu: NSMenu {
     }
 
     // Nested recursing functions cause body length
+    @MainActor
     func updateBookmarksMenu(favoriteViewModels: [BookmarkViewModel], topLevelBookmarkViewModels: [BookmarkViewModel]) {
 
         func bookmarkMenuItems(from bookmarkViewModels: [BookmarkViewModel], topLevel: Bool = true) -> [NSMenuItem] {
@@ -621,13 +636,6 @@ final class MainMenu: NSMenu {
             toggleBookmarksShortcutMenuItem.title = LocalPinningManager.shared.shortcutTitle(for: .bookmarks)
             toggleDownloadsShortcutMenuItem.title = LocalPinningManager.shared.shortcutTitle(for: .downloads)
 
-            if AIChatRemoteSettings().isApplicationMenuShortcutEnabled {
-                toggleAIChatShortcutMenuItem.title = LocalPinningManager.shared.shortcutTitle(for: .aiChat)
-                toggleAIChatShortcutMenuItem.isHidden = false
-            } else {
-                toggleAIChatShortcutMenuItem.isHidden = true
-            }
-
             if DefaultVPNFeatureGatekeeper(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge).isVPNVisible() {
                 toggleNetworkProtectionShortcutMenuItem.isHidden = false
                 toggleNetworkProtectionShortcutMenuItem.title = LocalPinningManager.shared.shortcutTitle(for: .networkProtection)
@@ -639,55 +647,53 @@ final class MainMenu: NSMenu {
 
     // MARK: - Debug
 
-    let internalUserItem = NSMenuItem(title: "Set Internal User State", action: #selector(MainViewController.internalUserState))
+    let internalUserItem = NSMenuItem(title: "Set Internal User State", action: #selector(AppDelegate.internalUserState))
 
     @MainActor
     private func setupDebugMenu() -> NSMenu {
         let debugMenu = NSMenu(title: "Debug") {
             NSMenuItem(title: "Feature Flag Overrides")
                 .submenu(FeatureFlagOverridesMenu(featureFlagOverrides: NSApp.delegateTyped.featureFlagger))
-            NSMenuItem.separator()
             NSMenuItem(title: "Open Vanilla Browser", action: #selector(MainViewController.openVanillaBrowser)).withAccessibilityIdentifier("MainMenu.openVanillaBrowser")
-            NSMenuItem.separator()
-            NSMenuItem(title: "Skip Onboarding", action: #selector(MainViewController.skipOnboarding))
+            NSMenuItem(title: "Skip Onboarding", action: #selector(AppDelegate.skipOnboarding)).withAccessibilityIdentifier("MainMenu.skipOnboarding")
             NSMenuItem(title: "New Tab Page") {
                 NSMenuItem(title: "Mode") {
                     newTabPagePrivacyStatsModeMenuItem.targetting(self)
                     newTabPageRecentActivityModeMenuItem.targetting(self)
                 }
-                NSMenuItem(title: "Reset Continue Setup", action: #selector(MainViewController.debugResetContinueSetup))
+                NSMenuItem(title: "Reset Continue Setup", action: #selector(AppDelegate.debugResetContinueSetup))
                 NSMenuItem(title: "Shift New Tab daily impression", action: #selector(MainViewController.debugShiftNewTabOpeningDate))
                 NSMenuItem(title: "Shift \(AppearancePreferences.Constants.dismissNextStepsCardsAfterDays) days", action: #selector(MainViewController.debugShiftNewTabOpeningDateNtimes))
             }
             NSMenuItem(title: "History")
                 .submenu(HistoryDebugMenu())
             NSMenuItem(title: "Reset Data") {
-                NSMenuItem(title: "Reset Default Browser Prompt", action: #selector(MainViewController.resetDefaultBrowserPrompt))
-                NSMenuItem(title: "Reset Default Grammar Checks", action: #selector(MainViewController.resetDefaultGrammarChecks))
-                NSMenuItem(title: "Reset Autofill Data", action: #selector(MainViewController.resetSecureVaultData)).withAccessibilityIdentifier("MainMenu.resetSecureVaultData")
-                NSMenuItem(title: "Reset Bookmarks", action: #selector(MainViewController.resetBookmarks)).withAccessibilityIdentifier("MainMenu.resetBookmarks")
-                NSMenuItem(title: "Reset Pinned Tabs", action: #selector(MainViewController.resetPinnedTabs))
+                NSMenuItem(title: "Reset Default Browser Prompt", action: #selector(AppDelegate.resetDefaultBrowserPrompt))
+                NSMenuItem(title: "Reset Default Grammar Checks", action: #selector(AppDelegate.resetDefaultGrammarChecks))
+                NSMenuItem(title: "Reset Autofill Data", action: #selector(AppDelegate.resetSecureVaultData)).withAccessibilityIdentifier("MainMenu.resetSecureVaultData")
+                NSMenuItem(title: "Reset Bookmarks", action: #selector(AppDelegate.resetBookmarks)).withAccessibilityIdentifier("MainMenu.resetBookmarks")
+                NSMenuItem(title: "Reset Pinned Tabs", action: #selector(AppDelegate.resetPinnedTabs))
                 NSMenuItem(title: "Reset New Tab Page Customizations", action: #selector(AppDelegate.resetNewTabPageCustomization))
-                NSMenuItem(title: "Reset YouTube Overlay Interactions", action: #selector(MainViewController.resetDuckPlayerOverlayInteractions))
-                NSMenuItem(title: "Reset MakeDuckDuckYours user settings", action: #selector(MainViewController.resetMakeDuckDuckGoYoursUserSettings))
-                NSMenuItem(title: "Experiment Install Date more than 5 days ago", action: #selector(MainViewController.changePixelExperimentInstalledDateToLessMoreThan5DayAgo(_:)))
+                NSMenuItem(title: "Reset YouTube Overlay Interactions", action: #selector(AppDelegate.resetDuckPlayerOverlayInteractions))
+                NSMenuItem(title: "Reset MakeDuckDuckYours user settings", action: #selector(AppDelegate.resetMakeDuckDuckGoYoursUserSettings))
+                NSMenuItem(title: "Experiment Install Date more than 5 days ago", action: #selector(AppDelegate.changePixelExperimentInstalledDateToLessMoreThan5DayAgo(_:)))
                 NSMenuItem(title: "Change Activation Date") {
-                    NSMenuItem(title: "Today", action: #selector(MainViewController.changeInstallDateToToday), keyEquivalent: "N")
-                    NSMenuItem(title: "Less Than a 5 days Ago", action: #selector(MainViewController.changeInstallDateToLessThan5DayAgo(_:)))
-                    NSMenuItem(title: "More Than 5 Days Ago", action: #selector(MainViewController.changeInstallDateToMoreThan5DayAgoButLessThan9(_:)))
-                    NSMenuItem(title: "More Than 9 Days Ago", action: #selector(MainViewController.changeInstallDateToMoreThan9DaysAgo(_:)))
+                    NSMenuItem(title: "Today", action: #selector(AppDelegate.changeInstallDateToToday), keyEquivalent: "N")
+                    NSMenuItem(title: "Less Than a 5 days Ago", action: #selector(AppDelegate.changeInstallDateToLessThan5DayAgo(_:)))
+                    NSMenuItem(title: "More Than 5 Days Ago", action: #selector(AppDelegate.changeInstallDateToMoreThan5DayAgoButLessThan9(_:)))
+                    NSMenuItem(title: "More Than 9 Days Ago", action: #selector(AppDelegate.changeInstallDateToMoreThan9DaysAgo(_:)))
                 }
-                NSMenuItem(title: "Reset Email Protection InContext Signup Prompt", action: #selector(MainViewController.resetEmailProtectionInContextPrompt))
-                NSMenuItem(title: "Reset Pixels Storage", action: #selector(MainViewController.resetDailyPixels))
+                NSMenuItem(title: "Reset Email Protection InContext Signup Prompt", action: #selector(AppDelegate.resetEmailProtectionInContextPrompt))
+                NSMenuItem(title: "Reset Pixels Storage", action: #selector(AppDelegate.resetDailyPixels))
                 NSMenuItem(title: "Reset Remote Messages", action: #selector(AppDelegate.resetRemoteMessages))
-                NSMenuItem(title: "Reset Duck Player Preferences", action: #selector(MainViewController.resetDuckPlayerPreferences))
-                NSMenuItem(title: "Reset Onboarding", action: #selector(MainViewController.resetOnboarding(_:)))
-                NSMenuItem(title: "Reset Home Page Settings Onboarding", action: #selector(MainViewController.resetHomePageSettingsOnboarding(_:)))
-                NSMenuItem(title: "Reset Contextual Onboarding", action: #selector(MainViewController.resetContextualOnboarding(_:)))
-                NSMenuItem(title: "Reset Sync Promo prompts", action: #selector(MainViewController.resetSyncPromoPrompts))
-                NSMenuItem(title: "Reset Add To Dock more options menu notification", action: #selector(MainViewController.resetAddToDockFeatureNotification))
-                NSMenuItem(title: "Reset Launch Date To Today", action: #selector(MainViewController.resetLaunchDateToToday))
-                NSMenuItem(title: "Set Launch Date A Week In the Past", action: #selector(MainViewController.setLaunchDayAWeekInThePast))
+                NSMenuItem(title: "Reset Duck Player Preferences", action: #selector(AppDelegate.resetDuckPlayerPreferences))
+                NSMenuItem(title: "Reset Onboarding", action: #selector(AppDelegate.resetOnboarding(_:)))
+                NSMenuItem(title: "Reset Home Page Settings Onboarding", action: #selector(AppDelegate.resetHomePageSettingsOnboarding(_:)))
+                NSMenuItem(title: "Reset Contextual Onboarding", action: #selector(AppDelegate.resetContextualOnboarding(_:)))
+                NSMenuItem(title: "Reset Sync Promo prompts", action: #selector(AppDelegate.resetSyncPromoPrompts))
+                NSMenuItem(title: "Reset Add To Dock more options menu notification", action: #selector(AppDelegate.resetAddToDockFeatureNotification))
+                NSMenuItem(title: "Reset Launch Date To Today", action: #selector(AppDelegate.resetLaunchDateToToday))
+                NSMenuItem(title: "Set Launch Date A Week In the Past", action: #selector(AppDelegate.setLaunchDayAWeekInThePast))
 
             }.withAccessibilityIdentifier("MainMenu.resetData")
             NSMenuItem(title: "UI Triggers") {
@@ -705,9 +711,9 @@ final class MainMenu: NSMenu {
                 customConfigurationUrlMenuItem
                 configurationDateAndTimeMenuItem
                 NSMenuItem.separator()
-                NSMenuItem(title: "Reload Configuration Now", action: #selector(MainViewController.reloadConfigurationNow))
-                NSMenuItem(title: "Set custom configuration URL…", action: #selector(MainViewController.setCustomConfigurationURL))
-                NSMenuItem(title: "Reset configuration to default", action: #selector(MainViewController.resetConfigurationToDefault))
+                NSMenuItem(title: "Reload Configuration Now", action: #selector(AppDelegate.reloadConfigurationNow))
+                NSMenuItem(title: "Set custom configuration URL…", action: #selector(AppDelegate.setCustomConfigurationURL))
+                NSMenuItem(title: "Reset configuration to default", action: #selector(AppDelegate.resetConfigurationToDefault))
             }
             NSMenuItem(title: "Remote Messaging Framework")
                 .submenu(RemoteMessagingDebugMenu())
@@ -735,9 +741,9 @@ final class MainMenu: NSMenu {
             }
 
             NSMenuItem(title: "Simulate crash") {
-                NSMenuItem(title: "fatalError", action: #selector(MainViewController.triggerFatalError))
+                NSMenuItem(title: "fatalError", action: #selector(AppDelegate.triggerFatalError))
                 NSMenuItem(title: "NSException", action: #selector(MainViewController.crashOnException))
-                NSMenuItem(title: "C++ exception", action: #selector(MainViewController.crashOnCxxException))
+                NSMenuItem(title: "C++ exception", action: #selector(AppDelegate.crashOnCxxException))
             }
 
             let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
@@ -771,15 +777,16 @@ final class MainMenu: NSMenu {
                                   isAuthV2Enabled: Application.appDelegate.isAuthV2Enabled)
 
             NSMenuItem(title: "TipKit") {
-                NSMenuItem(title: "Reset", action: #selector(MainViewController.resetTipKit))
+                NSMenuItem(title: "Reset", action: #selector(AppDelegate.resetTipKit))
                 NSMenuItem(title: "⚠️ App restart required.", action: nil, target: nil)
             }
 
             NSMenuItem(title: "Logging").submenu(setupLoggingMenu())
             NSMenuItem(title: "AI Chat").submenu(AIChatDebugMenu())
+            NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu())
 
-#if !APPSTORE
-            if #available(macOS 15.3, *) {
+#if !APPSTORE && WEB_EXTENSIONS_ENABLED
+            if #available(macOS 15.4, *) {
                 NSMenuItem.separator()
                 NSMenuItem(title: "Web Extensions").submenu(WebExtensionsDebugMenu())
                 NSMenuItem.separator()
@@ -794,16 +801,11 @@ final class MainMenu: NSMenu {
 
     private func setupLoggingMenu() -> NSMenu {
         let menu = NSMenu(title: "")
-
         menu.addItem(autofillDebugScriptMenuItem
             .targetting(self))
-
         menu.addItem(.separator())
-
-        if #available(macOS 12.0, *) {
-            let exportLogsMenuItem = NSMenuItem(title: "Save Logs…", action: #selector(exportLogs), target: self)
-            menu.addItem(exportLogsMenuItem)
-        }
+        let exportLogsMenuItem = NSMenuItem(title: "Export Logs…", action: #selector(MainViewController.exportLogs))
+        menu.addItem(exportLogsMenuItem)
 
         self.loggingMenu = menu
         return menu
@@ -850,36 +852,6 @@ final class MainMenu: NSMenu {
         AutofillPreferences().debugScriptEnabled = !AutofillPreferences().debugScriptEnabled
         NotificationCenter.default.post(name: .autofillScriptDebugSettingsDidChange, object: nil)
         updateAutofillDebugScriptMenuItem()
-    }
-
-    @available(macOS 12.0, *)
-    @objc private func exportLogs(_ sender: NSMenuItem) {
-        let displayName = Bundle.main.displayName!.replacingOccurrences(of: " ", with: "")
-
-        let launchDate = ISO8601DateFormatter().string(from: NSRunningApplication.current.launchDate ?? Date()).replacingOccurrences(of: ":", with: "_")
-        let savePanel = NSSavePanel.savePanelWithFileTypeChooser(fileTypes: [.log, .text], suggestedFilename: "\(displayName)_\(launchDate)")
-        guard case .OK = savePanel.runModal(),
-              let url = savePanel.url else { return }
-
-        do {
-            let formatter = DateFormatter()
-            formatter.locale = Locale(identifier: "en_US_POSIX")
-            formatter.dateFormat = "yyyy-MM-dd HH:mm:ss.SSS"
-
-            let logStore = try OSLogStore(scope: .currentProcessIdentifier)
-            try logStore.getEntries()
-                .compactMap {
-                    guard let entry = $0 as? OSLogEntryLog else { return nil }
-                    return "\(formatter.string(from: entry.date)) [\(entry.category)] \(entry.composedMessage)"
-                }
-                .joined(separator: "\n")
-                .utf8data
-                .write(to: url)
-
-            NSWorkspace.shared.activateFileViewerSelecting([url])
-        } catch {
-            NSAlert(error: error).runModal()
-        }
     }
 }
 

@@ -19,6 +19,8 @@
 import Combine
 import Foundation
 import BrowserServicesKit
+import PixelKit
+import AIChat
 
 final class AIChatPreferences: ObservableObject {
     static let shared = AIChatPreferences()
@@ -32,19 +34,10 @@ final class AIChatPreferences: ObservableObject {
         self.storage = storage
         self.configuration = configuration
 
-        showShortcutInToolbar = storage.shouldDisplayToolbarShortcut
         showShortcutInApplicationMenu = storage.showShortcutInApplicationMenu
+        showShortcutInAddressBar = storage.showShortcutInAddressBar
 
-        subscribeToShowInToolbarSettingsChanges()
         subscribeToShowInApplicationMenuSettingsChanges()
-    }
-
-    func subscribeToShowInToolbarSettingsChanges() {
-        storage.shouldDisplayToolbarShortcutPublisher
-            .removeDuplicates()
-            .receive(on: DispatchQueue.main)
-            .assign(to: \.showShortcutInToolbar, onWeaklyHeld: self)
-            .store(in: &cancellables)
     }
 
     func subscribeToShowInApplicationMenuSettingsChanges() {
@@ -53,26 +46,20 @@ final class AIChatPreferences: ObservableObject {
             .receive(on: DispatchQueue.main)
             .assign(to: \.showShortcutInApplicationMenu, onWeaklyHeld: self)
             .store(in: &cancellables)
-    }
 
-    var shouldShowToolBarShortcutOption: Bool {
-        self.configuration.isFeatureEnabledForToolbarShortcut
-    }
-
-    var shouldShowApplicationMenuShortcutOption: Bool {
-        self.configuration.isFeatureEnabledForApplicationMenuShortcut
-    }
-
-    @Published var showShortcutInToolbar: Bool {
-        didSet {
-            storage.shouldDisplayToolbarShortcut = showShortcutInToolbar
-        }
+        storage.showShortcutInAddressBarPublisher
+            .removeDuplicates()
+            .receive(on: DispatchQueue.main)
+            .assign(to: \.showShortcutInAddressBar, onWeaklyHeld: self)
+            .store(in: &cancellables)
     }
 
     @Published var showShortcutInApplicationMenu: Bool {
-        didSet {
-            storage.showShortcutInApplicationMenu = showShortcutInApplicationMenu
-        }
+        didSet { storage.showShortcutInApplicationMenu = showShortcutInApplicationMenu }
+    }
+
+    @Published var showShortcutInAddressBar: Bool {
+        didSet { storage.showShortcutInAddressBar = showShortcutInAddressBar }
     }
 
     @MainActor func openLearnMoreLink() {
@@ -80,6 +67,6 @@ final class AIChatPreferences: ObservableObject {
     }
 
     @MainActor func openAIChatLink() {
-        AIChatTabOpener.openAIChatTab()
+        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab()
     }
 }

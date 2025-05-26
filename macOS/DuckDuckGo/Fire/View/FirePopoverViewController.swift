@@ -80,7 +80,7 @@ final class FirePopoverViewController: NSViewController {
           tabCollectionViewModel: TabCollectionViewModel,
           historyCoordinating: HistoryCoordinating = HistoryCoordinator.shared,
           fireproofDomains: FireproofDomains = FireproofDomains.shared,
-          faviconManagement: FaviconManagement = FaviconManager.shared) {
+          faviconManagement: FaviconManagement = NSApp.delegateTyped.faviconManager) {
         self.fireViewModel = fireViewModel
         self.historyCoordinating = historyCoordinating
         self.firePopoverViewModel = FirePopoverViewModel(fireViewModel: fireViewModel,
@@ -89,7 +89,7 @@ final class FirePopoverViewController: NSViewController {
                                                          fireproofDomains: fireproofDomains,
                                                          faviconManagement: faviconManagement,
                                                          tld: ContentBlocking.shared.tld,
-                                                         contextualOnboardingStateMachine: Application.appDelegate.onboardingStateMachine)
+                                                         onboardingContextualDialogsManager: Application.appDelegate.onboardingContextualDialogsManager)
 
         super.init(coder: coder)
     }
@@ -143,6 +143,7 @@ final class FirePopoverViewController: NSViewController {
 
     @IBAction func openNewBurnerWindowAction(_ sender: Any) {
         NSApp.delegateTyped.newBurnerWindow(self)
+        delegate?.firePopoverViewControllerDidCancel(self)
     }
 
     @IBAction func openDetailsButtonAction(_ sender: Any) {

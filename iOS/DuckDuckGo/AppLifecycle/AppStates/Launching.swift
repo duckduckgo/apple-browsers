@@ -40,6 +40,7 @@ struct Launching: LaunchingHandling {
     private let voiceSearchHelper = VoiceSearchHelper()
     private let fireproofing = UserDefaultsFireproofing.xshared
     private let featureFlagger = AppDependencyProvider.shared.featureFlagger
+    private let contentScopeExperimentsManager = AppDependencyProvider.shared.contentScopeExperimentsManager
     private let aiChatSettings = AIChatSettings()
     private let privacyConfigurationManager = ContentBlocking.shared.privacyConfigurationManager
 
@@ -67,12 +68,16 @@ struct Launching: LaunchingHandling {
         // 2. To potentially complete their tasks before the app becomes visible to the user
         // This approach aims to optimize performance and ensure critical functionalities are ready ASAP
 
+        let appKeyValueFileStoreService = try AppKeyValueFileStoreService()
         let autofillService = AutofillService()
+
+        let dbpService = DBPService(appDependencies: AppDependencyProvider.shared)
         let configurationService = RemoteConfigurationService()
         let crashCollectionService = CrashCollectionService()
         let statisticsService = StatisticsService()
         let reportingService = ReportingService(fireproofing: fireproofing)
-        let syncService = SyncService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase)
+        let syncService = SyncService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
+                                      keyValueStore: appKeyValueFileStoreService.keyValueFilesStore)
         reportingService.syncService = syncService
         autofillService.syncService = syncService
         let remoteMessagingService = RemoteMessagingService(bookmarksDatabase: configuration.persistentStoresConfiguration.bookmarksDatabase,
@@ -97,6 +102,7 @@ struct Launching: LaunchingHandling {
                                               subscriptionService: subscriptionService,
                                               voiceSearchHelper: voiceSearchHelper,
                                               featureFlagger: featureFlagger,
+                                              contentScopeExperimentManager: contentScopeExperimentsManager,
                                               aiChatSettings: aiChatSettings,
                                               fireproofing: fireproofing,
                                               maliciousSiteProtectionService: maliciousSiteProtectionService,
@@ -126,6 +132,7 @@ struct Launching: LaunchingHandling {
                                authenticationService: authenticationService,
                                syncService: syncService,
                                vpnService: vpnService,
+                               dbpService: dbpService,
                                autofillService: autofillService,
                                remoteMessagingService: remoteMessagingService,
                                configurationService: configurationService,
@@ -134,7 +141,8 @@ struct Launching: LaunchingHandling {
                                subscriptionService: subscriptionService,
                                crashCollectionService: crashCollectionService,
                                maliciousSiteProtectionService: maliciousSiteProtectionService,
-                               statisticsService: statisticsService)
+                               statisticsService: statisticsService,
+                               keyValueFileStoreService: appKeyValueFileStoreService)
 
         // MARK: - Final Configuration
         // Complete the configuration process and set up the main window
@@ -144,7 +152,12 @@ struct Launching: LaunchingHandling {
                                mainViewController: mainCoordinator.controller)
         setupWindow()
         logAppLaunchTime()
-        startAutomationServerIfNeeded()
+
+        // Keep this init method minimal and think twice before adding anything here.
+        // - Use AppConfiguration for one-time setup.
+        // - Use a service for functionality that persists throughout the app's lifecycle.
+        // More details: https://app.asana.com/0/1202500774821704/1209445353536498/f
+        // For a broader overview: https://app.asana.com/0/1202500774821704/1209445353536490/f
     }
 
     private func setupWindow() {
@@ -169,17 +182,7 @@ struct Launching: LaunchingHandling {
             services: services
         )
     }
-
-    private func startAutomationServerIfNeeded() {
-        let launchOptionsHandler = LaunchOptionsHandler()
-        guard launchOptionsHandler.automationPort != nil else {
-            return
-        }
-        guard let rootViewController = window.rootViewController as? MainViewController else {
-            return
-        }
-        _ = AutomationServer(main: rootViewController, port: launchOptionsHandler.automationPort)
-    }
+    
 }
 
 extension Launching {

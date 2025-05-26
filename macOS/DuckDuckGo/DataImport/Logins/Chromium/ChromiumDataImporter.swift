@@ -41,7 +41,7 @@ internal class ChromiumDataImporter: DataImporter {
         self.init(profile: profile,
                   loginImporter: loginImporter,
                   bookmarkImporter: bookmarkImporter,
-                  faviconManager: FaviconManager.shared)
+                  faviconManager: NSApp.delegateTyped.faviconManager)
     }
 
     var importableTypes: [DataImport.DataType] {

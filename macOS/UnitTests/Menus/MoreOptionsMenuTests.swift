@@ -23,14 +23,15 @@ import XCTest
 import Subscription
 import SubscriptionTestingUtilities
 import BrowserServicesKit
-import DataBrokerProtection
-import DataBrokerProtectionShared
+import DataBrokerProtection_macOS
+import DataBrokerProtectionCore
 
 @testable import DuckDuckGo_Privacy_Browser
 
 final class MoreOptionsMenuTests: XCTestCase {
 
     var tabCollectionViewModel: TabCollectionViewModel!
+    var fireproofDomains: MockFireproofDomains!
     var passwordManagerCoordinator: PasswordManagerCoordinator!
     var networkProtectionVisibilityMock: NetworkProtectionVisibilityMock!
     var capturingActionDelegate: CapturingOptionsButtonMenuDelegate!
@@ -54,6 +55,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     override func setUp() {
         super.setUp()
         tabCollectionViewModel = TabCollectionViewModel()
+        fireproofDomains = MockFireproofDomains(domains: [])
         passwordManagerCoordinator = PasswordManagerCoordinator()
         networkProtectionVisibilityMock = NetworkProtectionVisibilityMock(isInstalled: false, visible: false)
         capturingActionDelegate = CapturingOptionsButtonMenuDelegate()
@@ -94,6 +96,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     @MainActor
     private func setupMoreOptionsMenu() {
         moreOptionsMenu = MoreOptionsMenu(tabCollectionViewModel: tabCollectionViewModel,
+                                          fireproofDomains: fireproofDomains,
                                           passwordManagerCoordinator: passwordManagerCoordinator,
                                           vpnFeatureGatekeeper: networkProtectionVisibilityMock,
                                           subscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true,
@@ -168,20 +171,26 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertEqual(moreOptionsMenu.items[2].title, UserText.plusButtonNewTabMenuItem)
         XCTAssertEqual(moreOptionsMenu.items[3].title, UserText.newWindowMenuItem)
         XCTAssertEqual(moreOptionsMenu.items[4].title, UserText.newBurnerWindowMenuItem)
-        XCTAssertTrue(moreOptionsMenu.items[5].isSeparatorItem)
-        XCTAssertEqual(moreOptionsMenu.items[6].title, UserText.zoom)
-        XCTAssertTrue(moreOptionsMenu.items[7].isSeparatorItem)
-        XCTAssertEqual(moreOptionsMenu.items[8].title, UserText.bookmarks)
-        XCTAssertEqual(moreOptionsMenu.items[9].title, UserText.downloads)
-        XCTAssertEqual(moreOptionsMenu.items[10].title, UserText.passwordManagementTitle)
-        XCTAssertTrue(moreOptionsMenu.items[11].isSeparatorItem)
-        XCTAssertEqual(moreOptionsMenu.items[12].title, UserText.emailOptionsMenuItem)
-        XCTAssertTrue(moreOptionsMenu.items[13].isSeparatorItem)
-        XCTAssertEqual(moreOptionsMenu.items[14].title, UserText.subscriptionOptionsMenuItem)
-        XCTAssertFalse(moreOptionsMenu.items[14].hasSubmenu)
-        XCTAssertTrue(moreOptionsMenu.items[15].isSeparatorItem)
-        XCTAssertEqual(moreOptionsMenu.items[16].title, UserText.mainMenuHelp)
-        XCTAssertEqual(moreOptionsMenu.items[17].title, UserText.settings)
+        XCTAssertEqual(moreOptionsMenu.items[5].title, UserText.newAIChatMenuItem)
+        XCTAssertTrue(moreOptionsMenu.items[6].isSeparatorItem)
+        XCTAssertEqual(moreOptionsMenu.items[7].title, UserText.zoom)
+        XCTAssertTrue(moreOptionsMenu.items[8].isSeparatorItem)
+        XCTAssertEqual(moreOptionsMenu.items[9].title, UserText.bookmarks)
+        XCTAssertEqual(moreOptionsMenu.items[10].title, UserText.downloads)
+        XCTAssertEqual(moreOptionsMenu.items[11].title, UserText.passwordManagementTitle)
+        XCTAssertTrue(moreOptionsMenu.items[12].isSeparatorItem)
+        XCTAssertEqual(moreOptionsMenu.items[13].title, UserText.emailOptionsMenuItem)
+        XCTAssertTrue(moreOptionsMenu.items[14].isSeparatorItem)
+        XCTAssertEqual(moreOptionsMenu.items[15].title, UserText.subscriptionOptionsMenuItem)
+        XCTAssertFalse(moreOptionsMenu.items[15].hasSubmenu)
+        XCTAssertTrue(moreOptionsMenu.items[16].isSeparatorItem)
+        XCTAssertEqual(moreOptionsMenu.items[17].title, UserText.fireproofSite)
+        XCTAssertEqual(moreOptionsMenu.items[18].title, UserText.findInPageMenuItem)
+        XCTAssertEqual(moreOptionsMenu.items[19].title, UserText.shareMenuItem)
+        XCTAssertEqual(moreOptionsMenu.items[20].title, UserText.printMenuItem)
+        XCTAssertTrue(moreOptionsMenu.items[21].isSeparatorItem)
+        XCTAssertEqual(moreOptionsMenu.items[22].title, UserText.mainMenuHelp)
+        XCTAssertEqual(moreOptionsMenu.items[23].title, UserText.settings)
     }
 
     @MainActor
@@ -200,21 +209,27 @@ final class MoreOptionsMenuTests: XCTestCase {
         XCTAssertEqual(moreOptionsMenu.items[2].title, UserText.plusButtonNewTabMenuItem)
         XCTAssertEqual(moreOptionsMenu.items[3].title, UserText.newWindowMenuItem)
         XCTAssertEqual(moreOptionsMenu.items[4].title, UserText.newBurnerWindowMenuItem)
-        XCTAssertTrue(moreOptionsMenu.items[5].isSeparatorItem)
-        XCTAssertEqual(moreOptionsMenu.items[6].title, UserText.zoom)
-        XCTAssertTrue(moreOptionsMenu.items[7].isSeparatorItem)
-        XCTAssertEqual(moreOptionsMenu.items[8].title, UserText.bookmarks)
-        XCTAssertEqual(moreOptionsMenu.items[9].title, UserText.downloads)
-        XCTAssertEqual(moreOptionsMenu.items[10].title, UserText.passwordManagementTitle)
-        XCTAssertTrue(moreOptionsMenu.items[11].isSeparatorItem)
-        XCTAssertEqual(moreOptionsMenu.items[12].title, UserText.emailOptionsMenuItem)
-        XCTAssertTrue(moreOptionsMenu.items[13].isSeparatorItem)
-        XCTAssertEqual(moreOptionsMenu.items[14].title, UserText.subscriptionOptionsMenuItem)
-        XCTAssertFalse(moreOptionsMenu.items[14].hasSubmenu)
-        XCTAssertEqual(moreOptionsMenu.items[15].title, UserText.freemiumDBPOptionsMenuItem)
-        XCTAssertTrue(moreOptionsMenu.items[16].isSeparatorItem)
-        XCTAssertEqual(moreOptionsMenu.items[17].title, UserText.mainMenuHelp)
-        XCTAssertEqual(moreOptionsMenu.items[18].title, UserText.settings)
+        XCTAssertEqual(moreOptionsMenu.items[5].title, UserText.newAIChatMenuItem)
+        XCTAssertTrue(moreOptionsMenu.items[6].isSeparatorItem)
+        XCTAssertEqual(moreOptionsMenu.items[7].title, UserText.zoom)
+        XCTAssertTrue(moreOptionsMenu.items[8].isSeparatorItem)
+        XCTAssertEqual(moreOptionsMenu.items[9].title, UserText.bookmarks)
+        XCTAssertEqual(moreOptionsMenu.items[10].title, UserText.downloads)
+        XCTAssertEqual(moreOptionsMenu.items[11].title, UserText.passwordManagementTitle)
+        XCTAssertTrue(moreOptionsMenu.items[12].isSeparatorItem)
+        XCTAssertEqual(moreOptionsMenu.items[13].title, UserText.emailOptionsMenuItem)
+        XCTAssertTrue(moreOptionsMenu.items[14].isSeparatorItem)
+        XCTAssertEqual(moreOptionsMenu.items[15].title, UserText.subscriptionOptionsMenuItem)
+        XCTAssertFalse(moreOptionsMenu.items[15].hasSubmenu)
+        XCTAssertEqual(moreOptionsMenu.items[16].title, UserText.freemiumDBPOptionsMenuItem)
+        XCTAssertTrue(moreOptionsMenu.items[17].isSeparatorItem)
+        XCTAssertEqual(moreOptionsMenu.items[18].title, UserText.fireproofSite)
+        XCTAssertEqual(moreOptionsMenu.items[19].title, UserText.findInPageMenuItem)
+        XCTAssertEqual(moreOptionsMenu.items[20].title, UserText.shareMenuItem)
+        XCTAssertEqual(moreOptionsMenu.items[21].title, UserText.printMenuItem)
+        XCTAssertTrue(moreOptionsMenu.items[22].isSeparatorItem)
+        XCTAssertEqual(moreOptionsMenu.items[23].title, UserText.mainMenuHelp)
+        XCTAssertEqual(moreOptionsMenu.items[24].title, UserText.settings)
     }
 
     @MainActor
@@ -291,7 +306,7 @@ final class MoreOptionsMenuTests: XCTestCase {
         setupMoreOptionsMenu()
 
         // GIVEN
-        let bookmarksMenu = try XCTUnwrap(moreOptionsMenu.item(at: 8)?.submenu)
+        let bookmarksMenu = try XCTUnwrap(moreOptionsMenu.item(at: 9)?.submenu)
         let bookmarkAllTabsIndex = try XCTUnwrap(bookmarksMenu.indexOfItem(withTitle: UserText.bookmarkAllTabs))
         let bookmarkAllTabsMenuItem = try XCTUnwrap(bookmarksMenu.items[bookmarkAllTabsIndex])
         bookmarkAllTabsMenuItem.isEnabled = true
@@ -359,6 +374,187 @@ final class MoreOptionsMenuTests: XCTestCase {
         moreOptionsMenu.update()
 
         XCTAssertEqual(moreOptionsMenu.items[1].title, UserText.setAsDefaultBrowser)
+    }
+
+    // MARK: - Page Items
+
+    @MainActor
+    func testWhenTabIsNotFireproofThenFireproofSiteItemIsPresentAndEnabled() throws {
+        let url = try XCTUnwrap("https://example.com".url)
+        let tab = Tab(content: .url(url, source: .link))
+        tabCollectionViewModel = TabCollectionViewModel(tabCollection: .init(tabs: [tab]))
+        fireproofDomains = MockFireproofDomains(domains: [])
+        tabCollectionViewModel.select(at: .unpinned(0), forceChange: true)
+
+        setupMoreOptionsMenu()
+        moreOptionsMenu.update()
+
+        let fireproofingItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.fireproofSite })
+        XCTAssertTrue(fireproofingItem.isEnabled)
+    }
+
+    @MainActor
+    func testWhenTabIsFireproofThenRemoveFireproofingItemIsPresentAndEnabled() throws {
+        let url = try XCTUnwrap("https://example.com".url)
+        let tab = Tab(content: .url(url, source: .link))
+        tabCollectionViewModel = TabCollectionViewModel(tabCollection: .init(tabs: [tab]))
+        fireproofDomains = MockFireproofDomains(domains: ["example.com"])
+        tabCollectionViewModel.select(at: .unpinned(0), forceChange: true)
+
+        setupMoreOptionsMenu()
+        moreOptionsMenu.update()
+
+        let fireproofingItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.removeFireproofing })
+        XCTAssertTrue(fireproofingItem.isEnabled)
+    }
+
+    @MainActor
+    func testWhenTabIsDuckDuckGoThenFireproofSiteItemIsPresentAndDisabled() throws {
+        let url = try XCTUnwrap("https://duckduckgo.com".url)
+        let tab = Tab(content: .url(url, source: .link))
+        tabCollectionViewModel = TabCollectionViewModel(tabCollection: .init(tabs: [tab]))
+        tabCollectionViewModel.select(at: .unpinned(0), forceChange: true)
+
+        setupMoreOptionsMenu()
+        moreOptionsMenu.update()
+
+        let fireproofingItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.fireproofSite })
+        XCTAssertFalse(fireproofingItem.isEnabled)
+    }
+
+    @MainActor
+    func testWhenTabSupportsFindInPageThenFindInPageItemIsPresentAndEnabled() throws {
+        let tabContentsSupportingFindInPage: [Tab.TabContent] = [
+            .url(try XCTUnwrap("https://example.com".url), credential: nil, source: .ui),
+            .subscription(.aboutDuckDuckGo),
+            .identityTheftRestoration(.aboutDuckDuckGo),
+            .releaseNotes,
+            .webExtensionUrl(.aboutDuckDuckGo)
+        ]
+        for tabContent in tabContentsSupportingFindInPage {
+            let tab = Tab(content: tabContent)
+            tabCollectionViewModel = TabCollectionViewModel(tabCollection: .init(tabs: [tab]))
+            tabCollectionViewModel.select(at: .unpinned(0), forceChange: true)
+            setupMoreOptionsMenu()
+            moreOptionsMenu.update()
+
+            let findInPageItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.findInPageMenuItem })
+            XCTAssertTrue(findInPageItem.isEnabled)
+        }
+    }
+
+    @MainActor
+    func testWhenTabDoesNotSupportFindInPageThenFindInPageItemIsPresentAndDisabled() throws {
+        let tabContentsNotSupportingFindInPage: [Tab.TabContent] = [
+            .url(try XCTUnwrap("duck://player/abcde12345".url), credential: nil, source: .ui),
+            .url(try XCTUnwrap("duck://favicon/www.example.com".url), credential: nil, source: .ui),
+            .newtab,
+            .settings(pane: nil),
+            .bookmarks,
+            .history,
+            .onboarding,
+            .dataBrokerProtection
+        ]
+        for tabContent in tabContentsNotSupportingFindInPage {
+            let tab = Tab(content: tabContent)
+            tabCollectionViewModel = TabCollectionViewModel(tabCollection: .init(tabs: [tab]))
+            tabCollectionViewModel.select(at: .unpinned(0), forceChange: true)
+            setupMoreOptionsMenu()
+            moreOptionsMenu.update()
+
+            let findInPageItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.findInPageMenuItem })
+            XCTAssertFalse(findInPageItem.isEnabled)
+        }
+    }
+
+    @MainActor
+    func testWhenTabSupportsSharingThenShareItemIsPresentAndEnabled() throws {
+        let tabContentsSupportingSharing: [Tab.TabContent] = [
+            .url(try XCTUnwrap("https://example.com".url), credential: nil, source: .ui),
+            .url(try XCTUnwrap("https://duckduckgo.com".url), credential: nil, source: .ui),
+            .url(try XCTUnwrap("https://wikipedia.org".url), credential: nil, source: .ui)
+        ]
+        for tabContent in tabContentsSupportingSharing {
+            let tab = Tab(content: tabContent)
+            tabCollectionViewModel = TabCollectionViewModel(tabCollection: .init(tabs: [tab]))
+            tabCollectionViewModel.select(at: .unpinned(0), forceChange: true)
+            setupMoreOptionsMenu()
+            moreOptionsMenu.update()
+
+            let findInPageItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.shareMenuItem })
+            XCTAssertTrue(findInPageItem.isEnabled, "\(tabContent) expected to support sharing")
+        }
+    }
+
+    @MainActor
+    func testWhenTabDoesNotSupportSharingThenShareItemIsPresentAndDisabled() throws {
+        let tabContentsNotSupportingSharing: [Tab.TabContent] = [
+            .url(try XCTUnwrap("duck://player/abcde12345".url), credential: nil, source: .ui),
+            .url(try XCTUnwrap("duck://favicon/www.example.com".url), credential: nil, source: .ui),
+            .subscription(.aboutDuckDuckGo),
+            .identityTheftRestoration(.aboutDuckDuckGo),
+            .releaseNotes,
+            .webExtensionUrl(.aboutDuckDuckGo),
+            .newtab,
+            .history,
+            .bookmarks,
+            .settings(pane: nil)
+        ]
+        for tabContent in tabContentsNotSupportingSharing {
+            let tab = Tab(content: tabContent)
+            tabCollectionViewModel = TabCollectionViewModel(tabCollection: .init(tabs: [tab]))
+            tabCollectionViewModel.select(at: .unpinned(0), forceChange: true)
+            setupMoreOptionsMenu()
+            moreOptionsMenu.update()
+
+            let shareItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.shareMenuItem })
+            XCTAssertFalse(shareItem.isEnabled, "\(tabContent) expected to not support sharing")
+        }
+    }
+
+    @MainActor
+    func testWhenTabSupportsPrintingThenPrintItemIsPresentAndEnabled() throws {
+        let tabContentsSupportingPrinting: [Tab.TabContent] = [
+            .url(try XCTUnwrap("https://example.com".url), credential: nil, source: .ui),
+            .url(try XCTUnwrap("https://duckduckgo.com".url), credential: nil, source: .ui),
+            .url(try XCTUnwrap("https://wikipedia.org".url), credential: nil, source: .ui)
+        ]
+        for tabContent in tabContentsSupportingPrinting {
+            let tab = Tab(content: tabContent)
+            tabCollectionViewModel = TabCollectionViewModel(tabCollection: .init(tabs: [tab]))
+            tabCollectionViewModel.select(at: .unpinned(0), forceChange: true)
+            setupMoreOptionsMenu()
+            moreOptionsMenu.update()
+
+            let printItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.printMenuItem })
+            XCTAssertTrue(printItem.isEnabled, "\(tabContent) expected to support printing")
+        }
+    }
+
+    @MainActor
+    func testWhenTabDoesNotSupportPrintingThenPrintItemIsPresentAndDisabled() throws {
+        let tabContentsSupportingPrinting: [Tab.TabContent] = [
+            .url(try XCTUnwrap("duck://player/abcde12345".url), credential: nil, source: .ui),
+            .url(try XCTUnwrap("duck://favicon/www.example.com".url), credential: nil, source: .ui),
+            .subscription(.aboutDuckDuckGo),
+            .identityTheftRestoration(.aboutDuckDuckGo),
+            .releaseNotes,
+            .webExtensionUrl(.aboutDuckDuckGo),
+            .newtab,
+            .history,
+            .bookmarks,
+            .settings(pane: nil)
+        ]
+        for tabContent in tabContentsSupportingPrinting {
+            let tab = Tab(content: tabContent)
+            tabCollectionViewModel = TabCollectionViewModel(tabCollection: .init(tabs: [tab]))
+            tabCollectionViewModel.select(at: .unpinned(0), forceChange: true)
+            setupMoreOptionsMenu()
+            moreOptionsMenu.update()
+
+            let printItem = try XCTUnwrap(moreOptionsMenu.items.first { $0.title == UserText.printMenuItem })
+            XCTAssertFalse(printItem.isEnabled, "\(tabContent) expected to not support printing")
+        }
     }
 }
 

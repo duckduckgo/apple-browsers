@@ -1,0 +1,26 @@
+<svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <path fill="url(#Privacy-Check-Color-24_svg__a)" d="M15.75 5.125h3.125l1.875 1.25V12a6.25 6.25 0 0 0-8.354 9.227l-.396.148L7 19.5l-3.75-5.625v-7.5l1.875-1.25H8.25l3.75-2.5 3.75 2.5Z"/>
+  <path fill="url(#Privacy-Check-Color-24_svg__b)" d="M15.75 5.125h3.125l1.875 1.25V12A6.223 6.223 0 0 0 17 10.75a6.24 6.24 0 0 0-5 2.5V2.625l3.75 2.5Z"/>
+  <path fill="url(#Privacy-Check-Color-24_svg__c)" d="M9.582 2.892a3.594 3.594 0 0 1 4.873.109l1.2 1.157.034.032c.36.325.862.442 1.33.308l.704-.203a3.281 3.281 0 0 1 4.186 3.06l.081 2.85a11.24 11.24 0 0 1-.254 2.717 6.283 6.283 0 0 0-1.09-.998c.078-.551.11-1.114.095-1.683l-.081-2.85a2.031 2.031 0 0 0-2.591-1.894l-.705.202a2.656 2.656 0 0 1-2.513-.58l-.065-.061L13.587 3.9a2.344 2.344 0 0 0-3.221-.031l-1.32 1.224a2.656 2.656 0 0 1-2.562.599l-.52-.154a2.031 2.031 0 0 0-2.609 1.899l-.068 2.855a10 10 0 0 0 5.693 9.263l1.948.929c.334.16.694.24 1.055.243.305.41.659.782 1.053 1.106a3.75 3.75 0 0 1-2.646-.22l-1.949-.93a11.25 11.25 0 0 1-6.403-10.42l.067-2.856A3.281 3.281 0 0 1 6.32 4.34l.52.154.045.013c.464.121.959-.002 1.312-.33l1.32-1.224.066-.06Z"/>
+  <path fill="#4CBA3C" d="M22 17a5 5 0 1 1-10 0 5 5 0 0 1 10 0Z"/>
+  <path fill="url(#Privacy-Check-Color-24_svg__d)" d="M17 12a5 5 0 1 1 0 10 5 5 0 0 1 0-10Zm0 1.25a3.75 3.75 0 1 0 0 7.5 3.75 3.75 0 0 0 0-7.5Z"/>
+  <path fill="#fff" d="M18.433 15.464a.625.625 0 1 1 .884.884l-2.344 2.344a.625.625 0 0 1-.86.022l-.024-.022-1.406-1.406-.022-.024a.625.625 0 0 1 .883-.882l.023.022.964.964 1.902-1.902Z"/>
+  <defs>
+    <linearGradient id="Privacy-Check-Color-24_svg__a" x1="12.005" x2="12.11" y1="3.25" y2="21.374" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF0C2"/>
+      <stop offset="1" stop-color="#FFDE7A"/>
+    </linearGradient>
+    <linearGradient id="Privacy-Check-Color-24_svg__b" x1="16.375" x2="16.375" y1="2.625" y2="21.354" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFDE7A"/>
+      <stop offset="1" stop-color="#F9BE1A"/>
+    </linearGradient>
+    <linearGradient id="Privacy-Check-Color-24_svg__c" x1="11.982" x2="11.982" y1="3.726" y2="21.049" gradientUnits="userSpaceOnUse">
+      <stop offset=".008" stop-color="#C18010"/>
+      <stop offset="1" stop-color="#92540C"/>
+    </linearGradient>
+    <linearGradient id="Privacy-Check-Color-24_svg__d" x1="17" x2="17" y1="12" y2="22" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#399F29"/>
+      <stop offset="1" stop-color="#288419"/>
+    </linearGradient>
+  </defs>
+</svg>

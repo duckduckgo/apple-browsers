@@ -83,7 +83,7 @@ final class TabViewCell: UICollectionViewCell {
 
     @IBOutlet weak var favicon: UIImageView!
     @IBOutlet weak var title: UILabel!
-    @IBOutlet weak var removeButton: UIButton!
+    @IBOutlet weak var removeButton: EnlargedHitAreaButton!
     @IBOutlet weak var unread: UIImageView!
     @IBOutlet weak var selectionIndicator: UIImageView!
 
@@ -116,6 +116,7 @@ final class TabViewCell: UICollectionViewCell {
 
         unread.tintColor = UIColor(designSystemColor: .accent)
 
+        removeButton.additionalHitTestSize = 4
     }
 
     private func updatePreviewToDisplay(image: UIImage) {
@@ -406,6 +407,17 @@ extension TabViewCell: UIGestureRecognizerDelegate {
         guard let pan = gestureRecognizer as? UIPanGestureRecognizer else { return true }
         let velocity = pan.velocity(in: self)
         return abs(velocity.y) < abs(velocity.x)
+    }
+
+}
+
+final class HitTestStackView: UIStackView {
+
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        for subview in arrangedSubviews where subview.point(inside: point, with: event) {
+            return true
+        }
+        return super.point(inside: point, with: event)
     }
 
 }

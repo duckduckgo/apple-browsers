@@ -131,8 +131,8 @@ final class WindowsManager {
     }
 
     @discardableResult
-    class func openNewWindow(with initialUrl: URL, source: Tab.TabContent.URLSource, isBurner: Bool, parentTab: Tab? = nil, droppingPoint: NSPoint? = nil) -> MainWindow? {
-        openNewWindow(with: Tab(content: .contentFromURL(initialUrl, source: source), parentTab: parentTab, shouldLoadInBackground: true, burnerMode: BurnerMode(isBurner: isBurner)), droppingPoint: droppingPoint)
+    class func openNewWindow(with initialUrl: URL, source: Tab.TabContent.URLSource, isBurner: Bool, parentTab: Tab? = nil, droppingPoint: NSPoint? = nil, showWindow: Bool = true) -> MainWindow? {
+        openNewWindow(with: Tab(content: .contentFromURL(initialUrl, source: source), parentTab: parentTab, shouldLoadInBackground: true, burnerMode: BurnerMode(isBurner: isBurner)), droppingPoint: droppingPoint, showWindow: showWindow)
     }
 
     @discardableResult
@@ -183,16 +183,10 @@ final class WindowsManager {
     }
 
     private class func makeNewWindow(tabCollectionViewModel: TabCollectionViewModel? = nil,
-                                     contentSize: NSSize? = nil,
                                      popUp: Bool = false,
                                      burnerMode: BurnerMode,
                                      autofillPopoverPresenter: AutofillPopoverPresenter) -> MainWindowController {
         let mainViewController = MainViewController(tabCollectionViewModel: tabCollectionViewModel ?? TabCollectionViewModel(burnerMode: burnerMode), autofillPopoverPresenter: autofillPopoverPresenter)
-
-        var contentSize = contentSize ?? NSSize(width: 1024, height: 790)
-        contentSize.width = min(NSScreen.main?.frame.size.width ?? 1024, max(contentSize.width, 300))
-        contentSize.height = min(NSScreen.main?.frame.size.height ?? 790, max(contentSize.height, 300))
-        mainViewController.view.frame = NSRect(origin: .zero, size: contentSize)
 
         let fireWindowSession = if case .burner = burnerMode {
             WindowControllersManager.shared.mainWindowControllers.first(where: {

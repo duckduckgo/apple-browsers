@@ -28,12 +28,21 @@
       }
     },
     {
+      "identity" : "combine-schedulers",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/combine-schedulers.git",
+      "state" : {
+        "revision" : "5928286acce13def418ec36d05a001a9641086f2",
+        "version" : "1.0.3"
+      }
+    },
+    {
       "identity" : "content-scope-scripts",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/content-scope-scripts",
       "state" : {
-        "revision" : "8fa69d009d3205b969bc76477897e3b82095f9f6",
-        "version" : "8.5.0"
+        "revision" : "53975299db5319b0a3e6811086d7b848f1b62abe",
+        "version" : "8.24.0"
       }
     },
     {
@@ -41,8 +50,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/DesignResourcesKit",
       "state" : {
-        "revision" : "7083d28778f86a0d6620c08ab0eb98270749f14e",
-        "version" : "4.1.0"
+        "revision" : "fed494b3f8603537fcd115ceaf3cb2ae4b5518d7",
+        "version" : "5.0.0"
       }
     },
     {
@@ -50,8 +59,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/duckduckgo-autofill.git",
       "state" : {
-        "revision" : "2bc93bec9cbe6d916e84b42346b925c6c057bfa5",
-        "version" : "17.0.0"
+        "revision" : "e02f499ad25f439e8a2a36ac6f9b9d88b8a65d56",
+        "version" : "17.2.0"
       }
     },
     {
@@ -104,8 +113,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/airbnb/lottie-spm.git",
       "state" : {
-        "revision" : "1d29eccc24cc8b75bff9f6804155112c0ffc9605",
-        "version" : "4.4.3"
+        "revision" : "8c6edf4f0fa84fe9c058600a4295eb0c01661c69",
+        "version" : "4.5.1"
       }
     },
     {
@@ -131,8 +140,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/privacy-dashboard",
       "state" : {
-        "revision" : "b370e1e1afa322a48a8a37c6c954a444c15489e4",
-        "version" : "9.0.0"
+        "revision" : "810b50a7e10c08ac676da1153dd8cf35212f1930",
+        "version" : "9.1.0"
       }
     },
     {
@@ -194,8 +203,17 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-crypto.git",
       "state" : {
-        "revision" : "b828ba476ab068f0b00d6b41f92f364961b0f323",
-        "version" : "3.10.2"
+        "revision" : "a6ce32a18b81b04ce7e897d1d98df6eb2da04786",
+        "version" : "3.12.2"
+      }
+    },
+    {
+      "identity" : "swift-custom-dump",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/pointfreeco/swift-custom-dump",
+      "state" : {
+        "revision" : "82645ec760917961cfa08c9c0c7104a57a0fa4b1",
+        "version" : "1.3.3"
       }
     },
     {
@@ -203,14 +221,14 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/swift-snapshot-testing",
       "state" : {
-        "revision" : "5b0c434778f2c1a4c9b5ebdb8682b28e84dd69bd",
-        "version" : "1.15.4"
+        "revision" : "b2d4cb30735f4fbc3a01963a9c658336dd21e9ba",
+        "version" : "1.18.1"
       }
     },
     {
       "identity" : "swift-syntax",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/apple/swift-syntax.git",
+      "location" : "https://github.com/swiftlang/swift-syntax",
       "state" : {
         "revision" : "64889f0c732f210a935a0ad7cda38f77f876262d",
         "version" : "509.1.1"
@@ -248,8 +266,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/TrackerRadarKit.git",
       "state" : {
-        "revision" : "5de0a610a7927b638a5fd463a53032c9934a2c3b",
-        "version" : "3.0.0"
+        "revision" : "a3f0ade39904602aa45874a7d71db4fafa10f7d9",
+        "version" : "3.0.1"
       }
     },
     {
@@ -266,8 +284,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/pointfreeco/xctest-dynamic-overlay",
       "state" : {
-        "revision" : "b444594f79844b0d6d76d70fbfb3f7f71728f938",
-        "version" : "1.5.1"
+        "revision" : "39de59b2d47f7ef3ca88a039dff3084688fe27f4",
+        "version" : "1.5.2"
       }
     },
     {

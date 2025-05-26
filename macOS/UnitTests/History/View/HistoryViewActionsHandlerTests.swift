@@ -307,7 +307,7 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         XCTAssertTrue(menu.items[3].isSeparatorItem)
         XCTAssertEqual(menu.items[4].title, UserText.showAllHistoryFromThisSite)
         XCTAssertTrue(menu.items[5].isSeparatorItem)
-        XCTAssertEqual(menu.items[6].title, UserText.copy)
+        XCTAssertEqual(menu.items[6].title, UserText.copyLink)
         XCTAssertEqual(menu.items[7].title, UserText.addToBookmarks)
         XCTAssertEqual(menu.items[8].title, UserText.addToFavorites)
         XCTAssertTrue(menu.items[9].isSeparatorItem)
@@ -600,5 +600,17 @@ final class HistoryViewActionsHandlerTests: XCTestCase {
         try? await Task.sleep(nanoseconds: 100_000_000)
 
         XCTAssertEqual(dialogPresenter.showDeleteDialogCalls, [.init(2, .unspecified)])
+    }
+}
+
+private extension HistoryViewActionsHandler {
+    @MainActor func open(_ url: URL) async {
+        await open(url, window: nil)
+    }
+    @MainActor func showDeleteDialog(for query: DataModel.HistoryQueryKind) async -> DataModel.DeleteDialogResponse {
+        await showDeleteDialog(for: query, in: nil)
+    }
+    @MainActor func showDeleteDialog(for entries: [String]) async -> DataModel.DeleteDialogResponse {
+        await showDeleteDialog(for: entries, in: nil)
     }
 }

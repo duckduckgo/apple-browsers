@@ -85,7 +85,8 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
         self.featureFlagger = featureFlagger
 
         self.model = AutocompleteViewModel(isAddressBarAtBottom: appSettings.currentAddressBarPosition == .bottom,
-                                           showMessage: historyManager.isHistoryFeatureEnabled() && historyMessageManager.shouldShow())
+                                           showMessage: historyManager.isHistoryFeatureEnabled() && historyMessageManager.shouldShow(),
+                                           isExperimentalThemingEnabled: ExperimentalThemingManager(featureFlagger: featureFlagger).isExperimentalThemingEnabled)
         super.init(rootView: AutocompleteView(model: model))
         self.model.delegate = self
     }
@@ -188,7 +189,7 @@ class AutocompleteViewController: UIHostingController<AutocompleteView> {
             }
 
             return url
-        })
+        }, isUrlIgnored: { _ in false })
 
         loader?.getSuggestions(query: query, usingDataSource: dataSource) { [weak self] result, error in
             guard let self, error == nil else { return }

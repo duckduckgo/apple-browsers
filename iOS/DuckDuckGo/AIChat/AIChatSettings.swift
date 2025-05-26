@@ -42,16 +42,13 @@ struct AIChatSettings: AIChatSettingsProvider {
     }
     private let userDefaults: UserDefaults
     private let notificationCenter: NotificationCenter
-    private let featureFlagger: FeatureFlagger
 
     init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
          userDefaults: UserDefaults = .standard,
-         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
          notificationCenter: NotificationCenter = .default) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.userDefaults = userDefaults
         self.notificationCenter = notificationCenter
-        self.featureFlagger = featureFlagger
     }
 
     // MARK: - Public
@@ -63,32 +60,35 @@ struct AIChatSettings: AIChatSettingsProvider {
         return url
     }
 
+    var isAIChatEnabled: Bool {
+        userDefaults.isAIChatEnabled
+    }
+
     var isAIChatBrowsingMenuUserSettingsEnabled: Bool {
-        userDefaults.showAIChatBrowsingMenu && isAIChatBrowsingMenubarShortcutFeatureEnabled
+        userDefaults.showAIChatBrowsingMenu && isAIChatEnabled
     }
 
     var isAIChatAddressBarUserSettingsEnabled: Bool {
-        userDefaults.showAIChatAddressBar && isAIChatAddressBarShortcutFeatureEnabled
+        userDefaults.showAIChatAddressBar && isAIChatEnabled
     }
 
-    var isAIChatFeatureEnabled: Bool {
-        featureFlagger.isFeatureOn(.aiChat)
-    }
-
-    var isAIChatVoiceSearchFeatureEnabled: Bool {
-        featureFlagger.isFeatureOn(.aiChatVoiceSearch)
+    var isAIChatTabSwitcherUserSettingsEnabled: Bool {
+        userDefaults.showAIChatTabSwitcher && isAIChatEnabled
     }
 
     var isAIChatVoiceSearchUserSettingsEnabled: Bool {
-        userDefaults.showAIChatVoiceSearch && isAIChatVoiceSearchFeatureEnabled
+        userDefaults.showAIChatVoiceSearch && isAIChatEnabled
     }
 
-    var isAIChatAddressBarShortcutFeatureEnabled: Bool {
-        featureFlagger.isFeatureOn(.aiChatAddressBarShortcut)
-    }
+    func enableAIChat(enable: Bool) {
+        userDefaults.isAIChatEnabled = enable
+        triggerSettingsChangedNotification()
 
-    var isAIChatBrowsingMenubarShortcutFeatureEnabled: Bool {
-        featureFlagger.isFeatureOn(.aiChatBrowsingToolbarShortcut)
+        if enable {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsEnabled)
+        } else {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsDisabled)
+        }
     }
 
     func enableAIChatBrowsingMenuUserSettings(enable: Bool) {
@@ -124,6 +124,16 @@ struct AIChatSettings: AIChatSettingsProvider {
         }
     }
 
+    func enableAIChatTabSwitcherUserSettings(enable: Bool) {
+        userDefaults.showAIChatTabSwitcher = enable
+        triggerSettingsChangedNotification()
+        if enable {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsTabManagerTurnedOn)
+        } else {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsTabManagerTurnedOff)
+        }
+    }
+
     // MARK: - Private
 
     private func triggerSettingsChangedNotification() {
@@ -142,15 +152,30 @@ struct AIChatSettings: AIChatSettingsProvider {
 
 private extension UserDefaults {
     enum Keys {
+        static let isAIChatEnabled = "aichat.settings.isEnabled"
         static let showAIChatBrowsingMenu = "aichat.settings.showAIChatBrowsingMenu"
         static let showAIChatAddressBar = "aichat.settings.showAIChatAddressBar"
         static let showAIChatVoiceSearch = "aichat.settings.showAIChatVoiceSearch"
+        static let showAIChatTabSwitcher = "aichat.settings.showAIChatTabSwitcher"
 
     }
 
+    static let isAIChatEnabledDefaultValue = true
     static let showAIChatBrowsingMenuDefaultValue = true
     static let showAIChatAddressBarDefaultValue = true
     static let showAIChatVoiceSearchDefaultValue = true
+    static let showAIChatTabSwitcherDefaultValue = true
+
+    @objc dynamic var isAIChatEnabled: Bool {
+        get {
+            value(forKey: Keys.isAIChatEnabled) as? Bool ?? Self.isAIChatEnabledDefaultValue
+        }
+
+        set {
+            guard newValue != isAIChatEnabled else { return }
+            set(newValue, forKey: Keys.isAIChatEnabled)
+        }
+    }
 
     @objc dynamic var showAIChatBrowsingMenu: Bool {
         get {
@@ -182,6 +207,17 @@ private extension UserDefaults {
         set {
             guard newValue != showAIChatAddressBar else { return }
             set(newValue, forKey: Keys.showAIChatAddressBar)
+        }
+    }
+
+    @objc dynamic var showAIChatTabSwitcher: Bool {
+        get {
+            value(forKey: Keys.showAIChatTabSwitcher) as? Bool ?? Self.showAIChatTabSwitcherDefaultValue
+        }
+
+        set {
+            guard newValue != showAIChatTabSwitcher else { return }
+            set(newValue, forKey: Keys.showAIChatTabSwitcher)
         }
     }
 }

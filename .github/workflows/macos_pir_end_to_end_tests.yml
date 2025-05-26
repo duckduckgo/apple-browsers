@@ -11,12 +11,13 @@ on:
   push:
     branches: [ main, "release/macos/**", "hotfix/macos/**" ]
     paths:
-      - 'BrowserServicesKit/**'
+      - 'SharedPackages/**'
       - 'macOS/**'
   pull_request:
     paths:
       - '.github/**'
-      - 'BrowserServicesKit/**'
+      - '.xcode-version'
+      - 'SharedPackages/**'
       - 'macOS/**'
 
 jobs:
@@ -103,10 +104,9 @@ jobs:
           ${{ runner.os }}-macos-
 
     - name: Select Xcode
-      run: |
-        # Override .xcode_version because 15.4 is not available on macos 13
-        echo "${{ matrix.xcode-version }}" > .xcode-version
-        sudo xcode-select -s /Applications/Xcode_$(<.xcode-version).app/Contents/Developer
+      uses: ./.github/actions/select-xcode-version
+      with:
+        xcode-version: ${{ matrix.xcode-version }}
 
     - name: Run PIR e2e Tests
       run: |

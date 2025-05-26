@@ -45,15 +45,7 @@ final class PrivacyDashboardViewController: NSViewController {
 
     public let rulesUpdateObserver = ContentBlockingRulesUpdateObserver()
 
-    private let brokenSiteReporter: BrokenSiteReporter = {
-        BrokenSiteReporter(pixelHandler: { parameters in
-            let privacyConfigurationManager = ContentBlocking.shared.privacyConfigurationManager
-            var updatedParameters = parameters
-            PixelKit.fire(NonStandardEvent(NonStandardPixel.brokenSiteReport),
-                          withAdditionalParameters: updatedParameters,
-                          allowedQueryReservedCharacters: BrokenSiteReport.allowedQueryReservedCharacters)
-        }, keyValueStoring: UserDefaults.standard)
-    }()
+    private let brokenSiteReporter: BrokenSiteReporter
 
     private let toggleProtectionsOffReporter: BrokenSiteReporter = {
         BrokenSiteReporter(pixelHandler: { parameters in
@@ -71,6 +63,12 @@ final class PrivacyDashboardViewController: NSViewController {
     }
     var sizeDelegate: PrivacyDashboardViewControllerSizeDelegate?
     private weak var tabViewModel: TabViewModel?
+    private let contentScopeExperimentsManager: ContentScopeExperimentsManaging
+    private let pixelFiring: (
+        _ event: PixelKitEvent,
+        _ withAdditionalParameters: [String: String]?,
+        _ allowedQueryReservedCharacters: CharacterSet?
+    ) -> Void
 
     private let privacyDashboardEvents = EventMapping<PrivacyDashboardEvents> { event, _, parameters, _ in
         let domainEvent: NonStandardPixel
@@ -88,14 +86,42 @@ final class PrivacyDashboardViewController: NSViewController {
 
     init(privacyInfo: PrivacyInfo? = nil,
          entryPoint: PrivacyDashboardEntryPoint = .dashboard,
-         privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager) {
+         privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
+         contentScopeExperimentsManager: ContentScopeExperimentsManaging,
+         pixelFiring: @escaping (
+            _ event: PixelKitEvent,
+            _ withAdditionalParameters: [String: String]?,
+            _ allowedQueryReservedCharacters: CharacterSet?
+         ) -> Void = { event, parameters, allowedCharacters in
+             PixelKit.fire(
+                 event,
+                 withAdditionalParameters: parameters,
+                 allowedQueryReservedCharacters: allowedCharacters
+             )
+         }
+    ) {
         let toggleReportingConfiguration = ToggleReportingConfiguration(privacyConfigurationManager: privacyConfigurationManager)
         let toggleReportingFeature = ToggleReportingFeature(toggleReportingConfiguration: toggleReportingConfiguration)
         let toggleReportingManager = ToggleReportingManager(feature: toggleReportingFeature)
+        self.contentScopeExperimentsManager = contentScopeExperimentsManager
+        self.pixelFiring = pixelFiring
         self.privacyDashboardController = PrivacyDashboardController(privacyInfo: privacyInfo,
                                                                      entryPoint: entryPoint,
                                                                      toggleReportingManager: toggleReportingManager,
                                                                      eventMapping: privacyDashboardEvents)
+        self.brokenSiteReporter = BrokenSiteReporter(
+            pixelHandler: { parameters in
+                let updatedParameters = parameters // You can add logic here if needed
+
+                // Fire the real pixel via the injected closure
+                pixelFiring(
+                    NonStandardEvent(NonStandardPixel.brokenSiteReport),
+                    updatedParameters,
+                    BrokenSiteReport.allowedQueryReservedCharacters
+                )
+            },
+            keyValueStoring: UserDefaults.standard
+        )
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -106,9 +132,11 @@ final class PrivacyDashboardViewController: NSViewController {
     public func updateTabViewModel(_ tabViewModel: TabViewModel) {
         self.tabViewModel = tabViewModel
         privacyDashboardController.updatePrivacyInfo(tabViewModel.tab.privacyInfo)
+        guard AppVersion.runType != .unitTests else { return }
         rulesUpdateObserver.updateTabViewModel(tabViewModel, onPendingUpdates: { [weak self] in
             self?.sendPendingUpdates()
         })
+
         permissionHandler.updateTabViewModel(tabViewModel) { [weak self] allowedPermissions in
             self?.privacyDashboardController.allowedPermissions = allowedPermissions
         }
@@ -230,7 +258,7 @@ extension PrivacyDashboardViewController: PrivacyDashboardControllerDelegate {
 
         switch target {
         case .cookiePopupManagement:
-            tabCollection.appendNewTab(with: .settings(pane: .dataClearing), selected: true)
+            tabCollection.appendNewTab(with: .settings(pane: .cookiePopupProtection), selected: true)
         default:
             tabCollection.appendNewTab(with: .anySettingsPane, selected: true)
         }
@@ -315,6 +343,16 @@ extension PrivacyDashboardViewController {
         return webVitalsResult
     }
 
+    private func isPirEnabledAndUserHasProfile() async -> Bool {
+        let isPIRFeatureEnabled = try? await Application.appDelegate.subscriptionAuthV1toV2Bridge.isEnabled(feature: .dataBrokerProtection)
+        guard let isPIRFeatureEnabled,
+              isPIRFeatureEnabled == true else {
+            return false
+        }
+        let profile = try? DataBrokerProtectionManager.shared.dataManager?.fetchProfile()
+        return profile != nil
+    }
+
     private func makeBrokenSiteReport(category: String = "",
                                       description: String = "",
                                       source: BrokenSiteReport.Source) async throws -> BrokenSiteReport {
@@ -326,8 +364,8 @@ extension PrivacyDashboardViewController {
         }
         let blockedTrackerDomains = currentTab.privacyInfo?.trackerInfo.trackersBlocked.compactMap { $0.domain } ?? []
         let installedSurrogates = currentTab.privacyInfo?.trackerInfo.installedSurrogates.map {$0} ?? []
-        let ampURL = currentTab.linkProtection.lastAMPURLString ?? ""
-        let urlParametersRemoved = currentTab.linkProtection.urlParametersRemoved
+        let ampURL = currentTab.linkProtection?.lastAMPURLString ?? ""
+        let urlParametersRemoved = currentTab.linkProtection?.urlParametersRemoved ?? false
 
         // current domain's protection status
         let configuration = ContentBlocking.shared.privacyConfigurationManager.privacyConfig
@@ -343,6 +381,19 @@ extension PrivacyDashboardViewController {
         if let httpStatusCode = currentTab.brokenSiteInfo?.lastHttpStatusCode {
             statusCodes = [httpStatusCode]
         }
+
+        var privacyExperimentCohorts: String {
+            var experiments: [String: String] = [:]
+            for feature in contentScopeExperimentsManager.allActiveContentScopeExperiments {
+                experiments[feature.key] = feature.value.cohortID
+            }
+            return experiments
+                .sorted { $0.key < $1.key }
+                .map { "\($0.key):\($0.value)" }
+                .joined(separator: ",")
+        }
+
+        let isPirEnabled = await isPirEnabledAndUserHasProfile()
 
         let websiteBreakage = BrokenSiteReport(siteUrl: currentURL,
                                                category: category.lowercased(),
@@ -365,7 +416,10 @@ extension PrivacyDashboardViewController {
                                                vpnOn: currentTab.networkProtection?.tunnelController.isConnected ?? false,
                                                jsPerformance: webVitals,
                                                userRefreshCount: currentTab.brokenSiteInfo?.refreshCountSinceLoad ?? -1,
-                                               cookieConsentInfo: currentTab.privacyInfo?.cookieConsentManaged)
+                                               cookieConsentInfo: currentTab.privacyInfo?.cookieConsentManaged,
+                                               debugFlags: currentTab.privacyInfo?.debugFlags ?? "",
+                                               privacyExperiments: privacyExperimentCohorts,
+                                               isPirEnabled: isPirEnabled)
         return websiteBreakage
     }
 }

@@ -157,6 +157,7 @@ final class CriticalPathsTests: XCTestCase {
         settingsWindow.buttons["Recover Synced Data"].click()
         sheetsQuery.buttons["Get Started"].click()
         sheetsQuery.buttons["Paste"].click()
+        sheetsQuery.buttons["Next"].click()
         sheetsQuery.buttons["Done"].click()
         XCTAssertTrue(syncEnabledElement.exists, "Sync Enabled text is not visible")
 

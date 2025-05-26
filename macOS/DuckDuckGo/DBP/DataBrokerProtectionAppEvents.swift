@@ -19,7 +19,7 @@
 import Foundation
 import LoginItems
 import Common
-import DataBrokerProtection
+import DataBrokerProtection_macOS
 import os.log
 
 struct DataBrokerProtectionAppEvents {
@@ -51,7 +51,8 @@ struct DataBrokerProtectionAppEvents {
         Task {
             // If we don't have profileQueries it means there's no user profile saved in our DB
             // In this case, let's disable the agent and delete any left-over data because there's nothing for it to do
-            if let profileQueriesCount = try? DataBrokerProtectionManager.shared.dataManager.profileQueriesCount(),
+            if let dataManager = DataBrokerProtectionManager.shared.dataManager,
+               let profileQueriesCount = try? dataManager.profileQueriesCount(),
                profileQueriesCount > 0 {
                 Logger.dataBrokerProtection.log("Found \(profileQueriesCount) profile queries in DB. Restarting agent.")
                 restartBackgroundAgent(loginItemsManager: loginItemsManager)
@@ -71,6 +72,7 @@ struct DataBrokerProtectionAppEvents {
             let prerequisitesMet = await featureGatekeeper.arePrerequisitesSatisfied()
             guard prerequisitesMet else {
                 loginItemsManager.disableLoginItems([LoginItem.dbpBackgroundAgent])
+                NotificationCenter.default.post(name: .dbpLoginItemDisabled, object: nil)
                 return
             }
         }
@@ -79,7 +81,9 @@ struct DataBrokerProtectionAppEvents {
     private func restartBackgroundAgent(loginItemsManager: LoginItemsManager) {
         DataBrokerProtectionLoginItemPixels.fire(pixel: GeneralPixel.dataBrokerResetLoginItemDaily, frequency: .daily)
         loginItemsManager.disableLoginItems([LoginItem.dbpBackgroundAgent])
+        NotificationCenter.default.post(name: .dbpLoginItemDisabled, object: nil)
         loginItemsManager.enableLoginItems([LoginItem.dbpBackgroundAgent])
+        NotificationCenter.default.post(name: .dbpLoginItemEnabled, object: nil)
 
         // restartLoginItems doesn't work when we change the agent name
     }

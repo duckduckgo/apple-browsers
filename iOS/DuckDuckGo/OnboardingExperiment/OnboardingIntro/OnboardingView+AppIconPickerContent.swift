@@ -23,40 +23,37 @@ import Onboarding
 
 extension OnboardingView {
 
-    struct AppIconPickerContentState {
-        var animateTitle = true
-        var animateMessage = false
-        var showContent = false
-    }
-
     struct AppIconPickerContent: View {
 
         private var animateTitle: Binding<Bool>
         private var animateMessage: Binding<Bool>
         private var showContent: Binding<Bool>
+        private var isSkipped: Binding<Bool>
         private let action: () -> Void
 
         init(
             animateTitle: Binding<Bool> = .constant(true),
             animateMessage: Binding<Bool> = .constant(true),
             showContent: Binding<Bool> = .constant(false),
+            isSkipped: Binding<Bool>,
             action: @escaping () -> Void
         ) {
             self.animateTitle = animateTitle
             self.animateMessage = animateMessage
             self.showContent = showContent
+            self.isSkipped = isSkipped
             self.action = action
         }
 
         var body: some View {
             VStack(spacing: 16.0) {
-                AnimatableTypingText(UserText.Onboarding.AppIconSelection.title, startAnimating: animateTitle) {
+                AnimatableTypingText(UserText.Onboarding.AppIconSelection.title, startAnimating: animateTitle, skipAnimation: isSkipped) {
                     animateMessage.wrappedValue = true
                 }
                 .foregroundColor(.primary)
                 .font(Metrics.titleFont)
 
-                AnimatableTypingText(UserText.Onboarding.AppIconSelection.message, startAnimating: animateMessage) {
+                AnimatableTypingText(UserText.Onboarding.AppIconSelection.message, startAnimating: animateMessage, skipAnimation: isSkipped) {
                     withAnimation {
                         showContent.wrappedValue = true
                     }

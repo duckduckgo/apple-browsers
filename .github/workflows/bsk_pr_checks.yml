@@ -2,17 +2,18 @@ name: BSK - PR Checks
 
 defaults:
   run:
-    working-directory: BrowserServicesKit
+    working-directory: SharedPackages/BrowserServicesKit
 
 on:
   push:
     branches: [ main ]
     paths:
-      - 'BrowserServicesKit/**'
+      - 'SharedPackages/BrowserServicesKit/**'
   pull_request:
     paths:
       - '.github/**'
-      - 'BrowserServicesKit/**'
+      - '.xcode-version'
+      - 'SharedPackages/BrowserServicesKit/**'
 
 jobs:
 
@@ -38,7 +39,7 @@ jobs:
           has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' Package.resolved)
           if [[ "$has_only_tags" == "true" ]]; then
             # hashFiles does not respect the working directory, so the full path must be specified
-            echo "cache_key_hash=${{ hashFiles('BrowserServicesKit/Package.resolved') }}" >> $GITHUB_ENV
+            echo "cache_key_hash=${{ hashFiles('SharedPackages/BrowserServicesKit/Package.resolved') }}" >> $GITHUB_ENV
           else
             echo "Package.resolved contains dependencies specified by branch or commit, skipping cache."
           fi
@@ -48,41 +49,51 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            BrowserServicesKit/.build/artifacts
-            BrowserServicesKit/.build/checkouts
-            BrowserServicesKit/.build/repositories
-            BrowserServicesKit/.build/workspace-state.json
+            SharedPackages/BrowserServicesKit/.build/artifacts
+            SharedPackages/BrowserServicesKit/.build/checkouts
+            SharedPackages/BrowserServicesKit/.build/repositories
+            SharedPackages/BrowserServicesKit/.build/workspace-state.json
           key: ${{ runner.os }}-bsk-spm-${{ env.cache_key_hash }}
           restore-keys: |
             ${{ runner.os }}-bsk-spm-
 
       - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_$(<.xcode-version).app/Contents/Developer
+        uses: ./.github/actions/select-xcode-version
 
       - name: Build BSK
         run: set -o pipefail && swift build | tee build-log.txt | xcbeautify
 
       - name: Run tests
+        id: run-unit-tests
         run: set -o pipefail && swift test | tee -a build-log.txt | xcbeautify --report junit --report-path . --junit-report-filename package-tests.xml
+
+      - name: Upload JUnit XML as artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bsk-macos-unittests.xml
+          path: |
+            SharedPackages/BrowserServicesKit/package-tests.xml
+          retention-days: 7
 
       - name: Publish Unit Tests Report
         uses: mikepenz/action-junit-report@v4
         if: always()
         with:
-          check_name: Test Report (macOS)
-          report_paths: BrowserServicesKit/package-tests.xml
+          check_name: BSK Test Report (macOS)
+          report_paths: SharedPackages/BrowserServicesKit/package-tests.xml
           require_tests: true
           check_retries: true
 
       - name: Update Asana with failed unit tests
-        if: always() # always run even if the previous step fails
+        if: always() && steps.run-unit-tests.outcome == 'failure'
         env:
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
           WORKFLOW_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
         run: |
           # Extract failed tests from the junit report
           # Only keep failures unique by classname and name (column 1 and 2 of the yq output)
-          yq < tests.xml -p xml -o json -r \
+          yq < package-tests.xml -p xml -o json -r \
             $'[.testsuites.testsuite[].testcase] | flatten | map(select(.failure) | .+@classname + " " + .+@name + " \'" + .failure.+@message + "\' ${{ env.WORKFLOW_URL }}") | .[]' \
             | sort -u -k 1,2 \
             | xargs -L 1 ./scripts/report-failed-unit-test.sh -s ${{ vars.APPLE_CI_FAILING_TESTS_BSK_FAILED_TESTS_SECTION_ID }}
@@ -92,7 +103,7 @@ jobs:
         if: always()
         with:
           name: build-log.txt
-          path: BrowserServicesKit/build-log.txt
+          path: SharedPackages/BrowserServicesKit/build-log.txt
 
       - name: Fetch latest commit author
         if: always() && github.ref_name == 'main'
@@ -122,7 +133,7 @@ jobs:
         run: |
           has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' Package.resolved)
           if [[ "$has_only_tags" == "true" ]]; then
-            echo "cache_key_hash=${{ hashFiles('BrowserServicesKit/Package.resolved') }}" >> $GITHUB_ENV
+            echo "cache_key_hash=${{ hashFiles('SharedPackages/BrowserServicesKit/Package.resolved') }}" >> $GITHUB_ENV
           else
             echo "Package.resolved contains dependencies specified by branch or commit, skipping cache."
           fi
@@ -131,13 +142,13 @@ jobs:
         if: env.cache_key_hash
         uses: actions/cache@v4
         with:
-          path: BrowserServicesKit/DerivedData/SourcePackages
+          path: SharedPackages/BrowserServicesKit/DerivedData/SourcePackages
           key: ${{ runner.os }}-bsk-spm-ios-${{ env.cache_key_hash }}
           restore-keys: |
             ${{ runner.os }}-bsk-spm-ios-
 
       - name: Select Xcode
-        run: sudo xcode-select -s /Applications/Xcode_$(<.xcode-version).app/Contents/Developer
+        uses: ./.github/actions/select-xcode-version
 
       - name: Resolve package dependencies
         run: |
@@ -153,6 +164,7 @@ jobs:
           # mv .build/* DerivedData/SourcePackages
 
       - name: Run tests
+        id: run-unit-tests-ios
         run: |
           set -o pipefail && xcodebuild test \
             -scheme BrowserServicesKit \
@@ -166,33 +178,42 @@ jobs:
             | tee -a ios-build-log.txt \
             | xcbeautify --report junit --report-path . --junit-report-filename bsk-ios-unittests.xml
 
+      - name: Upload JUnit XML as artifact
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: bsk-ios-unittests.xml
+          path: |
+            SharedPackages/BrowserServicesKit/bsk-ios-unittests.xml
+          retention-days: 7
+
       - name: Publish Unit Tests Report
         uses: mikepenz/action-junit-report@v4
         if: always()
         with:
-          check_name: Test Report (iOS)
-          report_paths: BrowserServicesKit/bsk-ios-unittests.xml
+          check_name: BSK Test Report (iOS)
+          report_paths: SharedPackages/BrowserServicesKit/bsk-ios-unittests.xml
           require_tests: true
 
       - name: Update Asana with failed unit tests
-        if: always() # always run even if the previous step fails
+        if: always() && steps.run-unit-tests-ios.outcome == 'failure'
         env:
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
           WORKFLOW_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
         run: |
           # Extract failed tests from the junit report
           # Only keep failures unique by classname and name (column 1 and 2 of the yq output)
-          yq < ios-unittests.xml -p xml -o json -r \
+          yq < bsk-ios-unittests.xml -p xml -o json -r \
             $'[.testsuites.testsuite[].testcase] | flatten | map(select(.failure) | .+@classname + " " + .+@name + " \'" + .failure.+@message + "\' ${{ env.WORKFLOW_URL }}") | .[]' \
             | sort -u -k 1,2 \
-            | xargs -L 1 ./scripts/report-failed-unit-test.sh -s ${{ vars.APPLE_CI_FAILING_TESTS_FAILED_TESTS_SECTION_ID }}
+            | xargs -L 1 ./scripts/report-failed-unit-test.sh -s ${{ vars.APPLE_CI_FAILING_TESTS_BSK_FAILED_TESTS_SECTION_ID }}
 
       - name: Upload logs
         uses: actions/upload-artifact@v4
         if: always()
         with:
           name: ios-build-log.txt
-          path: BrowserServicesKit/ios-build-log.txt
+          path: SharedPackages/BrowserServicesKit/ios-build-log.txt
 
   create-asana-task:
     name: Create Asana Task

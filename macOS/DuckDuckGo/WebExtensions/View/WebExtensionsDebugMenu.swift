@@ -16,19 +16,24 @@
 //  limitations under the License.
 //
 
-@available(macOS 15.3, *)
+#if WEB_EXTENSIONS_ENABLED
+
+@available(macOS 15.4, *)
 final class WebExtensionsDebugMenu: NSMenu {
 
     private let webExtensionManager: WebExtensionManaging
 
-    private let selectAndLoadMenuItem = NSMenuItem(title: "Install web extension...", action: #selector(WebExtensionsDebugMenu.selectAndLoadWebExtension))
+    private let installExtensionMenuItem = NSMenuItem(title: "Install web extension...", action: #selector(WebExtensionsDebugMenu.selectAndLoadWebExtension))
+    private let uninstallAllExtensionsMenuItem = NSMenuItem(title: "Uninstall all extensions", action: #selector(WebExtensionsDebugMenu.uninstallAllExtensions))
 
     init(webExtensionManager: WebExtensionManaging = WebExtensionManager.shared) {
         self.webExtensionManager = webExtensionManager
         super.init(title: "")
 
-        selectAndLoadMenuItem.target = self
-        selectAndLoadMenuItem.isEnabled = webExtensionManager.areExtenstionsEnabled
+        installExtensionMenuItem.target = self
+        installExtensionMenuItem.isEnabled = webExtensionManager.areExtenstionsEnabled
+        uninstallAllExtensionsMenuItem.target = self
+        uninstallAllExtensionsMenuItem.isEnabled = webExtensionManager.areExtenstionsEnabled && webExtensionManager.hasInstalledExtensions
 
         addItems()
     }
@@ -36,7 +41,9 @@ final class WebExtensionsDebugMenu: NSMenu {
     private func addItems() {
         removeAllItems()
 
-        addItem(selectAndLoadMenuItem)
+        addItem(installExtensionMenuItem)
+        addItem(uninstallAllExtensionsMenuItem)
+
         if !webExtensionManager.webExtensionPaths.isEmpty {
             addItem(.separator())
             for webExtensionPath in webExtensionManager.webExtensionPaths {
@@ -56,7 +63,8 @@ final class WebExtensionsDebugMenu: NSMenu {
 
         addItems()
 
-        selectAndLoadMenuItem.isEnabled = webExtensionManager.areExtenstionsEnabled
+        installExtensionMenuItem.isEnabled = webExtensionManager.areExtenstionsEnabled
+        uninstallAllExtensionsMenuItem.isEnabled = webExtensionManager.areExtenstionsEnabled && webExtensionManager.hasInstalledExtensions
     }
 
     @objc func selectAndLoadWebExtension() {
@@ -66,14 +74,18 @@ final class WebExtensionsDebugMenu: NSMenu {
         guard case .OK = panel.runModal(),
               let url = panel.url else { return }
 
-        webExtensionManager.addExtension(path: url.absoluteString)
+        Task {
+            await webExtensionManager.installExtension(path: url.absoluteString)
+        }
+    }
 
-        NSAlert.extensionAlert().runModal()
+    @objc func uninstallAllExtensions() {
+        webExtensionManager.uninstallAllExtensions()
     }
 
 }
 
-@available(macOS 15.3, *)
+@available(macOS 15.4, *)
 final class WebExtensionMenuItem: NSMenuItem {
 
     required init(coder: NSCoder) {
@@ -89,7 +101,7 @@ final class WebExtensionMenuItem: NSMenuItem {
 
 }
 
-@available(macOS 15.3, *)
+@available(macOS 15.4, *)
 final class WebExtensionSubMenu: NSMenu {
 
     private let webExtensionPath: String
@@ -105,27 +117,14 @@ final class WebExtensionSubMenu: NSMenu {
         super.init(title: "")
 
         buildItems {
-            NSMenuItem(title: "Remove the extension", action: #selector(unloadWebExtension), target: self)
+            NSMenuItem(title: "Remove the extension", action: #selector(uninstallExtension), target: self)
         }
     }
 
-    @objc func unloadWebExtension() {
-        webExtensionManager.removeExtension(path: webExtensionPath)
-
-        NSAlert.extensionAlert().runModal()
+    @objc func uninstallExtension() {
+        try? webExtensionManager.uninstallExtension(path: webExtensionPath)
     }
 
 }
 
-extension NSAlert {
-
-    static func extensionAlert() -> NSAlert {
-        let alert = NSAlert()
-        alert.messageText = "Restart required"
-        alert.informativeText = "Please restart your browser manually to apply changes to extensions."
-        alert.alertStyle = .informational
-        alert.addButton(withTitle: UserText.ok)
-        return alert
-    }
-
-}
+#endif

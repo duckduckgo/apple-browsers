@@ -37,4 +37,6 @@ protocol TabSwitcherDelegate: AnyObject {
     
     func tabSwitcherDidBulkCloseTabs(tabSwitcher: TabSwitcherViewController)
 
+    func tabSwitcherDidRequestAIChat(tabSwitcher: TabSwitcherViewController)
+
 }

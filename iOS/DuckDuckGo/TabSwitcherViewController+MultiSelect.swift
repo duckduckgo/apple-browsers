@@ -23,7 +23,6 @@ import Core
 import Bookmarks
 
 // MARK: Source agnostic action implementations
-// TODO fire pixels from the source specific action implementations
 extension TabSwitcherViewController {
 
     func bookmarkTabs(withIndexPaths indexPaths: [IndexPath], title: String, message: String,
@@ -251,24 +250,17 @@ extension TabSwitcherViewController {
 extension TabSwitcherViewController {
     
     func updateUIForSelectionMode() {
-        if featureFlagger.isFeatureOn(.tabManagerMultiSelection) {
-            if AppWidthObserver.shared.isLargeWidth {
-                interfaceMode = isEditing ? .multiSelectedEditingLarge : .multiSelectAvailableLarge
-            } else {
-                interfaceMode = isEditing ? .multiSelectEditingNormal : .multiSelectAvailableNormal
-            }
+        if AppWidthObserver.shared.isLargeWidth {
+            interfaceMode = isEditing ? .editingLargeSize : .largeSize
         } else {
-            if AppWidthObserver.shared.isLargeWidth {
-               interfaceMode = .singleSelectLarge
-            } else {
-               interfaceMode = .singleSelectNormal
-            }
+            interfaceMode = isEditing ? .editingRegularSize : .regularSize
         }
 
         barsHandler.update(interfaceMode,
                            selectedTabsCount: selectedTabs.count,
                            totalTabsCount: tabsModel.count,
-                           containsWebPages: tabsModel.tabs.contains(where: { $0.link != nil }))
+                           containsWebPages: tabsModel.tabs.contains(where: { $0.link != nil }),
+                           showAIChatButton: aiChatSettings.isAIChatTabSwitcherUserSettingsEnabled)
 
         topBarView.topItem?.leftBarButtonItems = barsHandler.topBarLeftButtonItems
         topBarView.topItem?.rightBarButtonItems = barsHandler.topBarRightButtonItems
@@ -332,7 +324,7 @@ extension TabSwitcherViewController {
             ].compactMap { $0 })
         ]
 
-        barsHandler.canShowSelectionMenu = !items.allSatisfy(\.children.isEmpty)
+        canShowSelectionMenu = !items.allSatisfy(\.children.isEmpty)
 
         let deferredElement = UIDeferredMenuElement.uncached { completion in
             Pixel.fire(pixel: .tabSwitcherSelectModeMenuClicked)
@@ -431,6 +423,7 @@ extension TabSwitcherViewController {
             guard let self else { return }
             self.onTabStyleChange()
         })
+        barsHandler.tabSwitcherStyleButton.tintColor = UIColor(designSystemColor: .icons)
 
         barsHandler.addAllBookmarksButton.accessibilityLabel = UserText.bookmarkAllTabs
         barsHandler.addAllBookmarksButton.primaryAction = action(image: "Bookmark-New-24") { [weak self] in
@@ -447,7 +440,7 @@ extension TabSwitcherViewController {
         })
 
         barsHandler.fireButton.accessibilityLabel = "Close all tabs and clear data"
-        barsHandler.fireButton.primaryAction = action(image: "FireLeftPadded") { [weak self] in
+        barsHandler.fireButton.primaryAction = action(image: "Fire") { [weak self] in
             self?.burn(sender: self!.barsHandler.fireButton)
         }
 
@@ -470,12 +463,17 @@ extension TabSwitcherViewController {
         barsHandler.menuButton.image = UIImage(resource: .moreApple24)
         barsHandler.menuButton.tintColor = UIColor(designSystemColor: .icons)
         barsHandler.menuButton.menu = createMultiSelectionMenu()
-        barsHandler.menuButton.isEnabled = barsHandler.canShowSelectionMenu
+        barsHandler.menuButton.isEnabled = canShowSelectionMenu
 
         barsHandler.closeTabsButton.isEnabled = selectedTabs.count > 0
         barsHandler.closeTabsButton.primaryAction = action(UserText.closeTabs(withCount: selectedTabs.count)) { [weak self] in
             self?.closeSelectedTabs()
         }
+
+        barsHandler.duckChatButton.tintColor = UIColor(designSystemColor: .icons)
+        barsHandler.duckChatButton.primaryAction = action(image: "AIChat-24", { [weak self] in
+            self?.delegate.tabSwitcherDidRequestAIChat(tabSwitcher: self!)
+        })
     }
 
 }

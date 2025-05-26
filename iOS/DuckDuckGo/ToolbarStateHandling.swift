@@ -19,6 +19,7 @@
 
 import UIKit
 import BrowserServicesKit
+import SwiftUICore
 
 enum ToolbarContentState: Equatable {
     case newTab
@@ -43,14 +44,44 @@ protocol ToolbarStateHandling {
 final class ToolbarHandler: ToolbarStateHandling {
     weak var toolbar: UIToolbar?
     private let featureFlagger: FeatureFlagger
+    lazy var isExperimentalThemingEnabled = {
+        ExperimentalThemingManager(featureFlagger: featureFlagger).isExperimentalThemingEnabled
+    }()
 
-   lazy var backButton = createBarButtonItem(title: UserText.keyCommandBrowserBack, imageName: "BrowsePrevious")
-   lazy var fireButton = createBarButtonItem(title: UserText.actionForgetAll, imageName: "Fire")
-   lazy var forwardButton = createBarButtonItem(title: UserText.keyCommandBrowserForward, imageName: "BrowseNext")
-   lazy var tabSwitcherButton = createBarButtonItem(title: UserText.tabSwitcherAccessibilityLabel, imageName: "Add-24")
-   lazy var bookmarkButton = createBarButtonItem(title: UserText.actionOpenBookmarks, imageName: "Book-24")
-   lazy var passwordsButton = createBarButtonItem(title: UserText.actionOpenPasswords, imageName: "Key-24")
-   lazy var browserMenuButton = createBarButtonItem(title: UserText.menuButtonHint, imageName: "Menu-Horizontal-24")
+    lazy var backButton = {
+        let resource = isExperimentalThemingEnabled ? ImageResource.arrowLeftNew24 : .browsePrevious
+        return createBarButtonItem(title: UserText.keyCommandBrowserBack, imageResource: resource)
+    }()
+
+    lazy var fireBarButtonItem = {
+        let resource = isExperimentalThemingEnabled ? ImageResource.fireNew24 : .fire
+        return createBarButtonItem(title: UserText.actionForgetAll, imageResource: resource)
+    }()
+
+    lazy var forwardButton = {
+        let resource = isExperimentalThemingEnabled ? ImageResource.arrowRightNew24 : .browseNext
+        return createBarButtonItem(title: UserText.keyCommandBrowserForward, imageResource: resource)
+    }()
+
+    lazy var tabSwitcherButton = {
+        let resource = isExperimentalThemingEnabled ? ImageResource.tabNew24 : .add24
+        return createBarButtonItem(title: UserText.tabSwitcherAccessibilityLabel, imageResource: resource)
+    }()
+
+    lazy var bookmarkButton = {
+        let resource = isExperimentalThemingEnabled ? ImageResource.bookmarksStacked24 : .book24
+        return createBarButtonItem(title: UserText.actionOpenBookmarks, imageResource: resource)
+    }()
+
+    lazy var passwordsButton = {
+        let resource = isExperimentalThemingEnabled ? ImageResource.keyNew24 : .key24
+        return createBarButtonItem(title: UserText.actionOpenPasswords, imageResource: resource)
+    }()
+
+    lazy var browserMenuButton = {
+        let resource = isExperimentalThemingEnabled ? ImageResource.menuHamburgerNew24 : .menuHorizontal24
+        return createBarButtonItem(title: UserText.menuButtonHint, imageResource: resource)
+    }()
 
     private var state: ToolbarContentState?
 
@@ -75,7 +106,7 @@ final class ToolbarHandler: ToolbarStateHandling {
             case .pageLoaded:
                 return createPageLoadedButtons()
             case .newTab:
-                return featureFlagger.isFeatureOn(.aiChatNewTabPage) ? createNewTabButtons() : createLegacyNewTabButtons()
+                return createNewTabButtons()
             }
         }()
 
@@ -96,49 +127,72 @@ final class ToolbarHandler: ToolbarStateHandling {
         forwardButton.isEnabled = currentTab?.canGoForward ?? false
     }
 
-    private func createBarButtonItem(title: String, imageName: String) -> UIBarButtonItem {
-        return UIBarButtonItem(title: title, image: UIImage(named: imageName), primaryAction: nil)
+    private func createBarButtonItem(title: String, imageResource: ImageResource) -> UIBarButtonItem {
+        if self.isExperimentalThemingEnabled {
+            let button = BrowserChromeButton(.primary)
+            button.setImage(UIImage(resource: imageResource))
+            button.frame = CGRect(x: 0, y: 0, width: 34, height: 44)
+
+            let barItem = UIBarButtonItem(customView: button)
+            barItem.title = title
+
+            return barItem
+        } else {
+            return UIBarButtonItem(title: title, image: UIImage(resource: imageResource), primaryAction: nil)
+        }
     }
 
     private func createPageLoadedButtons() -> [UIBarButtonItem] {
         return [
+            isExperimentalThemingEnabled ? .additionalFixedSpaceItem() : nil,
             backButton,
             .flexibleSpace(),
             forwardButton,
             .flexibleSpace(),
-            fireButton,
+            fireBarButtonItem,
             .flexibleSpace(),
             tabSwitcherButton,
             .flexibleSpace(),
-            browserMenuButton
-        ]
+            browserMenuButton,
+            isExperimentalThemingEnabled ? .additionalFixedSpaceItem() : nil
+        ].compactMap { $0 }
     }
 
     private func createNewTabButtons() -> [UIBarButtonItem] {
-        return [
-            bookmarkButton,
-            .flexibleSpace(),
-            passwordsButton,
-            .flexibleSpace(),
-            fireButton,
-            .flexibleSpace(),
-            tabSwitcherButton,
-            .flexibleSpace(),
-            browserMenuButton
-        ]
+        if isExperimentalThemingEnabled {
+            return [
+                .additionalFixedSpaceItem(),
+                passwordsButton,
+                .flexibleSpace(),
+                bookmarkButton,
+                .flexibleSpace(),
+                fireBarButtonItem,
+                .flexibleSpace(),
+                tabSwitcherButton,
+                .flexibleSpace(),
+                browserMenuButton,
+                .additionalFixedSpaceItem()
+            ]
+        } else {
+            return [
+                bookmarkButton,
+                .flexibleSpace(),
+                passwordsButton,
+                .flexibleSpace(),
+                fireBarButtonItem,
+                .flexibleSpace(),
+                tabSwitcherButton,
+                .flexibleSpace(),
+                browserMenuButton
+            ]
+        }
     }
+}
 
-    private func createLegacyNewTabButtons() -> [UIBarButtonItem] {
-        return [
-            backButton,
-            .flexibleSpace(),
-            forwardButton,
-            .flexibleSpace(),
-            fireButton,
-            .flexibleSpace(),
-            tabSwitcherButton,
-            .flexibleSpace(),
-            bookmarkButton
-        ]
+private extension UIBarButtonItem {
+    private static let additionalHorizontalSpace = 14.0
+
+    static func additionalFixedSpaceItem() -> UIBarButtonItem {
+        .fixedSpace(additionalHorizontalSpace)
     }
 }

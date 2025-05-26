@@ -1,0 +1,22 @@
+{
+  "images" : [
+    {
+      "filename" : "Gradient - Light.svg",
+      "idiom" : "mac"
+    },
+    {
+      "appearances" : [
+        {
+          "appearance" : "luminosity",
+          "value" : "dark"
+        }
+      ],
+      "filename" : "Gradient - Dark.svg",
+      "idiom" : "mac"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

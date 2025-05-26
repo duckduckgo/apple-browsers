@@ -189,7 +189,7 @@ extension TabExtensions {
 }
 
 extension Tab {
-    var linkProtection: LinkProtection {
-        self.navigationProtection!.linkProtection
+    var linkProtection: LinkProtection? {
+        self.navigationProtection?.linkProtection
     }
 }

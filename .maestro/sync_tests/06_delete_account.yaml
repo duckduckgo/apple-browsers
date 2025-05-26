@@ -14,6 +14,10 @@ name: 06_delete_account
 - runFlow:
     file: ../shared/set_internal_user_from_settings.yaml
 
+    # Set Dev environment
+- runFlow:
+    file: ../shared/set_sync_dev_environment.yaml
+
 # Create account
 - runFlow:
     file: ../shared/sync_create.yaml
@@ -27,12 +31,12 @@ name: 06_delete_account
 - tapOn: Sync with Another Device
 - inputText: "0000"
 - pressKey: Enter
-- assertVisible: Scan QR Code
 - runFlow:
     when:
       visible: Allows you to upload photographs and videos
     commands:
         - tapOn: "Allow"
+- assertVisible: Scan QR Code
 - tapOn: Manually Enter Code
 - tapOn: Paste
 - assertVisible: Sync & Backup Error

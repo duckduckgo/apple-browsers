@@ -55,8 +55,6 @@ public struct UserDefaultsWrapper<T> {
         case fireButtonPulseDateShown = "com.duckduckgo.ios.fireButtonPulseDateShown"
         case privacyButtonPulseShown = "com.duckduckgo.ios.privacyButtonPulseShown"
         case daxBrowsingFinalDialogShown = "com.duckduckgo.ios.daxOnboardingFinalDialogSeen"
-        case daxLastVisitedOnboardingWebsite = "com.duckduckgo.ios.daxOnboardingLastVisitedWebsite"
-        case daxLastShownContextualOnboardingDialogType = "com.duckduckgo.ios.daxLastShownContextualOnboardingDialogType"
         case daxPrivacyProPromotionDialogShown = "com.duckduckgo.ios.daxPrivacyProPromotionDialogShown"
 
         case notFoundCache = "com.duckduckgo.ios.favicons.notFoundCache"
@@ -92,6 +90,8 @@ public struct UserDefaultsWrapper<T> {
         case autofillCredentialsSavePromptShowAtLeastOnce = "com.duckduckgo.ios.autofillCredentialsSavePromptShowAtLeastOnce"
         case autofillCredentialsHasBeenEnabledAutomaticallyIfNecessary =
                 "com.duckduckgo.ios.autofillCredentialsHasBeenEnabledAutomaticallyIfNecessary"
+        case autofillCreditCardsHasBeenEnabledAutomaticallyIfNecessary =
+                "com.duckduckgo.ios.autofillCreditCardsHasBeenEnabledAutomaticallyIfNecessary"
         case autofillImportViaSyncStart = "com.duckduckgo.ios.autofillImportViaSyncStart"
         case autofillSearchDauDate = "com.duckduckgo.app.autofill.SearchDauDate"
         case autofillFillDate = "com.duckduckgo.app.autofill.FillDate"
@@ -143,6 +143,7 @@ public struct UserDefaultsWrapper<T> {
         case bookmarksMigrationVersion = "com.duckduckgo.ios.bookmarksMigrationVersion"
 
         case privacyConfigCustomURL = "com.duckduckgo.ios.privacyConfigCustomURL"
+        case remoteMessagingConfigCustomURL = "com.duckduckgo.ios.remoteMessagingConfigCustomURL"
 
         case privacyProEnvironment = "com.duckduckgo.ios.privacyPro.environment"
 
@@ -169,8 +170,13 @@ public struct UserDefaultsWrapper<T> {
         case duckPlayerNativeUI = "com.duckduckgo.ios.duckPlayerNativeUI"
         case duckPlayerAutoplay = "com.duckduckgo.ios.duckPlayerAutoplay"
         case duckPlayerNativeUISERPEnabled = "com.duckduckgo.ios.duckPlayerNativeUISERPEnabled"
-        case duckPlayerNativeUIPrimingModalPresentedCount = "com.duckduckgo.ios.duckPlayerNativeUIPrimingModalPresentedCount"
-        case duckPlayerNativeUIPrimingModalTimeSinceLastPresented = "com.duckduckgo.ios.duckPlayerNativeUIPrimingModalTimeSinceLastPresented"
+        case duckPlayerNativeUIPrimingModalPresentationEventCount = "com.duckduckgo.ios.duckPlayerNativeUIPrimingModalPresentationEventCount"
+        case duckPlayerNativeUIPrimingModalTimeSinceLastPresented = "com.duckduckgo.ios.duckPlayerduckPlayerNativeUIPrimingModalTimeSinceLastPresented"
+        case duckPlayerPillDismissCount = "com.duckduckgo.ios.duckPlayerPillDismissCount"
+        case duckPlayerWelcomeMessageShown = "com.duckduckgo.ios.duckPlayerWelcomeMessageShown"
+        case duckPlayerControlsVisible = "com.duckduckgo.ios.duckPlayerControlsVisible"
+        case duckPlayerNativeUIWasUsed = "com.duckduckgo.ios.duckPlayerNativeUIWasUsed"
+        case duckPlayerNativeUISettingsMapped = "com.duckduckgo.ios.duckPlayerNativeUISettingsMapped"
 
         case newTabPageSectionsSettings = "com.duckduckgo.ios.newTabPage.sections.settings"
         case newTabPageShortcutsSettings = "com.duckduckgo.ios.newTabPage.shortcuts.settings"

@@ -23,6 +23,7 @@ import UserScript
 import WebKit
 import Subscription
 import SpecialErrorPages
+import AIChat
 
 @MainActor
 final class UserScripts: UserScriptsProvider {
@@ -51,6 +52,7 @@ final class UserScripts: UserScriptsProvider {
     let releaseNotesUserScript: ReleaseNotesUserScript?
 #endif
     let aiChatUserScript: AIChatUserScript?
+    let subscriptionUserScript: SubscriptionUserScript?
     let historyViewUserScript: HistoryViewUserScript?
     let faviconScript = FaviconUserScript()
 
@@ -61,15 +63,21 @@ final class UserScripts: UserScriptsProvider {
         surrogatesScript = SurrogatesUserScript(configuration: sourceProvider.surrogatesConfig!)
         aiChatUserScript = AIChatUserScript(handler: AIChatUserScriptHandler(storage: DefaultAIChatPreferencesStorage()),
                                             urlSettings: AIChatDebugURLSettings())
+        subscriptionUserScript = SubscriptionUserScript(
+            platform: .macos,
+            subscriptionManager: NSApp.delegateTyped.subscriptionAuthV1toV2Bridge
+        )
 
         let isGPCEnabled = WebTrackingProtectionPreferences.shared.isGPCEnabled
         let privacyConfig = sourceProvider.privacyConfigurationManager.privacyConfig
         let sessionKey = sourceProvider.sessionKey ?? ""
         let messageSecret = sourceProvider.messageSecret ?? ""
+        let currentCohorts = sourceProvider.currentCohorts ?? []
         let prefs = ContentScopeProperties(gpcEnabled: isGPCEnabled,
                                            sessionKey: sessionKey,
                                            messageSecret: messageSecret,
-                                           featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfig))
+                                           featureToggles: ContentScopeFeatureToggles.supportedFeaturesOnMacOS(privacyConfig),
+                                           currentCohorts: currentCohorts)
         contentScopeUserScript = ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: Application.appDelegate.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
         contentScopeUserScriptIsolated = ContentScopeUserScript(sourceProvider.privacyConfigurationManager, properties: prefs, isIsolated: true, privacyConfigurationJSONGenerator: ContentScopePrivacyConfigurationJSONGenerator(featureFlagger: Application.appDelegate.featureFlagger, privacyConfigurationManager: sourceProvider.privacyConfigurationManager))
 
@@ -112,6 +120,10 @@ final class UserScripts: UserScriptsProvider {
 
         if let aiChatUserScript {
             contentScopeUserScriptIsolated.registerSubfeature(delegate: aiChatUserScript)
+        }
+
+        if let subscriptionUserScript {
+            contentScopeUserScriptIsolated.registerSubfeature(delegate: subscriptionUserScript)
         }
 
         if let youtubeOverlayScript {
@@ -171,7 +183,8 @@ final class UserScripts: UserScriptsProvider {
         subscriptionPagesUserScript.registerSubfeature(delegate: delegate)
         userScripts.append(subscriptionPagesUserScript)
 
-        let identityTheftRestorationPagesFeature = IdentityTheftRestorationPagesFeature(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge)
+        let identityTheftRestorationPagesFeature = IdentityTheftRestorationPagesFeature(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge,
+                                                                                        isAuthV2Enabled: Application.appDelegate.isAuthV2Enabled)
         identityTheftRestorationPagesUserScript.registerSubfeature(delegate: identityTheftRestorationPagesFeature)
         userScripts.append(identityTheftRestorationPagesUserScript)
     }

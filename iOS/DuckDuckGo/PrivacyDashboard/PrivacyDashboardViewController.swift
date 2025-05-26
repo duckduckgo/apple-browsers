@@ -38,6 +38,7 @@ final class PrivacyDashboardViewController: UIViewController {
     private let contentBlockingManager: ContentBlockerRulesManager
     private var privacyDashboardDidTriggerDismiss: Bool = false
     private let entryPoint: PrivacyDashboardEntryPoint
+    private let contentScopeExperimentsManager: ContentScopeExperimentsManaging
 
     private let brokenSiteReporter: BrokenSiteReporter = {
         BrokenSiteReporter(pixelHandler: { parameters in
@@ -74,7 +75,8 @@ final class PrivacyDashboardViewController: UIViewController {
           entryPoint: PrivacyDashboardEntryPoint,
           privacyConfigurationManager: PrivacyConfigurationManaging,
           contentBlockingManager: ContentBlockerRulesManager,
-          breakageAdditionalInfo: BreakageAdditionalInfo?) {
+          breakageAdditionalInfo: BreakageAdditionalInfo?,
+          contentScopeExperimentsManager: ContentScopeExperimentsManaging) {
 
         let toggleReportingConfiguration = ToggleReportingConfiguration(privacyConfigurationManager: privacyConfigurationManager)
         let toggleReportingFeature = ToggleReportingFeature(toggleReportingConfiguration: toggleReportingConfiguration)
@@ -87,6 +89,7 @@ final class PrivacyDashboardViewController: UIViewController {
         self.contentBlockingManager = contentBlockingManager
         self.breakageAdditionalInfo = breakageAdditionalInfo
         self.entryPoint = entryPoint
+        self.contentScopeExperimentsManager = contentScopeExperimentsManager
         super.init(coder: coder)
         
         privacyDashboardController.delegate = self
@@ -332,6 +335,18 @@ extension PrivacyDashboardViewController {
             statusCodes = [httpStatusCode]
         }
 
+        var privacyExperimentCohorts: String {
+            var experiments: [String: String] = [:]
+            for feature in contentScopeExperimentsManager.allActiveContentScopeExperiments {
+                experiments[feature.key] = feature.value.cohortID
+            }
+            return experiments
+                .sorted { $0.key < $1.key }
+                .map { "\($0.key):\($0.value)" }
+                .joined(separator: ",")
+        }
+
+
         return BrokenSiteReport(siteUrl: breakageAdditionalInfo.currentURL,
                                 category: category,
                                 description: description,
@@ -357,7 +372,10 @@ extension PrivacyDashboardViewController {
                                 jsPerformance: webVitalsResult,
                                 userRefreshCount: breakageAdditionalInfo.userRefreshCount,
                                 variant: PixelExperiment.cohort?.rawValue ?? "",
-                                cookieConsentInfo: privacyInfo.cookieConsentManaged)
+                                cookieConsentInfo: privacyInfo.cookieConsentManaged,
+                                debugFlags: privacyInfo.debugFlags,
+                                privacyExperiments: privacyExperimentCohorts,
+                                isPirEnabled: nil)
     }
 
 }

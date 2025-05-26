@@ -26,6 +26,8 @@ import NetworkProtectionTestUtils
 
 final class TunnelControllerViewModelTests: XCTestCase {
 
+    private static let timerZero = "0s"
+
     private class MockStatusReporter: NetworkProtectionStatusReporter {
         static let defaultServerInfo = NetworkProtectionStatusServerInfo(
             serverLocation: TunnelControllerViewModelTests.serverAttributes(),
@@ -129,7 +131,7 @@ final class TunnelControllerViewModelTests: XCTestCase {
         let isToggleOn = model.isToggleOn.wrappedValue
         XCTAssertFalse(isToggleOn)
         XCTAssertEqual(model.connectionStatusDescription, UserText.networkProtectionStatusDisconnected)
-        XCTAssertEqual(model.timeLapsed, UserText.networkProtectionStatusViewTimerZero)
+        XCTAssertEqual(model.timeLapsed, Self.timerZero)
         XCTAssertEqual(model.featureStatusDescription, UserText.networkProtectionStatusViewFeatureOff)
         XCTAssertFalse(model.showServerDetails)
     }
@@ -151,7 +153,7 @@ final class TunnelControllerViewModelTests: XCTestCase {
             uiActionHandler: MockVPNUIActionHandler())
 
         XCTAssertEqual(model.connectionStatusDescription, UserText.networkProtectionStatusDisconnecting)
-        XCTAssertEqual(model.timeLapsed, UserText.networkProtectionStatusViewTimerZero)
+        XCTAssertEqual(model.timeLapsed, Self.timerZero)
         XCTAssertEqual(model.featureStatusDescription, UserText.networkProtectionStatusViewFeatureOn)
         XCTAssertFalse(model.showServerDetails)
         XCTAssertEqual(model.serverAddress, "Unknown")
@@ -208,7 +210,7 @@ final class TunnelControllerViewModelTests: XCTestCase {
             uiActionHandler: MockVPNUIActionHandler())
 
         XCTAssertEqual(model.connectionStatusDescription, UserText.networkProtectionStatusConnecting)
-        XCTAssertEqual(model.timeLapsed, UserText.networkProtectionStatusViewTimerZero)
+        XCTAssertEqual(model.timeLapsed, Self.timerZero)
         XCTAssertEqual(model.featureStatusDescription, UserText.networkProtectionStatusViewFeatureOff)
         XCTAssertFalse(model.showServerDetails)
     }

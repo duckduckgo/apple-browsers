@@ -102,3 +102,15 @@ final class HistoryCoordinatingMock: HistoryCoordinating {
     }
 
 }
+
+extension HistoryCoordinatingMock: HistoryGroupingDataSource {}
+
+extension HistoryCoordinatingMock: HistoryDataSource {
+    func delete(_ visits: [History.Visit]) async {
+        await withCheckedContinuation { continuation in
+            burnVisits(visits) {
+                continuation.resume()
+            }
+        }
+    }
+}

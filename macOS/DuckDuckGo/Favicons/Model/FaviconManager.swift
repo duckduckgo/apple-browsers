@@ -23,6 +23,7 @@ import BrowserServicesKit
 import Common
 import History
 import CoreImage
+import Persistence
 
 protocol FaviconManagement: AnyObject {
 
@@ -93,7 +94,7 @@ extension FaviconManagement {
 final class FaviconManager: FaviconManagement {
 
     enum CacheType {
-        case standard
+        case standard(_ database: CoreDataDatabase)
         case inMemory
     }
 
@@ -104,8 +105,8 @@ final class FaviconManager: FaviconManagement {
         referenceCache: ((FaviconStoring) -> FaviconReferenceCaching)? = nil
     ) {
         switch cacheType {
-        case .standard:
-            store = FaviconStore()
+        case .standard(let database):
+            store = FaviconStore(database: database)
         case .inMemory:
             store = FaviconNullStore()
         }

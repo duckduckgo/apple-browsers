@@ -52,9 +52,11 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                        webTrackingProtectionPreferences: preferences,
                                        experimentManager: MockContentScopeExperimentManager(),
                                        tld: TLD(),
+                                       onboardingNavigationDelegate: CapturingOnboardingNavigation(),
                                        appearancePreferences: appearancePreferences,
                                        startupPreferences: startupPreferences,
-                                       bookmarkManager: MockBookmarkManager())
+                                       bookmarkManager: MockBookmarkManager(),
+                                       historyCoordinator: CapturingHistoryDataSource())
     }
 
     override static func setUp() {

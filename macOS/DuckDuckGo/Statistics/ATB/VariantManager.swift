@@ -20,6 +20,7 @@ import BrowserServicesKit
 import Common
 import Foundation
 import os.log
+import Persistence
 
 struct Variant: BrowserServicesKit.Variant {
 
@@ -62,6 +63,18 @@ final class DefaultVariantManager: VariantManager {
     private let storage: StatisticsStore
     private let rng: VariantRNG
     private let campaignVariant: CampaignVariant
+
+    convenience init(variants: [Variant] = Variant.defaultVariants,
+                     database: CoreDataDatabase,
+                     rng: VariantRNG = Arc4RandomUniformVariantRNG(),
+                     campaignVariant: CampaignVariant = CampaignVariant()) {
+        self.init(
+            variants: variants,
+            storage: LocalStatisticsStore(pixelDataStore: LocalPixelDataStore(database: database)),
+            rng: rng,
+            campaignVariant: campaignVariant
+        )
+    }
 
     init(variants: [Variant] = Variant.defaultVariants,
          storage: StatisticsStore = LocalStatisticsStore(),

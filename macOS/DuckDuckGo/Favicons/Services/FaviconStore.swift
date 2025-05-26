@@ -20,6 +20,7 @@ import Cocoa
 import CoreData
 import Combine
 import Common
+import Persistence
 import PixelKit
 import os.log
 
@@ -46,8 +47,8 @@ final class FaviconStore: FaviconStoring {
 
     private let context: NSManagedObjectContext
 
-    init() {
-        context = Database.shared.makeContext(concurrencyType: .privateQueueConcurrencyType, name: "Favicons")
+    init(database: CoreDataDatabase) {
+        context = database.makeContext(concurrencyType: .privateQueueConcurrencyType, name: "Favicons")
     }
 
     init(context: NSManagedObjectContext) {

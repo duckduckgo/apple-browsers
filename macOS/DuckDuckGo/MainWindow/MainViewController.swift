@@ -21,6 +21,7 @@ import Cocoa
 import Carbon.HIToolbox
 import Combine
 import Common
+import History
 import NetworkProtection
 import NetworkProtectionIPC
 import os.log
@@ -42,6 +43,7 @@ final class MainViewController: NSViewController {
 
     let tabCollectionViewModel: TabCollectionViewModel
     let bookmarkManager: BookmarkManager
+    let historyCoordinator: HistoryCoordinator
     let isBurner: Bool
 
     private var addressBarBookmarkIconVisibilityCancellable: AnyCancellable?
@@ -75,6 +77,7 @@ final class MainViewController: NSViewController {
     init(tabCollectionViewModel: TabCollectionViewModel? = nil,
          bookmarkManager: BookmarkManager = NSApp.delegateTyped.bookmarkManager,
          bookmarkDragDropManager: BookmarkDragDropManager = NSApp.delegateTyped.bookmarkDragDropManager,
+         historyCoordinator: HistoryCoordinator = NSApp.delegateTyped.historyCoordinator,
          autofillPopoverPresenter: AutofillPopoverPresenter,
          vpnXPCClient: VPNControllerXPCClient = .shared,
          aiChatMenuConfig: AIChatMenuVisibilityConfigurable = AIChatMenuConfiguration(),
@@ -88,6 +91,7 @@ final class MainViewController: NSViewController {
         let tabCollectionViewModel = tabCollectionViewModel ?? TabCollectionViewModel()
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
+        self.historyCoordinator = historyCoordinator
         self.isBurner = tabCollectionViewModel.isBurner
         self.featureFlagger = featureFlagger
         self.defaultBrowserAndDockPromptPresenting = defaultBrowserAndDockPromptPresenting
@@ -140,6 +144,7 @@ final class MainViewController: NSViewController {
         navigationBarViewController = NavigationBarViewController.create(tabCollectionViewModel: tabCollectionViewModel,
                                                                          bookmarkManager: bookmarkManager,
                                                                          bookmarkDragDropManager: bookmarkDragDropManager,
+                                                                         historyCoordinator: historyCoordinator,
                                                                          networkProtectionPopoverManager: networkProtectionPopoverManager,
                                                                          networkProtectionStatusReporter: networkProtectionStatusReporter,
                                                                          autofillPopoverPresenter: autofillPopoverPresenter,

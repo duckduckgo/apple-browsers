@@ -131,6 +131,7 @@ final class AddressBarViewController: NSViewController {
     init?(coder: NSCoder,
           tabCollectionViewModel: TabCollectionViewModel,
           bookmarkManager: BookmarkManager,
+          historyCoordinator: SuggestionContainer.HistoryProvider,
           burnerMode: BurnerMode,
           popovers: NavigationBarPopovers?,
           onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
@@ -143,6 +144,7 @@ final class AddressBarViewController: NSViewController {
             isHomePage: tabViewModel?.tab.content == .newtab,
             isBurner: burnerMode.isBurner,
             suggestionContainer: SuggestionContainer(
+                historyProvider: historyCoordinator,
                 bookmarkProvider: SuggestionsBookmarkProvider(bookmarkManager: bookmarkManager),
                 burnerMode: burnerMode,
                 isUrlIgnored: { _ in false }

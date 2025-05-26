@@ -18,7 +18,6 @@
 
 import SwiftUI
 import DesignResourcesKit
-import DesignResourcesKitIcons
 
 // MARK: - Metrics
 

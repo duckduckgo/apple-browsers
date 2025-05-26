@@ -5,61 +5,14 @@
       "comment" : "Bundle name",
       "extractionState" : "extracted_with_value",
       "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "DuckDuckGo"
-          }
-        },
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "DuckDuckGo App Store"
           }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "DuckDuckGo"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "DuckDuckGo"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "DuckDuckGo"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "DuckDuckGo"
-          }
-        },
-        "pl" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "DuckDuckGo"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "DuckDuckGo"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "DuckDuckGo"
-          }
         }
-      }
+      },
+      "shouldTranslate" : false
     },
     "NSCameraUsageDescription" : {
       "comment" : "Privacy - Camera Usage Description",

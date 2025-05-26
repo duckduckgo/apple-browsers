@@ -95,7 +95,7 @@ final class MockMoreOpationsMenuIconProvider: MoreOptionsMenuIconsProviding {
     var passwordsSubMenuIcon: NSImage = .logo
     var identitiesIcon: NSImage = .logo
     var creditCardsIcon: NSImage = .logo
-    var vpnIcon: NSImage = .logo
+    var vpnIcon: NSImage? = .logo
     var personalInformationRemovalIcon: NSImage = .logo
     var identityTheftRestorationIcon: NSImage = .logo
     var emailGenerateAddressIcon: NSImage = .logo

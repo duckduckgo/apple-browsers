@@ -219,48 +219,48 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
         }
     }
 
-    var preferenceIconName: String {
+    func preferenceIconName(for settingsIconProvider: SettingsIconsProviding) -> NSImage {
         switch self {
         case .defaultBrowser:
-            return "DefaultBrowser"
+            return settingsIconProvider.defaultBrowserIcon
         case .privateSearch:
-            return "PrivateSearchIcon"
+            return settingsIconProvider.privateSearchIcon
         case .webTrackingProtection:
-            return "WebTrackingProtectionIcon"
+            return settingsIconProvider.webTrackingProtectionIcon
         case .cookiePopupProtection:
-            return "CookieProtectionIcon"
+            return settingsIconProvider.cookiePopUpProtectionIcon
         case .emailProtection:
-            return "EmailProtectionIcon"
+            return settingsIconProvider.emailProtectionIcon
         case .general:
-            return "GeneralIcon"
+            return settingsIconProvider.generalIcon
         case .sync:
-            return "Sync"
+            return settingsIconProvider.syncAndBackupIcon
         case .appearance:
-            return "Appearance"
+            return settingsIconProvider.appearanceIcon
         case .dataClearing:
-            return "FireSettings"
+            return settingsIconProvider.dataClearingIcon
         case .privacyPro:
-            return "PrivacyPro"
+            return settingsIconProvider.privacyProIcon
         case .vpn:
-            return "VPN"
+            return settingsIconProvider.vpnIcon
         case .personalInformationRemoval:
-            return "PersonalInformationRemoval-Multicolor-16"
+            return settingsIconProvider.personalInformationRemovalIcon
         case .identityTheftRestoration:
-            return "Identity-Theft-Restoration-Multicolor-16"
+            return settingsIconProvider.identityTheftRestorationIcon
         case .subscriptionSettings:
-            return "PrivacyPro"
+            return settingsIconProvider.privacyProIcon
         case .autofill:
-            return "Autofill"
+            return settingsIconProvider.passwordsAndAutoFillIcon
         case .accessibility:
-            return "Accessibility"
+            return settingsIconProvider.accessibilityIcon
         case .duckPlayer:
-            return "DuckPlayerSettings"
+            return settingsIconProvider.duckPlayerIcon
         case .about:
-            return "About"
+            return settingsIconProvider.aboutIcon
         case .otherPlatforms:
-            return "OtherPlatformsPreferences"
+            return settingsIconProvider.otherPlatformsIcon
         case .aiChat:
-            return "AiChatPreferences"
+            return settingsIconProvider.duckAIIcon
         }
     }
 }

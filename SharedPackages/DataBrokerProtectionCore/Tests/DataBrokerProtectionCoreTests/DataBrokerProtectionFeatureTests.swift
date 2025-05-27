@@ -216,7 +216,7 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
         XCTAssertTrue(canTimeOut)
 
         sut.pushAction(method: .onActionReceived, webView: mockWebView, params: params, canTimeOut: canTimeOut)
-        
+
         // Fail the action before timeout
         let errorParams = ["error": "No action found."]
         _ = try? await sut.onActionError(params: errorParams, original: MockWKScriptMessage())

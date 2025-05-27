@@ -119,7 +119,7 @@
                BlueprintIdentifier = "AIChatTests"
                BuildableName = "AIChatTests"
                BlueprintName = "AIChatTests"
-               ReferencedContainer = "container:LocalPackages/AIChat">
+               ReferencedContainer = "container:../SharedPackages/AIChat">
             </BuildableReference>
          </TestableReference>
       </Testables>

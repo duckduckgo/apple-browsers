@@ -157,8 +157,10 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     @MainActor
-    func handleError(_ type: SyncErrorMessage, error: Error?, event: Pixel.Event) {
-        firePixelIfNeededFor(event: event, error: error)
+    func handleError(_ type: SyncErrorMessage, error: Error?, event: Pixel.Event?) {
+        if type.shouldSendPixel, let event = event {
+            firePixelIfNeededFor(event: event, error: error)
+        }
         let alertController = UIAlertController(
             title: type.title,
             message: [type.description, error?.localizedDescription].compactMap({ $0 }).joined(separator: "\n"),

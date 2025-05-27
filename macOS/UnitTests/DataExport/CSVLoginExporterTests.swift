@@ -38,7 +38,7 @@ class CSVLoginExporterTests: XCTestCase {
         XCTAssertNotNil(data)
 
         let expectedHeader = "\"title\",\"url\",\"username\",\"password\",\"notes\"\n"
-        let expectedRow = "\"title-1\",\"domain-1\",\"user-1\",\"password\\\"containing\\\"quotes\",\"\""
+        let expectedRow = "\"title-1\",\"domain-1\",\"user-1\",\"password\"\"containing\"\"quotes\",\"\""
         XCTAssertEqual(data, (expectedHeader + expectedRow).data(using: .utf8)!)
     }
 }

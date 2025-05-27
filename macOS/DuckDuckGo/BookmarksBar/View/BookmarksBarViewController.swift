@@ -49,8 +49,8 @@ final class BookmarksBarViewController: NSViewController {
     private var dragDestination: (folder: BookmarkFolder, mouseLocation: NSPoint, hoverStarted: Date)?
 
     fileprivate var clipThreshold: CGFloat {
-        let viewWidthWithoutClipIndicator = view.frame.width - clippedItemsIndicator.frame.minX
-        return view.frame.width - viewWidthWithoutClipIndicator - 3
+        let indicatorFrameInCollectionView = bookmarksBarCollectionView.convert(clippedItemsIndicator.frame, from: clippedItemsIndicator.superview)
+        return indicatorFrameInCollectionView.minX - 3
     }
 
     @UserDefaultsWrapper(key: .bookmarksBarPromptShown, defaultValue: false)
@@ -74,7 +74,10 @@ final class BookmarksBarViewController: NSViewController {
         self.visualStyleManager = visualStyleManager
 
         self.tabCollectionViewModel = tabCollectionViewModel
-        self.viewModel = BookmarksBarViewModel(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, tabCollectionViewModel: tabCollectionViewModel)
+        self.viewModel = BookmarksBarViewModel(bookmarkManager: bookmarkManager,
+                                               dragDropManager: dragDropManager,
+                                               tabCollectionViewModel: tabCollectionViewModel,
+                                               visualStyleManager: visualStyleManager)
 
         super.init(coder: coder)
     }
@@ -99,9 +102,11 @@ final class BookmarksBarViewController: NSViewController {
         let nib = NSNib(nibNamed: "BookmarksBarCollectionViewItem", bundle: .main)
         bookmarksBarCollectionView.setDraggingSourceOperationMask([.copy, .move], forLocal: true)
         bookmarksBarCollectionView.register(nib, forItemWithIdentifier: BookmarksBarCollectionViewItem.identifier)
+        bookmarksBarCollectionView.allowsMultipleSelection = false
 
         bookmarksBarCollectionView.registerForDraggedTypes(BookmarkDragDropManager.draggedTypes)
         bookmarksBarCollectionView.backgroundColors = [visualStyleManager.style.colorsProvider.navigationBackgroundColor]
+        bookmarksBarCollectionView.setAccessibilityIdentifier("BookmarksBarViewController.bookmarksBarCollectionView")
 
         clippedItemsIndicator.registerForDraggedTypes(BookmarkDragDropManager.draggedTypes)
         clippedItemsIndicator.delegate = self
@@ -113,7 +118,6 @@ final class BookmarksBarViewController: NSViewController {
         bookmarksBarCollectionView.dataSource = viewModel
 
         view.postsFrameChangedNotifications = true
-        bookmarksBarCollectionView.setAccessibilityIdentifier("BookmarksBarViewController.bookmarksBarCollectionView")
     }
 
     private func setUpImportBookmarksButton() {

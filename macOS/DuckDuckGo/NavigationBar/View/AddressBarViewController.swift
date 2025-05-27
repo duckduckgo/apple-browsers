@@ -22,6 +22,10 @@ import Lottie
 import Common
 import AIChat
 
+protocol AddressBarViewControllerDelegate: AnyObject {
+    func resizeAddressBarForHomePage(_ addressBarViewController: AddressBarViewController, isFocused: Bool)
+}
+
 final class AddressBarViewController: NSViewController {
 
     enum Mode: Equatable {
@@ -109,6 +113,8 @@ final class AddressBarViewController: NSViewController {
     /// save mouse-down position to handle same-place clicks outside of the Address Bar to remove first responder
     private var clickPoint: NSPoint?
 
+    weak var delegate: AddressBarViewControllerDelegate?
+
     // MARK: - View Lifecycle
 
     required init?(coder: NSCoder) {
@@ -169,6 +175,8 @@ final class AddressBarViewController: NSViewController {
 
         // disallow dragging window by the background view
         activeBackgroundView.interceptClickEvents = true
+
+        addressBarTextField.focusDelegate = self
     }
 
     override func viewWillAppear() {
@@ -412,18 +420,26 @@ final class AddressBarViewController: NSViewController {
 
         let isKey = self.view.window?.isKeyWindow == true
 
-        activeOuterBorderView.alphaValue = isKey && isFirstResponder && visualStyle.shouldShowOutlineBorder(isHomePage: isHomePage) ? 1 : 0
+        activeOuterBorderView.alphaValue = isKey && isFirstResponder && visualStyle.addressBarStyleProvider.shouldShowOutlineBorder(isHomePage: isHomePage) ? 1 : 0
         activeOuterBorderView.backgroundColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.2) : visualStyle.colorsProvider.addressBarOutlineShadow
-        activeBackgroundView.borderColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.2) : visualStyle.colorsProvider.accentPrimaryColor
+        activeBackgroundView.borderColor = isBurner ? NSColor.burnerAccent.withAlphaComponent(0.8) : visualStyle.colorsProvider.accentPrimaryColor
 
         setupAddressBarPlaceHolder()
+        setupAddressBarCornerRadius()
+    }
+
+    private func setupAddressBarCornerRadius() {
+        activeBackgroundView.setCornerRadius(visualStyle.addressBarActiveBackgroundViewRadius)
+        inactiveBackgroundView.setCornerRadius(visualStyle.addressBarInactiveBackgroundViewRadius)
+        innerBorderView.setCornerRadius(visualStyle.addressBarInnerBorderViewRadius)
+        activeOuterBorderView.setCornerRadius(visualStyle.addressBarActiveOuterBorderViewRadius)
     }
 
     private func setupAddressBarPlaceHolder() {
         let isNewTab = tabViewModel?.tab.content == .newtab
         let addressBarPlaceholder = isNewTab ? UserText.addressBarPlaceholder : ""
 
-        let font = NSFont.systemFont(ofSize: isNewTab ? visualStyle.newTabOrHomePageAddressBarFontSize : visualStyle.defaultAddressBarFontSize, weight: .regular)
+        let font = NSFont.systemFont(ofSize: isNewTab ? visualStyle.addressBarStyleProvider.newTabOrHomePageAddressBarFontSize : visualStyle.addressBarStyleProvider.defaultAddressBarFontSize, weight: .regular)
         let attributes: [NSAttributedString.Key: Any] = [
             .foregroundColor: visualStyle.colorsProvider.textSecondaryColor,
             .font: font
@@ -511,7 +527,7 @@ final class AddressBarViewController: NSViewController {
                 activeBackgroundView.backgroundColor = NSColor.addressBarBackground
                 switchToTabBox.backgroundColor = navigationBarBackgroundColor.blended(with: .addressBarBackground)
 
-                activeOuterBorderView.isHidden = !visualStyle.shouldShowOutlineBorder(isHomePage: isHomePage)
+                activeOuterBorderView.isHidden = !visualStyle.addressBarStyleProvider.shouldShowOutlineBorder(isHomePage: isHomePage)
             } else {
                 activeBackgroundView.borderWidth = 0
                 activeBackgroundView.borderColor = nil
@@ -659,8 +675,8 @@ extension AddressBarViewController: AddressBarButtonsViewControllerDelegate {
         passiveTextFieldTrailingConstraint.constant = trailingConstant
     }
 
-    func addressBarButtonsViewControllerClearButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
-        addressBarTextField.clearValue()
+    func addressBarButtonsViewControllerCancelButtonClicked(_ addressBarButtonsViewController: AddressBarButtonsViewController) {
+        _ = escapeKeyDown()
     }
 }
 
@@ -776,6 +792,16 @@ extension AddressBarViewController: NSDraggingDestination {
             // activate the address bar and replace its string value
             return addressBarTextField.performDragOperation(draggingInfo)
         }
+    }
+}
+
+extension AddressBarViewController: AddressBarTextFieldFocusDelegate {
+    func addressBarDidFocus(_ addressBarTextField: AddressBarTextField) {
+        delegate?.resizeAddressBarForHomePage(self, isFocused: true)
+    }
+
+    func addressBarDidLoseFocus(_ addressBarTextField: AddressBarTextField) {
+        delegate?.resizeAddressBarForHomePage(self, isFocused: false)
     }
 }
 

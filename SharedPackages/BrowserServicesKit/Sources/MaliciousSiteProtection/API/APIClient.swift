@@ -103,7 +103,7 @@ struct APIClient {
     let environment: APIClientEnvironment
     private let service: APIService
 
-    init(environment: APIClientEnvironment, platform: Platform? = nil, service: APIService = DefaultAPIService(urlSession: .shared)) {
+    init(environment: APIClientEnvironment, platform: Platform? = nil, service: APIService) {
         if let platform {
             self.platform = platform
         } else {

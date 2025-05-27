@@ -132,6 +132,7 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case partialFormSaves
     case autofillCreditCards
     case autofillCreditCardsOnByDefault
+    case passwordVariantCategorization
 }
 
 public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
@@ -209,6 +210,7 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case level3AllowCreateAccount
     case seamlessAccountSwitching
     case exchangeKeysToSyncWithAnotherDevice
+    case canScanUrlBasedSyncSetupBarcodes
 }
 
 public enum AutoconsentSubfeature: String, PrivacySubfeature {
@@ -230,6 +232,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case privacyProFreeTrialJan25
     case privacyProAuthV2
     case privacyProOnboardingPromotion
+    case privacyProFreeTrial
 }
 
 public enum SslCertificatesSubfeature: String, PrivacySubfeature {

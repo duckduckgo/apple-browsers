@@ -75,7 +75,8 @@ class SwipeTabsCoordinator: NSObject {
                 
         super.init()
         
-        collectionView.register(OmniBarCell.self, forCellWithReuseIdentifier: "omnibar")
+        collectionView.register(OmniBarCell.self, forCellWithReuseIdentifier: Constant.omniBarReuseIdentifier)
+        collectionView.register(OmniBarCell.self, forCellWithReuseIdentifier: Constant.templateReuseIdentifier)
         collectionView.isPagingEnabled = true
         collectionView.delegate = self
         collectionView.dataSource = self
@@ -167,6 +168,10 @@ class SwipeTabsCoordinator: NSObject {
         }
     }
 
+    private struct Constant {
+        static let omniBarReuseIdentifier = "omniBar"
+        static let templateReuseIdentifier = "template"
+    }
 }
 
 // MARK: UICollectionViewDelegate
@@ -361,11 +366,14 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "omnibar", for: indexPath) as? OmniBarCell else {
+        let isCurrentTab = tabsModel.currentIndex == indexPath.row || !isEnabled
+        let reuseIdentifier = isCurrentTab ? Constant.omniBarReuseIdentifier : Constant.templateReuseIdentifier
+
+        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as? OmniBarCell else {
             fatalError("Not \(OmniBarCell.self)")
         }
 
-        if !isEnabled || tabsModel.currentIndex == indexPath.row {
+        if isCurrentTab {
             cell.omniBar = coordinator.omniBar
         } else {
             // Strong reference while we use the omnibar

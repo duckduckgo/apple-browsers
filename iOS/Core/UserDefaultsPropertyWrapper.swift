@@ -143,6 +143,7 @@ public struct UserDefaultsWrapper<T> {
         case bookmarksMigrationVersion = "com.duckduckgo.ios.bookmarksMigrationVersion"
 
         case privacyConfigCustomURL = "com.duckduckgo.ios.privacyConfigCustomURL"
+        case remoteMessagingConfigCustomURL = "com.duckduckgo.ios.remoteMessagingConfigCustomURL"
 
         case privacyProEnvironment = "com.duckduckgo.ios.privacyPro.environment"
 
@@ -173,6 +174,9 @@ public struct UserDefaultsWrapper<T> {
         case duckPlayerNativeUIPrimingModalTimeSinceLastPresented = "com.duckduckgo.ios.duckPlayerduckPlayerNativeUIPrimingModalTimeSinceLastPresented"
         case duckPlayerPillDismissCount = "com.duckduckgo.ios.duckPlayerPillDismissCount"
         case duckPlayerWelcomeMessageShown = "com.duckduckgo.ios.duckPlayerWelcomeMessageShown"
+        case duckPlayerControlsVisible = "com.duckduckgo.ios.duckPlayerControlsVisible"
+        case duckPlayerNativeUIWasUsed = "com.duckduckgo.ios.duckPlayerNativeUIWasUsed"
+        case duckPlayerNativeUISettingsMapped = "com.duckduckgo.ios.duckPlayerNativeUISettingsMapped"
 
         case newTabPageSectionsSettings = "com.duckduckgo.ios.newTabPage.sections.settings"
         case newTabPageShortcutsSettings = "com.duckduckgo.ios.newTabPage.shortcuts.settings"

@@ -26,6 +26,11 @@ import Suggestions
 import Subscription
 import os.log
 
+protocol AddressBarTextFieldFocusDelegate: AnyObject {
+    func addressBarDidFocus(_ addressBarTextField: AddressBarTextField)
+    func addressBarDidLoseFocus(_ addressBarTextField: AddressBarTextField)
+}
+
 final class AddressBarTextField: NSTextField {
 
     var tabCollectionViewModel: TabCollectionViewModel! {
@@ -61,6 +66,7 @@ final class AddressBarTextField: NSTextField {
     private var windowFrameCancellable: AnyCancellable?
 
     weak var onboardingDelegate: OnboardingAddressBarReporting?
+    weak var focusDelegate: AddressBarTextFieldFocusDelegate?
 
     private let searchPreferences: SearchPreferences = SearchPreferences.shared
 
@@ -124,8 +130,8 @@ final class AddressBarTextField: NSTextField {
             .sink { [weak self] contentType in
                 guard let self else { return }
 
-                let newTabFontSize = visualStyle.newTabOrHomePageAddressBarFontSize
-                let defaultFontSize = visualStyle.defaultAddressBarFontSize
+                let newTabFontSize = visualStyle.addressBarStyleProvider.newTabOrHomePageAddressBarFontSize
+                let defaultFontSize = visualStyle.addressBarStyleProvider.defaultAddressBarFontSize
                 self.font = .systemFont(ofSize: contentType == .newtab ? newTabFontSize : defaultFontSize)
             }
     }
@@ -191,8 +197,8 @@ final class AddressBarTextField: NSTextField {
 
     private func updateAttributedStringValue() {
         withUndoDisabled {
-            let newTabFontSize = visualStyle.newTabOrHomePageAddressBarFontSize
-            let defaultFontSize = visualStyle.defaultAddressBarFontSize
+            let newTabFontSize = visualStyle.addressBarStyleProvider.newTabOrHomePageAddressBarFontSize
+            let defaultFontSize = visualStyle.addressBarStyleProvider.defaultAddressBarFontSize
 
             if let attributedString = value.toAttributedString(size: isHomePage ? newTabFontSize : defaultFontSize, isBurner: isBurner) {
                 self.attributedStringValue = attributedString
@@ -385,6 +391,14 @@ final class AddressBarTextField: NSTextField {
             // resign first responder if nothing has changed
             self.window?.makeFirstResponder(nil)
         }
+    }
+
+    override func becomeFirstResponder() -> Bool {
+        let result = super.becomeFirstResponder()
+        if result {
+            focusDelegate?.addressBarDidFocus(self)
+        }
+        return result
     }
 
     private func updateTabUrlWithUrl(_ providedUrl: URL, userEnteredValue: String, downloadRequested: Bool, suggestion: Suggestion?) {
@@ -966,6 +980,7 @@ extension AddressBarTextField: NSTextFieldDelegate {
     func controlTextDidEndEditing(_ obj: Notification) {
         suggestionContainerViewModel?.clearUserStringValue()
         hideSuggestionWindow()
+        focusDelegate?.addressBarDidLoseFocus(self)
     }
 
     func controlTextDidChange(_ obj: Notification) {

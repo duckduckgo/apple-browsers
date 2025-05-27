@@ -27,6 +27,8 @@ protocol TabStyleProviding {
     var shouldShowSShapedTab: Bool { get }
     var selectedTabColor: NSColor { get }
     var isRoundedBackgroundPresentOnHover: Bool { get }
+    var tabSpacing: CGFloat { get }
+    var applyTabShadow: Bool { get }
 }
 
 final class LegacyTabStyleProvider: TabStyleProviding {
@@ -38,6 +40,8 @@ final class LegacyTabStyleProvider: TabStyleProviding {
     let shouldShowSShapedTab = false
     let selectedTabColor: NSColor = .navigationBarBackground
     let isRoundedBackgroundPresentOnHover = false
+    let tabSpacing: CGFloat = 0
+    let applyTabShadow: Bool = false
 }
 
 final class NewlineTabStyleProvider: TabStyleProviding {
@@ -52,6 +56,8 @@ final class NewlineTabStyleProvider: TabStyleProviding {
     let pinnedTabHeight: CGFloat = 36
     let shouldShowSShapedTab = true
     let isRoundedBackgroundPresentOnHover = true
+    let tabSpacing: CGFloat = 4.0
+    let applyTabShadow: Bool = true
 
     init(palette: any ColorPalette) {
         self.palette = palette

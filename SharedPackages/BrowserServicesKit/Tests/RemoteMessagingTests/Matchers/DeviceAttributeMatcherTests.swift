@@ -38,7 +38,7 @@ class DeviceAttributeMatcherTests: XCTestCase {
     }
 
     func testWhenDeviceDoesNotMatchLocaleThenReturnFail() throws {
-        XCTAssertEqual(DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersion, locale: "will-not-match").evaluate(matchingAttribute: LocaleMatchingAttribute(value: ["en-US"], fallback: false)),
+        XCTAssertEqual(DeviceAttributeMatcher(osVersion: AppVersion.shared.osVersion, locale: "will-not-match", formFactor: DevicePlatform.formFactor).evaluate(matchingAttribute: LocaleMatchingAttribute(value: ["en-US"], fallback: false)),
                        .fail)
     }
 
@@ -86,5 +86,28 @@ class DeviceAttributeMatcherTests: XCTestCase {
     func testWhenOsApiMatchingAttributeEmptyThenReturnMatch() throws {
         XCTAssertEqual(DeviceAttributeMatcher().evaluate(matchingAttribute: OSMatchingAttribute(fallback: nil)),
                        .match)
+    }
+
+    func testWhenDeviceMatchesFormFactorThenReturnMatch() throws {
+        let formFactor = DevicePlatform.formFactor
+        XCTAssertEqual(
+            DeviceAttributeMatcher(formFactor: formFactor)
+                .evaluate(matchingAttribute: FormFactorMatchingAttribute(value: [formFactor], fallback: false)),
+                .match)
+    }
+
+    func testWhenDeviceDoesNotMatchFormFactorThenReturnFail() throws {
+        let formFactor = DevicePlatform.formFactor
+        XCTAssertEqual(
+            DeviceAttributeMatcher(formFactor: formFactor)
+                .evaluate(matchingAttribute: FormFactorMatchingAttribute(value: ["SomeOtherDevice"], fallback: false)),
+            .fail)
+    }
+
+    func testWhenFormFactorMatchingAttributeIsEmptyThenReturnFail() throws {
+        XCTAssertEqual(
+            DeviceAttributeMatcher()
+                .evaluate(matchingAttribute: FormFactorMatchingAttribute(value: [], fallback: false)),
+            .fail)
     }
 }

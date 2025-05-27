@@ -21,7 +21,7 @@ public class ActionsHandler {
 
     var captchaTransactionId: CaptchaTransactionId?
 
-    let step: Step
+    public let step: Step
 
     public init(step: Step) {
         self.step = step

@@ -81,6 +81,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private let crashReporter = CrashReporter()
 #endif
 
+    let keyValueStore: ThrowingKeyValueStoring
+
     let faviconManager: FaviconManager
     let pinnedTabsManager = PinnedTabsManager()
     let pinnedTabsManagerProvider: PinnedTabsManagerProviding!
@@ -89,6 +91,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let internalUserDecider: InternalUserDecider
     private var isInternalUserSharingCancellable: AnyCancellable?
     let featureFlagger: FeatureFlagger
+    let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     let featureFlagOverridesPublishingHandler = FeatureFlagOverridesPublishingHandler<FeatureFlag>()
     private var appIconChanger: AppIconChanger!
     private var autoClearHandler: AutoClearHandler!
@@ -203,6 +206,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         do {
+            keyValueStore = try KeyValueFileStore(location: URL.sandboxApplicationSupportURL, name: "AppKeyValueStore")
+        } catch {
+            PixelKit.fire(DebugEvent(GeneralPixel.keyValueFileStoreInitError, error: error))
+            Thread.sleep(forTimeInterval: 1)
+            fatalError("Could not prepare key value store: \(error.localizedDescription)")
+        }
+
+        do {
             let encryptionKey = AppVersion.runType.requiresEnvironment ? try keyStore.readKey() : nil
             fileStore = EncryptedFileStore(encryptionKey: encryptionKey)
         } catch {
@@ -270,7 +281,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         configurationManager = ConfigurationManager(store: configurationStore)
 
-        featureFlagger = DefaultFeatureFlagger(
+        let featureFlagger = DefaultFeatureFlagger(
             internalUserDecider: internalUserDecider,
             privacyConfigManager: AppPrivacyFeatures.shared.contentBlocking.privacyConfigurationManager,
             localOverrides: FeatureFlagLocalOverrides(
@@ -280,6 +291,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             experimentManager: ExperimentCohortsManager(store: ExperimentsDataStore(), fireCohortAssigned: PixelKit.fireExperimentEnrollmentPixel(subfeatureID:experiment:)),
             for: FeatureFlag.self
         )
+        self.featureFlagger = featureFlagger
+        self.contentScopeExperimentsManager = featureFlagger
 
         let coordinator =  DefaultBrowserAndDockPromptCoordinator(featureFlagger: featureFlagger)
         defaultBrowserAndDockPromptPresenter = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, featureFlagger: featureFlagger)
@@ -357,7 +370,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 remoteMessagingAvailabilityProvider: PrivacyConfigurationRemoteMessagingAvailabilityProvider(
                     privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager
                 ),
-                subscriptionManager: subscriptionAuthV1toV2Bridge
+                subscriptionManager: subscriptionAuthV1toV2Bridge,
+                featureFlagger: self.featureFlagger
             )
             activeRemoteMessageModel = ActiveRemoteMessageModel(remoteMessagingClient: remoteMessagingClient, openURLHandler: { url in
                 WindowControllersManager.shared.showTab(with: .contentFromURL(url, source: .appOpenUrl))
@@ -533,6 +547,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             stateRestorationManager.applicationDidFinishLaunching()
         }
 
+        setUpAutoClearHandler()
+
         BWManager.shared.initCommunication()
 
         if WindowsManager.windows.first(where: { $0 is MainWindow }) == nil,
@@ -587,8 +603,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         TipKitAppEventHandler(featureFlagger: featureFlagger).appDidFinishLaunching()
 
-        setUpAutoClearHandler()
-
         setUpAutofillPixelReporter()
 
         remoteMessagingClient?.startRefreshingRemoteMessages()
@@ -604,12 +618,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         freemiumDBPScanResultPolling = DefaultFreemiumDBPScanResultPolling(dataManager: DataBrokerProtectionManager.shared.dataManager, freemiumDBPUserStateManager: freemiumDBPUserStateManager)
         freemiumDBPScanResultPolling?.startPollingOrObserving()
-
-#if SPARKLE
-        PixelKit.fire(NonStandardEvent(GeneralPixel.launch(isDefault: DefaultBrowserPreferences().isDefault, isAddedToDock: DockCustomizer().isAddedToDock)), frequency: .daily)
-#else
-        PixelKit.fire(NonStandardEvent(GeneralPixel.launch(isDefault: DefaultBrowserPreferences().isDefault, isAddedToDock: nil)), frequency: .daily)
-#endif
     }
 
     private func fireFailedCompilationsPixelIfNeeded() {
@@ -629,6 +637,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidBecomeActive(_ notification: Notification) {
         guard didFinishLaunching else { return }
 
+        fireAppLaunchPixel()
+
         initializeSync()
 
         let freemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp)
@@ -646,6 +656,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Task { @MainActor in
             await subscriptionCookieManager.refreshSubscriptionCookie()
         }
+    }
+
+    private func fireAppLaunchPixel() {
+#if SPARKLE
+        PixelKit.fire(NonStandardEvent(GeneralPixel.launch(isDefault: DefaultBrowserPreferences().isDefault, isAddedToDock: DockCustomizer().isAddedToDock)), frequency: .daily)
+#else
+        PixelKit.fire(NonStandardEvent(GeneralPixel.launch(isDefault: DefaultBrowserPreferences().isDefault, isAddedToDock: nil)), frequency: .daily)
+#endif
     }
 
     private func initializeSync() {
@@ -779,6 +797,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             dataProvidersSource: syncDataProviders,
             errorEvents: SyncErrorHandler(),
             privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
+            keyValueStore: keyValueStore,
             environment: environment
         )
         syncService.initializeIfNeeded()
@@ -936,6 +955,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 NSApplication.shared.reply(toApplicationShouldTerminate: true)
             }
         }
+        self.autoClearHandler.restoreTabsIfNeeded()
     }
 
     private func setUpAutofillPixelReporter() {

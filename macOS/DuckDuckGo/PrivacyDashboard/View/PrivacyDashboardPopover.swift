@@ -18,6 +18,7 @@
 
 import Cocoa
 import PrivacyDashboard
+import BrowserServicesKit
 
 final class PrivacyDashboardPopover: NSPopover {
 

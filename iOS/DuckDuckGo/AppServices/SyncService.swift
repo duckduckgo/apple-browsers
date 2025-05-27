@@ -40,14 +40,15 @@ final class SyncService {
 
     init(bookmarksDatabase: CoreDataDatabase,
          privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
+         keyValueStore: ThrowingKeyValueStoring,
          application: UIApplication = UIApplication.shared) {
         self.application = application
-#if DEBUG
+
+#if CI
         let defaultEnvironment = ServerEnvironment.development
 #else
         let defaultEnvironment = ServerEnvironment.production
 #endif
-
         let environment = ServerEnvironment(
             UserDefaultsWrapper(
                 key: .syncEnvironment,
@@ -71,6 +72,7 @@ final class SyncService {
             dataProvidersSource: syncDataProviders,
             errorEvents: SyncErrorHandler(),
             privacyConfigurationManager: privacyConfigurationManager,
+            keyValueStore: keyValueStore,
             environment: environment
         )
 

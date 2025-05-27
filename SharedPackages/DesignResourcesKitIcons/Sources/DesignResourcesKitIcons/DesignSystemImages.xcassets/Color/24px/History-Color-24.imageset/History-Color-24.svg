@@ -1,0 +1,16 @@
+<svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <path fill="#FC3" d="M12 2.625a9.375 9.375 0 1 1 0 18.75 9.375 9.375 0 0 1 0-18.75Z"/>
+  <path fill="url(#History-Color-24_svg__a)" d="M12.08 2.625c-4.095 0-7.598 2.46-9.015 5.938h4.703a7.503 7.503 0 0 1 13.075 2.65l.856-.343c-.577-4.645-4.663-8.245-9.618-8.245Z"/>
+  <path fill="url(#History-Color-24_svg__b)" d="M12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12a.625.625 0 1 1 1.25 0 8.75 8.75 0 1 0 .87-3.809c.12.038.248.059.38.059h3.125a.625.625 0 1 1 0 1.25H4.5A2.5 2.5 0 0 1 2 7V3.25a.625.625 0 1 1 1.25 0V7c0 .048.003.095.008.141A9.997 9.997 0 0 1 12 2Z"/>
+  <path fill="#92540C" d="M11.375 6.375a.625.625 0 1 1 1.25 0v5.366l2.942 2.942.022.023a.625.625 0 0 1-.883.883l-.023-.022-3.125-3.125a.625.625 0 0 1-.183-.442V6.375Z"/>
+  <defs>
+    <radialGradient id="History-Color-24_svg__a" cx="0" cy="0" r="1" gradientTransform="matrix(15.6249 0 0 32.3327 5.518 6.986)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFF0C2"/>
+      <stop offset=".822" stop-color="#FFD65C"/>
+    </radialGradient>
+    <linearGradient id="History-Color-24_svg__b" x1="5.438" x2="18.563" y1="4.188" y2="19.813" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#C18010"/>
+      <stop offset="1" stop-color="#92540C"/>
+    </linearGradient>
+  </defs>
+</svg>

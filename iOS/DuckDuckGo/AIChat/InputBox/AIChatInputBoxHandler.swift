@@ -19,48 +19,29 @@
 
 import Combine
 import SwiftUI
-
-protocol AIChatInputBoxHandling {
-    // Publishers
-    var didPressFireButton: PassthroughSubject<Void, Never> { get }
-    var didPressNewChatButton: PassthroughSubject<Void, Never> { get }
-    var didSubmitText: PassthroughSubject<String, Never> { get }
-    var didPressStopGeneratingButton: PassthroughSubject<Void, Never> { get }
-
-    var aiChatStatus: AIChatStatusValue { get set }
-
-    // Methods
-    func fireButtonPressed()
-    func newChatButtonPressed()
-    func submitText(_ text: String)
-}
-
-enum AIChatStatusValue: String, Codable {
-    case startStreamNewPrompt = "start_stream:new_prompt"
-    case loading
-    case streaming
-    case error
-    case ready
-    case blocked
-    case unknown
-}
-
-struct AIChatStatus: Codable {
-    let status: AIChatStatusValue
-}
+import AIChat
 
 final class AIChatInputBoxHandler: AIChatInputBoxHandling {
     let didPressFireButton = PassthroughSubject<Void, Never>()
     let didPressNewChatButton = PassthroughSubject<Void, Never>()
     let didPressStopGeneratingButton = PassthroughSubject<Void, Never>()
-    let didSubmitText = PassthroughSubject<String, Never>()
+    let didSubmitPrompt = PassthroughSubject<String, Never>()
+    let didSubmitQuery = PassthroughSubject<String, Never>()
 
-    @MainActor
-    var aiChatStatus: AIChatStatusValue = .unknown {
+    @MainActor @Published var aiChatInputBoxVisibility: AIChatInputBoxVisibility = .unknown {
+        didSet {
+            inputBoxViewModel.visibility = aiChatInputBoxVisibility
+        }
+    }
+
+    @MainActor @Published var aiChatStatus: AIChatStatusValue = .unknown {
         didSet {
             updateStatus()
         }
     }
+
+    var aiChatStatusPublisher: Published<AIChatStatusValue>.Publisher { $aiChatStatus }
+    var aiChatInputBoxVisibilityPublisher: Published<AIChatInputBoxVisibility>.Publisher { $aiChatInputBoxVisibility }
 
     private let inputBoxViewModel: AIChatInputBoxViewModel
     private var cancellables = Set<AnyCancellable>()
@@ -84,12 +65,17 @@ final class AIChatInputBoxHandler: AIChatInputBoxHandling {
             }
             .store(in: &cancellables)
 
-        inputBoxViewModel.didSubmitText
+        inputBoxViewModel.didSubmitQuery
             .sink { [weak self] text in
-                self?.didSubmitText.send(text)
+                self?.didSubmitQuery.send(text)
             }
             .store(in: &cancellables)
 
+        inputBoxViewModel.didSubmitPrompt
+            .sink { [weak self] text in
+                self?.didSubmitPrompt.send(text)
+            }
+            .store(in: &cancellables)
         inputBoxViewModel.didPressStopGenerating
             .sink { [weak self] _ in
                 self?.didPressStopGeneratingButton.send()
@@ -109,18 +95,5 @@ final class AIChatInputBoxHandler: AIChatInputBoxHandling {
                 inputBoxViewModel.state = .unknown
             }
         }
-    }
-
-    // MARK: - Public Methods
-    func fireButtonPressed() {
-        inputBoxViewModel.fireButtonPressed()
-    }
-
-    func newChatButtonPressed() {
-        inputBoxViewModel.newChatButtonPressed()
-    }
-
-    func submitText(_ text: String) {
-        inputBoxViewModel.submitText(text)
     }
 }

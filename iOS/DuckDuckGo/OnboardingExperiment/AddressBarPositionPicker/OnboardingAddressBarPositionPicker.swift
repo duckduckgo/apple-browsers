@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import DesignResourcesKitIcons
 
 struct OnboardingAddressBarPositionPicker: View {
     @StateObject private var viewModel = OnboardingAddressBarPositionPickerViewModel()
@@ -124,10 +125,18 @@ extension OnboardingAddressBarPositionPicker.AddressBarPositionButton {
         @ViewBuilder
         private var selectionOverlay: some View {
             if isSelected {
-                Image(.checkShape)
+                Image(uiImage: DesignSystemImages.Glyphs.Size24.checkSolid)
+                    .renderingMode(.template)
                     .resizable()
-                    .frame(width: Metrics.Checkbox.checkSize.width, height: Metrics.Checkbox.checkSize.height)
-                    .foregroundColor(.white)
+                    .background(
+                        Circle()
+                            .fill(Color.white)
+                            // Use smaller frame for checkbox bg to not fill the transparent edge of the glyph
+                            .frame(width: Metrics.Checkbox.checkSize.width, height: Metrics.Checkbox.checkSize.height)
+                    )
+                    .foregroundStyle(Color(designSystemColor: .accent))
+                    .frame(width: Metrics.Checkbox.size, height: Metrics.Checkbox.size)
+                    .clipShape(Circle())
             } else {
                 Circle()
                     .inset(by: Metrics.Checkbox.strokeInset)

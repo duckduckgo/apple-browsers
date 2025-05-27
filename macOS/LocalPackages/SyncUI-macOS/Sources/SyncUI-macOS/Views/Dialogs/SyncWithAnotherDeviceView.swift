@@ -132,7 +132,7 @@ struct SyncWithAnotherDeviceView: View {
                 }
                 .padding(.horizontal, 8)
                 .padding(.vertical, 6)
-                .background(Color(red: 0.94, green: 0.94, blue: 0.94))
+                .background(Color(.blackWhite5))
                 .cornerRadius(8)
             }
             Spacer()

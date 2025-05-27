@@ -349,9 +349,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #else
         AppPrivacyFeatures.shared = AppPrivacyFeatures(
             contentBlocking: AppContentBlocking(
+                privacyConfigurationManager: privacyConfigurationManager,
                 internalUserDecider: internalUserDecider,
                 configurationStore: configurationStore,
-                contentScopeExperimentsManager: contentScopeExperimentsManager,
+                contentScopeExperimentsManager: self.contentScopeExperimentsManager,
                 appearancePreferences: appearancePreferences,
                 startupPreferences: startupPreferences,
                 bookmarkManager: bookmarkManager

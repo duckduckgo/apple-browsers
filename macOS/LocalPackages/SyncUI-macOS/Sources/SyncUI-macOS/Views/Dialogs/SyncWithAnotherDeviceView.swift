@@ -82,7 +82,7 @@ struct SyncWithAnotherDeviceView: View {
 
     fileprivate func pickerView() -> some View {
         return HStack(spacing: 0) {
-            pickerOptionView(imageName: "QR-Icon", title: UserText.syncWithAnotherDeviceShowCodeButton, tag: 0)
+            pickerOptionView(imageName: "QR-Icon", title: UserText.syncWithAnotherDeviceShowQRCodeButton, tag: 0)
             pickerOptionView(imageName: "Keyboard-16D", title: UserText.syncWithAnotherDeviceEnterCodeButton, tag: 1)
         }
         .frame(height: 32)
@@ -116,9 +116,23 @@ struct SyncWithAnotherDeviceView: View {
 
     fileprivate func scanQRCodeView() -> some View {
         return  Group {
-            Text(UserText.syncWithAnotherDeviceShowQRCodeExplanation)
+            HStack(alignment: .center, spacing: 8) {
+                Text(UserText.syncWithAnotherDeviceShowQRCodeExplanationPrefix)
+                HStack(alignment: .center, spacing: 10) {
+                    Text(UserText.syncWithAnotherDeviceShowQRCodeExplanationApp)
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(.primary)
+                    Image(.duckDuckGo128)
+                        .resizable()
+                        .frame(width: 24, height: 24)
+                }
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
+                .background(Color(red: 0.94, green: 0.94, blue: 0.94))
+                .cornerRadius(8)
+            }
             QRCode(string: stringForQRCode, size: CGSize(width: 164, height: 164))
-            Text(UserText.syncWithAnotherDeviceViewTextCode)
+            Text(UserText.syncWithAnotherDeviceUseTextCode)
                 .fontWeight(.semibold)
                 .foregroundColor(Color(.linkBlue))
                 .onTapGesture {
@@ -149,7 +163,7 @@ struct SyncWithAnotherDeviceView: View {
     fileprivate func showTextCodeView() -> some View {
         Group {
             VStack(spacing: 20) {
-                Text(UserText.syncWithAnotherDeviceShowCodeExplanation)
+                Text(UserText.syncWithAnotherDeviceShowCodeToPasteExplanation)
                 Text(codeForDisplayOrPasting)
                     .font(
                     Font.custom("SF Mono", size: 13)

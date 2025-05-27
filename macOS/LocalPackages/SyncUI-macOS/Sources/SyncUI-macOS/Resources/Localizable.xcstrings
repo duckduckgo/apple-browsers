@@ -3419,6 +3419,18 @@
         }
       }
     },
+    "preferences.sync.sync-with-another-device.show-qr-code-button" : {
+      "comment" : "Text on show QR code button on Sync with another device dialog",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Show QR Code"
+          }
+        }
+      }
+    },
     "preferences.sync.sync-with-another-device.show-qr-code-explanation" : {
       "comment" : "Sync with another device dialog show qr code explanation",
       "extractionState" : "extracted_with_value",
@@ -3475,6 +3487,42 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Чтобы установить привязку, отсканируйте этот QR-код."
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device.show-qr-code-explanation-app" : {
+      "comment" : "Sync with another device dialog show qr code explanation - app name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo App"
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device.show-qr-code-explanation-prefix" : {
+      "comment" : "Sync with another device dialog show qr code explanation - first part (second part will be the app name)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Scan using the"
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device.use-text-code-link" : {
+      "comment" : "Sync with another device dialog view text code link",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Use Text Code Instead"
           }
         }
       }

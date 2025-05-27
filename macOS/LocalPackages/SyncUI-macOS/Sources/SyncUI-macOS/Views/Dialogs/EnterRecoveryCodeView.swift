@@ -58,7 +58,7 @@ public struct EnterRecoveryCodeView: View {
                     .foregroundColor(Color(.blackWhite60))
                 line()
             }
-            QRCode(string: stringForQRCode, size: CGSize(width: 192, height: 192))
+            QRCode(string: stringForQRCode, desiredSize: 192)
         } buttons: {
             Button(UserText.cancel) {
                 model.endFlow()

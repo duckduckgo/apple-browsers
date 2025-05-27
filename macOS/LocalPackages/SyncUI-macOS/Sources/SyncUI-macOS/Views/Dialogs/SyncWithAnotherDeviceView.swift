@@ -136,7 +136,7 @@ struct SyncWithAnotherDeviceView: View {
                 .cornerRadius(8)
             }
             Spacer()
-            QRCode(string: stringForQRCode, size: CGSize(width: 164, height: 164))
+            QRCode(string: stringForQRCode, desiredSize: 180)
             Spacer()
             Text(UserText.syncWithAnotherDeviceUseTextCode)
                 .fontWeight(.semibold)

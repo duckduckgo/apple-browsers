@@ -124,9 +124,9 @@ struct SyncWithAnotherDeviceView: View {
                 Text(UserText.syncWithAnotherDeviceShowQRCodeExplanationPrefix)
                 HStack(alignment: .center, spacing: 10) {
                     Text(UserText.syncWithAnotherDeviceShowQRCodeExplanationApp)
-                    .font(.system(size: 13, weight: .bold))
-                    .foregroundColor(.primary)
-                    Image(.duckDuckGo128)
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundColor(.primary)
+                    Image(.duckDuckGo24)
                         .resizable()
                         .frame(width: 24, height: 24)
                 }
@@ -135,6 +135,7 @@ struct SyncWithAnotherDeviceView: View {
                 .background(Color(.blackWhite5))
                 .cornerRadius(8)
             }
+            .padding(.top, 16)
             Spacer()
             QRCode(string: stringForQRCode, desiredSize: 180)
             Spacer()
@@ -143,7 +144,7 @@ struct SyncWithAnotherDeviceView: View {
                 .foregroundColor(Color(.linkBlue))
                 .onTapGesture {
                     showQRCode = false
-                }
+                }.padding(.bottom, 16)
         }
     }
 

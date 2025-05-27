@@ -269,7 +269,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 fatalError("Could not create Bookmarks database stack: \(error.localizedDescription)")
             }
 
-
             bookmarkDatabase.db.loadStore { context, error in
                 guard let context = context else {
                     PixelKit.fire(DebugEvent(GeneralPixel.bookmarksCouldNotLoadDatabase(error: error)))

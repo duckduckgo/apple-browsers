@@ -162,9 +162,7 @@ final class DefaultOmniBarView: UIView {
         backButton.setImage(DesignSystemImages.Glyphs.Size24.arrowLeft, for: .normal)
         forwardButton.setImage(DesignSystemImages.Glyphs.Size24.arrowRight, for: .normal)
         dismissButton.setImage(DesignSystemImages.Glyphs.Size24.arrowLeftSmall, for: .normal)
-
-        // This isn't actually used but just in case
-        refreshButton.setImage(DesignSystemImages.Glyphs.Size24.reload, for: .normal)
+        refreshButton.setImage(DesignSystemImages.Glyphs.Size24.reloadSmall, for: .normal)
 
         // Cancel button is text and not even used
         // Accessory button set elsewhere

@@ -404,6 +404,8 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
 
         settingsButtonView.setImage(DesignSystemImages.Glyphs.Size24.settings)
         UpdatedOmniBarView.setUpCommonProperties(for: settingsButtonView)
+        
+        refreshButton.setImage(DesignSystemImages.Glyphs.Size24.reloadSmall, for: .normal)
 
         progressView?.hide()
 

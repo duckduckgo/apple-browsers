@@ -95,11 +95,7 @@ extension DefaultSubscriptionManager {
         let tokenStorageV2 = SubscriptionTokenKeychainStorageV2(keychainType: keychainType) { _, error in
             Logger.subscription.error("Failed to remove AuthV2 token container : \(error.localizedDescription, privacy: .public)")
         }
-        if let tokenContainer = try? tokenStorageV2.getTokenContainer() {
-            Logger.subscription.debug("Cleaning up Auth V2 token")
-            try? tokenStorageV2.saveTokenContainer(nil)
-            subscriptionEndpointService.clearSubscription()
-        }
+        tokenStorageV2.cleanupIfNeeded(subscriptionEndpointService: subscriptionEndpointService)
     }
 }
 

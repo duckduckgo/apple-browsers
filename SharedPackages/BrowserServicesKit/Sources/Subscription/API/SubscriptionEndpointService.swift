@@ -42,7 +42,8 @@ public protocol SubscriptionEndpointService {
     func getProducts() async -> Result<[GetProductsItem], APIServiceError>
     func getSubscriptionFeatures(for subscriptionID: String) async -> Result<GetSubscriptionFeaturesResponse, APIServiceError>
     func getCustomerPortalURL(accessToken: String, externalID: String) async -> Result<GetCustomerPortalURLResponse, APIServiceError>
-
+    func clearSubscription()
+    
     /// Confirms a subscription purchase by validating the provided access token and signature with the backend service.
     ///
     /// This method sends the necessary data to the server to confirm the purchase,

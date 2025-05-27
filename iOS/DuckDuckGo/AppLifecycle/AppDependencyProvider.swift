@@ -149,7 +149,7 @@ final class AppDependencyProvider: DependencyProvider {
                                                                      key: UserDefaultsCacheKey.subscriptionEntitlements,
                                                                      settings: UserDefaultsCacheSettings(defaultExpirationInterval: .minutes(20)))
             let accessTokenStorage = SubscriptionTokenKeychainStorage(keychainType: .dataProtection(.named(subscriptionAppGroup)))
-            let subscriptionEndpointService = DefaultSubscriptionEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment,
+            let subscriptionEndpointService: SubscriptionEndpointService = DefaultSubscriptionEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment,
                                                                                  userAgent: DefaultUserAgentManager.duckDuckGoUserAgent)
             let authService = DefaultAuthEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment,
                                                          userAgent: DefaultUserAgentManager.duckDuckGoUserAgent)
@@ -187,11 +187,7 @@ final class AppDependencyProvider: DependencyProvider {
             subscriptionAuthV1toV2Bridge = subscriptionManager
 
             // Auth V2 cleanup in case of rollback
-            if let tokenContainer = try? tokenStorageV2.getTokenContainer() {
-                Logger.subscription.debug("Cleaning up Auth V2 token")
-                try? tokenStorageV2.saveTokenContainer(nil)
-                subscriptionEndpointService.clearSubscription()
-            }
+            tokenStorageV2.cleanupIfNeeded(subscriptionEndpointService: subscriptionEndpointService)
         } else {
             // V2
             Logger.subscription.debug("Configuring Subscription V2")

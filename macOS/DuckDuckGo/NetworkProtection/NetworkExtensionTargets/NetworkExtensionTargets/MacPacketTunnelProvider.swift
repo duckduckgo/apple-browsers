@@ -589,13 +589,13 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
     @MainActor
     override func startTunnel(options: [String: NSObject]? = nil) async throws {
 
-        try await super.startTunnel(options: options)
-
         if !Self.isAuthV2Enabled {
             // Auth V2 cleanup in case of rollback
             Logger.subscription.debug("Cleaning up Auth V2 token")
             try? tokenStorageV2.saveTokenContainer(nil)
         }
+
+        try await super.startTunnel(options: options)
     }
 
     // MARK: - Pixels

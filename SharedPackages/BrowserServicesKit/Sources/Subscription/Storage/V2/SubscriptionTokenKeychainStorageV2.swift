@@ -178,3 +178,15 @@ extension SubscriptionTokenKeychainStorageV2 {
         return attributes
     }
 }
+
+extension SubscriptionTokenKeychainStorageV2 {
+
+    public func cleanupIfNeeded(subscriptionEndpointService: any SubscriptionEndpointService) {
+        // Auth V2 cleanup in case of rollback
+        if let tokenContainer = try? getTokenContainer() {
+            Logger.subscription.debug("Cleaning up Auth V2 token")
+            try? saveTokenContainer(nil)
+            subscriptionEndpointService.clearSubscription()
+        }
+    }
+}

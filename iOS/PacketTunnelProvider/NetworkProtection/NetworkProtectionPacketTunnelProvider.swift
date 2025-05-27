@@ -483,11 +483,7 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             self.subscriptionManager = nil
 
             // Auth V2 cleanup in case of rollback
-            if let tokenContainer = try? tokenStorageV2.getTokenContainer() {
-                Logger.subscription.debug("Cleaning up Auth V2 token")
-                try? tokenStorageV2.saveTokenContainer(nil)
-                subscriptionEndpointService.clearSubscription()
-            }
+            tokenStorageV2.cleanupIfNeeded(subscriptionEndpointService: subscriptionEndpointService)
         } else {
             // MARK: Subscription V2
             Logger.networkProtection.log("Configure Subscription V2")

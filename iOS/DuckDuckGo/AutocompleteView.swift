@@ -54,7 +54,7 @@ struct AutocompleteView: View {
                                onSuggestionDeleted: model.deleteSuggestion)
 
         }
-        .offset(x: 0, y: -20)
+        .offset(x: 0, y: model.isExperimentalThemingEnabled ? -28 : -20)
         .padding(.bottom, -20)
         .modifier(HideScrollContentBackground())
         .background(Color(designSystemColor: .background))

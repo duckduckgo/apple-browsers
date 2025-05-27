@@ -1959,8 +1959,6 @@
 		56DB9FED2CD2515F001BEC23 /* OnboardingPixelReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56DB9FEB2CD2515F001BEC23 /* OnboardingPixelReporter.swift */; };
 		56EA40292DB7830800B5061E /* LocalizationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56EA40282DB7830800B5061E /* LocalizationTests.swift */; };
 		56EA402A2DB7830800B5061E /* LocalizationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56EA40282DB7830800B5061E /* LocalizationTests.swift */; };
-		56EADE182DCA43340019DC77 /* PrivacyDashboardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56EADE172DCA43340019DC77 /* PrivacyDashboardTests.swift */; };
-		56EADE192DCA43340019DC77 /* PrivacyDashboardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56EADE172DCA43340019DC77 /* PrivacyDashboardTests.swift */; };
 		6590DB552DB7D59F007D6046 /* DuckPlayerTabExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6590DB542DB7D59F007D6046 /* DuckPlayerTabExtensionTests.swift */; };
 		6590DB562DB7D59F007D6046 /* DuckPlayerTabExtensionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6590DB542DB7D59F007D6046 /* DuckPlayerTabExtensionTests.swift */; };
 		7B00997D2B6508B700FE7C31 /* NetworkProtectionProxy in Frameworks */ = {isa = PBXBuildFile; productRef = 7B00997C2B6508B700FE7C31 /* NetworkProtectionProxy */; };
@@ -4557,7 +4555,6 @@
 		56DB9FE82CD24B47001BEC23 /* ContextualOnboardingPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContextualOnboardingPixel.swift; sourceTree = "<group>"; };
 		56DB9FEB2CD2515F001BEC23 /* OnboardingPixelReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingPixelReporter.swift; sourceTree = "<group>"; };
 		56EA40282DB7830800B5061E /* LocalizationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationTests.swift; sourceTree = "<group>"; };
-		56EADE172DCA43340019DC77 /* PrivacyDashboardTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyDashboardTests.swift; sourceTree = "<group>"; };
 		6590DB542DB7D59F007D6046 /* DuckPlayerTabExtensionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuckPlayerTabExtensionTests.swift; sourceTree = "<group>"; };
 		7B0099802B65C6B300FE7C31 /* MacTransparentProxyProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacTransparentProxyProvider.swift; sourceTree = "<group>"; };
 		7B05829D2A812AC000AC3F7C /* NetworkProtectionOnboardingMenu.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NetworkProtectionOnboardingMenu.swift; sourceTree = "<group>"; };
@@ -7858,14 +7855,6 @@
 			path = Localization;
 			sourceTree = "<group>";
 		};
-		56EADE162DCA42D30019DC77 /* PrivacyDashboard */ = {
-			isa = PBXGroup;
-			children = (
-				56EADE172DCA43340019DC77 /* PrivacyDashboardTests.swift */,
-			);
-			path = PrivacyDashboard;
-			sourceTree = "<group>";
-		};
 		7B0A6DF92D47CCDF00FDFDC2 /* ExcludedApps */ = {
 			isa = PBXGroup;
 			children = (
@@ -8789,7 +8778,6 @@
 		AA585D93248FD31400E9A3E2 /* UnitTests */ = {
 			isa = PBXGroup;
 			children = (
-				56EADE162DCA42D30019DC77 /* PrivacyDashboard */,
 				56EA40272DB782D500B5061E /* Localization */,
 				31F25EFD2CC3C9F9002F9084 /* AIChat */,
 				B6A5A28C25B962CB00AA7ADA /* App */,
@@ -13298,7 +13286,6 @@
 				3706FE20293F661700E42796 /* CLLocationManagerMock.swift in Sources */,
 				B6656E0E2B29C733008798A1 /* FileImportViewLocalizationTests.swift in Sources */,
 				B6C843DB2BA1CAB6006FDEC3 /* FilePresenterTests.swift in Sources */,
-				56EADE182DCA43340019DC77 /* PrivacyDashboardTests.swift in Sources */,
 				B6619EF72B10DFF700CD9186 /* InstructionsFormatParserTests.swift in Sources */,
 				3706FE21293F661700E42796 /* DownloadsPreferencesTests.swift in Sources */,
 				3706FE22293F661700E42796 /* FireproofDomainsTests.swift in Sources */,
@@ -15071,7 +15058,6 @@
 				9F982F132B822B7B00231028 /* AddEditBookmarkFolderDialogViewModelTests.swift in Sources */,
 				B630E7FE29C887ED00363609 /* NSErrorAdditionalInfo.swift in Sources */,
 				370270C02C78EB13002E44E4 /* HomePageSettingsModelTests.swift in Sources */,
-				56EADE192DCA43340019DC77 /* PrivacyDashboardTests.swift in Sources */,
 				4B9292BB2667103100AD2C21 /* BookmarkNodeTests.swift in Sources */,
 				4B0219A825E0646500ED7DEA /* WebsiteDataStoreTests.swift in Sources */,
 				AAC9C01E24CB6BEB00AD1325 /* TabCollectionViewModelTests.swift in Sources */,

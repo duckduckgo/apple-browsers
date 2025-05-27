@@ -49,6 +49,14 @@ public protocol SubJobWebRunning: CCFCommunicationDelegate {
              actionsHandler: ActionsHandler?,
              showWebView: Bool) async throws -> ReturnValue
 
+    /// Customization point for a given action when it's expected to run as the next action
+    /// Here we can set the stage, invoke other services, change the retry counts, etc
+    /// By default, the webViewHandler should execute the action
+    ///
+    /// Returns `true` if the action has been executed and we should early return, not passing it to the webViewHandler
+    /// Returns `false` if the action should be passed to the webViewHandler to execute
+    func evaluateActionAndHaltIfNeeded(_ action: Action) async -> Bool
+
     func executeNextStep() async
     func executeCurrentAction() async
 }
@@ -57,7 +65,13 @@ public extension SubJobWebRunning {
 
     // MARK: - Shared functions
 
+    func evaluateActionAndHaltIfNeeded(_ action: Action) async -> Bool {
+        false
+    }
+
     func runNextAction(_ action: Action) async {
+        let stepType = actionsHandler?.step.type
+
         switch action {
         case is GetCaptchaInfoAction:
             stageCalculator.setStage(.captchaParse)
@@ -89,7 +103,9 @@ public extension SubJobWebRunning {
                                                                                      attemptId: stageCalculator.attemptId,
                                                                                      shouldRunNextStep: shouldRunNextStep) {
                 stageCalculator.fireOptOutCaptchaSolve()
-                await webViewHandler?.execute(action: action, data: .solveCaptcha(CaptchaToken(token: captchaData)))
+                await webViewHandler?.execute(action: action,
+                                              ofType: stepType,
+                                              data: .solveCaptcha(CaptchaToken(token: captchaData)))
             } else {
                 await onError(error: DataBrokerProtectionError.captchaServiceError(CaptchaServiceError.nilDataWhenFetchingCaptchaResult))
             }
@@ -110,7 +126,13 @@ public extension SubJobWebRunning {
             }
         }
 
-        await webViewHandler?.execute(action: action, data: .userData(query.profileQuery, self.extractedProfile))
+        if await evaluateActionAndHaltIfNeeded(action) {
+            return
+        }
+
+        await webViewHandler?.execute(action: action,
+                                      ofType: stepType,
+                                      data: .userData(query.profileQuery, self.extractedProfile))
     }
 
     private func runEmailConfirmationAction(action: EmailConfirmationAction) async throws {

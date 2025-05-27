@@ -46,12 +46,13 @@ final class ScriptSourceProviderTests: XCTestCase {
         let expectedCohortData = ContentScopeExperimentData(feature: testExperimentData.parentID, subfeature: "test", cohort: testExperimentData.cohortID)
         let experimentManager = MockContentScopeExperimentManager()
         experimentManager.allActiveContentScopeExperiments = ["test": testExperimentData]
+
         let sourceProvider = DefaultScriptSourceProvider(appSettings: AppSettingsMock(), privacyConfigurationManager: MockPrivacyConfigurationManager(), contentBlockingManager: MockContentBlockerRulesManagerProtocol(), fireproofing: MockFireproofing(), contentScopeExperimentsManager: experimentManager)
 
         let cohorts = try XCTUnwrap(sourceProvider.currentCohorts)
         XCTAssertFalse(cohorts.isEmpty)
         XCTAssertEqual(cohorts[0], expectedCohortData)
-
+        XCTAssertTrue(experimentManager.resolveContentScopeScriptActiveExperimentsCalled)
     }
 
 }

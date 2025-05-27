@@ -259,9 +259,9 @@ final class DataBrokerProtectionDebugViewController: UITableViewController {
     }
 
     private func presentDeleteAllDataAlertController() {
-        let alert = UIAlertController(title: "Delete All PIR Data?", message: "This will remove all data and statistics from the PIR database, and reset your Tester ID.", preferredStyle: .alert)
+        let alert = UIAlertController(title: "Delete All PIR Data?", message: "This will remove all data and statistics from the PIR database, and give you a new tester ID.", preferredStyle: .alert)
         alert.addAction(title: "Delete All Data", style: .destructive) { [weak self] in
-            try? self?.manager.database.deleteProfileData()
+            try? self?.manager.deleteAllData()
             DataBrokerProtectionSettings.incrementDeviceIdentifier()
             self?.tableView.reloadData()
         }

@@ -3061,7 +3061,7 @@
     },
     "preferences.sync.sync-with-another-device.dialog-subtitle1" : {
       "comment" : "Sync with another device dialog subtitle - Instruction with sync menu path item inserted",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3115,6 +3115,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Откройте раздел «%@» в браузере DuckDuckGo на другом устройстве и выберите вариант «Синхронизировать с другим устройством»."
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device.dialog-subtitle2" : {
+      "comment" : "Sync with another device dialog subtitle - Instruction with sync menu path item inserted",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open the DuckDuckGo app on your other device and go to %@."
           }
         }
       }
@@ -3415,6 +3427,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Используйте этот код для привязки к настольному компьютеру."
+          }
+        }
+      }
+    },
+    "preferences.sync.sync-with-another-device.show-code-to-paste-explanation" : {
+      "comment" : "Sync with another device dialog show code explanation",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Paste code in DuckDuckGo App"
           }
         }
       }
@@ -6409,7 +6433,7 @@
     },
     "sync.menu.path" : {
       "comment" : "Sync Menu Path",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -6703,6 +6727,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Синхронизация и резервное копирование сейчас недоступны. Повторите попытку позже."
+          }
+        }
+      }
+    },
+    "sync.with.another.device.path" : {
+      "comment" : "Path to Sync with another device",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Settings › Sync & Backup › Sync With Another Device"
           }
         }
       }

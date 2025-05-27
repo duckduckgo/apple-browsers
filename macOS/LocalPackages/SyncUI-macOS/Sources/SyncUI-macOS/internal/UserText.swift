@@ -97,10 +97,10 @@ enum UserText {
     // Sync with another device dialog
     static let syncWithAnotherDeviceTitle = NSLocalizedString("preferences.sync.sync-with-another-device.dialog-title", bundle: Bundle.module, value: "Sync With Another Device", comment: "Sync with another device dialog title")
     static func syncWithAnotherDeviceSubtitle(syncMenuPath: String) -> String {
-        let localized = NSLocalizedString("preferences.sync.sync-with-another-device.dialog-subtitle1", bundle: Bundle.module, value: "Go to %@ in the DuckDuckGo Browser on another device and select Sync With Another Device.", comment: "Sync with another device dialog subtitle - Instruction with sync menu path item inserted")
+        let localized = NSLocalizedString("preferences.sync.sync-with-another-device.dialog-subtitle2", bundle: Bundle.module, value: "Open the DuckDuckGo app on your other device and go to %@.", comment: "Sync with another device dialog subtitle - Instruction with sync menu path item inserted")
         return String(format: localized, syncMenuPath)
     }
-    static let syncMenuPath = NSLocalizedString("sync.menu.path", bundle: Bundle.module, value: "Settings › Sync & Backup", comment: "Sync Menu Path")
+    static let syncWithAnotherDevicePath = NSLocalizedString("sync.with.another.device.path", bundle: Bundle.module, value: "Settings › Sync & Backup › Sync With Another Device", comment: "Path to Sync with another device")
     static let syncWithAnotherDeviceShowCodeButton = NSLocalizedString("preferences.sync.sync-with-another-device.show-code-button", bundle: Bundle.module, value: "Show Code", comment: "Text on show code button on Sync with another device dialog")
     static let syncWithAnotherDeviceShowQRCodeButton = NSLocalizedString("preferences.sync.sync-with-another-device.show-qr-code-button", bundle: Bundle.module, value: "Show QR Code", comment: "Text on show QR code button on Sync with another device dialog")
     static let syncWithAnotherDeviceEnterCodeButton = NSLocalizedString("preferences.sync.sync-with-another-device.enter-code-button", bundle: Bundle.module, value: "Enter Code", comment: "Text on enter code button on Sync with another device dialog")

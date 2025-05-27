@@ -31,20 +31,24 @@ struct SyncWithAnotherDeviceView: View {
 
     var body: some View {
         SyncDialog(spacing: 20.0) {
-            Image(.syncPair96)
-            SyncUIViews.TextHeader(text: UserText.syncWithAnotherDeviceTitle)
+            VStack(spacing: 8.0) {
+                Image(.syncColor24)
+                SyncUIViews.TextHeader(text: UserText.syncWithAnotherDeviceTitle)
+            }
             if #available(macOS 12.0, *) {
                 Text(syncWithAnotherDeviceInstruction)
+                    .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                     .multilineTextAlignment(.center)
             } else {
-                Text(UserText.syncWithAnotherDeviceSubtitle(syncMenuPath: UserText.syncMenuPath))
+                Text(UserText.syncWithAnotherDeviceSubtitle(syncMenuPath: UserText.syncWithAnotherDevicePath))
                     .fixedSize(horizontal: false, vertical: true)
                     .multilineTextAlignment(.center)
             }
 
+            pickerView()
+
             VStack(spacing: 20) {
-                pickerView()
                 if selectedSegment == 0 {
                     if showQRCode {
                         scanQRCodeView()
@@ -72,10 +76,10 @@ struct SyncWithAnotherDeviceView: View {
 
     @available(macOS 12, *)
     private var syncWithAnotherDeviceInstruction: AttributedString {
-        let baseString = UserText.syncWithAnotherDeviceSubtitle(syncMenuPath: UserText.syncMenuPath)
+        let baseString = UserText.syncWithAnotherDeviceSubtitle(syncMenuPath: UserText.syncWithAnotherDevicePath)
         var instructions = AttributedString(baseString)
-        if let range = instructions.range(of: UserText.syncMenuPath) {
-            instructions[range].font = .system(size: NSFont.systemFontSize, weight: .bold)
+        if let range = instructions.range(of: UserText.syncWithAnotherDevicePath) {
+            instructions[range].foregroundColor = .primary
         }
         return instructions
     }

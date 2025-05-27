@@ -136,16 +136,23 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
         return BannerMessageViewController(
             message: content.message,
             image: content.icon,
-            buttonText: content.primaryButtonTitle,
-            buttonAction: {
-                self.clearStatusUpdateData()
-                self.coordinator.confirmAction(for: .banner)
-                self.bannerDismissedSubject.send()
-            },
+            primaryAction: .init(
+                title: content.primaryButtonTitle,
+                action: {
+                    self.coordinator.confirmAction(for: .banner)
+                    self.dismissBanner()
+                }
+            ),
+            secondaryAction: .init(
+                title: content.secondaryButtonTitle,
+                action: {
+                    self.coordinator.dismissAction(.userInput(prompt: .banner, shouldHidePermanently: true))
+                    self.dismissBanner()
+                }
+            ),
             closeAction: {
-                self.clearStatusUpdateData()
                 self.coordinator.dismissAction(.userInput(prompt: .banner, shouldHidePermanently: false))
-                self.bannerDismissedSubject.send()
+                self.dismissBanner()
             })
     }
 
@@ -171,6 +178,11 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
         let contentView = DefaultBrowserAndDockPromptPopoverView(viewModel: viewModel)
 
         return NSHostingController(rootView: contentView)
+    }
+
+    private func dismissBanner() {
+        self.clearStatusUpdateData()
+        self.bannerDismissedSubject.send()
     }
 
     private func clearStatusUpdateData() {

@@ -62227,6 +62227,18 @@
         }
       }
     },
+    "sad.att.banner.button.permanently-dismiss" : {
+      "comment" : "Button action title that appears on a prompt that prevents the prompt from being shown again.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Don’t Ask Again"
+          }
+        }
+      }
+    },
     "sad.att.both.popover.message" : {
       "comment" : "Body of the popover that invites users to set DuckDuckGo as their default browser and add to their Dock",
       "extractionState" : "extracted_with_value",

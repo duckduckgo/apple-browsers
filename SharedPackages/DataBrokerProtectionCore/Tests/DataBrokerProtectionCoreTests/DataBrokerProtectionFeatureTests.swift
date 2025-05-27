@@ -285,29 +285,3 @@ private class MockWKScriptMessage: WKScriptMessage {
         super.init()
     }
 }
-
-private class MockWKScriptMessage: WKScriptMessage {
-
-    let mockedName: String
-    let mockedBody: Any
-    let mockedWebView: WKWebView?
-
-    override var name: String {
-        return mockedName
-    }
-
-    override var body: Any {
-        return mockedBody
-    }
-
-    override var webView: WKWebView? {
-        return mockedWebView
-    }
-
-    init(name: String = "", body: Any = "", webView: WKWebView? = nil) {
-        self.mockedName = name
-        self.mockedBody = body
-        self.mockedWebView = webView
-        super.init()
-    }
-}

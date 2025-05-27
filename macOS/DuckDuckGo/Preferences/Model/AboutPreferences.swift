@@ -98,9 +98,7 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
             if isAtRestartCheckpoint {
                 return UpdateButtonConfiguration(
                     title: UserText.restartToUpdate,
-                    action: { [weak self] in
-                        self?.checkForUpdate(userInitiated: true)
-                    },
+                    action: runUpdate,
                     enabled: true)
             } else if hasPendingUpdate {
                 return UpdateButtonConfiguration(

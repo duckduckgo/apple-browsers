@@ -20,6 +20,7 @@ import Common
 import Foundation
 import MaliciousSiteProtection
 import TrackerRadarKit
+import BrowserServicesKit
 
 public protocol SecurityTrust { }
 extension SecTrust: SecurityTrust {}
@@ -47,15 +48,23 @@ public final class PrivacyInfo {
     @Published public var malicousSiteThreatKind: MaliciousSiteProtection.ThreatKind?
     @Published public var isSpecialErrorPageVisible: Bool = false
     @Published public var shouldCheckServerTrust: Bool
+    public var privacyExperimentCohorts: String
     public private(set) var debugFlags: String = ""
 
-    public init(url: URL, parentEntity: Entity?, protectionStatus: ProtectionStatus, malicousSiteThreatKind: MaliciousSiteProtection.ThreatKind? = .none, shouldCheckServerTrust: Bool = false) {
+    public init(url: URL, parentEntity: Entity?, protectionStatus: ProtectionStatus, malicousSiteThreatKind: MaliciousSiteProtection.ThreatKind? = .none, shouldCheckServerTrust: Bool = false, allActiveContentScopeExperiments: Experiments = [:]) {
         self.url = url
         self.parentEntity = parentEntity
         self.protectionStatus = protectionStatus
         self.malicousSiteThreatKind = malicousSiteThreatKind
         self.shouldCheckServerTrust = shouldCheckServerTrust
-
+        var experiments: [String: String] = [:]
+        for feature in allActiveContentScopeExperiments {
+            experiments[feature.key] = feature.value.cohortID
+        }
+        privacyExperimentCohorts = experiments
+            .sorted { $0.key < $1.key }
+            .map { "\($0.key):\($0.value)" }
+            .joined(separator: ",")
         trackerInfo = TrackerInfo()
     }
 

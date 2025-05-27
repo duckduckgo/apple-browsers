@@ -1,6 +1,5 @@
 //
-//  MockContentScopeExperimentManager.swift
-//  DuckDuckGo
+//  VPNTimeFormatter.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -18,14 +17,23 @@
 //
 
 import Foundation
-import BrowserServicesKit
 
-class MockContentScopeExperimentManager: ContentScopeExperimentsManaging {
-    var allActiveContentScopeExperiments: Experiments = [:]
-    var resolveContentScopeScriptActiveExperimentsCalled = false
+public protocol VPNTimeFormatting {
+    func string(from ti: TimeInterval) -> String
+}
 
-    func resolveContentScopeScriptActiveExperiments() -> Experiments {
-        resolveContentScopeScriptActiveExperimentsCalled = true
-        return allActiveContentScopeExperiments
+public final class VPNTimeFormatter: VPNTimeFormatting {
+
+    private let formatter: DateComponentsFormatter
+
+    public init() {
+        formatter = DateComponentsFormatter()
+        formatter.allowedUnits = [.day, .hour, .minute, .second]
+        formatter.unitsStyle = .abbreviated
+        formatter.zeroFormattingBehavior = .dropAll
+    }
+
+    public func string(from ti: TimeInterval) -> String {
+        formatter.string(from: ti) ?? ""
     }
 }

@@ -195,7 +195,7 @@ extension AppDelegate {
     }
 
     @objc func openReportBrokenSite(_ sender: Any?) {
-        let privacyDashboardViewController = PrivacyDashboardViewController(privacyInfo: nil, entryPoint: .report, contentScopeExperimentsManager: self.contentScopeExperimentsManager)
+        let privacyDashboardViewController = PrivacyDashboardViewController(privacyInfo: nil, entryPoint: .report)
         privacyDashboardViewController.sizeDelegate = self
 
         let window = NSWindow(contentViewController: privacyDashboardViewController)
@@ -384,6 +384,29 @@ extension AppDelegate {
         AppearancePreferences.shared.isContinueSetUpVisible = true
         HomePage.Models.ContinueSetUpModel.Settings().clear()
         NotificationCenter.default.post(name: NSApplication.didBecomeActiveNotification, object: NSApp)
+    }
+
+    @objc func showContentScopeExperiments(_ sender: Any?) {
+        let experiments = contentScopeExperimentsManager.allActiveContentScopeExperiments
+
+        let alert = NSAlert()
+        alert.messageText = "Content Scope Experiments"
+
+        var infoText = "Active Experiments:\n"
+        if experiments.isEmpty {
+            infoText += "No active experiments\n"
+        } else {
+            for (key, data) in experiments {
+                infoText += "\nExperiment: \(key)\n"
+                infoText += "Parent ID: \(data.parentID)\n"
+                infoText += "Cohort ID: \(data.cohortID)\n"
+                infoText += "Enrollment Date: \(data.enrollmentDate)\n"
+            }
+        }
+
+        alert.informativeText = infoText
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
     }
 
     @objc func resetDefaultBrowserPrompt(_ sender: Any?) {

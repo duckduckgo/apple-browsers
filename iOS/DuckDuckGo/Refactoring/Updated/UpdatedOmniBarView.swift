@@ -107,7 +107,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     }
     var isRefreshButtonHidden: Bool {
         get { searchAreaView.reloadButton.isHidden }
-        set { searchAreaView.reloadButton.isHidden = true }
+        set { searchAreaView.reloadButton.isHidden = newValue }
     }
 
     var isShareButtonHidden: Bool {

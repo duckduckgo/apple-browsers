@@ -132,6 +132,7 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case partialFormSaves
     case autofillCreditCards
     case autofillCreditCardsOnByDefault
+    case passwordVariantCategorization
 }
 
 public enum DBPSubfeature: String, Equatable, PrivacySubfeature {

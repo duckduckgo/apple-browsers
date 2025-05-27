@@ -325,16 +325,6 @@ extension NetworkProtectionStatusView {
             return nil
         }
 
-        private func timeLapsedString(since date: Date) -> String {
-            let secondsLapsed = Date().timeIntervalSince(date)
-
-            let hours   = Int(secondsLapsed) / 3600
-            let minutes = Int(secondsLapsed) / 60 % 60
-            let seconds = Int(secondsLapsed) % 60
-
-            return String(format: "%02i:%02i:%02i", hours, minutes, seconds)
-        }
-
         /// The feature status (ON/OFF) right below the main icon.
         ///
         var featureStatusDescription: String {

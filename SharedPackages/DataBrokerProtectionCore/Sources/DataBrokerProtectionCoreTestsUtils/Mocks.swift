@@ -323,7 +323,7 @@ public final class WebViewHandlerMock: NSObject, WebViewHandler {
         wasFinishCalled = true
     }
 
-    public func execute(action: Action, data: CCFRequestData) async {
+    public func execute(action: Action, ofType stepType: StepType?, data: CCFRequestData) async {
         switch data {
         case .solveCaptcha:
             wasExecuteCalledForSolveCaptcha = true

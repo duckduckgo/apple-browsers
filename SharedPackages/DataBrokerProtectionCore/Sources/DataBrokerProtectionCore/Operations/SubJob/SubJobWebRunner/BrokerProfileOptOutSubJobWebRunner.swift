@@ -51,11 +51,6 @@ public final class BrokerProfileOptOutSubJobWebRunner: SubJobWebRunning, BrokerP
     public let pixelHandler: EventMapping<DataBrokerProtectionSharedPixels>
     public var postLoadingSiteStartTime: Date?
 
-    // Captcha is a third-party resource that sometimes takes more time to load
-    // if we are not able to get the captcha information. We will try to run the action again
-    // instead of failing the whole thing.
-    //
-    // https://app.asana.com/0/1203581873609357/1205476538384291/f
     public var retriesCountOnError: Int = 3
 
     public init(privacyConfig: PrivacyConfigurationManaging,

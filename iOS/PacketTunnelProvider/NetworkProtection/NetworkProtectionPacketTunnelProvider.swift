@@ -438,6 +438,20 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
 
         var tokenHandler: any SubscriptionTokenHandling
         var entitlementsCheck: (() async -> Result<Bool, Error>)
+
+        // AuthV2 keychain storage
+        let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
+        let tokenStorageV2 = SubscriptionTokenKeychainStorageV2(keychainType: .dataProtection(.named(subscriptionAppGroup))) { accessType, error in
+            Logger.subscription.error("Failed to access keychain, Error: \(error.localizedDescription, privacy: .public)")
+            let parameters = [PixelParameters.privacyProKeychainAccessType: accessType.rawValue,
+                              PixelParameters.privacyProKeychainError: error.localizedDescription,
+                              PixelParameters.source: KeychainErrorSource.vpn.rawValue,
+                              PixelParameters.authVersion: KeychainErrorAuthVersion.v2.rawValue]
+            DailyPixel.fireDailyAndCount(pixel: .privacyProKeychainAccessError,
+                                         pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
+                                         withAdditionalParameters: parameters)
+        }
+
         Self.isAuthV2Enabled = settings.isAuthV2Enabled
         if !Self.isAuthV2Enabled {
             // MARK: Subscription V1
@@ -467,6 +481,13 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             tokenHandler = NetworkProtectionKeychainTokenStore(accessTokenProvider: accessTokenProvider)
             entitlementsCheck = { return await Self.entitlementCheck(accountManager: accountManager) }
             self.subscriptionManager = nil
+
+            // Auth V2 cleanup in case of rollback
+            if let tokenContainer = try? tokenStorageV2.getTokenContainer() {
+                Logger.subscription.debug("Cleaning up Auth V2 token")
+                try? tokenStorageV2.saveTokenContainer(nil)
+                subscriptionEndpointService.clearSubscription()
+            }
         } else {
             // MARK: Subscription V2
             Logger.networkProtection.log("Configure Subscription V2")
@@ -474,19 +495,8 @@ final class NetworkProtectionPacketTunnelProvider: PacketTunnelProvider {
             let authService = DefaultOAuthService(baseURL: authEnvironment.url,
                                                   apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent))
 
-            // keychain storage
-            let subscriptionAppGroup = Bundle.main.appGroup(bundle: .subs)
-            let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainType: .dataProtection(.named(subscriptionAppGroup))) { accessType, error in
-                let parameters = [PixelParameters.privacyProKeychainAccessType: accessType.rawValue,
-                                  PixelParameters.privacyProKeychainError: error.localizedDescription,
-                                  PixelParameters.source: KeychainErrorSource.vpn.rawValue,
-                                  PixelParameters.authVersion: KeychainErrorAuthVersion.v2.rawValue]
-                DailyPixel.fireDailyAndCount(pixel: .privacyProKeychainAccessError,
-                                             pixelNameSuffixes: DailyPixel.Constant.legacyDailyPixelSuffixes,
-                                             withAdditionalParameters: parameters)
-            }
             let legacyAccountStorage = SubscriptionTokenKeychainStorage(keychainType: .dataProtection(.named(subscriptionAppGroup)))
-            let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
+            let authClient = DefaultOAuthClient(tokensStorage: tokenStorageV2,
                                                 legacyTokenStorage: legacyAccountStorage,
                                                 authService: authService)
             let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: DefaultUserAgentManager.duckDuckGoUserAgent),

@@ -127,7 +127,7 @@ final class AppDependencyProvider: DependencyProvider {
         var authenticationStateProvider: (any SubscriptionAuthenticationStateProvider)!
 
         let tokenStorageV2 = SubscriptionTokenKeychainStorageV2(keychainType: .dataProtection(.named(subscriptionAppGroup))) { accessType, error in
-
+            Logger.subscription.error("Failed to access keychain, Error: \(error.localizedDescription, privacy: .public)")
             let parameters = [PixelParameters.privacyProKeychainAccessType: accessType.rawValue,
                               PixelParameters.privacyProKeychainError: error.localizedDescription,
                               PixelParameters.source: KeychainErrorSource.browser.rawValue,
@@ -186,8 +186,8 @@ final class AppDependencyProvider: DependencyProvider {
             authenticationStateProvider = subscriptionManager
             subscriptionAuthV1toV2Bridge = subscriptionManager
 
-            let tokenContainer = try? tokenStorageV2.getTokenContainer()
-            if tokenContainer != nil {
+            // Auth V2 cleanup in case of rollback
+            if let tokenContainer = try? tokenStorageV2.getTokenContainer() {
                 Logger.subscription.debug("Cleaning up Auth V2 token")
                 try? tokenStorageV2.saveTokenContainer(nil)
                 subscriptionEndpointService.clearSubscription()

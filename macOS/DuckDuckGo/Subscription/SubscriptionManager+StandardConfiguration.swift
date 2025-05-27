@@ -92,10 +92,14 @@ extension DefaultSubscriptionManager {
         accountManager.delegate = self
 
         // Auth V2 cleanup in case of rollback
-        let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainType: keychainType) { _, error in
+        let tokenStorageV2 = SubscriptionTokenKeychainStorageV2(keychainType: keychainType) { _, error in
             Logger.subscription.error("Failed to remove AuthV2 token container : \(error.localizedDescription, privacy: .public)")
         }
-        try? tokenStorage.saveTokenContainer(nil)
+        if let tokenContainer = try? tokenStorageV2.getTokenContainer() {
+            Logger.subscription.debug("Cleaning up Auth V2 token")
+            try? tokenStorageV2.saveTokenContainer(nil)
+            subscriptionEndpointService.clearSubscription()
+        }
     }
 }
 
@@ -131,6 +135,7 @@ extension DefaultSubscriptionManagerV2 {
         let authService = DefaultOAuthService(baseURL: environment.authEnvironment.url,
                                               apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: UserAgent.duckDuckGoUserAgent()))
         let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainType: keychainType) { accessType, error in
+            Logger.subscription.error("Failed to access keychain, Error: \(error.localizedDescription, privacy: .public)")
             PixelKit.fire(PrivacyProErrorPixel.privacyProKeychainAccessError(accessType: accessType,
                                                                              accessError: error,
                                                                              source: KeychainErrorSource.shared,

@@ -29,12 +29,12 @@ protocol TutorialSettings: AnyObject {
 
 final class DefaultTutorialSettings: TutorialSettings {
 
-    struct Constants {
+    private struct Constants {
         // Set the build number of the last build that didn't force them to appear to force them to appear.
         static let onboardingVersion = 1
     }
 
-    struct Keys {
+    private struct Keys {
         static let lastVersionSeen = "com.duckduckgo.tutorials.lastVersionSeen"
         static let hasSeenOnboarding = "com.duckduckgo.tutorials.hasSeenOnboarding"
     }

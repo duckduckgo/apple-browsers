@@ -33,6 +33,7 @@ let package = Package(
     ],
     dependencies: [
         .package(path: "../BrowserServicesKit"),
+        .package(url: "https://github.com/duckduckgo/DesignResourcesKit", exact: "5.0.0")
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.
@@ -42,6 +43,7 @@ let package = Package(
             dependencies: [
                 .product(name: "BrowserServicesKit", package: "BrowserServicesKit"),
                 .product(name: "Common", package: "BrowserServicesKit"),
+                "DesignResourcesKit",
             ],
             resources: [
                 .process("Resources")
@@ -53,7 +55,8 @@ let package = Package(
         .testTarget(
             name: "OnboardingTests",
             dependencies: [
-                "Onboarding"
+                "Onboarding",
+                "DesignResourcesKit"
             ]
         )
     ]

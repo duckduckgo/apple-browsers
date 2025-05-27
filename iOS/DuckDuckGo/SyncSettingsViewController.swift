@@ -508,7 +508,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     func controllerDidError(_ error: SyncConnectionError, underlyingError: (any Error)?) {
         switch error {
         case .unableToRecognizeCode:
-            handleError(.unableToRecognizeCode, error: underlyingError, event: .syncSignupError)
+            handleError(.unableToRecognizeCode, error: underlyingError, event: nil)
         case .failedToFetchPublicKey, .failedToTransmitExchangeRecoveryKey, .failedToFetchConnectRecoveryKey, .failedToLogIn, .failedToTransmitExchangeKey, .failedToFetchExchangeRecoveryKey, .failedToTransmitConnectRecoveryKey:
             handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncLoginError)
         case .failedToCreateAccount:

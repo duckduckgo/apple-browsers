@@ -680,7 +680,7 @@ class BookmarksAndFavoritesTests: UITestCase {
         if #available(macOS 15.0, *) {
             deleteContextMenuItemCoordinate = bookmarkBarBookmarkIcon.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 9.0))
         } else {
-            deleteContextMenuItemCoordinate = bookmarkBarBookmarkIcon.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 10.0))
+            deleteContextMenuItemCoordinate = bookmarkBarBookmarkIcon.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 10.5))
         }
 
         bookmarkBarBookmarkIconCoordinate.rightClick()

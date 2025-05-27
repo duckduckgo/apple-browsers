@@ -53,7 +53,7 @@ private enum Metrics {
     }
     enum Checkbox {
         static let size: CGFloat = 24.0
-        static let checkSize: CGSize = CGSize(width: 12, height: 10)
+        static let checkSize: CGFloat = 16.0
         static let strokeInset = 0.75
         static let strokeWidth = 1.5
     }
@@ -132,7 +132,7 @@ extension OnboardingAddressBarPositionPicker.AddressBarPositionButton {
                         Circle()
                             .fill(Color.white)
                             // Use smaller frame for checkbox bg to not fill the transparent edge of the glyph
-                            .frame(width: Metrics.Checkbox.checkSize.width, height: Metrics.Checkbox.checkSize.height)
+                            .frame(width: Metrics.Checkbox.checkSize, height: Metrics.Checkbox.checkSize)
                     )
                     .foregroundStyle(Color(designSystemColor: .accent))
                     .frame(width: Metrics.Checkbox.size, height: Metrics.Checkbox.size)

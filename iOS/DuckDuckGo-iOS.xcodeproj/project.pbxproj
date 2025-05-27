@@ -2325,6 +2325,7 @@
 		85AE668D2097206E0014CF04 /* NotificationView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = NotificationView.xib; sourceTree = "<group>"; };
 		85AE668F209724120014CF04 /* NotificationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationView.swift; sourceTree = "<group>"; };
 		85AFA1202B45D14F0028A504 /* BookmarksMigrationAssertionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookmarksMigrationAssertionTests.swift; sourceTree = "<group>"; };
+		85B6ABB62DE5E4CC009C85C7 /* Onboarding */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = Onboarding; path = ../SharedPackages/Onboarding; sourceTree = SOURCE_ROOT; };
 		85B7CD8C2DCA3304000C7B7B /* MessageNavigator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MessageNavigator.swift; sourceTree = "<group>"; };
 		85B9814D2B5EB618009AC9A6 /* SwipeTabsCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeTabsCoordinator.swift; sourceTree = "<group>"; };
 		85B9CB8821AEBDD5009001F1 /* FavoriteHomeCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoriteHomeCell.swift; sourceTree = "<group>"; };
@@ -4428,6 +4429,7 @@
 		31E69A60280F4BAD00478327 /* LocalPackages */ = {
 			isa = PBXGroup;
 			children = (
+				85B6ABB62DE5E4CC009C85C7 /* Onboarding */,
 				4BE4D0BB2D8D2DFC00D63840 /* BrowserServicesKit */,
 				9D87088B2DAD5075007E22D4 /* DataBrokerProtectionCore */,
 				9D6891E52DAD25B600819662 /* DataBrokerProtection-iOS */,

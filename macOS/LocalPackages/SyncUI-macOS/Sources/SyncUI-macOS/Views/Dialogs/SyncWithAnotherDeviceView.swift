@@ -119,7 +119,7 @@ struct SyncWithAnotherDeviceView: View {
     }
 
     fileprivate func scanQRCodeView() -> some View {
-        return  Group {
+        return VStack(spacing: 16) {
             HStack(alignment: .center, spacing: 8) {
                 Text(UserText.syncWithAnotherDeviceShowQRCodeExplanationPrefix)
                 HStack(alignment: .center, spacing: 10) {
@@ -135,7 +135,9 @@ struct SyncWithAnotherDeviceView: View {
                 .background(Color(red: 0.94, green: 0.94, blue: 0.94))
                 .cornerRadius(8)
             }
+            Spacer()
             QRCode(string: stringForQRCode, size: CGSize(width: 164, height: 164))
+            Spacer()
             Text(UserText.syncWithAnotherDeviceUseTextCode)
                 .fontWeight(.semibold)
                 .foregroundColor(Color(.linkBlue))
@@ -166,8 +168,9 @@ struct SyncWithAnotherDeviceView: View {
 
     fileprivate func showTextCodeView() -> some View {
         Group {
-            VStack(spacing: 20) {
+            VStack(spacing: 16) {
                 Text(UserText.syncWithAnotherDeviceShowCodeToPasteExplanation)
+                Spacer()
                 Text(codeForDisplayOrPasting)
                     .font(
                     Font.custom("SF Mono", size: 13)
@@ -184,7 +187,8 @@ struct SyncWithAnotherDeviceView: View {
                             Image(.share)
                             Text(UserText.share)
                         }
-                        .frame(width: 153, height: 28)
+                        .padding(.horizontal, 12)
+                        .frame(height: 28)
                     }
                     Button {
                         model.delegate?.copyCode()
@@ -193,11 +197,13 @@ struct SyncWithAnotherDeviceView: View {
                             Image(.copy)
                             Text(UserText.copy)
                         }
-                        .frame(width: 153, height: 28)
+                        .padding(.horizontal, 12)
+                        .frame(height: 28)
                     }
                 }
                 .frame(width: 348, height: 32)
-                Text(UserText.syncWithAnotherDeviceViewQRCode)
+                Spacer()
+                Text(UserText.syncWithAnotherDeviceUseQRCode)
                     .fontWeight(.semibold)
                     .foregroundColor(Color(.linkBlue))
                     .onTapGesture {

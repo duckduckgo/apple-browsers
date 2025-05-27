@@ -110,8 +110,7 @@ enum UserText {
     static let syncWithAnotherDeviceEnterCodeExplanation = NSLocalizedString("preferences.sync.sync-with-another-device.enter-code-explanation", bundle: Bundle.module, value: "Paste the code here to sync.", comment: "Sync with another device dialog enter code explanation")
     static let syncWithAnotherDeviceShowCodeExplanation = NSLocalizedString("preferences.sync.sync-with-another-device.show-code-explanation", bundle: Bundle.module, value: "Share this code to connect with a desktop machine.", comment: "Sync with another device dialog show code explanation")
     static let syncWithAnotherDeviceShowCodeToPasteExplanation = NSLocalizedString("preferences.sync.sync-with-another-device.show-code-to-paste-explanation", bundle: Bundle.module, value: "Paste code in DuckDuckGo App", comment: "Sync with another device dialog show code explanation")
-    static let syncWithAnotherDeviceViewQRCode = NSLocalizedString("preferences.sync.sync-with-another-device.view-qr-code-link", bundle: Bundle.module, value: "View QR Code", comment: "Sync with another device dialog view qr code link")
-    static let syncWithAnotherDeviceViewTextCode = NSLocalizedString("preferences.sync.sync-with-another-device.view-text-code-link", bundle: Bundle.module, value: "View Text Code", comment: "Sync with another device dialog view text code link")
+    static let syncWithAnotherDeviceUseQRCode = NSLocalizedString("preferences.sync.sync-with-another-device.use-qr-code-link", bundle: Bundle.module, value: "Use QR Code Instead", comment: "Sync with another device dialog use qr code link")
     static let syncWithAnotherDeviceUseTextCode = NSLocalizedString("preferences.sync.sync-with-another-device.use-text-code-link", bundle: Bundle.module, value: "Use Text Code Instead", comment: "Sync with another device dialog view text code link")
 
     // Save recovery PDF dialog

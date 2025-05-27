@@ -3539,6 +3539,18 @@
         }
       }
     },
+    "preferences.sync.sync-with-another-device.use-qr-code-link" : {
+      "comment" : "Sync with another device dialog use qr code link",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Use QR Code Instead"
+          }
+        }
+      }
+    },
     "preferences.sync.sync-with-another-device.use-text-code-link" : {
       "comment" : "Sync with another device dialog view text code link",
       "extractionState" : "extracted_with_value",
@@ -3553,7 +3565,7 @@
     },
     "preferences.sync.sync-with-another-device.view-qr-code-link" : {
       "comment" : "Sync with another device dialog view qr code link",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -3613,7 +3625,7 @@
     },
     "preferences.sync.sync-with-another-device.view-text-code-link" : {
       "comment" : "Sync with another device dialog view text code link",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {

@@ -72,7 +72,13 @@ final class VPNAppEventsHandler {
         let loginItemsManager = LoginItemsManager()
 
         Task { @MainActor in
-            restartNetworkProtectionIfVersionChanged(using: loginItemsManager)
+            let canStartVPN = (try? await featureGatekeeper.canStartVPN()) ?? false
+
+            if canStartVPN {
+                restartNetworkProtectionIfVersionChanged(using: loginItemsManager)
+            } else {
+                try? await self.uninstaller.uninstall(removeSystemExtension: false, showNotification: false)
+            }
         }
     }
 

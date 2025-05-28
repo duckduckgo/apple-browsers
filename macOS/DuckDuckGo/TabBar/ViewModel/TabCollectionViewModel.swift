@@ -139,7 +139,7 @@ final class TabCollectionViewModel: NSObject {
         selectionIndex: TabIndex = .unpinned(0),
         pinnedTabsManagerProvider: PinnedTabsManagerProviding?,
         burnerMode: BurnerMode = .regular,
-        startupPreferences: StartupPreferences = StartupPreferences.shared,
+        startupPreferences: StartupPreferences = NSApp.delegateTyped.startupPreferences,
         tabsPreferences: TabsPreferences = TabsPreferences.shared
     ) {
         self.tabCollection = tabCollection

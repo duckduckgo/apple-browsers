@@ -1,5 +1,5 @@
 //
-//  MockNewTabPageSectionsAvailabilityProvider.swift
+//  MockNewTabPagePrivacyStatsVisibilityProvider.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,10 +16,9 @@
 //  limitations under the License.
 //
 
-import Combine
+import Foundation
 import NewTabPage
 
-final class MockNewTabPageSectionsAvailabilityProvider: NewTabPageSectionsAvailabilityProviding {
-    var isPrivacyStatsAvailable: Bool = true
-    var isRecentActivityAvailable: Bool = false
+final class MockNewTabPagePrivacyStatsVisibilityProvider: NewTabPagePrivacyStatsVisibilityProviding {
+    var isPrivacyStatsVisible: Bool = true
 }

@@ -28,7 +28,7 @@ final class BurnerHomePageViewController: NSViewController {
         fatalError("BurnerHomePageViewController: Bad initializer")
     }
 
-    init(appearancePreferences: AppearancePreferences = AppearancePreferences.shared) {
+    init(appearancePreferences: AppearancePreferences = NSApp.delegateTyped.appearancePreferences) {
         self.appearancePreferences = appearancePreferences
 
         super.init(nibName: nil, bundle: nil)

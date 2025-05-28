@@ -18,28 +18,43 @@
 
 import BrowserServicesKit
 import Common
+import PersistenceTestingUtils
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 class AutoconsentMessageProtocolTests: XCTestCase {
 
-    @MainActor
-    let userScript = AutoconsentUserScript(
-        scriptSource: ScriptSourceProvider(configStorage: MockConfigurationStore(),
-                                           privacyConfigurationManager: MockPrivacyConfigurationManager(),
-                                           webTrackingProtectionPreferences: WebTrackingProtectionPreferences.shared, // mock
-                                           contentBlockingManager: ContentBlockerRulesManagerMock(),
-                                           trackerDataManager: TrackerDataManager(etag: ConfigurationStore().loadEtag(for: .trackerDataSet),
-                                                                                  data: ConfigurationStore().loadData(for: .trackerDataSet),
-                                                                                  embeddedDataProvider: AppTrackerDataSetProvider(),
-                                                                                  errorReporting: nil),
-                                           experimentManager: MockContentScopeExperimentManager(),
-                                           tld: TLD()),
-        config: MockPrivacyConfiguration()
-    )
+    var userScript: AutoconsentUserScript!
 
-    override func setUp() {
-        super.setUp()
+    @MainActor
+    override func setUp() async throws{
+        try await super.setUp()
+
+        let appearancePreferences = AppearancePreferences(keyValueStore: try MockKeyValueFileStore())
+        let dataClearingPreferences = DataClearingPreferences(persistor: MockFireButtonPreferencesPersistor())
+        let startupPreferences = StartupPreferences(
+            persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),
+            appearancePreferences: appearancePreferences,
+            dataClearingPreferences: dataClearingPreferences
+        )
+
+        userScript = AutoconsentUserScript(
+            scriptSource: ScriptSourceProvider(configStorage: MockConfigurationStore(),
+                                               privacyConfigurationManager: MockPrivacyConfigurationManager(),
+                                               webTrackingProtectionPreferences: WebTrackingProtectionPreferences.shared, // mock
+                                               contentBlockingManager: ContentBlockerRulesManagerMock(),
+                                               trackerDataManager: TrackerDataManager(etag: ConfigurationStore().loadEtag(for: .trackerDataSet),
+                                                                                      data: ConfigurationStore().loadData(for: .trackerDataSet),
+                                                                                      embeddedDataProvider: AppTrackerDataSetProvider(),
+                                                                                      errorReporting: nil),
+                                               experimentManager: MockContentScopeExperimentManager(),
+                                               tld: TLD(),
+                                               appearancePreferences: appearancePreferences,
+                                               startupPreferences: startupPreferences
+                                              ),
+            config: MockPrivacyConfiguration()
+        )
+
         CookiePopupProtectionPreferences.shared.isAutoconsentEnabled = true
     }
 

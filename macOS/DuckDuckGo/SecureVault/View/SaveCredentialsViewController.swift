@@ -367,7 +367,7 @@ final class SaveCredentialsViewController: NSViewController {
         let existingCredentials = getExistingCredentialsFrom(credentials)
         evaluateCredentialsAndFirePixels(for: .dismissed, credentials: existingCredentials, backfilled: backfilled)
 
-        guard DataClearingPreferences.shared.isLoginDetectionEnabled else {
+        guard NSApp.delegateTyped.dataClearingPreferences.isLoginDetectionEnabled else {
             notifyDelegate()
             return
         }

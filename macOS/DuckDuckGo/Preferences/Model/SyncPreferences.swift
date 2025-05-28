@@ -176,7 +176,7 @@ final class SyncPreferences: ObservableObject, SyncUI_macOS.ManagementViewModel 
         syncService: DDGSyncing,
         syncBookmarksAdapter: SyncBookmarksAdapter,
         syncCredentialsAdapter: SyncCredentialsAdapter,
-        appearancePreferences: AppearancePreferences = .shared,
+        appearancePreferences: AppearancePreferences = NSApp.delegateTyped.appearancePreferences,
         managementDialogModel: ManagementDialogModel = ManagementDialogModel(),
         userAuthenticator: UserAuthenticating = DeviceAuthenticator.shared,
         syncPausedStateManager: any SyncPausedStateManaging,

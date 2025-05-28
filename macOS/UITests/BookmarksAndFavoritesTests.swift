@@ -678,9 +678,9 @@ class BookmarksAndFavoritesTests: UITestCase {
         let bookmarkBarBookmarkIconCoordinate = bookmarkBarBookmarkIcon.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
         var deleteContextMenuItemCoordinate: XCUICoordinate
         if #available(macOS 15.0, *) {
-            deleteContextMenuItemCoordinate = bookmarkBarBookmarkIcon.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 8.0))
-        } else {
             deleteContextMenuItemCoordinate = bookmarkBarBookmarkIcon.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 9.0))
+        } else {
+            deleteContextMenuItemCoordinate = bookmarkBarBookmarkIcon.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 10.5))
         }
 
         bookmarkBarBookmarkIconCoordinate.rightClick()

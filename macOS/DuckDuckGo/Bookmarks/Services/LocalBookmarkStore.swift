@@ -43,13 +43,14 @@ final class LocalBookmarkStore: BookmarkStore {
                                        index: Int?,
                                        indexInFavoritesArray: Int?)
 
-    convenience init(bookmarkDatabase: BookmarkDatabase) {
+    convenience init(bookmarkDatabase: BookmarkDatabase, favoritesDisplayMode: FavoritesDisplayMode = NSApp.delegateTyped.appearancePreferences.favoritesDisplayMode) {
         self.init(
             contextProvider: {
                 let context = bookmarkDatabase.db.makeContext(concurrencyType: .privateQueueConcurrencyType)
                 context.stalenessInterval = 0
                 return context
             },
+            favoritesDisplayMode: favoritesDisplayMode,
             preFormFactorSpecificFavoritesOrder: bookmarkDatabase.preFormFactorSpecificFavoritesFolderOrder
         )
     }
@@ -57,13 +58,13 @@ final class LocalBookmarkStore: BookmarkStore {
     // Directly used in tests
     init(
         contextProvider: @escaping () -> NSManagedObjectContext,
-        appearancePreferences: AppearancePreferences = .shared,
+        favoritesDisplayMode: FavoritesDisplayMode = .displayNative(.desktop),
         preFormFactorSpecificFavoritesOrder: [String]? = nil
     ) {
         self.contextProvider = contextProvider
         self.preFormFactorSpecificFavoritesOrder = preFormFactorSpecificFavoritesOrder
+        self.favoritesDisplayMode = favoritesDisplayMode
 
-        favoritesDisplayMode = appearancePreferences.favoritesDisplayMode
         migrateToFormFactorSpecificFavoritesFolders()
         removeInvalidBookmarkEntities()
         cacheReadOnlyTopLevelBookmarksFolders()

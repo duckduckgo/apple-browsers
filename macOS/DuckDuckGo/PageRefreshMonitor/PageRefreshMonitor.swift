@@ -29,13 +29,11 @@ extension PageRefreshMonitor {
             SiteBreakageExperimentMetrics.fireTDSExperimentMetric(metricType: .refresh2X, etag: tdsEtag, fireDebugExperiment: { parameters in
                 PixelKit.fire(GeneralPixel.debugBreakageExperiment, frequency: .uniqueByName, withAdditionalParameters: parameters)
             })
-            SiteBreakageExperimentMetrics.fireContentScopeExperimentMetric(metricType: .refresh2X)
         case 3:
             PixelKit.fire(GeneralPixel.pageRefreshThreeTimesWithin20Seconds)
             SiteBreakageExperimentMetrics.fireTDSExperimentMetric(metricType: .refresh3X, etag: tdsEtag, fireDebugExperiment: { parameters in
                 PixelKit.fire(GeneralPixel.debugBreakageExperiment, frequency: .uniqueByName, withAdditionalParameters: parameters)
             })
-            SiteBreakageExperimentMetrics.fireContentScopeExperimentMetric(metricType: .refresh3X)
         default:
             return
         }

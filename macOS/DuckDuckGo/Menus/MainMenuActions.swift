@@ -377,11 +377,12 @@ extension AppDelegate {
     }
 
     @objc func debugResetContinueSetup(_ sender: Any?) {
-        AppearancePreferencesUserDefaultsPersistor().continueSetUpCardsLastDemonstrated = nil
-        AppearancePreferencesUserDefaultsPersistor().continueSetUpCardsNumberOfDaysDemonstrated = 0
-        AppearancePreferences.shared.isContinueSetUpCardsViewOutdated = false
-        AppearancePreferences.shared.continueSetUpCardsClosed = false
-        AppearancePreferences.shared.isContinueSetUpVisible = true
+        let persistor = AppearancePreferencesUserDefaultsPersistor(keyValueStore: keyValueStore)
+        persistor.continueSetUpCardsLastDemonstrated = nil
+        persistor.continueSetUpCardsNumberOfDaysDemonstrated = 0
+        appearancePreferences.isContinueSetUpCardsViewOutdated = false
+        appearancePreferences.continueSetUpCardsClosed = false
+        appearancePreferences.isContinueSetUpVisible = true
         HomePage.Models.ContinueSetUpModel.Settings().clear()
         NotificationCenter.default.post(name: NSApplication.didBecomeActiveNotification, object: NSApp)
     }
@@ -464,15 +465,16 @@ extension AppDelegate {
     }
 
     @objc func resetBookmarks(_ sender: Any?) {
-        LocalBookmarkManager.shared.resetBookmarks()
-        LocalBookmarkManager.shared.sortMode = .manual
-        UserDefaultsWrapper<Bool>(key: .homePageContinueSetUpImport, defaultValue: false).clear()
-        UserDefaultsWrapper<Bool>(key: .showBookmarksBar, defaultValue: false).clear()
-        UserDefaultsWrapper<Bool>(key: .bookmarksBarPromptShown, defaultValue: false).clear()
-        UserDefaultsWrapper<Bool>(key: .centerAlignedBookmarksBar, defaultValue: false).clear()
-        UserDefaultsWrapper<Bool>(key: .showTabsAndBookmarksBarOnFullScreen, defaultValue: false).clear()
+        LocalBookmarkManager.shared.resetBookmarks {
+            LocalBookmarkManager.shared.sortMode = .manual
+            UserDefaultsWrapper<Bool>(key: .homePageContinueSetUpImport, defaultValue: false).clear()
+            UserDefaultsWrapper<Bool>(key: .showBookmarksBar, defaultValue: false).clear()
+            UserDefaultsWrapper<Bool>(key: .bookmarksBarPromptShown, defaultValue: false).clear()
+            UserDefaultsWrapper<Bool>(key: .centerAlignedBookmarksBar, defaultValue: false).clear()
+            UserDefaultsWrapper<Bool>(key: .showTabsAndBookmarksBarOnFullScreen, defaultValue: false).clear()
 
-        AppearancePreferences.shared = AppearancePreferences()
+            self.appearancePreferences.reload()
+        }
     }
 
     @objc func resetPinnedTabs(_ sender: Any?) {
@@ -747,7 +749,7 @@ extension MainViewController {
         //  If the user sets it to "new tabs only" somewhere (e.g. preferences), then it'll be that.
         guard let mainVC = WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController else { return }
 
-        let prefs = AppearancePreferences.shared
+        let prefs = NSApp.delegateTyped.appearancePreferences
         if prefs.showBookmarksBar && prefs.bookmarksBarAppearance == .newTabOnly {
             // show bookmarks bar but don't change the setting
             mainVC.toggleBookmarksBarVisibility()
@@ -1074,9 +1076,21 @@ extension MainViewController {
         }
     }
 
+    @objc func debugResetContinueSetup(_ sender: Any?) {
+        let persistor = AppearancePreferencesUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore)
+        persistor.continueSetUpCardsLastDemonstrated = nil
+        persistor.continueSetUpCardsNumberOfDaysDemonstrated = 0
+        NSApp.delegateTyped.appearancePreferences.isContinueSetUpCardsViewOutdated = false
+        NSApp.delegateTyped.appearancePreferences.continueSetUpCardsClosed = false
+        NSApp.delegateTyped.appearancePreferences.isContinueSetUpVisible = true
+        HomePage.Models.ContinueSetUpModel.Settings().clear()
+        NotificationCenter.default.post(name: NSApplication.didBecomeActiveNotification, object: NSApp)
+    }
+
     @objc func debugShiftNewTabOpeningDate(_ sender: Any?) {
-        AppearancePreferencesUserDefaultsPersistor().continueSetUpCardsLastDemonstrated = (AppearancePreferencesUserDefaultsPersistor().continueSetUpCardsLastDemonstrated ?? Date()).addingTimeInterval(-.day)
-        AppearancePreferences.shared.continueSetUpCardsViewDidAppear()
+        let persistor = AppearancePreferencesUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore)
+        persistor.continueSetUpCardsLastDemonstrated = (persistor.continueSetUpCardsLastDemonstrated ?? Date()).addingTimeInterval(-.day)
+        NSApp.delegateTyped.appearancePreferences.continueSetUpCardsViewDidAppear()
     }
 
     @objc func debugShiftNewTabOpeningDateNtimes(_ sender: Any?) {

@@ -50,9 +50,9 @@ final class NewTabPageCustomizationModel: ObservableObject {
     private var availableCustomImagesCancellable: AnyCancellable?
     private var customBackgroundPixelCancellable: AnyCancellable?
 
-    convenience init(visualStyleManager: VisualStyleManagerProviding) {
+    convenience init(visualStyleManager: VisualStyleManagerProviding, appearancePreferences: AppearancePreferences) {
         self.init(
-            appearancePreferences: .shared,
+            appearancePreferences: appearancePreferences,
             userBackgroundImagesManager: UserBackgroundImagesManager(
                 maximumNumberOfImages: Const.maximumNumberOfUserImages,
                 applicationSupportDirectory: URL.sandboxApplicationSupportURL

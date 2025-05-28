@@ -583,12 +583,9 @@ extension URL {
         urlString = urlString.lowercased()
 
         // Step 9: Remove "www." from the host component
-        if var components = URLComponents(string: urlString), shouldRemoveWWW {
-            if let host = components.host, host.hasPrefix("www.") {
-                components.host = String(host.droppingWwwPrefix()) // "www.".count = 4
-            }
-            if let finalURL = components.url {
-                urlString = finalURL.absoluteString
+        if shouldRemoveWWW, let tempURL = URL(string: urlString) {
+            if let urlWithoutWWW = tempURL.removingWWWFromHost() {
+                urlString = urlWithoutWWW.absoluteString
             }
         }
 
@@ -598,6 +595,17 @@ extension URL {
         }
 
         return validURL
+    }
+
+    public func removingWWWFromHost() -> URL? {
+        guard var components = URLComponents(url: self, resolvingAgainstBaseURL: false),
+              let host = components.host,
+              host.hasPrefix("www.") else {
+            return self
+        }
+
+        components.host = host.droppingWwwPrefix()
+        return components.url
     }
 
 }

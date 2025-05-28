@@ -276,12 +276,12 @@ jobs:
         done
         
     - name: Send Unit Tests Status Pixel
-      if: always() #&& github.ref_name == 'main'
+      if: always() && github.ref_name == 'main'
       run: |
         curl -fLSs -o /dev/null "https://improving.duckduckgo.com/t/m_ci_apple_mac_main_${{ matrix.flavor }}_unit_tests_${{ steps.run-unit-tests.outcome }}?workflow=${{ env.WORKFLOW_URL }}"
         
     - name: Send Integration Tests Status Pixel
-      if: always() #&& github.ref_name == 'main'
+      if: always() && github.ref_name == 'main'
       run: |
         curl -fLSs -o /dev/null "https://improving.duckduckgo.com/t/m_ci_apple_mac_main_${{ matrix.flavor }}_integration_tests_${{ steps.run-integration-tests.outcome }}?workflow=${{ env.WORKFLOW_URL }}"
 

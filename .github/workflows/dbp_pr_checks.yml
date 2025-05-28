@@ -80,7 +80,7 @@ jobs:
           check_retries: true
           
       - name: Send Unit Tests Status Pixel
-        if: always() #&& github.ref_name == 'main'
+        if: always() && github.ref_name == 'main'
         run: |
           curl -fLSs -o /dev/null "https://improving.duckduckgo.com/t/m_ci_apple_dbp_main_unit_tests_ios_${{ steps.run-unit-tests.outcome }}?workflow=${{ env.WORKFLOW_URL }}"
 

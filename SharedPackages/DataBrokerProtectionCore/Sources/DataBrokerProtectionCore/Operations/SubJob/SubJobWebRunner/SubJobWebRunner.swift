@@ -86,6 +86,10 @@ public extension SubJobWebRunning {
         default: ()
         }
 
+        if stepType == .scan {
+            fireScanStagePixel(for: action)
+        }
+
         if let emailConfirmationAction = action as? EmailConfirmationAction {
             do {
                 stageCalculator.fireOptOutSubmit()
@@ -316,6 +320,14 @@ public extension SubJobWebRunning {
     private func decrementRetriesCountOnError() {
         retriesCountOnError -= 1
         stageCalculator.incrementTries()
+    }
+
+    private func fireScanStagePixel(for action: Action) {
+        pixelHandler.fire(.scanStage(dataBroker: query.dataBroker.name,
+                                     dataBrokerVersion: query.dataBroker.version,
+                                     tries: stageCalculator.tries,
+                                     actionId: action.id,
+                                     actionType: action.actionType.rawValue))
     }
 }
 

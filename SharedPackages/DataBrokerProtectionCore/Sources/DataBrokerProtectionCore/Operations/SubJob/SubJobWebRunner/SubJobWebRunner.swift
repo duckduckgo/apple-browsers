@@ -59,6 +59,8 @@ public protocol SubJobWebRunning: CCFCommunicationDelegate {
 
     func executeNextStep() async
     func executeCurrentAction() async
+
+    func resetRetriesCount()
 }
 
 public extension SubJobWebRunning {
@@ -298,12 +300,22 @@ public extension SubJobWebRunning {
         try? await Task.sleep(nanoseconds: UInt64(waitTimeUntilRunningTheActionAgain) * 1_000_000_000)
 
         if let currentAction = self.actionsHandler?.currentAction() {
-            retriesCountOnError -= 1
+            decrementRetriesCountOnError()
             await runNextAction(currentAction)
         } else {
-            retriesCountOnError = 0
+            resetRetriesCount()
             await onError(error: DataBrokerProtectionError.unknown("No current action to execute"))
         }
+    }
+
+    func resetRetriesCount() {
+        retriesCountOnError = 0
+        stageCalculator.resetTries()
+    }
+
+    private func decrementRetriesCountOnError() {
+        retriesCountOnError -= 1
+        stageCalculator.incrementTries()
     }
 }
 

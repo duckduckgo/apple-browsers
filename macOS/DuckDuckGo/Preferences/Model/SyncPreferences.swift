@@ -681,7 +681,7 @@ extension SyncPreferences: ManagementDialogModelDelegate {
             return
         }
         if isSyncEnabled {
-            self.startPollingForPublicKey()
+            self.startExchangeOrRecovery()
         } else {
             self.startPollingForRecoveryKey(isRecovery: false)
         }
@@ -776,6 +776,23 @@ extension SyncPreferences: ManagementDialogModelDelegate {
 
     func switchAccountsCancelled() {
         PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncUserCancelledSwitchingAccount.withoutMacPrefix)
+    }
+
+    private func startExchangeOrRecovery() {
+        guard featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) else {
+            startLegacyRecoveryFlow()
+            return
+        }
+        startPollingForPublicKey()
+    }
+
+    private func startLegacyRecoveryFlow() {
+        let recoveryCode = recoveryCode ?? "" // Only called if Sync enabled therefore will never be blank
+        codeForDisplayOrPasting = recoveryCode
+        stringForQR = recoveryCode
+        Task {
+            await presentDialog(for: .syncWithAnotherDevice(codeForDisplayOrPasting: recoveryCode, stringForQRCode: recoveryCode))
+        }
     }
 
     private func startPollingForPublicKey() {

@@ -679,7 +679,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
     // when importing on iOS 18.2 and above
     func importAction() -> UIAction {
         return UIAction(title: UserText.importBookmarksActionTitle,
-                        image: DesignSystemImages.Glyphs.Size16.importLeft
+                        image: DesignSystemImages.Glyphs.Size16.import
         ) { [weak self] _ in
             self?.segueToDataImport()
             Pixel.fire(pixel: .bookmarksImportOverflowMenuTapped)
@@ -689,7 +689,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
     // when importing < iOS 18.2
     func importViaDocumentPickerAction() -> UIAction {
         return UIAction(title: UserText.importBookmarksActionHtmlTitle,
-                        image: DesignSystemImages.Glyphs.Size16.importLeft
+                        image: DesignSystemImages.Glyphs.Size16.import
         ) { [weak self] _ in
             self?.presentDocumentPicker()
         }
@@ -764,7 +764,7 @@ class BookmarksViewController: UIViewController, UITableViewDelegate {
                 return UserText.exportBookmarksActionHtmlTitle
             }
         }(),
-                        image: DesignSystemImages.Glyphs.Size16.exportRight,
+                        image: DesignSystemImages.Glyphs.Size16.export,
                         attributes: dataSource.isEmpty ? .disabled : []) { [weak self] _ in
             self?.exportHtmlFile()
         }

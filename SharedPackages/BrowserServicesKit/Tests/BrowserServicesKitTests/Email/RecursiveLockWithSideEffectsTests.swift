@@ -26,24 +26,24 @@ class RecursiveLockWithSideEffectsTests: XCTestCase {
         let thread1Started = expectation(description: "Thread 1 started")
         let thread1Done = expectation(description: "Thread 1 done")
         let thread2Done = expectation(description: "Thread 2 done")
-        
+
         var thread1SideEffectCalled = false
         var thread2SideEffectCalled = false
         var sharedValue = 0
-        
+
         // Thread 1 - Takes lock first and holds it
         DispatchQueue.global().async {
             XCTAssertFalse(lock.isLocked)
             lock.withLock {
                 thread1Started.fulfill()
-                
+
                 lock.dispatchSideEffect {
                     thread1SideEffectCalled = true
                 }
-                
+
                 sharedValue = 42
                 Thread.sleep(forTimeInterval: 0.1) // Hold lock to ensure thread 2 has to wait
-                
+
                 XCTAssertEqual(sharedValue, 42)
                 XCTAssertFalse(thread1SideEffectCalled)
                 XCTAssertFalse(thread2SideEffectCalled)
@@ -51,7 +51,7 @@ class RecursiveLockWithSideEffectsTests: XCTestCase {
             XCTAssertTrue(thread1SideEffectCalled)
             thread1Done.fulfill()
         }
-        
+
         // Thread 2 - Has to wait for lock
         DispatchQueue.global().async {
             XCTAssertFalse(lock.isLocked)
@@ -60,13 +60,13 @@ class RecursiveLockWithSideEffectsTests: XCTestCase {
                 lock.dispatchSideEffect {
                     thread2SideEffectCalled = true
                 }
-                
+
                 sharedValue = 99
-                
+
                 XCTAssertEqual(sharedValue, 99)
                 XCTAssertFalse(thread2SideEffectCalled)
             }
-            
+
             XCTAssertTrue(thread2SideEffectCalled)
             thread2Done.fulfill()
         }

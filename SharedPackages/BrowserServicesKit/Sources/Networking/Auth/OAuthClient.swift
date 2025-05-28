@@ -304,22 +304,20 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
     /// Tries to retrieve the v1 auth token stored locally, if present performs a migration to v2 and removes the old token
     public func migrateV1Token() async throws {
         guard !isUserAuthenticated else {
-            Logger.OAuthClient.log("Migration not needed, user is already authenticated")
             throw OAuthClientError.authMigrationNotPerformed
         }
 
         guard let legacyTokenStorage else {
-            Logger.OAuthClient.log("Auth migration attempted without a LegacyTokenStorage")
+            Logger.OAuthClient.fault("Auth migration attempted without a LegacyTokenStorage")
             throw OAuthClientError.authMigrationNotPerformed
         }
 
         guard let legacyToken = legacyTokenStorage.token,
               !legacyToken.isEmpty else {
-            Logger.OAuthClient.log("No V1 token available, migration not needed")
             throw OAuthClientError.authMigrationNotPerformed
         }
 
-        Logger.OAuthClient.log("Migrating legacy token...")
+        Logger.OAuthClient.log("Migrating v1 token...")
         _ = try await exchange(accessTokenV1: legacyToken)
         Logger.OAuthClient.log("Tokens migrated successfully")
 

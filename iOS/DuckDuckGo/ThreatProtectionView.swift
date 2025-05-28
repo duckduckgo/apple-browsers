@@ -55,7 +55,7 @@ struct ThreatProtectionViewSettings: View {
         Section(footer: Text(LocalizedStringKey(UserText.smarterEncryptionDescription))
             .tint(Color(designSystemColor: .accent))) {
                 SettingsCellView(label: "Smarter Encryption",
-                                 statusIndicator: StatusIndicatorView(status: .alwaysOn))
+                                 statusIndicator: StatusIndicatorView(status: .alwaysOn, isDotHidden: true))
         }
 
         // Scam Blocker

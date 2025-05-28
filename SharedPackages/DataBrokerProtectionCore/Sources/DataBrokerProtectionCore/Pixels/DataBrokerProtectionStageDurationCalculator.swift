@@ -79,7 +79,6 @@ final class DataBrokerProtectionStageDurationCalculator: StageDurationCalculator
     private(set) var actionID: String?
     private(set) var stage: Stage = .other
     private(set) var emailPattern: String?
-    private(set) var retriesCountOnError: Int = 3
     private(set) var tries = 1
     let vpnConnectionState: String
     let vpnBypassStatus: String

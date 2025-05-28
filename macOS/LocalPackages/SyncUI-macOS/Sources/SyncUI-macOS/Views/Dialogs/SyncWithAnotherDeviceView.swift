@@ -168,7 +168,7 @@ struct SyncWithAnotherDeviceView: View {
 
     fileprivate func showTextCodeView() -> some View {
         Group {
-            VStack(spacing: 16) {
+            VStack(spacing: 0) {
                 Text(UserText.syncWithAnotherDeviceShowCodeToPasteExplanation)
                 Spacer()
                 Text(codeForDisplayOrPasting)
@@ -179,6 +179,7 @@ struct SyncWithAnotherDeviceView: View {
                     .kerning(2)
                     .lineSpacing(5)
                     .multilineTextAlignment(.center)
+                    .padding(.bottom, 20)
                 HStack(spacing: 10) {
                     Button {
                         shareContent(codeForDisplayOrPasting)
@@ -210,6 +211,7 @@ struct SyncWithAnotherDeviceView: View {
                         showQRCode = true
                     }
             }
+            .padding(.top, 8)
         }
         .frame(width: 348)
     }

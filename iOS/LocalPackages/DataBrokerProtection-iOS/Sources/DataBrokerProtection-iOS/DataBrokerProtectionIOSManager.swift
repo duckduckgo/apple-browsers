@@ -250,6 +250,11 @@ public final class DataBrokerProtectionIOSManager {
         }
     }
 
+    /// Used by the iOS PIR debug menu to reset tester data.
+    public func deleteAllData() throws {
+        try database.deleteProfileData()
+    }
+
     // MARK: - Run Prerequisites
 
     public var meetsProfileRunPrequisite: Bool {

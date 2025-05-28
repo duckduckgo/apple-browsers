@@ -43,7 +43,17 @@ protocol ScriptSourceProviding {
 // refactor: ScriptSourceProvider to be passed to init methods as `some ScriptSourceProviding`, DefaultScriptSourceProvider to be killed
 // swiftlint:disable:next identifier_name
 @MainActor func DefaultScriptSourceProvider() -> ScriptSourceProviding {
-    ScriptSourceProvider(configStorage: Application.appDelegate.configurationStore, privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager, webTrackingProtectionPreferences: WebTrackingProtectionPreferences.shared, contentBlockingManager: ContentBlocking.shared.contentBlockingManager, trackerDataManager: ContentBlocking.shared.trackerDataManager, experimentManager: Application.appDelegate.contentScopeExperimentsManager, tld: ContentBlocking.shared.tld)
+    ScriptSourceProvider(
+        configStorage: Application.appDelegate.configurationStore,
+        privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
+        webTrackingProtectionPreferences: WebTrackingProtectionPreferences.shared,
+        contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
+        trackerDataManager: ContentBlocking.shared.trackerDataManager,
+        experimentManager: Application.appDelegate.contentScopeExperimentsManager,
+        tld: ContentBlocking.shared.tld,
+        appearancePreferences: Application.appDelegate.appearancePreferences,
+        startupPreferences: Application.appDelegate.startupPreferences
+    )
 }
 
 struct ScriptSourceProvider: ScriptSourceProviding {
@@ -71,7 +81,9 @@ struct ScriptSourceProvider: ScriptSourceProviding {
          contentBlockingManager: ContentBlockerRulesManagerProtocol,
          trackerDataManager: TrackerDataManager,
          experimentManager: ContentScopeExperimentsManaging,
-         tld: TLD) {
+         tld: TLD,
+         appearancePreferences: AppearancePreferences,
+         startupPreferences: StartupPreferences) {
 
         self.configStorage = configStorage
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -86,7 +98,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.sessionKey = generateSessionKey()
         self.messageSecret = generateSessionKey()
         self.autofillSourceProvider = buildAutofillSource()
-        self.onboardingActionsManager = buildOnboardingActionsManager()
+        self.onboardingActionsManager = buildOnboardingActionsManager(appearancePreferences, startupPreferences)
         self.historyViewActionsManager = buildHistoryViewActionsManager()
         self.currentCohorts = generateCurrentCohorts()
     }
@@ -144,13 +156,13 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     }
 
     @MainActor
-    private func buildOnboardingActionsManager() -> OnboardingActionsManaging {
+    private func buildOnboardingActionsManager(_ appearancePreferences: AppearancePreferences, _ startupPreferences: StartupPreferences) -> OnboardingActionsManaging {
         return OnboardingActionsManager(
             navigationDelegate: WindowControllersManager.shared,
             dockCustomization: DockCustomizer(),
             defaultBrowserProvider: SystemDefaultBrowserProvider(),
-            appearancePreferences: AppearancePreferences.shared,
-            startupPreferences: StartupPreferences.shared)
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences)
     }
 
     private func buildHistoryViewActionsManager() -> HistoryViewActionsManager {

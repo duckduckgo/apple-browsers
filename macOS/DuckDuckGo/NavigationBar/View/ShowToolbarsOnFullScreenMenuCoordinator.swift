@@ -21,21 +21,21 @@ import AppKit
 
 struct ShowToolbarsOnFullScreenMenuCoordinator {
 
-    static func replace(_ menuItem: NSMenuItem, _ prefs: AppearancePreferences = .shared) -> NSMenuItem? {
+    static func replace(_ menuItem: NSMenuItem, prefs: AppearancePreferences) -> NSMenuItem? {
         guard let menu = menuItem.menu else { return nil }
         let index = menu.index(of: menuItem)
         guard index >= 0 else { return nil }
 
-        let item = makeMenuItem(prefs)
+        let item = makeMenuItem(prefs: prefs)
         menu.replaceItem(at: index, with: item)
         return item
     }
 
-    static func addToMenu(_ menu: NSMenu, _ prefs: AppearancePreferences = .shared) {
-        menu.addItem(makeMenuItem(prefs))
+    static func addToMenu(_ menu: NSMenu, prefs: AppearancePreferences) {
+        menu.addItem(makeMenuItem(prefs: prefs))
     }
 
-    private static func makeMenuItem( _ prefs: AppearancePreferences) -> NSMenuItem {
+    private static func makeMenuItem(prefs: AppearancePreferences) -> NSMenuItem {
         let item = BlockMenuItem(title: UserText.mainMenuViewShowToolbarsOnFullScreen, isChecked: prefs.showTabsAndBookmarksBarOnFullScreen) {
             prefs.showTabsAndBookmarksBarOnFullScreen = !prefs.showTabsAndBookmarksBarOnFullScreen
         }

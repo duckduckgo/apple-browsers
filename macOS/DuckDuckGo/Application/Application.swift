@@ -31,11 +31,14 @@ final class Application: NSApplication {
         self.delegate = delegate
         Application.appDelegate = delegate
 
-        let mainMenu = MainMenu(featureFlagger: delegate.featureFlagger,
-                                bookmarkManager: delegate.bookmarksManager,
-                                faviconManager: delegate.faviconManager,
-                                aiChatMenuConfig: AIChatMenuConfiguration(),
-                                internalUserDecider: delegate.internalUserDecider)
+        let mainMenu = MainMenu(
+            featureFlagger: delegate.featureFlagger,
+            bookmarkManager: delegate.bookmarksManager,
+            faviconManager: delegate.faviconManager,
+            aiChatMenuConfig: AIChatMenuConfiguration(),
+            internalUserDecider: delegate.internalUserDecider,
+            appearancePreferences: delegate.appearancePreferences
+        )
         self.mainMenu = mainMenu
 
         // Makes sure Spotlight search is part of Help menu

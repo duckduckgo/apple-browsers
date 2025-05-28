@@ -131,7 +131,10 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
             }
         }
 
-        sut.pushAction(method: .onActionReceived, webView: mockWebView, params: params, canTimeOut: true)
+        let canTimeOut = action.canTimeOut(while: StepType.scan)
+        XCTAssertTrue(canTimeOut)
+
+        sut.pushAction(method: .onActionReceived, webView: mockWebView, params: params, canTimeOut: canTimeOut)
 
         await fulfillment(of: [timeoutExpectation], timeout: 0.3)
 
@@ -152,7 +155,10 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
             noErrorExpectation.fulfill()
         }
 
-        sut.pushAction(method: .onActionReceived, webView: mockWebView, params: params, canTimeOut: false)
+        let canTimeOut = action.canTimeOut(while: StepType.scan)
+        XCTAssertFalse(canTimeOut)
+
+        sut.pushAction(method: .onActionReceived, webView: mockWebView, params: params, canTimeOut: canTimeOut)
 
         // Wait for a reasonable time to ensure no error is received
         await fulfillment(of: [noErrorExpectation], timeout: 0.3)
@@ -173,7 +179,10 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
             noErrorExpectation.fulfill()
         }
 
-        sut.pushAction(method: .onActionReceived, webView: mockWebView, params: params, canTimeOut: true)
+        let canTimeOut = action.canTimeOut(while: StepType.scan)
+        XCTAssertTrue(canTimeOut)
+
+        sut.pushAction(method: .onActionReceived, webView: mockWebView, params: params, canTimeOut: canTimeOut)
 
         // Complete the action before timeout
         let completionParams = ["result": ["success": ["actionID": "expectation-1", "actionType": "expectation"] as [String: Any]]]
@@ -203,7 +212,10 @@ final class DataBrokerProtectionFeatureTests: XCTestCase {
             }
         }
 
-        sut.pushAction(method: .onActionReceived, webView: mockWebView, params: params, canTimeOut: true)
+        let canTimeOut = action.canTimeOut(while: StepType.scan)
+        XCTAssertTrue(canTimeOut)
+
+        sut.pushAction(method: .onActionReceived, webView: mockWebView, params: params, canTimeOut: canTimeOut)
 
         // Fail the action before timeout
         let errorParams = ["error": "No action found."]

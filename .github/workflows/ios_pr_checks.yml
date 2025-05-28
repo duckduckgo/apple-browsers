@@ -72,6 +72,9 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 60 # temporary (vs original 20) to fix the issue with GHA slowness
 
+    env:
+      WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
+
     outputs:
       commit_author: ${{ steps.fetch_commit_author.outputs.commit_author }}
 
@@ -155,7 +158,6 @@ jobs:
       if: always() && steps.run-unit-tests.outcome == 'failure'
       env:
         ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
-        WORKFLOW_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
       run: |
         # Extract failed tests from the junit report
         # Only keep failures unique by classname and name (column 1 and 2 of the yq output)
@@ -163,6 +165,11 @@ jobs:
           $'[.testsuites.testsuite[].testcase] | flatten | map(select(.failure) | .+@classname + " " + .+@name + " \'" + .failure.+@message + "\' ${{ env.WORKFLOW_URL }}") | .[]' \
           | sort -u -k 1,2 \
           | xargs -L 1 ./scripts/report-failed-unit-test.sh -s ${{ vars.APPLE_CI_FAILING_TESTS_IOS_FAILED_TESTS_SECTION_ID }}
+          
+    - name: Send Status Pixel
+      if: always() && github.ref_name == 'main'
+      run: |
+        curl -fLSs -o /dev/null "https://improving.duckduckgo.com/t/m_ci_unit_tests_${{ steps.run-unit-tests.outcome }}_main_ios?workflow=${{ env.WORKFLOW_URL }}"
 
     - name: Fetch latest commit author
       if: always() && github.ref_name == 'main'

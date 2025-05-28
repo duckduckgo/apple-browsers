@@ -40,6 +40,11 @@ final class CapturingPrivacyStats: PrivacyStatsCollecting {
         return privacyStats
     }
 
+    func fetchPrivacyStatsTotalCount() async -> Int64 {
+        fetchPrivacyStatsTotalCountCallCount += 1
+        return privacyStatsTotalCount
+    }
+
     func clearPrivacyStats() async {
         clearPrivacyStatsCallCount += 1
     }
@@ -51,8 +56,10 @@ final class CapturingPrivacyStats: PrivacyStatsCollecting {
     var recordBlockedTrackerCalls: [String] = []
     var clearPrivacyStatsCallCount: Int = 0
     var fetchPrivacyStatsCallCount: Int = 0
+    var fetchPrivacyStatsTotalCountCallCount: Int = 0
     var handleAppTerminationCallCount: Int = 0
     var privacyStats: [String: Int64] = [:]
+    var privacyStatsTotalCount: Int64 = 0
 }
 
 final class MockPrivacyStatsTrackerDataProvider: PrivacyStatsTrackerDataProviding {
@@ -68,21 +75,21 @@ final class MockPrivacyStatsTrackerDataProvider: PrivacyStatsTrackerDataProvidin
 final class NewTabPagePrivacyStatsModelTests: XCTestCase {
 
     private var model: NewTabPagePrivacyStatsModel!
+    private var visibilityProvider: MockNewTabPagePrivacyStatsVisibilityProvider!
     private var privacyStats: CapturingPrivacyStats!
     private var trackerDataProvider: MockPrivacyStatsTrackerDataProvider!
-    private var settingsPersistor: UserDefaultsNewTabPagePrivacyStatsSettingsPersistor!
 
     override func setUp() async throws {
         try await super.setUp()
 
+        visibilityProvider = MockNewTabPagePrivacyStatsVisibilityProvider()
         privacyStats = CapturingPrivacyStats()
         trackerDataProvider = MockPrivacyStatsTrackerDataProvider()
-        settingsPersistor = UserDefaultsNewTabPagePrivacyStatsSettingsPersistor(MockKeyValueStore(), getLegacySetting: nil)
         model = NewTabPagePrivacyStatsModel(
+            visibilityProvider: visibilityProvider,
             privacyStats: privacyStats,
             trackerDataProvider: trackerDataProvider,
-            eventMapping: nil,
-            settingsPersistor: settingsPersistor
+            eventMapping: nil
         )
     }
 
@@ -105,17 +112,17 @@ final class NewTabPagePrivacyStatsModelTests: XCTestCase {
 
         // recreate the model to pull in tracker data
         model = NewTabPagePrivacyStatsModel(
+            visibilityProvider: visibilityProvider,
             privacyStats: privacyStats,
             trackerDataProvider: trackerDataProvider,
-            eventMapping: nil,
-            settingsPersistor: settingsPersistor
+            eventMapping: nil
         )
 
         privacyStats.privacyStats = ["A": 1, "B": 2, "C": 3, "D": 4, "E": 1500, "F": 100, "G": 900]
 
         let stats: NewTabPageDataModel.PrivacyStatsData = await model.calculatePrivacyStats()
 
-        XCTAssertEqual(stats, .init(totalCount: 2510, trackerCompanies: [
+        XCTAssertEqual(stats, .init(trackerCompanies: [
             .init(count: 1, displayName: "A"),
             .init(count: 2, displayName: "B"),
             .init(count: 3, displayName: "C"),
@@ -135,32 +142,21 @@ final class NewTabPagePrivacyStatsModelTests: XCTestCase {
 
         // recreate the model to pull in tracker data
         model = NewTabPagePrivacyStatsModel(
+            visibilityProvider: visibilityProvider,
             privacyStats: privacyStats,
             trackerDataProvider: trackerDataProvider,
-            eventMapping: nil,
-            settingsPersistor: settingsPersistor
+            eventMapping: nil
         )
 
         privacyStats.privacyStats = ["A": 1, "B": 2, "C": 3, "D": 4, "E": 1500, "F": 100, "G": 900]
 
         let stats: NewTabPageDataModel.PrivacyStatsData = await model.calculatePrivacyStats()
 
-        XCTAssertEqual(stats, .init(totalCount: 2510, trackerCompanies: [
+        XCTAssertEqual(stats, .init(trackerCompanies: [
             .init(count: 1, displayName: "A"),
             .init(count: 3, displayName: "C"),
             .init(count: 4, displayName: "D"),
             .otherCompanies(count: 2502)
         ]))
-    }
-
-    func testWhenIsViewExpandedIsUpdatedThenPersistorIsUpdated() {
-        model.isViewExpanded = true
-        XCTAssertTrue(settingsPersistor.isViewExpanded)
-
-        model.isViewExpanded = false
-        XCTAssertFalse(settingsPersistor.isViewExpanded)
-
-        model.isViewExpanded = true
-        XCTAssertTrue(settingsPersistor.isViewExpanded)
     }
 }

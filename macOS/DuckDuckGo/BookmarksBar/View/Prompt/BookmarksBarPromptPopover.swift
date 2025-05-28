@@ -143,7 +143,7 @@ final class BookmarksBarPromptViewModel: ObservableObject {
     let prefs: AppearancePreferences
     var userDidDismiss = false
 
-    init(prefs: AppearancePreferences = AppearancePreferences.shared) {
+    init(prefs: AppearancePreferences = NSApp.delegateTyped.appearancePreferences) {
         self.prefs = prefs
     }
 

@@ -302,7 +302,7 @@ jobs:
         dmg="duckduckgo-${{ env.app-version }}.dmg"
         # Using APFS filesystem as per https://github.com/actions/runner-images/issues/7522#issuecomment-2299918092
         create-dmg --volname "${{ env.app-name }}" \
-            --volicon "scripts/assets/dmg.icns" \
+            --volicon "scripts/assets/dmg-${{ env.release-type }}.icns" \
             --filesystem APFS \
             --icon "${{ env.app-name }}.app" 140 160 \
             --background "scripts/assets/dmg-background.png" \

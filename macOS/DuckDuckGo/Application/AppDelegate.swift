@@ -321,10 +321,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             privacyConfigManager: ContentBlocking.shared.privacyConfigurationManager,
             featureFlagger: featureFlagger
         )
+
+        #if DEBUG || REVIEW
+        let defaultBrowserAndDockPromptDebugStore = DefaultBrowserAndDockPromptDebugStore()
+        let dateProvider: () -> Date = { defaultBrowserAndDockPromptDebugStore.simulatedTodayDate }
+        #else
+        let dateProvider: () -> Date = Date.init
+        #endif
+
         let defaultBrowserAndDockPromptDecider = DefaultBrowserAndDockPromptTypeDecider(
             featureFlagger: defaultBrowserAndDockPromptFeatureFlag,
             store: defaultBrowserAndDockPromptKeyValueStore,
-            installDateProvider: { LocalStatisticsStore().installDate }
+            installDateProvider: { LocalStatisticsStore().installDate },
+            dateProvider: defaultBrowserAndDockPromptDateProvider
         )
         let coordinator = DefaultBrowserAndDockPromptCoordinator(
             promptTypeDecider: defaultBrowserAndDockPromptDecider,

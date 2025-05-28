@@ -783,6 +783,7 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: "Logging").submenu(setupLoggingMenu())
             NSMenuItem(title: "AI Chat").submenu(AIChatDebugMenu())
             NSMenuItem(title: "Updates").submenu(UpdatesDebugMenu())
+            NSMenuItem(title: "SAD/ATT Prompts").submenu(DefaultBrowserAndDockPromptDebugMenu())
 
 #if !APPSTORE && WEB_EXTENSIONS_ENABLED
             if #available(macOS 15.4, *) {

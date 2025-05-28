@@ -657,6 +657,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                                                                          freemiumDBPUserStateManager: freemiumDBPUserStateManager)
 
         DataBrokerProtectionAppEvents(featureGatekeeper: pirGatekeeper).applicationDidBecomeActive()
+        vpnAppEventsHandler.applicationDidBecomeActive()
 
         subscriptionManagerV1?.refreshCachedSubscriptionAndEntitlements { isSubscriptionActive in
             if isSubscriptionActive {

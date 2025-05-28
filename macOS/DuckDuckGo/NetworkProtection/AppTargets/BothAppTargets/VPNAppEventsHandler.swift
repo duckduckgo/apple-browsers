@@ -76,6 +76,15 @@ final class VPNAppEventsHandler {
         }
     }
 
+    func applicationDidBecomeActive() {
+        Task {
+            let canStartVPN = (try? await featureGatekeeper.canStartVPN()) ?? false
+            if !canStartVPN {
+                try? await self.uninstaller.uninstall(removeSystemExtension: false, showNotification: false)
+            }
+        }
+    }
+
     private func restartNetworkProtectionIfVersionChanged(using loginItemsManager: LoginItemsManager) {
         // We want to restart the VPN menu app to make sure it's always on the latest.
         restartNetworkProtectionMenu(using: loginItemsManager)

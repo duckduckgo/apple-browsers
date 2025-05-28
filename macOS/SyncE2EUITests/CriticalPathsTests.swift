@@ -348,8 +348,8 @@ final class CriticalPathsTests: XCTestCase {
         let newTabPage = app.windows["New Tab"]
         let gitHub = newTabPage.staticTexts["DuckDuckGo · GitHub"]
         let spreadPrivacy = newTabPage.staticTexts["www.spreadprivacy.com"]
+        spreadPrivacy.assertExists()
         XCTAssertFalse(gitHub.exists)
-        XCTAssertTrue(spreadPrivacy.exists)
         app.typeKey("w", modifierFlags: [.command])
     }
 
@@ -386,8 +386,8 @@ final class CriticalPathsTests: XCTestCase {
         let newTabPage = app.windows["New Tab"]
         let gitHub = newTabPage.staticTexts["DuckDuckGo · GitHub"]
         let spreadPrivacy = newTabPage.staticTexts["www.spreadprivacy.com"]
-        XCTAssertTrue(gitHub.exists)
-        XCTAssertTrue(spreadPrivacy.exists)
+        gitHub.assertExists()
+        spreadPrivacy.assertExists()
         app.typeKey("w", modifierFlags: [.command])
     }
 

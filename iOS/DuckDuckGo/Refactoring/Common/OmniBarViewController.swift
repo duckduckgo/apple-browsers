@@ -114,12 +114,7 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.bookmarksButton.isPointerInteractionEnabled = true
         barView.accessoryButton.isPointerInteractionEnabled = true
         barView.menuButton.isPointerInteractionEnabled = true
-
         barView.refreshButton.isPointerInteractionEnabled = true
-        barView.refreshButton.pointerStyleProvider = { button, _, _ -> UIPointerStyle? in
-            return .init(effect: .lift(.init(view: button)))
-        }
-
         barView.shareButton.isPointerInteractionEnabled = true
     }
 

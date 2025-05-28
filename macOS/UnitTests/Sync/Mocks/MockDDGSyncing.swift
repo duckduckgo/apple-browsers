@@ -121,7 +121,7 @@ class MockDDGSyncing: DDGSyncing {
 }
 
 final class MockSyncConnectionControlling: SyncConnectionControlling {
-    
+
     @Published var cancelCalled: Bool = false
     func cancel() async {
         cancelCalled = true

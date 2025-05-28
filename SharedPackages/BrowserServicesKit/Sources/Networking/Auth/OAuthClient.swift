@@ -171,7 +171,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
 
     func getVerificationCodes() async throws -> (codeVerifier: String, codeChallenge: String) {
         Logger.OAuthClient.log("Getting verification codes")
-        let codeVerifier = OAuthCodesGenerator.codeVerifier
+        let codeVerifier = try OAuthCodesGenerator.generateCodeVerifier()
         guard let codeChallenge = OAuthCodesGenerator.codeChallenge(codeVerifier: codeVerifier) else {
             Logger.OAuthClient.error("Failed to get verification codes")
             throw OAuthClientError.internalError("Failed to generate code challenge")

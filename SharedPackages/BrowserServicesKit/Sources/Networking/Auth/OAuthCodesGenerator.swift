@@ -28,7 +28,7 @@ struct OAuthCodesGenerator {
         public var errorDescription: String? {
             switch self {
             case .failedToLoadRandomBytes(let errorCode):
-                "Failed to load random bytes \(errorCode)"
+                return "Failed to load random bytes \(errorCode)"
             }
         }
 

@@ -93,8 +93,6 @@ final class MainMenu: NSMenu {
     // MARK: Debug
 
     private var loggingMenu: NSMenu?
-    let newTabPagePrivacyStatsModeMenuItem = NSMenuItem(title: "Privacy Stats", action: #selector(MainMenu.updateNewTabPageMode), representedObject: NewTabPageMode.privacyStats)
-    let newTabPageRecentActivityModeMenuItem = NSMenuItem(title: "Recent Activity", action: #selector(MainMenu.updateNewTabPageMode), representedObject: NewTabPageMode.recentActivity)
     let customConfigurationUrlMenuItem = NSMenuItem(title: "Last Update Time", action: nil)
     let configurationDateAndTimeMenuItem = NSMenuItem(title: "Configuration URL", action: nil)
     let autofillDebugScriptMenuItem = NSMenuItem(title: "Autofill Debug Script", action: #selector(MainMenu.toggleAutofillScriptDebugSettingsAction))
@@ -114,6 +112,7 @@ final class MainMenu: NSMenu {
     private let defaultBrowserPreferences: DefaultBrowserPreferences
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
     private let internalUserDecider: InternalUserDecider
+    private let appearancePreferences: AppearancePreferences
     private let appVersion: AppVersion
 
     // MARK: - Initialization
@@ -126,9 +125,11 @@ final class MainMenu: NSMenu {
          defaultBrowserPreferences: DefaultBrowserPreferences = .shared,
          aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
          internalUserDecider: InternalUserDecider,
+         appearancePreferences: AppearancePreferences,
          appVersion: AppVersion = .shared) {
 
         self.internalUserDecider = internalUserDecider
+        self.appearancePreferences = appearancePreferences
         self.appVersion = appVersion
         self.dockCustomizer = dockCustomizer
         self.defaultBrowserPreferences = defaultBrowserPreferences
@@ -463,7 +464,6 @@ final class MainMenu: NSMenu {
         updateHomeButtonMenuItem()
         updateBookmarksBarMenuItem()
         updateShortcutMenuItems()
-        updateNewTabPageModeMenuItem()
         updateInternalUserItem()
         updateRemoteConfigurationInfo()
         updateAutofillDebugScriptMenuItem()
@@ -595,8 +595,8 @@ final class MainMenu: NSMenu {
     }
 
     private func updateBookmarksBarMenuItem() {
-        guard let toggleBookmarksBarMenuItem = BookmarksBarMenuFactory.replace(toggleBookmarksBarMenuItem),
-              let bookmarksMenuToggleBookmarksBarMenuItem = BookmarksBarMenuFactory.replace(bookmarksMenuToggleBookmarksBarMenuItem) else {
+        guard let toggleBookmarksBarMenuItem = BookmarksBarMenuFactory.replace(toggleBookmarksBarMenuItem, prefs: appearancePreferences),
+              let bookmarksMenuToggleBookmarksBarMenuItem = BookmarksBarMenuFactory.replace(bookmarksMenuToggleBookmarksBarMenuItem, prefs: appearancePreferences) else {
             assertionFailure("Could not replace toggleBookmarksBarMenuItem")
             return
         }
@@ -608,7 +608,7 @@ final class MainMenu: NSMenu {
     }
 
     private func updateHomeButtonMenuItem() {
-        guard let homeButtonMenuItem = HomeButtonMenuFactory.replace(homeButtonMenuItem) else {
+        guard let homeButtonMenuItem = HomeButtonMenuFactory.replace(homeButtonMenuItem, prefs: appearancePreferences) else {
             assertionFailure("Could not replace HomeButtonMenuItem")
             return
         }
@@ -616,7 +616,7 @@ final class MainMenu: NSMenu {
     }
 
     private func updateShowToolbarsOnFullScreenMenuItem() {
-        guard let showTabsAndBookmarksBarOnFullScreenMenuItem = ShowToolbarsOnFullScreenMenuCoordinator.replace(showTabsAndBookmarksBarOnFullScreenMenuItem) else {
+        guard let showTabsAndBookmarksBarOnFullScreenMenuItem = ShowToolbarsOnFullScreenMenuCoordinator.replace(showTabsAndBookmarksBarOnFullScreenMenuItem, prefs: appearancePreferences) else {
             assertionFailure("Could not replace ShowTabsAndBookmarksBarOnFullScreenMenuItem")
             return
         }
@@ -657,16 +657,15 @@ final class MainMenu: NSMenu {
             NSMenuItem(title: "Open Vanilla Browser", action: #selector(MainViewController.openVanillaBrowser)).withAccessibilityIdentifier("MainMenu.openVanillaBrowser")
             NSMenuItem(title: "Skip Onboarding", action: #selector(AppDelegate.skipOnboarding)).withAccessibilityIdentifier("MainMenu.skipOnboarding")
             NSMenuItem(title: "New Tab Page") {
-                NSMenuItem(title: "Mode") {
-                    newTabPagePrivacyStatsModeMenuItem.targetting(self)
-                    newTabPageRecentActivityModeMenuItem.targetting(self)
-                }
                 NSMenuItem(title: "Reset Continue Setup", action: #selector(AppDelegate.debugResetContinueSetup))
                 NSMenuItem(title: "Shift New Tab daily impression", action: #selector(MainViewController.debugShiftNewTabOpeningDate))
                 NSMenuItem(title: "Shift \(AppearancePreferences.Constants.dismissNextStepsCardsAfterDays) days", action: #selector(MainViewController.debugShiftNewTabOpeningDateNtimes))
             }
             NSMenuItem(title: "History")
                 .submenu(HistoryDebugMenu())
+            NSMenuItem(title: "Content Scopes Experiment") {
+                NSMenuItem(title: "Show Active Experiments", action: #selector(AppDelegate.showContentScopeExperiments))
+            }
             NSMenuItem(title: "Reset Data") {
                 NSMenuItem(title: "Reset Default Browser Prompt", action: #selector(AppDelegate.resetDefaultBrowserPrompt))
                 NSMenuItem(title: "Reset Default Grammar Checks", action: #selector(AppDelegate.resetDefaultGrammarChecks))
@@ -813,19 +812,6 @@ final class MainMenu: NSMenu {
 
     private func setupAIChatMenu() {
         aiChatMenu.isHidden = !aiChatMenuConfig.shouldDisplayApplicationMenuShortcut
-    }
-
-    private func updateNewTabPageModeMenuItem() {
-        let mode = NewTabPageModeDecider().effectiveMode
-        newTabPagePrivacyStatsModeMenuItem.state = mode == .privacyStats ? .on : .off
-        newTabPageRecentActivityModeMenuItem.state = mode == .recentActivity ? .on : .off
-    }
-
-    @objc private func updateNewTabPageMode(_ sender: NSMenuItem) {
-        guard let mode = sender.representedObject as? NewTabPageMode else {
-            return
-        }
-        NewTabPageModeDecider().modeOverride = mode
     }
 
     private func updateInternalUserItem() {

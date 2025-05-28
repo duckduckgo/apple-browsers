@@ -57,7 +57,8 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     isDuckPlayerOnboarded: false,
                     isDuckPlayerEnabled: false,
                     dismissedMessageIds: [],
-                    shownMessageIds: []
+                    shownMessageIds: [],
+                    enabledFeatureFlags: []
                 ),
                 percentileStore: MockRemoteMessagePercentileStore(),
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -155,7 +156,8 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     isDuckPlayerOnboarded: false,
                     isDuckPlayerEnabled: false,
                     dismissedMessageIds: [],
-                    shownMessageIds: []
+                    shownMessageIds: [],
+                    enabledFeatureFlags: []
                 ),
                 percentileStore: MockRemoteMessagePercentileStore(),
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -263,7 +265,8 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     isDuckPlayerOnboarded: false,
                     isDuckPlayerEnabled: false,
                     dismissedMessageIds: [],
-                    shownMessageIds: []
+                    shownMessageIds: [],
+                    enabledFeatureFlags: []
                 ),
                 percentileStore: MockRemoteMessagePercentileStore(),
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -314,7 +317,8 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     isDuckPlayerOnboarded: false,
                     isDuckPlayerEnabled: false,
                     dismissedMessageIds: [],
-                    shownMessageIds: []
+                    shownMessageIds: [],
+                    enabledFeatureFlags: []
                 ),
                 percentileStore: MockRemoteMessagePercentileStore(),
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -361,7 +365,8 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     isDuckPlayerOnboarded: false,
                     isDuckPlayerEnabled: false,
                     dismissedMessageIds: [],
-                    shownMessageIds: []
+                    shownMessageIds: [],
+                    enabledFeatureFlags: []
                 ),
                 percentileStore: percentileStore,
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -406,7 +411,8 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     isDuckPlayerOnboarded: false,
                     isDuckPlayerEnabled: false,
                     dismissedMessageIds: [],
-                    shownMessageIds: []
+                    shownMessageIds: [],
+                    enabledFeatureFlags: []
                 ),
                 percentileStore: percentileStore,
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -451,7 +457,8 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     isDuckPlayerOnboarded: false,
                     isDuckPlayerEnabled: false,
                     dismissedMessageIds: [],
-                    shownMessageIds: []
+                    shownMessageIds: [],
+                    enabledFeatureFlags: []
                 ),
                 percentileStore: percentileStore,
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),
@@ -496,7 +503,8 @@ class RemoteMessagingConfigMatcherTests: XCTestCase {
                     isDuckPlayerOnboarded: false,
                     isDuckPlayerEnabled: false,
                     dismissedMessageIds: [],
-                    shownMessageIds: []
+                    shownMessageIds: [],
+                    enabledFeatureFlags: []
                 ),
                 percentileStore: percentileStore,
                 surveyActionMapper: MockRemoteMessageSurveyActionMapper(),

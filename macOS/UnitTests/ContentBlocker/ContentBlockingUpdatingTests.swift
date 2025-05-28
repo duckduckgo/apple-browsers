@@ -16,11 +16,12 @@
 //  limitations under the License.
 //
 
-import XCTest
-import WebKit
-import Common
-import TrackerRadarKit
 import BrowserServicesKit
+import Common
+import PersistenceTestingUtils
+import TrackerRadarKit
+import WebKit
+import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 final class ContentBlockingUpdatingTests: XCTestCase {
@@ -30,8 +31,17 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     var updating: UserContentUpdating!
 
     @MainActor
-    override func setUp() {
+    override func setUp() async throws {
         let configStore = ConfigurationStore()
+
+        let appearancePreferences = AppearancePreferences(keyValueStore: try MockKeyValueFileStore())
+        let dataClearingPreferences = DataClearingPreferences(persistor: MockFireButtonPreferencesPersistor())
+        let startupPreferences = StartupPreferences(
+            persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),
+            appearancePreferences: appearancePreferences,
+            dataClearingPreferences: dataClearingPreferences
+        )
+
         updating = UserContentUpdating(contentBlockerRulesManager: rulesManager,
                                        privacyConfigurationManager: MockPrivacyConfigurationManager(),
                                        trackerDataManager: TrackerDataManager(etag: configStore.loadEtag(for: .trackerDataSet),
@@ -40,7 +50,9 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                                                               errorReporting: nil),
                                        configStorage: MockConfigurationStore(),
                                        webTrackingProtectionPreferences: preferences,
-                                       tld: TLD())
+                                       tld: TLD(),
+                                       appearancePreferences: appearancePreferences,
+                                       startupPreferences: startupPreferences)
     }
 
     override static func setUp() {

@@ -105,19 +105,19 @@ enum Preferences {
                     EmailProtectionView(emailManager: EmailManager(),
                                         protectionStatus: model.protectionStatus(for: .emailProtection))
                 case .general:
-                    GeneralView(startupModel: StartupPreferences.shared,
+                    GeneralView(startupModel: NSApp.delegateTyped.startupPreferences,
                                 downloadsModel: DownloadsPreferences.shared,
                                 searchModel: SearchPreferences.shared,
                                 tabsModel: TabsPreferences.shared,
-                                dataClearingModel: DataClearingPreferences.shared,
+                                dataClearingModel: NSApp.delegateTyped.dataClearingPreferences,
                                 maliciousSiteDetectionModel: MaliciousSiteProtectionPreferences.shared,
                                 dockCustomizer: DockCustomizer())
                 case .sync:
                     SyncView()
                 case .appearance:
-                    AppearanceView(model: .shared)
+                    AppearanceView(model: NSApp.delegateTyped.appearancePreferences)
                 case .dataClearing:
-                    DataClearingView(model: DataClearingPreferences.shared)
+                    DataClearingView(model: NSApp.delegateTyped.dataClearingPreferences)
                 case .privacyPro:
                     SubscriptionUI.PreferencesPurchaseSubscriptionView(model: purchaseSubscriptionModel!)
                 case .vpn:
@@ -331,19 +331,19 @@ enum Preferences {
                     EmailProtectionView(emailManager: EmailManager(),
                                         protectionStatus: model.protectionStatus(for: .emailProtection))
                 case .general:
-                    GeneralView(startupModel: StartupPreferences.shared,
+                    GeneralView(startupModel: NSApp.delegateTyped.startupPreferences,
                                 downloadsModel: DownloadsPreferences.shared,
                                 searchModel: SearchPreferences.shared,
                                 tabsModel: TabsPreferences.shared,
-                                dataClearingModel: DataClearingPreferences.shared,
+                                dataClearingModel: NSApp.delegateTyped.dataClearingPreferences,
                                 maliciousSiteDetectionModel: MaliciousSiteProtectionPreferences.shared,
                                 dockCustomizer: DockCustomizer())
                 case .sync:
                     SyncView()
                 case .appearance:
-                    AppearanceView(model: .shared)
+                    AppearanceView(model: NSApp.delegateTyped.appearancePreferences)
                 case .dataClearing:
-                    DataClearingView(model: DataClearingPreferences.shared)
+                    DataClearingView(model: NSApp.delegateTyped.dataClearingPreferences)
                 case .privacyPro:
                     SubscriptionUI.PreferencesPurchaseSubscriptionView(model: purchaseSubscriptionModel!)
                 case .vpn:

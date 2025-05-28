@@ -147,6 +147,10 @@ public final class NewTabPageFavoritesModel<FavoriteType, ActionHandler>: NSObje
                     self?.openInNewWindow(url, sourceWindow: window)
                 }
                 .withAccessibilityIdentifier("HomePage.Views.openInNewWindow")
+                NSMenuItem(title: UserText.openInNewFireWindow) { [weak self] _ in
+                    self?.openInNewFireWindow(url, sourceWindow: window)
+                }
+                .withAccessibilityIdentifier("HomePage.Views.openInNewFireWindow")
 
                 NSMenuItem.separator()
             }
@@ -174,6 +178,11 @@ public final class NewTabPageFavoritesModel<FavoriteType, ActionHandler>: NSObje
     @MainActor
     private func openInNewWindow(_ url: URL, sourceWindow: NSWindow?) {
         actionsHandler.open(url, sender: .contextMenuItem, target: .newWindow, in: sourceWindow)
+    }
+
+    @MainActor
+    private func openInNewFireWindow(_ url: URL, sourceWindow: NSWindow?) {
+        actionsHandler.open(url, sender: .contextMenuItem, target: .newWindow, setBurner: true, in: sourceWindow)
     }
 
     @MainActor

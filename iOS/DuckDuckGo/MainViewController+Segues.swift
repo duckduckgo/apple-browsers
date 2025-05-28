@@ -115,8 +115,7 @@ extension MainViewController {
                                            entryPoint: entryPoint,
                                            privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
                                            contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
-                                           breakageAdditionalInfo: self.currentTab?.makeBreakageAdditionalInfo(),
-                                           contentScopeExperimentsManager: self.contentScopeExperimentsManager)
+                                           breakageAdditionalInfo: self.currentTab?.makeBreakageAdditionalInfo())
         }
         
         guard let controller = controller else {
@@ -263,7 +262,15 @@ extension MainViewController {
             }
         }
     }
-    
+
+    func segueToFeedback() {
+        Logger.lifecycle.debug(#function)
+        hideAllHighlightsIfNeeded()
+        launchSettings {
+            $0.presentLegacyView(.feedback)
+        }
+   }
+
     func launchSettings(completion: ((SettingsViewModel) -> Void)? = nil,
                         deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection? = nil) {
         let legacyViewProvider = SettingsLegacyViewProvider(syncService: syncService,

@@ -75,6 +75,7 @@ struct DefaultScriptSourceProvider: ScriptSourceProviding {
         sessionKey = Self.generateSessionKey()
         messageSecret = Self.generateSessionKey()
         currentCohorts = Self.generateCurrentCohorts(experimentManager: contentScopeExperimentsManager)
+
         contentScopeProperties = ContentScopeProperties(gpcEnabled: appSettings.sendDoNotSell,
                                                         sessionKey: sessionKey,
                                                         messageSecret: messageSecret,

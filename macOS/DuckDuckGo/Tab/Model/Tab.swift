@@ -59,6 +59,7 @@ protocol NewWindowPolicyDecisionMaker {
         var maliciousSiteDetector: MaliciousSiteDetecting
         var faviconManagement: FaviconManagement?
         var featureFlagger: FeatureFlagger
+        var contentScopeExperimentsManager: ContentScopeExperimentsManaging
     }
 
     fileprivate weak var delegate: TabDelegate?
@@ -111,6 +112,7 @@ protocol NewWindowPolicyDecisionMaker {
                      statisticsLoader: StatisticsLoader? = nil,
                      extensionsBuilder: TabExtensionsBuilderProtocol = TabExtensionsBuilder.default,
                      featureFlagger: FeatureFlagger? = nil,
+                     contentScopeExperimentsManager: ContentScopeExperimentsManaging? = nil,
                      title: String? = nil,
                      favicon: NSImage? = nil,
                      interactionStateData: Data? = nil,
@@ -121,7 +123,7 @@ protocol NewWindowPolicyDecisionMaker {
                      canBeClosedWithBack: Bool = false,
                      lastSelectedAt: Date? = nil,
                      webViewSize: CGSize = CGSize(width: 1024, height: 768),
-                     startupPreferences: StartupPreferences = StartupPreferences.shared,
+                     startupPreferences: StartupPreferences = NSApp.delegateTyped.startupPreferences,
                      certificateTrustEvaluator: CertificateTrustEvaluating = CertificateTrustEvaluator(),
                      tunnelController: NetworkProtectionIPCTunnelController? = TunnelControllerProvider.shared.tunnelController,
                      maliciousSiteDetector: MaliciousSiteDetecting = MaliciousSiteProtectionManager.shared,
@@ -156,6 +158,7 @@ protocol NewWindowPolicyDecisionMaker {
                   geolocationService: geolocationService,
                   extensionsBuilder: extensionsBuilder,
                   featureFlagger: featureFlagger ?? NSApp.delegateTyped.featureFlagger,
+                  contentScopeExperimentsManager: contentScopeExperimentsManager ?? NSApp.delegateTyped.contentScopeExperimentsManager,
                   cbaTimeReporter: cbaTimeReporter,
                   statisticsLoader: statisticsLoader,
                   internalUserDecider: internalUserDecider,
@@ -194,6 +197,7 @@ protocol NewWindowPolicyDecisionMaker {
          geolocationService: GeolocationServiceProtocol,
          extensionsBuilder: TabExtensionsBuilderProtocol,
          featureFlagger: FeatureFlagger,
+         contentScopeExperimentsManager: ContentScopeExperimentsManaging,
          cbaTimeReporter: ContentBlockingAssetsCompilationTimeReporter?,
          statisticsLoader: StatisticsLoader?,
          internalUserDecider: InternalUserDecider?,
@@ -291,7 +295,8 @@ protocol NewWindowPolicyDecisionMaker {
                                                        tunnelController: tunnelController,
                                                        maliciousSiteDetector: maliciousSiteDetector,
                                                        faviconManagement: faviconManagement,
-                                                       featureFlagger: featureFlagger))
+                                                       featureFlagger: featureFlagger,
+                                                       contentScopeExperimentsManager: contentScopeExperimentsManager))
 
         super.init()
         tabGetter = { [weak self] in self }

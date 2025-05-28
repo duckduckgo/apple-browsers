@@ -26,7 +26,7 @@ final class NewTabPageNextStepsCardsProvider: NewTabPageNextStepsCardsProviding 
     let continueSetUpModel: HomePage.Models.ContinueSetUpModel
     let appearancePreferences: AppearancePreferences
 
-    init(continueSetUpModel: HomePage.Models.ContinueSetUpModel, appearancePreferences: AppearancePreferences = .shared) {
+    init(continueSetUpModel: HomePage.Models.ContinueSetUpModel, appearancePreferences: AppearancePreferences) {
         self.continueSetUpModel = continueSetUpModel
         self.appearancePreferences = appearancePreferences
     }

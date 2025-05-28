@@ -35,6 +35,8 @@ public enum OmniBarIcon: String {
 
 final class DefaultOmniBarView: UIView {
 
+    // To be replaced with AppUserDefaults.Notifications.addressBarPositionChanged after release
+    // https://app.asana.com/1/137249556945/project/1207252092703676/task/1210323588862346?focus=true
     public static let didLayoutNotification = Notification.Name("com.duckduckgo.app.OmniBarDidLayout")
     
     @IBOutlet weak var searchLoupe: UIView!
@@ -257,7 +259,9 @@ final class DefaultOmniBarView: UIView {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        NotificationCenter.default.post(name: DefaultOmniBarView.didLayoutNotification, object: self)
+        // To be removed in favor of AppUserDefaults.Notifications.addressBarPositionChanged subscription
+        // https://app.asana.com/1/137249556945/project/1207252092703676/task/1210323588862346?focus=true
+        NotificationCenter.default.post(name: DefaultOmniBarView.didLayoutNotification, object: self.frame.height)
     }
 }
 

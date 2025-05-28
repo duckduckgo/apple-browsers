@@ -33,7 +33,7 @@ struct SuggestionViewModel {
         self.suggestion = suggestion
         self.userStringValue = userStringValue
 
-        let fontSize = isHomePage ? visualStyle.newTabOrHomePageAddressBarFontSize : visualStyle.defaultAddressBarFontSize
+        let fontSize = isHomePage ? visualStyle.addressBarStyleProvider.newTabOrHomePageAddressBarFontSize : visualStyle.addressBarStyleProvider.defaultAddressBarFontSize
         self.tableRowViewStandardAttributes = Self.rowViewStandardAttributes(size: fontSize, isBold: false)
         self.tableRowViewBoldAttributes = Self.rowViewStandardAttributes(size: fontSize, isBold: true)
     }
@@ -189,7 +189,7 @@ struct SuggestionViewModel {
              .openTab(title: _, url: let url, _, _) where url.isHistory:
             return .historyFavicon
         case .internalPage(title: _, url: let url, _):
-            guard url == URL(string: StartupPreferences.shared.formattedCustomHomePageURL) else { return nil }
+            guard url == URL(string: NSApp.delegateTyped.startupPreferences.formattedCustomHomePageURL) else { return nil }
             return .home16
         case .openTab:
             return .openTabSuggestion

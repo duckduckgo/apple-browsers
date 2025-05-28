@@ -39,8 +39,6 @@ extension TabViewController {
         return settings.isAIChatBrowsingMenuUserSettingsEnabled
     }
 
-    private var shouldShowCopyButtonInBrowsingMenuList: Bool { shouldShowAIChatInMenu }
-
     func buildBrowsingMenuHeaderContent() -> [BrowsingMenuEntry] {
         var entries = [BrowsingMenuEntry]()
 
@@ -58,7 +56,7 @@ extension TabViewController {
             self.onShareAction(forLink: self.link!, fromView: menu)
         })
 
-        let copyEntry = buildCopyEntry(smallIcon: false)
+        let copyEntry = buildCopyEntry()
 
         let reloadEntry = BrowsingMenuEntry.regular(name: UserText.actionRefresh, image: UIImage(named: "Reload-24")!, action: { [weak self] in
             guard let self = self else { return }
@@ -66,27 +64,24 @@ extension TabViewController {
             self.reload()
         })
 
-        let chatEntry = BrowsingMenuEntry.regular(name: UserText.actionOpenAIChat, image: UIImage(named: "AIChat-24")!, action: { [weak self] in
-            Pixel.fire(pixel: .browsingMenuAIChat,
-                       withAdditionalParameters: self?.featureDiscovery.addToParams([:], forFeature: .aiChat) ?? [:])
-            self?.openAIChat()
-        })
 
         if shouldShowAIChatInMenu {
+            let chatEntry = buildChatEntry(withSmallIcon: false)
+
             entries.append(newTabEntry)
             entries.append(chatEntry)
-            entries.append(reloadEntry)
+            entries.append(copyEntry)
             entries.append(shareEntry)
         } else {
+            let printEntry = buildPrintEntry(withSmallIcon: false)
             entries.append(newTabEntry)
-            entries.append(reloadEntry)
+            entries.append(printEntry)
             entries.append(copyEntry)
             entries.append(shareEntry)
         }
-
+        
         return entries
     }
-
 
     var favoriteEntryIndex: Int { 1 }
 
@@ -100,17 +95,10 @@ extension TabViewController {
         let linkEntries = buildLinkEntries(with: bookmarksInterface)
         entries.append(contentsOf: linkEntries)
 
-        if shouldShowCopyButtonInBrowsingMenuList {
-            entries.append(buildCopyEntry(smallIcon: true))
+        if shouldShowAIChatInMenu {
+            let printEntry = buildPrintEntry(withSmallIcon: true)
+            entries.append(printEntry)
         }
-
-        entries.append(.regular(name: UserText.actionPrintSite,
-                                accessibilityLabel: UserText.actionPrintSite,
-                                image: UIImage(named: "Print-16")!,
-                                action: { [weak self] in
-            Pixel.fire(pixel: .browsingMenuListPrint)
-            self?.print()
-        }))
 
         if let domain = self.privacyInfo?.domain {
             entries.append(self.buildToggleProtectionEntry(forDomain: domain))
@@ -136,6 +124,26 @@ extension TabViewController {
         return entries
     }
 
+    private func buildPrintEntry(withSmallIcon smallIcon: Bool) -> BrowsingMenuEntry {
+        .regular(name: UserText.actionPrintSite,
+                 accessibilityLabel: UserText.actionPrintSite,
+                 image: smallIcon ? UIImage(resource: .print16) : UIImage(resource: .print24),
+                 action: { [weak self] in
+            Pixel.fire(pixel: .browsingMenuListPrint)
+            self?.print()
+        })
+    }
+
+    private func buildChatEntry(withSmallIcon smallIcon: Bool) -> BrowsingMenuEntry {
+        .regular(name: UserText.actionOpenAIChat,
+                 image: smallIcon ? UIImage(resource: .aiChat16) : UIImage(resource: .aiChat24),
+                 action: { [weak self] in
+            Pixel.fire(pixel: .browsingMenuAIChat,
+                       withAdditionalParameters: self?.featureDiscovery.addToParams([:], forFeature: .aiChat) ?? [:])
+            self?.openAIChat()
+        })
+    }
+
     private func buildShortcutsEntries(state: ShortcutEntriesState) -> [BrowsingMenuEntry] {
         var entries = [BrowsingMenuEntry]()
 
@@ -147,13 +155,8 @@ extension TabViewController {
             }))
 
             if shouldShowAIChatInMenu {
-                entries.append(BrowsingMenuEntry.regular(name: UserText.actionAIChatNew,
-                                                         image: UIImage(named: "AIChat-16")!,
-                                                         action: { [weak self] in
-                    Pixel.fire(pixel: .browsingMenuListAIChat,
-                               withAdditionalParameters: self?.featureDiscovery.addToParams([:], forFeature: .aiChat) ?? [:])
-                    self?.openAIChat()
-                }))
+                let chatEntry = buildChatEntry(withSmallIcon: true)
+                entries.append(chatEntry)
             }
 
             entries.append(.separator)
@@ -239,8 +242,8 @@ extension TabViewController {
                                          })
     }
 
-    private func buildCopyEntry(smallIcon: Bool) -> BrowsingMenuEntry {
-        let image = UIImage(resource: smallIcon ? .copy16 : .copy24)
+    private func buildCopyEntry() -> BrowsingMenuEntry {
+        let image = UIImage(resource: .copy24)
         return BrowsingMenuEntry.regular(name: UserText.actionCopy, image: image, action: { [weak self] in
             guard let strongSelf = self else { return }
             if !strongSelf.isError, let url = strongSelf.webView.url {
@@ -538,7 +541,6 @@ extension TabViewController {
         SiteBreakageExperimentMetrics.fireTDSExperimentMetric(metricType: .privacyToggleUsed, etag: tdsEtag) { parameters in
             UniquePixel.fire(pixel: .debugBreakageExperiment, withAdditionalParameters: parameters)
         }
-        SiteBreakageExperimentMetrics.fireContentScopeExperimentMetric(metricType: .privacyToggleUsed)
     }
 
     private func togglePrivacyProtection(domain: String, didSendReport: Bool = false) {

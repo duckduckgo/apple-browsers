@@ -353,6 +353,7 @@ struct UserText {
 
     static let openLinkInNewTab = NSLocalizedString("open.link.in.new.tab", value: "Open Link in New Tab", comment: "Context menu item")
     static let openLinkInNewBurnerTab = NSLocalizedString("open.link.in.new.burner.tab", value: "Open Link in New Fire Tab", comment: "Context menu item")
+    static let openLinkInNewBurnerWindow = NSLocalizedString("open.link.in.new.burner.window", value: "Open Link in New Fire Window", comment: "Context menu item")
     static let openImageInNewTab = NSLocalizedString("open.image.in.new.tab", value: "Open Image in New Tab", comment: "Context menu item")
     static let openImageInNewBurnerTab = NSLocalizedString("open.image.in.new.burner.tab", value: "Open Image in New Fire Tab", comment: "Context menu item")
     static let copyImageAddress = NSLocalizedString("copy.image.address", value: "Copy Image Address", comment: "Context menu item")
@@ -1275,6 +1276,7 @@ struct UserText {
     static let newTabSetUpEmailProtectionSummary = NSLocalizedString("newTab.setup.email.protection.summary", value: "Generate custom @duck.com addresses that clean trackers from incoming email.", comment: "Summary of the Email Protection card of the Set Up section in the home page")
 
     // Recent Activity
+    static let newTabProtectionsReportSectionTitle = NSLocalizedString("newTab.protections.section.title", value: "Protections Report", comment: "Title of the Protections Report section in the home page")
     static let newTabRecentActivitySectionTitle = NSLocalizedString("newTab.recent.activity.section.title", value: "Recent Activity", comment: "Title of the RecentActivity section in the home page")
     static let newTabPrivacyStatsSectionTitle = NSLocalizedString("newTab.privacy.stats.section.title", value: "Protection Stats", comment: "Title of the Privacy Stats section in the home page")
     static let justNow = NSLocalizedString("newTab.recent.activity.just.now", value: "Just now", comment: "Relative timestamp for a URL that was last visited within recent 60 seconds")

@@ -41,7 +41,7 @@ final class ContentScopeUserScriptTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        properties = ContentScopeProperties(gpcEnabled: false, sessionKey: "", messageSecret: "", featureToggles: ContentScopeFeatureToggles(emailProtection: false, emailProtectionIncontextSignup: false, credentialsAutofill: false, identitiesAutofill: false, creditCardsAutofill: false, credentialsSaving: false, passwordGeneration: false, inlineIconCredentials: false, thirdPartyCredentialsProvider: false, unknownUsernameCategorization: false, partialFormSaves: false), currentCohorts: [experimentData])
+        properties = ContentScopeProperties(gpcEnabled: false, sessionKey: "", messageSecret: "", featureToggles: ContentScopeFeatureToggles(emailProtection: false, emailProtectionIncontextSignup: false, credentialsAutofill: false, identitiesAutofill: false, creditCardsAutofill: false, credentialsSaving: false, passwordGeneration: false, inlineIconCredentials: false, thirdPartyCredentialsProvider: false, unknownUsernameCategorization: false, partialFormSaves: false, passwordVariantCategorization: true), currentCohorts: [experimentData])
         configGenerator = MockCSSPrivacyConfigGenerator()
         mockPrivacyConfigurationManager = MockPrivacyConfigurationManager(privacyConfig: MockPrivacyConfiguration(), internalUserDecider: DefaultInternalUserDecider(mockedStore: MockInternalUserStoring()))
         mockPrivacyConfigurationManager.currentConfigString = managerConfig

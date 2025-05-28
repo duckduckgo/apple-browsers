@@ -30,7 +30,7 @@ public protocol WebViewHandler: NSObject {
     func saveHTML(path: String, fileName: String) async throws
     func waitForWebViewLoad() async throws
     func finish() async
-    func execute(action: Action, data: CCFRequestData) async
+    func execute(action: Action, ofType stepType: StepType?, data: CCFRequestData) async
     func evaluateJavaScript(_ javaScript: String) async throws
     func setCookies(_ cookies: [HTTPCookie]) async
 }
@@ -139,13 +139,14 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
         }
     }
 
-    func execute(action: Action, data: CCFRequestData) {
+    func execute(action: Action, ofType stepType: StepType?, data: CCFRequestData) {
         Logger.action.log("Executing action: \(String(describing: action.actionType.rawValue), privacy: .public)")
 
         userContentController?.dataBrokerUserScripts?.dataBrokerFeature.pushAction(
             method: .onActionReceived,
             webView: self.webView!,
-            params: Params(state: ActionRequest(action: action, data: data))
+            params: Params(state: ActionRequest(action: action, data: data)),
+            canTimeOut: action.canTimeOut(while: stepType)
         )
     }
 

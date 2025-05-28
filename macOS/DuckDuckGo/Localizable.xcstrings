@@ -40159,6 +40159,66 @@
         }
       }
     },
+    "newTab.protections.section.title" : {
+      "comment" : "Title of the Protections Report section in the home page",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bericht über Schutzmaßnahmen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Protections Report"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Informe de protecciones"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rapport sur les protections"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rapporto sulle protezioni"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Beschermingsrapport"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Raport ochrony"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Relatório de proteções"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Отчет о защите"
+          }
+        }
+      }
+    },
     "newTab.recent.activity.just.now" : {
       "comment" : "Relative timestamp for a URL that was last visited within recent 60 seconds",
       "extractionState" : "extracted_with_value",
@@ -43748,6 +43808,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Открыть ссылку в новой Fire-вкладке"
+          }
+        }
+      }
+    },
+    "open.link.in.new.burner.window" : {
+      "comment" : "Context menu item",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Link in neuem Fire Window öffnen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open Link in New Fire Window"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir el enlace en una nueva Fire Window"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvrir le lien dans une nouvelle Fire Window"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apri link in una nuova Fire Window"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Link openen in nieuw Fire Window"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Otwórz link w nowym oknie Fire Window"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abrir link numa nova Fire Window"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Открыть ссылку в новом окне Fire Window"
           }
         }
       }
@@ -66514,7 +66634,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Выбор варианта «Не разрешать» может нарушить работу некоторых функций сайта, но ограничит отслеживание сервисом %@."
+            "value" : "Выбор варианта «Не разрешать» может нарушить работу некоторых функций сайта, но ограничит отслеживание со стороны %@."
           }
         }
       }
@@ -70912,7 +71032,7 @@
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "New version available - Update DuckDuckGo"
+            "value" : "Доступна новая версия — обновите DuckDuckGo"
           }
         }
       }

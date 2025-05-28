@@ -1282,17 +1282,26 @@
 /* Text displayed when DuckPlayer is in 'Ask' mode. */
 "duckPlayer.ask.label" = "Întreabă de fiecare dată";
 
-/* Subtitle explaining how Duck Player protects privacy */
-"duckplayer.blocks.ads.keeps.history.private" = "Duck Player blochează reclamele direcționate și îți păstrează confidențial istoricul de vizionare.";
-
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Niciodată";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";
 
-/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
-"duckplayer.open.youtube.videos.here" = "Deschide aici videoclipurile de pe YouTube";
+/* Content for Duck Player opt-in message */
+"duckplayer.opt-in.message.content" = "Duck Player blochează reclamele direcționate și îți păstrează istoricul de vizionare protejat.";
+
+/* Title for Duck Player opt-in message */
+"duckplayer.opt-in.message.title" = "YouTube, dar cu mai puține reclame și mai multă confidențialitate";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.opt-in.pill.subtitle" = "Vizionează fără reclame direcționate";
+
+/* Button text to play a video in Duck Player */
+"duckplayer.opt-in.pill.title" = "Redă acest videoclip în Duck Player";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.pill.subtitle" = "Vizionează fără reclame direcționate";
 
 /* Button text to play a video in Duck Player */
 "duckplayer.play.in.duck.player" = "Redă acest videoclip în Duck Player";
@@ -1354,6 +1363,9 @@
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.title" = "Duck Player";
 
+/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
+"duckplayer.settings.toggle" = "Deschide aici videoclipurile de pe YouTube";
+
 /* Label for the Duck Player variant picker in Duck Player settings */
 "duckplayer.settings.variant.label" = "Variantă Duck Player";
 
@@ -1363,20 +1375,29 @@
 /* Label for the YouTube.com option in Duck Player settings */
 "duckplayer.settings.youtube.label" = "YouTube.com";
 
+/* Text for the ask mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.ask" = "Permite-mi să aleg";
+
+/* Text for the auto mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.auto" = "Deschide automat";
+
+/* Text for the never mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.never" = "Nu arăta";
+
 /* Button text to open Duck Player settings */
 "duckplayer.toast.open.settings" = "Deschide Setări";
 
 /* Toast message informing user they can disable Duck Player in settings */
-"duckplayer.toast.turn.off.anytime" = "Poți dezactiva oricând Duck Player din Setări.";
+"duckplayer.toast.turn.off.anytime" = "Poți dezactiva oricând Duck Player";
 
 /* Button text to watch video on YouTube */
 "duckplayer.watch.on.youtube" = "Vizionează pe YouTube";
 
-/* Subtitle explaining Duck Player blocks targeted ads */
-"duckplayer.watch.without.targeted.ads" = "Vizionează fără reclame direcționate";
+/* Subtitle explaining how Duck Player protects privacy */
+"duckplayer.welcome.message.content" = "Pentru a reveni la YouTube, închide Duck Player.\nNu e pentru tine? Oprește-l mai jos!";
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
-"duckplayer.youtube.no.ads.privacy" = "Urmărește YouTube cu mai puține reclame și mai multă confidențialitate";
+"duckplayer.welcome.message.text" = "Urmărești în Duck Player!\nAici nu există reclame direcționate.";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Protecția comunicațiilor prin e-mail";
@@ -2769,6 +2790,9 @@
 
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe" = "Protejează-ți conexiunea și identitatea cu Privacy Pro";
+
+/* Try Privacy Pro Free button text for privacy pro */
+"settings.subscription.try.free" = "Încearcă Privacy Pro gratuit";
 
 /* Privacy pro description subtitle in settings */
 "settings.subscription.us.description" = "Include VPN, Personal Information Removal și Identity Theft Restoration.";

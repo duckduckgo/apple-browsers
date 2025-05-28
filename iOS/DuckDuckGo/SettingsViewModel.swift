@@ -51,6 +51,7 @@ final class SettingsViewModel: ObservableObject {
     let experimentalThemingManager: ExperimentalThemingManager
     var experimentalAIChatManager: ExperimentalAIChatManager
     private let duckPlayerSettings: DuckPlayerSettings
+    private let duckPlayerPixelHandler: DuckPlayerPixelFiring.Type
     let featureDiscovery: FeatureDiscovery
 
     // Subscription Dependencies
@@ -77,6 +78,9 @@ final class SettingsViewModel: ObservableObject {
     // App Data State Notification Observer
     private var appDataClearingObserver: Any?
     private var textZoomObserver: Any?
+
+    // Subscription Free Trials
+    private let subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping
 
     // Closures to interact with legacy view controllers through the container
     var onRequestPushLegacyView: ((UIViewController) -> Void)?
@@ -338,11 +342,11 @@ final class SettingsViewModel: ObservableObject {
     
     var duckPlayerNativeUI: Binding<Bool> {
         Binding<Bool>(
-            get: { self.state.duckPlayerNativeUI },
-            set: {
-                self.appSettings.duckPlayerNativeUI = $0
-                self.state.duckPlayerNativeUI = $0
-            }
+            get: {
+                (self.featureFlagger.isFeatureOn(.duckPlayerNativeUI) || self.isInternalUser) &&
+                UIDevice.current.userInterfaceIdiom == .phone
+            },
+            set: { _ in }
         )
     }
     
@@ -362,6 +366,7 @@ final class SettingsViewModel: ObservableObject {
             set: {
                 self.appSettings.duckPlayerNativeUISERPEnabled = $0
                 self.state.duckPlayerNativeUISERPEnabled = $0
+                self.duckPlayerPixelHandler.fire($0 ? .duckPlayerNativeSettingsSerpOn : .duckPlayerNativeSettingsSerpOff)
             }
         )
     }
@@ -374,6 +379,15 @@ final class SettingsViewModel: ObservableObject {
             set: {
                 self.appSettings.duckPlayerNativeYoutubeMode = $0
                 self.state.duckPlayerNativeYoutubeMode = $0
+
+                switch $0 {
+                case .auto:
+                    self.duckPlayerPixelHandler.fire(.duckPlayerNativeSettingsYoutubeAutomatic)
+                case .ask:
+                    self.duckPlayerPixelHandler.fire(.duckPlayerNativeSettingsYoutubeChoose)
+                case .never:
+                    self.duckPlayerPixelHandler.fire(.duckPlayerNativeSettingsYoutubeDontShow)
+                }
             }
         )
     }
@@ -477,7 +491,9 @@ final class SettingsViewModel: ObservableObject {
          experimentalThemingManager: ExperimentalThemingManager,
          experimentalAIChatManager: ExperimentalAIChatManager,
          duckPlayerSettings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
-         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery()
+         duckPlayerPixelHandler: DuckPlayerPixelFiring.Type = DuckPlayerPixelHandler.self,
+         featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(),
+         subscriptionFreeTrialsHelper: SubscriptionFreeTrialsHelping = SubscriptionFreeTrialsHelper()
     ) {
 
         self.state = SettingsState.defaults
@@ -498,7 +514,9 @@ final class SettingsViewModel: ObservableObject {
         self.experimentalThemingManager = experimentalThemingManager
         self.experimentalAIChatManager = experimentalAIChatManager
         self.duckPlayerSettings = duckPlayerSettings
+        self.duckPlayerPixelHandler = duckPlayerPixelHandler
         self.featureDiscovery = featureDiscovery
+        self.subscriptionFreeTrialsHelper = subscriptionFreeTrialsHelper
         setupNotificationObservers()
         updateRecentlyVisitedSitesVisibility()
     }
@@ -550,7 +568,6 @@ extension SettingsViewModel {
             duckPlayerMode: duckPlayerSettings.mode,
             duckPlayerOpenInNewTab: duckPlayerSettings.openInNewTab,
             duckPlayerOpenInNewTabEnabled: featureFlagger.isFeatureOn(.duckPlayerOpenInNewTab),
-            duckPlayerNativeUI: duckPlayerSettings.nativeUI,
             duckPlayerAutoplay: duckPlayerSettings.autoplay,
             duckPlayerNativeUISERPEnabled: duckPlayerSettings.nativeUISERPEnabled,
             duckPlayerNativeYoutubeMode: duckPlayerSettings.nativeUIYoutubeMode
@@ -627,7 +644,6 @@ extension SettingsViewModel {
     private func updateDuckPlayerState() {
         state.duckPlayerMode = duckPlayerSettings.mode
         state.duckPlayerOpenInNewTab = duckPlayerSettings.openInNewTab
-        state.duckPlayerNativeUI = duckPlayerSettings.nativeUI
         state.duckPlayerAutoplay = duckPlayerSettings.autoplay
         state.duckPlayerNativeUISERPEnabled = duckPlayerSettings.nativeUISERPEnabled
         state.duckPlayerNativeYoutubeMode = duckPlayerSettings.nativeUIYoutubeMode
@@ -866,6 +882,8 @@ extension SettingsViewModel {
             state.subscription.platform = .unknown
             state.subscription.isActiveTrialOffer = false
 
+            state.subscription.isEligibleForTrialOffer = await isUserEligibleForTrialOffer()
+
             subscriptionStateCache.set(state.subscription) // Sync cache
             return
         }
@@ -1031,6 +1049,17 @@ extension SettingsViewModel {
             case .subscriptionExpired:
                 DailyPixel.fireDailyAndCount(pixel: .privacyProActivatingRestoreErrorSubscriptionExpired)
             }
+        }
+    }
+
+    /// Checks if the user is eligible for a free trial subscription offer.
+    /// - Returns: `true` if free trials are available and the user is eligible for a free trial, `false` otherwise.
+    private func isUserEligibleForTrialOffer() async -> Bool {
+        guard subscriptionFreeTrialsHelper.areFreeTrialsEnabled else { return false }
+        if isAuthV2Enabled {
+            return await subscriptionManagerV2?.storePurchaseManager().isUserEligibleForFreeTrial() ?? false
+        } else {
+            return await subscriptionManagerV1?.storePurchaseManager().isUserEligibleForFreeTrial() ?? false
         }
     }
 

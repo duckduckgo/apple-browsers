@@ -17,7 +17,8 @@
 //
 
 import SwiftUI
-import CoreImage
+import CoreImage.CIFilterBuiltins
+
 struct QRCode: View {
     let string: String
     let desiredSize: Int

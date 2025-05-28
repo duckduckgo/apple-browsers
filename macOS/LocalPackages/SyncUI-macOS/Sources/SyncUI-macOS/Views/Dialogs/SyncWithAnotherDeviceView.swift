@@ -32,7 +32,7 @@ struct SyncWithAnotherDeviceView: View {
     var body: some View {
         SyncDialog(spacing: 20.0) {
             VStack(spacing: 8.0) {
-                Image(.syncColor24)
+                Image(.sync96)
                 SyncUIViews.TextHeader(text: UserText.syncWithAnotherDeviceTitle)
             }
             if #available(macOS 12.0, *) {
@@ -134,6 +134,7 @@ struct SyncWithAnotherDeviceView: View {
                 .background(Color(.blackWhite5))
                 .cornerRadius(8)
             }
+            .padding(.top, 8)
             Spacer()
             QRCode(string: stringForQRCode, desiredSize: 180)
             Spacer()

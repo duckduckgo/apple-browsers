@@ -318,19 +318,8 @@
                                         <action selector="onRefreshPressed:" destination="ojX-nM-dyN" eventType="touchUpInside" id="4Dg-IX-SdK"/>
                                     </connections>
                                 </button>
-                                <button opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" reversesTitleShadowWhenHighlighted="YES" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="eR6-Vx-MAY">
-                                    <rect key="frame" x="403" y="7" width="30" height="26"/>
-                                    <accessibility key="accessibilityConfiguration" label="Refresh Page"/>
-                                    <constraints>
-                                        <constraint firstAttribute="width" priority="900" constant="30" id="fjl-fd-cK0"/>
-                                    </constraints>
-                                    <state key="normal" image="person.bubble" catalog="system"/>
-                                    <connections>
-                                        <action selector="onSharePressed:" destination="ojX-nM-dyN" eventType="touchUpInside" id="1pO-tU-wuk"/>
-                                    </connections>
-                                </button>
                                 <button opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" reversesTitleShadowWhenHighlighted="YES" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="gb5-wL-4OW" userLabel="Abort Button">
-                                    <rect key="frame" x="433" y="7" width="30" height="26"/>
+                                    <rect key="frame" x="403" y="7" width="30" height="26"/>
                                     <accessibility key="accessibilityConfiguration" label="Stop Loading"/>
                                     <constraints>
                                         <constraint firstAttribute="width" priority="900" constant="30" id="MmC-kg-OHF"/>
@@ -338,6 +327,17 @@
                                     <state key="normal" image="person.bubble" catalog="system"/>
                                     <connections>
                                         <action selector="onAbortButtonPressed:" destination="ojX-nM-dyN" eventType="touchUpInside" id="AUa-p9-XUK"/>
+                                    </connections>
+                                </button>
+                                <button opaque="NO" contentMode="scaleToFill" horizontalHuggingPriority="750" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" reversesTitleShadowWhenHighlighted="YES" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="eR6-Vx-MAY">
+                                    <rect key="frame" x="433" y="7" width="30" height="26"/>
+                                    <accessibility key="accessibilityConfiguration" label="Refresh Page"/>
+                                    <constraints>
+                                        <constraint firstAttribute="width" priority="900" constant="30" id="fjl-fd-cK0"/>
+                                    </constraints>
+                                    <state key="normal" image="person.bubble" catalog="system"/>
+                                    <connections>
+                                        <action selector="onSharePressed:" destination="ojX-nM-dyN" eventType="touchUpInside" id="1pO-tU-wuk"/>
                                     </connections>
                                 </button>
                             </subviews>
@@ -494,10 +494,10 @@
     <resources>
         <image name="person.bubble" catalog="system" width="128" height="110"/>
         <systemColor name="systemGreenColor">
-            <color red="0.20392156862745098" green="0.7803921568627451" blue="0.34901960784313724" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <color red="0.20392156859999999" green="0.78039215689999997" blue="0.34901960780000002" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
         <systemColor name="systemPurpleColor">
-            <color red="0.68627450980392157" green="0.32156862745098042" blue="0.87058823529411766" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+            <color red="0.68627450980000004" green="0.32156862749999998" blue="0.87058823529999996" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
         <systemColor name="systemYellowColor">
             <color red="1" green="0.80000000000000004" blue="0.0" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>

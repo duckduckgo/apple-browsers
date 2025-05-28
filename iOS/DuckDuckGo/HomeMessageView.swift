@@ -81,12 +81,18 @@ struct HomeMessageView: View {
                     dimension[.top]
                 }
         }
-        .background(RoundedRectangle(cornerRadius: Const.Radius.corner)
-                        .fill(Color.background)
-                        .shadow(color: Color.shadow,
-                                radius: Const.Radius.shadow,
-                                x: 0,
-                                y: Const.Offset.shadowVertical))
+        .background(RoundedRectangle(cornerRadius: viewModel.isExperimentalThemingEnabled ? Const.Radius.cornerLarge : Const.Radius.corner)
+            .fill(Color.background)
+            .if(viewModel.isExperimentalThemingEnabled) {
+                $0.shadow(color: Color.updatedShadow, radius: Const.Radius.updatedShadow1, x: 0, y: Const.Offset.updatedShadow1Vertical)
+                    .shadow(color: Color.updatedShadow, radius: Const.Radius.updatedShadow2, x: 0, y: Const.Offset.updatedShadow2Vertical)
+            }
+            .if(!viewModel.isExperimentalThemingEnabled) {
+                $0.shadow(color: Color.shadow,
+                          radius: Const.Radius.shadow,
+                          x: 0,
+                          y: Const.Offset.shadowVertical)
+            })
         .onAppear {
             viewModel.onDidAppear()
         }
@@ -240,6 +246,7 @@ private extension Color {
     static let cancelButtonForeground = Color(designSystemColor: .buttonsSecondaryFillText)
     static let background = Color(designSystemColor: .surface)
     static let shadow = Color.shade(0.1)
+    static let updatedShadow = Color(designSystemColor: .shadowPrimary)
 }
 
 private extension Image {
@@ -256,7 +263,10 @@ private enum Const {
     
     enum Radius {
         static let shadow: CGFloat = 3
+        static let updatedShadow1: CGFloat = 12
+        static let updatedShadow2: CGFloat = 48
         static let corner: CGFloat = 8
+        static let cornerLarge: CGFloat = 16
     }
     
     enum Padding {
@@ -280,6 +290,8 @@ private enum Const {
     
     enum Offset {
         static let shadowVertical: CGFloat = 2
+        static let updatedShadow1Vertical: CGFloat = 4
+        static let updatedShadow2Vertical: CGFloat = 16
     }
 }
 
@@ -322,30 +334,35 @@ struct HomeMessageView_Previews: PreviewProvider {
                                                             sendPixels: false,
                                                             modelType: small,
                                                             navigator: DefaultMessageNavigator(delegate: nil),
+                                                            isExperimentalThemingEnabled: false,
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
 
             HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Critical",
                                                             sendPixels: false,
                                                             modelType: critical,
                                                             navigator: DefaultMessageNavigator(delegate: nil),
+                                                            isExperimentalThemingEnabled: false,
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
 
             HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Big Single",
                                                             sendPixels: false,
                                                             modelType: bigSingle,
                                                             navigator: DefaultMessageNavigator(delegate: nil),
+                                                            isExperimentalThemingEnabled: false,
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
 
             HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Big Two",
                                                             sendPixels: false,
                                                             modelType: bigTwo,
                                                             navigator: DefaultMessageNavigator(delegate: nil),
+                                                            isExperimentalThemingEnabled: false,
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
 
             HomeMessageView(viewModel: HomeMessageViewModel(messageId: "Promo",
                                                             sendPixels: false,
                                                             modelType: promo,
                                                             navigator: DefaultMessageNavigator(delegate: nil),
+                                                            isExperimentalThemingEnabled: false,
                                                             onDidClose: { _ in }, onDidAppear: {}, onAttachAdditionalParameters: { _, params in params }))
         }
         .frame(height: 200)

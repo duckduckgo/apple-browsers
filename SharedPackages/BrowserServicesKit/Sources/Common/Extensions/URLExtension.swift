@@ -542,13 +542,7 @@ extension URL {
         }
 
         // Step 3: Repeatedly percent-unescape the URL until it has no more percent-escapes
-        var previousURLString: String
-        repeat {
-            previousURLString = urlString
-            if let unescapedURLString = urlString.removingPercentEncoding {
-                urlString = unescapedURLString
-            }
-        } while urlString != previousURLString
+        urlString = urlString.fullyRemovingPercentEncoding()
 
         // Step 4: Remove all trailing slashes, but keep the single slash after the domain
         if let url = URL(string: urlString), url.path == "/" {

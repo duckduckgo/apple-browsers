@@ -1011,15 +1011,7 @@ extension AutofillLoginListViewController {
         tableView.separatorColor = UIColor(designSystemColor: .lines)
         tableView.sectionIndexColor = theme.buttonTintColor
 
-        navigationController?.navigationBar.barTintColor = theme.barBackgroundColor
-        navigationController?.navigationBar.tintColor = theme.navigationBarTintColor
-
-        let appearance = UINavigationBarAppearance()
-        appearance.shadowColor = .clear
-        appearance.backgroundColor = theme.backgroundColor
-
-        navigationController?.navigationBar.standardAppearance = appearance
-        navigationController?.navigationBar.scrollEdgeAppearance = appearance
+        decorateNavigationBar()
 
         tableView.reloadData()
     }

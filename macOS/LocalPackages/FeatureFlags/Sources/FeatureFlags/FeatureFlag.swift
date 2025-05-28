@@ -93,6 +93,9 @@ public enum FeatureFlag: String, CaseIterable {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210081345713964?focus=true
     case canScanUrlBasedSyncSetupBarcodes
 
+    /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1210052464460517?focus=true
+    case privacyProFreeTrial
+
     /// https://app.asana.com/1/137249556945/task/1210330600670666
     case removeWWWInCanonicalizationInThreatProtection
 

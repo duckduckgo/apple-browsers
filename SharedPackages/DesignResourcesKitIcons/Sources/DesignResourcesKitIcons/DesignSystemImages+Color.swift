@@ -80,6 +80,7 @@ public extension DesignSystemImages {
             public static var privacyCheckGray: DesignSystemImage { .init(resource: .privacyCheckGrayColor16) }
             public static var privacyPro: DesignSystemImage { .init(resource: .privacyProColor16) }
             public static var profile: DesignSystemImage { .init(resource: .profileColor16) }
+            public static var radar: DesignSystemImage { .init(resource: .radarColor16) }
             public static var releaseNotes: DesignSystemImage { .init(resource: .releaseNotesColor16) }
             public static var rocket: DesignSystemImage { .init(resource: .rocketColor16) }
             public static var sessionRestore: DesignSystemImage { .init(resource: .sessionRestoreColor16) }

@@ -58,9 +58,8 @@ struct SyncWithAnotherDeviceView: View {
                 } else {
                     enterCodeView()
                 }
-                Spacer(minLength: 0)
             }
-            .padding(.top, 16)
+            .padding(16)
             .frame(height: 332)
             .frame(minWidth: 380)
             .roundedBorder()
@@ -119,7 +118,7 @@ struct SyncWithAnotherDeviceView: View {
     }
 
     fileprivate func scanQRCodeView() -> some View {
-        return VStack(spacing: 16) {
+        return VStack(spacing: 0) {
             HStack(alignment: .center, spacing: 8) {
                 Text(UserText.syncWithAnotherDeviceShowQRCodeExplanationPrefix)
                 HStack(alignment: .center, spacing: 10) {
@@ -135,7 +134,6 @@ struct SyncWithAnotherDeviceView: View {
                 .background(Color(.blackWhite5))
                 .cornerRadius(8)
             }
-            .padding(.top, 16)
             Spacer()
             QRCode(string: stringForQRCode, desiredSize: 180)
             Spacer()
@@ -144,7 +142,7 @@ struct SyncWithAnotherDeviceView: View {
                 .foregroundColor(Color(.linkBlue))
                 .onTapGesture {
                     showQRCode = false
-                }.padding(.bottom, 16)
+                }
         }
     }
 

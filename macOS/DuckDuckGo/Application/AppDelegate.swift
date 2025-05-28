@@ -133,6 +133,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let remoteMessagingClient: RemoteMessagingClient!
     let onboardingContextualDialogsManager: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater
     let defaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPresenter
+    let defaultBrowserAndDockPromptKeyValueStore: DefaultBrowserAndDockPromptStorage
+    let defaultBrowserAndDockPromptFeatureFlagger: DefaultBrowserAndDockPromptFeatureFlagger
     let visualStyleManager: VisualStyleManagerProviding
 
     let isAuthV2Enabled: Bool
@@ -311,26 +313,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         onboardingContextualDialogsManager = ContextualDialogsManager()
 
-        let defaultBrowserAndDockPromptKeyValueStore = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStore)
+        #if DEBUG || REVIEW
+        let defaultBrowserAndDockPromptDebugStore = DefaultBrowserAndDockPromptDebugStore()
+        let defaultBrowserAndDockPromptDateProvider: () -> Date = { defaultBrowserAndDockPromptDebugStore.simulatedTodayDate }
+        #else
+        let defaultBrowserAndDockPromptDateProvider: () -> Date = Date.init
+        #endif
+
+        defaultBrowserAndDockPromptKeyValueStore = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStore)
         DefaultBrowserAndDockPromptStoreMigrator(
             oldStore: DefaultBrowserAndDockPromptLegacyStore(),
             newStore: defaultBrowserAndDockPromptKeyValueStore
         ).migrateIfNeeded()
 
-        let defaultBrowserAndDockPromptFeatureFlag = DefaultBrowserAndDockPromptFeatureFlag(
+        defaultBrowserAndDockPromptFeatureFlagger = DefaultBrowserAndDockPromptFeatureFlag(
             privacyConfigManager: ContentBlocking.shared.privacyConfigurationManager,
             featureFlagger: featureFlagger
         )
 
-        #if DEBUG || REVIEW
-        let defaultBrowserAndDockPromptDebugStore = DefaultBrowserAndDockPromptDebugStore()
-        let dateProvider: () -> Date = { defaultBrowserAndDockPromptDebugStore.simulatedTodayDate }
-        #else
-        let dateProvider: () -> Date = Date.init
-        #endif
-
         let defaultBrowserAndDockPromptDecider = DefaultBrowserAndDockPromptTypeDecider(
-            featureFlagger: defaultBrowserAndDockPromptFeatureFlag,
+            featureFlagger: defaultBrowserAndDockPromptFeatureFlagger,
             store: defaultBrowserAndDockPromptKeyValueStore,
             installDateProvider: { LocalStatisticsStore().installDate },
             dateProvider: defaultBrowserAndDockPromptDateProvider
@@ -338,7 +340,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let coordinator = DefaultBrowserAndDockPromptCoordinator(
             promptTypeDecider: defaultBrowserAndDockPromptDecider,
             store: defaultBrowserAndDockPromptKeyValueStore,
-            isOnboardingCompleted: onboardingContextualDialogsManager.state == .onboardingCompleted
+            isOnboardingCompleted: onboardingContextualDialogsManager.state == .onboardingCompleted,
+            dateProvider: defaultBrowserAndDockPromptDateProvider
         )
         let statusUpdateNotifier = DefaultBrowserAndDockPromptStatusUpdateNotifier()
         defaultBrowserAndDockPromptPresenter = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, statusUpdateNotifier: statusUpdateNotifier)

@@ -1487,6 +1487,7 @@ struct UserText {
     // Key: "subscription.menu.item"
     // Comment: "Title for Subscription item in the options menu"
     static let subscriptionOptionsMenuItem = "Privacy Pro"
+    static let subscriptionOptionsMenuItemFreeTrialBadge = "TRY FOR FREE"
 
     static let identityTheftRestorationOptionsMenuItem = "Identity Theft Restoration"
 

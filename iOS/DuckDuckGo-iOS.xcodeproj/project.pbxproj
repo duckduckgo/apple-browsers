@@ -508,7 +508,6 @@
 		6FE3AF002D9D8933001AE6B8 /* trackers-1-new.json in Resources */ = {isa = PBXBuildFile; fileRef = 6FE3AEF82D9D8933001AE6B8 /* trackers-1-new.json */; };
 		6FE3AF012D9D8933001AE6B8 /* dark-trackers-2-new.json in Resources */ = {isa = PBXBuildFile; fileRef = 6FE3AEF52D9D8933001AE6B8 /* dark-trackers-2-new.json */; };
 		6FE3AF022D9D8933001AE6B8 /* trackers-3-new.json in Resources */ = {isa = PBXBuildFile; fileRef = 6FE3AEFA2D9D8933001AE6B8 /* trackers-3-new.json */; };
-		6FE3AF432D9EBEF5001AE6B8 /* CompositeShadowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FE3AF422D9EBEF5001AE6B8 /* CompositeShadowView.swift */; };
 		6FE3AF462D9ECF6B001AE6B8 /* shield-dot-new.json in Resources */ = {isa = PBXBuildFile; fileRef = 6FE3AF452D9ECF6B001AE6B8 /* shield-dot-new.json */; };
 		6FE3AF472D9ECF6B001AE6B8 /* dark-shield-dot-new.json in Resources */ = {isa = PBXBuildFile; fileRef = 6FE3AF442D9ECF6B001AE6B8 /* dark-shield-dot-new.json */; };
 		6FEC0B852C999352006B4F6E /* FavoriteItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FEC0B842C999352006B4F6E /* FavoriteItem.swift */; };
@@ -2111,7 +2110,6 @@
 		6FE3AEF82D9D8933001AE6B8 /* trackers-1-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "trackers-1-new.json"; sourceTree = "<group>"; };
 		6FE3AEF92D9D8933001AE6B8 /* trackers-2-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "trackers-2-new.json"; sourceTree = "<group>"; };
 		6FE3AEFA2D9D8933001AE6B8 /* trackers-3-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "trackers-3-new.json"; sourceTree = "<group>"; };
-		6FE3AF422D9EBEF5001AE6B8 /* CompositeShadowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompositeShadowView.swift; sourceTree = "<group>"; };
 		6FE3AF442D9ECF6B001AE6B8 /* dark-shield-dot-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "dark-shield-dot-new.json"; sourceTree = "<group>"; };
 		6FE3AF452D9ECF6B001AE6B8 /* shield-dot-new.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "shield-dot-new.json"; sourceTree = "<group>"; };
 		6FEC0B842C999352006B4F6E /* FavoriteItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoriteItem.swift; sourceTree = "<group>"; };
@@ -4800,7 +4798,6 @@
 			isa = PBXGroup;
 			children = (
 				6F5938962DB1027400C8C068 /* ButtonConfigurations */,
-				6FE3AF422D9EBEF5001AE6B8 /* CompositeShadowView.swift */,
 				6F922EDA2D8C364C0062DFC1 /* UpdatedOmniBarViewController.swift */,
 				6F922EDC2D8C372F0062DFC1 /* UpdatedOmniBarView.swift */,
 				6F922EDE2D8C5AEC0062DFC1 /* UpdatedOmniBarSearchView.swift */,
@@ -9008,7 +9005,6 @@
 				B609D5522862EAFF0088CAC2 /* InlineWKDownloadDelegate.swift in Sources */,
 				BDFF03222BA3D8E200F324C9 /* NetworkProtectionFeatureVisibility.swift in Sources */,
 				B652DEFD287BE67400C12A9C /* UserScripts.swift in Sources */,
-				6FE3AF432D9EBEF5001AE6B8 /* CompositeShadowView.swift in Sources */,
 				3768D8472C2CC98C004120AE /* RemoteMessagingConfigMatcherProvider.swift in Sources */,
 				1D200C992BA3176D00108701 /* SettingsOthersView.swift in Sources */,
 				31DD208427395A5A008FB313 /* VoiceSearchHelper.swift in Sources */,

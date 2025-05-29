@@ -21,6 +21,7 @@ import UIKit
 import DesignResourcesKit
 import DesignResourcesKitIcons
 import SwiftUI
+import UIComponents
 
 final class UpdatedOmniBarView: UIView, OmniBarView {
 
@@ -227,7 +228,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     private let trailingButtonsContainer = UIStackView()
 
     private let searchAreaView = UpdatedOmniBarSearchView()
-    private let searchAreaContainerView = CompositeShadowView()
+    private let searchAreaContainerView = CompositeShadowView.defaultShadowView()
 
     /// Spans to available width of the omni bar and allows the input field to center horizontally
     private let searchAreaAlignmentView = UIView()
@@ -434,50 +435,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     }
 
     private func updateShadows() {
-        let inactiveColor = UIColor(designSystemColor: .shadowPrimary)
-        let activeColor = UIColor(designSystemColor: .shadowSecondary)
-
-        // The following two have the same id so we can update the existing shadow
-        let shadow1Inactive = CompositeShadowView.Shadow(
-            id: "shadow1",
-            color: inactiveColor,
-            opacity: 1,
-            radius: 12.0,
-            offset: CGSize(width: 0, height: 4)
-        )
-        let shadow1Active = CompositeShadowView.Shadow(
-            id: "shadow1",
-            color: activeColor,
-            opacity: 1,
-            radius: 12.0,
-            offset: CGSize(width: 0, height: 2)
-        )
-
-        // The following two have the same id so we can update the existing shadow
-        let shadow2Inactive = CompositeShadowView.Shadow(
-            id: "shadow2",
-            color: inactiveColor,
-            opacity: 0,
-            radius: 48.0,
-            offset: CGSize(width: 0, height: 16)
-        )
-        let shadow2Active = CompositeShadowView.Shadow(
-            id: "shadow2",
-            color: activeColor,
-            opacity: 1,
-            radius: 32,
-            offset: CGSize(width: 0, height: 16)
-        )
-
-        let primaryShadow = isActiveState ? shadow1Active : shadow1Inactive
-        let secondaryShadow = isActiveState ? shadow2Active : shadow2Inactive
-
-        if searchAreaContainerView.shadows.isEmpty {
-            searchAreaContainerView.shadows = [primaryShadow, secondaryShadow]
-        } else {
-            searchAreaContainerView.updateShadow(primaryShadow)
-            searchAreaContainerView.updateShadow(secondaryShadow)
-        }
+        isActiveState ? searchAreaContainerView.applyActiveShadow() : searchAreaContainerView.applyDefaultShadow()
     }
 
     private func setUpAccessibility() {
@@ -564,8 +522,6 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
 
         if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
             activeOutlineView.layer.borderColor = UIColor(Color(designSystemColor: .accent)).cgColor
-
-            updateShadows()
         }
     }
 

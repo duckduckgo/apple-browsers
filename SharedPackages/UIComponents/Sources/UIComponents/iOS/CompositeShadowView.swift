@@ -17,11 +17,13 @@
 //  limitations under the License.
 //
 
+#if os(iOS)
 import UIKit
 
-class CompositeShadowView: UIView {
+/// Allows creating multiple layers of shadows easily
+public class CompositeShadowView: UIView {
 
-    var shadows: [Shadow] = [] {
+    public var shadows: [Shadow] = [] {
         didSet {
             setUpShadows()
         }
@@ -29,7 +31,7 @@ class CompositeShadowView: UIView {
 
     private var shadowViews: [UIView] = []
 
-    init(shadows: [Shadow] = []) {
+    required public init(shadows: [Shadow] = []) {
         super.init(frame: .zero)
 
         self.shadows = shadows
@@ -42,7 +44,7 @@ class CompositeShadowView: UIView {
         super.init(coder: coder)
     }
 
-    override class var layerClass: AnyClass {
+    public override class var layerClass: AnyClass {
         return CustomLayer.self
     }
 
@@ -51,7 +53,10 @@ class CompositeShadowView: UIView {
         return layer as! CustomLayer
     }
 
-    func updateShadow(_ shadow: Shadow) {
+    /// Updates the shadow matched by `id`
+    ///
+    /// If there's no shadow found with specified `id` does nothing.
+    public func updateShadow(_ shadow: Shadow) {
         guard let shadowView = shadowViews.first(where: { $0.layer.name == shadow.id }) else {
             return
         }
@@ -84,14 +89,24 @@ class CompositeShadowView: UIView {
         }
     }
 
-    struct Shadow {
-        let id: String
-        let color: UIColor
-        let opacity: Float
-        let radius: CGFloat
-        let offset: CGSize
+    public override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
 
-        init(id: String = UUID().uuidString, color: UIColor, opacity: Float = 1.0, radius: CGFloat, offset: CGSize) {
+        if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
+            for shadow in shadows {
+                updateShadow(shadow)
+            }
+        }
+    }
+
+    public struct Shadow {
+        public let id: String
+        public let color: UIColor
+        public let opacity: Float
+        public let radius: CGFloat
+        public let offset: CGSize
+
+        public init(id: String = UUID().uuidString, color: UIColor, opacity: Float = 1.0, radius: CGFloat, offset: CGSize) {
             self.id = id
             self.color = color
             self.opacity = opacity
@@ -158,3 +173,5 @@ private extension CALayer {
         shadowOffset = shadow.offset
     }
 }
+
+#endif

@@ -20,6 +20,7 @@
 import SwiftUI
 import UIKit
 import DesignResourcesKit
+import UIComponents
 
 struct NewTabPageShadowScrollView<Content: View>: UIViewControllerRepresentable {
     var content: Content

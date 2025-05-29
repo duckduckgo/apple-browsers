@@ -436,7 +436,11 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     }
 
     private func updateShadows() {
-        isActiveState ? searchAreaContainerView.applyActiveShadow() : searchAreaContainerView.applyDefaultShadow()
+        if isActiveState {
+            searchAreaContainerView.applyActiveShadow()
+        } else {
+            searchAreaContainerView.applyDefaultShadow()
+        }
     }
 
     private func setUpAccessibility() {

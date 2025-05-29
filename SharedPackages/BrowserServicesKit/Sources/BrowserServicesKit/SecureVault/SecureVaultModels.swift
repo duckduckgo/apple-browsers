@@ -207,6 +207,11 @@ public struct SecureVaultModels {
             let type = CreditCardValidation.type(for: cardNumber)
             return "\(type.displayName) (\(cardSuffix))"
         }
+        
+        public var displayCardType: String {
+            let type = CreditCardValidation.type(for: cardNumber)
+            return type.displayCardType
+        }
 
         static func suffix(from cardNumber: String) -> String {
             let trimmedCardNumber = cardNumber.trimmingCharacters(in: .whitespacesAndNewlines)

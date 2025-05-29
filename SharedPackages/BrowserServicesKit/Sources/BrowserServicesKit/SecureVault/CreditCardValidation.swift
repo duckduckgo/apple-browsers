@@ -51,6 +51,27 @@ public struct CreditCardValidation {
                 return "Card"
             }
         }
+        
+        public var displayCardType: String {
+            switch self {
+            case .amex:
+                return "amex"
+            case .dinersClub:
+                return "dinersClub"
+            case .discover:
+                return "discover"
+            case .mastercard:
+                return "masterCard"
+            case .jcb:
+                return "jcb"
+            case .unionPay:
+                return "unionPay"
+            case .visa:
+                return "visa"
+            case .unknown:
+                return "generic"
+            }
+        }
 
         static fileprivate var patterns: [(type: CardType, pattern: String)] {
             return [

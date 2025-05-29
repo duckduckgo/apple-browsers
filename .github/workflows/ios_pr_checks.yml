@@ -111,9 +111,6 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-ios-
 
-    - name: Install xcbeautify
-      run: brew install xcbeautify
-
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
 
@@ -225,9 +222,6 @@ jobs:
         key: ${{ runner.os }}-ios-release-${{ env.cache_key_hash }}
         restore-keys: |
           ${{ runner.os }}-ios-release-
-
-    - name: Install xcbeautify
-      run: brew install xcbeautify
 
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version

@@ -31,23 +31,27 @@ final class AppStateRestorationManager: NSObject {
     private var appWillRelaunchCancellable: AnyCancellable?
     private var stateChangedCancellable: AnyCancellable?
     private let pinnedTabsManagerProvider: PinnedTabsManagerProviding = Application.appDelegate.pinnedTabsManagerProvider
+    private let startupPreferences: StartupPreferences
 
     @UserDefaultsWrapper(key: .appIsRelaunchingAutomatically, defaultValue: false)
     private var appIsRelaunchingAutomatically: Bool
     private var shouldRestoreRegularTabs: Bool {
-        return StartupPreferences().restorePreviousSession
+        startupPreferences.restorePreviousSession
     }
 
-    convenience init(fileStore: FileStore) {
+    convenience init(fileStore: FileStore, startupPreferences: StartupPreferences) {
         let service = StatePersistenceService(fileStore: fileStore, fileName: AppStateRestorationManager.fileName)
-        self.init(fileStore: fileStore, service: service)
+        self.init(fileStore: fileStore, service: service, startupPreferences: startupPreferences)
     }
 
     init(
         fileStore: FileStore,
-        service: StatePersistenceService) {
+        service: StatePersistenceService,
+        startupPreferences: StartupPreferences
+    ) {
         self.service = service
         self.tabSnapshotCleanupService = TabSnapshotCleanupService(fileStore: fileStore)
+        self.startupPreferences = startupPreferences
     }
 
     func subscribeToAutomaticAppRelaunching(using relaunchPublisher: AnyPublisher<Void, Never>) {

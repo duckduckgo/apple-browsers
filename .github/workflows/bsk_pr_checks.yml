@@ -23,6 +23,9 @@ jobs:
 
       runs-on: macos-15
       timeout-minutes: 30
+      
+      env:
+        WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
 
       outputs:
         commit_author: ${{ steps.fetch_commit_author.outputs.commit_author }}
@@ -66,6 +69,11 @@ jobs:
       - name: Run tests
         id: run-unit-tests
         run: set -o pipefail && swift test | tee -a build-log.txt | xcbeautify --report junit --report-path . --junit-report-filename package-tests.xml
+        
+      - name: Send Unit Tests Status Pixel
+        if: always() && github.ref_name == 'main'
+        run: |
+          curl -fLSs -o /dev/null "https://improving.duckduckgo.com/t/m_ci_apple_bsk_main_unit_tests_macos_${{ steps.run-unit-tests.outcome }}?workflow=${{ env.WORKFLOW_URL }}"
 
       - name: Upload JUnit XML as artifact
         uses: actions/upload-artifact@v4
@@ -89,7 +97,6 @@ jobs:
         if: always() && steps.run-unit-tests.outcome == 'failure'
         env:
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
-          WORKFLOW_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
         run: |
           # Extract failed tests from the junit report
           # Only keep failures unique by classname and name (column 1 and 2 of the yq output)
@@ -121,6 +128,9 @@ jobs:
 
       runs-on: macos-15
       timeout-minutes: 30
+      
+      env:
+        WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
 
       steps:
 
@@ -177,6 +187,11 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             | tee -a ios-build-log.txt \
             | xcbeautify --report junit --report-path . --junit-report-filename bsk-ios-unittests.xml
+            
+      - name: Send Unit Tests Status Pixel
+        if: always() && github.ref_name == 'main'
+        run: |
+          curl -fLSs -o /dev/null "https://improving.duckduckgo.com/t/m_ci_apple_bsk_main_unit_tests_ios_${{ steps.run-unit-tests-ios.outcome }}?workflow=${{ env.WORKFLOW_URL }}"
 
       - name: Upload JUnit XML as artifact
         uses: actions/upload-artifact@v4
@@ -199,7 +214,6 @@ jobs:
         if: always() && steps.run-unit-tests-ios.outcome == 'failure'
         env:
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
-          WORKFLOW_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
         run: |
           # Extract failed tests from the junit report
           # Only keep failures unique by classname and name (column 1 and 2 of the yq output)

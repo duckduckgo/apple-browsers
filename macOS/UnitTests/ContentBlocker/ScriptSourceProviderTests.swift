@@ -16,9 +16,10 @@
 //  limitations under the License.
 //
 
-import XCTest
-import Common
 import BrowserServicesKit
+import Common
+import PersistenceTestingUtils
+import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
 final class ScriptSourceProviderTests: XCTestCase {
@@ -44,7 +45,26 @@ final class ScriptSourceProviderTests: XCTestCase {
         let experimentManager = MockContentScopeExperimentManager()
 
         experimentManager.allActiveContentScopeExperiments = ["test": testExperimentData]
-        let sourceProvider = ScriptSourceProvider(configStorage: MockConfigurationStore(), privacyConfigurationManager: MockPrivacyConfigurationManaging(), webTrackingProtectionPreferences: WebTrackingProtectionPreferences(), contentBlockingManager: MockContentBlockerRulesManagerProtocol(), trackerDataManager: TrackerDataManager(etag: nil, data: Data(), embeddedDataProvider: MockEmbeddedDataProvider()), experimentManager: experimentManager, tld: TLD())
+
+        let appearancePreferences = AppearancePreferences(keyValueStore: try MockKeyValueFileStore())
+        let dataClearingPreferences = DataClearingPreferences(persistor: MockFireButtonPreferencesPersistor())
+        let startupPreferences = StartupPreferences(
+            persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),
+            appearancePreferences: appearancePreferences,
+            dataClearingPreferences: dataClearingPreferences
+        )
+
+        let sourceProvider = ScriptSourceProvider(
+            configStorage: MockConfigurationStore(),
+            privacyConfigurationManager: MockPrivacyConfigurationManaging(),
+            webTrackingProtectionPreferences: WebTrackingProtectionPreferences(),
+            contentBlockingManager: MockContentBlockerRulesManagerProtocol(),
+            trackerDataManager: TrackerDataManager(etag: nil, data: Data(), embeddedDataProvider: MockEmbeddedDataProvider()),
+            experimentManager: experimentManager,
+            tld: TLD(),
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences
+        )
 
         let cohorts = try XCTUnwrap(sourceProvider.currentCohorts)
         XCTAssertFalse(cohorts.isEmpty)

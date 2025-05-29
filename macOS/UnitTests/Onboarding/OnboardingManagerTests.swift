@@ -29,6 +29,8 @@ class OnboardingManagerTests: XCTestCase {
     var appearancePreferences: AppearancePreferences!
     var startupPreferences: StartupPreferences!
     var appearancePersistor: MockAppearancePreferencesPersistor!
+    var fireButtonPreferencesPersistor: MockFireButtonPreferencesPersistor!
+    var dataClearingPreferences: DataClearingPreferences!
     var startupPersistor: StartupPreferencesUserDefaultsPersistor!
     var importProvider: CapturingDataImportProvider!
 
@@ -40,7 +42,9 @@ class OnboardingManagerTests: XCTestCase {
         appearancePersistor = MockAppearancePreferencesPersistor()
         appearancePreferences = AppearancePreferences(persistor: appearancePersistor)
         startupPersistor = StartupPreferencesUserDefaultsPersistor()
-        startupPreferences = StartupPreferences(appearancePreferences: appearancePreferences, persistor: startupPersistor)
+        fireButtonPreferencesPersistor = MockFireButtonPreferencesPersistor()
+        dataClearingPreferences = DataClearingPreferences(persistor: fireButtonPreferencesPersistor)
+        startupPreferences = StartupPreferences(persistor: startupPersistor, appearancePreferences: appearancePreferences, dataClearingPreferences: dataClearingPreferences)
         importProvider = CapturingDataImportProvider()
         manager = OnboardingActionsManager(navigationDelegate: navigationDelegate, dockCustomization: dockCustomization, defaultBrowserProvider: defaultBrowserProvider, appearancePreferences: appearancePreferences, startupPreferences: startupPreferences, dataImportProvider: importProvider)
     }

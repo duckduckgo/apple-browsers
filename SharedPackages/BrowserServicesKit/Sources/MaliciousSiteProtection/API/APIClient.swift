@@ -100,11 +100,10 @@ struct APIClient {
 
     typealias Platform = MaliciousSiteDetector.APIEnvironment.Platform
     let platform: Platform
-    let authToken: String?
     let environment: APIClientEnvironment
     private let service: APIService
 
-    init(environment: APIClientEnvironment, platform: Platform? = nil, authToken: String? = nil, service: APIService) {
+    init(environment: APIClientEnvironment, platform: Platform? = nil, service: APIService) {
         if let platform {
             self.platform = platform
         } else {
@@ -116,14 +115,13 @@ struct APIClient {
             fatalError("Unsupported platform")
 #endif
         }
-        self.authToken = authToken
         self.environment = environment
         self.service = service
     }
 
     func load<R: Request>(_ requestConfig: R) async throws -> R.Response {
         let requestType = requestConfig.requestType
-        let headers = environment.headers(for: requestType, platform: platform, authToken: authToken)
+        let headers = environment.headers(for: requestType, platform: platform, authToken: nil)
         let url = environment.url(for: requestType, platform: platform)
         let timeout = environment.timeout(for: requestType) ?? requestConfig.defaultTimeout ?? 60
 

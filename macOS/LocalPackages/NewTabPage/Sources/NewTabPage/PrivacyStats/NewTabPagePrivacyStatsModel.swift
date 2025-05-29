@@ -23,37 +23,21 @@ import os.log
 import Persistence
 import PrivacyStats
 
-public protocol NewTabPagePrivacyStatsSettingsPersistor: AnyObject {
-    var isViewExpanded: Bool { get set }
-}
-
-final class UserDefaultsNewTabPagePrivacyStatsSettingsPersistor: NewTabPagePrivacyStatsSettingsPersistor {
-    enum Keys {
-        static let isViewExpanded = "new-tab-page.privacy-stats.is-view-expanded"
-    }
-
-    private let keyValueStore: KeyValueStoring
-
-    init(_ keyValueStore: KeyValueStoring = UserDefaults.standard, getLegacySetting: @autoclosure () -> Bool?) {
-        self.keyValueStore = keyValueStore
-        migrateFromLegacyHomePageSettings(using: getLegacySetting)
-    }
-
-    var isViewExpanded: Bool {
-        get { return keyValueStore.object(forKey: Keys.isViewExpanded) as? Bool ?? true }
-        set { keyValueStore.set(newValue, forKey: Keys.isViewExpanded) }
-    }
-
-    private func migrateFromLegacyHomePageSettings(using getLegacySetting: () -> Bool?) {
-        guard keyValueStore.object(forKey: Keys.isViewExpanded) == nil, let legacySetting = getLegacySetting() else {
-            return
-        }
-        isViewExpanded = legacySetting
-    }
-}
-
 public enum NewTabPagePrivacyStatsEvent: Equatable {
     case showLess, showMore
+}
+
+/**
+ * This protocol describes objects that can return Privacy Stats widget visibility.
+ *
+ * It's implemented by `NewTabPageProtectionsReportModel` and it's used to limit unnecessary
+ * data processing when the widget is not present on New Tab Page.
+ */
+public protocol NewTabPagePrivacyStatsVisibilityProviding {
+    /**
+     * This property should return `true` if Privacy Stats widget is visible on the New Tab Page.
+     */
+    var isPrivacyStatsVisible: Bool { get }
 }
 
 public final class NewTabPagePrivacyStatsModel {
@@ -61,50 +45,31 @@ public final class NewTabPagePrivacyStatsModel {
     let privacyStats: PrivacyStatsCollecting
     let statsUpdatePublisher: AnyPublisher<Void, Never>
 
-    @Published var isViewExpanded: Bool {
-        didSet {
-            settingsPersistor.isViewExpanded = self.isViewExpanded
-        }
-    }
-
-    private let settingsPersistor: NewTabPagePrivacyStatsSettingsPersistor
     private var topCompanies: Set<String> = []
     private let trackerDataProvider: PrivacyStatsTrackerDataProviding
+    private let visibilityProvider: NewTabPagePrivacyStatsVisibilityProviding
     private let eventMapping: EventMapping<NewTabPagePrivacyStatsEvent>?
 
     private let statsUpdateSubject = PassthroughSubject<Void, Never>()
     private var cancellables: Set<AnyCancellable> = []
 
-    public convenience init(
+    public init(
+        visibilityProvider: NewTabPagePrivacyStatsVisibilityProviding,
         privacyStats: PrivacyStatsCollecting,
         trackerDataProvider: PrivacyStatsTrackerDataProviding,
-        eventMapping: EventMapping<NewTabPagePrivacyStatsEvent>? = nil,
-        keyValueStore: KeyValueStoring = UserDefaults.standard,
-        getLegacyIsViewExpandedSetting: @autoclosure () -> Bool?
+        eventMapping: EventMapping<NewTabPagePrivacyStatsEvent>? = nil
     ) {
-        self.init(
-            privacyStats: privacyStats,
-            trackerDataProvider: trackerDataProvider,
-            eventMapping: eventMapping,
-            settingsPersistor: UserDefaultsNewTabPagePrivacyStatsSettingsPersistor(keyValueStore, getLegacySetting: getLegacyIsViewExpandedSetting())
-        )
-    }
-
-    init(
-        privacyStats: PrivacyStatsCollecting,
-        trackerDataProvider: PrivacyStatsTrackerDataProviding,
-        eventMapping: EventMapping<NewTabPagePrivacyStatsEvent>?,
-        settingsPersistor: NewTabPagePrivacyStatsSettingsPersistor
-    ) {
+        self.visibilityProvider = visibilityProvider
         self.privacyStats = privacyStats
         self.trackerDataProvider = trackerDataProvider
         self.eventMapping = eventMapping
-        self.settingsPersistor = settingsPersistor
 
-        isViewExpanded = settingsPersistor.isViewExpanded
         statsUpdatePublisher = statsUpdateSubject.eraseToAnyPublisher()
 
         privacyStats.statsUpdatePublisher
+            .filter { [weak self] in
+                self?.visibilityProvider.isPrivacyStatsVisible == true
+            }
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.statsUpdateSubject.send()
@@ -129,14 +94,16 @@ public final class NewTabPagePrivacyStatsModel {
         eventMapping?.fire(.showMore)
     }
 
+    func calculateTotalCount() async -> Int64 {
+        await privacyStats.fetchPrivacyStatsTotalCount()
+    }
+
     func calculatePrivacyStats() async -> NewTabPageDataModel.PrivacyStatsData {
         let stats = await privacyStats.fetchPrivacyStats()
 
-        var totalCount: Int64 = 0
         var otherCount: Int64 = 0
 
         var companiesStats: [NewTabPageDataModel.TrackerCompany] = stats.compactMap { key, value in
-            totalCount += value
             guard topCompanies.contains(key) else {
                 otherCount += value
                 return nil
@@ -147,7 +114,7 @@ public final class NewTabPagePrivacyStatsModel {
         if otherCount > 0 {
             companiesStats.append(.otherCompanies(count: otherCount))
         }
-        return NewTabPageDataModel.PrivacyStatsData(totalCount: totalCount, trackerCompanies: companiesStats)
+        return NewTabPageDataModel.PrivacyStatsData(trackerCompanies: companiesStats)
     }
 
     private func refreshTopCompanies() {

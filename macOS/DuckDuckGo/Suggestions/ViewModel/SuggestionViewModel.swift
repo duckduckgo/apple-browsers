@@ -189,7 +189,7 @@ struct SuggestionViewModel {
              .openTab(title: _, url: let url, _, _) where url.isHistory:
             return .historyFavicon
         case .internalPage(title: _, url: let url, _):
-            guard url == URL(string: StartupPreferences.shared.formattedCustomHomePageURL) else { return nil }
+            guard url == URL(string: NSApp.delegateTyped.startupPreferences.formattedCustomHomePageURL) else { return nil }
             return .home16
         case .openTab:
             return .openTabSuggestion

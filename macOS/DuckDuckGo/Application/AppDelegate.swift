@@ -103,18 +103,23 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var syncFeatureFlagsCancellable: AnyCancellable?
     private var screenLockedCancellable: AnyCancellable?
     private var emailCancellables = Set<AnyCancellable>()
-    let bookmarksManager = LocalBookmarkManager.shared
+    private(set) lazy var bookmarksManager = LocalBookmarkManager.shared
     var privacyDashboardWindow: NSWindow?
+
+    let appearancePreferences: AppearancePreferences
+    let dataClearingPreferences: DataClearingPreferences
+    let startupPreferences: StartupPreferences
 
     private var updateProgressCancellable: AnyCancellable?
 
     private(set) lazy var newTabPageCoordinator: NewTabPageCoordinator = NewTabPageCoordinator(
-        appearancePreferences: .shared,
+        appearancePreferences: appearancePreferences,
         customizationModel: newTabPageCustomizationModel,
         activeRemoteMessageModel: activeRemoteMessageModel,
         historyCoordinator: HistoryCoordinator.shared,
         privacyStats: privacyStats,
-        freemiumDBPPromotionViewCoordinator: freemiumDBPPromotionViewCoordinator
+        freemiumDBPPromotionViewCoordinator: freemiumDBPPromotionViewCoordinator,
+        keyValueStore: keyValueStore
     )
 
     private(set) lazy var aiChatTabOpener: AIChatTabOpening = AIChatTabOpener(
@@ -207,6 +212,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         do {
             keyValueStore = try KeyValueFileStore(location: URL.sandboxApplicationSupportURL, name: "AppKeyValueStore")
+            // perform a dummy read to ensure that KVS is accessible
+            _ = try keyValueStore.object(forKey: AppearancePreferencesUserDefaultsPersistor.Key.newTabPageIsProtectionsReportVisible.rawValue)
         } catch {
             PixelKit.fire(DebugEvent(GeneralPixel.keyValueFileStoreInitError, error: error))
             Thread.sleep(forTimeInterval: 1)
@@ -220,6 +227,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             Logger.general.error("App Encryption Key could not be read: \(error.localizedDescription)")
             fileStore = EncryptedFileStore()
         }
+
+        appearancePreferences = AppearancePreferences(keyValueStore: keyValueStore)
+        dataClearingPreferences = DataClearingPreferences()
+        startupPreferences = StartupPreferences(appearancePreferences: appearancePreferences, dataClearingPreferences: dataClearingPreferences)
 
         let internalUserDeciderStore = InternalUserDeciderStore(fileStore: fileStore)
         internalUserDecider = DefaultInternalUserDecider(store: internalUserDeciderStore)
@@ -271,10 +282,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #if DEBUG
         AppPrivacyFeatures.shared = AppVersion.runType.requiresEnvironment
         // runtime mock-replacement for Unit Tests, to be redone when we‘ll be doing Dependency Injection
-        ? AppPrivacyFeatures(contentBlocking: AppContentBlocking(internalUserDecider: internalUserDecider, configurationStore: configurationStore), database: Database.shared)
+        ? AppPrivacyFeatures(contentBlocking: AppContentBlocking(internalUserDecider: internalUserDecider, configurationStore: configurationStore, appearancePreferences: appearancePreferences, startupPreferences: startupPreferences), database: Database.shared)
         : AppPrivacyFeatures(contentBlocking: ContentBlockingMock(), httpsUpgradeStore: HTTPSUpgradeStoreMock())
 #else
-        AppPrivacyFeatures.shared = AppPrivacyFeatures(contentBlocking: AppContentBlocking(internalUserDecider: internalUserDecider, configurationStore: configurationStore), database: Database.shared)
+        AppPrivacyFeatures.shared = AppPrivacyFeatures(contentBlocking: AppContentBlocking(internalUserDecider: internalUserDecider, configurationStore: configurationStore, appearancePreferences: appearancePreferences, startupPreferences: startupPreferences), database: Database.shared)
 #endif
 
         pinnedTabsManagerProvider = PinnedTabsManagerProvider()
@@ -298,7 +309,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         defaultBrowserAndDockPromptPresenter = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, featureFlagger: featureFlagger)
 
         visualStyleManager = VisualStyleManager(featureFlagger: featureFlagger)
-        newTabPageCustomizationModel = NewTabPageCustomizationModel(visualStyleManager: visualStyleManager)
+        newTabPageCustomizationModel = NewTabPageCustomizationModel(visualStyleManager: visualStyleManager, appearancePreferences: appearancePreferences)
 
         onboardingContextualDialogsManager = ContextualDialogsManager()
 
@@ -363,7 +374,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             remoteMessagingClient = RemoteMessagingClient(
                 database: RemoteMessagingDatabase().db,
                 bookmarksDatabase: BookmarkDatabase.shared.db,
-                appearancePreferences: .shared,
+                appearancePreferences: appearancePreferences,
                 pinnedTabsManagerProvider: pinnedTabsManagerProvider,
                 internalUserDecider: internalUserDecider,
                 configurationStore: configurationStore,
@@ -443,7 +454,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         APIRequest.Headers.setUserAgent(UserAgent.duckDuckGoUserAgent())
         Configuration.setURLProvider(AppConfigurationURLProvider())
 
-        stateRestorationManager = AppStateRestorationManager(fileStore: fileStore)
+        stateRestorationManager = AppStateRestorationManager(fileStore: fileStore, startupPreferences: startupPreferences)
 
 #if SPARKLE
         if AppVersion.runType != .uiTests {
@@ -771,7 +782,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     // MARK: - Theme
 
     private func applyPreferredTheme() {
-        let appearancePreferences = AppearancePreferences()
         appearancePreferences.updateUserInterfaceStyle()
     }
 
@@ -792,7 +802,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let environment = defaultEnvironment
 #endif
         let syncErrorHandler = SyncErrorHandler()
-        let syncDataProviders = SyncDataProviders(bookmarksDatabase: BookmarkDatabase.shared.db, syncErrorHandler: syncErrorHandler)
+        let syncDataProviders = SyncDataProviders(
+            bookmarksDatabase: BookmarkDatabase.shared.db,
+            appearancePreferences: appearancePreferences,
+            syncErrorHandler: syncErrorHandler
+        )
         let syncService = DDGSync(
             dataProvidersSource: syncDataProviders,
             errorEvents: SyncErrorHandler(),
@@ -945,7 +959,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     @MainActor
     private func setUpAutoClearHandler() {
-        let autoClearHandler = AutoClearHandler(preferences: .shared,
+        let autoClearHandler = AutoClearHandler(preferences: dataClearingPreferences,
                                                 fireViewModel: FireCoordinator.fireViewModel,
                                                 stateRestorationManager: self.stateRestorationManager)
         self.autoClearHandler = autoClearHandler

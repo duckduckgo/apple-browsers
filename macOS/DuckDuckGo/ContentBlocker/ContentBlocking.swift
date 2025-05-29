@@ -67,7 +67,12 @@ final class AppContentBlocking {
 
     // keeping whole ContentBlocking state initialization in one place to avoid races between updates publishing and rules storing
     @MainActor
-    init(internalUserDecider: InternalUserDecider, configurationStore: ConfigurationStore) {
+    init(
+        internalUserDecider: InternalUserDecider,
+        configurationStore: ConfigurationStore,
+        appearancePreferences: AppearancePreferences,
+        startupPreferences: StartupPreferences
+    ) {
         privacyConfigurationManager = PrivacyConfigurationManager(fetchedETag: configurationStore.loadEtag(for: .privacyConfiguration),
                                                                   fetchedData: configurationStore.loadData(for: .privacyConfiguration),
                                                                   embeddedDataProvider: AppPrivacyConfigurationDataProvider(),
@@ -94,7 +99,9 @@ final class AppContentBlocking {
                                                   trackerDataManager: trackerDataManager,
                                                   configStorage: configurationStore,
                                                   webTrackingProtectionPreferences: WebTrackingProtectionPreferences.shared,
-                                                  tld: tld)
+                                                  tld: tld,
+                                                  appearancePreferences: appearancePreferences,
+                                                  startupPreferences: startupPreferences)
 
         adClickAttributionRulesProvider = AdClickAttributionRulesProvider(config: adClickAttribution,
                                                                           compiledRulesSource: contentBlockingManager,

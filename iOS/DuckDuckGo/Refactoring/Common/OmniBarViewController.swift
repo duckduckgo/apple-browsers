@@ -116,6 +116,7 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.menuButton.isPointerInteractionEnabled = true
         barView.refreshButton.isPointerInteractionEnabled = true
         barView.shareButton.isPointerInteractionEnabled = true
+        barView.clearButton.isPointerInteractionEnabled = true
     }
 
     private func configureTextField() {

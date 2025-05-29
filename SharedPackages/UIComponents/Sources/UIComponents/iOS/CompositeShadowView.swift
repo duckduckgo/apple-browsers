@@ -1,6 +1,5 @@
 //
 //  CompositeShadowView.swift
-//  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -132,7 +131,7 @@ public class CompositeShadowView: UIView {
             guard let index = shadowLayers.firstIndex(of: layer) else {
                 return
             }
-            
+
             shadowLayers.remove(at: index)
         }
 

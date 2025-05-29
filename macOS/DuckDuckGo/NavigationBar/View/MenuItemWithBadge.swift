@@ -180,14 +180,14 @@ struct MenuItemWithBadge: View {
                 // Left icon
                 Image(nsImage: leftImage)
                     .resizable()
-                    .foregroundColor(isHovered ? .white : .primary)
+                    .foregroundColor(isHovered ? .white : .blackWhite100)
                     .frame(width: MenuItemWithBadgeConstants.iconSize, height: MenuItemWithBadgeConstants.iconSize)
                     .padding(.trailing, MenuItemWithBadgeConstants.iconTitleSpacing)
                     .padding(.leading, MenuItemWithBadgeConstants.iconLeftPadding)
 
                 // Menu item title
                 Text(title)
-                    .foregroundColor(isHovered ? .white : .primary)
+                    .foregroundColor(isHovered ? .white : .blackWhite100.opacity(0.9))
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 // Badge on the right side

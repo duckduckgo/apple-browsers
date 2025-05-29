@@ -18,9 +18,10 @@
 //
 
 import DesignResourcesKit
-import UIKit
 
 #if os(iOS)
+import UIKit
+
 extension CompositeShadowView.Shadow {
     private static let defaultColor = UIColor(designSystemColor: .shadowPrimary)
     private static let focusColor = UIColor(designSystemColor: .shadowSecondary)

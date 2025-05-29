@@ -40,11 +40,12 @@ struct DefaultBrowserAndDockPromptFeatureFlaggerTests {
     @Test("Check Remote Subfeature Settings Are Returned Correctly")
     func checkRemoteSettingsAreReturnedCorrectly() throws {
         // GIVEN
-        let settings = ScheduledDefaultBrowserAndDockPromptSettings(firstPopoverDelayDays: 2, bannerAfterPopoverDelayDays: 4, bannerRepeatIntervalDays: 6)
-        let encodedSettingsData = try JSONEncoder().encode(settings)
-        let jsonString = String(data: encodedSettingsData, encoding: .utf8)
         let privacyConfigMock = privacyConfigManagerMock.privacyConfig as! MockPrivacyConfiguration
-        privacyConfigMock.subfeatureSettings = jsonString
+        privacyConfigMock.featureSettings = [
+            DefaultBrowserAndDockPromptFeatureSettings.firstPopoverDelayDays.rawValue: 2,
+            DefaultBrowserAndDockPromptFeatureSettings.bannerAfterPopoverDelayDays.rawValue: 4,
+            DefaultBrowserAndDockPromptFeatureSettings.bannerRepeatIntervalDays.rawValue: 6
+        ]
         let sut = DefaultBrowserAndDockPromptFeatureFlag(privacyConfigManager: privacyConfigManagerMock, featureFlagger: featureFlaggerMock)
 
         // WHEN
@@ -62,7 +63,7 @@ struct DefaultBrowserAndDockPromptFeatureFlaggerTests {
     func checkDefaultSettingsAreReturnedWhenRemoteSettingsAreNotSet() throws {
         // GIVEN
         let privacyConfigMock = privacyConfigManagerMock.privacyConfig as! MockPrivacyConfiguration
-        privacyConfigMock.subfeatureSettings = ""
+        privacyConfigMock.featureSettings = [:]
         let sut = DefaultBrowserAndDockPromptFeatureFlag(privacyConfigManager: privacyConfigManagerMock, featureFlagger: featureFlaggerMock)
 
         // WHEN

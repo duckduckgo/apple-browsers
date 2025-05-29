@@ -136,7 +136,7 @@ final class TabViewModel {
     }
 
     init(tab: Tab,
-         appearancePreferences: AppearancePreferences = .shared,
+         appearancePreferences: AppearancePreferences = NSApp.delegateTyped.appearancePreferences,
          accessibilityPreferences: AccessibilityPreferences = .shared) {
         self.tab = tab
         self.appearancePreferences = appearancePreferences

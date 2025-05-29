@@ -234,7 +234,7 @@ extension HomePage.Models {
             var features: [FeatureType] = []
             appendFeatureCards(&features)
             if features.isEmpty {
-                AppearancePreferences.shared.continueSetUpCardsClosed = true
+                NSApp.delegateTyped.appearancePreferences.continueSetUpCardsClosed = true
             }
             featuresMatrix = features.chunked(into: itemsPerRow)
         }

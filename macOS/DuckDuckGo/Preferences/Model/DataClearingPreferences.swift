@@ -20,8 +20,6 @@ import Foundation
 
 final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
 
-    static let shared = DataClearingPreferences()
-
     @Published
     var isLoginDetectionEnabled: Bool {
         didSet {

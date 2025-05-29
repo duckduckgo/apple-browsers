@@ -57,8 +57,18 @@ final class SuggestionContainer {
 
     private let urlSession: URLSession
 
-    init(openTabsProvider: OpenTabsProvider? = nil, suggestionLoading: SuggestionLoading? = nil, urlSession: URLSession? = nil, historyProvider: HistoryProvider, bookmarkProvider: BookmarkProvider, startupPreferences: StartupPreferences = .shared, featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger, burnerMode: BurnerMode, isUrlIgnored: @escaping (URL) -> Bool,
-         windowControllersManager: WindowControllersManagerProtocol? = nil) {
+    init(
+        openTabsProvider: OpenTabsProvider? = nil,
+        suggestionLoading: SuggestionLoading? = nil,
+        urlSession: URLSession? = nil,
+        historyProvider: HistoryProvider,
+        bookmarkProvider: BookmarkProvider,
+        startupPreferences: StartupPreferences = NSApp.delegateTyped.startupPreferences,
+        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+        burnerMode: BurnerMode,
+        isUrlIgnored: @escaping (URL) -> Bool,
+        windowControllersManager: WindowControllersManagerProtocol? = nil
+    ) {
         let windowControllersManager = windowControllersManager ?? WindowControllersManager.shared
         self.openTabsProvider = openTabsProvider ?? Self.defaultOpenTabsProvider(burnerMode: burnerMode, windowControllersManager: windowControllersManager)
         self.bookmarkProvider = bookmarkProvider

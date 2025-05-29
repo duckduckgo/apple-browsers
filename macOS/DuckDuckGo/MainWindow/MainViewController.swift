@@ -59,7 +59,7 @@ final class MainViewController: NSViewController {
     var shouldShowBookmarksBar: Bool {
         return !isInPopUpWindow
         && bookmarksBarVisibilityManager.isBookmarksBarVisible
-        && (!(view.window?.isFullScreen ?? false) || AppearancePreferences.shared.showTabsAndBookmarksBarOnFullScreen)
+        && (!(view.window?.isFullScreen ?? false) || NSApp.delegateTyped.appearancePreferences.showTabsAndBookmarksBarOnFullScreen)
     }
 
     private var isInPopUpWindow: Bool {

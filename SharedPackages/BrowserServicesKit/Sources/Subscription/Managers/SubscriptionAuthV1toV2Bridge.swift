@@ -82,7 +82,7 @@ extension DefaultSubscriptionManager: SubscriptionAuthV1toV2Bridge {
 
     public func isEnabled(feature: Entitlement.ProductName, cachePolicy: APICachePolicy) async throws -> Bool {
 
-        let result = await accountManager.hasEntitlement(forProductName: .networkProtection, cachePolicy: cachePolicy)
+        let result = await accountManager.hasEntitlement(forProductName: feature, cachePolicy: cachePolicy)
         switch result {
         case .success(let hasEntitlements):
             return hasEntitlements

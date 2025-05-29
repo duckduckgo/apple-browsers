@@ -65,7 +65,7 @@ final class BookmarksBarViewController: NSViewController {
     init?(coder: NSCoder, tabCollectionViewModel: TabCollectionViewModel,
           bookmarkManager: BookmarkManager = LocalBookmarkManager.shared,
           dragDropManager: BookmarkDragDropManager = BookmarkDragDropManager.shared,
-          appereancePreferences: AppearancePreferencesPersistor = AppearancePreferencesUserDefaultsPersistor(),
+          appereancePreferences: AppearancePreferencesPersistor = AppearancePreferencesUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore),
           visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager
     ) {
         self.bookmarkManager = bookmarkManager
@@ -474,7 +474,8 @@ extension BookmarksBarViewController: NSMenuDelegate {
             menu,
             target: self,
             addFolderSelector: #selector(addFolder(sender:)),
-            manageBookmarksSelector: #selector(manageBookmarks)
+            manageBookmarksSelector: #selector(manageBookmarks),
+            prefs: NSApp.delegateTyped.appearancePreferences
         )
     }
 

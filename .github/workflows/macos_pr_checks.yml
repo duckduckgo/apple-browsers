@@ -124,6 +124,9 @@ jobs:
 
     runs-on: ${{ matrix.runs-on }}
     timeout-minutes: 30
+    
+    env:
+      WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
 
     outputs:
       private-api-check-report: ${{ steps.private-api.outputs.report }}
@@ -262,7 +265,6 @@ jobs:
       if: always() && (steps.run-unit-tests.outcome == 'failure' || steps.run-integration-tests.outcome == 'failure')
       env:
         ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
-        WORKFLOW_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
       run: |
         # Extract failed tests from the junit report
         # Only keep failures unique by classname and name (column 1 and 2 of the yq output)
@@ -272,6 +274,16 @@ jobs:
             | sort -u -k 1,2 \
             | xargs -L 1 ./scripts/report-failed-unit-test.sh
         done
+        
+    - name: Send Unit Tests Status Pixel
+      if: always() && github.ref_name == 'main'
+      run: |
+        curl -fLSs -o /dev/null "https://improving.duckduckgo.com/t/m_ci_apple_mac_main_${{ matrix.flavor }}_unit_tests_${{ steps.run-unit-tests.outcome }}?workflow=${{ env.WORKFLOW_URL }}"
+        
+    - name: Send Integration Tests Status Pixel
+      if: always() && github.ref_name == 'main'
+      run: |
+        curl -fLSs -o /dev/null "https://improving.duckduckgo.com/t/m_ci_apple_mac_main_${{ matrix.flavor }}_integration_tests_${{ steps.run-integration-tests.outcome }}?workflow=${{ env.WORKFLOW_URL }}"
 
     - name: Upload failed unit tests log
       uses: actions/upload-artifact@v4

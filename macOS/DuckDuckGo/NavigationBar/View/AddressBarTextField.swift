@@ -727,9 +727,9 @@ final class AddressBarTextField: NSTextField {
     }
 
     @objc func toggleShowFullWebsiteAddress(_ menuItem: NSMenuItem) {
-        AppearancePreferences.shared.showFullURL.toggle()
+        NSApp.delegateTyped.appearancePreferences.showFullURL.toggle()
 
-        let shouldShowFullURL = AppearancePreferences.shared.showFullURL
+        let shouldShowFullURL = NSApp.delegateTyped.appearancePreferences.showFullURL
         menuItem.state = shouldShowFullURL ? .on : .off
     }
 
@@ -1205,7 +1205,7 @@ private extension NSMenuItem {
             action: #selector(AddressBarTextField.toggleShowFullWebsiteAddress(_:)),
             keyEquivalent: ""
         )
-        menuItem.state = AppearancePreferences.shared.showFullURL ? .on : .off
+        menuItem.state = NSApp.delegateTyped.appearancePreferences.showFullURL ? .on : .off
 
         return menuItem
     }

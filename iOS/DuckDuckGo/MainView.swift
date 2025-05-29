@@ -42,9 +42,11 @@ class MainViewFactory {
                                     aiChatSettings: AIChatSettingsProvider,
                                     voiceSearchHelper: VoiceSearchHelperProtocol,
                                     featureFlagger: FeatureFlagger) -> MainViewCoordinator {
+        let experimentalThemingManager = ExperimentalThemingManager(featureFlagger: featureFlagger)
         let omnibarDependencies = OmnibarDependencies(voiceSearchHelper: voiceSearchHelper,
                                                       featureFlagger: featureFlagger,
-                                                      aiChatSettings: aiChatSettings)
+                                                      aiChatSettings: aiChatSettings,
+                                                      isExperimentalAppearanceEnabled: experimentalThemingManager.isExperimentalThemingEnabled)
         let factory = MainViewFactory(parentController: parentController, omnibarDependencies: omnibarDependencies, featureFlagger: featureFlagger)
         factory.createViews()
         factory.disableAutoresizingOnImmediateSubviews(factory.superview)

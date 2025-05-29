@@ -307,7 +307,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.featureFlagger = featureFlagger
         self.contentScopeExperimentsManager = featureFlagger
 
-
         visualStyleManager = VisualStyleManager(featureFlagger: featureFlagger)
         newTabPageCustomizationModel = NewTabPageCustomizationModel(visualStyleManager: visualStyleManager, appearancePreferences: appearancePreferences)
 

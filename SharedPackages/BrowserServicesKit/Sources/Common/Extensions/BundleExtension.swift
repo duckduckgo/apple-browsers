@@ -27,6 +27,7 @@ extension Bundle {
         static let buildNumber = kCFBundleVersionKey as String
 		static let versionNumber = "CFBundleShortVersionString"
         static let displayName = "CFBundleDisplayName"
+        static let alphaBuildSuffix = "DDG_ALPHA_BUILD_SUFFIX"
 
     }
 

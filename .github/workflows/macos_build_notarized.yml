@@ -274,6 +274,7 @@ jobs:
           macOS/Gemfile
           macOS/Gemfile.lock
           macOS/fastlane
+          macOS/scripts/assets
 
     - name: Set up fastlane
       run: bundle install
@@ -299,13 +300,12 @@ jobs:
         GH_TOKEN: ${{ github.token }}
       run: |
         dmg="duckduckgo-${{ env.app-version }}.dmg"
-        curl -fLSs $(gh api https://api.github.com/repos/${{ github.repository }}/contents/macOS/scripts/assets/dmg-background.png?ref=${{ github.ref }} --jq .download_url) \
-            --output dmg-background.png
         # Using APFS filesystem as per https://github.com/actions/runner-images/issues/7522#issuecomment-2299918092
         create-dmg --volname "${{ env.app-name }}" \
+            --volicon "scripts/assets/dmg-${{ env.release-type }}.icns" \
             --filesystem APFS \
             --icon "${{ env.app-name }}.app" 140 160 \
-            --background "dmg-background.png" \
+            --background "scripts/assets/dmg-background.png" \
             --window-size 600 400 \
             --icon-size 120 \
             --app-drop-link 430 160 "${dmg}" \

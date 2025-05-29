@@ -23,6 +23,9 @@ jobs:
 
       runs-on: macos-15
       timeout-minutes: 30
+      
+      env:
+        WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
 
       outputs:
         commit_author: ${{ steps.fetch_commit_author.outputs.commit_author }}
@@ -64,6 +67,7 @@ jobs:
         run: set -o pipefail && swift build | tee build-log.txt | xcbeautify
 
       - name: Run tests
+        id: run-unit-tests
         run: set -o pipefail && swift test | tee -a build-log.txt | xcbeautify --report junit --report-path . --junit-report-filename package-tests.xml
 
       - name: Publish Unit Tests Report
@@ -74,6 +78,11 @@ jobs:
           report_paths: SharedPackages/DataBrokerProtectionCore/package-tests.xml
           require_tests: true
           check_retries: true
+          
+      - name: Send Unit Tests Status Pixel
+        if: always() && github.ref_name == 'main'
+        run: |
+          curl -fLSs -o /dev/null "https://improving.duckduckgo.com/t/m_ci_apple_dbp_main_unit_tests_ios_${{ steps.run-unit-tests.outcome }}?workflow=${{ env.WORKFLOW_URL }}"
 
       - name: Update Asana with failed unit tests
         if: always() # always run even if the previous step fails

@@ -51,7 +51,7 @@ public struct CreditCardValidation {
                 return "Card"
             }
         }
-        
+
         public var displayCardType: String {
             switch self {
             case .amex:

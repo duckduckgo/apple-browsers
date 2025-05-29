@@ -1,5 +1,5 @@
 //
-//  TDSOverrideExperimentMetrics.swift
+//  SiteBreakageExperimentMetrics.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -67,18 +67,6 @@ public struct SiteBreakageExperimentMetrics {
                 fireDebugBreakageExperiment(experimentType: experiment,
                                             etag: etag,
                                             fire: fireDebugExperiment
-                )
-            }
-        }
-    }
-
-    public static func fireContentScopeExperimentMetric( metricType: BreakageExperimentMetricType) {
-        for experiment in ContentScopeExperimentsFeatureFlag.allCases {
-            for day in 0...5 {
-                ExperimentConfig.firePixelExperiment(experiment.subfeature.rawValue,
-                                                     metricType.rawValue,
-                                                     0...day,
-                                                     "1"
                 )
             }
         }

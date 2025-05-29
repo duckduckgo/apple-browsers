@@ -48,9 +48,6 @@ final class CriticalPathsTests: XCTestCase {
         app = XCUIApplication(bundleIdentifier: "com.duckduckgo.macos.browser.review")
         app.launchEnvironment["UITEST_MODE"] = "1"
         app.launch()
-        if app.windows.count == 0 {
-            app.menuItems["newWindow:"].click()
-        }
         selectDevelopmentEnvironment()
         cleanupAndResetData()
     }
@@ -71,16 +68,10 @@ final class CriticalPathsTests: XCTestCase {
         debugMenuBarItem = menuBarsQuery.menuBarItems["Debug"]
         debugMenuBarItem.click()
 
-        let syncAndBackupMenuItem = menuBarsQuery.menuItems["MainMenu.syncAndBackup"]
-        syncAndBackupMenuItem.assertExists().hover()
-
-        let environmentMenuItem = syncAndBackupMenuItem.menuItems["SyncDebugMenu.environment"]
-        environmentMenuItem.assertExists().hover()
-
-        let currentEnvironmentMenuItem = syncAndBackupMenuItem.menuItems["SyncDebugMenu.currentEnvironment"]
+        let currentEnvironmentMenuItem = app.menuItems["SyncDebugMenu.currentEnvironment"]
         currentEnvironmentMenuItem.assertExists()
         if !currentEnvironmentMenuItem.title.contains("Development") {
-            let switchEnvironmentMenuItem = syncAndBackupMenuItem.menuItems["SyncDebugMenu.switchEnvironment"]
+            let switchEnvironmentMenuItem = app.menuItems["SyncDebugMenu.switchEnvironment"]
             switchEnvironmentMenuItem.assertExists()
             guard switchEnvironmentMenuItem.title == "Switch to Development" else {
                 XCTFail("Failed to switch to Development Sync environment")
@@ -91,21 +82,9 @@ final class CriticalPathsTests: XCTestCase {
     }
 
     private func cleanupAndResetData() {
-        let menuBarsQuery = app.menuBars
-        debugMenuBarItem = menuBarsQuery.menuBarItems["Debug"]
-
-        debugMenuBarItem.assertExists().click()
-        let resetDataMenuItem = menuBarsQuery.menuItems["MainMenu.resetData"]
-        resetDataMenuItem.assertExists().hover()
-        let resetBookMarksData = resetDataMenuItem.menuItems["MainMenu.resetBookmarks"]
-        resetBookMarksData.assertExists().hover()
-        resetBookMarksData.click()
-
-        debugMenuBarItem.click()
-        resetDataMenuItem.assertExists().hover()
-        let resetAutofillData = resetDataMenuItem.menuItems["MainMenu.resetSecureVaultData"]
-        resetAutofillData.assertExists().hover()
-        resetAutofillData.click()
+        app.menuItems["SyncDebugMenu.turnOffSync"].click()
+        app.menuItems["MainMenu.resetBookmarks"].click()
+        app.menuItems["MainMenu.resetSecureVaultData"].click()
     }
 
     func testCanCreateSyncAccount() throws {
@@ -250,6 +229,10 @@ final class CriticalPathsTests: XCTestCase {
         bookmarksWindow.menuItems["Settings"].click()
         logIn()
 
+        // Ensure Unify Favorites not checked
+        let settingsWindow = app.windows["Settings"]
+        XCTAssertFalse(settingsWindow.checkBoxes["Unify Favorites Across Devices"].value as! Bool)
+
         // Log Out
         logOut()
 
@@ -257,7 +240,6 @@ final class CriticalPathsTests: XCTestCase {
         checkFavoriteNonUnified()
 
         // Remove Bookmarks
-        let settingsWindow = app.windows["Settings"]
         settingsWindow.popUpButtons["Settings"].click()
         settingsWindow.menuItems["Bookmarks"].click()
         bookmarksWindow.staticTexts["www.spreadprivacy.com"].rightClick()
@@ -271,7 +253,8 @@ final class CriticalPathsTests: XCTestCase {
         logIn()
 
         // Toggle Unified Favorite
-        settingsWindow/*@START_MENU_TOKEN@*/.checkBoxes["Unify Favorites Across Devices"]/*[[".groups",".scrollViews.checkBoxes[\"Unify Favorites Across Devices\"]",".checkBoxes[\"Unify Favorites Across Devices\"]"],[[[-1,2],[-1,1],[-1,0,1]],[[-1,2],[-1,1]]],[0]]@END_MENU_TOKEN@*/.click()
+        settingsWindow.checkBoxes["Unify Favorites Across Devices"].click()
+        XCTAssertTrue(settingsWindow.checkBoxes["Unify Favorites Across Devices"].value as! Bool)
 
         // Check Bookmarks
         checkBookmarks()
@@ -281,6 +264,11 @@ final class CriticalPathsTests: XCTestCase {
 
         // Check Logins
         checkLogins()
+
+        // Switch Unified Favorite back off
+        app.typeKey(",", modifierFlags: [.command])
+        XCTAssertTrue(settingsWindow.checkBoxes["Unify Favorites Across Devices"].value as! Bool)
+        settingsWindow.checkBoxes["Unify Favorites Across Devices"].click()
     }
 
     private func logIn() {
@@ -346,12 +334,12 @@ final class CriticalPathsTests: XCTestCase {
         bookmarksWindow.menuItems["MoreOptionsMenu.autofill"].click()
         bookmarksWindow.popovers.buttons["add item"].click()
         bookmarksWindow.popovers.menuItems["createNewLogin"].click()
-        let usernameTextfieldTextField = bookmarksWindow.popovers.textFields["Username TextField"]
-        usernameTextfieldTextField.click()
-        usernameTextfieldTextField.typeText("mywebsite")
-        let websiteTextfieldTextField = bookmarksWindow.popovers.textFields["Website TextField"]
-        websiteTextfieldTextField.click()
-        websiteTextfieldTextField.typeText("mywebsite.com")
+        let usernameTextField = bookmarksWindow.popovers.textFields["Username TextField"]
+        usernameTextField.click()
+        usernameTextField.typeText("mywebsite")
+        let websiteTextField = bookmarksWindow.popovers.textFields["Website TextField"]
+        websiteTextField.click()
+        websiteTextField.typeText("mywebsite.com")
         bookmarksWindow.popovers.buttons["Save"].click()
     }
 
@@ -360,8 +348,8 @@ final class CriticalPathsTests: XCTestCase {
         let newTabPage = app.windows["New Tab"]
         let gitHub = newTabPage.staticTexts["DuckDuckGo · GitHub"]
         let spreadPrivacy = newTabPage.staticTexts["www.spreadprivacy.com"]
+        spreadPrivacy.assertExists()
         XCTAssertFalse(gitHub.exists)
-        XCTAssertTrue(spreadPrivacy.exists)
         app.typeKey("w", modifierFlags: [.command])
     }
 
@@ -398,8 +386,8 @@ final class CriticalPathsTests: XCTestCase {
         let newTabPage = app.windows["New Tab"]
         let gitHub = newTabPage.staticTexts["DuckDuckGo · GitHub"]
         let spreadPrivacy = newTabPage.staticTexts["www.spreadprivacy.com"]
-        XCTAssertTrue(gitHub.exists)
-        XCTAssertTrue(spreadPrivacy.exists)
+        gitHub.assertExists()
+        spreadPrivacy.assertExists()
         app.typeKey("w", modifierFlags: [.command])
     }
 

@@ -157,6 +157,7 @@ jobs:
         while [[ $retries -gt 0 ]]; do
           # Using APFS filesystem as per https://github.com/actions/runner-images/issues/7522#issuecomment-2299918092
           if create-dmg --volname "DuckDuckGo" \
+            --volicon "scripts/assets/dmg-release.icns" \
             --filesystem APFS \
             --icon "DuckDuckGo.app" 140 160 \
             --background "scripts/assets/dmg-background.png" \

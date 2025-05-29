@@ -200,7 +200,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .networkProtectionRiskyDomainsProtection:
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.riskyDomainsProtection))
         case .scheduledSetDefaultBrowserAndAddToDockPrompts:
-            return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledSetDefaultBrowserAndAddToDockPrompts))
+            return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserAndDockPrompts))
         case .privacyProAuthV2:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
         case .failsafeExampleCrossPlatformFeature:

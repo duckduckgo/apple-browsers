@@ -44,7 +44,7 @@ final class DefaultBrowserAndDockPromptFeatureFlag {
 
     private var remoteSubfeatureSettings: ScheduledDefaultBrowserAndDockPromptSettings {
         guard
-            let subFeatureJSON = privacyConfigManager.privacyConfig.settings(for: SetAsDefaultAndAddToDockSubfeature.scheduledSetDefaultBrowserAndAddToDockPrompts),
+            let subFeatureJSON = privacyConfigManager.privacyConfig.settings(for: SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserAndDockPrompts),
             let data = subFeatureJSON.data(using: .utf8),
             let decodedSettings: ScheduledDefaultBrowserAndDockPromptSettings = CodableHelper.decode(jsonData: data)
         else {

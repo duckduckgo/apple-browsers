@@ -71,6 +71,7 @@ struct PinnedTabView: View, DropDelegate {
                            size: TabShadowConfig.dividerSize)
             }
         }
+            .shadow(color: isSelected && tabStyleProvider.applyTabShadow ? Color(.shadowPrimary) : .clear, radius: 6, x: 0, y: -2)
 
         if controlActiveState == .key {
             stack.onHover { [weak collectionModel, weak model] isHovered in

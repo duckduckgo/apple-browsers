@@ -280,11 +280,11 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         searchAreaAlignmentView.addSubview(searchAreaStackView)
 
         searchAreaStackView.addArrangedSubview(searchAreaContainerView)
-        searchAreaStackView.addArrangedSubview(bookmarksButtonView)
 
         searchAreaContainerView.addSubview(searchAreaView)
         searchAreaContainerView.addSubview(omniBarProgressView)
 
+        trailingButtonsContainer.addArrangedSubview(bookmarksButtonView)
         trailingButtonsContainer.addArrangedSubview(menuButtonView)
         trailingButtonsContainer.addArrangedSubview(settingsButtonView)
 
@@ -384,6 +384,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         stackView.axis = .horizontal
         stackView.alignment = .fill
         stackView.distribution = .fill
+        stackView.spacing = Metrics.expandedSizeSpacing
 
         searchAreaStackView.spacing = Metrics.expandedSizeSpacing
 

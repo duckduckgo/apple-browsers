@@ -541,7 +541,8 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                     badgeText: UserText.subscriptionOptionsMenuItemFreeTrialBadge,
                     action: #selector(openSubscriptionPurchasePage(_:)),
                     target: self,
-                    image: moreOptionsMenuIconsProvider.privacyProIcon
+                    image: moreOptionsMenuIconsProvider.privacyProIcon,
+                    menu: self
                 )
             } else {
                 privacyProItem.target = self

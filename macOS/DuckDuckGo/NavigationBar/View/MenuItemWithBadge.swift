@@ -223,8 +223,9 @@ extension NSMenuItem {
     ///   - action: The selector to call when the menu item is selected
     ///   - target: The object that will receive the action message
     ///   - image: The icon to display on the left side of the menu item
+    ///   - menu: The menu instance to dismiss after action (optional)
     /// - Returns: A configured NSMenuItem with the badge view embedded
-    static func createMenuItemWithBadge(title: String, badgeText: String, action: Selector, target: AnyObject, image: NSImage) -> NSMenuItem {
+    static func createMenuItemWithBadge(title: String, badgeText: String, action: Selector, target: AnyObject, image: NSImage, menu: NSMenu? = nil) -> NSMenuItem {
         let menuItem = NSMenuItem(title: title, action: action, keyEquivalent: "")
         menuItem.target = target
 
@@ -232,6 +233,8 @@ extension NSMenuItem {
             if let target = menuItem.target {
                 _ = target.perform(menuItem.action, with: menuItem)
             }
+            // Dismiss the menu after performing the action
+            menu?.cancelTracking()
         }
 
         let hostingView = NSHostingView(rootView: badgeView)

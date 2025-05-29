@@ -90,5 +90,3 @@ final class HistoryCaptureTests: XCTestCase {
 private extension URL {
     static let example = URL(string: "https://example.com")!
 }
-
-

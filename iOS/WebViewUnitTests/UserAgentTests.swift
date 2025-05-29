@@ -23,26 +23,6 @@ import XCTest
 
 @testable import Core
 
-//class MockStatisticsStore: StatisticsStore {
-//
-//    var installDate: Date?
-//    var atb: String?
-//    var searchRetentionAtb: String?
-//    var appRetentionAtb: String?
-//
-//    var hasInstallStatistics: Bool {
-//        return atb != nil
-//    }
-//
-//    var variant: String?
-//}
-
-//extension DefaultInternalUserDecider {
-//    convenience init(mockedStore: MockInternalUserStoring = MockInternalUserStoring()) {
-//        self.init(store: mockedStore)
-//    }
-//}
-
 class MockEmbeddedDataProvider: EmbeddedDataProvider {
     var embeddedDataEtag: String
 

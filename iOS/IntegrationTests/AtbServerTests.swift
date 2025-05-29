@@ -118,26 +118,6 @@ class AtbServerTests: XCTestCase {
 
 }
 
-//
-//class MockFeatureFlagger: FeatureFlagger {
-//    func isFeatureOn<Flag>(for featureFlag: Flag, allowOverride: Bool) -> Bool where Flag: FeatureFlagDescribing {
-//        return false
-//    }
-//    
-//    var internalUserDecider: any InternalUserDecider = MockInteranlUserDecider()
-//
-//    var localOverrides: (any BrowserServicesKit.FeatureFlagLocalOverriding)?
-//    
-//    func resolveCohort<Flag>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? where Flag: FeatureFlagDescribing {
-//        return nil
-//    }
-//    
-//    var allActiveExperiments: Experiments {
-//        return [:]
-//    }
-//
-//}
-
 class MockInteranlUserDecider: InternalUserDecider {
     var isInternalUser: Bool = false
 

@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import Combine
 import BrowserServicesKit
 
 final class MockInternalUserStoring: InternalUserStoring {
@@ -27,5 +28,17 @@ final class MockInternalUserStoring: InternalUserStoring {
 extension DefaultInternalUserDecider {
     convenience init(mockedStore: MockInternalUserStoring = MockInternalUserStoring()) {
         self.init(store: mockedStore)
+    }
+}
+
+final class MockInternalUserDecider: InternalUserDecider {
+    var isInternalUser: Bool = false
+
+    var isInternalUserPublisher: AnyPublisher<Bool, Never> {
+        Just(false).eraseToAnyPublisher()
+    }
+
+    func markUserAsInternalIfNeeded(forUrl url: URL?, response: HTTPURLResponse?) -> Bool {
+        return false
     }
 }

@@ -51,11 +51,12 @@ final class VPNAppEventsHandler {
 
             if appState.isAuthV2Enabled && !appState.isMigratedToAuthV2 {
                 Task {
-                    guard await !tunnelController.isConnected else {
+                    guard await tunnelController.isConnected else {
                         return
                     }
 
                     await tunnelController.stop()
+                    try await Task.sleep(interval: .seconds(2))
                     await tunnelController.start()
                     appState.isMigratedToAuthV2 = true
                 }

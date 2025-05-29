@@ -31,21 +31,19 @@ jobs:
       - name: Check out the code
         uses: actions/checkout@v4
 
-      - name: Cache iOS Ruby dependencies
-        uses: actions/cache@v4
+      - name: Setup Ruby and dependencies for iOS
+        if: startsWith(inputs.target, 'ios')
+        uses: ./.github/actions/setup-ruby
         with:
-          path: iOS/vendor/bundle
-          key: ${{ runner.os }}-ios-ruby-${{ hashFiles('iOS/Gemfile.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-ios-ruby-
+          working-directory: iOS
+          cache-key-prefix: ios-ruby
 
-      - name: Cache macOS Ruby dependencies
-        uses: actions/cache@v4
+      - name: Setup Ruby and dependencies for macOS
+        if: startsWith(inputs.target, 'macos')
+        uses: ./.github/actions/setup-ruby
         with:
-          path: macOS/vendor/bundle
-          key: ${{ runner.os }}-macos-ruby-${{ hashFiles('macOS/Gemfile.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-macos-ruby-
+          working-directory: macOS
+          cache-key-prefix: macos-ruby
 
       - name: Update code signing assets
         env:
@@ -90,14 +88,4 @@ jobs:
           esac
  
           cd "$platform"
-          bundle config set --local path vendor/bundle
-          
-          # Set up caching based on platform
-          if [[ "$platform" == "iOS" ]]; then
-            cache_key="ios-ruby"
-          else
-            cache_key="macos-ruby"
-          fi
-          
-          bundle install
           bundle exec fastlane ${lane}

@@ -108,8 +108,8 @@ public struct AIChatNativeConfigValues: Codable {
     }
 }
 
-public struct AIChatNativePrompt: Codable {
-    public struct Query: Codable {
+public struct AIChatNativePrompt: Codable, Equatable {
+    public struct Query: Codable, Equatable {
         public let prompt: String
         public let autoSubmit: Bool
     }

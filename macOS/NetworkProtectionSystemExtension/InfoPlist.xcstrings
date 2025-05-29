@@ -3,7 +3,7 @@
   "strings" : {
     "CFBundleDisplayName" : {
       "comment" : "Bundle display name",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "automatic",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -16,7 +16,7 @@
     },
     "CFBundleName" : {
       "comment" : "Bundle name",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "automatic",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -29,7 +29,7 @@
     },
     "NSHumanReadableCopyright" : {
       "comment" : "Copyright (human-readable)",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "automatic",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -42,7 +42,7 @@
     },
     "NSSystemExtensionUsageDescription" : {
       "comment" : "Privacy - System Extension Usage Description",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "automatic",
       "localizations" : {
         "de" : {
           "stringUnit" : {

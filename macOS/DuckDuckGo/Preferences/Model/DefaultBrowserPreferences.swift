@@ -65,7 +65,6 @@ struct SystemDefaultBrowserProvider: DefaultBrowserProvider {
         if result != 0 {
             throw SystemDefaultBrowserProviderError.unableToSetDefaultURLHandler
         }
-        DefaultBrowserAndDockPromptCoordinator.fireSetAsDefaultAddToDockExperimentPixel()
     }
 
     func openSystemPreferences() {

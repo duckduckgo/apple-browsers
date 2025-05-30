@@ -42,11 +42,13 @@ read_command_line_arguments() {
 
 	case "$1" in
 		review)
+			release_type="review"
 			app_name="DuckDuckGo Review"
 			scheme="macOS Browser Review"
 			configuration="Review"
 			;;
 		release)
+			release_type="release"
 			app_name="DuckDuckGo"
 			scheme="macOS Browser"
 			configuration="Release"
@@ -286,6 +288,7 @@ create_dmg() {
 
 	local dmg_dir="${workdir}/dmg"
 	local dmg_background="${cwd}/assets/dmg-background.png"
+	local dmg_icon="${cwd}/assets/dmg-${release_type}.icns"
 	dmg_output_path="${workdir}/duckduckgo-${version_identifier}.dmg"
 
 	rm -rf "${dmg_dir}" "${dmg_output_path}"
@@ -293,6 +296,7 @@ create_dmg() {
 	cp -R "${app_path}" "${dmg_dir}"
 	# Using APFS filesystem as per https://github.com/actions/runner-images/issues/7522#issuecomment-2299918092
 	${filter_output} create-dmg --volname "${app_name}" \
+		--volicon "${dmg_icon}" \
 		--filesystem APFS \
 		--icon "${app_name}.app" 140 160 \
 		--background "${dmg_background}" \

@@ -477,9 +477,6 @@
 		6FC9059C2D65E2ED00E90A0B /* ExperimentalThemingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FC9059B2D65E2ED00E90A0B /* ExperimentalThemingManager.swift */; };
 		6FD0C41F2C5BF097000561C9 /* NewTabPageIntroMessageSetupTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FD0C41E2C5BF097000561C9 /* NewTabPageIntroMessageSetupTests.swift */; };
 		6FD0C4212C5BF774000561C9 /* NewTabPageViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FD0C4202C5BF774000561C9 /* NewTabPageViewModelTests.swift */; };
-		6FD1BAE42B87A107000C475C /* AdAttributionPixelReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FD1BAE12B87A107000C475C /* AdAttributionPixelReporter.swift */; };
-		6FD1BAE52B87A107000C475C /* AdAttributionReporterStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FD1BAE22B87A107000C475C /* AdAttributionReporterStorage.swift */; };
-		6FD1BAE62B87A107000C475C /* AdAttributionFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FD1BAE32B87A107000C475C /* AdAttributionFetcher.swift */; };
 		6FD3AEE32B8F4EEB0060FCCC /* AdAttributionPixelReporterTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FD3AEE12B8DFBB80060FCCC /* AdAttributionPixelReporterTests.swift */; };
 		6FD3F80F2C3EF4F000DA5797 /* DeviceOrientationEnvironmentValue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FD3F80E2C3EF4F000DA5797 /* DeviceOrientationEnvironmentValue.swift */; };
 		6FD3F8132C3EFDA200DA5797 /* FavoritesPreviewDataSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FD3F8122C3EFDA200DA5797 /* FavoritesPreviewDataSource.swift */; };
@@ -1464,6 +1461,10 @@
 		F1EFB0062C5B8B8E009AB44B /* StatusIndicatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1EFB0052C5B8B8E009AB44B /* StatusIndicatorView.swift */; };
 		F1F5337C1F26A9EF00D80D4F /* UserText.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F5337B1F26A9EF00D80D4F /* UserText.swift */; };
 		F1F533841F26ABAC00D80D4F /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = F1F533861F26ABAC00D80D4F /* Localizable.strings */; };
+		F1F6B4C42DE9B496004A48C3 /* AdAttributionPixelReporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F6B4C12DE9B496004A48C3 /* AdAttributionPixelReporter.swift */; };
+		F1F6B4C52DE9B496004A48C3 /* AdAttributionReporterStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F6B4C22DE9B496004A48C3 /* AdAttributionReporterStorage.swift */; };
+		F1F6B4C62DE9B496004A48C3 /* AdAttributionFetcher.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F6B4C02DE9B496004A48C3 /* AdAttributionFetcher.swift */; };
+		F1F6B4C82DE9B515004A48C3 /* AdClickExternalOpenDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1F6B4C72DE9B515004A48C3 /* AdClickExternalOpenDetector.swift */; };
 		F1FDC9302BF4E0B3006B1435 /* SubscriptionEnvironment+Default.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FDC92F2BF4E0B3006B1435 /* SubscriptionEnvironment+Default.swift */; };
 		F1FDC9312BF4E0B3006B1435 /* SubscriptionEnvironment+Default.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FDC92F2BF4E0B3006B1435 /* SubscriptionEnvironment+Default.swift */; };
 		F1FDC9352BF51E41006B1435 /* VPNSettings+Environment.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1FDC9342BF51E41006B1435 /* VPNSettings+Environment.swift */; };
@@ -2078,9 +2079,6 @@
 		6FC9059B2D65E2ED00E90A0B /* ExperimentalThemingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExperimentalThemingManager.swift; sourceTree = "<group>"; };
 		6FD0C41E2C5BF097000561C9 /* NewTabPageIntroMessageSetupTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageIntroMessageSetupTests.swift; sourceTree = "<group>"; };
 		6FD0C4202C5BF774000561C9 /* NewTabPageViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NewTabPageViewModelTests.swift; sourceTree = "<group>"; };
-		6FD1BAE12B87A107000C475C /* AdAttributionPixelReporter.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = AdAttributionPixelReporter.swift; path = AdAttribution/AdAttributionPixelReporter.swift; sourceTree = "<group>"; };
-		6FD1BAE22B87A107000C475C /* AdAttributionReporterStorage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = AdAttributionReporterStorage.swift; path = AdAttribution/AdAttributionReporterStorage.swift; sourceTree = "<group>"; };
-		6FD1BAE32B87A107000C475C /* AdAttributionFetcher.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = AdAttributionFetcher.swift; path = AdAttribution/AdAttributionFetcher.swift; sourceTree = "<group>"; };
 		6FD3AEE12B8DFBB80060FCCC /* AdAttributionPixelReporterTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdAttributionPixelReporterTests.swift; sourceTree = "<group>"; };
 		6FD3F80E2C3EF4F000DA5797 /* DeviceOrientationEnvironmentValue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceOrientationEnvironmentValue.swift; sourceTree = "<group>"; };
 		6FD3F8122C3EFDA200DA5797 /* FavoritesPreviewDataSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FavoritesPreviewDataSource.swift; sourceTree = "<group>"; };
@@ -3625,6 +3623,10 @@
 		F1ED309C1EDC2EA400651986 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/TabSwitcher.storyboard; sourceTree = "<group>"; };
 		F1EFB0052C5B8B8E009AB44B /* StatusIndicatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusIndicatorView.swift; sourceTree = "<group>"; };
 		F1F5337B1F26A9EF00D80D4F /* UserText.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UserText.swift; sourceTree = "<group>"; };
+		F1F6B4C02DE9B496004A48C3 /* AdAttributionFetcher.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdAttributionFetcher.swift; sourceTree = "<group>"; };
+		F1F6B4C12DE9B496004A48C3 /* AdAttributionPixelReporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdAttributionPixelReporter.swift; sourceTree = "<group>"; };
+		F1F6B4C22DE9B496004A48C3 /* AdAttributionReporterStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdAttributionReporterStorage.swift; sourceTree = "<group>"; };
+		F1F6B4C72DE9B515004A48C3 /* AdClickExternalOpenDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdClickExternalOpenDetector.swift; sourceTree = "<group>"; };
 		F1FDC92F2BF4E0B3006B1435 /* SubscriptionEnvironment+Default.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "SubscriptionEnvironment+Default.swift"; sourceTree = "<group>"; };
 		F1FDC9342BF51E41006B1435 /* VPNSettings+Environment.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "VPNSettings+Environment.swift"; sourceTree = "<group>"; };
 		F40F843528C938370081AE75 /* AutofillLoginListViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutofillLoginListViewModelTests.swift; sourceTree = "<group>"; };
@@ -4890,16 +4892,6 @@
 			path = ExperimentalThemingManager;
 			sourceTree = "<group>";
 		};
-		6FD1BAE02B87A0E8000C475C /* AdAttribution */ = {
-			isa = PBXGroup;
-			children = (
-				6FD1BAE32B87A107000C475C /* AdAttributionFetcher.swift */,
-				6FD1BAE12B87A107000C475C /* AdAttributionPixelReporter.swift */,
-				6FD1BAE22B87A107000C475C /* AdAttributionReporterStorage.swift */,
-			);
-			name = AdAttribution;
-			sourceTree = "<group>";
-		};
 		6FD8E51C2C5B84CA00345670 /* IntroMessage */ = {
 			isa = PBXGroup;
 			children = (
@@ -5234,16 +5226,15 @@
 		84E341941E2F7EFB00BDBA6F /* DuckDuckGo */ = {
 			isa = PBXGroup;
 			children = (
-				7BBE25A42D71EEEB003131FA /* TabViewController+Automation.swift */,
-				7BBE25A22D71EE72003131FA /* MainViewController+Automation.swift */,
+				F1F6B4C32DE9B496004A48C3 /* AdAttribution */,
 				311C79E22CF790270021196A /* AIChat */,
-				6FD1BAE02B87A0E8000C475C /* AdAttribution */,
 				AA4D6A8023DE4973007E8790 /* AppIcon */,
 				F1C5ECF31E37812900C599A4 /* Application */,
 				9817C9C121EF58BA00884F65 /* AutoClear */,
 				F15D43211E70849A00BF2CDC /* Autocomplete */,
 				1E908BED29827C480008C8F3 /* Autoconsent */,
 				F44D279327F331930037F371 /* Autofill */,
+				7BBE25A02D71ECFD003131FA /* AutomationServer.swift */,
 				F1668BCC1E798025008CBA04 /* Bookmarks */,
 				0283A1F92C6E3D4200508FBD /* BrokenSitePrompt */,
 				9830A05725ED0C5D00DB64DE /* BrowsingMenu */,
@@ -5264,6 +5255,7 @@
 				98B001B1251EABB40090EC07 /* InfoPlist.strings */,
 				85DFEDEB24C7CC7600973FE7 /* iPad */,
 				F1C5ECFA1E37B15B00C599A4 /* Main */,
+				7BBE25A22D71EE72003131FA /* MainViewController+Automation.swift */,
 				9F254AA92CF47CD30063B308 /* MaliciousSiteProtection */,
 				EECD94B22A28B8580085C66E /* NetworkProtection */,
 				F13B4BF31F18C73A00814661 /* NewTabPage */,
@@ -5282,6 +5274,7 @@
 				85F98F8C296F0ED100742F4A /* Sync */,
 				F13B4BF41F18C74500814661 /* Tabs */,
 				F1386BA21E6846320062FC3C /* TabSwitcher */,
+				7BBE25A42D71EEEB003131FA /* TabViewController+Automation.swift */,
 				859DB80C2CE6262A001F7210 /* TextZoom */,
 				98F3A1D6217B36EE0011A0D4 /* Themes */,
 				7BF78E002CA2CC100026A1FC /* TipKit */,
@@ -5291,7 +5284,6 @@
 				3151F0E827357F8F00226F58 /* VoiceSearch */,
 				4B6484F427FD1E390050A7A1 /* Waitlist */,
 				7B059F0E2D0387E900371ED0 /* Widgets */,
-				7BBE25A02D71ECFD003131FA /* AutomationServer.swift */,
 			);
 			path = DuckDuckGo;
 			sourceTree = "<group>";
@@ -7894,6 +7886,17 @@
 			name = Core;
 			sourceTree = "<group>";
 		};
+		F1F6B4C32DE9B496004A48C3 /* AdAttribution */ = {
+			isa = PBXGroup;
+			children = (
+				F1F6B4C02DE9B496004A48C3 /* AdAttributionFetcher.swift */,
+				F1F6B4C12DE9B496004A48C3 /* AdAttributionPixelReporter.swift */,
+				F1F6B4C22DE9B496004A48C3 /* AdAttributionReporterStorage.swift */,
+				F1F6B4C72DE9B515004A48C3 /* AdClickExternalOpenDetector.swift */,
+			);
+			path = AdAttribution;
+			sourceTree = "<group>";
+		};
 		F407605328131910006B1E0B /* AutofillLoginUI */ = {
 			isa = PBXGroup;
 			children = (
@@ -8943,6 +8946,7 @@
 				9F254B082CF9FC270063B308 /* SpecialErrorModel.swift in Sources */,
 				BDE91CDE2C62B90F0005CB74 /* UnifiedFeedbackRootView.swift in Sources */,
 				D65625A12C232F5E006EF297 /* SettingsDuckPlayerView.swift in Sources */,
+				F1F6B4C82DE9B515004A48C3 /* AdClickExternalOpenDetector.swift in Sources */,
 				D6FEB8B52B74994000C3615F /* HeadlessWebViewCoordinator.swift in Sources */,
 				6FE1273D2C204C2500EB5724 /* FavoritesView.swift in Sources */,
 				8528AE81212F15D600D0BD74 /* AppRatingPrompt.xcdatamodeld in Sources */,
@@ -8961,7 +8965,6 @@
 				EE9D68D12AE00CF300B55EF4 /* NetworkProtectionVPNSettingsView.swift in Sources */,
 				982C87C42255559A00919035 /* UITableViewCellExtension.swift in Sources */,
 				B623C1C42862CD670043013E /* WKDownloadSession.swift in Sources */,
-				6FD1BAE42B87A107000C475C /* AdAttributionPixelReporter.swift in Sources */,
 				1E8AD1D927C4FEC100ABA377 /* DownloadsListSectioningHelper.swift in Sources */,
 				6526CA712D70E0BB0048819E /* DuckPlayerViewUtils.swift in Sources */,
 				D60170BD2BA34CE8001911B5 /* Subscription.swift in Sources */,
@@ -9091,6 +9094,9 @@
 				C1D21E2D293A5965006E5A05 /* AutofillLoginSession.swift in Sources */,
 				D6B9E8D22CDA4420002B640C /* DuckPlayerOverlayUsagePixels.swift in Sources */,
 				CBDEDA162D8079E500123E00 /* RoundedCornersMaskView.swift in Sources */,
+				F1F6B4C42DE9B496004A48C3 /* AdAttributionPixelReporter.swift in Sources */,
+				F1F6B4C52DE9B496004A48C3 /* AdAttributionReporterStorage.swift in Sources */,
+				F1F6B4C62DE9B496004A48C3 /* AdAttributionFetcher.swift in Sources */,
 				4B53648A26718D0E001AA041 /* EmailWaitlist.swift in Sources */,
 				D63677F52BBDB1C300605BA5 /* DaxLogoNavbarTitle.swift in Sources */,
 				8524CC98246D66E100E59D45 /* String+Markdown.swift in Sources */,
@@ -9259,7 +9265,6 @@
 				319A37172829C8AD0079FBCE /* UITableViewExtension.swift in Sources */,
 				7B1681062D10BC96005EAE24 /* VPNShortcutIntents.swift in Sources */,
 				85EE7F59224673C5000FE757 /* WebContainerNavigationController.swift in Sources */,
-				6FD1BAE52B87A107000C475C /* AdAttributionReporterStorage.swift in Sources */,
 				6F5CC0812C2AFFE400AFC840 /* ToggleExpandButtonStyle.swift in Sources */,
 				D68A21462B7EC16200BB372E /* SubscriptionExternalLinkViewModel.swift in Sources */,
 				31DE43C22C2C480D00F8C51F /* DuckPlayerFeaturePresentationView.swift in Sources */,
@@ -9636,7 +9641,6 @@
 				83004E862193E5ED00DA013C /* TabViewControllerBrowsingMenuExtension.swift in Sources */,
 				6FACA67F2D8AFF7800019C87 /* OmniBar.swift in Sources */,
 				6FD3F8132C3EFDA200DA5797 /* FavoritesPreviewDataSource.swift in Sources */,
-				6FD1BAE62B87A107000C475C /* AdAttributionFetcher.swift in Sources */,
 				EE01EB402AFBD0000096AAC9 /* NetworkProtectionVPNSettingsViewModel.swift in Sources */,
 				EE72CA852A862D000043B5B3 /* NetworkProtectionDebugViewController.swift in Sources */,
 				CBF259B72D49113E00AC63E4 /* RemoteConfigurationService.swift in Sources */,

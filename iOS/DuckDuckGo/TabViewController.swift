@@ -140,6 +140,7 @@ class TabViewController: UIViewController {
 
     private static let tld = AppDependencyProvider.shared.storageCache.tld
     private let adClickAttributionDetection = ContentBlocking.shared.makeAdClickAttributionDetection(tld: tld)
+    private let adClickExternalOpenDetector: AdClickExternalOpenDetector
     let adClickAttributionLogic = ContentBlocking.shared.makeAdClickAttributionLogic(tld: tld)
 
     private var httpsForced: Bool = false
@@ -468,6 +469,8 @@ class TabViewController: UIViewController {
             return AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.canPurchase
         }
 
+        self.adClickExternalOpenDetector = AdClickExternalOpenDetector(tabID: tabModel.uid)
+
         super.init(coder: aDecoder)
         
         // Assign itself as tabNavigationHandler for DuckPlayer
@@ -476,6 +479,9 @@ class TabViewController: UIViewController {
         // Assign itself as specialErrorPageNavigationDelegate for SpecialErrorPages
         specialErrorPageNavigationHandler.delegate  = self
 
+        self.adClickExternalOpenDetector.mitigationHandler = { [weak self] in
+            self?.closeTab()
+        }
     }
 
     required init?(coder aDecoder: NSCoder) {
@@ -1564,12 +1570,14 @@ extension TabViewController: WKNavigationDelegate {
         linkProtection.setMainFrameUrl(webView.url)
         referrerTrimming.onBeginNavigation(to: webView.url)
         adClickAttributionDetection.onStartNavigation(url: webView.url)
+        adClickExternalOpenDetector.startNavigation()
     }
 
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
         self.currentlyLoadedURL = webView.url
         onTextZoomChange()
         adClickAttributionDetection.onDidFinishNavigation(url: webView.url)
+        adClickExternalOpenDetector.finishNavigation()
         adClickAttributionLogic.onDidFinishNavigation(host: webView.url?.host)
         hideProgressIndicator()
         onWebpageDidFinishLoading()
@@ -1761,6 +1769,7 @@ extension TabViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
         Logger.general.debug("didFailNavigation; error: \(error)")
         adClickAttributionDetection.onDidFailNavigation()
+        adClickExternalOpenDetector.failNavigation()
         hideProgressIndicator()
         webpageDidFailToLoad()
         checkForReloadOnError()
@@ -1786,6 +1795,7 @@ extension TabViewController: WKNavigationDelegate {
     func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
         Logger.general.debug("didFailProvisionalNavigation; error: \(error)")
         adClickAttributionDetection.onDidFailNavigation()
+        adClickExternalOpenDetector.failNavigation()
         hideProgressIndicator()
         linkProtection.setMainFrameUrl(nil)
         referrerTrimming.onFailedNavigation()

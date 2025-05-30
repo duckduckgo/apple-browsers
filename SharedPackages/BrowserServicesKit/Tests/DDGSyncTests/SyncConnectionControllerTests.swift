@@ -131,14 +131,15 @@ final class SyncConnectionControllerTests: XCTestCase {
 
     // MARK: startExchangeMode
 
-    func test_startExchangeMode_returnsExchangerCode() async throws {
-        let expectedExchangerCode = "TestExchangerCode"
+    func test_startExchangeMode_returnsExpectedPairingInfo() async throws {
+        let expectedExchangeCode = "TestExchangerCode"
         let mockRemoteKeyExchanger: MockRemoteKeyExchanging = .init()
         dependencies.createRemoteKeyExchangerStub = mockRemoteKeyExchanger
-        mockRemoteKeyExchanger.code = expectedExchangerCode
-        let code = try await controller.startExchangeMode()
+        mockRemoteKeyExchanger.code = expectedExchangeCode
+        let pairingInfo = try await controller.startExchangeMode()
 
-        XCTAssertEqual(code, expectedExchangerCode)
+        XCTAssertEqual(pairingInfo.base64Code, expectedExchangeCode)
+        XCTAssertEqual(pairingInfo.deviceName, Self.deviceName)
     }
 
     func test_startExchangeMode_pollSucceeds_transmitsRecoveryKey() async throws {
@@ -208,15 +209,16 @@ final class SyncConnectionControllerTests: XCTestCase {
 
     // MARK: startConnectMode
 
-    func test_startConnectMode_returnsConnectorCode() async throws {
+    func test_startConnectMode_returnsExpectedPairingInfo() async throws {
         let expectedConnectorCode = "TestConnectorCode"
         let mockRemoteConnector = MockRemoteConnecting()
         dependencies.createRemoteConnectorStub = mockRemoteConnector
         mockRemoteConnector.code = expectedConnectorCode
 
-        let code = try await controller.startConnectMode()
+        let pairingInfo = try await controller.startConnectMode()
 
-        XCTAssertEqual(code, expectedConnectorCode)
+        XCTAssertEqual(pairingInfo.base64Code, expectedConnectorCode)
+        XCTAssertEqual(pairingInfo.deviceName, Self.deviceName)
     }
 
     func test_startConnectMode_pollSucceeds_informsDelegate() async throws {
@@ -540,96 +542,6 @@ final class SyncConnectionControllerTests: XCTestCase {
 
         XCTAssertTrue(didError)
         XCTAssertEqual(errorType, .failedToLogIn)
-    }
-
-    // MARK: - syncCodeEntered recovery
-
-    func test_syncCodeEntered_withRecoveryCode_attemptsLogin() async {
-        let mockAccountManager = AccountManagingMock()
-        dependencies.account = mockAccountManager
-
-        await controller.syncCodeEntered(code: Self.validRecoveryCode)
-
-        XCTAssertTrue(mockAccountManager.loginCalled)
-    }
-
-    func test_syncCodeEntered_withRecoveryCode_whenLoginFails_notifiesError() async {
-        let mockAccountManager = AccountManagingMock()
-        mockAccountManager.loginError = SyncError.failedToDecryptValue("")
-        dependencies.account = mockAccountManager
-
-        await controller.syncCodeEntered(code: Self.validRecoveryCode)
-
-        let didError = await delegate.didErrorCalled
-        let errorType = await delegate.didErrorErrors?.error
-
-        XCTAssertTrue(didError)
-        XCTAssertEqual(errorType, .failedToLogIn)
-    }
-
-    func test_syncCodeEntered_withRecoveryCode_whenAccountExists_notifiesTwoAccounts() async {
-        let mockAccountManager = AccountManagingMock()
-        mockAccountManager.loginError = SyncError.failedToDecryptValue("")
-        dependencies.account = mockAccountManager
-        try? dependencies.secureStore.persistAccount(SyncAccount.mock)
-
-        await controller.syncCodeEntered(code: Self.validRecoveryCode)
-
-        let twoAccountsKey = await delegate.didFindTwoAccountsDuringRecoveryCalled
-        XCTAssertNotNil(twoAccountsKey)
-    }
-
-    // MARK: - syncCodeEntered connect
-
-    func test_syncCodeEntered_withConnectCode_whenNoAccount_createsAccount() async {
-        let mockAccountManager = AccountManagingMock()
-        dependencies.account = mockAccountManager
-
-        await controller.syncCodeEntered(code: Self.validConnectCode)
-
-        let didCreateAccount = await delegate.didCreateSyncAccountCalled
-        XCTAssertTrue(didCreateAccount)
-    }
-
-    func test_syncCodeEntered_withConnectCode_whenAccountCreationThrows_notifiesError() async {
-        let mockAccountManager = AccountManagingMock()
-        mockAccountManager.createAccountError = SyncError.failedToDecryptValue("")
-        dependencies.account = mockAccountManager
-
-        await controller.syncCodeEntered(code: Self.validConnectCode)
-
-        let error = try? await waitForError()
-        XCTAssertEqual(error, .failedToCreateAccount)
-    }
-
-    func test_syncCodeEntered_withConnectCode_transmitsRecoveryKey() async {
-        let mockRecoveryKeyTransmitter = MockRecoveryKeyTransmitting()
-        dependencies.createRecoveryTransmitterStub = mockRecoveryKeyTransmitter
-
-        await controller.syncCodeEntered(code: Self.validConnectCode)
-
-        XCTAssertEqual(mockRecoveryKeyTransmitter.sendCalled, 1)
-    }
-
-    func test_syncCodeEntered_withConnectCode_whenTransmitFails_notifiesError() async {
-        let mockRecoveryKeyTransmitter = MockRecoveryKeyTransmitting()
-        mockRecoveryKeyTransmitter.sendError = SyncError.unableToDecodeResponse("")
-        dependencies.createRecoveryTransmitterStub = mockRecoveryKeyTransmitter
-
-        await controller.syncCodeEntered(code: Self.validConnectCode)
-
-        let error = try? await waitForError()
-        XCTAssertEqual(error, .failedToTransmitConnectRecoveryKey)
-    }
-
-    func test_syncCodeEntered_withConnectCode_whenSuccessful_notifiesCompletion() async {
-        let mockRecoveryKeyTransmitter = MockRecoveryKeyTransmitting()
-        dependencies.createRecoveryTransmitterStub = mockRecoveryKeyTransmitter
-
-        await controller.syncCodeEntered(code: Self.validConnectCode)
-
-        let didComplete = await delegate.didCompleteAccountConnectionValue
-        XCTAssertNotNil(didComplete)
     }
 
     // MARK: - syncCodeEntered recovery

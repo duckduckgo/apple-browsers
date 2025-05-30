@@ -399,25 +399,9 @@ final class SyncPreferencesTests: XCTestCase {
 
     @MainActor
     func test_startPollingForRecoveryKey_whenFeatureFlagOff_usesBase64Code() async throws {
-        let featureFlagger = MockSyncFeatureFlagger()
         featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = false
         let pairingInfo = PairingInfo(base64Code: "test_code", deviceName: "test_device")
         connectionController.startConnectModeStub = pairingInfo
-
-        syncPreferences = SyncPreferences(
-            syncService: ddgSyncing,
-            syncBookmarksAdapter: syncBookmarksAdapter,
-            syncCredentialsAdapter: syncCredentialsAdapter,
-            appearancePreferences: appearancePreferences,
-            managementDialogModel: managementDialogModel,
-            userAuthenticator: MockUserAuthenticator(),
-            syncPausedStateManager: pausedStateManager,
-            connectionControllerFactory: { [weak self] _, _ in
-                guard let self else { return MockSyncConnectionControlling() }
-                return connectionController
-            },
-            featureFlagger: featureFlagger
-        )
 
         syncPreferences.startPollingForRecoveryKey(isRecovery: false)
 
@@ -427,25 +411,9 @@ final class SyncPreferencesTests: XCTestCase {
 
     @MainActor
     func test_startPollingForRecoveryKey_whenFeatureFlagOn_usesURL() async throws {
-        let featureFlagger = MockSyncFeatureFlagger()
         featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = true
         let pairingInfo = PairingInfo(base64Code: "test_code", deviceName: "test_device")
         connectionController.startConnectModeStub = pairingInfo
-
-        syncPreferences = SyncPreferences(
-            syncService: ddgSyncing,
-            syncBookmarksAdapter: syncBookmarksAdapter,
-            syncCredentialsAdapter: syncCredentialsAdapter,
-            appearancePreferences: appearancePreferences,
-            managementDialogModel: managementDialogModel,
-            userAuthenticator: MockUserAuthenticator(),
-            syncPausedStateManager: pausedStateManager,
-            connectionControllerFactory: { [weak self] _, _ in
-                guard let self else { return MockSyncConnectionControlling() }
-                return connectionController
-            },
-            featureFlagger: featureFlagger
-        )
 
         syncPreferences.startPollingForRecoveryKey(isRecovery: false)
 
@@ -455,27 +423,11 @@ final class SyncPreferencesTests: XCTestCase {
 
     @MainActor
     func test_syncWithAnotherDevicePressed_accountExists_whenFeatureFlagOff_usesBase64Code() async throws {
-        let featureFlagger = MockSyncFeatureFlagger()
         featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = false
         featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
         let pairingInfo = PairingInfo(base64Code: "test_code", deviceName: "test_device")
         connectionController.startExchangeModeStub = pairingInfo
         ddgSyncing.account = .mock
-
-        syncPreferences = SyncPreferences(
-            syncService: ddgSyncing,
-            syncBookmarksAdapter: syncBookmarksAdapter,
-            syncCredentialsAdapter: syncCredentialsAdapter,
-            appearancePreferences: appearancePreferences,
-            managementDialogModel: managementDialogModel,
-            userAuthenticator: MockUserAuthenticator(),
-            syncPausedStateManager: pausedStateManager,
-            connectionControllerFactory: { [weak self] _, _ in
-                guard let self else { return MockSyncConnectionControlling() }
-                return connectionController
-            },
-            featureFlagger: featureFlagger
-        )
 
         await syncPreferences.syncWithAnotherDevicePressed()
 
@@ -485,27 +437,11 @@ final class SyncPreferencesTests: XCTestCase {
 
     @MainActor
     func test_syncWithAnotherDevicePressed_accountExists_whenFeatureFlagOn_usesURL() async throws {
-        let featureFlagger = MockSyncFeatureFlagger()
         featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = true
         featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
         let pairingInfo = PairingInfo(base64Code: "test_code", deviceName: "test_device")
         connectionController.startExchangeModeStub = pairingInfo
         ddgSyncing.account = .mock
-
-        syncPreferences = SyncPreferences(
-            syncService: ddgSyncing,
-            syncBookmarksAdapter: syncBookmarksAdapter,
-            syncCredentialsAdapter: syncCredentialsAdapter,
-            appearancePreferences: appearancePreferences,
-            managementDialogModel: managementDialogModel,
-            userAuthenticator: MockUserAuthenticator(),
-            syncPausedStateManager: pausedStateManager,
-            connectionControllerFactory: { [weak self] _, _ in
-                guard let self else { return MockSyncConnectionControlling() }
-                return connectionController
-            },
-            featureFlagger: featureFlagger
-        )
 
         await syncPreferences.syncWithAnotherDevicePressed()
 
@@ -515,26 +451,10 @@ final class SyncPreferencesTests: XCTestCase {
 
     @MainActor
     func test_syncWithAnotherDevicePressed_accountExists_whenExchangeFeatureFlagOff_usesRecoveryCode() async throws {
-        let featureFlagger = MockSyncFeatureFlagger()
         featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = false
         let mockAccount = SyncAccount.mock
         ddgSyncing.account = mockAccount
         let expectedRecoveryCode = mockAccount.recoveryCode
-
-        syncPreferences = SyncPreferences(
-            syncService: ddgSyncing,
-            syncBookmarksAdapter: syncBookmarksAdapter,
-            syncCredentialsAdapter: syncCredentialsAdapter,
-            appearancePreferences: appearancePreferences,
-            managementDialogModel: managementDialogModel,
-            userAuthenticator: MockUserAuthenticator(),
-            syncPausedStateManager: pausedStateManager,
-            connectionControllerFactory: { [weak self] _, _ in
-                guard let self else { return MockSyncConnectionControlling() }
-                return connectionController
-            },
-            featureFlagger: featureFlagger
-        )
 
         await syncPreferences.syncWithAnotherDevicePressed()
 
@@ -573,27 +493,11 @@ final class SyncPreferencesTests: XCTestCase {
 
     @MainActor
     func test_syncWithAnotherDevicePressed_accountExists_whenExchangeFeatureFlagOff_andUrlBarcodeOff_usesBase64Format() async throws {
-        let featureFlagger = MockSyncFeatureFlagger()
         featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = false
         featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = false
         let mockAccount = SyncAccount.mock
         ddgSyncing.account = mockAccount
         let expectedRecoveryCode = mockAccount.recoveryCode
-
-        syncPreferences = SyncPreferences(
-            syncService: ddgSyncing,
-            syncBookmarksAdapter: syncBookmarksAdapter,
-            syncCredentialsAdapter: syncCredentialsAdapter,
-            appearancePreferences: appearancePreferences,
-            managementDialogModel: managementDialogModel,
-            userAuthenticator: MockUserAuthenticator(),
-            syncPausedStateManager: pausedStateManager,
-            connectionControllerFactory: { [weak self] _, _ in
-                guard let self else { return MockSyncConnectionControlling() }
-                return connectionController
-            },
-            featureFlagger: featureFlagger
-        )
 
         await syncPreferences.syncWithAnotherDevicePressed()
 
@@ -609,24 +513,8 @@ final class SyncPreferencesTests: XCTestCase {
 
     @MainActor
     func test_startPollingForRecoveryKey_whenError_showsError() async throws {
-        let featureFlagger = MockSyncFeatureFlagger()
         featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
         connectionController.startConnectModeError = SyncError.failedToDecryptValue("")
-
-        syncPreferences = SyncPreferences(
-            syncService: ddgSyncing,
-            syncBookmarksAdapter: syncBookmarksAdapter,
-            syncCredentialsAdapter: syncCredentialsAdapter,
-            appearancePreferences: appearancePreferences,
-            managementDialogModel: managementDialogModel,
-            userAuthenticator: MockUserAuthenticator(),
-            syncPausedStateManager: pausedStateManager,
-            connectionControllerFactory: { [weak self] _, _ in
-                guard let self else { return MockSyncConnectionControlling() }
-                return connectionController
-            },
-            featureFlagger: featureFlagger
-        )
 
         syncPreferences.startPollingForRecoveryKey(isRecovery: false)
 
@@ -636,25 +524,9 @@ final class SyncPreferencesTests: XCTestCase {
 
     @MainActor
     func test_syncWithAnotherDevicePressed_accountExists_whenError_showsError() async throws {
-        let featureFlagger = MockSyncFeatureFlagger()
         featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
         connectionController.startExchangeModeError = SyncError.failedToDecryptValue("")
         ddgSyncing.account = .mock
-
-        syncPreferences = SyncPreferences(
-            syncService: ddgSyncing,
-            syncBookmarksAdapter: syncBookmarksAdapter,
-            syncCredentialsAdapter: syncCredentialsAdapter,
-            appearancePreferences: appearancePreferences,
-            managementDialogModel: managementDialogModel,
-            userAuthenticator: MockUserAuthenticator(),
-            syncPausedStateManager: pausedStateManager,
-            connectionControllerFactory: { [weak self] _, _ in
-                guard let self else { return MockSyncConnectionControlling() }
-                return connectionController
-            },
-            featureFlagger: featureFlagger
-        )
 
         await syncPreferences.syncWithAnotherDevicePressed()
 

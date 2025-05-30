@@ -29,6 +29,7 @@ protocol VisualStyleProviding {
     var fireButtonSize: CGFloat { get }
     var navigationToolbarButtonsSpacing: CGFloat { get }
     var tabBarButtonSize: CGFloat { get }
+    var addToolbarShadow: Bool { get }
 
     var addressBarStyleProvider: AddressBarStyleProviding { get }
     var tabStyleProvider: TabStyleProviding { get }
@@ -72,6 +73,7 @@ struct VisualStyle: VisualStyleProviding {
     let fireButtonSize: CGFloat
     let navigationToolbarButtonsSpacing: CGFloat
     let tabBarButtonSize: CGFloat
+    let addToolbarShadow: Bool
 
     static var legacy: VisualStyleProviding {
         return VisualStyle(toolbarButtonsCornerRadius: 4,
@@ -83,7 +85,8 @@ struct VisualStyle: VisualStyleProviding {
                            iconsProvider: LegacyIconsProvider(),
                            fireButtonSize: 28,
                            navigationToolbarButtonsSpacing: 0,
-                           tabBarButtonSize: 28)
+                           tabBarButtonSize: 28,
+                           addToolbarShadow: false)
     }
 
     static var current: VisualStyleProviding {
@@ -97,7 +100,8 @@ struct VisualStyle: VisualStyleProviding {
                            iconsProvider: CurrentIconsProvider(),
                            fireButtonSize: 32,
                            navigationToolbarButtonsSpacing: 2,
-                           tabBarButtonSize: 28)
+                           tabBarButtonSize: 28,
+                           addToolbarShadow: true)
     }
 }
 

@@ -282,7 +282,7 @@ final class TabBarItemCellView: NSView {
             mouseOverView.layer?.addSublayer(borderLayer)
         }
 
-        titleTextField.textColor = visualStyle.colorsProvider.textPrimaryColor
+        titleTextField.textColor = .labelColor
 
         addSubview(mouseOverView)
         if visualStyle.tabStyleProvider.isRoundedBackgroundPresentOnHover {

@@ -35,6 +35,7 @@ struct HomeMessageViewModelBuilder {
     static func build(for remoteMessage: RemoteMessageModel,
                       with privacyProDataReporter: PrivacyProDataReporting?,
                       navigator: MessageNavigator,
+                      isExperimentalThemingEnabled: Bool,
                       onDidClose: @escaping (HomeMessageViewModel.ButtonAction?) async -> Void,
                       onDidAppear: @escaping () -> Void) -> HomeMessageViewModel? {
             guard let content = remoteMessage.content else { return nil }
@@ -44,6 +45,7 @@ struct HomeMessageViewModelBuilder {
             sendPixels: remoteMessage.isMetricsEnabled,
             modelType: content,
             navigator: navigator,
+            isExperimentalThemingEnabled: isExperimentalThemingEnabled,
             onDidClose: onDidClose,
             onDidAppear: onDidAppear,
             onAttachAdditionalParameters: { useCase, params in

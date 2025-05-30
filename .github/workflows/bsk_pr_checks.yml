@@ -14,6 +14,8 @@ on:
       - '.github/**'
       - '.xcode-version'
       - 'SharedPackages/BrowserServicesKit/**'
+  schedule:
+    - cron: '10,35,50 4,5,6 * * *'
 
 jobs:
 
@@ -66,14 +68,40 @@ jobs:
       - name: Build BSK
         run: set -o pipefail && swift build | tee build-log.txt | xcbeautify
 
+      - name: Configure system logging
+        run: |
+          sudo cp com.apple.system.logging.plist /Library/Preferences/Logging/com.apple.system.logging.plist
+          sudo killall logd || true
+
+      - name: Start log stream in background
+        run: |
+          log stream --predicate 'process == "xctest"' --style syslog > xctest.log 2>&1 &
+          echo $! > log_stream.pid
+
       - name: Run tests
         id: run-unit-tests
         run: set -o pipefail && swift test | tee -a build-log.txt | xcbeautify --report junit --report-path . --junit-report-filename package-tests.xml
-        
+
       - name: Send Unit Tests Status Pixel
         if: always() && github.ref_name == 'main'
         run: |
           curl -fLSs -o /dev/null "https://improving.duckduckgo.com/t/m_ci_apple_bsk_main_unit_tests_macos_${{ steps.run-unit-tests.outcome }}?workflow=${{ env.WORKFLOW_URL }}"
+
+      - name: Stop log stream
+        if: always()
+        run: |
+          if [ -f log_stream.pid ]; then
+            kill $(cat log_stream.pid) || true
+          fi
+
+      - name: Upload XCTest log stream output
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bsk-xctest-log-stream.log
+          path: |
+            SharedPackages/BrowserServicesKit/xctest.log
+          retention-days: 7
 
       - name: Upload JUnit XML as artifact
         uses: actions/upload-artifact@v4

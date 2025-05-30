@@ -33,6 +33,13 @@ extension WKWebView {
 
 #endif
 
+    private static let committedURLKey = "committedURL"
+    public var committedURL: URL? {
+        guard self.responds(to: NSSelectorFromString("_" + Self.committedURLKey))
+                || self.responds(to: NSSelectorFromString(Self.committedURLKey)) else { return nil }
+        return value(forKey: Self.committedURLKey) as? URL
+    }
+
 #if !_MAIN_FRAME_NAVIGATION_ENABLED
 
     static let swizzleLoadMethodOnce: Void = {

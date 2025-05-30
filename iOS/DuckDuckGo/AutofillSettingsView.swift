@@ -19,6 +19,7 @@
 
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct AutofillSettingsView: View {
     
@@ -167,7 +168,7 @@ struct AutofillSettingsView: View {
         let viewModel: AutofillSettingsViewModel
         
         var body: some View {
-            return (Text(Image(.lockSolid16)).baselineOffset(-1.0).foregroundColor(.secondary)
+            return (Text(Image(uiImage: DesignSystemImages.Glyphs.Size12.lockSolid)).baselineOffset(-1.0).foregroundColor(.secondary)
                     + Text(verbatim: " ")
                     + Text(viewModel.showCreditCards ? UserText.autofillLoginListSettingsPasswordsAndCardsFooter : UserText.autofillLoginListSettingsFooter).foregroundColor(.secondary)
                     + Text(verbatim: " ")

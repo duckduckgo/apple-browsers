@@ -137,6 +137,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let remoteMessagingClient: RemoteMessagingClient!
     let onboardingContextualDialogsManager: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater
     let defaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPresenter
+    let defaultBrowserAndDockPromptKeyValueStore: DefaultBrowserAndDockPromptStorage
+    let defaultBrowserAndDockPromptFeatureFlagger: DefaultBrowserAndDockPromptFeatureFlagger
     let visualStyleManager: VisualStyleManagerProviding
 
     let isAuthV2Enabled: Bool
@@ -363,13 +365,43 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         pinnedTabsManagerProvider = PinnedTabsManagerProvider()
         configurationManager = ConfigurationManager(store: configurationStore)
 
-        let coordinator =  DefaultBrowserAndDockPromptCoordinator(featureFlagger: featureFlagger)
-        defaultBrowserAndDockPromptPresenter = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, featureFlagger: featureFlagger)
-
         visualStyleManager = VisualStyleManager(featureFlagger: featureFlagger)
         newTabPageCustomizationModel = NewTabPageCustomizationModel(visualStyleManager: visualStyleManager, appearancePreferences: appearancePreferences)
 
         onboardingContextualDialogsManager = ContextualDialogsManager()
+
+#if DEBUG || REVIEW
+        let defaultBrowserAndDockPromptDebugStore = DefaultBrowserAndDockPromptDebugStore()
+        let defaultBrowserAndDockPromptDateProvider: () -> Date = { defaultBrowserAndDockPromptDebugStore.simulatedTodayDate }
+#else
+        let defaultBrowserAndDockPromptDateProvider: () -> Date = Date.init
+#endif
+
+        defaultBrowserAndDockPromptKeyValueStore = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStore)
+        DefaultBrowserAndDockPromptStoreMigrator(
+            oldStore: DefaultBrowserAndDockPromptLegacyStore(),
+            newStore: defaultBrowserAndDockPromptKeyValueStore
+        ).migrateIfNeeded()
+
+        defaultBrowserAndDockPromptFeatureFlagger = DefaultBrowserAndDockPromptFeatureFlag(
+            privacyConfigManager: ContentBlocking.shared.privacyConfigurationManager,
+            featureFlagger: featureFlagger
+        )
+
+        let defaultBrowserAndDockPromptDecider = DefaultBrowserAndDockPromptTypeDecider(
+            featureFlagger: defaultBrowserAndDockPromptFeatureFlagger,
+            store: defaultBrowserAndDockPromptKeyValueStore,
+            installDateProvider: { LocalStatisticsStore().installDate },
+            dateProvider: defaultBrowserAndDockPromptDateProvider
+        )
+        let coordinator = DefaultBrowserAndDockPromptCoordinator(
+            promptTypeDecider: defaultBrowserAndDockPromptDecider,
+            store: defaultBrowserAndDockPromptKeyValueStore,
+            isOnboardingCompleted: onboardingContextualDialogsManager.state == .onboardingCompleted,
+            dateProvider: defaultBrowserAndDockPromptDateProvider
+        )
+        let statusUpdateNotifier = DefaultBrowserAndDockPromptStatusUpdateNotifier()
+        defaultBrowserAndDockPromptPresenter = DefaultBrowserAndDockPromptPresenter(coordinator: coordinator, statusUpdateNotifier: statusUpdateNotifier)
 
         // MARK: - Subscription configuration
 

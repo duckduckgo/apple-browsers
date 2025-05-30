@@ -21,6 +21,8 @@ import Foundation
 import BrowserServicesKit
 import SwiftUI
 import Core
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 protocol ZipContentSelectionViewModelDelegate: AnyObject {
     func zipContentSelectionViewModelDidSelectOptions(_ viewModel: ZipContentSelectionViewModel, selectedTypes: [DataImport.DataType])
@@ -32,9 +34,9 @@ extension DataImportPreview {
     var icon: Image {
         switch type {
         case .bookmarks:
-            return Image(.bookmarksOpen24)
+            return Image(uiImage: DesignSystemImages.Glyphs.Size24.bookmarksOpen)
         case .passwords:
-            return Image(.key24)
+            return Image(uiImage: DesignSystemImages.Glyphs.Size24.key)
         }
     }
 

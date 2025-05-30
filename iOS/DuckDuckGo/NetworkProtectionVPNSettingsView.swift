@@ -19,6 +19,7 @@
 
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct NetworkProtectionVPNSettingsView: View {
     @StateObject var viewModel = NetworkProtectionVPNSettingsViewModel()
@@ -157,7 +158,7 @@ struct NetworkProtectionVPNSettingsView: View {
                     Label {
                         Text(UserText.vpnSettingsAddWidget)
                     } icon: {
-                        Image(.addWidgetColor24)
+                        Image(uiImage: DesignSystemImages.Color.Size24.addWidget)
                             .frame(width: 24, height: 24)
                     }.daxBodyRegular()
                 }
@@ -170,7 +171,7 @@ struct NetworkProtectionVPNSettingsView: View {
                         Label {
                             Text(UserText.vpnSettingsAddControlCenterWidget)
                         } icon: {
-                            Image(.settingsColor24)
+                            Image(uiImage: DesignSystemImages.Color.Size24.settings)
                                 .frame(width: 24, height: 24)
                         }.daxBodyRegular()
                     }
@@ -182,7 +183,7 @@ struct NetworkProtectionVPNSettingsView: View {
                     Label {
                         Text(UserText.vpnSettingsControlWithSiri)
                     } icon: {
-                        Image(.askSiriColor24)
+                        Image(uiImage: DesignSystemImages.Color.Size24.askSiri)
                             .frame(width: 24, height: 24)
                     }.daxBodyRegular()
                 }
@@ -202,7 +203,7 @@ private extension WidgetEducationView {
             navBarTitle: UserText.settingsAddVPNWidget,
             thirdParagraphText: UserText.addVPNWidgetSettingsThirdParagraph,
             thirdParagraphDetail: .image(
-                Image("WidgetEducationVPNWidgetExample"),
+                Image(.widgetEducationVPNWidgetExample),
                 maxWidth: 164,
                 horizontalOffset: -7,
                 dropsShadow: true

@@ -19,6 +19,7 @@
 
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import DuckUI
 
 struct SyncPromoView: View {
@@ -75,7 +76,8 @@ struct SyncPromoView: View {
                     Button {
                         viewModel.dismissButtonAction?()
                     } label: {
-                        Image(.close24)
+                        #warning("ICONS image size changed from 24 -> 16")
+                        Image(uiImage: DesignSystemImages.Glyphs.Size16.close)
                             .foregroundColor(.primary)
                     }
                     .frame(width: 44, height: 44)

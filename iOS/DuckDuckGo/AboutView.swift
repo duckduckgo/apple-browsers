@@ -38,12 +38,12 @@ struct AboutViewText: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            Image("Logo")
+            Image(.logo)
                 .resizable()
                 .frame(width: 96, height: 96)
                 .padding(.top)
 
-            Image("TextDuckDuckGo")
+            Image(.textDuckDuckGo)
 
             Text(UserText.aboutProtectionTagline)
                 .daxHeadline()

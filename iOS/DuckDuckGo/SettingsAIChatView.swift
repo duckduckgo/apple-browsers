@@ -28,7 +28,7 @@ struct SettingsAIChatView: View {
         List {
 
             VStack(alignment: .center) {
-                Image("SettingsAIChatHero")
+                Image(.settingsAIChatHero)
                     .padding(.top, -20)
 
                 Text(UserText.aiChatFeatureName)

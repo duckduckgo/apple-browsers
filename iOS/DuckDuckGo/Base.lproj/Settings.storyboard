@@ -453,6 +453,7 @@
                     </navigationItem>
                     <simulatedToolbarMetrics key="simulatedBottomBarMetrics" translucent="NO"/>
                     <connections>
+                        <outlet property="addButton" destination="CxT-QK-iVn" id="gVh-V2-NhE"/>
                         <outlet property="backButton" destination="SWM-CB-n4U" id="vIB-TK-wlR"/>
                         <outlet property="doneButton" destination="I92-fZ-gIP" id="0Hs-2v-Z7L"/>
                         <outlet property="editButton" destination="o1a-ie-C4I" id="dmI-yW-01A"/>

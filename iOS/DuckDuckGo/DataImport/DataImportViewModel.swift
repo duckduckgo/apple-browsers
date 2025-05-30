@@ -23,6 +23,7 @@ import UniformTypeIdentifiers
 import Core
 import BrowserServicesKit
 import Common
+import DesignResourcesKit
 
 protocol DataImportViewModelDelegate: AnyObject {
     func dataImportViewModelDidRequestImportFile(_ viewModel: DataImportViewModel)

@@ -401,7 +401,9 @@ public extension DesignSystemImages {
             public static var platformPlayStore: DesignSystemImage { .init(resource: .platformPlayStore24) }
             public static var pointUp: DesignSystemImage { .init(resource: .pointUp24) }
             public static var pointUpSolid: DesignSystemImage { .init(resource: .pointUpSolid24) }
+            public static var print: DesignSystemImage { .init(resource: .print24) }
             public static var reload: DesignSystemImage { .init(resource: .reload24) }
+            public static var reloadSmall: DesignSystemImage { .init(resource: .reloadSmall24) }
             public static var rename: DesignSystemImage { .init(resource: .rename24) }
             public static var replace: DesignSystemImage { .init(resource: .replace24) }
             public static var reset: DesignSystemImage { .init(resource: .reset24) }

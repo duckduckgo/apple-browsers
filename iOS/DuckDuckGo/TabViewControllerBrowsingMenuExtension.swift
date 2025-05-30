@@ -26,6 +26,8 @@ import WidgetKit
 import Common
 import PrivacyDashboard
 import PixelExperimentKit
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 extension TabViewController {
 
@@ -44,12 +46,14 @@ extension TabViewController {
 
         let newTabEntry = BrowsingMenuEntry.regular(name: UserText.actionNewTab,
                                                     accessibilityLabel: UserText.keyCommandNewTab,
-                                                    image: UIImage(named: "Add-24")!,
+                                                    image: DesignSystemImages.Glyphs.Size24.add,
                                                     action: { [weak self] in
             self?.onNewTabAction()
         })
 
-        let shareEntry = BrowsingMenuEntry.regular(name: UserText.actionShare, image: UIImage(named: "Share-24")!, action: { [weak self] in
+        let shareEntry = BrowsingMenuEntry.regular(name: UserText.actionShare,
+                                                   image: DesignSystemImages.Glyphs.Size24.shareApple,
+                                                   action: { [weak self] in
             guard let self = self else { return }
             guard let menu = self.chromeDelegate?.omniBar.barView.menuButton else { return }
             Pixel.fire(pixel: .browsingMenuShare)
@@ -58,12 +62,13 @@ extension TabViewController {
 
         let copyEntry = buildCopyEntry()
 
-        let reloadEntry = BrowsingMenuEntry.regular(name: UserText.actionRefresh, image: UIImage(named: "Reload-24")!, action: { [weak self] in
+        let reloadEntry = BrowsingMenuEntry.regular(name: UserText.actionRefresh,
+                                                    image: DesignSystemImages.Glyphs.Size24.reload,
+                                                    action: { [weak self] in
             guard let self = self else { return }
             Pixel.fire(pixel: .browsingMenuReload)
             self.reload()
         })
-
 
         if shouldShowAIChatInMenu {
             let chatEntry = buildChatEntry(withSmallIcon: false)
@@ -107,7 +112,7 @@ extension TabViewController {
         if link != nil {
             let name = UserText.actionReportBrokenSite
             entries.append(BrowsingMenuEntry.regular(name: name,
-                                                     image: UIImage(named: "Feedback-16")!,
+                                                     image: DesignSystemImages.Glyphs.Size16.feedbackBlank,
                                                      action: { [weak self] in
                 self?.onReportBrokenSiteAction()
             }))
@@ -127,7 +132,7 @@ extension TabViewController {
     private func buildPrintEntry(withSmallIcon smallIcon: Bool) -> BrowsingMenuEntry {
         .regular(name: UserText.actionPrintSite,
                  accessibilityLabel: UserText.actionPrintSite,
-                 image: smallIcon ? UIImage(resource: .print16) : UIImage(resource: .print24),
+                 image: smallIcon ? DesignSystemImages.Glyphs.Size16.print : DesignSystemImages.Glyphs.Size24.print,
                  action: { [weak self] in
             Pixel.fire(pixel: .browsingMenuListPrint)
             self?.print()
@@ -136,7 +141,7 @@ extension TabViewController {
 
     private func buildChatEntry(withSmallIcon smallIcon: Bool) -> BrowsingMenuEntry {
         .regular(name: UserText.actionOpenAIChat,
-                 image: smallIcon ? UIImage(resource: .aiChat16) : UIImage(resource: .aiChat24),
+                 image: smallIcon ? DesignSystemImages.Glyphs.Size16.aiChat : DesignSystemImages.Glyphs.Size24.aiChat,
                  action: { [weak self] in
             Pixel.fire(pixel: .browsingMenuAIChat,
                        withAdditionalParameters: self?.featureDiscovery.addToParams([:], forFeature: .aiChat) ?? [:])
@@ -149,7 +154,7 @@ extension TabViewController {
 
         if state == .newTab {
             entries.append(BrowsingMenuEntry.regular(name: UserText.actionTabNew,
-                                                     image: UIImage(named: "Add-16")!,
+                                                     image: DesignSystemImages.Glyphs.Size16.add,
                                                      action: { [weak self] in
                 self?.onNewTabAction()
             }))
@@ -166,21 +171,21 @@ extension TabViewController {
 
         if featureFlagger.isFeatureOn(.autofillAccessCredentialManagement) {
             entries.append(BrowsingMenuEntry.regular(name: UserText.actionAutofillLogins,
-                                                     image: UIImage(named: "Key-16")!,
+                                                     image: DesignSystemImages.Glyphs.Size16.keyLogin,
                                                      action: { [weak self] in
                 self?.onOpenAutofillLoginsAction()
             }))
         }
 
         entries.append(BrowsingMenuEntry.regular(name: UserText.actionDownloads,
-                                                 image: UIImage(named: "Downloads-16")!,
+                                                 image: DesignSystemImages.Glyphs.Size16.downloads,
                                                  showNotificationDot: AppDependencyProvider.shared.downloadManager.unseenDownloadsAvailable,
                                                  action: { [weak self] in
             self?.onOpenDownloadsAction()
         }))
 
         entries.append(BrowsingMenuEntry.regular(name: UserText.actionSettings,
-                                                 image: UIImage(named: "Settings-16")!,
+                                                 image: DesignSystemImages.Glyphs.Size16.settings,
                                                  action: { [weak self] in
             self?.onBrowsingSettingsAction()
         }))
@@ -213,7 +218,7 @@ extension TabViewController {
         }
 
         let title = self.tabModel.isDesktop ? UserText.actionRequestMobileSite : UserText.actionRequestDesktopSite
-        let image = self.tabModel.isDesktop ? UIImage(named: "Device-Mobile-16")! : UIImage(named: "Device-Desktop-16")!
+        let image = self.tabModel.isDesktop ? DesignSystemImages.Glyphs.Size16.deviceMobile : DesignSystemImages.Glyphs.Size16.deviceDesktop
         entries.append(BrowsingMenuEntry.regular(name: title, image: image, action: { [weak self] in
             self?.onToggleDesktopSiteAction(forUrl: link.url)
         }))
@@ -229,21 +234,21 @@ extension TabViewController {
         
         if isFireproofed {
             return BrowsingMenuEntry.regular(name: UserText.disablePreservingLogins,
-                                             image: UIImage(named: "MenuRemoveFireproof")!,
+                                             image: DesignSystemImages.Glyphs.Size16.fireSolid,
                                              action: { [weak self] in
                                                 self?.disableFireproofingForDomain(domain)
                                              })
         }
 
         return BrowsingMenuEntry.regular(name: UserText.enablePreservingLogins,
-                                         image: UIImage(named: "MenuFireproof")!,
+                                         image: DesignSystemImages.Glyphs.Size16.fireproofSolid,
                                          action: { [weak self] in
                                             self?.enableFireproofingForDomain(domain)
                                          })
     }
 
     private func buildCopyEntry() -> BrowsingMenuEntry {
-        let image = UIImage(resource: .copy24)
+        let image = DesignSystemImages.Glyphs.Size24.copy
         return BrowsingMenuEntry.regular(name: UserText.actionCopy, image: image, action: { [weak self] in
             guard let strongSelf = self else { return }
             if !strongSelf.isError, let url = strongSelf.webView.url {
@@ -265,7 +270,7 @@ extension TabViewController {
     }
 
     private func buildFindInPageEntry(forLink link: Link) -> BrowsingMenuEntry {
-        return BrowsingMenuEntry.regular(name: UserText.findInPage, image: UIImage(named: "Find-16")!, action: { [weak self] in
+        return BrowsingMenuEntry.regular(name: UserText.findInPage, image: DesignSystemImages.Glyphs.Size16.findInPage, action: { [weak self] in
             Pixel.fire(pixel: .browsingMenuFindInPage)
             self?.requestFindInPage()
         })
@@ -291,14 +296,14 @@ extension TabViewController {
         
         if bookmark != nil {
             return BrowsingMenuEntry.regular(name: UserText.actionEditBookmark,
-                                             image: UIImage(named: "Bookmark-Solid-16")!,
+                                             image: DesignSystemImages.Glyphs.Size16.bookmarkSolid,
                                              action: { [weak self] in
                                                 self?.performEditBookmarkAction(for: link)
                                              })
         }
 
         return BrowsingMenuEntry.regular(name: UserText.actionSaveBookmark,
-                                         image: UIImage(named: "Bookmark-16")!,
+                                         image: DesignSystemImages.Glyphs.Size16.bookmark,
                                          action: { [weak self] in
                                            self?.performSaveBookmarkAction(for: link,
                                                                            with: bookmarksInterface)
@@ -307,7 +312,7 @@ extension TabViewController {
 
     private func buildOpenBookmarksEntry() -> BrowsingMenuEntry {
         BrowsingMenuEntry.regular(name: UserText.actionOpenBookmarks,
-                                                 image: UIImage(named: "Library-16")!,
+                                  image: DesignSystemImages.Glyphs.Size16.bookmarks,
                                                  action: { [weak self] in
             self?.onOpenBookmarksAction()
         })
@@ -345,7 +350,7 @@ extension TabViewController {
             }
 
             let entry = BrowsingMenuEntry.regular(name: UserText.actionRemoveFavorite,
-                                                  image: UIImage(named: "Favorite-Solid-16")!,
+                                                  image: DesignSystemImages.Glyphs.Size16.favoriteSolid,
                                                   action: action)
             return entry
 
@@ -355,7 +360,7 @@ extension TabViewController {
         let addToFavoriteFlow = DaxDialogs.shared.isAddFavoriteFlow
 
         let entry = BrowsingMenuEntry.regular(name: UserText.actionSaveFavorite,
-                                              image: UIImage(named: "Favorite-16")!,
+                                              image: DesignSystemImages.Glyphs.Size16.favorite,
                                               action: { [weak self] in
             Pixel.fire(pixel: addToFavoriteFlow ? .browsingMenuAddToFavoritesAddFavoriteFlow : .browsingMenuAddToFavorites)
             DailyPixel.fire(pixel: .addFavoriteDaily)
@@ -396,7 +401,7 @@ extension TabViewController {
     private func buildUseNewDuckAddressEntry(forLink link: Link) -> BrowsingMenuEntry? {
         guard emailManager?.isSignedIn == true else { return nil }
         let title = UserText.emailBrowsingMenuUseNewDuckAddress
-        let image = UIImage(named: "Email-16")!
+        let image = DesignSystemImages.Glyphs.Size16.email
 
         return BrowsingMenuEntry.regular(name: title, image: image) { [weak self] in
             (self?.parent as? MainViewController)?.newEmailAddress()
@@ -518,8 +523,8 @@ extension TabViewController {
         let config = ContentBlocking.shared.privacyConfigurationManager.privacyConfig
         let isProtected = !config.isUserUnprotected(domain: domain)
         let title = isProtected ? UserText.actionDisableProtection : UserText.actionEnableProtection
-        let image = isProtected ? UIImage(named: "Protections-Blocked-16")! : UIImage(named: "Protections-16")!
-    
+        let image = isProtected ? DesignSystemImages.Glyphs.Size16.shieldBlocked : DesignSystemImages.Glyphs.Size16.shield
+
         return BrowsingMenuEntry.regular(name: title, image: image, action: { [weak self] in
             self?.onToggleProtectionAction(forDomain: domain, isProtected: isProtected)
         })

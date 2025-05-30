@@ -19,6 +19,7 @@
 
 import UIKit
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 final class UpdatedOmniBarSearchView: UIView {
 
@@ -149,28 +150,28 @@ final class UpdatedOmniBarSearchView: UIView {
         textField.spellCheckingType = .no
         textField.keyboardType = .webSearch
 
-        accessoryButton.setImage(UIImage(resource: .aiChatNew24))
+        accessoryButton.setImage(DesignSystemImages.Glyphs.Size24.aiChat)
         UpdatedOmniBarView.setUpCommonProperties(for: accessoryButton)
 
-        reloadButton.setImage(UIImage(resource: .reloadNew24))
+        reloadButton.setImage(DesignSystemImages.Glyphs.Size24.reload)
         UpdatedOmniBarView.setUpCommonProperties(for: reloadButton)
 
-        clearButton.setImage(UIImage(resource: .closeCircleSmallNew24))
+        clearButton.setImage(DesignSystemImages.Glyphs.Size24.closeCircleSmall)
         UpdatedOmniBarView.setUpCommonProperties(for: clearButton)
 
-        shareButton.setImage(UIImage(resource: .shareAppleNew24))
+        shareButton.setImage(DesignSystemImages.Glyphs.Size24.shareApple)
         UpdatedOmniBarView.setUpCommonProperties(for: shareButton)
 
-        cancelButton.setImage(UIImage(resource: .closeNew24))
+        cancelButton.setImage(DesignSystemImages.Glyphs.Size24.close)
         UpdatedOmniBarView.setUpCommonProperties(for: cancelButton)
 
-        voiceSearchButton.setImage(UIImage(resource: .microphoneNew24))
+        voiceSearchButton.setImage(DesignSystemImages.Glyphs.Size24.microphone)
         UpdatedOmniBarView.setUpCommonProperties(for: voiceSearchButton)
 
-        dismissButtonView.setImage(UIImage(resource: .arrowLeftNew24))
+        dismissButtonView.setImage(DesignSystemImages.Glyphs.Size24.arrowLeft)
         UpdatedOmniBarView.setUpCommonProperties(for: dismissButtonView)
 
-        loupeIconView.image = UIImage(resource: .findSearchSmall24)
+        loupeIconView.image = DesignSystemImages.Glyphs.Size24.findSearchSmall
         loupeIconView.tintColor = tintColor
         loupeIconView.contentMode = .center
 

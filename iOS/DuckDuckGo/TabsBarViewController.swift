@@ -19,6 +19,8 @@
 
 import UIKit
 import Core
+import DesignResourcesKit
+import DesignResourcesKitIcons
 import BrowserServicesKit
 
 protocol TabsBarDelegate: NSObjectProtocol {
@@ -52,11 +54,11 @@ class TabsBarViewController: UIViewController {
     @IBOutlet weak var buttonsBackground: UIView!
 
     lazy var fireButton: UIButton = {
-        createButton(resource: isExperimentalThemingEnabled ? .fireNew24 : .fire)
+        createButton(image: DesignSystemImages.Glyphs.Size24.fireSolid)
     }()
 
     lazy var addTabButton: UIButton = {
-        createButton(resource: .add24)
+        createButton(image: DesignSystemImages.Glyphs.Size24.add)
     }()
 
     weak var delegate: TabsBarDelegate?
@@ -118,6 +120,9 @@ class TabsBarViewController: UIViewController {
         collectionView.clipsToBounds = false
         collectionView.delegate = self
         collectionView.dataSource = self
+
+        addTabButton.setImage(DesignSystemImages.Glyphs.Size24.add, for: .normal)
+        fireButton.setImage(DesignSystemImages.Glyphs.Size24.fireSolid, for: .normal)
 
         buttonsStack.spacing = isExperimentalThemingEnabled ? Constants.experimentalStackSpacing : Constants.stackSpacing
 
@@ -253,8 +258,7 @@ class TabsBarViewController: UIViewController {
         }
     }
 
-    private func createButton(resource: ImageResource) -> UIButton {
-        let image = UIImage(resource: resource)
+    private func createButton(image: UIImage) -> UIButton {
         if isExperimentalThemingEnabled {
             let button = BrowserChromeButton()
             button.setImage(image)

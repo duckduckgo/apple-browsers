@@ -17,6 +17,7 @@
 //
 
 import PixelKit
+import DDGSync
 
 enum SyncSwitchAccountPixelKitEvent: PixelKitEventV2 {
     case syncAskUserToSwitchAccount
@@ -51,24 +52,20 @@ enum SyncSwitchAccountPixelKitEvent: PixelKitEventV2 {
 }
 
 enum SyncSetupPixelKitEvent: PixelKitEventV2 {
-    enum Source: String {
-        case exchange
-        case connect
-    }
 
     enum ParameterKey {
         static let source = "source"
     }
 
-    case syncSetupBarcodeScreenShown(Source)
-    case syncSetupBarcodeScannerSuccess(Source)
-    case syncSetupBarcodeScannerFailed(Source)
-    case syncSetupBarcodeCodeCopied(Source)
-    case syncSetupManualCodeEntryScreenShown(Source)
-    case syncSetupManualCodeEntered(Source)
-    case syncSetupManualCodeEnteredFailed(Source)
-    case syncSetupEndedAbandoned(Source)
-    case syncSetupEndedSuccessful(Source)
+    case syncSetupBarcodeScreenShown(SyncSetupSource)
+    case syncSetupBarcodeScannerSuccess(SyncSetupSource)
+    case syncSetupBarcodeScannerFailed(SyncSetupSource)
+    case syncSetupBarcodeCodeCopied(SyncSetupSource)
+    case syncSetupManualCodeEntryScreenShown(SyncSetupSource)
+    case syncSetupManualCodeEntered(SyncSetupSource)
+    case syncSetupManualCodeEnteredFailed(SyncSetupSource)
+    case syncSetupEndedAbandoned(SyncSetupSource)
+    case syncSetupEndedSuccessful(SyncSetupSource)
 
     var name: String {
         switch self {
@@ -96,7 +93,7 @@ enum SyncSetupPixelKitEvent: PixelKitEventV2 {
         NonStandardEvent(self)
     }
 
-    private var source: Source {
+    private var source: SyncSetupSource {
         switch self {
         case
             .syncSetupBarcodeScreenShown(let source),

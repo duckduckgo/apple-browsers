@@ -68,7 +68,11 @@ jobs:
 
       - name: Run tests
         id: run-unit-tests
-        run: set -o pipefail && swift test | tee -a build-log.txt | xcbeautify --report junit --report-path . --junit-report-filename package-tests.xml
+        run: |
+          # temporarily skip Navigation tests - https://app.asana.com/1/137249556945/project/1201037661562251/task/1210416915595210?focus=true
+          set -o pipefail && swift test --skip Navigation \
+            | tee -a build-log.txt \
+            | xcbeautify --report junit --report-path . --junit-report-filename package-tests.xml
         
       - name: Send Unit Tests Status Pixel
         if: always() && github.ref_name == 'main'

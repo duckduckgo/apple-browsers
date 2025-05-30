@@ -92,7 +92,7 @@ final class LoginItemsManager: LoginItemsManaging {
 
     private func handleError(for item: LoginItem, action: Action, error: NSError) {
         let event = GeneralPixel.loginItemUpdateError(loginItemBundleID: item.agentBundleID,
-                                                      action: "enable",
+                                                      action: action.rawValue,
                                                       buildType: AppVersion.shared.buildType,
                                                       osVersion: AppVersion.shared.osVersion)
         PixelKit.fire(DebugEvent(event, error: error), frequency: .legacyDailyAndCount)

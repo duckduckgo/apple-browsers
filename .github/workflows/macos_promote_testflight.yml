@@ -23,8 +23,11 @@ jobs:
           macOS/fastlane
           macOS/scripts
 
-    - name: Set up fastlane
-      run: bundle install
+    - name: Setup Ruby and dependencies
+      uses: ./.github/actions/setup-ruby
+      with:
+        working-directory: macOS
+        cache-key-prefix: macos-ruby
 
     - name: Promote TestFlight to App Store
       env:

@@ -1,13 +1,16 @@
-# bookmarks.yaml
+# refresh.yaml
 appId: com.duckduckgo.mobile.ios
 tags:
     - release
 
 ---
 
-# Set up 
-- runFlow: 
+# Set up
+- runFlow:
     file: ../shared/setup.yaml
+
+# Make Sure there's no refresh button
+- assertNotVisible: "Refresh Page"
 
 # Load Site
 - assertVisible:
@@ -18,9 +21,7 @@ tags:
 - pressKey: Enter
 
 - assertVisible: ".*Privacy Test Pages.*"
- 
+
 # Reload page
-- assertVisible: "Browsing menu"
-- tapOn: "Browsing menu"
-- assertVisible: "Refresh"
-- tapOn: "Refresh"
+- assertVisible: "Refresh Page"
+- tapOn: "Refresh Page"

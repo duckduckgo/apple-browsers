@@ -25,8 +25,8 @@ extension Logger {
     static let adClickExternalOpenDetector = Logger(subsystem: "AdClickExternalOpenDetector", category: "")
 }
 
-/// Mitigation for https://app.asana.com/1/137249556945/project/1205842942115003/task/1209365034718375
-/// Note: This is a best effort attempt that could be ineffective when the connection is particularly slow and the requests need a long time to load
+/// Detects and mitigates the issue described in https://app.asana.com/1/137249556945/project/1205842942115003/task/1209365034718375
+/// This is a best effort attempt that could be ineffective when the connection is particularly slow and the requests need a long time to load
 final class AdClickExternalOpenDetector {
 
     private let operationTimeout: TimeInterval = .seconds(6) // 2s is enough on a fast connection
@@ -93,6 +93,15 @@ final class AdClickExternalOpenDetector {
             reset()
             return
         }
+
+        /*
+         The only valid event sequence triggering a mitigation is:
+         - unknown
+         - startNavigation
+         - failNavigation
+         - leaveApp
+         Any other sequence reset the state
+         */
 
         switch state {
         case .unknown:

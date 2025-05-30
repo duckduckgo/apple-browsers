@@ -167,16 +167,38 @@ extension WKNavigationAction: WebViewNavigationAction {
     }
 #endif
 
+    private var currentURL: URL? {
+        guard let targetFrame else { return nil }
+        if targetFrame.isMainFrame,
+           let url = targetFrame.webView?.committedURL {
+            // same-document Navigation Action targetFrame would return
+            // the target frame of the original non-same-document Navigation
+            // this got broken in macOS 15.5
+            return url
+        }
+        return targetFrame.safeRequest?.url
+    }
+
     public var isSameDocumentNavigation: Bool {
-        guard let currentURL = targetFrame?.safeRequest?.url,
-              let newURL = self.request.url,
+        guard let currentURL, let newURL = self.request.url,
               !currentURL.isEmpty,
               !newURL.isEmpty
         else { return false }
 
         switch navigationType {
         case .linkActivated, .other:
-            return self.isRedirect != true && newURL.absoluteString.hashedSuffix != nil && currentURL.isSameDocument(newURL)
+            let isSameDocumentNavigation = self.isRedirect != true && newURL.absoluteString.hashedSuffix != nil && currentURL.isSameDocument(newURL)
+            assert(!isSameDocumentNavigation || targetFrame?.webView?.committedURL?.absoluteString != targetFrame?.safeRequest?.url?.absoluteString,
+                   """
+                    If the issue is fixed in the future macOS/iOS versions,
+                    please add version check to only use `targetFrame.webView?.committedURL`
+                    in the `currentURL` property above when macOS >= 15.5 and less than the one where this was fixed
+                    and iOS >= 18.5 and less than with the same WebKit version.
+                    Otherwise we should just use `targetFrame.safeRequest?.url` which got broken for same-document navigations.
+                    This assertion should be removed afterwards.
+                    Also update NavigationAction.init checking source/target frames urls.
+                    """)
+            return isSameDocumentNavigation
         case .backForward:
             return (newURL.absoluteString.hashedSuffix != nil || currentURL.absoluteString.hashedSuffix != nil) && currentURL.isSameDocument(newURL)
         case .reload, .formSubmitted, .formResubmitted:

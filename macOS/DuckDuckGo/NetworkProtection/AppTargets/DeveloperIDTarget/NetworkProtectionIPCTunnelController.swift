@@ -76,7 +76,7 @@ final class NetworkProtectionIPCTunnelController {
 
     private func enableLoginItems() async throws {
         do {
-            try loginItemsManager.throwingEnableLoginItems(LoginItemsManager.networkProtectionLoginItems)
+            try loginItemsManager.throwingEnableLoginItems(LoginItemsManager.vpnLoginItems)
         } catch {
             throw RequestError.internalLoginItemError(error)
         }

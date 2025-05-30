@@ -1977,6 +1977,14 @@
 		7B0A6DFD2D47CCDF00FDFDC2 /* ExcludedApps.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 7B0A6DF72D47CCDF00FDFDC2 /* ExcludedApps.storyboard */; };
 		7B1459552B7D438F00047F2C /* VPNProxyLauncher.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B0694972B6E980F00FA4DBA /* VPNProxyLauncher.swift */; };
 		7B1459572B7D43E500047F2C /* NetworkProtectionProxy in Frameworks */ = {isa = PBXBuildFile; productRef = 7B1459562B7D43E500047F2C /* NetworkProtectionProxy */; };
+		7B1522AE2DE9CBE900887371 /* VPNAppEventsHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1522AD2DE9CBE300887371 /* VPNAppEventsHandlerTests.swift */; };
+		7B1522AF2DE9CBE900887371 /* VPNAppEventsHandlerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1522AD2DE9CBE300887371 /* VPNAppEventsHandlerTests.swift */; };
+		7B1522B12DE9CCA900887371 /* MockFeatureGatekeeper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1522B02DE9CCA500887371 /* MockFeatureGatekeeper.swift */; };
+		7B1522B22DE9CCA900887371 /* MockFeatureGatekeeper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1522B02DE9CCA500887371 /* MockFeatureGatekeeper.swift */; };
+		7B1522B72DE9D09A00887371 /* FeatureFlags in Frameworks */ = {isa = PBXBuildFile; productRef = 7B1522B62DE9D09A00887371 /* FeatureFlags */; };
+		7B1522B92DE9D19600887371 /* MockLoginItemsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1522B82DE9D19200887371 /* MockLoginItemsManager.swift */; };
+		7B1522BA2DE9D19600887371 /* MockLoginItemsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1522B82DE9D19200887371 /* MockLoginItemsManager.swift */; };
+		7B1522BC2DE9D23600887371 /* LoginItems in Frameworks */ = {isa = PBXBuildFile; productRef = 7B1522BB2DE9D23600887371 /* LoginItems */; };
 		7B1E819E27C8874900FF0E60 /* ContentOverlayPopover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1E819B27C8874900FF0E60 /* ContentOverlayPopover.swift */; };
 		7B1E819F27C8874900FF0E60 /* ContentOverlay.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 7B1E819C27C8874900FF0E60 /* ContentOverlay.storyboard */; };
 		7B1E81A027C8874900FF0E60 /* ContentOverlayViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B1E819D27C8874900FF0E60 /* ContentOverlayViewController.swift */; };
@@ -4598,6 +4606,9 @@
 		7B09CBA72BA4BE7000CF245B /* NetworkProtectionPixelEventTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionPixelEventTests.swift; sourceTree = "<group>"; };
 		7B0A6DF72D47CCDF00FDFDC2 /* ExcludedApps.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; path = ExcludedApps.storyboard; sourceTree = "<group>"; };
 		7B0A6DF82D47CCDF00FDFDC2 /* ExcludedAppsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExcludedAppsViewController.swift; sourceTree = "<group>"; };
+		7B1522AD2DE9CBE300887371 /* VPNAppEventsHandlerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPNAppEventsHandlerTests.swift; sourceTree = "<group>"; };
+		7B1522B02DE9CCA500887371 /* MockFeatureGatekeeper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockFeatureGatekeeper.swift; sourceTree = "<group>"; };
+		7B1522B82DE9D19200887371 /* MockLoginItemsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockLoginItemsManager.swift; sourceTree = "<group>"; };
 		7B1E819B27C8874900FF0E60 /* ContentOverlayPopover.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ContentOverlayPopover.swift; sourceTree = "<group>"; };
 		7B1E819C27C8874900FF0E60 /* ContentOverlay.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; path = ContentOverlay.storyboard; sourceTree = "<group>"; };
 		7B1E819D27C8874900FF0E60 /* ContentOverlayViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ContentOverlayViewController.swift; sourceTree = "<group>"; };
@@ -5908,10 +5919,12 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				7B1522B72DE9D09A00887371 /* FeatureFlags in Frameworks */,
 				B6DA44172616C13800DD1EC2 /* OHHTTPStubs in Frameworks */,
 				B65CD8CB2B316DF100A595BB /* SnapshotTesting in Frameworks */,
 				4B9EE36A2D76CB2300DDC75C /* PixelKitTestingUtilities in Frameworks */,
 				9DC5FACB2C6B8E050011F068 /* AppKitExtensions in Frameworks */,
+				7B1522BC2DE9D23600887371 /* LoginItems in Frameworks */,
 				84EFBCD02D817CC400706739 /* InlineSnapshotTesting in Frameworks */,
 				4B9EE3682D76CB1600DDC75C /* SubscriptionTestingUtilities in Frameworks */,
 				374EFDEF2D01C70300B30939 /* Utilities in Frameworks */,
@@ -7681,6 +7694,7 @@
 				BDA7648F2BC4E56200D0400C /* Mocks */,
 				7B09CBA72BA4BE7000CF245B /* NetworkProtectionPixelEventTests.swift */,
 				BDA7648C2BC4E4EF00D0400C /* DefaultVPNLocationFormatterTests.swift */,
+				7B1522AD2DE9CBE300887371 /* VPNAppEventsHandlerTests.swift */,
 				7B4C5CF42BE51D640007A164 /* VPNUninstallerTests.swift */,
 			);
 			path = NetworkProtection;
@@ -10369,6 +10383,8 @@
 		BDA7648F2BC4E56200D0400C /* Mocks */ = {
 			isa = PBXGroup;
 			children = (
+				7B1522B82DE9D19200887371 /* MockLoginItemsManager.swift */,
+				7B1522B02DE9CCA500887371 /* MockFeatureGatekeeper.swift */,
 				BDA764902BC4E57200D0400C /* MockVPNLocationFormatter.swift */,
 			);
 			path = Mocks;
@@ -11394,6 +11410,8 @@
 				4B9EE3672D76CB1600DDC75C /* SubscriptionTestingUtilities */,
 				4B9EE3692D76CB2300DDC75C /* PixelKitTestingUtilities */,
 				84EFBCCF2D817CC400706739 /* InlineSnapshotTesting */,
+				7B1522B62DE9D09A00887371 /* FeatureFlags */,
+				7B1522BB2DE9D23600887371 /* LoginItems */,
 			);
 			productName = DuckDuckGoTests;
 			productReference = AA585D90248FD31400E9A3E2 /* Unit Tests.xctest */;
@@ -13411,6 +13429,7 @@
 				562532A12BC069190034D316 /* ZoomPopoverViewModelTests.swift in Sources */,
 				3706FE28293F661700E42796 /* BookmarkTests.swift in Sources */,
 				3706FE29293F661700E42796 /* SuggestionContainerViewModelTests.swift in Sources */,
+				7B1522BA2DE9D19600887371 /* MockLoginItemsManager.swift in Sources */,
 				567A23CF2C80CF4B0010F66C /* ErrorPageTabExtensionTest.swift in Sources */,
 				37D046A22C7DA9A200AEAA50 /* UserBackgroundImagesManagerTests.swift in Sources */,
 				37DB56F02C3B31CD0093D4DC /* MockRemoteMessagingAvailabilityProvider.swift in Sources */,
@@ -13432,6 +13451,7 @@
 				3706FE31293F661700E42796 /* TabCollectionViewModelDelegateMock.swift in Sources */,
 				3706FE32293F661700E42796 /* BookmarksHTMLReaderTests.swift in Sources */,
 				9F0FFFBC2BCCAEC2007C87DD /* AddEditBookmarkFolderDialogViewModelMock.swift in Sources */,
+				7B1522AE2DE9CBE900887371 /* VPNAppEventsHandlerTests.swift in Sources */,
 				B60C6F8229B1B4AD007BFAA8 /* TestRunHelper.swift in Sources */,
 				567DA94029E8045D008AC5EE /* MockEmailStorage.swift in Sources */,
 				9FBB0C0A2CBD3B800006B6A6 /* ViewHighlighterTests.swift in Sources */,
@@ -13609,6 +13629,7 @@
 				5681ED412BDB955100F59729 /* SyncCredentialsAdapterTests.swift in Sources */,
 				56EA402A2DB7830800B5061E /* LocalizationTests.swift in Sources */,
 				3706FE7F293F661700E42796 /* FileDownloadManagerMock.swift in Sources */,
+				7B1522B12DE9CCA900887371 /* MockFeatureGatekeeper.swift in Sources */,
 				3706FE81293F661700E42796 /* PermissionModelTests.swift in Sources */,
 				5681ED442BDBA5F900F59729 /* SyncBookmarksAdapterTests.swift in Sources */,
 				C1F142DB2CB93AED003DA518 /* FreemiumDBPPromotionViewCoordinatorTests.swift in Sources */,
@@ -15239,6 +15260,7 @@
 				F1F861152C1B25D4005DB446 /* SubscriptionUIHandlerMock.swift in Sources */,
 				B69B50472726C5C200758A2B /* VariantManagerTests.swift in Sources */,
 				8546DE6225C03056000CA5E1 /* UserAgentTests.swift in Sources */,
+				7B1522B22DE9CCA900887371 /* MockFeatureGatekeeper.swift in Sources */,
 				9F26060B2B85C20A00819292 /* AddEditBookmarkDialogViewModelTests.swift in Sources */,
 				B63ED0DE26AFD9A300A9DAD1 /* AVCaptureDeviceMock.swift in Sources */,
 				98A95D88299A2DF900B9B81A /* BookmarkMigrationTests.swift in Sources */,
@@ -15281,6 +15303,7 @@
 				373E477D2D809EF5006F3FEC /* AddBookmarkPopoverViewModelTests.swift in Sources */,
 				9F5E481A2D5D867600D2396D /* NSPasteboardExtensionTests.swift in Sources */,
 				9F872D9D2B9058D000138637 /* Bookmarks+TabTests.swift in Sources */,
+				7B1522AF2DE9CBE900887371 /* VPNAppEventsHandlerTests.swift in Sources */,
 				BBFF355D2C4AF26200DA3289 /* BookmarksSortModeTests.swift in Sources */,
 				9F3910622B68C35600CB5112 /* DownloadsTabExtensionTests.swift in Sources */,
 				4B9DB0562A983B55000927DB /* MockNotificationService.swift in Sources */,
@@ -15315,6 +15338,7 @@
 				1D9EB3172D43C2CF004B7270 /* WebExtensionPathsCacheMock.swift in Sources */,
 				986189E62A7CFB3E001B4519 /* LocalBookmarkStoreSavingTests.swift in Sources */,
 				AA652CD325DDA6E9009059CC /* LocalBookmarkManagerTests.swift in Sources */,
+				7B1522B92DE9D19600887371 /* MockLoginItemsManager.swift in Sources */,
 				CBDD5DE329A67F2700832877 /* MockConfigurationStore.swift in Sources */,
 				9F3910692B68D87B00CB5112 /* ProgressExtensionTests.swift in Sources */,
 				9FFBEE662DDD83C20058B11A /* DefaultBrowserAndDockPromptStorageTests.swift in Sources */,
@@ -17266,6 +17290,14 @@
 		7B1459562B7D43E500047F2C /* NetworkProtectionProxy */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = NetworkProtectionProxy;
+		};
+		7B1522B62DE9D09A00887371 /* FeatureFlags */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = FeatureFlags;
+		};
+		7B1522BB2DE9D23600887371 /* LoginItems */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = LoginItems;
 		};
 		7B2366832C09FAC2002D393F /* VPNAppLauncher */ = {
 			isa = XCSwiftPackageProductDependency;

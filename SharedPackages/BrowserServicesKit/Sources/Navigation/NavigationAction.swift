@@ -112,11 +112,18 @@ public struct NavigationAction {
            frame.isMainFrame, navigationAction.isSameDocumentNavigation,
            let committedURL = webView.committedURL,
            frame.url != committedURL {
+#if _FRAME_HANDLE_ENABLED
             targetFrame = FrameInfo(webView: frame.webView,
                                     handle: frame.handle,
                                     isMainFrame: frame.isMainFrame,
                                     url: committedURL,
                                     securityOrigin: committedURL.securityOrigin)
+#else
+            targetFrame = FrameInfo(webView: frame.webView,
+                                    isMainFrame: frame.isMainFrame,
+                                    url: committedURL,
+                                    securityOrigin: committedURL.securityOrigin)
+#endif
             if sourceFrame == frame {
                 sourceFrame = targetFrame!
             }

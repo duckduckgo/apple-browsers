@@ -277,8 +277,8 @@ public enum MaliciousSiteProtectionSubfeature: String, PrivacySubfeature {
 
 public enum SetAsDefaultAndAddToDockSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .setAsDefaultAndAddToDock }
-     case popoverVsBannerExperiment
- }
+    case popoverVsBannerExperiment
+}
 
 public enum OnboardingSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .extendedOnboarding }

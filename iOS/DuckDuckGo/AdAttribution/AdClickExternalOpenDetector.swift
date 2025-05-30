@@ -26,9 +26,10 @@ extension Logger {
 }
 
 /// Mitigation for https://app.asana.com/1/137249556945/project/1205842942115003/task/1209365034718375
+/// Note: This is a best effort attempt that could be ineffective when the connection is particularly slow and the requests need a long time to load
 final class AdClickExternalOpenDetector {
 
-    private let operationTimeout: TimeInterval = .seconds(6)
+    private let operationTimeout: TimeInterval = .seconds(6) // 2s is enough on a fast connection
     private var operationStartDate: Date?
     private var state: AdClickState = .unknown
     public var tabID: String
@@ -57,7 +58,7 @@ final class AdClickExternalOpenDetector {
         NotificationCenter.default.removeObserver(self)
     }
 
-    // events handlers
+    // Events handlers
 
     @objc private func appDidEnterBackground() {
         Logger.adClickExternalOpenDetector.log("\(self.tabID, privacy: .public) - App entered background")

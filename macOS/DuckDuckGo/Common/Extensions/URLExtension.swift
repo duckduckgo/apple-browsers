@@ -403,10 +403,14 @@ extension URL {
         return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/sync-and-backup/password-manager-security/")!
     }
 
-    static var maliciousSiteProtectionLearnMore = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy/scam-blocker/")!
+    static var maliciousSiteProtectionLearnMore = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker")!
 
     static var smarterEncryptionLearnMore: URL {
         return URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/")!
+    }
+
+    static var threatProtectionLearnMore: URL {
+        return URL(string: "duckduckgo.com/duckduckgo-help-pages/threat-protection/")!
     }
 
     static var dnsBlocklistLearnMore = URL(string: "https://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists")!

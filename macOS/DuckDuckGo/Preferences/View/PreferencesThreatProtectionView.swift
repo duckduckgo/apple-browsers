@@ -38,7 +38,12 @@ extension Preferences {
 
                 // SECTION 2: Threat Protection Caption
                 PreferencePaneSection {
-                    TextMenuItemCaption(UserText.threatProtectionCaption)
+                    VStack(alignment: .leading, spacing: 0) {
+                        TextMenuItemCaption(UserText.threatProtectionCaption)
+                        TextButton(UserText.learnMore) {
+                            model.openNewTab(with: .threatProtectionLearnMore)
+                        }
+                    }
                 }
 
                 // SECTION 3: Smarter Encryption

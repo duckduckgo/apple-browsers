@@ -533,6 +533,88 @@ final class SyncPreferencesTests: XCTestCase {
         try await waitForPublisher(managementDialogModel.$shouldShowErrorMessage, toEmit: true)
         try await waitForPublisher(managementDialogModel.$syncErrorMessage.compactMap { $0 }.map(\.type), toEmit: .unableToSyncToOtherDevice)
     }
+
+    @MainActor
+    func test_enterRecoveryCodePressed_whenUrlBarcodeOn_usesUrlFormat() async throws {
+        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = true
+        let expectedCode = "test_code"
+        let stubbedPairingInfo = PairingInfo(base64Code: expectedCode, deviceName: "")
+        let expectedQRCodeString = stubbedPairingInfo.url.absoluteString
+        connectionController.startConnectModeStub = stubbedPairingInfo
+
+        syncPreferences.enterRecoveryCodePressed()
+
+        try await waitForPublisher(syncPreferences.$codeForDisplayOrPasting, toEmit: expectedCode)
+        try await waitForPublisher(syncPreferences.$stringForQR, toEmit: expectedQRCodeString)
+        try await waitForPublisher(managementDialogModel.$currentDialog.map { dialog in
+            if case .enterRecoveryCode(let qr) = dialog {
+                return qr == expectedQRCodeString
+            }
+            return false
+        }, toEmit: true)
+    }
+
+    @MainActor
+    func test_enterRecoveryCodePressed_whenUrlBarcodeOff_usesBase64Format() async throws {
+        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = false
+        let expectedCode = "test_code"
+        let stubbedPairingInfo = PairingInfo(base64Code: expectedCode, deviceName: "")
+        connectionController.startConnectModeStub = stubbedPairingInfo
+
+        syncPreferences.enterRecoveryCodePressed()
+
+        try await waitForPublisher(syncPreferences.$codeForDisplayOrPasting, toEmit: expectedCode)
+        try await waitForPublisher(syncPreferences.$stringForQR, toEmit: expectedCode)
+        try await waitForPublisher(managementDialogModel.$currentDialog.map { dialog in
+            if case .enterRecoveryCode(let qr) = dialog {
+                return qr == expectedCode
+            }
+            return false
+        }, toEmit: true)
+    }
+
+    @MainActor
+    func test_syncWithAnotherDevicePressed_whenUrlBarcodeOn_usesUrlFormat() async throws {
+        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = true
+        featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
+        let expectedCode = "test_code"
+        let stubbedPairingInfo = PairingInfo(base64Code: expectedCode, deviceName: "")
+        let expectedQRCodeString = stubbedPairingInfo.url.absoluteString
+        connectionController.startExchangeModeStub = stubbedPairingInfo
+        ddgSyncing.account = .mock
+
+        await syncPreferences.syncWithAnotherDevicePressed()
+
+        try await waitForPublisher(syncPreferences.$codeForDisplayOrPasting, toEmit: expectedCode)
+        try await waitForPublisher(syncPreferences.$stringForQR, toEmit: expectedQRCodeString)
+        try await waitForPublisher(managementDialogModel.$currentDialog.map { dialog in
+            if case .syncWithAnotherDevice(let code, let qr) = dialog {
+                return code == expectedCode && qr == expectedQRCodeString
+            }
+            return false
+        }, toEmit: true)
+    }
+
+    @MainActor
+    func test_syncWithAnotherDevicePressed_whenUrlBarcodeOff_usesBase64Format() async throws {
+        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = false
+        featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
+        let expectedCode = "test_code"
+        let stubbedPairingInfo = PairingInfo(base64Code: expectedCode, deviceName: "")
+        connectionController.startExchangeModeStub = stubbedPairingInfo
+        ddgSyncing.account = .mock
+
+        await syncPreferences.syncWithAnotherDevicePressed()
+
+        try await waitForPublisher(syncPreferences.$codeForDisplayOrPasting, toEmit: expectedCode)
+        try await waitForPublisher(syncPreferences.$stringForQR, toEmit: expectedCode)
+        try await waitForPublisher(managementDialogModel.$currentDialog.map { dialog in
+            if case .syncWithAnotherDevice(let code, let qr) = dialog {
+                return code == expectedCode && qr == expectedCode
+            }
+            return false
+        }, toEmit: true)
+    }
 }
 
 class CapturingScheduler: Scheduling {

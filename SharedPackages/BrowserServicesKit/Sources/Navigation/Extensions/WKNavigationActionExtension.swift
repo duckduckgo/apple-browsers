@@ -167,9 +167,19 @@ extension WKNavigationAction: WebViewNavigationAction {
     }
 #endif
 
+    private var currentURL: URL? {
+        guard let targetFrame else { return nil }
+        if targetFrame.isMainFrame {
+            // same-document Navigation Action targetFrame would return
+            // the target frame of the original non-same-document Navigation
+            // this got broken in macOS 15.5
+            return targetFrame.webView?.backForwardList.currentItem?.url
+        }
+        return targetFrame.safeRequest?.url
+    }
+
     public var isSameDocumentNavigation: Bool {
-        guard let currentURL = targetFrame?.safeRequest?.url,
-              let newURL = self.request.url,
+        guard let currentURL, let newURL = self.request.url,
               !currentURL.isEmpty,
               !newURL.isEmpty
         else { return false }

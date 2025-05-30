@@ -177,7 +177,7 @@ final class SettingsViewModel: ObservableObject {
             set: { _ in
                 self.themeManager.toggleExperimentalTheming()
 
-                // The theme manager is caching the value, so we use previous one to update the UI.
+                // The theme manager is caching the value, so we use previous state to update the UI.
                 // Changes will be applied after restart.
                 self.state.isExperimentalThemingEnabled = !self.state.isExperimentalThemingEnabled
             })

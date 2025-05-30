@@ -1,5 +1,5 @@
 //
-//  DefaultBrowserAndDockPromptNotifications.swift
+//  MockDefaultBrowserAndDockPromptFeatureFlagger.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,6 +16,13 @@
 //  limitations under the License.
 //
 
-public extension Notification.Name {
-    static let setAsDefaultBrowserAndAddToDockExperimentFlagOverrideDidChange = Notification.Name("com.duckduckgo.app.setAsDefaultBrowserAndAddToDockExperimentFlagOverrideDidChange")
+import Foundation
+@testable import DuckDuckGo_Privacy_Browser
+
+final class MockDefaultBrowserAndDockPromptFeatureFlagger: DefaultBrowserAndDockPromptFeatureFlagger {
+    var isDefaultBrowserAndDockPromptFeatureEnabled = true
+
+    var firstPopoverDelayDays = 14
+    var bannerAfterPopoverDelayDays = 14
+    var bannerRepeatIntervalDays = 14
 }

@@ -19,18 +19,23 @@
 import SwiftUI
 import SwiftUIExtensions
 
+struct TitledButtonAction {
+    let title: String
+    let action: () -> Void
+}
+
 final class BannerMessageViewController: NSHostingController<BannerView> {
     let viewModel: BannerViewModel
 
     init(message: String,
          image: NSImage,
-         buttonText: String,
-         buttonAction: @escaping (() -> Void),
-         closeAction: @escaping (() -> Void)) {
+         primaryAction: TitledButtonAction,
+         secondaryAction: TitledButtonAction?,
+         closeAction: @escaping () -> Void) {
         self.viewModel = .init(message: message,
                                image: image,
-                               buttonText: buttonText,
-                               buttonAction: buttonAction,
+                               primaryAction: primaryAction,
+                               secondaryAction: secondaryAction,
                                closeAction: closeAction)
 
         super.init(rootView: BannerView(viewModel: viewModel))
@@ -44,19 +49,19 @@ final class BannerMessageViewController: NSHostingController<BannerView> {
 final class BannerViewModel: ObservableObject {
     @Published var message: String
     @Published var image: NSImage
-    @Published var buttonText: String
-    @Published var buttonAction: (() -> Void)
-    @Published var closeAction: (() -> Void)
+    @Published var primaryAction: TitledButtonAction
+    @Published var secondaryAction: TitledButtonAction?
+    @Published var closeAction: () -> Void
 
     public init(message: String,
                 image: NSImage,
-                buttonText: String,
-                buttonAction: @escaping (() -> Void),
-                closeAction: @escaping (() -> Void)) {
+                primaryAction: TitledButtonAction,
+                secondaryAction: TitledButtonAction?,
+                closeAction: @escaping () -> Void) {
         self.message = message
         self.image = image
-        self.buttonText = buttonText
-        self.buttonAction = buttonAction
+        self.primaryAction = primaryAction
+        self.secondaryAction = secondaryAction
         self.closeAction = closeAction
     }
 }
@@ -72,12 +77,7 @@ struct BannerView: View {
 
                 Text(viewModel.message)
 
-                Button {
-                    viewModel.buttonAction()
-                } label: {
-                    Text(viewModel.buttonText)
-                }
-                .buttonStyle(DefaultActionButtonStyle(enabled: true))
+                mainActionButtons
 
                 Spacer()
 
@@ -97,5 +97,25 @@ struct BannerView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
         .background(Color.bannerBackground)
+    }
+
+    private var mainActionButtons: some View {
+        HStack(spacing: 12) {
+            Button {
+                viewModel.primaryAction.action()
+            } label: {
+                Text(viewModel.primaryAction.title)
+            }
+            .buttonStyle(DefaultActionButtonStyle(enabled: true))
+
+            if let secondaryAction = viewModel.secondaryAction {
+                Button {
+                    secondaryAction.action()
+                } label: {
+                    Text(secondaryAction.title)
+                }
+                .buttonStyle(DismissActionButtonStyle())
+            }
+        }
     }
 }

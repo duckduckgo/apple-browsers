@@ -122,6 +122,16 @@
                ReferencedContainer = "container:../SharedPackages/Onboarding">
             </BuildableReference>
          </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "AIChatTests"
+               BuildableName = "AIChatTests"
+               BlueprintName = "AIChatTests"
+               ReferencedContainer = "container:../SharedPackages/AIChat">
+            </BuildableReference>
+         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction

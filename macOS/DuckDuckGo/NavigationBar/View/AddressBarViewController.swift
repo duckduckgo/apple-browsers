@@ -566,7 +566,7 @@ final class AddressBarViewController: NSViewController {
             if window.isKeyWindow {
                 activeBackgroundView.borderWidth = 2.0
                 activeBackgroundView.borderColor = accentColor.withAlphaComponent(0.6)
-                activeBackgroundView.backgroundColor = NSColor.addressBarBackground
+                activeBackgroundView.backgroundColor = visualStyle.colorsProvider.activeAddressBarBackgroundColor
                 switchToTabBox.backgroundColor = navigationBarBackgroundColor.blended(with: .addressBarBackground)
 
                 activeOuterBorderView.isHidden = !visualStyle.addressBarStyleProvider.shouldShowOutlineBorder(isHomePage: isHomePage)
@@ -575,7 +575,7 @@ final class AddressBarViewController: NSViewController {
             } else {
                 activeBackgroundView.borderWidth = 0
                 activeBackgroundView.borderColor = nil
-                activeBackgroundView.backgroundColor = NSColor.inactiveSearchBarBackground
+                activeBackgroundView.backgroundColor = visualStyle.colorsProvider.inactiveAddressBarBackgroundColor
                 switchToTabBox.backgroundColor = navigationBarBackgroundColor.blended(with: .inactiveSearchBarBackground)
 
                 activeOuterBorderView.isHidden = true

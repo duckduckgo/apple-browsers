@@ -34,6 +34,8 @@ protocol ColorsProviding {
     var downloadsPanelBackgroundColor: NSColor { get }
     var passwordManagerBackgroundColor: NSColor { get }
     var passwordManagerLockScreenBackgroundColor: NSColor { get }
+    var activeAddressBarBackgroundColor: NSColor { get }
+    var inactiveAddressBarBackgroundColor: NSColor { get }
 
     /// New Tab Page
     var ntpLightBackgroundColor: String { get }
@@ -58,6 +60,8 @@ final class LegacyColorsProviding: ColorsProviding {
     var downloadsPanelBackgroundColor: NSColor { .popoverBackground }
     var passwordManagerBackgroundColor: NSColor { .popoverBackground }
     var passwordManagerLockScreenBackgroundColor: NSColor { .neutralBackground }
+    var activeAddressBarBackgroundColor: NSColor { .addressBarBackground }
+    var inactiveAddressBarBackgroundColor: NSColor { .inactiveSearchBarBackground }
     var ntpLightBackgroundColor: String { "#FAFAFA" }
     var ntpDarkBackgroundColor: String { "#333333" }
 
@@ -83,6 +87,8 @@ final class NewColorsProviding: ColorsProviding {
     var downloadsPanelBackgroundColor: NSColor { palette.surfacePrimary }
     var passwordManagerBackgroundColor: NSColor { palette.surfacePrimary }
     var passwordManagerLockScreenBackgroundColor: NSColor { palette.surfacePrimary }
+    var activeAddressBarBackgroundColor: NSColor { palette.surfaceTertiary }
+    var inactiveAddressBarBackgroundColor: NSColor { palette.surfaceTertiary }
     var ntpLightBackgroundColor: String { "#F2F2F2" }
     var ntpDarkBackgroundColor: String { "#262626" }
 

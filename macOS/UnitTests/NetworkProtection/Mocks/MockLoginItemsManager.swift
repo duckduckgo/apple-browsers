@@ -46,22 +46,20 @@ struct MockLoginItemsManager: LoginItemsManaging {
     func enableLoginItems(_ items: Set<LoginItems.LoginItem>) {
         enableLoginItemsCallback(items)
     }
-    
+
     func throwingEnableLoginItems(_ items: Set<LoginItems.LoginItem>) throws {
         try throwingEnableLoginItemsCallback(items)
     }
-    
+
     func disableLoginItems(_ items: Set<LoginItems.LoginItem>) {
         disableLoginItemsCallback(items)
     }
-    
+
     func restartLoginItems(_ items: Set<LoginItems.LoginItem>) {
         restartLoginItemsCallback(items)
     }
-    
+
     func isAnyEnabled(_ items: Set<LoginItems.LoginItem>) -> Bool {
         isAnyEnabledCallback(items)
     }
-    
-
 }

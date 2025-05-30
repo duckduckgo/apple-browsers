@@ -38,11 +38,11 @@ struct MockVPNFeatureGatekeeper: VPNFeatureGatekeeper {
         isVPNVisibleOverride = isVPNVisible
         self.onboardStatusPublisher = onboardStatusPublisher
     }
-    
+
     func canStartVPN() async throws -> Bool {
         canStartVPNOverride
     }
-    
+
     func isVPNVisible() -> Bool {
         isVPNVisibleOverride
     }

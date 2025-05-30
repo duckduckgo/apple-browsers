@@ -153,8 +153,8 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     let suggestionTextFieldLeadingPadding: CGFloat = 8
     let topSpaceForSuggestionWindow: CGFloat = 16
     let suggestionShadowRadius: CGFloat = 3.0
-    let suggestionHighlightCornerRadius: CGFloat = 12
-    let shouldLeaveBottomPaddingInSuggestions: Bool = false
+    let suggestionHighlightCornerRadius: CGFloat = 6.0
+    let shouldLeaveBottomPaddingInSuggestions: Bool = true
 
     func navigationBarHeight(for type: AddressBarSizeClass) -> CGFloat {
         switch type {

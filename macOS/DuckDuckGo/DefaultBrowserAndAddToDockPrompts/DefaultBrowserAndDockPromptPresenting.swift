@@ -43,28 +43,26 @@ protocol DefaultBrowserAndDockPromptPresenting {
                          bannerViewHandler: (BannerMessageViewController) -> Void)
 }
 
-enum DefaultBrowserAndDockPromptPresentationType {
+enum DefaultBrowserAndDockPromptPresentationType: Equatable {
     case banner
     case popover
 }
 
 final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPresenting {
     private let coordinator: DefaultBrowserAndDockPrompt
-    private let repository: DefaultBrowserAndDockPromptStoring
-    private let featureFlagger: FeatureFlagger
+    private let statusUpdateNotifier: DefaultBrowserAndDockPromptStatusNotifying
     private let bannerDismissedSubject = PassthroughSubject<Void, Never>()
 
     private var popover: NSPopover?
-    private var cancellables: Set<AnyCancellable> = []
+    private var statusUpdateCancellable: Cancellable?
+    private(set) var currentShownPrompt: DefaultBrowserAndDockPromptPresentationType?
 
-    init(coordinator: DefaultBrowserAndDockPrompt,
-         repository: DefaultBrowserAndDockPromptStoring = DefaultBrowserAndDockPromptStore(),
-         featureFlagger: FeatureFlagger) {
+    init(
+        coordinator: DefaultBrowserAndDockPrompt,
+        statusUpdateNotifier: DefaultBrowserAndDockPromptStatusNotifying
+    ) {
         self.coordinator = coordinator
-        self.repository = repository
-        self.featureFlagger = featureFlagger
-
-        subscribeToLocalOverride()
+        self.statusUpdateNotifier = statusUpdateNotifier
     }
 
     var bannerDismissedPublisher: AnyPublisher<Void, Never> {
@@ -73,33 +71,57 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
 
     func tryToShowPrompt(popoverAnchorProvider: () -> NSView?,
                          bannerViewHandler: (BannerMessageViewController) -> Void) {
-        guard !repository.didShowPrompt(), let type = coordinator.getPromptType() else { return }
+        guard let type = coordinator.getPromptType() else { return }
 
         switch type {
         case .banner:
             guard let banner = getBanner() else { return }
-
+            // Ensure that only one prompt is displayed at a time. Dismiss the popover if the banner is about to be shown to the user.
+            popover?.close()
             bannerViewHandler(banner)
         case .popover:
             guard let view = popoverAnchorProvider() else { return }
 
             showPopover(below: view)
         }
+
+        // Keep track of what type of prompt is shown.
+        // If the user modify the SAD/ATT state outside of the banner we need to know the type of prompt it was shown to save its visualisation date.
+        currentShownPrompt = type
+        // Start subscribing to status updates for SAD/ATT.
+        // It's possible that the user may set SAD/ATT outside the prompt (e.g. from Settings). If that happens we want to dismiss the prompt.
+        subscribeToStatusUpdates()
     }
 
     // MARK: - Private
+
+    private func subscribeToStatusUpdates() {
+        statusUpdateCancellable = statusUpdateNotifier
+            .statusPublisher
+            .dropFirst() // Skip the first value as it represents the current status.
+            .prefix(1) // Only one event is necessary as the notifier will send an event only when there's a new update.
+            .sink { [weak self] _ in
+                guard let self else { return }
+
+                if let currentShownPrompt {
+                    self.coordinator.dismissAction(.statusUpdate(prompt: currentShownPrompt))
+                }
+                self.clearStatusUpdateData()
+                // Dismiss the prompt
+                popover?.close()
+                bannerDismissedSubject.send()
+            }
+
+        statusUpdateNotifier.startNotifyingStatus(interval: 1.0)
+    }
 
     private func showPopover(below view: NSView) {
         guard let content = coordinator.evaluatePromptEligibility else {
             return
         }
 
-        /// For the popover we mark it as shown when the user actions on it.
-        /// Given that we want to show the banner in all windows.
-        repository.setPromptShown(true)
-
-        self.initializePopover(with: content)
-        self.showPopover(positionedBelow: view)
+        initializePopover(with: content)
+        showPopover(positionedBelow: view)
     }
 
     private func getBanner() -> BannerMessageViewController? {
@@ -114,15 +136,23 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
         return BannerMessageViewController(
             message: content.message,
             image: content.icon,
-            buttonText: content.primaryButtonTitle,
-            buttonAction: {
-                self.coordinator.onPromptConfirmation()
-                self.repository.setPromptShown(true)
-                self.bannerDismissedSubject.send()
-            },
+            primaryAction: .init(
+                title: content.primaryButtonTitle,
+                action: {
+                    self.coordinator.confirmAction(for: .banner)
+                    self.dismissBanner()
+                }
+            ),
+            secondaryAction: .init(
+                title: content.secondaryButtonTitle,
+                action: {
+                    self.coordinator.dismissAction(.userInput(prompt: .banner, shouldHidePermanently: true))
+                    self.dismissBanner()
+                }
+            ),
             closeAction: {
-                self.bannerDismissedSubject.send()
-                self.repository.setPromptShown(true)
+                self.coordinator.dismissAction(.userInput(prompt: .banner, shouldHidePermanently: false))
+                self.dismissBanner()
             })
     }
 
@@ -134,17 +164,30 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
             image: content.icon,
             buttonText: content.primaryButtonTitle,
             buttonAction: {
-                self.coordinator.onPromptConfirmation()
+                self.clearStatusUpdateData()
+                self.coordinator.confirmAction(for: .popover)
                 self.popover?.close()
             },
             secondaryButtonText: content.secondaryButtonTitle,
             secondaryButtonAction: {
+                self.clearStatusUpdateData()
+                self.coordinator.dismissAction(.userInput(prompt: .popover, shouldHidePermanently: false))
                 self.popover?.close()
             })
 
         let contentView = DefaultBrowserAndDockPromptPopoverView(viewModel: viewModel)
 
         return NSHostingController(rootView: contentView)
+    }
+
+    private func dismissBanner() {
+        self.clearStatusUpdateData()
+        self.bannerDismissedSubject.send()
+    }
+
+    private func clearStatusUpdateData() {
+        self.statusUpdateNotifier.stopNotifyingStatus()
+        self.currentShownPrompt = nil
     }
 
     private func initializePopover(with type: DefaultBrowserAndDockPromptType) {
@@ -157,22 +200,4 @@ final class DefaultBrowserAndDockPromptPresenter: DefaultBrowserAndDockPromptPre
         popover?.contentViewController?.view.makeMeFirstResponder()
     }
 
-    private func subscribeToLocalOverride() {
-        guard let overridesHandler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
-            return
-        }
-
-        overridesHandler.experimentFlagDidChangePublisher
-            .filter { $0.0 == .popoverVsBannerExperiment }
-            .sink { (_, cohort) in
-                if FeatureFlag.PopoverVSBannerExperimentCohort.cohort(for: cohort) == nil { return }
-
-                /// For testing purposes when we override the local features and because we want to show the prompt.
-                /// We set the set prompt flag to false in case it was show in the past.
-                self.repository.setPromptShown(false)
-
-                NotificationCenter.default.post(name: .setAsDefaultBrowserAndAddToDockExperimentFlagOverrideDidChange, object: nil)
-            }
-            .store(in: &cancellables)
-    }
 }

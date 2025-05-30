@@ -2441,7 +2441,7 @@
 "preferences.scam-blocker.toggle-caption" = "Bu özelliği devre dışı bırakmak kişisel bilgilerinizi riske atabilir.";
 
 /* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
-"preferences.scam-blocker.toggle-label" = "Dolandırıcılık, kimlik avı veya kötü amaçlı yazılım için işaretlenen siteler olduğunda uyarı göster. [Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/scam-blocker/)";
+"preferences.scam-blocker.toggle-label" = "Dolandırıcılık, kimlik avı veya kötü amaçlı yazılım için işaretlenen siteler olduğunda uyarı göster. [Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker/)";
 
 /* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
 "preferences.smarter-encryption.description" = "Mümkün olduğunda bağlantıları otomatik olarak HTTPS'ye yükseltir. [Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
@@ -2456,7 +2456,7 @@
 "preferences.threat-protection" = "Tehdit Koruması";
 
 /* Caption of the option to show the Threat Protection preferences */
-"preferences.threat-protection.caption" = "DuckDuckGo'nun gelişmiş korumaları, bağlantıyı güvende tutarken yaygın tehditleri durdurur.";
+"preferences.threat-protection.caption" = "DuckDuckGo'nun gelişmiş korumaları, bağlantıyı güvende tutarken yaygın tehditleri durdurur.\n[Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Bazı yer işaretleri veya parolalar yanlış veya çok uzun biçimlendirilmiş ve senkronize edilmemiş.";

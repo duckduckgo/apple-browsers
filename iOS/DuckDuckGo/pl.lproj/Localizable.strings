@@ -2444,7 +2444,7 @@
 "preferences.scam-blocker.toggle-caption" = "Wyłączenie tej funkcji może narazić Twoje dane osobowe na ryzyko.";
 
 /* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
-"preferences.scam-blocker.toggle-label" = "Ostrzegaj przed witrynami oznaczonymi z powodu oszustw, wyłudzania informacji lub złośliwego oprogramowania. [Dowiedz się więcej](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/scam-blocker/)";
+"preferences.scam-blocker.toggle-label" = "Ostrzegaj przed witrynami oznaczonymi z powodu oszustw, wyłudzania informacji lub złośliwego oprogramowania. [Dowiedz się więcej](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker/)";
 
 /* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
 "preferences.smarter-encryption.description" = "Automatycznie aktualizuje łącza do protokołu HTTPS, jeśli to możliwe. [Dowiedz się więcej](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
@@ -2459,7 +2459,7 @@
 "preferences.threat-protection" = "Ochrona przed zagrożeniami";
 
 /* Caption of the option to show the Threat Protection preferences */
-"preferences.threat-protection.caption" = "Ulepszone mechanizmy ochrony dostępne w DuckDuckGo blokują typowe zagrożenia, a jednocześnie zapewniają bezpieczeństwo połączenia.";
+"preferences.threat-protection.caption" = "Ulepszone mechanizmy ochrony dostępne w DuckDuckGo blokują typowe zagrożenia, a jednocześnie zapewniają bezpieczeństwo połączenia.\n[Dowiedz się więcej](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Niektóre zakładki lub hasła mają niepoprawny format lub są zbyt długie i nie zostały zsynchronizowane.";

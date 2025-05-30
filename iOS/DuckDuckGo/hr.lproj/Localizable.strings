@@ -2441,7 +2441,7 @@
 "preferences.scam-blocker.toggle-caption" = "Onemogućavanje ove značajke može ugroziti tvoje osobne podatke.";
 
 /* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
-"preferences.scam-blocker.toggle-label" = "Upozori na mrežnim lokacijama označenim zbog prijevara, krađe identiteta ili zlonamjernog softvera. [Saznaj više](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/scam-blocker/)";
+"preferences.scam-blocker.toggle-label" = "Upozori na mrežnim lokacijama označenim zbog prijevara, krađe identiteta ili zlonamjernog softvera. [Saznaj više](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker/)";
 
 /* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
 "preferences.smarter-encryption.description" = "Automatski nadograđuje poveznice na HTTPS kad god je to moguće. [Saznaj više](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
@@ -2456,7 +2456,7 @@
 "preferences.threat-protection" = "Zaštita od prijetnji";
 
 /* Caption of the option to show the Threat Protection preferences */
-"preferences.threat-protection.caption" = "Poboljšane zaštite DuckDuckGoa zaustavljaju uobičajene prijetnje, dok istovremeno održavaju tvoju vezu sigurnom.";
+"preferences.threat-protection.caption" = "Poboljšane zaštite DuckDuckGoa zaustavljaju uobičajene prijetnje, dok istovremeno održavaju tvoju vezu sigurnom.\n[Saznaj više](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Neke oznake ili lozinke formatirane su pogrešno, ili su preduge i nisu sinkronizirane.";

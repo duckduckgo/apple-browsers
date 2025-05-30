@@ -2441,7 +2441,7 @@
 "preferences.scam-blocker.toggle-caption" = "Dezactivarea acestei funcții poate genera riscuri privind datele tale cu caracter personal.";
 
 /* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
-"preferences.scam-blocker.toggle-label" = "Avertizează cu privire la site-urile marcate ca incluzând escrocherii, phishing sau programe rău intenționate. [Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/scam-blocker/)";
+"preferences.scam-blocker.toggle-label" = "Avertizează cu privire la site-urile marcate ca incluzând escrocherii, phishing sau programe rău intenționate. [Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker/)";
 
 /* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
 "preferences.smarter-encryption.description" = "Actualizează automat linkurile la HTTPS, oricând este posibil. [Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
@@ -2456,7 +2456,7 @@
 "preferences.threat-protection" = "Protecție împotriva amenințărilor";
 
 /* Caption of the option to show the Threat Protection preferences */
-"preferences.threat-protection.caption" = "Protecțiile îmbunătățite oferite de DuckDuckGo stopează amenințările comune, menținându-ți în același timp conexiunea securizată.";
+"preferences.threat-protection.caption" = "Protecțiile îmbunătățite oferite de DuckDuckGo stopează amenințările comune, menținându-ți în același timp conexiunea securizată.\n[Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Unele semne de carte sau parole sunt formatate incorect sau sunt prea lungi și nu au fost sincronizate.";

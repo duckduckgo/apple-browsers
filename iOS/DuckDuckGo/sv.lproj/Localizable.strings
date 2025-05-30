@@ -2441,7 +2441,7 @@
 "preferences.scam-blocker.toggle-caption" = "Om den här funktionen inaktiveras kan dina personuppgifter utsättas för risker.";
 
 /* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
-"preferences.scam-blocker.toggle-label" = "Varna på webbplatser som har flaggats för bedrägerier, nätfiske eller skadlig programvara. [Läs mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/scam-blocker/)";
+"preferences.scam-blocker.toggle-label" = "Varna på webbplatser som har flaggats för bedrägerier, nätfiske eller skadlig programvara. [Läs mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker/)";
 
 /* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
 "preferences.smarter-encryption.description" = "Uppgraderar automatiskt länkar till HTTPS när det är möjligt. [Läs mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
@@ -2456,7 +2456,7 @@
 "preferences.threat-protection" = "Skydd mot hot";
 
 /* Caption of the option to show the Threat Protection preferences */
-"preferences.threat-protection.caption" = "DuckDuckGos förbättrade skydd stoppar vanliga hot samtidigt som din anslutning förblir säker.";
+"preferences.threat-protection.caption" = "DuckDuckGos förbättrade skydd stoppar vanliga hot samtidigt som din anslutning förblir säker.\n[Läs mer](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Vissa bokmärken eller lösenord är felaktigt formaterade eller för långa och synkroniserades inte.";

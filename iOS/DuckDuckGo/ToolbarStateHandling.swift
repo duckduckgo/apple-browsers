@@ -46,11 +46,10 @@ protocol ToolbarStateHandling {
 final class ToolbarHandler: ToolbarStateHandling {
     weak var toolbar: UIToolbar?
 
-    private let featureFlagger: FeatureFlagger
-    private let themingProperties: ExperimentalThemingProperties
-    
+    private let themeManager: ThemeManaging
+
     private var isExperimentalThemingEnabled: Bool {
-        themingProperties.isExperimentalThemingEnabled
+        themeManager.properties.isExperimentalThemingEnabled
     }
 
     lazy var backButton = {
@@ -84,11 +83,9 @@ final class ToolbarHandler: ToolbarStateHandling {
     private var state: ToolbarContentState?
 
     init(toolbar: UIToolbar,
-         featureFlagger: FeatureFlagger,
-         themingProperties: ExperimentalThemingProperties = ThemeManager.shared.properties) {
+         themeManager: ThemeManaging = ThemeManager.shared) {
         self.toolbar = toolbar
-        self.featureFlagger = featureFlagger
-        self.themingProperties = themingProperties
+        self.themeManager = themeManager
     }
 
     // MARK: - Public Methods

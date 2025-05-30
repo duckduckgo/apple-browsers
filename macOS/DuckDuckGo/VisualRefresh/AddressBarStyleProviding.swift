@@ -123,8 +123,8 @@ final class LegacyAddressBarStyleProvider: AddressBarStyleProviding {
 }
 
 final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
-    private let navigationBarHeightForDefault: CGFloat = 50
-    private let navigationBarHeightForHomePage: CGFloat = 50
+    private let navigationBarHeightForDefault: CGFloat = 52
+    private let navigationBarHeightForHomePage: CGFloat = 52
     private let navigationBarHeightForPopUpWindow: CGFloat = 42
     private let addressBarTopPaddingForDefault: CGFloat = 6
     private let addressBarTopPaddingForHomePage: CGFloat = 6

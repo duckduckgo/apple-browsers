@@ -28,7 +28,7 @@ extension Logger {
 /// Mitigation for https://app.asana.com/1/137249556945/project/1205842942115003/task/1209365034718375
 final class AdClickExternalOpenDetector {
 
-    private let operationTimeout: TimeInterval = .seconds(4)
+    private let operationTimeout: TimeInterval = .seconds(6)
     private var operationStartDate: Date?
     private var state: AdClickState = .unknown
     public var tabID: String

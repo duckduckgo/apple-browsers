@@ -1,5 +1,5 @@
 //
-//  OmniBarFactory.swift
+//  MockThemeManager.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -17,14 +17,19 @@
 //  limitations under the License.
 //
 
+import Foundation
 import UIKit
 
-final class OmniBarFactory {
-    static func createOmniBarViewController(with dependencies: OmnibarDependencyProvider) -> OmniBarViewController {
-        if dependencies.themingProperties.isExperimentalThemingEnabled {
-            UpdatedOmniBarViewController(dependencies: dependencies)
-        } else {
-            DefaultOmniBarViewController(dependencies: dependencies)
-        }
-    }
+@testable import DuckDuckGo
+
+final class MockThemeManager: ThemeManaging {
+    var properties = ExperimentalThemingProperties(isExperimentalThemingEnabled: false,
+                                                   isRoundedCornersTreatmentEnabled: false)
+    var currentTheme: any Theme = DefaultTheme()
+    var currentInterfaceStyle: UIUserInterfaceStyle = .light
+
+    func updateColorScheme() { }
+    func toggleExperimentalTheming() { }
+    func setThemeStyle(_ style: DuckDuckGo.ThemeStyle) { }
+    func updateUserInterfaceStyle(window: UIWindow?) { }
 }

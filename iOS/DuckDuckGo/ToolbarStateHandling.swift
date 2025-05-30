@@ -47,9 +47,11 @@ final class ToolbarHandler: ToolbarStateHandling {
     weak var toolbar: UIToolbar?
 
     private let featureFlagger: FeatureFlagger
-    private lazy var isExperimentalThemingEnabled = {
-        ExperimentalThemingManager(featureFlagger: featureFlagger).isExperimentalThemingEnabled
-    }()
+    private let themingProperties: ExperimentalThemingProperties
+    
+    private var isExperimentalThemingEnabled: Bool {
+        themingProperties.isExperimentalThemingEnabled
+    }
 
     lazy var backButton = {
         return createBarButtonItem(title: UserText.keyCommandBrowserBack, image: DesignSystemImages.Glyphs.Size24.arrowLeft)
@@ -81,9 +83,12 @@ final class ToolbarHandler: ToolbarStateHandling {
 
     private var state: ToolbarContentState?
 
-    init(toolbar: UIToolbar, featureFlagger: FeatureFlagger) {
+    init(toolbar: UIToolbar, 
+         featureFlagger: FeatureFlagger,
+         themingProperties: ExperimentalThemingProperties = ThemeManager.shared.properties) {
         self.toolbar = toolbar
         self.featureFlagger = featureFlagger
+        self.themingProperties = themingProperties
     }
 
     // MARK: - Public Methods

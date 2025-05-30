@@ -25,11 +25,10 @@ import Core
 class TabSwitcherBarsStateHandlerTests: XCTestCase {
 
     var stateHandler: TabSwitcherBarsStateHandler!
-    let featureFlaggerMock = MockFeatureFlagger()
 
     override func setUp() {
         super.setUp()
-        stateHandler = TabSwitcherBarsStateHandler(featureFlagger: featureFlaggerMock)
+        stateHandler = TabSwitcherBarsStateHandler(themingProperties: ExperimentalThemingProperties(isExperimentalThemingEnabled: false, isRoundedCornersTreatmentEnabled: false))
     }
 
     override func tearDown() {

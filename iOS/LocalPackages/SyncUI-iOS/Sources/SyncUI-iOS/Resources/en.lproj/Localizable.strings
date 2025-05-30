@@ -206,7 +206,7 @@
 "scan.or.see.code.scan.code.qr.instructions.body" = "Open DuckDuckGo on your other device and scan this code to sync.";
 
 /* Scan or See Code View - Scan Code Instructions Title */
-"scan.or.see.code.scan.code.qr.instructions.title" = "Or scan with DuckDuckGo on your other device?";
+"scan.or.see.code.scan.code.qr.instructions.title" = "Or scan with DuckDuckGo on your other device";
 
 /* Scan or See Code View - Share Code Link */
 "scan.or.see.code.share.code.link" = "Share Text Code";

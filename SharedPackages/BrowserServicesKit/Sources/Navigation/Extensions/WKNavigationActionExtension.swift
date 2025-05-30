@@ -196,7 +196,7 @@ extension WKNavigationAction: WebViewNavigationAction {
                     and iOS >= 18.5 and less than with the same WebKit version.
                     Otherwise we should just use `targetFrame.safeRequest?.url` which got broken for same-document navigations.
                     This assertion should be removed afterwards.
-                    Also update NavigationAction.init checking source/target frames urls. 
+                    Also update NavigationAction.init checking source/target frames urls.
                     """)
             return isSameDocumentNavigation
         case .backForward:

@@ -282,12 +282,12 @@ public enum SetAsDefaultAndAddToDockSubfeature: String, PrivacySubfeature {
 
 public enum OnboardingSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .extendedOnboarding }
-    
+
     case setAsDefaultBrowserExperiment
 }
 
 public enum ExperimentalBrowserThemingSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .experimentalBrowserTheming }
-    
+
     case onByDefault // Rollout
 }

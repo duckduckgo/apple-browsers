@@ -82,8 +82,8 @@ final class ToolbarHandler: ToolbarStateHandling {
     }()
 
     private var state: ToolbarContentState?
-    
-    init(toolbar: UIToolbar, 
+
+    init(toolbar: UIToolbar,
          featureFlagger: FeatureFlagger,
          themingProperties: ExperimentalThemingProperties = ThemeManager.shared.properties) {
         self.toolbar = toolbar

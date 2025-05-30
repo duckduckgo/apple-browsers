@@ -158,7 +158,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .privacyProOnboardingPromotion,
              .duckPlayerNativeUI,
              .privacyProFreeTrial,
-             .autofillPasswordVariantCategorization,                
+             .autofillPasswordVariantCategorization,
              .syncSetupBarcodeIsUrlBased,
              .canScanUrlBasedSyncSetupBarcodes,
              .canInterceptSyncSetupUrls,

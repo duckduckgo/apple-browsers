@@ -23,7 +23,7 @@ import WidgetKit
 @available(iOSApplicationExtension 16.0, *)
 protocol LockScreenWidget: Widget {
     var kind: String { get }
-    var imageName: String { get }
+    var image: Image { get }
     var deepLink: URL { get }
     var displayName: String { get }
     var description: String { get }
@@ -33,7 +33,7 @@ protocol LockScreenWidget: Widget {
 extension LockScreenWidget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: Provider()) { _ in
-            LockScreenWidgetView(imageNamed: imageName)
+            LockScreenWidgetView(image: image)
                 .widgetURL(deepLink)
         }
         .configurationDisplayName(displayName)
@@ -45,7 +45,7 @@ extension LockScreenWidget {
 @available(iOSApplicationExtension 16.0, *)
 struct SearchLockScreenWidget: LockScreenWidget {
     let kind = "SearchLockScreenWidget"
-    let imageName = "LockScreenSearch"
+    let image = Image(.lockScreenSearch)
     let deepLink = DeepLinks.newSearch.appendingParameter(name: "ls", value: "1")
     let displayName = UserText.lockScreenSearchTitle
     let description = UserText.lockScreenSearchDescription
@@ -54,7 +54,7 @@ struct SearchLockScreenWidget: LockScreenWidget {
 @available(iOSApplicationExtension 16.0, *)
 struct FavoritesLockScreenWidget: LockScreenWidget {
     let kind = "FavoritesLockScreenWidget"
-    let imageName = "LockScreenFavorites"
+    let image = Image(.lockScreenFavorites)
     let deepLink = DeepLinks.favorites.appendingParameter(name: "ls", value: "1")
     let displayName = UserText.lockScreenFavoritesTitle
     let description = UserText.lockScreenFavoritesDescription
@@ -63,7 +63,7 @@ struct FavoritesLockScreenWidget: LockScreenWidget {
 @available(iOSApplicationExtension 16.0, *)
 struct VoiceSearchLockScreenWidget: LockScreenWidget {
     let kind = "VoiceSearchLockScreenWidget"
-    let imageName = "LockScreenVoice"
+    let image = Image(.lockScreenVoice)
     let deepLink = DeepLinks.voiceSearch.appendingParameter(name: "ls", value: "1")
     let displayName = UserText.lockScreenVoiceTitle
     let description = UserText.lockScreenVoiceDescription
@@ -72,7 +72,7 @@ struct VoiceSearchLockScreenWidget: LockScreenWidget {
 @available(iOSApplicationExtension 16.0, *)
 struct EmailProtectionLockScreenWidget: LockScreenWidget {
     let kind = "EmailProtectionLockScreenWidget"
-    let imageName = "LockScreenEmail"
+    let image = Image(.lockScreenEmail)
     let deepLink = DeepLinks.newEmail.appendingParameter(name: "ls", value: "1")
     let displayName = UserText.lockScreenEmailTitle
     let description = UserText.lockScreenEmailDescription
@@ -81,7 +81,7 @@ struct EmailProtectionLockScreenWidget: LockScreenWidget {
 @available(iOSApplicationExtension 16.0, *)
 struct FireButtonLockScreenWidget: LockScreenWidget {
     let kind = "FireButtonLockScreenWidget"
-    let imageName = "LockScreenFire"
+    let image = Image(.lockScreenFire)
     let deepLink = DeepLinks.fireButton.appendingParameter(name: "ls", value: "1")
     let displayName = UserText.lockScreenFireTitle
     let description = UserText.lockScreenFireDescription
@@ -90,7 +90,7 @@ struct FireButtonLockScreenWidget: LockScreenWidget {
 @available(iOSApplicationExtension 16.0, *)
 struct PasswordsLockScreenWidget: LockScreenWidget {
     let kind = "PasswordsLockScreenWidget"
-    let imageName = "LockScreenPasswords"
+    let image = Image(.lockScreenPasswords)
     let deepLink = DeepLinks.openPasswords.appendingParameter(name: "ls", value: "1")
     let displayName = UserText.lockScreenPasswordsTitle
     let description = UserText.lockScreenPasswordsDescription
@@ -99,7 +99,7 @@ struct PasswordsLockScreenWidget: LockScreenWidget {
 @available(iOSApplicationExtension 16.0, *)
 struct AIChatLockScreenWidget: LockScreenWidget {
     let kind = "AIChatLockScreenWidget"
-    let imageName = "LockScreenAIChat"
+    let image = Image(.lockScreenAIChat)
     let deepLink = DeepLinks.openAIChat.appendingParameter(name: WidgetSourceType.sourceKey, value: WidgetSourceType.lockscreenComplication.rawValue)
     let displayName = UserText.lockScreenAIChatTitle
     let description = UserText.lockScreenAIChatDescription
@@ -107,11 +107,11 @@ struct AIChatLockScreenWidget: LockScreenWidget {
 
 // MARK: - Widget View
 struct LockScreenWidgetView: View {
-    let imageNamed: String
+    let image: Image
 
     var body: some View {
         ZStack {
-            Image(imageNamed)
+            image
                 .resizable()
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

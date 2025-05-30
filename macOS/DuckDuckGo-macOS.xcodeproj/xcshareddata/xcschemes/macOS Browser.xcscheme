@@ -160,6 +160,9 @@
                   Identifier = "TabSnapshotExtensionTests/testWhenSnapshotIsRestored_ThenRenderingIsSkippedAfterLoading()">
                </Test>
                <Test
+                  Identifier = "VPNUninstallerTests">
+               </Test>
+               <Test
                   Identifier = "WindowManagerStateRestorationTests/testWindowManagerStateRestoration()">
                </Test>
             </SkippedTests>
@@ -185,6 +188,12 @@
                </Test>
                <Test
                   Identifier = "CoreDataEncryptionTests/testSavingIncorrectValueTypes()">
+               </Test>
+               <Test
+                  Identifier = "DownloadsIntegrationTests/testWhenDownloadIsStartedAfterAppOpensURL_tabIsClosed()">
+               </Test>
+               <Test
+                  Identifier = "DownloadsIntegrationTests/testWhenDownloadIsStartedInNewTab_tabIsClosed()">
                </Test>
                <Test
                   Identifier = "EncryptionKeyStoreTests">

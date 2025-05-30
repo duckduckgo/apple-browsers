@@ -87,8 +87,11 @@ jobs:
           *) echo "👎 Not a release or hotfix branch"; exit 1 ;;
         esac
 
-    - name: Set up fastlane
-      run: bundle install
+    - name: Setup Ruby and dependencies
+      uses: ./.github/actions/setup-ruby
+      with:
+        working-directory: macOS
+        cache-key-prefix: macos-ruby
 
     - name: Tag Release and merge to base branch
       id: tag-release

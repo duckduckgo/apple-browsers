@@ -40,6 +40,8 @@ import PageRefreshMonitor
 import BrokenSitePrompt
 import AIChat
 import NetworkExtension
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 class MainViewController: UIViewController {
 
@@ -439,7 +441,8 @@ class MainViewController: UIViewController {
 
         let omnibarDependencies = OmnibarDependencies(voiceSearchHelper: voiceSearchHelper,
                                                       featureFlagger: featureFlagger,
-                                                      aiChatSettings: aiChatSettings)
+                                                      aiChatSettings: aiChatSettings,
+                                                      isExperimentalAppearanceEnabled: isExperimentalAppearanceEnabled)
 
         swipeTabsCoordinator = SwipeTabsCoordinator(coordinator: viewCoordinator,
                                                     tabPreviewsSource: previewsSource,
@@ -834,7 +837,8 @@ class MainViewController: UIViewController {
         viewCoordinator.omniBar.barView.bookmarksButton.addGestureRecognizer(UILongPressGestureRecognizer(target: self,
                                                                                   action: #selector(quickSaveBookmarkLongPress(gesture:))))
         gestureBookmarksButton.delegate = self
-        gestureBookmarksButton.image = UIImage(named: "Bookmarks")
+
+        gestureBookmarksButton.image = DesignSystemImages.Glyphs.Size24.bookmarks
     }
 
     private func bindFavoritesDisplayMode() {
@@ -1414,7 +1418,7 @@ class MainViewController: UIViewController {
 
     private func applyWidthToTrayController() {
         if AppWidthObserver.shared.isLargeWidth {
-            self.suggestionTrayController?.float(withWidth: self.viewCoordinator.omniBar.barView.searchContainerWidth)
+            self.suggestionTrayController?.float(withWidth: self.viewCoordinator.omniBar.barView.searchContainerWidth, useActiveShadow: isExperimentalAppearanceEnabled)
         } else {
             self.suggestionTrayController?.fill()
         }

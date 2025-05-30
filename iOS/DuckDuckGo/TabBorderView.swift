@@ -66,12 +66,19 @@ final class TabBorderView: UIView {
         isUserInteractionEnabled = false
         backgroundColor = .clear
 
-        let edgeColor = UIColor(designSystemColor: .shadowPrimary)
+        let edgeColor = UIColor { traitCollection in
+            switch traitCollection.userInterfaceStyle {
+            case .dark:
+                return UIColor(designSystemColor: .shadowTertiary)
+            default:
+                return UIColor(designSystemColor: .shadowSecondary)
+            }
+        }
         topEdge.backgroundColor = edgeColor
         bottomEdge.backgroundColor = edgeColor
     }
 
     private struct Metrics {
-        static let lineWidth = 0.5
+        static let lineWidth = 1.0
     }
 }

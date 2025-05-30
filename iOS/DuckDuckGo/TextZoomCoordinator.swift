@@ -22,6 +22,8 @@ import WebKit
 import Common
 import BrowserServicesKit
 import Core
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 /// Central point for coordinating text zoom activities.
 /// * Host is used to represent unaltered host from a URL. Domain is a normalised host.
@@ -157,7 +159,7 @@ final class TextZoomCoordinator: TextZoomCoordinating {
         }
 
         return BrowsingMenuEntry.regular(name: label,
-                                         image: UIImage(named: "Type-Size-16")!,
+                                         image: DesignSystemImages.Glyphs.Size16.typeSize,
                                          showNotificationDot: false) { [weak self, weak controller, weak webView] in
             guard let self = self, let controller = controller, let webView = webView else { return }
             Task { @MainActor in

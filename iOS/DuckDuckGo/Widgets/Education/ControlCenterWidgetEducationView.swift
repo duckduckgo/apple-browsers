@@ -100,7 +100,7 @@ private extension Color {
 }
 
 private extension Image {
-    static let controlCenterBottom = Image("ControlCenterBottom")
+    static let controlCenterBottom = Image(.controlCenterBottom)
 }
 
 

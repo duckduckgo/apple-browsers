@@ -29,7 +29,7 @@ extension Logger {
 /// This is a best effort attempt that could be ineffective when the connection is particularly slow and the requests need a long time to load
 final class AdClickExternalOpenDetector {
 
-    private let operationTimeout: TimeInterval = .seconds(6) // 2s is enough on a fast connection
+    private let operationTimeout: TimeInterval // 2s is enough on a fast connection
     private var operationStartDate: Date?
     private var state: AdClickState = .unknown
     private var tabID: String
@@ -44,8 +44,9 @@ final class AdClickExternalOpenDetector {
         case finishNavigation
     }
 
-    init(tabID: String) {
+    init(tabID: String, operationTimeout: TimeInterval = .seconds(6)) {
         self.tabID = tabID
+        self.operationTimeout = operationTimeout
         NotificationCenter.default.addObserver(
             self,
             selector: #selector(appDidEnterBackground),

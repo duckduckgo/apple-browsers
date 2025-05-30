@@ -27,7 +27,7 @@ final class AdClickExternalOpenDetectorTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        detector = AdClickExternalOpenDetector(tabID: testTabID)
+        detector = AdClickExternalOpenDetector(tabID: testTabID, operationTimeout: .seconds(1))
     }
 
     override func tearDown() {
@@ -83,7 +83,7 @@ final class AdClickExternalOpenDetectorTests: XCTestCase {
         detector.startNavigation()
 
         // Artificially simulate timeout
-        sleep(7) // Exceeds 6-second timeout
+        sleep(2) // Exceeds operation timeout
         detector.failNavigation()
         NotificationCenter.default.post(name: UIApplication.didEnterBackgroundNotification, object: nil)
 

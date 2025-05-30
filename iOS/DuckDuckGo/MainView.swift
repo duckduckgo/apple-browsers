@@ -29,19 +29,19 @@ class MainViewFactory {
     private var isExperimentalThemingEnabled: Bool {
         omnibarDependencies.themingProperties.isExperimentalThemingEnabled
     }
-
+    
     var superview: UIView {
         coordinator.superview
     }
-
-    private init(parentController: UIViewController, 
+    
+    private init(parentController: UIViewController,
                  omnibarDependencies: OmnibarDependencyProvider,
                  featureFlagger: FeatureFlagger) {
         coordinator = MainViewCoordinator(parentController: parentController)
         self.featureFlagger = featureFlagger
         self.omnibarDependencies = omnibarDependencies
     }
-
+    
     static func createViewHierarchy(_ parentController: UIViewController,
                                     aiChatSettings: AIChatSettingsProvider,
                                     voiceSearchHelper: VoiceSearchHelperProtocol,

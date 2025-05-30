@@ -66,12 +66,14 @@ jobs:
       - name: Build BSK
         run: set -o pipefail && swift build | tee build-log.txt | xcbeautify
 
-      - name: Configure system logging
+      - name: Configure system logging for debugging
+        if: env.RUNNER_DEBUG == '1'
         run: |
           sudo cp com.apple.system.logging.plist /Library/Preferences/Logging/com.apple.system.logging.plist
           sudo killall logd || true
 
-      - name: Start log stream in background
+      - name: Start log stream in background for debugging
+        if: env.RUNNER_DEBUG == '1'
         run: |
           log stream --predicate 'process == "xctest"' --style syslog > xctest.log 2>&1 &
           echo $! > log_stream.pid
@@ -85,8 +87,8 @@ jobs:
         run: |
           curl -fLSs -o /dev/null "https://improving.duckduckgo.com/t/m_ci_apple_bsk_main_unit_tests_macos_${{ steps.run-unit-tests.outcome }}?workflow=${{ env.WORKFLOW_URL }}"
 
-      - name: Stop log stream
-        if: always()
+      - name: Stop log stream for debugging
+        if: always() && env.RUNNER_DEBUG == '1'
         run: |
           if [ -f log_stream.pid ]; then
             kill $(cat log_stream.pid) || true

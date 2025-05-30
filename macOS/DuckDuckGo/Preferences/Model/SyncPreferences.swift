@@ -800,9 +800,9 @@ extension SyncPreferences: ManagementDialogModelDelegate {
             do {
                 let pairingInfo = try await connectionController.startExchangeMode()
                 let codeForDisplayOrPasting = pairingInfo.base64Code
-                let stringForQR = pairingInfo.url.absoluteString
+                let stringForQR = featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased) ? pairingInfo.url.absoluteString : pairingInfo.base64Code
                 self.codeForDisplayOrPasting = codeForDisplayOrPasting
-                self.stringForQR = featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased) ? pairingInfo.url.absoluteString : pairingInfo.base64Code
+                self.stringForQR = stringForQR
                 self.presentDialog(for: .syncWithAnotherDevice(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQR))
             } catch {
                 managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToOtherDevice, description: error.localizedDescription)

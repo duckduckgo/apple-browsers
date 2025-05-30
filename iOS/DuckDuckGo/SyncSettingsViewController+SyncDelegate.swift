@@ -321,7 +321,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         }
         Task { @MainActor in
             let pairingInfo: PairingInfo
-            let shouldGenerateURLBasedCode = featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased)
             if isSyncEnabled {
                 do {
                     pairingInfo = try await connectionController.startExchangeMode()

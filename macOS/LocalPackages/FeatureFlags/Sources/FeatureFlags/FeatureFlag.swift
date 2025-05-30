@@ -207,7 +207,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .failsafeExamplePlatformSpecificSubfeature:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests))
         case .visualRefresh:
-            return .remoteDevelopment(.feature(.experimentalBrowserTheming))
+            return .internalOnly()
         case .tabCrashDebugging:
             return .disabled
         case .tabCrashRecovery:

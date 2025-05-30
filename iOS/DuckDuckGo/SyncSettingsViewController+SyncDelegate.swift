@@ -321,9 +321,11 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         }
         Task { @MainActor in
             let pairingInfo: PairingInfo
+            let source: SyncSetupSource
             if isSyncEnabled {
                 do {
                     pairingInfo = try await connectionController.startExchangeMode()
+                    source = .exchange
                 } catch {
                     self.handleError(SyncErrorMessage.unableToSyncWithDevice, error: error, event: .syncLoginError)
                     return
@@ -331,13 +333,14 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             } else {
                 do {
                     pairingInfo = try await connectionController.startConnectMode()
+                    source = .connect
                 } catch {
                     self.handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
                     return
                 }
             }
             let stringForQRCode = featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased) ? pairingInfo.url.absoluteString : pairingInfo.base64Code
-            presentScanOrPasteCodeView(codeForDisplayOrPasting: pairingInfo.base64Code, stringForQRCode: stringForQRCode, showQRCode: showQRCode)
+            presentScanOrPasteCodeView(codeForDisplayOrPasting: pairingInfo.base64Code, stringForQRCode: stringForQRCode, showQRCode: showQRCode, onPresentPixelInfo: .init(pixel: .syncSetupBarcodeScreenShown, source: source))
         }
     }
 
@@ -345,24 +348,27 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         Task {
             let stringForQRCode: String
             let codeForDisplayOrPasting: String
+            let onPresentPixelInfo: SyncSetupPixelInfo?
             if isSyncEnabled {
                 stringForQRCode = recoveryCode
                 codeForDisplayOrPasting = recoveryCode
+                onPresentPixelInfo = nil
             } else {
                 do {
                     let pairingInfo = try await connectionController.startConnectMode()
                     stringForQRCode = featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased) ? pairingInfo.url.absoluteString : pairingInfo.base64Code
                     codeForDisplayOrPasting = pairingInfo.base64Code
+                    onPresentPixelInfo = .init(pixel: .syncSetupBarcodeScreenShown, source: .connect)
                 } catch {
                     self.handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
                     return
                 }
             }
-            presentScanOrPasteCodeView(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQRCode, showQRCode: showQRCode)
+            presentScanOrPasteCodeView(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQRCode, showQRCode: showQRCode, onPresentPixelInfo: onPresentPixelInfo)
         }
     }
 
-    private func presentScanOrPasteCodeView(codeForDisplayOrPasting: String, stringForQRCode: String, showQRCode: Bool) {
+    private func presentScanOrPasteCodeView(codeForDisplayOrPasting: String, stringForQRCode: String, showQRCode: Bool, onPresentPixelInfo: SyncSetupPixelInfo?) {
         let model = ScanOrPasteCodeViewModel(codeForDisplayOrPasting: codeForDisplayOrPasting, qrCodeString: stringForQRCode)
         model.delegate = self
         
@@ -382,6 +388,9 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         navController.modalPresentationStyle = .fullScreen
         navigationController?.present(navController, animated: true) {
             self.checkCameraPermission(model: model)
+            if let onPresentPixelInfo {
+                Pixel.fire(onPresentPixelInfo.pixel, withAdditionalParameters: [PixelParameters.source: onPresentPixelInfo.source.rawValue])
+            }
         }
     }
 
@@ -521,4 +530,9 @@ private class PortraitNavigationController: UINavigationController {
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
         [.portrait, .portraitUpsideDown]
     }
+}
+
+private struct SyncSetupPixelInfo {
+    let pixel: Pixel.Event
+    let source: SyncSetupSource
 }

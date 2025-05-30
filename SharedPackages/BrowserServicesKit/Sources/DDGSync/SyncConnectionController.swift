@@ -26,7 +26,7 @@ public protocol SyncConnectionControllerDelegate: AnyObject {
 
     func controllerDidReceiveRecoveryKey()
 
-    func controllerDidRecognizeScannedCode() async
+    func controllerDidRecognizeScannedCode(setupSource: SyncSetupSource, codeSource: SyncCodeSource) async
 
     func controllerDidCreateSyncAccount()
     func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool)
@@ -76,7 +76,7 @@ public protocol SyncConnectionControlling {
      Handles a scanned or pasted key and starts excange, recovery or connect flow
      */
     @discardableResult
-    func syncCodeEntered(code: String, canScanURLBarcodes: Bool) async -> Bool
+    func syncCodeEntered(code: String, canScanURLBarcodes: Bool, codeSource: SyncCodeSource) async -> Bool
 
     /**
      Logs in to an existing account using a recovery key.
@@ -144,20 +144,21 @@ public actor SyncConnectionController: SyncConnectionControlling {
             return false
         }
 
-        await delegate?.controllerDidRecognizeScannedCode()
-
         if let exchangeKey = syncCode.exchangeKey {
+            await delegate?.controllerDidRecognizeScannedCode(setupSource: .exchange, codeSource: .qrCode)
             return await handleExchangeKey(exchangeKey)
         } else if let connectKey = syncCode.connect {
+            await delegate?.controllerDidRecognizeScannedCode(setupSource: .connect, codeSource: .qrCode)
             return await handleConnectKey(connectKey)
         } else {
+            await delegate?.controllerDidRecognizeScannedCode(setupSource: .recovery, codeSource: .qrCode)
             await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: nil)
             return false
         }
     }
 
     @discardableResult
-    public func syncCodeEntered(code: String, canScanURLBarcodes: Bool = true) async -> Bool {
+    public func syncCodeEntered(code: String, canScanURLBarcodes: Bool = true, codeSource: SyncCodeSource) async -> Bool {
         guard !isCodeHandlingInFlight else {
             return false
         }
@@ -178,15 +179,18 @@ public actor SyncConnectionController: SyncConnectionControlling {
             return false
         }
 
-        await delegate?.controllerDidRecognizeScannedCode()
-
         if let exchangeKey = syncCode.exchangeKey {
+            await delegate?.controllerDidRecognizeScannedCode(setupSource: .exchange, codeSource: codeSource)
             return await handleExchangeKey(exchangeKey)
         } else if let recoveryKey = syncCode.recovery {
+            await delegate?.controllerDidRecognizeScannedCode(setupSource: .recovery, codeSource: codeSource)
             return await handleRecoveryKey(recoveryKey, isRecovery: true)
         } else if let connectKey = syncCode.connect {
+            await delegate?.controllerDidRecognizeScannedCode(setupSource: .connect, codeSource: codeSource)
             return await handleConnectKey(connectKey)
         } else {
+            // We shouldn't ever really reach this point
+            assertionFailure("Shouldn't be able to parse SyncCode without any of the supported keys")
             await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: nil)
             return false
         }

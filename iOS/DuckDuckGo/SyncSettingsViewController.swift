@@ -393,8 +393,16 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
         }
     }
     
-    func syncCodeEntered(code: String) async -> Bool {
-        return await connectionController.syncCodeEntered(code: code, canScanURLBarcodes: featureFlagger.isFeatureOn(.canScanUrlBasedSyncSetupBarcodes))
+    func syncCodeEntered(code: String, source: CodeEntrySource) async -> Bool {
+        let codeSource: SyncCodeSource
+        switch source {
+        case .pastedCode:
+            codeSource = .pastedCode
+        case .qrCode:
+            codeSource = .qrCode
+        }
+
+        return await connectionController.syncCodeEntered(code: code, canScanURLBarcodes: featureFlagger.isFeatureOn(.canScanUrlBasedSyncSetupBarcodes), codeSource: codeSource)
     }
 
     func dismissVCAndShowRecoveryPDF() {
@@ -448,7 +456,8 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         showPreparingSync(nil)
     }
     
-    func controllerDidRecognizeScannedCode() async {
+    func controllerDidRecognizeScannedCode(setupSource: SyncSetupSource, codeSource: SyncCodeSource) async {
+        
         dismissPresentedViewController()
         await showPreparingSync()
     }
@@ -477,6 +486,17 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
             handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncLoginError)
         case .failedToCreateAccount:
             handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncSignupError)
+        }
+    }
+
+    private func sendCodeRecognisedPixel(setupSource: SyncSetupSource, codeSource: SyncCodeSource) {
+        guard setupSource != .recovery else { return }
+        let parameters = [PixelParameters.source: setupSource.rawValue]
+        switch codeSource {
+        case .qrCode:
+            Pixel.fire(.syncSetupBarcodeScannerSuccess, withAdditionalParameters: parameters)
+        case .pastedCode:
+            Pixel.fire(.syncSetupBarcodeScannerSuccess, withAdditionalParameters: parameters)
         }
     }
 }

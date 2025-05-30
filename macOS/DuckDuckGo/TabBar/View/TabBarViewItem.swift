@@ -130,7 +130,6 @@ final class TabBarItemCellView: NSView {
     fileprivate let crashIndicatorButton = {
         let crashIndicatorButton = MouseOverButton(title: "", target: nil, action: #selector(TabBarViewItem.crashButtonAction))
         crashIndicatorButton.bezelStyle = .shadowlessSquare
-        crashIndicatorButton.cornerRadius = 2
         crashIndicatorButton.normalTintColor = .audioTabIcon
         crashIndicatorButton.mouseDownColor = .buttonMouseDown
         crashIndicatorButton.mouseOverColor = .buttonMouseOver
@@ -144,7 +143,6 @@ final class TabBarItemCellView: NSView {
     fileprivate let audioButton = {
         let audioButton = MouseOverButton(title: "", target: nil, action: #selector(TabBarViewItem.audioButtonAction))
         audioButton.bezelStyle = .shadowlessSquare
-        audioButton.cornerRadius = 2
         audioButton.normalTintColor = .audioTabIcon
         audioButton.mouseDownColor = .buttonMouseDown
         audioButton.mouseOverColor = .buttonMouseOver
@@ -168,7 +166,6 @@ final class TabBarItemCellView: NSView {
     fileprivate lazy var permissionButton = {
         let permissionButton = MouseOverButton(title: "", target: nil, action: #selector(TabBarViewItem.permissionButtonAction))
         permissionButton.bezelStyle = .shadowlessSquare
-        permissionButton.cornerRadius = 2
         permissionButton.normalTintColor = .button
         permissionButton.mouseDownColor = .buttonMouseDown
         permissionButton.mouseOverColor = .buttonMouseOver
@@ -180,7 +177,6 @@ final class TabBarItemCellView: NSView {
     fileprivate lazy var closeButton = {
         let closeButton = MouseOverButton(image: .close, target: nil, action: #selector(TabBarViewItem.closeButtonAction))
         closeButton.bezelStyle = .shadowlessSquare
-        closeButton.cornerRadius = 2
         closeButton.normalTintColor = .button
         closeButton.mouseDownColor = .buttonMouseDown
         closeButton.mouseOverColor = .buttonMouseOver
@@ -303,6 +299,11 @@ final class TabBarItemCellView: NSView {
         addSubview(permissionButton)
         addSubview(closeButton)
         addSubview(rightSeparatorView)
+
+        closeButton.cornerRadius = visualStyle.tabStyleProvider.tabButtonActionsCornerRadius
+        permissionButton.cornerRadius = visualStyle.tabStyleProvider.tabButtonActionsCornerRadius
+        audioButton.cornerRadius = visualStyle.tabStyleProvider.tabButtonActionsCornerRadius
+        crashIndicatorButton.cornerRadius = visualStyle.tabStyleProvider.tabButtonActionsCornerRadius
     }
 
     required init?(coder: NSCoder) {

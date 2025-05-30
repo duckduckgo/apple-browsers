@@ -32,7 +32,7 @@ final class AdClickExternalOpenDetector {
     private let operationTimeout: TimeInterval = .seconds(6) // 2s is enough on a fast connection
     private var operationStartDate: Date?
     private var state: AdClickState = .unknown
-    public var tabID: String
+    private var tabID: String
     public typealias AdClickExternalOpenDetectorCompletionBlock = () -> Void
     public var mitigationHandler: AdClickExternalOpenDetectorCompletionBlock?
 

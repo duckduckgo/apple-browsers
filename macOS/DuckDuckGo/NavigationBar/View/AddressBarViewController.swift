@@ -186,6 +186,7 @@ final class AddressBarViewController: NSViewController {
 
         setupInactiveShadowView()
         setupActiveOuterBorderSize()
+        activeBackgroundViewWithSuggestions.backgroundColor = visualStyle.colorsProvider.suggestionsBackgroundColor
     }
 
     override func viewWillAppear() {
@@ -424,7 +425,7 @@ final class AddressBarViewController: NSViewController {
         passiveTextField.textColor = visualStyle.colorsProvider.textPrimaryColor
 
         updateShadowViewPresence(isFirstResponder)
-        inactiveBackgroundView.backgroundColor = visualStyle.colorsProvider.backgroundTertiaryColor
+        inactiveBackgroundView.backgroundColor = visualStyle.colorsProvider.inactiveAddressBarBackgroundColor
         inactiveBackgroundView.alphaValue = isFirstResponder ? 0 : 1
         activeBackgroundView.alphaValue = isFirstResponder ? 1 : 0
 

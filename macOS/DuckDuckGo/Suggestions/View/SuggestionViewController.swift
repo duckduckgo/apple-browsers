@@ -82,6 +82,7 @@ final class SuggestionViewController: NSViewController {
         backgroundViewTopConstraint.constant = visualStyle.addressBarStyleProvider.topSpaceForSuggestionWindow
         backgroundView.setCornerRadius(visualStyle.addressBarStyleProvider.addressBarActiveBackgroundViewRadius)
         innerBorderView.setCornerRadius(visualStyle.addressBarStyleProvider.addressBarActiveBackgroundViewRadius)
+        backgroundView.backgroundColor = visualStyle.colorsProvider.suggestionsBackgroundColor
     }
 
     override func viewWillAppear() {

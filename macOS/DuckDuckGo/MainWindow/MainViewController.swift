@@ -38,6 +38,7 @@ final class MainViewController: NSViewController {
     let featureFlagger: FeatureFlagger
     private let bookmarksBarVisibilityManager: BookmarksBarVisibilityManager
     private let defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting
+    private let visualStyle: VisualStyleProviding
 
     let tabCollectionViewModel: TabCollectionViewModel
     let isBurner: Bool
@@ -77,7 +78,8 @@ final class MainViewController: NSViewController {
          aiChatMenuConfig: AIChatMenuVisibilityConfigurable = AIChatMenuConfiguration(),
          brokenSitePromptLimiter: BrokenSitePromptLimiter = .shared,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-         defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting = NSApp.delegateTyped.defaultBrowserAndDockPromptPresenter
+         defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting = NSApp.delegateTyped.defaultBrowserAndDockPromptPresenter,
+         visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager
     ) {
 
         self.aiChatMenuConfig = aiChatMenuConfig
@@ -86,6 +88,7 @@ final class MainViewController: NSViewController {
         self.isBurner = tabCollectionViewModel.isBurner
         self.featureFlagger = featureFlagger
         self.defaultBrowserAndDockPromptPresenting = defaultBrowserAndDockPromptPresenting
+        self.visualStyle = visualStyleManager.style
 
         tabBarViewController = TabBarViewController.create(tabCollectionViewModel: tabCollectionViewModel, activeRemoteMessageModel: NSApp.delegateTyped.activeRemoteMessageModel)
         bookmarksBarVisibilityManager = BookmarksBarVisibilityManager(selectedTabPublisher: tabCollectionViewModel.$selectedTabViewModel.eraseToAnyPublisher())
@@ -307,15 +310,19 @@ final class MainViewController: NSViewController {
 
     private func updateDividerColor(isShowingHomePage isHomePage: Bool) {
         NSAppearance.withAppAppearance {
-            let backgroundColor: NSColor = {
-                if mainView.isBannerViewShown {
-                    return bookmarksBarIsVisible ? .bookmarkBarBackground : .addressBarSolidSeparator
-                } else {
-                    return (bookmarksBarIsVisible || isHomePage) ? .bookmarkBarBackground : .addressBarSolidSeparator
-                }
-            }()
+            if visualStyle.addToolbarShadow {
+                mainView.divider.backgroundColor = .shadowSecondary
+            } else {
+                let backgroundColor: NSColor = {
+                    if mainView.isBannerViewShown {
+                        return bookmarksBarIsVisible ? .bookmarkBarBackground : .addressBarSolidSeparator
+                    } else {
+                        return (bookmarksBarIsVisible || isHomePage) ? .bookmarkBarBackground : .addressBarSolidSeparator
+                    }
+                }()
 
-            mainView.divider.backgroundColor = backgroundColor
+                mainView.divider.backgroundColor = backgroundColor
+            }
         }
     }
 

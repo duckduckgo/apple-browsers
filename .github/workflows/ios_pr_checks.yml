@@ -111,9 +111,6 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-ios-
 
-    - name: Install xcbeautify
-      run: brew install xcbeautify
-
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
 
@@ -226,14 +223,14 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-ios-release-
 
-    - name: Install xcbeautify
-      run: brew install xcbeautify
-
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
 
-    - name: Prepare fastlane
-      run: bundle install
+    - name: Setup Ruby and dependencies
+      uses: ./.github/actions/setup-ruby
+      with:
+        working-directory: iOS
+        cache-key-prefix: ios-ruby
 
     - name: Build the app
       env:

@@ -200,7 +200,6 @@ final class MainViewController: NSViewController {
         registerForBookmarkBarPromptNotifications()
 
         adjustFirstResponder(force: true)
-        showSetAsDefaultAndAddToDockIfNeeded()
     }
 
     var bookmarkBarPromptObserver: Any?
@@ -232,6 +231,7 @@ final class MainViewController: NSViewController {
         updateReloadMenuItem()
         updateStopMenuItem()
         browserTabViewController.windowDidBecomeKey()
+        showSetAsDefaultAndAddToDockIfNeeded()
     }
 
     func windowDidResignKey() {
@@ -500,11 +500,6 @@ final class MainViewController: NSViewController {
     // MARK: - Set As Default and Add To Dock Prompts configuration
 
     private func subscribeToSetAsDefaultAndAddToDockPromptsNotifications() {
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(showSetAsDefaultAndAddToDockIfNeeded),
-                                               name: .setAsDefaultBrowserAndAddToDockExperimentFlagOverrideDidChange,
-                                               object: nil)
-
         bannerDismissedCancellable = defaultBrowserAndDockPromptPresenting.bannerDismissedPublisher
             .sink { [weak self] in
                 self?.hideBanner()

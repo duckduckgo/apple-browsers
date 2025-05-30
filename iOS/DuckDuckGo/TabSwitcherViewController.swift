@@ -74,6 +74,15 @@ class TabSwitcherViewController: UIViewController {
             }
         }
 
+        var image: UIImage {
+            switch self {
+            case .list:
+                return UIImage(resource: .tabsToggleList)
+            case .grid:
+                return UIImage(resource: .tabsToggleGrid)
+            }
+        }
+
     }
 
     @IBOutlet weak var topBarView: UINavigationBar!

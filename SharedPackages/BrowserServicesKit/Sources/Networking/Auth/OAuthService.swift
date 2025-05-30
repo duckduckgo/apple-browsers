@@ -154,7 +154,8 @@ public struct DefaultOAuthService: OAuthService {
     public func authorize(codeChallenge: String) async throws -> OAuthSessionID {
         let request = OAuthRequest.authorize(baseURL: baseURL, codeChallenge: codeChallenge)
         let response = try await fetch(request: request)
-        guard let cookieValue = response.httpResponse.getCookie(withName: "ddg_auth_session_id")?.value else {
+        guard let cookieValue = response.httpResponse.getCookie(withName: "ddg_auth_session_id")?.value,
+              !cookieValue.isEmpty else {
             throw OAuthServiceError.missingResponseValue("ddg_auth_session_id cookie")
         }
         return cookieValue

@@ -20,6 +20,8 @@
 import UIKit
 import Core
 import BrowserServicesKit
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 class UnprotectedSitesViewController: UITableViewController {
     
@@ -29,7 +31,8 @@ class UnprotectedSitesViewController: UITableViewController {
     @IBOutlet var flexibleSpace: UIBarButtonItem!
     @IBOutlet var doneButton: UIBarButtonItem!
     @IBOutlet var editButton: UIBarButtonItem!
-    
+    @IBOutlet var addButton: UIBarButtonItem!
+
     private var hiddenNavBarItem: UIBarButtonItem?
     private var hiddenNavBarItems: [UIBarButtonItem]?
 
@@ -41,6 +44,8 @@ class UnprotectedSitesViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         decorate()
+
+        addButton.image = DesignSystemImages.Glyphs.Size24.add
 
         navigationController?.setToolbarHidden(false, animated: false)
         refreshToolbarItems(animated: false)

@@ -19,13 +19,14 @@
 
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct FavoriteAddItemView: View {
     var body: some View {
         RoundedRectangle(cornerRadius: 8, style: .continuous)
             .fill(.clear)
             .overlay {
-                Image(.add24)
+                Image(uiImage: DesignSystemImages.Glyphs.Size24.add)
                     .tintIfAvailable(Color(designSystemColor: .icons))
             }
             .aspectRatio(1.0, contentMode: .fit)

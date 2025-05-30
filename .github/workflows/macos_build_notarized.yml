@@ -95,7 +95,7 @@ jobs:
 
     steps:
     - name: Register SSH key for certificates repository access
-      uses: webfactory/ssh-agent@v0.9.0
+      uses: webfactory/ssh-agent@v0.9.1
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
 
@@ -105,8 +105,11 @@ jobs:
         submodules: recursive
         ref: ${{ env.branch }}
 
-    - name: Set up fastlane
-      run: bundle install
+    - name: Setup Ruby and dependencies
+      uses: ./.github/actions/setup-ruby
+      with:
+        working-directory: macOS
+        cache-key-prefix: macos-ruby
 
     - name: Sync code signing assets
       env:
@@ -276,8 +279,11 @@ jobs:
           macOS/fastlane
           macOS/scripts/assets
 
-    - name: Set up fastlane
-      run: bundle install
+    - name: Setup Ruby and dependencies
+      uses: ./.github/actions/setup-ruby
+      with:
+        working-directory: macOS
+        cache-key-prefix: macos-ruby
 
     - name: Fetch app bundle
       uses: actions/download-artifact@v4
@@ -405,8 +411,11 @@ jobs:
             macOS/Gemfile.lock
             macOS/fastlane
 
-      - name: Set up fastlane
-        run: bundle install
+      - name: Setup Ruby and dependencies
+        uses: ./.github/actions/setup-ruby
+        with:
+          working-directory: macOS
+          cache-key-prefix: macos-ruby
 
       - name: Send Mattermost message
         if: ${{ env.success || env.failure }} # Don't execute when cancelled

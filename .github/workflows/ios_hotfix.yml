@@ -36,8 +36,11 @@ jobs:
             exit 1
           fi
 
-      - name: Set up fastlane
-        run: bundle install
+      - name: Setup Ruby and dependencies
+        uses: ./.github/actions/setup-ruby
+        with:
+          working-directory: iOS
+          cache-key-prefix: ios-ruby
 
       - name: Make release branch
         id: make_release_branch
@@ -55,8 +58,11 @@ jobs:
             is_hotfix:"true"
 
       # Necessary as make_release_branch will checkout a hotfix branch and the plugins may be differnet
-      - name: Reinstall fastlane
-        run: bundle install
+      - name: Setup Ruby and dependencies (after branch checkout)
+        uses: ./.github/actions/setup-ruby
+        with:
+          working-directory: iOS
+          cache-key-prefix: ios-ruby
 
       - name: Report success
         env:

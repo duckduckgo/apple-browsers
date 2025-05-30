@@ -285,3 +285,9 @@ public enum OnboardingSubfeature: String, PrivacySubfeature {
 
     case setAsDefaultBrowserExperiment
 }
+
+public enum ExperimentalBrowserThemingSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .experimentalBrowserTheming }
+    
+    case onByDefault // Rollout
+}

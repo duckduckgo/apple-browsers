@@ -250,7 +250,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .networkProtectionRiskyDomainsProtection:
             return  .remoteReleasable(.subfeature(NetworkProtectionSubfeature.riskyDomainsProtection))
         case .experimentalBrowserTheming:
-            return .remoteDevelopment(.feature(.experimentalBrowserTheming))
+            return .remoteDevelopment(.subfeature(ExperimentalBrowserThemingSubfeature.onByDefault))
         case .privacyProAuthV2:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
         case .onboardingSetAsDefaultBrowser:

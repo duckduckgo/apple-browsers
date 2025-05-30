@@ -80,7 +80,7 @@ platform :ios do
     sync_signing_adhoc(options)
 
     suffix = ""
-    plist_path = "DuckDuckGo/Info.plist"
+    plist_path = "../DuckDuckGo/Info.plist"
     if options[:suffix]
       suffix = "#{options[:suffix]}-"
       # Set the suffix in the Info.plist for the main app bundle
@@ -157,7 +157,7 @@ platform :ios do
     sync_signing_alpha_adhoc(options)
 
     suffix = ""
-    plist_path = "DuckDuckGo/Info.plist"
+    plist_path = "../DuckDuckGo/Info.plist"
     if options[:suffix]
       suffix = "#{options[:suffix]}-"
       # Set the suffix in the Info.plist for the main app bundle

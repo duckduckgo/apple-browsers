@@ -128,7 +128,7 @@ final class DefaultBrowserAndDockPromptKeyValueStore: DefaultBrowserAndDockPromp
         }
     }
 
-    private func write<T>(value: T, forKey key: StorageKey) {
+    private func write<T>(value: T?, forKey key: StorageKey) {
         do {
             try keyValueStoring.set(value, forKey: key.rawValue)
         } catch {

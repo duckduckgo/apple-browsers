@@ -64,7 +64,7 @@ final class LegacySettingsIconProvider: SettingsIconsProviding {
 final class CurrentSettingsIconProvider: SettingsIconsProviding {
     var defaultBrowserIcon: NSImage = DesignSystemImages.Color.Size16.defaultBrowser
     var privateSearchIcon: NSImage = DesignSystemImages.Color.Size16.findSearch
-    var webTrackingProtectionIcon: NSImage = DesignSystemImages.Color.Size16.shieldCheck
+    var webTrackingProtectionIcon: NSImage = DesignSystemImages.Color.Size16.shield
     var cookiePopUpProtectionIcon: NSImage = DesignSystemImages.Color.Size16.cookie
     var emailProtectionIcon: NSImage = DesignSystemImages.Color.Size16.emailProtection
     var privacyProIcon: NSImage = DesignSystemImages.Color.Size16.privacyPro

@@ -170,6 +170,8 @@ final class PreferencesSidebarModel: ObservableObject {
             return PrivacyProtectionStatus(statusIndicator: .on)
         case .webTrackingProtection:
             return PrivacyProtectionStatus(statusIndicator: .on)
+        case .threatProtection:
+            return PrivacyProtectionStatus(statusIndicator: .on)
         case .cookiePopupProtection:
             return  PrivacyProtectionStatus(statusPublisher: CookiePopupProtectionPreferences.shared.$isAutoconsentEnabled) { isAutoconsentEnabled in
                 isAutoconsentEnabled ? .on : .off

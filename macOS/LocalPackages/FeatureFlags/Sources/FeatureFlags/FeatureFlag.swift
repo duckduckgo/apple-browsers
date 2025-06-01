@@ -139,6 +139,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .visualRefresh,
                 .tabCrashDebugging,
                 .tabCrashRecovery,
+                .maliciousSiteProtection,
                 .delayedWebviewPresentation,
                 .syncSetupBarcodeIsUrlBased,
                 .canScanUrlBasedSyncSetupBarcodes:
@@ -150,7 +151,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .contextualOnboarding,
                 .unknownUsernameCategorization,
                 .credentialsImportPromotionForExistingUsers,
-                .maliciousSiteProtection,
                 .dbpRemoteBrokerDelivery:
             return false
         }

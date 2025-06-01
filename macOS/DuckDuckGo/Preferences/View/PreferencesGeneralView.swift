@@ -250,32 +250,6 @@ extension Preferences {
                                        isOn: $downloadsModel.alwaysRequestDownloadLocation).accessibilityIdentifier("PreferencesGeneralView.alwaysAskWhereToSaveFiles")
                     }
                 }
-
-                // SECTION: Phishing Detection
-                if featureFlagger.maliciousSiteProtectionFeatureFlags().isMaliciousSiteProtectionEnabled {
-                    let toggleText = featureFlagger.isFeatureOn(.scamSiteProtection) ? UserText.maliciousSiteDetectionIsEnabled : UserText.maliciousSiteDetectionIsEnabledDeprecated
-                    PreferencePaneSection(UserText.maliciousSiteDetectionHeader, spacing: 0) {
-                        PreferencePaneSubSection {
-                            ToggleMenuItem(toggleText,
-                                           isOn: $maliciousSiteDetectionModel.isEnabled)
-                            .onChange(of: maliciousSiteDetectionModel.isEnabled) { newValue in
-                                PixelKit.fire(MaliciousSiteProtection.Event.settingToggled(to: newValue))
-                            }
-                        }
-                        TextButton(UserText.learnMore) {
-                            tabsModel.openNewTab(with: .maliciousSiteProtectionLearnMore)
-                        }
-                        .padding(.leading, 19)
-                        .padding(.top, 0)
-
-                        Text(UserText.maliciousDetectionEnabledWarning)
-                            .opacity(maliciousSiteDetectionModel.isEnabled ? 0 : 1)
-                            .font(.footnote)
-                            .foregroundColor(.red)
-                            .padding(.leading, 19)
-                            .padding(.top, 5)
-                    }
-                }
             }
         }
     }

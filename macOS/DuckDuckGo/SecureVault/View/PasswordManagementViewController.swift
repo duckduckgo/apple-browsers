@@ -589,6 +589,9 @@ final class PasswordManagementViewController: NSViewController {
                 showDuplicateAlert()
             } else {
                 PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
+                if let window = view.window {
+                    NSAlert.passwordManagerSaveError(errorType: error.localizedDescription).beginSheetModal(for: window)
+                }
             }
         }
     }

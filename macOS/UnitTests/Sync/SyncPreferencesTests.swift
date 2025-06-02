@@ -458,14 +458,14 @@ final class SyncPreferencesTests: XCTestCase {
 
         await syncPreferences.syncWithAnotherDevicePressed()
 
-        try await waitForPublisher(syncPreferences.$codeForDisplayOrPasting, toEmit: expectedRecoveryCode)
-        try await waitForPublisher(syncPreferences.$stringForQR, toEmit: expectedRecoveryCode)
         try await waitForPublisher(managementDialogModel.$currentDialog.map { dialog in
             if case .syncWithAnotherDevice(let code, let qr) = dialog {
                 return code == expectedRecoveryCode && qr == expectedRecoveryCode
             }
             return false
         }, toEmit: true)
+        XCTAssertEqual(syncPreferences.codeForDisplayOrPasting, expectedRecoveryCode)
+        XCTAssertEqual(syncPreferences.stringForQR, expectedRecoveryCode)
     }
 
     @MainActor
@@ -481,14 +481,14 @@ final class SyncPreferencesTests: XCTestCase {
 
         await syncPreferences.syncWithAnotherDevicePressed()
 
-        try await waitForPublisher(syncPreferences.$codeForDisplayOrPasting, toEmit: expectedExchangeCode)
-        try await waitForPublisher(syncPreferences.$stringForQR, toEmit: expectedQRCodeString)
         try await waitForPublisher(managementDialogModel.$currentDialog.map { dialog in
             if case .syncWithAnotherDevice(let code, let qr) = dialog {
                 return code == expectedExchangeCode && qr == expectedQRCodeString
             }
             return false
         }, toEmit: true)
+        XCTAssertEqual(syncPreferences.codeForDisplayOrPasting, expectedExchangeCode)
+        XCTAssertEqual(syncPreferences.stringForQR, expectedQRCodeString)
     }
 
     @MainActor
@@ -501,14 +501,14 @@ final class SyncPreferencesTests: XCTestCase {
 
         await syncPreferences.syncWithAnotherDevicePressed()
 
-        try await waitForPublisher(syncPreferences.$codeForDisplayOrPasting, toEmit: expectedRecoveryCode)
-        try await waitForPublisher(syncPreferences.$stringForQR, toEmit: expectedRecoveryCode)
         try await waitForPublisher(managementDialogModel.$currentDialog.map { dialog in
             if case .syncWithAnotherDevice(let code, let qr) = dialog {
                 return code == expectedRecoveryCode && qr == expectedRecoveryCode
             }
             return false
         }, toEmit: true)
+        XCTAssertEqual(syncPreferences.codeForDisplayOrPasting, expectedRecoveryCode)
+        XCTAssertEqual(syncPreferences.stringForQR, expectedRecoveryCode)
     }
 
     @MainActor
@@ -544,14 +544,14 @@ final class SyncPreferencesTests: XCTestCase {
 
         syncPreferences.enterRecoveryCodePressed()
 
-        try await waitForPublisher(syncPreferences.$codeForDisplayOrPasting, toEmit: expectedCode)
-        try await waitForPublisher(syncPreferences.$stringForQR, toEmit: expectedQRCodeString)
         try await waitForPublisher(managementDialogModel.$currentDialog.map { dialog in
             if case .enterRecoveryCode(let qr) = dialog {
                 return qr == expectedQRCodeString
             }
             return false
         }, toEmit: true)
+        XCTAssertEqual(syncPreferences.codeForDisplayOrPasting, expectedCode)
+        XCTAssertEqual(syncPreferences.stringForQR, expectedQRCodeString)
     }
 
     @MainActor
@@ -563,14 +563,14 @@ final class SyncPreferencesTests: XCTestCase {
 
         syncPreferences.enterRecoveryCodePressed()
 
-        try await waitForPublisher(syncPreferences.$codeForDisplayOrPasting, toEmit: expectedCode)
-        try await waitForPublisher(syncPreferences.$stringForQR, toEmit: expectedCode)
         try await waitForPublisher(managementDialogModel.$currentDialog.map { dialog in
             if case .enterRecoveryCode(let qr) = dialog {
                 return qr == expectedCode
             }
             return false
         }, toEmit: true)
+        XCTAssertEqual(syncPreferences.codeForDisplayOrPasting, expectedCode)
+        XCTAssertEqual(syncPreferences.stringForQR, expectedCode)
     }
 
     @MainActor
@@ -585,14 +585,14 @@ final class SyncPreferencesTests: XCTestCase {
 
         await syncPreferences.syncWithAnotherDevicePressed()
 
-        try await waitForPublisher(syncPreferences.$codeForDisplayOrPasting, toEmit: expectedCode)
-        try await waitForPublisher(syncPreferences.$stringForQR, toEmit: expectedQRCodeString)
         try await waitForPublisher(managementDialogModel.$currentDialog.map { dialog in
             if case .syncWithAnotherDevice(let code, let qr) = dialog {
                 return code == expectedCode && qr == expectedQRCodeString
             }
             return false
         }, toEmit: true)
+        XCTAssertEqual(syncPreferences.codeForDisplayOrPasting, expectedCode)
+        XCTAssertEqual(syncPreferences.stringForQR, expectedQRCodeString)
     }
 
     @MainActor
@@ -606,14 +606,14 @@ final class SyncPreferencesTests: XCTestCase {
 
         await syncPreferences.syncWithAnotherDevicePressed()
 
-        try await waitForPublisher(syncPreferences.$codeForDisplayOrPasting, toEmit: expectedCode)
-        try await waitForPublisher(syncPreferences.$stringForQR, toEmit: expectedCode)
         try await waitForPublisher(managementDialogModel.$currentDialog.map { dialog in
             if case .syncWithAnotherDevice(let code, let qr) = dialog {
                 return code == expectedCode && qr == expectedCode
             }
             return false
         }, toEmit: true)
+        XCTAssertEqual(syncPreferences.codeForDisplayOrPasting, expectedCode)
+        XCTAssertEqual(syncPreferences.stringForQR, expectedCode)
     }
 }
 

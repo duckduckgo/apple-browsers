@@ -43,6 +43,7 @@ protocol BrowserTabViewControllerDelegate: AnyObject {
 final class BrowserTabViewController: NSViewController {
 
     private lazy var browserTabView = BrowserTabView(frame: .zero, backgroundColor: .browserTabBackground)
+    private lazy var sidebarContainer = ColorView(frame: .zero, backgroundColor: .browserTabBackground, borderWidth: 0)
     private lazy var hoverLabel = NSTextField(string: URL.duckDuckGo.absoluteString)
     private lazy var hoverLabelContainer = ColorView(frame: .zero, backgroundColor: .browserTabBackground, borderWidth: 0)
 
@@ -95,6 +96,8 @@ final class BrowserTabViewController: NSViewController {
         let modal = DuckPlayerOnboardingModalManager()
         return modal
     }()
+
+    private lazy var tabSidebarProvider: TabSidebarProviding = TabSidebarProvider()
 
     required init?(coder: NSCoder) {
         fatalError("BrowserTabViewController: Bad initializer")
@@ -153,6 +156,19 @@ final class BrowserTabViewController: NSViewController {
         hoverLabel.leadingAnchor.constraint(equalTo: hoverLabelContainer.leadingAnchor, constant: 12).isActive = true
         hoverLabelContainer.trailingAnchor.constraint(equalTo: hoverLabel.trailingAnchor, constant: 8).isActive = true
         hoverLabel.topAnchor.constraint(equalTo: hoverLabelContainer.topAnchor, constant: 6).isActive = true
+
+        if featureFlagger.isFeatureOn(.aiChatSidebar) {
+            view.addSubview(sidebarContainer)
+
+            sidebarContainerLeadingConstraint = sidebarContainer.leadingAnchor.constraint(equalTo: browserTabView.trailingAnchor)
+
+            NSLayoutConstraint.activate([
+                sidebarContainer.topAnchor.constraint(equalTo: browserTabView.topAnchor),
+                sidebarContainer.bottomAnchor.constraint(equalTo: browserTabView.bottomAnchor),
+                sidebarContainerLeadingConstraint!,
+                sidebarContainer.widthAnchor.constraint(equalToConstant: tabSidebarProvider.sidebarWidth)
+            ])
+        }
     }
 
     override func viewDidLoad() {
@@ -305,6 +321,7 @@ final class BrowserTabViewController: NSViewController {
                 generateNativePreviewIfNeeded()
                 tabViewModel = selectedTabViewModel
                 showTabContent(of: selectedTabViewModel)
+                updateSidebar(for: selectedTabViewModel)
 
                 subscribeToTabContent(of: selectedTabViewModel)
                 subscribeToHoveredLink(of: selectedTabViewModel)
@@ -426,6 +443,9 @@ final class BrowserTabViewController: NSViewController {
         }
     }
 
+    private var webContainerTrailingConstraint: NSLayoutConstraint?
+    private var sidebarContainerLeadingConstraint: NSLayoutConstraint?
+
     private func addWebViewToViewHierarchy(_ webView: WebView, tab: Tab) {
         let container = WebViewContainerView(tab: tab, webView: webView, frame: view.bounds)
         self.webViewContainer = container
@@ -438,13 +458,21 @@ final class BrowserTabViewController: NSViewController {
         view.addSubview(containerStackView, positioned: .below, relativeTo: hoverLabelContainer)
 
         containerStackView.translatesAutoresizingMaskIntoConstraints = false
+
+        if webContainerTrailingConstraint == nil {
+            webContainerTrailingConstraint = containerStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+        }
+
         NSLayoutConstraint.activate([
             containerStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            containerStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+//            containerStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            webContainerTrailingConstraint!,
             containerStackView.topAnchor.constraint(equalTo: view.topAnchor),
             containerStackView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
         containerStackView.addArrangedSubview(container)
+
+        updateWebContainerAndTabSidebarConstraints(forSidebarRevealed: tabSidebarProvider.isShowingSidebar(for: tab), animated: false)
     }
 
     private func removeExistingDialog() {
@@ -966,6 +994,60 @@ final class BrowserTabViewController: NSViewController {
 
         Task {
             await tabViewModel.tab.tabSnapshots?.renderSnapshot(from: viewForRendering)
+        }
+    }
+
+    // MARK: - Tab sidebar
+
+    func toggleSidebar() {
+        guard featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
+        guard let tab = tabViewModel?.tab else { return }
+
+        let willAnimateSidebarReveal = !tabSidebarProvider.isShowingSidebar(for: tab)
+
+        if willAnimateSidebarReveal {
+            let sidebarViewController = tabSidebarProvider.tabSidebar(for: tab).sidebarViewController
+            addAndLayoutChild(sidebarViewController, into: sidebarContainer)
+            updateWebContainerAndTabSidebarConstraints(forSidebarRevealed: true, animated: true)
+        } else {
+            updateWebContainerAndTabSidebarConstraints(forSidebarRevealed: false, animated: true)
+        }
+    }
+
+    private func updateSidebar(for tabViewModel: TabViewModel?) {
+        guard featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
+        guard let tab = tabViewModel?.tab else { return }
+
+        if tabSidebarProvider.isShowingSidebar(for: tab) {
+            let vc = tabSidebarProvider.tabSidebar(for: tab).sidebarViewController
+            addAndLayoutChild(vc, into: sidebarContainer)
+            updateWebContainerAndTabSidebarConstraints(forSidebarRevealed: true, animated: false)
+        } else {
+            updateWebContainerAndTabSidebarConstraints(forSidebarRevealed: false, animated: false)
+        }
+    }
+
+    private func updateWebContainerAndTabSidebarConstraints(forSidebarRevealed: Bool, animated: Bool) {
+        guard featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
+
+        let newConstraintValue = forSidebarRevealed ? -self.tabSidebarProvider.sidebarWidth : 0.0
+
+        if animated {
+            NSAnimationContext.runAnimationGroup { [weak self] context in
+                guard let self else { return }
+
+                context.duration = 0.25
+                context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+
+                self.sidebarContainerLeadingConstraint?.animator().constant = newConstraintValue
+                self.webContainerTrailingConstraint?.animator().constant = newConstraintValue
+            } completionHandler: { [weak self, tab = tabViewModel?.tab] in
+                guard let self, let tab, !forSidebarRevealed else { return }
+                self.tabSidebarProvider.handleSidebarDidClose(for: tab)
+            }
+        } else {
+            sidebarContainerLeadingConstraint?.constant = newConstraintValue
+            webContainerTrailingConstraint?.constant = newConstraintValue
         }
     }
 

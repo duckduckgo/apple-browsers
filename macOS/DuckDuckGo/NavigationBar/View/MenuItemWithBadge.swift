@@ -245,4 +245,4 @@ extension NSMenuItem {
 
         return menuItem
     }
-} 
+}

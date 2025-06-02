@@ -202,7 +202,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
         switch subscriptionPlatform {
         case .appStore:
             guard #available(macOS 12.0, *) else { break }
-            
+
             if featureFlagger.isFeatureOn(.privacyProFreeTrial),
                let freeTrialOptions = await freeTrialSubscriptionOptions() {
                 subscriptionOptions = freeTrialOptions

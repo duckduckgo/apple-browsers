@@ -535,7 +535,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                 .withImage(moreOptionsMenuIconsProvider.privacyProIcon)
 
             // Check if user is eligible for Free Trial
-            if (featureFlagger.isFeatureOn(.privacyProFreeTrial) && subscriptionManager.isUserEligibleForFreeTrial()) {
+            if featureFlagger.isFeatureOn(.privacyProFreeTrial) && subscriptionManager.isUserEligibleForFreeTrial() {
                 privacyProItem = NSMenuItem.createMenuItemWithBadge(
                     title: UserText.subscriptionOptionsMenuItem,
                     badgeText: UserText.subscriptionOptionsMenuItemFreeTrialBadge,

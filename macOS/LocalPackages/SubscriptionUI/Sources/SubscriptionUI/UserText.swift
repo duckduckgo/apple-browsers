@@ -160,10 +160,7 @@ enum UserText {
                                           value: "Your free trial ends on %@ & automatically converts to an annual paid subscription on that day.",
                                           comment: "Annual trial subscription renewal info where parameter is renewal date. This reads as 'Your free trial ends on (date) & automatically converts to an annual paid subscription on that day.'")
         case .unknown:
-            localized = NSLocalizedString("subscription.preferences.subscription.active.renewing.unknown.caption",
-                                          bundle: Bundle.module,
-                                          value: "Your subscription renews on %@.",
-                                          comment: "Caption for the subscription preferences pane when the subscription is active and will renew, the parameter is date of renewal.")
+            localized = preferencesSubscriptionRenewingCaption(billingPeriod: .unknown, formattedDate: formattedDate)
         }
 
         return String(format: localized, formattedDate)

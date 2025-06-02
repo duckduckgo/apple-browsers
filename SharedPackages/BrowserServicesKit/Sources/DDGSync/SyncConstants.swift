@@ -16,10 +16,16 @@
 //  limitations under the License.
 //
 
+public enum SyncSetupRole {
+    case receiver(SyncSetupSource)
+    case sharer
+}
+
 public enum SyncSetupSource: String {
     case recovery
     case exchange
     case connect
+    case unknown
 }
 
 public enum SyncCodeSource: String {

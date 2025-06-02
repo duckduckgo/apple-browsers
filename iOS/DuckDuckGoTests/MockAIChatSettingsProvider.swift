@@ -30,6 +30,7 @@ public class MockAIChatSettingsProvider: AIChatSettingsProvider {
     public var isAIChatAddressBarShortcutFeatureEnabled: Bool
     public var isAIChatVoiceSearchUserSettingsEnabled: Bool
     public var isAIChatTabSwitcherUserSettingsEnabled: Bool
+    public var sessionTimerInMinutes: Int
 
     public init(aiChatURL: URL = URL(string: "https://example.com")!,
                 isAIChatEnabled: Bool = false,
@@ -38,7 +39,8 @@ public class MockAIChatSettingsProvider: AIChatSettingsProvider {
                 isAIChatBrowsingMenubarShortcutFeatureEnabled: Bool = false,
                 isAIChatAddressBarShortcutFeatureEnabled: Bool = false,
                 isAIChatVoiceSearchUserSettingsEnabled: Bool = false,
-                isAIChatTabSwitcherUserSettingsEnabled: Bool = false) {
+                isAIChatTabSwitcherUserSettingsEnabled: Bool = false,
+                sessionTimerInMinutes: Int = 60) {
 
         self.aiChatURL = aiChatURL
         self.isAIChatEnabled = isAIChatEnabled
@@ -47,6 +49,7 @@ public class MockAIChatSettingsProvider: AIChatSettingsProvider {
         self.isAIChatAddressBarShortcutFeatureEnabled = isAIChatAddressBarShortcutFeatureEnabled
         self.isAIChatVoiceSearchUserSettingsEnabled = isAIChatVoiceSearchUserSettingsEnabled
         self.isAIChatTabSwitcherUserSettingsEnabled = isAIChatTabSwitcherUserSettingsEnabled
+        self.sessionTimerInMinutes = sessionTimerInMinutes
     }
     
     public func enableAIChatBrowsingMenuUserSettings(enable: Bool) {

@@ -859,7 +859,7 @@ extension Pixel {
         case syncSetupBarcodeScannerFailed
         case syncSetupBarcodeCodeCopied
         case syncSetupManualCodeEntryScreenShown
-        case syncSetupManualCodeEntered
+        case syncSetupManualCodeEnteredSuccess
         case syncSetupManualCodeEnteredFailed
         case syncSetupEndedAbandoned
         case syncSetupEndedSuccessful
@@ -1999,7 +1999,7 @@ extension Pixel.Event {
         case .syncSetupBarcodeScannerFailed: return "sync_setup_barcode_scanner_failed"
         case .syncSetupBarcodeCodeCopied: return "sync_setup_barcode_code_copied"
         case .syncSetupManualCodeEntryScreenShown: return "sync_setup_manual_code_entry_screen_shown"
-        case .syncSetupManualCodeEntered: return "sync_setup_manual_code_entered"
+        case .syncSetupManualCodeEnteredSuccess: return "sync_setup_manual_code_entered_success"
         case .syncSetupManualCodeEnteredFailed: return "sync_setup_manual_code_entered_failed"
         case .syncSetupEndedAbandoned: return "sync_setup_ended_abandoned"
         case .syncSetupEndedSuccessful: return "sync_setup_ended_successful"

@@ -91,6 +91,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210081345713964?focus=true
     case canScanUrlBasedSyncSetupBarcodes
+
+    /// https://app.asana.com/1/137249556945/project/1209671977594486/task/1210410403692636?focus=true
+    case aiChatSidebar
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -142,7 +145,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .maliciousSiteProtection,
                 .delayedWebviewPresentation,
                 .syncSetupBarcodeIsUrlBased,
-                .canScanUrlBasedSyncSetupBarcodes:
+                .canScanUrlBasedSyncSetupBarcodes,
+                .aiChatSidebar:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -220,6 +224,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .canScanUrlBasedSyncSetupBarcodes:
             return .remoteReleasable(.subfeature(SyncSubfeature.canScanUrlBasedSyncSetupBarcodes))
+        case .aiChatSidebar:
+            return .disabled
         }
     }
 }

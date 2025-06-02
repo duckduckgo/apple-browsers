@@ -65,20 +65,22 @@ protocol DefaultBrowserAndDockPrompt {
 final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt {
 
     private let promptTypeDecider: DefaultBrowserAndDockPromptTypeDeciding
-    private let store: DefaultBrowserAndDockPromptStorageWriting
+    private let store: DefaultBrowserAndDockPromptStorage
     private let dockCustomization: DockCustomization
     private let defaultBrowserProvider: DefaultBrowserProvider
+    private let pixelFiring: PixelFiring?
     private let isSparkleBuild: Bool
     private let isOnboardingCompleted: Bool
     private let dateProvider: () -> Date
 
     init(
         promptTypeDecider: DefaultBrowserAndDockPromptTypeDeciding,
-        store: DefaultBrowserAndDockPromptStorageWriting,
+        store: DefaultBrowserAndDockPromptStorage,
         isOnboardingCompleted: Bool,
         dockCustomization: DockCustomization = DockCustomizer(),
         defaultBrowserProvider: DefaultBrowserProvider = SystemDefaultBrowserProvider(),
         applicationBuildType: ApplicationBuildType = StandardApplicationBuildType(),
+        pixelFiring: PixelFiring? = PixelKit.shared,
         dateProvider: @escaping () -> Date = Date.init
     ) {
         self.promptTypeDecider = promptTypeDecider
@@ -87,6 +89,7 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         self.dockCustomization = dockCustomization
         self.defaultBrowserProvider = defaultBrowserProvider
         self.isSparkleBuild = applicationBuildType.isSparkleBuild
+        self.pixelFiring = pixelFiring
         self.dateProvider = dateProvider
     }
 
@@ -114,13 +117,19 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
         guard isOnboardingCompleted else { return nil }
 
         // If user has set browser as default and app is added to the dock do not show any prompts.
-        guard evaluatePromptEligibility != nil else { return nil }
+        guard let evaluatePromptEligibility else { return nil }
 
         let prompt = promptTypeDecider.promptType()
 
         // For the popover we mark it as shown when it appears on screen as we don't want to show in every windows.
-        if prompt == .popover {
+        switch prompt {
+        case .popover:
             setPopoverSeen()
+            pixelFiring?.fire(DefaultBrowserAndDockPromptPixelEvent.popoverImpression(type: evaluatePromptEligibility))
+        case .banner:
+            pixelFiring?.fire(DefaultBrowserAndDockPromptPixelEvent.bannerImpression(type: evaluatePromptEligibility))
+        case .none:
+            break
         }
 
         return prompt
@@ -142,10 +151,6 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
             }
         }
 
-        func fireActionPixel() {
-
-        }
-
         func setPromptSeen() {
             // Do not set popover seen when user interacting with it. Popover is intrusive and we don't want to show in every windows. We set seen when we show it on screen.
             guard prompt == .banner else { return }
@@ -153,9 +158,23 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
             setBannerSeen(shouldHidePermanently: false)
         }
 
+        func fireConfirmActionPixel() {
+            guard let type = evaluatePromptEligibility else { return }
+
+            switch prompt {
+            case .popover:
+                pixelFiring?.fire(DefaultBrowserAndDockPromptPixelEvent.popoverConfirmButtonClicked(type: type))
+            case .banner:
+                // https://app.asana.com/1/137249556945/task/1210341343812872/comment/1210348068777628?focus=true
+                let numberOfBannersShown = store.bannerShownOccurrences > 10 ? "10+" : String(store.bannerShownOccurrences)
+                pixelFiring?.fire(DefaultBrowserAndDockPromptPixelEvent.bannerConfirmButtonClicked(type: type, numberOfBannersShown: numberOfBannersShown))
+            }
+        }
+
+        // Fire pixel first to get the content of the prompt before mutating it.
+        fireConfirmActionPixel()
         setDefaultBrowserAndAddToDockIfNeeded()
         setPromptSeen()
-        fireActionPixel()
     }
 
     func dismissAction(_ action: DefaultBrowserAndDockPromptDismissAction) {
@@ -193,15 +212,28 @@ private extension DefaultBrowserAndDockPromptCoordinator {
     }
 
     func handleUserInputDismissAction(for prompt: DefaultBrowserAndDockPromptPresentationType, shouldHidePermanently: Bool) {
-        switch prompt {
-        case .popover:
-            // Send Pixel
-            break
-        case .banner:
-            // Send Pixel
-            // Set the banner seen only when the user interact with it because we want to show it in every windows.
+
+        func fireDismissActionPixel() {
+            guard let evaluatePromptEligibility else { return }
+
+            switch prompt {
+            case .popover:
+                pixelFiring?.fire(DefaultBrowserAndDockPromptPixelEvent.popoverCloseButtonClicked(type: evaluatePromptEligibility))
+            case .banner:
+                if shouldHidePermanently {
+                    pixelFiring?.fire(DefaultBrowserAndDockPromptPixelEvent.bannerNeverAskAgainButtonClicked(type: evaluatePromptEligibility))
+                } else {
+                    pixelFiring?.fire(DefaultBrowserAndDockPromptPixelEvent.bannerCloseButtonClicked(type: evaluatePromptEligibility))
+                }
+            }
+        }
+
+        // Set the banner seen only when the user interact with it because we want to show it in every windows.
+        if case .banner = prompt {
             setBannerSeen(shouldHidePermanently: shouldHidePermanently)
         }
+
+        fireDismissActionPixel()
     }
 
     func handleSystemUpdateDismissAction(for prompt: DefaultBrowserAndDockPromptPresentationType) {

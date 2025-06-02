@@ -465,7 +465,6 @@ final class BrowserTabViewController: NSViewController {
 
         NSLayoutConstraint.activate([
             containerStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-//            containerStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
             webContainerTrailingConstraint!,
             containerStackView.topAnchor.constraint(equalTo: view.topAnchor),
             containerStackView.bottomAnchor.constraint(equalTo: view.bottomAnchor)

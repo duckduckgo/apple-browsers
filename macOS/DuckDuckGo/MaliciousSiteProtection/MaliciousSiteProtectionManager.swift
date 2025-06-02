@@ -145,8 +145,11 @@ public class MaliciousSiteProtectionManager: MaliciousSiteDetecting {
             let isScamProtectionEnabled = featureFlagger.isFeatureOn(.scamSiteProtection)
             return isScamProtectionEnabled ? ThreatKind.allCases : ThreatKind.allCases.filter { $0 != .scam }
         }
+        let shouldRemoveWWWInCanonicalization = {
+            featureFlagger.isFeatureOn(.removeWWWInCanonicalizationInThreatProtection)
+        }
         let apiEnvironment = apiEnvironment ?? MaliciousSiteDetector.APIEnvironment.production
-        self.detector = detector ?? MaliciousSiteDetector(apiEnvironment: apiEnvironment, service: apiService, dataManager: dataManager, eventMapping: Self.debugEvents, supportedThreatsProvider: supportedThreatsProvider)
+        self.detector = detector ?? MaliciousSiteDetector(apiEnvironment: apiEnvironment, service: apiService, dataManager: dataManager, eventMapping: Self.debugEvents, supportedThreatsProvider: supportedThreatsProvider, shouldRemoveWWWInCanonicalization: shouldRemoveWWWInCanonicalization)
         self.updateManager = MaliciousSiteProtection.UpdateManager(apiEnvironment: apiEnvironment, service: apiService, dataManager: dataManager, eventMapping: Self.debugEvents, updateIntervalProvider: updateIntervalProvider ?? Self.updateInterval, supportedThreatsProvider: supportedThreatsProvider)
         self.detectionPreferences = detectionPreferences
 

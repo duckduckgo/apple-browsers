@@ -51,7 +51,7 @@ extension UIViewController {
         let appearance = targetToolbar.standardAppearance
 
         appearance.backgroundColor = theme.barBackgroundColor
-        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+        if ThemeManager.shared.properties.isExperimentalThemingEnabled {
             appearance.shadowColor = .clear
         }
 

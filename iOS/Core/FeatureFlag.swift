@@ -80,6 +80,9 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/0/1204186595873227/1209164066387913
     case scamSiteProtection
 
+    /// https://app.asana.com/1/137249556945/task/1210330600670666
+    case removeWWWInCanonicalizationInThreatProtection
+
     /// https://app.asana.com/0/1204186595873227/1206489252288889
     case networkProtectionRiskyDomainsProtection
 
@@ -122,7 +125,7 @@ public enum FeatureFlag: String {
 extension FeatureFlag: FeatureFlagDescribing {
     public var defaultValue: Bool {
         switch self {
-        case .failsafeExampleCrossPlatformFeature, .failsafeExamplePlatformSpecificSubfeature, .canScanUrlBasedSyncSetupBarcodes:
+        case .failsafeExampleCrossPlatformFeature, .failsafeExamplePlatformSpecificSubfeature, .canScanUrlBasedSyncSetupBarcodes, .removeWWWInCanonicalizationInThreatProtection:
             true
         default:
             false
@@ -157,6 +160,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .syncSetupBarcodeIsUrlBased,
              .canScanUrlBasedSyncSetupBarcodes,
              .duckPlayerNativeUI,
+             .removeWWWInCanonicalizationInThreatProtection,
              .privacyProFreeTrial,
              .autofillPasswordVariantCategorization:
             return true
@@ -250,7 +254,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .networkProtectionRiskyDomainsProtection:
             return  .remoteReleasable(.subfeature(NetworkProtectionSubfeature.riskyDomainsProtection))
         case .experimentalBrowserTheming:
-            return .remoteDevelopment(.feature(.experimentalBrowserTheming))
+            return .remoteReleasable(.subfeature(ExperimentalBrowserThemingSubfeature.onByDefault))
         case .privacyProAuthV2:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
         case .onboardingSetAsDefaultBrowser:
@@ -269,6 +273,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .canScanUrlBasedSyncSetupBarcodes:
             return .remoteReleasable(.subfeature(SyncSubfeature.canScanUrlBasedSyncSetupBarcodes))
+        case .removeWWWInCanonicalizationInThreatProtection:
+            return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.removeWWWInCanonicalization))
         case .privacyProFreeTrial:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProFreeTrial))
         case .autofillPasswordVariantCategorization:

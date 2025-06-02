@@ -22,7 +22,21 @@ import Core
 import DesignResourcesKit
 import BrowserServicesKit
 
-class ThemeManager {
+protocol ThemeManaging {
+    var properties: ExperimentalThemingProperties { get }
+    var currentTheme: Theme { get }
+    var currentInterfaceStyle: UIUserInterfaceStyle { get }
+
+    func updateColorScheme()
+    func toggleExperimentalTheming()
+    func setThemeStyle(_ style: ThemeStyle)
+
+    func updateUserInterfaceStyle(window: UIWindow?)
+    func updateUserInterfaceStyle()
+}
+
+class ThemeManager: ThemeManaging {
+
     enum ImageSet {
         case light
         case dark
@@ -39,24 +53,32 @@ class ThemeManager {
     
     public static let shared = ThemeManager()
 
+    var properties: ExperimentalThemingProperties {
+        themingManager.properties
+    }
+
     private var appSettings: AppSettings
-    private let featureFlagger: FeatureFlagger
+    private let themingManager: ExperimentalThemingManager
 
     private(set) var currentTheme: Theme = DefaultTheme()
 
     init(settings: AppSettings = AppUserDefaults(), featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         appSettings = settings
-        self.featureFlagger = featureFlagger
+        self.themingManager = ExperimentalThemingManager(featureFlagger: featureFlagger)
 
         updateColorScheme()
     }
 
     public func updateColorScheme() {
-        if !ExperimentalThemingManager(featureFlagger: featureFlagger).isExperimentalThemingEnabled {
-            DesignSystemPalette.current = .default
-        } else {
+        if properties.isExperimentalThemingEnabled {
             DesignSystemPalette.current = .experimental
+        } else {
+            DesignSystemPalette.current = .default
         }
+    }
+
+    public func toggleExperimentalTheming() {
+        themingManager.toggleExperimentalTheming()
     }
 
     public func setThemeStyle(_ style: ThemeStyle) {
@@ -81,5 +103,44 @@ class ThemeManager {
 
     var currentInterfaceStyle: UIUserInterfaceStyle {
         UIApplication.shared.firstKeyWindow?.traitCollection.userInterfaceStyle ?? .light
+    }
+}
+
+struct ExperimentalThemingProperties {
+    let isExperimentalThemingEnabled: Bool
+    let isRoundedCornersTreatmentEnabled: Bool
+}
+
+private extension ThemeManager {
+    final class ExperimentalThemingManager {
+
+        let featureFlagger: FeatureFlagger
+
+        private(set) lazy var properties: ExperimentalThemingProperties = .init(
+            isExperimentalThemingEnabled: isExperimentalThemingEnabled,
+            isRoundedCornersTreatmentEnabled: isRoundedCornersTreatmentEnabled
+        )
+
+        init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
+            self.featureFlagger = featureFlagger
+        }
+
+        func toggleExperimentalTheming() {
+            featureFlagger.localOverrides?.toggleOverride(for: FeatureFlag.experimentalBrowserTheming)
+        }
+
+        // MARK: - Private
+
+        private var isExperimentalThemingEnabled: Bool {
+            featureFlagger.isFeatureOn(for: FeatureFlag.experimentalBrowserTheming, allowOverride: true)
+        }
+
+        private let isRoundedCornersTreatmentEnabled = false
+    }
+}
+
+extension ThemeManaging {
+    func updateUserInterfaceStyle() {
+        updateUserInterfaceStyle(window: UIApplication.shared.firstKeyWindow)
     }
 }

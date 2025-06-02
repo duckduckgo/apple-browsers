@@ -138,6 +138,22 @@ public extension String {
         return message
     }
 
+    /// Repeatedly removes percent-encoding until no more percent-escapes remain.
+    /// - Returns: The fully unescaped string.
+    func fullyRemovingPercentEncoding() -> String {
+        var currentString = self
+        var previousString: String
+
+        repeat {
+            previousString = currentString
+            if let unescapedString = currentString.removingPercentEncoding {
+                currentString = unescapedString
+            }
+        } while currentString != previousString
+
+        return currentString
+    }
+
     private enum FileRegex {
         //                           "(matching url/file/path/at/in..-like prefix)(not an end of expr)(=|:)  (open quote/brace)
         static let varStart = regex(#"(?:"# +

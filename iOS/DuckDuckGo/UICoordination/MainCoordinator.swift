@@ -98,7 +98,8 @@ final class MainCoordinator {
                                         appDidFinishLaunchingStartTime: didFinishLaunchingStartTime,
                                         maliciousSiteProtectionManager: maliciousSiteProtectionService.manager,
                                         maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionService.preferencesManager,
-                                        aiChatSettings: aiChatSettings)
+                                        aiChatSettings: aiChatSettings,
+                                        themeManager: ThemeManager.shared)
     }
 
     func start() {

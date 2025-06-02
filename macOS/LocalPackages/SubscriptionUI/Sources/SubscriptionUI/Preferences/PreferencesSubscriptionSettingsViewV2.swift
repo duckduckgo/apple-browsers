@@ -46,13 +46,15 @@ public struct PreferencesSubscriptionSettingsViewV2: View {
                     expiredHeaderView
                 case .subscriptionPendingActivation:
                     pendingActivationHeaderView
+                case .subscriptionFreeTrialActive:
+                    StatusIndicatorView(status: .custom(UserText.freeTrialActiveStatusIndicator, Color(designSystemColor: .alertGreen)), isLarge: true)
                 }
             }
             .padding(.bottom, 16)
 
             // Sections
             switch model.settingsState {
-            case .subscriptionActive:
+            case .subscriptionActive, .subscriptionFreeTrialActive:
                 activateSection
                 settingsSection
                 helpSection

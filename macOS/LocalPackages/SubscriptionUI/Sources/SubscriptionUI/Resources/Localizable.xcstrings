@@ -3671,6 +3671,30 @@
         }
       }
     },
+    "subscription.preferences.subscription.active.renewing.trial.monthly.caption" : {
+      "comment" : "Monthly trial subscription renewal info where parameter is renewal date. This reads as 'Your free trial ends on (date) & automatically converts to a monthly paid subscription on that day.'",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your free trial ends on %@ & automatically converts to a monthly paid subscription on that day."
+          }
+        }
+      }
+    },
+    "subscription.preferences.subscription.active.renewing.trial.yearly.caption" : {
+      "comment" : "Annual trial subscription renewal info where parameter is renewal date. This reads as 'Your free trial ends on (date) & automatically converts to an annual paid subscription on that day.'",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your free trial ends on %@ & automatically converts to an annual paid subscription on that day."
+          }
+        }
+      }
+    },
     "subscription.preferences.subscription.active.renewing.unknown.caption" : {
       "comment" : "Caption for the subscription preferences pane when the subscription is active and will renew, the parameter is date of renewal.",
       "extractionState" : "extracted_with_value",
@@ -4151,6 +4175,18 @@
         }
       }
     },
+    "subscription.preferences.subscription.expired.trial.caption" : {
+      "comment" : "Trial subscription expiration info where parameter is expiration date. This reads as 'Your free trial ends on (date) & will not convert to a paid subscription.'",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Your free trial ends on %@ & will not convert to a paid subscription."
+          }
+        }
+      }
+    },
     "subscription.preferences.subscription.footer.title" : {
       "comment" : "Title for the subscription preferences pane footer",
       "extractionState" : "extracted_with_value",
@@ -4567,6 +4603,18 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Выполняется активация"
+          }
+        }
+      }
+    },
+    "subscription.preferences.subscription.settings.free-trial.active" : {
+      "comment" : "Title for the status indicator informing that user is currently on a Free Trial",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Free Trial Active"
           }
         }
       }

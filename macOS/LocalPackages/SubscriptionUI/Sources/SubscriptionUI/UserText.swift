@@ -51,6 +51,7 @@ enum UserText {
     static let preferencesSubscriptionSettingsTitle = NSLocalizedString("subscription.preferences.subscription.settings.title", bundle: Bundle.module, value: "Subscription Settings", comment: "Title of the preferences pane for subscription settings")
     static let subscribedStatusIndicator = NSLocalizedString("subscription.preferences.subscription.settings.subscribed", bundle: Bundle.module, value: "Subscribed", comment: "Title for the status indicator informing that user is currently subscribed")
     static let activatingStatusIndicator = NSLocalizedString("subscription.preferences.subscription.settings.activating", bundle: Bundle.module, value: "Activating", comment: "Title for the status indicator informing that user's subscription is still activating")
+    static let freeTrialActiveStatusIndicator = NSLocalizedString("subscription.preferences.subscription.settings.free-trial.active", bundle: Bundle.module, value: "Free Trial Active", comment: "Title for the status indicator informing that user is currently on a Free Trial")
 
     // MARK: Preferences activate section
     static let activateSectionTitle = NSLocalizedString("subscription.preferences.subscription.add.to.device.title", bundle: Bundle.module, value: "Add Privacy Pro to Other Devices", comment: "Title for the subscription preferences section for adding subscription to other devices")
@@ -141,6 +142,38 @@ enum UserText {
 
     static func preferencesSubscriptionExpiredCaption(formattedDate: String) -> String {
         let localized = NSLocalizedString("subscription.preferences.subscription.expired.caption", bundle: Bundle.module, value: "Your Privacy Pro subscription expired on %@", comment: "Caption for the subscription preferences pane when the subscription has expired. The parameter is date of expiry.")
+        return String(format: localized, formattedDate)
+    }
+
+    static func preferencesTrialSubscriptionRenewingCaption(billingPeriod: PrivacyProSubscription.BillingPeriod, formattedDate: String) -> String {
+        let localized: String
+
+        switch billingPeriod {
+        case .monthly:
+            localized = NSLocalizedString("subscription.preferences.subscription.active.renewing.trial.monthly.caption",
+                                          bundle: Bundle.module,
+                                          value: "Your free trial ends on %@ & automatically converts to a monthly paid subscription on that day.",
+                                          comment: "Monthly trial subscription renewal info where parameter is renewal date. This reads as 'Your free trial ends on (date) & automatically converts to a monthly paid subscription on that day.'")
+        case .yearly:
+            localized = NSLocalizedString("subscription.preferences.subscription.active.renewing.trial.yearly.caption",
+                                          bundle: Bundle.module,
+                                          value: "Your free trial ends on %@ & automatically converts to an annual paid subscription on that day.",
+                                          comment: "Annual trial subscription renewal info where parameter is renewal date. This reads as 'Your free trial ends on (date) & automatically converts to an annual paid subscription on that day.'")
+        case .unknown:
+            localized = NSLocalizedString("subscription.preferences.subscription.active.renewing.unknown.caption",
+                                          bundle: Bundle.module,
+                                          value: "Your subscription renews on %@.",
+                                          comment: "Caption for the subscription preferences pane when the subscription is active and will renew, the parameter is date of renewal.")
+        }
+
+        return String(format: localized, formattedDate)
+    }
+
+    static func preferencesTrialSubscriptionExpiringCaption(formattedDate: String) -> String {
+        let localized = NSLocalizedString("subscription.preferences.subscription.expired.trial.caption",
+                                          bundle: Bundle.module,
+                                          value: "Your free trial ends on %@ & will not convert to a paid subscription.",
+                                          comment: "Trial subscription expiration info where parameter is expiration date. This reads as 'Your free trial ends on (date) & will not convert to a paid subscription.'")
         return String(format: localized, formattedDate)
     }
 

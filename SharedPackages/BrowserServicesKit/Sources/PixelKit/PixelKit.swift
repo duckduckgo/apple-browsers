@@ -329,10 +329,10 @@ public final class PixelKit {
         reportErrorIf(pixel: pixelName, endsWith: "_u")
         reportErrorIf(pixel: pixelName, endsWith: "_d")
         if !pixelHasBeenFiredToday(pixelName) {
-            fireRequestWrapper(pixelName, headers, newParams, allowedQueryReservedCharacters, true, .legacyDaily, onComplete)
+            fireRequestWrapper(pixelName, headers, newParams, allowedQueryReservedCharacters, true, .legacyDailyNoSuffix, onComplete)
             updatePixelLastFireDate(pixelName: pixelName)
         } else {
-            printDebugInfo(pixelName: pixelName, frequency: .legacyDaily, parameters: newParams, skipped: true)
+            printDebugInfo(pixelName: pixelName, frequency: .legacyDailyNoSuffix, parameters: newParams, skipped: true)
         }
     }
 
@@ -344,10 +344,10 @@ public final class PixelKit {
         reportErrorIf(pixel: pixelName, endsWith: "_u")
         reportErrorIf(pixel: pixelName, endsWith: "_d") // Because is added automatically
         if !pixelHasBeenFiredToday(pixelName) {
-            fireRequestWrapper(pixelName + "_d", headers, newParams, allowedQueryReservedCharacters, true, .daily, onComplete)
+            fireRequestWrapper(pixelName + "_d", headers, newParams, allowedQueryReservedCharacters, true, .legacyDaily, onComplete)
             updatePixelLastFireDate(pixelName: pixelName)
         } else {
-            printDebugInfo(pixelName: pixelName + "_d", frequency: .daily, parameters: newParams, skipped: true)
+            printDebugInfo(pixelName: pixelName + "_d", frequency: .legacyDaily, parameters: newParams, skipped: true)
         }
     }
 

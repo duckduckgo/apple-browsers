@@ -668,7 +668,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         let store = FailedCompilationsStore()
         if store.hasAnyFailures {
             PixelKit.fire(DebugEvent(GeneralPixel.compilationFailed),
-                          frequency: .daily,
+                          frequency: .legacyDaily,
                           withAdditionalParameters: store.summary,
                           includeAppVersionParameter: true) { didFire, _ in
                 if !didFire {

@@ -122,10 +122,10 @@ enum SettingsPixel: PixelKitEventV2 {
             case .about: return "settings_about_opened"
             case .otherPlatforms: return "settings_other_platforms_clicked"
             }
-        case .showFullURLSettingToggled: return "settings_full_url_toggled"
-        case .themeSettingChanged: return "settings_theme_changed"
-        case .websiteZoomSettingChanged: return "settings_zoom_changed"
-        case .dataClearingSettingToggled: return "settings_auto_clear_toggled"
+        case .showFullURLSettingToggled: return "settings_full_url_toggled_u"
+        case .themeSettingChanged: return "settings_theme_changed_u"
+        case .websiteZoomSettingChanged: return "settings_zoom_changed_u"
+        case .dataClearingSettingToggled: return "settings_auto_clear_toggled_u"
         }
     }
 

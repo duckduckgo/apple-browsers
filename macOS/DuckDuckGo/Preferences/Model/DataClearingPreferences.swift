@@ -17,6 +17,7 @@
 //
 
 import Foundation
+import PixelKit
 
 final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
 
@@ -34,6 +35,7 @@ final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
             NotificationCenter.default.post(name: .autoClearDidChange,
                                             object: nil,
                                             userInfo: nil)
+            pixelFiring?.fire(SettingsPixel.dataClearingSettingToggled, frequency: .uniqueByName)
         }
     }
 
@@ -62,14 +64,16 @@ final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
         parentWindowController.window?.beginSheet(fireproofDomainsWindow)
     }
 
-    init(persistor: FireButtonPreferencesPersistor = FireButtonPreferencesUserDefaultsPersistor()) {
+    init(persistor: FireButtonPreferencesPersistor = FireButtonPreferencesUserDefaultsPersistor(), pixelFiring: PixelFiring? = nil) {
         self.persistor = persistor
+        self.pixelFiring = pixelFiring
         isLoginDetectionEnabled = persistor.loginDetectionEnabled
         isAutoClearEnabled = persistor.autoClearEnabled
         isWarnBeforeClearingEnabled = persistor.warnBeforeClearingEnabled
     }
 
     private var persistor: FireButtonPreferencesPersistor
+    private let pixelFiring: PixelFiring?
 }
 
 protocol FireButtonPreferencesPersistor {

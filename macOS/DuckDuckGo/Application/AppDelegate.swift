@@ -231,10 +231,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             fileStore = EncryptedFileStore()
         }
 
-        appearancePreferences = AppearancePreferences(keyValueStore: keyValueStore)
-        dataClearingPreferences = DataClearingPreferences()
-        startupPreferences = StartupPreferences(appearancePreferences: appearancePreferences, dataClearingPreferences: dataClearingPreferences)
-
         let internalUserDeciderStore = InternalUserDeciderStore(fileStore: fileStore)
         internalUserDecider = DefaultInternalUserDecider(store: internalUserDeciderStore)
 
@@ -281,6 +277,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             }
         }
+
+        appearancePreferences = AppearancePreferences(keyValueStore: keyValueStore, pixelFiring: PixelKit.shared)
+        dataClearingPreferences = DataClearingPreferences(pixelFiring: PixelKit.shared)
+        startupPreferences = StartupPreferences(appearancePreferences: appearancePreferences, dataClearingPreferences: dataClearingPreferences)
 
 #if DEBUG
         AppPrivacyFeatures.shared = AppVersion.runType.requiresEnvironment

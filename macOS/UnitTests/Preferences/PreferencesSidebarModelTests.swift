@@ -18,10 +18,11 @@
 
 import XCTest
 import Combine
+import Common
+import PixelKitTestingUtilities
 import Subscription
 import SubscriptionUI
 import SubscriptionTestingUtilities
-import Common
 @testable import DuckDuckGo_Privacy_Browser
 
 @MainActor
@@ -29,6 +30,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
 
     private var testNotificationCenter: NotificationCenter!
     private var mockSubscriptionManager: SubscriptionAuthV1toV2BridgeMock!
+    private var pixelFiringMock: PixelKitMock!
 
     var cancellables = Set<AnyCancellable>()
 
@@ -36,6 +38,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
         try super.setUpWithError()
         testNotificationCenter = NotificationCenter()
         mockSubscriptionManager = SubscriptionAuthV1toV2BridgeMock()
+        pixelFiringMock = PixelKitMock()
         cancellables.removeAll()
     }
 
@@ -45,7 +48,8 @@ final class PreferencesSidebarModelTests: XCTestCase {
             tabSwitcherTabs: tabSwitcherTabs,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false),
-            subscriptionManager: mockSubscriptionManager
+            subscriptionManager: mockSubscriptionManager,
+            pixelFiring: pixelFiringMock
         )
     }
 
@@ -56,7 +60,8 @@ final class PreferencesSidebarModelTests: XCTestCase {
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false),
             subscriptionManager: mockSubscriptionManager,
-            notificationCenter: testNotificationCenter
+            notificationCenter: testNotificationCenter,
+            pixelFiring: pixelFiringMock
         )
     }
 

@@ -24,13 +24,13 @@ public final class PixelKitMock: PixelFiring {
 
     /// An array of fire calls, in order, that this mock expects
     ///
-    private let expectedFireCalls: [ExpectedFireCall]
+    private var expectedFireCalls: [ExpectedFireCall]
 
     /// The actual fire calls
     ///
     private var actualFireCalls = [ExpectedFireCall]()
 
-    public init(expecting expectedFireCalls: [ExpectedFireCall]) {
+    public init(expecting expectedFireCalls: [ExpectedFireCall] = []) {
         self.expectedFireCalls = expectedFireCalls
     }
 

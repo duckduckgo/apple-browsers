@@ -39,7 +39,7 @@ enum SettingsPixel: PixelKitEventV2 {
     case settingsPaneOpened(PreferencePaneIdentifier)
 
     /**
-     * Event Trigger: General Settings tab is opened.
+     * Event Trigger: Full URL setting was toggled.
      *
      * > Note: This is a unique pixel.
      *
@@ -53,7 +53,7 @@ enum SettingsPixel: PixelKitEventV2 {
     case showFullURLSettingToggled
 
     /**
-     * Event Trigger: General Settings tab is opened.
+     * Event Trigger: Browser theme settings was changed.
      *
      * > Note: This is a unique pixel.
      *
@@ -67,7 +67,7 @@ enum SettingsPixel: PixelKitEventV2 {
     case themeSettingChanged
 
     /**
-     * Event Trigger: General Settings tab is opened.
+     * Event Trigger: Website zoom setting was changed.
      *
      * > Note: This is a unique pixel.
      *
@@ -81,7 +81,7 @@ enum SettingsPixel: PixelKitEventV2 {
     case websiteZoomSettingChanged
 
     /**
-     * Event Trigger: General Settings tab is opened.
+     * Event Trigger: Data Clearing setting was toggled.
      *
      * > Note: This is a unique pixel.
      *

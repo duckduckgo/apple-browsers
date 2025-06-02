@@ -66,7 +66,7 @@ public struct PreferencesPurchaseSubscriptionView: View {
 
                 HStack {
                     Button(purchaseButtonText) { model.purchaseAction() }
-                        .buttonStyle(DefaultActionButtonStyle(enabled: true)) // Button is always enabled
+                        .buttonStyle(DefaultActionButtonStyle(enabled: true))
                     Button(UserText.haveSubscriptionButton) {
                         if model.shouldDirectlyLaunchActivationFlow {
                             model.sheetModel.handleEmailAction()

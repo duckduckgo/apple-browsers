@@ -66999,6 +66999,18 @@
         }
       }
     },
+    "subscription.free-trial.settings.menu.item" : {
+      "comment" : "Title for Subscription Free Trial promotion item in the options menu",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "TRY FOR FREE"
+          }
+        }
+      }
+    },
     "subscription.progress.view.completing.purchase" : {
       "comment" : "Progress view title when completing the purchase",
       "extractionState" : "extracted_with_value",

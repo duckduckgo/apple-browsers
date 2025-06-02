@@ -26,6 +26,9 @@ public protocol AIChatSettingsProvider {
     /// The user state for AI chat overall.
     var isAIChatEnabled: Bool { get }
 
+    /// Remote config for keep session subfeature, in minutes
+    var sessionTimer: Int { get }
+
     /// The user settings state for the AI Chat browsing address bar.
     var isAIChatAddressBarUserSettingsEnabled: Bool { get }
 

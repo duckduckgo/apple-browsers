@@ -171,10 +171,10 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
             }
         }
 
-        // Fire pixel first to get the content of the prompt before mutating it.
+        // Set Prompt seen and then fire pixel first to get the content of the prompt before mutating it.
+        setPromptSeen()
         fireConfirmActionPixel()
         setDefaultBrowserAndAddToDockIfNeeded()
-        setPromptSeen()
     }
 
     func dismissAction(_ action: DefaultBrowserAndDockPromptDismissAction) {

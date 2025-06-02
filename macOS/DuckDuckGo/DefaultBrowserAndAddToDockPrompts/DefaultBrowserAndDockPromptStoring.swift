@@ -110,9 +110,8 @@ final class DefaultBrowserAndDockPromptKeyValueStore: DefaultBrowserAndDockPromp
         set {
             write(value: newValue, forKey: .bannerShownDate)
             // If value is not nil store the occurrence of the banner
-            if let bannerShownDate {
-                write(value: bannerShownOccurrences + 1, forKey: .bannerShownOccurrences)
-            }
+            let numberOfBannersShown = newValue != nil ? bannerShownOccurrences + 1 : 0
+            write(value: numberOfBannersShown, forKey: .bannerShownOccurrences)
         }
     }
 

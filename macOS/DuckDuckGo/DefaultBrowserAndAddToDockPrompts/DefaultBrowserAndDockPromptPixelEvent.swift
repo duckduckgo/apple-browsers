@@ -23,7 +23,7 @@ import PixelKit
 /// > Related links:
 /// [Pixel Definition](https://app.asana.com/1/137249556945/project/1206329551987282/task/1210257532277820)
 /// [Pixel Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210341343812872)
-enum DefaultBrowserAndDockPromptPixelEvent: PixelKitEventV2 {
+enum DefaultBrowserAndDockPromptPixelEvent: PixelKitEventV2, Hashable {
     private enum ParameterKey {
         static let contentType = "contentType"
         static let numberOfBannersShown = "numberOfBannersShown"

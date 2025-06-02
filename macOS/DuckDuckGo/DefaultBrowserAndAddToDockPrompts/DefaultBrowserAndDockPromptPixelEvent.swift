@@ -82,7 +82,7 @@ enum DefaultBrowserAndDockPromptPixelEvent: PixelKitEventV2, Hashable {
         }
     }
 
-    var parameters: [String : String]? {
+    var parameters: [String: String]? {
         switch self {
         case let .popoverImpression(type):
             [ParameterKey.contentType: type.promptTypeDescription]
@@ -162,7 +162,7 @@ enum DefaultBrowserAndDockPromptDebugPixelEvent: PixelKitEventV2 {
         }
     }
 
-    var parameters: [String : String]? {
+    var parameters: [String: String]? {
         nil
     }
 

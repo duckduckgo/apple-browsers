@@ -40,7 +40,7 @@ struct SettingsMainSettingsView: View {
             let label = viewModel.state.sync.title
             SettingsCellView(label: label,
                              image: Image(uiImage: DesignSystemImages.Color.Size24.sync1),
-                             action: { viewModel.presentLegacyView(.sync) },
+                             action: { viewModel.presentLegacyView(.sync(nil)) },
                              statusIndicator: statusIndicator,
                              disclosureIndicator: true,
                              isButton: true)

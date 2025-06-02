@@ -694,7 +694,7 @@ extension SettingsViewModel {
 
     @MainActor func shouldPresentSyncViewWithSource(_ source: String? = nil) {
         state.syncSource = source
-        presentLegacyView(.sync)
+        presentLegacyView(.sync(nil))
     }
 
     func openEmailProtection() {
@@ -750,8 +750,8 @@ extension SettingsViewModel {
         
         case .addToDock:
             presentViewController(legacyViewProvider.addToDock, modal: true)
-        case .sync:
-            pushViewController(legacyViewProvider.syncSettings(source: state.syncSource))
+        case .sync(let pairingInfo):
+            pushViewController(legacyViewProvider.syncSettings(source: state.syncSource, pairingInfo: pairingInfo))
         case .appIcon: pushViewController(legacyViewProvider.appIconSettings(onChange: { [weak self] appIcon in
             self?.state.appIcon = appIcon
         }))

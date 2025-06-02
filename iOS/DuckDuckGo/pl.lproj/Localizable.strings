@@ -190,6 +190,15 @@
 /* Description for alert shown when user logged off from sync */
 "alert.sync-invalid-login-error-description" = "Synchronizacja została wstrzymana. Jeśli chcesz kontynuować synchronizowanie tego urządzenia, ponownie nawiąż połączenie za pomocą innego urządzenia lub użyj kodu odzyskiwania.";
 
+/* Sync Now button in alert asking if they would like to sync with another device */
+"alert.sync-new-device.button" = "Synchronizuj teraz";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.message" = "„%@” będzie mieć dostęp do zsynchronizowanych danych DuckDuckGo.";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.title" = "Synchronizować nowe urządzenie?";
+
 /* Learn more button in alert */
 "alert.sync-paused-alert-learn-more-button" = "Dowiedz się więcej";
 

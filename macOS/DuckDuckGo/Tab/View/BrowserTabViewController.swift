@@ -722,7 +722,7 @@ final class BrowserTabViewController: NSViewController {
              .url(_, _, source: .reload):
             return true
 
-        case .settings, .bookmarks, .history, .dataBrokerProtection, .subscription, .onboarding, .releaseNotes, .identityTheftRestoration, .webExtensionUrl:
+        case .settings, .bookmarks, .history, .dataBrokerProtection, .subscription, .onboarding, .releaseNotes, .identityTheftRestoration, .webExtensionUrl, .aiChat:
             return true
 
         case .none:
@@ -742,7 +742,7 @@ final class BrowserTabViewController: NSViewController {
         case .newtab:
             // don‘t steal focus from the address bar at .newtab page
             return
-        case .url, .subscription, .identityTheftRestoration, .onboarding, .releaseNotes, .history:
+        case .url, .subscription, .identityTheftRestoration, .onboarding, .releaseNotes, .history, .aiChat:
             getView = { [weak self, weak tabViewModel] in
                 guard let self, let tabViewModel else { return nil }
                 return webView(for: tabViewModel, tabContent: tabContent)
@@ -862,7 +862,7 @@ final class BrowserTabViewController: NSViewController {
             removeAllTabContent()
             updateTabIfNeeded(tabViewModel: tabViewModel)
 
-        case .url, .subscription, .identityTheftRestoration:
+        case .url, .subscription, .identityTheftRestoration, .aiChat:
             updateTabIfNeeded(tabViewModel: tabViewModel)
 
         case .newtab:

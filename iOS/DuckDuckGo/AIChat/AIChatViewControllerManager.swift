@@ -52,6 +52,7 @@ final class AIChatViewControllerManager {
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let downloadsDirectoryHandler: DownloadsDirectoryHandling
     private let userAgentManager: AIChatUserAgentProviding
+    private let featureFlagger: FeatureFlagger
     private let experimentalAIChatManager: ExperimentalAIChatManager
     private var cancellables = Set<AnyCancellable>()
     private var sessionTimer: AIChatSessionTimer?
@@ -61,12 +62,14 @@ final class AIChatViewControllerManager {
     init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
          downloadsDirectoryHandler: DownloadsDirectoryHandling = DownloadsDirectoryHandler(),
          userAgentManager: UserAgentManager = DefaultUserAgentManager.shared,
-         experimentalAIChatManager: ExperimentalAIChatManager) {
+         experimentalAIChatManager: ExperimentalAIChatManager,
+         featureFlagger: FeatureFlagger) {
 
         self.privacyConfigurationManager = privacyConfigurationManager
         self.downloadsDirectoryHandler = downloadsDirectoryHandler
         self.userAgentManager = AIChatUserAgentHandler(userAgentManager: userAgentManager)
         self.experimentalAIChatManager = experimentalAIChatManager
+        self.featureFlagger = featureFlagger
     }
 
     // MARK: - Public Methods
@@ -111,6 +114,8 @@ final class AIChatViewControllerManager {
     // MARK: - Private Helper Methods
 
     private func startSessionTimer() {
+        guard isKeepSessionEnabled else { return }
+
         sessionTimer = AIChatSessionTimer()
         sessionTimer?.start {  [weak self] in
             Task { @MainActor in
@@ -126,6 +131,10 @@ final class AIChatViewControllerManager {
 
     private func stopSessionTimer() {
         sessionTimer?.cancel()
+    }
+
+    private var isKeepSessionEnabled: Bool {
+        featureFlagger.isFeatureOn(.aiChatKeepSession)
     }
 
     @MainActor
@@ -266,7 +275,11 @@ extension AIChatViewControllerManager: AIChatViewControllerDelegate {
 
 extension AIChatViewControllerManager: RoundedPageSheetContainerViewControllerDelegate {
     func roundedPageSheetContainerViewControllerDidDisappear(_ controller: RoundedPageSheetContainerViewController) {
+        guard isKeepSessionEnabled == false else { return }
 
+        Task { @MainActor in
+            await cleanUpSession()
+        }
     }
 }
 

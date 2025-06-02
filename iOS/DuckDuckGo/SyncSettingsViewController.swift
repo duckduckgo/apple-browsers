@@ -494,9 +494,18 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         let parameters = [PixelParameters.source: setupSource.rawValue]
         switch codeSource {
         case .qrCode:
-            Pixel.fire(.syncSetupBarcodeScannerSuccess, withAdditionalParameters: parameters)
+            Pixel.fire(pixel: .syncSetupBarcodeScannerSuccess, withAdditionalParameters: parameters, includedParameters: [.appVersion])
         case .pastedCode:
-            Pixel.fire(.syncSetupBarcodeScannerSuccess, withAdditionalParameters: parameters)
+            Pixel.fire(pixel: .syncSetupManualCodeEnteredSuccess, withAdditionalParameters: parameters, includedParameters: [.appVersion])
+        }
+    }
+
+    private func sendCodeParsingFailedPixel(codeSource: SyncCodeSource) {
+        switch codeSource {
+        case .qrCode:
+            Pixel.fire(pixel: .syncSetupBarcodeScannerSuccess, withAdditionalParameters: [:], includedParameters: [.appVersion])
+        case .pastedCode:
+            Pixel.fire(pixel: .syncSetupManualCodeEnteredFailed, withAdditionalParameters: [:], includedParameters: [.appVersion])
         }
     }
 }

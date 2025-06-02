@@ -228,7 +228,7 @@ fileprivate extension Favicon {
               let documentUrl = faviconMO.documentUrlEncrypted as? URL,
               let dateCreated = faviconMO.dateCreated,
               let relation = Favicon.Relation(rawValue: Int(faviconMO.relation)) else {
-            PixelKit.fire(DebugEvent(GeneralPixel.faviconDecryptionFailedUnique), frequency: .daily)
+            PixelKit.fire(DebugEvent(GeneralPixel.faviconDecryptionFailedUnique), frequency: .legacyDaily)
             assertionFailure("Favicon: Failed to init Favicon from FaviconManagedObject")
             return nil
         }

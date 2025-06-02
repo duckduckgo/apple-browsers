@@ -47,7 +47,7 @@ struct DataBrokerProtectionFeatureDisabler: DataBrokerProtectionFeatureDisabling
             Logger.dataBrokerProtection.error("DataBrokerProtectionFeatureDisabler error: disableAndDelete, error: \(error.localizedDescription, privacy: .public)")
         }
 
-        DataBrokerProtectionLoginItemPixels.fire(pixel: GeneralPixel.dataBrokerDisableAndDeleteDaily, frequency: .daily)
+        DataBrokerProtectionLoginItemPixels.fire(pixel: GeneralPixel.dataBrokerDisableAndDeleteDaily, frequency: .legacyDaily)
         NotificationCenter.default.post(name: .dbpWasDisabled, object: nil)
     }
 }

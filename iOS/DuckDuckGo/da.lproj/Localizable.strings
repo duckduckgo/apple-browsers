@@ -190,6 +190,15 @@
 /* Description for alert shown when user logged off from sync */
 "alert.sync-invalid-login-error-description" = "Synkroniseringen er blevet sat på pause. Hvis du vil fortsætte med at synkronisere denne enhed, skal du oprette forbindelse igen ved hjælp af en anden enhed eller din gendannelseskode.";
 
+/* Sync Now button in alert asking if they would like to sync with another device */
+"alert.sync-new-device.button" = "Synkroniser nu";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.message" = "\"%@\" vil kunne tilgå dine synkroniserede DuckDuckGo-data.";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.title" = "Synkroniser ny enhed?";
+
 /* Learn more button in alert */
 "alert.sync-paused-alert-learn-more-button" = "Mere info";
 

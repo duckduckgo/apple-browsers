@@ -535,7 +535,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
                 .withImage(moreOptionsMenuIconsProvider.privacyProIcon)
 
             // Check if user is eligible for Free Trial
-            if (true) {
+            if (subscriptionManager.isUserEligibleForFreeTrial()) {
                 privacyProItem = NSMenuItem.createMenuItemWithBadge(
                     title: UserText.subscriptionOptionsMenuItem,
                     badgeText: UserText.subscriptionOptionsMenuItemFreeTrialBadge,
@@ -556,7 +556,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         } else {
             let privacyProItem = NSMenuItem(title: UserText.subscriptionOptionsMenuItem)
                 .withImage(moreOptionsMenuIconsProvider.privacyProIcon)
-            
+
             privacyProItem.submenu = SubscriptionSubMenu(targeting: self,
                                                          subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability(),
                                                          subscriptionManager: subscriptionManager,

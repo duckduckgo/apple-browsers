@@ -27,6 +27,7 @@ import os.log
 public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
 
     @Published var subscriptionStorefrontRegion: SubscriptionRegion = .usa
+    @Published var isUserEligibleForFreeTrial: Bool = false
 
     var currentPurchasePlatform: SubscriptionEnvironment.PurchasePlatform { subscriptionManager.currentEnvironment.purchasePlatform }
 
@@ -53,11 +54,13 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
         self.userEventHandler = userEventHandler
         self.sheetActionHandler = sheetActionHandler
         self.subscriptionStorefrontRegion = currentStorefrontRegion()
+        self.isUserEligibleForFreeTrial = subscriptionManager.isUserEligibleForFreeTrial()
     }
 
     @MainActor
     func didAppear() {
         self.subscriptionStorefrontRegion = currentStorefrontRegion()
+        self.isUserEligibleForFreeTrial = subscriptionManager.isUserEligibleForFreeTrial()
     }
 
     @MainActor

@@ -62,9 +62,11 @@ public struct PreferencesPurchaseSubscriptionView: View {
                 TextMenuItemHeader(UserText.preferencesSubscriptionInactiveHeader)
                 TextMenuItemCaption(UserText.preferencesSubscriptionInactiveCaption(region: model.subscriptionStorefrontRegion))
 
+                let purchaseButtonText = model.isUserEligibleForFreeTrial ? UserText.purchaseFreeTrialButton : UserText.purchaseButton
+
                 HStack {
-                    Button(UserText.purchaseButton) { model.purchaseAction() }
-                        .buttonStyle(DefaultActionButtonStyle(enabled: true))
+                    Button(purchaseButtonText) { model.purchaseAction() }
+                        .buttonStyle(DefaultActionButtonStyle(enabled: true)) // Button is always enabled
                     Button(UserText.haveSubscriptionButton) {
                         if model.shouldDirectlyLaunchActivationFlow {
                             model.sheetModel.handleEmailAction()

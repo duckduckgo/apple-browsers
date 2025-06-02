@@ -2573,6 +2573,18 @@
         }
       }
     },
+    "subscription.preferences.purchase.free-trial.button" : {
+      "comment" : "Button to open a page where user can learn more and try a free trial subscription",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Try Privacy Pro Free"
+          }
+        }
+      }
+    },
     "subscription.preferences.purchase.subscription.title" : {
       "comment" : "Title of the preferences pane for purchase subscription",
       "extractionState" : "extracted_with_value",

@@ -322,10 +322,10 @@ public final class PixelKit {
     }
 
     private func handleLegacyDailyNoSuffix(_ pixelName: String,
-                                   _ headers: [String: String],
-                                   _ newParams: [String: String],
-                                   _ allowedQueryReservedCharacters: CharacterSet?,
-                                   _ onComplete: @escaping CompletionBlock) {
+                                           _ headers: [String: String],
+                                           _ newParams: [String: String],
+                                           _ allowedQueryReservedCharacters: CharacterSet?,
+                                           _ onComplete: @escaping CompletionBlock) {
         reportErrorIf(pixel: pixelName, endsWith: "_u")
         reportErrorIf(pixel: pixelName, endsWith: "_d")
         if !pixelHasBeenFiredToday(pixelName) {

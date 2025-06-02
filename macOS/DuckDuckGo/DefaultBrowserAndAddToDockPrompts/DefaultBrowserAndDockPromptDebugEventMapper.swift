@@ -47,24 +47,26 @@ extension DefaultBrowserAndDockPromptDebugEvent.Storage {
 enum DefaultBrowserAndDockPromptDebugEventMapper {
 
     static let eventHandler = EventMapping<DefaultBrowserAndDockPromptDebugEvent> { event, _, _, _ in
+        let debugEvent: DebugEvent
         switch event {
         case let .storage(.failedToRetrieveValue(.popoverShownDate(error))):
-            PixelKit.fire(DebugEvent(DefaultBrowserAndDockPromptDebugPixelEvent.failedToRetrievePopoverSeenDate, error: error))
+            debugEvent = DebugEvent(DefaultBrowserAndDockPromptDebugPixelEvent.failedToRetrievePopoverSeenDate, error: error)
         case let .storage(.failedToRetrieveValue(.bannerShownDate(error))):
-            PixelKit.fire(DebugEvent(DefaultBrowserAndDockPromptDebugPixelEvent.failedToRetrieveBannerSeenDate, error: error))
+            debugEvent = DebugEvent(DefaultBrowserAndDockPromptDebugPixelEvent.failedToRetrieveBannerSeenDate, error: error)
         case let .storage(.failedToRetrieveValue(.bannerShownOccurrences(error))):
-            PixelKit.fire(DebugEvent(DefaultBrowserAndDockPromptDebugPixelEvent.failedToRetrieveNumberOfBannerShown, error: error))
+            debugEvent = DebugEvent(DefaultBrowserAndDockPromptDebugPixelEvent.failedToRetrieveNumberOfBannerShown, error: error)
         case let .storage(.failedToSaveValue(.bannerShownOccurrences(error))):
-            PixelKit.fire(DebugEvent(DefaultBrowserAndDockPromptDebugPixelEvent.failedToSaveNumberOfBannerShown, error: error))
+            debugEvent = DebugEvent(DefaultBrowserAndDockPromptDebugPixelEvent.failedToSaveNumberOfBannerShown, error: error)
         case let .storage(.failedToRetrieveValue(.permanentlyDismissPrompt(error))):
-            PixelKit.fire(DebugEvent(DefaultBrowserAndDockPromptDebugPixelEvent.failedToRetrieveBannerPermanentlyDismissedValue, error: error))
+            debugEvent = DebugEvent(DefaultBrowserAndDockPromptDebugPixelEvent.failedToRetrieveBannerPermanentlyDismissedValue, error: error)
         case let .storage(.failedToSaveValue(.popoverShownDate(error))):
-            PixelKit.fire(DebugEvent(DefaultBrowserAndDockPromptDebugPixelEvent.failedToSavePopoverSeenDate, error: error))
+            debugEvent = DebugEvent(DefaultBrowserAndDockPromptDebugPixelEvent.failedToSavePopoverSeenDate, error: error)
         case let .storage(.failedToSaveValue(.bannerShownDate(error))):
-            PixelKit.fire(DebugEvent(DefaultBrowserAndDockPromptDebugPixelEvent.failedToSaveBannerSeenDate, error: error))
+            debugEvent = DebugEvent(DefaultBrowserAndDockPromptDebugPixelEvent.failedToSaveBannerSeenDate, error: error)
         case let .storage(.failedToSaveValue(.permanentlyDismissPrompt(error))):
-            PixelKit.fire(DebugEvent(DefaultBrowserAndDockPromptDebugPixelEvent.failedToSaveBannerPermanentlyDismissedValue, error: error))
+            debugEvent = DebugEvent(DefaultBrowserAndDockPromptDebugPixelEvent.failedToSaveBannerPermanentlyDismissedValue, error: error)
         }
+        PixelKit.fire(debugEvent, frequency: .dailyAndCount)
     }
 
 }

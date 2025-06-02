@@ -38,6 +38,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private let accessibilityPreferences: AccessibilityPreferences
     private let visualStyle: VisualStyleProviding
+    private let featureFlagger: FeatureFlagger
 
     private var permissionAuthorizationPopover: PermissionAuthorizationPopover?
     private func permissionAuthorizationPopoverCreatingIfNeeded() -> PermissionAuthorizationPopover {
@@ -198,7 +199,8 @@ final class AddressBarButtonsViewController: NSViewController {
           onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
           aiChatTabOpener: AIChatTabOpening,
           aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
-          visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
+          visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager,
+          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.accessibilityPreferences = accessibilityPreferences
         self.popovers = popovers
@@ -206,6 +208,7 @@ final class AddressBarButtonsViewController: NSViewController {
         self.aiChatTabOpener = aiChatTabOpener
         self.aiChatMenuConfig = aiChatMenuConfig
         self.visualStyle = visualStyleManager.style
+        self.featureFlagger = featureFlagger
         super.init(coder: coder)
     }
 
@@ -355,7 +358,9 @@ final class AddressBarButtonsViewController: NSViewController {
             target = .newTabSelected
         }
 
-        if let value = textFieldValue {
+        if featureFlagger.isFeatureOn(.aiChatSidebar), case .url = tabViewModel?.tabContent, !isTextFieldEditorFirstResponder {
+            WindowControllersManager.shared.mainWindowController?.mainViewController.browserTabViewController.toggleSidebar()
+        } else if let value = textFieldValue {
             aiChatTabOpener.openAIChatTab(value, target: target)
         } else {
             aiChatTabOpener.openAIChatTab(nil, target: target)

@@ -29,13 +29,13 @@ public protocol SyncConnectionControllerDelegate: AnyObject {
     func controllerDidRecognizeScannedCode(setupSource: SyncSetupSource, codeSource: SyncCodeSource) async
 
     func controllerDidCreateSyncAccount()
-    func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool)
+    func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool, setupSource: SyncSetupSource)
 
-    func controllerDidCompleteLogin(registeredDevices: [RegisteredDevice], isRecovery: Bool)
+    func controllerDidCompleteLogin(registeredDevices: [RegisteredDevice], isRecovery: Bool, setupRole: SyncSetupRole)
 
-    func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey) async
+    func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey, setupRole: SyncSetupRole) async
 
-    func controllerDidError(_ error: SyncConnectionError, underlyingError: Error?)
+    func controllerDidError(_ error: SyncConnectionError, underlyingError: Error?, setupRole: SyncSetupRole)
 }
 
 public enum SyncConnectionError: Error {
@@ -77,11 +77,6 @@ public protocol SyncConnectionControlling {
      */
     @discardableResult
     func syncCodeEntered(code: String, canScanURLBarcodes: Bool, codeSource: SyncCodeSource) async -> Bool
-
-    /**
-     Logs in to an existing account using a recovery key.
-     */
-    func loginAndShowDeviceConnected(recoveryKey: SyncCode.RecoveryKey, isRecovery: Bool) async throws
 }
 
 public actor SyncConnectionController: SyncConnectionControlling {
@@ -140,7 +135,7 @@ public actor SyncConnectionController: SyncConnectionControlling {
         do {
             syncCode = try SyncCode.decodeBase64String(pairingInfo.base64Code)
         } catch {
-            await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: error)
+            await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: error, setupRole: .receiver(.unknown))
             return false
         }
 
@@ -152,13 +147,13 @@ public actor SyncConnectionController: SyncConnectionControlling {
             return await handleConnectKey(connectKey)
         } else {
             await delegate?.controllerDidRecognizeScannedCode(setupSource: .recovery, codeSource: .qrCode)
-            await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: nil)
+            await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: nil, setupRole: .receiver(.unknown))
             return false
         }
     }
 
     @discardableResult
-    public func syncCodeEntered(code: String, canScanURLBarcodes: Bool = true, codeSource: SyncCodeSource) async -> Bool {
+    public func syncCodeEntered(code: String, canScanURLBarcodes: Bool, codeSource: SyncCodeSource) async -> Bool {
         guard !isCodeHandlingInFlight else {
             return false
         }
@@ -175,7 +170,7 @@ public actor SyncConnectionController: SyncConnectionControlling {
                 syncCode = try SyncCode.decodeBase64String(code)
             }
         } catch {
-            await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: error)
+            await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: error, setupRole: .receiver(.unknown))
             return false
         }
 
@@ -184,21 +179,21 @@ public actor SyncConnectionController: SyncConnectionControlling {
             return await handleExchangeKey(exchangeKey)
         } else if let recoveryKey = syncCode.recovery {
             await delegate?.controllerDidRecognizeScannedCode(setupSource: .recovery, codeSource: codeSource)
-            return await handleRecoveryKey(recoveryKey, isRecovery: true)
+            return await handleRecoveryKey(recoveryKey, isRecovery: true, setupRole: .receiver(.recovery))
         } else if let connectKey = syncCode.connect {
             await delegate?.controllerDidRecognizeScannedCode(setupSource: .connect, codeSource: codeSource)
             return await handleConnectKey(connectKey)
         } else {
             // We shouldn't ever really reach this point
             assertionFailure("Shouldn't be able to parse SyncCode without any of the supported keys")
-            await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: nil)
+            await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: nil, setupRole: .receiver(.unknown))
             return false
         }
     }
 
-    public func loginAndShowDeviceConnected(recoveryKey: SyncCode.RecoveryKey, isRecovery: Bool) async throws {
+    func loginAndShowDeviceConnected(recoveryKey: SyncCode.RecoveryKey, isRecovery: Bool, setupRole: SyncSetupRole) async throws {
         let registeredDevices = try await syncService.login(recoveryKey, deviceName: deviceName, deviceType: deviceType)
-        await delegate?.controllerDidCompleteLogin(registeredDevices: registeredDevices, isRecovery: isRecovery)
+        await delegate?.controllerDidCompleteLogin(registeredDevices: registeredDevices, isRecovery: isRecovery, setupRole: setupRole)
     }
 
     private func remoteConnect() throws -> RemoteConnecting {
@@ -219,7 +214,7 @@ public actor SyncConnectionController: SyncConnectionControlling {
                 }
                 exchangeMessage = message
             } catch {
-                await delegate?.controllerDidError(.failedToFetchPublicKey, underlyingError: error)
+                await delegate?.controllerDidError(.failedToFetchPublicKey, underlyingError: error, setupRole: .sharer)
                 return
             }
 
@@ -227,7 +222,7 @@ public actor SyncConnectionController: SyncConnectionControlling {
             do {
                 try await syncService.transmitExchangeRecoveryKey(for: exchangeMessage)
             } catch {
-                await delegate?.controllerDidError(.failedToTransmitExchangeRecoveryKey, underlyingError: error)
+                await delegate?.controllerDidError(.failedToTransmitExchangeRecoveryKey, underlyingError: error, setupRole: .sharer)
             }
 
             await delegate?.controllerDidFinishTransmittingRecoveryKey()
@@ -245,26 +240,27 @@ public actor SyncConnectionController: SyncConnectionControlling {
                 }
                 recoveryKey = key
             } catch {
-                await delegate?.controllerDidError(.failedToFetchConnectRecoveryKey, underlyingError: error)
+                await delegate?.controllerDidError(.failedToFetchConnectRecoveryKey, underlyingError: error, setupRole: .sharer)
                 return
             }
 
             await delegate?.controllerDidReceiveRecoveryKey()
 
             do {
-                try await loginAndShowDeviceConnected(recoveryKey: recoveryKey, isRecovery: false)
+                try await loginAndShowDeviceConnected(recoveryKey: recoveryKey, isRecovery: false, setupRole: .sharer)
             } catch {
-                await delegate?.controllerDidError(.failedToLogIn, underlyingError: error)
+                await delegate?.controllerDidError(.failedToLogIn, underlyingError: error, setupRole: .sharer)
             }
         }
     }
 
     private func handleExchangeKey(_ exchangeKey: SyncCode.ExchangeKey) async -> Bool {
         let exchangeInfo: ExchangeInfo
+        let setupRole: SyncSetupRole = .receiver(.exchange)
         do {
             exchangeInfo = try await self.syncService.transmitGeneratedExchangeInfo(exchangeKey, deviceName: deviceName)
         } catch {
-            await delegate?.controllerDidError(.failedToTransmitExchangeKey, underlyingError: error)
+            await delegate?.controllerDidError(.failedToTransmitExchangeKey, underlyingError: error, setupRole: setupRole)
             return false
         }
 
@@ -273,9 +269,9 @@ public actor SyncConnectionController: SyncConnectionControlling {
                 // Polling likelly cancelled.
                 return false
             }
-            return await handleRecoveryKey(recoveryKey, isRecovery: false)
+            return await handleRecoveryKey(recoveryKey, isRecovery: false, setupRole: setupRole)
         } catch {
-            await delegate?.controllerDidError(.failedToFetchExchangeRecoveryKey, underlyingError: error)
+            await delegate?.controllerDidError(.failedToFetchExchangeRecoveryKey, underlyingError: error, setupRole: setupRole)
             return false
         }
     }
@@ -284,12 +280,12 @@ public actor SyncConnectionController: SyncConnectionControlling {
         return try dependencies.createRemoteExchangeRecoverer(exchangeInfo)
     }
 
-    private func handleRecoveryKey(_ recoveryKey: SyncCode.RecoveryKey, isRecovery: Bool) async -> Bool {
+    private func handleRecoveryKey(_ recoveryKey: SyncCode.RecoveryKey, isRecovery: Bool, setupRole: SyncSetupRole) async -> Bool {
         do {
-            try await loginAndShowDeviceConnected(recoveryKey: recoveryKey, isRecovery: isRecovery)
+            try await loginAndShowDeviceConnected(recoveryKey: recoveryKey, isRecovery: isRecovery, setupRole: setupRole)
             return true
         } catch {
-            await handleRecoveryCodeLoginError(recoveryKey: recoveryKey, error: error)
+            await handleRecoveryCodeLoginError(recoveryKey: recoveryKey, error: error, setupRole: setupRole)
             return false
         }
     }
@@ -304,16 +300,16 @@ public actor SyncConnectionController: SyncConnectionControlling {
                 shouldShowSyncEnabled = false
             } catch {
                 Task {
-                    await delegate?.controllerDidError(.failedToCreateAccount, underlyingError: error)
+                    await delegate?.controllerDidError(.failedToCreateAccount, underlyingError: error, setupRole: .receiver(.connect))
                 }
                 return false
             }
         }
         do {
             try await syncService.transmitRecoveryKey(connectKey)
-            await delegate?.controllerDidCompleteAccountConnection(shouldShowSyncEnabled: shouldShowSyncEnabled)
+            await delegate?.controllerDidCompleteAccountConnection(shouldShowSyncEnabled: shouldShowSyncEnabled, setupSource: .connect)
         } catch {
-            await delegate?.controllerDidError(.failedToTransmitConnectRecoveryKey, underlyingError: error)
+            await delegate?.controllerDidError(.failedToTransmitConnectRecoveryKey, underlyingError: error, setupRole: .receiver(.connect))
             return false
         }
 
@@ -330,11 +326,11 @@ public actor SyncConnectionController: SyncConnectionControlling {
         exchanger = nil
     }
 
-    private func handleRecoveryCodeLoginError(recoveryKey: SyncCode.RecoveryKey, error: Error) async {
+    private func handleRecoveryCodeLoginError(recoveryKey: SyncCode.RecoveryKey, error: Error, setupRole: SyncSetupRole) async {
         if syncService.account != nil {
-            await delegate?.controllerDidFindTwoAccountsDuringRecovery(recoveryKey)
+            await delegate?.controllerDidFindTwoAccountsDuringRecovery(recoveryKey, setupRole: setupRole)
         } else {
-            await delegate?.controllerDidError(.failedToLogIn, underlyingError: error)
+            await delegate?.controllerDidError(.failedToLogIn, underlyingError: error, setupRole: setupRole)
         }
     }
 }

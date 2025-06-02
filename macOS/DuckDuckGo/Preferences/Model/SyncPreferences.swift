@@ -602,9 +602,9 @@ extension SyncPreferences: ManagementDialogModelDelegate {
         self.connector = nil
     }
 
-    func recoverDevice(recoveryCode: String, fromRecoveryScreen: Bool) {
+    func recoverDevice(recoveryCode: String, fromRecoveryScreen: Bool, codeSource: SyncCodeSource) {
         Task {
-            await connectionController.syncCodeEntered(code: recoveryCode, canScanURLBarcodes: false)
+            await connectionController.syncCodeEntered(code: recoveryCode, canScanURLBarcodes: false, codeSource: codeSource)
         }
     }
 
@@ -739,11 +739,11 @@ extension SyncPreferences: ManagementDialogModelDelegate {
     }
 
     func recoveryCodePasted(_ code: String) {
-        recoverDevice(recoveryCode: code, fromRecoveryScreen: true)
+        recoverDevice(recoveryCode: code, fromRecoveryScreen: true, codeSource: .pastedCode)
     }
 
     func recoveryCodePasted(_ code: String, fromRecoveryScreen: Bool) {
-        recoverDevice(recoveryCode: code, fromRecoveryScreen: fromRecoveryScreen)
+        recoverDevice(recoveryCode: code, fromRecoveryScreen: fromRecoveryScreen, codeSource: .pastedCode)
     }
 
     func userConfirmedSwitchAccounts(recoveryCode: String) {
@@ -845,7 +845,7 @@ extension SyncPreferences: SyncConnectionControllerDelegate {
         presentDialog(for: .prepareToSync)
     }
 
-    func controllerDidRecognizeScannedCode() async {
+    func controllerDidRecognizeScannedCode(setupSource: SyncSetupSource, codeSource: SyncCodeSource) async {
         // no-op
     }
 
@@ -858,7 +858,7 @@ extension SyncPreferences: SyncConnectionControllerDelegate {
         presentDialog(for: .saveRecoveryCode(code))
     }
 
-    func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool) {
+    func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool, setupSource: SyncSetupSource) {
         guard shouldShowSyncEnabled else { return }
         self.$devices
             .removeDuplicates()
@@ -871,7 +871,7 @@ extension SyncPreferences: SyncConnectionControllerDelegate {
             }.store(in: &cancellables)
     }
 
-    func controllerDidCompleteLogin(registeredDevices: [RegisteredDevice], isRecovery: Bool) {
+    func controllerDidCompleteLogin(registeredDevices: [RegisteredDevice], isRecovery: Bool, setupRole: SyncSetupRole) {
         self.codeForDisplayOrPasting = self.recoveryCode
         self.stringForQR = self.recoveryCode
         mapDevices(registeredDevices)
@@ -882,11 +882,11 @@ extension SyncPreferences: SyncConnectionControllerDelegate {
         }
     }
 
-    func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey) async {
+    func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey, setupRole: SyncSetupRole) async {
         await handleAccountAlreadyExists(recoveryKey)
     }
 
-    func controllerDidError(_ error: SyncConnectionError, underlyingError: (any Error)?) {
+    func controllerDidError(_ error: SyncConnectionError, underlyingError: (any Error)?, setupRole: SyncSetupRole) {
         switch error {
         case .unableToRecognizeCode:
             handleError(.unableToRecognizeCode, error: underlyingError, pixelEvent: nil)

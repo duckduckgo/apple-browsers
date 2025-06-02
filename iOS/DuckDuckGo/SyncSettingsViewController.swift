@@ -423,7 +423,7 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
 
 extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     
-    func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool) {
+    func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool, setupSource: SyncSetupSource) {
         guard shouldShowSyncEnabled else { return }
         self.rootView.model.$devices
             .removeDuplicates()
@@ -462,7 +462,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         await showPreparingSync()
     }
     
-    func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey) async {
+    func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey, setupRole: SyncSetupRole) async {
         if rootView.model.devices.count > 1 {
             promptToSwitchAccounts(recoveryKey: recoveryKey)
         } else {
@@ -470,7 +470,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         }
     }
     
-    func controllerDidCompleteLogin(registeredDevices: [RegisteredDevice], isRecovery: Bool) {
+    func controllerDidCompleteLogin(registeredDevices: [RegisteredDevice], isRecovery: Bool, setupRole: SyncSetupRole) {
         mapDevices(registeredDevices)
         Pixel.fire(pixel: .syncLogin, includedParameters: [.appVersion])
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
@@ -478,7 +478,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         }
     }
     
-    func controllerDidError(_ error: SyncConnectionError, underlyingError: (any Error)?) {
+    func controllerDidError(_ error: SyncConnectionError, underlyingError: (any Error)?, setupRole: SyncSetupRole) {
         switch error {
         case .unableToRecognizeCode:
             handleError(.unableToRecognizeCode, error: underlyingError, event: nil)

@@ -640,15 +640,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
             return 0
         }
 
-        let insets: NSEdgeInsets
-        let tabsWidth: CGFloat
-        if visualStyle.tabStyleProvider.shouldShowSShapedTab {
-            insets = self.collectionView(self.collectionView, layout: self.collectionView.collectionViewLayout!, insetForSectionAt: 0)
-            tabsWidth = scrollView.bounds.width - footerCurrentWidthDimension - insets.left - insets.right
-        } else {
-            tabsWidth = scrollView.bounds.width - footerCurrentWidthDimension
-        }
-
+        let tabsWidth = scrollView.bounds.width - footerCurrentWidthDimension
         let minimumWidth = selected ? TabBarViewItem.Width.minimumSelected : TabBarViewItem.Width.minimum
 
         if tabMode == .divided {
@@ -1120,7 +1112,7 @@ extension TabBarViewController: NSCollectionViewDelegateFlowLayout {
         if visualStyle.tabStyleProvider.shouldShowSShapedTab {
             let isRightScrollButtonVisible = !rightScrollButton.isHidden
             let isLeftScrollButonVisible = !leftScrollButton.isHidden
-            return NSEdgeInsets(top: 0, left: isLeftScrollButonVisible ? 6 : 12, bottom: 0, right: isRightScrollButtonVisible ? 6 : 0)
+            return NSEdgeInsets(top: 0, left: isLeftScrollButonVisible ? 6 : 12, bottom: 0, right: isRightScrollButtonVisible ? 6 : -12)
         } else if let flowLayout = collectionViewLayout as? NSCollectionViewFlowLayout {
             return flowLayout.sectionInset
         } else {

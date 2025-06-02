@@ -122,7 +122,7 @@ private enum Const {
 }
 
 private extension Image {
-    static let lock = Image("AutofillLock")
+    static let lock = Image(.autofillLock)
 }
 
 #Preview {

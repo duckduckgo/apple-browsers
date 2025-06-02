@@ -32,8 +32,8 @@ import Cocoa
 final class RampView: NSView {
 
     enum Consts {
-        static let rampWidth: CGFloat = 12
-        static let rampHeight: CGFloat = 12
+        static let rampWidth: CGFloat = 10
+        static let rampHeight: CGFloat = 10
     }
 
     var isFlippedHorizontally: Bool = false

@@ -134,6 +134,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .visualRefresh,
                 .tabCrashDebugging,
                 .tabCrashRecovery,
+                .maliciousSiteProtection,
                 .delayedWebviewPresentation,
                 .syncSetupBarcodeIsUrlBased,
                 .exchangeKeysToSyncWithAnotherDevice:
@@ -145,7 +146,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .contextualOnboarding,
                 .unknownUsernameCategorization,
                 .credentialsImportPromotionForExistingUsers,
-                .maliciousSiteProtection,
                 .dbpRemoteBrokerDelivery:
             return false
         }
@@ -200,7 +200,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .failsafeExamplePlatformSpecificSubfeature:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests))
         case .visualRefresh:
-            return .remoteDevelopment(.feature(.experimentalBrowserTheming))
+            return .internalOnly()
         case .tabCrashDebugging:
             return .disabled
         case .tabCrashRecovery:

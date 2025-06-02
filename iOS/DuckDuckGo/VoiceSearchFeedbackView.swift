@@ -18,6 +18,7 @@
 //
 
 import SwiftUI
+import DesignResourcesKitIcons
 
 struct VoiceSearchFeedbackView: View {
     @ObservedObject var speechModel: VoiceSearchFeedbackViewModel
@@ -126,7 +127,7 @@ extension VoiceSearchFeedbackView {
     }
 
     private var micImage: some View {
-        Image(micIconName)
+        Image(uiImage: DesignSystemImages.Glyphs.Size24.microphoneSolid)
             .resizable()
             .renderingMode(.template)
             .frame(width: micSize.width, height: micSize.height)
@@ -150,7 +151,6 @@ extension VoiceSearchFeedbackView {
 
 extension VoiceSearchFeedbackView {
     private var footerWidth: CGFloat { 285 }
-    private var micIconName: String { "MicrophoneSolid" }
     private var voiceCircleVerticalPadding: CGFloat { sizeClass == .regular ? 60 : 43 }
     private var footerTextPadding: CGFloat { sizeClass == .regular ? 43 : 8 }
     private var micSize: CGSize { CGSize(width: 32, height: 32) }

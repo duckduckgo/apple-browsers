@@ -247,6 +247,9 @@ public struct UserDefaultsWrapper<T> {
 
         // Web Extensions
         case webExtensionPathsCache = "com.duckduckgo.web.extension.paths.cache"
+
+        // SAD/ATT Debug
+        case debugSetDefaultAndAddToDockPromptCurrentDateKey = "com.duckduckgo.ios.debug.setDefaultAndAddToDockPromptCurrentDate"
     }
 
     enum RemovedKeys: String, CaseIterable {

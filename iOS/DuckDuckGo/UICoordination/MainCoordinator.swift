@@ -53,6 +53,7 @@ final class MainCoordinator {
          subscriptionService: SubscriptionService,
          voiceSearchHelper: VoiceSearchHelper,
          featureFlagger: FeatureFlagger,
+         contentScopeExperimentManager: ContentScopeExperimentsManaging,
          aiChatSettings: AIChatSettings,
          fireproofing: Fireproofing,
          subscriptionManager: any SubscriptionAuthV1toV2Bridge = AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
@@ -64,7 +65,8 @@ final class MainCoordinator {
                                                           privacyProDataReporter: reportingService.privacyProDataReporter)
         let previewsSource = DefaultTabPreviewsSource()
         let historyManager = try Self.makeHistoryManager()
-        let tabsModel = Self.prepareTabsModel(previewsSource: previewsSource)
+        let tabsPersistence = try TabsModelPersistence()
+        let tabsModel = try Self.prepareTabsModel(previewsSource: previewsSource, tabsPersistence: tabsPersistence)
         reportingService.privacyProDataReporter.injectTabsModel(tabsModel)
         let daxDialogsFactory = ExperimentContextualDaxDialogsFactory(contextualOnboardingLogic: daxDialogs,
                                                                       contextualOnboardingPixelReporter: reportingService.onboardingPixelReporter)
@@ -78,6 +80,7 @@ final class MainCoordinator {
                                         appSettings: AppDependencyProvider.shared.appSettings,
                                         previewsSource: previewsSource,
                                         tabsModel: tabsModel,
+                                        tabsPersistence: tabsPersistence,
                                         syncPausedStateManager: syncService.syncErrorHandler,
                                         privacyProDataReporter: reportingService.privacyProDataReporter,
                                         variantManager: variantManager,
@@ -87,6 +90,7 @@ final class MainCoordinator {
                                         subscriptionFeatureAvailability: subscriptionService.subscriptionFeatureAvailability,
                                         voiceSearchHelper: voiceSearchHelper,
                                         featureFlagger: featureFlagger,
+                                        contentScopeExperimentsManager: contentScopeExperimentManager,
                                         fireproofing: fireproofing,
                                         subscriptionCookieManager: subscriptionService.subscriptionCookieManager,
                                         textZoomCoordinator: Self.makeTextZoomCoordinator(),
@@ -94,7 +98,8 @@ final class MainCoordinator {
                                         appDidFinishLaunchingStartTime: didFinishLaunchingStartTime,
                                         maliciousSiteProtectionManager: maliciousSiteProtectionService.manager,
                                         maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionService.preferencesManager,
-                                        aiChatSettings: aiChatSettings)
+                                        aiChatSettings: aiChatSettings,
+                                        themeManager: ThemeManager.shared)
     }
 
     func start() {
@@ -120,17 +125,17 @@ final class MainCoordinator {
     }
 
     private static func prepareTabsModel(previewsSource: TabPreviewsSource = DefaultTabPreviewsSource(),
-                                         appSettings: AppSettings = AppDependencyProvider.shared.appSettings) -> TabsModel {
+                                         tabsPersistence: TabsModelPersisting,
+                                         appSettings: AppSettings = AppDependencyProvider.shared.appSettings) throws -> TabsModel {
         let isPadDevice = UIDevice.current.userInterfaceIdiom == .pad
         let tabsModel: TabsModel
         if AutoClearSettingsModel(settings: appSettings) != nil {
             tabsModel = TabsModel(desktop: isPadDevice)
-            tabsModel.save()
+            tabsPersistence.clear()
+            tabsPersistence.save(model: tabsModel)
             previewsSource.removeAllPreviews()
         } else {
-            if let storedModel = TabsModel.get() {
-                // Save new model in case of migration
-                storedModel.save()
+            if let storedModel = try tabsPersistence.getTabsModel() {
                 tabsModel = storedModel
             } else {
                 tabsModel = TabsModel(desktop: isPadDevice)

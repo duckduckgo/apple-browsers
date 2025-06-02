@@ -26,6 +26,11 @@ import Suggestions
 import Subscription
 import os.log
 
+protocol AddressBarTextFieldFocusDelegate: AnyObject {
+    func addressBarDidFocus(_ addressBarTextField: AddressBarTextField)
+    func addressBarDidLoseFocus(_ addressBarTextField: AddressBarTextField)
+}
+
 final class AddressBarTextField: NSTextField {
 
     var tabCollectionViewModel: TabCollectionViewModel! {
@@ -58,8 +63,10 @@ final class AddressBarTextField: NSTextField {
     private var selectedTabViewModelCancellable: AnyCancellable?
     private var addressBarStringCancellable: AnyCancellable?
     private var contentTypeCancellable: AnyCancellable?
+    private var windowFrameCancellable: AnyCancellable?
 
     weak var onboardingDelegate: OnboardingAddressBarReporting?
+    weak var focusDelegate: AddressBarTextFieldFocusDelegate?
 
     private let searchPreferences: SearchPreferences = SearchPreferences.shared
 
@@ -85,10 +92,6 @@ final class AddressBarTextField: NSTextField {
     override func mouseDown(with event: NSEvent) {
         super.mouseDown(with: event)
         currentEditor()?.selectAll(self)
-    }
-
-    func viewDidLayout() {
-        layoutSuggestionWindow()
     }
 
     // MARK: Observation
@@ -127,8 +130,8 @@ final class AddressBarTextField: NSTextField {
             .sink { [weak self] contentType in
                 guard let self else { return }
 
-                let newTabFontSize = visualStyle.newTabOrHomePageAddressBarFontSize
-                let defaultFontSize = visualStyle.defaultAddressBarFontSize
+                let newTabFontSize = visualStyle.addressBarStyleProvider.newTabOrHomePageAddressBarFontSize
+                let defaultFontSize = visualStyle.addressBarStyleProvider.defaultAddressBarFontSize
                 self.font = .systemFont(ofSize: contentType == .newtab ? newTabFontSize : defaultFontSize)
             }
     }
@@ -194,8 +197,8 @@ final class AddressBarTextField: NSTextField {
 
     private func updateAttributedStringValue() {
         withUndoDisabled {
-            let newTabFontSize = visualStyle.newTabOrHomePageAddressBarFontSize
-            let defaultFontSize = visualStyle.defaultAddressBarFontSize
+            let newTabFontSize = visualStyle.addressBarStyleProvider.newTabOrHomePageAddressBarFontSize
+            let defaultFontSize = visualStyle.addressBarStyleProvider.defaultAddressBarFontSize
 
             if let attributedString = value.toAttributedString(size: isHomePage ? newTabFontSize : defaultFontSize, isBurner: isBurner) {
                 self.attributedStringValue = attributedString
@@ -388,6 +391,14 @@ final class AddressBarTextField: NSTextField {
             // resign first responder if nothing has changed
             self.window?.makeFirstResponder(nil)
         }
+    }
+
+    override func becomeFirstResponder() -> Bool {
+        let result = super.becomeFirstResponder()
+        if result {
+            focusDelegate?.addressBarDidFocus(self)
+        }
+        return result
     }
 
     private func updateTabUrlWithUrl(_ providedUrl: URL, userEnteredValue: String, downloadRequested: Bool, suggestion: Suggestion?) {
@@ -634,6 +645,12 @@ final class AddressBarTextField: NSTextField {
         guard !suggestionWindow.isVisible, isFirstResponder else { return }
 
         window.addChildWindow(suggestionWindow, ordered: .above)
+
+        windowFrameCancellable = window.publisher(for: \.frame)
+            .sink { [weak self] _ in
+                self?.layoutSuggestionWindow()
+            }
+
         layoutSuggestionWindow()
     }
 
@@ -643,6 +660,8 @@ final class AddressBarTextField: NSTextField {
 
         parent.removeChildWindow(suggestionWindow)
         suggestionWindow.orderOut(nil)
+        windowFrameCancellable?.cancel()
+        windowFrameCancellable = nil
     }
 
     private func layoutSuggestionWindow() {
@@ -708,9 +727,9 @@ final class AddressBarTextField: NSTextField {
     }
 
     @objc func toggleShowFullWebsiteAddress(_ menuItem: NSMenuItem) {
-        AppearancePreferences.shared.showFullURL.toggle()
+        NSApp.delegateTyped.appearancePreferences.showFullURL.toggle()
 
-        let shouldShowFullURL = AppearancePreferences.shared.showFullURL
+        let shouldShowFullURL = NSApp.delegateTyped.appearancePreferences.showFullURL
         menuItem.state = shouldShowFullURL ? .on : .off
     }
 
@@ -961,6 +980,7 @@ extension AddressBarTextField: NSTextFieldDelegate {
     func controlTextDidEndEditing(_ obj: Notification) {
         suggestionContainerViewModel?.clearUserStringValue()
         hideSuggestionWindow()
+        focusDelegate?.addressBarDidLoseFocus(self)
     }
 
     func controlTextDidChange(_ obj: Notification) {
@@ -1185,7 +1205,7 @@ private extension NSMenuItem {
             action: #selector(AddressBarTextField.toggleShowFullWebsiteAddress(_:)),
             keyEquivalent: ""
         )
-        menuItem.state = AppearancePreferences.shared.showFullURL ? .on : .off
+        menuItem.state = NSApp.delegateTyped.appearancePreferences.showFullURL ? .on : .off
 
         return menuItem
     }

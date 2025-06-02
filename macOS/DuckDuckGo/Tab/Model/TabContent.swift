@@ -126,7 +126,7 @@ extension TabContent {
         case URL.releaseNotes:
             return .releaseNotes
         case URL.Invalid.aboutHome:
-            guard let customURL = URL(string: StartupPreferences.shared.formattedCustomHomePageURL) else {
+            guard let customURL = URL(string: NSApp.delegateTyped.startupPreferences.formattedCustomHomePageURL) else {
                 return .newtab
             }
             return .url(customURL, source: source)
@@ -338,9 +338,9 @@ extension TabContent {
 
     var canBeBookmarked: Bool {
         switch self {
-        case .newtab, .onboarding, .bookmarks, .settings, .none:
+        case .history, .newtab, .onboarding, .bookmarks, .settings, .none:
             return false
-        case .url, .history, .subscription, .identityTheftRestoration, .dataBrokerProtection, .releaseNotes, .webExtensionUrl:
+        case .url, .subscription, .identityTheftRestoration, .dataBrokerProtection, .releaseNotes, .webExtensionUrl:
             return true
         }
     }

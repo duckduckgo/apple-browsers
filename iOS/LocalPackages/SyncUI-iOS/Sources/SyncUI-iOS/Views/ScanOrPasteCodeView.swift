@@ -19,15 +19,17 @@
 
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 public struct ScanOrSeeCode: View {
     @ObservedObject var model: ScanOrPasteCodeViewModel
-    @State var qrCodeModel = ShowQRCodeViewModel()
+    @State var qrCodeModel: ShowQRCodeViewModel
 
     @State private var isShareSheetPresented: Bool = false
 
     public init(model: ScanOrPasteCodeViewModel) {
         self.model = model
+        self.qrCodeModel = ShowQRCodeViewModel(code: model.code)
     }
 
     public var body: some View {
@@ -102,7 +104,7 @@ public struct ScanOrSeeCode: View {
                             .fixedSize(horizontal: false, vertical: true)
                             .multilineTextAlignment(.leading)
                         Spacer()
-                        Image("SyncDeviceType_phone")
+                        Image(uiImage: DesignSystemImages.Glyphs.Size24.deviceMobile)
                             .padding(2)
                             .background(
                                 RoundedRectangle(cornerRadius: 2)
@@ -143,7 +145,7 @@ public struct ScanOrSeeCode: View {
                     .onTapGesture {
                         model.showShareCodeSheet()
                     }
-                Image("Arrow-Circle-Right-12")
+                Image(uiImage: DesignSystemImages.Glyphs.Size12.arrowCircleRight)
             }
         }
     }

@@ -262,7 +262,15 @@ extension MainViewController {
             }
         }
     }
-    
+
+    func segueToFeedback() {
+        Logger.lifecycle.debug(#function)
+        hideAllHighlightsIfNeeded()
+        launchSettings {
+            $0.presentLegacyView(.feedback)
+        }
+   }
+
     func launchSettings(completion: ((SettingsViewModel) -> Void)? = nil,
                         deepLinkTarget: SettingsViewModel.SettingsDeepLinkSection? = nil) {
         let legacyViewProvider = SettingsLegacyViewProvider(syncService: syncService,
@@ -290,7 +298,7 @@ extension MainViewController {
                                                   textZoomCoordinator: textZoomCoordinator,
                                                   aiChatSettings: aiChatSettings,
                                                   maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager,
-                                                  experimentalThemingManager: ExperimentalThemingManager(featureFlagger: featureFlagger),
+                                                  themeManager: themeManager,
                                                   experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: featureFlagger))
         Pixel.fire(pixel: .settingsPresented)
 

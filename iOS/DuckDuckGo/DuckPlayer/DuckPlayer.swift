@@ -257,6 +257,9 @@ protocol DuckPlayerControlling: AnyObject {
 
     /// Shows the bottom sheet when browser chrome is visible
     @MainActor func showPillForVisibleChrome()
+
+    // Map Settings
+    func mapLegacySettings()
 }
 
 extension DuckPlayerControlling {
@@ -355,6 +358,9 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
                                              selector: #selector(handleChromeVisibilityChange(_:)),
                                              name: .browserChromeVisibilityChanged,
                                              object: nil)
+
+        // Map legacy settings
+        mapLegacySettings()
     }
 
     // Add a convenience initializer that creates a new presenter
@@ -441,6 +447,10 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
 
     /// Loads a native DuckPlayerView and sets flag that DuckPlayer has been used.
     func loadNativeDuckPlayerVideo(videoID: String, source: VideoNavigationSource = .other, timestamp: TimeInterval? = nil) {
+
+        // Mark that Native UI was used
+        settings.nativeUIWasUsed = true
+
         guard let hostView = hostView else { return }
         featureDiscovery.setWasUsedBefore(.duckPlayer)
 
@@ -841,6 +851,26 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
                 }
         }
         return (.duckPlayerYouTubeUnknownErrorImpression, .duckPlayerYouTubeUnknownErrorDaily)
+    }
+
+    /// Maps legacy settings to new settings
+    // Maps DuckPlayerMode to NativeUIYoutubeMode
+    // https://app.asana.com/1/137249556945/project/1204099484721401/task/1210320494056772?focus=true
+    func mapLegacySettings() {
+        if settings.nativeUI && !settings.nativeUISettingsMapped {
+            switch settings.mode {
+            case .enabled:
+                settings.nativeUIYoutubeMode = .auto
+                settings.nativeUISERPEnabled = true
+            case .alwaysAsk:
+                settings.nativeUIYoutubeMode = .ask
+                settings.nativeUISERPEnabled = true
+            case .disabled:
+                settings.nativeUIYoutubeMode = .never
+                settings.nativeUISERPEnabled = false
+            }
+            settings.nativeUISettingsMapped = true
+        }
     }
 }
 

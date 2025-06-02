@@ -27,6 +27,7 @@ public enum OAuthClientError: Error, LocalizedError, Equatable {
     case refreshTokenExpired
     case invalidTokenRequest
     case authMigrationNotPerformed
+    case unknownAccount
 
     public var errorDescription: String? {
         switch self {
@@ -42,6 +43,8 @@ public enum OAuthClientError: Error, LocalizedError, Equatable {
             return "Invalid token request"
         case .authMigrationNotPerformed:
             return "Auth migration not needed"
+        case .unknownAccount:
+            return "Unknown account"
         }
     }
 
@@ -119,7 +122,7 @@ public protocol OAuthClient {
     /// Exchange token v1 for tokens v2
     /// - Parameter accessTokenV1: The legacy auth token
     /// - Returns: A TokenContainer with access and refresh tokens
-    func exchange(accessTokenV1: String) async throws -> TokenContainer
+    @discardableResult func exchange(accessTokenV1: String) async throws -> TokenContainer
 
     // MARK: Logout
 
@@ -168,7 +171,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
 
     func getVerificationCodes() async throws -> (codeVerifier: String, codeChallenge: String) {
         Logger.OAuthClient.log("Getting verification codes")
-        let codeVerifier = OAuthCodesGenerator.codeVerifier
+        let codeVerifier = try OAuthCodesGenerator.generateCodeVerifier()
         guard let codeChallenge = OAuthCodesGenerator.codeChallenge(codeVerifier: codeVerifier) else {
             Logger.OAuthClient.error("Failed to get verification codes")
             throw OAuthClientError.internalError("Failed to generate code challenge")
@@ -218,6 +221,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         try tokenStorage.saveTokenContainer(tokenContainer)
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     public func getTokens(policy: AuthTokensCachePolicy) async throws -> TokenContainer {
         let localTokenContainer = try tokenStorage.getTokenContainer()
 
@@ -269,12 +273,15 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
                 Logger.OAuthClient.log("Tokens refreshed, expiry: \(refreshedTokens.decodedAccessToken.exp.value.description, privacy: .public)")
                 try tokenStorage.saveTokenContainer(refreshedTokens)
                 return refreshedTokens
-            } catch OAuthServiceError.authAPIError(let code) where code == OAuthRequest.BodyErrorCode.invalidTokenRequest {
+            } catch OAuthServiceError.authAPIError(let code) where code == .invalidTokenRequest {
                 Logger.OAuthClient.error("Failed to refresh token: invalidTokenRequest")
                 throw OAuthClientError.invalidTokenRequest
-            } catch OAuthServiceError.authAPIError(let code) {
-                Logger.OAuthClient.error("Failed to refresh token: \(code.rawValue, privacy: .public), \(code.description, privacy: .public)")
-                throw OAuthServiceError.authAPIError(code: code)
+            } catch OAuthServiceError.authAPIError(let code) where code == .unknownAccount {
+                Logger.OAuthClient.error("Failed to refresh token: unknownAccount")
+                throw OAuthClientError.unknownAccount
+            } catch {
+                Logger.OAuthClient.error("Failed to refresh token: \(error.localizedDescription, privacy: .public)")
+                throw error
             }
 
         case .createIfNeeded:
@@ -287,7 +294,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
                     try tokenStorage.saveTokenContainer(tokenContainer)
                     return tokenContainer
                 } catch {
-                    Logger.OAuthClient.fault("Failed to create account: \(error, privacy: .public)")
+                    Logger.OAuthClient.fault("Failed to create account: \(error.localizedDescription, privacy: .public)")
                     throw error
                 }
             }
@@ -297,23 +304,21 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
     /// Tries to retrieve the v1 auth token stored locally, if present performs a migration to v2 and removes the old token
     public func migrateV1Token() async throws {
         guard !isUserAuthenticated else {
-            Logger.OAuthClient.log("Migration not needed, user is already authenticated")
             throw OAuthClientError.authMigrationNotPerformed
         }
 
         guard let legacyTokenStorage else {
-            Logger.OAuthClient.log("Auth migration attempted without a LegacyTokenStorage")
+            Logger.OAuthClient.fault("Auth migration attempted without a LegacyTokenStorage")
             throw OAuthClientError.authMigrationNotPerformed
         }
 
         guard let legacyToken = legacyTokenStorage.token,
               !legacyToken.isEmpty else {
-            Logger.OAuthClient.log("No V1 token available, migration not needed")
             throw OAuthClientError.authMigrationNotPerformed
         }
 
-        Logger.OAuthClient.log("Migrating legacy token...")
-        _ = try await exchange(accessTokenV1: legacyToken)
+        Logger.OAuthClient.log("Migrating v1 token...")
+        try await exchange(accessTokenV1: legacyToken)
         Logger.OAuthClient.log("Tokens migrated successfully")
 
         // NOTE: We don't remove the old token to allow roll back to Auth V1
@@ -350,7 +355,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
 
     // MARK: Exchange V1 to V2 token
 
-    public func exchange(accessTokenV1: String) async throws -> TokenContainer {
+    @discardableResult public func exchange(accessTokenV1: String) async throws -> TokenContainer {
         Logger.OAuthClient.log("Exchanging access token V1 to V2")
         let (codeVerifier, codeChallenge) = try await getVerificationCodes()
         let authSessionID = try await authService.authorize(codeChallenge: codeChallenge)

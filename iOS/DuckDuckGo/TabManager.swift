@@ -30,7 +30,8 @@ import os.log
 class TabManager {
 
     private(set) var model: TabsModel
-    
+    private(set) var persistence: TabsModelPersisting
+
     private var tabControllerCache = [TabViewController]()
 
     private let bookmarksDatabase: CoreDataDatabase
@@ -44,6 +45,7 @@ class TabManager {
     private let contextualOnboardingLogic: ContextualOnboardingLogic
     private let onboardingPixelReporter: OnboardingPixelReporting
     private let featureFlagger: FeatureFlagger
+    private let contentScopeExperimentManager: ContentScopeExperimentsManaging
     private let textZoomCoordinator: TextZoomCoordinating
     private let fireproofing: Fireproofing
     private let websiteDataManager: WebsiteDataManaging
@@ -60,6 +62,7 @@ class TabManager {
 
     @MainActor
     init(model: TabsModel,
+         persistence: TabsModelPersisting,
          previewsSource: TabPreviewsSource,
          interactionStateSource: TabInteractionStateSource?,
          bookmarksDatabase: CoreDataDatabase,
@@ -71,6 +74,7 @@ class TabManager {
          contextualOnboardingLogic: ContextualOnboardingLogic,
          onboardingPixelReporter: OnboardingPixelReporting,
          featureFlagger: FeatureFlagger,
+         contentScopeExperimentManager: ContentScopeExperimentsManaging,
          subscriptionCookieManager: SubscriptionCookieManaging,
          appSettings: AppSettings,
          textZoomCoordinator: TextZoomCoordinating,
@@ -81,6 +85,7 @@ class TabManager {
          featureDiscovery: FeatureDiscovery
     ) {
         self.model = model
+        self.persistence = persistence
         self.previewsSource = previewsSource
         self.interactionStateSource = interactionStateSource
         self.bookmarksDatabase = bookmarksDatabase
@@ -92,6 +97,7 @@ class TabManager {
         self.contextualOnboardingLogic = contextualOnboardingLogic
         self.onboardingPixelReporter = onboardingPixelReporter
         self.featureFlagger = featureFlagger
+        self.contentScopeExperimentManager = contentScopeExperimentManager
         self.subscriptionCookieManager = subscriptionCookieManager
         self.appSettings = appSettings
         self.textZoomCoordinator = textZoomCoordinator
@@ -132,6 +138,7 @@ class TabManager {
                                                               contextualOnboardingLogic: contextualOnboardingLogic,
                                                               onboardingPixelReporter: onboardingPixelReporter,
                                                               featureFlagger: featureFlagger,
+                                                              contentScopeExperimentManager: contentScopeExperimentManager,
                                                               subscriptionCookieManager: subscriptionCookieManager,
                                                               textZoomCoordinator: textZoomCoordinator,
                                                               websiteDataManager: websiteDataManager,
@@ -224,7 +231,7 @@ class TabManager {
                                                               contextualOnboardingLogic: contextualOnboardingLogic,
                                                               onboardingPixelReporter: onboardingPixelReporter,
                                                               featureFlagger: featureFlagger,
-                                                              subscriptionCookieManager: subscriptionCookieManager,
+                                                              contentScopeExperimentManager: contentScopeExperimentManager, subscriptionCookieManager: subscriptionCookieManager,
                                                               textZoomCoordinator: textZoomCoordinator,
                                                               websiteDataManager: websiteDataManager,
                                                               fireproofing: fireproofing,
@@ -377,7 +384,7 @@ class TabManager {
     }
 
     func save() {
-        model.save()
+        persistence.save(model: model)
     }
     
     @MainActor

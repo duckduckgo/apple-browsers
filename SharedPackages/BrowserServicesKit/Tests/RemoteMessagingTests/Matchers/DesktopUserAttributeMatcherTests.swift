@@ -199,7 +199,8 @@ class DesktopUserAttributeMatcherTests: XCTestCase {
             isDuckPlayerOnboarded: true,
             isDuckPlayerEnabled: false,
             isCurrentFreemiumPIRUser: false,
-            dismissedDeprecatedMacRemoteMessageIds: dismissedDeprecatedMacRemoteMessageIds
+            dismissedDeprecatedMacRemoteMessageIds: dismissedDeprecatedMacRemoteMessageIds,
+            enabledFeatureFlags: []
         )
     }
 }

@@ -54,13 +54,16 @@ enum Preferences {
         var subscriptionSettingsModel: PreferencesSubscriptionSettingsModelV1?
         let subscriptionManager: SubscriptionManager
         let subscriptionUIHandler: SubscriptionUIHandling
+        let visualStyle: VisualStyleProviding
 
         init(model: PreferencesSidebarModel,
              subscriptionManager: SubscriptionManager,
-             subscriptionUIHandler: SubscriptionUIHandling) {
+             subscriptionUIHandler: SubscriptionUIHandling,
+             visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
             self.model = model
             self.subscriptionManager = subscriptionManager
             self.subscriptionUIHandler = subscriptionUIHandler
+            self.visualStyle = visualStyleManager.style
             self.purchaseSubscriptionModel = makePurchaseSubscriptionViewModel()
             self.personalInformationRemovalModel = makePersonalInformationRemovalViewModel()
             self.identityTheftRestorationModel = makeIdentityTheftRestorationViewModel()
@@ -81,7 +84,7 @@ enum Preferences {
                 .frame(minWidth: Const.minContentWidth, maxWidth: .infinity)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.preferencesBackground)
+            .background(Color(visualStyle.colorsProvider.settingsBackgroundColor))
         }
 
         @ViewBuilder
@@ -96,25 +99,27 @@ enum Preferences {
                     PrivateSearchView(model: SearchPreferences.shared)
                 case .webTrackingProtection:
                     WebTrackingProtectionView(model: WebTrackingProtectionPreferences.shared)
+                case .threatProtection:
+                    ThreatProtectionView(model: MaliciousSiteProtectionPreferences.shared)
                 case .cookiePopupProtection:
                     CookiePopupProtectionView(model: CookiePopupProtectionPreferences.shared)
                 case .emailProtection:
                     EmailProtectionView(emailManager: EmailManager(),
                                         protectionStatus: model.protectionStatus(for: .emailProtection))
                 case .general:
-                    GeneralView(startupModel: StartupPreferences.shared,
+                    GeneralView(startupModel: NSApp.delegateTyped.startupPreferences,
                                 downloadsModel: DownloadsPreferences.shared,
                                 searchModel: SearchPreferences.shared,
                                 tabsModel: TabsPreferences.shared,
-                                dataClearingModel: DataClearingPreferences.shared,
+                                dataClearingModel: NSApp.delegateTyped.dataClearingPreferences,
                                 maliciousSiteDetectionModel: MaliciousSiteProtectionPreferences.shared,
                                 dockCustomizer: DockCustomizer())
                 case .sync:
                     SyncView()
                 case .appearance:
-                    AppearanceView(model: .shared)
+                    AppearanceView(model: NSApp.delegateTyped.appearancePreferences)
                 case .dataClearing:
-                    DataClearingView(model: DataClearingPreferences.shared)
+                    DataClearingView(model: NSApp.delegateTyped.dataClearingPreferences)
                 case .privacyPro:
                     SubscriptionUI.PreferencesPurchaseSubscriptionView(model: purchaseSubscriptionModel!)
                 case .vpn:
@@ -275,15 +280,18 @@ enum Preferences {
         var subscriptionSettingsModel: PreferencesSubscriptionSettingsModelV2?
         let subscriptionManager: SubscriptionManagerV2
         let subscriptionUIHandler: SubscriptionUIHandling
+        let visualStyle: VisualStyleProviding
 
         init(
             model: PreferencesSidebarModel,
             subscriptionManager: SubscriptionManagerV2,
-            subscriptionUIHandler: SubscriptionUIHandling
+            subscriptionUIHandler: SubscriptionUIHandling,
+            visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager
         ) {
             self.model = model
             self.subscriptionManager = subscriptionManager
             self.subscriptionUIHandler = subscriptionUIHandler
+            self.visualStyle = visualStyleManager.style
             self.purchaseSubscriptionModel = makePurchaseSubscriptionViewModel()
             self.personalInformationRemovalModel = makePersonalInformationRemovalViewModel()
             self.identityTheftRestorationModel = makeIdentityTheftRestorationViewModel()
@@ -304,7 +312,7 @@ enum Preferences {
                 .frame(minWidth: Const.minContentWidth, maxWidth: .infinity)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(Color.preferencesBackground)
+            .background(Color(visualStyle.colorsProvider.settingsBackgroundColor))
         }
 
         @ViewBuilder
@@ -319,25 +327,27 @@ enum Preferences {
                     PrivateSearchView(model: SearchPreferences.shared)
                 case .webTrackingProtection:
                     WebTrackingProtectionView(model: WebTrackingProtectionPreferences.shared)
+                case .threatProtection:
+                    ThreatProtectionView(model: MaliciousSiteProtectionPreferences.shared)
                 case .cookiePopupProtection:
                     CookiePopupProtectionView(model: CookiePopupProtectionPreferences.shared)
                 case .emailProtection:
                     EmailProtectionView(emailManager: EmailManager(),
                                         protectionStatus: model.protectionStatus(for: .emailProtection))
                 case .general:
-                    GeneralView(startupModel: StartupPreferences.shared,
+                    GeneralView(startupModel: NSApp.delegateTyped.startupPreferences,
                                 downloadsModel: DownloadsPreferences.shared,
                                 searchModel: SearchPreferences.shared,
                                 tabsModel: TabsPreferences.shared,
-                                dataClearingModel: DataClearingPreferences.shared,
+                                dataClearingModel: NSApp.delegateTyped.dataClearingPreferences,
                                 maliciousSiteDetectionModel: MaliciousSiteProtectionPreferences.shared,
                                 dockCustomizer: DockCustomizer())
                 case .sync:
                     SyncView()
                 case .appearance:
-                    AppearanceView(model: .shared)
+                    AppearanceView(model: NSApp.delegateTyped.appearancePreferences)
                 case .dataClearing:
-                    DataClearingView(model: DataClearingPreferences.shared)
+                    DataClearingView(model: NSApp.delegateTyped.dataClearingPreferences)
                 case .privacyPro:
                     SubscriptionUI.PreferencesPurchaseSubscriptionView(model: purchaseSubscriptionModel!)
                 case .vpn:

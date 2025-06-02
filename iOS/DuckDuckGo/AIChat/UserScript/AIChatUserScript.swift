@@ -129,6 +129,10 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.getAIChatNativeHandoffData
         case .openAIChat:
             return handler.openAIChat
+        case .hideChatInput:
+            return handler.hideChatInput
+        case .showChatInput:
+            return handler.showChatInput
         default:
             return nil
         }
@@ -141,7 +145,7 @@ final class AIChatUserScript: NSObject, Subfeature {
     // MARK: - Input Box Event Subscription
 
     private func subscribeToInputBoxEvents() {
-        inputBoxHandler?.didSubmitText
+        inputBoxHandler?.didSubmitPrompt
             .sink(receiveValue: submitPrompt)
             .store(in: &cancellables)
 

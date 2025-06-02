@@ -52,7 +52,10 @@ final class UserContentUpdating {
          trackerDataManager: TrackerDataManager,
          configStorage: ConfigurationStoring,
          webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
-         tld: TLD) {
+         tld: TLD,
+         appearancePreferences: AppearancePreferences,
+         startupPreferences: StartupPreferences
+    ) {
 
         let makeValue: (Update) -> NewContent = { rulesUpdate in
             let sourceProvider = ScriptSourceProvider(configStorage: configStorage,
@@ -60,7 +63,10 @@ final class UserContentUpdating {
                                                       webTrackingProtectionPreferences: webTrackingProtectionPreferences,
                                                       contentBlockingManager: contentBlockerRulesManager,
                                                       trackerDataManager: trackerDataManager,
-                                                      tld: tld)
+                                                      experimentManager: Application.appDelegate.contentScopeExperimentsManager,
+                                                      tld: tld,
+                                                      appearancePreferences: appearancePreferences,
+                                                      startupPreferences: startupPreferences)
             return NewContent(rulesUpdate: rulesUpdate, sourceProvider: sourceProvider)
         }
 

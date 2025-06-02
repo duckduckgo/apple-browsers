@@ -71,8 +71,8 @@ struct NetworkProtectionFeatureVisibilityMocks: NetworkProtectionFeatureVisibili
                                                                  key: UserDefaultsCacheKey.subscriptionEntitlements,
                                                                  settings: UserDefaultsCacheSettings(defaultExpirationInterval: .minutes(20)))
         let accessTokenStorage = SubscriptionTokenKeychainStorage(keychainType: .dataProtection(.named(subscriptionAppGroup)))
-        let subscriptionService = DefaultSubscriptionEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment)
-        let authService = DefaultAuthEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment)
+        let subscriptionService = DefaultSubscriptionEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment, userAgent: "")
+        let authService = DefaultAuthEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment, userAgent: "")
         accountManager = DefaultAccountManager(storage: AccountKeychainStorageMock(),
                                                accessTokenStorage: accessTokenStorage,
                                                entitlementsCache: entitlementsCache,

@@ -98,7 +98,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
          freemiumDBPUserStateManager: FreemiumDBPUserStateManager = DefaultFreemiumDBPUserStateManager(userDefaults: .dbp),
          freemiumDBPFeature: FreemiumDBPFeature,
          freemiumDBPPresenter: FreemiumDBPPresenter = DefaultFreemiumDBPPresenter(),
-         appearancePreferences: AppearancePreferences = .shared,
+         appearancePreferences: AppearancePreferences = NSApp.delegateTyped.appearancePreferences,
          dockCustomizer: DockCustomization? = nil,
          defaultBrowserPreferences: DefaultBrowserPreferences = .shared,
          notificationCenter: NotificationCenter = .default,
@@ -125,7 +125,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
         self.freemiumDBPExperimentPixelHandler = freemiumDBPExperimentPixelHandler
         self.aiChatMenuConfiguration = aiChatMenuConfiguration
         self.featureFlagger = featureFlagger
-        self.moreOptionsMenuIconsProvider = visualStyleManager.style.moreOptionsMenuIconsProvider
+        self.moreOptionsMenuIconsProvider = visualStyleManager.style.iconsProvider.moreOptionsMenuIconsProvider
 
         super.init(title: "")
 
@@ -405,7 +405,12 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             return
         }
 
-        addItem(UpdateMenuItemFactory.menuItem(for: update))
+        if featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp) {
+            addItem(UpdateMenuItemFactory.menuItem(for: updateController))
+        } else {
+            addItem(UpdateMenuItemFactory.menuItem(for: update))
+        }
+
         addItem(NSMenuItem.separator())
 #endif
     }
@@ -829,7 +834,7 @@ final class BookmarksSubMenu: NSMenu {
         addItem(withTitle: UserText.bookmarksShowToolbarPanel, action: #selector(MoreOptionsMenu.openBookmarks(_:)), keyEquivalent: "")
             .targetting(target)
 
-        BookmarksBarMenuFactory.addToMenu(self)
+        BookmarksBarMenuFactory.addToMenu(self, prefs: NSApp.delegateTyped.appearancePreferences)
 
         addItem(withTitle: UserText.bookmarksManageBookmarks, action: #selector(MoreOptionsMenu.openBookmarksManagementInterface), keyEquivalent: "b")
             .withModifierMask([.command, .option])

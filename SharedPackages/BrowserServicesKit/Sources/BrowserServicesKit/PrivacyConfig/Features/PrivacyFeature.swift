@@ -132,6 +132,7 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case partialFormSaves
     case autofillCreditCards
     case autofillCreditCardsOnByDefault
+    case passwordVariantCategorization
 }
 
 public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
@@ -143,14 +144,6 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case waitlistBetaActive
     case freemium
     case remoteBrokerDelivery
-}
-
-public enum ContentScopeExperimentsSubfeatures: String, Equatable, PrivacySubfeature {
-    public var parent: PrivacyFeature {
-        .contentScopeExperiments
-    }
-
-    case fingerprintingCanvas
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
@@ -209,6 +202,7 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case level3AllowCreateAccount
     case seamlessAccountSwitching
     case exchangeKeysToSyncWithAnotherDevice
+    case canScanUrlBasedSyncSetupBarcodes
 }
 
 public enum AutoconsentSubfeature: String, PrivacySubfeature {
@@ -230,6 +224,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case privacyProFreeTrialJan25
     case privacyProAuthV2
     case privacyProOnboardingPromotion
+    case privacyProFreeTrial
 }
 
 public enum SslCertificatesSubfeature: String, PrivacySubfeature {
@@ -278,15 +273,22 @@ public enum MaliciousSiteProtectionSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .maliciousSiteProtection }
     case onByDefault // Rollout feature
     case scamProtection
+    case removeWWWInCanonicalization
 }
 
 public enum SetAsDefaultAndAddToDockSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .setAsDefaultAndAddToDock }
-     case popoverVsBannerExperiment
- }
+    case popoverVsBannerExperiment
+}
 
 public enum OnboardingSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .extendedOnboarding }
 
     case setAsDefaultBrowserExperiment
+}
+
+public enum ExperimentalBrowserThemingSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .experimentalBrowserTheming }
+
+    case onByDefault // Rollout
 }

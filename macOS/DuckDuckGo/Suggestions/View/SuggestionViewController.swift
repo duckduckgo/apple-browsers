@@ -41,6 +41,7 @@ final class SuggestionViewController: NSViewController {
     @IBOutlet weak var tableView: NSTableView!
     @IBOutlet weak var tableViewHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var pixelPerfectConstraint: NSLayoutConstraint!
+    @IBOutlet weak var backgroundViewTopConstraint: NSLayoutConstraint!
 
     let suggestionContainerViewModel: SuggestionContainerViewModel
     let visualStyle: VisualStyleProviding
@@ -77,6 +78,11 @@ final class SuggestionViewController: NSViewController {
         addTrackingArea()
         subscribeToSuggestionResult()
         subscribeToSelectionIndex()
+
+        backgroundViewTopConstraint.constant = visualStyle.addressBarStyleProvider.topSpaceForSuggestionWindow
+        backgroundView.setCornerRadius(visualStyle.addressBarStyleProvider.addressBarActiveBackgroundViewRadius)
+        innerBorderView.setCornerRadius(visualStyle.addressBarStyleProvider.addressBarActiveBackgroundViewRadius)
+        backgroundView.backgroundColor = visualStyle.colorsProvider.suggestionsBackgroundColor
     }
 
     override func viewWillAppear() {
@@ -86,7 +92,8 @@ final class SuggestionViewController: NSViewController {
         self.view.window!.backgroundColor = .clear
 
         addEventMonitors()
-        tableView.rowHeight = suggestionContainerViewModel.isHomePage ? 34 : 28
+
+        tableView.rowHeight = visualStyle.addressBarStyleProvider.sizeForSuggestionRow(isHomePage: suggestionContainerViewModel.isHomePage)
     }
 
     override func viewDidDisappear() {
@@ -229,9 +236,14 @@ final class SuggestionViewController: NSViewController {
 
         let rowHeight = tableView.rowHeight
 
-        tableViewHeightConstraint.constant = CGFloat(suggestionContainerViewModel.numberOfSuggestions) * rowHeight
-            + (tableView.enclosingScrollView?.contentInsets.top ?? 0)
-            + (tableView.enclosingScrollView?.contentInsets.bottom ?? 0)
+        if visualStyle.addressBarStyleProvider.shouldLeaveBottomPaddingInSuggestions {
+            tableViewHeightConstraint.constant = CGFloat(suggestionContainerViewModel.numberOfSuggestions) * rowHeight
+                + (tableView.enclosingScrollView?.contentInsets.top ?? 0)
+                + (tableView.enclosingScrollView?.contentInsets.bottom ?? 0)
+        } else {
+            tableViewHeightConstraint.constant = CGFloat(suggestionContainerViewModel.numberOfSuggestions) * rowHeight
+                + (tableView.enclosingScrollView?.contentInsets.top ?? 0)
+        }
     }
 
     private func closeWindow() {
@@ -301,6 +313,9 @@ extension SuggestionViewController: NSTableViewDelegate {
             assertionFailure("SuggestionViewController: Making of table row view failed")
             return nil
         }
+
+        suggestionTableRowView.visualStyle = visualStyle
+
         return suggestionTableRowView
     }
 

@@ -55,8 +55,12 @@ extension LoginResult {
 }
 
 class AccountManagingMock: AccountManaging {
+    var createAccountError: Error?
     func createAccount(deviceName: String, deviceType: String) async throws -> SyncAccount {
-        .mock
+        if let error = createAccountError {
+            throw error
+        }
+        return .mock
     }
 
     func deleteAccount(_ account: SyncAccount) async throws {}
@@ -229,7 +233,8 @@ final class MockSyncDependencies: SyncDependencies, SyncDependenciesDebuggingSup
     var scheduler: SchedulingInternal = SchedulerMock()
     var privacyConfigurationManager: PrivacyConfigurationManaging = MockPrivacyConfigurationManager()
     var errorEvents: EventMapping<SyncError> = MockErrorHandler()
-    var keyValueStore: KeyValueStoring = MockKeyValueStore()
+    var keyValueStore: ThrowingKeyValueStoring = try! MockKeyValueFileStore()
+    var legacyKeyValueStore: KeyValueStoring = MockKeyValueStore()
 
     var request = HTTPRequestingMock()
 
@@ -314,11 +319,13 @@ final class MockRemoteKeyExchanging: RemoteKeyExchanging {
 }
 
 final class MockRecoveryKeyTransmitting: RecoveryKeyTransmitting {
-
     var sendCalled = 0
     var sendSpy: SyncCode.ConnectCode?
     var sendError: Error?
     func send(_ code: SyncCode.ConnectCode) async throws {
+        if let error = sendError {
+            throw error
+        }
         sendCalled += 1
         sendSpy = code
     }

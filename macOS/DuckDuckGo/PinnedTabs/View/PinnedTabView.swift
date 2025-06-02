@@ -46,11 +46,14 @@ struct PinnedTabView: View, DropDelegate {
                     width: tabStyleProvider.pinnedTabWidth,
                     height: tabStyleProvider.pinnedTabHeight,
                     isSelected: isSelected,
+                    isHovered: collectionModel.hoveredItem == model,
                     foregroundColor: foregroundColor,
                     separatorColor: Color(tabStyleProvider.separatorColor),
                     separatorHeight: tabStyleProvider.separatorHeight,
                     drawSeparator: !collectionModel.itemsWithoutSeparator.contains(model),
-                    showSShaped: tabStyleProvider.shouldShowSShapedTab
+                    showSShaped: tabStyleProvider.shouldShowSShapedTab,
+                    applyTabShadow: tabStyleProvider.applyTabShadow,
+                    roundedHover: tabStyleProvider.isRoundedBackgroundPresentOnHover
                 )
                 .environmentObject(model)
                 .environmentObject(model.crashIndicatorModel)
@@ -68,6 +71,7 @@ struct PinnedTabView: View, DropDelegate {
                            size: TabShadowConfig.dividerSize)
             }
         }
+            .shadow(color: isSelected && tabStyleProvider.applyTabShadow ? Color(.shadowPrimary) : .clear, radius: 6, x: 0, y: -2)
 
         if controlActiveState == .key {
             stack.onHover { [weak collectionModel, weak model] isHovered in
@@ -103,7 +107,7 @@ struct PinnedTabView: View, DropDelegate {
             return Color(tabStyleProvider.selectedTabColor)
         }
         let isHovered = collectionModel.hoveredItem == model
-        return showsHover && isHovered ? .tabMouseOver : Color.clear
+        return showsHover && isHovered ? Color(tabStyleProvider.selectedTabColor) : Color.clear
     }
 
     @ViewBuilder
@@ -223,11 +227,18 @@ struct PinnedTabInnerView: View {
     let width: CGFloat
     let height: CGFloat
     var isSelected: Bool
+    var isHovered: Bool
     var foregroundColor: Color
     var separatorColor: Color
     var separatorHeight: CGFloat
     var drawSeparator: Bool = true
     var showSShaped: Bool
+    var applyTabShadow: Bool
+    var roundedHover: Bool
+
+    var shouldApplyNewHoverState: Bool {
+        return isHovered && !isSelected && roundedHover
+    }
 
     @Environment(\.colorScheme) var colorScheme
     @EnvironmentObject var model: Tab
@@ -238,8 +249,8 @@ struct PinnedTabInnerView: View {
         ZStack {
             Rectangle()
                 .foregroundColor(foregroundColor)
-                .frame(width: width, height: height)
-                .cornerRadius(PinnedTabView.Const.cornerRadius, corners: [.topLeft, .topRight])
+                .frame(width: shouldApplyNewHoverState ? width - 8 : width, height: shouldApplyNewHoverState ? height - 8 : height)
+                .cornerRadius(shouldApplyNewHoverState ? 6 : PinnedTabView.Const.cornerRadius, corners: shouldApplyNewHoverState ? [.topLeft, .topRight, .bottomLeft, .bottomRight] : [.topLeft, .topRight])
 
             if drawSeparator {
                 GeometryReader { proxy in

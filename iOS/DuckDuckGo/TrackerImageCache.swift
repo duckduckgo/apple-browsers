@@ -19,6 +19,7 @@
 
 import UIKit
 
+// Images and logic here are self contained, see Trackers.xcassets
 final class TrackerImageCache {
     
     public var shadowTrackerImage: CGImage!

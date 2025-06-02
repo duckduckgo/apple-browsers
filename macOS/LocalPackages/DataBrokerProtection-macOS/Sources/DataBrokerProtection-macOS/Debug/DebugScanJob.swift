@@ -50,7 +50,7 @@ struct EmptyCookieHandler: CookieHandler {
     }
 }
 
-final class DebugScanJob: DataBrokerJob {
+final class DebugScanJob: SubJobWebRunning {
     typealias ReturnValue = DebugScanReturnValue
     typealias InputValue = Void
 
@@ -146,7 +146,9 @@ final class DebugScanJob: DataBrokerJob {
             }
         }
 
-        await webViewHandler?.execute(action: action, data: .userData(query.profileQuery, self.extractedProfile))
+        await webViewHandler?.execute(action: action,
+                                      ofType: actionsHandler?.step.type,
+                                      data: .userData(query.profileQuery, self.extractedProfile))
     }
 
     public func extractedProfiles(profiles: [ExtractedProfile], meta: [String: Any]?) async {
@@ -170,6 +172,14 @@ final class DebugScanJob: DataBrokerJob {
         }
 
         await executeNextStep()
+    }
+
+    func evaluateActionAndHaltIfNeeded(_ action: Action) async -> Bool {
+        if action.actionType == .expectation {
+            retriesCountOnError = 1
+        }
+
+        return false
     }
 
     public func executeNextStep() async {

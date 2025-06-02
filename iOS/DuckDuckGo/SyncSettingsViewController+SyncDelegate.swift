@@ -157,8 +157,10 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     @MainActor
-    func handleError(_ type: SyncErrorMessage, error: Error?, event: Pixel.Event) {
-        firePixelIfNeededFor(event: event, error: error)
+    func handleError(_ type: SyncErrorMessage, error: Error?, event: Pixel.Event?) {
+        if type.shouldSendPixel, let event = event {
+            firePixelIfNeededFor(event: event, error: error)
+        }
         let alertController = UIAlertController(
             title: type.title,
             message: [type.description, error?.localizedDescription].compactMap({ $0 }).joined(separator: "\n"),
@@ -323,16 +325,17 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     private func newCollectCode(showQRCode: Bool) {
         Task { @MainActor in
             let code: String
+            let shouldGenerateURLBasedCode = featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased)
             if isSyncEnabled {
                 do {
-                    code = try await connectionController.startExchangeMode()
+                    code = try await connectionController.startExchangeMode(shouldGenerateURLBasedCode: shouldGenerateURLBasedCode)
                 } catch {
                     self.handleError(SyncErrorMessage.unableToSyncWithDevice, error: error, event: .syncLoginError)
                     return
                 }
             } else {
                 do {
-                    code = try await connectionController.startConnectMode()
+                    code = try await connectionController.startConnectMode(shouldGenerateURLBasedCode: shouldGenerateURLBasedCode)
                 } catch {
                     self.handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
                     return

@@ -38,6 +38,7 @@ final class MainViewController: NSViewController {
     let featureFlagger: FeatureFlagger
     private let bookmarksBarVisibilityManager: BookmarksBarVisibilityManager
     private let defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting
+    private let visualStyle: VisualStyleProviding
 
     let tabCollectionViewModel: TabCollectionViewModel
     let isBurner: Bool
@@ -59,7 +60,7 @@ final class MainViewController: NSViewController {
     var shouldShowBookmarksBar: Bool {
         return !isInPopUpWindow
         && bookmarksBarVisibilityManager.isBookmarksBarVisible
-        && (!(view.window?.isFullScreen ?? false) || AppearancePreferences.shared.showTabsAndBookmarksBarOnFullScreen)
+        && (!(view.window?.isFullScreen ?? false) || NSApp.delegateTyped.appearancePreferences.showTabsAndBookmarksBarOnFullScreen)
     }
 
     private var isInPopUpWindow: Bool {
@@ -77,7 +78,8 @@ final class MainViewController: NSViewController {
          aiChatMenuConfig: AIChatMenuVisibilityConfigurable = AIChatMenuConfiguration(),
          brokenSitePromptLimiter: BrokenSitePromptLimiter = .shared,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-         defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting = NSApp.delegateTyped.defaultBrowserAndDockPromptPresenter
+         defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting = NSApp.delegateTyped.defaultBrowserAndDockPromptPresenter,
+         visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager
     ) {
 
         self.aiChatMenuConfig = aiChatMenuConfig
@@ -86,6 +88,7 @@ final class MainViewController: NSViewController {
         self.isBurner = tabCollectionViewModel.isBurner
         self.featureFlagger = featureFlagger
         self.defaultBrowserAndDockPromptPresenting = defaultBrowserAndDockPromptPresenting
+        self.visualStyle = visualStyleManager.style
 
         tabBarViewController = TabBarViewController.create(tabCollectionViewModel: tabCollectionViewModel, activeRemoteMessageModel: NSApp.delegateTyped.activeRemoteMessageModel)
         bookmarksBarVisibilityManager = BookmarksBarVisibilityManager(selectedTabPublisher: tabCollectionViewModel.$selectedTabViewModel.eraseToAnyPublisher())
@@ -200,7 +203,6 @@ final class MainViewController: NSViewController {
         registerForBookmarkBarPromptNotifications()
 
         adjustFirstResponder(force: true)
-        showSetAsDefaultAndAddToDockIfNeeded()
     }
 
     var bookmarkBarPromptObserver: Any?
@@ -232,6 +234,7 @@ final class MainViewController: NSViewController {
         updateReloadMenuItem()
         updateStopMenuItem()
         browserTabViewController.windowDidBecomeKey()
+        showSetAsDefaultAndAddToDockIfNeeded()
     }
 
     func windowDidResignKey() {
@@ -251,7 +254,7 @@ final class MainViewController: NSViewController {
 
         updateBookmarksBarViewVisibility(visible: true)
         // This won't work until the bookmarks bar is actually visible which it isn't until the next ui cycle
-        DispatchQueue.main.async {
+        DispatchQueue.main.asyncAfter(deadline: .now() + NSAnimationContext.current.duration) {
             self.bookmarksBarViewController.showBookmarksBarPrompt()
         }
     }
@@ -307,15 +310,19 @@ final class MainViewController: NSViewController {
 
     private func updateDividerColor(isShowingHomePage isHomePage: Bool) {
         NSAppearance.withAppAppearance {
-            let backgroundColor: NSColor = {
-                if mainView.isBannerViewShown {
-                    return bookmarksBarIsVisible ? .bookmarkBarBackground : .addressBarSolidSeparator
-                } else {
-                    return (bookmarksBarIsVisible || isHomePage) ? .bookmarkBarBackground : .addressBarSolidSeparator
-                }
-            }()
+            if visualStyle.addToolbarShadow {
+                mainView.divider.backgroundColor = .shadowSecondary
+            } else {
+                let backgroundColor: NSColor = {
+                    if mainView.isBannerViewShown {
+                        return bookmarksBarIsVisible ? .bookmarkBarBackground : .addressBarSolidSeparator
+                    } else {
+                        return (bookmarksBarIsVisible || isHomePage) ? .bookmarkBarBackground : .addressBarSolidSeparator
+                    }
+                }()
 
-            mainView.divider.backgroundColor = backgroundColor
+                mainView.divider.backgroundColor = backgroundColor
+            }
         }
     }
 
@@ -500,11 +507,6 @@ final class MainViewController: NSViewController {
     // MARK: - Set As Default and Add To Dock Prompts configuration
 
     private func subscribeToSetAsDefaultAndAddToDockPromptsNotifications() {
-        NotificationCenter.default.addObserver(self,
-                                               selector: #selector(showSetAsDefaultAndAddToDockIfNeeded),
-                                               name: .setAsDefaultBrowserAndAddToDockExperimentFlagOverrideDidChange,
-                                               object: nil)
-
         bannerDismissedCancellable = defaultBrowserAndDockPromptPresenting.bannerDismissedPublisher
             .sink { [weak self] in
                 self?.hideBanner()
@@ -576,7 +578,7 @@ extension MainViewController: NSDraggingDestination {
     }
 
     func draggingUpdated(_ draggingInfo: NSDraggingInfo) -> NSDragOperation {
-        return .copy
+        return browserTabViewController.draggingUpdated(draggingInfo)
     }
 
     func performDragOperation(_ draggingInfo: NSDraggingInfo) -> Bool {

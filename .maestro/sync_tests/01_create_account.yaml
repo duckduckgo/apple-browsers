@@ -15,6 +15,10 @@ name: 01_create_account
 - runFlow:
     file: ../shared/set_internal_user_from_settings.yaml
 
+# Set Dev environment
+- runFlow:
+    file: ../shared/set_sync_dev_environment.yaml
+
 # Create account
 - runFlow:
     file: ../shared/sync_create.yaml

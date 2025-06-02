@@ -174,7 +174,8 @@ final class FireTests: XCTestCase {
         let fileStore = preparePersistedState(withFileName: fileName)
         let service = StatePersistenceService(fileStore: fileStore, fileName: fileName)
         let appStateRestorationManager = AppStateRestorationManager(fileStore: fileStore,
-                                                                    service: service)
+                                                                    service: service,
+                                                                    startupPreferences: NSApp.delegateTyped.startupPreferences)
         appStateRestorationManager.applicationDidFinishLaunching()
 
         let fire = Fire(historyCoordinating: HistoryCoordinatingMock(),
@@ -192,7 +193,8 @@ final class FireTests: XCTestCase {
         let fileStore = preparePersistedState(withFileName: fileName)
         let service = StatePersistenceService(fileStore: fileStore, fileName: fileName)
         let appStateRestorationManager = AppStateRestorationManager(fileStore: fileStore,
-                                                                    service: service)
+                                                                    service: service,
+                                                                    startupPreferences: NSApp.delegateTyped.startupPreferences)
         appStateRestorationManager.applicationDidFinishLaunching()
 
         let fire = Fire(historyCoordinating: HistoryCoordinatingMock(),

@@ -19,7 +19,7 @@
 import WebKit
 import Common
 import UserScript
-import OSLog
+import os.log
 
 public enum RequestVaultDataAction: String, Codable {
     case none
@@ -77,6 +77,10 @@ public protocol AutofillSecureVaultDelegate: AnyObject {
     func autofillUserScriptDidOfferGeneratedPassword(_: AutofillUserScript,
                                                      password: String,
                                                      completionHandler: @escaping (Bool) -> Void)
+
+    func autofillUserScriptDidFocus(_ : AutofillUserScript,
+                                    mainType: AutofillUserScript.GetAutofillDataMainType,
+                                    completionHandler: @escaping (SecureVaultModels.CreditCard?, RequestVaultDataAction) -> Void)
 
     func autofillUserScript(_: AutofillUserScript, didSendPixel pixel: AutofillUserScript.JSPixel)
 
@@ -386,6 +390,8 @@ extension AutofillUserScript {
         let cardSecurityCode: String
         let expirationMonth: String
         let expirationYear: String
+        let title: String
+        let displayNumber: String
 
     }
 
@@ -465,13 +471,27 @@ extension AutofillUserScript {
                 let month = creditCard.expirationMonth.map { String($0) } ?? ""
                 let year = creditCard.expirationYear.map { String($0) } ?? ""
 
-                creditCardResponse = CreditCardResponse(id: String(id), cardNumber: creditCard.cardNumber, cardName: creditCard.cardholderName ?? "", cardSecurityCode: creditCard.cardSecurityCode ?? "", expirationMonth: month, expirationYear: year)
+                creditCardResponse = CreditCardResponse(id: String(id), cardNumber: creditCard.cardNumber, cardName: creditCard.cardholderName ?? "", cardSecurityCode: creditCard.cardSecurityCode ?? "", expirationMonth: month, expirationYear: year, title: "", displayNumber: creditCard.cardSuffix)
             } else {
                 creditCardResponse = nil
             }
 
             return RequestVaultCreditCardResponse(success: RequestVaultCreditCardResponseContents(creditCards: creditCardResponse, action: action))
         }
+    }
+
+    struct NoActionResponse: Codable {
+        
+        enum NoActionType: String, Codable {
+            case none
+        }
+        
+        struct NoActionResponseContents: Codable {
+            let action: NoActionType
+        }
+        
+        let success: NoActionResponseContents
+        
     }
 
     // MARK: - Message Handlers
@@ -512,6 +532,10 @@ extension AutofillUserScript {
         let subType: GetAutofillDataSubType
         let trigger: GetTriggerType
         let generatedPassword: GetGeneratedPasswordValue?
+    }
+
+    struct GetAutofillDataFocus: Codable {
+        let mainType: GetAutofillDataMainType
     }
 
     // https://github.com/duckduckgo/duckduckgo-autofill/blob/main/src/deviceApiCalls/schemas/getAutofillData.params.json
@@ -580,19 +604,34 @@ extension AutofillUserScript {
                 }
             }
         } else if request.mainType == .creditCards {
-            let messageType = request.mainType.rawValue
             Logger.autofill.debug("Incoming getAutofillData request")
             
-            // Register this handler, canceling any previous ones
-            registerHandler(for: messageType, handler: replyHandler)
-
             vaultDelegate?.autofillUserScriptDidRequestCreditCard(self, trigger: request.trigger) { [weak self] creditCard, action in
                 let response = RequestVaultCreditCardResponse.responseFromSecureVaultCreditCards(creditCard, action: action)
 
                 if let json = try? JSONEncoder().encode(response), let jsonString = String(data: json, encoding: .utf8) {
                     Logger.autofill.debug("Outgoing getAutofillData response \(jsonString)")
-                    self?.completeHandler(for: messageType, domain: domain, withResponse: jsonString)
+                    replyHandler(jsonString)
                 }
+            }
+        }
+    }
+    
+    func getAutofillDataFocus(_ message: UserScriptMessage, _ replyHandler: @escaping MessageReplyHandler) {
+        guard let request: GetAutofillDataFocus = DecodableHelper.decode(from: message.messageBody) else {
+            print("Failed to decode GetAutofillDataRequest \(message.messageBody)")
+            return
+        }
+        let messageType = request.mainType.rawValue
+        registerHandler(for: messageType, handler: replyHandler)
+        
+        Logger.autofill.debug("Received getAutofillDataFocus message \(message.messageName)")
+        vaultDelegate?.autofillUserScriptDidFocus(self, mainType: request.mainType) { [weak self] creditCard, action in
+            let response = RequestVaultCreditCardResponse.responseFromSecureVaultCreditCards(creditCard, action: action)
+
+            if let json = try? JSONEncoder().encode(response), let jsonString = String(data: json, encoding: .utf8) {
+                Logger.autofill.debug("Outgoing getAutofillDataFocus response \(jsonString)")
+                self?.completeHandler(for: messageType, withResponse: jsonString)
             }
         }
     }
@@ -613,7 +652,7 @@ extension AutofillUserScript {
             // Cancel previous handlers asynchronously to avoid deadlocks
             DispatchQueue.main.async {
                 for previousHandler in handlersToCancel {
-                    Logger.autofill.debug("Outgoing getAutofillData cleanup response")
+                    Logger.autofill.debug("Outgoing getAutofillDataFocus cleanup response on register incoming")
                     previousHandler("{\"success\": {\"action\": \"none\"}}")
                 }
             }
@@ -623,7 +662,7 @@ extension AutofillUserScript {
         Self.activeHandlers[key] = handlers
     }
     
-    private func completeHandler(for messageType: String, domain: String, withResponse response: String?) {
+    private func completeHandler(for messageType: String, withResponse response: String?) {
         let key = "\(messageType)"
         
         Self.handlersLock.lock()
@@ -656,7 +695,7 @@ extension AutofillUserScript {
         
         DispatchQueue.main.async {
             for handler in allHandlers {
-                Logger.autofill.debug("Outgoing getAutofillData cleanup all response")
+                Logger.autofill.debug("Outgoing getAutofillDataFocus cleanup all response")
                 handler("{\"success\": {\"action\": \"none\"}}")
             }
         }

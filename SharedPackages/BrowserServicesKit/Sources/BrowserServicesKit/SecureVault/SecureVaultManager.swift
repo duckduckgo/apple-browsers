@@ -79,6 +79,11 @@ public protocol SecureVaultManagerDelegate: AnyObject, SecureVaultReporting {
     func secureVaultManager(_: SecureVaultManager,
                             didRequestRuntimeConfigurationForDomain domain: String,
                             completionHandler: @escaping (String?) -> Void)
+    
+    func secureVaultManagerDidFocus(_: SecureVaultManager,
+                                    forType type: AutofillUserScript.GetAutofillDataMainType,
+                                    withCreditCards creditCards: [SecureVaultModels.CreditCard],
+                                    completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void)
 
     func secureVaultManager(_: SecureVaultManager, didReceivePixel: AutofillUserScript.JSPixel)
 
@@ -584,6 +589,28 @@ extension SecureVaultManager: AutofillSecureVaultDelegate {
         delegate?.secureVaultManager(self,
                                      promptUserWithGeneratedPassword: password) { useGeneratedPassword in
             completionHandler(useGeneratedPassword)
+        }
+    }
+    
+    public func autofillUserScriptDidFocus(_: AutofillUserScript,
+                                           mainType: AutofillUserScript.GetAutofillDataMainType,
+                                           completionHandler: @escaping (SecureVaultModels.CreditCard?, RequestVaultDataAction) -> Void) {
+        if mainType == .creditCards {
+            do {
+                let vault = try self.vault ?? AutofillSecureVaultFactory.makeVault(reporter: self.delegate)
+                let cards: [SecureVaultModels.CreditCard] = try vault.creditCards()
+                
+                delegate?.secureVaultManagerDidFocus(self, forType: mainType, withCreditCards: cards, completionHandler: { creditCard in
+                    guard let creditCard else {
+                        completionHandler(nil, .none)
+                        return
+                    }
+                    completionHandler(creditCard, .fill)
+                })
+            } catch {
+                Logger.secureVault.error("Error requesting credit card: \(error.localizedDescription, privacy: .public)")
+                completionHandler(nil, .none)
+            }
         }
     }
 

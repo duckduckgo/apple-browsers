@@ -3035,6 +3035,8 @@ extension TabViewController: SecureVaultManagerDelegate {
 
     func secureVaultManagerShouldPromptUserToAutofillCreditCard(_: SecureVaultManager, withCreditCards creditCards: [SecureVaultModels.CreditCard], withTrigger trigger: AutofillUserScript.GetTriggerType, completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         
+        Logger.autofill.debug("secureVaultManagerShouldPromptUserToAutofillCreditCard")
+        
         if !AutofillSettingStatus.isCreditCardAutofillEnabledInSettings || !featureFlagger.isFeatureOn(.autofillCreditCards) {
             completionHandler(nil)
             return
@@ -3058,32 +3060,40 @@ extension TabViewController: SecureVaultManagerDelegate {
             resetCreditCardPrompt()
         }
 
-        if shouldShowCreditCardPrompt {
-            fillCreditCardsPromptIsPresenting = true
-            shouldShowCreditCardPrompt = false
-            presentAutofillPromptViewController(creditCards: creditCards, trigger: trigger) { creditCard in
-                completionHandler(creditCard)
-            }
-        } else {
-            fillCreditCardsPromptIsPresenting = false
-
-            guard let webView = webView as? WebView, let autofillCreditCardAccessoryView = autofillCreditCardAccessoryView else {
-                return
-            }
-
-            autofillCreditCardAccessoryView.updateCreditCards(creditCards)
-            webView.setAccessoryContentView(autofillCreditCardAccessoryView, height: 52.0)
-
-            autofillCreditCardAccessoryView.onCardSelected = { [weak self] card in
-                completionHandler(card)
-                if card == nil {
-                    self?.webView.resignFirstResponder()
-                }
-                self?.cleanupInputAccessoryView()
-            }
+        presentAutofillPromptViewController(creditCards: creditCards, trigger: trigger) { creditCard in
+            completionHandler(creditCard)
         }
     }
 
+    func secureVaultManagerDidFocus(_: SecureVaultManager,
+                                    forType type: AutofillUserScript.GetAutofillDataMainType,
+                                    withCreditCards creditCards: [SecureVaultModels.CreditCard],
+                                    completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+        Logger.autofill.debug("secureVaultManagerDidCancelGetAutofillDataRequest")
+        guard let webView = webView as? WebView, let autofillCreditCardAccessoryView = autofillCreditCardAccessoryView else {
+            completionHandler(nil)
+            return
+        }
+        
+        guard type == .creditCards else {
+            Logger.autofill.debug("secureVaultManagerDidFocus: not creditCard")
+            completionHandler(nil)
+            cleanupInputAccessoryView()
+            return
+        }
+
+        autofillCreditCardAccessoryView.updateCreditCards(creditCards)
+        webView.setAccessoryContentView(autofillCreditCardAccessoryView, height: 52.0)
+
+        autofillCreditCardAccessoryView.onCardSelected = { [weak self] card in
+            completionHandler(card)
+            if card == nil {
+                self?.webView.resignFirstResponder()
+            }
+            self?.cleanupInputAccessoryView()
+        }
+    }
+    
     private func cleanupInputAccessoryView() {
         guard let webView = webView as? WebView, webView.inputAccessoryView != nil else {
             return

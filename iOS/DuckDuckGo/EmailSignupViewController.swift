@@ -442,6 +442,10 @@ extension EmailSignupViewController: SecureVaultManagerDelegate {
         
         completionHandler(runtimeConfig)
     }
+  
+    func secureVaultManagerDidFocus(_: SecureVaultManager, forType type: AutofillUserScript.GetAutofillDataMainType, withCreditCards creditCards: [SecureVaultModels.CreditCard], completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+        // no-op
+    }
 
     func secureVaultManager(_: SecureVaultManager, didReceivePixel pixel: AutofillUserScript.JSPixel) {
         guard !pixel.isEmailPixel else {

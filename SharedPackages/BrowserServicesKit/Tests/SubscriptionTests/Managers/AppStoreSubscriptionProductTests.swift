@@ -107,7 +107,7 @@ final class AppStoreSubscriptionProductTests: XCTestCase {
         XCTAssertNil(subscriptionProduct.introductoryOffer)
     }
 
-    func testRefreshFreeTrialEligibility_FreeTrialProduct() async throws {
+    func testCheckFreshFreeTrialEligibility_FreeTrialProduct() async throws {
         // Given
         let mockProduct = MockStoreProduct(
             id: "com.test.trial",
@@ -115,19 +115,19 @@ final class AppStoreSubscriptionProductTests: XCTestCase {
             isEligibleForFreeTrial: true
         )
 
-        var subscriptionProduct = await AppStoreSubscriptionProduct.create(product: mockProduct)
+        let subscriptionProduct = await AppStoreSubscriptionProduct.create(product: mockProduct)
         XCTAssertTrue(subscriptionProduct.isEligibleForFreeTrial)
 
         // When - Simulate eligibility change
         mockProduct.mockEligibilityChange(to: false)
-        let updatedEligibility = await subscriptionProduct.refreshFreeTrialEligibility()
+        let freshEligibility = await subscriptionProduct.checkFreshFreeTrialEligibility()
 
-        // Then
-        XCTAssertFalse(updatedEligibility)
-        XCTAssertFalse(subscriptionProduct.isEligibleForFreeTrial)
+        // Then - Fresh check returns updated eligibility, but cached value unchanged
+        XCTAssertFalse(freshEligibility)
+        XCTAssertTrue(subscriptionProduct.isEligibleForFreeTrial) // Cached value unchanged
     }
 
-    func testRefreshFreeTrialEligibility_NonFreeTrialProduct() async throws {
+    func testCheckFreshFreeTrialEligibility_NonFreeTrialProduct() async throws {
         // Given
         let mockProduct = MockStoreProduct(
             id: "com.test.regular",
@@ -135,14 +135,14 @@ final class AppStoreSubscriptionProductTests: XCTestCase {
             isEligibleForFreeTrial: false
         )
 
-        var subscriptionProduct = await AppStoreSubscriptionProduct.create(product: mockProduct)
+        let subscriptionProduct = await AppStoreSubscriptionProduct.create(product: mockProduct)
         XCTAssertFalse(subscriptionProduct.isEligibleForFreeTrial)
 
         // When
-        let updatedEligibility = await subscriptionProduct.refreshFreeTrialEligibility()
+        let freshEligibility = await subscriptionProduct.checkFreshFreeTrialEligibility()
 
         // Then
-        XCTAssertFalse(updatedEligibility)
+        XCTAssertFalse(freshEligibility)
         XCTAssertFalse(subscriptionProduct.isEligibleForFreeTrial)
     }
 

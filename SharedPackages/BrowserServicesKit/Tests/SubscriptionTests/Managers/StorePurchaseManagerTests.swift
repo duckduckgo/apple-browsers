@@ -99,7 +99,7 @@ final class StorePurchaseManagerTests: XCTestCase {
                 periodInDays: 7,
                 isFreeTrial: true
             ),
-            isEligibleForIntroOffer: true
+            isEligibleForFreeTrial: true
         )
 
         let yearlyTrialProduct = MockSubscriptionProduct(
@@ -114,7 +114,7 @@ final class StorePurchaseManagerTests: XCTestCase {
                 periodInDays: 7,
                 isFreeTrial: true
             ),
-            isEligibleForIntroOffer: true
+            isEligibleForFreeTrial: true
         )
 
         let regularProduct = MockSubscriptionProduct(
@@ -242,7 +242,7 @@ final class StorePurchaseManagerTests: XCTestCase {
                 periodInDays: 7,
                 isFreeTrial: true
             ),
-            isEligibleForIntroOffer: true
+            isEligibleForFreeTrial: true
         )
 
         let yearlyTrialProduct = MockSubscriptionProduct(
@@ -257,7 +257,7 @@ final class StorePurchaseManagerTests: XCTestCase {
                 periodInDays: 14,
                 isFreeTrial: true
             ),
-            isEligibleForIntroOffer: true
+            isEligibleForFreeTrial: true
         )
 
         mockProductFetcher.mockProducts = [monthlyTrialProduct, yearlyTrialProduct]
@@ -395,7 +395,7 @@ final class StorePurchaseManagerTests: XCTestCase {
         await sut.updateAvailableProducts()
 
         // When
-        let isEligible = await sut.isUserEligibleForFreeTrial()
+        let isEligible = sut.isUserEligibleForFreeTrial()
 
         // Then
         XCTAssertTrue(isEligible)
@@ -403,13 +403,13 @@ final class StorePurchaseManagerTests: XCTestCase {
 
     func testIsUserEligibleForFreeTrialReturnsFalseWhenNoEligibleProductExists() async {
         // Given
-        let monthlyProduct = createMonthlyProduct(withTrial: true, isEligibleForIntroOffer: false)
-        let yearlyProduct = createYearlyProduct(withTrial: true, isEligibleForIntroOffer: false)
+        let monthlyProduct = createMonthlyProduct(withTrial: true, isEligibleForFreeTrial: false)
+        let yearlyProduct = createYearlyProduct(withTrial: true, isEligibleForFreeTrial: false)
         mockProductFetcher.mockProducts = [monthlyProduct, yearlyProduct]
         await sut.updateAvailableProducts()
 
         // When
-        let isEligible = await sut.isUserEligibleForFreeTrial()
+        let isEligible = sut.isUserEligibleForFreeTrial()
 
         // Then
         XCTAssertFalse(isEligible)
@@ -423,7 +423,7 @@ final class StorePurchaseManagerTests: XCTestCase {
         await sut.updateAvailableProducts()
 
         // When
-        let isEligible = await sut.isUserEligibleForFreeTrial()
+        let isEligible = sut.isUserEligibleForFreeTrial()
 
         // Then
         XCTAssertFalse(isEligible)
@@ -431,11 +431,11 @@ final class StorePurchaseManagerTests: XCTestCase {
 }
 
 private final class MockProductFetcher: ProductFetching {
-    var mockProducts: [any SubscriptionProduct] = []
+    var mockProducts: [any StoreProduct] = []
     var fetchError: Error?
     var fetchCount: Int = 0
 
-    public func products(for identifiers: [String]) async throws -> [any SubscriptionProduct] {
+    public func products(for identifiers: [String]) async throws -> [any StoreProduct] {
         fetchCount += 1
         if let error = fetchError {
             throw error
@@ -449,7 +449,7 @@ private enum MockProductError: Error {
 }
 
 private extension StorePurchaseManagerTests {
-    func createMonthlyProduct(withTrial: Bool = false, isEligibleForIntroOffer: Bool = true) -> MockSubscriptionProduct {
+    func createMonthlyProduct(withTrial: Bool = false, isEligibleForFreeTrial: Bool = true) -> MockSubscriptionProduct {
         MockSubscriptionProduct(
             id: "com.test.monthly\(withTrial ? ".trial" : "")",
             displayName: "Monthly Plan\(withTrial ? " with Trial" : "")",
@@ -462,11 +462,11 @@ private extension StorePurchaseManagerTests {
                 periodInDays: 7,
                 isFreeTrial: true
             ) : nil,
-            isEligibleForIntroOffer: isEligibleForIntroOffer
+            isEligibleForFreeTrial: isEligibleForFreeTrial
         )
     }
 
-    func createYearlyProduct(withTrial: Bool = false, isEligibleForIntroOffer: Bool = true) -> MockSubscriptionProduct {
+    func createYearlyProduct(withTrial: Bool = false, isEligibleForFreeTrial: Bool = true) -> MockSubscriptionProduct {
         MockSubscriptionProduct(
             id: "com.test.yearly\(withTrial ? ".trial" : "")",
             displayName: "Yearly Plan\(withTrial ? " with Trial" : "")",
@@ -479,12 +479,12 @@ private extension StorePurchaseManagerTests {
                 periodInDays: 14,
                 isFreeTrial: true
             ) : nil,
-            isEligibleForIntroOffer: isEligibleForIntroOffer
+            isEligibleForFreeTrial: isEligibleForFreeTrial
         )
     }
 }
 
-private class MockSubscriptionProduct: SubscriptionProduct {
+private class MockSubscriptionProduct: StoreProduct {
     let id: String
     let displayName: String
     let displayPrice: String
@@ -493,7 +493,7 @@ private class MockSubscriptionProduct: SubscriptionProduct {
     let isYearly: Bool
     let isFreeTrialProduct: Bool
     private let mockIntroOffer: MockIntroductoryOffer?
-    private let mockIsEligibleForIntroOffer: Bool
+    private let mockIsEligibleForFreeTrial: Bool
 
     init(id: String,
          displayName: String = "Mock Product",
@@ -503,7 +503,7 @@ private class MockSubscriptionProduct: SubscriptionProduct {
          isYearly: Bool = false,
          isFreeTrialProduct: Bool = false,
          introOffer: MockIntroductoryOffer? = nil,
-         isEligibleForIntroOffer: Bool = false) {
+         isEligibleForFreeTrial: Bool = false) {
         self.id = id
         self.displayName = displayName
         self.displayPrice = displayPrice
@@ -512,16 +512,16 @@ private class MockSubscriptionProduct: SubscriptionProduct {
         self.isYearly = isYearly
         self.isFreeTrialProduct = isFreeTrialProduct
         self.mockIntroOffer = introOffer
-        self.mockIsEligibleForIntroOffer = isEligibleForIntroOffer
+        self.mockIsEligibleForFreeTrial = isEligibleForFreeTrial
     }
 
     var introductoryOffer: SubscriptionProductIntroductoryOffer? {
         return mockIntroOffer
     }
 
-    var isEligibleForIntroOffer: Bool {
+    var isEligibleForFreeTrial: Bool {
         get async {
-            return mockIsEligibleForIntroOffer
+            return mockIsEligibleForFreeTrial
         }
     }
 

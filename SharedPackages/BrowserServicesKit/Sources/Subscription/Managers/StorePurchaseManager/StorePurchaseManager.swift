@@ -45,7 +45,7 @@ public protocol StorePurchaseManager {
     @MainActor func hasActiveSubscription() async -> Bool
     /// Checks if the user is eligible for a free trial subscription offer.
     /// - Returns: `true` if the user is eligible for a free trial, `false` otherwise.
-    func isUserEligibleForFreeTrial() async -> Bool
+    func isUserEligibleForFreeTrial() -> Bool
 
     @MainActor func purchaseSubscription(with identifier: String, externalID: String) async -> Result<StorePurchaseManager.TransactionJWS, StorePurchaseManagerError>
 }
@@ -137,7 +137,12 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
 
             self.currentStorefrontRegion = storefrontRegion
             let applicableProductIdentifiers = storeSubscriptionConfiguration.subscriptionIdentifiers(for: storefrontRegion)
-            let availableProducts = try await productFetcher.products(for: applicableProductIdentifiers)
+            let storeKitProducts = try await productFetcher.products(for: applicableProductIdentifiers)
+            var availableProducts: [AppStoreSubscriptionProduct] = []
+            for product in storeKitProducts {
+                let product = await AppStoreSubscriptionProduct.create(product: product)
+                availableProducts.append(product)
+            }
             Logger.subscription.info("[StorePurchaseManager] updateAvailableProducts fetched \(availableProducts.count) products for \(storefrontCountryCode ?? "<nil>", privacy: .public)")
 
             if Set(availableProducts.map { $0.id }) != Set(self.availableProducts.map { $0.id }) {
@@ -215,12 +220,9 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
 
     /// Checks if the user is eligible for a free trial subscription offer.
     /// - Returns: `true` if the user is eligible for a free trial, `false` otherwise.
-    public func isUserEligibleForFreeTrial() async -> Bool {
+    public func isUserEligibleForFreeTrial() -> Bool {
         Logger.subscription.info("[StorePurchaseManager] isUserEligibleForFreeTrial")
-        guard let options = await freeTrialSubscriptionOptions()?.options else {
-            return false
-        }
-        return options.contains { $0.offer?.isUserEligible == true }
+        return availableProducts.contains { $0.isEligibleForFreeTrial == true }
     }
 
     @MainActor
@@ -355,9 +357,10 @@ private extension SubscriptionOption {
         var offer: SubscriptionOptionOffer?
 
         if let introOffer = product.introductoryOffer, introOffer.isFreeTrial {
-
             let durationInDays = introOffer.periodInDays
-            let isUserEligible = await product.isEligibleForIntroOffer
+
+            // Get fresh eligibility data without mutating the product
+            let isUserEligible = await product.checkFreshFreeTrialEligibility()
 
             offer = .init(type: .freeTrial, id: introOffer.id ?? "", durationInDays: durationInDays, isUserEligible: isUserEligible)
         }

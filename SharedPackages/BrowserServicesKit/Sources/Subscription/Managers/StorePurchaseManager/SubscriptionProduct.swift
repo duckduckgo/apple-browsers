@@ -50,9 +50,9 @@ public protocol SubscriptionProduct: Equatable {
     /// Whether the user is eligible for an introductory offer.
     var isEligibleForFreeTrial: Bool { get }
 
-    /// Refreshes the free trial eligibility status
-    /// - Returns: The updated eligibility status
-    mutating func refreshFreeTrialEligibility() async -> Bool
+    /// Checks the current free trial eligibility status without updating cached state
+    /// - Returns: The current eligibility status from the underlying product
+    func checkFreshFreeTrialEligibility() async -> Bool
 
     /// Initiates a purchase of the subscription with the specified options.
     /// - Parameter options: A set of options to configure the purchase.
@@ -112,18 +112,14 @@ public struct AppStoreSubscriptionProduct: SubscriptionProduct {
         return AppStoreSubscriptionProduct(product: product, freeTrialEligibility: isEligible)
     }
 
-    /// Refreshes the free trial eligibility status from the underlying product
-    /// - Returns: The updated eligibility status
-    @discardableResult
-    public mutating func refreshFreeTrialEligibility() async -> Bool {
+    /// Checks the current free trial eligibility status without updating cached state
+    /// - Returns: The current eligibility status from the underlying product
+    public func checkFreshFreeTrialEligibility() async -> Bool {
         guard product.isFreeTrialProduct else {
-            isEligibleForFreeTrial = false
             return false
         }
 
-        let updatedEligibility = await product.isEligibleForFreeTrial
-        isEligibleForFreeTrial = updatedEligibility
-        return updatedEligibility
+        return await product.isEligibleForFreeTrial
     }
 
     public func purchase(options: Set<Product.PurchaseOption>) async throws -> Product.PurchaseResult {

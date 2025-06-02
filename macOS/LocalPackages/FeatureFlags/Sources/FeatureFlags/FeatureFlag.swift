@@ -144,8 +144,9 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .syncSetupBarcodeIsUrlBased,
                 .exchangeKeysToSyncWithAnotherDevice,
                 .canScanUrlBasedSyncSetupBarcodes,
+				.privacyProFreeTrial,
                 .removeWWWInCanonicalizationInThreatProtection,
-                .aiChatSidebar:
+				.aiChatSidebar:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -224,6 +225,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
         case .canScanUrlBasedSyncSetupBarcodes:
             return .remoteReleasable(.subfeature(SyncSubfeature.canScanUrlBasedSyncSetupBarcodes))
+        case .privacyProFreeTrial:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProFreeTrial))
         case .removeWWWInCanonicalizationInThreatProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.removeWWWInCanonicalization))
         case .aiChatSidebar:

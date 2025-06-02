@@ -298,7 +298,7 @@ extension MainViewController {
                                                   textZoomCoordinator: textZoomCoordinator,
                                                   aiChatSettings: aiChatSettings,
                                                   maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager,
-                                                  experimentalThemingManager: ExperimentalThemingManager(featureFlagger: featureFlagger),
+                                                  themeManager: themeManager,
                                                   experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: featureFlagger))
         Pixel.fire(pixel: .settingsPresented)
 

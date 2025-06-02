@@ -86,13 +86,13 @@ private extension Color {
 }
 
 extension Image {
-    static let add = Image("WidgetEducationAddIcon")
-    static let widgetExample = Image("WidgetEducationWidgetExample")
+    static let add = Image(.widgetEducationAddIcon)
+    static let widgetExample = Image(.widgetEducationWidgetExample)
     static var homeScreen: Image {
         if #available(iOS 18, *) {
-            Image("WidgetEducationHomeScreen")
+            Image(.widgetEducationHomeScreen)
         } else {
-            Image("WidgetEducationHomeScreeniOS17")
+            Image(.widgetEducationHomeScreeniOS17)
         }
     }
 }

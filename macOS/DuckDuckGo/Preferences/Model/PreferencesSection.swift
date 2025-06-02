@@ -32,7 +32,7 @@ struct PreferencesSection: Hashable, Identifiable {
                                 includingAIChat: Bool,
                                 subscriptionState: PreferencesSidebarSubscriptionState) -> [PreferencesSection] {
         let privacyPanes: [PreferencePaneIdentifier] = [
-            .defaultBrowser, .privateSearch, .webTrackingProtection, .cookiePopupProtection, .emailProtection
+            .defaultBrowser, .privateSearch, .webTrackingProtection, .threatProtection, .cookiePopupProtection, .emailProtection
         ]
 
         let regularPanes: [PreferencePaneIdentifier] = {
@@ -129,6 +129,7 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
     case defaultBrowser
     case privateSearch
     case webTrackingProtection
+    case threatProtection
     case cookiePopupProtection
     case emailProtection
 
@@ -174,6 +175,8 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
             return UserText.privateSearch
         case .webTrackingProtection:
             return UserText.webTrackingProtection
+        case .threatProtection:
+            return UserText.threatProtection
         case .cookiePopupProtection:
             return UserText.cookiePopUpProtection
         case .emailProtection:
@@ -227,6 +230,8 @@ enum PreferencePaneIdentifier: String, Equatable, Hashable, Identifiable, CaseIt
             return settingsIconProvider.privateSearchIcon
         case .webTrackingProtection:
             return settingsIconProvider.webTrackingProtectionIcon
+        case .threatProtection:
+            return settingsIconProvider.threatProtectionIcon
         case .cookiePopupProtection:
             return settingsIconProvider.cookiePopUpProtectionIcon
         case .emailProtection:

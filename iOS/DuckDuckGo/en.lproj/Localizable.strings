@@ -2390,6 +2390,30 @@ https://duckduckgo.com/mac";
 /* Title for the Privacy Pro feedback form */
 "ppro.feedback-form.title" = "Send Feedback";
 
+/* Title of the section of a setting page that shows Scam Blocking preferences (weather warning in case of scam sites) */
+"preferences.scam-blocker.title" = "Scam Blocker";
+
+/* Caption explaining the risk of disabling scam blocker protection */
+"preferences.scam-blocker.toggle-caption" = "Disabling this feature can put your personal information at risk.";
+
+/* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
+"preferences.scam-blocker.toggle-label" = "Warn on sites flagged for scams, phishing, or malware. [Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker)";
+
+/* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
+"preferences.smarter-encryption.description" = "Automatically upgrades links to HTTPS whenever possible. [Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
+
+/* Title of the section of a setting page that shows Smarter Encryption preferences */
+"preferences.smarter-encryption.title" = "Smarter Encryption";
+
+/* Status indicator of a browser privacy protection feature. */
+"preferences.status-indicator.always-on" = "Always On";
+
+/* Title of the option to show the Threat Protection preferences */
+"preferences.threat-protection" = "Threat Protection";
+
+/* Caption of the option to show the Threat Protection preferences */
+"preferences.threat-protection.caption" = "DuckDuckGo's enhanced protections stop common threats while keeping your connection secure.\n[Learn More](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
+
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Some bookmarks or passwords are formatted incorrectly or too long and were not synced.";
 

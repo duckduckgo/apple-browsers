@@ -91,12 +91,15 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210081345713964?focus=true
     case canScanUrlBasedSyncSetupBarcodes
+
+    /// https://app.asana.com/1/137249556945/task/1210330600670666
+    case removeWWWInCanonicalizationInThreatProtection
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
     public var defaultValue: Bool {
         switch self {
-        case .failsafeExampleCrossPlatformFeature, .failsafeExamplePlatformSpecificSubfeature, .canScanUrlBasedSyncSetupBarcodes:
+        case .failsafeExampleCrossPlatformFeature, .failsafeExamplePlatformSpecificSubfeature, .canScanUrlBasedSyncSetupBarcodes, .removeWWWInCanonicalizationInThreatProtection:
             true
         default:
             false
@@ -139,9 +142,11 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .visualRefresh,
                 .tabCrashDebugging,
                 .tabCrashRecovery,
+                .maliciousSiteProtection,
                 .delayedWebviewPresentation,
                 .syncSetupBarcodeIsUrlBased,
-                .canScanUrlBasedSyncSetupBarcodes:
+                .canScanUrlBasedSyncSetupBarcodes,
+                .removeWWWInCanonicalizationInThreatProtection:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -150,7 +155,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .contextualOnboarding,
                 .unknownUsernameCategorization,
                 .credentialsImportPromotionForExistingUsers,
-                .maliciousSiteProtection,
                 .dbpRemoteBrokerDelivery:
             return false
         }
@@ -207,7 +211,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .failsafeExamplePlatformSpecificSubfeature:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests))
         case .visualRefresh:
-            return .remoteDevelopment(.feature(.experimentalBrowserTheming))
+            return .internalOnly()
         case .tabCrashDebugging:
             return .disabled
         case .tabCrashRecovery:
@@ -220,6 +224,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .disabled
         case .canScanUrlBasedSyncSetupBarcodes:
             return .remoteReleasable(.subfeature(SyncSubfeature.canScanUrlBasedSyncSetupBarcodes))
+        case .removeWWWInCanonicalizationInThreatProtection:
+            return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.removeWWWInCanonicalization))
         }
     }
 }

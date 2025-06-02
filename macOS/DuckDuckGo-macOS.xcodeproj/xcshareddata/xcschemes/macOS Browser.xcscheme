@@ -202,9 +202,6 @@
                   Identifier = "HTTPSUpgradeIntegrationTests">
                </Test>
                <Test
-                  Identifier = "HistoryIntegrationTests/testWhenSameDocumentNavigation_historyEntryTitleUpdated()">
-               </Test>
-               <Test
                   Identifier = "NavigationProtectionIntegrationTests/testAMPLinks()">
                </Test>
                <Test

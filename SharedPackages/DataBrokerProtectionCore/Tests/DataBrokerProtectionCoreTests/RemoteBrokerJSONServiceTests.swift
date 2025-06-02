@@ -108,20 +108,6 @@ final class RemoteBrokerJSONServiceTests: XCTestCase {
         }
     }
 
-    func testCheckForUpdatesThrowsMissingAccessToken() async {
-        let expectation = XCTestExpectation(description: "Missing access token")
-
-        authenticationManager.accessTokenValue = nil
-        do {
-            try await remoteBrokerJSONService.checkForUpdates()
-            XCTFail("Unexpected error")
-        } catch RemoteBrokerJSONService.Error.missingAccessToken {
-            expectation.fulfill()
-        } catch {
-            XCTFail("Unexpected error")
-        }
-    }
-
     func testCheckForUpdatesReturnsEarlyWhen304() async {
         MockURLProtocol.requestHandlerQueue.append { _ in (HTTPURLResponse.notModified, nil) }
         MockURLProtocol.requestHandlerQueue.append { _ in (HTTPURLResponse.noAuth, nil) }

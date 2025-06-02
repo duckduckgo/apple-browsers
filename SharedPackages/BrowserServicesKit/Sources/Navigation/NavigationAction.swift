@@ -102,14 +102,38 @@ public struct NavigationAction {
 
     internal init(webView: WKWebView, navigationAction: WKNavigationAction, currentHistoryItemIdentity: HistoryItemIdentity?, redirectHistory: [NavigationAction]?, navigationType: NavigationType? = nil, mainFrameNavigation: Navigation?) {
         // In this cruel reality the source frame IS Nullable for developer-initiated load events, this would mean we‘re targeting the main frame
-        let sourceFrame = (navigationAction.safeSourceFrame ?? navigationAction.targetFrame).map(FrameInfo.init) ?? .mainFrame(for: webView)
+        var sourceFrame = (navigationAction.safeSourceFrame ?? navigationAction.targetFrame).map(FrameInfo.init) ?? .mainFrame(for: webView)
+        // always has targetFrame if not targeting to a new window
+        var targetFrame = navigationAction.targetFrame.map(FrameInfo.init)
+
+        // To be adjusted when fixed in WebKit
+        // see WKNavigationActionExtension: isSameDocumentNavigation
+        if let frame = targetFrame,
+           frame.isMainFrame, navigationAction.isSameDocumentNavigation,
+           let committedURL = webView.committedURL,
+           frame.url != committedURL {
+#if _FRAME_HANDLE_ENABLED
+            targetFrame = FrameInfo(webView: frame.webView,
+                                    handle: frame.handle,
+                                    isMainFrame: frame.isMainFrame,
+                                    url: committedURL,
+                                    securityOrigin: committedURL.securityOrigin)
+#else
+            targetFrame = FrameInfo(webView: frame.webView,
+                                    isMainFrame: frame.isMainFrame,
+                                    url: committedURL,
+                                    securityOrigin: committedURL.securityOrigin)
+#endif
+            if sourceFrame == frame {
+                sourceFrame = targetFrame!
+            }
+        }
         var navigationType = navigationType
 
         if case .other = navigationAction.navigationType,
            case .returnCacheDataElseLoad = navigationAction.request.cachePolicy,
            navigationType == nil,
            redirectHistory == nil,
-           navigationAction.safeSourceFrame == nil,
            navigationAction.targetFrame?.isMainFrame == true,
            navigationAction.targetFrame?.safeRequest?.url?.isEmpty == true,
            webView.backForwardList.currentItem != nil {
@@ -138,8 +162,7 @@ public struct NavigationAction {
                   redirectHistory: redirectHistory,
                   isUserInitiated: navigationAction.isUserInitiated,
                   sourceFrame: sourceFrame,
-                  // always has targetFrame if not targeting to a new window
-                  targetFrame: navigationAction.targetFrame.map(FrameInfo.init),
+                  targetFrame: targetFrame,
                   shouldDownload: navigationAction.shouldDownload,
                   mainFrameNavigation: mainFrameNavigation)
 #if os(macOS)

@@ -225,7 +225,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .canScanUrlBasedSyncSetupBarcodes:
             return .remoteReleasable(.subfeature(SyncSubfeature.canScanUrlBasedSyncSetupBarcodes))
         case .aiChatSidebar:
-            return .disabled
+            return .internalOnly()
         }
     }
 }

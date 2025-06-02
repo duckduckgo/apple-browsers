@@ -588,7 +588,7 @@ final class PasswordManagementViewController: NSViewController {
             if case SecureStorageError.duplicateRecord = error {
                 showDuplicateAlert()
             } else {
-                PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error)))
+                PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
             }
         }
     }
@@ -611,7 +611,7 @@ final class PasswordManagementViewController: NSViewController {
             postChange()
 
         } catch {
-            PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error)))
+            PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
         }
     }
 
@@ -655,7 +655,7 @@ final class PasswordManagementViewController: NSViewController {
             postChange()
 
         } catch {
-            PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error)))
+            PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
         }
     }
 
@@ -675,7 +675,7 @@ final class PasswordManagementViewController: NSViewController {
                     self.refreshData()
                     PixelKit.fire(GeneralPixel.autofillManagementDeleteLogin)
                 } catch {
-                    PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error)))
+                    PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
                 }
 
             default:
@@ -698,7 +698,7 @@ final class PasswordManagementViewController: NSViewController {
                     try self.secureVault?.deleteIdentityFor(identityId: id)
                     self.refreshData()
                 } catch {
-                    PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error)))
+                    PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
                 }
 
             default:
@@ -740,7 +740,7 @@ final class PasswordManagementViewController: NSViewController {
                     try self.secureVault?.deleteCreditCardFor(cardId: id)
                     self.refreshData()
                 } catch {
-                    PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error)))
+                    PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
                 }
 
             default:
@@ -793,7 +793,7 @@ final class PasswordManagementViewController: NSViewController {
                         self?.syncModelsOnNote(note)
                     }
                 } catch {
-                    PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error)))
+                    PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
                 }
             }
 
@@ -923,7 +923,7 @@ final class PasswordManagementViewController: NSViewController {
                     items = cards.map(SecureVaultItem.card)
                 }
             } catch {
-                PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error)))
+                PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
             }
 
             DispatchQueue.main.async {

@@ -305,7 +305,7 @@ final class SaveCredentialsViewController: NSViewController {
             }
         } catch {
             Logger.sync.error("failed to store credentials \(error.localizedDescription)")
-            PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error)))
+            PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
         }
 
         NotificationCenter.default.post(name: .autofillSaveEvent, object: nil, userInfo: nil)

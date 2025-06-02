@@ -26,17 +26,15 @@ protocol VisualStyleProviding {
     var toolbarButtonsCornerRadius: CGFloat { get }
     var fireWindowGraphic: NSImage { get }
     var areNavigationBarCornersRound: Bool { get }
+    var fireButtonSize: CGFloat { get }
+    var navigationToolbarButtonsSpacing: CGFloat { get }
+    var tabBarButtonSize: CGFloat { get }
+    var addToolbarShadow: Bool { get }
 
     var addressBarStyleProvider: AddressBarStyleProviding { get }
     var tabStyleProvider: TabStyleProviding { get }
     var colorsProvider: ColorsProviding { get }
     var iconsProvider: IconsProviding { get }
-    var fireButtonSize: CGFloat { get }
-
-    var addressBarActiveBackgroundViewRadius: CGFloat { get }
-    var addressBarInactiveBackgroundViewRadius: CGFloat { get }
-    var addressBarInnerBorderViewRadius: CGFloat { get }
-    var addressBarActiveOuterBorderViewRadius: CGFloat { get }
 }
 
 protocol VisualStyleManagerProviding {
@@ -73,10 +71,9 @@ struct VisualStyle: VisualStyleProviding {
     let colorsProvider: ColorsProviding
     let iconsProvider: IconsProviding
     let fireButtonSize: CGFloat
-    let addressBarActiveBackgroundViewRadius: CGFloat
-    let addressBarInactiveBackgroundViewRadius: CGFloat
-    let addressBarInnerBorderViewRadius: CGFloat
-    let addressBarActiveOuterBorderViewRadius: CGFloat
+    let navigationToolbarButtonsSpacing: CGFloat
+    let tabBarButtonSize: CGFloat
+    let addToolbarShadow: Bool
 
     static var legacy: VisualStyleProviding {
         return VisualStyle(toolbarButtonsCornerRadius: 4,
@@ -87,10 +84,9 @@ struct VisualStyle: VisualStyleProviding {
                            colorsProvider: LegacyColorsProviding(),
                            iconsProvider: LegacyIconsProvider(),
                            fireButtonSize: 28,
-                           addressBarActiveBackgroundViewRadius: 8,
-                           addressBarInactiveBackgroundViewRadius: 6,
-                           addressBarInnerBorderViewRadius: 8,
-                           addressBarActiveOuterBorderViewRadius: 10)
+                           navigationToolbarButtonsSpacing: 0,
+                           tabBarButtonSize: 28,
+                           addToolbarShadow: false)
     }
 
     static var current: VisualStyleProviding {
@@ -103,10 +99,9 @@ struct VisualStyle: VisualStyleProviding {
                            colorsProvider: NewColorsProviding(palette: palette),
                            iconsProvider: CurrentIconsProvider(),
                            fireButtonSize: 32,
-                           addressBarActiveBackgroundViewRadius: 11,
-                           addressBarInactiveBackgroundViewRadius: 11,
-                           addressBarInnerBorderViewRadius: 11,
-                           addressBarActiveOuterBorderViewRadius: 13)
+                           navigationToolbarButtonsSpacing: 2,
+                           tabBarButtonSize: 28,
+                           addToolbarShadow: true)
     }
 }
 

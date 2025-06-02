@@ -132,8 +132,11 @@ jobs:
             echo "::notice::Branch ${branch} doesn't exist on the remote repository, staying on main."
           fi
 
-      - name: Set up fastlane
-        run: bundle install
+      - name: Setup Ruby and dependencies
+        uses: ./.github/actions/setup-ruby
+        with:
+          working-directory: macOS
+          cache-key-prefix: macos-ruby
 
       - name: Select Xcode
         uses: ./.github/actions/select-xcode-version

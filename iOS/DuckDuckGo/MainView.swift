@@ -42,9 +42,11 @@ class MainViewFactory {
                                     aiChatSettings: AIChatSettingsProvider,
                                     voiceSearchHelper: VoiceSearchHelperProtocol,
                                     featureFlagger: FeatureFlagger) -> MainViewCoordinator {
+        let experimentalThemingManager = ExperimentalThemingManager(featureFlagger: featureFlagger)
         let omnibarDependencies = OmnibarDependencies(voiceSearchHelper: voiceSearchHelper,
                                                       featureFlagger: featureFlagger,
-                                                      aiChatSettings: aiChatSettings)
+                                                      aiChatSettings: aiChatSettings,
+                                                      isExperimentalAppearanceEnabled: experimentalThemingManager.isExperimentalThemingEnabled)
         let factory = MainViewFactory(parentController: parentController, omnibarDependencies: omnibarDependencies, featureFlagger: featureFlagger)
         factory.createViews()
         factory.disableAutoresizingOnImmediateSubviews(factory.superview)
@@ -166,8 +168,8 @@ extension MainViewFactory {
     final class LogoBackgroundView: UIView { }
     private func createLogoBackground() {
         coordinator.logoContainer = LogoBackgroundView()
-        coordinator.logo = UIImageView(image: UIImage(named: "Logo"))
-        coordinator.logoText = UIImageView(image: UIImage(named: "TextDuckDuckGo"))
+        coordinator.logo = UIImageView(image: UIImage(resource: .logo))
+        coordinator.logoText = UIImageView(image: UIImage(resource: .textDuckDuckGo))
 
         coordinator.logoContainer.backgroundColor = .clear
         coordinator.logoContainer.addSubview(coordinator.logo)

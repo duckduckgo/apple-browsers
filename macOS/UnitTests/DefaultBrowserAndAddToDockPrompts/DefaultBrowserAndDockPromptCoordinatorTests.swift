@@ -22,304 +22,360 @@ import FeatureFlags
 @testable import DuckDuckGo_Privacy_Browser
 
 final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
+    private var promptTypeDeciderMock: MockDefaultBrowserAndDockPromptTypeDecider!
+    private var defaultBrowserProviderMock: DefaultBrowserProviderMock!
+    private var dockCustomizerMock: DockCustomizerMock!
+    private var applicationBuildTypeMock: ApplicationBuildTypeMock!
+    private var storeMock: MockDefaultBrowserAndDockPromptStore!
+    private var timeTraveller: TimeTraveller!
+    private static let now = Date(timeIntervalSince1970: 1747872000) // 22 May 2025 12:00:00 AM
+
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+
+        promptTypeDeciderMock = MockDefaultBrowserAndDockPromptTypeDecider()
+        defaultBrowserProviderMock = DefaultBrowserProviderMock()
+        dockCustomizerMock = DockCustomizerMock()
+        applicationBuildTypeMock = ApplicationBuildTypeMock()
+        storeMock = MockDefaultBrowserAndDockPromptStore()
+        timeTraveller = TimeTraveller(date: Self.now)
+    }
+
+    override func tearDownWithError() throws {
+        promptTypeDeciderMock = nil
+        defaultBrowserProviderMock = nil
+        dockCustomizerMock = nil
+        applicationBuildTypeMock = nil
+        storeMock = nil
+        timeTraveller = nil
+
+        try super.tearDownWithError()
+    }
+
+    func makeSUT(isOnboardingCompleted: Bool = true) -> DefaultBrowserAndDockPromptCoordinator  {
+        DefaultBrowserAndDockPromptCoordinator(
+            promptTypeDecider: promptTypeDeciderMock,
+            store: storeMock,
+            isOnboardingCompleted: isOnboardingCompleted,
+            dockCustomization: dockCustomizerMock,
+            defaultBrowserProvider: defaultBrowserProviderMock,
+            applicationBuildType: applicationBuildTypeMock,
+            dateProvider: timeTraveller.getDate
+        )
+    }
 
     // MARK: - Evaluate prompt eligibility tests
 
     func testEvaluatePromptEligibility_SparkleBuild_DefaultBrowserAndAddedToDock_ReturnsNil() {
-        let defaultBrowserProviderMock = DefaultBrowserProviderMock()
-        let dockCustomizerMock = DockCustomizerMock()
-        let applicationBuildTypeMock = ApplicationBuildTypeMock()
-        let featureFlagger = MockFeatureFlagger()
-
+        // GIVEN
         applicationBuildTypeMock.isSparkleBuild = true
-
-        let sut = DefaultBrowserAndDockPromptCoordinator(
-            dockCustomization: dockCustomizerMock,
-            defaultBrowserProvider: defaultBrowserProviderMock,
-            featureFlagger: featureFlagger,
-            applicationBuildType: applicationBuildTypeMock
-        )
-
         defaultBrowserProviderMock.isDefault = true
         dockCustomizerMock.dockStatus = true
+        let sut = makeSUT()
 
+        // THEN
         XCTAssertNil(sut.evaluatePromptEligibility)
     }
 
     func testEvaluatePromptEligibility_SparkleBuild_DefaultBrowserAndNotAddedToDock_ReturnsAddToDockPrompt() {
-        let defaultBrowserProviderMock = DefaultBrowserProviderMock()
-        let dockCustomizerMock = DockCustomizerMock()
-        let applicationBuildTypeMock = ApplicationBuildTypeMock()
-        let featureFlagger = MockFeatureFlagger()
-
+        // GIVEN
         applicationBuildTypeMock.isSparkleBuild = true
-
-        let sut = DefaultBrowserAndDockPromptCoordinator(
-            dockCustomization: dockCustomizerMock,
-            defaultBrowserProvider: defaultBrowserProviderMock,
-            featureFlagger: featureFlagger,
-            applicationBuildType: applicationBuildTypeMock
-        )
-
         defaultBrowserProviderMock.isDefault = true
         dockCustomizerMock.dockStatus = false
+        let sut = makeSUT()
 
+        // THEN
         XCTAssertEqual(sut.evaluatePromptEligibility, .addToDockPrompt)
     }
 
     func testEvaluatePromptEligibility_SparkleBuild_NotDefaultBrowserAndAddedToDock_ReturnsSetAsDefaultPrompt() {
-        let defaultBrowserProviderMock = DefaultBrowserProviderMock()
-        let dockCustomizerMock = DockCustomizerMock()
-        let applicationBuildTypeMock = ApplicationBuildTypeMock()
-        let featureFlagger = MockFeatureFlagger()
-
+        // GIVEN
         applicationBuildTypeMock.isSparkleBuild = true
-
-        let sut = DefaultBrowserAndDockPromptCoordinator(
-            dockCustomization: dockCustomizerMock,
-            defaultBrowserProvider: defaultBrowserProviderMock,
-            featureFlagger: featureFlagger,
-            applicationBuildType: applicationBuildTypeMock
-        )
-
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = true
+        let sut = makeSUT()
 
+        // THEN
         XCTAssertEqual(sut.evaluatePromptEligibility, .setAsDefaultPrompt)
     }
 
     func testEvaluatePromptEligibility_SparkleBuild_NotDefaultBrowserAndNotAddedToDock_ReturnsBothDefaultBrowserAndDockPrompt() {
-        let defaultBrowserProviderMock = DefaultBrowserProviderMock()
-        let dockCustomizerMock = DockCustomizerMock()
-        let applicationBuildTypeMock = ApplicationBuildTypeMock()
-        let featureFlagger = MockFeatureFlagger()
-
+        // GIVEN
         applicationBuildTypeMock.isSparkleBuild = true
-
-        let sut = DefaultBrowserAndDockPromptCoordinator(
-            dockCustomization: dockCustomizerMock,
-            defaultBrowserProvider: defaultBrowserProviderMock,
-            featureFlagger: featureFlagger,
-            applicationBuildType: applicationBuildTypeMock
-        )
-
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = false
+        let sut = makeSUT()
 
+        // THEN
         XCTAssertEqual(sut.evaluatePromptEligibility, .bothDefaultBrowserAndDockPrompt)
     }
 
     func testEvaluatePromptEligibility_AppStoreBuild_DefaultBrowser_ReturnsNil() {
-        let defaultBrowserProviderMock = DefaultBrowserProviderMock()
-        let dockCustomizerMock = DockCustomizerMock()
-        let applicationBuildTypeMock = ApplicationBuildTypeMock()
-        let featureFlagger = MockFeatureFlagger()
-
+        // GIVEN
         applicationBuildTypeMock.isSparkleBuild = false
-
-        let sut = DefaultBrowserAndDockPromptCoordinator(
-            dockCustomization: dockCustomizerMock,
-            defaultBrowserProvider: defaultBrowserProviderMock,
-            featureFlagger: featureFlagger,
-            applicationBuildType: applicationBuildTypeMock
-        )
-
         defaultBrowserProviderMock.isDefault = true
         dockCustomizerMock.dockStatus = false
+        let sut = makeSUT()
 
+        // THEN
         XCTAssertNil(sut.evaluatePromptEligibility)
     }
 
     func testEvaluatePromptEligibility_AppStoreBuild_NotDefaultBrowser_ReturnsSetAsDefaultPrompt() {
-        let defaultBrowserProviderMock = DefaultBrowserProviderMock()
-        let dockCustomizerMock = DockCustomizerMock()
-        let applicationBuildTypeMock = ApplicationBuildTypeMock()
-        let featureFlagger = MockFeatureFlagger()
-
+        // GIVEN
         applicationBuildTypeMock.isSparkleBuild = false
-
-        let sut = DefaultBrowserAndDockPromptCoordinator(
-            dockCustomization: dockCustomizerMock,
-            defaultBrowserProvider: defaultBrowserProviderMock,
-            featureFlagger: featureFlagger,
-            applicationBuildType: applicationBuildTypeMock
-        )
-
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = false
+        let sut = makeSUT()
 
+        // THEN
         XCTAssertEqual(sut.evaluatePromptEligibility, .setAsDefaultPrompt)
     }
 
-    // MARK: - Get prompty type tests
+    // MARK: - Get prompt type tests
 
-    func testGetPromptTypeReturnsNilWhenUserIsNotEligibleForExperiment() {
-        let featureFlaggerMock = FeatureFlaggerMock(enabledFeatureFlags: [.popoverVsBannerExperiment])
-        let experimentDecidingMock = DefaultBrowserAndDockPromptExperimentDecidingMock()
-        experimentDecidingMock.isUserEligibleForExperiment = false
+    func testGetPromptTypeReturnsNilWhenOnboardingIsNotCompleted() {
+        // GIVEN
+        defaultBrowserProviderMock.isDefault = false
+        dockCustomizerMock.dockStatus = false
+        promptTypeDeciderMock.promptTypeToReturn = .banner
+        let sut = makeSUT(isOnboardingCompleted: false)
 
-        let sut = DefaultBrowserAndDockPromptCoordinator(featureFlagger: featureFlaggerMock)
-
-        XCTAssertNil(sut.getPromptType(experimentDecider: experimentDecidingMock))
-
+        // THEN
+        XCTAssertNil(sut.getPromptType())
     }
 
-    func testGetPromptTypeReturnsNilWhenFeatureFlagCohortIsControl() {
-        let featureFlaggerMock = FeatureFlaggerMock(enabledFeatureFlags: [.popoverVsBannerExperiment])
-        let experimentDecidingMock = DefaultBrowserAndDockPromptExperimentDecidingMock()
-        experimentDecidingMock.isUserEligibleForExperiment = true
+    func testGetPromptTypeReturnsNilWhenBrowserIsDefaultAndAddedToDock() {
+        // GIVEN
+        defaultBrowserProviderMock.isDefault = true
+        dockCustomizerMock.dockStatus = true
+        promptTypeDeciderMock.promptTypeToReturn = .banner
+        let sut = makeSUT()
 
-        let sut = DefaultBrowserAndDockPromptCoordinator(featureFlagger: featureFlaggerMock)
-
-        featureFlaggerMock.cohortToReturn = FeatureFlag.PopoverVSBannerExperimentCohort.control
-
-        XCTAssertNil(sut.getPromptType(experimentDecider: experimentDecidingMock))
+        // THEN
+        XCTAssertNil(sut.getPromptType())
     }
 
-    func testGetPromptTypeReturnsBannerWhenFeatureFlagCohortIsBanner() {
-        let featureFlaggerMock = FeatureFlaggerMock(enabledFeatureFlags: [.popoverVsBannerExperiment])
-        let experimentDecidingMock = DefaultBrowserAndDockPromptExperimentDecidingMock()
-        experimentDecidingMock.isUserEligibleForExperiment = true
+    func testGetPromptTypeReturnsPromptWhenBrowserIsNotDefault() {
+        // GIVEN
+        defaultBrowserProviderMock.isDefault = false
+        dockCustomizerMock.dockStatus = true
+        promptTypeDeciderMock.promptTypeToReturn = .banner
+        let sut = makeSUT()
 
-        let sut = DefaultBrowserAndDockPromptCoordinator(featureFlagger: featureFlaggerMock)
-
-        featureFlaggerMock.cohortToReturn = FeatureFlag.PopoverVSBannerExperimentCohort.banner
-        let result = sut.getPromptType(experimentDecider: experimentDecidingMock)
-
-        XCTAssertEqual(result, .banner)
+        // THEN
+        XCTAssertEqual(sut.getPromptType(), .banner)
     }
 
-    func testGetPromptTypeReturnsPopoverWhenFeatureFlagCohortIsPopover() {
-        let featureFlaggerMock = FeatureFlaggerMock(enabledFeatureFlags: [.popoverVsBannerExperiment])
-        let experimentDecidingMock = DefaultBrowserAndDockPromptExperimentDecidingMock()
-        experimentDecidingMock.isUserEligibleForExperiment = true
+    func testGetPromptTypeReturnsPromptWhenBrowserIsNotAddedToDock() {
+        // GIVEN
+        defaultBrowserProviderMock.isDefault = true
+        dockCustomizerMock.dockStatus = false
+        applicationBuildTypeMock.isSparkleBuild = true
+        promptTypeDeciderMock.promptTypeToReturn = .banner
+        let sut = makeSUT()
 
-        let sut = DefaultBrowserAndDockPromptCoordinator(featureFlagger: featureFlaggerMock)
+        // THEN
+        XCTAssertEqual(sut.getPromptType(), .banner)
+    }
 
-        featureFlaggerMock.cohortToReturn = FeatureFlag.PopoverVSBannerExperimentCohort.popover
-        let result = sut.getPromptType(experimentDecider: experimentDecidingMock)
+    func testGetPromptTypeSetPopoverSeenWhenPromptReturnedIsPopover() {
+        // GIVEN
+        defaultBrowserProviderMock.isDefault = false
+        promptTypeDeciderMock.promptTypeToReturn = .popover
+        XCTAssertNil(storeMock.popoverShownDate)
+        let sut = makeSUT()
 
+        // WHEN
+        let result = sut.getPromptType()
+
+        // THEN
         XCTAssertEqual(result, .popover)
-    }
-
-    func testGetPromptTypeReturnsNilWhenFeatureFlagIsDisabled() {
-        let featureFlaggerMock = FeatureFlaggerMock(enabledFeatureFlags: [])
-        let experimentDecidingMock = DefaultBrowserAndDockPromptExperimentDecidingMock()
-        experimentDecidingMock.isUserEligibleForExperiment = true
-
-        let sut = DefaultBrowserAndDockPromptCoordinator(featureFlagger: featureFlaggerMock)
-
-        featureFlaggerMock.cohortToReturn = FeatureFlag.PopoverVSBannerExperimentCohort.popover
-
-        XCTAssertNil(sut.getPromptType(experimentDecider: experimentDecidingMock))
+        XCTAssertEqual(storeMock.popoverShownDate, Self.now.timeIntervalSince1970)
     }
 
     // MARK: - Prompt confirmation tests
 
-    func testOnPromptConfirmationCallsAddToDockAndSetAsDefaultBrowserWhenBothDefaultBrowserAndDockPromptType() {
-        let defaultBrowserProviderMock = DefaultBrowserProviderMock()
-        let dockCustomizerMock = DockCustomizerMock()
-        let applicationBuildTypeMock = ApplicationBuildTypeMock()
-        let featureFlagger = MockFeatureFlagger()
-
+    func testConfirmActionCallsAddToDockAndSetAsDefaultBrowserWhenBothDefaultBrowserAndDockPromptType() {
+        // GIVEN
         applicationBuildTypeMock.isSparkleBuild = true
-
-        let sut = DefaultBrowserAndDockPromptCoordinator(
-            dockCustomization: dockCustomizerMock,
-            defaultBrowserProvider: defaultBrowserProviderMock,
-            featureFlagger: featureFlagger,
-            applicationBuildType: applicationBuildTypeMock
-        )
-
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = false
+        let sut = makeSUT()
 
-        sut.onPromptConfirmation()
+        // WHEN
+        sut.confirmAction(for: .popover)
 
+        // THEN
         XCTAssertTrue(dockCustomizerMock.dockStatus)
         XCTAssertTrue(defaultBrowserProviderMock.wasPresentDefaultBrowserPromptCalled)
     }
 
-    func testOnPromptConfirmationCallsAddToDockWhenAddToDockPromptType() {
-        let defaultBrowserProviderMock = DefaultBrowserProviderMock()
-        let dockCustomizerMock = DockCustomizerMock()
-        let applicationBuildTypeMock = ApplicationBuildTypeMock()
-        let featureFlagger = MockFeatureFlagger()
-
+    func testConfirmActionCallsAddToDockWhenAddToDockPromptType() {
+        // GIVEN
         applicationBuildTypeMock.isSparkleBuild = true
-
-        let sut = DefaultBrowserAndDockPromptCoordinator(
-            dockCustomization: dockCustomizerMock,
-            defaultBrowserProvider: defaultBrowserProviderMock,
-            featureFlagger: featureFlagger,
-            applicationBuildType: applicationBuildTypeMock
-        )
-
         defaultBrowserProviderMock.isDefault = true
         dockCustomizerMock.dockStatus = false
+        let sut = makeSUT()
 
-        sut.onPromptConfirmation()
+        // WHEN
+        sut.confirmAction(for: .popover)
 
+        // THEN
         XCTAssertTrue(dockCustomizerMock.dockStatus)
         XCTAssertFalse(defaultBrowserProviderMock.wasPresentDefaultBrowserPromptCalled)
     }
 
-    func testOnPromptConfirmationCallsSetAsDefaultBrowserWhenSetAsDefaultPromptType() {
-        let defaultBrowserProviderMock = DefaultBrowserProviderMock()
-        let dockCustomizerMock = DockCustomizerMock()
-        let applicationBuildTypeMock = ApplicationBuildTypeMock()
-        let featureFlagger = MockFeatureFlagger()
-
+    func testConfirmActionCallsSetAsDefaultBrowserWhenSetAsDefaultPromptType() {
+        // GIVEN
         applicationBuildTypeMock.isSparkleBuild = true
-
-        let sut = DefaultBrowserAndDockPromptCoordinator(
-            dockCustomization: dockCustomizerMock,
-            defaultBrowserProvider: defaultBrowserProviderMock,
-            featureFlagger: featureFlagger,
-            applicationBuildType: applicationBuildTypeMock
-        )
-
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = true
+        let sut = makeSUT()
 
-        sut.onPromptConfirmation()
+        // WHEN
+        sut.confirmAction(for: .popover)
 
+        // THEN
         XCTAssertFalse(dockCustomizerMock.wasAddToDockCalled)
         XCTAssertTrue(defaultBrowserProviderMock.wasPresentDefaultBrowserPromptCalled)
     }
 
-    func testOnPromptConfirmationDoesNothingWhenEvaluatePromptEligibilityIsNil() {
-        let defaultBrowserProviderMock = DefaultBrowserProviderMock()
-        let dockCustomizerMock = DockCustomizerMock()
-        let applicationBuildTypeMock = ApplicationBuildTypeMock()
-        let featureFlagger = MockFeatureFlagger()
-
+    func testConfirmActionDoesNothingWhenEvaluatePromptEligibilityIsNil() {
+        // GIVEN
         applicationBuildTypeMock.isSparkleBuild = true
-
-        let sut = DefaultBrowserAndDockPromptCoordinator(
-            dockCustomization: dockCustomizerMock,
-            defaultBrowserProvider: defaultBrowserProviderMock,
-            featureFlagger: featureFlagger,
-            applicationBuildType: applicationBuildTypeMock
-        )
-
         defaultBrowserProviderMock.isDefault = true
         dockCustomizerMock.dockStatus = true
+        let sut = makeSUT()
 
-        sut.onPromptConfirmation()
+        // WHEN
+        sut.confirmAction(for: .popover)
 
+        // THEN
         XCTAssertFalse(dockCustomizerMock.wasAddToDockCalled)
         XCTAssertFalse(defaultBrowserProviderMock.wasPresentDefaultBrowserPromptCalled)
     }
-}
 
-final class ApplicationBuildTypeMock: ApplicationBuildType {
-    var isSparkleBuild: Bool = false
-    var isAppStoreBuild: Bool = false
-}
+    func testConfirmActionSetBannerSeen() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        defaultBrowserProviderMock.isDefault = false
+        dockCustomizerMock.dockStatus = false
+        let sut = makeSUT()
+        XCTAssertNil(storeMock.bannerShownDate)
+        XCTAssertNil(storeMock.popoverShownDate)
 
-final class DefaultBrowserAndDockPromptExperimentDecidingMock: DefaultBrowserAndDockPromptExperimentDeciding {
-    var isUserEligibleForExperiment: Bool = false
+        // WHEN
+        sut.confirmAction(for: .banner)
+
+        // THEN
+        XCTAssertEqual(storeMock.bannerShownDate, Self.now.timeIntervalSince1970)
+        XCTAssertNil(storeMock.popoverShownDate)
+    }
+
+    func testConfirmActionDoesNotSetPopoverSeen() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        defaultBrowserProviderMock.isDefault = false
+        dockCustomizerMock.dockStatus = false
+        let sut = makeSUT()
+        XCTAssertNil(storeMock.bannerShownDate)
+        XCTAssertNil(storeMock.popoverShownDate)
+
+        // WHEN
+        sut.confirmAction(for: .popover)
+
+        // THEN
+        XCTAssertNil(storeMock.bannerShownDate)
+        XCTAssertNil(storeMock.popoverShownDate)
+    }
+
+    // MARK: - Dismiss Action tests
+
+    func testDismissActionShouldHidePermanentlyFalseSetBannerSeenAndDoesNotSetPermanentlyHiddenFlagToTrue() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        defaultBrowserProviderMock.isDefault = false
+        dockCustomizerMock.dockStatus = false
+        let sut = makeSUT()
+        XCTAssertNil(storeMock.bannerShownDate)
+        XCTAssertFalse(storeMock.isBannerPermanentlyDismissed)
+        XCTAssertNil(storeMock.popoverShownDate)
+
+        // WHEN
+        sut.dismissAction(.userInput(prompt: .banner, shouldHidePermanently: false))
+
+        // THEN
+        XCTAssertEqual(storeMock.bannerShownDate, Self.now.timeIntervalSince1970)
+        XCTAssertFalse(storeMock.isBannerPermanentlyDismissed)
+        XCTAssertNil(storeMock.popoverShownDate)
+    }
+
+    func testDismissActionShouldHidePermanentlyTrueSetBannerSeenAndSetPermanentlyHiddenFlagToTrue() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        defaultBrowserProviderMock.isDefault = false
+        dockCustomizerMock.dockStatus = false
+        let sut = makeSUT()
+        XCTAssertNil(storeMock.bannerShownDate)
+        XCTAssertFalse(storeMock.isBannerPermanentlyDismissed)
+        XCTAssertNil(storeMock.popoverShownDate)
+
+        // WHEN
+        sut.dismissAction(.userInput(prompt: .banner, shouldHidePermanently: true))
+
+        // THEN
+        XCTAssertEqual(storeMock.bannerShownDate, Self.now.timeIntervalSince1970)
+        XCTAssertTrue(storeMock.isBannerPermanentlyDismissed)
+        XCTAssertNil(storeMock.popoverShownDate)
+    }
+
+    func testDismissActionDoesNotSetPopoverSeen() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        defaultBrowserProviderMock.isDefault = false
+        dockCustomizerMock.dockStatus = false
+        let sut = makeSUT()
+        XCTAssertNil(storeMock.bannerShownDate)
+        XCTAssertFalse(storeMock.isBannerPermanentlyDismissed)
+        XCTAssertNil(storeMock.popoverShownDate)
+
+        // WHEN
+        sut.dismissAction(.userInput(prompt: .popover, shouldHidePermanently: true))
+
+        // THEN
+        XCTAssertNil(storeMock.bannerShownDate)
+        XCTAssertFalse(storeMock.isBannerPermanentlyDismissed)
+        XCTAssertNil(storeMock.popoverShownDate)
+    }
+
+    func testDismissActionStatusUpdateForBannerPromptSetBannerSeenAndSetPermanentlyHiddenFlagToFalse() {
+        // GIVEN
+        let sut = makeSUT()
+        XCTAssertNil(storeMock.bannerShownDate)
+        XCTAssertFalse(storeMock.isBannerPermanentlyDismissed)
+
+        // WHEN
+        sut.dismissAction(.statusUpdate(prompt: .banner))
+
+        // THEN
+        XCTAssertEqual(storeMock.bannerShownDate, Self.now.timeIntervalSince1970)
+        XCTAssertFalse(storeMock.isBannerPermanentlyDismissed)
+    }
+
+    func testDismissActionStatusUpdateForPopoverDoesNotSetPopoverSeen() {
+        // GIVEN
+        let sut = makeSUT()
+        XCTAssertNil(storeMock.popoverShownDate)
+        XCTAssertFalse(storeMock.isBannerPermanentlyDismissed)
+
+        // WHEN
+        sut.dismissAction(.statusUpdate(prompt: .popover))
+
+        // THEN
+        XCTAssertNil(storeMock.popoverShownDate)
+        XCTAssertFalse(storeMock.isBannerPermanentlyDismissed)
+    }
 }
 
 final class FeatureFlaggerMock: FeatureFlagger {

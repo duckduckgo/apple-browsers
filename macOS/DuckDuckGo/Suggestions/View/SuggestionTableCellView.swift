@@ -36,6 +36,8 @@ final class SuggestionTableCellView: NSTableCellView {
         static let switchToTabSuffixPadding: CGFloat = 8
 
         static let trailingSpace: CGFloat = 8
+        static let iconImageViewLeadingSpace: CGFloat = 13
+        static let suggestionTextFieldLeadingSpace: CGFloat = 7
     }
 
     @IBOutlet var iconImageView: NSImageView!
@@ -47,6 +49,8 @@ final class SuggestionTableCellView: NSTableCellView {
     @IBOutlet var switchToTabArrowView: NSImageView!
     @IBOutlet var switchToTabBoxLeadingConstraint: NSLayoutConstraint!
     @IBOutlet var switchToTabBoxTrailingConstraint: NSLayoutConstraint!
+    @IBOutlet weak var iconImageViewLeadingConstraint: NSLayoutConstraint!
+    @IBOutlet weak var searchSuggestionTextFieldLeadingConstraint: NSLayoutConstraint!
 
     var visualStyle: VisualStyleProviding?
     var suggestion: Suggestion?
@@ -189,6 +193,9 @@ final class SuggestionTableCellView: NSTableCellView {
                 suffixTrailingConstraint.constant = Constants.trailingSpace
             }
         }
+
+        iconImageViewLeadingConstraint.constant = visualStyle?.addressBarStyleProvider.suggestionIconViewLeadingPadding ?? Constants.iconImageViewLeadingSpace
+        searchSuggestionTextFieldLeadingConstraint.constant = visualStyle?.addressBarStyleProvider.suggestionTextFieldLeadingPadding ?? Constants.suggestionTextFieldLeadingSpace
 
         super.layout()
     }

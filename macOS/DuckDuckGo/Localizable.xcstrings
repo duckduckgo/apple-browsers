@@ -59796,6 +59796,186 @@
         }
       }
     },
+    "preferences.scam-blocker.title" : {
+      "comment" : "Title of the section of a setting page that shows Scam Blocking preferences (weather warning in case of scam sites)",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Betrugsblocker"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Scam Blocker"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloqueador de estafas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloqueur d'escroqueries"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blocco delle truffe"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scamblocker"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Blokowanie oszustw"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bloqueador de fraude"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Блокировщик мошенничества"
+          }
+        }
+      }
+    },
+    "preferences.scam-blocker.toggle-caption" : {
+      "comment" : "Caption explaining the risk of disabling scam blocker protection",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Das Deaktivieren dieser Funktion kann deine persönlichen Daten gefährden."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Disabling this feature can put your personal information at risk."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desactivar esta función puede poner en riesgo tu información personal."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La désactivation de cette fonctionnalité peut mettre vos informations personnelles en danger."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Disabilitando questa funzione, potresti mettere a rischio i tuoi dati personali."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Als je deze functie uitschakelt, kunnen je persoonlijke gegevens in gevaar komen."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Wyłączenie tej funkcji może narazić Twoje dane osobowe na ryzyko."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desativar esta funcionalidade pode pôr em risco as tuas informações pessoais."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "При отключении этой функции ваши личные данные могут оказаться под угрозой."
+          }
+        }
+      }
+    },
+    "preferences.scam-blocker.toggle-label" : {
+      "comment" : "Label for toggle that enables or disables scam, phishing, and malware site warnings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Warnt vor Websites, die als betrügerische, Phishing- oder Malware-Websites gekennzeichnet sind"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Warn on sites flagged for scams, phishing, or malware"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avisar sobre sitios marcados como estafas, phishing o malware"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "M'avertir sur les sites signalés pour escroqueries, hameçonnage ou logiciels malveillants"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avvisa sui siti contrassegnati per truffe, phishing o malware"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Waarschuwing geven over sites die zijn aangeduid als oplichting, phishing of malware"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ostrzegaj przed witrynami oznaczonymi z powodu oszustw, wyłudzania informacji lub złośliwego oprogramowania"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Avisar sobre sites sinalizados por fraudes, phishing ou malware"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Предупреждать о мошеннических, фишинговых и вредоносных сайтах"
+          }
+        }
+      }
+    },
     "preferences.set-as-default" : {
       "comment" : "Menu option to set the browser as default",
       "extractionState" : "extracted_with_value",
@@ -59972,6 +60152,186 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Открыть новое окно"
+          }
+        }
+      }
+    },
+    "preferences.smarter-encryption.description" : {
+      "comment" : "Description explaining the Smarter Encryption feature",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Links nach Möglichkeit automatisch auf HTTPS aktualisieren."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Automatically upgrades links to HTTPS whenever possible."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Actualiza automáticamente los enlaces a HTTPS siempre que sea posible."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Met automatiquement à niveau les liens vers HTTPS lorsque c'est possible."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aggiorna automaticamente i link a HTTPS quando possibile."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Links worden waar mogelijk automatisch naar HTTPS geüpgraded."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "W miarę możliwości automatycznie aktualizuje łącza do protokołu HTTPS."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atualiza automaticamente os links para HTTPS sempre que possível."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "По возможности автоматически переводит ссылки на более безопасный протокол HTTPS."
+          }
+        }
+      }
+    },
+    "preferences.smarter-encryption.title" : {
+      "comment" : "Title of the section of a setting page that shows Smarter Encryption preferences",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Smarter Encryption"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Smarter Encryption"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Smarter Encryption"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Meilleur cryptage"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Crittografia più sofisticata"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Smarter Encryption"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inteligentniejsze szyfrowanie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Encriptação mais inteligente"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Усовершенствованное шифрование"
+          }
+        }
+      }
+    },
+    "preferences.status-indicator.always-on" : {
+      "comment" : "Status indicator of a browser privacy protection feature.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Immer aktiviert"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Always On"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siempre activado"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toujours activé"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sempre attiva"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Altijd aan"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Zawsze włączone"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sempre ligada"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Всегда включено"
           }
         }
       }
@@ -60212,6 +60572,126 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Для настройки синхронизации и резервного копирования нужно разблокировать устройство."
+          }
+        }
+      }
+    },
+    "preferences.threat-protection" : {
+      "comment" : "Title of the option to show the Threat Protection preferences",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schutz vor Bedrohungen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Threat Protection"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protección contra amenazas"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protection contre les menaces"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Protezione dalle minacce"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bescherming tegen bedreigingen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ochrona przed zagrożeniami"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Proteção contra ameaças"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Защита от угроз"
+          }
+        }
+      }
+    },
+    "preferences.threat-protection.caption" : {
+      "comment" : "Caption of the option to show the Threat Protection preferences",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Der erweitere Schutz von DuckDuckGo schützt deine Verbindung und stoppt gängige Bedrohungen."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo's enhanced protections stop common threats while keeping your connection secure."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las protecciones mejoradas de DuckDuckGo detienen las amenazas comunes mientras mantienen tu conexión segura."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Les protections améliorées de DuckDuckGo arrêtent les menaces courantes tout en maintenant votre connexion sécurisée."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Le protezioni avanzate di DuckDuckGo fermano le minacce comuni mantenendo sicura la connessione."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "De verbeterde beveiligingen van DuckDuckGo stoppen veelvoorkomende bedreigingen en houden je verbinding veilig."
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ulepszone mechanizmy ochrony dostępne w DuckDuckGo blokują typowe zagrożenia, a jednocześnie zapewniają bezpieczeństwo połączenia."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As proteções melhoradas do DuckDuckGo impedem ameaças comuns enquanto mantêm a tua ligação segura."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Функции повышенной защиты DuckDuckGo пресекают распространенные угрозы, одновременно обеспечивая вам безопасное соединение."
           }
         }
       }
@@ -62223,6 +62703,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "DuckDuckGo на вашей док-панели"
+          }
+        }
+      }
+    },
+    "sad.att.banner.button.permanently-dismiss" : {
+      "comment" : "Button action title that appears on a prompt that prevents the prompt from being shown again.",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nicht erneut fragen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Don’t Ask Again"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No volver a preguntar"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ne plus demander"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Non chiederlo più"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Niet opnieuw vragen"
+          }
+        },
+        "pl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nie pytaj ponownie"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Não perguntar novamente"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Больше не спрашивать"
           }
         }
       }

@@ -153,7 +153,7 @@ final class NetworkProtectionPixelEventTests: XCTestCase {
              file: #filePath,
              line: #line)
         fire(NetworkProtectionPixelEvent.networkProtectionLatencyError,
-             frequency: .legacyDaily,
+             frequency: .legacyDailyNoSuffix,
              and: .expect(pixelName: "m_mac_netp_ev_latency_error"),
              file: #filePath,
              line: #line)

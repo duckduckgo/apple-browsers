@@ -54,6 +54,7 @@ final class AIChatViewControllerManager {
     private let userAgentManager: AIChatUserAgentProviding
     private let featureFlagger: FeatureFlagger
     private let experimentalAIChatManager: ExperimentalAIChatManager
+    private let aiChatSettings: AIChatSettingsProvider
     private var cancellables = Set<AnyCancellable>()
     private var sessionTimer: AIChatSessionTimer?
 
@@ -63,13 +64,15 @@ final class AIChatViewControllerManager {
          downloadsDirectoryHandler: DownloadsDirectoryHandling = DownloadsDirectoryHandler(),
          userAgentManager: UserAgentManager = DefaultUserAgentManager.shared,
          experimentalAIChatManager: ExperimentalAIChatManager,
-         featureFlagger: FeatureFlagger) {
+         featureFlagger: FeatureFlagger,
+         aiChatSettings: AIChatSettingsProvider) {
 
         self.privacyConfigurationManager = privacyConfigurationManager
         self.downloadsDirectoryHandler = downloadsDirectoryHandler
         self.userAgentManager = AIChatUserAgentHandler(userAgentManager: userAgentManager)
         self.experimentalAIChatManager = experimentalAIChatManager
         self.featureFlagger = featureFlagger
+        self.aiChatSettings = aiChatSettings
     }
 
     // MARK: - Public Methods
@@ -116,7 +119,7 @@ final class AIChatViewControllerManager {
     private func startSessionTimer() {
         guard isKeepSessionEnabled else { return }
 
-        sessionTimer = AIChatSessionTimer()
+        sessionTimer = AIChatSessionTimer(durationInSeconds: TimeInterval(aiChatSettings.sessionTimerInMinutes * 60))
         sessionTimer?.start {  [weak self] in
             Task { @MainActor in
                 await self?.cleanUpSession()
@@ -134,7 +137,7 @@ final class AIChatViewControllerManager {
     }
 
     private var isKeepSessionEnabled: Bool {
-        featureFlagger.isFeatureOn(.aiChatKeepSession)
+        featureFlagger.isFeatureOn(.aiChatKeepSession) || featureFlagger.internalUserDecider.isInternalUser
     }
 
     @MainActor
@@ -142,13 +145,12 @@ final class AIChatViewControllerManager {
         if let chatViewController = chatViewController {
             return chatViewController
         }
-        let settings = AIChatSettings(privacyConfigurationManager: privacyConfigurationManager)
         let webViewConfiguration = createWebViewConfiguration()
         let inspectableWebView = isInspectableWebViewEnabled()
         let chatInputBox = setupChatInputBoxIfNeeded()
 
         let aiChatViewController = AIChatViewController(
-            settings: settings,
+            settings: aiChatSettings,
             webViewConfiguration: webViewConfiguration,
             requestAuthHandler: AIChatRequestAuthorizationHandler(debugSettings: AIChatDebugSettings()),
             inspectableWebView: inspectableWebView,
@@ -314,15 +316,16 @@ private struct AIChatUserAgentHandler: AIChatUserAgentProviding {
 // MARK: - AIChatReloadTimer
 
 private final class AIChatSessionTimer {
-    private enum Constants {
-        static let sessionTimerDuration: TimeInterval = 60 * 60
-    }
-
+    let durationInSeconds: TimeInterval
     private var timer: Timer?
+
+    internal init(durationInSeconds: TimeInterval) {
+        self.durationInSeconds = durationInSeconds
+    }
 
     func start(completion: @escaping () -> Void) {
         cancel()
-        timer = Timer.scheduledTimer(withTimeInterval: Constants.sessionTimerDuration, repeats: false) { _ in
+        timer = Timer.scheduledTimer(withTimeInterval: durationInSeconds, repeats: false) { _ in
             completion()
         }
     }

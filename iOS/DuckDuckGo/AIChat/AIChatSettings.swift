@@ -81,7 +81,7 @@ struct AIChatSettings: AIChatSettingsProvider {
         return nil
     }
 
-    var sessionTimer: Int {
+    var sessionTimerInMinutes: Int {
         keepSessionSettings?.sessionTimeoutMinutes ?? 60
     }
     

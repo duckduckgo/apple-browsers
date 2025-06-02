@@ -3497,6 +3497,8 @@
 		EEEFA3472D145328006A3F8A /* SyncPixels.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEEFA3452D145322006A3F8A /* SyncPixels.swift */; };
 		EEF12E6F2A2111880023E6BF /* MacPacketTunnelProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEF12E6D2A2111880023E6BF /* MacPacketTunnelProvider.swift */; };
 		EEF53E182950CED5002D78F4 /* JSAlertViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEF53E172950CED5002D78F4 /* JSAlertViewModelTests.swift */; };
+		EEF7091C2DDE2C2400BA3C36 /* SyncExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEF7091B2DDE2C2000BA3C36 /* SyncExtensions.swift */; };
+		EEF7091D2DDE2C2400BA3C36 /* SyncExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEF7091B2DDE2C2000BA3C36 /* SyncExtensions.swift */; };
 		F10C99422C7E20A1005568B4 /* Logger+DBPBackgroundAgent.swift in Sources */ = {isa = PBXBuildFile; fileRef = F17E7DDB2C7C7F8100907A84 /* Logger+DBPBackgroundAgent.swift */; };
 		F118EA7D2BEA2B8700F77634 /* DefaultSubscriptionFeatureAvailability+DefaultInitializer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F118EA7C2BEA2B8700F77634 /* DefaultSubscriptionFeatureAvailability+DefaultInitializer.swift */; };
 		F118EA7E2BEA2B8700F77634 /* DefaultSubscriptionFeatureAvailability+DefaultInitializer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F118EA7C2BEA2B8700F77634 /* DefaultSubscriptionFeatureAvailability+DefaultInitializer.swift */; };
@@ -5509,6 +5511,7 @@
 		EEEFA3452D145322006A3F8A /* SyncPixels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncPixels.swift; sourceTree = "<group>"; };
 		EEF12E6D2A2111880023E6BF /* MacPacketTunnelProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacPacketTunnelProvider.swift; sourceTree = "<group>"; };
 		EEF53E172950CED5002D78F4 /* JSAlertViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSAlertViewModelTests.swift; sourceTree = "<group>"; };
+		EEF7091B2DDE2C2000BA3C36 /* SyncExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncExtensions.swift; sourceTree = "<group>"; };
 		F118EA7C2BEA2B8700F77634 /* DefaultSubscriptionFeatureAvailability+DefaultInitializer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "DefaultSubscriptionFeatureAvailability+DefaultInitializer.swift"; sourceTree = "<group>"; };
 		F118EA842BEACC7000F77634 /* NonStandardPixel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NonStandardPixel.swift; sourceTree = "<group>"; };
 		F1476FBF2C1359FB00EAE46A /* SubscriptionUIHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionUIHandler.swift; sourceTree = "<group>"; };
@@ -6458,6 +6461,7 @@
 				37A6A8F02AFCC988008580A3 /* FaviconsFetcherOnboarding.swift */,
 				37A6A8F52AFCCA59008580A3 /* FaviconsFetcherOnboardingViewController.swift */,
 				EEDFA3892CD148DE00D1C558 /* SyncDiagnosisHelper.swift */,
+				EEF7091B2DDE2C2000BA3C36 /* SyncExtensions.swift */,
 			);
 			path = Sync;
 			sourceTree = "<group>";
@@ -12646,6 +12650,7 @@
 				F1D447242D9EAA950085809A /* AuthV2PixelHandler.swift in Sources */,
 				9F33445F2BBFA77F0040CBEB /* BookmarksBarVisibilityManager.swift in Sources */,
 				3706FB58293F65D500E42796 /* LinkButton.swift in Sources */,
+				EEF7091D2DDE2C2400BA3C36 /* SyncExtensions.swift in Sources */,
 				4B0EF7272B578096009D6481 /* AppVersionExtension.swift in Sources */,
 				3706FB59293F65D500E42796 /* TemporaryFileHandler.swift in Sources */,
 				37197EA62942443D00394917 /* WebViewSnapshotView.swift in Sources */,
@@ -15041,6 +15046,7 @@
 				B6C00ECD292F89D9009C73A6 /* FindInPageTabExtension.swift in Sources */,
 				85589E8327BBB8630038AD11 /* BurnerHomePageViewController.swift in Sources */,
 				F17114852C7C9D28009836C1 /* Logger+Fire.swift in Sources */,
+				EEF7091C2DDE2C2400BA3C36 /* SyncExtensions.swift in Sources */,
 				C126B35A2C820924005DC2A3 /* FreemiumDebugMenu.swift in Sources */,
 				B6A9E46B2614618A0067D1B9 /* OperatingSystemVersionExtension.swift in Sources */,
 				4BDFA4AE27BF19E500648192 /* ToggleableScrollView.swift in Sources */,

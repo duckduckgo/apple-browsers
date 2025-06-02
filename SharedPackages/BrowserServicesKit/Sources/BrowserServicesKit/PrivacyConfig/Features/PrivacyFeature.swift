@@ -206,6 +206,7 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case seamlessAccountSwitching
     case exchangeKeysToSyncWithAnotherDevice
     case canScanUrlBasedSyncSetupBarcodes
+    case canInterceptSyncSetupUrls
 }
 
 public enum AutoconsentSubfeature: String, PrivacySubfeature {

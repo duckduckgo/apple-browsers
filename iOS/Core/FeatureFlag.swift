@@ -96,9 +96,6 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/0/1206329551987282/1209130794450271
     case onboardingSetAsDefaultBrowser
 
-    /// https://app.asana.com/0/72649045549333/1209633877674689/f
-    case exchangeKeysToSyncWithAnotherDevice
-
     // Demonstrative cases for default value. Remove once a real-world feature/subfeature is added
     case failsafeExampleCrossPlatformFeature
     case failsafeExamplePlatformSpecificSubfeature
@@ -121,6 +118,12 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/1198964220583541/task/1210272333893232?focus=true
     case autofillPasswordVariantCategorization
 
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210081345713964?focus=true
+    case canInterceptSyncSetupUrls
+
+    /// https://app.asana.com/1/137249556945/project/414235014887631/task/1210325960030113?focus=true
+    case exchangeKeysToSyncWithAnotherDevice
+
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210422840951066?focus=true
     case aiChatKeepSession
 }
@@ -128,7 +131,7 @@ public enum FeatureFlag: String {
 extension FeatureFlag: FeatureFlagDescribing {
     public var defaultValue: Bool {
         switch self {
-        case .failsafeExampleCrossPlatformFeature, .failsafeExamplePlatformSpecificSubfeature, .canScanUrlBasedSyncSetupBarcodes, .removeWWWInCanonicalizationInThreatProtection:
+        case .failsafeExampleCrossPlatformFeature, .failsafeExamplePlatformSpecificSubfeature, .canScanUrlBasedSyncSetupBarcodes, .canInterceptSyncSetupUrls, .removeWWWInCanonicalizationInThreatProtection:
             true
         default:
             false
@@ -158,14 +161,15 @@ extension FeatureFlag: FeatureFlagDescribing {
              .maliciousSiteProtection,
              .autofillCreditCards,
              .autofillCreditCardsOnByDefault,
-             .exchangeKeysToSyncWithAnotherDevice,
              .privacyProOnboardingPromotion,
-             .syncSetupBarcodeIsUrlBased,
-             .canScanUrlBasedSyncSetupBarcodes,
              .duckPlayerNativeUI,
              .removeWWWInCanonicalizationInThreatProtection,
              .privacyProFreeTrial,
-             .autofillPasswordVariantCategorization:
+             .autofillPasswordVariantCategorization,
+             .syncSetupBarcodeIsUrlBased,
+             .canScanUrlBasedSyncSetupBarcodes,
+             .canInterceptSyncSetupUrls,
+             .exchangeKeysToSyncWithAnotherDevice:
             return true
         case .onboardingSetAsDefaultBrowser:
             if #available(iOS 18.3, *) {
@@ -262,16 +266,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
         case .onboardingSetAsDefaultBrowser:
             return .remoteReleasable(.subfeature(OnboardingSubfeature.setAsDefaultBrowserExperiment))
-        case .exchangeKeysToSyncWithAnotherDevice:
-            return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
         case .failsafeExampleCrossPlatformFeature:
             return .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests))
         case .failsafeExamplePlatformSpecificSubfeature:
             return .remoteReleasable(.subfeature(iOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests))
         case .experimentalAIChat:
             return .internalOnly()
-        case .aiChatKeepSession:
-            return .remoteReleasable(.subfeature(AIChatSubfeature.keepSession))
         case .privacyProOnboardingPromotion:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProOnboardingPromotion))
         case .syncSetupBarcodeIsUrlBased:
@@ -284,6 +284,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProFreeTrial))
         case .autofillPasswordVariantCategorization:
             return .remoteReleasable(.subfeature(AutofillSubfeature.passwordVariantCategorization))
+        case .canInterceptSyncSetupUrls:
+            return .remoteReleasable(.subfeature(SyncSubfeature.canInterceptSyncSetupUrls))
+        case .exchangeKeysToSyncWithAnotherDevice:
+            return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
+        case .aiChatKeepSession:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.keepSession))
         }
     }
 }

@@ -1,8 +1,8 @@
 //
-//  ShowQRCodeViewModel.swift
+//  SyncExtensions.swift
 //  DuckDuckGo
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,16 +17,11 @@
 //  limitations under the License.
 //
 
+import DDGSync
 import Foundation
-import UIKit
 
-struct ShowQRCodeViewModel {
-
-    let codeForDisplayOrPasting: String
-    let qrCodeString: String
-
-    func copy() {
-        UIPasteboard.general.string = codeForDisplayOrPasting
+extension PairingInfo {
+    var url: URL {
+        toURL(baseURL: URL(string: "https://duckduckgo.com")!)
     }
-
 }

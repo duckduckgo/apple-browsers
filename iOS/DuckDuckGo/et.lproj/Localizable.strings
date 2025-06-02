@@ -190,6 +190,15 @@
 /* Description for alert shown when user logged off from sync */
 "alert.sync-invalid-login-error-description" = "Sünkroonimine on peatatud. Kui soovid selle seadme sünkroonimist jätkata, loo uuesti ühendus, kasutades mõnda teist seadet või taastamiskoodi.";
 
+/* Sync Now button in alert asking if they would like to sync with another device */
+"alert.sync-new-device.button" = "Sünkrooni kohe";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.message" = "%@ saab pääseb ligi sinu sünkroonitud DuckDuckGo andmetele.";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.title" = "Kas sünkroonida uus seade?";
+
 /* Learn more button in alert */
 "alert.sync-paused-alert-learn-more-button" = "Loe edasi";
 

@@ -211,7 +211,7 @@ final class AppearancePreferencesTests: XCTestCase {
         withExtendedLifetime(c) {}
     }
 
-    // MARK: - Pixels firing tests
+    // MARK: - Pixel firing tests
 
     func testWhenCurrentThemeIsUpdatedThenPixelIsFired() {
         let pixelFiringMock = PixelKitMock()

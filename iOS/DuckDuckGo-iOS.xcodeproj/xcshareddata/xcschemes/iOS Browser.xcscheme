@@ -116,10 +116,20 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "OnboardingTests"
+               BuildableName = "OnboardingTests"
+               BlueprintName = "OnboardingTests"
+               ReferencedContainer = "container:../SharedPackages/Onboarding">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "AIChatTests"
                BuildableName = "AIChatTests"
                BlueprintName = "AIChatTests"
-               ReferencedContainer = "container:LocalPackages/AIChat">
+               ReferencedContainer = "container:../SharedPackages/AIChat">
             </BuildableReference>
          </TestableReference>
       </Testables>

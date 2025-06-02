@@ -16,6 +16,8 @@ on:
       - '.xcode-version'
       - 'SharedPackages/**'
       - 'iOS/**'
+  schedule:
+    - cron: '10,35,50 4,5,6 * * *'
   workflow_call:
     inputs:
       branch:
@@ -111,9 +113,6 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-ios-
 
-    - name: Install xcbeautify
-      run: brew install xcbeautify
-
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
 
@@ -167,9 +166,9 @@ jobs:
           | xargs -L 1 ./scripts/report-failed-unit-test.sh -s ${{ vars.APPLE_CI_FAILING_TESTS_IOS_FAILED_TESTS_SECTION_ID }}
           
     - name: Send Status Pixel
-      if: always() && github.ref_name == 'main'
+      if: always() #&& github.ref_name == 'main'
       run: |
-        curl -fLSs -o /dev/null "https://improving.duckduckgo.com/t/m_ci_unit_tests_${{ steps.run-unit-tests.outcome }}_main_ios?workflow=${{ env.WORKFLOW_URL }}"
+        curl -fLSs -o /dev/null "https://improving.duckduckgo.com/t/m_ci_apple_ios_main_unit_tests_${{ steps.run-unit-tests.outcome }}?workflow=${{ env.WORKFLOW_URL }}"
 
     - name: Fetch latest commit author
       if: always() && github.ref_name == 'main'
@@ -194,7 +193,7 @@ jobs:
     steps:
 
     - name: Register SSH keys for access to certificates
-      uses: webfactory/ssh-agent@v0.7.0
+      uses: webfactory/ssh-agent@v0.9.1
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
 
@@ -226,14 +225,14 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-ios-release-
 
-    - name: Install xcbeautify
-      run: brew install xcbeautify
-
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
 
-    - name: Prepare fastlane
-      run: bundle install
+    - name: Setup Ruby and dependencies
+      uses: ./.github/actions/setup-ruby
+      with:
+        working-directory: iOS
+        cache-key-prefix: ios-ruby
 
     - name: Build the app
       env:

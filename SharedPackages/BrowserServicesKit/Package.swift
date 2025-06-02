@@ -44,7 +44,6 @@ let package = Package(
         .library(name: "SpecialErrorPages", targets: ["SpecialErrorPages"]),
         .library(name: "DuckPlayer", targets: ["DuckPlayer"]),
         .library(name: "MaliciousSiteProtection", targets: ["MaliciousSiteProtection"]),
-        .library(name: "Onboarding", targets: ["Onboarding"]),
         .library(name: "PixelExperimentKit", targets: ["PixelExperimentKit"]),
         .library(name: "BrokenSitePrompt", targets: ["BrokenSitePrompt"]),
         .library(name: "PageRefreshMonitor", targets: ["PageRefreshMonitor"]),
@@ -63,7 +62,6 @@ let package = Package(
         .package(url: "https://github.com/1024jp/GzipSwift.git", exact: "6.0.1"),
         .package(url: "https://github.com/vapor/jwt-kit.git", exact: "4.13.4"),
         .package(url: "https://github.com/pointfreeco/swift-clocks.git", exact: "1.0.6"),
-        .package(url: "https://github.com/duckduckgo/DesignResourcesKit", exact: "5.0.0")
     ],
     targets: [
         .target(
@@ -440,19 +438,6 @@ let package = Package(
             ]
         ),
         .target(
-            name: "Onboarding",
-            dependencies: [
-                "BrowserServicesKit",
-                "DesignResourcesKit"
-            ],
-            resources: [
-                .process("Resources")
-            ],
-            swiftSettings: [
-                .define("DEBUG", .when(configuration: .debug))
-            ]
-        ),
-        .target(
             name: "PixelExperimentKit",
             dependencies: [
                 "PixelKit",
@@ -711,12 +696,6 @@ let package = Package(
             resources: [
                 .copy("Resources/phishingHashPrefixes.json"),
                 .copy("Resources/phishingFilterSet.json"),
-            ]
-        ),
-        .testTarget(
-            name: "OnboardingTests",
-            dependencies: [
-                "Onboarding"
             ]
         ),
         .testTarget(

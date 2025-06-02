@@ -68,6 +68,26 @@ final class NavigationBarViewController: NSViewController {
     @IBOutlet var logoWidthConstraint: NSLayoutConstraint!
     @IBOutlet var backgroundColorView: MouseOverView!
     @IBOutlet var backgroundBaseColorView: ColorView!
+    @IBOutlet weak var goBackButtonWidthConstraint: NSLayoutConstraint!
+    @IBOutlet weak var goBackButtonHeightConstraint: NSLayoutConstraint!
+    @IBOutlet weak var goForwardButtonWidthConstraint: NSLayoutConstraint!
+    @IBOutlet weak var goForwardButtonHeightConstraint: NSLayoutConstraint!
+    @IBOutlet weak var refreshButtonWidthConstraint: NSLayoutConstraint!
+    @IBOutlet weak var refreshButtonHeightConstraint: NSLayoutConstraint!
+    @IBOutlet weak var homeButtonWidthConstraint: NSLayoutConstraint!
+    @IBOutlet weak var homeButtonHeightConstraint: NSLayoutConstraint!
+    @IBOutlet weak var downloadsButtonWidthConstraint: NSLayoutConstraint!
+    @IBOutlet weak var downloadsButtonHeightConstraint: NSLayoutConstraint!
+    @IBOutlet weak var passwordsButtonWidthConstraint: NSLayoutConstraint!
+    @IBOutlet weak var passwordsButtonHeightConstraint: NSLayoutConstraint!
+    @IBOutlet weak var bookmarksButtonWidthConstraint: NSLayoutConstraint!
+    @IBOutlet weak var bookmarksButtonHeightConstraint: NSLayoutConstraint!
+    @IBOutlet weak var vpnButtonWidthConstraint: NSLayoutConstraint!
+    @IBOutlet weak var vpnButtonHeightConstraint: NSLayoutConstraint!
+    @IBOutlet weak var overflowButtonWidthConstraint: NSLayoutConstraint!
+    @IBOutlet weak var overflowButtonHeightConstraint: NSLayoutConstraint!
+    @IBOutlet weak var optionsButtonWidthConstraint: NSLayoutConstraint!
+    @IBOutlet weak var optionsButtonHeightConstraint: NSLayoutConstraint!
 
     private let downloadListCoordinator: DownloadListCoordinator
 
@@ -119,6 +139,9 @@ final class NavigationBarViewController: NSViewController {
     private let brokenSitePromptLimiter: BrokenSitePromptLimiter
     private let featureFlagger: FeatureFlagger
     private let visualStyle: VisualStyleProviding
+
+    private var leftFocusSpacer: NSView?
+    private var rightFocusSpacer: NSView?
 
     @UserDefaultsWrapper(key: .homeButtonPosition, defaultValue: .right)
     static private var homeButtonPosition: HomeButtonPosition
@@ -198,8 +221,12 @@ final class NavigationBarViewController: NSViewController {
         setupNavigationButtonMenus()
         setupNavigationButtonIcons()
         setupNavigationButtonColors()
+        setupNavigationButtonsSize()
         addContextMenu()
         setupOverflowMenu()
+
+        menuButtons.spacing = visualStyle.navigationToolbarButtonsSpacing
+        navigationButtons.spacing = visualStyle.navigationToolbarButtonsSpacing
 
         optionsButton.sendAction(on: .leftMouseDown)
         bookmarkListButton.sendAction(on: .leftMouseDown)
@@ -773,6 +800,29 @@ final class NavigationBarViewController: NSViewController {
         }
     }
 
+    private func setupNavigationButtonsSize() {
+        goBackButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        goBackButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        goForwardButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        goForwardButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        refreshButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        refreshButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        homeButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        homeButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        downloadsButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        downloadsButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        passwordsButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        passwordsButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        bookmarksButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        bookmarksButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        vpnButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        vpnButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        overflowButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        overflowButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        optionsButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        optionsButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+    }
+
     private func setupBackgroundViewsAndColors() {
         if visualStyle.areNavigationBarCornersRound {
             backgroundBaseColorView.backgroundColor = visualStyle.colorsProvider.baseBackgroundColor
@@ -825,23 +875,26 @@ final class NavigationBarViewController: NSViewController {
         heightChangeAnimation?.cancel()
 
         daxLogo.alphaValue = !sizeClass.isLogoVisible ? 1 : 0 // initial value to animate from
-        daxLogo.isHidden = visualStyle.addressBarStyleProvider.shouldShowLogoinInAddressBar
+        daxLogo.isHidden = visualStyle.addressBarStyleProvider.shouldShowNewSearchIcon
 
         let performResize = { [weak self] in
             guard let self else { return }
 
             let isAddressBarFocused = view.window?.firstResponder == addressBarViewController?.addressBarTextField.currentEditor()
+
             let height: NSLayoutConstraint = animated ? navigationBarHeightConstraint.animator() : navigationBarHeightConstraint
-            height.constant = visualStyle.addressBarStyleProvider.addressBarHeight(for: sizeClass, focused: isAddressBarFocused)
+            height.constant = visualStyle.addressBarStyleProvider.navigationBarHeight(for: sizeClass)
 
             let barTop: NSLayoutConstraint = animated ? addressBarTopConstraint.animator() : addressBarTopConstraint
-            barTop.constant = visualStyle.addressBarStyleProvider.addressBarTopPadding(for: sizeClass)
+            barTop.constant = visualStyle.addressBarStyleProvider.addressBarTopPadding(for: sizeClass, focused: isAddressBarFocused)
 
             let bottom: NSLayoutConstraint = animated ? addressBarBottomConstraint.animator() : addressBarBottomConstraint
-            bottom.constant = visualStyle.addressBarStyleProvider.addressBarBottomPadding(for: sizeClass)
+            bottom.constant = visualStyle.addressBarStyleProvider.addressBarBottomPadding(for: sizeClass, focused: isAddressBarFocused)
 
             let logoWidth: NSLayoutConstraint = animated ? logoWidthConstraint.animator() : logoWidthConstraint
             logoWidth.constant = sizeClass.logoWidth
+
+            resizeAddressBarWidth(isAddressBarFocused: isAddressBarFocused)
         }
 
         let prepareNavigationBar = { [weak self] in
@@ -884,6 +937,40 @@ final class NavigationBarViewController: NSViewController {
             // update synchronously for off-screen view
             prepareNavigationBar()
             heightChange()
+        }
+    }
+
+    private func resizeAddressBarWidth(isAddressBarFocused: Bool) {
+        if visualStyle.addressBarStyleProvider.shouldShowNewSearchIcon {
+            if !isAddressBarFocused {
+                if leftFocusSpacer == nil {
+                    leftFocusSpacer = NSView()
+                    leftFocusSpacer?.wantsLayer = true
+                    leftFocusSpacer?.translatesAutoresizingMaskIntoConstraints = false
+                    leftFocusSpacer?.widthAnchor.constraint(equalToConstant: 1).isActive = true
+                }
+                if rightFocusSpacer == nil {
+                    rightFocusSpacer = NSView()
+                    rightFocusSpacer?.wantsLayer = true
+                    rightFocusSpacer?.translatesAutoresizingMaskIntoConstraints = false
+                    rightFocusSpacer?.widthAnchor.constraint(equalToConstant: 1).isActive = true
+                }
+                if let left = leftFocusSpacer, !addressBarStack.arrangedSubviews.contains(left) {
+                    addressBarStack.insertArrangedSubview(left, at: 0)
+                }
+                if let right = rightFocusSpacer, !addressBarStack.arrangedSubviews.contains(right) {
+                    addressBarStack.insertArrangedSubview(right, at: addressBarStack.arrangedSubviews.count)
+                }
+            } else {
+                if let left = leftFocusSpacer, addressBarStack.arrangedSubviews.contains(left) {
+                    addressBarStack.removeArrangedSubview(left)
+                    left.removeFromSuperview()
+                }
+                if let right = rightFocusSpacer, addressBarStack.arrangedSubviews.contains(right) {
+                    addressBarStack.removeArrangedSubview(right)
+                    right.removeFromSuperview()
+                }
+            }
         }
     }
 
@@ -1667,11 +1754,11 @@ extension NavigationBarViewController: MouseOverButtonDelegate {
 
 extension NavigationBarViewController: AddressBarViewControllerDelegate {
 
-    func resizeAddressBarForHomePage(_ addressBarViewController: AddressBarViewController, isFocused: Bool) {
+    func resizeAddressBarForHomePage(_ addressBarViewController: AddressBarViewController) {
         let addressBarSizeClass: AddressBarSizeClass = tabCollectionViewModel.selectedTabViewModel?.tab.content == .newtab ? .homePage : .default
 
-        if visualStyle.addressBarStyleProvider.shouldShowLogoinInAddressBar {
-            resizeAddressBar(for: addressBarSizeClass, animated: true)
+        if visualStyle.addressBarStyleProvider.shouldShowNewSearchIcon {
+            resizeAddressBar(for: addressBarSizeClass, animated: false)
         }
     }
 }

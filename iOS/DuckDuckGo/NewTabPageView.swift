@@ -86,7 +86,10 @@ private extension NewTabPageView {
                     
                     messagesSectionView
                         .padding(.top, Metrics.nonGridSectionTopPadding)
-                    
+                        .if(viewModel.isExperimentalAppearanceEnabled) {
+                            $0.padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
+                        }
+
                     favoritesSectionView(proxy: proxy)
                 }
                 .padding(sectionsViewPadding(in: proxy))
@@ -106,6 +109,9 @@ private extension NewTabPageView {
             VStack(spacing: Metrics.sectionSpacing) {
                 messagesSectionView
                     .padding(.top, Metrics.nonGridSectionTopPadding)
+                    .if(viewModel.isExperimentalAppearanceEnabled) {
+                        $0.padding(.horizontal, Metrics.updatedNonGridSectionHorizontalPadding)
+                    }
                     .frame(maxHeight: .infinity, alignment: .top)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -149,6 +155,7 @@ private struct Metrics {
     static let regularPadding = 24.0
     static let sectionSpacing = 32.0
     static let nonGridSectionTopPadding = -8.0
+    static let updatedNonGridSectionHorizontalPadding = -8.0
 
     static let messageMaximumWidth: CGFloat = 380
     static let messageMaximumWidthPad: CGFloat = 455

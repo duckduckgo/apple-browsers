@@ -99,6 +99,8 @@ enum Preferences {
                     PrivateSearchView(model: SearchPreferences.shared)
                 case .webTrackingProtection:
                     WebTrackingProtectionView(model: WebTrackingProtectionPreferences.shared)
+                case .threatProtection:
+                    ThreatProtectionView(model: MaliciousSiteProtectionPreferences.shared)
                 case .cookiePopupProtection:
                     CookiePopupProtectionView(model: CookiePopupProtectionPreferences.shared)
                 case .emailProtection:
@@ -325,6 +327,8 @@ enum Preferences {
                     PrivateSearchView(model: SearchPreferences.shared)
                 case .webTrackingProtection:
                     WebTrackingProtectionView(model: WebTrackingProtectionPreferences.shared)
+                case .threatProtection:
+                    ThreatProtectionView(model: MaliciousSiteProtectionPreferences.shared)
                 case .cookiePopupProtection:
                     CookiePopupProtectionView(model: CookiePopupProtectionPreferences.shared)
                 case .emailProtection:

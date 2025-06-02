@@ -41,10 +41,8 @@ final class AIChatSidebarViewController: NSViewController {
     var aiTab = Tab(content: .url(AIChatRemoteSettings().aiChatURL, source: .ui))
 
     private var buttonTrackingArea: NSTrackingArea?
-    private var id: String
 
-    init(id: String) {
-        self.id = id
+    init() {
         super.init(nibName: nil, bundle: nil)
     }
 

@@ -27,6 +27,6 @@ final class TabSidebar {
     }
 
     static func makeAIChatTabSidebar() -> TabSidebar {
-        return Self.init(sidebarViewController: AIChatSidebarViewController(id: ""))
+        return Self.init(sidebarViewController: AIChatSidebarViewController())
     }
 }

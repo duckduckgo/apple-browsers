@@ -157,16 +157,21 @@ struct DefaultBrowserAndDockPromptStorageTests {
             let keyValueStoringMock = try MockKeyValueFileStore()
             let expectedError = NSError(domain: #function, code: 0, userInfo: nil)
             keyValueStoringMock.throwOnSet = expectedError
-            var expectedEvent: DefaultBrowserAndDockPromptDebugEvent?
+            var expectedEvents: [DefaultBrowserAndDockPromptDebugEvent] = []
             let sut = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStoringMock, eventMapper: EventMapping<DefaultBrowserAndDockPromptDebugEvent> { event, _, _, _ in
-                expectedEvent = event
+                expectedEvents.append(event)
             })
 
             // WHEN
             sut.bannerShownDate = now.timeIntervalSince1970
 
             // THEN
-            if case let .storage(.failedToSaveValue(.bannerShownDate(error as NSError))) = expectedEvent {
+            let failedToSaveBannerShownDateEvent = try #require(expectedEvents.first)
+            let failedToSaveBannerShownOccurrences = try #require(expectedEvents.last)
+
+            if case let .storage(.failedToSaveValue(.bannerShownDate(error as NSError))) = failedToSaveBannerShownDateEvent {
+                #expect(error == expectedError)
+            } else if case let .storage(.failedToSaveValue(.bannerShownOccurrences(error as NSError))) = failedToSaveBannerShownOccurrences {
                 #expect(error == expectedError)
             } else {
                 Issue.record("Expected Event .bannerShownDate")

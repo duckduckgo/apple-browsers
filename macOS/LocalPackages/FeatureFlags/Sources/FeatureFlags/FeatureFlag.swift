@@ -114,12 +114,6 @@ extension FeatureFlag: FeatureFlagDescribing {
         }
     }
 
-    public enum PopoverVSBannerExperimentCohort: String, FeatureFlagCohortDescribing {
-        case control
-        case popover
-        case banner
-     }
-
     public var supportsLocalOverriding: Bool {
         switch self {
         case .autofillPartialFormSaves,

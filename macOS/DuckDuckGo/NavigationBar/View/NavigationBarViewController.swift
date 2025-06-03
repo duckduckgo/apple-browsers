@@ -436,6 +436,8 @@ final class NavigationBarViewController: NSViewController {
             return
         }
 
+        PixelKit.fire(NavigationBarPixel.homeButtonClicked, frequency: .daily)
+
         let behavior = LinkOpenBehavior(
             event: NSApp.currentEvent,
             switchToNewTabWhenOpenedPreference: TabsPreferences.shared.switchToNewTabWhenOpened,
@@ -493,10 +495,12 @@ final class NavigationBarViewController: NSViewController {
 
     @IBAction func bookmarksButtonAction(_ sender: NSButton) {
         popovers.bookmarksButtonPressed(bookmarkListButton, popoverDelegate: self, tab: tabCollectionViewModel.selectedTabViewModel?.tab)
+        PixelKit.fire(NavigationBarPixel.bookmarksButtonClicked, frequency: .daily)
     }
 
     @IBAction func passwordManagementButtonAction(_ sender: NSButton) {
         popovers.passwordManagementButtonPressed(passwordManagementButton, withDelegate: self)
+        PixelKit.fire(NavigationBarPixel.passwordsButtonClicked, frequency: .daily)
     }
 
     @IBAction func networkProtectionButtonAction(_ sender: NSButton) {
@@ -513,6 +517,7 @@ final class NavigationBarViewController: NSViewController {
 
     @IBAction func downloadsButtonAction(_ sender: NSButton) {
         toggleDownloadsPopover(keepButtonVisible: false)
+        PixelKit.fire(NavigationBarPixel.downloadsButtonClicked, frequency: .daily)
     }
 
     override func mouseDown(with event: NSEvent) {

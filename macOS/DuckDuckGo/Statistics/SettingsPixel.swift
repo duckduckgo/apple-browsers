@@ -113,7 +113,9 @@ enum SettingsPixel: PixelKitEventV2 {
             case .accessibility: return "settings_accessibility_opened"
             case .dataClearing: return "settings_data_clearing_opened"
             case .duckPlayer: return "settings_duckplayer_opened"
-            case .aiChat: return "settings_duck_ai_opened"
+            case .aiChat:
+                assertionFailure("This pixel is not in use and AIChatPixel.aiChatSettingsDisplayed should be used instead")
+                return "settings_duck_ai_opened"
             case .privacyPro: return "settings_privacy_pro_opened"
             case .vpn: return "settings_vpn_opened"
             case .personalInformationRemoval: return "settings_pir_opened"

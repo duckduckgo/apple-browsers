@@ -287,10 +287,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
-        appearancePreferences = AppearancePreferences(keyValueStore: keyValueStore, pixelFiring: PixelKit.shared)
-        dataClearingPreferences = DataClearingPreferences(pixelFiring: PixelKit.shared)
-        startupPreferences = StartupPreferences(appearancePreferences: appearancePreferences, dataClearingPreferences: dataClearingPreferences)
-
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {
             bookmarkManager = LocalBookmarkManager(

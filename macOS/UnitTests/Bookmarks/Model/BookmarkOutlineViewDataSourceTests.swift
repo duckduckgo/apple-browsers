@@ -21,12 +21,18 @@ import XCTest
 
 class BookmarkOutlineViewDataSourceTests: XCTestCase {
 
+    func makeBookmarkManager() -> LocalBookmarkManager {
+        .init(bookmarkStore: BookmarkStoreMock(), appearancePreferences: .mock)
+    }
+
     @MainActor
     func testWhenOutlineViewExpandsItem_ThenTheObjectIDIsAddedToExpandedItems() {
         let mockFolder = BookmarkFolder.mock
         let treeController = createTreeController(with: [mockFolder])
         let mockFolderNode = treeController.node(representing: mockFolder)!
-        let dataSource = BookmarkOutlineViewDataSource(contentMode: .foldersOnly, bookmarkManager: LocalBookmarkManager(), treeController: treeController, sortMode: .manual)
+        let bookmarkManager = makeBookmarkManager()
+        let dragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
+        let dataSource = BookmarkOutlineViewDataSource(contentMode: .foldersOnly, bookmarkManager: bookmarkManager, treeController: treeController, dragDropManager: dragDropManager, sortMode: .manual)
 
         let notification = Notification(name: NSOutlineView.itemDidExpandNotification, object: nil, userInfo: ["NSObject": mockFolderNode])
         dataSource.outlineViewItemDidExpand(notification)
@@ -39,7 +45,9 @@ class BookmarkOutlineViewDataSourceTests: XCTestCase {
         let mockFolder = BookmarkFolder.mock
         let treeController = createTreeController(with: [mockFolder])
         let mockFolderNode = treeController.node(representing: mockFolder)!
-        let dataSource = BookmarkOutlineViewDataSource(contentMode: .foldersOnly, bookmarkManager: LocalBookmarkManager(), treeController: treeController, sortMode: .manual)
+        let bookmarkManager = makeBookmarkManager()
+        let dragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
+        let dataSource = BookmarkOutlineViewDataSource(contentMode: .foldersOnly, bookmarkManager: bookmarkManager, treeController: treeController, dragDropManager: dragDropManager, sortMode: .manual)
 
         let expandNotification = Notification(name: NSOutlineView.itemDidExpandNotification, object: nil, userInfo: ["NSObject": mockFolderNode])
         dataSource.outlineViewItemDidExpand(expandNotification)
@@ -58,7 +66,9 @@ class BookmarkOutlineViewDataSourceTests: XCTestCase {
         let mockOutlineView = NSOutlineView(frame: .zero)
         let treeController = createTreeController(with: [mockFolder])
         let mockFolderNode = treeController.node(representing: mockFolder)!
-        let dataSource = BookmarkOutlineViewDataSource(contentMode: .foldersOnly, bookmarkManager: LocalBookmarkManager(), treeController: treeController, sortMode: .manual)
+        let bookmarkManager = makeBookmarkManager()
+        let dragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
+        let dataSource = BookmarkOutlineViewDataSource(contentMode: .foldersOnly, bookmarkManager: bookmarkManager, treeController: treeController, dragDropManager: dragDropManager, sortMode: .manual)
 
         let writer = dataSource.outlineView(mockOutlineView, pasteboardWriterForItem: mockFolderNode) as? FolderPasteboardWriter
         XCTAssertNotNil(writer)
@@ -72,7 +82,9 @@ class BookmarkOutlineViewDataSourceTests: XCTestCase {
         let mockFolder = BookmarkFolder.mock
         let mockOutlineView = NSOutlineView(frame: .zero)
         let treeController = createTreeController(with: [mockFolder])
-        let dataSource = BookmarkOutlineViewDataSource(contentMode: .foldersOnly, bookmarkManager: LocalBookmarkManager(), treeController: treeController, sortMode: .manual)
+        let bookmarkManager = makeBookmarkManager()
+        let dragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
+        let dataSource = BookmarkOutlineViewDataSource(contentMode: .foldersOnly, bookmarkManager: bookmarkManager, treeController: treeController, dragDropManager: dragDropManager, sortMode: .manual)
 
         let spacerNode = BookmarkNode(representedObject: SpacerNode.blank, parent: nil)
         let writer = dataSource.outlineView(mockOutlineView, pasteboardWriterForItem: spacerNode) as? FolderPasteboardWriter
@@ -84,7 +96,7 @@ class BookmarkOutlineViewDataSourceTests: XCTestCase {
         let mockDestinationFolder = BookmarkFolder.mock
         let bookmarkStoreMock = BookmarkStoreMock(bookmarks: [mockDestinationFolder])
         let faviconManagerMock = FaviconManagerMock()
-        let bookmarkManager = LocalBookmarkManager(bookmarkStore: bookmarkStoreMock, faviconManagement: faviconManagerMock)
+        let bookmarkManager = LocalBookmarkManager(bookmarkStore: bookmarkStoreMock, appearancePreferences: .mock)
         let dragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
 
         bookmarkManager.loadBookmarks()
@@ -92,7 +104,7 @@ class BookmarkOutlineViewDataSourceTests: XCTestCase {
         let treeDataSource = BookmarkSidebarTreeController(bookmarkManager: bookmarkManager)
         let treeController = BookmarkTreeController(dataSource: treeDataSource, sortMode: .manual)
         let mockDestinationNode = treeController.node(representing: mockDestinationFolder)!
-        let dataSource = BookmarkOutlineViewDataSource(contentMode: .foldersOnly, bookmarkManager: LocalBookmarkManager(), treeController: treeController, dragDropManager: dragDropManager, sortMode: .manual)
+        let dataSource = BookmarkOutlineViewDataSource(contentMode: .foldersOnly, bookmarkManager: makeBookmarkManager(), treeController: treeController, dragDropManager: dragDropManager, sortMode: .manual)
 
         let bookmark = Bookmark(id: UUID().uuidString, url: "https://example.com", title: "Pasteboard Bookmark", isFavorite: false)
         let pasteboard = NSPasteboard.test()
@@ -107,8 +119,7 @@ class BookmarkOutlineViewDataSourceTests: XCTestCase {
     func testWhenValidatingFolderDrop_AndDestinationIsFolder_ThenMoveDragOperationIsReturned() {
         let mockDestinationFolder = BookmarkFolder.mock
         let bookmarkStoreMock = BookmarkStoreMock(bookmarks: [mockDestinationFolder])
-        let faviconManagerMock = FaviconManagerMock()
-        let bookmarkManager = LocalBookmarkManager(bookmarkStore: bookmarkStoreMock, faviconManagement: faviconManagerMock)
+        let bookmarkManager = LocalBookmarkManager(bookmarkStore: bookmarkStoreMock, appearancePreferences: .mock)
         let dragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
 
         bookmarkManager.loadBookmarks()
@@ -116,7 +127,7 @@ class BookmarkOutlineViewDataSourceTests: XCTestCase {
         let treeDataSource = BookmarkSidebarTreeController(bookmarkManager: bookmarkManager)
         let treeController = BookmarkTreeController(dataSource: treeDataSource, sortMode: .manual)
         let mockDestinationNode = treeController.node(representing: mockDestinationFolder)!
-        let dataSource = BookmarkOutlineViewDataSource(contentMode: .foldersOnly, bookmarkManager: LocalBookmarkManager(), treeController: treeController, dragDropManager: dragDropManager, sortMode: .manual)
+        let dataSource = BookmarkOutlineViewDataSource(contentMode: .foldersOnly, bookmarkManager: makeBookmarkManager(), treeController: treeController, dragDropManager: dragDropManager, sortMode: .manual)
 
         let folder = BookmarkFolder(id: UUID().uuidString, title: "Pasteboard Folder")
         let pasteboard = NSPasteboard.test()
@@ -131,15 +142,14 @@ class BookmarkOutlineViewDataSourceTests: XCTestCase {
     func testWhenValidatingFolderDrop_AndDestinationIsSameFolder_ThenNoDragOperationIsReturned() {
         let mockDestinationFolder = BookmarkFolder.mock
         let bookmarkStoreMock = BookmarkStoreMock(bookmarks: [mockDestinationFolder])
-        let faviconManagerMock = FaviconManagerMock()
-        let bookmarkManager = LocalBookmarkManager(bookmarkStore: bookmarkStoreMock, faviconManagement: faviconManagerMock)
+        let bookmarkManager = LocalBookmarkManager(bookmarkStore: bookmarkStoreMock, appearancePreferences: .mock)
         let dragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
 
         bookmarkManager.loadBookmarks()
 
         let treeDataSource = BookmarkSidebarTreeController(bookmarkManager: bookmarkManager)
         let treeController = BookmarkTreeController(dataSource: treeDataSource, sortMode: .manual)
-        let dataSource = BookmarkOutlineViewDataSource(contentMode: .foldersOnly, bookmarkManager: LocalBookmarkManager(), treeController: treeController, dragDropManager: dragDropManager, sortMode: .manual)
+        let dataSource = BookmarkOutlineViewDataSource(contentMode: .foldersOnly, bookmarkManager: makeBookmarkManager(), treeController: treeController, dragDropManager: dragDropManager, sortMode: .manual)
         let mockDestinationNode = treeController.node(representing: mockDestinationFolder)!
 
         let pasteboard = NSPasteboard.test()
@@ -156,15 +166,14 @@ class BookmarkOutlineViewDataSourceTests: XCTestCase {
         let rootFolder = BookmarkFolder(id: "rootfolder", title: "Root", children: [childFolder])
 
         let bookmarkStoreMock = BookmarkStoreMock(bookmarks: [rootFolder])
-        let faviconManagerMock = FaviconManagerMock()
-        let bookmarkManager = LocalBookmarkManager(bookmarkStore: bookmarkStoreMock, faviconManagement: faviconManagerMock)
+        let bookmarkManager = LocalBookmarkManager(bookmarkStore: bookmarkStoreMock, appearancePreferences: .mock)
         let dragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
 
         bookmarkManager.loadBookmarks()
 
         let treeDataSource = BookmarkSidebarTreeController(bookmarkManager: bookmarkManager)
         let treeController = BookmarkTreeController(dataSource: treeDataSource, sortMode: .manual)
-        let dataSource = BookmarkOutlineViewDataSource(contentMode: .foldersOnly, bookmarkManager: LocalBookmarkManager(), treeController: treeController, dragDropManager: dragDropManager, sortMode: .manual)
+        let dataSource = BookmarkOutlineViewDataSource(contentMode: .foldersOnly, bookmarkManager: makeBookmarkManager(), treeController: treeController, dragDropManager: dragDropManager, sortMode: .manual)
         let mockDestinationNode = treeController.node(representing: childFolder)!
 
         // Simulate dragging the root folder onto the child folder:
@@ -185,7 +194,9 @@ class BookmarkOutlineViewDataSourceTests: XCTestCase {
         window.contentView = mockOutlineView
         let treeController = createTreeController(with: [mockFolder])
         let mockFolderNode = treeController.node(representing: mockFolder)!
-        let dataSource = BookmarkOutlineViewDataSource(contentMode: .foldersOnly, bookmarkManager: LocalBookmarkManager(), treeController: treeController, sortMode: .manual)
+        let bookmarkManager = makeBookmarkManager()
+        let dragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
+        let dataSource = BookmarkOutlineViewDataSource(contentMode: .foldersOnly, bookmarkManager: bookmarkManager, treeController: treeController, dragDropManager: dragDropManager, sortMode: .manual)
         let cell = try XCTUnwrap(dataSource.outlineView(mockOutlineView, viewFor: nil, item: mockFolderNode) as? BookmarkOutlineCellView)
         let row = NSView(frame: .zero)
         row.addSubview(cell)
@@ -218,7 +229,9 @@ class BookmarkOutlineViewDataSourceTests: XCTestCase {
         let mockOutlineView = NSOutlineView(frame: .zero)
         let treeController = createTreeController(with: [mockFolder])
         let mockFolderNode = treeController.node(representing: mockFolder)!
-        let dataSource = BookmarkOutlineViewDataSource(contentMode: .bookmarksAndFolders, bookmarkManager: LocalBookmarkManager(), treeController: treeController, sortMode: .manual)
+        let bookmarkManager = makeBookmarkManager()
+        let dragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
+        let dataSource = BookmarkOutlineViewDataSource(contentMode: .bookmarksAndFolders, bookmarkManager: bookmarkManager, treeController: treeController, dragDropManager: dragDropManager, sortMode: .manual)
 
         // WHEN
         let cell = try XCTUnwrap(dataSource.outlineView(mockOutlineView, viewFor: nil, item: mockFolderNode) as? BookmarkOutlineCellView)
@@ -234,7 +247,9 @@ class BookmarkOutlineViewDataSourceTests: XCTestCase {
         let mockOutlineView = NSOutlineView(frame: .zero)
         let treeController = createTreeController(with: [mockFolder])
         let mockFolderNode = treeController.node(representing: mockFolder)!
-        let dataSource = BookmarkOutlineViewDataSource(contentMode: .foldersOnly, bookmarkManager: LocalBookmarkManager(), treeController: treeController, sortMode: .manual)
+        let bookmarkManager = makeBookmarkManager()
+        let dragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
+        let dataSource = BookmarkOutlineViewDataSource(contentMode: .foldersOnly, bookmarkManager: bookmarkManager, treeController: treeController, dragDropManager: dragDropManager, sortMode: .manual)
 
         // WHEN
         let cell = try XCTUnwrap(dataSource.outlineView(mockOutlineView, viewFor: nil, item: mockFolderNode) as? BookmarkOutlineCellView)
@@ -250,7 +265,9 @@ class BookmarkOutlineViewDataSourceTests: XCTestCase {
         let mockOutlineView = NSOutlineView(frame: .zero)
         let treeController = createTreeController(with: [mockFolder])
         let mockFolderNode = treeController.node(representing: mockFolder)!
-        let dataSource = BookmarkOutlineViewDataSource(contentMode: .bookmarksMenu, bookmarkManager: LocalBookmarkManager(), treeController: treeController, sortMode: .manual)
+        let bookmarkManager = makeBookmarkManager()
+        let dragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
+        let dataSource = BookmarkOutlineViewDataSource(contentMode: .bookmarksMenu, bookmarkManager: bookmarkManager, treeController: treeController, dragDropManager: dragDropManager, sortMode: .manual)
 
         // WHEN
         let cell = try XCTUnwrap(dataSource.outlineView(mockOutlineView, viewFor: nil, item: mockFolderNode) as? BookmarkOutlineCellView)
@@ -264,8 +281,7 @@ class BookmarkOutlineViewDataSourceTests: XCTestCase {
     @MainActor
     private func createTreeController(with bookmarks: [BaseBookmarkEntity]) -> BookmarkTreeController {
         let bookmarkStoreMock = BookmarkStoreMock(bookmarks: bookmarks)
-        let faviconManagerMock = FaviconManagerMock()
-        let bookmarkManager = LocalBookmarkManager(bookmarkStore: bookmarkStoreMock, faviconManagement: faviconManagerMock)
+        let bookmarkManager = LocalBookmarkManager(bookmarkStore: bookmarkStoreMock, appearancePreferences: .mock)
         bookmarkManager.loadBookmarks()
 
         let treeDataSource = BookmarkSidebarTreeController(bookmarkManager: bookmarkManager)

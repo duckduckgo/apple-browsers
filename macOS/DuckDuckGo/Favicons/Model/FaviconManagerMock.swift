@@ -1,7 +1,7 @@
 //
 //  FaviconManagerMock.swift
 //
-//  Copyright © 2021 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,12 +16,9 @@
 //  limitations under the License.
 //
 
-import XCTest
-import Combine
-import BrowserServicesKit
+#if DEBUG
 import Common
 import History
-@testable import DuckDuckGo_Privacy_Browser
 
 final class FaviconManagerMock: FaviconManagement {
 
@@ -53,9 +50,10 @@ final class FaviconManagerMock: FaviconManagement {
         return nil
     }
 
-    func burn(except fireproofDomains: DuckDuckGo_Privacy_Browser.FireproofDomains, bookmarkManager: DuckDuckGo_Privacy_Browser.BookmarkManager, savedLogins: Set<String>) async {
+    func burn(except fireproofDomains: FireproofDomains, bookmarkManager: BookmarkManager, savedLogins: Set<String>) async {
     }
 
-    func burnDomains(_ domains: Set<String>, exceptBookmarks bookmarkManager: any DuckDuckGo_Privacy_Browser.BookmarkManager, exceptSavedLogins: Set<String>, exceptExistingHistory history: History.BrowsingHistory, tld: Common.TLD) async {
+    func burnDomains(_ domains: Set<String>, exceptBookmarks bookmarkManager: any BookmarkManager, exceptSavedLogins: Set<String>, exceptExistingHistory history: BrowsingHistory, tld: TLD) async {
     }
 }
+#endif

@@ -433,7 +433,7 @@ final class AutofillLoginListViewController: UIViewController {
             if let source = source {
                 settingsVC.viewModel.shouldPresentSyncViewWithSource(source)
             } else {
-                settingsVC.viewModel.presentLegacyView(.sync)
+                settingsVC.viewModel.presentLegacyView(.sync(nil))
             }
         } else if let mainVC = self.presentingViewController as? MainViewController {
             dismiss(animated: true) {

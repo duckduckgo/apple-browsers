@@ -147,8 +147,8 @@ final class BookmarkListViewController: NSViewController {
         return hostingController
     }()
 
-    init(bookmarkManager: BookmarkManager = LocalBookmarkManager.shared,
-         dragDropManager: BookmarkDragDropManager = BookmarkDragDropManager.shared,
+    init(bookmarkManager: BookmarkManager,
+         dragDropManager: BookmarkDragDropManager,
          metrics: BookmarksSearchAndSortMetrics = BookmarksSearchAndSortMetrics(),
          visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
         self.bookmarkManager = bookmarkManager
@@ -669,7 +669,7 @@ final class BookmarkListViewController: NSViewController {
     }
 
     @objc func newBookmarkButtonClicked(_ sender: AnyObject) {
-        let view = BookmarksDialogViewFactory.makeAddBookmarkView(currentTab: currentTabWebsite)
+        let view = BookmarksDialogViewFactory.makeAddBookmarkView(currentTab: currentTabWebsite, bookmarkManager: bookmarkManager)
         showDialog(view)
     }
 
@@ -1041,7 +1041,7 @@ func _mockPreviewBookmarkManager(previewEmptyState: Bool) -> BookmarkManager {
             Bookmark(id: "b5", url: URL.duckDuckGo.absoluteString, title: "DuckDuckGo", isFavorite: false, parentFolderUUID: "")
         ] }.flatMap { $0 }
     }
-    let bkman = LocalBookmarkManager(bookmarkStore: BookmarkStoreMock(bookmarks: bookmarks))
+    let bkman = LocalBookmarkManager(bookmarkStore: BookmarkStoreMock(bookmarks: bookmarks), appearancePreferences: .mock)
 
     bkman.loadBookmarks()
     customAssertionFailure = { _, _, _ in }
@@ -1052,13 +1052,15 @@ func _mockPreviewBookmarkManager(previewEmptyState: Bool) -> BookmarkManager {
 @available(macOS 14.0, *)
 #Preview("Test Bookmark data",
          traits: BookmarkListViewController.Constants.preferredContentSize.fixedLayout) {
-    BookmarkListViewController(bookmarkManager: _mockPreviewBookmarkManager(previewEmptyState: false))
+    let bkman = _mockPreviewBookmarkManager(previewEmptyState: false)
+    return BookmarkListViewController(bookmarkManager: bkman, dragDropManager: .init(bookmarkManager: bkman))
         ._preview_hidingWindowControlsOnAppear()
 }
 
 @available(macOS 14.0, *)
 #Preview("Empty Scope", traits: BookmarkListViewController.Constants.preferredContentSize.fixedLayout) {
-    BookmarkListViewController(bookmarkManager: _mockPreviewBookmarkManager(previewEmptyState: true))
+    let bkman = _mockPreviewBookmarkManager(previewEmptyState: true)
+    return BookmarkListViewController(bookmarkManager: bkman, dragDropManager: .init(bookmarkManager: bkman))
         ._preview_hidingWindowControlsOnAppear()
 }
 #endif

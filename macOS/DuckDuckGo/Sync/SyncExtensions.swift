@@ -1,8 +1,7 @@
 //
-//  MockInternalUserStoring.swift
-//  DuckDuckGo
+//  SyncExtensions.swift
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,15 +16,10 @@
 //  limitations under the License.
 //
 
-import Foundation
-import BrowserServicesKit
+import DDGSync
 
-final class MockInternalUserStoring: InternalUserStoring {
-    var isInternalUser: Bool = false
-}
-
-extension DefaultInternalUserDecider {
-    convenience init(mockedStore: MockInternalUserStoring = MockInternalUserStoring()) {
-        self.init(store: mockedStore)
+extension PairingInfo {
+    var url: URL {
+        toURL(baseURL: .duckDuckGo)
     }
 }

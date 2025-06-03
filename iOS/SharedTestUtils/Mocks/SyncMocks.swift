@@ -1,5 +1,5 @@
 //
-//  MockOmnibarDependency.swift
+//  SyncMocks.swift
 //  DuckDuckGo
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
@@ -17,22 +17,15 @@
 //  limitations under the License.
 //
 
-import AIChat
-import Foundation
 import BrowserServicesKit
+import Bookmarks
+import DDGSync
+import Persistence
+import Core
 @testable import DuckDuckGo
 
-struct MockOmnibarDependency: OmnibarDependencyProvider {
-    var voiceSearchHelper: VoiceSearchHelperProtocol
-    var featureFlagger: FeatureFlagger
-    var aiChatSettings: AIChatSettingsProvider
-    let isExperimentalAppearanceEnabled = false
-
-    init(voiceSearchHelper: VoiceSearchHelperProtocol = MockVoiceSearchHelper(),
-         featureFlagger: FeatureFlagger = MockFeatureFlagger(),
-         aiChatSettings: AIChatSettingsProvider = MockAIChatSettingsProvider() ) {
-        self.voiceSearchHelper = voiceSearchHelper
-        self.featureFlagger = featureFlagger
-        self.aiChatSettings = aiChatSettings
-    }
+class MockFavoriteDisplayModeStorage: FavoritesDisplayModeStoring {
+    var favoritesDisplayMode: FavoritesDisplayMode = .displayNative(.mobile)
 }
+
+class MockFavoritesDisplayModeStoring: MockFavoriteDisplayModeStorage {}

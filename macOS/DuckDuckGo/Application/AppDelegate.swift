@@ -103,18 +103,22 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var syncFeatureFlagsCancellable: AnyCancellable?
     private var screenLockedCancellable: AnyCancellable?
     private var emailCancellables = Set<AnyCancellable>()
-    private(set) lazy var bookmarksManager = LocalBookmarkManager.shared
     var privacyDashboardWindow: NSWindow?
 
     let appearancePreferences: AppearancePreferences
     let dataClearingPreferences: DataClearingPreferences
     let startupPreferences: StartupPreferences
 
+    let bookmarkDatabase: BookmarkDatabase
+    let bookmarkManager: LocalBookmarkManager
+    let bookmarkDragDropManager: BookmarkDragDropManager
+
     private var updateProgressCancellable: AnyCancellable?
 
     private(set) lazy var newTabPageCoordinator: NewTabPageCoordinator = NewTabPageCoordinator(
         appearancePreferences: appearancePreferences,
         customizationModel: newTabPageCustomizationModel,
+        bookmarkManager: bookmarkManager,
         activeRemoteMessageModel: activeRemoteMessageModel,
         historyCoordinator: HistoryCoordinator.shared,
         privacyStats: privacyStats,
@@ -234,6 +238,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         appearancePreferences = AppearancePreferences(keyValueStore: keyValueStore)
         dataClearingPreferences = DataClearingPreferences()
         startupPreferences = StartupPreferences(appearancePreferences: appearancePreferences, dataClearingPreferences: dataClearingPreferences)
+        bookmarkDatabase = BookmarkDatabase()
 
         let internalUserDeciderStore = InternalUserDeciderStore(fileStore: fileStore)
         internalUserDecider = DefaultInternalUserDecider(store: internalUserDeciderStore)
@@ -260,14 +265,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 let formFactorFavMigration = BookmarkFormFactorFavoritesMigration()
                 let favoritesOrder = try formFactorFavMigration.getFavoritesOrderFromPreV4Model(dbContainerLocation: BookmarkDatabase.defaultDBLocation,
                                                                                                 dbFileURL: BookmarkDatabase.defaultDBFileURL)
-                BookmarkDatabase.shared.preFormFactorSpecificFavoritesFolderOrder = favoritesOrder
+                bookmarkDatabase.preFormFactorSpecificFavoritesFolderOrder = favoritesOrder
             } catch {
                 PixelKit.fire(DebugEvent(GeneralPixel.bookmarksCouldNotLoadDatabase(error: error)))
                 Thread.sleep(forTimeInterval: 1)
                 fatalError("Could not create Bookmarks database stack: \(error.localizedDescription)")
             }
 
-            BookmarkDatabase.shared.db.loadStore { context, error in
+            bookmarkDatabase.db.loadStore { context, error in
                 guard let context = context else {
                     PixelKit.fire(DebugEvent(GeneralPixel.bookmarksCouldNotLoadDatabase(error: error)))
                     Thread.sleep(forTimeInterval: 1)
@@ -283,21 +288,40 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
 #if DEBUG
-        AppPrivacyFeatures.shared = AppVersion.runType.requiresEnvironment
-        // runtime mock-replacement for Unit Tests, to be redone when we‘ll be doing Dependency Injection
-        ? AppPrivacyFeatures(contentBlocking: AppContentBlocking(internalUserDecider: internalUserDecider, configurationStore: configurationStore, appearancePreferences: appearancePreferences, startupPreferences: startupPreferences), database: Database.shared)
-        : AppPrivacyFeatures(contentBlocking: ContentBlockingMock(), httpsUpgradeStore: HTTPSUpgradeStoreMock())
+        if AppVersion.runType.requiresEnvironment {
+            bookmarkManager = LocalBookmarkManager(
+                bookmarkStore: LocalBookmarkStore(
+                    bookmarkDatabase: bookmarkDatabase,
+                    favoritesDisplayMode: appearancePreferences.favoritesDisplayMode
+                ),
+                appearancePreferences: appearancePreferences
+            )
+        } else {
+            bookmarkManager = LocalBookmarkManager(bookmarkStore: BookmarkStoreMock(), appearancePreferences: appearancePreferences)
+        }
 #else
-        AppPrivacyFeatures.shared = AppPrivacyFeatures(contentBlocking: AppContentBlocking(internalUserDecider: internalUserDecider, configurationStore: configurationStore, appearancePreferences: appearancePreferences, startupPreferences: startupPreferences), database: Database.shared)
+        bookmarkManager = LocalBookmarkManager(
+            bookmarkStore: LocalBookmarkStore(
+                bookmarkDatabase: bookmarkDatabase,
+                favoritesDisplayMode: appearancePreferences.favoritesDisplayMode
+            ),
+            appearancePreferences: appearancePreferences
+        )
 #endif
+        bookmarkDragDropManager = BookmarkDragDropManager(bookmarkManager: bookmarkManager)
 
-        pinnedTabsManagerProvider = PinnedTabsManagerProvider()
-
-        configurationManager = ConfigurationManager(store: configurationStore)
+        let privacyConfigurationManager = PrivacyConfigurationManager(
+            fetchedETag: configurationStore.loadEtag(for: .privacyConfiguration),
+            fetchedData: configurationStore.loadData(for: .privacyConfiguration),
+            embeddedDataProvider: AppPrivacyConfigurationDataProvider(),
+            localProtection: LocalUnprotectedDomains.shared,
+            errorReporting: AppContentBlocking.debugEvents,
+            internalUserDecider: internalUserDecider
+        )
 
         let featureFlagger = DefaultFeatureFlagger(
             internalUserDecider: internalUserDecider,
-            privacyConfigManager: AppPrivacyFeatures.shared.contentBlocking.privacyConfigurationManager,
+            privacyConfigManager: privacyConfigurationManager,
             localOverrides: FeatureFlagLocalOverrides(
                 keyValueStore: UserDefaults.appConfiguration,
                 actionHandler: featureFlagOverridesPublishingHandler
@@ -308,17 +332,51 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         self.featureFlagger = featureFlagger
         self.contentScopeExperimentsManager = featureFlagger
 
+#if DEBUG
+        AppPrivacyFeatures.shared = AppVersion.runType.requiresEnvironment
+        // runtime mock-replacement for Unit Tests, to be redone when we‘ll be doing Dependency Injection
+        ? AppPrivacyFeatures(
+            contentBlocking: AppContentBlocking(
+                privacyConfigurationManager: privacyConfigurationManager,
+                internalUserDecider: internalUserDecider,
+                configurationStore: configurationStore,
+                contentScopeExperimentsManager: self.contentScopeExperimentsManager,
+                appearancePreferences: appearancePreferences,
+                startupPreferences: startupPreferences,
+                bookmarkManager: bookmarkManager
+            ),
+            database: Database.shared
+        )
+        : AppPrivacyFeatures(contentBlocking: ContentBlockingMock(), httpsUpgradeStore: HTTPSUpgradeStoreMock())
+#else
+        AppPrivacyFeatures.shared = AppPrivacyFeatures(
+            contentBlocking: AppContentBlocking(
+                privacyConfigurationManager: privacyConfigurationManager,
+                internalUserDecider: internalUserDecider,
+                configurationStore: configurationStore,
+                contentScopeExperimentsManager: self.contentScopeExperimentsManager,
+                appearancePreferences: appearancePreferences,
+                startupPreferences: startupPreferences,
+                bookmarkManager: bookmarkManager
+            ),
+            database: Database.shared
+        )
+#endif
+
+        pinnedTabsManagerProvider = PinnedTabsManagerProvider()
+        configurationManager = ConfigurationManager(store: configurationStore)
+
         visualStyleManager = VisualStyleManager(featureFlagger: featureFlagger)
         newTabPageCustomizationModel = NewTabPageCustomizationModel(visualStyleManager: visualStyleManager, appearancePreferences: appearancePreferences)
 
         onboardingContextualDialogsManager = ContextualDialogsManager()
 
-        #if DEBUG || REVIEW
+#if DEBUG || REVIEW
         let defaultBrowserAndDockPromptDebugStore = DefaultBrowserAndDockPromptDebugStore()
         let defaultBrowserAndDockPromptDateProvider: () -> Date = { defaultBrowserAndDockPromptDebugStore.simulatedTodayDate }
-        #else
+#else
         let defaultBrowserAndDockPromptDateProvider: () -> Date = Date.init
-        #endif
+#endif
 
         defaultBrowserAndDockPromptKeyValueStore = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStore)
         DefaultBrowserAndDockPromptStoreMigrator(
@@ -406,7 +464,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if AppVersion.runType.requiresEnvironment {
             remoteMessagingClient = RemoteMessagingClient(
                 database: RemoteMessagingDatabase().db,
-                bookmarksDatabase: BookmarkDatabase.shared.db,
+                bookmarksDatabase: bookmarkDatabase.db,
                 appearancePreferences: appearancePreferences,
                 pinnedTabsManagerProvider: pinnedTabsManagerProvider,
                 internalUserDecider: internalUserDecider,
@@ -468,9 +526,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         PixelKit.configureExperimentKit(featureFlagger: featureFlagger, eventTracker: ExperimentEventTracker(store: UserDefaults.appConfiguration))
 
 #if DEBUG
-        faviconManager = FaviconManager(cacheType: AppVersion.runType.requiresEnvironment ? .standard : .inMemory)
+        faviconManager = FaviconManager(cacheType: AppVersion.runType.requiresEnvironment ? .standard : .inMemory, bookmarkManager: bookmarkManager)
 #else
-        faviconManager = FaviconManager(cacheType: .standard)
+        faviconManager = FaviconManager(cacheType: .standard, bookmarkManager: bookmarkManager)
 #endif
 
 #if !APPSTORE && WEB_EXTENSIONS_ENABLED
@@ -536,7 +594,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         PrivacyFeatures.httpsUpgrade.loadDataAsync()
-        bookmarksManager.loadBookmarks()
+        bookmarkManager.loadBookmarks()
 
         // Force use of .mainThread to prevent high WindowServer Usage
         // Pending Fix with newer Lottie versions
@@ -838,7 +896,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 #endif
         let syncErrorHandler = SyncErrorHandler()
         let syncDataProviders = SyncDataProviders(
-            bookmarksDatabase: BookmarkDatabase.shared.db,
+            bookmarksDatabase: bookmarkDatabase.db,
+            bookmarkManager: bookmarkManager,
             appearancePreferences: appearancePreferences,
             syncErrorHandler: syncErrorHandler
         )

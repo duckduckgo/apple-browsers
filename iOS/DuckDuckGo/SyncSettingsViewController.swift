@@ -67,6 +67,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
     var viewModel: SyncSettingsViewModel?
 
     var source: String?
+    var pairingInfo: PairingInfo?
 
     var onConfirmSyncDisable: (() -> Void)?
     var onConfirmAndDeleteAllData: (() -> Void)?
@@ -79,6 +80,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
         appSettings: AppSettings = AppDependencyProvider.shared.appSettings,
         syncPausedStateManager: any SyncPausedStateManaging,
         source: String? = nil,
+        pairingInfo: PairingInfo? = nil,
         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger
     ) {
         self.syncService = syncService
@@ -86,6 +88,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
         self.syncCredentialsAdapter = syncCredentialsAdapter
         self.syncPausedStateManager = syncPausedStateManager
         self.source = source
+        self.pairingInfo = pairingInfo
         self.featureFlagger = featureFlagger
 
         let viewModel = SyncSettingsViewModel(
@@ -258,6 +261,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
         Pixel.fire(pixel: .settingsSyncOpen, withAdditionalParameters: [
             "is_enabled": isSyncEnabled ? "1" : "0"
         ])
+        startPairingIfNecessary()
     }
 
     func updateOptions() {
@@ -306,6 +310,38 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
         }.sorted(by: { lhs, _ in
             lhs.isThisDevice
         })
+    }
+
+    private func startPairingIfNecessary() {
+        if let pairingInfo {
+            askForPairingConfirmation(deviceName: pairingInfo.deviceName)
+        }
+    }
+
+    private func askForAuthThenStartPairing() {
+        guard let pairingInfo = self.pairingInfo else { return }
+        Task {
+            do {
+                try await authenticateUser()
+                await connectionController.startPairingMode(pairingInfo)
+            }
+        }
+        self.pairingInfo = nil
+    }
+
+    func askForPairingConfirmation(deviceName: String) {
+        let alert = UIAlertController(title: UserText.syncAlertSyncNewDeviceTitle,
+                                      message: UserText.syncAlertSyncNewDeviceMessage(deviceName),
+                                      preferredStyle: .alert)
+        let cancelAction = UIAlertAction(title: UserText.actionCancel, style: .cancel) { [weak self] _ in
+            self?.pairingInfo = nil
+        }
+        let confirmAction = UIAlertAction(title: UserText.syncAlertSyncNewDeviceButton, style: .default) { [weak self] _ in
+            self?.askForAuthThenStartPairing()
+        }
+        alert.addAction(cancelAction)
+        alert.addAction(confirmAction)
+        self.present(alert, animated: true)
     }
 }
 
@@ -358,79 +394,7 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
     }
     
     func syncCodeEntered(code: String) async -> Bool {
-        if featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) {
-            return await connectionController.syncCodeEntered(code: code, canScanURLBarcodes: featureFlagger.isFeatureOn(.canScanUrlBasedSyncSetupBarcodes))
-        } else {
-            return await legacySyncCodeEntered(code: code)
-        }
-    }
-
-    private func legacySyncCodeEntered(code: String) async -> Bool {
-        var shouldShowSyncEnabled = true
-        guard let syncCode = try? SyncCode.decodeBase64String(code) else {
-            return false
-        }
-        if let recoveryKey = syncCode.recovery {
-            dismissPresentedViewController()
-            await showPreparingSync()
-            do {
-                try await loginAndShowDeviceConnected(recoveryKey: recoveryKey)
-                return true
-            } catch {
-                await handleRecoveryCodeLoginError(recoveryKey: recoveryKey, error: error)
-            }
-        } else if let connectKey = syncCode.connect {
-            dismissPresentedViewController()
-            showPreparingSync(nil)
-            if syncService.account == nil {
-                do {
-                    try await syncService.createAccount(deviceName: deviceName, deviceType: deviceType)
-                    let additionalParameters = source.map { ["source": $0] } ?? [:]
-                    try await Pixel.fire(pixel: .syncSignupConnect, withAdditionalParameters: additionalParameters, includedParameters: [.appVersion])
-                    self.dismissVCAndShowRecoveryPDF()
-                    shouldShowSyncEnabled = false
-                    rootView.model.syncEnabled(recoveryCode: recoveryCode)
-                } catch {
-                    handleError(.unableToSyncToServer, error: error, event: .syncSignupError)
-                }
-            }
-            do {
-                try await syncService.transmitRecoveryKey(connectKey)
-                self.rootView.model.$devices
-                    .removeDuplicates()
-                    .dropFirst()
-                    .prefix(1)
-                    .sink { [weak self] _ in
-                        guard let self else { return }
-                        if shouldShowSyncEnabled {
-                            self.dismissVCAndShowRecoveryPDF()
-                        }
-                    }.store(in: &cancellables)
-            } catch {
-                handleError(.unableToSyncWithDevice, error: error, event: .syncLoginError)
-            }
-
-            return true
-        }
-        return false
-    }
-
-    private func handleRecoveryCodeLoginError(recoveryKey: SyncCode.RecoveryKey, error: Error) async {
-        if self.rootView.model.isSyncEnabled && featureFlagger.isFeatureOn(.syncSeamlessAccountSwitching) {
-            await handleTwoSyncAccountsFoundDuringRecovery(recoveryKey)
-        } else if self.rootView.model.isSyncEnabled {
-            handleError(.unableToMergeTwoAccounts, error: error, event: .syncLoginExistingAccountError)
-        } else {
-            handleError(.unableToSyncToServer, error: error, event: .syncLoginError)
-        }
-    }
-
-    private func handleTwoSyncAccountsFoundDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey) async {
-        if rootView.model.devices.count > 1 {
-            promptToSwitchAccounts(recoveryKey: recoveryKey)
-        } else {
-            await switchAccounts(recoveryKey: recoveryKey)
-        }
+        return await connectionController.syncCodeEntered(code: code, canScanURLBarcodes: featureFlagger.isFeatureOn(.canScanUrlBasedSyncSetupBarcodes))
     }
 
     func dismissVCAndShowRecoveryPDF() {

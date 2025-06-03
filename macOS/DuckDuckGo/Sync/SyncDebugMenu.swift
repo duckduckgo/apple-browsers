@@ -84,7 +84,7 @@ final class SyncDebugMenu: NSMenu {
 
     @objc func createStubsForDebug() {
 #if DEBUG || REVIEW
-        let db = BookmarkDatabase.shared
+        let db = NSApp.delegateTyped.bookmarkDatabase
 
         let context = db.db.makeContext(concurrencyType: .privateQueueConcurrencyType)
 

@@ -31,7 +31,7 @@ final class AddBookmarkPopoverViewModelTests: XCTestCase {
     override func setUp() async throws {
         let bookmark = Bookmark.mock
         bookmarkStoreMock = BookmarkStoreMock(bookmarks: [bookmark])
-        bookmarkManager = .init(bookmarkStore: bookmarkStoreMock, faviconManagement: FaviconManagerMock())
+        bookmarkManager = .init(bookmarkStore: bookmarkStoreMock, appearancePreferences: .mock)
         bookmarkManager.loadBookmarks()
         buttonClickedCallsCount = 0
 

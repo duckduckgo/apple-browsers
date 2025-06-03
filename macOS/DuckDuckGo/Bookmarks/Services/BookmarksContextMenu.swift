@@ -43,8 +43,8 @@ final class BookmarksContextMenu: NSMenu {
     }
 
     @MainActor
-    init(bookmarkManager: BookmarkManager = LocalBookmarkManager.shared, windowControllersManager: WindowControllersManagerProtocol? = nil, delegate: BookmarksContextMenuDelegate) {
-        self.bookmarkManager = bookmarkManager
+    init(bookmarkManager: BookmarkManager? = nil, windowControllersManager: WindowControllersManagerProtocol? = nil, delegate: BookmarksContextMenuDelegate) {
+        self.bookmarkManager = bookmarkManager ?? NSApp.delegateTyped.bookmarkManager
         self.windowControllersManager = windowControllersManager ?? WindowControllersManager.shared
         super.init(title: "")
         self.delegate = delegate

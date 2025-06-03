@@ -49,6 +49,16 @@ extension NSAlert {
         return alert
     }
 
+    // Temporary alert to help track down a user issue
+    static func passwordManagerSaveError(errorType: String) -> NSAlert {
+        let alert = NSAlert()
+        alert.messageText = "Error"
+        alert.informativeText = "There was an error saving your changes. \(errorType)"
+        alert.alertStyle = .warning
+        alert.addButton(withTitle: UserText.ok)
+        return alert
+    }
+
     static func passwordManagerConfirmDeleteCard() -> NSAlert {
         let alert = NSAlert()
         alert.messageText = UserText.passwordManagerAlertRemoveCardConfirmation

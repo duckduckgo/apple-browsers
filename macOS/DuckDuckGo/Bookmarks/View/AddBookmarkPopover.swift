@@ -21,6 +21,8 @@ import SwiftUI
 
 final class AddBookmarkPopover: NSPopover {
 
+    private let bookmarkManager: BookmarkManager
+
     var isNew: Bool = false
     var bookmark: Bookmark? {
         didSet {
@@ -41,7 +43,8 @@ final class AddBookmarkPopover: NSPopover {
         return frame
     }
 
-    override init() {
+    init(bookmarkManager: BookmarkManager) {
+        self.bookmarkManager = bookmarkManager
         super.init()
 
         animates = false
@@ -54,7 +57,7 @@ final class AddBookmarkPopover: NSPopover {
 
     private func setupBookmarkAddController() {
         guard let bookmark else { return }
-        let viewModel = AddBookmarkPopoverViewModel(bookmark: bookmark)
+        let viewModel = AddBookmarkPopoverViewModel(bookmark: bookmark, bookmarkManager: bookmarkManager)
         contentViewController = NSHostingController(rootView: AddBookmarkPopoverView(model: viewModel))
         viewModel.buttonClicked = { [weak self] in
             self?.performClose(nil)

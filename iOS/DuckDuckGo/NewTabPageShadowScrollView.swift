@@ -62,6 +62,9 @@ struct NewTabPageShadowScrollView<Content: View>: UIViewControllerRepresentable 
     }
 
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {
+        // Set content in case it has changed
+        context.coordinator.contentHostingController?.rootView = content
+        
         // This is required in order for the scroll view to adjust for changed size of
         // hosted SUI view. Without this the layout is not updating properly.
         context.coordinator.contentHostingController?.view.setNeedsUpdateConstraints()

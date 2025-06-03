@@ -190,6 +190,15 @@
 /* Description for alert shown when user logged off from sync */
 "alert.sync-invalid-login-error-description" = "Synchronisatie is onderbroken. Als je dit apparaat wilt blijven synchroniseren, maak dan opnieuw verbinding met een ander apparaat of met je herstelcode.";
 
+/* Sync Now button in alert asking if they would like to sync with another device */
+"alert.sync-new-device.button" = "Nu synchroniseren";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.message" = "'%@' heeft toegang tot je gesynchroniseerde DuckDuckGo-gegevens.";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.title" = "Nieuw apparaat synchroniseren?";
+
 /* Learn more button in alert */
 "alert.sync-paused-alert-learn-more-button" = "Meer informatie";
 

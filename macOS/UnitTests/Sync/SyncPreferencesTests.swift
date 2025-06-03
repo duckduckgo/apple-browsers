@@ -489,9 +489,7 @@ final class SyncPreferencesTests: XCTestCase {
 
         await syncPreferences.syncWithAnotherDevicePressed()
 
-        let dialogCodes = try await waitForPublisher(waitForSyncWithAnotherDeviceDialog(), toEmit: SyncDialogCodes(displayCode: expectedRecoveryCode, qrCode: expectedRecoveryCode))
-        XCTAssertEqual(dialogCodes.displayCode, expectedRecoveryCode)
-        XCTAssertEqual(dialogCodes.qrCode, expectedRecoveryCode)
+        try await waitForPublisher(waitForSyncWithAnotherDeviceDialog(), toEmit: SyncDialogCodes(displayCode: expectedRecoveryCode, qrCode: expectedRecoveryCode))
         XCTAssertEqual(syncPreferences.codeForDisplayOrPasting, expectedRecoveryCode)
         XCTAssertEqual(syncPreferences.stringForQR, expectedRecoveryCode)
     }
@@ -509,9 +507,7 @@ final class SyncPreferencesTests: XCTestCase {
 
         await syncPreferences.syncWithAnotherDevicePressed()
 
-        let dialogCodes = try await waitForPublisher(waitForSyncWithAnotherDeviceDialog(), toEmit: SyncDialogCodes(displayCode: expectedExchangeCode, qrCode: expectedQRCodeUrl))
-        XCTAssertEqual(dialogCodes.displayCode, expectedExchangeCode)
-        XCTAssertEqual(dialogCodes.qrCode, expectedQRCodeUrl)
+        try await waitForPublisher(waitForSyncWithAnotherDeviceDialog(), toEmit: SyncDialogCodes(displayCode: expectedExchangeCode, qrCode: expectedQRCodeUrl))
         XCTAssertEqual(syncPreferences.codeForDisplayOrPasting, expectedExchangeCode)
         XCTAssertEqual(syncPreferences.stringForQR, expectedQRCodeUrl)
     }
@@ -526,8 +522,7 @@ final class SyncPreferencesTests: XCTestCase {
 
         syncPreferences.enterRecoveryCodePressed()
 
-        let recoveryQRCode = try await waitForPublisher(waitForEnterRecoveryCodeDialog(), toEmit: expectedQRCodeUrl)
-        XCTAssertEqual(recoveryQRCode, expectedQRCodeUrl)
+        try await waitForPublisher(waitForEnterRecoveryCodeDialog(), toEmit: expectedQRCodeUrl)
         XCTAssertEqual(syncPreferences.codeForDisplayOrPasting, expectedDisplayCode)
         XCTAssertEqual(syncPreferences.stringForQR, expectedQRCodeUrl)
     }
@@ -541,8 +536,7 @@ final class SyncPreferencesTests: XCTestCase {
 
         syncPreferences.enterRecoveryCodePressed()
 
-        let recoveryQRCode = try await waitForPublisher(waitForEnterRecoveryCodeDialog(), toEmit: expectedDisplayCode)
-        XCTAssertEqual(recoveryQRCode, expectedDisplayCode)
+        try await waitForPublisher(waitForEnterRecoveryCodeDialog(), toEmit: expectedDisplayCode)
         XCTAssertEqual(syncPreferences.codeForDisplayOrPasting, expectedDisplayCode)
         XCTAssertEqual(syncPreferences.stringForQR, expectedDisplayCode)
     }
@@ -559,12 +553,7 @@ final class SyncPreferencesTests: XCTestCase {
 
         await syncPreferences.syncWithAnotherDevicePressed()
 
-        try await waitForPublisher(managementDialogModel.$currentDialog.map { dialog in
-            if case .syncWithAnotherDevice(let code, let qr) = dialog {
-                return code == expectedCode && qr == expectedQRCodeString
-            }
-            return false
-        }, toEmit: true)
+        try await waitForPublisher(waitForSyncWithAnotherDeviceDialog(), toEmit: SyncDialogCodes(displayCode: expectedCode, qrCode: expectedQRCodeString))
         XCTAssertEqual(syncPreferences.codeForDisplayOrPasting, expectedCode)
         XCTAssertEqual(syncPreferences.stringForQR, expectedQRCodeString)
     }
@@ -580,12 +569,7 @@ final class SyncPreferencesTests: XCTestCase {
 
         await syncPreferences.syncWithAnotherDevicePressed()
 
-        try await waitForPublisher(managementDialogModel.$currentDialog.map { dialog in
-            if case .syncWithAnotherDevice(let code, let qr) = dialog {
-                return code == expectedCode && qr == expectedCode
-            }
-            return false
-        }, toEmit: true)
+        try await waitForPublisher(waitForSyncWithAnotherDeviceDialog(), toEmit: SyncDialogCodes(displayCode: expectedCode, qrCode: expectedCode))
         XCTAssertEqual(syncPreferences.codeForDisplayOrPasting, expectedCode)
         XCTAssertEqual(syncPreferences.stringForQR, expectedCode)
     }

@@ -18,6 +18,7 @@
 
 #if os(iOS)
 import Foundation
+import UIKit
 
 /// A protocol that defines the timing behavior for chat sessions.
 ///
@@ -25,10 +26,17 @@ import Foundation
 /// of a chat session and provides functionality to start, cancel, and check the elapsed time.
 protocol AIChatSessionTiming {
 
+    /// Initializes a new instance of a chat session timer.
+    ///
+    /// - Parameters:
+    ///   - durationInSeconds: The duration of the timer in seconds.
+    ///   - completion: A closure that is called when the timer completes its duration.
+    init(durationInSeconds: TimeInterval, completion: @escaping () -> Void)
+
     /// Starts the timer for the chat session.
     ///
-    /// - Parameter completion: A closure that is called when the timer completes its duration.
-    func start(completion: @escaping () -> Void)
+    /// This method begins the timer using the duration specified during initialization.
+    func start()
 
     /// Cancels the timer if it is currently running.
     ///
@@ -42,20 +50,34 @@ protocol AIChatSessionTiming {
     func timeElapsedInMinutes() -> Int?
 }
 
+
 public final class AIChatSessionTimer: AIChatSessionTiming {
     private let durationInSeconds: TimeInterval
     private var timer: Timer?
     private var startDate: Date?
+    private let completion: () -> Void
+    private var currentDuration: TimeInterval
 
-    public init(durationInSeconds: TimeInterval) {
-        self.durationInSeconds = durationInSeconds
+    public init(durationInSeconds: TimeInterval, completion: @escaping () -> Void) {
+        self.durationInSeconds = 30
+        self.currentDuration = 30
+        self.completion = completion
+        registerLifecycleNotifications()
     }
 
-    public func start(completion: @escaping () -> Void) {
+    private func registerLifecycleNotifications() {
+        NotificationCenter.default.addObserver(self, selector: #selector(appWillEnterForeground), name: UIApplication.willEnterForegroundNotification, object: nil)
+    }
+
+    public func start() {
+        start(duration: durationInSeconds)
+    }
+
+    private func start(duration: TimeInterval) {
         cancel()
         startDate = Date()
-        timer = Timer.scheduledTimer(withTimeInterval: durationInSeconds, repeats: false) { _ in
-            completion()
+        timer = Timer.scheduledTimer(withTimeInterval: duration, repeats: false) { [weak self] _ in
+            self?.completion()
         }
     }
 
@@ -63,6 +85,31 @@ public final class AIChatSessionTimer: AIChatSessionTiming {
         timer?.invalidate()
         timer = nil
         startDate = nil
+    }
+
+    @objc private func appWillEnterForeground() {
+        handleTimerAfterBackgrounding()
+    }
+
+
+    ///    This function is called when the app re-enters the foreground.
+    ///    It calculates the elapsed time since the timer started and determines whether to fire the timer immediately or restart it with the remaining time.
+    ///     - Fires the timer if the elapsed time is greater than or equal to the duration.
+    ///     - Restarts the timer with the remaining time if the elapsed time is less.
+    ///
+    private func handleTimerAfterBackgrounding() {
+        guard let startDate = startDate else {
+            return
+        }
+
+        let elapsedTime = Date().timeIntervalSince(startDate)
+
+        if elapsedTime >= durationInSeconds {
+            timer?.fire()
+        } else {
+            self.currentDuration = currentDuration - elapsedTime
+            start(duration: self.currentDuration)
+        }
     }
 
     public func timeElapsedInMinutes() -> Int? {
@@ -74,7 +121,9 @@ public final class AIChatSessionTimer: AIChatSessionTiming {
     }
 
     deinit {
+        NotificationCenter.default.removeObserver(self)
         cancel()
     }
+
 }
 #endif

@@ -86,7 +86,7 @@ final class AIChatViewControllerManager {
 
         /// If we have a query or payload, let's clean the previous session and start fresh
         if query != nil || payload != nil {
-            Task { @MainActor in
+            Task {
                 await cleanUpSession()
                 setupAndPresentAIChat(query, payload: payload, autoSend: autoSend, on: viewController)
             }
@@ -119,14 +119,16 @@ final class AIChatViewControllerManager {
     private func startSessionTimer() {
         guard isKeepSessionEnabled else { return }
 
-        sessionTimer = AIChatSessionTimer(durationInSeconds: TimeInterval(aiChatSettings.sessionTimerInMinutes * 60))
-        sessionTimer?.start {  [weak self] in
-            Task { @MainActor in
+        let sessionTime = TimeInterval(aiChatSettings.sessionTimerInMinutes * 60)
+        sessionTimer = AIChatSessionTimer(durationInSeconds: sessionTime, completion: { [weak self] in
+            Task {
                 await self?.cleanUpSession()
             }
-        }
+        })
+        sessionTimer?.start()
     }
 
+    @MainActor
     private func cleanUpSession() async {
         await self.cleanUpUserContent()
         self.chatViewController = nil
@@ -279,7 +281,7 @@ extension AIChatViewControllerManager: RoundedPageSheetContainerViewControllerDe
     func roundedPageSheetContainerViewControllerDidDisappear(_ controller: RoundedPageSheetContainerViewController) {
         guard isKeepSessionEnabled == false else { return }
 
-        Task { @MainActor in
+        Task {
             await cleanUpSession()
         }
     }

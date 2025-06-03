@@ -139,7 +139,7 @@ final class AIChatViewControllerManager {
     }
 
     private var isKeepSessionEnabled: Bool {
-        featureFlagger.isFeatureOn(.aiChatKeepSession) || featureFlagger.internalUserDecider.isInternalUser
+        featureFlagger.isFeatureOn(.aiChatKeepSession)
     }
 
     @MainActor

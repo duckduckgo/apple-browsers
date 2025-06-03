@@ -609,8 +609,15 @@ extension SecureVaultManager: AutofillSecureVaultDelegate {
                 })
             } catch {
                 Logger.secureVault.error("Error requesting credit card: \(error.localizedDescription, privacy: .public)")
-                completionHandler(nil, .none)
+                delegate?.secureVaultManagerDidFocus(self, forType: mainType, withCreditCards: [], completionHandler: { _ in
+                    completionHandler(nil, .none)
+                })
+
             }
+        } else {
+            delegate?.secureVaultManagerDidFocus(self, forType: mainType, withCreditCards: [], completionHandler: { _ in
+                completionHandler(nil, .none)
+            })
         }
     }
 

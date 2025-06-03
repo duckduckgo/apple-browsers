@@ -3060,8 +3060,16 @@ extension TabViewController: SecureVaultManagerDelegate {
             resetCreditCardPrompt()
         }
 
-        presentAutofillPromptViewController(creditCards: creditCards, trigger: trigger) { creditCard in
-            completionHandler(creditCard)
+        if shouldShowCreditCardPrompt {
+            presentAutofillPromptViewController(creditCards: creditCards, trigger: trigger) { creditCard in
+                completionHandler(creditCard)
+            }
+            shouldShowCreditCardPrompt = false
+        } else {
+            // handling for scenario of credit card forms split into multiple iframes which each trigger getAutofillData
+            addCreditCardInputAccessoryView(creditCards: creditCards) { card in
+                completionHandler(card)
+            }
         }
     }
 
@@ -3070,11 +3078,6 @@ extension TabViewController: SecureVaultManagerDelegate {
                                     withCreditCards creditCards: [SecureVaultModels.CreditCard],
                                     completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
         Logger.autofill.debug("secureVaultManagerDidCancelGetAutofillDataRequest")
-        guard let webView = webView as? WebView, let autofillCreditCardAccessoryView = autofillCreditCardAccessoryView else {
-            completionHandler(nil)
-            return
-        }
-        
         guard type == .creditCards else {
             Logger.autofill.debug("secureVaultManagerDidFocus: not creditCard")
             completionHandler(nil)
@@ -3082,6 +3085,16 @@ extension TabViewController: SecureVaultManagerDelegate {
             return
         }
 
+        addCreditCardInputAccessoryView(creditCards: creditCards) { card in
+            completionHandler(card)
+        }
+    }
+    
+    private func addCreditCardInputAccessoryView(creditCards: [SecureVaultModels.CreditCard], completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
+        guard let webView = webView as? WebView, let autofillCreditCardAccessoryView = autofillCreditCardAccessoryView else {
+            completionHandler(nil)
+            return
+        }
         autofillCreditCardAccessoryView.updateCreditCards(creditCards)
         webView.setAccessoryContentView(autofillCreditCardAccessoryView, height: 52.0)
 
@@ -3109,7 +3122,9 @@ extension TabViewController: SecureVaultManagerDelegate {
     private func presentAutofillPromptViewController(creditCards: [SecureVaultModels.CreditCard],
                                              trigger: AutofillUserScript.GetTriggerType,
                                              completionHandler: @escaping (SecureVaultModels.CreditCard?) -> Void) {
-
+        // Ensure keyboard doesn't block prompt
+        webView.resignFirstResponder()
+        
         let creditCardPromptViewController = CreditCardPromptViewController(creditCards: creditCards) { creditCard in
             completionHandler(creditCard)
         }

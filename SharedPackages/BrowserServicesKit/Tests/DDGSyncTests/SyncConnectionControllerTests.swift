@@ -131,14 +131,15 @@ final class SyncConnectionControllerTests: XCTestCase {
 
     // MARK: startExchangeMode
 
-    func test_startExchangeMode_returnsExchangerCode() async throws {
-        let expectedExchangerCode = "TestExchangerCode"
+    func test_startExchangeMode_returnsExpectedPairingInfo() async throws {
+        let expectedExchangeCode = "TestExchangerCode"
         let mockRemoteKeyExchanger: MockRemoteKeyExchanging = .init()
         dependencies.createRemoteKeyExchangerStub = mockRemoteKeyExchanger
-        mockRemoteKeyExchanger.code = expectedExchangerCode
-        let code = try await controller.startExchangeMode()
+        mockRemoteKeyExchanger.code = expectedExchangeCode
+        let pairingInfo = try await controller.startExchangeMode()
 
-        XCTAssertEqual(code, expectedExchangerCode)
+        XCTAssertEqual(pairingInfo.base64Code, expectedExchangeCode)
+        XCTAssertEqual(pairingInfo.deviceName, Self.deviceName)
     }
 
     func test_startExchangeMode_pollSucceeds_transmitsRecoveryKey() async throws {
@@ -208,15 +209,16 @@ final class SyncConnectionControllerTests: XCTestCase {
 
     // MARK: startConnectMode
 
-    func test_startConnectMode_returnsConnectorCode() async throws {
+    func test_startConnectMode_returnsExpectedPairingInfo() async throws {
         let expectedConnectorCode = "TestConnectorCode"
         let mockRemoteConnector = MockRemoteConnecting()
         dependencies.createRemoteConnectorStub = mockRemoteConnector
         mockRemoteConnector.code = expectedConnectorCode
 
-        let code = try await controller.startConnectMode()
+        let pairingInfo = try await controller.startConnectMode()
 
-        XCTAssertEqual(code, expectedConnectorCode)
+        XCTAssertEqual(pairingInfo.base64Code, expectedConnectorCode)
+        XCTAssertEqual(pairingInfo.deviceName, Self.deviceName)
     }
 
     func test_startConnectMode_pollSucceeds_informsDelegate() async throws {

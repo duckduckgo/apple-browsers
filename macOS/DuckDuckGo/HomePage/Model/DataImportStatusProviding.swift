@@ -81,7 +81,7 @@ final class BookmarksAndPasswordsImportStatusProvider: DataImportStatusProviding
             let identitiesDates = try secureVault.identities().map(\.created)
             dates.append(contentsOf: identitiesDates)
         } catch {
-            PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error)))
+            PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
         }
         guard dates.count >= 2 else {
             return false

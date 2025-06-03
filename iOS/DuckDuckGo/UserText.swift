@@ -1124,6 +1124,12 @@ Take back control of your personal information with the browser designed for dat
     public static let syncAlertSwitchAccountTitle = NSLocalizedString("alert.sync-switch-account-title", value: "Switch to a different Sync?", comment: "Switch account title in alert")
     public static let syncAlertSwitchAccountMessage = NSLocalizedString("alert.sync-switch-account-message", value: "This device is already synced, are you sure you want to sync it with a different backup or device? Switching won't remove any data already synced to this device.", comment: "Description for switching sync accounts when there's two")
     public static let syncAlertSwitchAccountButton = NSLocalizedString("alert.sync-switch-account-button", value: "Switch Sync", comment: "Switch account button in alert")
+    public static let syncAlertSyncNewDeviceTitle = NSLocalizedString("alert.sync-new-device.title", value: "Sync new device?", comment: "Asks the user if they would like to sync with a new device")
+    public static func syncAlertSyncNewDeviceMessage(_ deviceName: String) -> String {
+        let message = NSLocalizedString("alert.sync-new-device.message", value: "\"%@\" will be able to access your synced DuckDuckGo data.", comment: "Asks the user if they would like to sync with a new device")
+        return message.format(arguments: deviceName)
+    }
+    public static let syncAlertSyncNewDeviceButton = NSLocalizedString("alert.sync-new-device.button", value: "Sync Now", comment: "Sync Now button in alert asking if they would like to sync with another device")
     public static let syncErrorAlertTitle = NSLocalizedString("alert.sync-error", value: "Sync & Backup Error", comment: "Title for sync error alert")
     public static let unableToSyncToServerDescription = NSLocalizedString("alert.unable-to-sync-to-server-description", value: "Unable to connect to the server.", comment: "Description for unable to sync to server error")
     public static let unableToSyncWithOtherDeviceDescription = NSLocalizedString("alert.unable-to-sync-with-other-device-description", value: "Unable to Sync with another device.", comment: "Description for unable to sync with another device error")

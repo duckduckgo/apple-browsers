@@ -38,11 +38,6 @@ struct SyncDialog<Content, Buttons>: View where Content: View, Buttons: View {
                 .padding(.horizontal, 20.0)
                 .padding(.bottom, spacing)
 
-            Rectangle()
-                .frame(height: 1)
-                .foregroundColor(Color(NSColor.separatorColor))
-                .padding(.bottom, 16.0)
-
             HStack {
                 if let bottomText {
                     Spacer()

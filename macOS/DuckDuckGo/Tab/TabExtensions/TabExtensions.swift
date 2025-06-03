@@ -200,7 +200,10 @@ extension TabExtensionsBuilder {
                                 titlePublisher: args.titlePublisher)
         }
         add {
-            PrivacyStatsTabExtension(trackersPublisher: contentBlocking.trackersPublisher)
+            PrivacyStatsTabExtension(
+                trackersPublisher: contentBlocking.trackersPublisher,
+                trackerDataProvider: PrivacyStatsTrackerDataProvider(contentBlocking: dependencies.privacyFeatures.contentBlocking)
+            )
         }
         add {
             ExternalAppSchemeHandler(workspace: dependencies.workspace, permissionModel: args.permissionModel, contentPublisher: args.contentPublisher)

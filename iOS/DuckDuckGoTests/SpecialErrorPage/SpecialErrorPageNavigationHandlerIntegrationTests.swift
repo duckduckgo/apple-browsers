@@ -60,7 +60,8 @@ final class SpecialErrorPageNavigationHandlerIntegrationTests {
             detector: MockMaliciousSiteDetector(),
             preferencesManager: preferencesManager,
             maliciousSiteProtectionFeatureFlagger: maliciousSiteProtectionFeatureFlags,
-            supportedThreatsProvider: { return [] }
+            supportedThreatsProvider: { return [] },
+            shouldRemoveWWWInCanonicalization: { true }
         )
         maliciousSiteProtectionNavigationHandler = MaliciousSiteProtectionNavigationHandler(maliciousSiteProtectionManager: maliciousSiteProtectionManager)
         

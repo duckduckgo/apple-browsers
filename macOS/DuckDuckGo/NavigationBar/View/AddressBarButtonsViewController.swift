@@ -77,6 +77,7 @@ final class AddressBarButtonsViewController: NSViewController {
     var shieldAnimationView: LottieAnimationView!
     var shieldDotAnimationView: LottieAnimationView!
     @IBOutlet weak var privacyShieldLeadingConstraint: NSLayoutConstraint!
+    @IBOutlet weak var animationWrapperViewLeadingConstraint: NSLayoutConstraint!
 
     @IBOutlet weak var aiChatDivider: NSImageView!
     @IBOutlet weak var aiChatStackTrailingViewConstraint: NSLayoutConstraint!
@@ -236,6 +237,7 @@ final class AddressBarButtonsViewController: NSViewController {
         guard visualStyle.addressBarStyleProvider.shouldAddPaddingToAddressBarButtons else { return }
 
         imageButtonLeadingConstraint.constant = isFocused ? 2 : 1
+        animationWrapperViewLeadingConstraint.constant = 1
 
         if let superview = privacyEntryPointButton.superview {
             privacyEntryPointButton.translatesAutoresizingMaskIntoConstraints = false

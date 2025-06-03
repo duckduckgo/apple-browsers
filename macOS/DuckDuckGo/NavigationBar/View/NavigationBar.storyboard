@@ -1098,6 +1098,7 @@
                         <outlet property="aiChatDivider" destination="L8T-hS-NZz" id="1f9-tG-uDW"/>
                         <outlet property="aiChatStackTrailingViewConstraint" destination="SQu-A0-Vje" id="7rh-E8-Hyx"/>
                         <outlet property="animationWrapperView" destination="hdY-An-3W8" id="53o-2D-orG"/>
+                        <outlet property="animationWrapperViewLeadingConstraint" destination="xv6-0t-7td" id="Bnx-Nf-Nb2"/>
                         <outlet property="bookmarkButton" destination="taC-vG-1fV" id="tbQ-qW-71o"/>
                         <outlet property="bookmarkButtonHeightConstraint" destination="nLM-v6-jHW" id="0if-Ez-QqB"/>
                         <outlet property="bookmarkButtonWidthConstraint" destination="3ze-iM-E0b" id="t1B-0J-ET8"/>
@@ -1132,7 +1133,7 @@
         <image name="Arrow-Right-12" width="9" height="9"/>
         <image name="Back" width="16" height="16"/>
         <image name="Bookmark" width="16" height="16"/>
-        <image name="Bookmarks" width="24" height="24"/>
+        <image name="Bookmarks" width="16" height="16"/>
         <image name="Camera-Active" width="16" height="12"/>
         <image name="Camera-Icon" width="16" height="12"/>
         <image name="Camera-Tab-Blocked" width="16" height="14"/>

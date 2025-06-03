@@ -469,12 +469,6 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
         }
     }
 
-    func copyCode() {
-        UIPasteboard.general.string = recoveryCode
-        ActionMessageView.present(message: UserText.syncCodeCopied,
-                                  presentationLocation: .withoutBottomBar)
-    }
-
     func confirmRemoveDevice(_ device: SyncSettingsViewModel.Device) async -> Bool {
         return await withCheckedContinuation { continuation in
             let alert = UIAlertController(title: UserText.syncRemoveDeviceTitle,

@@ -166,7 +166,7 @@ jobs:
           | xargs -L 1 ./scripts/report-failed-unit-test.sh -s ${{ vars.APPLE_CI_FAILING_TESTS_IOS_FAILED_TESTS_SECTION_ID }}
           
     - name: Send Status Pixel
-      if: always() #&& github.ref_name == 'main'
+      if: always() && github.ref_name == 'main'
       run: |
         curl -fLSs -o /dev/null "https://improving.duckduckgo.com/t/m_ci_apple_ios_main_unit_tests_${{ steps.run-unit-tests.outcome }}?workflow=${{ env.WORKFLOW_URL }}"
 

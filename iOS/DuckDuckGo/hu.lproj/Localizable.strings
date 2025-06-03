@@ -2468,7 +2468,7 @@
 "preferences.threat-protection" = "Fenyegetések elleni védelem";
 
 /* Caption of the option to show the Threat Protection preferences */
-"preferences.threat-protection.caption" = "A DuckDuckGo továbbfejlesztett védelmi megoldásai kivédik a gyakori fenyegetéseket, miközben megőrzik a kapcsolat biztonságát.[További információk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
+"preferences.threat-protection.caption" = "A DuckDuckGo továbbfejlesztett védelmi megoldásai kivédik a gyakori fenyegetéseket, miközben megőrzik a kapcsolat biztonságát.\n[További információk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Egyes könyvjelzők vagy jelszavak helytelen formátumúak vagy túl hosszúak, és nem lettek szinkronizálva.";

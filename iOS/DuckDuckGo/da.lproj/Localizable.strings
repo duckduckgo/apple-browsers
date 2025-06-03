@@ -2468,7 +2468,7 @@
 "preferences.threat-protection" = "Trusselsbeskyttelse";
 
 /* Caption of the option to show the Threat Protection preferences */
-"preferences.threat-protection.caption" = "DuckDuckGos forbedrede beskyttelser stopper almindelige trusler, mens de holder din forbindelse sikker.[Læs mere](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
+"preferences.threat-protection.caption" = "DuckDuckGos forbedrede beskyttelser stopper almindelige trusler, mens de holder din forbindelse sikker.\n[Læs mere](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Nogle bogmærker eller adgangskoder er formateret forkert eller er for lange og blev ikke synkroniseret.";

@@ -2468,7 +2468,7 @@
 "preferences.threat-protection" = "Προστασία από απειλές";
 
 /* Caption of the option to show the Threat Protection preferences */
-"preferences.threat-protection.caption" = "Οι βελτιωμένες προστασίες του DuckDuckGo σταματούν τις συνήθεις απειλές, διατηρώντας τη σύνδεσή σας ασφαλή.[Μάθετε περισσότερα](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
+"preferences.threat-protection.caption" = "Οι βελτιωμένες προστασίες του DuckDuckGo σταματούν τις συνήθεις απειλές, διατηρώντας τη σύνδεσή σας ασφαλή.\n[Μάθετε περισσότερα](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Ορισμένοι σελιδοδείκτες ή κωδικοί πρόσβασης δεν έχουν μορφοποιηθεί σωστά ή είναι πολύ μεγάλοι και δεν συγχρονίστηκαν.";

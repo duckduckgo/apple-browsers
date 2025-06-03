@@ -2468,7 +2468,7 @@
 "preferences.threat-protection" = "Protecție împotriva amenințărilor";
 
 /* Caption of the option to show the Threat Protection preferences */
-"preferences.threat-protection.caption" = "Protecțiile îmbunătățite oferite de DuckDuckGo stopează amenințările comune, menținându-ți în același timp conexiunea securizată.[Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
+"preferences.threat-protection.caption" = "Protecțiile îmbunătățite oferite de DuckDuckGo stopează amenințările comune, menținându-ți în același timp conexiunea securizată.\n[Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Unele semne de carte sau parole sunt formatate incorect sau sunt prea lungi și nu au fost sincronizate.";

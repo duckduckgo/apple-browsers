@@ -2468,7 +2468,7 @@
 "preferences.threat-protection" = "Grėsmių apsauga";
 
 /* Caption of the option to show the Threat Protection preferences */
-"preferences.threat-protection.caption" = "„DuckDuckGo“ patobulintos apsaugos priemonės sustabdo įprastas grėsmes ir užtikrina tavo ryšio saugumą.[Daugiau informacijos](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
+"preferences.threat-protection.caption" = "„DuckDuckGo“ patobulintos apsaugos priemonės sustabdo įprastas grėsmes ir užtikrina tavo ryšio saugumą.\n[Daugiau informacijos](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Kai kurios žymės ar slaptažodžiai suformatuoti neteisingai arba yra per ilgi ir nebuvo sinchronizuoti.";

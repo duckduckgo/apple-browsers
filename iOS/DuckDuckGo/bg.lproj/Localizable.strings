@@ -2468,7 +2468,7 @@
 "preferences.threat-protection" = "Защита от заплахи";
 
 /* Caption of the option to show the Threat Protection preferences */
-"preferences.threat-protection.caption" = "Усъвършенстваните защити на DuckDuckGo предотвратяват често срещаните заплахи, като същевременно запазват връзката ви сигурна.[Научете повече](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
+"preferences.threat-protection.caption" = "Усъвършенстваните защити на DuckDuckGo предотвратяват често срещаните заплахи, като същевременно запазват връзката ви сигурна..\n[Научете повече](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Някои отметки или пароли са форматирани неправилно или са твърде дълги и не бяха синхронизирани.";

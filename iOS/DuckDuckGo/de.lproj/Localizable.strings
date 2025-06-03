@@ -2468,7 +2468,7 @@
 "preferences.threat-protection" = "Schutz vor Bedrohungen";
 
 /* Caption of the option to show the Threat Protection preferences */
-"preferences.threat-protection.caption" = "Der erweitere Schutz von DuckDuckGo schützt deine Verbindung und stoppt gängige Bedrohungen.[Mehr erfahren](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
+"preferences.threat-protection.caption" = "Der erweitere Schutz von DuckDuckGo schützt deine Verbindung und stoppt gängige Bedrohungen.\n[Mehr erfahren](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Einige Lesezeichen oder Passwörter sind falsch formatiert oder zu lang und wurden nicht synchronisiert.";

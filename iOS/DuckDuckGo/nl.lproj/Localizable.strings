@@ -2468,7 +2468,7 @@
 "preferences.threat-protection" = "Bescherming tegen bedreigingen";
 
 /* Caption of the option to show the Threat Protection preferences */
-"preferences.threat-protection.caption" = "De verbeterde beveiligingen van DuckDuckGo stoppen veelvoorkomende bedreigingen en houden je verbinding veilig.[Meer informatie](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
+"preferences.threat-protection.caption" = "De verbeterde beveiligingen van DuckDuckGo stoppen veelvoorkomende bedreigingen en houden je verbinding veilig.\n[Meer informatie](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Sommige bladwijzers of wachtwoorden hebben de verkeerd indeling of te lang en werden niet gesynchroniseerd.";

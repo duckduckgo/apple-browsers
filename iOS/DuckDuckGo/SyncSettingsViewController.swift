@@ -481,6 +481,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     func controllerDidError(_ error: SyncConnectionError, underlyingError: (any Error)?, setupRole: SyncSetupRole) {
         switch error {
         case .unableToRecognizeCode:
+            sendCodeParsingFailedPixel(setupRole: setupRole)
             handleError(.unableToRecognizeCode, error: underlyingError, event: nil)
         case .failedToFetchPublicKey, .failedToTransmitExchangeRecoveryKey, .failedToFetchConnectRecoveryKey, .failedToLogIn, .failedToTransmitExchangeKey, .failedToFetchExchangeRecoveryKey, .failedToTransmitConnectRecoveryKey:
             handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncLoginError)
@@ -500,12 +501,16 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         }
     }
 
-    private func sendCodeParsingFailedPixel(codeSource: SyncCodeSource) {
+    private func sendCodeParsingFailedPixel(setupRole: SyncSetupRole) {
+        guard case .receiver(_ , let codeSource) = setupRole else {
+            return
+        }
+
         switch codeSource {
         case .qrCode:
-            Pixel.fire(pixel: .syncSetupBarcodeScannerSuccess, withAdditionalParameters: [:], includedParameters: [.appVersion])
+            Pixel.fire(pixel: .syncSetupBarcodeScannerSuccess, includedParameters: [.appVersion])
         case .pastedCode:
-            Pixel.fire(pixel: .syncSetupManualCodeEnteredFailed, withAdditionalParameters: [:], includedParameters: [.appVersion])
+            Pixel.fire(pixel: .syncSetupManualCodeEnteredFailed, includedParameters: [.appVersion])
         }
     }
 }

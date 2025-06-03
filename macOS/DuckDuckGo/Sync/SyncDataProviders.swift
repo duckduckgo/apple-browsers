@@ -95,6 +95,7 @@ final class SyncDataProviders: DataProvidersSource {
 
     init(
         bookmarksDatabase: CoreDataDatabase,
+        bookmarkManager: BookmarkManager,
         secureVaultFactory: AutofillVaultFactory = AutofillSecureVaultFactory,
         appearancePreferences: AppearancePreferences,
         syncErrorHandler: SyncErrorHandler
@@ -103,7 +104,7 @@ final class SyncDataProviders: DataProvidersSource {
         self.secureVaultFactory = secureVaultFactory
         self.appearancePreferences = appearancePreferences
         self.syncErrorHandler = syncErrorHandler
-        bookmarksAdapter = SyncBookmarksAdapter(database: bookmarksDatabase, appearancePreferences: appearancePreferences, syncErrorHandler: syncErrorHandler)
+        bookmarksAdapter = SyncBookmarksAdapter(database: bookmarksDatabase, bookmarkManager: bookmarkManager, appearancePreferences: appearancePreferences, syncErrorHandler: syncErrorHandler)
         credentialsAdapter = SyncCredentialsAdapter(secureVaultFactory: secureVaultFactory, syncErrorHandler: syncErrorHandler)
         settingsAdapter = SyncSettingsAdapter(syncErrorHandler: syncErrorHandler)
     }

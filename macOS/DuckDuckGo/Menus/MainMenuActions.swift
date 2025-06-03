@@ -317,7 +317,7 @@ extension AppDelegate {
     @objc func openExportBookmarks(_ sender: Any?) {
         guard let windowController = WindowControllersManager.shared.lastKeyMainWindowController,
               let window = windowController.window,
-              let list = LocalBookmarkManager.shared.list else { return }
+              let list = bookmarkManager.list else { return }
 
         let savePanel = NSSavePanel()
         savePanel.nameFieldStringValue = "DuckDuckGo \(UserText.exportBookmarksFileNameSuffix)"
@@ -465,8 +465,8 @@ extension AppDelegate {
     }
 
     @objc func resetBookmarks(_ sender: Any?) {
-        LocalBookmarkManager.shared.resetBookmarks {
-            LocalBookmarkManager.shared.sortMode = .manual
+        bookmarkManager.resetBookmarks {
+            self.bookmarkManager.sortMode = .manual
             UserDefaultsWrapper<Bool>(key: .homePageContinueSetUpImport, defaultValue: false).clear()
             UserDefaultsWrapper<Bool>(key: .showBookmarksBar, defaultValue: false).clear()
             UserDefaultsWrapper<Bool>(key: .bookmarksBarPromptShown, defaultValue: false).clear()
@@ -902,7 +902,7 @@ extension MainViewController {
 
     @objc func bookmarkAllOpenTabs(_ sender: Any) {
         let websitesInfo = tabCollectionViewModel.tabs.compactMap(WebsiteInfo.init)
-        BookmarksDialogViewFactory.makeBookmarkAllOpenTabsView(websitesInfo: websitesInfo).show()
+        BookmarksDialogViewFactory.makeBookmarkAllOpenTabsView(websitesInfo: websitesInfo, bookmarkManager: bookmarkManager).show()
     }
 
     @objc func favoriteThisPage(_ sender: Any) {
@@ -1314,7 +1314,7 @@ extension AppDelegate: NSMenuItemValidation {
 
         // Enables and disables export bookmarks items
         case #selector(AppDelegate.openExportBookmarks(_:)):
-            return bookmarksManager.list?.totalBookmarks != 0
+            return bookmarkManager.list?.totalBookmarks != 0
 
         // Enables and disables export passwords items
         case #selector(AppDelegate.openExportLogins(_:)):

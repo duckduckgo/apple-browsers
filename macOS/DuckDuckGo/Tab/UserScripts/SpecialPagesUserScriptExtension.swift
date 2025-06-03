@@ -59,6 +59,8 @@ extension SpecialPagesUserScript {
             dockCustomization: DockCustomizer(),
             defaultBrowserProvider: SystemDefaultBrowserProvider(),
             appearancePreferences: NSApp.delegateTyped.appearancePreferences,
-            startupPreferences: NSApp.delegateTyped.startupPreferences)
+            startupPreferences: NSApp.delegateTyped.startupPreferences,
+            bookmarkManager: NSApp.delegateTyped.bookmarkManager
+        )
     }
 }

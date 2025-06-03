@@ -67,18 +67,43 @@ final class AppContentBlocking {
 
     // keeping whole ContentBlocking state initialization in one place to avoid races between updates publishing and rules storing
     @MainActor
-    init(
+    convenience init(
         internalUserDecider: InternalUserDecider,
         configurationStore: ConfigurationStore,
+        contentScopeExperimentsManager: @autoclosure @escaping () -> ContentScopeExperimentsManaging,
         appearancePreferences: AppearancePreferences,
-        startupPreferences: StartupPreferences
+        startupPreferences: StartupPreferences,
+        bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling
     ) {
-        privacyConfigurationManager = PrivacyConfigurationManager(fetchedETag: configurationStore.loadEtag(for: .privacyConfiguration),
-                                                                  fetchedData: configurationStore.loadData(for: .privacyConfiguration),
-                                                                  embeddedDataProvider: AppPrivacyConfigurationDataProvider(),
-                                                                  localProtection: LocalUnprotectedDomains.shared,
-                                                                  errorReporting: Self.debugEvents,
-                                                                  internalUserDecider: internalUserDecider)
+
+        let privacyConfigurationManager = PrivacyConfigurationManager(fetchedETag: configurationStore.loadEtag(for: .privacyConfiguration),
+                                                                      fetchedData: configurationStore.loadData(for: .privacyConfiguration),
+                                                                      embeddedDataProvider: AppPrivacyConfigurationDataProvider(),
+                                                                      localProtection: LocalUnprotectedDomains.shared,
+                                                                      errorReporting: Self.debugEvents,
+                                                                      internalUserDecider: internalUserDecider)
+        self.init(
+            privacyConfigurationManager: privacyConfigurationManager,
+            internalUserDecider: internalUserDecider,
+            configurationStore: configurationStore,
+            contentScopeExperimentsManager: contentScopeExperimentsManager(),
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
+            bookmarkManager: bookmarkManager
+        )
+    }
+
+    @MainActor
+    init(
+        privacyConfigurationManager: PrivacyConfigurationManager,
+        internalUserDecider: InternalUserDecider,
+        configurationStore: ConfigurationStore,
+        contentScopeExperimentsManager: @autoclosure @escaping () -> ContentScopeExperimentsManaging,
+        appearancePreferences: AppearancePreferences,
+        startupPreferences: StartupPreferences,
+        bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling
+    ) {
+        self.privacyConfigurationManager = privacyConfigurationManager
 
         trackerDataManager = TrackerDataManager(etag: configurationStore.loadEtag(for: .trackerDataSet),
                                                 data: configurationStore.loadData(for: .trackerDataSet),
@@ -99,9 +124,11 @@ final class AppContentBlocking {
                                                   trackerDataManager: trackerDataManager,
                                                   configStorage: configurationStore,
                                                   webTrackingProtectionPreferences: WebTrackingProtectionPreferences.shared,
+                                                  experimentManager: contentScopeExperimentsManager(),
                                                   tld: tld,
                                                   appearancePreferences: appearancePreferences,
-                                                  startupPreferences: startupPreferences)
+                                                  startupPreferences: startupPreferences,
+                                                  bookmarkManager: bookmarkManager)
 
         adClickAttributionRulesProvider = AdClickAttributionRulesProvider(config: adClickAttribution,
                                                                           compiledRulesSource: contentBlockingManager,
@@ -110,7 +137,7 @@ final class AppContentBlocking {
                                                                           compilationErrorReporting: Self.debugEvents)
     }
 
-    private static let debugEvents = EventMapping<ContentBlockerDebugEvents> { event, error, parameters, onComplete in
+    static let debugEvents = EventMapping<ContentBlockerDebugEvents> { event, error, parameters, onComplete in
         guard AppVersion.runType.requiresEnvironment else { return }
 
         let domainEvent: GeneralPixel

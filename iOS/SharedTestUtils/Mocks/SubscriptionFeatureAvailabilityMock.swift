@@ -18,6 +18,7 @@
 //
 
 import Foundation
+import Subscription
 @testable import BrowserServicesKit
 
 public final class SubscriptionFeatureAvailabilityMock: SubscriptionFeatureAvailability {

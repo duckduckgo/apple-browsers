@@ -1,8 +1,8 @@
 //
-//  MockInternalUserStoring.swift
+//  SyncMocks.swift
 //  DuckDuckGo
 //
-//  Copyright © 2023 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,15 +17,15 @@
 //  limitations under the License.
 //
 
-import Foundation
 import BrowserServicesKit
+import Bookmarks
+import DDGSync
+import Persistence
+import Core
+@testable import DuckDuckGo
 
-final class MockInternalUserStoring: InternalUserStoring {
-    var isInternalUser: Bool = false
+class MockFavoriteDisplayModeStorage: FavoritesDisplayModeStoring {
+    var favoritesDisplayMode: FavoritesDisplayMode = .displayNative(.mobile)
 }
 
-extension DefaultInternalUserDecider {
-    convenience init(mockedStore: MockInternalUserStoring = MockInternalUserStoring()) {
-        self.init(store: mockedStore)
-    }
-}
+class MockFavoritesDisplayModeStoring: MockFavoriteDisplayModeStorage {}

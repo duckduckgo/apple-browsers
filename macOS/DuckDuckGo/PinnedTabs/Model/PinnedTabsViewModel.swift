@@ -87,7 +87,7 @@ final class PinnedTabsViewModel: ObservableObject {
     init(
         collection: TabCollection,
         fireproofDomains: FireproofDomains = .shared,
-        bookmarkManager: BookmarkManager = LocalBookmarkManager.shared
+        bookmarkManager: BookmarkManager
     ) {
         tabsDidReorderPublisher = tabsDidReorderSubject.eraseToAnyPublisher()
         contextMenuActionPublisher = contextMenuActionSubject.eraseToAnyPublisher()

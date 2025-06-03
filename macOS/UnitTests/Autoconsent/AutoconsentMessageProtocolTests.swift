@@ -50,7 +50,8 @@ class AutoconsentMessageProtocolTests: XCTestCase {
                                                experimentManager: MockContentScopeExperimentManager(),
                                                tld: TLD(),
                                                appearancePreferences: appearancePreferences,
-                                               startupPreferences: startupPreferences
+                                               startupPreferences: startupPreferences,
+                                               bookmarkManager: MockBookmarkManager()
                                               ),
             config: MockPrivacyConfiguration()
         )

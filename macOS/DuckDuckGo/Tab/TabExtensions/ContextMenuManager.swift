@@ -459,7 +459,7 @@ private extension ContextMenuManager {
             guard let url = navigationAction?.request.url else { return .cancel }
 
             let title = selectedText ?? url.absoluteString
-            LocalBookmarkManager.shared.makeBookmark(for: url, title: title, isFavorite: false)
+            NSApp.delegateTyped.bookmarkManager.makeBookmark(for: url, title: title, isFavorite: false)
 
             return .cancel
         }

@@ -56,11 +56,13 @@ public final class AIChatSessionTimer: AIChatSessionTiming {
     private var timer: Timer?
     private var startDate: Date?
     private let completion: () -> Void
+
+    /// Property to keep track of the current duration for the timer in case the app moves to the background multiple times
     private var currentDuration: TimeInterval
 
     public init(durationInSeconds: TimeInterval, completion: @escaping () -> Void) {
-        self.durationInSeconds = 30
-        self.currentDuration = 30
+        self.durationInSeconds = durationInSeconds
+        self.currentDuration = durationInSeconds
         self.completion = completion
         registerLifecycleNotifications()
     }

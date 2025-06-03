@@ -312,30 +312,3 @@ private struct AIChatUserAgentHandler: AIChatUserAgentProviding {
         userAgentManager.userAgent(isDesktop: false, url: url)
     }
 }
-
-// MARK: - AIChatReloadTimer
-
-private final class AIChatSessionTimer {
-    let durationInSeconds: TimeInterval
-    private var timer: Timer?
-
-    internal init(durationInSeconds: TimeInterval) {
-        self.durationInSeconds = durationInSeconds
-    }
-
-    func start(completion: @escaping () -> Void) {
-        cancel()
-        timer = Timer.scheduledTimer(withTimeInterval: durationInSeconds, repeats: false) { _ in
-            completion()
-        }
-    }
-
-    func cancel() {
-        timer?.invalidate()
-        timer = nil
-    }
-
-    deinit {
-        cancel()
-    }
-}

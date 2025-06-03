@@ -78,7 +78,7 @@ final class OmniBarNotificationContainerView: UIView {
         let useDarkStyle = traitCollection.userInterfaceStyle == .dark
         let notificationText: String
         let notificationAnimationName = useDarkStyle ? "cookie-icon-animated-40-dark" : "cookie-icon-animated-40-light"
-        let isExperimental = ExperimentalThemingManager().isExperimentalThemingEnabled
+        let isExperimental = ThemeManager.shared.properties.isExperimentalThemingEnabled
 
         switch type {
         case .cookiePopupManaged:

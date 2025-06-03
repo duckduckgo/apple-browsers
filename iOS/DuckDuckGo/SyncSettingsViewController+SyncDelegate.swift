@@ -319,50 +319,51 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             legacyCollectCode(showQRCode: showQRCode)
             return
         }
-        newCollectCode(showQRCode: showQRCode)
-    }
-    
-    private func newCollectCode(showQRCode: Bool) {
         Task { @MainActor in
-            let code: String
-            let shouldGenerateURLBasedCode = featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased)
+            let pairingInfo: PairingInfo
             if isSyncEnabled {
                 do {
-                    code = try await connectionController.startExchangeMode(shouldGenerateURLBasedCode: shouldGenerateURLBasedCode)
+                    pairingInfo = try await connectionController.startExchangeMode()
                 } catch {
                     self.handleError(SyncErrorMessage.unableToSyncWithDevice, error: error, event: .syncLoginError)
                     return
                 }
             } else {
                 do {
-                    code = try await connectionController.startConnectMode(shouldGenerateURLBasedCode: shouldGenerateURLBasedCode)
+                    pairingInfo = try await connectionController.startConnectMode()
                 } catch {
                     self.handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
                     return
                 }
             }
-            presentScanOrPasteCodeView(code: code, showQRCode: showQRCode)
+            let stringForQRCode = featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased) ? pairingInfo.url.absoluteString : pairingInfo.base64Code
+            presentScanOrPasteCodeView(codeForDisplayOrPasting: pairingInfo.base64Code, stringForQRCode: stringForQRCode, showQRCode: showQRCode)
         }
     }
-    
+
     private func legacyCollectCode(showQRCode: Bool) {
-        let code: String
-        
-        if isSyncEnabled {
-            code = recoveryCode
-        } else {
-            do {
-                code = try startConnectMode()
-            } catch {
-                self.handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
-                return
+        Task {
+            let stringForQRCode: String
+            let codeForDisplayOrPasting: String
+            if isSyncEnabled {
+                stringForQRCode = recoveryCode
+                codeForDisplayOrPasting = recoveryCode
+            } else {
+                do {
+                    let pairingInfo = try await connectionController.startConnectMode()
+                    stringForQRCode = featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased) ? pairingInfo.url.absoluteString : pairingInfo.base64Code
+                    codeForDisplayOrPasting = pairingInfo.base64Code
+                } catch {
+                    self.handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
+                    return
+                }
             }
+            presentScanOrPasteCodeView(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQRCode, showQRCode: showQRCode)
         }
-        presentScanOrPasteCodeView(code: code, showQRCode: showQRCode)
     }
-    
-    private func presentScanOrPasteCodeView(code: String, showQRCode: Bool) {
-        let model = ScanOrPasteCodeViewModel(code: code)
+
+    private func presentScanOrPasteCodeView(codeForDisplayOrPasting: String, stringForQRCode: String, showQRCode: Bool) {
+        let model = ScanOrPasteCodeViewModel(codeForDisplayOrPasting: codeForDisplayOrPasting, qrCodeString: stringForQRCode)
         model.delegate = self
         
         var controller: UIHostingController<AnyView>

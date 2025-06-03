@@ -22,6 +22,7 @@ import Core
 import BrowserServicesKit
 import Subscription
 import Persistence
+import DDGSync
 
 @MainActor
 protocol URLHandling {
@@ -43,6 +44,7 @@ final class MainCoordinator {
 
     let controller: MainViewController
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    private let featureFlagger: FeatureFlagger
 
     init(syncService: SyncService,
          bookmarksDatabase: CoreDataDatabase,
@@ -60,6 +62,7 @@ final class MainCoordinator {
          maliciousSiteProtectionService: MaliciousSiteProtectionService,
          didFinishLaunchingStartTime: CFAbsoluteTime) throws {
         self.subscriptionManager = subscriptionManager
+        self.featureFlagger = featureFlagger
         let homePageConfiguration = HomePageConfiguration(variantManager: AppDependencyProvider.shared.variantManager,
                                                           remoteMessagingClient: remoteMessagingService.remoteMessagingClient,
                                                           privacyProDataReporter: reportingService.privacyProDataReporter)
@@ -98,7 +101,8 @@ final class MainCoordinator {
                                         appDidFinishLaunchingStartTime: didFinishLaunchingStartTime,
                                         maliciousSiteProtectionManager: maliciousSiteProtectionService.manager,
                                         maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionService.preferencesManager,
-                                        aiChatSettings: aiChatSettings)
+                                        aiChatSettings: aiChatSettings,
+                                        themeManager: ThemeManager.shared)
     }
 
     func start() {
@@ -241,6 +245,10 @@ extension MainCoordinator: URLHandling {
         case .openAIChat:
             AIChatDeepLinkHandler().handleDeepLink(url, on: controller)
         default:
+            if featureFlagger.isFeatureOn(.canInterceptSyncSetupUrls), let pairingInfo = PairingInfo(url: url) {
+                controller.segueToSettingsSync(with: nil, pairingInfo: pairingInfo)
+                return true
+            }
             guard application.applicationState == .active, let currentTab = controller.currentTab else {
                 return false
             }

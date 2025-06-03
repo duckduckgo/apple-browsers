@@ -48,13 +48,13 @@ class TabSwitcherBarsStateHandler {
 
     private(set) var isFirstUpdate = true
 
-    private let featureFlagger: FeatureFlagger
-    private lazy var isExperimentalThemingEnabled = {
-        ExperimentalThemingManager(featureFlagger: featureFlagger).isExperimentalThemingEnabled
-    }()
+    private let themingProperties: ExperimentalThemingProperties
+    private var isExperimentalThemingEnabled: Bool {
+        themingProperties.isExperimentalThemingEnabled
+    }
 
-    init(featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
-        self.featureFlagger = featureFlagger
+    init(themingProperties: ExperimentalThemingProperties = ThemeManager.shared.properties) {
+        self.themingProperties = themingProperties
     }
 
     func update(_ interfaceMode: TabSwitcherViewController.InterfaceMode,

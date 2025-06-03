@@ -56,6 +56,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     weak var actionDelegate: OptionsButtonMenuDelegate?
 
     private let tabCollectionViewModel: TabCollectionViewModel
+    private let bookmarkManager: BookmarkManager
     private let emailManager: EmailManager
     private let fireproofDomains: FireproofDomains
     private let passwordManagerCoordinator: PasswordManagerCoordinating
@@ -87,6 +88,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     @MainActor
     init(tabCollectionViewModel: TabCollectionViewModel,
+         bookmarkManager: BookmarkManager,
          emailManager: EmailManager = EmailManager(),
          fireproofDomains: FireproofDomains = FireproofDomains.shared,
          passwordManagerCoordinator: PasswordManagerCoordinator,
@@ -108,6 +110,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
          visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
 
         self.tabCollectionViewModel = tabCollectionViewModel
+        self.bookmarkManager = bookmarkManager
         self.emailManager = emailManager
         self.fireproofDomains = fireproofDomains
         self.passwordManagerCoordinator = passwordManagerCoordinator
@@ -453,6 +456,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     private func addUtilityItems() {
         let bookmarksSubMenu = BookmarksSubMenu(targetting: self,
                                                 tabCollectionViewModel: tabCollectionViewModel,
+                                                bookmarkManager: bookmarkManager,
                                                 moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider)
 
         addItem(withTitle: UserText.bookmarks, action: #selector(openBookmarks), keyEquivalent: "")
@@ -800,11 +804,14 @@ final class BookmarksSubMenu: NSMenu {
     @MainActor
     init(targetting target: AnyObject,
          tabCollectionViewModel: TabCollectionViewModel,
-         moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
+         bookmarkManager: BookmarkManager,
+         moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding
+    ) {
         super.init(title: UserText.passwordManagementTitle)
         self.autoenablesItems = false
         addMenuItems(with: tabCollectionViewModel,
                      target: target,
+                     bookmarkManager: bookmarkManager,
                      moreOptionsMenuIconsProvider: moreOptionsMenuIconsProvider)
     }
 
@@ -815,6 +822,7 @@ final class BookmarksSubMenu: NSMenu {
     @MainActor
     private func addMenuItems(with tabCollectionViewModel: TabCollectionViewModel,
                               target: AnyObject,
+                              bookmarkManager: BookmarkManager,
                               moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
         let bookmarkPageItem = addItem(withTitle: UserText.bookmarkThisPage, action: #selector(MoreOptionsMenu.bookmarkPage(_:)), keyEquivalent: "d")
             .withModifierMask([.command])
@@ -842,7 +850,7 @@ final class BookmarksSubMenu: NSMenu {
 
         addItem(NSMenuItem.separator())
 
-        if let favorites = LocalBookmarkManager.shared.list?.favoriteBookmarks {
+        if let favorites = bookmarkManager.list?.favoriteBookmarks {
             let favoriteViewModels = favorites.compactMap(BookmarkViewModel.init(entity:))
             let potentialItems = bookmarkMenuItems(from: favoriteViewModels)
 
@@ -858,7 +866,6 @@ final class BookmarksSubMenu: NSMenu {
             addItem(NSMenuItem.separator())
         }
 
-        let bookmarkManager = LocalBookmarkManager.shared
         guard let entities = bookmarkManager.list?.topLevelEntities else {
             return
         }

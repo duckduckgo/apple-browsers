@@ -20,6 +20,7 @@
 import BrowserServicesKit
 import Foundation
 import WebKit
+@testable import Core
 
 class MockUserAgentManager: UserAgentManager {
 

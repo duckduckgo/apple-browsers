@@ -25,6 +25,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
 
     var suggestionLoadingMock: SuggestionLoadingMock!
     var historyProviderMock: HistoryProviderMock!
+    var bookmarkProviderMock: SuggestionsBookmarkProvider!
     var suggestionContainer: SuggestionContainer!
     var suggestionContainerViewModel: SuggestionContainerViewModel!
 
@@ -34,10 +35,11 @@ final class SuggestionContainerViewModelTests: XCTestCase {
         SearchPreferences.shared.showAutocompleteSuggestions = true
         suggestionLoadingMock = SuggestionLoadingMock()
         historyProviderMock = HistoryProviderMock()
+        bookmarkProviderMock = SuggestionsBookmarkProvider(bookmarkManager: MockBookmarkManager())
         suggestionContainer = SuggestionContainer(openTabsProvider: { [] },
                                                   suggestionLoading: suggestionLoadingMock,
                                                   historyProvider: historyProviderMock,
-                                                  bookmarkProvider: LocalBookmarkManager.shared,
+                                                  bookmarkProvider: bookmarkProviderMock,
                                                   burnerMode: .regular,
                                                   isUrlIgnored: { _ in false })
         suggestionContainerViewModel = SuggestionContainerViewModel(suggestionContainer: suggestionContainer)
@@ -63,7 +65,11 @@ final class SuggestionContainerViewModelTests: XCTestCase {
 
     @MainActor
     func testWhenSelectionIndexIsNilThenSelectedSuggestionViewModelIsNil() {
-        let suggestionContainer = SuggestionContainer(burnerMode: .regular, isUrlIgnored: { _ in false })
+        let suggestionContainer = SuggestionContainer(
+            bookmarkProvider: SuggestionsBookmarkProvider(bookmarkManager: MockBookmarkManager()),
+            burnerMode: .regular,
+            isUrlIgnored: { _ in false }
+        )
         let suggestionContainerViewModel = SuggestionContainerViewModel(suggestionContainer: suggestionContainer)
 
         XCTAssertNil(suggestionContainerViewModel.selectionIndex)
@@ -92,7 +98,11 @@ final class SuggestionContainerViewModelTests: XCTestCase {
 
     @MainActor
     func testWhenSelectCalledWithIndexOutOfBoundsThenSelectedSuggestionViewModelIsNil() {
-        let suggestionContainer = SuggestionContainer(burnerMode: .regular, isUrlIgnored: { _ in false })
+        let suggestionContainer = SuggestionContainer(
+            bookmarkProvider: SuggestionsBookmarkProvider(bookmarkManager: MockBookmarkManager()),
+            burnerMode: .regular,
+            isUrlIgnored: { _ in false }
+        )
         let suggestionListViewModel = SuggestionContainerViewModel(suggestionContainer: suggestionContainer)
 
         suggestionListViewModel.select(at: 0)
@@ -313,7 +323,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
         suggestionContainer = SuggestionContainer(openTabsProvider: { openTabs },
                                                   suggestionLoading: suggestionLoadingMock,
                                                   historyProvider: historyProviderMock,
-                                                  bookmarkProvider: LocalBookmarkManager.shared,
+                                                  bookmarkProvider: bookmarkProviderMock,
                                                   burnerMode: .regular,
                                                   isUrlIgnored: { _ in false })
         suggestionContainerViewModel = SuggestionContainerViewModel(suggestionContainer: suggestionContainer)

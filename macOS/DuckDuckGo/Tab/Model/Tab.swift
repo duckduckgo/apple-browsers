@@ -140,7 +140,7 @@ protocol NewWindowPolicyDecisionMaker {
         let internalUserDecider = NSApp.delegateTyped.internalUserDecider
         var faviconManager = faviconManagement
         if burnerMode.isBurner {
-            faviconManager = FaviconManager(cacheType: .inMemory)
+            faviconManager = FaviconManager(cacheType: .inMemory, bookmarkManager: NSApp.delegateTyped.bookmarkManager)
         }
 
         self.init(id: id,

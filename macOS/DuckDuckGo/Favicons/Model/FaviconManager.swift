@@ -99,6 +99,7 @@ final class FaviconManager: FaviconManagement {
 
     init(
         cacheType: CacheType,
+        bookmarkManager: BookmarkManager,
         imageCache: ((FaviconStoring) -> FaviconImageCaching)? = nil,
         referenceCache: ((FaviconStoring) -> FaviconReferenceCaching)? = nil
     ) {
@@ -108,6 +109,7 @@ final class FaviconManager: FaviconManagement {
         case .inMemory:
             store = FaviconNullStore()
         }
+        self.bookmarkManager = bookmarkManager
         self.imageCache = imageCache?(store) ?? FaviconImageCache(faviconStoring: store)
         self.referenceCache = referenceCache?(store) ?? FaviconReferenceCache(faviconStoring: store)
 
@@ -118,6 +120,7 @@ final class FaviconManager: FaviconManagement {
 
     private(set) var store: FaviconStoring
 
+    private let bookmarkManager: BookmarkManager
     private let faviconURLSession = URLSession(configuration: .ephemeral)
 
     @Published private var faviconsLoaded = false
@@ -125,9 +128,9 @@ final class FaviconManager: FaviconManagement {
 
     func loadFavicons() async throws {
         try await imageCache.load()
-        await imageCache.cleanOld(except: FireproofDomains.shared, bookmarkManager: LocalBookmarkManager.shared)
+        await imageCache.cleanOld(except: FireproofDomains.shared, bookmarkManager: bookmarkManager)
         try await referenceCache.load()
-        await referenceCache.cleanOld(except: FireproofDomains.shared, bookmarkManager: LocalBookmarkManager.shared)
+        await referenceCache.cleanOld(except: FireproofDomains.shared, bookmarkManager: bookmarkManager)
         faviconsLoaded = true
     }
 

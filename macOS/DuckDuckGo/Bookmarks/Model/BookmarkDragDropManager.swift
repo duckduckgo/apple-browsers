@@ -23,8 +23,6 @@ import os.log
 
 final class BookmarkDragDropManager {
 
-    static let shared = BookmarkDragDropManager()
-
     static let draggedTypes: [NSPasteboard.PasteboardType] = [
         .string,
         .URL,
@@ -34,7 +32,7 @@ final class BookmarkDragDropManager {
 
     private let bookmarkManager: BookmarkManager
 
-    init(bookmarkManager: BookmarkManager = LocalBookmarkManager.shared) {
+    init(bookmarkManager: BookmarkManager) {
         self.bookmarkManager = bookmarkManager
     }
 

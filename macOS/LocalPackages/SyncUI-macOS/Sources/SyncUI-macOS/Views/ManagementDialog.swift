@@ -23,12 +23,12 @@ public enum ManagementDialogKind: Equatable {
     case turnOffSync
     case deviceDetails(_ device: SyncDevice)
     case removeDevice(_ device: SyncDevice)
-    case syncWithAnotherDevice(code: String)
+    case syncWithAnotherDevice(codeForDisplayOrPasting: String, stringForQRCode: String)
     case prepareToSync
     case saveRecoveryCode(_ code: String)
     case nowSyncing
     case syncWithServer
-    case enterRecoveryCode(code: String)
+    case enterRecoveryCode(stringForQRCode: String)
     case recoverSyncedData
     case empty
 }
@@ -96,8 +96,8 @@ public struct ManagementDialog: View {
                 RemoveDeviceView(device: device)
             case .deleteAccount(let devices):
                 DeleteAccountView(devices: devices)
-            case .syncWithAnotherDevice(let code):
-                SyncWithAnotherDeviceView(code: code)
+            case .syncWithAnotherDevice(let codeForDisplayOrPasting, let stringForQRCode):
+                SyncWithAnotherDeviceView(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQRCode)
             case .prepareToSync:
                 PreparingToSyncView()
             case .saveRecoveryCode(let code):
@@ -106,8 +106,8 @@ public struct ManagementDialog: View {
                 DeviceSyncedView()
             case .syncWithServer:
                 SyncWithServerView()
-            case .enterRecoveryCode(let code):
-                EnterRecoveryCodeView(code: code)
+            case .enterRecoveryCode(let stringForQRCode):
+                EnterRecoveryCodeView(stringForQRCode: stringForQRCode)
             case .recoverSyncedData:
                 RecoverSyncedDataView()
             default:

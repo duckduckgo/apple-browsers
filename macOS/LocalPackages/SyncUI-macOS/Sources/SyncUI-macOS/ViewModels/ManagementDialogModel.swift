@@ -40,13 +40,11 @@ public protocol ManagementDialogModelDelegate: AnyObject {
 public final class ManagementDialogModel: ObservableObject {
 
     @Published public var currentDialog: ManagementDialogKind?
-    public var codeToDisplay: String?
+    public var codeForQR: String?
 
     @Published public var shouldShowErrorMessage: Bool = false
     @Published public var syncErrorMessage: SyncErrorMessage?
     @Published public var shouldShowSwitchAccountsMessage: Bool = false
-
-    private(set) public var codeToSwitchTo: String?
 
     public weak var delegate: ManagementDialogModelDelegate?
 

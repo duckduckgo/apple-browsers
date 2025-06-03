@@ -59,7 +59,7 @@ public extension XCTestCase {
         // created at the top of our test, and once done, we
         // also cancel our cancellable to avoid getting any
         // unused variable warnings:
-        await fulfillment(of: [expectation])
+        await fulfillment(of: [expectation], timeout: timeout)
         cancellable.cancel()
 
         // Here we pass the original file and line number that
@@ -87,6 +87,7 @@ public extension XCTestCase {
             publisher.first {
                 value == $0
             },
+            timeout: timeout,
             waitForFinish: false
         )
     }

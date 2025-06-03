@@ -65,20 +65,23 @@ struct AddBookmarkPopoverView: View {
 #if DEBUG
 #Preview("Bookmark Added - Light") {
     let bkm = Bookmark(id: "n", url: URL.duckDuckGo.absoluteString, title: "DuckDuckGo", isFavorite: false, parentFolderUUID: "1")
-    let bkman = LocalBookmarkManager(bookmarkStore: BookmarkStoreMock(bookmarks: [
-        BookmarkFolder(id: "1", title: "Folder with a name that shouldn‘t fit into the picker", children: [
-            bkm,
-            BookmarkFolder(id: "2", title: "Nested Folder", children: [
+    let bkman = LocalBookmarkManager(
+        bookmarkStore: BookmarkStoreMock(bookmarks: [
+            BookmarkFolder(id: "1", title: "Folder with a name that shouldn‘t fit into the picker", children: [
+                bkm,
+                BookmarkFolder(id: "2", title: "Nested Folder", children: [
                 ])
-        ]),
-        Bookmark(id: "b2", url: URL.duckDuckGo.absoluteString, title: "DuckDuckGo", isFavorite: true, parentFolderUUID: "1"),
-        BookmarkFolder(id: "3", title: "Another Folder", children: [
-            BookmarkFolder(id: "4", title: "Nested Folder", children: [
-                BookmarkFolder(id: "5", title: "Another Nested Folder", children: [
+            ]),
+            Bookmark(id: "b2", url: URL.duckDuckGo.absoluteString, title: "DuckDuckGo", isFavorite: true, parentFolderUUID: "1"),
+            BookmarkFolder(id: "3", title: "Another Folder", children: [
+                BookmarkFolder(id: "4", title: "Nested Folder", children: [
+                    BookmarkFolder(id: "5", title: "Another Nested Folder", children: [
+                    ])
                 ])
             ])
-        ])
-    ]))
+        ]),
+        appearancePreferences: .mock
+    )
     bkman.loadBookmarks()
     customAssertionFailure = { _, _, _ in }
 
@@ -88,8 +91,13 @@ struct AddBookmarkPopoverView: View {
 
 #Preview("Bookmark Added - Dark") {
     let bkm = Bookmark(id: "n", url: URL.duckDuckGo.absoluteString, title: "DuckDuckGo", isFavorite: false, parentFolderUUID: "1")
-    let bkman = LocalBookmarkManager(bookmarkStore: BookmarkStoreMock(bookmarks: [
-        BookmarkFolder(id: "1", title: "Folder with a name that shouldn‘t fit into the picker", children: [])]))
+    let bkman = LocalBookmarkManager(
+        bookmarkStore: BookmarkStoreMock(
+            bookmarks: [
+                BookmarkFolder(id: "1", title: "Folder with a name that shouldn‘t fit into the picker", children: [])
+            ]),
+        appearancePreferences: .mock
+    )
     bkman.loadBookmarks()
 
     return AddBookmarkPopoverView(model: AddBookmarkPopoverViewModel(bookmark: bkm, bookmarkManager: bkman))

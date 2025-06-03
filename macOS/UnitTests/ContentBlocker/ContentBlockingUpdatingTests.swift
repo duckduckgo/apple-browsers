@@ -50,9 +50,11 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                                                               errorReporting: nil),
                                        configStorage: MockConfigurationStore(),
                                        webTrackingProtectionPreferences: preferences,
+                                       experimentManager: MockContentScopeExperimentManager(),
                                        tld: TLD(),
                                        appearancePreferences: appearancePreferences,
-                                       startupPreferences: startupPreferences)
+                                       startupPreferences: startupPreferences,
+                                       bookmarkManager: MockBookmarkManager())
     }
 
     override static func setUp() {

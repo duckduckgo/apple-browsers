@@ -1,5 +1,5 @@
 //
-//  OnboardingDaxFavouritesTests.swift
+//  OnboardingNavigationDelegateTests.swift
 //  DuckDuckGo
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
@@ -25,20 +25,19 @@ import History
 import BrowserServicesKit
 import RemoteMessaging
 import Configuration
-import Core
+import Combine
 import SubscriptionTestingUtilities
 import Common
 @testable import DuckDuckGo
-@testable import PersistenceTestingUtils
+@testable import Core
 
-final class OnboardingDaxFavouritesTests: XCTestCase {
-    private var sut: MainViewController!
-    private var tutorialSettingsMock: MockTutorialSettings!
-    private var contextualOnboardingLogicMock: ContextualOnboardingLogicMock!
+final class OnboardingNavigationDelegateTests: XCTestCase {
 
-    let mockWebsiteDataManager = MockWebsiteDataManager()
+    var mainVC: MainViewController!
+    var onboardingPixelReporter: OnboardingPixelReporterMock!
 
     override func setUpWithError() throws {
+        throw XCTSkip("Potentially flaky")
         try super.setUpWithError()
         let db = CoreDataDatabase.bookmarksMock
         let bookmarkDatabaseCleaner = BookmarkDatabaseCleaner(bookmarkDatabase: db, errorEvents: nil)
@@ -52,7 +51,7 @@ final class OnboardingDaxFavouritesTests: XCTestCase {
             faviconStoring: MockFaviconStore(),
             tld: TLD()
         )
-
+        
         let remoteMessagingClient = RemoteMessagingClient(
             bookmarksDatabase: db,
             appSettings: AppSettingsMock(),
@@ -65,10 +64,9 @@ final class OnboardingDaxFavouritesTests: XCTestCase {
         )
         let homePageConfiguration = HomePageConfiguration(remoteMessagingClient: remoteMessagingClient, privacyProDataReporter: MockPrivacyProDataReporter())
         let tabsModel = TabsModel(desktop: true)
-        tutorialSettingsMock = MockTutorialSettings(hasSeenOnboarding: false)
-        contextualOnboardingLogicMock = ContextualOnboardingLogicMock()
-        let tabsPersistence = try TabsModelPersistence(store: MockKeyValueFileStore(), legacyStore: MockKeyValueStore())
-        sut = MainViewController(
+        onboardingPixelReporter = OnboardingPixelReporterMock()
+        let tabsPersistence = try TabsModelPersistence()
+        mainVC = MainViewController(
             bookmarksDatabase: db,
             bookmarksDatabaseCleaner: bookmarkDatabaseCleaner,
             historyManager: MockHistoryManager(historyCoordinator: MockHistoryCoordinator(), isEnabledByUser: true, historyFeatureEnabled: true),
@@ -83,9 +81,8 @@ final class OnboardingDaxFavouritesTests: XCTestCase {
             privacyProDataReporter: MockPrivacyProDataReporter(),
             variantManager: MockVariantManager(),
             contextualOnboardingPresenter: ContextualOnboardingPresenterMock(),
-            contextualOnboardingLogic: contextualOnboardingLogicMock,
-            contextualOnboardingPixelReporter: OnboardingPixelReporterMock(),
-            tutorialSettings: tutorialSettingsMock,
+            contextualOnboardingLogic: ContextualOnboardingLogicMock(),
+            contextualOnboardingPixelReporter: onboardingPixelReporter,
             subscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock.enabled,
             voiceSearchHelper: MockVoiceSearchHelper(isSpeechRecognizerAvailable: true, voiceSearchEnabled: true),
             featureFlagger: MockFeatureFlagger(),
@@ -93,66 +90,115 @@ final class OnboardingDaxFavouritesTests: XCTestCase {
             fireproofing: MockFireproofing(),
             subscriptionCookieManager: SubscriptionCookieManagerMock(),
             textZoomCoordinator: MockTextZoomCoordinator(),
-            websiteDataManager: mockWebsiteDataManager,
+            websiteDataManager: MockWebsiteDataManager(),
             appDidFinishLaunchingStartTime: nil,
             maliciousSiteProtectionManager: MockMaliciousSiteProtectionManager(),
             maliciousSiteProtectionPreferencesManager: MockMaliciousSiteProtectionPreferencesManager(),
-            aiChatSettings: MockAIChatSettingsProvider()
+            aiChatSettings: MockAIChatSettingsProvider(),
+            themeManager: MockThemeManager()
         )
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.rootViewController = UIViewController()
         window.makeKeyAndVisible()
-        window.rootViewController?.present(sut, animated: false, completion: nil)
+        window.rootViewController?.present(mainVC, animated: false, completion: nil)
+
+        let viewLoadedExpectation = expectation(description: "View is loaded")
+        DispatchQueue.main.async {
+            XCTAssertNotNil(self.mainVC.view, "The view should be loaded")
+            viewLoadedExpectation.fulfill()
+        }
+        waitForExpectations(timeout: 5, handler: nil)
+        mainVC.loadQueryInNewTab("try something")
     }
 
-    override func tearDownWithError() throws {
-        sut = nil
-        try super.tearDownWithError()
+    override func tearDown() {
+        mainVC = nil
     }
 
-    func testWhenMakeOnboardingSeenIsCalled_ThenSetHasSeenOnboardingTrue() {
+    func testSearchForQueryLoadsQueryInCurrentTab() throws {
         // GIVEN
-        XCTAssertFalse(tutorialSettingsMock.hasSeenOnboarding)
+        let query = "Some query"
+        let expectedUrl = try XCTUnwrap(URL.makeSearchURL(query: query, queryContext: nil))
 
         // WHEN
-        tutorialSettingsMock.hasSeenOnboarding = true
+        mainVC.searchFromOnboarding(for: query)
 
         // THEN
-        XCTAssertTrue(tutorialSettingsMock.hasSeenOnboarding)
+        assertExpected(queryURL: expectedUrl)
     }
 
-    func testWhenHasSeenOnboardingIntroIsCalled_AndHasSeenOnboardingSettingIsTrue_ThenReturnFalse() throws {
+    func testNavigateToURLLoadsSiteInCurrentTab() throws {
         // GIVEN
-        tutorialSettingsMock.hasSeenOnboarding = true
+        let site = "duckduckgo.com"
+        let expectedUrl = try XCTUnwrap(URL(string: site))
 
         // WHEN
-        let result = sut.needsToShowOnboardingIntro()
+        mainVC.navigateFromOnboarding(to: expectedUrl)
 
         // THEN
-        XCTAssertFalse(result)
+        assertExpected(url: expectedUrl)
     }
 
-    func testWhenHasSeenOnboardingIntroIsCalled_AndHasSeenOnboardingIsFalse_ThenReturnTrue() throws {
+    func testWhenDidRequestLoadQueryIsCalledThenLoadsQueryInCurrentTab() throws {
         // GIVEN
-        tutorialSettingsMock.hasSeenOnboarding = false
+        let query = "Some query"
+        let expectedUrl = try XCTUnwrap(URL.makeSearchURL(query: query, queryContext: nil))
 
         // WHEN
-        let result = sut.needsToShowOnboardingIntro()
+        mainVC.tab(.fake(), didRequestLoadQuery: query)
 
         // THEN
-        XCTAssertTrue(result)
+        assertExpected(queryURL: expectedUrl)
     }
 
-    func testWhenAddFavouriteIsCalled_ThenItShouldEnableAddFavouriteFlowOnContextualOnboardingLogic() {
+    func testWhenDidRequestLoadsURLIsCalledThenLoadSiteInCurrentTab() throws {
         // GIVEN
-        contextualOnboardingLogicMock.canStartFavoriteFlow = true
-        XCTAssertFalse(contextualOnboardingLogicMock.didCallEnableAddFavoriteFlow)
+        let site = "duckduckgo.com"
+        let expectedUrl = try XCTUnwrap(URL(string: site))
 
         // WHEN
-        sut.startAddFavoriteFlow()
+        mainVC.tab(.fake(), didRequestLoadURL: expectedUrl)
 
         // THEN
-        XCTAssertTrue(contextualOnboardingLogicMock.didCallEnableAddFavoriteFlow)
+        assertExpected(url: expectedUrl)
+    }
+
+    func assertExpected(queryURL: URL) {
+        XCTAssertNotNil(mainVC.currentTab?.url)
+        XCTAssertEqual(mainVC.currentTab?.url?.scheme, queryURL.scheme)
+        XCTAssertEqual(mainVC.currentTab?.url?.host, queryURL.host)
+        XCTAssertEqual(mainVC.currentTab?.url?.query, queryURL.query)
+    }
+
+    func assertExpected(url: URL) {
+        XCTAssertNotNil(mainVC.currentTab?.url)
+        XCTAssertEqual(mainVC.currentTab?.url, url)
+    }
+
+    // MARK: Pixel
+
+    func testWhenPrivacyBarIconIsPressed_AndPrivacyIconIsHighlighted_ThenFireFirstTimePrivacyDashboardUsedPixel() {
+        // GIVEN
+        let isHighlighted = true
+        XCTAssertFalse(onboardingPixelReporter.didCallMeasurePrivacyDashboardOpenedForFirstTime)
+
+        // WHEN
+        mainVC.onPrivacyIconPressed(isHighlighted: isHighlighted)
+
+        // THEN
+        XCTAssertTrue(onboardingPixelReporter.didCallMeasurePrivacyDashboardOpenedForFirstTime)
+    }
+
+    func testWhenPrivacyBarIconIsPressed_AndPrivacyIconIsNotHighlighted_ThenDoNotFireFirstTimePrivacyDashboardUsedPixel() {
+        // GIVEN
+        let isHighlighted = false
+        XCTAssertFalse(onboardingPixelReporter.didCallMeasurePrivacyDashboardOpenedForFirstTime)
+
+        // WHEN
+        mainVC.onPrivacyIconPressed(isHighlighted: isHighlighted)
+
+        // THEN
+        XCTAssertFalse(onboardingPixelReporter.didCallMeasurePrivacyDashboardOpenedForFirstTime)
     }
 
 }

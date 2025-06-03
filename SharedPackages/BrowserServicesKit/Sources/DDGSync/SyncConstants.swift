@@ -17,7 +17,7 @@
 //
 
 public enum SyncSetupRole {
-    case receiver(SyncSetupSource)
+    case receiver(SyncSetupSource, SyncCodeSource)
     case sharer
 }
 

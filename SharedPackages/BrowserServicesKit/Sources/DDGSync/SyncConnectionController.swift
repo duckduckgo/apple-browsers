@@ -135,19 +135,21 @@ public actor SyncConnectionController: SyncConnectionControlling {
         do {
             syncCode = try SyncCode.decodeBase64String(pairingInfo.base64Code)
         } catch {
-            await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: error, setupRole: .receiver(.unknown))
+            // TODO: Maybe different event... all of these
+            await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: error, setupRole: .receiver(.unknown, .qrCode))
             return false
         }
 
         if let exchangeKey = syncCode.exchangeKey {
             await delegate?.controllerDidRecognizeScannedCode(setupSource: .exchange, codeSource: .qrCode)
-            return await handleExchangeKey(exchangeKey)
+            return await handleExchangeKey(exchangeKey, codeSource: .qrCode)
         } else if let connectKey = syncCode.connect {
             await delegate?.controllerDidRecognizeScannedCode(setupSource: .connect, codeSource: .qrCode)
-            return await handleConnectKey(connectKey)
+            return await handleConnectKey(connectKey, codeSource: .qrCode)
         } else {
             await delegate?.controllerDidRecognizeScannedCode(setupSource: .recovery, codeSource: .qrCode)
-            await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: nil, setupRole: .receiver(.unknown))
+            // TODO: Maybe different event
+            await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: nil, setupRole: .receiver(.unknown, .qrCode))
             return false
         }
     }
@@ -170,23 +172,23 @@ public actor SyncConnectionController: SyncConnectionControlling {
                 syncCode = try SyncCode.decodeBase64String(code)
             }
         } catch {
-            await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: error, setupRole: .receiver(.unknown))
+            await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: error, setupRole: .receiver(.unknown, codeSource))
             return false
         }
 
         if let exchangeKey = syncCode.exchangeKey {
             await delegate?.controllerDidRecognizeScannedCode(setupSource: .exchange, codeSource: codeSource)
-            return await handleExchangeKey(exchangeKey)
+            return await handleExchangeKey(exchangeKey, codeSource: codeSource)
         } else if let recoveryKey = syncCode.recovery {
             await delegate?.controllerDidRecognizeScannedCode(setupSource: .recovery, codeSource: codeSource)
-            return await handleRecoveryKey(recoveryKey, isRecovery: true, setupRole: .receiver(.recovery))
+            return await handleRecoveryKey(recoveryKey, isRecovery: true, setupRole: .receiver(.recovery, codeSource))
         } else if let connectKey = syncCode.connect {
             await delegate?.controllerDidRecognizeScannedCode(setupSource: .connect, codeSource: codeSource)
-            return await handleConnectKey(connectKey)
+            return await handleConnectKey(connectKey, codeSource: codeSource)
         } else {
             // We shouldn't ever really reach this point
             assertionFailure("Shouldn't be able to parse SyncCode without any of the supported keys")
-            await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: nil, setupRole: .receiver(.unknown))
+            await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: nil, setupRole: .receiver(.unknown, codeSource))
             return false
         }
     }
@@ -254,9 +256,9 @@ public actor SyncConnectionController: SyncConnectionControlling {
         }
     }
 
-    private func handleExchangeKey(_ exchangeKey: SyncCode.ExchangeKey) async -> Bool {
+    private func handleExchangeKey(_ exchangeKey: SyncCode.ExchangeKey, codeSource: SyncCodeSource) async -> Bool {
         let exchangeInfo: ExchangeInfo
-        let setupRole: SyncSetupRole = .receiver(.exchange)
+        let setupRole: SyncSetupRole = .receiver(.exchange, codeSource)
         do {
             exchangeInfo = try await self.syncService.transmitGeneratedExchangeInfo(exchangeKey, deviceName: deviceName)
         } catch {
@@ -290,7 +292,7 @@ public actor SyncConnectionController: SyncConnectionControlling {
         }
     }
 
-    private func handleConnectKey(_ connectKey: SyncCode.ConnectCode) async -> Bool {
+    private func handleConnectKey(_ connectKey: SyncCode.ConnectCode, codeSource: SyncCodeSource) async -> Bool {
         var shouldShowSyncEnabled = true
 
         if syncService.account == nil {
@@ -300,7 +302,7 @@ public actor SyncConnectionController: SyncConnectionControlling {
                 shouldShowSyncEnabled = false
             } catch {
                 Task {
-                    await delegate?.controllerDidError(.failedToCreateAccount, underlyingError: error, setupRole: .receiver(.connect))
+                    await delegate?.controllerDidError(.failedToCreateAccount, underlyingError: error, setupRole: .receiver(.connect, codeSource))
                 }
                 return false
             }
@@ -309,7 +311,7 @@ public actor SyncConnectionController: SyncConnectionControlling {
             try await syncService.transmitRecoveryKey(connectKey)
             await delegate?.controllerDidCompleteAccountConnection(shouldShowSyncEnabled: shouldShowSyncEnabled, setupSource: .connect)
         } catch {
-            await delegate?.controllerDidError(.failedToTransmitConnectRecoveryKey, underlyingError: error, setupRole: .receiver(.connect))
+            await delegate?.controllerDidError(.failedToTransmitConnectRecoveryKey, underlyingError: error, setupRole: .receiver(.connect, codeSource))
             return false
         }
 

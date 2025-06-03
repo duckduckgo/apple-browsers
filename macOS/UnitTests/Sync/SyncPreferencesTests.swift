@@ -297,7 +297,7 @@ final class SyncPreferencesTests: XCTestCase {
             XCTAssert(ddgSyncing.disconnectCalled)
             return [RegisteredDevice(id: "1", name: "iPhone", type: "iPhone"), RegisteredDevice(id: "2", name: "Macbook Pro", type: "Macbook Pro")]
         }
-        await syncPreferences.controllerDidFindTwoAccountsDuringRecovery(testRecoveryKey)
+        await syncPreferences.controllerDidFindTwoAccountsDuringRecovery(testRecoveryKey, setupRole: .sharer)
         XCTAssert(didCallDDGSyncLogin)
     }
 
@@ -309,7 +309,7 @@ final class SyncPreferencesTests: XCTestCase {
             return [RegisteredDevice(id: "1", name: "iPhone", type: "iPhone"), RegisteredDevice(id: "2", name: "Macbook Pro", type: "Macbook Pro")]
         }
 
-        await syncPreferences.controllerDidFindTwoAccountsDuringRecovery(testRecoveryKey)
+        await syncPreferences.controllerDidFindTwoAccountsDuringRecovery(testRecoveryKey, setupRole: .sharer)
 
         let deviceIDsPublisher = syncPreferences.$devices.map { $0.map { $0.id } }
         try await deviceIDsPublisher.async(waitFor: ["1", "2"])
@@ -324,7 +324,7 @@ final class SyncPreferencesTests: XCTestCase {
             return [RegisteredDevice(id: "1", name: "iPhone", type: "iPhone"), RegisteredDevice(id: "2", name: "Macbook Pro", type: "Macbook Pro")]
         }
 
-        await syncPreferences.controllerDidFindTwoAccountsDuringRecovery(testRecoveryKey)
+        await syncPreferences.controllerDidFindTwoAccountsDuringRecovery(testRecoveryKey, setupRole: .sharer)
 
         try await managementDialogModel.$currentDialog.async(waitFor: nil)
     }
@@ -334,7 +334,7 @@ final class SyncPreferencesTests: XCTestCase {
         ddgSyncing.account = SyncAccount(deviceId: "1", deviceName: "", deviceType: "", userId: "", primaryKey: Data(), secretKey: Data(), token: nil, state: .active)
         syncPreferences.devices = [SyncDevice(RegisteredDevice(id: "1", name: "iPhone", type: "iPhone")), SyncDevice(RegisteredDevice(id: "2", name: "iPhone", type: "iPhone"))]
 
-        await syncPreferences.controllerDidFindTwoAccountsDuringRecovery(testRecoveryKey)
+        await syncPreferences.controllerDidFindTwoAccountsDuringRecovery(testRecoveryKey, setupRole: .sharer)
 
         XCTAssert(managementDialogModel.shouldShowErrorMessage)
         XCTAssert(managementDialogModel.shouldShowSwitchAccountsMessage)

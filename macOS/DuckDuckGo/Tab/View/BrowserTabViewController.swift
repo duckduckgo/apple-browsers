@@ -455,7 +455,6 @@ final class BrowserTabViewController: NSViewController {
         }
     }
 
-    private var webContainerTrailingConstraint: NSLayoutConstraint?
     private var sidebarContainerLeadingConstraint: NSLayoutConstraint?
 
     private func addWebViewToViewHierarchy(_ webView: WebView, tab: Tab) {
@@ -471,16 +470,22 @@ final class BrowserTabViewController: NSViewController {
 
         containerStackView.translatesAutoresizingMaskIntoConstraints = false
 
-        if webContainerTrailingConstraint == nil {
-            webContainerTrailingConstraint = containerStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
-        }
-
         NSLayoutConstraint.activate([
             containerStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            webContainerTrailingConstraint!,
             containerStackView.topAnchor.constraint(equalTo: view.topAnchor),
             containerStackView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
+
+        if featureFlagger.isFeatureOn(.aiChatSidebar) {
+            NSLayoutConstraint.activate([
+                containerStackView.trailingAnchor.constraint(equalTo: sidebarContainer.leadingAnchor)
+            ])
+        } else {
+            NSLayoutConstraint.activate([
+                containerStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+            ])
+        }
+
         containerStackView.addArrangedSubview(container)
 
         updateWebContainerAndTabSidebarConstraints(forSidebarRevealed: tabSidebarProvider.isShowingSidebar(for: tab), animated: false)
@@ -1051,14 +1056,12 @@ final class BrowserTabViewController: NSViewController {
                 context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
 
                 self.sidebarContainerLeadingConstraint?.animator().constant = newConstraintValue
-                self.webContainerTrailingConstraint?.animator().constant = newConstraintValue
             } completionHandler: { [weak self, tab = tabViewModel?.tab] in
                 guard let self, let tab, !forSidebarRevealed else { return }
                 self.tabSidebarProvider.handleSidebarDidClose(for: tab)
             }
         } else {
             sidebarContainerLeadingConstraint?.constant = newConstraintValue
-            webContainerTrailingConstraint?.constant = newConstraintValue
         }
     }
 

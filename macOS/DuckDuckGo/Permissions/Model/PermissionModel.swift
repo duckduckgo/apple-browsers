@@ -172,7 +172,7 @@ final class PermissionModel {
                 .systemAuthorizationDenied(systemWide: !geolocationService.locationServicesEnabled())
         }
 
-        permissions.forEach { self.permissions[$0].authorizationQueried(query, updatesRequest: $0 == .popups) }
+        permissions.forEach { self.permissions[$0].authorizationQueried(query, updateQueryInRequest: $0 == .popups) }
         authorizationQueries.append(query)
     }
 

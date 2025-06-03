@@ -62353,55 +62353,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "DuckDuckGo zum Dock hinzufügen."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Add DuckDuckGo to Your Dock."
+            "value" : "Add DuckDuckGo to Your Dock"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Añadir DuckDuckGo a tu Dock."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Ajoutez DuckDuckGo à votre Dock."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Aggiungi DuckDuckGo al tuo dock."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "DuckDuckGo toevoegen aan je dock."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Dodaj DuckDuckGo do Docka."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Adiciona o DuckDuckGo à tua Dock."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "DuckDuckGo на вашей док-панели"
           }
         }

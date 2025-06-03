@@ -1463,7 +1463,7 @@ struct UserText {
     // MARK: - Set as Default and Add To Dock Prompts
 
     /// Strings for ATT/ATD only
-    static let addDuckDuckGoToDockPopoverTitle = NSLocalizedString("sad.att.add-to-dock.popover.title", value: "Add DuckDuckGo to Your Dock.", comment: "Title of a popover that invites users to add DuckDuckGo to their Dock")
+    static let addDuckDuckGoToDockPopoverTitle = NSLocalizedString("sad.att.add-to-dock.popover.title", value: "Add DuckDuckGo to Your Dock", comment: "Title of a popover that invites users to add DuckDuckGo to their Dock")
     static let addToDockPopoverPromptMessage = NSLocalizedString("sad.att.add-to-dock.popover.message", value: "Get quick access to protected browsing when you add DuckDuckGo to your Dock.", comment: "Body of the popover that invites users to add DuckDuckGo to their Dock")
     static let addToDockBannerPromptMessage = NSLocalizedString("sat.att.add-to-dock.banner.message", value: "Get quick access to protected browsing", comment: "Body of the banner view that invites users to add DuckDuckGo to their Dock")
     static let addToDockPopoverPrimaryAction = NSLocalizedString("sad.att.add-to-dock.popover.primary", value: "Add To Dock", comment: "Button primary action title that appears on a popover inviting users to add DuckDuckGo to their Dock")

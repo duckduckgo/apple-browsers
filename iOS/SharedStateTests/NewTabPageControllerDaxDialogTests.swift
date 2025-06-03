@@ -142,20 +142,6 @@ class CapturingVariantManager: VariantManager {
     }
 }
 
-
-class MockFavoritesListInteracting: FavoritesListInteracting {
-    var favoritesDisplayMode: Bookmarks.FavoritesDisplayMode = .displayNative(.mobile)
-    var favorites: [Bookmarks.BookmarkEntity] = []
-    func favorite(at index: Int) -> Bookmarks.BookmarkEntity? {
-        return nil
-    }
-    func removeFavorite(_ favorite: Bookmarks.BookmarkEntity) {}
-    func moveFavorite(_ favorite: Bookmarks.BookmarkEntity, fromIndex: Int, toIndex: Int) {    }
-    var externalUpdates: AnyPublisher<Void, Never> = Empty<Void, Never>().eraseToAnyPublisher()
-    var localUpdates: AnyPublisher<Void, Never> = Empty<Void, Never>().eraseToAnyPublisher()
-    func reloadData() {}
-}
-
 class CapturingNewTabDaxDialogProvider: NewTabDaxDialogProvider {
     var homeDialog: DaxDialogs.HomeScreenSpec?
     var onDismiss: ((_ activateSearch: Bool) -> Void)?

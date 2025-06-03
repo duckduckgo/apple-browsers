@@ -27,7 +27,7 @@ extension NewTabPageActionsManager {
     convenience init(
         appearancePreferences: AppearancePreferences,
         customizationModel: NewTabPageCustomizationModel,
-        bookmarkManager: BookmarkManager & URLFavoriteStatusProviding = LocalBookmarkManager.shared,
+        bookmarkManager: BookmarkManager & URLFavoriteStatusProviding & RecentActivityFavoritesHandling,
         duckPlayerHistoryEntryTitleProvider: DuckPlayerHistoryEntryTitleProviding = DuckPlayer.shared,
         contentBlocking: ContentBlockingProtocol = ContentBlocking.shared,
         activeRemoteMessageModel: ActiveRemoteMessageModel,
@@ -39,7 +39,7 @@ extension NewTabPageActionsManager {
     ) {
         let favoritesPublisher = bookmarkManager.listPublisher.map({ $0?.favoriteBookmarks ?? [] }).eraseToAnyPublisher()
         let favoritesModel = NewTabPageFavoritesModel(
-            actionsHandler: DefaultFavoritesActionsHandler(),
+            actionsHandler: DefaultFavoritesActionsHandler(bookmarkManager: bookmarkManager),
             favoritesPublisher: favoritesPublisher,
             getLegacyIsViewExpandedSetting: UserDefaultsWrapper<Bool>(key: .homePageShowAllFavorites, defaultValue: true).wrappedValue
         )
@@ -63,7 +63,7 @@ extension NewTabPageActionsManager {
         )
         let recentActivityModel = NewTabPageRecentActivityModel(
             activityProvider: recentActivityProvider,
-            actionsHandler: DefaultRecentActivityActionsHandler()
+            actionsHandler: DefaultRecentActivityActionsHandler(favoritesHandler: bookmarkManager)
         )
 
         self.init(scriptClients: [

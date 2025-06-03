@@ -23,6 +23,10 @@ import Bookmarks
 
 extension CoreDataDatabase {
 
+    static func tempDBDir() -> URL {
+        FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+    }
+
     static func mock(
         bundle: Bundle,
         modelName: String,

@@ -272,7 +272,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .privacyProOnboardingPromotion:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProOnboardingPromotion))
         case .syncSetupBarcodeIsUrlBased:
-            return .disabled
+            return .remoteReleasable(.subfeature(SyncSubfeature.syncSetupBarcodeIsUrlBased))
         case .canScanUrlBasedSyncSetupBarcodes:
             return .remoteReleasable(.subfeature(SyncSubfeature.canScanUrlBasedSyncSetupBarcodes))
         case .removeWWWInCanonicalizationInThreatProtection:

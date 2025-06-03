@@ -87,50 +87,6 @@ final class HistoryCaptureTests: XCTestCase {
 
 }
 
-class MockHistoryCoordinator: NullHistoryCoordinator {
-
-    var addVisitCalls = [URL]()
-    var updateTitleIfNeededCalls = [(title: String, url: URL)]()
-
-    override func addVisit(of url: URL) -> Visit? {
-        addVisitCalls.append(url)
-        return nil
-    }
-
-    override func updateTitleIfNeeded(title: String, url: URL) {
-        updateTitleIfNeededCalls.append((title: title, url: url))
-    }
-
-}
-
 private extension URL {
     static let example = URL(string: "https://example.com")!
 }
-
-class MockHistoryManager: HistoryManaging {
-
-    let historyCoordinator: HistoryCoordinating
-    var isEnabledByUser: Bool
-    var historyFeatureEnabled: Bool
-
-    convenience init() {
-        self.init(historyCoordinator: MockHistoryCoordinator(), isEnabledByUser: false, historyFeatureEnabled: false)
-    }
-
-    init(historyCoordinator: HistoryCoordinating, isEnabledByUser: Bool, historyFeatureEnabled: Bool) {
-        self.historyCoordinator = historyCoordinator
-        self.historyFeatureEnabled = historyFeatureEnabled
-        self.isEnabledByUser = isEnabledByUser
-    }
-
-    func isHistoryFeatureEnabled() -> Bool {
-        return historyFeatureEnabled
-    }
-
-    func removeAllHistory() async {
-    }
-
-    func deleteHistoryForURL(_ url: URL) async {
-    }
-
- }

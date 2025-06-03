@@ -36,10 +36,11 @@ final class SuggestionContainerTests: XCTestCase {
     func testWhenGetSuggestionsIsCalled_ThenContainerAsksAndHoldsSuggestionsFromLoader() {
         let suggestionLoadingMock = SuggestionLoadingMock()
         let historyCoordinatingMock = HistoryProviderMock()
+        let bookmarkProviderMock = SuggestionsBookmarkProvider(bookmarkManager: MockBookmarkManager())
         let suggestionContainer = SuggestionContainer(openTabsProvider: { [] },
                                                       suggestionLoading: suggestionLoadingMock,
                                                       historyProvider: historyCoordinatingMock,
-                                                      bookmarkProvider: LocalBookmarkManager.shared,
+                                                      bookmarkProvider: bookmarkProviderMock,
                                                       burnerMode: .regular,
                                                       isUrlIgnored: { _ in false })
 
@@ -64,10 +65,11 @@ final class SuggestionContainerTests: XCTestCase {
     func testWhenStopGettingSuggestionsIsCalled_ThenNoSuggestionsArePublished() {
         let suggestionLoadingMock = SuggestionLoadingMock()
         let historyCoordinatingMock = HistoryProviderMock()
+        let bookmarkProviderMock = SuggestionsBookmarkProvider(bookmarkManager: MockBookmarkManager())
         let suggestionContainer = SuggestionContainer(openTabsProvider: { [] },
                                                       suggestionLoading: suggestionLoadingMock,
                                                       historyProvider: historyCoordinatingMock,
-                                                      bookmarkProvider: LocalBookmarkManager.shared,
+                                                      bookmarkProvider: bookmarkProviderMock,
                                                       burnerMode: .regular,
                                                       isUrlIgnored: { _ in false })
 
@@ -82,10 +84,11 @@ final class SuggestionContainerTests: XCTestCase {
     func testSuggestionLoadingCacheClearing() {
         let suggestionLoadingMock = SuggestionLoadingMock()
         let historyCoordinatingMock = HistoryProviderMock()
+        let bookmarkProviderMock = SuggestionsBookmarkProvider(bookmarkManager: MockBookmarkManager())
         let suggestionContainer = SuggestionContainer(openTabsProvider: { [] },
                                                       suggestionLoading: suggestionLoadingMock,
                                                       historyProvider: historyCoordinatingMock,
-                                                      bookmarkProvider: LocalBookmarkManager.shared,
+                                                      bookmarkProvider: bookmarkProviderMock,
                                                       burnerMode: .regular,
                                                       isUrlIgnored: { _ in false })
 

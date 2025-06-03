@@ -124,7 +124,7 @@ class MainMenuTests: XCTestCase {
         let sut = MainMenu(
             featureFlagger: DummyFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
-            faviconManager: FaviconManagerMock(),
+            faviconManagement: FaviconManagerMock(),
             dockCustomizer: dockCustomizer,
             aiChatMenuConfig: DummyAIChatConfig()
         )
@@ -145,7 +145,7 @@ class MainMenuTests: XCTestCase {
         let sut = MainMenu(
             featureFlagger: DummyFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
-            faviconManager: FaviconManagerMock(),
+            faviconManagement: FaviconManagerMock(),
             dockCustomizer: dockCustomizer,
             aiChatMenuConfig: DummyAIChatConfig()
         )

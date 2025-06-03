@@ -65,7 +65,7 @@ final class SyncBookmarksAdapter {
 
     init(
         database: CoreDataDatabase,
-        bookmarkManager: BookmarkManager = LocalBookmarkManager.shared,
+        bookmarkManager: BookmarkManager,
         appearancePreferences: AppearancePreferences,
         syncErrorHandler: SyncErrorHandling
     ) {

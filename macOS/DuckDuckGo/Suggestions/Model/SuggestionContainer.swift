@@ -82,9 +82,9 @@ final class SuggestionContainer {
     }
 
     @MainActor
-    convenience init(burnerMode: BurnerMode, isUrlIgnored: @escaping (URL) -> Bool, windowControllersManager: WindowControllersManagerProtocol? = nil) {
+    convenience init(bookmarkProvider: BookmarkProvider, burnerMode: BurnerMode, isUrlIgnored: @escaping (URL) -> Bool, windowControllersManager: WindowControllersManagerProtocol? = nil) {
         self.init(historyProvider: HistoryCoordinator.shared,
-                  bookmarkProvider: LocalBookmarkManager.shared,
+                  bookmarkProvider: bookmarkProvider,
                   burnerMode: burnerMode,
                   isUrlIgnored: isUrlIgnored,
                   windowControllersManager: windowControllersManager)
@@ -155,9 +155,12 @@ extension HistoryCoordinator: SuggestionContainer.HistoryProvider {
         history ?? []
     }
 }
-extension LocalBookmarkManager: SuggestionContainer.BookmarkProvider {
+
+struct SuggestionsBookmarkProvider: SuggestionContainer.BookmarkProvider {
+    let bookmarkManager: BookmarkManager
+
     func bookmarks(for suggestionLoading: SuggestionLoading) -> [Suggestions.Bookmark] {
-        list?.bookmarks() ?? []
+        bookmarkManager.list?.bookmarks() ?? []
     }
 }
 extension SuggestionContainer: SuggestionLoadingDataSource {

@@ -103,7 +103,7 @@ final class Fire {
          recentlyClosedCoordinator: RecentlyClosedCoordinating? = nil,
          pinnedTabsManagerProvider: PinnedTabsManagerProviding? = nil,
          tld: TLD,
-         bookmarkManager: BookmarkManager = LocalBookmarkManager.shared,
+         bookmarkManager: BookmarkManager? = nil,
          syncService: DDGSyncing? = nil,
          syncDataProviders: SyncDataProviders? = nil,
          secureVaultFactory: AutofillVaultFactory = AutofillSecureVaultFactory,
@@ -119,7 +119,7 @@ final class Fire {
         self.faviconManagement = faviconManagement ?? NSApp.delegateTyped.faviconManager
         self.recentlyClosedCoordinator = recentlyClosedCoordinator ?? RecentlyClosedCoordinator.shared
         self.pinnedTabsManagerProvider = pinnedTabsManagerProvider ?? Application.appDelegate.pinnedTabsManagerProvider
-        self.bookmarkManager = bookmarkManager
+        self.bookmarkManager = bookmarkManager ?? NSApp.delegateTyped.bookmarkManager
         self.syncService = syncService ?? NSApp.delegateTyped.syncService
         self.syncDataProviders = syncDataProviders ?? NSApp.delegateTyped.syncDataProviders
         self.secureVaultFactory = secureVaultFactory
@@ -480,7 +480,7 @@ final class Fire {
     private func burnFavicons(completion: @escaping () -> Void) {
         Task { @MainActor in
             await self.faviconManagement.burn(except: FireproofDomains.shared,
-                                              bookmarkManager: LocalBookmarkManager.shared,
+                                              bookmarkManager: bookmarkManager,
                                               savedLogins: autofillDomains())
             completion()
         }
@@ -490,7 +490,7 @@ final class Fire {
     private func burnFavicons(for baseDomains: Set<String>, completion: @escaping () -> Void) {
         Task { @MainActor in
             await self.faviconManagement.burnDomains(baseDomains,
-                                                     exceptBookmarks: LocalBookmarkManager.shared,
+                                                     exceptBookmarks: bookmarkManager,
                                                      exceptSavedLogins: autofillDomains(),
                                                      exceptExistingHistory: historyCoordinating.history ?? [],
                                                      tld: tld)

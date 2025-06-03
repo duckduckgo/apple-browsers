@@ -33,6 +33,7 @@ extension ContentScopeFeatureToggles {
                                           inlineIconCredentials: autofillPrefs.askToSaveUsernamesAndPasswords,
                                           thirdPartyCredentialsProvider: true,
                                           unknownUsernameCategorization: privacyConfig.isSubfeatureEnabled(AutofillSubfeature.unknownUsernameCategorization),
-                                          partialFormSaves: privacyConfig.isSubfeatureEnabled(AutofillSubfeature.partialFormSaves))
+                                          partialFormSaves: privacyConfig.isSubfeatureEnabled(AutofillSubfeature.partialFormSaves),
+                                          passwordVariantCategorization: privacyConfig.isSubfeatureEnabled(AutofillSubfeature.passwordVariantCategorization))
     }
 }

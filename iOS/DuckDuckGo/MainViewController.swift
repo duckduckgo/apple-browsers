@@ -40,6 +40,8 @@ import PageRefreshMonitor
 import BrokenSitePrompt
 import AIChat
 import NetworkExtension
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 class MainViewController: UIViewController {
 
@@ -196,7 +198,8 @@ class MainViewController: UIViewController {
     private lazy var themeColorManager: SiteThemeColorManager = {
         SiteThemeColorManager(viewCoordinator: viewCoordinator,
                               currentTabViewController: { [weak self] in self?.currentTab }(),
-                              appSettings: appSettings)
+                              appSettings: appSettings,
+                              themeManager: themeManager)
     }()
 
     private lazy var aiChatViewControllerManager: AIChatViewControllerManager = {
@@ -212,9 +215,10 @@ class MainViewController: UIViewController {
     }()
 
     let isAuthV2Enabled: Bool
+    let themeManager: ThemeManaging
 
     private var duckPlayerEntryPointVisible = false
-    private lazy var isExperimentalAppearanceEnabled = ExperimentalThemingManager().isExperimentalThemingEnabled
+    private var isExperimentalAppearanceEnabled: Bool { themeManager.properties.isExperimentalThemingEnabled }
 
     private lazy var aiChatOmnibarExperimentOverlayButton: UIButton = {
         let button = UIButton(type: .custom)
@@ -255,7 +259,8 @@ class MainViewController: UIViewController {
         maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
         aiChatSettings: AIChatSettingsProvider,
         experimentalAIChatManager: ExperimentalAIChatManager = ExperimentalAIChatManager(),
-        featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard)
+        featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
+        themeManager: ThemeManaging
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.bookmarksDatabaseCleaner = bookmarksDatabaseCleaner
@@ -270,6 +275,7 @@ class MainViewController: UIViewController {
         self.experimentalAIChatManager = experimentalAIChatManager
         self.previewsSource = previewsSource
         self.featureDiscovery = featureDiscovery
+        self.themeManager = themeManager
 
         let interactionStateSource = WebViewStateRestorationManager(featureFlagger: featureFlagger).isFeatureEnabled ? TabInteractionStateDiskSource() : nil
         self.tabManager = TabManager(model: tabsModel,
@@ -439,7 +445,8 @@ class MainViewController: UIViewController {
 
         let omnibarDependencies = OmnibarDependencies(voiceSearchHelper: voiceSearchHelper,
                                                       featureFlagger: featureFlagger,
-                                                      aiChatSettings: aiChatSettings)
+                                                      aiChatSettings: aiChatSettings,
+                                                      themingProperties: themeManager.properties)
 
         swipeTabsCoordinator = SwipeTabsCoordinator(coordinator: viewCoordinator,
                                                     tabPreviewsSource: previewsSource,
@@ -523,7 +530,7 @@ class MainViewController: UIViewController {
 
         let storyboard = UIStoryboard(name: "TabSwitcher", bundle: nil)
         let controller: TabsBarViewController = storyboard.instantiateViewController(identifier: "TabsBar") { coder in
-            TabsBarViewController(coder: coder, featureFlagger: self.featureFlagger)
+            TabsBarViewController(coder: coder, themingProperties: self.themeManager.properties)
         }
         addChild(controller)
         controller.view.frame = viewCoordinator.tabBarContainer.bounds
@@ -834,7 +841,8 @@ class MainViewController: UIViewController {
         viewCoordinator.omniBar.barView.bookmarksButton.addGestureRecognizer(UILongPressGestureRecognizer(target: self,
                                                                                   action: #selector(quickSaveBookmarkLongPress(gesture:))))
         gestureBookmarksButton.delegate = self
-        gestureBookmarksButton.image = UIImage(named: "Bookmarks")
+
+        gestureBookmarksButton.image = DesignSystemImages.Glyphs.Size24.bookmarks
     }
 
     private func bindFavoritesDisplayMode() {
@@ -1414,7 +1422,7 @@ class MainViewController: UIViewController {
 
     private func applyWidthToTrayController() {
         if AppWidthObserver.shared.isLargeWidth {
-            self.suggestionTrayController?.float(withWidth: self.viewCoordinator.omniBar.barView.searchContainerWidth)
+            self.suggestionTrayController?.float(withWidth: self.viewCoordinator.omniBar.barView.searchContainerWidth, useActiveShadow: isExperimentalAppearanceEnabled)
         } else {
             self.suggestionTrayController?.fill()
         }

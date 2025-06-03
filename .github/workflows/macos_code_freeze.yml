@@ -39,8 +39,11 @@ jobs:
             exit 1
           fi
 
-      - name: Prepare fastlane
-        run: bundle install
+      - name: Setup Ruby and dependencies
+        uses: ./.github/actions/setup-ruby
+        with:
+          working-directory: macOS
+          cache-key-prefix: macos-ruby
 
       - name: Make release branch
         id: make_release_branch
@@ -87,8 +90,11 @@ jobs:
           submodules: recursive
           ref: ${{ needs.create_release_branch.outputs.release_branch_name }}
 
-      - name: Prepare fastlane
-        run: bundle install
+      - name: Setup Ruby and dependencies
+        uses: ./.github/actions/setup-ruby
+        with:
+          working-directory: macOS
+          cache-key-prefix: macos-ruby
 
       - name: Increment build number
         env:

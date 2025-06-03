@@ -39,7 +39,7 @@ struct LargeOmniBarState {
         let showMenu = true
         let showSettings = false
         let showCancel = false
-        let showDismiss = false
+        var showDismiss: Bool { dependencies.themingProperties.isExperimentalThemingEnabled }
         var name: String { return "Pad" + Type.name(self) }
         var onEditingStoppedState: OmniBarState { return HomeNonEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onEditingStartedState: OmniBarState { return self }
@@ -187,7 +187,7 @@ struct LargeOmniBarState {
         let showMenu = true
         let showSettings = false
         let showCancel = false
-        let showDismiss = false
+        var showDismiss: Bool { dependencies.themingProperties.isExperimentalThemingEnabled }
         var name: String { return "Pad" + Type.name(self) }
         var onEditingStoppedState: OmniBarState { return BrowsingNonEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onEditingStartedState: OmniBarState { return self }
@@ -218,10 +218,8 @@ struct LargeOmniBarState {
         let showBackground = true
         let showClear = false
         var showAbort: Bool { isLoading }
-
-        // To be removed
-        var showRefresh: Bool { false }
-        var showShare: Bool { !isLoading }
+        var showRefresh: Bool { !isLoading }
+        let showShare = true
         let showMenu = true
         let showSettings = false
         let showCancel = false

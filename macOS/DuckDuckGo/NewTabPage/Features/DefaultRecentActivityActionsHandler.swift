@@ -128,7 +128,7 @@ final class DefaultRecentActivityActionsHandler: RecentActivityActionsHandling {
     private let burnDidCompleteSubject = PassthroughSubject<Void, Never>()
 
     init(
-        favoritesHandler: RecentActivityFavoritesHandling = LocalBookmarkManager.shared,
+        favoritesHandler: RecentActivityFavoritesHandling,
         burner: RecentActivityItemBurning = RecentActivityItemBurner()
     ) {
         self.favoritesHandler = favoritesHandler

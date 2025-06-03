@@ -1,0 +1,11 @@
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <g clip-path="url(#Jump-Recolorable-16_svg__a)">
+    <path fill="#888" fill-rule="evenodd" d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16Z" clip-rule="evenodd"/>
+    <path fill="#fff" d="M13 5.625a.625.625 0 1 0-1.25 0V7.89a5.447 5.447 0 0 0-.822-1.094 5.77 5.77 0 0 0-3.158-1.67c-1.188-.202-2.36.004-3.298.578a3.876 3.876 0 0 0-1.795 2.54.625.625 0 0 0 1.224.253A2.624 2.624 0 0 1 5.125 6.77c.654-.4 1.515-.568 2.437-.412a4.52 4.52 0 0 1 2.468 1.307c.6.621.963 1.36 1.07 2.085H8.626a.625.625 0 1 0 0 1.25h3.125c.69 0 1.25-.56 1.25-1.25V5.625Z"/>
+  </g>
+  <defs>
+    <clipPath id="Jump-Recolorable-16_svg__a">
+      <path fill="#fff" d="M0 0h16v16H0z"/>
+    </clipPath>
+  </defs>
+</svg>

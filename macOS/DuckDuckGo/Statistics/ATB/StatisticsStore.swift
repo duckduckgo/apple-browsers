@@ -28,7 +28,6 @@ protocol StatisticsStore: BrowserServicesKit.StatisticsStore {
 
     var autoLockEnabled: Bool { get set }
     var autoLockThreshold: String? { get set }
-
 }
 
 extension StatisticsStore {

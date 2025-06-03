@@ -73,7 +73,7 @@ class FaviconsHelperTests: XCTestCase {
         let domain = "example.com"
         let cache = Favicons.Constants.caches[.fireproof]!
         let resource = Favicons.shared.defaultResource(forDomain: domain)!
-        let testImage = UIImage(named: "Logo")!
+        let testImage = UIImage(resource: .logo)
         
         cache.store(testImage, forKey: resource.cacheKey)
         

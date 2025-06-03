@@ -25,6 +25,7 @@ import BrowserServicesKit
 import SwiftUI
 import PrivacyDashboard
 import Subscription
+import DDGSync
 import os.log
 
 extension MainViewController {
@@ -115,8 +116,7 @@ extension MainViewController {
                                            entryPoint: entryPoint,
                                            privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
                                            contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
-                                           breakageAdditionalInfo: self.currentTab?.makeBreakageAdditionalInfo(),
-                                           contentScopeExperimentsManager: self.contentScopeExperimentsManager)
+                                           breakageAdditionalInfo: self.currentTab?.makeBreakageAdditionalInfo())
         }
         
         guard let controller = controller else {
@@ -252,15 +252,22 @@ extension MainViewController {
         }
     }
 
-    func segueToSettingsSync(with source: String? = nil) {
+    func segueToSettingsSync(with source: String? = nil, pairingInfo: PairingInfo? = nil) {
         Logger.lifecycle.debug(#function)
         hideAllHighlightsIfNeeded()
-        launchSettings {
-            if let source = source {
-                $0.shouldPresentSyncViewWithSource(source)
-            } else {
-                $0.presentLegacyView(.sync)
+        let launchSync: () -> Void = { [weak self] in
+            self?.launchSettings {
+                if let source = source {
+                    $0.shouldPresentSyncViewWithSource(source)
+                } else {
+                    $0.presentLegacyView(.sync(pairingInfo))
+                }
             }
+        }
+        if let presentedViewController {
+            presentedViewController.dismiss(animated: false, completion: launchSync)
+        } else {
+            launchSync()
         }
     }
 
@@ -299,7 +306,7 @@ extension MainViewController {
                                                   textZoomCoordinator: textZoomCoordinator,
                                                   aiChatSettings: aiChatSettings,
                                                   maliciousSiteProtectionPreferencesManager: maliciousSiteProtectionPreferencesManager,
-                                                  experimentalThemingManager: ExperimentalThemingManager(featureFlagger: featureFlagger),
+                                                  themeManager: themeManager,
                                                   experimentalAIChatManager: ExperimentalAIChatManager(featureFlagger: featureFlagger))
         Pixel.fire(pixel: .settingsPresented)
 

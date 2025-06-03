@@ -281,7 +281,7 @@ final class VPNUninstaller: VPNUninstalling {
     }
 
     func removeAgents() {
-        loginItemsManager.disableLoginItems(LoginItemsManager.networkProtectionLoginItems)
+        loginItemsManager.disableLoginItems(LoginItemsManager.vpnLoginItems)
     }
 
     func removeSystemExtension() async throws {

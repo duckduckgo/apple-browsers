@@ -38,6 +38,7 @@ final class PreferencesSidebarModel: ObservableObject {
 
     let vpnTunnelIPCClient: VPNControllerXPCClient
     let subscriptionManager: any SubscriptionAuthV1toV2Bridge
+    let settingsIconProvider: SettingsIconsProviding
 
     @Published private(set) var currentSubscriptionState: PreferencesSidebarSubscriptionState = .initial
 
@@ -62,13 +63,15 @@ final class PreferencesSidebarModel: ObservableObject {
         syncService: DDGSyncing,
         vpnTunnelIPCClient: VPNControllerXPCClient = .shared,
         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
-        notificationCenter: NotificationCenter = .default
+        notificationCenter: NotificationCenter = .default,
+        settingsIconProvider: SettingsIconsProviding = NSApp.delegateTyped.visualStyleManager.style.iconsProvider.settingsIconProvider
     ) {
         self.loadSections = loadSections
         self.tabSwitcherTabs = tabSwitcherTabs
         self.vpnTunnelIPCClient = vpnTunnelIPCClient
         self.subscriptionManager = subscriptionManager
         self.notificationCenter = notificationCenter
+        self.settingsIconProvider = settingsIconProvider
 
         self.personalInformationRemovalUpdates = personalInformationRemovalSubject.eraseToAnyPublisher()
         self.identityTheftRestorationUpdates = identityTheftRestorationSubject.eraseToAnyPublisher()
@@ -166,6 +169,8 @@ final class PreferencesSidebarModel: ObservableObject {
         case .privateSearch:
             return PrivacyProtectionStatus(statusIndicator: .on)
         case .webTrackingProtection:
+            return PrivacyProtectionStatus(statusIndicator: .on)
+        case .threatProtection:
             return PrivacyProtectionStatus(statusIndicator: .on)
         case .cookiePopupProtection:
             return  PrivacyProtectionStatus(statusPublisher: CookiePopupProtectionPreferences.shared.$isAutoconsentEnabled) { isAutoconsentEnabled in

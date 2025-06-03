@@ -1,0 +1,10 @@
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <g clip-path="url(#Undo-16_svg__a)">
+    <path fill="#000" d="M2.414.203a.625.625 0 0 1 .922.844L1.546 3H10.5a5.5 5.5 0 0 1 0 11H6.625a.625.625 0 1 1 0-1.25H10.5a4.25 4.25 0 0 0 0-8.5H1.546l1.79 1.953.02.024a.625.625 0 0 1-.92.843l-.022-.023-1.82-1.986a2.125 2.125 0 0 1 0-2.872L2.413.203Z"/>
+  </g>
+  <defs>
+    <clipPath id="Undo-16_svg__a">
+      <path fill="#fff" d="M0 0h16v16H0z"/>
+    </clipPath>
+  </defs>
+</svg>

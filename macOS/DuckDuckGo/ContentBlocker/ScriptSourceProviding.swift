@@ -43,7 +43,18 @@ protocol ScriptSourceProviding {
 // refactor: ScriptSourceProvider to be passed to init methods as `some ScriptSourceProviding`, DefaultScriptSourceProvider to be killed
 // swiftlint:disable:next identifier_name
 @MainActor func DefaultScriptSourceProvider() -> ScriptSourceProviding {
-    ScriptSourceProvider(configStorage: Application.appDelegate.configurationStore, privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager, webTrackingProtectionPreferences: WebTrackingProtectionPreferences.shared, contentBlockingManager: ContentBlocking.shared.contentBlockingManager, trackerDataManager: ContentBlocking.shared.trackerDataManager, experimentManager: Application.appDelegate.contentScopeExperimentsManager, tld: ContentBlocking.shared.tld)
+    ScriptSourceProvider(
+        configStorage: Application.appDelegate.configurationStore,
+        privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
+        webTrackingProtectionPreferences: WebTrackingProtectionPreferences.shared,
+        contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
+        trackerDataManager: ContentBlocking.shared.trackerDataManager,
+        experimentManager: Application.appDelegate.contentScopeExperimentsManager,
+        tld: ContentBlocking.shared.tld,
+        appearancePreferences: Application.appDelegate.appearancePreferences,
+        startupPreferences: Application.appDelegate.startupPreferences,
+        bookmarkManager: Application.appDelegate.bookmarkManager
+    )
 }
 
 struct ScriptSourceProvider: ScriptSourceProviding {
@@ -63,6 +74,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     let webTrakcingProtectionPreferences: WebTrackingProtectionPreferences
     let tld: TLD
     let experimentManager: ContentScopeExperimentsManaging
+    let bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling
 
     @MainActor
     init(configStorage: ConfigurationStoring,
@@ -71,7 +83,11 @@ struct ScriptSourceProvider: ScriptSourceProviding {
          contentBlockingManager: ContentBlockerRulesManagerProtocol,
          trackerDataManager: TrackerDataManager,
          experimentManager: ContentScopeExperimentsManaging,
-         tld: TLD) {
+         tld: TLD,
+         appearancePreferences: AppearancePreferences,
+         startupPreferences: StartupPreferences,
+         bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling
+    ) {
 
         self.configStorage = configStorage
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -80,14 +96,15 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.trackerDataManager = trackerDataManager
         self.experimentManager = experimentManager
         self.tld = tld
+        self.bookmarkManager = bookmarkManager
 
         self.contentBlockerRulesConfig = buildContentBlockerRulesConfig()
         self.surrogatesConfig = buildSurrogatesConfig()
         self.sessionKey = generateSessionKey()
         self.messageSecret = generateSessionKey()
         self.autofillSourceProvider = buildAutofillSource()
-        self.onboardingActionsManager = buildOnboardingActionsManager()
-        self.historyViewActionsManager = buildHistoryViewActionsManager()
+        self.onboardingActionsManager = buildOnboardingActionsManager(appearancePreferences, startupPreferences)
+        self.historyViewActionsManager = buildHistoryViewActionsManager(bookmarksHandler: bookmarkManager)
         self.currentCohorts = generateCurrentCohorts()
     }
 
@@ -144,17 +161,19 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     }
 
     @MainActor
-    private func buildOnboardingActionsManager() -> OnboardingActionsManaging {
+    private func buildOnboardingActionsManager(_ appearancePreferences: AppearancePreferences, _ startupPreferences: StartupPreferences) -> OnboardingActionsManaging {
         return OnboardingActionsManager(
             navigationDelegate: WindowControllersManager.shared,
             dockCustomization: DockCustomizer(),
             defaultBrowserProvider: SystemDefaultBrowserProvider(),
-            appearancePreferences: AppearancePreferences.shared,
-            startupPreferences: StartupPreferences.shared)
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
+            bookmarkManager: bookmarkManager
+        )
     }
 
-    private func buildHistoryViewActionsManager() -> HistoryViewActionsManager {
-        HistoryViewActionsManager(historyCoordinator: HistoryCoordinator.shared)
+    private func buildHistoryViewActionsManager(bookmarksHandler: HistoryViewBookmarksHandling) -> HistoryViewActionsManager {
+        HistoryViewActionsManager(historyCoordinator: HistoryCoordinator.shared, bookmarksHandler: bookmarksHandler)
     }
 
     private func loadTextFile(_ fileName: String, _ fileExt: String) -> String? {

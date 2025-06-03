@@ -35,6 +35,7 @@ struct HomeMessageViewModel {
     let sendPixels: Bool
     let modelType: RemoteMessageModelType
     let navigator: MessageNavigator
+    let isExperimentalThemingEnabled: Bool
 
     var image: String? {
         switch modelType {

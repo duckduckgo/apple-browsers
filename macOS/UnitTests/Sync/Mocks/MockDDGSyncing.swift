@@ -36,7 +36,7 @@ class MockDDGSyncing: DDGSyncing {
     }
 
     var registeredDevices = [RegisteredDevice(id: "1", name: "Device 1", type: "desktop"), RegisteredDevice(id: "2", name: "Device 2", type: "mobile"), RegisteredDevice(id: "3", name: "Device 1", type: "desktop")]
-    var disconnectCalled = false
+    @Published var disconnectCalled = false
 
     var dataProvidersSource: DataProvidersSource?
 
@@ -83,7 +83,9 @@ class MockDDGSyncing: DDGSyncing {
         return self.stubLogin
     }
 
+    @Published var loginCalled: Bool = false
     func login(_ recoveryKey: SyncCode.RecoveryKey, deviceName: String, deviceType: String) async throws -> [RegisteredDevice] {
+        loginCalled = true
         return try spyLogin(recoveryKey, deviceName, deviceType)
     }
 
@@ -120,25 +122,80 @@ class MockDDGSyncing: DDGSyncing {
 
 final class MockSyncConnectionControlling: SyncConnectionControlling {
 
+    @Published var cancelCalled: Bool = false
     func cancel() async {
+        cancelCalled = true
     }
 
-    func startExchangeMode(shouldGenerateURLBasedCode: Bool) async throws -> String {
-        ""
+    @Published var startExhangeModeCalled: Bool = false
+    var spyStartExchangeModelShouldGenerateURLBasedCode: Bool?
+    var startExchangeModeStub: PairingInfo = .init(base64Code: "", deviceName: "")
+    var startExchangeModeError: Error?
+    func startExchangeMode() async throws -> PairingInfo {
+        startExhangeModeCalled = true
+        if let error = startExchangeModeError {
+            throw error
+        }
+        return startExchangeModeStub
     }
 
-    func startConnectMode(shouldGenerateURLBasedCode: Bool) async throws -> String {
-        ""
+    @Published var startConnectModeCalled: Bool = false
+    var spyStartConnectModeShouldGenerateURLBasedCode: Bool?
+    var startConnectModeStub: PairingInfo = .init(base64Code: "", deviceName: "")
+    var startConnectModeError: Error?
+    func startConnectMode() async throws -> PairingInfo {
+        startConnectModeCalled = true
+        if let error = startConnectModeError {
+            throw error
+        }
+        return startConnectModeStub
     }
 
+    @Published var startPairingModeCalled: Bool = false
+    var spyStartPairingModeInfo: PairingInfo?
+    var stubStartPairingMode: Bool = true
     func startPairingMode(_ pairingInfo: PairingInfo) async -> Bool {
-        true
+        startPairingModeCalled = true
+        spyStartPairingModeInfo = pairingInfo
+        return stubStartPairingMode
     }
 
+    @Published var syncCodeEnteredCalled: Bool = false
+    var spySyncCodeEnteredCode: String?
+    var spySyncCodeEnteredCanScanURLBarcodes: Bool?
+    var stubSyncCodeEntered: Bool = true
     func syncCodeEntered(code: String, canScanURLBarcodes: Bool) async -> Bool {
-        true
+        syncCodeEnteredCalled = true
+        spySyncCodeEnteredCode = code
+        spySyncCodeEnteredCanScanURLBarcodes = canScanURLBarcodes
+        return stubSyncCodeEntered
     }
 
+    @Published var loginAndShowDeviceConnectedCalled: Bool = false
+    var spyLoginAndShowDeviceConnectedRecoveryKey: SyncCode.RecoveryKey?
+    var spyLoginAndShowDeviceConnectedIsRecovery: Bool?
+    var stubLoginAndShowDeviceConnectedError: Error?
     func loginAndShowDeviceConnected(recoveryKey: SyncCode.RecoveryKey, isRecovery: Bool) async throws {
+        loginAndShowDeviceConnectedCalled = true
+        spyLoginAndShowDeviceConnectedRecoveryKey = recoveryKey
+        spyLoginAndShowDeviceConnectedIsRecovery = isRecovery
+        if let error = stubLoginAndShowDeviceConnectedError {
+            throw error
+        }
+    }
+}
+
+extension SyncAccount {
+    static var mock: SyncAccount {
+        SyncAccount(
+            deviceId: "deviceId",
+            deviceName: "deviceName",
+            deviceType: "deviceType",
+            userId: "userId",
+            primaryKey: "primaryKey".data(using: .utf8)!,
+            secretKey: "secretKey".data(using: .utf8)!,
+            token: "token",
+            state: .active
+        )
     }
 }

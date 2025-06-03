@@ -224,7 +224,7 @@ final class DuckPlayerNativeUIPresenterTests: XCTestCase {
         let presentedPillType = presentedPillTypeMirror.children.first { $0.label == "presentedPillType" }?.value as? Any
         // We can't access private enum directly, but we can check that containerViewModel is not replaced and notifications are not duplicated
         XCTAssertNotNil(containerViewModel, "Container view model should still exist")
-        // There should be only one pill visibility notification (from the first present)
+        // There should be only one pill visibility notification (from the first present, second call is ignored)
         let postedNotifications = testNotificationCenter.postedNotifications.filter { notification in
             notification.name == DuckPlayerNativeUIPresenter.Notifications.duckPlayerPillUpdated
         }

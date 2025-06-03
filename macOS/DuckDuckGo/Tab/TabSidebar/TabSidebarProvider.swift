@@ -24,6 +24,7 @@ protocol TabSidebarProviding {
     func tabSidebar(for tab: Tab) -> TabSidebar
     func isShowingSidebar(for tab: Tab) -> Bool
     func handleSidebarDidClose(for tab: Tab)
+    func cleanUp(for currentTabs: [Tab])
 }
 
 final class TabSidebarProvider: TabSidebarProviding {
@@ -32,28 +33,40 @@ final class TabSidebarProvider: TabSidebarProviding {
         static let sidebarWidth: CGFloat = 450
     }
 
-    private var sidebarTabs: NSMapTable = NSMapTable<Tab, TabSidebar>.weakToStrongObjects()
+    private var sidebarTabs: [String: TabSidebar] = [:]
 
     var sidebarWidth: CGFloat { Constants.sidebarWidth }
 
     func tabSidebar(for tab: Tab) -> TabSidebar {
-        if let tabSidebar = sidebarTabs.object(forKey: tab) {
+        if let tabSidebar = sidebarTabs[tab.id] {
             return tabSidebar
         } else {
             let tabSidebar = TabSidebar.makeAIChatTabSidebar()
-            sidebarTabs.setObject(tabSidebar, forKey: tab)
+            sidebarTabs[tab.id] = tabSidebar
             return tabSidebar
         }
     }
 
     func isShowingSidebar(for tab: Tab) -> Bool {
-        return sidebarTabs.object(forKey: tab) != nil
+        return sidebarTabs[tab.id] != nil
     }
 
     func handleSidebarDidClose(for tab: Tab) {
-        if let tabSidebar = sidebarTabs.object(forKey: tab) {
+        if let tabSidebar = sidebarTabs[tab.id] {
             tabSidebar.sidebarViewController.removeCompletely()
-            sidebarTabs.removeObject(forKey: tab)
+            sidebarTabs.removeValue(forKey: tab.id)
+        }
+    }
+
+    func cleanUp(for currentTabs: [Tab]) {
+        let currentTabIDs = currentTabs.map { $0.id }
+        let tabIDsForRemoval = Set(sidebarTabs.keys).subtracting(currentTabIDs)
+
+        for tabID in tabIDsForRemoval {
+            if let tabSidebar = sidebarTabs[tabID] {
+                tabSidebar.sidebarViewController.removeCompletely()
+                sidebarTabs.removeValue(forKey: tabID)
+            }
         }
     }
 }

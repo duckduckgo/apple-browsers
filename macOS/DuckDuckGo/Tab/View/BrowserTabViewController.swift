@@ -343,6 +343,10 @@ final class BrowserTabViewController: NSViewController {
         tabCollectionViewModel.tabCollection.$tabs
             .sink(receiveValue: removeDataBrokerViewIfNecessary())
             .store(in: &cancellables)
+
+        tabCollectionViewModel.tabCollection.$tabs
+            .sink(receiveValue: cleanUpSidebarsForClosedTabs())
+            .store(in: &cancellables)
     }
 
     private func subscribeToPinnedTabs() {
@@ -413,6 +417,14 @@ final class BrowserTabViewController: NSViewController {
                 tab.autofill?.setDelegate(self)
                 tab.downloads?.delegate = self
             }
+        }
+    }
+
+    private func cleanUpSidebarsForClosedTabs() -> ([Tab]) -> Void {
+        { [weak self] (tabs: [Tab]) in
+            guard let self else { return }
+            guard featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
+            tabSidebarProvider.cleanUp(for: tabs)
         }
     }
 

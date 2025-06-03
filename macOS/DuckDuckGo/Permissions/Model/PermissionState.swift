@@ -95,13 +95,12 @@ extension Optional where Wrapped == PermissionState {
         }
     }
 
-    /// Updates the ``PermissionState`` with the newly-queried ``PermissionAuthorizationQuery``.
+    /// Updates the ``PermissionState`` with the provided ``PermissionAuthorizationQuery``.
     ///
     /// - Parameters:
-    ///     - query: the ``PermissionAuthorizationQuery`` that was queried.
-    ///     - updateQueryIfAlreadyRequested: if a permission has already been requested, setting this parameter to true
-    ///             will update the associated query in the request with the one provided in this call.  This is cuyrrently only used to
-    ///             make sure the UI will respond to multiple ``PermissionType.popup`` requests without affecting other request types.
+    ///   - query: The queried ``PermissionAuthorizationQuery``.
+    ///   - updateQueryIfAlreadyRequested: If true, updates the existing query for an already-requested permission.
+    ///     Currently used only to handle multiple ``PermissionType.popup`` requests without affecting other types.
     ///
     mutating func authorizationQueried(_ query: PermissionAuthorizationQuery, updateQueryIfAlreadyRequested: Bool) {
         switch self {

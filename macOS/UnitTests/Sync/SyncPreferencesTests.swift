@@ -449,12 +449,17 @@ final class SyncPreferencesTests: XCTestCase {
         try await waitForPublisher(syncPreferences.$stringForQR, toEmit: pairingInfo.url.absoluteString)
     }
 
-    private func waitForSyncWithAnotherDeviceDialog() -> AnyPublisher<(displayCode: String, qrCode: String), Never> {
+    private struct SyncDialogCodes: Equatable {
+        let displayCode: String?
+        let qrCode: String?
+    }
+
+    private func waitForSyncWithAnotherDeviceDialog() -> AnyPublisher<SyncDialogCodes, Never> {
         managementDialogModel.$currentDialog
             .compactMap { $0 }
-            .map { dialog -> (displayCode: String, qrCode: String)? in
+            .map { dialog -> SyncDialogCodes? in
                 if case .syncWithAnotherDevice(let displayCode, let qrCode) = dialog {
-                    return (displayCode: displayCode, qrCode: qrCode)
+                    return SyncDialogCodes(displayCode: displayCode, qrCode: qrCode)
                 }
                 return nil
             }
@@ -484,9 +489,9 @@ final class SyncPreferencesTests: XCTestCase {
 
         await syncPreferences.syncWithAnotherDevicePressed()
 
-        let (displayedRecoveryCode, recoveryQRCode) = try await waitForPublisher(waitForSyncWithAnotherDeviceDialog(), toEmit: (displayCode: expectedRecoveryCode, qrCode: expectedRecoveryCode))
-        XCTAssertEqual(displayedRecoveryCode, expectedRecoveryCode)
-        XCTAssertEqual(recoveryQRCode, expectedRecoveryCode)
+        let dialogCodes = try await waitForPublisher(waitForSyncWithAnotherDeviceDialog(), toEmit: SyncDialogCodes(displayCode: expectedRecoveryCode, qrCode: expectedRecoveryCode))
+        XCTAssertEqual(dialogCodes.displayCode, expectedRecoveryCode)
+        XCTAssertEqual(dialogCodes.qrCode, expectedRecoveryCode)
         XCTAssertEqual(syncPreferences.codeForDisplayOrPasting, expectedRecoveryCode)
         XCTAssertEqual(syncPreferences.stringForQR, expectedRecoveryCode)
     }
@@ -504,9 +509,9 @@ final class SyncPreferencesTests: XCTestCase {
 
         await syncPreferences.syncWithAnotherDevicePressed()
 
-        let (displayedExchangeCode, exchangeQRCode) = try await waitForPublisher(waitForSyncWithAnotherDeviceDialog(), toEmit: (displayCode: expectedExchangeCode, qrCode: expectedQRCodeUrl))
-        XCTAssertEqual(displayedExchangeCode, expectedExchangeCode)
-        XCTAssertEqual(exchangeQRCode, expectedQRCodeUrl)
+        let dialogCodes = try await waitForPublisher(waitForSyncWithAnotherDeviceDialog(), toEmit: SyncDialogCodes(displayCode: expectedExchangeCode, qrCode: expectedQRCodeUrl))
+        XCTAssertEqual(dialogCodes.displayCode, expectedExchangeCode)
+        XCTAssertEqual(dialogCodes.qrCode, expectedQRCodeUrl)
         XCTAssertEqual(syncPreferences.codeForDisplayOrPasting, expectedExchangeCode)
         XCTAssertEqual(syncPreferences.stringForQR, expectedQRCodeUrl)
     }

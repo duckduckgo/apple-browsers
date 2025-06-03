@@ -22,18 +22,31 @@ import Combine
 import WebKit
 import AIChat
 
+protocol AIChatUserScriptProvider {
+    var aiChatUserScript: AIChatUserScript? { get }
+}
+extension UserScripts: AIChatUserScriptProvider {}
+
 final class AIChatOnboardingTabExtension {
     private weak var webView: WKWebView?
     private var cancellables = Set<AnyCancellable>()
     private let notificationCenter: NotificationCenter
     private let remoteSettings: AIChatRemoteSettingsProvider
+    private(set) weak var aiChatUserScript: AIChatUserScript?
 
     init(webViewPublisher: some Publisher<WKWebView, Never>,
+         scriptsPublisher: some Publisher<some AIChatUserScriptProvider, Never>,
          notificationCenter: NotificationCenter,
          remoteSettings: AIChatRemoteSettingsProvider) {
 
         self.notificationCenter = notificationCenter
         self.remoteSettings = remoteSettings
+
+        scriptsPublisher.sink { [weak self] scripts in
+            Task { @MainActor in
+                self?.aiChatUserScript = scripts.aiChatUserScript
+            }
+        }.store(in: &cancellables)
 
         webViewPublisher.sink { [weak self] webView in
             self?.webView = webView
@@ -82,6 +95,7 @@ extension AIChatOnboardingTabExtension: NavigationResponder {
 }
 
 protocol AIChatOnboardingProtocol: AnyObject, NavigationResponder {
+    var aiChatUserScript: AIChatUserScript? { get }
 }
 
 extension AIChatOnboardingTabExtension: AIChatOnboardingProtocol, TabExtension {

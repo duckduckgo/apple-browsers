@@ -80,6 +80,10 @@ extension MainViewController: EmailManagerAliasPermissionDelegate {
     func emailManager(_ emailManager: EmailManager,
                       didRequestPermissionToProvideAliasWithCompletion: @escaping (EmailManagerPermittedAddressType, Bool) -> Void) {
 
+        if let tab = currentTab {
+            currentTab?.webView.resignFirstResponder()
+        }
+        
         DispatchQueue.main.async {
             let emailAddressPromptViewController = EmailAddressPromptViewController(emailManager) { addressType, autosave in
                 didRequestPermissionToProvideAliasWithCompletion(addressType, autosave)

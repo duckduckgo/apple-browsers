@@ -494,6 +494,10 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             }
         }
     }
+
+    func codeEntryScreenShown() {
+        Pixel.fire(pixel: .syncSetupManualCodeEntryScreenShown)
+    }
 }
 
 private class DismissibleHostingController<Content: View>: UIHostingController<Content> {

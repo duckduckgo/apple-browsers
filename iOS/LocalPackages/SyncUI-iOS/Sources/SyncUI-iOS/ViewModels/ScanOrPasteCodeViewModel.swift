@@ -37,6 +37,7 @@ public protocol ScanOrPasteCodeViewModelDelegate: AnyObject {
     func gotoSettings()
     func shareCode(_ code: String)
 
+    func codeEntryScreenShown()
 }
 
 public class ScanOrPasteCodeViewModel: ObservableObject {

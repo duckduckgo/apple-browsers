@@ -67,9 +67,6 @@ struct MenuItemWithBadgeConstants {
 
     // MARK: - Menu Item Hosting View Constants
 
-    /// Default width for the menu item hosting view
-    static let hostingViewWidth: CGFloat = 250
-
     /// Default height for the menu item hosting view
     static let hostingViewHeight: CGFloat = 22
 }
@@ -84,11 +81,22 @@ struct MenuItemWithBadgeConstants {
 /// - Bottom-left: Square (no rounding)
 /// - Bottom-right: Rounded with the specified corner radius
 struct BadgeShape: Shape {
+    // Cache the path since it's the same for all badges with the same corner radius
+    private static var cachedPath: Path?
+    private static var cachedRect: CGRect = .zero
+
     /// Creates the path for the badge shape with asymmetric corner rounding.
     ///
     /// - Parameter rect: The rectangle bounds within which to draw the shape
     /// - Returns: A Path representing the badge shape with asymmetric corners
     func path(in rect: CGRect) -> Path {
+        // Return cached path if available and rect hasn't changed significantly
+        if let cached = Self.cachedPath,
+           abs(Self.cachedRect.width - rect.width) < 0.1,
+           abs(Self.cachedRect.height - rect.height) < 0.1 {
+            return cached
+        }
+
         var path = Path()
         let radius = MenuItemWithBadgeConstants.cornerRadius
 
@@ -112,6 +120,11 @@ struct BadgeShape: Shape {
                    radius: radius, startAngle: .degrees(180), endAngle: .degrees(270), clockwise: false)
 
         path.closeSubpath()
+
+        // Cache the path for reuse
+        Self.cachedPath = path
+        Self.cachedRect = rect
+
         return path
     }
 }
@@ -129,15 +142,19 @@ struct BadgeView: View {
     /// The text content to display in the badge
     let text: String
 
+    // Cache commonly used styling values to avoid repeated calculations
+    private static let badgeFont = Font.system(size: 11, weight: .bold)
+    private static let badgeShape = BadgeShape()
+
     var body: some View {
         Text(text)
-            .font(.system(size: 11, weight: .bold))
-            .foregroundColor(.textPrimary)
+            .font(Self.badgeFont)
+            .foregroundColor(.black)
             .padding(.top, MenuItemWithBadgeConstants.paddingTop)
             .padding(.bottom, MenuItemWithBadgeConstants.paddingBottom)
             .padding(.leading, MenuItemWithBadgeConstants.paddingLeft)
             .padding(.trailing, MenuItemWithBadgeConstants.paddingRight)
-            .background(BadgeShape().fill(Color(baseColor: .yellow60)))
+            .background(Self.badgeShape.fill(Color(baseColor: .yellow60)))
     }
 }
 
@@ -208,6 +225,9 @@ struct MenuItemWithBadge: View {
 
 extension NSMenuItem {
 
+    // Cache for reusable hosting view configurations
+    private static let emptyView = NSView()
+
     /// Creates a new menu item with a badge.
     ///
     /// This factory method creates a complete menu item that includes:
@@ -225,20 +245,30 @@ extension NSMenuItem {
     ///   - image: The icon to display on the left side of the menu item
     ///   - menu: The menu instance to dismiss after action (optional)
     /// - Returns: A configured NSMenuItem with the badge view embedded
-    static func createMenuItemWithBadge(title: String, badgeText: String, action: Selector, target: AnyObject, image: NSImage, menu: NSMenu? = nil) -> NSMenuItem {
-        let menuItem = NSMenuItem(title: title, action: action, keyEquivalent: "")
+    static func createMenuItemWithBadge(title: String, badgeText: String, action: Selector, target: AnyObject, image: NSImage, menu: NSMenu) -> NSMenuItem {
+        let menuItem = NSMenuItem(action: action)
         menuItem.target = target
 
+        weak var weakTarget = target
+        let menuAction = action
+
         let badgeView = MenuItemWithBadge(leftImage: image, title: title, badgeText: badgeText) {
-            if let target = menuItem.target {
-                _ = target.perform(menuItem.action, with: menuItem)
+            menuItem.view = Self.emptyView
+
+            // Dismiss the menu
+            menu.cancelTracking()
+
+            // Execute the action
+            if let target = weakTarget {
+                DispatchQueue.main.async {
+                    _ = target.perform(menuAction, with: menuItem)
+                }
             }
-            // Dismiss the menu after performing the action
-            menu?.cancelTracking()
         }
 
         let hostingView = NSHostingView(rootView: badgeView)
-        hostingView.frame = NSRect(x: 0, y: 0, width: MenuItemWithBadgeConstants.hostingViewWidth, height: MenuItemWithBadgeConstants.hostingViewHeight)
+
+        hostingView.frame = NSRect(x: 0, y: 0, width: menu.size.width, height: MenuItemWithBadgeConstants.hostingViewHeight)
         hostingView.autoresizingMask = [.width, .height]
 
         menuItem.view = hostingView

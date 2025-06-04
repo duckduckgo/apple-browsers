@@ -511,7 +511,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     }
 
     private func sendCodeRecognisedPixel(setupSource: SyncSetupSource, codeSource: SyncCodeSource) {
-        guard setupSource != .recovery else { return }
+        guard setupSource != .recovery, setupSource != .unknown else { return }
         let parameters = [PixelParameters.source: setupSource.rawValue]
         switch codeSource {
         case .qrCode:
@@ -539,7 +539,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     }
 
     private func sendSetupEndedSuccessfullyPixel(setupSource: SyncSetupSource, codeSource: SyncCodeSource) {
-        guard setupSource != .recovery else { return }
+        guard setupSource != .recovery, setupSource != .unknown else { return }
         let parameters = [PixelParameters.source: setupSource.rawValue]
         switch codeSource {
         case .pastedCode, .qrCode:

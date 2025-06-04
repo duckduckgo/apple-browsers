@@ -341,21 +341,21 @@ final class BrowserTabViewController: NSViewController {
 
     private func subscribeToTabs() {
         tabCollectionViewModel.tabCollection.$tabs
-            .sink(receiveValue: setDelegate())
-            .store(in: &cancellables)
-
-        tabCollectionViewModel.tabCollection.$tabs
-            .sink(receiveValue: removeDataBrokerViewIfNecessary())
-            .store(in: &cancellables)
-
-        tabCollectionViewModel.tabCollection.$tabs
-            .sink(receiveValue: cleanUpSidebarsForClosedTabs())
+            .sink {  [weak self] tabs in
+                guard let self else { return }
+                setDelegate(for: tabs)
+                removeDataBrokerViewIfNecessary(for: tabs)
+                cleanUpSidebarsForClosedTabs(for: tabs)
+            }
             .store(in: &cancellables)
     }
 
     private func subscribeToPinnedTabs() {
         pinnedTabsDelegatesCancellable = tabCollectionViewModel.pinnedTabsCollection?.$tabs
-            .sink(receiveValue: setDelegate())
+            .sink(receiveValue: { [weak self] tabs in
+                guard let self else { return }
+                setDelegate(for: tabs)
+            })
     }
 
     private func subscribeToNotifications() {
@@ -402,35 +402,25 @@ final class BrowserTabViewController: NSViewController {
                                                object: nil)
     }
 
-    private func removeDataBrokerViewIfNecessary() -> ([Tab]) -> Void {
-        { [weak self] (tabs: [Tab]) in
-            guard let self else { return }
-            if let dataBrokerProtectionHomeViewController,
-               !tabs.contains(where: { $0.content == .dataBrokerProtection }) {
-                dataBrokerProtectionHomeViewController.removeCompletely()
-                self.dataBrokerProtectionHomeViewController = nil
-            }
+    private func removeDataBrokerViewIfNecessary(for tabs: [Tab]) {
+        if let dataBrokerProtectionHomeViewController,
+           !tabs.contains(where: { $0.content == .dataBrokerProtection }) {
+            dataBrokerProtectionHomeViewController.removeCompletely()
+            self.dataBrokerProtectionHomeViewController = nil
         }
     }
 
-    private func setDelegate() -> ([Tab]) -> Void {
-        { [weak self] (tabs: [Tab]) in
-            guard let self else { return }
-            for tab in tabs {
-                tab.setDelegate(self)
-                tab.autofill?.setDelegate(self)
-                tab.downloads?.delegate = self
-            }
+    private func setDelegate(for tabs: [Tab]) {
+        for tab in tabs {
+            tab.setDelegate(self)
+            tab.autofill?.setDelegate(self)
+            tab.downloads?.delegate = self
         }
     }
 
-    private func cleanUpSidebarsForClosedTabs() -> ([Tab]) -> Void {
-        { [weak self] (tabs: [Tab]) in
-            guard let self else { return }
-            guard featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
-            let currentTabIDs = tabs.map { $0.id }
-            aiChatTabSidebarHostingDelegate?.refreshSidebarState(for: currentTabIDs)
-        }
+    private func cleanUpSidebarsForClosedTabs(for currentTabs: [Tab]) {
+        let currentTabIDs = currentTabs.map { $0.id }
+        aiChatTabSidebarHostingDelegate?.refreshSidebarState(for: currentTabIDs)
     }
 
     private func removeWebViewFromHierarchy(webView: WebView? = nil,

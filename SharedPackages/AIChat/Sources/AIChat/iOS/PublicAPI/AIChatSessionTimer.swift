@@ -50,7 +50,6 @@ protocol AIChatSessionTiming {
     func timeElapsedInMinutes() -> Int?
 }
 
-
 public final class AIChatSessionTimer: AIChatSessionTiming {
     private let durationInSeconds: TimeInterval
     private var timer: Timer?
@@ -92,7 +91,6 @@ public final class AIChatSessionTimer: AIChatSessionTiming {
     @objc private func appWillEnterForeground() {
         handleTimerAfterBackgrounding()
     }
-
 
     ///    This function is called when the app re-enters the foreground.
     ///    It calculates the elapsed time since the timer started and determines whether to fire the timer immediately or restart it with the remaining time.

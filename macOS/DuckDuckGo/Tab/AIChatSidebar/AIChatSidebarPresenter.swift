@@ -52,6 +52,7 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
 
         if isShowingSidebar {
             let sidebarViewController = sidebarProvider.sidebar(for: tabID).sidebarViewController
+            sidebarViewController.delegate = self
             sidebarHost.embedSidebarViewController(sidebarViewController)
         }
 
@@ -90,4 +91,18 @@ extension AIChatSidebarPresenter: AIChatSidebarHostingDelegate {
     func sidebarHostDidUpdateTabs(_ currentTabIDs: [TabIdentifier]) {
         sidebarProvider.cleanUp(for: currentTabIDs)
     }
+}
+
+extension AIChatSidebarPresenter: AIChatSidebarViewControllerDelegate {
+
+    func didClickOpenInNewTabButton() {
+        Task { @MainActor in
+            NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(nil, target: .newTabSelected)
+        }
+    }
+    
+    func didClickCloseButton() {
+        toggleSidebar()
+    }
+
 }

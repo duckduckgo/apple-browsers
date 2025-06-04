@@ -71,9 +71,9 @@ final class AIChatSidebarProvider: AIChatSidebarProviding {
 }
 
 final class TabSidebar {
-    var sidebarViewController: NSViewController
+    var sidebarViewController: AIChatSidebarViewController
 
-    init(sidebarViewController: NSViewController) {
+    init(sidebarViewController: AIChatSidebarViewController) {
         self.sidebarViewController = sidebarViewController
     }
 

@@ -18,6 +18,11 @@
 
 import AppKit
 
+protocol AIChatSidebarViewControllerDelegate: AnyObject {
+    func didClickOpenInNewTabButton()
+    func didClickCloseButton()
+}
+
 final class AIChatSidebarViewController: NSViewController {
 
     private enum Constants {
@@ -31,6 +36,8 @@ final class AIChatSidebarViewController: NSViewController {
         static let webViewTopCornerRadius: CGFloat = 16
         static let webViewBottomCornerRadius: CGFloat = 6
     }
+
+    weak var delegate: AIChatSidebarViewControllerDelegate?
 
     private var openInNewTabButton: MouseOverButton!
     private var closeButton: MouseOverButton!
@@ -155,9 +162,9 @@ final class AIChatSidebarViewController: NSViewController {
         // Observe bounds changes to update the mask
         webViewContainer.postsFrameChangedNotifications = true
         NotificationCenter.default.addObserver(self,
-                                             selector: #selector(updateWebViewMask),
-                                             name: NSView.frameDidChangeNotification,
-                                             object: webViewContainer)
+                                               selector: #selector(updateWebViewMask),
+                                               name: NSView.frameDidChangeNotification,
+                                               object: webViewContainer)
     }
 
     @objc private func updateWebViewMask() {
@@ -168,38 +175,38 @@ final class AIChatSidebarViewController: NSViewController {
         // Bottom left corner
         path.move(to: CGPoint(x: bounds.minX, y: bounds.minY + Constants.webViewBottomCornerRadius))
         path.addArc(center: CGPoint(x: bounds.minX + Constants.webViewBottomCornerRadius,
-                                  y: bounds.minY + Constants.webViewBottomCornerRadius),
-                   radius: Constants.webViewBottomCornerRadius,
-                   startAngle: .pi,
-                   endAngle: .pi * 3/2,
-                   clockwise: false)
+                                    y: bounds.minY + Constants.webViewBottomCornerRadius),
+                    radius: Constants.webViewBottomCornerRadius,
+                    startAngle: .pi,
+                    endAngle: .pi * 3/2,
+                    clockwise: false)
 
         // Bottom right corner
         path.addLine(to: CGPoint(x: bounds.maxX - Constants.webViewBottomCornerRadius, y: bounds.minY))
         path.addArc(center: CGPoint(x: bounds.maxX - Constants.webViewBottomCornerRadius,
-                                  y: bounds.minY + Constants.webViewBottomCornerRadius),
-                   radius: Constants.webViewBottomCornerRadius,
-                   startAngle: .pi * 3/2,
-                   endAngle: 0,
-                   clockwise: false)
+                                    y: bounds.minY + Constants.webViewBottomCornerRadius),
+                    radius: Constants.webViewBottomCornerRadius,
+                    startAngle: .pi * 3/2,
+                    endAngle: 0,
+                    clockwise: false)
 
         // Top right corner
         path.addLine(to: CGPoint(x: bounds.maxX, y: bounds.maxY - Constants.webViewTopCornerRadius))
         path.addArc(center: CGPoint(x: bounds.maxX - Constants.webViewTopCornerRadius,
-                                  y: bounds.maxY - Constants.webViewTopCornerRadius),
-                   radius: Constants.webViewTopCornerRadius,
-                   startAngle: 0,
-                   endAngle: .pi/2,
-                   clockwise: false)
+                                    y: bounds.maxY - Constants.webViewTopCornerRadius),
+                    radius: Constants.webViewTopCornerRadius,
+                    startAngle: 0,
+                    endAngle: .pi/2,
+                    clockwise: false)
 
         // Top left corner
         path.addLine(to: CGPoint(x: bounds.minX + Constants.webViewTopCornerRadius, y: bounds.maxY))
         path.addArc(center: CGPoint(x: bounds.minX + Constants.webViewTopCornerRadius,
-                                  y: bounds.maxY - Constants.webViewTopCornerRadius),
-                   radius: Constants.webViewTopCornerRadius,
-                   startAngle: .pi/2,
-                   endAngle: .pi,
-                   clockwise: false)
+                                    y: bounds.maxY - Constants.webViewTopCornerRadius),
+                    radius: Constants.webViewTopCornerRadius,
+                    startAngle: .pi/2,
+                    endAngle: .pi,
+                    clockwise: false)
 
         path.closeSubpath()
 
@@ -209,13 +216,11 @@ final class AIChatSidebarViewController: NSViewController {
     }
 
     @objc private func openInNewTabButtonClicked() {
-//        WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController.toggleAIChatSidebar()
-//        WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController.browserTabViewController.openNewTab(tab: aiTab)
-        NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(nil, target: .newTabSelected)
+        delegate?.didClickOpenInNewTabButton()
     }
 
     @objc private func closeButtonClicked() {
-//        WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController.browserTabViewController.toggleSidebar()
+        delegate?.didClickCloseButton()
     }
 
 }

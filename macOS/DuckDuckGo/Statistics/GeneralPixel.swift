@@ -108,6 +108,17 @@ enum GeneralPixel: PixelKitEventV2 {
     // Fire Button
     case fireButtonFirstBurn
     case fireButton(option: FireButtonOption)
+    
+    /**
+     * Event Trigger: User opens the fire popover (fire button details view).
+     *
+     * > Note: This is a daily pixel.
+     *
+     * Anomaly Investigation:
+     * - May indicate changes in user awareness of privacy clearing features.
+     * - Increase could suggest users are exploring advanced clearing options.
+     */
+    case fireButtonDetailsViewed
 
     // Duck Player
     case duckPlayerDailyUniqueView
@@ -668,6 +679,8 @@ enum GeneralPixel: PixelKitEventV2 {
             return "m_mac_fire_button_first_burn"
         case .fireButton(option: let option):
             return "m_mac_fire_button_\(option)"
+        case .fireButtonDetailsViewed:
+            return "m_mac_fire_button_details_viewed"
 
         case .duckPlayerWeeklyUniqueView:
             return "duckplayer_weekly-unique-view"

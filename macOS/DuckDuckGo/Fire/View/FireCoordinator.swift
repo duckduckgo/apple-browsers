@@ -17,6 +17,7 @@
 //
 
 import Cocoa
+import PixelKit
 
 @MainActor
 final class FireCoordinator {
@@ -62,6 +63,9 @@ final class FireCoordinator {
         }
         firePopover = FirePopover(fireViewModel: fireViewModel, tabCollectionViewModel: tabCollectionViewModel)
         firePopover?.show(positionedBelow: positioningView.bounds.insetBy(dx: 0, dy: 3), in: positioningView)
+        
+        // Fire pixel when fire popover details are viewed
+        PixelKit.fire(GeneralPixel.fireButtonDetailsViewed, frequency: .dailyAndCount)
     }
 
 }

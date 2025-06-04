@@ -20,8 +20,8 @@ import Foundation
 import AppKit
 
 protocol AIChatSidebarHostingDelegate: AnyObject {
-    func updateSidebarStateForSelectedTab(with tabID: TabIdentifier)
-    func refreshSidebarState(for currentTabIDs: [TabIdentifier])
+    func sidebarHostDidSelectTab(with tabID: TabIdentifier)
+    func sidebarHostDidUpdateTabs(_ currentTabIDs: [TabIdentifier])
 }
 
 protocol AIChatSidebarHosting {

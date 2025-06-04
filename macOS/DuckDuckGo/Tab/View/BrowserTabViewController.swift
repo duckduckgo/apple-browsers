@@ -323,10 +323,6 @@ final class BrowserTabViewController: NSViewController {
                 tabViewModel = selectedTabViewModel
                 showTabContent(of: selectedTabViewModel)
 
-                if let selectedTabID = selectedTabViewModel?.tab.id {
-                    aiChatSidebarHostingDelegate?.updateSidebarStateForSelectedTab(with: selectedTabID)
-                }
-
                 subscribeToTabContent(of: selectedTabViewModel)
                 subscribeToHoveredLink(of: selectedTabViewModel)
                 subscribeToUserDialogs(of: selectedTabViewModel)
@@ -421,7 +417,7 @@ final class BrowserTabViewController: NSViewController {
     private func cleanUpSidebarsForClosedTabs(for currentTabs: [Tab]) {
         let currentTabIDs = currentTabs.map { $0.id }
         let currentPinnedTabIDs = tabCollectionViewModel.pinnedTabsCollection?.tabs.map { $0.id } ?? []
-        aiChatSidebarHostingDelegate?.refreshSidebarState(for: currentTabIDs + currentPinnedTabIDs)
+        aiChatSidebarHostingDelegate?.sidebarHostDidUpdateTabs(currentTabIDs + currentPinnedTabIDs)
     }
 
     private func removeWebViewFromHierarchy(webView: WebView? = nil,
@@ -484,8 +480,6 @@ final class BrowserTabViewController: NSViewController {
         }
 
         containerStackView.addArrangedSubview(container)
-
-        aiChatSidebarHostingDelegate?.updateSidebarStateForSelectedTab(with: tab.id)
     }
 
     private func removeExistingDialog() {
@@ -949,6 +943,10 @@ final class BrowserTabViewController: NSViewController {
         if shouldReplaceWebView(for: tabViewModel) {
             removeAllTabContent(includingWebView: true)
             changeWebView(tabViewModel: tabViewModel)
+
+            if let tabID = tabViewModel?.tab.id {
+                aiChatSidebarHostingDelegate?.sidebarHostDidSelectTab(with: tabID)
+            }
         }
     }
 

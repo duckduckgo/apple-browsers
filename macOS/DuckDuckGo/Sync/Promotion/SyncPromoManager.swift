@@ -88,7 +88,7 @@ final class SyncPromoManager: SyncPromoManaging {
     }
 
     @MainActor func goToSyncSettings(for touchpoint: Touchpoint) {
-        WindowControllersManager.shared.showPreferencesTab(withSelectedPane: .sync)
+        Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: .sync)
 
         var source: String
         switch touchpoint {

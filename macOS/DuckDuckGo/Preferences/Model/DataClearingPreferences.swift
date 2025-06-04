@@ -55,7 +55,7 @@ final class DataClearingPreferences: ObservableObject, PreferencesTabOpening {
         let fireproofDomainsWindowController = FireproofDomainsViewController.create().wrappedInWindowController()
 
         guard let fireproofDomainsWindow = fireproofDomainsWindowController.window,
-              let parentWindowController = WindowControllersManager.shared.lastKeyMainWindowController
+              let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController
         else {
             assertionFailure("DataClearingPreferences: Failed to present FireproofDomainsViewController")
             return

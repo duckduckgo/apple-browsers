@@ -157,7 +157,7 @@ extension AppDelegate {
 
     @MainActor
     @objc func showAbout(_ sender: Any?) {
-        WindowControllersManager.shared.showTab(with: .settings(pane: .about))
+        Application.appDelegate.windowControllersManager.showTab(with: .settings(pane: .about))
     }
 
     @MainActor
@@ -174,12 +174,12 @@ extension AppDelegate {
 
     @MainActor
     @objc func showReleaseNotes(_ sender: Any?) {
-        WindowControllersManager.shared.showTab(with: .releaseNotes)
+        Application.appDelegate.windowControllersManager.showTab(with: .releaseNotes)
     }
 
     @MainActor
     @objc func showWhatIsNew(_ sender: Any?) {
-        WindowControllersManager.shared.showTab(with: .url(.updates, source: .ui))
+        Application.appDelegate.windowControllersManager.showTab(with: .url(.updates, source: .ui))
     }
 
 #if FEEDBACK
@@ -187,7 +187,7 @@ extension AppDelegate {
     @objc func openFeedback(_ sender: Any?) {
         DispatchQueue.main.async {
             if self.internalUserDecider.isInternalUser {
-                WindowControllersManager.shared.showTab(with: .url(.internalFeedbackForm, source: .ui))
+                Application.appDelegate.windowControllersManager.showTab(with: .url(.internalFeedbackForm, source: .ui))
             } else {
                 FeedbackPresenter.presentFeedbackForm()
             }
@@ -206,7 +206,7 @@ extension AppDelegate {
         privacyDashboardWindow = window
 
         DispatchQueue.main.async {
-            guard let parentWindowController = WindowControllersManager.shared.lastKeyMainWindowController,
+            guard let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController,
                   let tabModel = parentWindowController.mainViewController.tabCollectionViewModel.selectedTabViewModel else {
                 assertionFailure("AppDelegate: Failed to present PrivacyDashboard")
                 return
@@ -218,7 +218,7 @@ extension AppDelegate {
 
     @MainActor
     @objc func openPProFeedback(_ sender: Any?) {
-        WindowControllersManager.shared.showShareFeedbackModal(source: .settings)
+        Application.appDelegate.windowControllersManager.showShareFeedbackModal(source: .settings)
     }
 
     @MainActor
@@ -275,7 +275,7 @@ extension AppDelegate {
 
     @MainActor
     @objc func openExportLogins(_ sender: Any?) {
-        guard let windowController = WindowControllersManager.shared.lastKeyMainWindowController,
+        guard let windowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController,
               let window = windowController.window else { return }
 
         DeviceAuthenticator.shared.authenticateUser(reason: .exportLogins) { authenticationResult in
@@ -315,7 +315,7 @@ extension AppDelegate {
 
     @MainActor
     @objc func openExportBookmarks(_ sender: Any?) {
-        guard let windowController = WindowControllersManager.shared.lastKeyMainWindowController,
+        guard let windowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController,
               let window = windowController.window,
               let list = bookmarkManager.list else { return }
 
@@ -362,8 +362,8 @@ extension AppDelegate {
         UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.onboardingFinished.rawValue)
         Application.appDelegate.onboardingContextualDialogsManager.state = .onboardingCompleted
         OnboardingActionsManager.isOnboardingFinished = true
-        WindowControllersManager.shared.updatePreventUserInteraction(prevent: false)
-        WindowControllersManager.shared.replaceTabWith(Tab(content: .newtab))
+        Application.appDelegate.windowControllersManager.updatePreventUserInteraction(prevent: false)
+        Application.appDelegate.windowControllersManager.replaceTabWith(Tab(content: .newtab))
     }
 
     @objc func resetRemoteMessages(_ sender: Any?) {
@@ -622,7 +622,7 @@ extension MainViewController {
                let tab = mainWindowController.activeTab {
                 return tab
             }
-            return WindowControllersManager.shared.lastKeyMainWindowController?.activeTab
+            return Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.activeTab
         }
         guard let tab else {
             assertionFailure("Could not get currently active Tab")
@@ -730,11 +730,11 @@ extension MainViewController {
     @objc func toggleDownloads(_ sender: Any) {
         var navigationBarViewController = self.navigationBarViewController
         if view.window?.isPopUpWindow == true {
-            if let vc = WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController.navigationBarViewController {
+            if let vc = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.navigationBarViewController {
                 navigationBarViewController = vc
             } else {
                 WindowsManager.openNewWindow(with: Tab(content: .newtab))
-                guard let wc = WindowControllersManager.shared.mainWindowControllers.first(where: { $0.window?.isPopUpWindow == false }) else {
+                guard let wc = Application.appDelegate.windowControllersManager.mainWindowControllers.first(where: { $0.window?.isPopUpWindow == false }) else {
                     return
                 }
                 navigationBarViewController = wc.mainViewController.navigationBarViewController
@@ -747,7 +747,7 @@ extension MainViewController {
     @objc func toggleBookmarksBarFromMenu(_ sender: Any) {
         // Leaving this keyboard shortcut in place.  When toggled on it will use the previously set appearence which defaults to "always".
         //  If the user sets it to "new tabs only" somewhere (e.g. preferences), then it'll be that.
-        guard let mainVC = WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController else { return }
+        guard let mainVC = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController else { return }
 
         let prefs = NSApp.delegateTyped.appearancePreferences
         if prefs.showBookmarksBar && prefs.bookmarksBarAppearance == .newTabOnly {
@@ -806,7 +806,7 @@ extension MainViewController {
 
         makeKeyIfNeeded()
 
-        WindowControllersManager.shared.open(historyEntry, with: NSApp.currentEvent)
+        Application.appDelegate.windowControllersManager.open(historyEntry, with: NSApp.currentEvent)
     }
 
     @objc func clearAllHistory(_ sender: NSMenuItem) {
@@ -927,7 +927,7 @@ extension MainViewController {
         guard let bookmark = menuItem.representedObject as? Bookmark else { return }
         makeKeyIfNeeded()
 
-        WindowControllersManager.shared.open(bookmark, with: NSApp.currentEvent)
+        Application.appDelegate.windowControllersManager.open(bookmark, with: NSApp.currentEvent)
     }
 
     @objc func openAllInTabs(_ sender: Any?) {
@@ -1031,13 +1031,13 @@ extension MainViewController {
     }
 
     @objc func mergeAllWindows(_ sender: Any?) {
-        guard let mainWindowController = WindowControllersManager.shared.lastKeyMainWindowController else { return }
+        guard let mainWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController else { return }
         assert(!self.isBurner)
 
-        let otherWindowControllers = WindowControllersManager.shared.mainWindowControllers.filter {
+        let otherWindowControllers = Application.appDelegate.windowControllersManager.mainWindowControllers.filter {
             $0 !== mainWindowController && $0.mainViewController.isBurner == false
         }
-        let excludedWindowControllers = WindowControllersManager.shared.mainWindowControllers.filter {
+        let excludedWindowControllers = Application.appDelegate.windowControllersManager.mainWindowControllers.filter {
             $0 === mainWindowController || $0.mainViewController.isBurner == true
         }
 
@@ -1262,7 +1262,7 @@ extension MainViewController: NSMenuItemValidation {
 
         // Merge all windows
         case #selector(MainViewController.mergeAllWindows(_:)):
-            return WindowControllersManager.shared.mainWindowControllers.filter({ !$0.mainViewController.isBurner }).count > 1 && !self.isBurner
+            return Application.appDelegate.windowControllersManager.mainWindowControllers.filter({ !$0.mainViewController.isBurner }).count > 1 && !self.isBurner
 
         // Move Tab to New Window, Select Next/Prev Tab
         case #selector(MainViewController.moveTabToNewWindow(_:)):
@@ -1302,7 +1302,7 @@ extension AppDelegate: NSMenuItemValidation {
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         switch menuItem.action {
         case #selector(AppDelegate.closeAllWindows(_:)):
-            return !WindowControllersManager.shared.mainWindowControllers.isEmpty
+            return !Application.appDelegate.windowControllersManager.mainWindowControllers.isEmpty
 
         // Reopen Last Removed Tab
         case #selector(AppDelegate.reopenLastClosedTab(_:)):
@@ -1321,7 +1321,7 @@ extension AppDelegate: NSMenuItemValidation {
             return areTherePasswords
 
         case #selector(AppDelegate.openReportBrokenSite(_:)):
-            return WindowControllersManager.shared.selectedTab?.canReload ?? false
+            return Application.appDelegate.windowControllersManager.selectedTab?.canReload ?? false
 
         default:
             return true

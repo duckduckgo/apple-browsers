@@ -30,8 +30,8 @@ final class FireTests: XCTestCase {
     @MainActor
     override func tearDown() {
         WindowsManager.closeWindows()
-        for controller in WindowControllersManager.shared.mainWindowControllers {
-            WindowControllersManager.shared.unregister(controller)
+        for controller in Application.appDelegate.windowControllersManager.mainWindowControllers {
+            Application.appDelegate.windowControllersManager.unregister(controller)
         }
     }
 
@@ -45,7 +45,7 @@ final class FireTests: XCTestCase {
         let fire = Fire(cacheManager: manager,
                         historyCoordinating: historyCoordinator,
                         permissionManager: permissionManager,
-                        windowControllerManager: WindowControllersManager.shared,
+                        windowControllerManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: faviconManager,
                         tld: ContentBlocking.shared.tld)
 
@@ -83,7 +83,7 @@ final class FireTests: XCTestCase {
         let fire = Fire(cacheManager: manager,
                         historyCoordinating: historyCoordinator,
                         permissionManager: permissionManager,
-                        windowControllerManager: WindowControllersManager.shared,
+                        windowControllerManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: faviconManager,
                         pinnedTabsManagerProvider: pinnedTabsManagerProvider,
                         tld: ContentBlocking.shared.tld)
@@ -115,7 +115,7 @@ final class FireTests: XCTestCase {
                         historyCoordinating: historyCoordinator,
                         permissionManager: permissionManager,
                         savedZoomLevelsCoordinating: zoomLevelsCoordinator,
-                        windowControllerManager: WindowControllersManager.shared,
+                        windowControllerManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: faviconManager,
                         recentlyClosedCoordinator: recentlyClosedCoordinator,
                         tld: ContentBlocking.shared.tld,
@@ -231,7 +231,7 @@ final class FireTests: XCTestCase {
         let fire = Fire(cacheManager: manager,
                         historyCoordinating: historyCoordinator,
                         permissionManager: permissionManager,
-                        windowControllerManager: WindowControllersManager.shared,
+                        windowControllerManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: faviconManager,
                         recentlyClosedCoordinator: recentlyClosedCoordinator,
                         tld: ContentBlocking.shared.tld,
@@ -271,7 +271,7 @@ final class FireTests: XCTestCase {
         let fire = Fire(cacheManager: manager,
                         historyCoordinating: historyCoordinator,
                         permissionManager: permissionManager,
-                        windowControllerManager: WindowControllersManager.shared,
+                        windowControllerManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: faviconManager,
                         recentlyClosedCoordinator: recentlyClosedCoordinator,
                         tld: ContentBlocking.shared.tld,
@@ -328,7 +328,7 @@ fileprivate extension TabCollectionViewModel {
     @MainActor
     static func makeTabCollectionViewModel(with pinnedTabsManagerProvider: PinnedTabsManagerProviding? = nil) -> TabCollectionViewModel {
 
-        let tabCollectionViewModel = TabCollectionViewModel(tabCollection: .init(), pinnedTabsManagerProvider: pinnedTabsManagerProvider ?? WindowControllersManager.shared.pinnedTabsManagerProvider)
+        let tabCollectionViewModel = TabCollectionViewModel(tabCollection: .init(), pinnedTabsManagerProvider: pinnedTabsManagerProvider ?? Application.appDelegate.windowControllersManager.pinnedTabsManagerProvider)
         tabCollectionViewModel.append(tab: Tab(content: .none))
         tabCollectionViewModel.append(tab: Tab(content: .none))
         return tabCollectionViewModel

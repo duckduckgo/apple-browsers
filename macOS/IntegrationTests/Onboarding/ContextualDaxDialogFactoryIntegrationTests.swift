@@ -57,7 +57,7 @@ final class ContextualDaxDialogFactoryIntegrationTests: XCTestCase {
         let expectation = self.expectation(description: "Wait for FirePopover to appear")
         self.waitForPopoverToAppear(expectation: expectation)
         wait(for: [expectation], timeout: 3.0)
-        WindowControllersManager.shared.lastKeyMainWindowController?.window?.close()
+        Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window?.close()
     }
 
     @MainActor private func waitForPopoverToAppear(expectation: XCTestExpectation) {

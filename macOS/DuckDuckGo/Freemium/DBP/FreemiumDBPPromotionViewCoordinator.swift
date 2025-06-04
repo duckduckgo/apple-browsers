@@ -131,7 +131,7 @@ private extension FreemiumDBPPromotionViewCoordinator {
     /// Shows the Freemium DBP user interface via the presenter.
     @MainActor
     func showFreemiumDBP() {
-        freemiumDBPPresenter.showFreemiumDBPAndSetActivated(windowControllerManager: WindowControllersManager.shared)
+        freemiumDBPPresenter.showFreemiumDBPAndSetActivated(windowControllerManager: Application.appDelegate.windowControllersManager)
     }
 
     /// Dismisses the home page promotion and updates the user state to reflect this.

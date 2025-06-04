@@ -25,7 +25,7 @@ import os.log
 
 @MainActor
 private func getFirstAvailableWebView() -> WKWebView? {
-    let wcm = WindowControllersManager.shared
+    let wcm = Application.appDelegate.windowControllersManager
     if wcm.lastKeyMainWindowController?.mainViewController.browserTabViewController == nil {
         WindowsManager.openNewWindow()
     }

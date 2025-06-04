@@ -36,7 +36,7 @@ final class NewTabPageShownPixelSender {
         appearancePreferences: AppearancePreferences,
         protectionsReportVisibleFeedProvider: NewTabPageProtectionsReportVisibleFeedProviding,
         customizationModel: NewTabPageCustomizationModel,
-        fireDailyPixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .daily) }
+        fireDailyPixel: @escaping (PixelKitEvent) -> Void = { PixelKit.fire($0, frequency: .legacyDaily) }
     ) {
         self.appearancePreferences = appearancePreferences
         self.protectionsReportVisibleFeedProvider = protectionsReportVisibleFeedProvider

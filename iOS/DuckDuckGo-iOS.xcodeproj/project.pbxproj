@@ -816,7 +816,6 @@
 		986B16C425E92DF0007D23E8 /* BrowsingMenuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 986B16C225E92DF0007D23E8 /* BrowsingMenuViewController.swift */; };
 		986B45CB299D5EF50089D2D7 /* BookmarksLookupPerformanceTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 986B45CA299D5EF50089D2D7 /* BookmarksLookupPerformanceTests.swift */; };
 		986B45D0299E30A50089D2D7 /* BookmarkEntityTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 986B45CF299E30A50089D2D7 /* BookmarkEntityTests.swift */; };
-		986CD5332DE8F4A300AFA98A /* Configuration in Frameworks */ = {isa = PBXBuildFile; productRef = 986CD5322DE8F4A300AFA98A /* Configuration */; };
 		986CD5352DE8F4FA00AFA98A /* RemoteMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 986CD5342DE8F4FA00AFA98A /* RemoteMessaging */; };
 		986CD5372DE8F50100AFA98A /* RemoteMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 986CD5362DE8F50100AFA98A /* RemoteMessaging */; };
 		986CD5392DE8F50400AFA98A /* Configuration in Frameworks */ = {isa = PBXBuildFile; productRef = 986CD5382DE8F50400AFA98A /* Configuration */; };
@@ -3892,7 +3891,6 @@
 				4BC95EB12D7417BF002FAB32 /* Subscription in Frameworks */,
 				4B470EE4299C6DFB0086EBDC /* Core.framework in Frameworks */,
 				4BC8948C2C7902E6009AA141 /* WireGuard in Frameworks */,
-				986CD5332DE8F4A300AFA98A /* Configuration in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -8252,7 +8250,6 @@
 				4BC8948B2C7902E6009AA141 /* WireGuard */,
 				4BC95EB02D7417BF002FAB32 /* Subscription */,
 				4BC95EC02D741830002FAB32 /* NetworkProtection */,
-				986CD5322DE8F4A300AFA98A /* Configuration */,
 			);
 			productName = PacketTunnelProvider;
 			productReference = 02025662298818B100E694E7 /* PacketTunnelProvider.appex */;
@@ -14154,10 +14151,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 984249C42CED4F430071C7DB /* XCRemoteSwiftPackageReference "BrowserServicesKit" */;
 			productName = SubscriptionTestingUtilities;
-		};
-		986CD5322DE8F4A300AFA98A /* Configuration */ = {
-			isa = XCSwiftPackageProductDependency;
-			productName = Configuration;
 		};
 		986CD5342DE8F4FA00AFA98A /* RemoteMessaging */ = {
 			isa = XCSwiftPackageProductDependency;

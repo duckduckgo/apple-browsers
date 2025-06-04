@@ -529,7 +529,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
 
         switch codeSource {
         case .qrCode:
-            Pixel.fire(pixel: .syncSetupBarcodeScannerSuccess, includedParameters: [.appVersion])
+            Pixel.fire(pixel: .syncSetupBarcodeScannerFailed, includedParameters: [.appVersion])
         case .pastedCode:
             Pixel.fire(pixel: .syncSetupManualCodeEnteredFailed, includedParameters: [.appVersion])
         case .deepLink:

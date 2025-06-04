@@ -80,8 +80,14 @@ platform :ios do
     sync_signing_adhoc(options)
 
     suffix = ""
+    plist_path = "../DuckDuckGo/Info.plist"
     if options[:suffix]
       suffix = "#{options[:suffix]}-"
+      # Set the suffix in the Info.plist for the main app bundle
+      sh("/usr/libexec/PlistBuddy -c \"Add :DDG_ALPHA_BUILD_SUFFIX string #{options[:suffix]}\" #{plist_path} || /usr/libexec/PlistBuddy -c \"Set :DDG_ALPHA_BUILD_SUFFIX #{options[:suffix]}\" #{plist_path}")
+    else
+      # Remove the suffix key if no suffix is provided
+      sh("/usr/libexec/PlistBuddy -c \"Delete :DDG_ALPHA_BUILD_SUFFIX\" #{plist_path} || true")
     end
 
     timestamp = Time.now.strftime("%Y-%m-%d-%H-%M")
@@ -151,8 +157,14 @@ platform :ios do
     sync_signing_alpha_adhoc(options)
 
     suffix = ""
+    plist_path = "../DuckDuckGo/Info.plist"
     if options[:suffix]
       suffix = "#{options[:suffix]}-"
+      # Set the suffix in the Info.plist for the main app bundle
+      sh("/usr/libexec/PlistBuddy -c \"Add :DDG_ALPHA_BUILD_SUFFIX string #{options[:suffix]}\" #{plist_path} || /usr/libexec/PlistBuddy -c \"Set :DDG_ALPHA_BUILD_SUFFIX #{options[:suffix]}\" #{plist_path}")
+    else
+      # Remove the suffix key if no suffix is provided
+      sh("/usr/libexec/PlistBuddy -c \"Delete :DDG_ALPHA_BUILD_SUFFIX\" #{plist_path} || true")
     end
 
     timestamp = Time.now.strftime("%Y-%m-%d-%H-%M")
@@ -252,19 +264,6 @@ platform :ios do
       groups: options[:groups],
       skip_waiting_for_build_processing: true
     )
-  end
-
-  desc 'Latest build number for version'
-  lane :latest_build_number_for_version do |options|
-    build_number = latest_testflight_build_number(
-      api_key: get_api_key,
-      version: options[:version],
-      app_identifier: options[:app_identifier],
-      initial_build_number: -1,
-      username: get_username(options))
-    if options[:file_name]
-      File.write(options[:file_name], build_number)
-    end
   end
 
   desc 'Increment build number based on version in App Store Connect'

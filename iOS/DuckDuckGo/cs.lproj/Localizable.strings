@@ -190,6 +190,15 @@
 /* Description for alert shown when user logged off from sync */
 "alert.sync-invalid-login-error-description" = "Synchronizace je pozastavená. Pokud chceš toto zařízení dál synchronizovat, znovu se připoj pomocí jiného zařízení nebo kódu pro obnovení.";
 
+/* Sync Now button in alert asking if they would like to sync with another device */
+"alert.sync-new-device.button" = "Synchronizovat";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.message" = "„%@“ získá přístup ke tvým synchronizovaným datům DuckDuckGo.";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.title" = "Synchronizovat nové zařízení?";
+
 /* Learn more button in alert */
 "alert.sync-paused-alert-learn-more-button" = "Více informací";
 
@@ -261,6 +270,12 @@
 
 /* No comment provided by engineer. */
 "Are you sure you want to delete all bookmarks? This action cannot be undone." = "Opravdu chceš smazat všechny záložky? Tuto akci nelze vrátit.";
+
+/* No comment provided by engineer. */
+"Are you sure you want to delete this chat? This cannot be undone." = "Opravdu chceš tenhle chat smazat? Tenhle krok se nedá vrátit zpět.";
+
+/* No comment provided by engineer. */
+"Ask anything..." = "Zeptej se na cokoli...";
 
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Přihlásit";
@@ -920,6 +935,9 @@
 "close.all.tabs" = "Zavřít všechny karty";
 
 /* No comment provided by engineer. */
+"Cohort: %@" = "Kohorta: %@";
+
+/* No comment provided by engineer. */
 "Confirm" = "Potvrdit";
 
 /* Button to continue the onboarding process */
@@ -1282,17 +1300,26 @@
 /* Text displayed when DuckPlayer is in 'Ask' mode. */
 "duckPlayer.ask.label" = "Vždycky se ptát";
 
-/* Subtitle explaining how Duck Player protects privacy */
-"duckplayer.blocks.ads.keeps.history.private" = "Duck Player blokuje cílené reklamy a uchovává soukromí tvé historie sledování.";
-
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Nikdy";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";
 
-/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
-"duckplayer.open.youtube.videos.here" = "Otevírat videa YouTube zde";
+/* Content for Duck Player opt-in message */
+"duckplayer.opt-in.message.content" = "Duck Player blokuje cílené reklamy a chrání tvé historie sledování.";
+
+/* Title for Duck Player opt-in message */
+"duckplayer.opt-in.message.title" = "YouTube, ale s menším počtem reklam a větším soukromím";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.opt-in.pill.subtitle" = "Sleduj bez cílených reklam";
+
+/* Button text to play a video in Duck Player */
+"duckplayer.opt-in.pill.title" = "Přehrát toto video v Duck Playeru";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.pill.subtitle" = "Sleduj bez cílených reklam";
 
 /* Button text to play a video in Duck Player */
 "duckplayer.play.in.duck.player" = "Přehrát toto video v Duck Playeru";
@@ -1354,6 +1381,9 @@
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.title" = "Duck Player";
 
+/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
+"duckplayer.settings.toggle" = "Otevírat videa YouTube zde";
+
 /* Label for the Duck Player variant picker in Duck Player settings */
 "duckplayer.settings.variant.label" = "Varianta Duck Player";
 
@@ -1363,20 +1393,29 @@
 /* Label for the YouTube.com option in Duck Player settings */
 "duckplayer.settings.youtube.label" = "YouTube.com";
 
+/* Text for the ask mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.ask" = "Chci si vybrat";
+
+/* Text for the auto mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.auto" = "Otevřít automaticky";
+
+/* Text for the never mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.never" = "Neukazovat";
+
 /* Button text to open Duck Player settings */
 "duckplayer.toast.open.settings" = "Otevřené nastavení";
 
 /* Toast message informing user they can disable Duck Player in settings */
-"duckplayer.toast.turn.off.anytime" = "Duck Player můžeš kdykoli vypnout v Nastavení";
+"duckplayer.toast.turn.off.anytime" = "Duck Player můžeš kdykoli vypnout";
 
 /* Button text to watch video on YouTube */
 "duckplayer.watch.on.youtube" = "Sledovat na YouTube";
 
-/* Subtitle explaining Duck Player blocks targeted ads */
-"duckplayer.watch.without.targeted.ads" = "Sleduj bez cílených reklam";
+/* Subtitle explaining how Duck Player protects privacy */
+"duckplayer.welcome.message.content" = "Chceš-li se vrátit k YouTube, zavři Duck Player.\nNic pro tebe? Dole to můžeš vypnout!";
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
-"duckplayer.youtube.no.ads.privacy" = "Sleduj YouTube s menším počtem reklam a větším soukromím";
+"duckplayer.welcome.message.text" = "Sleduješ v přehrávači Duck Player!\nNejsou zde žádné cílené reklamy.";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Ochrana e-mailu";
@@ -1454,6 +1493,9 @@
 "empty.search" = "Nenalezeny žádné shody";
 
 /* No comment provided by engineer. */
+"Enrolled: %@" = "Zahájeno: %@";
+
+/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1506,6 +1548,9 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Jenom oblíbené mobilní položky";
+
+/* No comment provided by engineer. */
+"Feature: %@" = "Funkce: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Blokování reklam a vyskakovacích oken";
@@ -2255,7 +2300,7 @@
 "onboarding.highlights.browsers.features.cookiePopups.title" = "Blokování vyskakovacích oken ohledně cookies";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Blokuj reklamy, které tě sledují";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Blokování cílených reklam";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Vymaž údaje o prohlížení jedním tlačítkem";
@@ -2409,6 +2454,30 @@
 
 /* Title for the Privacy Pro feedback form */
 "ppro.feedback-form.title" = "Odeslat zpětnou vazbu";
+
+/* Title of the section of a setting page that shows Scam Blocking preferences (weather warning in case of scam sites) */
+"preferences.scam-blocker.title" = "Blokování podvodů";
+
+/* Caption explaining the risk of disabling scam blocker protection */
+"preferences.scam-blocker.toggle-caption" = "Vypnutím téhle funkce můžeš svoje osobní údaje vystavit riziku.";
+
+/* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
+"preferences.scam-blocker.toggle-label" = "Upozornit na weby nahlášené kvůli podvodům, phishingu nebo malwaru. [Další informace](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker)";
+
+/* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
+"preferences.smarter-encryption.description" = "Automaticky převede odkazy na HTTPS, pokud to jde. [Další informace](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
+
+/* Title of the section of a setting page that shows Smarter Encryption preferences */
+"preferences.smarter-encryption.title" = "Chytřejší šifrování";
+
+/* Status indicator of a browser privacy protection feature. */
+"preferences.status-indicator.always-on" = "Vždycky zapnuté";
+
+/* Title of the option to show the Threat Protection preferences */
+"preferences.threat-protection" = "Ochrana proti hrozbám";
+
+/* Caption of the option to show the Threat Protection preferences */
+"preferences.threat-protection.caption" = "Vylepšená ochrana DuckDuckGo zastavuje běžné hrozby a zároveň chrání tvoje připojení.\n[Další informace](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Některé záložky nebo hesla jsou nesprávně naformátované nebo příliš dlouhé, takže jsme je nemohli synchronizovat.";
@@ -2770,6 +2839,9 @@
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe" = "Chraň své připojení a identitu se službou Privacy Pro";
 
+/* Try Privacy Pro Free button text for privacy pro */
+"settings.subscription.try.free" = "Vyzkoušej zdarma službu Privacy Pro";
+
 /* Privacy pro description subtitle in settings */
 "settings.subscription.us.description" = "Zahrnuje naše funkce VPN, Personal Information Removal a Identity Theft Restoration.";
 
@@ -2840,7 +2912,13 @@
 "siteFeedback.urlPlaceholder" = "Které webové stránky jsou poškozené?";
 
 /* No comment provided by engineer. */
+"Stop generating..." = "Zastavit generování...";
+
+/* No comment provided by engineer. */
 "Stored Hostname: %@" = "Uložený název hostitele: %@";
+
+/* No comment provided by engineer. */
+"Subfeature: %@" = "Podfunkce: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Přidat do zařízení";

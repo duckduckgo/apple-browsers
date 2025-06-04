@@ -56,4 +56,13 @@ enum SyncErrorMessage {
             return UserText.unableToRecognizeCode
         }
     }
+
+    var shouldSendPixel: Bool {
+        switch self {
+        case .unableToRecognizeCode:
+            return false
+        default:
+            return true
+        }
+    }
 }

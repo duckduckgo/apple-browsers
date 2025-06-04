@@ -38,7 +38,6 @@ final class PrivacyDashboardViewController: UIViewController {
     private let contentBlockingManager: ContentBlockerRulesManager
     private var privacyDashboardDidTriggerDismiss: Bool = false
     private let entryPoint: PrivacyDashboardEntryPoint
-    private let contentScopeExperimentsManager: ContentScopeExperimentsManaging
 
     private let brokenSiteReporter: BrokenSiteReporter = {
         BrokenSiteReporter(pixelHandler: { parameters in
@@ -75,8 +74,7 @@ final class PrivacyDashboardViewController: UIViewController {
           entryPoint: PrivacyDashboardEntryPoint,
           privacyConfigurationManager: PrivacyConfigurationManaging,
           contentBlockingManager: ContentBlockerRulesManager,
-          breakageAdditionalInfo: BreakageAdditionalInfo?,
-          contentScopeExperimentsManager: ContentScopeExperimentsManaging) {
+          breakageAdditionalInfo: BreakageAdditionalInfo?) {
 
         let toggleReportingConfiguration = ToggleReportingConfiguration(privacyConfigurationManager: privacyConfigurationManager)
         let toggleReportingFeature = ToggleReportingFeature(toggleReportingConfiguration: toggleReportingConfiguration)
@@ -89,7 +87,6 @@ final class PrivacyDashboardViewController: UIViewController {
         self.contentBlockingManager = contentBlockingManager
         self.breakageAdditionalInfo = breakageAdditionalInfo
         self.entryPoint = entryPoint
-        self.contentScopeExperimentsManager = contentScopeExperimentsManager
         super.init(coder: coder)
         
         privacyDashboardController.delegate = self
@@ -144,7 +141,6 @@ final class PrivacyDashboardViewController: UIViewController {
             SiteBreakageExperimentMetrics.fireTDSExperimentMetric(metricType: .privacyToggleUsed, etag: tdsEtag) { parameters in
                 UniquePixel.fire(pixel: .debugBreakageExperiment, withAdditionalParameters: parameters)
             }
-            SiteBreakageExperimentMetrics.fireContentScopeExperimentMetric(metricType: .privacyToggleUsed)
         }
         
         contentBlockingManager.scheduleCompilation()
@@ -335,18 +331,6 @@ extension PrivacyDashboardViewController {
             statusCodes = [httpStatusCode]
         }
 
-        var privacyExperimentCohorts: String {
-            var experiments: [String: String] = [:]
-            for feature in contentScopeExperimentsManager.allActiveContentScopeExperiments {
-                experiments[feature.key] = feature.value.cohortID
-            }
-            return experiments
-                .sorted { $0.key < $1.key }
-                .map { "\($0.key):\($0.value)" }
-                .joined(separator: ",")
-        }
-
-
         return BrokenSiteReport(siteUrl: breakageAdditionalInfo.currentURL,
                                 category: category,
                                 description: description,
@@ -374,7 +358,7 @@ extension PrivacyDashboardViewController {
                                 variant: PixelExperiment.cohort?.rawValue ?? "",
                                 cookieConsentInfo: privacyInfo.cookieConsentManaged,
                                 debugFlags: privacyInfo.debugFlags,
-                                privacyExperiments: privacyExperimentCohorts,
+                                privacyExperiments: privacyInfo.privacyExperimentCohorts,
                                 isPirEnabled: nil)
     }
 

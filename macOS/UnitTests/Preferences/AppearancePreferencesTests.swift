@@ -17,6 +17,8 @@
 //
 
 import Bookmarks
+import PersistenceTestingUtils
+import PixelKitTestingUtilities
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -30,8 +32,7 @@ final class AppearancePreferencesTests: XCTestCase {
                 favoritesDisplayMode: FavoritesDisplayMode.displayNative(.desktop).description,
                 isContinueSetUpVisible: true,
                 isFavoriteVisible: true,
-                isRecentActivityVisible: true,
-                isPrivacyStatsVisible: false,
+                isProtectionsReportVisible: true,
                 homeButtonPosition: .left,
                 homePageCustomBackground: CustomBackground.gradient(.gradient01).description,
                 centerAlignedBookmarksBar: true,
@@ -43,9 +44,8 @@ final class AppearancePreferencesTests: XCTestCase {
         XCTAssertEqual(model.currentThemeName, ThemeName.systemDefault)
         XCTAssertEqual(model.favoritesDisplayMode, .displayNative(.desktop))
         XCTAssertEqual(model.isFavoriteVisible, true)
+        XCTAssertEqual(model.isProtectionsReportVisible, true)
         XCTAssertEqual(model.isContinueSetUpVisible, true)
-        XCTAssertEqual(model.isRecentActivityVisible, true)
-        XCTAssertEqual(model.isPrivacyStatsVisible, false)
         XCTAssertEqual(model.homeButtonPosition, .left)
         XCTAssertEqual(model.homePageCustomBackground, .gradient(.gradient01))
         XCTAssertTrue(model.centerAlignedBookmarksBarBool)
@@ -58,8 +58,7 @@ final class AppearancePreferencesTests: XCTestCase {
                 favoritesDisplayMode: FavoritesDisplayMode.displayUnified(native: .desktop).description,
                 isContinueSetUpVisible: false,
                 isFavoriteVisible: false,
-                isRecentActivityVisible: false,
-                isPrivacyStatsVisible: true,
+                isProtectionsReportVisible: false,
                 isSearchBarVisible: false,
                 homeButtonPosition: .left,
                 homePageCustomBackground: CustomBackground.gradient(.gradient05).description,
@@ -71,9 +70,8 @@ final class AppearancePreferencesTests: XCTestCase {
         XCTAssertEqual(model.currentThemeName, ThemeName.light)
         XCTAssertEqual(model.favoritesDisplayMode, .displayUnified(native: .desktop))
         XCTAssertEqual(model.isFavoriteVisible, false)
+        XCTAssertEqual(model.isProtectionsReportVisible, false)
         XCTAssertEqual(model.isContinueSetUpVisible, false)
-        XCTAssertEqual(model.isRecentActivityVisible, false)
-        XCTAssertEqual(model.isPrivacyStatsVisible, true)
         XCTAssertEqual(model.homeButtonPosition, .left)
         XCTAssertEqual(model.homePageCustomBackground, .gradient(.gradient05))
         XCTAssertFalse(model.centerAlignedBookmarksBarBool)
@@ -115,42 +113,36 @@ final class AppearancePreferencesTests: XCTestCase {
     func testWhenNewTabPreferencesAreUpdatedThenPersistedValuesAreUpdated() throws {
         let model = AppearancePreferences(persistor: AppearancePreferencesPersistorMock())
 
-        model.isRecentActivityVisible = true
-        XCTAssertEqual(model.isRecentActivityVisible, true)
-        model.isPrivacyStatsVisible = true
-        XCTAssertEqual(model.isPrivacyStatsVisible, true)
         model.isFavoriteVisible = true
         XCTAssertEqual(model.isFavoriteVisible, true)
+        model.isProtectionsReportVisible = true
+        XCTAssertEqual(model.isProtectionsReportVisible, true)
         model.isContinueSetUpVisible = true
         XCTAssertEqual(model.isContinueSetUpVisible, true)
 
-        model.isRecentActivityVisible = false
-        XCTAssertEqual(model.isRecentActivityVisible, false)
-        model.isPrivacyStatsVisible = false
-        XCTAssertEqual(model.isPrivacyStatsVisible, false)
         model.isFavoriteVisible = false
         XCTAssertEqual(model.isFavoriteVisible, false)
+        model.isProtectionsReportVisible = false
+        XCTAssertEqual(model.isProtectionsReportVisible, false)
         model.isContinueSetUpVisible = false
         XCTAssertEqual(model.isContinueSetUpVisible, false)
     }
 
-    func testPersisterReturnsValuesFromDisk() {
+    func testPersisterReturnsValuesFromDisk() throws {
         UserDefaultsWrapper<Any>.clearAll()
-        let persister1 = AppearancePreferencesUserDefaultsPersistor()
-        let persister2 = AppearancePreferencesUserDefaultsPersistor()
+        let keyValueStore = try MockKeyValueFileStore()
+        var persister1 = AppearancePreferencesUserDefaultsPersistor(keyValueStore: keyValueStore)
+        var persister2 = AppearancePreferencesUserDefaultsPersistor(keyValueStore: keyValueStore)
 
         persister2.isFavoriteVisible = false
         persister1.isFavoriteVisible = true
-        persister2.isRecentActivityVisible = false
-        persister1.isRecentActivityVisible = true
-        persister2.isPrivacyStatsVisible = false
-        persister1.isPrivacyStatsVisible = true
+        persister2.isProtectionsReportVisible = false
+        persister1.isProtectionsReportVisible = true
         persister2.isContinueSetUpVisible = false
         persister1.isContinueSetUpVisible = true
 
         XCTAssertTrue(persister2.isFavoriteVisible)
-        XCTAssertTrue(persister2.isRecentActivityVisible)
-        XCTAssertTrue(persister2.isPrivacyStatsVisible)
+        XCTAssertTrue(persister2.isProtectionsReportVisible)
         XCTAssertTrue(persister2.isContinueSetUpVisible)
     }
 
@@ -219,4 +211,89 @@ final class AppearancePreferencesTests: XCTestCase {
         withExtendedLifetime(c) {}
     }
 
+    // MARK: - Pixel firing tests
+
+    func testWhenCurrentThemeIsUpdatedThenPixelIsFired() {
+        let pixelFiringMock = PixelKitMock()
+        let model = AppearancePreferences(persistor: AppearancePreferencesPersistorMock(), pixelFiring: pixelFiringMock)
+
+        model.currentThemeName = ThemeName.systemDefault
+        model.currentThemeName = ThemeName.light
+        model.currentThemeName = ThemeName.dark
+        model.currentThemeName = ThemeName.systemDefault
+
+        pixelFiringMock.expectedFireCalls = [
+            .init(pixel: SettingsPixel.themeSettingChanged, frequency: .uniqueByName),
+            .init(pixel: SettingsPixel.themeSettingChanged, frequency: .uniqueByName),
+            .init(pixel: SettingsPixel.themeSettingChanged, frequency: .uniqueByName),
+            .init(pixel: SettingsPixel.themeSettingChanged, frequency: .uniqueByName)
+        ]
+
+        pixelFiringMock.verifyExpectations()
+    }
+
+    func testWhenShowFullURLIsUpdatedThenPixelIsFired() {
+        let pixelFiringMock = PixelKitMock()
+        let model = AppearancePreferences(persistor: AppearancePreferencesPersistorMock(), pixelFiring: pixelFiringMock)
+
+        model.showFullURL = true
+        model.showFullURL = false
+
+        pixelFiringMock.expectedFireCalls = [
+            .init(pixel: SettingsPixel.showFullURLSettingToggled, frequency: .uniqueByName),
+            .init(pixel: SettingsPixel.showFullURLSettingToggled, frequency: .uniqueByName)
+        ]
+
+        pixelFiringMock.verifyExpectations()
+    }
+
+    func testWhenFavoritesSectionIsHiddenThenPixelIsFired() {
+        let pixelFiringMock = PixelKitMock()
+        let model = AppearancePreferences(persistor: AppearancePreferencesPersistorMock(), pixelFiring: pixelFiringMock)
+
+        model.isFavoriteVisible = false
+        model.isFavoriteVisible = true
+        model.isFavoriteVisible = true
+        model.isFavoriteVisible = false
+        model.isFavoriteVisible = true
+        model.isFavoriteVisible = true
+        model.isFavoriteVisible = true
+        model.isFavoriteVisible = true
+        model.isFavoriteVisible = false
+        model.isFavoriteVisible = true
+        model.isFavoriteVisible = true
+
+        pixelFiringMock.expectedFireCalls = [
+            .init(pixel: NewTabPagePixel.favoriteSectionHidden, frequency: .dailyAndStandard),
+            .init(pixel: NewTabPagePixel.favoriteSectionHidden, frequency: .dailyAndStandard),
+            .init(pixel: NewTabPagePixel.favoriteSectionHidden, frequency: .dailyAndStandard)
+        ]
+
+        pixelFiringMock.verifyExpectations()
+    }
+
+    func testWhenProtectionsReportSectionIsHiddenThenPixelIsFired() {
+        let pixelFiringMock = PixelKitMock()
+        let model = AppearancePreferences(persistor: AppearancePreferencesPersistorMock(), pixelFiring: pixelFiringMock)
+
+        model.isProtectionsReportVisible = false
+        model.isProtectionsReportVisible = true
+        model.isProtectionsReportVisible = true
+        model.isProtectionsReportVisible = false
+        model.isProtectionsReportVisible = true
+        model.isProtectionsReportVisible = true
+        model.isProtectionsReportVisible = true
+        model.isProtectionsReportVisible = true
+        model.isProtectionsReportVisible = false
+        model.isProtectionsReportVisible = true
+        model.isProtectionsReportVisible = true
+
+        pixelFiringMock.expectedFireCalls = [
+            .init(pixel: NewTabPagePixel.protectionsSectionHidden, frequency: .dailyAndStandard),
+            .init(pixel: NewTabPagePixel.protectionsSectionHidden, frequency: .dailyAndStandard),
+            .init(pixel: NewTabPagePixel.protectionsSectionHidden, frequency: .dailyAndStandard)
+        ]
+
+        pixelFiringMock.verifyExpectations()
+    }
 }

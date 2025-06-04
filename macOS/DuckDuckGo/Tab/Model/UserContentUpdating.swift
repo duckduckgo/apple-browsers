@@ -52,7 +52,12 @@ final class UserContentUpdating {
          trackerDataManager: TrackerDataManager,
          configStorage: ConfigurationStoring,
          webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
-         tld: TLD) {
+         experimentManager: @autoclosure @escaping () -> ContentScopeExperimentsManaging,
+         tld: TLD,
+         appearancePreferences: AppearancePreferences,
+         startupPreferences: StartupPreferences,
+         bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling
+    ) {
 
         let makeValue: (Update) -> NewContent = { rulesUpdate in
             let sourceProvider = ScriptSourceProvider(configStorage: configStorage,
@@ -60,8 +65,11 @@ final class UserContentUpdating {
                                                       webTrackingProtectionPreferences: webTrackingProtectionPreferences,
                                                       contentBlockingManager: contentBlockerRulesManager,
                                                       trackerDataManager: trackerDataManager,
-                                                      experimentManager: Application.appDelegate.contentScopeExperimentsManager,
-                                                      tld: tld)
+                                                      experimentManager: experimentManager(),
+                                                      tld: tld,
+                                                      appearancePreferences: appearancePreferences,
+                                                      startupPreferences: startupPreferences,
+                                                      bookmarkManager: bookmarkManager)
             return NewContent(rulesUpdate: rulesUpdate, sourceProvider: sourceProvider)
         }
 

@@ -19,6 +19,8 @@
 
 import UIKit
 import Core
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 protocol TabViewCellDelegate: AnyObject {
 
@@ -282,14 +284,16 @@ final class TabViewCell: UICollectionViewCell {
 
     func updateSelectionIndicator(_ image: UIImageView) {
         if !isSelected {
-            image.image = UIImage(systemName: "circle")
+            image.image = DesignSystemImages.Glyphs.Size24.shapeCircle
         } else {
-            let symbolColorConfiguration = UIImage.SymbolConfiguration(paletteColors: [
-                .white, // The check
-                .clear, // This does nothing in this palette
-                UIColor(designSystemColor: .accent), // The filled background of the circle
-            ])
-            image.image = UIImage(systemName: "checkmark.circle.fill")?.applyingSymbolConfiguration(symbolColorConfiguration)
+//            let symbolColorConfiguration = UIImage.SymbolConfiguration(paletteColors: [
+//                .white, // The check
+//                .clear, // This does nothing in this palette
+//                UIColor(designSystemColor: .accent), // The filled background of the circle
+//            ])
+//            image.image = UIImage(systemName: "checkmark.circle.fill")?.applyingSymbolConfiguration(symbolColorConfiguration)
+            // This is temporary until we can work out how to use the above logic with custom symbols
+            image.image = UIImage(resource: .checkAccentDONOTUSE)
         }
     }
 
@@ -327,6 +331,7 @@ final class TabViewCell: UICollectionViewCell {
 
         updateCurrentTabBorder()
 
+        removeButton.setImage(DesignSystemImages.Glyphs.Size24.close, for: .normal)
         if let link = tab.link {
             removeButton.accessibilityLabel = UserText.closeTab(withTitle: link.displayTitle, atAddress: link.url.host ?? "")
             title.accessibilityLabel = UserText.openTab(withTitle: link.displayTitle, atAddress: link.url.host ?? "")
@@ -342,7 +347,7 @@ final class TabViewCell: UICollectionViewCell {
 
             link?.text = UserText.homeTabSearchAndFavorites
             title.text = UserText.homeTabTitle
-            favicon.image = UIImage(named: "Logo")
+            favicon.image = UIImage(resource: .logo)
             unread.isHidden = true
             self.preview?.isHidden = !tab.viewed
             title.isHidden = !tab.viewed
@@ -354,7 +359,7 @@ final class TabViewCell: UICollectionViewCell {
 
             // Duck Player videos
             if let url = tab.link?.url, url.isDuckPlayer {
-                favicon.image = UIImage(named: "DuckPlayerURLIcon")
+                favicon.image = UIImage(resource: .duckPlayerURLIcon)
             } else {
                 favicon.loadFavicon(forDomain: tab.link?.url.host, usingCache: .tabs)
             }

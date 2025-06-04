@@ -36,7 +36,7 @@ enum NewTabPagePixel: PixelKitEventV2 {
      * Anomaly Investigation:
      * - Anomaly in this pixel may mean an increase/drop in app use.
      */
-    case newTabPageShown(favorites: Bool, recentActivity: Bool?, privacyStats: Bool?, customBackground: Bool)
+    case newTabPageShown(favorites: Bool, protections: ProtectionsReportMode, customBackground: Bool)
 
     /**
      * Event Trigger: Favorites section on NTP is hidden.
@@ -65,32 +65,18 @@ enum NewTabPagePixel: PixelKitEventV2 {
     case privacyFeedHistoryLinkOpened
 
     /**
-     * Event Trigger: Recent Activity section on NTP is hidden.
+     * Event Trigger: Protections Report section on NTP is hidden.
      *
      * > Related links:
-     * [Privacy Triage](https://app.asana.com/0/69071770703008/1209254338283658/f)
-     * [Detailed Pixels description](https://app.asana.com/0/72649045549333/1209247985805453/f)
+     * [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210276198897188?focus=true)
+     * [Detailed Pixels description](https://app.asana.com/1/137249556945/project/1201048563534612/task/1210247335076370?focus=true)
      *
      * Anomaly Investigation:
      * - Anomaly in this pixel may mean an increase/drop in app use.
      * - The pixel is fired from `AppearancePreferences` so an anomaly may mean a bug in the code
      *   causing the setter to be called too many times.
      */
-    case recentActivitySectionHidden
-
-    /**
-     * Event Trigger: Recent Activity section on NTP is hidden.
-     *
-     * > Related links:
-     * [Privacy Triage](https://app.asana.com/0/69071770703008/1209254338283658/f)
-     * [Detailed Pixels description](https://app.asana.com/0/72649045549333/1209247985805453/f)
-     *
-     * Anomaly Investigation:
-     * - Anomaly in this pixel may mean an increase/drop in app use.
-     * - The pixel is fired from `AppearancePreferences` so an anomaly may mean a bug in the code
-     *   causing the setter to be called too many times.
-     */
-    case blockedTrackingAttemptsSectionHidden
+    case protectionsSectionHidden
 
     /**
      * Event Trigger: "Show Less" button is clicked in Privacy Stats table on the New Tab Page, to collapse the table.
@@ -152,13 +138,20 @@ enum NewTabPagePixel: PixelKitEventV2 {
 
     case newTabPageExceptionReported
 
+    // MARK: -
+
+    enum ProtectionsReportMode: String {
+        case recentActivity = "recent-activity", blockedTrackingAttempts = "blocked-tracking-attempts", collapsed, hidden
+    }
+
+    // MARK: -
+
     var name: String {
         switch self {
         case .newTabPageShown: return "m_mac_newtab_shown"
         case .favoriteSectionHidden: return "m_mac_favorite-section-hidden"
         case .privacyFeedHistoryLinkOpened: return "m_mac_privacy_feed_history_link_opened"
-        case .recentActivitySectionHidden: return "m_mac_recent-activity-section-hidden"
-        case .blockedTrackingAttemptsSectionHidden: return "m_mac_blocked-tracking-attempts-section-hidden"
+        case .protectionsSectionHidden: return "m_mac_protections-section-hidden"
         case .blockedTrackingAttemptsShowLess: return "m_mac_new-tab-page_blocked-tracking-attempts_show-less"
         case .blockedTrackingAttemptsShowMore: return "m_mac_new-tab-page_blocked-tracking-attempts_show-more"
         case .privacyStatsCouldNotLoadDatabase: return "new-tab-page_privacy-stats_could-not-load-database"
@@ -169,21 +162,14 @@ enum NewTabPagePixel: PixelKitEventV2 {
 
     var parameters: [String: String]? {
         switch self {
-        case .newTabPageShown(let favorites, let recentActivity, let privacyStats, let customBackground):
-            var parameters = [
+        case .newTabPageShown(let favorites, let protections, let customBackground):
+            return [
                 "favorites": String(favorites),
+                "protections": protections.rawValue,
                 "background": customBackground ? "custom" : "default"
             ]
-            if let recentActivity {
-                parameters["recent-activity"] = String(recentActivity)
-            }
-            if let privacyStats {
-                parameters["blocked-tracking-attempts"] = String(privacyStats)
-            }
-            return parameters
         case .favoriteSectionHidden,
-                .recentActivitySectionHidden,
-                .blockedTrackingAttemptsSectionHidden,
+                .protectionsSectionHidden,
                 .blockedTrackingAttemptsShowLess,
                 .blockedTrackingAttemptsShowMore,
                 .privacyFeedHistoryLinkOpened,

@@ -80,8 +80,8 @@ class AddressBarTests: XCTestCase {
         // tests return debugDescription instead of localizedDescription
         NSError.disableSwizzledDescription = true
 
-        StartupPreferences.shared.customHomePageURL = URL.duckDuckGo.absoluteString
-        StartupPreferences.shared.launchToCustomHomePage = false
+        NSApp.delegateTyped.startupPreferences.customHomePageURL = URL.duckDuckGo.absoluteString
+        NSApp.delegateTyped.startupPreferences.launchToCustomHomePage = false
 
         TabsPreferences.shared.pinnedTabsMode = .shared
 
@@ -94,7 +94,7 @@ class AddressBarTests: XCTestCase {
         window = nil
         schemeHandler = nil
         NSError.disableSwizzledDescription = false
-        StartupPreferences.shared.launchToCustomHomePage = false
+        NSApp.delegateTyped.startupPreferences.launchToCustomHomePage = false
 
         TabsPreferences.shared.pinnedTabsMode = .separate
 
@@ -256,7 +256,7 @@ class AddressBarTests: XCTestCase {
             Tab(content: .newtab, privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager()),
             Tab(content: .url(.duckDuckGo, credential: nil, source: .pendingStateRestoration), webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager()),
         ]))
-        AppearancePreferences.shared.showFullURL = true
+        NSApp.delegateTyped.appearancePreferences.showFullURL = true
         window = WindowsManager.openNewWindow(with: viewModel)!
 
         // Switch between loaded tabs and home tab/settings/bookmarks, validate the Address Bar gets activated on the New Tab; Validate privacy entry button/icon is correct
@@ -662,7 +662,7 @@ class AddressBarTests: XCTestCase {
 
     @MainActor
     func testWhenHomePageIsOpened_addressBarIsDeactivated() async throws {
-        StartupPreferences.shared.launchToCustomHomePage = true
+        NSApp.delegateTyped.startupPreferences.launchToCustomHomePage = true
 
         let tab = Tab(content: .url(.duckDuckGo, credential: nil, source: .webViewUpdated), webViewConfiguration: schemeHandler.webViewConfiguration(), privacyFeatures: privacyFeaturesMock, maliciousSiteDetector: MockMaliciousSiteProtectionManager())
         let viewModel = TabCollectionViewModel(tabCollection: TabCollection(tabs: [tab]))
@@ -762,7 +762,7 @@ class AddressBarTests: XCTestCase {
 
     @MainActor
     func testWhenPageRedirectedWhenAddressBarIsInactive_addressBarShouldReset() async throws {
-        AppearancePreferences.shared.showFullURL = true
+        NSApp.delegateTyped.appearancePreferences.showFullURL = true
 
         let expectation = expectation(description: "request sent")
         schemeHandler.middleware = [{ request in

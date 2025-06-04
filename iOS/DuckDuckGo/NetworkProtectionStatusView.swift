@@ -21,6 +21,8 @@ import SwiftUI
 import NetworkProtection
 import TipKit
 import Networking
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct NetworkProtectionStatusView: View {
 
@@ -212,10 +214,9 @@ struct NetworkProtectionStatusView: View {
                 }
 
                 NavigationLink(destination: locationView()) {
-                    NetworkProtectionLocationItemView(title: locationAttributedString, imageName: nil)
+                    NetworkProtectionLocationItemView(title: locationAttributedString, image: nil)
                 }
             } else {
-                let imageName = statusModel.preferredLocation.isNearest ? "VPNLocation" : nil
                 var nearestLocationAttributedString: AttributedString {
                     var attributedString = AttributedString(statusModel.preferredLocation.title)
                     attributedString.foregroundColor = .init(designSystemColor: .textPrimary)
@@ -223,7 +224,7 @@ struct NetworkProtectionStatusView: View {
                 }
 
                 NavigationLink(destination: locationView()) {
-                    NetworkProtectionLocationItemView(title: nearestLocationAttributedString, imageName: imageName)
+                    NetworkProtectionLocationItemView(title: nearestLocationAttributedString, image: Image(uiImage: DesignSystemImages.Glyphs.Size24.location))
                 }
             }
         } header: {
@@ -277,9 +278,7 @@ struct NetworkProtectionStatusView: View {
         Section {
             NavigationLink(destination: NetworkProtectionVPNSettingsView()) {
                 HStack {
-                    Image("Settings-24")
-                        .resizable()
-                        .frame(width: 24, height: 24)
+                    Image(uiImage: DesignSystemImages.Glyphs.Size24.settings)
                     Text(UserText.netPVPNSettingsTitle)
                 }
                 .daxBodyRegular()
@@ -296,7 +295,7 @@ struct NetworkProtectionStatusView: View {
         Section {
             NavigationLink(destination: LazyView(NetworkProtectionFAQView())) {
                 HStack {
-                    Image("Help-24")
+                    Image(uiImage: DesignSystemImages.Glyphs.Size24.help)
                     Text(UserText.netPVPNSettingsFAQ)
                 }
                 .daxBodyRegular()
@@ -306,7 +305,7 @@ struct NetworkProtectionStatusView: View {
             if statusModel.enablesUnifiedFeedbackForm {
                 NavigationLink(destination: LazyView(UnifiedFeedbackRootView(viewModel: feedbackFormModel))) {
                     HStack {
-                        Image("Support-24")
+                        Image(uiImage: DesignSystemImages.Glyphs.Size24.support)
                         Text(UserText.subscriptionFeedback)
                     }
                     .daxBodyRegular()
@@ -444,7 +443,7 @@ private struct NetworkProtectionErrorView: View {
     var body: some View {
         VStack(alignment: .leading) {
             HStack {
-                Image("Alert-Color-16")
+                Image(uiImage: DesignSystemImages.Glyphs.Size16.alertRecolorable)
                 Text(title)
                     .daxBodyBold()
                     .foregroundColor(.primary)
@@ -459,12 +458,12 @@ private struct NetworkProtectionErrorView: View {
 
 private struct NetworkProtectionLocationItemView: View {
     let title: AttributedString
-    let imageName: String?
+    let image: Image?
 
     var body: some View {
         HStack(spacing: 8) {
-            if let imageName {
-                Image(imageName)
+            if let image {
+                image
             }
 
             Text(title)
@@ -505,13 +504,13 @@ private struct NetworkProtectionThroughputItemView: View {
 
             Spacer(minLength: 2)
 
-            Image("VPNDownload")
+            Image(.vpnDownload)
                 .foregroundColor(.init(designSystemColor: .textSecondary))
             Text(downloadSpeed)
                 .daxBodyRegular()
                 .foregroundColor(.init(designSystemColor: .textSecondary))
 
-            Image("VPNUpload")
+            Image(.vpnUpload)
                 .foregroundColor(.init(designSystemColor: .textSecondary))
                 .padding(.leading, 4)
             Text(uploadSpeed)

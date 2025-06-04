@@ -77,6 +77,7 @@ protocol TabExtensionDependencies {
     var maliciousSiteDetector: MaliciousSiteDetecting { get }
     var faviconManagement: FaviconManagement? { get }
     var featureFlagger: FeatureFlagger { get }
+    var contentScopeExperimentsManager: ContentScopeExperimentsManaging { get }
 }
 
 // swiftlint:disable:next large_tuple
@@ -138,6 +139,7 @@ extension TabExtensionsBuilder {
         add {
             PrivacyDashboardTabExtension(contentBlocking: dependencies.privacyFeatures.contentBlocking,
                                          certificateTrustEvaluator: dependencies.certificateTrustEvaluator,
+                                         contentScopeExperimentsManager: dependencies.contentScopeExperimentsManager,
                                          autoconsentUserScriptPublisher: userScripts.map(\.?.autoconsentUserScript),
                                          contentScopeUserScriptPublisher: userScripts.map(\.?.contentScopeUserScript),
                                          didUpgradeToHttpsPublisher: httpsUpgrade.didUpgradeToHttpsPublisher,
@@ -198,7 +200,10 @@ extension TabExtensionsBuilder {
                                 titlePublisher: args.titlePublisher)
         }
         add {
-            PrivacyStatsTabExtension(trackersPublisher: contentBlocking.trackersPublisher)
+            PrivacyStatsTabExtension(
+                trackersPublisher: contentBlocking.trackersPublisher,
+                trackerDataProvider: PrivacyStatsTrackerDataProvider(contentBlocking: dependencies.privacyFeatures.contentBlocking)
+            )
         }
         add {
             ExternalAppSchemeHandler(workspace: dependencies.workspace, permissionModel: args.permissionModel, contentPublisher: args.contentPublisher)

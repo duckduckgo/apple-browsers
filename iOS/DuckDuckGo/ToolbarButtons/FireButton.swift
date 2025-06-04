@@ -20,11 +20,11 @@
 import UIKit
 import DesignResourcesKit
 
-class FireButton: ToolbarButton {
+class FireButton: BrowserChromeButton {
     convenience init() {
         self.init(.fire)
 
-        setImage(UIImage(resource: .fireNew24))
+        setImage(DesignSystemImages.Glyphs.Size24.fire)
 
         frame = CGRect(x: 0, y: 0, width: 84, height: 44)
     }

@@ -20,6 +20,8 @@
 import SwiftUI
 import UIKit
 import SyncUI_iOS
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct SettingsMainSettingsView: View {
 
@@ -30,15 +32,15 @@ struct SettingsMainSettingsView: View {
             // General
             NavigationLink(destination: SettingsGeneralView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.general,
-                                 image: Image("SettingsGeneral"))
+                                 image: Image(uiImage: DesignSystemImages.Color.Size24.settings))
             }
 
             // Sync & Backup
             let statusIndicator = viewModel.syncStatus == .on ? StatusIndicatorView(status: viewModel.syncStatus, isDotHidden: true) : nil
             let label = viewModel.state.sync.title
             SettingsCellView(label: label,
-                             image: Image("SettingsSync"),
-                             action: { viewModel.presentLegacyView(.sync) },
+                             image: Image(uiImage: DesignSystemImages.Color.Size24.sync1),
+                             action: { viewModel.presentLegacyView(.sync(nil)) },
                              statusIndicator: statusIndicator,
                              disclosureIndicator: true,
                              isButton: true)
@@ -46,12 +48,12 @@ struct SettingsMainSettingsView: View {
             // Appearance
             NavigationLink(destination: SettingsAppearanceView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.settingsAppearanceSection,
-                                 image: Image("SettingsAppearance"))
+                                 image: Image(uiImage: DesignSystemImages.Color.Size24.appearance))
             }
 
             // Passwords
             SettingsCellView(label: UserText.settingsLogins,
-                             image: Image("SettingsPasswords"),
+                             image: Image(uiImage: DesignSystemImages.Color.Size24.key),
                              action: { viewModel.presentLegacyView(.logins) },
                              disclosureIndicator: true,
                              isButton: true)
@@ -59,13 +61,13 @@ struct SettingsMainSettingsView: View {
             // Accessibility
             NavigationLink(destination: SettingsAccessibilityView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.accessibility,
-                                 image: Image("SettingsAccessibility"))
+                                 image: Image(uiImage: DesignSystemImages.Color.Size24.accessibility))
             }
 
             // Data Clearing
             NavigationLink(destination: SettingsDataClearingView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.dataClearing,
-                                 image: Image("SettingsDataClearing"))
+                                 image: Image(uiImage: DesignSystemImages.Color.Size24.fire))
             }
 
             // Duck Player
@@ -73,14 +75,14 @@ struct SettingsMainSettingsView: View {
             if viewModel.state.duckPlayerEnabled {
                 NavigationLink(destination: SettingsDuckPlayerView().environmentObject(viewModel)) {
                     SettingsCellView(label: UserText.duckPlayerFeatureName,
-                                     image: Image("SettingsDuckPlayer"))
+                                     image: Image(uiImage: DesignSystemImages.Color.Size24.videoPlayer))
                 }
             }
 
             // AI Chat
             NavigationLink(destination: SettingsAIChatView().environmentObject(viewModel)) {
                 SettingsCellView(label: UserText.aiChatFeatureName,
-                                 image: Image("SettingsAIChat"))
+                                 image: Image(uiImage: DesignSystemImages.Color.Size24.aiChat))
             }
         }
 

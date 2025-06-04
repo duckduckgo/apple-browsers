@@ -27,7 +27,7 @@ class MockSyncPausedStateManaging: SyncPausedStateManaging {
 
     var isSyncPausedChangedPublisher = PassthroughSubject<Void, Never>()
 
-    var syncDidTurnOffCalled = false
+    @Published var syncDidTurnOffCalled = false
 
     var isSyncPaused: Bool = false
 

@@ -31,10 +31,11 @@ final class SyncDebugMenu: NSMenu {
             NSMenuItem(title: "Environment")
                 .submenu(environmentMenu)
                 .withAccessibilityIdentifier("SyncDebugMenu.environment")
-            NSMenuItem(title: "Reset Favicons Fetcher Onboarding Dialog", action: #selector(resetFaviconsFetcherOnboardingDialog))
-                .targetting(self)
-            NSMenuItem(title: "Populate Stub objects", action: #selector(createStubsForDebug))
-                .targetting(self)
+
+            NSMenuItem(title: "Turn off Sync", action: #selector(turnOffSync), target: self)
+                .withAccessibilityIdentifier("SyncDebugMenu.turnOffSync")
+            NSMenuItem(title: "Reset Favicons Fetcher Onboarding Dialog", action: #selector(resetFaviconsFetcherOnboardingDialog), target: self)
+            NSMenuItem(title: "Populate Stub objects", action: #selector(createStubsForDebug), target: self)
         }
     }
 
@@ -83,7 +84,7 @@ final class SyncDebugMenu: NSMenu {
 
     @objc func createStubsForDebug() {
 #if DEBUG || REVIEW
-        let db = BookmarkDatabase.shared
+        let db = NSApp.delegateTyped.bookmarkDatabase
 
         let context = db.db.makeContext(concurrencyType: .privateQueueConcurrencyType)
 
@@ -123,7 +124,20 @@ final class SyncDebugMenu: NSMenu {
 #endif
     }
 
-    @objc func resetFaviconsFetcherOnboardingDialog(_ sender: NSMenuItem) {
-        UserDefaults.standard.set(false, forKey: UserDefaultsWrapper<String>.Key.syncDidPresentFaviconsFetcherOnboarding.rawValue)
+    @objc func turnOffSync(_ sender: NSMenuItem) {
+        if let syncService = NSApp.delegateTyped.syncService, let syncDataProviders = NSApp.delegateTyped.syncDataProviders {
+            let syncPreferences = SyncPreferences(
+                syncService: syncService,
+                syncBookmarksAdapter: syncDataProviders.bookmarksAdapter,
+                syncCredentialsAdapter: syncDataProviders.credentialsAdapter,
+                syncPausedStateManager: syncDataProviders.syncErrorHandler
+            )
+            syncPreferences.turnOffSync()
+        }
     }
+
+    @objc func resetFaviconsFetcherOnboardingDialog(_ sender: NSMenuItem) {
+        UserDefaultsWrapper<Bool?>(key: .syncDidPresentFaviconsFetcherOnboarding).clear()
+    }
+
 }

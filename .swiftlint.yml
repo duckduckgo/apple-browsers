@@ -70,7 +70,7 @@ file_header:
 
 # General Config
 excluded:
-  - SharedPackages/BrowserServicesKit/Package.swift
+  - SharedPackages/*/Package.swift
   - SharedPackages/*/.build
   - SharedPackages/BrowserServicesKit/scripts/
   - SharedPackages/BrowserServicesKit/Sources/RemoteMessaging/Model/AnyDecodable.swift

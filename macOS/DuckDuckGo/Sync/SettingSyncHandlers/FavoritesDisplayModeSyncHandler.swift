@@ -39,7 +39,7 @@ final class FavoritesDisplayModeSyncHandler: FavoritesDisplayModeSyncHandlerBase
         preferences.$favoritesDisplayMode.dropFirst().asVoid().eraseToAnyPublisher()
     }
 
-    init(_ preferences: AppearancePreferences = .shared) {
+    init(_ preferences: AppearancePreferences) {
         self.preferences = preferences
     }
 

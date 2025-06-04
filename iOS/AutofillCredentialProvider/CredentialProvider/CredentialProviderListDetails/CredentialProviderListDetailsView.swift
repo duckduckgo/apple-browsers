@@ -20,6 +20,7 @@
 import SwiftUI
 import DuckUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct CredentialProviderListDetailsView: View {
 
@@ -88,7 +89,7 @@ struct CredentialProviderListDetailsView: View {
         CopyableCell(title: UserText.credentialProviderDetailsUsername,
                      subtitle: viewModel.usernameDisplayString,
                      selectedCell: $viewModel.selectedCell,
-                     buttonImageName: "Copy-24",
+                     buttonImage: Image(uiImage: DesignSystemImages.Glyphs.Size24.copy),
                      buttonAccessibilityLabel: UserText.credentialProviderDetailsCopyPrompt(for: UserText.credentialProviderDetailsUsername),
                      buttonAction: { viewModel.copyToPasteboard(.username) })
     }
@@ -98,10 +99,10 @@ struct CredentialProviderListDetailsView: View {
                      subtitle: viewModel.userVisiblePassword,
                      selectedCell: $viewModel.selectedCell,
                      isMonospaced: true,
-                     buttonImageName: viewModel.isPasswordHidden ? "Eye-24" : "Eye-Closed-24",
+                     buttonImage: Image(uiImage: viewModel.isPasswordHidden ? DesignSystemImages.Glyphs.Size24.eye : DesignSystemImages.Glyphs.Size24.eyeClosed),
                      buttonAccessibilityLabel: viewModel.isPasswordHidden ? UserText.credentialProviderDetailsShowPassword : UserText.credentialProviderDetailsHidePassword,
                      buttonAction: { viewModel.isPasswordHidden.toggle() },
-                     secondaryButtonImageName: "Copy-24",
+                     secondaryButtonImage: Image(uiImage: DesignSystemImages.Glyphs.Size24.copy),
                      secondaryButtonAccessibilityLabel: UserText.credentialProviderDetailsCopyPrompt(for: UserText.credentialProviderDetailsPassword),
                      secondaryButtonAction: { viewModel.copyToPasteboard(.password) })
     }
@@ -111,7 +112,7 @@ struct CredentialProviderListDetailsView: View {
                      subtitle: viewModel.address,
                      selectedCell: $viewModel.selectedCell,
                      truncationMode: .middle,
-                     buttonImageName: "Copy-24",
+                     buttonImage: Image(uiImage: DesignSystemImages.Glyphs.Size24.copy),
                      buttonAccessibilityLabel: UserText.credentialProviderDetailsCopyPrompt(for: UserText.credentialProviderDetailsAddress),
                      buttonAction: { viewModel.copyToPasteboard(.address) })
     }
@@ -180,11 +181,11 @@ private struct CopyableCell: View {
     var multiLine: Bool = false
     var isMonospaced: Bool = false
 
-    var buttonImageName: String?
+    var buttonImage: Image?
     var buttonAccessibilityLabel: String?
     var buttonAction: (() -> Void)?
 
-    var secondaryButtonImageName: String?
+    var secondaryButtonImage: Image?
     var secondaryButtonAccessibilityLabel: String?
     var secondaryButtonAction: (() -> Void)?
 
@@ -216,14 +217,14 @@ private struct CopyableCell: View {
                 }
                 .padding(EdgeInsets(top: 8, leading: 0, bottom: 8, trailing: 8))
 
-                if secondaryButtonImageName != nil {
+                if secondaryButtonImage != nil {
                     Spacer(minLength: Constants.textFieldImageSize * 2 + 8)
                 } else {
-                    Spacer(minLength: buttonImageName != nil ? Constants.textFieldImageSize : 8)
+                    Spacer(minLength: buttonImage != nil ? Constants.textFieldImageSize : 8)
                 }
             }
 
-            if let buttonImageName = buttonImageName, let buttonAccessibilityLabel = buttonAccessibilityLabel {
+            if let buttonImage = buttonImage, let buttonAccessibilityLabel = buttonAccessibilityLabel {
                 let differenceBetweenImageSizeAndTapAreaPerEdge = (Constants.textFieldTapSize - Constants.textFieldImageSize) / 2.0
                 HStack(alignment: .center, spacing: 0) {
                     Spacer()
@@ -236,7 +237,7 @@ private struct CopyableCell: View {
                             Spacer()
                             HStack {
                                 Spacer()
-                                Image(buttonImageName)
+                                buttonImage
                                     .resizable()
                                     .frame(width: Constants.textFieldImageSize, height: Constants.textFieldImageSize)
                                     .foregroundColor(Color(UIColor.label).opacity(Constants.textFieldImageOpacity))
@@ -253,7 +254,7 @@ private struct CopyableCell: View {
                     .contentShape(Rectangle())
                     .frame(width: Constants.textFieldTapSize, height: Constants.textFieldTapSize)
 
-                    if let secondaryButtonImageName = secondaryButtonImageName,
+                    if let secondaryButtonImage = secondaryButtonImage,
                         let secondaryButtonAccessibilityLabel = secondaryButtonAccessibilityLabel {
                         Button {
                             secondaryButtonAction?()
@@ -263,7 +264,7 @@ private struct CopyableCell: View {
                                 Spacer()
                                 HStack {
                                     Spacer()
-                                    Image(secondaryButtonImageName)
+                                    secondaryButtonImage
                                         .resizable()
                                         .frame(width: Constants.textFieldImageSize, height: Constants.textFieldImageSize)
                                         .foregroundColor(Color(UIColor.label).opacity(Constants.textFieldImageOpacity))

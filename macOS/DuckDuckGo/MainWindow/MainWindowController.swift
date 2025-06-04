@@ -27,7 +27,7 @@ final class MainWindowController: NSWindowController {
     private var cancellables: Set<AnyCancellable> = []
     private static var knownFullScreenMouseDetectionWindows = Set<NSValue>()
     let fireWindowSession: FireWindowSession?
-    private let appearancePreferences: AppearancePreferences = .shared
+    private let appearancePreferences: AppearancePreferences = NSApp.delegateTyped.appearancePreferences
     let fullscreenController = FullscreenController()
 
     var mainViewController: MainViewController {

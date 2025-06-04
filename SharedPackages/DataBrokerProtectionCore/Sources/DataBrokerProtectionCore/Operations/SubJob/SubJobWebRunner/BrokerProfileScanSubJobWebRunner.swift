@@ -116,6 +116,22 @@ public final class BrokerProfileScanSubJobWebRunner: SubJobWebRunning, BrokerPro
         await executeNextStep()
     }
 
+    public func evaluateActionAndHaltIfNeeded(_ action: Action) async -> Bool {
+        /// Certain brokers force a page reload with a random time interval when the user lands on the search result
+        /// page. The first time the action runs the C-S-S context is lost as the page is reloading and C-S-S fails
+        /// to respond to the native message. We will try to run the action one more time after the page has loaded
+        /// and the C-S-S context is present again to receive the native message.
+        ///
+        /// To minimize the impact of this change, we set the number of retries to 1 for now.
+        ///
+        /// https://app.asana.com/1/137249556945/project/481882893211075/task/1210079565270206?focus=true
+        if action is ExpectationAction {
+            retriesCountOnError = 1
+        }
+
+        return false
+    }
+
     public func executeNextStep() async {
         retriesCountOnError = 0 // We reset the retries on error when it is successful
         Logger.action.debug("SCAN Waiting \(self.operationAwaitTime, privacy: .public) seconds...")

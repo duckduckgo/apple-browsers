@@ -28,12 +28,9 @@ public final class NewTabPageRecentActivityClient: NewTabPageUserScriptClient {
     private var cancellables: Set<AnyCancellable> = []
 
     enum MessageName: String, CaseIterable {
-        case getConfig = "activity_getConfig"
         case getData = "activity_getData"
         case onBurnComplete = "activity_onBurnComplete"
-        case onConfigUpdate = "activity_onConfigUpdate"
         case onDataUpdate = "activity_onDataUpdate"
-        case setConfig = "activity_setConfig"
         case addFavorite = "activity_addFavorite"
         case removeFavorite = "activity_removeFavorite"
         case removeItem = "activity_removeItem"
@@ -44,14 +41,6 @@ public final class NewTabPageRecentActivityClient: NewTabPageUserScriptClient {
     public init(model: NewTabPageRecentActivityModel) {
         self.model = model
         super.init()
-
-        model.$isViewExpanded.dropFirst()
-            .sink { [weak self] isExpanded in
-                Task { @MainActor in
-                    self?.notifyConfigUpdated(isExpanded)
-                }
-            }
-            .store(in: &cancellables)
 
         model.activityProvider.activityPublisher
             .sink { [weak self] activity in
@@ -72,9 +61,7 @@ public final class NewTabPageRecentActivityClient: NewTabPageUserScriptClient {
 
     public override func registerMessageHandlers(for userScript: NewTabPageUserScript) {
         userScript.registerMessageHandlers([
-            MessageName.getConfig.rawValue: { [weak self] in try await self?.getConfig(params: $0, original: $1) },
             MessageName.getData.rawValue: { [weak self] in try await self?.getData(params: $0, original: $1) },
-            MessageName.setConfig.rawValue: { [weak self] in try await self?.setConfig(params: $0, original: $1) },
             MessageName.addFavorite.rawValue: { [weak self] in try await self?.addFavorite(params: $0, original: $1) },
             MessageName.removeFavorite.rawValue: { [weak self] in try await self?.removeFavorite(params: $0, original: $1) },
             MessageName.confirmBurn.rawValue: { [weak self] in try await self?.confirmBurn(params: $0, original: $1) },
@@ -82,30 +69,9 @@ public final class NewTabPageRecentActivityClient: NewTabPageUserScriptClient {
         ])
     }
 
-    private func getConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        let expansion: NewTabPageUserScript.WidgetConfig.Expansion = model.isViewExpanded ? .expanded : .collapsed
-        return NewTabPageUserScript.WidgetConfig(animation: .noAnimation, expansion: expansion)
-    }
-
     @MainActor
     private func getData(params: Any, original: WKScriptMessage) async throws -> Encodable? {
         return NewTabPageDataModel.ActivityData(activity: model.activityProvider.refreshActivity())
-    }
-
-    @MainActor
-    private func notifyConfigUpdated(_ isViewExpanded: Bool) {
-        let expansion: NewTabPageUserScript.WidgetConfig.Expansion = isViewExpanded ? .expanded : .collapsed
-        let config = NewTabPageUserScript.WidgetConfig(animation: .noAnimation, expansion: expansion)
-        pushMessage(named: MessageName.onConfigUpdate.rawValue, params: config)
-    }
-
-    @MainActor
-    private func setConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        guard let config: NewTabPageUserScript.WidgetConfig = DecodableHelper.decode(from: params) else {
-            return nil
-        }
-        model.isViewExpanded = config.expansion == .expanded
-        return nil
     }
 
     @MainActor

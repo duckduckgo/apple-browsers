@@ -190,6 +190,15 @@
 /* Description for alert shown when user logged off from sync */
 "alert.sync-invalid-login-error-description" = "Synkronointi on keskeytetty. Jos haluat jatkaa tämän laitteen synkronointia, muodosta yhteys uudelleen toisella laitteella tai palautuskoodilla.";
 
+/* Sync Now button in alert asking if they would like to sync with another device */
+"alert.sync-new-device.button" = "Synkronoi nyt";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.message" = "%@ voi käyttää synkronoituja DuckDuckGo-tietojasi.";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.title" = "Synkronoidaanko uusi laite?";
+
 /* Learn more button in alert */
 "alert.sync-paused-alert-learn-more-button" = "Lue lisää";
 
@@ -261,6 +270,12 @@
 
 /* No comment provided by engineer. */
 "Are you sure you want to delete all bookmarks? This action cannot be undone." = "Haluatko varmasti poistaa kaikki kirjanmerkit? Tätä toimintoa ei voi kumota.";
+
+/* No comment provided by engineer. */
+"Are you sure you want to delete this chat? This cannot be undone." = "Haluatko varmasti poistaa tämän keskustelun? Tätä ei voi kumota.";
+
+/* No comment provided by engineer. */
+"Ask anything..." = "Kysy mitä tahansa...";
 
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Kirjaudu sisään";
@@ -920,6 +935,9 @@
 "close.all.tabs" = "Sulje kaikki välilehdet";
 
 /* No comment provided by engineer. */
+"Cohort: %@" = "Kohortti: %@";
+
+/* No comment provided by engineer. */
 "Confirm" = "Vahvista";
 
 /* Button to continue the onboarding process */
@@ -1282,17 +1300,26 @@
 /* Text displayed when DuckPlayer is in 'Ask' mode. */
 "duckPlayer.ask.label" = "Kysy joka kerta";
 
-/* Subtitle explaining how Duck Player protects privacy */
-"duckplayer.blocks.ads.keeps.history.private" = "Duck Player estää kohdennetut mainokset ja pitää katseluhistoriasi yksityisenä.";
-
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Ei koskaan";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";
 
-/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
-"duckplayer.open.youtube.videos.here" = "Avaa YouTube-videot täällä";
+/* Content for Duck Player opt-in message */
+"duckplayer.opt-in.message.content" = "Duck Player estää kohdennetut mainokset ja pitää katseluhistoriasi suojattuna.";
+
+/* Title for Duck Player opt-in message */
+"duckplayer.opt-in.message.title" = "YouTube, mutta vähemmän mainoksia ja enemmän yksityisyyttä";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.opt-in.pill.subtitle" = "Katso ilman kohdennettuja mainoksia";
+
+/* Button text to play a video in Duck Player */
+"duckplayer.opt-in.pill.title" = "Toista tämä video Duck Playerissa";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.pill.subtitle" = "Katso ilman kohdennettuja mainoksia";
 
 /* Button text to play a video in Duck Player */
 "duckplayer.play.in.duck.player" = "Toista tämä video Duck Playerissa";
@@ -1354,6 +1381,9 @@
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.title" = "Duck Player";
 
+/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
+"duckplayer.settings.toggle" = "Avaa YouTube-videot täällä";
+
 /* Label for the Duck Player variant picker in Duck Player settings */
 "duckplayer.settings.variant.label" = "Duck Player -variaatio";
 
@@ -1363,20 +1393,29 @@
 /* Label for the YouTube.com option in Duck Player settings */
 "duckplayer.settings.youtube.label" = "YouTube.com";
 
+/* Text for the ask mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.ask" = "Anna minun valita";
+
+/* Text for the auto mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.auto" = "Avaa automaattisesti";
+
+/* Text for the never mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.never" = "Älä näytä";
+
 /* Button text to open Duck Player settings */
 "duckplayer.toast.open.settings" = "Avaa asetukset";
 
 /* Toast message informing user they can disable Duck Player in settings */
-"duckplayer.toast.turn.off.anytime" = "Voit poistaa Duck Playerin käytöstä milloin tahansa asetuksissa.";
+"duckplayer.toast.turn.off.anytime" = "Voit poistaa Duck Playerin käytöstä milloin tahansa";
 
 /* Button text to watch video on YouTube */
 "duckplayer.watch.on.youtube" = "Katso YouTubessa";
 
-/* Subtitle explaining Duck Player blocks targeted ads */
-"duckplayer.watch.without.targeted.ads" = "Katso ilman kohdennettuja mainoksia";
+/* Subtitle explaining how Duck Player protects privacy */
+"duckplayer.welcome.message.content" = "Jos haluat palata YouTubeen, sulje Duck Player.\nEikö tämä ole sinua varten? Poista se käytöstä alta!";
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
-"duckplayer.youtube.no.ads.privacy" = "Katso YouTubea vähemmin mainoksin ja yksityisemmin";
+"duckplayer.welcome.message.text" = "Katsot Duck Playerissa!\nTäällä ei ole kohdennettuja mainoksia.";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Sähköpostisuojaus";
@@ -1454,6 +1493,9 @@
 "empty.search" = "Ei hakutuloksia";
 
 /* No comment provided by engineer. */
+"Enrolled: %@" = "Rekisteröitynyt: %@";
+
+/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1506,6 +1548,9 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Vain mobiilisuosikit";
+
+/* No comment provided by engineer. */
+"Feature: %@" = "Ominaisuus: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Mainosten ja ponnahdusikkunoiden esto";
@@ -2255,7 +2300,7 @@
 "onboarding.highlights.browsers.features.cookiePopups.title" = "Estä evästeponnahdusikkunat";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Estä seurantamainokset";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Estä kohdennetut mainokset";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Poista selaustiedot yhdellä painikkeella";
@@ -2409,6 +2454,30 @@
 
 /* Title for the Privacy Pro feedback form */
 "ppro.feedback-form.title" = "Lähetä palautetta";
+
+/* Title of the section of a setting page that shows Scam Blocking preferences (weather warning in case of scam sites) */
+"preferences.scam-blocker.title" = "Huijausten esto";
+
+/* Caption explaining the risk of disabling scam blocker protection */
+"preferences.scam-blocker.toggle-caption" = "Tämän ominaisuuden käytöstä poistaminen voi vaarantaa henkilötietosi.";
+
+/* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
+"preferences.scam-blocker.toggle-label" = "Varoita sivustoista, jotka on merkitty huijausten, tietojenkalastelun tai haittaohjelmien johdosta. [Lue lisää](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker)";
+
+/* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
+"preferences.smarter-encryption.description" = "Päivittää linkit automaattisesti HTTPS-yhteyteen aina kun mahdollista. [Lue lisää](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
+
+/* Title of the section of a setting page that shows Smarter Encryption preferences */
+"preferences.smarter-encryption.title" = "Älykkäämpi salaus";
+
+/* Status indicator of a browser privacy protection feature. */
+"preferences.status-indicator.always-on" = "Aina käytössä";
+
+/* Title of the option to show the Threat Protection preferences */
+"preferences.threat-protection" = "Uhkien torjunta";
+
+/* Caption of the option to show the Threat Protection preferences */
+"preferences.threat-protection.caption" = "DuckDuckGon parannetut suojaustoiminnot pysäyttävät yleisimmät uhat ja pitävät yhteytesi suojattuna.\n[Lue lisää](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Jotkin kirjanmerkit tai salasanat on väärin muotoiltuja tai liian pitkiä, eikä niitä ole synkronoitu.";
@@ -2565,6 +2634,7 @@
 
 /* Settings screen text for showing AI Chat in various places in the app */
 "settings.aichat.shortcuts" = "Pikavalinnat";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Aina käytössä";
 
@@ -2769,6 +2839,9 @@
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe" = "Suojaa yhteytesi ja identiteettisi Privacy Prolla";
 
+/* Try Privacy Pro Free button text for privacy pro */
+"settings.subscription.try.free" = "Kokeile Privacy Pro -tilausta ilmaiseksi";
+
 /* Privacy pro description subtitle in settings */
 "settings.subscription.us.description" = "Seuraavat sisältyvät: VPN, Personal Information Removal ja Identity Theft Restoration.";
 
@@ -2839,7 +2912,13 @@
 "siteFeedback.urlPlaceholder" = "Mikä verkkosivusto on viallinen?";
 
 /* No comment provided by engineer. */
+"Stop generating..." = "Lopeta luominen...";
+
+/* No comment provided by engineer. */
 "Stored Hostname: %@" = "Tallennettu isäntänimi: %@";
+
+/* No comment provided by engineer. */
+"Subfeature: %@" = "Alaominaisuus: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Lisää laitteeseen";

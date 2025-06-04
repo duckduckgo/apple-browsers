@@ -49,23 +49,24 @@ final class BookmarksBarViewController: NSViewController {
     private var dragDestination: (folder: BookmarkFolder, mouseLocation: NSPoint, hoverStarted: Date)?
 
     fileprivate var clipThreshold: CGFloat {
-        let viewWidthWithoutClipIndicator = view.frame.width - clippedItemsIndicator.frame.minX
-        return view.frame.width - viewWidthWithoutClipIndicator - 3
+        let indicatorFrameInCollectionView = bookmarksBarCollectionView.convert(clippedItemsIndicator.frame, from: clippedItemsIndicator.superview)
+        return indicatorFrameInCollectionView.minX - 3
     }
 
     @UserDefaultsWrapper(key: .bookmarksBarPromptShown, defaultValue: false)
     var bookmarksBarPromptShown: Bool
 
-    static func create(tabCollectionViewModel: TabCollectionViewModel, bookmarkManager: BookmarkManager = LocalBookmarkManager.shared) -> BookmarksBarViewController {
+    static func create(tabCollectionViewModel: TabCollectionViewModel, bookmarkManager: BookmarkManager, dragDropManager: BookmarkDragDropManager) -> BookmarksBarViewController {
         NSStoryboard(name: "BookmarksBar", bundle: nil).instantiateInitialController { coder in
-            self.init(coder: coder, tabCollectionViewModel: tabCollectionViewModel, bookmarkManager: bookmarkManager)
+            self.init(coder: coder, tabCollectionViewModel: tabCollectionViewModel, bookmarkManager: bookmarkManager, dragDropManager: dragDropManager)
         }!
     }
 
-    init?(coder: NSCoder, tabCollectionViewModel: TabCollectionViewModel,
-          bookmarkManager: BookmarkManager = LocalBookmarkManager.shared,
-          dragDropManager: BookmarkDragDropManager = BookmarkDragDropManager.shared,
-          appereancePreferences: AppearancePreferencesPersistor = AppearancePreferencesUserDefaultsPersistor(),
+    init?(coder: NSCoder,
+          tabCollectionViewModel: TabCollectionViewModel,
+          bookmarkManager: BookmarkManager,
+          dragDropManager: BookmarkDragDropManager,
+          appereancePreferences: AppearancePreferencesPersistor = AppearancePreferencesUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore),
           visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager
     ) {
         self.bookmarkManager = bookmarkManager
@@ -74,7 +75,10 @@ final class BookmarksBarViewController: NSViewController {
         self.visualStyleManager = visualStyleManager
 
         self.tabCollectionViewModel = tabCollectionViewModel
-        self.viewModel = BookmarksBarViewModel(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, tabCollectionViewModel: tabCollectionViewModel)
+        self.viewModel = BookmarksBarViewModel(bookmarkManager: bookmarkManager,
+                                               dragDropManager: dragDropManager,
+                                               tabCollectionViewModel: tabCollectionViewModel,
+                                               visualStyleManager: visualStyleManager)
 
         super.init(coder: coder)
     }
@@ -436,7 +440,7 @@ private extension BookmarksBarViewController {
             }
             bookmarkMenuPopover.reloadData(withRootFolder: folder)
         } else {
-            bookmarkMenuPopover = BookmarksBarMenuPopover(rootFolder: folder)
+            bookmarkMenuPopover = BookmarksBarMenuPopover(bookmarkManager: bookmarkManager, dragDropManager: dragDropManager, rootFolder: folder)
             bookmarkMenuPopover.delegate = self
             self.bookmarkMenuPopover = bookmarkMenuPopover
         }
@@ -458,7 +462,7 @@ private extension BookmarksBarViewController {
     }
 
     @objc func addFolder(sender: NSMenuItem) {
-        showDialog(BookmarksDialogViewFactory.makeAddBookmarkFolderView(parentFolder: nil))
+        showDialog(BookmarksDialogViewFactory.makeAddBookmarkFolderView(parentFolder: nil, bookmarkManager: bookmarkManager))
     }
 
 }
@@ -471,7 +475,8 @@ extension BookmarksBarViewController: NSMenuDelegate {
             menu,
             target: self,
             addFolderSelector: #selector(addFolder(sender:)),
-            manageBookmarksSelector: #selector(manageBookmarks)
+            manageBookmarksSelector: #selector(manageBookmarks),
+            prefs: NSApp.delegateTyped.appearancePreferences
         )
     }
 

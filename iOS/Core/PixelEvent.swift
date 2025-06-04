@@ -854,6 +854,14 @@ extension Pixel {
         case syncPromoConfirmed
         case syncPromoDismissed
 
+        case syncSetupBarcodeScreenShown
+        case syncSetupBarcodeScannerSuccess
+        case syncSetupBarcodeScannedSuccess
+        case syncSetupBarcodeCodeCopied
+        case syncSetupManualCodeEntryScreenShown
+        case syncSetupManualCodeEntered
+        case syncSetupAbandoned
+
         case swipeTabsUsedDaily
         case swipeToOpenNewTab
 
@@ -1184,6 +1192,47 @@ extension Pixel {
 
         // MARK: Malicious Site Protection
         case maliciousSiteProtection(event: MaliciousSiteProtectionEvent)
+
+        // MARK: - Duck Player Native pixels
+        
+        /// First time Duck Player is opened each day
+        case duckPlayerNativeDailyUniqueView
+        /// Duck Player is opened automatically on YouTube
+        case duckPlayerNativeViewFromYoutubeAutomatic
+        /// Duck Player is opened from the YouTube entry point
+        case duckPlayerNativeViewFromYoutubeEntryPoint
+        /// Duck Player is opened from the YouTube re-entry point
+        case duckPlayerNativeViewFromYoutubeReEntryPoint
+        /// Duck Player is opened from SERP
+        case duckPlayerNativeViewFromSERP
+        /// Watch on YouTube button is tapped from Duck Player UI
+        case duckPlayerNativeWatchOnYoutube
+        /// Duck Player entry point is shown on YouTube video page
+        case duckPlayerNativeEntryPointImpression
+        /// Duck Player entry point is dismissed on YouTube video page
+        case duckPlayerNativeEntryPointDismissed
+        /// Duck Player re-entry point is shown on YouTube video page
+        case duckPlayerNativeReEntryPointImpression
+        /// Duck Player re-entry point is dismissed on YouTube video page
+        case duckPlayerNativeReEntryPointDismissed
+        /// Setting for SERP is changed to off
+        case duckPlayerNativeSettingsSerpOff
+        /// Setting for SERP is changed to on
+        case duckPlayerNativeSettingsSerpOn
+        /// Setting for YouTube is changed to automatic
+        case duckPlayerNativeSettingsYoutubeAutomatic
+        /// Setting for YouTube is changed to let me choose
+        case duckPlayerNativeSettingsYoutubeChoose
+        /// Setting for YouTube is changed to don't show
+        case duckPlayerNativeSettingsYoutubeDontShow
+        /// Priming modal is shown
+        case duckPlayerNativePrimingModalImpression
+        /// Priming modal is dismissed
+        case duckPlayerNativePrimingModalDismissed
+        /// Priming modal CTA is tapped
+        case duckPlayerNativePrimingModalCTA
+        /// Settings gear icon is tapped from Duck Player UI
+        case duckPlayerNativeDuckPlayerSettingsOpened
     }
 
 }
@@ -1571,18 +1620,18 @@ extension Pixel.Event {
 
         case .autofillJSPixelFired(let pixel):
             return "m_ios_\(pixel.pixelName)"
-            
+
         case .secureVaultError: return "m_secure_vault_error"
-            
+
         case .secureVaultInitFailedError: return "m_secure-vault_error_init-failed"
         case .secureVaultFailedToOpenDatabaseError: return "m_secure-vault_error_failed-to-open-database"
-            
+
         case .secureVaultIsEnabledCheckedWhenEnabledAndDataProtected: return "m_secure-vault_is-enabled-checked_when-enabled-and-data-protected"
 
         case .secureVaultV4Migration: return "m_secure-vault_v4-migration"
         case .secureVaultV4MigrationSkipped: return "m_secure-vault_v4-migration-skipped"
 
-            // MARK: Data Import pixels
+        // MARK: Data Import pixels
 
         case .autofillImportPasswordsImportButtonTapped: return "autofill_import_passwords_import_button_tapped"
         case .autofillImportPasswordsImportButtonShown: return "autofill_import_passwords_import_button_shown"
@@ -1943,6 +1992,14 @@ extension Pixel.Event {
         case .syncPromoConfirmed: return "sync_promotion_confirmed"
         case .syncPromoDismissed: return "sync_promotion_dismissed"
 
+        case .syncSetupBarcodeScreenShown: return "sync_setup_barcode_screen_shown"
+        case .syncSetupBarcodeScannerSuccess: return "sync_setup_barcode_scanner_success"
+        case .syncSetupBarcodeScannedSuccess: return "sync_setup_barcode_scanned_success"
+        case .syncSetupBarcodeCodeCopied: return "sync_setup_barcode_code_copied"
+        case .syncSetupManualCodeEntryScreenShown: return "sync_setup_manual_code_entry_screen_shown"
+        case .syncSetupManualCodeEntered: return "sync_setup_manual_code_entered"
+        case .syncSetupAbandoned: return "sync_setup_abandoned"
+
         case .swipeTabsUsedDaily: return "m_swipe-tabs-used-daily"
         case .swipeToOpenNewTab: return "m_addressbar_swipe_new_tab"
 
@@ -2295,6 +2352,66 @@ extension Pixel.Event {
         case .tabSwitcherLongPressCloseTab: return "m_tab_manager_long_press_close_tab"
         case .tabSwitcherLongPressCloseOtherTabs: return "m_tab_manager_long_press_close_other_tabs"
         case .tabSwitcherLongPressCloseOtherTabsDaily: return "m_tab_manager_long_press_close_other_tabs_daily"
+
+        // MARK: - Duck Player Native pixels
+
+        /// First time Duck Player is opened each day
+        case .duckPlayerNativeDailyUniqueView:
+            return "duckplayer_native_daily-unique-view"
+        /// Duck Player is opened automatically on YouTube
+        case .duckPlayerNativeViewFromYoutubeAutomatic:
+            return "duckplayer_native_view-from_youtube_automatic"
+        /// Duck Player is opened from the YouTube entry point
+        case .duckPlayerNativeViewFromYoutubeEntryPoint:
+            return "duckplayer_native_view-from_youtube_entry-point"
+        /// Duck Player is opened from the YouTube re-entry point
+        case .duckPlayerNativeViewFromYoutubeReEntryPoint:
+            return "duckplayer_native_view-from_youtube_re-entry-point"
+        /// Duck Player is opened from SERP
+        case .duckPlayerNativeViewFromSERP:
+            return "duckplayer_native_view-from_serp"
+        /// Watch on YouTube button is tapped from Duck Player UI
+        case .duckPlayerNativeWatchOnYoutube:
+            return "duckplayer_native_watch-on-youtube"
+        /// Duck Player entry point is shown on YouTube video page
+        case .duckPlayerNativeEntryPointImpression:
+            return "duckplayer_native_entry-point_impression"
+        /// Duck Player entry point is dismissed on YouTube video page
+        case .duckPlayerNativeEntryPointDismissed:
+            return "duckplayer_native_entry-point_dismissed"
+        /// Duck Player re-entry point is shown on YouTube video page
+        case .duckPlayerNativeReEntryPointImpression:
+            return "duckplayer_native_re-entry-point_impression"
+        /// Duck Player re-entry point is dismissed on YouTube video page
+        case .duckPlayerNativeReEntryPointDismissed:
+            return "duckplayer_native_re-entry-point_dismissed"
+        /// Setting for SERP is changed to off
+        case .duckPlayerNativeSettingsSerpOff:
+            return "duckplayer_native_settings_serp_off"
+        /// Setting for SERP is changed to on
+        case .duckPlayerNativeSettingsSerpOn:
+            return "duckplayer_native_settings_serp_on"
+        /// Setting for YouTube is changed to automatic
+        case .duckPlayerNativeSettingsYoutubeAutomatic:
+            return "duckplayer_native_settings_youtube_automatic"
+        /// Setting for YouTube is changed to let me choose
+        case .duckPlayerNativeSettingsYoutubeChoose:
+            return "duckplayer_native_settings_youtube_choose"
+        /// Setting for YouTube is changed to don't show
+        case .duckPlayerNativeSettingsYoutubeDontShow:
+            return "duckplayer_native_settings_youtube_dont-show"
+        /// Priming modal is shown
+        case .duckPlayerNativePrimingModalImpression:
+            return "duckplayer_native_priming-modal_impression"
+        /// Priming modal is dismissed
+        case .duckPlayerNativePrimingModalDismissed:
+            return "duckplayer_native_priming-modal_dismissed"
+        /// Priming modal CTA is tapped
+        case .duckPlayerNativePrimingModalCTA:
+            return "duckplayer_native_priming-modal_cta"
+        /// Settings gear icon is tapped from Duck Player UI
+        case .duckPlayerNativeDuckPlayerSettingsOpened:
+            return "duckplayer_native_duckplayer_settings_opened"
         }
     }
 }

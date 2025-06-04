@@ -57,8 +57,18 @@ final class SuggestionContainer {
 
     private let urlSession: URLSession
 
-    init(openTabsProvider: OpenTabsProvider? = nil, suggestionLoading: SuggestionLoading? = nil, urlSession: URLSession? = nil, historyProvider: HistoryProvider, bookmarkProvider: BookmarkProvider, startupPreferences: StartupPreferences = .shared, featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger, burnerMode: BurnerMode, isUrlIgnored: @escaping (URL) -> Bool,
-         windowControllersManager: WindowControllersManagerProtocol? = nil) {
+    init(
+        openTabsProvider: OpenTabsProvider? = nil,
+        suggestionLoading: SuggestionLoading? = nil,
+        urlSession: URLSession? = nil,
+        historyProvider: HistoryProvider,
+        bookmarkProvider: BookmarkProvider,
+        startupPreferences: StartupPreferences = NSApp.delegateTyped.startupPreferences,
+        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+        burnerMode: BurnerMode,
+        isUrlIgnored: @escaping (URL) -> Bool,
+        windowControllersManager: WindowControllersManagerProtocol? = nil
+    ) {
         let windowControllersManager = windowControllersManager ?? WindowControllersManager.shared
         self.openTabsProvider = openTabsProvider ?? Self.defaultOpenTabsProvider(burnerMode: burnerMode, windowControllersManager: windowControllersManager)
         self.bookmarkProvider = bookmarkProvider
@@ -72,9 +82,9 @@ final class SuggestionContainer {
     }
 
     @MainActor
-    convenience init(burnerMode: BurnerMode, isUrlIgnored: @escaping (URL) -> Bool, windowControllersManager: WindowControllersManagerProtocol? = nil) {
+    convenience init(bookmarkProvider: BookmarkProvider, burnerMode: BurnerMode, isUrlIgnored: @escaping (URL) -> Bool, windowControllersManager: WindowControllersManagerProtocol? = nil) {
         self.init(historyProvider: HistoryCoordinator.shared,
-                  bookmarkProvider: LocalBookmarkManager.shared,
+                  bookmarkProvider: bookmarkProvider,
                   burnerMode: burnerMode,
                   isUrlIgnored: isUrlIgnored,
                   windowControllersManager: windowControllersManager)
@@ -145,9 +155,12 @@ extension HistoryCoordinator: SuggestionContainer.HistoryProvider {
         history ?? []
     }
 }
-extension LocalBookmarkManager: SuggestionContainer.BookmarkProvider {
+
+struct SuggestionsBookmarkProvider: SuggestionContainer.BookmarkProvider {
+    let bookmarkManager: BookmarkManager
+
     func bookmarks(for suggestionLoading: SuggestionLoading) -> [Suggestions.Bookmark] {
-        list?.bookmarks() ?? []
+        bookmarkManager.list?.bookmarks() ?? []
     }
 }
 extension SuggestionContainer: SuggestionLoadingDataSource {

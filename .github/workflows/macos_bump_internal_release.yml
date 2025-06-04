@@ -54,8 +54,11 @@ jobs:
             *) echo "👎 Not a release or main branch"; exit 1 ;;
           esac
           
-      - name: Set up fastlane
-        run: bundle install
+      - name: Setup Ruby and dependencies
+        uses: ./.github/actions/setup-ruby
+        with:
+          working-directory: macOS
+          cache-key-prefix: macos-ruby
 
       - name: Prepare release bump
         id: prepare-release-bump
@@ -103,8 +106,11 @@ jobs:
           ref: ${{ needs.validate_input_conditions.outputs.release-branch }}
           submodules: recursive
 
-      - name: Set up fastlane
-        run: bundle install
+      - name: Setup Ruby and dependencies
+        uses: ./.github/actions/setup-ruby
+        with:
+          working-directory: macOS
+          cache-key-prefix: macos-ruby
 
       - name: Select Xcode
         uses: ./.github/actions/select-xcode-version

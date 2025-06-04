@@ -25,7 +25,7 @@ runs:
   using: "composite"
   steps:
     - id: get-asana-user-id
-      uses: duckduckgo/native-github-asana-sync@v1.3
+      uses: duckduckgo/native-github-asana-sync@v1.9
       with:
         action: 'get-asana-user-id'
         github-username: ${{ inputs.commit-author }}

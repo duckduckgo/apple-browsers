@@ -891,13 +891,13 @@ enum GeneralPixel: PixelKitEventV2 {
             // Onboarding
         case .onboardingExceptionReported: return "m_mac_onboarding_exception-reported"
 
-         // “Advanced” usage
-         case .windowFullscreen: return "m_mac_window_fullscreen"
-         case .windowSplitScreen: return "m_mac_window_split_screen"
+        // “Advanced” usage
+        case .windowFullscreen: return "m_mac_window_fullscreen"
+        case .windowSplitScreen: return "m_mac_window_split_screen"
 
-         case .pictureInPictureVideoPlayback: return "m_mac_pip_video_playback"
+        case .pictureInPictureVideoPlayback: return "m_mac_pip_video_playback"
 
-         case .developerToolsOpened: return "m_mac_dev_tools_opened"
+        case .developerToolsOpened: return "m_mac_dev_tools_opened"
 
             // DEBUG
         case .assertionFailure:

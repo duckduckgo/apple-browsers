@@ -20,9 +20,8 @@ import Foundation
 import StoreKit
 
 /// A protocol that defines the core functionality and properties of a subscription product.
-/// Conforming types must provide information about pricing, description, and subscription terms.
 @available(macOS 12.0, iOS 15.0, *)
-public protocol SubscriptionProduct: Equatable {
+public protocol SubscriptionProduct {
     /// The unique identifier of the product.
     var id: String { get }
 
@@ -50,9 +49,22 @@ public protocol SubscriptionProduct: Equatable {
     /// Whether the user is eligible for an introductory offer.
     var isEligibleForFreeTrial: Bool { get }
 
-    /// Checks the current free trial eligibility status without updating cached state
+    /// Checks the current free trial eligibility status without updating state.
     /// - Returns: The current eligibility status from the underlying product
     func checkFreshFreeTrialEligibility() async -> Bool
+
+    /// Updates the stored free trial eligibility status by querying the underlying product.
+    ///
+    /// This method refreshes the `isEligibleForFreeTrial` property by fetching the current
+    /// eligibility status from the underlying store product. This is typically called after
+    /// events that might change trial eligibility, such as:
+    /// - Completing a purchase
+    /// - Restoring purchases
+    /// - Account changes
+    ///
+    /// - Important: This method mutates the product state and should be called when you need
+    ///   to ensure the stored eligibility status reflects the current App Store state.
+    mutating func refreshFreeTrialEligibility() async
 
     /// Initiates a purchase of the subscription with the specified options.
     /// - Parameter options: A set of options to configure the purchase.
@@ -89,11 +101,11 @@ public struct AppStoreSubscriptionProduct: SubscriptionProduct {
     /// User eligibility for free trial
     public var isEligibleForFreeTrial: Bool
 
-    /// Creates an AppStoreSubscriptionProduct with cached eligibility state
+    /// Creates an AppStoreSubscriptionProduct with eligibility state
     /// - Parameters:
     ///   - product: The StoreProduct to wrap
-    ///   - cachedEligibility: Initial cached eligibility state (defaults to false)
-    public init(product: any StoreProduct, freeTrialEligibility: Bool = false) {
+    ///   - freeTrialEligibility: Eligibility state (defaults to false)
+    private init(product: any StoreProduct, freeTrialEligibility: Bool = false) {
         self.product = product
         self.isEligibleForFreeTrial = freeTrialEligibility
     }
@@ -101,37 +113,38 @@ public struct AppStoreSubscriptionProduct: SubscriptionProduct {
     /// Creates an AppStoreSubscriptionProduct and asynchronously determines eligibility
     /// - Parameter product: The StoreProduct to wrap
     public static func create(product: any StoreProduct) async -> AppStoreSubscriptionProduct {
-        let isEligible: Bool
-
-        guard product.isFreeTrialProduct else {
-            isEligible = false
-            return AppStoreSubscriptionProduct(product: product, freeTrialEligibility: isEligible)
-        }
-
-        isEligible = await product.isEligibleForFreeTrial
+        let isEligible = await product.isEligibleForFreeTrial
         return AppStoreSubscriptionProduct(product: product, freeTrialEligibility: isEligible)
     }
 
-    /// Checks the current free trial eligibility status without updating cached state
+    /// Checks the current free trial eligibility status without updating state
     /// - Returns: The current eligibility status from the underlying product
     public func checkFreshFreeTrialEligibility() async -> Bool {
-        guard product.isFreeTrialProduct else {
-            return false
-        }
-
         return await product.isEligibleForFreeTrial
     }
 
+    /// Updates the stored free trial eligibility status by querying the underlying product.
+    ///
+    /// This implementation fetches the current eligibility from the underlying `StoreProduct`
+    /// and updates the cached `isEligibleForFreeTrial` property. This ensures that the
+    /// subscription product reflects the most current trial eligibility state from the App Store.
+    ///
+    /// - Note: This method is particularly important for maintaining accurate state after
+    ///   purchases, as trial eligibility typically changes once a user has purchased a subscription.
+    public mutating func refreshFreeTrialEligibility() async {
+        self.isEligibleForFreeTrial = await product.isEligibleForFreeTrial
+    }
+
+    /// Initiates a purchase of the subscription with the specified options.
+    /// - Parameter options: A set of options to configure the purchase.
+    /// - Returns: The result of the purchase attempt.
+    /// - Throws: An error if the purchase fails.
     public func purchase(options: Set<Product.PurchaseOption>) async throws -> Product.PurchaseResult {
         return try await product.purchase(options: options)
     }
-
-    public static func == (lhs: AppStoreSubscriptionProduct, rhs: AppStoreSubscriptionProduct) -> Bool {
-        return lhs.product.id == rhs.product.id
-    }
 }
 
-/// Protocol that captures the Product interface needed by AppStoreSubscriptionProduct
+/// Protocol that captures the Product interface required by AppStoreSubscriptionProduct
 @available(macOS 12.0, iOS 15.0, *)
 public protocol StoreProduct {
     /// The unique identifier of the store product.
@@ -185,23 +198,17 @@ extension Product: StoreProduct {
 
     /// A Boolean value that indicates whether the subscription product is one which relates to a Free Trial.
     ///
-    /// This property returns `true` if the subscription has an associated introductory offer marked as a free trial
-    /// or if the subscription's identifier contains the designated free trial identifer.
+    /// This property returns `true` if the subscription has an associated introductory offer marked as a free trial.
     /// If neither condition is met, the property returns `false`.
     public var isFreeTrialProduct: Bool {
-        return subscription?.introductoryOffer?.isFreeTrial ?? false || id.contains(StoreSubscriptionConstants.freeTrialIdentifer)
+        return subscription?.introductoryOffer?.isFreeTrial ?? false
     }
 
     /// Asynchronously checks if the user is eligible for an introductory offer.
     public var isEligibleForFreeTrial: Bool {
         get async {
-            guard let subscription else { return false }
+            guard isFreeTrialProduct, let subscription else { return false }
             return await subscription.isEligibleForIntroOffer
         }
-    }
-
-    /// Implements Equatable by comparing product IDs.
-    public static func == (lhs: Product, rhs: Product) -> Bool {
-        return lhs.id == rhs.id
     }
 }

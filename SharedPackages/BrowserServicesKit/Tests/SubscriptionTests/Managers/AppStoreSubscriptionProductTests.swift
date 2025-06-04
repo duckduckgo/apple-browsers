@@ -146,41 +146,7 @@ final class AppStoreSubscriptionProductTests: XCTestCase {
         XCTAssertFalse(subscriptionProduct.isEligibleForFreeTrial)
     }
 
-    func testInitWithCachedEligibility() throws {
-        // Given
-        let mockProduct = MockStoreProduct(
-            id: "com.test.product",
-            isFreeTrialProduct: true,
-            isEligibleForFreeTrial: true
-        )
-
-        // When
-        let subscriptionProduct = AppStoreSubscriptionProduct(
-            product: mockProduct,
-            freeTrialEligibility: false
-        )
-
-        // Then
-        XCTAssertEqual(subscriptionProduct.id, "com.test.product")
-        XCTAssertFalse(subscriptionProduct.isEligibleForFreeTrial)
-    }
-
-    func testEquality() throws {
-        // Given
-        let mockProduct1 = MockStoreProduct(id: "com.test.product1")
-        let mockProduct2 = MockStoreProduct(id: "com.test.product2")
-        let mockProduct3 = MockStoreProduct(id: "com.test.product1")
-
-        let subscription1 = AppStoreSubscriptionProduct(product: mockProduct1)
-        let subscription2 = AppStoreSubscriptionProduct(product: mockProduct2)
-        let subscription3 = AppStoreSubscriptionProduct(product: mockProduct3)
-
-        // Then
-        XCTAssertEqual(subscription1, subscription3) // Same ID
-        XCTAssertNotEqual(subscription1, subscription2) // Different ID
-    }
-
-    func testPropertyForwarding() throws {
+    func testPropertyForwarding() async throws {
         // Given
         let mockIntroOffer = MockIntroductoryOffer(
             id: "offer_id",
@@ -201,7 +167,7 @@ final class AppStoreSubscriptionProductTests: XCTestCase {
             isEligibleForFreeTrial: true
         )
 
-        let subscriptionProduct = AppStoreSubscriptionProduct(product: mockProduct)
+        let subscriptionProduct = await AppStoreSubscriptionProduct.create(product: mockProduct)
 
         // Then - Verify all properties are forwarded correctly
         XCTAssertEqual(subscriptionProduct.id, "com.test.product")
@@ -213,6 +179,81 @@ final class AppStoreSubscriptionProductTests: XCTestCase {
         XCTAssertTrue(subscriptionProduct.isFreeTrialProduct)
         XCTAssertNotNil(subscriptionProduct.introductoryOffer)
         XCTAssertEqual(subscriptionProduct.introductoryOffer?.id, "offer_id")
+    }
+
+    func testRefreshFreeTrialEligibility_EligibleToIneligible() async throws {
+        // Given
+        let mockProduct = MockStoreProduct(
+            id: "com.test.trial",
+            isFreeTrialProduct: true,
+            isEligibleForFreeTrial: true
+        )
+
+        var subscriptionProduct = await AppStoreSubscriptionProduct.create(product: mockProduct)
+        XCTAssertTrue(subscriptionProduct.isEligibleForFreeTrial)
+
+        // When
+        mockProduct.mockEligibilityChange(to: false)
+        await subscriptionProduct.refreshFreeTrialEligibility()
+
+        // Then
+        XCTAssertFalse(subscriptionProduct.isEligibleForFreeTrial)
+    }
+
+    func testRefreshFreeTrialEligibility_IneligibleToEligible() async throws {
+        // Given
+        let mockProduct = MockStoreProduct(
+            id: "com.test.trial",
+            isFreeTrialProduct: true,
+            isEligibleForFreeTrial: false
+        )
+
+        var subscriptionProduct = await AppStoreSubscriptionProduct.create(product: mockProduct)
+        XCTAssertFalse(subscriptionProduct.isEligibleForFreeTrial)
+
+        // When
+        mockProduct.mockEligibilityChange(to: true)
+        await subscriptionProduct.refreshFreeTrialEligibility()
+
+        // Then
+        XCTAssertTrue(subscriptionProduct.isEligibleForFreeTrial)
+    }
+
+    func testRefreshFreeTrialEligibility_NonFreeTrialProduct() async throws {
+        // Given
+        let mockProduct = MockStoreProduct(
+            id: "com.test.regular",
+            isFreeTrialProduct: false,
+            isEligibleForFreeTrial: false
+        )
+
+        var subscriptionProduct = await AppStoreSubscriptionProduct.create(product: mockProduct)
+        XCTAssertFalse(subscriptionProduct.isEligibleForFreeTrial)
+
+        // When
+        mockProduct.mockEligibilityChange(to: true)
+        await subscriptionProduct.refreshFreeTrialEligibility()
+
+        // Then
+        XCTAssertTrue(subscriptionProduct.isEligibleForFreeTrial)
+    }
+
+    func testRefreshFreeTrialEligibility_NoChange() async throws {
+        // Given
+        let mockProduct = MockStoreProduct(
+            id: "com.test.trial",
+            isFreeTrialProduct: true,
+            isEligibleForFreeTrial: true
+        )
+
+        var subscriptionProduct = await AppStoreSubscriptionProduct.create(product: mockProduct)
+        XCTAssertTrue(subscriptionProduct.isEligibleForFreeTrial)
+
+        // When
+        await subscriptionProduct.refreshFreeTrialEligibility()
+
+        // Then
+        XCTAssertTrue(subscriptionProduct.isEligibleForFreeTrial)
     }
 }
 

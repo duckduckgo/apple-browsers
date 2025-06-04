@@ -108,7 +108,7 @@ enum GeneralPixel: PixelKitEventV2 {
     // Fire Button
     case fireButtonFirstBurn
     case fireButton(option: FireButtonOption)
-    
+
     /**
      * Event Trigger: User opens the fire popover (fire button details view).
      *
@@ -270,7 +270,7 @@ enum GeneralPixel: PixelKitEventV2 {
     case onboardingExceptionReported(message: String, id: String)
 
     // MARK: - Advanced Usage
-    
+
     /**
      * Event Trigger: User enters regular fullscreen mode (not split screen).
      *
@@ -281,7 +281,7 @@ enum GeneralPixel: PixelKitEventV2 {
      * - Increase could suggest users prefer immersive browsing experience.
      */
     case windowFullscreen
-    
+
     /**
      * Event Trigger: User enters split screen mode (window approximately half screen width in fullscreen).
      *
@@ -292,7 +292,7 @@ enum GeneralPixel: PixelKitEventV2 {
      * - Useful for understanding productivity workflows.
      */
     case windowSplitScreen
-    
+
     /**
      * Event Trigger: User activates Picture-in-Picture mode for video playback.
      *
@@ -303,7 +303,7 @@ enum GeneralPixel: PixelKitEventV2 {
      * - Increase could suggest growing use of video content while browsing.
      */
     case pictureInPictureVideoPlayback
-    
+
     /**
      * Event Trigger: User opens developer tools (via any method: menu, context menu, keyboard shortcuts).
      *

@@ -30,7 +30,6 @@ enum GeneralPixel: PixelKitEventV2 {
     case crashReportingSubmissionFailed
     case crashReportCRCIDMissing
     case compileRulesWait(onboardingShown: OnboardingShown, waitTime: CompileRulesWaitTime, result: WaitResult)
-    case launchInitial(cohort: String)
     case launch(isDefault: Bool, isAddedToDock: Bool?)
 
     case serp
@@ -258,6 +257,52 @@ enum GeneralPixel: PixelKitEventV2 {
 
     // Onboarding
     case onboardingExceptionReported(message: String, id: String)
+
+    // MARK: - Advanced Usage
+    
+    /**
+     * Event Trigger: User enters regular fullscreen mode (not split screen).
+     *
+     * > Note: This is a daily pixel.
+     *
+     * Anomaly Investigation:
+     * - May indicate changes in user interface preferences or usage patterns.
+     * - Increase could suggest users prefer immersive browsing experience.
+     */
+    case windowFullscreen
+    
+    /**
+     * Event Trigger: User enters split screen mode (window approximately half screen width in fullscreen).
+     *
+     * > Note: This is a daily pixel.
+     *
+     * Anomaly Investigation:
+     * - May indicate multitasking behavior changes or macOS split screen adoption.
+     * - Useful for understanding productivity workflows.
+     */
+    case windowSplitScreen
+    
+    /**
+     * Event Trigger: User activates Picture-in-Picture mode for video playback.
+     *
+     * > Note: This is a daily pixel.
+     *
+     * Anomaly Investigation:
+     * - May indicate video consumption patterns and multitasking preferences.
+     * - Increase could suggest growing use of video content while browsing.
+     */
+    case pictureInPictureVideoPlayback
+    
+    /**
+     * Event Trigger: User opens developer tools (via any method: menu, context menu, keyboard shortcuts).
+     *
+     * > Note: This is a daily pixel.
+     *
+     * Anomaly Investigation:
+     * - May indicate changes in developer user base or debugging needs.
+     * - Could suggest technical issues requiring inspection or developer activity.
+     */
+    case developerToolsOpened
 
     // MARK: - Debug
 
@@ -708,8 +753,6 @@ enum GeneralPixel: PixelKitEventV2 {
         case .dashboardProtectionAllowlistRemove:
             return "mp_wlr"
 
-        case .launchInitial:
-            return "m_mac_first-launch"
         case .serpInitial:
             return "m_mac_navigation_first-search_u"
 
@@ -835,6 +878,14 @@ enum GeneralPixel: PixelKitEventV2 {
 
             // Onboarding
         case .onboardingExceptionReported: return "m_mac_onboarding_exception-reported"
+
+         // “Advanced” usage
+         case .windowFullscreen: return "m_mac_window_fullscreen"
+         case .windowSplitScreen: return "m_mac_window_split_screen"
+
+         case .pictureInPictureVideoPlayback: return "m_mac_pip_video_playback"
+
+         case .developerToolsOpened: return "m_mac_dev_tools_opened"
 
             // DEBUG
         case .assertionFailure:
@@ -1201,9 +1252,6 @@ enum GeneralPixel: PixelKitEventV2 {
                 params[PixelKit.Parameters.sourceBrowserVersion] = version
             }
             return params
-
-        case .launchInitial(let cohort):
-            return [PixelKit.Parameters.experimentCohort: cohort]
 
         case .dailyOsVersionCounter:
             return [PixelKit.Parameters.osMajorVersion: "\(ProcessInfo.processInfo.operatingSystemVersion.majorVersion)"]

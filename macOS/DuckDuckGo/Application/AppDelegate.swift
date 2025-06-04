@@ -235,9 +235,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             fileStore = EncryptedFileStore()
         }
 
-        appearancePreferences = AppearancePreferences(keyValueStore: keyValueStore)
-        dataClearingPreferences = DataClearingPreferences()
-        startupPreferences = StartupPreferences(appearancePreferences: appearancePreferences, dataClearingPreferences: dataClearingPreferences)
         bookmarkDatabase = BookmarkDatabase()
 
         let internalUserDeciderStore = InternalUserDeciderStore(fileStore: fileStore)
@@ -286,6 +283,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 }
             }
         }
+
+        appearancePreferences = AppearancePreferences(keyValueStore: keyValueStore, pixelFiring: PixelKit.shared)
+        dataClearingPreferences = DataClearingPreferences(pixelFiring: PixelKit.shared)
+        startupPreferences = StartupPreferences(appearancePreferences: appearancePreferences, dataClearingPreferences: dataClearingPreferences)
 
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {

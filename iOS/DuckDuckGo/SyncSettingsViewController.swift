@@ -343,6 +343,16 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
         alert.addAction(confirmAction)
         self.present(alert, animated: true)
     }
+
+    private func handlePairingConfirmation() {
+        pairingInfo = nil
+        askForAuthThenStartPairing()
+        Pixel.fire(pixel: .syncSetupDeepLinkFlowStarted, includedParameters: [.appVersion])
+    }
+
+    private func handlePairingCancellation() {
+        Pixel.fire(pixel: .syncSetupDeepLinkFlowAbandoned, includedParameters: [.appVersion])
+    }
 }
 
 extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
@@ -424,7 +434,7 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
 
 extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     
-    func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool, setupSource: SyncSetupSource) {
+    func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool, setupSource: SyncSetupSource, codeSource: SyncCodeSource) {
         guard shouldShowSyncEnabled else { return }
         self.rootView.model.$devices
             .removeDuplicates()
@@ -434,7 +444,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
                 guard let self else { return }
                 self.dismissVCAndShowRecoveryPDF()
             }.store(in: &cancellables)
-        sendSetupEndedSuccessfullyPixel(setupSource: setupSource)
+        sendSetupEndedSuccessfullyPixel(setupSource: setupSource, codeSource: codeSource)
     }
     
     func controllerDidCreateSyncAccount() {
@@ -482,7 +492,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
             return
         }
 
-        sendSetupEndedSuccessfullyPixel(setupSource: syncSetupSource)
+        sendSetupEndedSuccessfullyPixel(setupSource: syncSetupSource, codeSource: syncCodeSource)
     }
     
     func controllerDidError(_ error: SyncConnectionError, underlyingError: (any Error)?, setupRole: SyncSetupRole) {
@@ -494,6 +504,8 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
             handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncLoginError)
         case .failedToCreateAccount:
             handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncSignupError)
+        case .pollingForRecoveryKeyTimedOut:
+            handleRecoveryKeyPollingTimeout(setupRole: setupRole)
         }
     }
 
@@ -505,6 +517,8 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
             Pixel.fire(pixel: .syncSetupBarcodeScannerSuccess, withAdditionalParameters: parameters, includedParameters: [.appVersion])
         case .pastedCode:
             Pixel.fire(pixel: .syncSetupManualCodeEnteredSuccess, withAdditionalParameters: parameters, includedParameters: [.appVersion])
+        case .deepLink:
+            break
         }
     }
 
@@ -518,13 +532,30 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
             Pixel.fire(pixel: .syncSetupBarcodeScannerSuccess, includedParameters: [.appVersion])
         case .pastedCode:
             Pixel.fire(pixel: .syncSetupManualCodeEnteredFailed, includedParameters: [.appVersion])
+        case .deepLink:
+            break
         }
     }
 
-    private func sendSetupEndedSuccessfullyPixel(setupSource: SyncSetupSource) {
+    private func sendSetupEndedSuccessfullyPixel(setupSource: SyncSetupSource, codeSource: SyncCodeSource) {
         guard setupSource != .recovery else { return }
         let parameters = [PixelParameters.source: setupSource.rawValue]
-        Pixel.fire(pixel: .syncSetupEndedSuccessful, withAdditionalParameters: parameters)
+        switch codeSource {
+        case .pastedCode, .qrCode:
+            Pixel.fire(pixel: .syncSetupEndedSuccessful, withAdditionalParameters: parameters, includedParameters: [.appVersion])
+        case .deepLink:
+            Pixel.fire(pixel: .syncSetupDeepLinkFlowSuccess, includedParameters: [.appVersion])
+        }
+    }
+
+    private func handleRecoveryKeyPollingTimeout(setupRole: SyncSetupRole) {
+        guard case .receiver(let setupSource, let codeSource) = setupRole else {
+            return
+        }
+        guard case .deepLink = codeSource else {
+            return
+        }
+        Pixel.fire(pixel: .syncSetupDeepLinkFlowTimeout, includedParameters: [.appVersion])
     }
 }
 

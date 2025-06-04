@@ -30,7 +30,7 @@ public protocol SyncConnectionControllerDelegate: AnyObject {
     func controllerDidRecognizeScannedCode(setupSource: SyncSetupSource, codeSource: SyncCodeSource) async
 
     func controllerDidCreateSyncAccount()
-    func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool, setupSource: SyncSetupSource)
+    func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool, setupSource: SyncSetupSource, codeSource: SyncCodeSource)
 
     func controllerDidCompleteLogin(registeredDevices: [RegisteredDevice], isRecovery: Bool, setupRole: SyncSetupRole)
 
@@ -52,6 +52,8 @@ public enum SyncConnectionError: Error {
 
     case failedToCreateAccount
     case failedToTransmitConnectRecoveryKey
+
+    case pollingForRecoveryKeyTimedOut
 }
 
 public protocol SyncConnectionControlling {
@@ -132,25 +134,26 @@ public actor SyncConnectionController: SyncConnectionControlling {
 
     @discardableResult
     public func startPairingMode(_ pairingInfo: PairingInfo) async -> Bool {
+        let syncCodeSource = SyncCodeSource.deepLink
         let syncCode: SyncCode
         do {
             syncCode = try SyncCode.decodeBase64String(pairingInfo.base64Code)
         } catch {
             // TODO: Maybe different event... all of these
-            await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: error, setupRole: .receiver(.unknown, .qrCode))
+            await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: error, setupRole: .receiver(.unknown, syncCodeSource))
             return false
         }
 
         if let exchangeKey = syncCode.exchangeKey {
-            await delegate?.controllerDidRecognizeScannedCode(setupSource: .exchange, codeSource: .qrCode)
-            return await handleExchangeKey(exchangeKey, codeSource: .qrCode)
+            await delegate?.controllerDidRecognizeScannedCode(setupSource: .exchange, codeSource: syncCodeSource)
+            return await handleExchangeKey(exchangeKey, codeSource: syncCodeSource)
         } else if let connectKey = syncCode.connect {
-            await delegate?.controllerDidRecognizeScannedCode(setupSource: .connect, codeSource: .qrCode)
-            return await handleConnectKey(connectKey, codeSource: .qrCode)
+            await delegate?.controllerDidRecognizeScannedCode(setupSource: .connect, codeSource: syncCodeSource)
+            return await handleConnectKey(connectKey, codeSource: syncCodeSource)
         } else {
-            await delegate?.controllerDidRecognizeScannedCode(setupSource: .recovery, codeSource: .qrCode)
+            await delegate?.controllerDidRecognizeScannedCode(setupSource: .recovery, codeSource: syncCodeSource)
             // TODO: Maybe different event
-            await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: nil, setupRole: .receiver(.unknown, .qrCode))
+            await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: nil, setupRole: .receiver(.unknown, syncCodeSource))
             return false
         }
     }
@@ -273,6 +276,9 @@ public actor SyncConnectionController: SyncConnectionControlling {
                 return false
             }
             return await handleRecoveryKey(recoveryKey, isRecovery: false, setupRole: setupRole)
+        } catch SyncError.pollingDidTimeOut {
+            await delegate?.controllerDidError(.pollingForRecoveryKeyTimedOut, underlyingError: nil, setupRole: setupRole)
+            return false
         } catch {
             await delegate?.controllerDidError(.failedToFetchExchangeRecoveryKey, underlyingError: error, setupRole: setupRole)
             return false
@@ -310,7 +316,7 @@ public actor SyncConnectionController: SyncConnectionControlling {
         }
         do {
             try await syncService.transmitRecoveryKey(connectKey)
-            await delegate?.controllerDidCompleteAccountConnection(shouldShowSyncEnabled: shouldShowSyncEnabled, setupSource: .connect)
+            await delegate?.controllerDidCompleteAccountConnection(shouldShowSyncEnabled: shouldShowSyncEnabled, setupSource: .connect, codeSource: codeSource)
         } catch {
             await delegate?.controllerDidError(.failedToTransmitConnectRecoveryKey, underlyingError: error, setupRole: .receiver(.connect, codeSource))
             return false

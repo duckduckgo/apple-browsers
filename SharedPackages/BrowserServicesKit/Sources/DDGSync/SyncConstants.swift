@@ -31,4 +31,5 @@ public enum SyncSetupSource: String {
 public enum SyncCodeSource: String {
     case qrCode
     case pastedCode
+    case deepLink
 }

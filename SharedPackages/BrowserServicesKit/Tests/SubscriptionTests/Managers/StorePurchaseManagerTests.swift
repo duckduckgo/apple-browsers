@@ -417,8 +417,8 @@ final class StorePurchaseManagerTests: XCTestCase {
 
     func testIsUserEligibleForFreeTrialReturnsFalseWhenNoTrialProductsExist() async {
         // Given
-        let monthlyProduct = createMonthlyProduct(withTrial: false)
-        let yearlyProduct = createYearlyProduct(withTrial: false)
+        let monthlyProduct = createMonthlyProduct(withTrial: false, isEligibleForFreeTrial: false)
+        let yearlyProduct = createYearlyProduct(withTrial: false, isEligibleForFreeTrial: false)
         mockProductFetcher.mockProducts = [monthlyProduct, yearlyProduct]
         await sut.updateAvailableProducts()
 
@@ -520,9 +520,7 @@ private class MockSubscriptionProduct: StoreProduct {
     }
 
     var isEligibleForFreeTrial: Bool {
-        get async {
-            return mockIsEligibleForFreeTrial
-        }
+        mockIsEligibleForFreeTrial
     }
 
     func purchase(options: Set<Product.PurchaseOption>) async throws -> Product.PurchaseResult {

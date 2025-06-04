@@ -263,6 +263,7 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
                 // Successful purchase
                 await transaction.finish()
                 await self.updatePurchasedProducts()
+                await self.updateAvailableProductsTrialEligibility()
                 return .success(verificationResult.jwsRepresentation)
             case let .unverified(_, error):
                 Logger.subscription.info("[StorePurchaseManager] purchaseSubscription result: success /unverified/ - \(error.localizedDescription, privacy: .public)")
@@ -348,6 +349,27 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
             }
         }
     }
+
+    /// Updates the free trial eligibility status for all available subscription products.
+    ///
+    /// This method iterates through all products in the `availableProducts` array and refreshes
+    /// their stored free trial eligibility status by querying the underlying App Store products.
+    /// This ensures that the products reflect the most current trial eligibility state.
+    ///
+    /// This method is typically called after significant subscription events that might affect
+    /// trial eligibility, such as:
+    /// - Successful purchases (users typically become ineligible for trials after purchasing)
+    /// - Transaction updates from the App Store
+    /// - Account restoration events
+    ///
+    /// - Important: This method directly modifies the products in the `availableProducts` array
+    ///   using index-based iteration to ensure the changes persist in the published array.
+    private func updateAvailableProductsTrialEligibility() async {
+        for index in self.availableProducts.indices {
+            Logger.subscription.info("[StorePurchaseManager] updateAvailableProductsTrialStatus subscription id: \(self.availableProducts[index].id)")  
+            await self.availableProducts[index].refreshFreeTrialEligibility()
+        }
+    }
 }
 
 @available(macOS 12.0, iOS 15.0, *)
@@ -359,7 +381,7 @@ private extension SubscriptionOption {
         if let introOffer = product.introductoryOffer, introOffer.isFreeTrial {
             let durationInDays = introOffer.periodInDays
 
-            // Get fresh eligibility data without mutating the product
+            // Get fresh eligibility data
             let isUserEligible = await product.checkFreshFreeTrialEligibility()
 
             offer = .init(type: .freeTrial, id: introOffer.id ?? "", durationInDays: durationInDays, isUserEligible: isUserEligible)

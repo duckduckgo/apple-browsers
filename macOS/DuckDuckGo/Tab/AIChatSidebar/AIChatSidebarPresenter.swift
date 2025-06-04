@@ -100,7 +100,7 @@ extension AIChatSidebarPresenter: AIChatSidebarViewControllerDelegate {
             NSApp.delegateTyped.aiChatTabOpener.openAIChatTab(nil, target: .newTabSelected)
         }
     }
-    
+
     func didClickCloseButton() {
         toggleSidebar()
     }

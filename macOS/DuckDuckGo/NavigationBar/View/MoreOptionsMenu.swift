@@ -84,6 +84,8 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     /// The `FreemiumDBPExperimentPixelHandler` instance used to fire pixels
     private let freemiumDBPExperimentPixelHandler: EventMapping<FreemiumDBPExperimentPixel>
 
+    private weak var updateMenuItem: NSMenuItem?
+
     required init(coder: NSCoder) {
         fatalError("MoreOptionsMenu: Bad initializer")
     }
@@ -250,6 +252,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     }
 
     @objc func openDataBrokerProtection(_ sender: NSMenuItem) {
+        PixelKit.fire(MoreOptionsMenuPixel.dataBrokerProtectionActionClicked, frequency: .daily)
         actionDelegate?.optionsButtonMenuRequestedDataBrokerProtection(self)
     }
 
@@ -346,7 +349,6 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     }
 
     @objc func openExternalPasswordManager(_ sender: NSMenuItem) {
-        PixelKit.fire(MoreOptionsMenuPixel.passwordsActionClicked, frequency: .daily)
         actionDelegate?.optionsButtonMenuRequestedOpenExternalPasswordManager(self)
     }
 
@@ -378,6 +380,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     }
 
     @objc func openSubscriptionSettings(_ sender: NSMenuItem) {
+        PixelKit.fire(MoreOptionsMenuPixel.subscriptionActionClicked, frequency: .daily)
         actionDelegate?.optionsButtonMenuRequestedSubscriptionPreferences(self)
     }
 
@@ -427,11 +430,16 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             return
         }
 
-        if featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp) {
-            addItem(UpdateMenuItemFactory.menuItem(for: updateController))
-        } else {
-            addItem(UpdateMenuItemFactory.menuItem(for: update))
-        }
+        let menuItem: NSMenuItem = {
+            if featureFlagger.isFeatureOn(.updatesWontAutomaticallyRestartApp) {
+                return UpdateMenuItemFactory.menuItem(for: updateController)
+            } else {
+                return UpdateMenuItemFactory.menuItem(for: update)
+            }
+        }()
+
+        updateMenuItem = menuItem
+        addItem(menuItem)
 
         addItem(NSMenuItem.separator())
 #endif
@@ -615,6 +623,13 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     func menuDidClose(_ menu: NSMenu) {
         dockCustomizer?.didCloseMoreOptionsMenu()
     }
+
+    override func performActionForItem(at index: Int) {
+        if let item = item(at: index), item == updateMenuItem {
+            PixelKit.fire(MoreOptionsMenuPixel.updateActionClicked, frequency: .daily)
+        }
+        super.performActionForItem(at: index)
+    }
 }
 
 final class EmailOptionsButtonSubMenu: NSMenu {
@@ -668,8 +683,12 @@ final class EmailOptionsButtonSubMenu: NSMenu {
             addItem(withTitle: UserText.emailOptionsMenuTurnOnSubItem, action: #selector(turnOnEmailAction(_:)), keyEquivalent: "")
                 .targetting(self)
                 .withImage(moreOptionsMenuIconsProvider.emailProtectionTurnOnIcon)
-
         }
+    }
+
+    override func performActionForItem(at index: Int) {
+        PixelKit.fire(MoreOptionsMenuPixel.emailProtectionActionClicked, frequency: .daily)
+        super.performActionForItem(at: index)
     }
 
     @MainActor
@@ -963,6 +982,10 @@ final class BookmarksSubMenu: NSMenu {
         return menuItems
     }
 
+    override func performActionForItem(at index: Int) {
+        PixelKit.fire(MoreOptionsMenuPixel.bookmarksActionClicked, frequency: .daily)
+        super.performActionForItem(at: index)
+    }
 }
 
 final class LoginsSubMenu: NSMenu {
@@ -1045,6 +1068,11 @@ final class HelpSubMenu: NSMenu {
         let feedback = (NSApp.mainMenuTyped.sendFeedbackMenuItem.copy() as? NSMenuItem)!
         addItem(feedback)
 #endif
+    }
+
+    override func performActionForItem(at index: Int) {
+        PixelKit.fire(MoreOptionsMenuPixel.helpActionClicked, frequency: .daily)
+        super.performActionForItem(at: index)
     }
 }
 

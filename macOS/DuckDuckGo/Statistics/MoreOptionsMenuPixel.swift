@@ -33,28 +33,59 @@ import PixelKit
  */
 enum MoreOptionsMenuPixel: PixelKitEventV2 {
 
+    /// Event Trigger: Feedback or Privacy Pro feedback menu action is clicked
     case feedbackActionClicked
+
+    /// Event Trigger: New Tab action is clicked
     case newTabActionClicked
+
+    /// Event Trigger: New Window action is clicked
     case newWindowActionClicked
+
+    /// Event Trigger: New Fire Window action is clicked
     case newBurnerWindowActionClicked
-    case newAIChatActionClicked
+
+    /// Event Trigger: Zoom In, zoom Out or Actual Size action is clicked
     case zoomActionClicked
 
+    /// Event Trigger: Any action in Bookmarks submenu is clicked
     case bookmarksActionClicked
+
+    /// Event Trigger: Downloads action is clicked
     case downloadsActionClicked
+
+    /// Event Trigger: Any action in Passwords and Autofill submenu is clicked
     case passwordsActionClicked
+
+    /// Event Trigger: Any action in Email Protection submenu is clicked
     case emailProtectionActionClicked
+
+    /// Event Trigger: Subscription Settings action is clicked
     case subscriptionActionClicked
+
+    /// Event Trigger: Data Broker Protection action is clicked
     case dataBrokerProtectionActionClicked
+
+    /// Event Trigger: Fireproof This Site action is clicked
     case fireproofSiteActionClicked
+
+    /// Event Trigger: Find in Page action is clicked
     case findInPageActionClicked
+
+    /// Event Trigger: Any action in Share menu is clicked
     case shareActionClicked
+
+    /// Event Trigger: Print action is clicked
     case printActionClicked
+
+    /// Event Trigger: Any action in Help menu is clicked
     case helpActionClicked
+
+    /// Event Trigger: Update action is clicked
     case updateActionClicked
+
+    /// Event Trigger: Settings action is clicked
     case settingsActionClicked
-    case addToDockActionClicked
-    case setAsDefaultActionClicked
 
     // MARK: -
 
@@ -68,8 +99,6 @@ enum MoreOptionsMenuPixel: PixelKitEventV2 {
             return "browser_menu_new_window"
         case .newBurnerWindowActionClicked:
             return "browser_menu_new_burner_window"
-        case .newAIChatActionClicked:
-            return "browser_menu_new_ai_chat"
         case .zoomActionClicked:
             return "browser_menu_zoom"
         case .bookmarksActionClicked:
@@ -98,10 +127,6 @@ enum MoreOptionsMenuPixel: PixelKitEventV2 {
             return "browser_menu_update"
         case .settingsActionClicked:
             return "browser_menu_settings"
-        case .addToDockActionClicked:
-            return "browser_menu_add_to_dock"
-        case .setAsDefaultActionClicked:
-            return "browser_menu_set_as_default"
         }
     }
 

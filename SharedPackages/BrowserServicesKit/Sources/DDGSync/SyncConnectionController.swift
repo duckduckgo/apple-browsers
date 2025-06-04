@@ -138,7 +138,6 @@ public actor SyncConnectionController: SyncConnectionControlling {
         do {
             syncCode = try SyncCode.decodeBase64String(pairingInfo.base64Code)
         } catch {
-            // TODO: Maybe different event... all of these
             await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: error, setupRole: .receiver(.unknown, syncCodeSource))
             return false
         }
@@ -151,7 +150,6 @@ public actor SyncConnectionController: SyncConnectionControlling {
             return await handleConnectKey(connectKey, codeSource: syncCodeSource)
         } else {
             await delegate?.controllerDidRecognizeCode(setupSource: .recovery, codeSource: syncCodeSource)
-            // TODO: Maybe different event
             await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: nil, setupRole: .receiver(.unknown, syncCodeSource))
             return false
         }

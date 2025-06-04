@@ -1,0 +1,23 @@
+name: Test Asana User ID Mapping
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  create-asana-task:
+    name: Create Asana Task
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v4
+      - name: Create Asana Task
+        uses: ./.github/actions/asana-failed-pr-checks
+        with:
+          action: create-task
+          asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
+          asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_IOS_POST_MERGE_SECTION_ID }}
+          commit-author: ${{ github.actor }}
+          github-token: ${{ github.token }}

@@ -17,6 +17,10 @@ inputs:
     description: "Last commit author's GitHub handle"
     required: false
     type: string
+  github-token:
+    description: "GitHub token"
+    required: false
+    type: string
 runs:
   using: "composite"
   steps:
@@ -25,7 +29,7 @@ runs:
       with:
         action: 'get-asana-user-id'
         github-username: ${{ inputs.commit-author }}
-        github-pat: ${{ secrets.GITHUB_TOKEN }}
+        github-pat: ${{ inputs.github-token }}
     - id: report-failed-pr-checks
       env:
         WORKFLOW_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}

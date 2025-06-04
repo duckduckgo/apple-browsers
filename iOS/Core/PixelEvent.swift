@@ -863,6 +863,10 @@ extension Pixel {
         case syncSetupManualCodeEnteredFailed
         case syncSetupEndedAbandoned
         case syncSetupEndedSuccessful
+        case syncSetupDeepLinkFlowStarted
+        case syncSetupDeepLinkFlowSuccess
+        case syncSetupDeepLinkFlowAbandoned
+        case syncSetupDeepLinkFlowTimeout
 
         case swipeTabsUsedDaily
         case swipeToOpenNewTab
@@ -2003,6 +2007,10 @@ extension Pixel.Event {
         case .syncSetupManualCodeEnteredFailed: return "sync_setup_manual_code_entered_failed"
         case .syncSetupEndedAbandoned: return "sync_setup_ended_abandoned"
         case .syncSetupEndedSuccessful: return "sync_setup_ended_successful"
+        case .syncSetupDeepLinkFlowStarted: return "sync_setup_deep_link_flow_started"
+        case .syncSetupDeepLinkFlowSuccess: return "sync_setup_deep_link_flow_success"
+        case .syncSetupDeepLinkFlowAbandoned: return "sync_setup_deep_link_flow_abandoned"
+        case .syncSetupDeepLinkFlowTimeout: return "sync_setup_deep_link_timeout"
 
         case .swipeTabsUsedDaily: return "m_swipe-tabs-used-daily"
         case .swipeToOpenNewTab: return "m_addressbar_swipe_new_tab"

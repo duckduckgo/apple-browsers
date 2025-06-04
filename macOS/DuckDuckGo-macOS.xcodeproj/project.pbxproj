@@ -225,6 +225,8 @@
 		1E15F6952DF08E920061395E /* AIChatSidebarPresenter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E15F6932DF08E920061395E /* AIChatSidebarPresenter.swift */; };
 		1E15F6972DF08EDD0061395E /* AIChatSidebarHosting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E15F6962DF08EDD0061395E /* AIChatSidebarHosting.swift */; };
 		1E15F6982DF08EDD0061395E /* AIChatSidebarHosting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E15F6962DF08EDD0061395E /* AIChatSidebarHosting.swift */; };
+		1E15F69A2DF0D1590061395E /* AIChatSidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E15F6992DF0D1590061395E /* AIChatSidebar.swift */; };
+		1E15F69B2DF0D1590061395E /* AIChatSidebar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E15F6992DF0D1590061395E /* AIChatSidebar.swift */; };
 		1E25A4FE2CC937120080EFD4 /* SubscriptionCookieManageEventPixelMapping.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E25A4FD2CC937120080EFD4 /* SubscriptionCookieManageEventPixelMapping.swift */; };
 		1E25A4FF2CC9408A0080EFD4 /* SubscriptionCookieManageEventPixelMapping.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E25A4FD2CC937120080EFD4 /* SubscriptionCookieManageEventPixelMapping.swift */; };
 		1E2BEAE42C8B00B5002741A3 /* SubscriptionPagesUseSubscriptionFeatureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E2BEAE32C8B00B5002741A3 /* SubscriptionPagesUseSubscriptionFeatureTests.swift */; };
@@ -3960,6 +3962,7 @@
 		1E0C72052ABC63BD00802009 /* SubscriptionPagesUserScript.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPagesUserScript.swift; sourceTree = "<group>"; };
 		1E15F6932DF08E920061395E /* AIChatSidebarPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSidebarPresenter.swift; sourceTree = "<group>"; };
 		1E15F6962DF08EDD0061395E /* AIChatSidebarHosting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSidebarHosting.swift; sourceTree = "<group>"; };
+		1E15F6992DF0D1590061395E /* AIChatSidebar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSidebar.swift; sourceTree = "<group>"; };
 		1E25A4FD2CC937120080EFD4 /* SubscriptionCookieManageEventPixelMapping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionCookieManageEventPixelMapping.swift; sourceTree = "<group>"; };
 		1E2BEAE32C8B00B5002741A3 /* SubscriptionPagesUseSubscriptionFeatureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPagesUseSubscriptionFeatureTests.swift; sourceTree = "<group>"; };
 		1E4EDA272DE9ED2D0019B6E8 /* AIChatSidebarProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIChatSidebarProvider.swift; sourceTree = "<group>"; };
@@ -6206,6 +6209,7 @@
 			isa = PBXGroup;
 			children = (
 				1E4EDA272DE9ED2D0019B6E8 /* AIChatSidebarProvider.swift */,
+				1E15F6992DF0D1590061395E /* AIChatSidebar.swift */,
 				1E4EDA2D2DE9ED710019B6E8 /* AIChatSidebarViewController.swift */,
 				1E15F6932DF08E920061395E /* AIChatSidebarPresenter.swift */,
 				1E15F6962DF08EDD0061395E /* AIChatSidebarHosting.swift */,
@@ -12618,6 +12622,7 @@
 				1D39E57B2C2C0F3700757339 /* ReleaseNotesUserScript.swift in Sources */,
 				3706FB33293F65D500E42796 /* DeviceIdleStateDetector.swift in Sources */,
 				1DB67F2A2B6FEB17003DF243 /* WebViewSnapshotRenderer.swift in Sources */,
+				1E15F69A2DF0D1590061395E /* AIChatSidebar.swift in Sources */,
 				3706FB35293F65D500E42796 /* FlatButton.swift in Sources */,
 				3706FB36293F65D500E42796 /* PinnedTabView.swift in Sources */,
 				7BC641152DD1FBDA00272A9D /* UpdatesDebugMenu.swift in Sources */,
@@ -14602,6 +14607,7 @@
 				B66260E029AC6EBD00E9E3EE /* HistoryTabExtension.swift in Sources */,
 				B6BCC54F2AFE4F7D002C5499 /* DataImportTypePicker.swift in Sources */,
 				AAEEC6A927088ADB008445F7 /* FireCoordinator.swift in Sources */,
+				1E15F69B2DF0D1590061395E /* AIChatSidebar.swift in Sources */,
 				B655369B268442EE00085A79 /* GeolocationProvider.swift in Sources */,
 				562802C82DAAB43B009F2F04 /* ContextualDialogsManager.swift in Sources */,
 				BBB881882C4029BA001247C6 /* BookmarkListTreeControllerSearchDataSource.swift in Sources */,

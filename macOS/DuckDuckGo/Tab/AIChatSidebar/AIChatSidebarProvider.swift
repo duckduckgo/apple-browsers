@@ -23,7 +23,7 @@ typealias TabIdentifier = String
 protocol AIChatSidebarProviding {
     var sidebarWidth: CGFloat { get }
 
-    func sidebar(for tabID: TabIdentifier) -> TabSidebar
+    func sidebar(for tabID: TabIdentifier) -> AIChatSidebar
     func isShowingSidebar(for tabID: TabIdentifier) -> Bool
 
     func handleSidebarDidClose(for tabID: TabIdentifier)
@@ -36,48 +36,36 @@ final class AIChatSidebarProvider: AIChatSidebarProviding {
         static let sidebarWidth: CGFloat = 450
     }
 
-    private var sidebarTabs: [String: TabSidebar] = [:]
+    private var sidebarsByTabIDs: [TabIdentifier: AIChatSidebar] = [:]
 
     var sidebarWidth: CGFloat { Constants.sidebarWidth }
 
-    func sidebar(for tabID: TabIdentifier) -> TabSidebar {
-        if let tabSidebar = sidebarTabs[tabID] {
-            return tabSidebar
+    func sidebar(for tabID: TabIdentifier) -> AIChatSidebar {
+        if let sidebar = sidebarsByTabIDs[tabID] {
+            return sidebar
         } else {
-            let tabSidebar = TabSidebar.makeAIChatSidebar()
-            sidebarTabs[tabID] = tabSidebar
-            return tabSidebar
+            let sidebar = AIChatSidebar()
+            sidebarsByTabIDs[tabID] = sidebar
+            return sidebar
         }
     }
 
     func isShowingSidebar(for tabID: TabIdentifier) -> Bool {
-        return sidebarTabs[tabID] != nil
+        return sidebarsByTabIDs[tabID] != nil
     }
 
     func handleSidebarDidClose(for tabID: TabIdentifier) {
-        if let tabSidebar = sidebarTabs[tabID] {
+        if let tabSidebar = sidebarsByTabIDs[tabID] {
             tabSidebar.sidebarViewController.removeCompletely()
-            sidebarTabs.removeValue(forKey: tabID)
+            sidebarsByTabIDs.removeValue(forKey: tabID)
         }
     }
 
     func cleanUp(for currentTabIDs: [TabIdentifier]) {
-        let tabIDsForRemoval = Set(sidebarTabs.keys).subtracting(currentTabIDs)
+        let tabIDsForRemoval = Set(sidebarsByTabIDs.keys).subtracting(currentTabIDs)
 
         for tabID in tabIDsForRemoval {
             handleSidebarDidClose(for: tabID)
         }
-    }
-}
-
-final class TabSidebar {
-    var sidebarViewController: AIChatSidebarViewController
-
-    init(sidebarViewController: AIChatSidebarViewController) {
-        self.sidebarViewController = sidebarViewController
-    }
-
-    static func makeAIChatSidebar() -> TabSidebar {
-        return TabSidebar(sidebarViewController: AIChatSidebarViewController())
     }
 }

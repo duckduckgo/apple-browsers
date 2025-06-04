@@ -116,7 +116,7 @@ struct PinnedTabView: View, DropDelegate {
             return Color(tabStyleProvider.selectedTabColor)
         }
         let isHovered = collectionModel.hoveredItem == model
-        return showsHover && isHovered ? Color(tabStyleProvider.selectedTabColor) : Color.clear
+        return showsHover && isHovered ? Color(tabStyleProvider.hoverTabColor) : Color.clear
     }
 
     private var shouldDrawSeparator: Bool {

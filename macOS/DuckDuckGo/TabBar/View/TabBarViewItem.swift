@@ -199,7 +199,6 @@ final class TabBarItemCellView: NSView {
 
     fileprivate let mouseOverView = {
         let mouseOverView = MouseOverView()
-        mouseOverView.mouseOverColor = .tabMouseOver
         return mouseOverView
     }()
 
@@ -274,6 +273,7 @@ final class TabBarItemCellView: NSView {
             .layerMinXMaxYCorner,
             .layerMaxXMaxYCorner
         ]
+        mouseOverView.mouseOverColor = visualStyle.tabStyleProvider.hoverTabColor
 
         if visualStyle.tabStyleProvider.shouldShowSShapedTab {
             addSubview(leftRampView)

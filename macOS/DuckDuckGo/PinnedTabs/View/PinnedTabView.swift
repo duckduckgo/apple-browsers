@@ -50,7 +50,7 @@ struct PinnedTabView: View, DropDelegate {
                     foregroundColor: foregroundColor,
                     separatorColor: Color(tabStyleProvider.separatorColor),
                     separatorHeight: tabStyleProvider.separatorHeight,
-                    drawSeparator: !collectionModel.itemsWithoutSeparator.contains(model),
+                    drawSeparator: shouldDrawSeparator,
                     showSShaped: tabStyleProvider.shouldShowSShapedTab,
                     applyTabShadow: tabStyleProvider.applyTabShadow,
                     roundedHover: tabStyleProvider.isRoundedBackgroundPresentOnHover
@@ -76,6 +76,15 @@ struct PinnedTabView: View, DropDelegate {
         if controlActiveState == .key {
             stack.onHover { [weak collectionModel, weak model] isHovered in
                 collectionModel?.hoveredItem = isHovered ? model : nil
+                // Notify adjacent tabs to update their separators
+                if let model = model, let index = collectionModel?.items.firstIndex(of: model) {
+                    if index > 0 {
+                        collectionModel?.items[index - 1].needsSeparatorUpdate = true
+                    }
+                    if index < (collectionModel?.items.count ?? 0) - 1 {
+                        collectionModel?.items[index + 1].needsSeparatorUpdate = true
+                    }
+                }
             }
         } else {
             stack
@@ -108,6 +117,22 @@ struct PinnedTabView: View, DropDelegate {
         }
         let isHovered = collectionModel.hoveredItem == model
         return showsHover && isHovered ? Color(tabStyleProvider.selectedTabColor) : Color.clear
+    }
+
+    private var shouldDrawSeparator: Bool {
+        let isHovered = collectionModel.hoveredItem == model
+        let rightItemIsHovered: Bool = {
+            guard let index = collectionModel.items.firstIndex(of: model),
+                  index < collectionModel.items.count - 1
+            else { return false }
+            return collectionModel.hoveredItem == collectionModel.items[index + 1]
+        }()
+
+        if tabStyleProvider.isRoundedBackgroundPresentOnHover && (isHovered || rightItemIsHovered) {
+            return false
+        }
+
+        return !isSelected && !collectionModel.itemsWithoutSeparator.contains(model)
     }
 
     @ViewBuilder

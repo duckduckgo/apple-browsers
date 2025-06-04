@@ -21,6 +21,7 @@ import Cocoa
 import Common
 import Combine
 import FeatureFlags
+import History
 import OSLog
 import SwiftUI
 import WebKit
@@ -62,7 +63,7 @@ final class MainMenu: NSMenu {
 
     // MARK: History
     @MainActor
-    let historyMenu = HistoryMenu()
+    let historyMenu: HistoryMenu
 
     @MainActor
     var backMenuItem: NSMenuItem { historyMenu.backMenuItem }
@@ -120,6 +121,7 @@ final class MainMenu: NSMenu {
     @MainActor
     init(featureFlagger: FeatureFlagger,
          bookmarkManager: BookmarkManager,
+         historyCoordinator: HistoryCoordinating & HistoryGroupingDataSource,
          faviconManager: FaviconManagement,
          dockCustomizer: DockCustomization = DockCustomizer(),
          defaultBrowserPreferences: DefaultBrowserPreferences = .shared,
@@ -134,6 +136,7 @@ final class MainMenu: NSMenu {
         self.dockCustomizer = dockCustomizer
         self.defaultBrowserPreferences = defaultBrowserPreferences
         self.aiChatMenuConfig = aiChatMenuConfig
+        self.historyMenu = HistoryMenu(historyGroupingDataSource: historyCoordinator, featureFlagger: featureFlagger)
         super.init(title: UserText.duckDuckGo)
 
         buildItems {
@@ -144,7 +147,7 @@ final class MainMenu: NSMenu {
             buildHistoryMenu()
             buildBookmarksMenu()
             buildWindowMenu()
-            buildDebugMenu(featureFlagger: featureFlagger)
+            buildDebugMenu(featureFlagger: featureFlagger, historyCoordinator: historyCoordinator)
             buildHelpMenu()
         }
 
@@ -406,14 +409,14 @@ final class MainMenu: NSMenu {
     }
 
     @MainActor
-    func buildDebugMenu(featureFlagger: FeatureFlagger) -> NSMenuItem? {
+    func buildDebugMenu(featureFlagger: FeatureFlagger, historyCoordinator: HistoryCoordinating) -> NSMenuItem? {
 #if DEBUG || REVIEW
         NSMenuItem(title: "Debug")
-            .submenu(setupDebugMenu())
+            .submenu(setupDebugMenu(featureFlagger: featureFlagger, historyCoordinator: historyCoordinator))
 #else
         if featureFlagger.isFeatureOn(.debugMenu) {
             NSMenuItem(title: "Debug")
-                .submenu(setupDebugMenu())
+                .submenu(setupDebugMenu(featureFlagger: featureFlagger, historyCoordinator: historyCoordinator))
         } else {
             nil
         }
@@ -650,10 +653,10 @@ final class MainMenu: NSMenu {
     let internalUserItem = NSMenuItem(title: "Set Internal User State", action: #selector(AppDelegate.internalUserState))
 
     @MainActor
-    private func setupDebugMenu() -> NSMenu {
+    private func setupDebugMenu(featureFlagger: FeatureFlagger, historyCoordinator: HistoryCoordinating) -> NSMenu {
         let debugMenu = NSMenu(title: "Debug") {
             NSMenuItem(title: "Feature Flag Overrides")
-                .submenu(FeatureFlagOverridesMenu(featureFlagOverrides: NSApp.delegateTyped.featureFlagger))
+                .submenu(FeatureFlagOverridesMenu(featureFlagOverrides: featureFlagger))
             NSMenuItem(title: "Open Vanilla Browser", action: #selector(MainViewController.openVanillaBrowser)).withAccessibilityIdentifier("MainMenu.openVanillaBrowser")
             NSMenuItem(title: "Skip Onboarding", action: #selector(AppDelegate.skipOnboarding)).withAccessibilityIdentifier("MainMenu.skipOnboarding")
             NSMenuItem(title: "New Tab Page") {
@@ -662,7 +665,7 @@ final class MainMenu: NSMenu {
                 NSMenuItem(title: "Shift \(AppearancePreferences.Constants.dismissNextStepsCardsAfterDays) days", action: #selector(MainViewController.debugShiftNewTabOpeningDateNtimes))
             }
             NSMenuItem(title: "History")
-                .submenu(HistoryDebugMenu())
+                .submenu(HistoryDebugMenu(historyCoordinator: historyCoordinator, featureFlagger: featureFlagger))
             NSMenuItem(title: "Content Scopes Experiment") {
                 NSMenuItem(title: "Show Active Experiments", action: #selector(AppDelegate.showContentScopeExperiments))
             }

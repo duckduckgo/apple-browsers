@@ -75,9 +75,9 @@ extension WindowControllersManagerProtocol {
 @MainActor
 final class WindowControllersManager: WindowControllersManagerProtocol {
 
-    static let shared = WindowControllersManager(pinnedTabsManagerProvider: Application.appDelegate.pinnedTabsManagerProvider,
-                                                 subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability()
-    )
+    static var shared: WindowControllersManager {
+        Application.appDelegate.windowControllersManager
+    }
 
     var activeViewController: MainViewController? {
         lastKeyMainWindowController?.mainViewController

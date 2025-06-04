@@ -412,6 +412,7 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
     func codeCollectionCancelled() {
         assert(navigationController?.visibleViewController is UIHostingController<AnyView>)
         dismissPresentedViewController()
+        Pixel.fire(pixel: .syncSetupEndedAbandoned)
     }
 
     func gotoSettings() {
@@ -433,6 +434,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
                 guard let self else { return }
                 self.dismissVCAndShowRecoveryPDF()
             }.store(in: &cancellables)
+        sendSetupEndedSuccessfullyPixel(setupSource: setupSource)
     }
     
     func controllerDidCreateSyncAccount() {
@@ -457,7 +459,6 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     }
     
     func controllerDidRecognizeScannedCode(setupSource: SyncSetupSource, codeSource: SyncCodeSource) async {
-        
         sendCodeRecognisedPixel(setupSource: setupSource, codeSource: codeSource)
         dismissPresentedViewController()
         await showPreparingSync()
@@ -477,6 +478,11 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             self.dismissVCAndShowRecoveryPDF()
         }
+        guard case .receiver(let syncSetupSource, let syncCodeSource) = setupRole else {
+            return
+        }
+
+        sendSetupEndedSuccessfullyPixel(setupSource: syncSetupSource)
     }
     
     func controllerDidError(_ error: SyncConnectionError, underlyingError: (any Error)?, setupRole: SyncSetupRole) {
@@ -513,6 +519,12 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         case .pastedCode:
             Pixel.fire(pixel: .syncSetupManualCodeEnteredFailed, includedParameters: [.appVersion])
         }
+    }
+
+    private func sendSetupEndedSuccessfullyPixel(setupSource: SyncSetupSource) {
+        guard setupSource != .recovery else { return }
+        let parameters = [PixelParameters.source: setupSource.rawValue]
+        Pixel.fire(pixel: .syncSetupEndedSuccessful, withAdditionalParameters: parameters)
     }
 }
 

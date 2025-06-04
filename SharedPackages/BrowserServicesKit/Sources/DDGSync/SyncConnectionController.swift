@@ -26,6 +26,7 @@ public protocol SyncConnectionControllerDelegate: AnyObject {
 
     func controllerDidReceiveRecoveryKey()
 
+    // TODO: Rename to include pasting
     func controllerDidRecognizeScannedCode(setupSource: SyncSetupSource, codeSource: SyncCodeSource) async
 
     func controllerDidCreateSyncAccount()

@@ -139,6 +139,7 @@ final class NavigationBarViewController: NSViewController {
     private let brokenSitePromptLimiter: BrokenSitePromptLimiter
     private let featureFlagger: FeatureFlagger
     private let visualStyle: VisualStyleProviding
+    private let aiChatTabSidebarPresenter: AIChatTabSidebarPresenting
 
     private var leftFocusSpacer: NSView?
     private var rightFocusSpacer: NSView?
@@ -158,7 +159,8 @@ final class NavigationBarViewController: NSViewController {
                        autofillPopoverPresenter: AutofillPopoverPresenter,
                        brokenSitePromptLimiter: BrokenSitePromptLimiter,
                        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-                       visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager
+                       visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager,
+                       aiChatTabSidebarPresenter: AIChatTabSidebarPresenting
     ) -> NavigationBarViewController {
         NSStoryboard(name: "NavigationBar", bundle: nil).instantiateInitialController { coder in
             self.init(
@@ -171,7 +173,8 @@ final class NavigationBarViewController: NSViewController {
                 autofillPopoverPresenter: autofillPopoverPresenter,
                 brokenSitePromptLimiter: brokenSitePromptLimiter,
                 featureFlagger: featureFlagger,
-                visualStyle: visualStyleManager.style
+                visualStyle: visualStyleManager.style,
+                aiChatTabSidebarPresenter: aiChatTabSidebarPresenter
             )
         }!
     }
@@ -186,7 +189,8 @@ final class NavigationBarViewController: NSViewController {
         autofillPopoverPresenter: AutofillPopoverPresenter,
         brokenSitePromptLimiter: BrokenSitePromptLimiter,
         featureFlagger: FeatureFlagger,
-        visualStyle: VisualStyleProviding
+        visualStyle: VisualStyleProviding,
+        aiChatTabSidebarPresenter: AIChatTabSidebarPresenting
     ) {
 
         self.popovers = NavigationBarPopovers(networkProtectionPopoverManager: networkProtectionPopoverManager, autofillPopoverPresenter: autofillPopoverPresenter, isBurner: tabCollectionViewModel.isBurner)
@@ -199,6 +203,7 @@ final class NavigationBarViewController: NSViewController {
         self.brokenSitePromptLimiter = brokenSitePromptLimiter
         self.featureFlagger = featureFlagger
         self.visualStyle = visualStyle
+        self.aiChatTabSidebarPresenter = aiChatTabSidebarPresenter
         goBackButtonMenuDelegate = NavigationButtonMenuDelegate(buttonType: .back, tabCollectionViewModel: tabCollectionViewModel)
         goForwardButtonMenuDelegate = NavigationButtonMenuDelegate(buttonType: .forward, tabCollectionViewModel: tabCollectionViewModel)
         super.init(coder: coder)
@@ -349,7 +354,8 @@ final class NavigationBarViewController: NSViewController {
                                                                       tabCollectionViewModel: tabCollectionViewModel,
                                                                       burnerMode: burnerMode,
                                                                       popovers: popovers,
-                                                                      onboardingPixelReporter: onboardingPixelReporter) else {
+                                                                      onboardingPixelReporter: onboardingPixelReporter,
+                                                                      aiChatTabSidebarPresenter: aiChatTabSidebarPresenter) else {
             fatalError("NavigationBarViewController: Failed to init AddressBarViewController")
         }
 

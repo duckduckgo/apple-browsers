@@ -1,5 +1,5 @@
 //
-//  TabSidebarProvider.swift
+//  AIChatTabSidebarProvider.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -18,16 +18,19 @@
 
 import Foundation
 
-protocol TabSidebarProviding {
+typealias TabIdentifier = String
+
+protocol AIChatTabSidebarProviding {
     var sidebarWidth: CGFloat { get }
 
-    func tabSidebar(for tab: Tab) -> TabSidebar
-    func isShowingSidebar(for tab: Tab) -> Bool
-    func handleSidebarDidClose(for tab: Tab)
-    func cleanUp(for currentTabs: [Tab])
+    func tabSidebar(for tabID: TabIdentifier) -> TabSidebar
+    func isShowingSidebar(for tabID: TabIdentifier) -> Bool
+
+    func handleSidebarDidClose(for tabID: TabIdentifier)
+    func cleanUp(for currentTabIDs: [TabIdentifier])
 }
 
-final class TabSidebarProvider: TabSidebarProviding {
+final class AIChatTabSidebarProvider: AIChatTabSidebarProviding {
 
     enum Constants {
         static let sidebarWidth: CGFloat = 450
@@ -37,36 +40,32 @@ final class TabSidebarProvider: TabSidebarProviding {
 
     var sidebarWidth: CGFloat { Constants.sidebarWidth }
 
-    func tabSidebar(for tab: Tab) -> TabSidebar {
-        if let tabSidebar = sidebarTabs[tab.id] {
+    func tabSidebar(for tabID: TabIdentifier) -> TabSidebar {
+        if let tabSidebar = sidebarTabs[tabID] {
             return tabSidebar
         } else {
             let tabSidebar = TabSidebar.makeAIChatTabSidebar()
-            sidebarTabs[tab.id] = tabSidebar
+            sidebarTabs[tabID] = tabSidebar
             return tabSidebar
         }
     }
 
-    func isShowingSidebar(for tab: Tab) -> Bool {
-        return sidebarTabs[tab.id] != nil
+    func isShowingSidebar(for tabID: TabIdentifier) -> Bool {
+        return sidebarTabs[tabID] != nil
     }
 
-    func handleSidebarDidClose(for tab: Tab) {
-        if let tabSidebar = sidebarTabs[tab.id] {
+    func handleSidebarDidClose(for tabID: TabIdentifier) {
+        if let tabSidebar = sidebarTabs[tabID] {
             tabSidebar.sidebarViewController.removeCompletely()
-            sidebarTabs.removeValue(forKey: tab.id)
+            sidebarTabs.removeValue(forKey: tabID)
         }
     }
 
-    func cleanUp(for currentTabs: [Tab]) {
-        let currentTabIDs = currentTabs.map { $0.id }
+    func cleanUp(for currentTabIDs: [TabIdentifier]) {
         let tabIDsForRemoval = Set(sidebarTabs.keys).subtracting(currentTabIDs)
 
         for tabID in tabIDsForRemoval {
-            if let tabSidebar = sidebarTabs[tabID] {
-                tabSidebar.sidebarViewController.removeCompletely()
-                sidebarTabs.removeValue(forKey: tabID)
-            }
+            handleSidebarDidClose(for: tabID)
         }
     }
 }

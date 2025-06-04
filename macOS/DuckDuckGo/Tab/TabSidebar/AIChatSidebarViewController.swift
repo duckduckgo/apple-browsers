@@ -215,7 +215,7 @@ final class AIChatSidebarViewController: NSViewController {
     }
 
     @objc private func closeButtonClicked() {
-        WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController.browserTabViewController.toggleSidebar()
+//        WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController.browserTabViewController.toggleSidebar()
     }
 
 }

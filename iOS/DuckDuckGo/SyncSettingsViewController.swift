@@ -505,6 +505,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         case .failedToCreateAccount:
             handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncSignupError)
         case .pollingForRecoveryKeyTimedOut:
+            // TODO: Consider cancelling flow here
             handleRecoveryKeyPollingTimeout(setupRole: setupRole)
         }
     }

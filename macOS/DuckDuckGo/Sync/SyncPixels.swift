@@ -58,20 +58,16 @@ enum SyncSetupPixelKitEvent: PixelKitEventV2 {
     }
 
     case syncSetupBarcodeScreenShown(SyncSetupSource)
-    case syncSetupBarcodeScannerSuccess(SyncSetupSource)
-    case syncSetupBarcodeScannerFailed(SyncSetupSource)
     case syncSetupBarcodeCodeCopied(SyncSetupSource)
     case syncSetupManualCodeEntryScreenShown(SyncSetupSource)
     case syncSetupManualCodeEntered(SyncSetupSource)
-    case syncSetupManualCodeEnteredFailed(SyncSetupSource)
+    case syncSetupManualCodeEnteredFailed
     case syncSetupEndedAbandoned(SyncSetupSource)
     case syncSetupEndedSuccessful(SyncSetupSource)
 
     var name: String {
         switch self {
         case .syncSetupBarcodeScreenShown: return "sync_setup_barcode_screen_shown"
-        case .syncSetupBarcodeScannerSuccess: return "sync_setup_barcode_scanner_success"
-        case .syncSetupBarcodeScannerFailed: return "sync_setup_barcode_scanner_failed"
         case .syncSetupBarcodeCodeCopied: return "sync_setup_barcode_code_copied"
         case .syncSetupManualCodeEntryScreenShown: return "sync_setup_manual_code_entry_screen_shown"
         case .syncSetupManualCodeEntered: return "sync_setup_manual_code_entered"
@@ -82,6 +78,7 @@ enum SyncSetupPixelKitEvent: PixelKitEventV2 {
     }
 
     var parameters: [String: String]? {
+        guard let source else { return nil }
         return [ParameterKey.source: source.rawValue]
     }
 
@@ -93,19 +90,18 @@ enum SyncSetupPixelKitEvent: PixelKitEventV2 {
         NonStandardEvent(self)
     }
 
-    private var source: SyncSetupSource {
+    private var source: SyncSetupSource? {
         switch self {
         case
             .syncSetupBarcodeScreenShown(let source),
-            .syncSetupBarcodeScannerSuccess(let source),
-            .syncSetupBarcodeScannerFailed(let source),
             .syncSetupBarcodeCodeCopied(let source),
             .syncSetupManualCodeEntryScreenShown(let source),
             .syncSetupManualCodeEntered(let source),
-            .syncSetupManualCodeEnteredFailed(let source),
             .syncSetupEndedAbandoned(let source),
             .syncSetupEndedSuccessful(let source):
             return source
+        case .syncSetupManualCodeEnteredFailed:
+            return nil
         }
     }
 }

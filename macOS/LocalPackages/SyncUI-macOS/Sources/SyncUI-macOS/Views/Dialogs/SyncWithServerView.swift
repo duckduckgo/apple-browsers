@@ -30,7 +30,7 @@ struct SyncWithServerView: View {
             SyncUIViews.TextDetailMultiline(text: UserText.syncWithServerSubtitle2)
         } buttons: {
             Button(UserText.cancel) {
-                model.endFlow()
+                model.cancelPressed()
             }
             .buttonStyle(DismissActionButtonStyle())
             Button(UserText.syncWithServerButton) {

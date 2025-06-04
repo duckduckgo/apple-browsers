@@ -67,7 +67,7 @@ struct SyncWithAnotherDeviceView: View {
         }
     buttons: {
         Button(UserText.cancel) {
-            model.endFlow()
+            model.cancelPressed()
         }
     }
     .frame(width: 420)

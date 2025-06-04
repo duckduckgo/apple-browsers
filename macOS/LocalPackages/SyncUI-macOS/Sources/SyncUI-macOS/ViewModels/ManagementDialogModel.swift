@@ -32,6 +32,7 @@ public protocol ManagementDialogModelDelegate: AnyObject {
     func copyCode()
     func openSystemPasswordSettings()
     func userConfirmedSwitchAccounts(recoveryCode: String)
+    func userPressedCancel(from dialog: ManagementDialogKind)
     func switchAccountsCancelled()
 }
 
@@ -54,6 +55,14 @@ public final class ManagementDialogModel: ObservableObject {
                 self?.shouldShowErrorMessage = hasError
             }
 
+    }
+
+    @MainActor
+    public func cancelPressed() {
+        if let currentDialog = currentDialog {
+            delegate?.userPressedCancel(from: currentDialog)
+        }
+        endFlow()
     }
 
     @MainActor

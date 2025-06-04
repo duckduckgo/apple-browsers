@@ -20,20 +20,24 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - env:
+    - id: test-username-action
+      uses: duckduckgo/native-github-asana-sync@v1.3
+      with:
+        action: 'get-asana-user-id'
+        github-username: ${{ inputs.commit-author }}
+        github-pat: ${{ secrets.GITHUB_TOKEN }}
+    - id: report-failed-pr-checks
+      env:
         WORKFLOW_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
         GITHUB_REF_NAME: ${{ github.ref_name }}
         GITHUB_RUN_ID: ${{ github.run_id }}
         ASANA_SECTION_ID: ${{ inputs.asana-section-id }}
         ASANA_ACCESS_TOKEN: ${{ inputs.asana-access-token }}
+        ASANA_ASSIGNEE: ${{ steps.test-username-action.outputs.asana-user-id }}
       shell: bash
       run: |
         case "${{ inputs.action }}" in
           "create-task")
-            if [[ -n "${{ inputs.commit-author }}" ]]; then
-              export ASANA_ASSIGNEE=$(jq -r .${{ inputs.commit-author }} < ${{ github.action_path }}/user_ids.json)
-            fi
-
             ${{ github.action_path }}/report-failed-pr-checks.sh create-task \
               -t "PR Check is failing on ${{ env.GITHUB_REF_NAME }}" \
               -d "PR Checks conducted after merging have failed. See ${{ env.WORKFLOW_URL }}. Follow the steps on https://app.asana.com/0/1202500774821704/1205317064731691 to resolve this issue."

@@ -15682,9 +15682,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 37DD516C296EAEDC00837F27 /* DuckDuckGoAppStore.xcconfig */;
 			buildSettings = {
-				CLANG_ENABLE_MODULES = YES;
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 6.0;
 			};
 			name = Debug;
 		};
@@ -15692,9 +15689,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 37DD516C296EAEDC00837F27 /* DuckDuckGoAppStore.xcconfig */;
 			buildSettings = {
-				CLANG_ENABLE_MODULES = YES;
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_VERSION = 6.0;
 			};
 			name = CI;
 		};
@@ -15702,8 +15696,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 37DD516C296EAEDC00837F27 /* DuckDuckGoAppStore.xcconfig */;
 			buildSettings = {
-				CLANG_ENABLE_MODULES = YES;
-				SWIFT_VERSION = 6.0;
 			};
 			name = Release;
 		};
@@ -15711,8 +15703,6 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 37DD516C296EAEDC00837F27 /* DuckDuckGoAppStore.xcconfig */;
 			buildSettings = {
-				CLANG_ENABLE_MODULES = YES;
-				SWIFT_VERSION = 6.0;
 			};
 			name = Review;
 		};

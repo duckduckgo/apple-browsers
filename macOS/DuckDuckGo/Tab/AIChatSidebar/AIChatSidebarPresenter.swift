@@ -43,33 +43,19 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
         guard featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
         guard let currentTabID = sidebarHost.currentTabID else { return }
 
-        let willAnimateSidebarReveal = !sidebarProvider.isShowingSidebar(for: currentTabID)
-
-        if willAnimateSidebarReveal {
-            let sidebarViewController = sidebarProvider.tabSidebar(for: currentTabID).sidebarViewController
-            sidebarHost.embedSidebarViewController(sidebarViewController)
-        }
-
-        updateTabSidebarConstraints(forSidebarRevealed: willAnimateSidebarReveal, withAnimation: true)
+        let willShowSidebar = !sidebarProvider.isShowingSidebar(for: currentTabID)
+        updateSidebarConstraints(for: currentTabID, isShowingSidebar: willShowSidebar, withAnimation: true)
     }
 
-    private func updateSidebar(for tabID: TabIdentifier) {
+    private func updateSidebarConstraints(for tabID: TabIdentifier, isShowingSidebar: Bool, withAnimation: Bool) {
         guard featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
-
-        let isShowingSidebar = sidebarProvider.isShowingSidebar(for: tabID)
 
         if isShowingSidebar {
-            let sidebarViewController = sidebarProvider.tabSidebar(for: tabID).sidebarViewController
+            let sidebarViewController = sidebarProvider.sidebar(for: tabID).sidebarViewController
             sidebarHost.embedSidebarViewController(sidebarViewController)
         }
 
-        updateTabSidebarConstraints(forSidebarRevealed: isShowingSidebar, withAnimation: false)
-    }
-
-    private func updateTabSidebarConstraints(forSidebarRevealed: Bool, withAnimation: Bool) {
-        guard featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
-
-        let newConstraintValue = forSidebarRevealed ? -self.sidebarProvider.sidebarWidth : 0.0
+        let newConstraintValue = isShowingSidebar ? -self.sidebarProvider.sidebarWidth : 0.0
 
         sidebarHost.sidebarContainerWidthConstraint?.constant = sidebarProvider.sidebarWidth
 
@@ -81,13 +67,13 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
                 context.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
                 sidebarHost.sidebarContainerLeadingConstraint?.animator().constant = newConstraintValue
             } completionHandler: { [weak self, tabID = sidebarHost.currentTabID] in
-                guard let self, let tabID, !forSidebarRevealed else { return }
+                guard let self, let tabID, !isShowingSidebar else { return }
                 self.sidebarProvider.handleSidebarDidClose(for: tabID)
             }
         } else {
             sidebarHost.sidebarContainerLeadingConstraint?.constant = newConstraintValue
 
-            if let tabID = sidebarHost.currentTabID, !forSidebarRevealed {
+            if let tabID = sidebarHost.currentTabID, !isShowingSidebar {
                 sidebarProvider.handleSidebarDidClose(for: tabID)
             }
         }
@@ -97,7 +83,8 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
 extension AIChatSidebarPresenter: AIChatSidebarHostingDelegate {
 
     func sidebarHostDidSelectTab(with tabID: TabIdentifier) {
-        updateSidebar(for: tabID)
+        let isShowingSidebar = sidebarProvider.isShowingSidebar(for: tabID)
+        updateSidebarConstraints(for: tabID, isShowingSidebar: isShowingSidebar, withAnimation: false)
     }
 
     func sidebarHostDidUpdateTabs(_ currentTabIDs: [TabIdentifier]) {

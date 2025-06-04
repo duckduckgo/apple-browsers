@@ -23,7 +23,7 @@ typealias TabIdentifier = String
 protocol AIChatSidebarProviding {
     var sidebarWidth: CGFloat { get }
 
-    func tabSidebar(for tabID: TabIdentifier) -> TabSidebar
+    func sidebar(for tabID: TabIdentifier) -> TabSidebar
     func isShowingSidebar(for tabID: TabIdentifier) -> Bool
 
     func handleSidebarDidClose(for tabID: TabIdentifier)
@@ -40,7 +40,7 @@ final class AIChatSidebarProvider: AIChatSidebarProviding {
 
     var sidebarWidth: CGFloat { Constants.sidebarWidth }
 
-    func tabSidebar(for tabID: TabIdentifier) -> TabSidebar {
+    func sidebar(for tabID: TabIdentifier) -> TabSidebar {
         if let tabSidebar = sidebarTabs[tabID] {
             return tabSidebar
         } else {

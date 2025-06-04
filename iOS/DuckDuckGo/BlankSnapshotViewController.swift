@@ -121,7 +121,7 @@ class BlankSnapshotViewController: UIViewController {
     }
 
     private func configureTabBar() {
-        let controller = TabsBarViewController.createFromXib(featureFlagger: featureFlagger)
+        let controller = TabsBarViewController.createFromXib(themingProperties: ThemeManager.shared.properties)
         controller.view.frame = CGRect(x: 0, y: 24, width: view.frame.width, height: 40)
         controller.view.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(controller.view)

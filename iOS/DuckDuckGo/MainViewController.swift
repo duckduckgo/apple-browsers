@@ -528,7 +528,7 @@ class MainViewController: UIViewController {
     func loadTabsBarIfNeeded() {
         guard isPad else { return }
 
-        let controller = TabsBarViewController.createFromXib(featureFlagger: featureFlagger)
+        let controller = TabsBarViewController.createFromXib(themingProperties: themeManager.properties)
 
         addChild(controller)
         controller.view.frame = viewCoordinator.tabBarContainer.bounds

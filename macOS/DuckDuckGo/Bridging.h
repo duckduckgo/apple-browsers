@@ -5,12 +5,8 @@
 #import <db.h>
 
 #import "WKWebView+Private.h"
-#import "NSException+Catch.h"
-#import "NSObject+performSelector.h"
 #import "WKGeolocationProvider.h"
 
 #ifndef APPSTORE
-#import "BWEncryption.h"
-#import "PFMoveApplication.h"
 #import "Sparkle/SPUStandardUserDriver+Private.h"
 #endif

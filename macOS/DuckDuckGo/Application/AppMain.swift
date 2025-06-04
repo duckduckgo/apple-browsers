@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import LetsMove
 
 @main
 struct AppMain {

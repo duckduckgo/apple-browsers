@@ -249,8 +249,12 @@ struct PinnedTabInnerView: View {
         ZStack {
             Rectangle()
                 .foregroundColor(foregroundColor)
-                .frame(width: shouldApplyNewHoverState ? width - 8 : width, height: shouldApplyNewHoverState ? height - 8 : height)
-                .cornerRadius(shouldApplyNewHoverState ? 6 : PinnedTabView.Const.cornerRadius, corners: shouldApplyNewHoverState ? [.topLeft, .topRight, .bottomLeft, .bottomRight] : [.topLeft, .topRight])
+                .frame(width: shouldApplyNewHoverState ? width - 8 : showSShaped ? width : width-2,
+                       height: shouldApplyNewHoverState ? height - 8 : height)
+                .cornerRadius(
+                    shouldApplyNewHoverState ? 6 : PinnedTabView.Const.cornerRadius,
+                    corners: shouldApplyNewHoverState ? [.topLeft, .topRight, .bottomLeft, .bottomRight] : [.topLeft, .topRight]
+                )
 
             if drawSeparator {
                 GeometryReader { proxy in

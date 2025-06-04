@@ -62,7 +62,7 @@ final class NewlineTabStyleProvider: TabStyleProviding {
     let tabsScrollViewHeight: CGFloat = 38
     let pinnedTabsContainerViewHeight: CGFloat = 38
     let standardTabHeight: CGFloat = 38
-    let pinnedTabWidth: CGFloat = 34
+    let pinnedTabWidth: CGFloat = 38
     let pinnedTabHeight: CGFloat = 38
     let shouldShowSShapedTab = true
     let isRoundedBackgroundPresentOnHover = true

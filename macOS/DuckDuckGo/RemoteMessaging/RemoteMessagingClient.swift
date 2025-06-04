@@ -55,7 +55,7 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         }()
     }
 
-    let database: CoreDataDatabase
+    let remoteMessagingDatabase: CoreDataDatabase
     let endpoint: URL = Constants.endpoint
     let configFetcher: RemoteMessagingConfigFetching
     let configMatcherProvider: RemoteMessagingConfigMatcherProviding
@@ -63,8 +63,9 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
     private(set) var store: RemoteMessagingStoring?
 
     convenience init(
-        database: CoreDataDatabase,
+        remoteMessagingDatabase: CoreDataDatabase,
         bookmarksDatabase: CoreDataDatabase,
+        database: CoreDataDatabase,
         appearancePreferences: AppearancePreferences,
         pinnedTabsManagerProvider: PinnedTabsManagerProviding,
         internalUserDecider: InternalUserDecider,
@@ -75,6 +76,7 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         featureFlagger: FeatureFlagger
     ) {
         let provider = RemoteMessagingConfigMatcherProvider(
+            database: database,
             bookmarksDatabase: bookmarksDatabase,
             appearancePreferences: appearancePreferences,
             pinnedTabsManagerProvider: pinnedTabsManagerProvider,
@@ -83,7 +85,7 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
             featureFlagger: featureFlagger
         )
         self.init(
-            database: database,
+            remoteMessagingDatabase: remoteMessagingDatabase,
             configMatcherProvider: provider,
             configurationStore: configurationStore,
             remoteMessagingAvailabilityProvider: remoteMessagingAvailabilityProvider
@@ -91,7 +93,7 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
     }
 
     convenience init(
-        database: CoreDataDatabase,
+        remoteMessagingDatabase: CoreDataDatabase,
         configMatcherProvider: RemoteMessagingConfigMatcherProviding,
         configurationStore: ConfigurationStoring,
         remoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding,
@@ -107,7 +109,7 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         )
 
         self.init(
-            database: database,
+            remoteMessagingDatabase: remoteMessagingDatabase,
             configFetcher: configFetcher,
             configMatcherProvider: configMatcherProvider,
             remoteMessagingAvailabilityProvider: remoteMessagingAvailabilityProvider,
@@ -119,13 +121,13 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
      * This designated initializer is used in unit tests where `configFetcher` needs mocking.
      */
     init(
-        database: CoreDataDatabase,
+        remoteMessagingDatabase: CoreDataDatabase,
         configFetcher: RemoteMessagingConfigFetching,
         configMatcherProvider: RemoteMessagingConfigMatcherProviding,
         remoteMessagingAvailabilityProvider: RemoteMessagingAvailabilityProviding,
         remoteMessagingStoreProvider: RemoteMessagingStoreProviding = DefaultRemoteMessagingStoreProvider()
     ) {
-        self.database = database
+        self.remoteMessagingDatabase = remoteMessagingDatabase
         self.configFetcher = configFetcher
         self.configMatcherProvider = configMatcherProvider
         self.remoteMessagingAvailabilityProvider = remoteMessagingAvailabilityProvider
@@ -199,7 +201,7 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         }
 
         if AppVersion.runType.requiresEnvironment {
-            database.loadStore { context, error in
+            remoteMessagingDatabase.loadStore { context, error in
                 guard context != nil else {
                     if let error = error {
                         PixelKit.fire(DebugEvent(GeneralPixel.syncMetadataCouldNotLoadDatabase, error: error))
@@ -214,7 +216,7 @@ final class RemoteMessagingClient: RemoteMessagingProcessing {
         }
 
         store = remoteMessagingStoreProvider.makeRemoteMessagingStore(
-            database: database,
+            database: remoteMessagingDatabase,
             availabilityProvider: remoteMessagingAvailabilityProvider
         )
 

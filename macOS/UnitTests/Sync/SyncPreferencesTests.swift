@@ -185,7 +185,7 @@ final class SyncPreferencesTests: XCTestCase {
 
     func testOnTurnOffSyncThenSyncServiceIsDisconnected() async throws {
         syncPreferences.turnOffSync()
-        try await waitForPublisher(ddgSyncing.$disconnectCalled, toEmit: true)
+        try await ddgSyncing.$disconnectCalled.async(waitFor: true)
     }
 
     // MARK: - SYNC ERRORS
@@ -252,13 +252,13 @@ final class SyncPreferencesTests: XCTestCase {
     func test_WhenSyncIsTurnedOff_ErrorHandlerSyncDidTurnOffCalled() async throws {
         syncPreferences.turnOffSync()
 
-        try await waitForPublisher(pausedStateManager.$syncDidTurnOffCalled, toEmit: true)
+        try await pausedStateManager.$syncDidTurnOffCalled.async(waitFor: true)
     }
 
     func test_WhenAccountRemoved_ErrorHandlerSyncDidTurnOffCalled() async throws {
         syncPreferences.deleteAccount()
 
-        try await waitForPublisher(pausedStateManager.$syncDidTurnOffCalled, toEmit: true)
+        try await pausedStateManager.$syncDidTurnOffCalled.async(waitFor: true)
     }
 
     func test_ErrorHandlerReturnsExpectedSyncBookmarksPausedMetadata() {
@@ -284,7 +284,7 @@ final class SyncPreferencesTests: XCTestCase {
 
     func test_recoverDevice_callsConnectionController() async throws {
         syncPreferences.recoverDevice(recoveryCode: testRecoveryCode, fromRecoveryScreen: false)
-        _ = try await waitForPublisher(connectionController.$syncCodeEnteredCalled, toEmit: true)
+        try await connectionController.$syncCodeEnteredCalled.async(waitFor: true)
     }
 
     func test_controllerDidFindTwoAccountsDuringRecovery_accountAlreadyExists_oneDevice_disconnectsThenLogsInAgain() async throws {
@@ -312,7 +312,7 @@ final class SyncPreferencesTests: XCTestCase {
         await syncPreferences.controllerDidFindTwoAccountsDuringRecovery(testRecoveryKey)
 
         let deviceIDsPublisher = syncPreferences.$devices.map { $0.map { $0.id } }
-        _ = try await waitForPublisher(deviceIDsPublisher, toEmit: ["1", "2"])
+        try await deviceIDsPublisher.async(waitFor: ["1", "2"])
     }
 
     func test_recoverDevice_accountAlreadyExists_oneDevice_endsFlow() async throws {
@@ -326,7 +326,7 @@ final class SyncPreferencesTests: XCTestCase {
 
         await syncPreferences.controllerDidFindTwoAccountsDuringRecovery(testRecoveryKey)
 
-        _ = try await waitForPublisher(managementDialogModel.$currentDialog, timeout: 5.0, toEmit: nil)
+        try await managementDialogModel.$currentDialog.async(waitFor: nil)
     }
 
     func test_recoverDevice_accountAlreadyExists_twoOrMoreDevices_showsAccountSwitchingMessage() async throws {
@@ -365,7 +365,7 @@ final class SyncPreferencesTests: XCTestCase {
 
         syncPreferences.userConfirmedSwitchAccounts(recoveryCode: testRecoveryCode)
         let deviceIDsPublisher = syncPreferences.$devices.map { $0.map { $0.id } }
-        try await waitForPublisher(deviceIDsPublisher, toEmit: ["1", "2"])
+        try await deviceIDsPublisher.async(waitFor: ["1", "2"])
     }
 
     private func setUpWithSingleDevice(id: String)  {
@@ -381,8 +381,8 @@ final class SyncPreferencesTests: XCTestCase {
 
         syncPreferences.startPollingForRecoveryKey(isRecovery: false)
 
-        try await waitForPublisher(syncPreferences.$codeForDisplayOrPasting, toEmit: "test_code")
-        try await waitForPublisher(syncPreferences.$stringForQR, toEmit: "test_code")
+        try await syncPreferences.$codeForDisplayOrPasting.async(waitFor: "test_code")
+        try await syncPreferences.$stringForQR.async(waitFor: "test_code")
     }
 
     func test_startPollingForRecoveryKey_whenFeatureFlagOn_usesURL() async throws {
@@ -392,8 +392,8 @@ final class SyncPreferencesTests: XCTestCase {
 
         syncPreferences.startPollingForRecoveryKey(isRecovery: false)
 
-        try await waitForPublisher(syncPreferences.$codeForDisplayOrPasting, toEmit: "test_code")
-        try await waitForPublisher(syncPreferences.$stringForQR, toEmit: pairingInfo.url.absoluteString)
+        try await syncPreferences.$codeForDisplayOrPasting.async(waitFor: "test_code")
+        try await syncPreferences.$stringForQR.async(waitFor: pairingInfo.url.absoluteString)
     }
 
     func test_syncWithAnotherDevicePressed_accountExists_whenFeatureFlagOff_usesBase64Code() async throws {
@@ -405,8 +405,8 @@ final class SyncPreferencesTests: XCTestCase {
 
         await syncPreferences.syncWithAnotherDevicePressed()
 
-        try await waitForPublisher(syncPreferences.$codeForDisplayOrPasting, toEmit: "test_code")
-        try await waitForPublisher(syncPreferences.$stringForQR, toEmit: "test_code")
+        try await syncPreferences.$codeForDisplayOrPasting.async(waitFor: "test_code")
+        try await syncPreferences.$stringForQR.async(waitFor: "test_code")
     }
 
     func test_syncWithAnotherDevicePressed_accountExists_whenFeatureFlagOn_usesURL() async throws {
@@ -418,13 +418,149 @@ final class SyncPreferencesTests: XCTestCase {
 
         await syncPreferences.syncWithAnotherDevicePressed()
 
-        try await waitForPublisher(syncPreferences.$codeForDisplayOrPasting, toEmit: "test_code")
-        try await waitForPublisher(syncPreferences.$stringForQR, toEmit: pairingInfo.url.absoluteString)
+        try await syncPreferences.$codeForDisplayOrPasting.async(waitFor: "test_code")
+        try await syncPreferences.$stringForQR.async(waitFor: pairingInfo.url.absoluteString)
+    }
+
+    func test_syncWithAnotherDevicePressed_accountExists_whenExchangeFeatureFlagOff_usesRecoveryCode() async throws {
+        featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = false
+        let mockAccount = SyncAccount.mock
+        ddgSyncing.account = mockAccount
+
+        await syncPreferences.syncWithAnotherDevicePressed()
+
+        let codes = try await waitForSyncWithAnotherDeviceDialog().async()
+
+        XCTAssertTrue(codes.displayCode.isRecoveryKey)
+        XCTAssertTrue(codes.qrCode.isRecoveryKey)
+
+        let codeForDisplayOrPasting = try XCTUnwrap(syncPreferences.codeForDisplayOrPasting)
+        XCTAssertTrue(codeForDisplayOrPasting.isRecoveryKey)
+
+        let stringForQR = try XCTUnwrap(syncPreferences.stringForQR)
+        XCTAssertTrue(stringForQR.isRecoveryKey)
+    }
+
+    func test_syncWithAnotherDevicePressed_accountExists_whenExchangeFeatureFlagOn_andUrlBarcodeOn_usesUrlFormat() async throws {
+        featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
+        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = true
+        let mockAccount = SyncAccount.mock
+        ddgSyncing.account = mockAccount
+        let expectedExchangeCode = "expected_exchange_code"
+        let stubbedPairingInfo = PairingInfo(base64Code: expectedExchangeCode, deviceName: "")
+        connectionController.startExchangeModeStub = stubbedPairingInfo
+
+        await syncPreferences.syncWithAnotherDevicePressed()
+
+        let codes = try await waitForSyncWithAnotherDeviceDialog().async()
+
+        XCTAssertEqual(codes.displayCode, expectedExchangeCode)
+        XCTAssertTrue(codes.qrCode.isDDGURLString)
+
+        let codeForDisplayOrPasting = try XCTUnwrap(syncPreferences.codeForDisplayOrPasting)
+        XCTAssertEqual(codeForDisplayOrPasting, expectedExchangeCode)
+
+        let stringForQR = try XCTUnwrap(syncPreferences.stringForQR)
+        XCTAssertTrue(stringForQR.isDDGURLString)
+    }
+
+    func test_enterRecoveryCodePressed_whenUrlBarcodeOn_usesUrlFormat() async throws {
+        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = true
+        let expectedDisplayCode = "test_code"
+        let stubbedPairingInfo = PairingInfo(base64Code: expectedDisplayCode, deviceName: "")
+        connectionController.startConnectModeStub = stubbedPairingInfo
+
+        await syncPreferences.enterRecoveryCodePressed()
+
+        let code = try await waitForEnterRecoveryCodeDialog().async()
+
+        XCTAssertTrue(code.isDDGURLString)
+
+        let codeForDisplayOrPasting = try XCTUnwrap(syncPreferences.codeForDisplayOrPasting)
+        XCTAssertEqual(codeForDisplayOrPasting, expectedDisplayCode)
+
+        let stringForQR = try XCTUnwrap(syncPreferences.stringForQR)
+        XCTAssertTrue(stringForQR.isDDGURLString)
+    }
+
+    func test_enterRecoveryCodePressed_whenUrlBarcodeOff_usesBase64Format() async throws {
+        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = false
+        let expectedDisplayCode = "test_code"
+        let stubbedPairingInfo = PairingInfo(base64Code: expectedDisplayCode, deviceName: "")
+        connectionController.startConnectModeStub = stubbedPairingInfo
+
+        await syncPreferences.enterRecoveryCodePressed()
+
+        let code = try await waitForEnterRecoveryCodeDialog().async()
+
+        XCTAssertEqual(code, expectedDisplayCode)
+        XCTAssertEqual(syncPreferences.codeForDisplayOrPasting, expectedDisplayCode)
+        XCTAssertEqual(syncPreferences.stringForQR, expectedDisplayCode)
+    }
+
+    func test_syncWithAnotherDevicePressed_whenUrlBarcodeOn_usesUrlFormat() async throws {
+        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = true
+        featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
+        let expectedCode = "test_code"
+        let stubbedPairingInfo = PairingInfo(base64Code: expectedCode, deviceName: "")
+        connectionController.startExchangeModeStub = stubbedPairingInfo
+        ddgSyncing.account = .mock
+
+        await syncPreferences.syncWithAnotherDevicePressed()
+
+        let dialog = try await waitForSyncWithAnotherDeviceDialog().async()
+
+        let dialogQrCode = try XCTUnwrap(dialog.qrCode)
+        XCTAssertTrue(dialogQrCode.isDDGURLString)
+
+        XCTAssertEqual(syncPreferences.codeForDisplayOrPasting, expectedCode)
+        let stringForQR = try XCTUnwrap(syncPreferences.stringForQR)
+        XCTAssertTrue(stringForQR.isDDGURLString)
+    }
+
+    func test_syncWithAnotherDevicePressed_whenUrlBarcodeOff_usesBase64Format() async throws {
+        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = false
+        featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
+        let expectedCode = "test_code"
+        let stubbedPairingInfo = PairingInfo(base64Code: expectedCode, deviceName: "")
+        connectionController.startExchangeModeStub = stubbedPairingInfo
+        ddgSyncing.account = .mock
+
+        await syncPreferences.syncWithAnotherDevicePressed()
+
+        let dialog = try await waitForSyncWithAnotherDeviceDialog().async()
+
+        XCTAssertEqual(dialog.qrCode, expectedCode)
+        XCTAssertEqual(dialog.displayCode, expectedCode)
+
+        XCTAssertEqual(syncPreferences.codeForDisplayOrPasting, expectedCode)
+        XCTAssertEqual(syncPreferences.stringForQR, expectedCode)
+    }
+
+    func test_startPollingForRecoveryKey_whenError_showsError() async throws {
+        featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
+        connectionController.startConnectModeError = SyncError.failedToDecryptValue("")
+
+        syncPreferences.startPollingForRecoveryKey(isRecovery: false)
+
+        try await managementDialogModel.$shouldShowErrorMessage.async(waitFor: true)
+        try await managementDialogModel.$syncErrorMessage.compactMap { $0 }.map(\.type).async(waitFor: .unableToSyncToOtherDevice)
+    }
+
+    func test_syncWithAnotherDevicePressed_accountExists_whenError_showsError() async throws {
+        featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
+        connectionController.startExchangeModeError = SyncError.failedToDecryptValue("")
+        ddgSyncing.account = .mock
+
+        await syncPreferences.syncWithAnotherDevicePressed()
+
+        try await managementDialogModel.$shouldShowErrorMessage.async(waitFor: true)
+        try await managementDialogModel.$syncErrorMessage.compactMap { $0 }.map(\.type).async(waitFor: .unableToSyncToOtherDevice)
     }
 
     private struct SyncDialogCodes: Equatable {
-        let displayCode: String?
-        let qrCode: String?
+        let displayCode: String
+        let qrCode: String
     }
 
     private func waitForSyncWithAnotherDeviceDialog() -> AnyPublisher<SyncDialogCodes, Never> {
@@ -451,119 +587,6 @@ final class SyncPreferencesTests: XCTestCase {
             }
             .compactMap { $0 }
             .eraseToAnyPublisher()
-    }
-
-    func test_syncWithAnotherDevicePressed_accountExists_whenExchangeFeatureFlagOff_usesRecoveryCode() async throws {
-        featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = false
-        let mockAccount = SyncAccount.mock
-        ddgSyncing.account = mockAccount
-        let expectedRecoveryCode = mockAccount.recoveryCode
-
-        await syncPreferences.syncWithAnotherDevicePressed()
-
-        try await waitForPublisher(waitForSyncWithAnotherDeviceDialog(), toEmit: SyncDialogCodes(displayCode: expectedRecoveryCode, qrCode: expectedRecoveryCode))
-        XCTAssertEqual(syncPreferences.codeForDisplayOrPasting, expectedRecoveryCode)
-        XCTAssertEqual(syncPreferences.stringForQR, expectedRecoveryCode)
-    }
-
-    func test_syncWithAnotherDevicePressed_accountExists_whenExchangeFeatureFlagOn_andUrlBarcodeOn_usesUrlFormat() async throws {
-        featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
-        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = true
-        let mockAccount = SyncAccount.mock
-        ddgSyncing.account = mockAccount
-        let expectedExchangeCode = "expected_exchange_code"
-        let stubbedPairingInfo = PairingInfo(base64Code: expectedExchangeCode, deviceName: "")
-        let expectedQRCodeUrl = stubbedPairingInfo.url.absoluteString
-        connectionController.startExchangeModeStub = stubbedPairingInfo
-
-        await syncPreferences.syncWithAnotherDevicePressed()
-
-        try await waitForPublisher(waitForSyncWithAnotherDeviceDialog(), toEmit: SyncDialogCodes(displayCode: expectedExchangeCode, qrCode: expectedQRCodeUrl))
-        XCTAssertEqual(syncPreferences.codeForDisplayOrPasting, expectedExchangeCode)
-        XCTAssertEqual(syncPreferences.stringForQR, expectedQRCodeUrl)
-    }
-
-    func test_enterRecoveryCodePressed_whenUrlBarcodeOn_usesUrlFormat() async throws {
-        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = true
-        let expectedDisplayCode = "test_code"
-        let stubbedPairingInfo = PairingInfo(base64Code: expectedDisplayCode, deviceName: "")
-        let expectedQRCodeUrl = stubbedPairingInfo.url.absoluteString
-        connectionController.startConnectModeStub = stubbedPairingInfo
-
-        Task {
-            await syncPreferences.enterRecoveryCodePressed()
-        }
-
-        try await waitForPublisher(waitForEnterRecoveryCodeDialog(), toEmit: expectedQRCodeUrl)
-        XCTAssertEqual(syncPreferences.codeForDisplayOrPasting, expectedDisplayCode)
-        XCTAssertEqual(syncPreferences.stringForQR, expectedQRCodeUrl)
-    }
-
-    func test_enterRecoveryCodePressed_whenUrlBarcodeOff_usesBase64Format() async throws {
-        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = false
-        let expectedDisplayCode = "test_code"
-        let stubbedPairingInfo = PairingInfo(base64Code: expectedDisplayCode, deviceName: "")
-        connectionController.startConnectModeStub = stubbedPairingInfo
-
-        Task {
-            await syncPreferences.enterRecoveryCodePressed()
-        }
-
-        try await waitForPublisher(waitForEnterRecoveryCodeDialog(), toEmit: expectedDisplayCode)
-        XCTAssertEqual(syncPreferences.codeForDisplayOrPasting, expectedDisplayCode)
-        XCTAssertEqual(syncPreferences.stringForQR, expectedDisplayCode)
-    }
-
-    func test_syncWithAnotherDevicePressed_whenUrlBarcodeOn_usesUrlFormat() async throws {
-        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = true
-        featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
-        let expectedCode = "test_code"
-        let stubbedPairingInfo = PairingInfo(base64Code: expectedCode, deviceName: "")
-        let expectedQRCodeString = stubbedPairingInfo.url.absoluteString
-        connectionController.startExchangeModeStub = stubbedPairingInfo
-        ddgSyncing.account = .mock
-
-        await syncPreferences.syncWithAnotherDevicePressed()
-
-        try await waitForPublisher(waitForSyncWithAnotherDeviceDialog(), toEmit: SyncDialogCodes(displayCode: expectedCode, qrCode: expectedQRCodeString))
-        XCTAssertEqual(syncPreferences.codeForDisplayOrPasting, expectedCode)
-        XCTAssertEqual(syncPreferences.stringForQR, expectedQRCodeString)
-    }
-
-    func test_syncWithAnotherDevicePressed_whenUrlBarcodeOff_usesBase64Format() async throws {
-        featureFlagger.isFeatureOn[FeatureFlag.syncSetupBarcodeIsUrlBased.rawValue] = false
-        featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
-        let expectedCode = "test_code"
-        let stubbedPairingInfo = PairingInfo(base64Code: expectedCode, deviceName: "")
-        connectionController.startExchangeModeStub = stubbedPairingInfo
-        ddgSyncing.account = .mock
-
-        await syncPreferences.syncWithAnotherDevicePressed()
-
-        try await waitForPublisher(waitForSyncWithAnotherDeviceDialog(), toEmit: SyncDialogCodes(displayCode: expectedCode, qrCode: expectedCode))
-        XCTAssertEqual(syncPreferences.codeForDisplayOrPasting, expectedCode)
-        XCTAssertEqual(syncPreferences.stringForQR, expectedCode)
-    }
-
-    func test_startPollingForRecoveryKey_whenError_showsError() async throws {
-        featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
-        connectionController.startConnectModeError = SyncError.failedToDecryptValue("")
-
-        syncPreferences.startPollingForRecoveryKey(isRecovery: false)
-
-        try await waitForPublisher(managementDialogModel.$shouldShowErrorMessage, toEmit: true)
-        try await waitForPublisher(managementDialogModel.$syncErrorMessage.compactMap { $0 }.map(\.type), toEmit: .unableToSyncToOtherDevice)
-    }
-
-    func test_syncWithAnotherDevicePressed_accountExists_whenError_showsError() async throws {
-        featureFlagger.isFeatureOn[FeatureFlag.exchangeKeysToSyncWithAnotherDevice.rawValue] = true
-        connectionController.startExchangeModeError = SyncError.failedToDecryptValue("")
-        ddgSyncing.account = .mock
-
-        await syncPreferences.syncWithAnotherDevicePressed()
-
-        try await waitForPublisher(managementDialogModel.$shouldShowErrorMessage, toEmit: true)
-        try await waitForPublisher(managementDialogModel.$syncErrorMessage.compactMap { $0 }.map(\.type), toEmit: .unableToSyncToOtherDevice)
     }
 }
 
@@ -603,5 +626,19 @@ private extension SyncCode.RecoveryKey {
         let contents = try Data(base64Encoded: try XCTUnwrap(base64Code))
             .flatMap { try JSONDecoder.snakeCaseKeys.decode(SyncCode.self, from: $0) }
         self = try XCTUnwrap(contents?.recovery)
+    }
+}
+
+private extension String {
+    var isDDGURLString: Bool {
+        guard let url = URL(string: self) else { return false }
+        return url.isDuckDuckGo
+    }
+
+    var isRecoveryKey: Bool {
+        guard let decoded = try? SyncCode.decodeBase64String(self) else {
+            return false
+        }
+        return decoded.recovery != nil
     }
 }

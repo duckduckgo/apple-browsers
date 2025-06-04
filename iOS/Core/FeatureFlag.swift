@@ -123,6 +123,9 @@ public enum FeatureFlag: String {
 
     /// https://app.asana.com/1/137249556945/project/414235014887631/task/1210325960030113?focus=true
     case exchangeKeysToSyncWithAnotherDevice
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210422840951066?focus=true
+    case aiChatKeepSession
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -285,6 +288,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.canInterceptSyncSetupUrls))
         case .exchangeKeysToSyncWithAnotherDevice:
             return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
+        case .aiChatKeepSession:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.keepSession))
         }
     }
 }

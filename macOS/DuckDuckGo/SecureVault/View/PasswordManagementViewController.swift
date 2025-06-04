@@ -321,7 +321,7 @@ final class PasswordManagementViewController: NSViewController {
     }
 
     @IBAction func openAutofillPreferences(_ sender: Any) {
-        WindowControllersManager.shared.showPreferencesTab(withSelectedPane: .autofill)
+        Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: .autofill)
         self.dismiss()
     }
 
@@ -1114,9 +1114,9 @@ extension PasswordManagementViewController: NSTextViewDelegate {
     func textView(_ textView: NSTextView, clickedOnLink link: Any, at charIndex: Int) -> Bool {
         if let link = link as? URL {
             if let pane = PreferencePaneIdentifier(url: link) {
-                WindowControllersManager.shared.showPreferencesTab(withSelectedPane: pane)
+                Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: pane)
             } else {
-                WindowControllersManager.shared.showTab(with: .url(link, source: .link))
+                Application.appDelegate.windowControllersManager.showTab(with: .url(link, source: .link))
             }
             self.dismiss()
         }

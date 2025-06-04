@@ -159,6 +159,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Web and native integration for opening AI Chat in a custom webview.
     case deepLink
+
+    /// Keep AI Chat session after the user closes it
+    case keepSession
 }
 
 public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {

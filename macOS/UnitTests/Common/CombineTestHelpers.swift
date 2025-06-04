@@ -92,3 +92,77 @@ public extension XCTestCase {
         )
     }
 }
+
+extension Publisher {
+    @discardableResult
+    func async(timeout: TimeInterval = 10, file: StaticString = #file, line: UInt = #line) async throws -> Output {
+        try await withCheckedThrowingContinuation { continuation in
+            var cancellable: AnyCancellable?
+
+            cancellable = self
+                .timeout(timeout, file: file, line: line)
+                .first()
+                .sink(
+                    receiveCompletion: { completion in
+                        if case let .failure(error) = completion {
+                            continuation.resume(throwing: error)
+                        }
+                    },
+                    receiveValue: { value in
+                        continuation.resume(returning: value)
+                        cancellable?.cancel()
+                    }
+                )
+        }
+    }
+}
+
+extension Publisher where Output: Equatable {
+    @discardableResult
+    func async(waitFor value: Output, timeout: TimeInterval = 10, file: StaticString = #file, line: UInt = #line) async throws -> Output {
+        try await withCheckedThrowingContinuation { continuation in
+            var cancellable: AnyCancellable?
+
+            cancellable = self
+                .filter { $0 == value }
+                .timeout(timeout, file: file, line: line)
+                .first()
+                .sink(
+                    receiveCompletion: { completion in
+                        if case let .failure(error) = completion {
+                            continuation.resume(throwing: error)
+                        }
+                    },
+                    receiveValue: { value in
+                        continuation.resume(returning: value)
+                        cancellable?.cancel()
+                    }
+                )
+        }
+    }
+}
+
+extension Publisher where Output: ExpressibleByNilLiteral {
+    @discardableResult
+    func asyncFirstNonNil<T>(timeout: TimeInterval = 10, file: StaticString = #file, line: UInt = #line) async throws -> T where Output == T? {
+        try await withCheckedThrowingContinuation { continuation in
+            var cancellable: AnyCancellable?
+
+            cancellable = self
+                .compactMap { $0 } // Filter nils
+                .first()
+                .timeout(timeout, file: file, line: line)
+                .sink(
+                    receiveCompletion: { completion in
+                        if case let .failure(error) = completion {
+                            continuation.resume(throwing: error)
+                        }
+                    },
+                    receiveValue: { value in
+                        continuation.resume(returning: value)
+                        cancellable?.cancel()
+                    }
+                )
+        }
+    }
+}

@@ -92,7 +92,7 @@ final class Fire {
 
     @MainActor
     init(cacheManager: WebCacheManager = WebCacheManager.shared,
-         historyCoordinating: HistoryCoordinating = HistoryCoordinator.shared,
+         historyCoordinating: HistoryCoordinating? = nil,
          permissionManager: PermissionManagerProtocol = PermissionManager.shared,
          savedZoomLevelsCoordinating: SavedZoomLevelsCoordinating = AccessibilityPreferences.shared,
          downloadListCoordinator: DownloadListCoordinator = DownloadListCoordinator.shared,
@@ -111,11 +111,11 @@ final class Fire {
          getVisitedLinkStore: (() -> WKVisitedLinkStoreWrapper?)? = nil
     ) {
         self.webCacheManager = cacheManager
-        self.historyCoordinating = historyCoordinating
+        self.historyCoordinating = historyCoordinating ?? NSApp.delegateTyped.historyCoordinator
         self.permissionManager = permissionManager
         self.savedZoomLevelsCoordinating = savedZoomLevelsCoordinating
         self.downloadListCoordinator = downloadListCoordinator
-        self.windowControllerManager = windowControllerManager ?? WindowControllersManager.shared
+        self.windowControllerManager = windowControllerManager ?? Application.appDelegate.windowControllersManager
         self.faviconManagement = faviconManagement ?? NSApp.delegateTyped.faviconManager
         self.recentlyClosedCoordinator = recentlyClosedCoordinator ?? RecentlyClosedCoordinator.shared
         self.pinnedTabsManagerProvider = pinnedTabsManagerProvider ?? Application.appDelegate.pinnedTabsManagerProvider

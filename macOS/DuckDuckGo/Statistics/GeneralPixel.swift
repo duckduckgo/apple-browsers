@@ -264,7 +264,6 @@ enum GeneralPixel: PixelKitEventV2 {
     case assertionFailure(message: String, file: StaticString, line: UInt)
 
     case keyValueFileStoreInitError
-    case dbMakeDatabaseError(error: Error?)
     case dbContainerInitializationError(error: Error)
     case dbInitializationError(error: Error)
     case dbSaveExcludedHTTPSDomainsError(error: Error?)
@@ -842,8 +841,6 @@ enum GeneralPixel: PixelKitEventV2 {
 
         case .keyValueFileStoreInitError:
             return "key_value_file_store_init_error"
-        case .dbMakeDatabaseError:
-            return "database_make_database_error"
         case .dbContainerInitializationError:
             return "database_container_error"
         case .dbInitializationError:
@@ -1148,8 +1145,7 @@ enum GeneralPixel: PixelKitEventV2 {
 
     var error: (any Error)? {
         switch self {
-        case .dbMakeDatabaseError(let error?),
-                .dbContainerInitializationError(let error),
+        case .dbContainerInitializationError(let error),
                 .dbInitializationError(let error),
                 .dbSaveExcludedHTTPSDomainsError(let error?),
                 .dbSaveBloomFilterError(let error?),

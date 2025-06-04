@@ -69,7 +69,7 @@ final class MockSyncConnectionControllerDelegate: SyncConnectionControllerDelega
         didReceiveRecoveryKeyCalled = true
     }
 
-    func controllerDidRecognizeScannedCode() async {
+    func controllerDidRecognizeCode() async {
         didRecognizeScannedCodeCalled = true
     }
 

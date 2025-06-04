@@ -26,8 +26,7 @@ public protocol SyncConnectionControllerDelegate: AnyObject {
 
     func controllerDidReceiveRecoveryKey()
 
-    // TODO: Rename to include pasting
-    func controllerDidRecognizeScannedCode(setupSource: SyncSetupSource, codeSource: SyncCodeSource) async
+    func controllerDidRecognizeCode(setupSource: SyncSetupSource, codeSource: SyncCodeSource) async
 
     func controllerDidCreateSyncAccount()
     func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool, setupSource: SyncSetupSource, codeSource: SyncCodeSource)
@@ -145,13 +144,13 @@ public actor SyncConnectionController: SyncConnectionControlling {
         }
 
         if let exchangeKey = syncCode.exchangeKey {
-            await delegate?.controllerDidRecognizeScannedCode(setupSource: .exchange, codeSource: syncCodeSource)
+            await delegate?.controllerDidRecognizeCode(setupSource: .exchange, codeSource: syncCodeSource)
             return await handleExchangeKey(exchangeKey, codeSource: syncCodeSource)
         } else if let connectKey = syncCode.connect {
-            await delegate?.controllerDidRecognizeScannedCode(setupSource: .connect, codeSource: syncCodeSource)
+            await delegate?.controllerDidRecognizeCode(setupSource: .connect, codeSource: syncCodeSource)
             return await handleConnectKey(connectKey, codeSource: syncCodeSource)
         } else {
-            await delegate?.controllerDidRecognizeScannedCode(setupSource: .recovery, codeSource: syncCodeSource)
+            await delegate?.controllerDidRecognizeCode(setupSource: .recovery, codeSource: syncCodeSource)
             // TODO: Maybe different event
             await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: nil, setupRole: .receiver(.unknown, syncCodeSource))
             return false
@@ -181,13 +180,13 @@ public actor SyncConnectionController: SyncConnectionControlling {
         }
 
         if let exchangeKey = syncCode.exchangeKey {
-            await delegate?.controllerDidRecognizeScannedCode(setupSource: .exchange, codeSource: codeSource)
+            await delegate?.controllerDidRecognizeCode(setupSource: .exchange, codeSource: codeSource)
             return await handleExchangeKey(exchangeKey, codeSource: codeSource)
         } else if let recoveryKey = syncCode.recovery {
-            await delegate?.controllerDidRecognizeScannedCode(setupSource: .recovery, codeSource: codeSource)
+            await delegate?.controllerDidRecognizeCode(setupSource: .recovery, codeSource: codeSource)
             return await handleRecoveryKey(recoveryKey, isRecovery: true, setupRole: .receiver(.recovery, codeSource))
         } else if let connectKey = syncCode.connect {
-            await delegate?.controllerDidRecognizeScannedCode(setupSource: .connect, codeSource: codeSource)
+            await delegate?.controllerDidRecognizeCode(setupSource: .connect, codeSource: codeSource)
             return await handleConnectKey(connectKey, codeSource: codeSource)
         } else {
             // We shouldn't ever really reach this point

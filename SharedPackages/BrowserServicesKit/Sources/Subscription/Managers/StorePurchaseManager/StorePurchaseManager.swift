@@ -366,7 +366,7 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
     ///   using index-based iteration to ensure the changes persist in the published array.
     private func updateAvailableProductsTrialEligibility() async {
         for index in self.availableProducts.indices {
-            Logger.subscription.info("[StorePurchaseManager] updateAvailableProductsTrialStatus subscription id: \(self.availableProducts[index].id)")  
+            Logger.subscription.info("[StorePurchaseManager] updateAvailableProductsTrialStatus subscription id: \(self.availableProducts[index].id)")
             await self.availableProducts[index].refreshFreeTrialEligibility()
         }
     }

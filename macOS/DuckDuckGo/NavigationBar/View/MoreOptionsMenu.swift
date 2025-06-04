@@ -64,7 +64,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     private let passwordManagerCoordinator: PasswordManagerCoordinating
     private let internalUserDecider: InternalUserDecider
     @MainActor
-    private lazy var sharingMenu: NSMenu = SharingMenu(title: UserText.shareMenuItem)
+    private lazy var sharingMenu: NSMenu = SharingMenu(title: UserText.shareMenuItem, location: .moreOptionsMenu)
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let freemiumDBPUserStateManager: FreemiumDBPUserStateManager
     private let freemiumDBPFeature: FreemiumDBPFeature
@@ -259,28 +259,31 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     @MainActor
     @objc func addToDock(_ sender: NSMenuItem) {
-        PixelKit.fire(GeneralPixel.userAddedToDockFromMoreOptionsMenu)
+        PixelKit.fire(GeneralPixel.userAddedToDockFromMoreOptionsMenu, frequency: .dailyAndStandard)
         dockCustomizer?.addToDock()
     }
 
     @MainActor
     @objc func setAsDefault(_ sender: NSMenuItem) {
-        PixelKit.fire(GeneralPixel.defaultRequestedFromMoreOptionsMenu)
+        PixelKit.fire(GeneralPixel.defaultRequestedFromMoreOptionsMenu, frequency: .dailyAndStandard)
         defaultBrowserPreferences.becomeDefault()
     }
 
     @MainActor
     @objc func newTab(_ sender: NSMenuItem) {
+        PixelKit.fire(MoreOptionsMenuPixel.newTabActionClicked, frequency: .daily)
         tabCollectionViewModel.appendNewTab()
     }
 
     @MainActor
     @objc func newWindow(_ sender: NSMenuItem) {
+        PixelKit.fire(MoreOptionsMenuPixel.newWindowActionClicked, frequency: .daily)
         WindowsManager.openNewWindow()
     }
 
     @MainActor
     @objc func newBurnerWindow(_ sender: NSMenuItem) {
+        PixelKit.fire(MoreOptionsMenuPixel.newBurnerWindowActionClicked, frequency: .daily)
         WindowsManager.openNewWindow(burnerMode: BurnerMode(isBurner: true))
     }
 
@@ -297,6 +300,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
             return
         }
 
+        PixelKit.fire(MoreOptionsMenuPixel.fireproofSiteActionClicked, frequency: .daily)
         selectedTabViewModel.tab.requestFireproofToggle()
     }
 
@@ -309,10 +313,12 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     }
 
     @objc func openBookmarks(_ sender: NSMenuItem) {
+        PixelKit.fire(MoreOptionsMenuPixel.bookmarksActionClicked, frequency: .daily)
         actionDelegate?.optionsButtonMenuRequestedBookmarkPopover(self)
     }
 
     @objc func openBookmarksManagementInterface(_ sender: NSMenuItem) {
+        PixelKit.fire(MoreOptionsMenuPixel.bookmarksActionClicked, frequency: .daily)
         actionDelegate?.optionsButtonMenuRequestedBookmarkManagementInterface(self)
     }
 
@@ -325,30 +331,37 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     }
 
     @objc func openDownloads(_ sender: NSMenuItem) {
+        PixelKit.fire(MoreOptionsMenuPixel.downloadsActionClicked, frequency: .daily)
         actionDelegate?.optionsButtonMenuRequestedDownloadsPopover(self)
     }
 
     @objc func openAutofillWithAllItems(_ sender: NSMenuItem) {
+        PixelKit.fire(MoreOptionsMenuPixel.passwordsActionClicked, frequency: .daily)
         actionDelegate?.optionsButtonMenuRequestedLoginsPopover(self, selectedCategory: .allItems)
     }
 
     @objc func openAutofillWithLogins(_ sender: NSMenuItem) {
+        PixelKit.fire(MoreOptionsMenuPixel.passwordsActionClicked, frequency: .daily)
         actionDelegate?.optionsButtonMenuRequestedLoginsPopover(self, selectedCategory: .logins)
     }
 
     @objc func openExternalPasswordManager(_ sender: NSMenuItem) {
+        PixelKit.fire(MoreOptionsMenuPixel.passwordsActionClicked, frequency: .daily)
         actionDelegate?.optionsButtonMenuRequestedOpenExternalPasswordManager(self)
     }
 
     @objc func openAutofillWithIdentities(_ sender: NSMenuItem) {
+        PixelKit.fire(MoreOptionsMenuPixel.passwordsActionClicked, frequency: .daily)
         actionDelegate?.optionsButtonMenuRequestedLoginsPopover(self, selectedCategory: .identities)
     }
 
     @objc func openAutofillWithCreditCards(_ sender: NSMenuItem) {
+        PixelKit.fire(MoreOptionsMenuPixel.passwordsActionClicked, frequency: .daily)
         actionDelegate?.optionsButtonMenuRequestedLoginsPopover(self, selectedCategory: .cards)
     }
 
     @objc func openPreferences(_ sender: NSMenuItem) {
+        PixelKit.fire(MoreOptionsMenuPixel.settingsActionClicked, frequency: .daily)
         actionDelegate?.optionsButtonMenuRequestedPreferences(self)
     }
 
@@ -387,10 +400,12 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     @MainActor
     @objc func findInPage(_ sender: NSMenuItem) {
+        PixelKit.fire(MoreOptionsMenuPixel.findInPageActionClicked, frequency: .daily)
         tabCollectionViewModel.selectedTabViewModel?.showFindInPage()
     }
 
     @objc func doPrint(_ sender: NSMenuItem) {
+        PixelKit.fire(MoreOptionsMenuPixel.printActionClicked, frequency: .daily)
         actionDelegate?.optionsButtonMenuRequestedPrint(self)
     }
 
@@ -726,8 +741,9 @@ final class FeedbackSubMenu: NSMenu {
         removeAllItems()
 
         let browserFeedbackItem = NSMenuItem(title: UserText.browserFeedback,
-                                             action: #selector(AppDelegate.openFeedback(_:)),
+                                             action: #selector(sendFeedback(_:)),
                                              keyEquivalent: "")
+            .targetting(self)
             .withImage(moreOptionsMenuIconsProvider.browserFeedbackIcon)
         addItem(browserFeedbackItem)
 
@@ -751,6 +767,12 @@ final class FeedbackSubMenu: NSMenu {
             addItem(.separator())
             addItem(withTitle: "Copy Version", action: #selector(AppDelegate.copyVersion(_:)), keyEquivalent: "")
         }
+    }
+
+    @MainActor
+    @objc private func sendFeedback(_ sender: Any?) {
+        PixelKit.fire(MoreOptionsMenuPixel.feedbackActionClicked, frequency: .daily)
+        Application.appDelegate.openFeedback(sender)
     }
 }
 

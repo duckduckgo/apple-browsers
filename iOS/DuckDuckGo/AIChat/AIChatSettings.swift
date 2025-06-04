@@ -85,7 +85,7 @@ struct AIChatSettings: AIChatSettingsProvider {
     var sessionTimerInMinutes: Int {
         keepSessionSettings?.sessionTimeoutMinutes ?? KeepSessionSettings.defaultSessionTimeoutInMinutes
     }
-    
+
     var isAIChatEnabled: Bool {
         userDefaults.isAIChatEnabled
     }

@@ -127,7 +127,9 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
             setPopoverSeen()
             pixelFiring?.fire(DefaultBrowserAndDockPromptPixelEvent.popoverImpression(type: evaluatePromptEligibility))
         case .banner:
-            pixelFiring?.fire(DefaultBrowserAndDockPromptPixelEvent.bannerImpression(type: evaluatePromptEligibility))
+            // We set the banner show occurrences only when the user interact with the banner.
+            // We cannot increment the number of banners shown here because this returns a value every time the browser is focused.
+            pixelFiring?.fire(DefaultBrowserAndDockPromptPixelEvent.bannerImpression(type: evaluatePromptEligibility, numberOfBannersShown: formattedNumberOfBannersShown(value: store.bannerShownOccurrences + 1)), frequency: .uniqueByNameAndParameters)
         case .none:
             break
         }
@@ -165,9 +167,7 @@ final class DefaultBrowserAndDockPromptCoordinator: DefaultBrowserAndDockPrompt 
             case .popover:
                 pixelFiring?.fire(DefaultBrowserAndDockPromptPixelEvent.popoverConfirmButtonClicked(type: type))
             case .banner:
-                // https://app.asana.com/1/137249556945/task/1210341343812872/comment/1210348068777628?focus=true
-                let numberOfBannersShown = store.bannerShownOccurrences > 10 ? "10+" : String(store.bannerShownOccurrences)
-                pixelFiring?.fire(DefaultBrowserAndDockPromptPixelEvent.bannerConfirmButtonClicked(type: type, numberOfBannersShown: numberOfBannersShown))
+                pixelFiring?.fire(DefaultBrowserAndDockPromptPixelEvent.bannerConfirmButtonClicked(type: type, numberOfBannersShown: formattedNumberOfBannersShown(value: store.bannerShownOccurrences)))
             }
         }
 
@@ -241,4 +241,10 @@ private extension DefaultBrowserAndDockPromptCoordinator {
         guard prompt == .banner else { return }
         setBannerSeen(shouldHidePermanently: false)
     }
+
+    func formattedNumberOfBannersShown(value: Int) -> String {
+        // https://app.asana.com/1/137249556945/task/1210341343812872/comment/1210348068777628?focus=true
+        return value > 10 ? "10+" : String(value)
+    }
+
 }

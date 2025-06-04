@@ -44,7 +44,8 @@ enum DefaultBrowserAndDockPromptPixelEvent: PixelKitEventV2, Hashable {
     /// Event Trigger: The SAD/ATT banner appears on screen.
     /// - Parameters:
     ///     - type: A hardcoded string with the following possible values (“set-as-default”, “add-to-dock”, “set-as-default-and-add-to-dock") representing the type of prompt.
-    case bannerImpression(type: DefaultBrowserAndDockPromptType)
+    ///     - numberOfBannersShown: The number of banner that users have seen before clicking the confirm action.
+    case bannerImpression(type: DefaultBrowserAndDockPromptType, numberOfBannersShown: String)
     /// Event Trigger: The primary action button of the SAD/ATT banner is clicked.
     /// - Parameters:
     ///     - type: A hardcoded string with the following possible values (“set-as-default”, “add-to-dock”, “set-as-default-and-add-to-dock") representing the type of prompt.
@@ -90,9 +91,9 @@ enum DefaultBrowserAndDockPromptPixelEvent: PixelKitEventV2, Hashable {
             [ParameterKey.contentType: type.promptTypeDescription]
         case let .popoverCloseButtonClicked(type):
             [ParameterKey.contentType: type.promptTypeDescription]
-        case let .bannerImpression(type):
-            [ParameterKey.contentType: type.promptTypeDescription]
-        case let .bannerConfirmButtonClicked(type, numberOfBannersShown):
+        case
+            let .bannerImpression(type, numberOfBannersShown),
+            let .bannerConfirmButtonClicked(type, numberOfBannersShown):
             [
                 ParameterKey.contentType: type.promptTypeDescription,
                 ParameterKey.numberOfBannersShown: String(numberOfBannersShown)

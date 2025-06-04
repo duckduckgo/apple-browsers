@@ -169,6 +169,7 @@ struct DefaultBrowserAndDockPromptStorageTests {
             let failedToSaveBannerShownDateEvent = try #require(expectedEvents.first)
             let failedToSaveBannerShownOccurrences = try #require(expectedEvents.last)
 
+            #expect(expectedEvents.count == 2)
             if case let .storage(.failedToSaveValue(.bannerShownDate(error as NSError))) = failedToSaveBannerShownDateEvent {
                 #expect(error == expectedError)
             } else if case let .storage(.failedToSaveValue(.bannerShownOccurrences(error as NSError))) = failedToSaveBannerShownOccurrences {

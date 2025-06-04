@@ -398,7 +398,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
 
         // WHEN
-        let result = sut.getPromptType()
+        let _ = sut.getPromptType()
 
         // THEN
         pixelKitMock.verifyExpectations(file: #file, line: #line)
@@ -414,7 +414,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
 
         // WHEN
-        let result = sut.getPromptType()
+        let _ = sut.getPromptType()
 
         // THEN
         pixelKitMock.verifyExpectations(file: #file, line: #line)
@@ -430,7 +430,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
 
         // WHEN
-        let result = sut.getPromptType()
+        let _ = sut.getPromptType()
 
         // THEN
         pixelKitMock.verifyExpectations(file: #file, line: #line)
@@ -548,11 +548,12 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         promptTypeDeciderMock.promptTypeToReturn = .banner
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = false
-        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.bannerImpression(type: .bothDefaultBrowserAndDockPrompt), frequency: .standard)
+        storeMock.bannerShownOccurrences = 6
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.bannerImpression(type: .bothDefaultBrowserAndDockPrompt, numberOfBannersShown: "7"), frequency: .uniqueByNameAndParameters)
         let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
 
         // WHEN
-        let result = sut.getPromptType()
+        let _ = sut.getPromptType()
 
         // THEN
         pixelKitMock.verifyExpectations(file: #file, line: #line)
@@ -564,11 +565,12 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         promptTypeDeciderMock.promptTypeToReturn = .banner
         defaultBrowserProviderMock.isDefault = false
         dockCustomizerMock.dockStatus = true
-        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.bannerImpression(type: .setAsDefaultPrompt), frequency: .standard)
+        storeMock.bannerShownOccurrences = 9
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.bannerImpression(type: .setAsDefaultPrompt, numberOfBannersShown: "10"), frequency: .uniqueByNameAndParameters)
         let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
 
         // WHEN
-        let result = sut.getPromptType()
+        let _ = sut.getPromptType()
 
         // THEN
         pixelKitMock.verifyExpectations(file: #file, line: #line)
@@ -580,11 +582,12 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         promptTypeDeciderMock.promptTypeToReturn = .banner
         defaultBrowserProviderMock.isDefault = true
         dockCustomizerMock.dockStatus = false
-        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.bannerImpression(type: .addToDockPrompt), frequency: .standard)
+        storeMock.bannerShownOccurrences = 10
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.bannerImpression(type: .addToDockPrompt, numberOfBannersShown: "10+"), frequency: .uniqueByNameAndParameters)
         let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
 
         // WHEN
-        let result = sut.getPromptType()
+        let _ = sut.getPromptType()
 
         // THEN
         pixelKitMock.verifyExpectations(file: #file, line: #line)

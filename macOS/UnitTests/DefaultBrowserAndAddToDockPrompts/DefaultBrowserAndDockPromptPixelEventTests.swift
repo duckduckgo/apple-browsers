@@ -32,104 +32,176 @@ final class DefaultBrowserAndDockPromptPixelEventTests: XCTestCase {
 
     func testParametersMapsToTheRightStrings() {
         // GIVEN
-        let pixels: [DefaultBrowserAndDockPromptPixelEvent: PixelFireExpectations] = [
-            .popoverImpression(type: .bothDefaultBrowserAndDockPrompt): PixelFireExpectations(
-                pixelName: Self.popoverImpressionPixelName,
-                customFields: ["contentType": "set-as-default-and-add-to-dock"]
+        let pixels: [DefaultBrowserAndDockPromptPixelEvent: (expectation: PixelFireExpectations, frequency: PixelKit.Frequency)] = [
+            .popoverImpression(type: .bothDefaultBrowserAndDockPrompt): (
+                PixelFireExpectations(
+                    pixelName: Self.popoverImpressionPixelName,
+                    customFields: ["contentType": "set-as-default-and-add-to-dock"]
+                ),
+                .standard
             ),
-            .popoverImpression(type: .setAsDefaultPrompt): PixelFireExpectations(
-                pixelName: Self.popoverImpressionPixelName,
-                customFields: ["contentType": "set-as-default"]
+            .popoverImpression(type: .setAsDefaultPrompt): (
+                PixelFireExpectations(
+                    pixelName: Self.popoverImpressionPixelName,
+                    customFields: ["contentType": "set-as-default"]
+                ),
+                .standard
             ),
-            .popoverImpression(type: .addToDockPrompt): PixelFireExpectations(
-                pixelName: Self.popoverImpressionPixelName, customFields: ["contentType": "add-to-dock"]
+            .popoverImpression(type: .addToDockPrompt): (
+                PixelFireExpectations(
+                    pixelName: Self.popoverImpressionPixelName, customFields: ["contentType": "add-to-dock"]
+                ),
+                .standard
             ),
-            .popoverConfirmButtonClicked(type: .bothDefaultBrowserAndDockPrompt): PixelFireExpectations(
-                pixelName: Self.popoverConfirmationActionPixelName,
-                customFields: ["contentType": "set-as-default-and-add-to-dock"]
+            .popoverConfirmButtonClicked(type: .bothDefaultBrowserAndDockPrompt): (
+                PixelFireExpectations(
+                    pixelName: Self.popoverConfirmationActionPixelName,
+                    customFields: ["contentType": "set-as-default-and-add-to-dock"]
+                ),
+                .standard
             ),
-            .popoverConfirmButtonClicked(type: .setAsDefaultPrompt): PixelFireExpectations(
-                pixelName: Self.popoverConfirmationActionPixelName,
-                customFields: ["contentType": "set-as-default"]
+            .popoverConfirmButtonClicked(type: .setAsDefaultPrompt): (
+                PixelFireExpectations(
+                    pixelName: Self.popoverConfirmationActionPixelName,
+                    customFields: ["contentType": "set-as-default"]
+                ),
+                .standard
             ),
-            .popoverConfirmButtonClicked(type: .addToDockPrompt): PixelFireExpectations(
-                pixelName: Self.popoverConfirmationActionPixelName,
-                customFields: ["contentType": "add-to-dock"]
+            .popoverConfirmButtonClicked(type: .addToDockPrompt): (
+                PixelFireExpectations(
+                    pixelName: Self.popoverConfirmationActionPixelName,
+                    customFields: ["contentType": "add-to-dock"]
+                ),
+                .standard
             ),
-            .popoverCloseButtonClicked(type: .bothDefaultBrowserAndDockPrompt): PixelFireExpectations(
-                pixelName: Self.popoverDismissActionPixelName,
-                customFields: ["contentType": "set-as-default-and-add-to-dock"]
+            .popoverCloseButtonClicked(type: .bothDefaultBrowserAndDockPrompt): (
+                PixelFireExpectations(
+                    pixelName: Self.popoverDismissActionPixelName,
+                    customFields: ["contentType": "set-as-default-and-add-to-dock"]
+                ),
+                .standard
             ),
-            .popoverCloseButtonClicked(type: .setAsDefaultPrompt): PixelFireExpectations(
-                pixelName: Self.popoverDismissActionPixelName,
-                customFields: ["contentType": "set-as-default"]
+            .popoverCloseButtonClicked(type: .setAsDefaultPrompt): (
+                PixelFireExpectations(
+                    pixelName: Self.popoverDismissActionPixelName,
+                    customFields: ["contentType": "set-as-default"]
+                ),
+                .standard
             ),
-            .popoverCloseButtonClicked(type: .addToDockPrompt): PixelFireExpectations(
-                pixelName: Self.popoverDismissActionPixelName,
-                customFields: ["contentType": "add-to-dock"]
+            .popoverCloseButtonClicked(type: .addToDockPrompt): (
+                PixelFireExpectations(
+                    pixelName: Self.popoverDismissActionPixelName,
+                    customFields: ["contentType": "add-to-dock"]
+                ),
+                .standard
             ),
-            .bannerImpression(type: .bothDefaultBrowserAndDockPrompt): PixelFireExpectations(
-                pixelName: Self.bannerImpressionPixelName,
-                customFields: ["contentType": "set-as-default-and-add-to-dock"]
+            .bannerImpression(type: .bothDefaultBrowserAndDockPrompt, numberOfBannersShown: "10+"): (
+                PixelFireExpectations(
+                    pixelName: Self.bannerImpressionPixelName,
+                    customFields: [
+                        "contentType": "set-as-default-and-add-to-dock",
+                        "numberOfBannersShown": "10+",
+                    ]
+                ),
+                .uniqueByNameAndParameters
             ),
-            .bannerImpression(type: .setAsDefaultPrompt): PixelFireExpectations(
-                pixelName: Self.bannerImpressionPixelName,
-                customFields: ["contentType": "set-as-default"]
+            .bannerImpression(type: .setAsDefaultPrompt, numberOfBannersShown: "5"): (
+                PixelFireExpectations(
+                    pixelName: Self.bannerImpressionPixelName,
+                    customFields: [
+                        "contentType": "set-as-default",
+                        "numberOfBannersShown": "5"
+                    ]
+                ),
+                .uniqueByNameAndParameters
             ),
-            .bannerImpression(type: .addToDockPrompt): PixelFireExpectations(
-                pixelName: Self.bannerImpressionPixelName,
-                customFields: ["contentType": "add-to-dock"]
+            .bannerImpression(type: .addToDockPrompt, numberOfBannersShown: "8"): (
+                PixelFireExpectations(
+                    pixelName: Self.bannerImpressionPixelName,
+                    customFields: [
+                        "contentType": "add-to-dock",
+                        "numberOfBannersShown": "8"
+                    ]
+                ),
+                .uniqueByNameAndParameters
             ),
-            .bannerConfirmButtonClicked(type: .bothDefaultBrowserAndDockPrompt, numberOfBannersShown: "5"): PixelFireExpectations(
-                pixelName: Self.bannerConfirmationActionPixelName,
-                customFields: [
-                    "contentType": "set-as-default-and-add-to-dock",
-                    "numberOfBannersShown": "5",
-                ]
+            .bannerConfirmButtonClicked(type: .bothDefaultBrowserAndDockPrompt, numberOfBannersShown: "5"): (
+                PixelFireExpectations(
+                    pixelName: Self.bannerConfirmationActionPixelName,
+                    customFields: [
+                        "contentType": "set-as-default-and-add-to-dock",
+                        "numberOfBannersShown": "5",
+                    ]
+                ),
+                .standard
             ),
-            .bannerConfirmButtonClicked(type: .setAsDefaultPrompt, numberOfBannersShown: "8"): PixelFireExpectations(
-                pixelName: Self.bannerConfirmationActionPixelName,
-                customFields: [
-                    "contentType": "set-as-default",
-                    "numberOfBannersShown": "8",
-                ]
+            .bannerConfirmButtonClicked(type: .setAsDefaultPrompt, numberOfBannersShown: "8"): (
+                PixelFireExpectations(
+                    pixelName: Self.bannerConfirmationActionPixelName,
+                    customFields: [
+                        "contentType": "set-as-default",
+                        "numberOfBannersShown": "8",
+                    ]
+                ),
+                .standard
             ),
-            .bannerConfirmButtonClicked(type: .addToDockPrompt, numberOfBannersShown: "10+"): PixelFireExpectations(
-                pixelName: Self.bannerConfirmationActionPixelName,
-                customFields: [
-                    "contentType": "add-to-dock",
-                    "numberOfBannersShown": "10+",
-                ]
+            .bannerConfirmButtonClicked(type: .addToDockPrompt, numberOfBannersShown: "10+"): (
+                PixelFireExpectations(
+                    pixelName: Self.bannerConfirmationActionPixelName,
+                    customFields: [
+                        "contentType": "add-to-dock",
+                        "numberOfBannersShown": "10+",
+                    ]
+                ),
+                .standard
             ),
-            .bannerCloseButtonClicked(type: .bothDefaultBrowserAndDockPrompt): PixelFireExpectations(
-                pixelName: Self.bannerDismissActionPixelName,
-                customFields: ["contentType": "set-as-default-and-add-to-dock"]
+            .bannerCloseButtonClicked(type: .bothDefaultBrowserAndDockPrompt): (
+                PixelFireExpectations(
+                    pixelName: Self.bannerDismissActionPixelName,
+                    customFields: ["contentType": "set-as-default-and-add-to-dock"]
+                ),
+                .standard
             ),
-            .bannerCloseButtonClicked(type: .setAsDefaultPrompt): PixelFireExpectations(
-                pixelName: Self.bannerDismissActionPixelName,
-                customFields: ["contentType": "set-as-default"]
+            .bannerCloseButtonClicked(type: .setAsDefaultPrompt): (
+                PixelFireExpectations(
+                    pixelName: Self.bannerDismissActionPixelName,
+                    customFields: ["contentType": "set-as-default"]
+                ),
+                .standard
             ),
-            .bannerCloseButtonClicked(type: .addToDockPrompt): PixelFireExpectations(
-                pixelName: Self.bannerDismissActionPixelName,
-                customFields: ["contentType": "add-to-dock"]
+            .bannerCloseButtonClicked(type: .addToDockPrompt): (
+                PixelFireExpectations(
+                    pixelName: Self.bannerDismissActionPixelName,
+                    customFields: ["contentType": "add-to-dock"]
+                ),
+                .standard
             ),
-            .bannerNeverAskAgainButtonClicked(type: .bothDefaultBrowserAndDockPrompt): PixelFireExpectations(
-                pixelName: Self.bannerNeverAskAgainActionPixelName,
-                customFields: ["contentType": "set-as-default-and-add-to-dock"]
+            .bannerNeverAskAgainButtonClicked(type: .bothDefaultBrowserAndDockPrompt): (
+                PixelFireExpectations(
+                    pixelName: Self.bannerNeverAskAgainActionPixelName,
+                    customFields: ["contentType": "set-as-default-and-add-to-dock"]
+                ),
+                .standard
             ),
-            .bannerNeverAskAgainButtonClicked(type: .setAsDefaultPrompt): PixelFireExpectations(
-                pixelName: Self.bannerNeverAskAgainActionPixelName,
-                customFields: ["contentType": "set-as-default"]
+            .bannerNeverAskAgainButtonClicked(type: .setAsDefaultPrompt): (
+                PixelFireExpectations(
+                    pixelName: Self.bannerNeverAskAgainActionPixelName,
+                    customFields: ["contentType": "set-as-default"]
+                ),
+                .standard
             ),
-            .bannerNeverAskAgainButtonClicked(type: .addToDockPrompt): PixelFireExpectations(
-                pixelName: Self.bannerNeverAskAgainActionPixelName,
-                customFields: ["contentType": "add-to-dock"]
+            .bannerNeverAskAgainButtonClicked(type: .addToDockPrompt): (
+                PixelFireExpectations(
+                    pixelName: Self.bannerNeverAskAgainActionPixelName,
+                    customFields: ["contentType": "add-to-dock"]
+                ),
+                .standard
             ),
-       ]
+        ]
 
         // THEN
-        for (event, expectations) in pixels {
-            verifyThat(event, frequency: .standard, meets: expectations, file: #file, line: #line)
+        for (event, context) in pixels {
+            verifyThat(event, frequency: context.frequency, meets: context.expectation, file: #file, line: #line)
         }
     }
 

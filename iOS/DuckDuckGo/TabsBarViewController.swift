@@ -93,9 +93,17 @@ class TabsBarViewController: UIViewController {
         return Int(collectionView.frame.size.width / Constants.minItemWidth)
     }
 
-    required init?(coder: NSCoder, themingProperties: ExperimentalThemingProperties) {
-        self.themingProperties = themingProperties
+    static func createFromXib(featureFlagger: FeatureFlagger) -> TabsBarViewController {
+        let storyboard = UIStoryboard(name: "TabSwitcher", bundle: nil)
+        let controller: TabsBarViewController = storyboard.instantiateViewController(identifier: "TabsBar") { coder in
+            TabsBarViewController(coder: coder, featureFlagger: featureFlagger)
+        }
+        return controller
+    }
 
+    required init?(coder: NSCoder, featureFlagger: FeatureFlagger) {
+        self.featureFlagger = featureFlagger
+        
         super.init(coder: coder)
     }
 

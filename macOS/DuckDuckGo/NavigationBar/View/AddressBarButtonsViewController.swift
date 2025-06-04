@@ -372,6 +372,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
         popovers?.togglePrivacyDashboardPopover(for: tabViewModel, from: privacyEntryPointButton, entryPoint: entryPoint)
         onboardingPixelReporter.measurePrivacyDashboardOpened()
+        PixelKit.fire(NavigationBarPixel.privacyDashboardOpened, frequency: .daily)
     }
 
     private func setupButtonsCornerRadius() {

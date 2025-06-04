@@ -24,7 +24,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - id: test-username-action
+    - id: get-asana-user-id
       uses: duckduckgo/native-github-asana-sync@v1.3
       with:
         action: 'get-asana-user-id'
@@ -37,7 +37,7 @@ runs:
         GITHUB_RUN_ID: ${{ github.run_id }}
         ASANA_SECTION_ID: ${{ inputs.asana-section-id }}
         ASANA_ACCESS_TOKEN: ${{ inputs.asana-access-token }}
-        ASANA_ASSIGNEE: ${{ steps.test-username-action.outputs.asana-user-id }}
+        ASANA_ASSIGNEE: ${{ steps.test-username-action.outputs.asanaUserId }}
       shell: bash
       run: |
         case "${{ inputs.action }}" in

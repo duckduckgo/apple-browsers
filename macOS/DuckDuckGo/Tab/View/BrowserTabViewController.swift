@@ -420,7 +420,8 @@ final class BrowserTabViewController: NSViewController {
 
     private func cleanUpSidebarsForClosedTabs(for currentTabs: [Tab]) {
         let currentTabIDs = currentTabs.map { $0.id }
-        aiChatSidebarHostingDelegate?.refreshSidebarState(for: currentTabIDs)
+        let currentPinnedTabIDs = tabCollectionViewModel.pinnedTabsCollection?.tabs.map { $0.id } ?? []
+        aiChatSidebarHostingDelegate?.refreshSidebarState(for: currentTabIDs + currentPinnedTabIDs)
     }
 
     private func removeWebViewFromHierarchy(webView: WebView? = nil,

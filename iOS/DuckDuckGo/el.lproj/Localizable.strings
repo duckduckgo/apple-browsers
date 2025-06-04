@@ -3443,10 +3443,10 @@
 "vpn.settings.dns.server.content.blocking.explanation" = "Αποκλείστε περισσότερους από 150.000 τομείς που έχουν επισημανθεί για φιλοξενία κακόβουλου λογισμικού, επιθέσεις ηλεκτρονικού ψαρέματος και διαδικτυακές απάτες, με μια λίστα αποκλεισμού σε επίπεδο DNS. [Μάθετε περισσότερα](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
 
 /* Header of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.header" = "Αποκλεισμός και φιλτράρισμα περιεχομένου";
+"vpn.settings.dns.server.content.blocking.header" = "Αποκλεισμός κακόβουλου περιεχομένου";
 
-/* Title of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.title" = "Αποκλεισμός επικίνδυνων τομέων";
+/* Title of the vpn scam blocker sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Πρόγραμμα αποκλεισμού απάτης";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";

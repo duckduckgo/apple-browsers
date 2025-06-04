@@ -39,6 +39,7 @@ enum MoreOptionsMenuPixel: PixelKitEventV2 {
     case newBurnerWindowActionClicked
     case newAIChatActionClicked
     case zoomActionClicked
+
     case bookmarksActionClicked
     case downloadsActionClicked
     case passwordsActionClicked

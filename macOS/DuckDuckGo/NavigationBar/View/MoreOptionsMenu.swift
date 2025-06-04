@@ -759,6 +759,7 @@ final class FeedbackSubMenu: NSMenu {
             let sendPProFeedbackItem = NSMenuItem(title: UserText.sendPProFeedback,
                                                   action: #selector(AppDelegate.openPProFeedback(_:)),
                                                   keyEquivalent: "")
+                .targetting(self)
                 .withImage(moreOptionsMenuIconsProvider.sendPrivacyProFeedbackIcon)
             addItem(sendPProFeedbackItem)
         }
@@ -773,6 +774,12 @@ final class FeedbackSubMenu: NSMenu {
     @objc private func sendFeedback(_ sender: Any?) {
         PixelKit.fire(MoreOptionsMenuPixel.feedbackActionClicked, frequency: .daily)
         Application.appDelegate.openFeedback(sender)
+    }
+
+    @MainActor
+    @objc private func sendPrivacyProFeedback(_ sender: Any?) {
+        PixelKit.fire(MoreOptionsMenuPixel.feedbackActionClicked, frequency: .daily)
+        Application.appDelegate.openPProFeedback(sender)
     }
 }
 
@@ -796,6 +803,7 @@ final class ZoomSubMenu: NSMenu {
     @MainActor
     private func updateMenuItems(with tabCollectionViewModel: TabCollectionViewModel, targetting target: AnyObject, moreOptionsMenuIconsProvider: MoreOptionsMenuIconsProviding) {
         removeAllItems()
+        zoomItems.removeAll()
 
         let fullScreenItem = (NSApp.mainMenuTyped.toggleFullscreenMenuItem.copy() as? NSMenuItem)!
             .withImage(moreOptionsMenuIconsProvider.enterFullscreenIcon)
@@ -822,7 +830,18 @@ final class ZoomSubMenu: NSMenu {
                                                target: target)
             .withImage(moreOptionsMenuIconsProvider.changeDefaultZoomIcon)
         addItem(globalZoomSettingItem)
+
+        zoomItems = [zoomInItem, zoomOutItem, actualSizeItem]
     }
+
+    override func performActionForItem(at index: Int) {
+        if let item = item(at: index), zoomItems.contains(item) {
+            PixelKit.fire(MoreOptionsMenuPixel.zoomActionClicked, frequency: .daily)
+        }
+        super.performActionForItem(at: index)
+    }
+
+    private var zoomItems: [NSMenuItem] = []
 }
 
 final class BookmarksSubMenu: NSMenu {

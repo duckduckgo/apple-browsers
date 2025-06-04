@@ -80,6 +80,20 @@ enum NavigationBarPixel: PixelKitEventV2 {
      */
     case passwordsButtonClicked
 
+    /**
+     * Event Trigger: Privacy Dashboard was opened from the address bar.
+     *
+     * > Note: This is a daily pixel.
+     *
+     * > Related links:
+     * [Privacy Triage](https://app.asana.com/1/137249556945/project/69071770703008/task/1210380019277469?focus=true)
+     * [Detailed Pixels description](https://app.asana.com/1/137249556945/project/1201048563534612/task/1210134892516086?focus=true)
+     *
+     * Anomaly Investigation:
+     * - Anomaly in this pixel may mean an increase/drop in app use.
+     */
+    case privacyDashboardOpened
+
     // MARK: -
 
     var name: String {
@@ -92,6 +106,8 @@ enum NavigationBarPixel: PixelKitEventV2 {
             "toolbar_shortcut_downloads"
         case .passwordsButtonClicked:
             "toolbar_shortcut_passwords"
+        case .privacyDashboardOpened:
+            "privacy_dashboard_opened"
         }
     }
 

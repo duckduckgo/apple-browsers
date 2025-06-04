@@ -770,6 +770,7 @@ extension SettingsViewModel {
         case .logins:
             pushViewController(legacyViewProvider.loginSettings(delegate: self,
                                                                 selectedAccount: state.activeWebsiteAccount,
+                                                                showPasswordManagement: false,
                                                                 source: state.autofillSource))
 
         case .gpc:
@@ -803,6 +804,19 @@ extension SettingsViewModel: AutofillSettingsViewControllerDelegate {
         onRequestPopLegacyView?()
     }
 }
+
+// MARK: DataImportViewControllerDelegate
+extension SettingsViewModel: DataImportViewControllerDelegate {
+    @MainActor
+    func dataImportViewControllerDidFinish(_ controller: DataImportViewController) {
+        AppDependencyProvider.shared.autofillLoginSession.startSession()
+        pushViewController(legacyViewProvider.loginSettings(delegate: self,
+                                                            selectedAccount: nil,
+                                                            showPasswordManagement: true,
+                                                            source: state.autofillSource))
+    }
+}
+
 
 // MARK: DeepLinks
 extension SettingsViewModel {

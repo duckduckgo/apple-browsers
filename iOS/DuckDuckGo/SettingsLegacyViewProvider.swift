@@ -141,14 +141,16 @@ class SettingsLegacyViewProvider: ObservableObject {
 
     func loginSettings(delegate: AutofillSettingsViewControllerDelegate,
                        selectedAccount: SecureVaultModels.WebsiteAccount?,
+                       showPasswordManagement: Bool,
                        source: AutofillSettingsSource?) -> AutofillSettingsViewController {
         return AutofillSettingsViewController(appSettings: self.appSettings,
-                                                       syncService: self.syncService,
-                                                       syncDataProviders: self.syncDataProviders,
-                                                       selectedAccount: selectedAccount,
-                                                       source: source ?? .settings,
-                                                       bookmarksDatabase: self.bookmarksDatabase,
-                                                       favoritesDisplayMode: self.appSettings.favoritesDisplayMode)
+                                              syncService: self.syncService,
+                                              syncDataProviders: self.syncDataProviders,
+                                              selectedAccount: selectedAccount,
+                                              showPasswordManagement: showPasswordManagement,
+                                              source: source ?? .settings,
+                                              bookmarksDatabase: self.bookmarksDatabase,
+                                              favoritesDisplayMode: self.appSettings.favoritesDisplayMode)
     }
     
     func importPasswords(delegate: DataImportViewControllerDelegate) -> DataImportViewController {

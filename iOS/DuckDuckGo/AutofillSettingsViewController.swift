@@ -52,6 +52,7 @@ final class AutofillSettingsViewController: UIViewController {
     private let syncService: DDGSyncing
     private let syncDataProviders: SyncDataProviders
     private let selectedAccount: SecureVaultModels.WebsiteAccount?
+    private let showPasswordManagement: Bool
     private let source: AutofillSettingsSource
     private let bookmarksDatabase: CoreDataDatabase
     private let favoritesDisplayMode: FavoritesDisplayMode
@@ -60,6 +61,7 @@ final class AutofillSettingsViewController: UIViewController {
          syncService: DDGSyncing,
          syncDataProviders: SyncDataProviders,
          selectedAccount: SecureVaultModels.WebsiteAccount?,
+         showPasswordManagement: Bool,
          source: AutofillSettingsSource,
          bookmarksDatabase: CoreDataDatabase,
          favoritesDisplayMode: FavoritesDisplayMode
@@ -68,6 +70,7 @@ final class AutofillSettingsViewController: UIViewController {
         self.syncService = syncService
         self.syncDataProviders = syncDataProviders
         self.selectedAccount = selectedAccount
+        self.showPasswordManagement = showPasswordManagement
         self.source = source
         self.bookmarksDatabase = bookmarksDatabase
         self.favoritesDisplayMode = favoritesDisplayMode
@@ -87,7 +90,7 @@ final class AutofillSettingsViewController: UIViewController {
         
         title = UserText.settingsLogins
         
-        if selectedAccount != nil {
+        if selectedAccount != nil || showPasswordManagement {
             segueToPasswords()
         }
         

@@ -38,7 +38,7 @@ struct BookmarksSearchAndSortMetrics {
     }
 
     func fireSearchExecuted(origin: BookmarkOperationOrigin) {
-        PixelKit.fire(GeneralPixel.bookmarksSearchExecuted(origin: origin.rawValue), frequency: .daily)
+        PixelKit.fire(GeneralPixel.bookmarksSearchExecuted(origin: origin.rawValue), frequency: .legacyDaily)
     }
 
     func fireSearchResultClicked(origin: BookmarkOperationOrigin) {

@@ -1,5 +1,5 @@
 //
-//  AIChatTabSidebarProvider.swift
+//  AIChatSidebarProvider.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -20,7 +20,7 @@ import Foundation
 
 typealias TabIdentifier = String
 
-protocol AIChatTabSidebarProviding {
+protocol AIChatSidebarProviding {
     var sidebarWidth: CGFloat { get }
 
     func tabSidebar(for tabID: TabIdentifier) -> TabSidebar
@@ -30,7 +30,7 @@ protocol AIChatTabSidebarProviding {
     func cleanUp(for currentTabIDs: [TabIdentifier])
 }
 
-final class AIChatTabSidebarProvider: AIChatTabSidebarProviding {
+final class AIChatSidebarProvider: AIChatSidebarProviding {
 
     enum Constants {
         static let sidebarWidth: CGFloat = 450
@@ -44,7 +44,7 @@ final class AIChatTabSidebarProvider: AIChatTabSidebarProviding {
         if let tabSidebar = sidebarTabs[tabID] {
             return tabSidebar
         } else {
-            let tabSidebar = TabSidebar.makeAIChatTabSidebar()
+            let tabSidebar = TabSidebar.makeAIChatSidebar()
             sidebarTabs[tabID] = tabSidebar
             return tabSidebar
         }
@@ -67,5 +67,17 @@ final class AIChatTabSidebarProvider: AIChatTabSidebarProviding {
         for tabID in tabIDsForRemoval {
             handleSidebarDidClose(for: tabID)
         }
+    }
+}
+
+final class TabSidebar {
+    var sidebarViewController: NSViewController
+
+    init(sidebarViewController: NSViewController) {
+        self.sidebarViewController = sidebarViewController
+    }
+
+    static func makeAIChatSidebar() -> TabSidebar {
+        return TabSidebar(sidebarViewController: AIChatSidebarViewController())
     }
 }

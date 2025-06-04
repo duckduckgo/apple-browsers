@@ -97,7 +97,7 @@ final class BrowserTabViewController: NSViewController {
         return modal
     }()
 
-    public weak var aiChatTabSidebarHostingDelegate: AIChatTabSidebarHostingDelegate?
+    public weak var aiChatSidebarHostingDelegate: AIChatSidebarHostingDelegate?
 
     required init?(coder: NSCoder) {
         fatalError("BrowserTabViewController: Bad initializer")
@@ -324,7 +324,7 @@ final class BrowserTabViewController: NSViewController {
                 showTabContent(of: selectedTabViewModel)
 
                 if let selectedTabID = selectedTabViewModel?.tab.id {
-                    aiChatTabSidebarHostingDelegate?.updateSidebarStateForSelectedTab(with: selectedTabID)
+                    aiChatSidebarHostingDelegate?.updateSidebarStateForSelectedTab(with: selectedTabID)
                 }
 
                 subscribeToTabContent(of: selectedTabViewModel)
@@ -420,7 +420,7 @@ final class BrowserTabViewController: NSViewController {
 
     private func cleanUpSidebarsForClosedTabs(for currentTabs: [Tab]) {
         let currentTabIDs = currentTabs.map { $0.id }
-        aiChatTabSidebarHostingDelegate?.refreshSidebarState(for: currentTabIDs)
+        aiChatSidebarHostingDelegate?.refreshSidebarState(for: currentTabIDs)
     }
 
     private func removeWebViewFromHierarchy(webView: WebView? = nil,
@@ -484,7 +484,7 @@ final class BrowserTabViewController: NSViewController {
 
         containerStackView.addArrangedSubview(container)
 
-        aiChatTabSidebarHostingDelegate?.updateSidebarStateForSelectedTab(with: tab.id)
+        aiChatSidebarHostingDelegate?.updateSidebarStateForSelectedTab(with: tab.id)
     }
 
     private func removeExistingDialog() {

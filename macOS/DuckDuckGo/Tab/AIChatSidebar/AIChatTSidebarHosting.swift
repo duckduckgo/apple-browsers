@@ -1,5 +1,5 @@
 //
-//  AIChatTabSidebarHosting.swift
+//  AIChatSidebarHosting.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -19,27 +19,30 @@
 import Foundation
 import AppKit
 
-protocol AIChatTabSidebarHostingDelegate: AnyObject {
+protocol AIChatSidebarHostingDelegate: AnyObject {
     func updateSidebarStateForSelectedTab(with tabID: TabIdentifier)
     func refreshSidebarState(for currentTabIDs: [TabIdentifier])
 }
 
-protocol AIChatTabSidebarHosting {
-    var aiChatTabSidebarHostingDelegate: AIChatTabSidebarHostingDelegate? { get set }
+protocol AIChatSidebarHosting {
+    var aiChatSidebarHostingDelegate: AIChatSidebarHostingDelegate? { get set }
 
     var currentTabID: TabIdentifier? { get }
-
-    var sidebarContainer: ColorView { get }
 
     var sidebarContainerLeadingConstraint: NSLayoutConstraint? { get }
     var sidebarContainerWidthConstraint: NSLayoutConstraint? { get }
 
-    func addAndLayoutChild(_ vc: NSViewController, into containerView: NSView?)
+    func embedSidebarViewController(_ vc: NSViewController)
 }
 
-extension BrowserTabViewController: AIChatTabSidebarHosting {
+extension BrowserTabViewController: AIChatSidebarHosting {
 
     var currentTabID: TabIdentifier? {
         tabViewModel?.tab.id
     }
+
+    func embedSidebarViewController(_ sidebarViewController: NSViewController) {
+        addAndLayoutChild(sidebarViewController, into: sidebarContainer)
+    }
+
 }

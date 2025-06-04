@@ -1,5 +1,5 @@
 //
-//  AIChatTabSidebarPresenter.swift
+//  AIChatSidebarPresenter.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -19,23 +19,23 @@
 import Foundation
 import BrowserServicesKit
 
-protocol AIChatTabSidebarPresenting {
+protocol AIChatSidebarPresenting {
     func toggleSidebar()
 }
 
-final class AIChatTabSidebarPresenter: AIChatTabSidebarPresenting {
-    private var sidebarHost: AIChatTabSidebarHosting
-    private var sidebarProvider: AIChatTabSidebarProviding
+final class AIChatSidebarPresenter: AIChatSidebarPresenting {
+    private var sidebarHost: AIChatSidebarHosting
+    private var sidebarProvider: AIChatSidebarProviding
     private var featureFlagger: FeatureFlagger
 
-    init(sidebarHost: AIChatTabSidebarHosting,
-         sidebarProvider: AIChatTabSidebarProviding = AIChatTabSidebarProvider(),
+    init(sidebarHost: AIChatSidebarHosting,
+         sidebarProvider: AIChatSidebarProviding = AIChatSidebarProvider(),
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
         self.sidebarHost = sidebarHost
         self.sidebarProvider = sidebarProvider
         self.featureFlagger = featureFlagger
 
-        self.sidebarHost.aiChatTabSidebarHostingDelegate = self
+        self.sidebarHost.aiChatSidebarHostingDelegate = self
     }
 
     func toggleSidebar() {
@@ -46,7 +46,7 @@ final class AIChatTabSidebarPresenter: AIChatTabSidebarPresenting {
 
         if willAnimateSidebarReveal {
             let sidebarViewController = sidebarProvider.tabSidebar(for: currentTabID).sidebarViewController
-            sidebarHost.addAndLayoutChild(sidebarViewController, into: sidebarHost.sidebarContainer)
+            sidebarHost.embedSidebarViewController(sidebarViewController)
             updateWebContainerAndTabSidebarConstraints(forSidebarRevealed: true, animated: true)
         } else {
             updateWebContainerAndTabSidebarConstraints(forSidebarRevealed: false, animated: true)
@@ -57,8 +57,8 @@ final class AIChatTabSidebarPresenter: AIChatTabSidebarPresenting {
         guard featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
 
         if sidebarProvider.isShowingSidebar(for: tabID) {
-            let vc = sidebarProvider.tabSidebar(for: tabID).sidebarViewController
-            sidebarHost.addAndLayoutChild(vc, into: sidebarHost.sidebarContainer)
+            let sidebarViewController = sidebarProvider.tabSidebar(for: tabID).sidebarViewController
+            sidebarHost.embedSidebarViewController(sidebarViewController)
             updateWebContainerAndTabSidebarConstraints(forSidebarRevealed: true, animated: false)
         } else {
             updateWebContainerAndTabSidebarConstraints(forSidebarRevealed: false, animated: false)
@@ -93,7 +93,7 @@ final class AIChatTabSidebarPresenter: AIChatTabSidebarPresenting {
     }
 }
 
-extension AIChatTabSidebarPresenter: AIChatTabSidebarHostingDelegate {
+extension AIChatSidebarPresenter: AIChatSidebarHostingDelegate {
 
     func updateSidebarStateForSelectedTab(with tabID: TabIdentifier) {
         updateSidebar(for: tabID)

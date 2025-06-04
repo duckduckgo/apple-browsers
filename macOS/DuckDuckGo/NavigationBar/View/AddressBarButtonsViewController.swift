@@ -191,7 +191,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private let aiChatTabOpener: AIChatTabOpening
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
-    private let aiChatTabSidebarPresenter: AIChatTabSidebarPresenting
+    private let aiChatSidebarPresenter: AIChatSidebarPresenting
 
     init?(coder: NSCoder,
           tabCollectionViewModel: TabCollectionViewModel,
@@ -200,7 +200,7 @@ final class AddressBarButtonsViewController: NSViewController {
           onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
           aiChatTabOpener: AIChatTabOpening,
           aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
-          aiChatTabSidebarPresenter: AIChatTabSidebarPresenting,
+          aiChatSidebarPresenter: AIChatSidebarPresenting,
           visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager,
           featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
         self.tabCollectionViewModel = tabCollectionViewModel
@@ -209,7 +209,7 @@ final class AddressBarButtonsViewController: NSViewController {
         self.onboardingPixelReporter = onboardingPixelReporter
         self.aiChatTabOpener = aiChatTabOpener
         self.aiChatMenuConfig = aiChatMenuConfig
-        self.aiChatTabSidebarPresenter = aiChatTabSidebarPresenter
+        self.aiChatSidebarPresenter = aiChatSidebarPresenter
         self.visualStyle = visualStyleManager.style
         self.featureFlagger = featureFlagger
         super.init(coder: coder)
@@ -362,7 +362,7 @@ final class AddressBarButtonsViewController: NSViewController {
         }
 
         if featureFlagger.isFeatureOn(.aiChatSidebar), case .url = tabViewModel?.tabContent, !isTextFieldEditorFirstResponder {
-            aiChatTabSidebarPresenter.toggleSidebar()
+            aiChatSidebarPresenter.toggleSidebar()
         } else if let value = textFieldValue {
             aiChatTabOpener.openAIChatTab(value, target: target)
         } else {

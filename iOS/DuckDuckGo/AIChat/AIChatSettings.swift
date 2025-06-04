@@ -30,23 +30,6 @@ struct AIChatSettings: AIChatSettingsProvider {
     struct KeepSessionSettings: Codable {
         let sessionTimeoutMinutes: Int
         static let defaultSessionTimeoutInMinutes: Int = 60
-
-        enum CodingKeys: String, CodingKey {
-            case sessionTimeoutMinutes
-        }
-
-        init(from decoder: Decoder) throws {
-            let container = try decoder.container(keyedBy: CodingKeys.self)
-
-            if let stringValue = try? container.decode(String.self, forKey: .sessionTimeoutMinutes),
-               let intValue = Int(stringValue) {
-                sessionTimeoutMinutes = intValue
-            } else if let intValue = try? container.decode(Int.self, forKey: .sessionTimeoutMinutes) {
-                sessionTimeoutMinutes = intValue
-            } else {
-                sessionTimeoutMinutes = KeepSessionSettings.defaultSessionTimeoutInMinutes
-            }
-        }
     }
 
     enum SettingsValue: String {

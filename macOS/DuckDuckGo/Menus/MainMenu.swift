@@ -629,7 +629,7 @@ final class MainMenu: NSMenu {
     @MainActor
     @objc
     private func toggleBookmarksBarFromMenu(_ sender: Any) {
-        guard let mainVC = WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController else { return }
+        guard let mainVC = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController else { return }
         mainVC.toggleBookmarksBarFromMenu(sender)
     }
 
@@ -770,8 +770,8 @@ final class MainMenu: NSMenu {
                                   updateServiceEnvironment: updateServiceEnvironment,
                                   updatePurchasingPlatform: updatePurchasingPlatform,
                                   updateCustomBaseSubscriptionURL: updateCustomBaseSubscriptionURL,
-                                  currentViewController: { WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController },
-                                  openSubscriptionTab: { WindowControllersManager.shared.showTab(with: .subscription($0)) },
+                                  currentViewController: { Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController },
+                                  openSubscriptionTab: { Application.appDelegate.windowControllersManager.showTab(with: .subscription($0)) },
                                   subscriptionAuthV1toV2Bridge: Application.appDelegate.subscriptionAuthV1toV2Bridge,
                                   subscriptionManagerV1: Application.appDelegate.subscriptionManagerV1,
                                   subscriptionManagerV2: Application.appDelegate.subscriptionManagerV2,

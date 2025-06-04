@@ -116,7 +116,7 @@ final class MainViewController: NSViewController {
             return NetworkProtectionNavBarPopoverManager(
                 ipcClient: vpnXPCClient,
                 vpnUninstaller: vpnUninstaller,
-                vpnUIPresenting: WindowControllersManager.shared)
+                vpnUIPresenting: Application.appDelegate.windowControllersManager)
         }()
         let networkProtectionStatusReporter: NetworkProtectionStatusReporter = {
             var connectivityIssuesObserver: ConnectivityIssueObserver!
@@ -747,7 +747,7 @@ extension MainViewController: BrowserTabViewControllerDelegate {
         }
 
         lazy var areOtherWindowsWithPinnedTabsAvailable: Bool = {
-            WindowControllersManager.shared.mainWindowControllers
+            Application.appDelegate.windowControllersManager.mainWindowControllers
                 .contains { mainWindowController -> Bool in
                     mainWindowController.mainViewController !== self
                     && mainWindowController.mainViewController.isBurner == false

@@ -115,7 +115,7 @@ final class HistoryDebugMenu: NSMenu {
     @MainActor
     @objc func showHistoryViewOnboarding() {
         resetHistoryViewOnboarding()
-        WindowControllersManager.shared.lastKeyMainWindowController?
+        Application.appDelegate.windowControllersManager.lastKeyMainWindowController?
             .mainViewController
             .navigationBarViewController
             .presentHistoryViewOnboardingIfNeeded(force: true)

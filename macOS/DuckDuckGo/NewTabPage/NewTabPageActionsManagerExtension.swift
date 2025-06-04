@@ -93,6 +93,6 @@ extension NewTabPageActionsManager {
 struct NewTabPageTabOpener: ContinueSetUpModelTabOpening {
     @MainActor
     func openTab(_ tab: Tab) {
-        WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.insertOrAppend(tab: tab, selected: true)
+        Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.insertOrAppend(tab: tab, selected: true)
     }
 }

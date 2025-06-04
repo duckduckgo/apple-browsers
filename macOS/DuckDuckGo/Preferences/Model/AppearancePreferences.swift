@@ -143,9 +143,9 @@ protocol NewTabPageNavigator {
 final class DefaultNewTabPageNavigator: NewTabPageNavigator {
     func openNewTabPageBackgroundCustomizationSettings() {
         Task { @MainActor in
-            WindowControllersManager.shared.showTab(with: .newtab)
+            Application.appDelegate.windowControllersManager.showTab(with: .newtab)
             try? await Task.sleep(interval: 0.2)
-            if let window = WindowControllersManager.shared.lastKeyMainWindowController {
+            if let window = Application.appDelegate.windowControllersManager.lastKeyMainWindowController {
                 let newTabPageViewModel = window.mainViewController.browserTabViewController.newTabPageWebViewModel
                 NSApp.delegateTyped.newTabPageCustomizationModel.customizerOpener.openSettings(for: newTabPageViewModel.webView)
             }

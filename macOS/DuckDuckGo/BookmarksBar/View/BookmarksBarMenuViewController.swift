@@ -690,7 +690,7 @@ final class BookmarksBarMenuViewController: NSViewController {
 
         switch node.representedObject {
         case let bookmark as Bookmark:
-            WindowControllersManager.shared.open(bookmark, with: NSApp.currentEvent)
+            Application.appDelegate.windowControllersManager.open(bookmark, with: NSApp.currentEvent)
             delegate?.closeBookmarksPopovers(self)
 
         case let menuItem as MenuItemNode:
@@ -712,11 +712,11 @@ final class BookmarksBarMenuViewController: NSViewController {
               let node = item as? BookmarkNode,
               let bookmark = node.representedObject as? Bookmark else { return }
 
-        WindowControllersManager.shared.open(bookmark, with: NSApp.currentEvent)
+        Application.appDelegate.windowControllersManager.open(bookmark, with: NSApp.currentEvent)
     }
 
     private func openAllInNewTabs() {
-        guard let tabCollection = WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel,
+        guard let tabCollection = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel,
               let folder = self.treeController.rootNode.representedObject as? BookmarkFolder else {
             assertionFailure("Cannot open all in new tabs")
             return

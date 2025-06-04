@@ -35,7 +35,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         factory = nil
         delegate = nil
         reporter = nil
-        WindowControllersManager.shared.lastKeyMainWindowController = nil
+        Application.appDelegate.windowControllersManager.lastKeyMainWindowController = nil
     }
 
     func testWhenMakeViewForTryASearchThenOnboardingTrySearchDialogViewCreatedAndOnActionExpectedSearchOccurs() throws {
@@ -240,7 +240,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         let window = MockWindow(isVisible: false)
         let mainWindowController = MainWindowController(window: window, mainViewController: mainViewController, popUp: false)
         mainWindowController.window = window
-        WindowControllersManager.shared.lastKeyMainWindowController = mainWindowController
+        Application.appDelegate.windowControllersManager.lastKeyMainWindowController = mainWindowController
 
         // WHEN
         let result = factory.makeView(for: dialogType, delegate: delegate, onDismiss: onDismiss, onGotItPressed: {}, onFireButtonPressed: onFireButtonPressed)

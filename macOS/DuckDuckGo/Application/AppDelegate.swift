@@ -383,7 +383,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         // MARK: - Subscription configuration
 
         subscriptionUIHandler = SubscriptionUIHandler(windowControllersManagerProvider: {
-            return WindowControllersManager.shared
+            return Application.appDelegate.windowControllersManager
         })
 
         self.isAuthV2Enabled = featureFlagger.isFeatureOn(.privacyProAuthV2)
@@ -533,7 +533,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 featureFlagger: self.featureFlagger
             )
             activeRemoteMessageModel = ActiveRemoteMessageModel(remoteMessagingClient: remoteMessagingClient, openURLHandler: { url in
-                WindowControllersManager.shared.showTab(with: .contentFromURL(url, source: .appOpenUrl))
+                Application.appDelegate.windowControllersManager.showTab(with: .contentFromURL(url, source: .appOpenUrl))
             })
         } else {
             // As long as remoteMessagingClient is private to App Delegate and activeRemoteMessageModel
@@ -879,7 +879,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        if WindowControllersManager.shared.mainWindowControllers.isEmpty,
+        if Application.appDelegate.windowControllersManager.mainWindowControllers.isEmpty,
            case .normal = AppVersion.runType {
             WindowsManager.openNewWindow()
             return true
@@ -1017,7 +1017,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     case .alertSecondButtonReturn:
                         alert.window.sheetParent?.endSheet(alert.window)
                         DispatchQueue.main.async {
-                            WindowControllersManager.shared.showPreferencesTab(withSelectedPane: .sync)
+                            Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: .sync)
                         }
                     default:
                         break

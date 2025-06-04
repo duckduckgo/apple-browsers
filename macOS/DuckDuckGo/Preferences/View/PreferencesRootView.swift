@@ -165,7 +165,7 @@ enum Preferences {
             let sheetActionHandler = SubscriptionAccessActionHandlers(
                 openActivateViaEmailURL: {
                     let url = subscriptionManager.url(for: .activationFlow)
-                    WindowControllersManager.shared.showTab(with: .subscription(url))
+                    Application.appDelegate.windowControllersManager.showTab(with: .subscription(url))
                     PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
                 }, restorePurchases: {
                     if #available(macOS 12.0, *) {
@@ -196,7 +196,7 @@ enum Preferences {
                     switch event {
                     case .openPIR:
                         PixelKit.fire(PrivacyProPixel.privacyProPersonalInformationRemovalSettings)
-                        WindowControllersManager.shared.showTab(with: .dataBrokerProtection)
+                        Application.appDelegate.windowControllersManager.showTab(with: .dataBrokerProtection)
                     case .openURL(let url):
                         openURL(subscriptionURL: url)
                     case .didOpenPIRPreferencePane:
@@ -216,7 +216,7 @@ enum Preferences {
                     case .openITR:
                         PixelKit.fire(PrivacyProPixel.privacyProIdentityRestorationSettings)
                         let url = subscriptionManager.url(for: .identityTheftRestoration)
-                        WindowControllersManager.shared.showTab(with: .identityTheftRestoration(url))
+                        Application.appDelegate.windowControllersManager.showTab(with: .identityTheftRestoration(url))
                     case .openURL(let url):
                         openURL(subscriptionURL: url)
                     case .didOpenITRPreferencePane:
@@ -242,7 +242,7 @@ enum Preferences {
                     case .openManageSubscriptionsInAppStore:
                         NSWorkspace.shared.open(subscriptionManager.url(for: .manageSubscriptionsInAppStore))
                     case .openCustomerPortalURL(let url):
-                        WindowControllersManager.shared.showTab(with: .url(url, source: .ui))
+                        Application.appDelegate.windowControllersManager.showTab(with: .url(url, source: .ui))
                     case .didClickManageEmail:
                         PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementEmail, frequency: .legacyDailyAndCount)
                     case .didOpenSubscriptionSettings:
@@ -265,7 +265,7 @@ enum Preferences {
                 let url = subscriptionManager.url(for: subscriptionURL)
                     .appendingParameter(name: AttributionParameter.origin,
                                         value: SubscriptionFunnelOrigin.appSettings.rawValue)
-                WindowControllersManager.shared.showTab(with: .subscription(url))
+                Application.appDelegate.windowControllersManager.showTab(with: .subscription(url))
             }
         }
     }
@@ -393,7 +393,7 @@ enum Preferences {
             let sheetActionHandler = SubscriptionAccessActionHandlers(
                 openActivateViaEmailURL: {
                     let url = subscriptionManager.url(for: .activationFlow)
-                    WindowControllersManager.shared.showTab(with: .subscription(url))
+                    Application.appDelegate.windowControllersManager.showTab(with: .subscription(url))
                     PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
                 }, restorePurchases: {
                     if #available(macOS 12.0, *) {
@@ -421,7 +421,7 @@ enum Preferences {
                     switch event {
                     case .openPIR:
                         PixelKit.fire(PrivacyProPixel.privacyProPersonalInformationRemovalSettings)
-                        WindowControllersManager.shared.showTab(with: .dataBrokerProtection)
+                        Application.appDelegate.windowControllersManager.showTab(with: .dataBrokerProtection)
                     case .openURL(let url):
                         openURL(subscriptionURL: url)
                     case .didOpenPIRPreferencePane:
@@ -441,7 +441,7 @@ enum Preferences {
                     case .openITR:
                         PixelKit.fire(PrivacyProPixel.privacyProIdentityRestorationSettings)
                         let url = subscriptionManager.url(for: .identityTheftRestoration)
-                        WindowControllersManager.shared.showTab(with: .identityTheftRestoration(url))
+                        Application.appDelegate.windowControllersManager.showTab(with: .identityTheftRestoration(url))
                     case .openURL(let url):
                         openURL(subscriptionURL: url)
                     case .didOpenITRPreferencePane:
@@ -467,7 +467,7 @@ enum Preferences {
                     case .openManageSubscriptionsInAppStore:
                         NSWorkspace.shared.open(subscriptionManager.url(for: .manageSubscriptionsInAppStore))
                     case .openCustomerPortalURL(let url):
-                        WindowControllersManager.shared.showTab(with: .url(url, source: .ui))
+                        Application.appDelegate.windowControllersManager.showTab(with: .url(url, source: .ui))
                     case .didClickManageEmail:
                         PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementEmail, frequency: .legacyDailyAndCount)
                     case .didOpenSubscriptionSettings:
@@ -490,7 +490,7 @@ enum Preferences {
                 let url = subscriptionManager.url(for: subscriptionURL)
                     .appendingParameter(name: AttributionParameter.origin,
                                         value: SubscriptionFunnelOrigin.appSettings.rawValue)
-                WindowControllersManager.shared.showTab(with: .subscription(url))
+                Application.appDelegate.windowControllersManager.showTab(with: .subscription(url))
             }
         }
     }

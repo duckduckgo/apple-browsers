@@ -117,7 +117,7 @@ final class RemoteMessagingDebugMenu: NSMenu {
 
     @objc func openRemoteMessagesConfig() {
         Task { @MainActor in
-            WindowControllersManager.shared.showTab(with: .contentFromURL(RemoteMessagingClient.Constants.endpoint, source: .appOpenUrl))
+            Application.appDelegate.windowControllersManager.showTab(with: .contentFromURL(RemoteMessagingClient.Constants.endpoint, source: .appOpenUrl))
         }
     }
 

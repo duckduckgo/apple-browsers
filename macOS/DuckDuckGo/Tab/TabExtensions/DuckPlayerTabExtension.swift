@@ -449,7 +449,7 @@ extension DuckPlayerTabExtension: NavigationResponder {
                           "autoplay": autoplay]
 
             PixelKit.fire(GeneralPixel.duckPlayerDailyUniqueView,
-                          frequency: .legacyDaily,
+                          frequency: .legacyDailyNoSuffix,
                           withAdditionalParameters: params)
 
         }

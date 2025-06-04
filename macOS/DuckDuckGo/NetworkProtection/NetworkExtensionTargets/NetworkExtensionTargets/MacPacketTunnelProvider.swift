@@ -133,7 +133,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         case .userBecameActive:
             PixelKit.fire(
                 NetworkProtectionPixelEvent.networkProtectionActiveUser,
-                frequency: .legacyDaily,
+                frequency: .legacyDailyNoSuffix,
                 withAdditionalParameters: [PixelKit.Parameters.vpnCohort: PixelKit.cohort(from: defaults.vpnFirstEnabled)],
                 includeAppVersionParameter: true)
         case .connectionTesterStatusChange(let status, let server):
@@ -213,7 +213,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
             case .error:
                 PixelKit.fire(
                     NetworkProtectionPixelEvent.networkProtectionLatencyError,
-                    frequency: .legacyDaily,
+                    frequency: .legacyDailyNoSuffix,
                     includeAppVersionParameter: true)
             case .quality(let quality):
                 guard quality != .unknown else { return }

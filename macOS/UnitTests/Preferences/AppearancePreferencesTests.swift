@@ -18,6 +18,7 @@
 
 import Bookmarks
 import PersistenceTestingUtils
+import PixelKitTestingUtilities
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -210,4 +211,89 @@ final class AppearancePreferencesTests: XCTestCase {
         withExtendedLifetime(c) {}
     }
 
+    // MARK: - Pixel firing tests
+
+    func testWhenCurrentThemeIsUpdatedThenPixelIsFired() {
+        let pixelFiringMock = PixelKitMock()
+        let model = AppearancePreferences(persistor: AppearancePreferencesPersistorMock(), pixelFiring: pixelFiringMock)
+
+        model.currentThemeName = ThemeName.systemDefault
+        model.currentThemeName = ThemeName.light
+        model.currentThemeName = ThemeName.dark
+        model.currentThemeName = ThemeName.systemDefault
+
+        pixelFiringMock.expectedFireCalls = [
+            .init(pixel: SettingsPixel.themeSettingChanged, frequency: .uniqueByName),
+            .init(pixel: SettingsPixel.themeSettingChanged, frequency: .uniqueByName),
+            .init(pixel: SettingsPixel.themeSettingChanged, frequency: .uniqueByName),
+            .init(pixel: SettingsPixel.themeSettingChanged, frequency: .uniqueByName)
+        ]
+
+        pixelFiringMock.verifyExpectations()
+    }
+
+    func testWhenShowFullURLIsUpdatedThenPixelIsFired() {
+        let pixelFiringMock = PixelKitMock()
+        let model = AppearancePreferences(persistor: AppearancePreferencesPersistorMock(), pixelFiring: pixelFiringMock)
+
+        model.showFullURL = true
+        model.showFullURL = false
+
+        pixelFiringMock.expectedFireCalls = [
+            .init(pixel: SettingsPixel.showFullURLSettingToggled, frequency: .uniqueByName),
+            .init(pixel: SettingsPixel.showFullURLSettingToggled, frequency: .uniqueByName)
+        ]
+
+        pixelFiringMock.verifyExpectations()
+    }
+
+    func testWhenFavoritesSectionIsHiddenThenPixelIsFired() {
+        let pixelFiringMock = PixelKitMock()
+        let model = AppearancePreferences(persistor: AppearancePreferencesPersistorMock(), pixelFiring: pixelFiringMock)
+
+        model.isFavoriteVisible = false
+        model.isFavoriteVisible = true
+        model.isFavoriteVisible = true
+        model.isFavoriteVisible = false
+        model.isFavoriteVisible = true
+        model.isFavoriteVisible = true
+        model.isFavoriteVisible = true
+        model.isFavoriteVisible = true
+        model.isFavoriteVisible = false
+        model.isFavoriteVisible = true
+        model.isFavoriteVisible = true
+
+        pixelFiringMock.expectedFireCalls = [
+            .init(pixel: NewTabPagePixel.favoriteSectionHidden, frequency: .dailyAndStandard),
+            .init(pixel: NewTabPagePixel.favoriteSectionHidden, frequency: .dailyAndStandard),
+            .init(pixel: NewTabPagePixel.favoriteSectionHidden, frequency: .dailyAndStandard)
+        ]
+
+        pixelFiringMock.verifyExpectations()
+    }
+
+    func testWhenProtectionsReportSectionIsHiddenThenPixelIsFired() {
+        let pixelFiringMock = PixelKitMock()
+        let model = AppearancePreferences(persistor: AppearancePreferencesPersistorMock(), pixelFiring: pixelFiringMock)
+
+        model.isProtectionsReportVisible = false
+        model.isProtectionsReportVisible = true
+        model.isProtectionsReportVisible = true
+        model.isProtectionsReportVisible = false
+        model.isProtectionsReportVisible = true
+        model.isProtectionsReportVisible = true
+        model.isProtectionsReportVisible = true
+        model.isProtectionsReportVisible = true
+        model.isProtectionsReportVisible = false
+        model.isProtectionsReportVisible = true
+        model.isProtectionsReportVisible = true
+
+        pixelFiringMock.expectedFireCalls = [
+            .init(pixel: NewTabPagePixel.protectionsSectionHidden, frequency: .dailyAndStandard),
+            .init(pixel: NewTabPagePixel.protectionsSectionHidden, frequency: .dailyAndStandard),
+            .init(pixel: NewTabPagePixel.protectionsSectionHidden, frequency: .dailyAndStandard)
+        ]
+
+        pixelFiringMock.verifyExpectations()
+    }
 }

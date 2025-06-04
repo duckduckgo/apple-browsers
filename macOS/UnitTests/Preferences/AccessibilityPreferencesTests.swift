@@ -16,9 +16,10 @@
 //  limitations under the License.
 //
 
+import Combine
+import PixelKitTestingUtilities
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
-import Combine
 
 class AccessibilityPreferencesTests: XCTestCase {
 
@@ -169,6 +170,22 @@ class AccessibilityPreferencesTests: XCTestCase {
         XCTAssertNil(persister.zoomPerWebsite[domain4])
     }
 
+    // MARK: - Pixel firing tests
+
+    func testWhenWebsiteZoomSettingIsUpdatedThenPixelIsFired() {
+        let pixelFiringMock = PixelKitMock()
+        let accessibilityPreferences = AccessibilityPreferences(persistor: mockPersistor, pixelFiring: pixelFiringMock)
+
+        accessibilityPreferences.defaultPageZoom = .percent115
+        accessibilityPreferences.defaultPageZoom = .percent100
+
+        pixelFiringMock.expectedFireCalls = [
+            .init(pixel: SettingsPixel.websiteZoomSettingChanged, frequency: .uniqueByName),
+            .init(pixel: SettingsPixel.websiteZoomSettingChanged, frequency: .uniqueByName)
+        ]
+
+        pixelFiringMock.verifyExpectations()
+    }
 }
 
 class MockAccessibilityPreferencesPersistor: AccessibilityPreferencesPersistor {

@@ -193,7 +193,7 @@ final class FirePopoverViewModel {
 
     func burn() {
         onboardingContextualDialogsManager.fireButtonUsed()
-        PixelKit.fire(GeneralPixel.fireButtonFirstBurn, frequency: .legacyDaily)
+        PixelKit.fire(GeneralPixel.fireButtonFirstBurn, frequency: .legacyDailyNoSuffix)
 
         switch (clearingOption, areAllSelected) {
         case (.currentTab, _):

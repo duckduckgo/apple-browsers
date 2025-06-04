@@ -57,10 +57,19 @@ final class HistoryMenu: NSMenu {
     private let location: Location
 
     @MainActor
-    init(location: Location = .mainMenu, historyGroupingProvider: HistoryGroupingProvider? = nil, featureFlagger: FeatureFlagger? = nil) {
+    convenience init(location: Location = .mainMenu, historyGroupingDataSource: HistoryGroupingDataSource, featureFlagger: FeatureFlagger) {
+        self.init(
+            location: location,
+            historyGroupingProvider: .init(dataSource: historyGroupingDataSource, featureFlagger: featureFlagger),
+            featureFlagger: featureFlagger
+        )
+    }
+
+    @MainActor
+    init(location: Location = .mainMenu, historyGroupingProvider: HistoryGroupingProvider, featureFlagger: FeatureFlagger) {
         self.location = location
-        self.historyGroupingProvider = historyGroupingProvider ?? HistoryGroupingProvider(dataSource: HistoryCoordinator.shared)
-        self.featureFlagger = featureFlagger ?? NSApp.delegateTyped.featureFlagger
+        self.historyGroupingProvider = historyGroupingProvider
+        self.featureFlagger = featureFlagger
 
         super.init(title: UserText.mainMenuHistory)
 

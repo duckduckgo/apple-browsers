@@ -57,6 +57,5 @@ tmp
 
 #VSCode
 .windsurf/
-.cursor/
 .vscode/*
 /buildServer.json

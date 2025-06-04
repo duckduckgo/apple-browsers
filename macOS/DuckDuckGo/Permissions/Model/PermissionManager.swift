@@ -36,7 +36,17 @@ protocol PermissionManagerProtocol: AnyObject {
 
 final class PermissionManager: PermissionManagerProtocol {
 
-    static let shared = PermissionManager()
+    static let shared: PermissionManager = {
+#if DEBUG
+        if AppVersion.runType.requiresEnvironment {
+            return PermissionManager()
+        } else {
+            return PermissionManager(store: LocalPermissionStore(database: nil))
+        }
+#else
+        return PermissionManager()
+#endif
+    }()
 
     private let store: PermissionStore
     private var permissions = [String: [PermissionType: StoredPermission]]()
@@ -44,7 +54,7 @@ final class PermissionManager: PermissionManagerProtocol {
     private let permissionSubject = PassthroughSubject<PublishedPermission, Never>()
     var permissionPublisher: AnyPublisher<PublishedPermission, Never> { permissionSubject.eraseToAnyPublisher() }
 
-    init(store: PermissionStore = LocalPermissionStore()) {
+    init(store: PermissionStore = LocalPermissionStore(database: Application.appDelegate.database.db)) {
         self.store = store
         loadPermissions()
     }

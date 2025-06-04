@@ -97,6 +97,7 @@ final class MoreOptionsMenuTests: XCTestCase {
     private func setupMoreOptionsMenu() {
         moreOptionsMenu = MoreOptionsMenu(tabCollectionViewModel: tabCollectionViewModel,
                                           bookmarkManager: MockBookmarkManager(),
+                                          historyCoordinator: HistoryCoordinatingMock(),
                                           fireproofDomains: fireproofDomains,
                                           passwordManagerCoordinator: passwordManagerCoordinator,
                                           vpnFeatureGatekeeper: networkProtectionVisibilityMock,

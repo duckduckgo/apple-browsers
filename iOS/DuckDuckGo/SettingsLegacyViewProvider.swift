@@ -73,6 +73,7 @@ class SettingsLegacyViewProvider: ObservableObject {
              autoclearData,
              keyboard,
              feedback,
+             passwordsImport,
              debug
     }
 
@@ -148,6 +149,19 @@ class SettingsLegacyViewProvider: ObservableObject {
                                                        source: source ?? .settings,
                                                        bookmarksDatabase: self.bookmarksDatabase,
                                                        favoritesDisplayMode: self.appSettings.favoritesDisplayMode)
+    }
+    
+    func importPasswords(delegate: DataImportViewControllerDelegate) -> DataImportViewController {
+        let dataImportManager = DataImportManager(reporter: SecureVaultReporter(),
+                                                  bookmarksDatabase: bookmarksDatabase,
+                                                  favoritesDisplayMode: self.appSettings.favoritesDisplayMode,
+                                                  tld: AppDependencyProvider.shared.storageCache.tld)
+        let viewController = DataImportViewController(importManager: dataImportManager,
+                                                          importScreen: DataImportViewModel.ImportScreen.passwords,
+                                                          syncService: syncService)
+        viewController.delegate = delegate  // Actually set the delegate!
+        return viewController
+
     }
 
 }

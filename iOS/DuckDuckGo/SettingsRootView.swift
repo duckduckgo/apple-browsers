@@ -51,6 +51,10 @@ struct SettingsRootView: View {
                        isActive: $isShowingSubscribeFlow) { EmptyView() }
 
         List {
+            if #available(iOS 18.2, *) {
+                SettingsGetStartedView()
+                    .listRowBackground(Color(designSystemColor: .surface))
+            }
             SettingsPrivacyProtectionsView()
                 .listRowBackground(Color(designSystemColor: .surface))
             SettingsSubscriptionView().environmentObject(subscriptionNavigationCoordinator)

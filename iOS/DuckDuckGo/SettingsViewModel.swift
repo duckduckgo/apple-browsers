@@ -778,6 +778,8 @@ extension SettingsViewModel {
         
         case .autoconsent:
             pushViewController(legacyViewProvider.autoConsent)
+        case .passwordsImport:
+            pushViewController(legacyViewProvider.importPasswords(delegate: self))
         }
     }
  

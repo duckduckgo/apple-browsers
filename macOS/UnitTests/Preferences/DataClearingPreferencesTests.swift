@@ -30,6 +30,7 @@ class MockFireButtonPreferencesPersistor: FireButtonPreferencesPersistor {
 }
 
 fileprivate extension DataClearingPreferences {
+    @MainActor
     convenience init(persistor: FireButtonPreferencesPersistor, pixelFiring: PixelFiring? = nil) {
         self.init(persistor: persistor, fireproofDomains: MockFireproofDomains(domains: []), faviconManager: FaviconManagerMock(), windowControllersManager: WindowControllersManagerMock())
     }
@@ -37,6 +38,7 @@ fileprivate extension DataClearingPreferences {
 
 class DataClearingPreferencesTests: XCTestCase {
 
+    @MainActor
     func testWhenInitializedThenItLoadsPersistedLoginDetectionSetting() {
         let mockPersistor = MockFireButtonPreferencesPersistor()
         mockPersistor.loginDetectionEnabled = true
@@ -45,6 +47,7 @@ class DataClearingPreferencesTests: XCTestCase {
         XCTAssertTrue(dataClearingPreferences.isLoginDetectionEnabled)
     }
 
+    @MainActor
     func testWhenIsLoginDetectionEnabledUpdatedThenPersistorUpdates() {
         let mockPersistor = MockFireButtonPreferencesPersistor()
         let dataClearingPreferences = DataClearingPreferences(persistor: mockPersistor)
@@ -55,6 +58,7 @@ class DataClearingPreferencesTests: XCTestCase {
 
     // MARK: - Pixel firing tests
 
+    @MainActor
     func testWhenDataClearingSettingIsUpdatedThenPixelIsFired() {
         let pixelFiringMock = PixelKitMock()
         let mockPersistor = MockFireButtonPreferencesPersistor()

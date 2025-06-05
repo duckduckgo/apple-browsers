@@ -47,7 +47,12 @@ final class ScriptSourceProviderTests: XCTestCase {
         experimentManager.allActiveContentScopeExperiments = ["test": testExperimentData]
 
         let appearancePreferences = AppearancePreferences(keyValueStore: try MockKeyValueFileStore())
-        let dataClearingPreferences = DataClearingPreferences(persistor: MockFireButtonPreferencesPersistor())
+        let dataClearingPreferences = DataClearingPreferences(
+            persistor: MockFireButtonPreferencesPersistor(),
+            fireproofDomains: MockFireproofDomains(domains: []),
+            faviconManager: FaviconManagerMock(),
+            windowControllersManager: WindowControllersManagerMock()
+        )
         let startupPreferences = StartupPreferences(
             persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),
             appearancePreferences: appearancePreferences,
@@ -66,7 +71,8 @@ final class ScriptSourceProviderTests: XCTestCase {
             appearancePreferences: appearancePreferences,
             startupPreferences: startupPreferences,
             bookmarkManager: MockBookmarkManager(),
-            historyCoordinator: HistoryCoordinatingMock()
+            historyCoordinator: HistoryCoordinatingMock(),
+            fireproofDomains: MockFireproofDomains(domains: [])
         )
 
         let cohorts = try XCTUnwrap(sourceProvider.currentCohorts)

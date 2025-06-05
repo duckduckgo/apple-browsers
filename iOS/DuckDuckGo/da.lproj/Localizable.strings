@@ -190,6 +190,15 @@
 /* Description for alert shown when user logged off from sync */
 "alert.sync-invalid-login-error-description" = "Synkroniseringen er blevet sat på pause. Hvis du vil fortsætte med at synkronisere denne enhed, skal du oprette forbindelse igen ved hjælp af en anden enhed eller din gendannelseskode.";
 
+/* Sync Now button in alert asking if they would like to sync with another device */
+"alert.sync-new-device.button" = "Synkroniser nu";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.message" = "\"%@\" vil kunne tilgå dine synkroniserede DuckDuckGo-data.";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.title" = "Synkroniser ny enhed?";
+
 /* Learn more button in alert */
 "alert.sync-paused-alert-learn-more-button" = "Mere info";
 
@@ -261,6 +270,12 @@
 
 /* No comment provided by engineer. */
 "Are you sure you want to delete all bookmarks? This action cannot be undone." = "Er du sikker på, at du vil slette alle bogmærker? Denne handling kan ikke fortrydes.";
+
+/* No comment provided by engineer. */
+"Are you sure you want to delete this chat? This cannot be undone." = "Er du sikker på, at du vil slette denne chat? Dette kan ikke fortrydes.";
+
+/* No comment provided by engineer. */
+"Ask anything..." = "Spørg om hvad som helst...";
 
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Log ind";
@@ -920,6 +935,9 @@
 "close.all.tabs" = "Luk alle faner";
 
 /* No comment provided by engineer. */
+"Cohort: %@" = "Kohorte: %@";
+
+/* No comment provided by engineer. */
 "Confirm" = "Bekræft";
 
 /* Button to continue the onboarding process */
@@ -1475,6 +1493,9 @@
 "empty.search" = "Ingen match fundet";
 
 /* No comment provided by engineer. */
+"Enrolled: %@" = "Tilmeldt: %@";
+
+/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1527,6 +1548,9 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Kun favoritter på mobil";
+
+/* No comment provided by engineer. */
+"Feature: %@" = "Funktion: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Blokering af annoncer og pop op-vinduer";
@@ -2276,7 +2300,7 @@
 "onboarding.highlights.browsers.features.cookiePopups.title" = "Bloker pop op-vinduer om cookies";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Bloker sporende annoncer";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Bloker målrettede annoncer";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Slet browsingdata med én knap";
@@ -2430,6 +2454,30 @@
 
 /* Title for the Privacy Pro feedback form */
 "ppro.feedback-form.title" = "Send tilbagemelding";
+
+/* Title of the section of a setting page that shows Scam Blocking preferences (weather warning in case of scam sites) */
+"preferences.scam-blocker.title" = "Blokering af svindel";
+
+/* Caption explaining the risk of disabling scam blocker protection */
+"preferences.scam-blocker.toggle-caption" = "Deaktivering af denne funktion kan bringe dine personlige oplysninger i fare.";
+
+/* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
+"preferences.scam-blocker.toggle-label" = "Advar på websteder, der er registreret for svindel, phishing eller malware. [Læs mere](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker)";
+
+/* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
+"preferences.smarter-encryption.description" = "Opgraderer automatisk links til HTTPS, når det er muligt. [Læs mere](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
+
+/* Title of the section of a setting page that shows Smarter Encryption preferences */
+"preferences.smarter-encryption.title" = "Smarter Encryption";
+
+/* Status indicator of a browser privacy protection feature. */
+"preferences.status-indicator.always-on" = "Altid aktiv";
+
+/* Title of the option to show the Threat Protection preferences */
+"preferences.threat-protection" = "Trusselsbeskyttelse";
+
+/* Caption of the option to show the Threat Protection preferences */
+"preferences.threat-protection.caption" = "DuckDuckGos forbedrede beskyttelser stopper almindelige trusler, mens de holder din forbindelse sikker.\n[Læs mere](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Nogle bogmærker eller adgangskoder er formateret forkert eller er for lange og blev ikke synkroniseret.";
@@ -2864,7 +2912,13 @@
 "siteFeedback.urlPlaceholder" = "Hvilket websted er ødelagt?";
 
 /* No comment provided by engineer. */
+"Stop generating..." = "Stop generering...";
+
+/* No comment provided by engineer. */
 "Stored Hostname: %@" = "Gemt værtsnavn: %@";
+
+/* No comment provided by engineer. */
+"Subfeature: %@" = "Underfunktion: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Tilføj til enhed";
@@ -3389,10 +3443,10 @@
 "vpn.settings.dns.server.content.blocking.explanation" = "Bloker over 150.000 domæner, der er markeret for hosting af malware, phishing-angreb og onlinesvindel med en blokeringsliste på DNS-niveau. [Læs mere](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
 
 /* Header of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.header" = "Blokering og filtrering af indhold";
+"vpn.settings.dns.server.content.blocking.header" = "Blokering af ondsindet indhold";
 
-/* Title of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.title" = "Bloker risikable domæner";
+/* Title of the vpn scam blocker sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Blokering af svindel";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";

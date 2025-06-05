@@ -39,7 +39,7 @@ struct LargeOmniBarState {
         let showMenu = true
         let showSettings = false
         let showCancel = false
-        let showDismiss = false
+        var showDismiss: Bool { dependencies.themingProperties.isExperimentalThemingEnabled }
         var name: String { return "Pad" + Type.name(self) }
         var onEditingStoppedState: OmniBarState { return HomeNonEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onEditingStartedState: OmniBarState { return self }
@@ -140,7 +140,7 @@ struct LargeOmniBarState {
         let showBackButton = true
         let showForwardButton = true
         let showBookmarksButton = true
-        let showAccessoryButton = true
+        var showAccessoryButton: Bool { dependencies.isAIChatEnabledInSettings }
         let clearTextOnStart = true
         let allowsTrackersAnimation = false
         let showPrivacyIcon = false
@@ -175,7 +175,7 @@ struct LargeOmniBarState {
         let showBackButton = true
         let showForwardButton = true
         let showBookmarksButton = true
-        let showAccessoryButton = true
+        var showAccessoryButton: Bool { dependencies.isAIChatEnabledInSettings }
         let clearTextOnStart = false
         let allowsTrackersAnimation = false
         let showPrivacyIcon = false
@@ -187,7 +187,7 @@ struct LargeOmniBarState {
         let showMenu = true
         let showSettings = false
         let showCancel = false
-        let showDismiss = false
+        var showDismiss: Bool { dependencies.themingProperties.isExperimentalThemingEnabled }
         var name: String { return "Pad" + Type.name(self) }
         var onEditingStoppedState: OmniBarState { return BrowsingNonEditingState(dependencies: dependencies, isLoading: isLoading) }
         var onEditingStartedState: OmniBarState { return self }
@@ -210,7 +210,7 @@ struct LargeOmniBarState {
         let showBackButton = true
         let showForwardButton = true
         let showBookmarksButton = true
-        let showAccessoryButton = true
+        var showAccessoryButton: Bool { dependencies.isAIChatEnabledInSettings }
         let clearTextOnStart = false
         let allowsTrackersAnimation = true
         let showSearchLoupe = false

@@ -23,6 +23,7 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
     private let popoverWillShowDateMenuItem = NSMenuItem(title: "")
     private let bannerWillShowDateMenuItem = NSMenuItem(title: "")
     private let promptPermanentlyDismissedMenuItem = NSMenuItem(title: "")
+    private let numberOfBannersShownMenuItem = NSMenuItem(title: "")
     private let store = NSApp.delegateTyped.defaultBrowserAndDockPromptKeyValueStore
     private let debugStore = DefaultBrowserAndDockPromptDebugStore()
     private let defaultBrowserAndDockPromptFeatureFlagger = NSApp.delegateTyped.defaultBrowserAndDockPromptFeatureFlagger
@@ -49,6 +50,7 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
             simulatedTodayDateMenuItem
             popoverWillShowDateMenuItem
             bannerWillShowDateMenuItem
+            numberOfBannersShownMenuItem
             promptPermanentlyDismissedMenuItem
         }
     }
@@ -95,6 +97,7 @@ final class DefaultBrowserAndDockPromptDebugMenu: NSMenu {
 
         func updateBannerMenuInfo() {
             promptPermanentlyDismissedMenuItem.title = "Prompt hasn't been permanently dismissed."
+            numberOfBannersShownMenuItem.title = "Number Of Banners Shown: \(store.bannerShownOccurrences)"
 
             // If the popover hasn't been shown inform that the banner will show x days after popover
             guard let popoverShownDate = store.popoverShownDate else {

@@ -16,6 +16,8 @@ on:
       - '.xcode-version'
       - 'SharedPackages/**'
       - 'iOS/**'
+  schedule:
+    - cron: '10,35,50 4,5,6 * * *'
   workflow_call:
     inputs:
       branch:
@@ -35,6 +37,8 @@ on:
       APPLE_API_KEY_ISSUER:
         required: true
       ASANA_ACCESS_TOKEN:
+        required: true
+      GH_RO_PAT:
         required: true
       MATCH_PASSWORD:
         required: true
@@ -164,7 +168,7 @@ jobs:
           | xargs -L 1 ./scripts/report-failed-unit-test.sh -s ${{ vars.APPLE_CI_FAILING_TESTS_IOS_FAILED_TESTS_SECTION_ID }}
           
     - name: Send Status Pixel
-      if: always() #&& github.ref_name == 'main'
+      if: always() && github.ref_name == 'main'
       run: |
         curl -fLSs -o /dev/null "https://improving.duckduckgo.com/t/m_ci_apple_ios_main_unit_tests_${{ steps.run-unit-tests.outcome }}?workflow=${{ env.WORKFLOW_URL }}"
 
@@ -268,6 +272,7 @@ jobs:
           asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
           asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_IOS_POST_MERGE_SECTION_ID }}
           commit-author: ${{ needs.unit-tests.outputs.commit_author }}
+          github-token: ${{ secrets.GH_RO_PAT }}
 
   close-asana-task:
     name: Close Asana Task
@@ -286,3 +291,4 @@ jobs:
           action: close-task
           asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
           asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_IOS_POST_MERGE_SECTION_ID }}
+          github-token: ${{ secrets.GH_RO_PAT }}

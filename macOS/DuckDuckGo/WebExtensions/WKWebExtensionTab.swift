@@ -32,7 +32,7 @@ extension Tab: WKWebExtensionTab {
     }
 
     private var tabCollectionViewModel: TabCollectionViewModel? {
-        let mainWindowController = WindowControllersManager.shared.windowController(for: self)
+        let mainWindowController = Application.appDelegate.windowControllersManager.windowController(for: self)
         let mainViewController = mainWindowController?.mainViewController
         return mainViewController?.tabCollectionViewModel
     }

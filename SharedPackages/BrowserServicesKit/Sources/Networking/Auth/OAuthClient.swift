@@ -122,7 +122,7 @@ public protocol OAuthClient {
     /// Exchange token v1 for tokens v2
     /// - Parameter accessTokenV1: The legacy auth token
     /// - Returns: A TokenContainer with access and refresh tokens
-    func exchange(accessTokenV1: String) async throws -> TokenContainer
+    @discardableResult func exchange(accessTokenV1: String) async throws -> TokenContainer
 
     // MARK: Logout
 
@@ -318,7 +318,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
         }
 
         Logger.OAuthClient.log("Migrating v1 token...")
-        _ = try await exchange(accessTokenV1: legacyToken)
+        try await exchange(accessTokenV1: legacyToken)
         Logger.OAuthClient.log("Tokens migrated successfully")
 
         // NOTE: We don't remove the old token to allow roll back to Auth V1
@@ -355,7 +355,7 @@ final public actor DefaultOAuthClient: @preconcurrency OAuthClient {
 
     // MARK: Exchange V1 to V2 token
 
-    public func exchange(accessTokenV1: String) async throws -> TokenContainer {
+    @discardableResult public func exchange(accessTokenV1: String) async throws -> TokenContainer {
         Logger.OAuthClient.log("Exchanging access token V1 to V2")
         let (codeVerifier, codeChallenge) = try await getVerificationCodes()
         let authSessionID = try await authService.authorize(codeChallenge: codeChallenge)

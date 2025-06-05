@@ -24,7 +24,7 @@ extension MainViewController: BareBonesBrowserUIDelegate {
 
     fileprivate static let ddgURL = URL(string: "https://duckduckgo.com/")!
     @objc func openVanillaBrowser(_ sender: Any?) {
-        let currentURL = WindowControllersManager.shared.selectedTab?.url ?? MainViewController.ddgURL
+        let currentURL = Application.appDelegate.windowControllersManager.selectedTab?.url ?? MainViewController.ddgURL
         openVanillaBrowser(url: currentURL)
     }
 

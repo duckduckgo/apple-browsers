@@ -33,7 +33,8 @@ final class Application: NSApplication {
 
         let mainMenu = MainMenu(
             featureFlagger: delegate.featureFlagger,
-            bookmarkManager: delegate.bookmarksManager,
+            bookmarkManager: delegate.bookmarkManager,
+            historyCoordinator: delegate.historyCoordinator,
             faviconManager: delegate.faviconManager,
             aiChatMenuConfig: AIChatMenuConfiguration(),
             internalUserDecider: delegate.internalUserDecider,

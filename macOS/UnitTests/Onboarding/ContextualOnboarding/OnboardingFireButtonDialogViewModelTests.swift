@@ -48,7 +48,7 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
     override func tearDownWithError() throws {
         reporter = nil
         viewModel = nil
-        WindowControllersManager.shared.lastKeyMainWindowController = nil
+        Application.appDelegate.windowControllersManager.lastKeyMainWindowController = nil
     }
 
     func testWhenHighFiveThenOnGotItAndOnDismissPressed() throws {
@@ -64,7 +64,7 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
         let window = MockWindow(isVisible: false)
         let mainWindowController = MainWindowController(window: window, mainViewController: mainViewController, popUp: false)
         mainWindowController.window = window
-        WindowControllersManager.shared.lastKeyMainWindowController = mainWindowController
+        Application.appDelegate.windowControllersManager.lastKeyMainWindowController = mainWindowController
 
         window.isVisible = true
         viewModel.tryFireButton()

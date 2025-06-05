@@ -49,8 +49,11 @@ class AutoconsentMessageProtocolTests: XCTestCase {
                                                                                       errorReporting: nil),
                                                experimentManager: MockContentScopeExperimentManager(),
                                                tld: TLD(),
+                                               onboardingNavigationDelegate: CapturingOnboardingNavigation(),
                                                appearancePreferences: appearancePreferences,
-                                               startupPreferences: startupPreferences
+                                               startupPreferences: startupPreferences,
+                                               bookmarkManager: MockBookmarkManager(),
+                                               historyCoordinator: CapturingHistoryDataSource()
                                               ),
             config: MockPrivacyConfiguration()
         )

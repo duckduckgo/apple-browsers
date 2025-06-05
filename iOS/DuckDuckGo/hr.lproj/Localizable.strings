@@ -190,6 +190,15 @@
 /* Description for alert shown when user logged off from sync */
 "alert.sync-invalid-login-error-description" = "Sinkronizacija je pauzirana. Ako želiš nastaviti sinkronizirati ovaj uređaj, ponovno se poveži pomoću drugog uređaja ili šifre za oporavak.";
 
+/* Sync Now button in alert asking if they would like to sync with another device */
+"alert.sync-new-device.button" = "Sinkroniziraj";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.message" = "\"%@\" će moći pristupiti tvojim sinkroniziranim podacima DuckDuckGoa.";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.title" = "Sinkronizirati novi uređaj?";
+
 /* Learn more button in alert */
 "alert.sync-paused-alert-learn-more-button" = "Saznajte više";
 
@@ -261,6 +270,12 @@
 
 /* No comment provided by engineer. */
 "Are you sure you want to delete all bookmarks? This action cannot be undone." = "Jesi li siguran da želiš izbrisati sve oznake? Ova se radnja ne može poništiti.";
+
+/* No comment provided by engineer. */
+"Are you sure you want to delete this chat? This cannot be undone." = "Sigurno želiš izbrisati ovo čavrljanje? Ovo se ne može poništiti.";
+
+/* No comment provided by engineer. */
+"Ask anything..." = "Pitaj bilo što...";
 
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Prijava";
@@ -920,6 +935,9 @@
 "close.all.tabs" = "Zatvori sve kartice";
 
 /* No comment provided by engineer. */
+"Cohort: %@" = "Kohorta: %@";
+
+/* No comment provided by engineer. */
 "Confirm" = "Potvrdi";
 
 /* Button to continue the onboarding process */
@@ -1475,6 +1493,9 @@
 "empty.search" = "Nema pronađenih rezultata";
 
 /* No comment provided by engineer. */
+"Enrolled: %@" = "Upisani: %@";
+
+/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1527,6 +1548,9 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Samo favoriti na mobilnom uređaju";
+
+/* No comment provided by engineer. */
+"Feature: %@" = "Značajka: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Blokiranje oglasa i skočnih prozora";
@@ -2276,7 +2300,7 @@
 "onboarding.highlights.browsers.features.cookiePopups.title" = "Blokiraj skočne prozore kolačića";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Blokiraj reklame za praćenje";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Blokiraj ciljane oglase";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Izbriši podatke o pregledavanju jednim gumbom";
@@ -2430,6 +2454,30 @@
 
 /* Title for the Privacy Pro feedback form */
 "ppro.feedback-form.title" = "Pošalji povratnu informaciju";
+
+/* Title of the section of a setting page that shows Scam Blocking preferences (weather warning in case of scam sites) */
+"preferences.scam-blocker.title" = "Blokiranje prevara";
+
+/* Caption explaining the risk of disabling scam blocker protection */
+"preferences.scam-blocker.toggle-caption" = "Onemogućavanje ove značajke može ugroziti tvoje osobne podatke.";
+
+/* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
+"preferences.scam-blocker.toggle-label" = "Upozori na mrežnim lokacijama označenim zbog prijevara, krađe identiteta ili zlonamjernog softvera. [Saznaj više](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker)";
+
+/* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
+"preferences.smarter-encryption.description" = "Automatski nadograđuje poveznice na HTTPS kad god je to moguće. [Saznaj više](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
+
+/* Title of the section of a setting page that shows Smarter Encryption preferences */
+"preferences.smarter-encryption.title" = "Pametnije šifriranje - Smarter Encryption";
+
+/* Status indicator of a browser privacy protection feature. */
+"preferences.status-indicator.always-on" = "Uvijek uključeno";
+
+/* Title of the option to show the Threat Protection preferences */
+"preferences.threat-protection" = "Zaštita od prijetnji";
+
+/* Caption of the option to show the Threat Protection preferences */
+"preferences.threat-protection.caption" = "Poboljšane zaštite DuckDuckGoa zaustavljaju uobičajene prijetnje, istovremeno održavajući tvoju vezu sigurnom.\n[Saznaj više](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Neke oznake ili lozinke formatirane su pogrešno, ili su preduge i nisu sinkronizirane.";
@@ -2864,7 +2912,13 @@
 "siteFeedback.urlPlaceholder" = "Koje je web-mjesto neispravno?";
 
 /* No comment provided by engineer. */
+"Stop generating..." = "Zaustavi generiranje...";
+
+/* No comment provided by engineer. */
 "Stored Hostname: %@" = "Pohranjeno ime glavnog računala: %@";
+
+/* No comment provided by engineer. */
+"Subfeature: %@" = "Podznačajka: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Dodaj na uređaj";
@@ -3389,10 +3443,10 @@
 "vpn.settings.dns.server.content.blocking.explanation" = "Blokiraj više od 150.000 domena označenih zbog sadržavanja zlonamjernog softvera, krađe identiteta i internetskih prevara pomoću popisa za blokiranje na razini DNS-a. [Saznaj više](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
 
 /* Header of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.header" = "Blokiranje i filtriranje sadržaja";
+"vpn.settings.dns.server.content.blocking.header" = "Blokiranje zlonamjernog sadržaja";
 
-/* Title of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.title" = "Blokiraj rizične domene";
+/* Title of the vpn scam blocker sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Blokiranje prevara";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";

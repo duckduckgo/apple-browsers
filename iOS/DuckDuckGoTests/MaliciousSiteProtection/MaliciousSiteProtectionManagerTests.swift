@@ -51,7 +51,8 @@ final class MaliciousSiteProtectionManagerTests {
             maliciousSiteProtectionFeatureFlagger: featureFlaggerMock,
             supportedThreatsProvider: {
                 return self.scamProtectionSupported ? ThreatKind.allCases : ThreatKind.allCases.filter { $0 != .scam }
-            }
+            },
+            shouldRemoveWWWInCanonicalization: { true }
         )
     }
 

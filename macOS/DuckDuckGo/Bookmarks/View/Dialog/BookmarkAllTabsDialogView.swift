@@ -114,7 +114,7 @@ struct BookmarkAllTabsDialogView: ModalView {
 #Preview("Bookmark All Tabs - Light") {
     let parentFolder = BookmarkFolder(id: "7", title: "DuckDuckGo")
     let bookmark = Bookmark(id: "1", url: "www.duckduckgo.com", title: "DuckDuckGo", isFavorite: true, parentFolderUUID: "7")
-    let bookmarkManager = LocalBookmarkManager(bookmarkStore: BookmarkStoreMock(bookmarks: [bookmark, parentFolder]))
+    let bookmarkManager = LocalBookmarkManager(bookmarkStore: BookmarkStoreMock(bookmarks: [bookmark, parentFolder]), appearancePreferences: .mock)
     bookmarkManager.loadBookmarks()
     let websitesInfo: [WebsiteInfo] = [
         .init(.init(content: .url(URL.duckDuckGo, credential: nil, source: .ui)))!,
@@ -128,7 +128,7 @@ struct BookmarkAllTabsDialogView: ModalView {
 #Preview("Bookmark All Tabs - Dark") {
     let parentFolder = BookmarkFolder(id: "7", title: "DuckDuckGo")
     let bookmark = Bookmark(id: "1", url: "www.duckduckgo.com", title: "DuckDuckGo", isFavorite: true, parentFolderUUID: "7")
-    let bookmarkManager = LocalBookmarkManager(bookmarkStore: BookmarkStoreMock(bookmarks: [bookmark, parentFolder]))
+    let bookmarkManager = LocalBookmarkManager(bookmarkStore: BookmarkStoreMock(bookmarks: [bookmark, parentFolder]), appearancePreferences: .mock)
     bookmarkManager.loadBookmarks()
     let websitesInfo: [WebsiteInfo] = [
         .init(.init(content: .url(URL.duckDuckGo, credential: nil, source: .ui)))!,

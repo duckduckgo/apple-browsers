@@ -21,6 +21,7 @@ import UIKit
 import Bookmarks
 import Core
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 class BookmarkCell: UITableViewCell {
 
@@ -76,11 +77,7 @@ class BookmarksViewControllerCellFactory {
         let theme = ThemeManager.shared.currentTheme
         cell.backgroundColor = theme.tableCellBackgroundColor
         cell.titleLabel.textColor = theme.tableCellTextColor
-        if ExperimentalThemingManager().isExperimentalThemingEnabled {
-            cell.favoriteImageView.image = UIImage(named: "Favorite-Color-24")
-        } else {
-            cell.favoriteImageView.tintColor = UIColor(designSystemColor: .icons)
-        }
+        cell.favoriteImageView.image = DesignSystemImages.Color.Size16.favorite
         cell.faviconImageView.tintColor = UIColor(designSystemColor: .icons)
         cell.editingAccessoryType = .disclosureIndicator
         return cell
@@ -96,9 +93,8 @@ class BookmarksViewControllerCellFactory {
         cell.titleLabel.textColor = theme.tableCellTextColor
         cell.childrenCountLabel.textColor = theme.tableCellTextColor
         cell.editingAccessoryType = .disclosureIndicator
-        if ExperimentalThemingManager().isExperimentalThemingEnabled {
-            cell.iconImageView.image = UIImage(named: "Folder-Color-24")
-        } else {
+        cell.iconImageView.image = DesignSystemImages.Color.Size24.folder
+        if !ThemeManager.shared.properties.isExperimentalThemingEnabled {
             cell.iconImageView.tintColor = UIColor(designSystemColor: .icons)
         }
         return cell

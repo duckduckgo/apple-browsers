@@ -190,6 +190,15 @@
 /* Description for alert shown when user logged off from sync */
 "alert.sync-invalid-login-error-description" = "Synchronizace je pozastavená. Pokud chceš toto zařízení dál synchronizovat, znovu se připoj pomocí jiného zařízení nebo kódu pro obnovení.";
 
+/* Sync Now button in alert asking if they would like to sync with another device */
+"alert.sync-new-device.button" = "Synchronizovat";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.message" = "„%@“ získá přístup ke tvým synchronizovaným datům DuckDuckGo.";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.title" = "Synchronizovat nové zařízení?";
+
 /* Learn more button in alert */
 "alert.sync-paused-alert-learn-more-button" = "Více informací";
 
@@ -261,6 +270,12 @@
 
 /* No comment provided by engineer. */
 "Are you sure you want to delete all bookmarks? This action cannot be undone." = "Opravdu chceš smazat všechny záložky? Tuto akci nelze vrátit.";
+
+/* No comment provided by engineer. */
+"Are you sure you want to delete this chat? This cannot be undone." = "Opravdu chceš tenhle chat smazat? Tenhle krok se nedá vrátit zpět.";
+
+/* No comment provided by engineer. */
+"Ask anything..." = "Zeptej se na cokoli...";
 
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Přihlásit";
@@ -920,6 +935,9 @@
 "close.all.tabs" = "Zavřít všechny karty";
 
 /* No comment provided by engineer. */
+"Cohort: %@" = "Kohorta: %@";
+
+/* No comment provided by engineer. */
 "Confirm" = "Potvrdit";
 
 /* Button to continue the onboarding process */
@@ -1475,6 +1493,9 @@
 "empty.search" = "Nenalezeny žádné shody";
 
 /* No comment provided by engineer. */
+"Enrolled: %@" = "Zahájeno: %@";
+
+/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1527,6 +1548,9 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Jenom oblíbené mobilní položky";
+
+/* No comment provided by engineer. */
+"Feature: %@" = "Funkce: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Blokování reklam a vyskakovacích oken";
@@ -2276,7 +2300,7 @@
 "onboarding.highlights.browsers.features.cookiePopups.title" = "Blokování vyskakovacích oken ohledně cookies";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Blokuj reklamy, které tě sledují";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Blokování cílených reklam";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Vymaž údaje o prohlížení jedním tlačítkem";
@@ -2430,6 +2454,30 @@
 
 /* Title for the Privacy Pro feedback form */
 "ppro.feedback-form.title" = "Odeslat zpětnou vazbu";
+
+/* Title of the section of a setting page that shows Scam Blocking preferences (weather warning in case of scam sites) */
+"preferences.scam-blocker.title" = "Blokování podvodů";
+
+/* Caption explaining the risk of disabling scam blocker protection */
+"preferences.scam-blocker.toggle-caption" = "Vypnutím téhle funkce můžeš svoje osobní údaje vystavit riziku.";
+
+/* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
+"preferences.scam-blocker.toggle-label" = "Upozornit na weby nahlášené kvůli podvodům, phishingu nebo malwaru. [Další informace](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker)";
+
+/* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
+"preferences.smarter-encryption.description" = "Automaticky převede odkazy na HTTPS, pokud to jde. [Další informace](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
+
+/* Title of the section of a setting page that shows Smarter Encryption preferences */
+"preferences.smarter-encryption.title" = "Chytřejší šifrování";
+
+/* Status indicator of a browser privacy protection feature. */
+"preferences.status-indicator.always-on" = "Vždycky zapnuté";
+
+/* Title of the option to show the Threat Protection preferences */
+"preferences.threat-protection" = "Ochrana proti hrozbám";
+
+/* Caption of the option to show the Threat Protection preferences */
+"preferences.threat-protection.caption" = "Vylepšená ochrana DuckDuckGo zastavuje běžné hrozby a zároveň chrání tvoje připojení.\n[Další informace](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Některé záložky nebo hesla jsou nesprávně naformátované nebo příliš dlouhé, takže jsme je nemohli synchronizovat.";
@@ -2864,7 +2912,13 @@
 "siteFeedback.urlPlaceholder" = "Které webové stránky jsou poškozené?";
 
 /* No comment provided by engineer. */
+"Stop generating..." = "Zastavit generování...";
+
+/* No comment provided by engineer. */
 "Stored Hostname: %@" = "Uložený název hostitele: %@";
+
+/* No comment provided by engineer. */
+"Subfeature: %@" = "Podfunkce: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Přidat do zařízení";
@@ -3389,10 +3443,10 @@
 "vpn.settings.dns.server.content.blocking.explanation" = "Blokuj víc než 150 000 domén, u kterých bylo nahlášené hostování malwaru, phishingové útoky a online podvody, pomocí seznamu blokování na úrovni DNS. [Další informace](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
 
 /* Header of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.header" = "Blokování a filtrování obsahu";
+"vpn.settings.dns.server.content.blocking.header" = "Blokování škodlivého obsahu";
 
-/* Title of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.title" = "Blokování rizikových domén";
+/* Title of the vpn scam blocker sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Blokování podvodů";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";

@@ -16,6 +16,8 @@ on:
       - '.xcode-version'
       - 'SharedPackages/**'
       - 'macOS/**'
+  schedule:
+    - cron: '10,40 4,5 * * *'
   workflow_call:
     inputs:
       branch:
@@ -30,6 +32,8 @@ on:
       APPLE_API_KEY_ISSUER:
         required: true
       ASANA_ACCESS_TOKEN:
+        required: true
+      GH_RO_PAT:
         required: true
       MATCH_PASSWORD:
         required: true
@@ -452,6 +456,7 @@ jobs:
           asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
           asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_MACOS_POST_MERGE_SECTION_ID }}
           commit-author: ${{ needs.tests.outputs.commit_author }}
+          github-token: ${{ secrets.GH_RO_PAT }}
 
   close-asana-task:
     name: Close Asana Task
@@ -470,3 +475,4 @@ jobs:
           action: close-task
           asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
           asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_MACOS_POST_MERGE_SECTION_ID }}
+          github-token: ${{ secrets.GH_RO_PAT }}

@@ -52,9 +52,13 @@ final class UserContentUpdating {
          trackerDataManager: TrackerDataManager,
          configStorage: ConfigurationStoring,
          webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
+         experimentManager: @autoclosure @escaping () -> ContentScopeExperimentsManaging,
          tld: TLD,
+         onboardingNavigationDelegate: OnboardingNavigating,
          appearancePreferences: AppearancePreferences,
-         startupPreferences: StartupPreferences
+         startupPreferences: StartupPreferences,
+         bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling,
+         historyCoordinator: HistoryDataSource
     ) {
 
         let makeValue: (Update) -> NewContent = { rulesUpdate in
@@ -63,10 +67,13 @@ final class UserContentUpdating {
                                                       webTrackingProtectionPreferences: webTrackingProtectionPreferences,
                                                       contentBlockingManager: contentBlockerRulesManager,
                                                       trackerDataManager: trackerDataManager,
-                                                      experimentManager: Application.appDelegate.contentScopeExperimentsManager,
+                                                      experimentManager: experimentManager(),
                                                       tld: tld,
+                                                      onboardingNavigationDelegate: onboardingNavigationDelegate,
                                                       appearancePreferences: appearancePreferences,
-                                                      startupPreferences: startupPreferences)
+                                                      startupPreferences: startupPreferences,
+                                                      bookmarkManager: bookmarkManager,
+                                                      historyCoordinator: historyCoordinator)
             return NewContent(rulesUpdate: rulesUpdate, sourceProvider: sourceProvider)
         }
 

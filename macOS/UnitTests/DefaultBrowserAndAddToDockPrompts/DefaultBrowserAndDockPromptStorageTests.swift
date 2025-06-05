@@ -30,7 +30,7 @@ struct DefaultBrowserAndDockPromptStorageTests {
         func checkPopoverShownDateIsPersistedInUnderlyingStorage() throws {
             // GIVEN
             let keyValueStoringMock = try MockKeyValueFileStore()
-            let sut = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStoringMock, eventMapper: EventMapping<DefaultBrowserAndDockPromptEvent> { _, _, _, _ in })
+            let sut = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStoringMock, eventMapper: EventMapping<DefaultBrowserAndDockPromptDebugEvent> { _, _, _, _ in })
             #expect(try keyValueStoringMock.object(forKey: DefaultBrowserAndDockPromptKeyValueStore.StorageKey.popoverShownDate.rawValue) == nil)
 
             // WHEN
@@ -44,7 +44,7 @@ struct DefaultBrowserAndDockPromptStorageTests {
         func checkPopoverShownDateIsRetrievedFromUnderlyingStorage() throws {
             // GIVEN
             let keyValueStoringMock = try MockKeyValueFileStore()
-            let sut = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStoringMock, eventMapper: EventMapping<DefaultBrowserAndDockPromptEvent> { _, _, _, _ in })
+            let sut = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStoringMock, eventMapper: EventMapping<DefaultBrowserAndDockPromptDebugEvent> { _, _, _, _ in })
             #expect(sut.popoverShownDate == nil)
             try keyValueStoringMock.set(now.timeIntervalSince1970, forKey: DefaultBrowserAndDockPromptKeyValueStore.StorageKey.popoverShownDate.rawValue)
 
@@ -59,7 +59,7 @@ struct DefaultBrowserAndDockPromptStorageTests {
         func checkBannerShownDateIsPersistedInUnderlyingStorage() throws {
             // GIVEN
             let keyValueStoringMock = try MockKeyValueFileStore()
-            let sut = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStoringMock, eventMapper: EventMapping<DefaultBrowserAndDockPromptEvent> { _, _, _, _ in })
+            let sut = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStoringMock, eventMapper: EventMapping<DefaultBrowserAndDockPromptDebugEvent> { _, _, _, _ in })
             #expect(try keyValueStoringMock.object(forKey: DefaultBrowserAndDockPromptKeyValueStore.StorageKey.bannerShownDate.rawValue) == nil)
 
             // WHEN
@@ -73,7 +73,7 @@ struct DefaultBrowserAndDockPromptStorageTests {
         func checkBannerShownDateIsRetrievedFromUnderlyingStorage() throws {
             // GIVEN
             let keyValueStoringMock = try MockKeyValueFileStore()
-            let sut = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStoringMock, eventMapper: EventMapping<DefaultBrowserAndDockPromptEvent> { _, _, _, _ in })
+            let sut = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStoringMock, eventMapper: EventMapping<DefaultBrowserAndDockPromptDebugEvent> { _, _, _, _ in })
             #expect(sut.bannerShownDate == nil)
             try keyValueStoringMock.set(now.timeIntervalSince1970, forKey: DefaultBrowserAndDockPromptKeyValueStore.StorageKey.bannerShownDate.rawValue)
 
@@ -88,7 +88,7 @@ struct DefaultBrowserAndDockPromptStorageTests {
         func checkBannerPermanentlyDismissedValueIsPersistedInUnderlyingStorage() throws {
             // GIVEN
             let keyValueStoringMock = try MockKeyValueFileStore()
-            let sut = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStoringMock, eventMapper: EventMapping<DefaultBrowserAndDockPromptEvent> { _, _, _, _ in })
+            let sut = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStoringMock, eventMapper: EventMapping<DefaultBrowserAndDockPromptDebugEvent> { _, _, _, _ in })
             #expect(try keyValueStoringMock.object(forKey: DefaultBrowserAndDockPromptKeyValueStore.StorageKey.bannerPermanentlyDismissed.rawValue) == nil)
 
             // WHEN
@@ -103,7 +103,7 @@ struct DefaultBrowserAndDockPromptStorageTests {
             // GIVEN
             let keyValueStoringMock = try MockKeyValueFileStore()
             try keyValueStoringMock.set(true, forKey: DefaultBrowserAndDockPromptKeyValueStore.StorageKey.bannerPermanentlyDismissed.rawValue)
-            let sut = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStoringMock, eventMapper: EventMapping<DefaultBrowserAndDockPromptEvent> { _, _, _, _ in })
+            let sut = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStoringMock, eventMapper: EventMapping<DefaultBrowserAndDockPromptDebugEvent> { _, _, _, _ in })
 
             // WHEN
             let result = sut.isBannerPermanentlyDismissed
@@ -117,7 +117,7 @@ struct DefaultBrowserAndDockPromptStorageTests {
             // GIVEN
             let keyValueStoringMock = try MockKeyValueFileStore()
             #expect(try keyValueStoringMock.object(forKey: DefaultBrowserAndDockPromptKeyValueStore.StorageKey.bannerPermanentlyDismissed.rawValue) == nil)
-            let sut = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStoringMock, eventMapper: EventMapping<DefaultBrowserAndDockPromptEvent> { _, _, _, _ in })
+            let sut = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStoringMock, eventMapper: EventMapping<DefaultBrowserAndDockPromptDebugEvent> { _, _, _, _ in })
 
             // WHEN
             let result = sut.isBannerPermanentlyDismissed
@@ -135,8 +135,8 @@ struct DefaultBrowserAndDockPromptStorageTests {
             let keyValueStoringMock = try MockKeyValueFileStore()
             let expectedError = NSError(domain: #function, code: 0, userInfo: nil)
             keyValueStoringMock.throwOnSet = expectedError
-            var expectedEvent: DefaultBrowserAndDockPromptEvent?
-            let sut = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStoringMock, eventMapper: EventMapping<DefaultBrowserAndDockPromptEvent> { event, _, _, _ in
+            var expectedEvent: DefaultBrowserAndDockPromptDebugEvent?
+            let sut = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStoringMock, eventMapper: EventMapping<DefaultBrowserAndDockPromptDebugEvent> { event, _, _, _ in
                 expectedEvent = event
             })
 
@@ -157,16 +157,22 @@ struct DefaultBrowserAndDockPromptStorageTests {
             let keyValueStoringMock = try MockKeyValueFileStore()
             let expectedError = NSError(domain: #function, code: 0, userInfo: nil)
             keyValueStoringMock.throwOnSet = expectedError
-            var expectedEvent: DefaultBrowserAndDockPromptEvent?
-            let sut = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStoringMock, eventMapper: EventMapping<DefaultBrowserAndDockPromptEvent> { event, _, _, _ in
-                expectedEvent = event
+            var expectedEvents: [DefaultBrowserAndDockPromptDebugEvent] = []
+            let sut = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStoringMock, eventMapper: EventMapping<DefaultBrowserAndDockPromptDebugEvent> { event, _, _, _ in
+                expectedEvents.append(event)
             })
 
             // WHEN
             sut.bannerShownDate = now.timeIntervalSince1970
 
             // THEN
-            if case let .storage(.failedToSaveValue(.bannerShownDate(error as NSError))) = expectedEvent {
+            let failedToSaveBannerShownDateEvent = try #require(expectedEvents.first)
+            let failedToSaveBannerShownOccurrences = try #require(expectedEvents.last)
+
+            #expect(expectedEvents.count == 2)
+            if case let .storage(.failedToSaveValue(.bannerShownDate(error as NSError))) = failedToSaveBannerShownDateEvent {
+                #expect(error == expectedError)
+            } else if case let .storage(.failedToSaveValue(.bannerShownOccurrences(error as NSError))) = failedToSaveBannerShownOccurrences {
                 #expect(error == expectedError)
             } else {
                 Issue.record("Expected Event .bannerShownDate")
@@ -179,8 +185,8 @@ struct DefaultBrowserAndDockPromptStorageTests {
             let keyValueStoringMock = try MockKeyValueFileStore()
             let expectedError = NSError(domain: #function, code: 0, userInfo: nil)
             keyValueStoringMock.throwOnSet = expectedError
-            var expectedEvent: DefaultBrowserAndDockPromptEvent?
-            let sut = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStoringMock, eventMapper: EventMapping<DefaultBrowserAndDockPromptEvent> { event, _, _, _ in
+            var expectedEvent: DefaultBrowserAndDockPromptDebugEvent?
+            let sut = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStoringMock, eventMapper: EventMapping<DefaultBrowserAndDockPromptDebugEvent> { event, _, _, _ in
                 expectedEvent = event
             })
 
@@ -201,8 +207,8 @@ struct DefaultBrowserAndDockPromptStorageTests {
             let keyValueStoringMock = try MockKeyValueFileStore()
             let expectedError = NSError(domain: #function, code: 0, userInfo: nil)
             keyValueStoringMock.throwOnRead = expectedError
-            var expectedEvent: DefaultBrowserAndDockPromptEvent?
-            let sut = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStoringMock, eventMapper: EventMapping<DefaultBrowserAndDockPromptEvent> { event, _, _, _ in
+            var expectedEvent: DefaultBrowserAndDockPromptDebugEvent?
+            let sut = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStoringMock, eventMapper: EventMapping<DefaultBrowserAndDockPromptDebugEvent> { event, _, _, _ in
                 expectedEvent = event
             })
 
@@ -223,8 +229,8 @@ struct DefaultBrowserAndDockPromptStorageTests {
             let keyValueStoringMock = try MockKeyValueFileStore()
             let expectedError = NSError(domain: #function, code: 0, userInfo: nil)
             keyValueStoringMock.throwOnRead = expectedError
-            var expectedEvent: DefaultBrowserAndDockPromptEvent?
-            let sut = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStoringMock, eventMapper: EventMapping<DefaultBrowserAndDockPromptEvent> { event, _, _, _ in
+            var expectedEvent: DefaultBrowserAndDockPromptDebugEvent?
+            let sut = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStoringMock, eventMapper: EventMapping<DefaultBrowserAndDockPromptDebugEvent> { event, _, _, _ in
                 expectedEvent = event
             })
 
@@ -239,14 +245,14 @@ struct DefaultBrowserAndDockPromptStorageTests {
             }
         }
 
-        @Test("Check Permanently Dismissed Protnt Failed To Retrieve Event Is Triggered When Underlying Storage Fails To Retrieve Value")
+        @Test("Check Permanently Dismissed Prompt Failed To Retrieve Event Is Triggered When Underlying Storage Fails To Retrieve Value")
         func checkPermanentlyDismissedPromptFailedToRetrieveValueEventIsSentWhenUnderlyingStorageFailsToPersist() throws {
             // GIVEN
             let keyValueStoringMock = try MockKeyValueFileStore()
             let expectedError = NSError(domain: #function, code: 0, userInfo: nil)
             keyValueStoringMock.throwOnRead = expectedError
-            var expectedEvent: DefaultBrowserAndDockPromptEvent?
-            let sut = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStoringMock, eventMapper: EventMapping<DefaultBrowserAndDockPromptEvent> { event, _, _, _ in
+            var expectedEvent: DefaultBrowserAndDockPromptDebugEvent?
+            let sut = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStoringMock, eventMapper: EventMapping<DefaultBrowserAndDockPromptDebugEvent> { event, _, _, _ in
                 expectedEvent = event
             })
 
@@ -258,6 +264,50 @@ struct DefaultBrowserAndDockPromptStorageTests {
                 #expect(error == expectedError)
             } else {
                 Issue.record("Expected Event .permanentlyDismissPrompt")
+            }
+        }
+
+        @Test("Check Failed To Save Number Banners Shown Is Event Is Triggered When Underlying Storage Fails To Save Value")
+        func checkNumberOfBannersShownFailedToSaveValueEventIsSentWhenUnderlyingStorageFailsToPersist() throws {
+            // GIVEN
+            let keyValueStoringMock = try MockKeyValueFileStore()
+            let expectedError = NSError(domain: #function, code: 0, userInfo: nil)
+            keyValueStoringMock.throwOnSet = expectedError
+            var expectedEvent: DefaultBrowserAndDockPromptDebugEvent?
+            let sut = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStoringMock, eventMapper: EventMapping<DefaultBrowserAndDockPromptDebugEvent> { event, _, _, _ in
+                expectedEvent = event
+            })
+
+            // WHEN
+            sut.bannerShownOccurrences = 10
+
+            // THEN
+            if case let .storage(.failedToSaveValue(.bannerShownOccurrences(error as NSError))) = expectedEvent {
+                #expect(error == expectedError)
+            } else {
+                Issue.record("Expected Event .bannerShownOccurrences")
+            }
+        }
+
+        @Test("Check Failed To Retrieve Number Banners Shown Is Triggered When Underlying Storage Fails To Retrieve Value")
+        func checkNumberOfBannersShownFailedToRetrieveValueEventIsSentWhenUnderlyingStorageFailsToPersist() throws {
+            // GIVEN
+            let keyValueStoringMock = try MockKeyValueFileStore()
+            let expectedError = NSError(domain: #function, code: 0, userInfo: nil)
+            keyValueStoringMock.throwOnRead = expectedError
+            var expectedEvent: DefaultBrowserAndDockPromptDebugEvent?
+            let sut = DefaultBrowserAndDockPromptKeyValueStore(keyValueStoring: keyValueStoringMock, eventMapper: EventMapping<DefaultBrowserAndDockPromptDebugEvent> { event, _, _, _ in
+                expectedEvent = event
+            })
+
+            // WHEN
+            _ = sut.bannerShownOccurrences
+
+            // THEN
+            if case let .storage(.failedToRetrieveValue(.bannerShownOccurrences(error as NSError))) = expectedEvent {
+                #expect(error == expectedError)
+            } else {
+                Issue.record("Expected Event .bannerShownOccurrences")
             }
         }
     }

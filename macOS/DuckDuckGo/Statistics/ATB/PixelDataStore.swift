@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
-import Foundation
 import CoreData
+import Foundation
+import Persistence
 
 protocol PixelDataStore {
 
@@ -52,12 +53,9 @@ extension PixelDataStore {
     }
 }
 
-extension PixelData {
-    fileprivate static let sharedPixelDataStore = LocalPixelDataStore<PixelData>()
-}
-private extension LocalPixelDataStore where T == PixelData {
-    convenience init() {
-        self.init(context: Database.shared.makeContext(concurrencyType: .mainQueueConcurrencyType, name: "PixelData"),
+extension LocalPixelDataStore where T == PixelData {
+    convenience init(database: CoreDataDatabase) {
+        self.init(context: database.makeContext(concurrencyType: .mainQueueConcurrencyType, name: "PixelData"),
                   updateModel: PixelData.update,
                   entityName: PixelData.className())
     }
@@ -67,7 +65,6 @@ enum PixelDataStoreError: Error {
 }
 
 final class LocalPixelDataStore<T: NSManagedObject>: PixelDataStore {
-    static var shared: LocalPixelDataStore<PixelData> { PixelData.sharedPixelDataStore }
 
     private let context: NSManagedObjectContext
     private let entityName: String

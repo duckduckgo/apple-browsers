@@ -123,7 +123,7 @@ struct SubscriptionSettingsView: View {
                     .foregroundColor(Color.init(designSystemColor: .accent)) },
                                    disclosureIndicator: false)
             }.isDetailLink(false)
-        }
+        }.listRowBackground(Color(designSystemColor: .surface))
     }
 
     private var devicesSectionFooter: some View {

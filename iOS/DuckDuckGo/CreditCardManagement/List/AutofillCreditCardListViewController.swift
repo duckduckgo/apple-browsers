@@ -21,6 +21,8 @@ import UIKit
 import BrowserServicesKit
 import Combine
 import SwiftUI
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 final class AutofillCreditCardListViewController: UIViewController {
     
@@ -29,7 +31,7 @@ final class AutofillCreditCardListViewController: UIViewController {
     private var cancellables: Set<AnyCancellable> = []
     
     private lazy var addBarButtonItem: UIBarButtonItem = {
-        UIBarButtonItem(image: UIImage(named: "Add-24"),
+        UIBarButtonItem(image: DesignSystemImages.Glyphs.Size24.add,
                         style: .plain,
                         target: self,
                         action: #selector(addButtonPressed))

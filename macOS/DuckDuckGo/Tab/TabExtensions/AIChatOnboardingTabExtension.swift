@@ -28,74 +28,24 @@ protocol AIChatUserScriptProvider {
 extension UserScripts: AIChatUserScriptProvider {}
 
 final class AIChatOnboardingTabExtension {
-    private weak var webView: WKWebView?
+
     private var cancellables = Set<AnyCancellable>()
-    private let notificationCenter: NotificationCenter
-    private let remoteSettings: AIChatRemoteSettingsProvider
     private let isLoadedInSidebar: Bool
 
     private(set) weak var aiChatUserScript: AIChatUserScript?
 
-    init(webViewPublisher: some Publisher<WKWebView, Never>,
-         scriptsPublisher: some Publisher<some AIChatUserScriptProvider, Never>,
-         notificationCenter: NotificationCenter,
-         remoteSettings: AIChatRemoteSettingsProvider,
+    init(scriptsPublisher: some Publisher<some AIChatUserScriptProvider, Never>,
          isLoadedInSidebar: Bool) {
-
-        self.notificationCenter = notificationCenter
-        self.remoteSettings = remoteSettings
         self.isLoadedInSidebar = isLoadedInSidebar
-
         scriptsPublisher.sink { [weak self] scripts in
             Task { @MainActor in
                 self?.aiChatUserScript = scripts.aiChatUserScript
             }
         }.store(in: &cancellables)
-
-        webViewPublisher.sink { [weak self] webView in
-            self?.webView = webView
-        }.store(in: &cancellables)
-    }
-
-    private func validateAIChatCookie(webView: WKWebView) {
-        guard let url = webView.url,
-              url.isDuckDuckGo,
-              isQueryItemEqualToDuckDuckGoAIChat(url: url) else {
-            return
-        }
-
-        let cookieStore = webView.configuration.websiteDataStore.httpCookieStore
-
-        cookieStore.getAllCookies { [weak self] cookies in
-            guard let self = self else { return }
-            if cookies.contains(where: { $0.isAIChatCookie(settings: self.remoteSettings) }) {
-                self.notificationCenter.post(name: .AIChatOpenedForReturningUser, object: nil)
-            }
-        }
-    }
-
-    private func isQueryItemEqualToDuckDuckGoAIChat(url: URL) -> Bool {
-        let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
-        if let queryItems = components?.queryItems {
-            if let queryValue = queryItems.first(where: { $0.name == remoteSettings.aiChatURLIdentifiableQuery })?.value {
-                return queryValue == remoteSettings.aiChatURLIdentifiableQueryValue
-            }
-        }
-
-        return false
     }
 }
 
 extension AIChatOnboardingTabExtension: NavigationResponder {
-    @MainActor func navigationDidFinish(_ navigation: Navigation) {
-        guard let webView = webView else { return }
-        validateAIChatCookie(webView: webView)
-    }
-
-    func navigation(_ navigation: Navigation, didSameDocumentNavigationOf navigationType: WKSameDocumentNavigationType) {
-        guard let webView = webView else { return }
-        validateAIChatCookie(webView: webView)
-    }
 
     func decidePolicy(for navigationAction: NavigationAction, preferences: inout NavigationPreferences) async -> NavigationActionPolicy? {
         guard isLoadedInSidebar,
@@ -124,14 +74,4 @@ extension TabExtensions {
     var aiChatOnboarding: AIChatOnboardingProtocol? {
         resolve(AIChatOnboardingTabExtension.self)
     }
-}
-
-private extension HTTPCookie {
-    func isAIChatCookie(settings: AIChatRemoteSettingsProvider) -> Bool {
-        name == settings.onboardingCookieName && domain == settings.onboardingCookieDomain
-    }
-}
-
-extension NSNotification.Name {
-    static let AIChatOpenedForReturningUser = NSNotification.Name("aichat.AIChatOpenedForReturningUser")
 }

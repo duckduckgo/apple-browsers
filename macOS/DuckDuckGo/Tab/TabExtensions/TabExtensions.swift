@@ -222,10 +222,7 @@ extension TabExtensionsBuilder {
         }
 
         add {
-            AIChatOnboardingTabExtension(webViewPublisher: args.webViewFuture,
-                                         scriptsPublisher: userScripts.compactMap { $0 },
-                                         notificationCenter: .default,
-                                         remoteSettings: AIChatRemoteSettings(),
+            AIChatOnboardingTabExtension(scriptsPublisher: userScripts.compactMap { $0 },                                         
                                          isLoadedInSidebar: args.isTabLoadedInSidebar)
         }
 

@@ -20,13 +20,28 @@ import Foundation
 
 typealias TabIdentifier = String
 
+/// A protocol that defines the interface for managing AI chat sidebars in tabs.
+/// This provider handles the lifecycle and state of chat sidebars across multiple browser tabs.
 protocol AIChatSidebarProviding {
+    /// The width of the chat sidebar in points.
     var sidebarWidth: CGFloat { get }
 
+    /// Returns the chat sidebar instance for the specified tab.
+    /// - Parameter tabID: The unique identifier of the tab
+    /// - Returns: An `AIChatSidebar` instance associated with the tab
     func sidebar(for tabID: TabIdentifier) -> AIChatSidebar
+
+    /// Checks if a sidebar is currently being displayed for the specified tab.
+    /// - Parameter tabID: The unique identifier of the tab
+    /// - Returns: `true` if the sidebar is showing, `false` otherwise
     func isShowingSidebar(for tabID: TabIdentifier) -> Bool
 
+    /// Handles cleanup when a sidebar is closed by the user.
+    /// - Parameter tabID: The unique identifier of the tab whose sidebar was closed
     func handleSidebarDidClose(for tabID: TabIdentifier)
+
+    /// Removes sidebars for tabs that are no longer active.
+    /// - Parameter currentTabIDs: Array of tab IDs that are currently open
     func cleanUp(for currentTabIDs: [TabIdentifier])
 }
 

@@ -18,9 +18,13 @@
 
 import Foundation
 
+/// A wrapper class that represents the AI Chat sidebar contents and its displayed view controller.
 final class AIChatSidebar {
+    /// The view controller that displays the sidebar contents.
     var sidebarViewController: AIChatSidebarViewController
 
+    /// Creates a sidebar wrapper with the specified view controller.
+    /// - Parameter sidebarViewController: The view controller to display. Defaults to a new instance.
     init(sidebarViewController: AIChatSidebarViewController = AIChatSidebarViewController()) {
         self.sidebarViewController = sidebarViewController
     }

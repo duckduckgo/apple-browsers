@@ -18,11 +18,20 @@
 
 import AppKit
 
+/// A delegate protocol that handles user interactions with the AI Chat sidebar view controller.
+/// This protocol defines methods for responding to navigation and UI events in the sidebar.
 protocol AIChatSidebarViewControllerDelegate: AnyObject {
+    /// Called when the user clicks the "Expand" button
     func didClickOpenInNewTabButton()
+    /// Called when the user clicks the "Close" button
     func didClickCloseButton()
 }
 
+/// A view controller that manages the AI Chat sidebar interface.
+/// This controller handles the layout and interaction of the sidebar components including:
+/// - A native top navigation bar with buttons and title label
+/// - A web view container for displaying AI chat
+/// - Additional visual styling including corner radius and separators
 final class AIChatSidebarViewController: NSViewController {
 
     private enum Constants {

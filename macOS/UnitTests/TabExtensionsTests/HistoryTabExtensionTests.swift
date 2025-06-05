@@ -27,7 +27,7 @@ import XCTest
 class HistoryTabExtensionTests: XCTestCase {
 
     @MainActor
-    func testWhenNotEnabled_ThenNoHistoryIsStored() {
+    func testWhenNotCapturingHistory_ThenNoHistoryIsStored() {
         let historyCoordinatingMock = HistoryCoordinatingMock()
 
         let trackersPublisher: AnyPublisher<DetectedTracker, Never> = Empty().eraseToAnyPublisher()

@@ -24,7 +24,7 @@ import Common
 final class FireproofingReferenceTests: XCTestCase {
     private var referenceTests = [Test]()
     private let dataStore = WKWebsiteDataStore.default()
-    private let fireproofDomains = FireproofDomains.shared
+    private let fireproofDomains = Application.appDelegate.fireproofDomains
 
     private enum Resource {
         static let tests = "privacy-reference-tests/storage-clearing/tests.json"

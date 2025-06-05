@@ -79,6 +79,7 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     }
 
     private let bookmarkManager: BookmarkManager
+    private let fireproofDomains: FireproofDomains
     private let visualStyle: VisualStyleProviding
     private var pinnedTabsViewModel: PinnedTabsViewModel?
     private var pinnedTabsView: PinnedTabsView?
@@ -138,12 +139,18 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
         }
     }
 
-    static func create(tabCollectionViewModel: TabCollectionViewModel, bookmarkManager: BookmarkManager, activeRemoteMessageModel: ActiveRemoteMessageModel) -> TabBarViewController {
+    static func create(
+        tabCollectionViewModel: TabCollectionViewModel,
+        bookmarkManager: BookmarkManager,
+        fireproofDomains: FireproofDomains,
+        activeRemoteMessageModel: ActiveRemoteMessageModel
+    ) -> TabBarViewController {
         NSStoryboard(name: "TabBar", bundle: nil).instantiateInitialController { coder in
             self.init(
                 coder: coder,
                 tabCollectionViewModel: tabCollectionViewModel,
                 bookmarkManager: bookmarkManager,
+                fireproofDomains: fireproofDomains,
                 activeRemoteMessageModel: activeRemoteMessageModel
             )
         }!
@@ -156,16 +163,18 @@ final class TabBarViewController: NSViewController, TabBarRemoteMessagePresentin
     init?(coder: NSCoder,
           tabCollectionViewModel: TabCollectionViewModel,
           bookmarkManager: BookmarkManager,
+          fireproofDomains: FireproofDomains,
           activeRemoteMessageModel: ActiveRemoteMessageModel,
           visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
+        self.fireproofDomains = fireproofDomains
         let tabBarActiveRemoteMessageModel = TabBarActiveRemoteMessage(activeRemoteMessageModel: activeRemoteMessageModel)
         self.tabBarRemoteMessageViewModel = TabBarRemoteMessageViewModel(activeRemoteMessageModel: tabBarActiveRemoteMessageModel,
                                                                          isFireWindow: tabCollectionViewModel.isBurner)
         self.visualStyle = visualStyleManager.style
         if !tabCollectionViewModel.isBurner, let pinnedTabCollection = tabCollectionViewModel.pinnedTabsManager?.tabCollection {
-            let pinnedTabsViewModel = PinnedTabsViewModel(collection: pinnedTabCollection, bookmarkManager: bookmarkManager)
+            let pinnedTabsViewModel = PinnedTabsViewModel(collection: pinnedTabCollection, fireproofDomains: fireproofDomains, bookmarkManager: bookmarkManager)
             let pinnedTabsView = PinnedTabsView(model: pinnedTabsViewModel)
             self.pinnedTabsViewModel = pinnedTabsViewModel
             self.pinnedTabsView = pinnedTabsView
@@ -1096,7 +1105,7 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
             return
         }
 
-        FireproofDomains.shared.add(domain: host)
+        fireproofDomains.add(domain: host)
     }
 
     private func removeFireproofing(from tab: Tab) {
@@ -1105,7 +1114,7 @@ extension TabBarViewController: TabCollectionViewModelDelegate {
             return
         }
 
-        FireproofDomains.shared.remove(domain: host)
+        fireproofDomains.remove(domain: host)
     }
 
 }
@@ -1156,6 +1165,7 @@ extension TabBarViewController: NSCollectionViewDataSource {
             return tabBarViewItem
         }
 
+        tabBarViewItem.fireproofDomains = fireproofDomains
         tabBarViewItem.delegate = self
         tabBarViewItem.isBurner = tabCollectionViewModel.isBurner
         tabBarViewItem.subscribe(to: tabViewModel)

@@ -95,7 +95,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
          bookmarkManager: BookmarkManager,
          historyCoordinator: HistoryGroupingDataSource,
          emailManager: EmailManager = EmailManager(),
-         fireproofDomains: FireproofDomains = FireproofDomains.shared,
+         fireproofDomains: FireproofDomains,
          passwordManagerCoordinator: PasswordManagerCoordinator,
          vpnFeatureGatekeeper: VPNFeatureGatekeeper,
          subscriptionFeatureAvailability: SubscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(),

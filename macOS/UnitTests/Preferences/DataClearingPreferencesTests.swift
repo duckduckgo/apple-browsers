@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import PixelKit
 import PixelKitTestingUtilities
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
@@ -26,6 +27,12 @@ class MockFireButtonPreferencesPersistor: FireButtonPreferencesPersistor {
     var warnBeforeClearingEnabled: Bool = false
     var loginDetectionEnabled: Bool = false
 
+}
+
+fileprivate extension DataClearingPreferences {
+    convenience init(persistor: FireButtonPreferencesPersistor, pixelFiring: PixelFiring? = nil) {
+        self.init(persistor: persistor, fireproofDomains: MockFireproofDomains(domains: []), faviconManager: FaviconManagerMock(), windowControllersManager: WindowControllersManagerMock())
+    }
 }
 
 class DataClearingPreferencesTests: XCTestCase {

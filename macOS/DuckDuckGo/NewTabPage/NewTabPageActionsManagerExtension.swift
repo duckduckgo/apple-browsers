@@ -32,6 +32,7 @@ extension NewTabPageActionsManager {
         contentBlocking: ContentBlockingProtocol = ContentBlocking.shared,
         activeRemoteMessageModel: ActiveRemoteMessageModel,
         historyCoordinator: HistoryCoordinating,
+        fireproofDomains: URLFireproofStatusProviding,
         privacyStats: PrivacyStatsCollecting,
         protectionsReportModel: NewTabPageProtectionsReportModel,
         freemiumDBPPromotionViewCoordinator: FreemiumDBPPromotionViewCoordinator,
@@ -63,7 +64,10 @@ extension NewTabPageActionsManager {
         )
         let recentActivityModel = NewTabPageRecentActivityModel(
             activityProvider: recentActivityProvider,
-            actionsHandler: DefaultRecentActivityActionsHandler(favoritesHandler: bookmarkManager)
+            actionsHandler: DefaultRecentActivityActionsHandler(
+                favoritesHandler: bookmarkManager,
+                burner: RecentActivityItemBurner(fireproofStatusProvider: fireproofDomains)
+            )
         )
 
         self.init(scriptClients: [

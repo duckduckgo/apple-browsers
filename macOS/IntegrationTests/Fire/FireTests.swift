@@ -242,7 +242,7 @@ final class FireTests: XCTestCase {
 
         let finishedBurningExpectation = expectation(description: "Finished burning")
         fire.burnVisits([],
-                        except: FireproofDomains.shared,
+                        except: Application.appDelegate.fireproofDomains,
                         isToday: true,
                         completion: {
             finishedBurningExpectation.fulfill()
@@ -290,7 +290,7 @@ final class FireTests: XCTestCase {
             Visit(date: Date(), identifier: nil, historyEntry: historyEntries[0]),
             Visit(date: Date(), identifier: nil, historyEntry: historyEntries[1]),
                         ],
-                        except: FireproofDomains.shared,
+                        except: Application.appDelegate.fireproofDomains,
                         isToday: false,
                         completion: {
             finishedBurningExpectation.fulfill()

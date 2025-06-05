@@ -862,7 +862,7 @@ extension SyncPreferences: ManagementDialogModelDelegate {
 
 @MainActor
 extension SyncPreferences: SyncConnectionControllerDelegate {
-    
+
     func controllerWillBeginTransmittingRecoveryKey() async {
         // no-op
     }
@@ -940,7 +940,7 @@ extension SyncPreferences: SyncConnectionControllerDelegate {
     }
 
     private func sendCodeParsingFailedPixel(setupRole: SyncSetupRole) {
-        guard case .receiver(_ , let codeSource) = setupRole, case .pastedCode = codeSource else {
+        guard case .receiver(_, let codeSource) = setupRole, case .pastedCode = codeSource else {
             return
         }
         PixelKit.fire(SyncSetupPixelKitEvent.syncSetupManualCodeEnteredFailed.withoutMacPrefix)

@@ -222,7 +222,7 @@ extension SyncError: CustomNSError {
         case .patchPayloadCompressionFailed: return 29
         case .failedToRemoveAccount: return 30
         case .failedToDecodeSecureStoreData: return 31
-            
+
         case .pollingDidTimeOut: return 35
         }
     }

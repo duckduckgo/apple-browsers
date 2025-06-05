@@ -524,7 +524,7 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
     }
 
     private func sendCodeParsingFailedPixel(setupRole: SyncSetupRole) {
-        guard case .receiver(_ , let codeSource) = setupRole else {
+        guard case .receiver(_, let codeSource) = setupRole else {
             return
         }
 

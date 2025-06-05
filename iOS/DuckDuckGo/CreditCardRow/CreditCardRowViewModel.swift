@@ -42,6 +42,14 @@ struct CreditCardRowViewModel: Identifiable, Hashable {
         return creditCard.title.isEmpty ? type.displayName : creditCard.title
     }
     
+    var compactDisplayTitle: String {
+        if displayTitle.count > 30 {
+            let ellipsis = "..."
+            return String(displayTitle.prefix(30)) + ellipsis
+        }
+        return displayTitle
+    }
+    
     var icon: Image {
         switch type {
         case .amex:

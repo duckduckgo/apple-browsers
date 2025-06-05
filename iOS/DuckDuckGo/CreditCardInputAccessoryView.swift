@@ -270,7 +270,7 @@ class CreditCardInputAccessoryView: UIView {
 
         // Title
         let titleLabel = UILabel()
-        titleLabel.text = card.displayTitle
+        titleLabel.text = card.compactDisplayTitle
         titleLabel.font = UIFont.systemFont(ofSize: 13, weight: .regular)
         titleLabel.textColor = UIColor(designSystemColor: .textPrimary)
         containerView.addSubview(titleLabel)
@@ -326,7 +326,7 @@ class CreditCardInputAccessoryView: UIView {
 
                 expirationLabel.leadingAnchor.constraint(equalTo: verticalLine.trailingAnchor, constant: 6),
                 expirationLabel.centerYAnchor.constraint(equalTo: detailsContainer.centerYAnchor),
-                expirationLabel.trailingAnchor.constraint(equalTo: detailsContainer.trailingAnchor),
+                expirationLabel.trailingAnchor.constraint(lessThanOrEqualTo: detailsContainer.trailingAnchor),
             ])
         }
 

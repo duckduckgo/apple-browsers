@@ -430,7 +430,7 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
     }
 
     // MARK: - Trial Eligibility Update Tests
-    
+
     func testUpdateAvailableProductsTrialEligibilityUpdatesAllProducts() async {
         // Given
         let product1 = MockSubscriptionProduct(

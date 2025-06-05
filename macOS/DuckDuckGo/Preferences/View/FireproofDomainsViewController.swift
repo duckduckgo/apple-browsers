@@ -38,11 +38,11 @@ final class FireproofDomainsViewController: NSViewController {
         self.faviconManager = faviconManager
         super.init(coder: coder)
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     @IBOutlet var tableView: NSTableView!
     @IBOutlet var removeDomainButton: NSButton!
     @IBOutlet var removeAllDomainsButton: NSButton!

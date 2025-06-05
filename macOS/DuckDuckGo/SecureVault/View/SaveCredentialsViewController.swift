@@ -78,11 +78,11 @@ final class SaveCredentialsViewController: NSViewController {
         self.fireproofDomains = fireproofDomains
         super.init(coder: coder)
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     private let backfilledKey = GeneralPixel.AutofillParameterKeys.backfilled
     private let fireproofDomains: FireproofDomains
 

@@ -1,5 +1,5 @@
 //
-//  DownloadsWebViewMock.h
+//  NSException+Catch.m
 //
 //  Copyright © 2021 DuckDuckGo. All rights reserved.
 //
@@ -16,10 +16,17 @@
 //  limitations under the License.
 //
 
-#import <WebKit/WebKit.h>
+#import "include/NSException+Catch.h"
 
-@interface DownloadsWebViewMock : WKWebView
-@property (nonatomic, copy, nullable) id _Nullable  (^startDownloadBlock)(NSURLRequest * _Nullable);
-@property (nonatomic, copy, nullable) id _Nullable  (^resumeDownloadBlock)(NSData * _Nullable);
+@implementation NSException (Catch)
+
++ (NSException * _Nullable)tryBlock:(void (__attribute__((noescape)) ^ _Nonnull)(void))block {
+    @try {
+        block();
+    } @catch (NSException *exception) {
+        return exception;
+    }
+    return nil;
+}
+
 @end
-

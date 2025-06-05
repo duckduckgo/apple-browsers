@@ -19,6 +19,7 @@
 import Cocoa
 import Combine
 import Common
+import PixelKit
 
 @MainActor
 final class MainWindowController: NSWindowController {
@@ -350,6 +351,17 @@ extension MainWindowController: NSWindowDelegate {
     }
 
     func windowDidEnterFullScreen(_ notification: Notification) {
+        guard let window = self.window else { return }
+
+        // Detect split screen vs regular fullscreen mode
+        if window.isApproximatelyHalfScreenWide {
+            // Fire pixel for split screen usage
+            PixelKit.fire(GeneralPixel.windowSplitScreen, frequency: .dailyAndCount)
+        } else {
+            // Fire pixel for regular fullscreen usage
+            PixelKit.fire(GeneralPixel.windowFullscreen, frequency: .dailyAndCount)
+        }
+
         // fix NSToolbarFullScreenWindow occurring beneath the MainWindow
         // https://app.asana.com/0/1177771139624306/1203853030672990/f
         // NSApp should be active at the moment of window ordering otherwise toolbar would disappear on activation

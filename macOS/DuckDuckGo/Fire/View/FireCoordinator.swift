@@ -17,6 +17,7 @@
 //
 
 import Cocoa
+import PixelKit
 
 @MainActor
 final class FireCoordinator {

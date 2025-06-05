@@ -41,8 +41,8 @@ extension Tab: NavigationResponder {
 
     func setupNavigationDelegate() {
         navigationDelegate.setResponders(
-            // AI Chat onboarding navigations handling
-            .weak(nullable: self.aiChatOnboarding),
+            // AI Chat navigations handling
+            .weak(nullable: self.aiChat),
 
             .weak(nullable: self.navigationHotkeyHandler),
             .weak(nullable: self.brokenSiteInfo),

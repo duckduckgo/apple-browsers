@@ -71,5 +71,5 @@ extension AIChatTabExtension: AIChatProtocol, TabExtension {
 }
 
 extension TabExtensions {
-    var aiChatOnboarding: AIChatProtocol? { resolve(AIChatTabExtension.self) }
+    var aiChat: AIChatProtocol? { resolve(AIChatTabExtension.self) }
 }

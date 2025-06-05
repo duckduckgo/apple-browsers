@@ -1180,6 +1180,13 @@ extension Pixel {
         case aiChatSettingsEnabled
         case aiChatSettingsDisabled
 
+        case aiChatOpen
+        case aiChatMetricStartNewConversation
+        case aiChatMetricStartNewConversationButtonClicked
+        case aiChatMetricOpenHistory
+        case aiChatMetricOpenMostRecentHistoryChat
+        case aiChatMetricSentPromptOngoingChat
+
         // MARK: Lifecycle
         case appDidTransitionToUnexpectedState
 
@@ -2309,6 +2316,13 @@ extension Pixel.Event {
         case .aiChatSettingsDisplayed: return "m_aichat_settings_displayed"
         case .aiChatSettingsEnabled: return "m_aichat_settings_enabled"
         case .aiChatSettingsDisabled: return "m_aichat_settings_disabled"
+
+        case .aiChatOpen: return "m_aichat_open"
+        case .aiChatMetricStartNewConversation: return "m_aichat_start_new_conversation"
+        case .aiChatMetricStartNewConversationButtonClicked: return "m_aichat_start_new_conversation_button_clicked"
+        case .aiChatMetricOpenHistory: return "m_aichat_open_history"
+        case .aiChatMetricOpenMostRecentHistoryChat: return "m_aichat_open_most_recent_history_chat"
+        case .aiChatMetricSentPromptOngoingChat: return "m_aichat_sent_prompt_ongoing_chat"
 
         // MARK: Lifecycle
         case .appDidTransitionToUnexpectedState: return "m_debug_app-did-transition-to-unexpected-state-4"

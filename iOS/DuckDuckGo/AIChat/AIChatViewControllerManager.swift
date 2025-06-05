@@ -57,6 +57,7 @@ final class AIChatViewControllerManager {
     private let aiChatSettings: AIChatSettingsProvider
     private var cancellables = Set<AnyCancellable>()
     private var sessionTimer: AIChatSessionTimer?
+    private var pixelMetricHandler: AIChatPixelMetricHandler?
 
     // MARK: - Initialization
 
@@ -83,6 +84,9 @@ final class AIChatViewControllerManager {
                     autoSend: Bool = false,
                     on viewController: UIViewController) {
         downloadsDirectoryHandler.createDownloadsDirectoryIfNeeded()
+
+        pixelMetricHandler = AIChatPixelMetricHandler(timeElapsedInMinutes: sessionTimer?.timeElapsedInMinutes())
+        pixelMetricHandler?.fireOpenAIChat()
 
         /// If we have a query or payload, let's clean the previous session and start fresh
         if query != nil || payload != nil {
@@ -305,7 +309,7 @@ extension AIChatViewControllerManager: AIChatUserScriptDelegate {
     }
 
     func aiChatUserScript(_ userScript: AIChatUserScript, didReceiveMetric metric: AIChatMetric) {
-        print("METRIC \(metric)")
+        pixelMetricHandler?.firePixelWithMetric(metric)
     }
 }
 
@@ -316,5 +320,44 @@ private struct AIChatUserAgentHandler: AIChatUserAgentProviding {
 
     func userAgent(url: URL?) -> String {
         userAgentManager.userAgent(isDesktop: false, url: url)
+    }
+}
+
+struct AIChatPixelMetricHandler {
+    let timeElapsedInMinutes: Int?
+    private let timestampParameterKey = "delta-timestamp-minutes"
+
+    private let metricToEventMap: [AIChatMetricName: Pixel.Event] = [
+        .userDidSubmitPrompt: .aiChatMetricSentPromptOngoingChat,
+        .userDidSubmitFirstPrompt: .aiChatMetricStartNewConversation,
+        .userDidOpenHistory: .aiChatMetricOpenHistory,
+        .userDidSelectFirstHistoryItem: .aiChatMetricOpenMostRecentHistoryChat,
+        .userDidCreateNewChat: .aiChatMetricStartNewConversationButtonClicked
+    ]
+
+    func fireOpenAIChat() {
+        if let params {
+            Pixel.fire(pixel: .aiChatOpen, withAdditionalParameters: params)
+        } else {
+            Pixel.fire(pixel: .aiChatOpen)
+        }
+    }
+
+    var params: [String: String]? {
+        guard let timeElapsed = timeElapsedInMinutes else { return nil }
+        let timeStampParameterValue = "\(timeElapsed)"
+
+        return [timestampParameterKey: timeStampParameterValue]
+    }
+
+    func firePixelWithMetric(_ metric: AIChatMetric) {
+        if let event = metricToEventMap[metric.metricName] {
+            if let params {
+                Pixel.fire(pixel: event, withAdditionalParameters: params)
+            } else {
+                Pixel.fire(pixel: event)
+            }
+
+        }
     }
 }

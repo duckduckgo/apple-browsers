@@ -109,6 +109,7 @@ class CreditCardInputAccessoryView: UIView {
         super.traitCollectionDidChange(previousTraitCollection)
 
         if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
+            gradientLayer = nil
             setupGradientIfNeeded()
         }
     }

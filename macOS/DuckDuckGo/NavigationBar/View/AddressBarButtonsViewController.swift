@@ -89,7 +89,12 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBOutlet weak var privacyShieldButtonWidthConstraint: NSLayoutConstraint!
     @IBOutlet weak var privacyShieldButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var imageButtonLeadingConstraint: NSLayoutConstraint!
-
+    @IBOutlet weak var zoomButtonHeightConstraint: NSLayoutConstraint!
+    @IBOutlet weak var geolocationButtonHeightConstraint: NSLayoutConstraint!
+    @IBOutlet weak var microphoneButtonHeightConstraint: NSLayoutConstraint!
+    @IBOutlet weak var cameraButtonHeightConstraint: NSLayoutConstraint!
+    @IBOutlet weak var popupsButtonHeightConstraint: NSLayoutConstraint!
+    @IBOutlet weak var externalSchemeButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet private weak var permissionButtons: NSView!
     @IBOutlet weak var cameraButton: PermissionButton! {
         didSet {
@@ -400,6 +405,12 @@ final class AddressBarButtonsViewController: NSViewController {
         aiChatButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
         privacyShieldButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
         privacyShieldButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        zoomButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        geolocationButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        microphoneButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        cameraButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        popupsButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        externalSchemeButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
     }
 
     private func setupButtonIcons() {

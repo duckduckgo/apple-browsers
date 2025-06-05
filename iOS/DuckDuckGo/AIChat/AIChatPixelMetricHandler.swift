@@ -35,6 +35,7 @@ final class AIChatPixelMetricHandler: AIChatPixelMetricHandling {
     // MARK: - Private Properties
 
     private let timeElapsedInMinutes: Int?
+    private let pixelFiring: PixelFiring.Type
     private let timestampParameterKey = "delta-timestamp-minutes"
 
     private let metricToEventMap: [AIChatMetricName: Pixel.Event] = [
@@ -47,18 +48,16 @@ final class AIChatPixelMetricHandler: AIChatPixelMetricHandling {
 
     // MARK: - Initialization
 
-    init(timeElapsedInMinutes: Int?) {
+    init(timeElapsedInMinutes: Int?, pixelFiring: PixelFiring.Type = Pixel.self) {
         self.timeElapsedInMinutes = timeElapsedInMinutes
+        self.pixelFiring = pixelFiring
     }
 
     // MARK: - AIChatPixelMetricHandling
 
     func fireOpenAIChat() {
-        if let parameters = timestampParameters {
-            Pixel.fire(pixel: .aiChatOpen, withAdditionalParameters: parameters)
-        } else {
-            Pixel.fire(pixel: .aiChatOpen)
-        }
+        let parameters = timestampParameters ?? [:]
+        pixelFiring.fire(.aiChatOpen, withAdditionalParameters: parameters)
     }
 
     func firePixelWithMetric(_ metric: AIChatMetric) {
@@ -66,11 +65,8 @@ final class AIChatPixelMetricHandler: AIChatPixelMetricHandling {
             return
         }
 
-        if let parameters = timestampParameters {
-            Pixel.fire(pixel: event, withAdditionalParameters: parameters)
-        } else {
-            Pixel.fire(pixel: event)
-        }
+        let parameters = timestampParameters ?? [:]
+        pixelFiring.fire(event, withAdditionalParameters: parameters)
     }
 
     // MARK: - Private Helpers

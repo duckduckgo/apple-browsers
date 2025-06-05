@@ -28,4 +28,8 @@ public enum AIChatMetricName: String, Codable {
 
 public struct AIChatMetric: Codable {
     public let metricName: AIChatMetricName
+
+     public init(metricName: AIChatMetricName) {
+         self.metricName = metricName
+     }
 }

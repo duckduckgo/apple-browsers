@@ -20,6 +20,20 @@
                ReferencedContainer = "container:DuckDuckGo-iOS.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
+         <BuildActionEntry
+            buildForTesting = "YES"
+            buildForRunning = "NO"
+            buildForProfiling = "NO"
+            buildForArchiving = "NO"
+            buildForAnalyzing = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "98E5643D2DE8DDA200E6E75F"
+               BuildableName = "SharedStateTests.xctest"
+               BlueprintName = "SharedStateTests"
+               ReferencedContainer = "container:DuckDuckGo-iOS.xcodeproj">
+            </BuildableReference>
+         </BuildActionEntry>
       </BuildActionEntries>
    </BuildAction>
    <TestAction
@@ -116,10 +130,30 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
+               BlueprintIdentifier = "98E5643D2DE8DDA200E6E75F"
+               BuildableName = "SharedStateTests.xctest"
+               BlueprintName = "SharedStateTests"
+               ReferencedContainer = "container:DuckDuckGo-iOS.xcodeproj">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
+               BlueprintIdentifier = "OnboardingTests"
+               BuildableName = "OnboardingTests"
+               BlueprintName = "OnboardingTests"
+               ReferencedContainer = "container:../SharedPackages/Onboarding">
+            </BuildableReference>
+         </TestableReference>
+         <TestableReference
+            skipped = "NO">
+            <BuildableReference
+               BuildableIdentifier = "primary"
                BlueprintIdentifier = "AIChatTests"
                BuildableName = "AIChatTests"
                BlueprintName = "AIChatTests"
-               ReferencedContainer = "container:LocalPackages/AIChat">
+               ReferencedContainer = "container:../SharedPackages/AIChat">
             </BuildableReference>
          </TestableReference>
       </Testables>

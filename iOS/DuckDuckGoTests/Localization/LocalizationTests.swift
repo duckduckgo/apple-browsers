@@ -21,6 +21,7 @@ import XCTest
 
 final class LocalizationTests: XCTestCase {
 
+#if targetEnvironment(simulator)
     func testNoDuplicateLocalizationKeys() throws {
         // 1. Extract Root URL
         let testFileURL = URL(fileURLWithPath: #file)
@@ -73,4 +74,5 @@ final class LocalizationTests: XCTestCase {
             XCTFail(report)
         }
     }
+#endif
 }

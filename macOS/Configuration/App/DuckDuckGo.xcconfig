@@ -26,6 +26,8 @@ CODE_SIGN_IDENTITY[config=Debug][sdk=macosx*] = Apple Development
 
 FEATURE_FLAGS = FEEDBACK SPARKLE STRIPE
 
+INFOPLIST_FILE = DuckDuckGo/Info.plist
+
 PRODUCT_NAME_PREFIX = DuckDuckGo
 
 PROVISIONING_PROFILE_SPECIFIER[sdk=macosx*] =

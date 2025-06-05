@@ -19,6 +19,7 @@
 import Cocoa
 import Combine
 import Common
+import PixelKit
 
 @MainActor
 final class MainWindowController: NSWindowController {
@@ -27,7 +28,7 @@ final class MainWindowController: NSWindowController {
     private var cancellables: Set<AnyCancellable> = []
     private static var knownFullScreenMouseDetectionWindows = Set<NSValue>()
     let fireWindowSession: FireWindowSession?
-    private let appearancePreferences: AppearancePreferences = .shared
+    private let appearancePreferences: AppearancePreferences = NSApp.delegateTyped.appearancePreferences
     let fullscreenController = FullscreenController()
 
     var mainViewController: MainViewController {
@@ -40,16 +41,23 @@ final class MainWindowController: NSWindowController {
         return window?.standardWindowButton(.closeButton)?.superview
     }
 
-    init(window: NSWindow? = nil, mainViewController: MainViewController, popUp: Bool, fireWindowSession: FireWindowSession? = nil, fireViewModel: FireViewModel? = nil) {
-        let size = mainViewController.view.frame.size
-        let moveToCenter = CGAffineTransform(translationX: ((NSScreen.main?.frame.width ?? 1024) - size.width) / 2,
-                                             y: ((NSScreen.main?.frame.height ?? 790) - size.height) / 2)
-        let frame = NSRect(origin: (NSScreen.main?.frame.origin ?? .zero).applying(moveToCenter),
-                           size: size)
+    @MainActor
+    init(window: NSWindow? = nil,
+         mainViewController: MainViewController,
+         popUp: Bool,
+         fireWindowSession: FireWindowSession? = nil,
+         fireViewModel: FireViewModel? = nil) {
 
-        assert(window == nil || [.unitTests, .integrationTests].contains(AppVersion.runType), "Window should not be set in non-test environment")
-        let window = window ?? (popUp ? PopUpWindow(frame: frame) : MainWindow(frame: frame))
+        // Compute initial window frame
+        let frame = InitialWindowFrameProvider.initialFrame()
+
+        assert(window == nil || [.unitTests, .integrationTests].contains(AppVersion.runType),
+               "Window should not be set in non-test environment")
+        let window = window ?? (popUp
+            ? PopUpWindow(frame: frame)
+            : MainWindow(frame: frame))
         window.contentViewController = mainViewController
+        window.setContentSize(frame.size)
         self.fireViewModel = fireViewModel ?? FireCoordinator.fireViewModel
 
         assert(!mainViewController.isBurner || fireWindowSession != nil)
@@ -250,7 +258,7 @@ final class MainWindowController: NSWindowController {
     }
 
     func orderWindowBack(_ sender: Any?) {
-        if let lastKeyWindow = WindowControllersManager.shared.lastKeyMainWindowController?.window {
+        if let lastKeyWindow = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window {
             window?.order(.below, relativeTo: lastKeyWindow.windowNumber)
         } else {
             window?.orderFront(sender)
@@ -259,7 +267,7 @@ final class MainWindowController: NSWindowController {
     }
 
     private func register() {
-        WindowControllersManager.shared.register(self)
+        Application.appDelegate.windowControllersManager.register(self)
     }
 
 }
@@ -274,7 +282,7 @@ extension MainWindowController: NSWindowDelegate {
         mainViewController.windowDidBecomeKey()
 
         if !mainWindow.isPopUpWindow {
-            WindowControllersManager.shared.lastKeyMainWindowController = self
+            Application.appDelegate.windowControllersManager.lastKeyMainWindowController = self
         }
 
 #if !APPSTORE && WEB_EXTENSIONS_ENABLED
@@ -343,6 +351,17 @@ extension MainWindowController: NSWindowDelegate {
     }
 
     func windowDidEnterFullScreen(_ notification: Notification) {
+        guard let window = self.window else { return }
+
+        // Detect split screen vs regular fullscreen mode
+        if window.isApproximatelyHalfScreenWide {
+            // Fire pixel for split screen usage
+            PixelKit.fire(GeneralPixel.windowSplitScreen, frequency: .dailyAndCount)
+        } else {
+            // Fire pixel for regular fullscreen usage
+            PixelKit.fire(GeneralPixel.windowFullscreen, frequency: .dailyAndCount)
+        }
+
         // fix NSToolbarFullScreenWindow occurring beneath the MainWindow
         // https://app.asana.com/0/1177771139624306/1203853030672990/f
         // NSApp should be active at the moment of window ordering otherwise toolbar would disappear on activation
@@ -395,7 +414,7 @@ extension MainWindowController: NSWindowDelegate {
         // Because it's also the delegate, deinit within this method caused crash
         // Push the Window Controller into current autorelease pool so it‘s released when the event loop pass ends
         _=Unmanaged.passRetained(self).autorelease()
-        WindowControllersManager.shared.unregister(self)
+        Application.appDelegate.windowControllersManager.unregister(self)
 
 #if !APPSTORE && WEB_EXTENSIONS_ENABLED
         if #available(macOS 15.4, *) {
@@ -494,6 +513,7 @@ fileprivate extension NavigationBarViewController {
     var controlsForUserPrevention: [NSControl?] {
         return [homeButton,
                 optionsButton,
+                overflowButton,
                 bookmarkListButton,
                 passwordManagementButton,
                 addressBarViewController?.addressBarTextField,

@@ -28,7 +28,7 @@ struct SettingsAIChatView: View {
         List {
 
             VStack(alignment: .center) {
-                Image("SettingsAIChatHero")
+                Image(.settingsAIChatHero)
                     .padding(.top, -20)
 
                 Text(UserText.aiChatFeatureName)
@@ -45,18 +45,35 @@ struct SettingsAIChatView: View {
             .listRowBackground(Color.clear)
 
             Section {
-                SettingsCellView(label: UserText.aiChatSettingsEnableBrowsingMenuToggle,
-                                 accessory: .toggle(isOn: viewModel.aiChatBrowsingMenuEnabledBinding))
-
-                SettingsCellView(label: UserText.aiChatSettingsEnableAddressBarToggle,
-                                 accessory: .toggle(isOn: viewModel.aiChatAddressBarEnabledBinding))
-
-                SettingsCellView(label: UserText.aiChatSettingsEnableVoiceSearchToggle,
-                                 accessory: .toggle(isOn: viewModel.aiChatVoiceSearchEnabledBinding))
-
-                SettingsCellView(label: UserText.aiChatSettingsEnableTabSwitcherToggle,
-                                 accessory: .toggle(isOn: viewModel.aiChatTabSwitcherEnabledBinding))
+                SettingsCellView(label: UserText.settingsEnableAiChat,
+                                 accessory: .toggle(isOn: viewModel.isAiChatEnabledBinding))
             }
+
+            if viewModel.isAiChatEnabledBinding.wrappedValue {
+                Section(header: Text(UserText.settingsAiChatShortcuts)) {
+                    SettingsCellView(label: UserText.aiChatSettingsEnableBrowsingMenuToggle,
+                                     accessory: .toggle(isOn: viewModel.aiChatBrowsingMenuEnabledBinding))
+
+                    SettingsCellView(label: UserText.aiChatSettingsEnableAddressBarToggle,
+                                     accessory: .toggle(isOn: viewModel.aiChatAddressBarEnabledBinding))
+
+                    SettingsCellView(label: UserText.aiChatSettingsEnableVoiceSearchToggle,
+                                     accessory: .toggle(isOn: viewModel.aiChatVoiceSearchEnabledBinding))
+
+                    SettingsCellView(label: UserText.aiChatSettingsEnableTabSwitcherToggle,
+                                     accessory: .toggle(isOn: viewModel.aiChatTabSwitcherEnabledBinding))
+                }
+
+                if viewModel.experimentalAIChatManager.isExperimentalAIChatFeatureFlagEnabled {
+                    Section {
+                        SettingsCellView(label: UserText.settingsAIChatExperimentalMainSwitch,
+                                         accessory: .toggle(isOn: viewModel.aiChatExperimentalBinding))
+                    } header: {
+                        Text(UserText.settingsAIChatExperimentalSection)
+                    }
+                }
+            }
+
         }.applySettingsListModifiers(title: UserText.aiChatFeatureName,
                                      displayMode: .inline,
                                      viewModel: viewModel)

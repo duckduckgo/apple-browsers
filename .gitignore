@@ -54,3 +54,8 @@ release/
 DerivedData/
 xcodebuild.log
 tmp
+
+#VSCode
+.windsurf/
+.vscode/*
+/buildServer.json

@@ -24,13 +24,18 @@ final class DefaultFavoritesActionsHandler: FavoritesActionsHandling {
 
     let bookmarkManager: BookmarkManager
 
-    init(bookmarkManager: BookmarkManager = LocalBookmarkManager.shared) {
+    init(bookmarkManager: BookmarkManager) {
         self.bookmarkManager = bookmarkManager
     }
 
     @MainActor
-    func open(_ url: URL, sender: LinkOpenSender, target: LinkOpenTarget, in window: NSWindow?) {
-        NewTabPageLinkOpener.open(url, source: .bookmark, sender: sender, target: target, sourceWindow: window)
+    func open(_ url: URL, sender: NewTabPage.LinkOpenSender, target: NewTabPage.LinkOpenTarget, in window: NSWindow?) {
+        open(url, sender: sender, target: target, setBurner: nil, in: window)
+    }
+
+    @MainActor
+    func open(_ url: URL, sender: LinkOpenSender, target: LinkOpenTarget, setBurner: Bool?, in window: NSWindow?) {
+        NewTabPageLinkOpener.open(url, source: .bookmark, setBurner: setBurner, sender: sender, target: target, sourceWindow: window)
     }
 
     func copyLink(_ favorite: Bookmark) {
@@ -49,13 +54,13 @@ final class DefaultFavoritesActionsHandler: FavoritesActionsHandling {
     @MainActor
     func addNewFavorite(in window: NSWindow?) {
         guard let window else { return }
-        BookmarksDialogViewFactory.makeAddFavoriteView().show(in: window)
+        BookmarksDialogViewFactory.makeAddFavoriteView(bookmarkManager: bookmarkManager).show(in: window)
     }
 
     @MainActor
     func edit(_ favorite: Bookmark, in window: NSWindow?) {
         guard let window else { return }
-        BookmarksDialogViewFactory.makeEditBookmarkView(bookmark: favorite).show(in: window)
+        BookmarksDialogViewFactory.makeEditBookmarkView(bookmark: favorite, bookmarkManager: bookmarkManager).show(in: window)
     }
 
     func move(_ bookmarkID: String, toIndex index: Int) {

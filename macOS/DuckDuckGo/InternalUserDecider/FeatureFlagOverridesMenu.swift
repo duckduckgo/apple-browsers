@@ -58,6 +58,7 @@ final class FeatureFlagOverridesMenu: NSMenu {
     private func featureFlagMenuItems() -> [NSMenuItem] {
         return FeatureFlag.allCases
             .filter { $0.supportsLocalOverriding && $0.cohortType == nil }
+            .sorted(by: { $0.rawValue.caseInsensitiveCompare($1.rawValue) == .orderedAscending })
             .map { flag in
                 NSMenuItem(
                     title: menuItemTitle(for: flag),

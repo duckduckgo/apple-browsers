@@ -32,6 +32,7 @@ class SwipeTabsCoordinator: NSObject {
     weak var tabPreviewsSource: TabPreviewsSource!
     weak var appSettings: AppSettings!
     private let omnibarDependencies: OmnibarDependencyProvider
+    private let themingProperties: ExperimentalThemingProperties
 
     let selectTab: (Int) -> Void
     let newTab: () -> Void
@@ -62,7 +63,8 @@ class SwipeTabsCoordinator: NSObject {
          omnibarAccessoryHandler: OmnibarAccessoryHandler,
          selectTab: @escaping (Int) -> Void,
          newTab: @escaping () -> Void,
-         onSwipeStarted: @escaping () -> Void) {
+         onSwipeStarted: @escaping () -> Void,
+         themingProperties: ExperimentalThemingProperties = ThemeManager.shared.properties) {
         
         self.coordinator = coordinator
         self.tabPreviewsSource = tabPreviewsSource
@@ -72,10 +74,12 @@ class SwipeTabsCoordinator: NSObject {
         self.selectTab = selectTab
         self.newTab = newTab
         self.onSwipeStarted = onSwipeStarted
+        self.themingProperties = themingProperties
                 
         super.init()
         
-        collectionView.register(OmniBarCell.self, forCellWithReuseIdentifier: "omnibar")
+        collectionView.register(OmniBarCell.self, forCellWithReuseIdentifier: Constant.omniBarReuseIdentifier)
+        collectionView.register(OmniBarCell.self, forCellWithReuseIdentifier: Constant.templateReuseIdentifier)
         collectionView.isPagingEnabled = true
         collectionView.delegate = self
         collectionView.dataSource = self
@@ -109,6 +113,10 @@ class SwipeTabsCoordinator: NSObject {
     weak var preview: UIView?
     weak var currentView: UIView?
 
+    private var omniBarHeight: CGFloat {
+        themingProperties.isExperimentalThemingEnabled ? UpdatedOmniBarView.expectedHeight : DefaultOmniBarView.expectedHeight
+    }
+
     func invalidateLayout() {
         updateLayout()
         scrollToCurrent()
@@ -118,7 +126,6 @@ class SwipeTabsCoordinator: NSObject {
     }
 
     private func updateLayout() {
-        let omniBarHeight: CGFloat = ExperimentalThemingManager().isExperimentalThemingEnabled ? UpdatedOmniBarView.expectedHeight : DefaultOmniBarView.expectedHeight
         let layout = collectionView.collectionViewLayout as? UICollectionViewFlowLayout
         layout?.itemSize = CGSize(width: coordinator.superview.frame.size.width, height: omniBarHeight)
         layout?.minimumLineSpacing = 0
@@ -167,6 +174,10 @@ class SwipeTabsCoordinator: NSObject {
         }
     }
 
+    private struct Constant {
+        static let omniBarReuseIdentifier = "omniBar"
+        static let templateReuseIdentifier = "template"
+    }
 }
 
 // MARK: UICollectionViewDelegate
@@ -251,7 +262,7 @@ extension SwipeTabsCoordinator: UICollectionViewDelegate {
         }
 
         preview?.frame.origin.x = coordinator.contentContainer.frame.width * CGFloat(modifier)
-        if ExperimentalThemingManager().isRoundedCornersTreatmentEnabled {
+        if themingProperties.isRoundedCornersTreatmentEnabled {
             preview?.clipsToBounds = true
             preview?.layer.cornerRadius = 12
         }
@@ -361,17 +372,19 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "omnibar", for: indexPath) as? OmniBarCell else {
+        let isCurrentTab = tabsModel.currentIndex == indexPath.row || !isEnabled
+        let reuseIdentifier = isCurrentTab ? Constant.omniBarReuseIdentifier : Constant.templateReuseIdentifier
+
+        guard let cell = collectionView.dequeueReusableCell(withReuseIdentifier: reuseIdentifier, for: indexPath) as? OmniBarCell else {
             fatalError("Not \(OmniBarCell.self)")
         }
 
-        removeControllerForCell(cell)
-
-        if !isEnabled || tabsModel.currentIndex == indexPath.row {
+        if isCurrentTab {
             cell.omniBar = coordinator.omniBar
         } else {
             // Strong reference while we use the omnibar
-            let controller = OmniBarFactory.createOmniBarViewController(with: omnibarDependencies)
+            let controller = cell.controller ?? OmniBarFactory.createOmniBarViewController(with: omnibarDependencies)
+            let url = tabsModel.safeGetTabAt(indexPath.row)?.link?.url
 
             coordinator.parentController?.addChild(controller)
 
@@ -382,28 +395,23 @@ extension SwipeTabsCoordinator: UICollectionViewDataSource {
 
             if let url = tabsModel.safeGetTabAt(indexPath.row)?.link?.url {
                 cell.omniBar?.startBrowsing()
-                cell.omniBar?.refreshText(forUrl: url, forceFullURL: appSettings.showFullSiteAddress)
-                cell.omniBar?.resetPrivacyIcon(for: url)
                 cell.omniBar?.updateAccessoryType(omnibarAccessoryHandler.omnibarAccessory(for: url))
+                cell.omniBar?.resetPrivacyIcon(for: url)
+            } else {
+                cell.omniBar?.stopBrowsing()
+                // It's always chat just now (this might change in the future) and this prevents a flash when on new tab
+                cell.omniBar?.updateAccessoryType(.chat)
             }
 
+            cell.omniBar?.refreshText(forUrl: url, forceFullURL: appSettings.showFullSiteAddress)
+
             controller.didMove(toParent: coordinator.parentController)
+            cell.controller = controller
         }
 
         cell.setNeedsUpdateConstraints()
 
         return cell
-    }
-
-    private func removeControllerForCell(_ cell: OmniBarCell) {
-        if let existingOmniBarView = cell.omniBar?.barView,
-           let backingVC = coordinator.parentController?.children.first(where: { $0.view === existingOmniBarView }) {
-
-            backingVC.willMove(toParent: nil)
-            existingOmniBarView.removeFromSuperview()
-            cell.omniBar = nil
-            backingVC.removeFromParent()
-        }
     }
 
 }
@@ -412,8 +420,12 @@ class OmniBarCell: UICollectionViewCell {
 
     weak var coordinator: MainViewCoordinator?
     var roundCornersMaskView: RoundedCornersMaskView?
+    var controller: OmniBarViewController?
 
     weak var omniBar: OmniBar? {
+        willSet {
+            omniBar?.barView.removeFromSuperview()
+        }
         didSet {
             guard let omniBarView = omniBar?.barView else { return }
 
@@ -434,7 +446,7 @@ class OmniBarCell: UICollectionViewCell {
     func addMaskViewIfNeeded() {
         guard let omniBarView = omniBar?.barView else { return }
 
-        if ExperimentalThemingManager().isRoundedCornersTreatmentEnabled,
+        if ThemeManager.shared.properties.isRoundedCornersTreatmentEnabled,
            AppDependencyProvider.shared.appSettings.currentAddressBarPosition == .bottom,
            isPortrait {
             let maskView = RoundedCornersMaskView(cornerRadius: 12.0,
@@ -453,6 +465,11 @@ class OmniBarCell: UICollectionViewCell {
             bringSubviewToFront(maskView)
                 
         }
+    }
+
+    deinit {
+        controller?.removeFromParent()
+        controller = nil
     }
 }
 

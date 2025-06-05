@@ -48,4 +48,19 @@ final class BrokenSiteReporterTests: XCTestCase {
 
         waitForExpectations(timeout: 3)
     }
+
+    func testReportContainsExperimentData() throws {
+        let keyValueStore = MockKeyValueStore()
+        let expectation = expectation(description: "Pixel sent")
+        let reporter = BrokenSiteReporter(pixelHandler: { parameters in
+            XCTAssertTrue(parameters["contentScopeExperiments"]!.contains("experiment1:control"))
+            XCTAssertTrue(parameters["contentScopeExperiments"]!.contains("experiment2:treatment"))
+            print(parameters)
+            expectation.fulfill()
+        }, keyValueStoring: keyValueStore)
+
+        try reporter.report(BrokenSiteReportMocks.report, reportMode: .regular)
+
+        waitForExpectations(timeout: 3)
+    }
 }

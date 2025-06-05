@@ -30,17 +30,19 @@ final class BookmarkOutlineCellView: NSTableCellView {
         NSUserInterfaceItemIdentifier("\(mode)_\(self.className())")
     }
 
-    static let sizingCell: BookmarkOutlineCellView = {
-        let cell = BookmarkOutlineCellView(identifier: BookmarkOutlineCellView.sizingCellIdentifier)
+    static func sizingCell(visualStyle: VisualStyleProviding) -> BookmarkOutlineCellView {
+        let cell = BookmarkOutlineCellView(identifier: BookmarkOutlineCellView.sizingCellIdentifier, style: visualStyle)
         cell.highlight = true // include menu button width
         return cell
-    }()
+    }
 
     static let rowHeight: CGFloat = 28
     private enum Constants {
         static let minUrlLabelWidth: CGFloat = 42
         static let minWidth: CGFloat = 75
         static let extraWidth: CGFloat = 6
+        static let faviconWidth: CGFloat = 16
+        static let menuWidth: CGFloat = 28
     }
 
     private lazy var faviconImageView = NSImageView()
@@ -51,6 +53,7 @@ final class BookmarkOutlineCellView: NSTableCellView {
     private lazy var favoriteImageView = NSImageView()
 
     private var leadingConstraint = NSLayoutConstraint()
+    private var faviconImageWidthConstraint = NSLayoutConstraint()
 
     var highlight = false {
         didSet {
@@ -75,7 +78,10 @@ final class BookmarkOutlineCellView: NSTableCellView {
 
     weak var delegate: BookmarkOutlineCellViewDelegate?
 
-    init(identifier: NSUserInterfaceItemIdentifier) {
+    private let visualStyle: VisualStyleProviding
+
+    init(identifier: NSUserInterfaceItemIdentifier, style: VisualStyleProviding) {
+        self.visualStyle = style
         super.init(frame: .zero)
         self.identifier = identifier
         setupUI()
@@ -148,10 +154,11 @@ final class BookmarkOutlineCellView: NSTableCellView {
 
     private func setupLayout() {
         leadingConstraint = faviconImageView.leadingAnchor.constraint(equalTo: leadingAnchor, constant: 5)
+        faviconImageWidthConstraint = faviconImageView.widthAnchor.constraint(equalToConstant: Constants.faviconWidth)
 
         NSLayoutConstraint.activate([
             faviconImageView.heightAnchor.constraint(equalToConstant: 16),
-            faviconImageView.widthAnchor.constraint(equalToConstant: 16),
+            faviconImageWidthConstraint,
             leadingConstraint,
             faviconImageView.centerYAnchor.constraint(equalTo: centerYAnchor),
 
@@ -175,7 +182,7 @@ final class BookmarkOutlineCellView: NSTableCellView {
             menuButton.trailingAnchor.constraint(equalTo: trailingAnchor),
             menuButton.topAnchor.constraint(equalTo: topAnchor),
             menuButton.bottomAnchor.constraint(equalTo: bottomAnchor),
-            menuButton.widthAnchor.constraint(equalToConstant: 28),
+            menuButton.widthAnchor.constraint(equalToConstant: Constants.menuWidth),
 
             favoriteImageView.centerYAnchor.constraint(equalTo: titleLabel.centerYAnchor),
             favoriteImageView.trailingAnchor.constraint(equalTo: menuButton.trailingAnchor),
@@ -213,7 +220,7 @@ final class BookmarkOutlineCellView: NSTableCellView {
             titleLabel.setContentCompressionResistancePriority(.init(300), for: .horizontal)
             titleLabel.setContentHuggingPriority(.init(301), for: .vertical)
             urlLabel.setContentCompressionResistancePriority(.init(200), for: .horizontal)
-            countLabel.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+            countLabel.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
 
         } else {
             faviconImageView.setContentCompressionResistancePriority(.required, for: .horizontal)
@@ -251,6 +258,24 @@ final class BookmarkOutlineCellView: NSTableCellView {
             titleLabel.textColor = .controlTextColor
             urlLabel.textColor = .secondaryLabelColor
         }
+        updateUIAtNarrowWidths()
+    }
+
+    private func updateUIAtNarrowWidths() {
+        // Hide cell contents if menu button is visible
+        // and cell is too small to show at least menu and favicon without overlap.
+        // Skip adjustments until the view is on a window to not affect bookmarks bar popovers sizing.
+        guard window != nil, frame.width < Constants.menuWidth + Constants.faviconWidth else {
+            return
+        }
+
+        faviconImageWidthConstraint.constant = menuButton.isShown ? 0 : Constants.faviconWidth
+        titleLabel.widthAnchor.constraint(equalToConstant: 0)
+            .autoDeactivatedWhenViewIsHidden(menuButton)
+        urlLabel.widthAnchor.constraint(equalToConstant: 0)
+            .autoDeactivatedWhenViewIsHidden(menuButton)
+        countLabel.widthAnchor.constraint(equalToConstant: 0)
+            .autoDeactivatedWhenViewIsHidden(menuButton)
     }
 
     override func layout() {
@@ -261,6 +286,8 @@ final class BookmarkOutlineCellView: NSTableCellView {
             urlLabel.stringValue = ""
             urlLabel.isHidden = true
         }
+
+        updateUIAtNarrowWidths()
     }
 
     @objc private func cellMenuButtonClicked() {
@@ -269,7 +296,7 @@ final class BookmarkOutlineCellView: NSTableCellView {
 
     // MARK: - Public
 
-    static func preferredContentWidth(for object: Any?) -> CGFloat {
+    static func preferredContentWidth(for object: Any?, visualStyle: VisualStyleProviding) -> CGFloat {
         guard let representedObject = (object as? BookmarkNode)?.representedObject ?? object else { return 0 }
         let extraWidth: CGFloat
         let minWidth: CGFloat
@@ -283,6 +310,7 @@ final class BookmarkOutlineCellView: NSTableCellView {
         default:
             return 0
         }
+        let sizingCell = sizingCell(visualStyle: visualStyle)
         sizingCell.frame = .zero
         sizingCell.update(from: representedObject)
         sizingCell.layoutSubtreeIfNeeded()
@@ -307,7 +335,7 @@ final class BookmarkOutlineCellView: NSTableCellView {
     }
 
     func update(from bookmark: Bookmark, isSearch: Bool = false, showURL: Bool) {
-        faviconImageView.image = bookmark.favicon(.small) ?? .bookmarkDefaultFavicon
+        faviconImageView.image = bookmark.favicon(.small) ?? visualStyle.iconsProvider.bookmarksIconsProvider.bookmarkColorIcon
         faviconImageView.isHidden = false
         titleLabel.stringValue = bookmark.title
         titleLabel.isEnabled = true
@@ -330,7 +358,7 @@ final class BookmarkOutlineCellView: NSTableCellView {
     }
 
     func update(from folder: BookmarkFolder, isSearch: Bool = false) {
-        faviconImageView.image = .folder
+        faviconImageView.image = visualStyle.iconsProvider.bookmarksIconsProvider.bookmarkFolderColorIcon
         faviconImageView.isHidden = false
         titleLabel.stringValue = folder.title
         titleLabel.isEnabled = true
@@ -401,17 +429,17 @@ extension BookmarkOutlineCellView {
             translatesAutoresizingMaskIntoConstraints = true
 
             let cells = [
-                BookmarkOutlineCellView(identifier: .init("")),
-                BookmarkOutlineCellView(identifier: .init("")),
-                BookmarkOutlineCellView(identifier: .init("")),
-                BookmarkOutlineCellView(identifier: BookmarkOutlineCellView.identifier(for: .bookmarksMenu)),
-                BookmarkOutlineCellView(identifier: .init("")),
-                BookmarkOutlineCellView(identifier: .init("")),
-                BookmarkOutlineCellView(identifier: .init("")),
-                BookmarkOutlineCellView(identifier: BookmarkOutlineCellView.identifier(for: .bookmarksMenu)),
-                BookmarkOutlineCellView(identifier: BookmarkOutlineCellView.identifier(for: .bookmarksMenu)),
-                BookmarkOutlineCellView(identifier: .init("")),
-                BookmarkOutlineCellView(identifier: .init("")),
+                BookmarkOutlineCellView(identifier: .init(""), style: VisualStyle.current),
+                BookmarkOutlineCellView(identifier: .init(""), style: VisualStyle.current),
+                BookmarkOutlineCellView(identifier: .init(""), style: VisualStyle.current),
+                BookmarkOutlineCellView(identifier: BookmarkOutlineCellView.identifier(for: .bookmarksMenu), style: VisualStyle.current),
+                BookmarkOutlineCellView(identifier: .init(""), style: VisualStyle.current),
+                BookmarkOutlineCellView(identifier: .init(""), style: VisualStyle.current),
+                BookmarkOutlineCellView(identifier: .init(""), style: VisualStyle.current),
+                BookmarkOutlineCellView(identifier: BookmarkOutlineCellView.identifier(for: .bookmarksMenu), style: VisualStyle.current),
+                BookmarkOutlineCellView(identifier: BookmarkOutlineCellView.identifier(for: .bookmarksMenu), style: VisualStyle.current),
+                BookmarkOutlineCellView(identifier: .init(""), style: VisualStyle.current),
+                BookmarkOutlineCellView(identifier: .init(""), style: VisualStyle.current),
             ]
 
             let stackView = NSStackView(views: cells as [NSView])

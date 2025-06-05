@@ -51,7 +51,9 @@ class TabViewController: UIViewController {
         static let secGPCHeader = "Sec-GPC"
         static let navigationExpectationInterval = 3.0
     }
-    
+
+    private lazy var borderView = TabBorderView()
+
     @IBOutlet private(set) weak var error: UIView!
     @IBOutlet private(set) weak var errorInfoImage: UIImageView!
     @IBOutlet private(set) weak var errorHeader: UILabel!
@@ -94,6 +96,15 @@ class TabViewController: UIViewController {
         webView.isLoading && !wasLoadingStoppedExternally
     }
 
+    private let themingProperties: ExperimentalThemingProperties
+    private var isExperimentalThemingEnabled: Bool {
+        themingProperties.isExperimentalThemingEnabled
+    }
+    
+    private var isRounderCornersEnabled: Bool {
+        themingProperties.isRoundedCornersTreatmentEnabled
+    }
+
     var openedByPage = false
     weak var openingTab: TabViewController? {
         didSet {
@@ -120,6 +131,7 @@ class TabViewController: UIViewController {
     let appSettings: AppSettings
 
     var featureFlagger: FeatureFlagger
+    let contentScopeExperimentsManager: ContentScopeExperimentsManaging
     let subscriptionCookieManager: SubscriptionCookieManaging
     private lazy var internalUserDecider = AppDependencyProvider.shared.internalUserDecider
 
@@ -344,6 +356,7 @@ class TabViewController: UIViewController {
                                    contextualOnboardingLogic: ContextualOnboardingLogic,
                                    onboardingPixelReporter: OnboardingCustomInteractionPixelReporting,
                                    featureFlagger: FeatureFlagger,
+                                   contentScopeExperimentManager: ContentScopeExperimentsManaging,
                                    subscriptionCookieManager: SubscriptionCookieManaging,
                                    textZoomCoordinator: TextZoomCoordinating,
                                    websiteDataManager: WebsiteDataManaging,
@@ -365,6 +378,7 @@ class TabViewController: UIViewController {
                               contextualOnboardingLogic: contextualOnboardingLogic,
                               onboardingPixelReporter: onboardingPixelReporter,
                               featureFlagger: featureFlagger,
+                              contentScopeExperimentManager: contentScopeExperimentManager,
                               subscriptionCookieManager: subscriptionCookieManager,
                               textZoomCoordinator: textZoomCoordinator,
                               fireproofing: fireproofing,
@@ -430,13 +444,15 @@ class TabViewController: UIViewController {
                    onboardingPixelReporter: OnboardingCustomInteractionPixelReporting,
                    urlCredentialCreator: URLCredentialCreating = URLCredentialCreator(),
                    featureFlagger: FeatureFlagger,
+                   contentScopeExperimentManager: ContentScopeExperimentsManaging,
                    subscriptionCookieManager: SubscriptionCookieManaging,
                    textZoomCoordinator: TextZoomCoordinating,
                    fireproofing: Fireproofing,
                    websiteDataManager: WebsiteDataManaging,
                    tabInteractionStateSource: TabInteractionStateSource?,
                    specialErrorPageNavigationHandler: SpecialErrorPageManaging,
-                   featureDiscovery: FeatureDiscovery) {
+                   featureDiscovery: FeatureDiscovery,
+                   themingProperties: ExperimentalThemingProperties = ThemeManager.shared.properties) {
         self.tabModel = tabModel
         self.appSettings = appSettings
         self.bookmarksDatabase = bookmarksDatabase
@@ -450,6 +466,7 @@ class TabViewController: UIViewController {
         self.contextualOnboardingLogic = contextualOnboardingLogic
         self.onboardingPixelReporter = onboardingPixelReporter
         self.featureFlagger = featureFlagger
+        self.contentScopeExperimentsManager = contentScopeExperimentManager
         self.subscriptionCookieManager = subscriptionCookieManager
         self.textZoomCoordinator = textZoomCoordinator
         self.fireproofing = fireproofing
@@ -457,6 +474,7 @@ class TabViewController: UIViewController {
         self.tabInteractionStateSource = tabInteractionStateSource
         self.specialErrorPageNavigationHandler = specialErrorPageNavigationHandler
         self.featureDiscovery = featureDiscovery
+        self.themingProperties = themingProperties
 
         self.tabURLInterceptor = TabURLInterceptorDefault(featureFlagger: featureFlagger) {
             return AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.canPurchase
@@ -577,6 +595,7 @@ class TabViewController: UIViewController {
         duckPlayerNavigationHandler.updateDuckPlayerForWebViewAppearance(self)
         
         updateRoundedCorners()
+        fireWebViewDebugPixels()
     }
 
     override func buildActivities() -> [UIActivity] {
@@ -618,10 +637,36 @@ class TabViewController: UIViewController {
         adClickAttributionLogic.applyInheritedAttribution(state: attribution)
     }
 
+    private func updateBorder(for webView: WKWebView) {
+        guard isExperimentalThemingEnabled else { return }
+
+        if !borderView.isDescendant(of: webView) {
+            webView.addSubview(borderView)
+
+            borderView.frame = webView.bounds
+            borderView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+        }
+    }
+
     @objc func updateRoundedCorners() {
-        if ExperimentalThemingManager().isRoundedCornersTreatmentEnabled {
+        if isRounderCornersEnabled {
             webViewContainer.clipsToBounds = true
             webViewContainer.layer.cornerRadius = isPortrait ? 12 : 0
+        }
+    }
+
+    private func fireWebViewDebugPixels() {
+        if !webView.isDescendant(of: view) {
+            DailyPixel.fireDailyAndCount(pixel: .debugWebViewNotInVisibleTabHierarchy)
+        }
+        if webView.window == nil {
+            DailyPixel.fireDailyAndCount(pixel: .debugWebViewNotAttachedToWindow)
+        }
+        if webView.isHidden && (errorMessage.text.isNilOrEmpty || error.isHidden) {
+            DailyPixel.fireDailyAndCount(pixel: .debugWebViewInVisibleTabHidden)
+        }
+        if webView.frame == .zero {
+            DailyPixel.fireDailyAndCount(pixel: .debugWebViewHasZeroFrameSize)
         }
     }
 
@@ -666,7 +711,7 @@ class TabViewController: UIViewController {
             webView.trailingAnchor.constraint(equalTo: webViewContainer.trailingAnchor)
         ])
 
-        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+        if isExperimentalThemingEnabled {
             pullToRefreshViewAdapter = PullToRefreshViewAdapter(with: webView.scrollView,
                                                                 pullableView: webViewContainerView,
                                                                 onRefresh: { [weak self] in
@@ -730,6 +775,7 @@ class TabViewController: UIViewController {
 #endif
 
         updateRoundedCorners()
+        updateBorder(for: webView)
     }
 
     private func addObservers() {
@@ -770,7 +816,7 @@ class TabViewController: UIViewController {
             doLoad()
         }
     }
-    
+
     public func executeBookmarklet(url: URL) {
         if let js = url.toDecodedBookmarklet() {
             webView.evaluateJavaScript(js)
@@ -1068,7 +1114,7 @@ class TabViewController: UIViewController {
                                        entryPoint: .dashboard,
                                        privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
                                        contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
-                                       breakageAdditionalInfo: makeBreakageAdditionalInfo())
+                                              breakageAdditionalInfo: makeBreakageAdditionalInfo())
     }
     
     private func addTextZoomObserver() {
@@ -1121,7 +1167,7 @@ class TabViewController: UIViewController {
     }
 
     func setRefreshControlEnabled(_ isEnabled: Bool) {
-        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+        if isExperimentalThemingEnabled {
             pullToRefreshViewAdapter?.setRefreshControlEnabled(isEnabled)
         } else {
             webView.scrollView.refreshControl = isEnabled ? refreshControl : nil
@@ -1159,7 +1205,8 @@ class TabViewController: UIViewController {
                                       parentEntity: entity,
                                       protectionStatus: makeProtectionStatus(for: host),
                                       malicousSiteThreatKind: specialErrorPageNavigationHandler.currentThreatKind,
-                                      shouldCheckServerTrust: shouldCheckServerTrust)
+                                      shouldCheckServerTrust: shouldCheckServerTrust,
+                                      allActiveContentScopeExperiments: contentScopeExperimentsManager.allActiveContentScopeExperiments)
         let isCertificateInvalid = certificateTrustEvaluator
             .evaluateCertificateTrust(trust: webView.serverTrust)
             .map { !$0 }

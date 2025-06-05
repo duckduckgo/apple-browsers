@@ -34,7 +34,7 @@ final class FireproofDomainsStoreMock: FireproofDomainsStore {
     var history = [CallHistoryItem]()
 
     init() {
-        super.init(context: nil, tableName: "")
+        super.init(context: nil)
     }
 
     override func load<Result>(objectsWithPredicate predicate: NSPredicate? = nil,

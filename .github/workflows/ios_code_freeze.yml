@@ -40,8 +40,11 @@ jobs:
             exit 1
           fi
 
-      - name: Prepare fastlane
-        run: bundle install
+      - name: Setup Ruby and dependencies
+        uses: ./.github/actions/setup-ruby
+        with:
+          working-directory: iOS
+          cache-key-prefix: ios-ruby
 
       - name: Make release branch
         id: make_release_branch

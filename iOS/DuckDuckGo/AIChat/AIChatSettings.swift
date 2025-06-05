@@ -25,6 +25,13 @@ import Core
 /// This struct serves as a wrapper for PrivacyConfigurationManaging, enabling the retrieval of data relevant to AIChat.
 /// It also fire pixels when necessary data is missing.
 struct AIChatSettings: AIChatSettingsProvider {
+
+    // Settings for KeepSession subfeature
+    struct KeepSessionSettings: Codable {
+        let sessionTimeoutMinutes: Int
+        static let defaultSessionTimeoutInMinutes: Int = 60
+    }
+
     enum SettingsValue: String {
         case aiChatURL
 
@@ -60,20 +67,54 @@ struct AIChatSettings: AIChatSettingsProvider {
         return url
     }
 
+    private var keepSessionSettings: KeepSessionSettings? {
+        let decoder = JSONDecoder()
+
+        if let settingsJSON = privacyConfigurationManager.privacyConfig.settings(for: AIChatSubfeature.keepSession),
+           let jsonData = settingsJSON.data(using: .utf8) {
+            do {
+                let settings = try decoder.decode(KeepSessionSettings.self, from: jsonData)
+                return settings
+            } catch {
+                return nil
+            }
+        }
+        return nil
+    }
+
+    var sessionTimerInMinutes: Int {
+        keepSessionSettings?.sessionTimeoutMinutes ?? KeepSessionSettings.defaultSessionTimeoutInMinutes
+    }
+
+    var isAIChatEnabled: Bool {
+        userDefaults.isAIChatEnabled
+    }
+
     var isAIChatBrowsingMenuUserSettingsEnabled: Bool {
-        userDefaults.showAIChatBrowsingMenu
+        userDefaults.showAIChatBrowsingMenu && isAIChatEnabled
     }
 
     var isAIChatAddressBarUserSettingsEnabled: Bool {
-        userDefaults.showAIChatAddressBar
+        userDefaults.showAIChatAddressBar && isAIChatEnabled
     }
 
     var isAIChatTabSwitcherUserSettingsEnabled: Bool {
-        userDefaults.showAIChatTabSwitcher
+        userDefaults.showAIChatTabSwitcher && isAIChatEnabled
     }
 
     var isAIChatVoiceSearchUserSettingsEnabled: Bool {
-        userDefaults.showAIChatVoiceSearch
+        userDefaults.showAIChatVoiceSearch && isAIChatEnabled
+    }
+
+    func enableAIChat(enable: Bool) {
+        userDefaults.isAIChatEnabled = enable
+        triggerSettingsChangedNotification()
+
+        if enable {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsEnabled)
+        } else {
+            DailyPixel.fireDailyAndCount(pixel: .aiChatSettingsDisabled)
+        }
     }
 
     func enableAIChatBrowsingMenuUserSettings(enable: Bool) {
@@ -137,6 +178,7 @@ struct AIChatSettings: AIChatSettingsProvider {
 
 private extension UserDefaults {
     enum Keys {
+        static let isAIChatEnabled = "aichat.settings.isEnabled"
         static let showAIChatBrowsingMenu = "aichat.settings.showAIChatBrowsingMenu"
         static let showAIChatAddressBar = "aichat.settings.showAIChatAddressBar"
         static let showAIChatVoiceSearch = "aichat.settings.showAIChatVoiceSearch"
@@ -144,10 +186,22 @@ private extension UserDefaults {
 
     }
 
+    static let isAIChatEnabledDefaultValue = true
     static let showAIChatBrowsingMenuDefaultValue = true
     static let showAIChatAddressBarDefaultValue = true
     static let showAIChatVoiceSearchDefaultValue = true
     static let showAIChatTabSwitcherDefaultValue = true
+
+    @objc dynamic var isAIChatEnabled: Bool {
+        get {
+            value(forKey: Keys.isAIChatEnabled) as? Bool ?? Self.isAIChatEnabledDefaultValue
+        }
+
+        set {
+            guard newValue != isAIChatEnabled else { return }
+            set(newValue, forKey: Keys.isAIChatEnabled)
+        }
+    }
 
     @objc dynamic var showAIChatBrowsingMenu: Bool {
         get {

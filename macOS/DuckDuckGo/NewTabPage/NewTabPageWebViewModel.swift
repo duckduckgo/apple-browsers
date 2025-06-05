@@ -64,13 +64,6 @@ final class NewTabPageWebViewModel: NSObject {
                 }
             }
             .store(in: &cancellables)
-
-        NotificationCenter.default.publisher(for: .newTabPageModeDidChange)
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in
-                self?.webView.reload()
-            }
-            .store(in: &cancellables)
     }
 
     func removeUserScripts() {

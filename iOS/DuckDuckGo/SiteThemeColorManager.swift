@@ -22,7 +22,7 @@ import UIKit
 final class SiteThemeColorManager {
 
     private let viewCoordinator: MainViewCoordinator
-    private let themeManager: ThemeManager
+    private let themeManager: ThemeManaging
     private let appSettings: AppSettings
     private let currentTabViewController: () -> TabViewController?
 
@@ -33,7 +33,7 @@ final class SiteThemeColorManager {
     init(viewCoordinator: MainViewCoordinator,
          currentTabViewController: @autoclosure @escaping () -> TabViewController?,
          appSettings: AppSettings,
-         themeManager: ThemeManager = ThemeManager.shared) {
+         themeManager: ThemeManaging) {
         self.viewCoordinator = viewCoordinator
         self.appSettings = appSettings
         self.themeManager = themeManager
@@ -130,7 +130,7 @@ final class SiteThemeColorManager {
     }
 
     private func applyThemeColor(_ color: UIColor?) {
-        guard ExperimentalThemingManager().isExperimentalThemingEnabled else { return }
+        guard themeManager.properties.isExperimentalThemingEnabled else { return }
 
         var newColor = UIColor(designSystemColor: .background)
 
@@ -138,7 +138,11 @@ final class SiteThemeColorManager {
             newColor = color
         }
 
-        viewCoordinator.statusBackground.backgroundColor = newColor
+        if AppWidthObserver.shared.isPad && viewCoordinator.parentController?.traitCollection.horizontalSizeClass == .regular {
+            viewCoordinator.statusBackground.backgroundColor = themeManager.currentTheme.tabsBarBackgroundColor
+        } else {
+            viewCoordinator.statusBackground.backgroundColor = newColor
+        }
         tabViewController?.pullToRefreshViewAdapter?.backgroundColor = newColor
         tabViewController?.webView?.underPageBackgroundColor = newColor
         tabViewController?.webView?.scrollView.backgroundColor = newColor

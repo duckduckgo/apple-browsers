@@ -190,6 +190,15 @@
 /* Description for alert shown when user logged off from sync */
 "alert.sync-invalid-login-error-description" = "La synchronisation a été suspendue. Si vous souhaitez continuer à synchroniser cet appareil, reconnectez-vous à l’aide d’un autre appareil ou de votre code de récupération.";
 
+/* Sync Now button in alert asking if they would like to sync with another device */
+"alert.sync-new-device.button" = "Synchroniser maintenant";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.message" = "« %@ » pourra accéder à vos données DuckDuckGo synchronisées.";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.title" = "Synchroniser un nouvel appareil ?";
+
 /* Learn more button in alert */
 "alert.sync-paused-alert-learn-more-button" = "En savoir plus";
 
@@ -261,6 +270,12 @@
 
 /* No comment provided by engineer. */
 "Are you sure you want to delete all bookmarks? This action cannot be undone." = "Voulez-vous vraiment supprimer tous les signets ? Cette action est irréversible.";
+
+/* No comment provided by engineer. */
+"Are you sure you want to delete this chat? This cannot be undone." = "Êtes-vous sûr de vouloir supprimer cette discussion ? Cette action ne peut pas être annulée.";
+
+/* No comment provided by engineer. */
+"Ask anything..." = "Demandez ce que vous voulez...";
 
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Se connecter";
@@ -920,6 +935,9 @@
 "close.all.tabs" = "Fermer tous les onglets";
 
 /* No comment provided by engineer. */
+"Cohort: %@" = "Cohorte : %@";
+
+/* No comment provided by engineer. */
 "Confirm" = "Confirmer";
 
 /* Button to continue the onboarding process */
@@ -1150,41 +1168,8 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Hier";
 
-/* No comment provided by engineer. */
-"dax.hide.button" = "Masquer les conseils définitivement";
-
-/* No comment provided by engineer. */
-"dax.hide.cancel" = "Annuler";
-
-/* Subtitle in Hide Dax dialog */
-"dax.hide.message" = "Il n'y en a que quelques-uns et nous avons essayé de les rendre aussi utiles que possible.";
-
-/* Title in Hide Dax dialog */
-"dax.hide.title" = "Masquer les conseils restants ?";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search" = "Vos recherches sur DuckDuckGo sont anonymes. Toujours. 🙌";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search.cta" = "Ouf !";
-
-/* First parameter is a count of additional trackers, second and third are names of the tracker networks (strings) */
-"dax.onboarding.browsing.multiple.trackers" = "dax.onboarding.browsing.multiple.trackers";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.multiple.trackers.cta" = "Bien joué !";
-
-/* Parameter is domain name (string) */
-"dax.onboarding.browsing.one.tracker" = "*%1$@* essayait de vous traquer ici.\n\nJe l'ai bloqué !\n\n☝️ Vous pouvez voir dans la barre d'adresse qui essaie de vous traquer lorsque vous visitez un nouveau site.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.one.tracker.cta" = "Bien joué !";
-
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Attention ! Je ne peux pas empêcher %1$@ de voir votre activité sur %2$@.\n\nSi vous naviguez avec moi, je peux réduire les données récoltées par %1$@ en bloquant ses traqueurs sur de nombreux autres sites.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.site.is.major.tracker.cta" = "J'ai compris";
 
 /* Parameters are domain names (strings) */
 "dax.onboarding.browsing.site.owned.by.major.tracker" = "Attention ! Comme %2$@ est propriétaire de %1$@, je ne peux pas l'empêcher d'y suivre votre activité.\n\nSi vous naviguez avec moi, je peux réduire les données récoltées par %2$@ en bloquant ses traqueurs sur de nombreux autres sites.";
@@ -1195,29 +1180,8 @@
 /* No comment provided by engineer. */
 "dax.onboarding.browsing.without.trackers" = "Lors de votre navigation, je bloque les traqueurs indésirables.\n\nContinuez à naviguer en toute tranquillité !";
 
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.without.trackers.cta" = "J'ai compris";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button" = "Les données personnelles peuvent s'accumuler dans votre navigateur. Oh non ! Utilisez le bouton en forme de flamme pour les supprimer. Essayez par vous-même !👇";
-
-/* Cancel action */
-"dax.onboarding.fire.button.cancelAction" = "Annuler";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button.confirmAction" = "Fermer les onglets et effacer les données";
-
 /* Encourage user to add favorite site using the browsing menu. */
 "dax.onboarding.home.add.favorite" = "Consultez vos sites préférés en un clin d'œil !\n\nRendez-vous sur un site que vous aimez particulièrement. Appuyez sur l'icône « ⋯ » et sélectionnez *Ajouter aux favoris*.";
-
-/* Accessible version of dax.onboarding.home.add.favorite */
-"dax.onboarding.home.add.favorite.accessible" = "Consultez vos sites préférés en un clin d'œil ! Rendez-vous sur l'un de vos sites préférés. Appuyez sur le bouton pour ouvrir le menu et sélectionnez Ajouter aux favoris.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.home.initial" = "Maintenant, essayez de visiter un de vos sites préférés !\n\nJe bloquerai les traqueurs afin qu'ils ne puissent pas vous espionner. J'améliorerai également la sécurité de votre connexion dans la mesure du possible. 🔒";
-
-/* ad = advertisment */
-"dax.onboarding.home.subsequent" = "Bien joué !\n\nSouvenez-vous : chaque fois que vous naviguez avec moi, des publicités intrusives disparaissent. 👍";
 
 /* No comment provided by engineer. */
 "Debug" = "Déboguer";
@@ -1313,16 +1277,16 @@
 "duckai.preferences.text.markdown" = "Duck.ai est une fonctionnalité optionnelle qui vous permet de discuter anonymement avec des modèles de chat IA tiers populaires. Vos discussions ne servent pas à entraîner l'IA.\n[En savoir plus](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
-"duckai.settings.enable.address-bar-toggle" = "Afficher Duck.ai dans la barre d'adresse";
+"duckai.settings.enable.address-bar-toggle" = "Barre d'adresse";
 
 /* Toggle text to enable/disable AI Chat in the browsing menu */
-"duckai.settings.enable.browsing-menu-toggle" = "Afficher Duck.ai dans le menu du navigateur";
+"duckai.settings.enable.browsing-menu-toggle" = "Menu du navigateur";
 
 /* Toggle text to enable/disable Duck.ai in tab manager */
-"duckai.settings.enable.tab-switcher-toggle" = "Afficher Duck.ai sur l'écran des onglets";
+"duckai.settings.enable.tab-switcher-toggle" = "Écran des onglets";
 
 /* Toggle text to enable/disable Duck.ai in voice search */
-"duckai.settings.enable.voice-search-toggle" = "Afficher Duck.ai dans la recherche vocale";
+"duckai.settings.enable.voice-search-toggle" = "Recherche vocale";
 
 /* Settings screen cell text for AI Chat settings */
 "duckai.settings.title" = "Duck.ai";
@@ -1342,6 +1306,24 @@
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";
 
+/* Content for Duck Player opt-in message */
+"duckplayer.opt-in.message.content" = "Duck Player bloque les publicités ciblées et protège votre historique de visionnage.";
+
+/* Title for Duck Player opt-in message */
+"duckplayer.opt-in.message.title" = "YouTube, mais avec moins de publicités et plus de confidentialité";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.opt-in.pill.subtitle" = "Regardez sans publicités ciblées";
+
+/* Button text to play a video in Duck Player */
+"duckplayer.opt-in.pill.title" = "Lire cette vidéo dans Duck Player";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.pill.subtitle" = "Regardez sans publicités ciblées";
+
+/* Button text to play a video in Duck Player */
+"duckplayer.play.in.duck.player" = "Lire cette vidéo dans Duck Player";
+
 /* Body text for the modal feature explanation */
 "duckplayer.presentation.modal.body" = "Duck Player vous permet de regarder YouTube sans publicités ciblées dans DuckDuckGo. De plus, ce que vous regardez n'influence pas vos recommandations.";
 
@@ -1353,6 +1335,18 @@
 
 /* Two line title (separated by \n) for the feature explanation */
 "duckplayer.presentation.modal.title.youtube" = "YouTube vous inonde de publicités ? Pas avec Duck Player !";
+
+/* Button text to resume video in Duck Player */
+"duckplayer.resume.in.duck.player" = "Reprendre dans Duck Player";
+
+/* Footer text explaining the auto-play toggle in Duck Player settings */
+"duckplayer.settings.autoplay.footer" = "Les vidéos ouvertes dans Duck Player démarreront automatiquement la lecture. Désactivez cette option si vous souhaitez démarrer manuellement la lecture des vidéos ouvertes dans Duck Player.";
+
+/* Label for the auto-play toggle in Duck Player settings */
+"duckplayer.settings.autoplay.label" = "Lecture automatique des vidéos";
+
+/* Label for the experimental section in Duck Player settings */
+"duckplayer.settings.experimental.label" = "Expérimental";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "DuckDuckGo fournit tous les incontournables de la confidentialité dont vous avez besoin pour vous protéger lorsque vous naviguez sur le Web.";
@@ -1369,8 +1363,59 @@
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.open-videos-in" = "Ouvrir les vidéos YouTube dans Duck Player";
 
+/* Footer text explaining the search results toggle in Duck Player settings */
+"duckplayer.settings.search.results.footer" = "Cliquer sur les vidéos YouTube à partir des résultats de recherche DuckDuckGo les ouvrira dans Duck Player.";
+
+/* Label for the search results toggle in Duck Player settings */
+"duckplayer.settings.search.results.label" = "Résultats de recherche DuckDuckGo";
+
+/* Message for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.message" = "Veuillez fermer tous les onglets pour que ce paramètre prenne effet.";
+
+/* OK button text for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.ok" = "OK";
+
+/* Title for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.title" = "Important !";
+
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.title" = "Duck Player";
+
+/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
+"duckplayer.settings.toggle" = "Ouvrir les vidéos YouTube ici";
+
+/* Label for the Duck Player variant picker in Duck Player settings */
+"duckplayer.settings.variant.label" = "Variante Duck Player";
+
+/* Footer text explaining the YouTube.com option in Duck Player settings */
+"duckplayer.settings.youtube.footer" = "En cliquant sur les vidéos YouTube lors de la navigation sur YouTube.com, elles s'ouvriront dans Duck Player.";
+
+/* Label for the YouTube.com option in Duck Player settings */
+"duckplayer.settings.youtube.label" = "YouTube.com";
+
+/* Text for the ask mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.ask" = "Laissez-moi choisir";
+
+/* Text for the auto mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.auto" = "Ouvrir automatiquement";
+
+/* Text for the never mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.never" = "Ne pas afficher";
+
+/* Button text to open Duck Player settings */
+"duckplayer.toast.open.settings" = "Ouvrez les Paramètres";
+
+/* Toast message informing user they can disable Duck Player in settings */
+"duckplayer.toast.turn.off.anytime" = "Vous pouvez désactiver Duck Player à tout moment";
+
+/* Button text to watch video on YouTube */
+"duckplayer.watch.on.youtube" = "Regarder sur YouTube";
+
+/* Subtitle explaining how Duck Player protects privacy */
+"duckplayer.welcome.message.content" = "Pour retourner sur YouTube, fermez Duck Player.\nPas pour vous ? Désactivez-le ci-dessous !";
+
+/* Title for Duck Player welcome message highlighting privacy benefits */
+"duckplayer.welcome.message.text" = "Vous regardez du contenu dans Duck Player !\nPas de publicités ciblées ici.";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Protection des e-mails";
@@ -1448,6 +1493,9 @@
 "empty.search" = "Aucune correspondance trouvée";
 
 /* No comment provided by engineer. */
+"Enrolled: %@" = "Inscriptions : %@";
+
+/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1500,6 +1548,9 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Favoris sur mobile uniquement";
+
+/* No comment provided by engineer. */
+"Feature: %@" = "Fonctionnalité : %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Bloquer les publicités et les fenêtres contextuelles";
@@ -2249,7 +2300,7 @@
 "onboarding.highlights.browsers.features.cookiePopups.title" = "Bloquez les fenêtres contextuelles de cookies";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Bloquez les publicités qui pistent";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Bloquez les publicités ciblées";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Supprimez les données de navigation d'un seul clic";
@@ -2332,9 +2383,6 @@
 /* No comment provided by engineer. */
 "onboardingWelcomeHeader" = "Bienvenue sur DuckDuckGo !";
 
-/* No comment provided by engineer. */
-"Open tabs remain unaffected by this change.  Please close all tabs for this setting to take effect." = "Les onglets ouverts ne sont pas concernés par ce changement.  Veuillez fermer tous les onglets pour que ce paramètre prenne effet.";
-
 /* ’Link’ is link on a website */
 "open.externally.failed" = "L'application nécessaire pour ouvrir ce lien est introuvable";
 
@@ -2406,6 +2454,30 @@
 
 /* Title for the Privacy Pro feedback form */
 "ppro.feedback-form.title" = "Envoyer vos remarques";
+
+/* Title of the section of a setting page that shows Scam Blocking preferences (weather warning in case of scam sites) */
+"preferences.scam-blocker.title" = "Bloqueur d'escroqueries";
+
+/* Caption explaining the risk of disabling scam blocker protection */
+"preferences.scam-blocker.toggle-caption" = "La désactivation de cette fonctionnalité peut mettre vos informations personnelles en danger.";
+
+/* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
+"preferences.scam-blocker.toggle-label" = "M'avertir sur les sites signalés pour des escroqueries, de l’hameçonnage et des logiciels malveillants. [En savoir plus](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker)";
+
+/* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
+"preferences.smarter-encryption.description" = "Met automatiquement à niveau les liens vers HTTPS lorsque c'est possible. [En savoir plus](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
+
+/* Title of the section of a setting page that shows Smarter Encryption preferences */
+"preferences.smarter-encryption.title" = "Meilleur cryptage";
+
+/* Status indicator of a browser privacy protection feature. */
+"preferences.status-indicator.always-on" = "Toujours activé";
+
+/* Title of the option to show the Threat Protection preferences */
+"preferences.threat-protection" = "Protection contre les menaces";
+
+/* Caption of the option to show the Threat Protection preferences */
+"preferences.threat-protection.caption" = "Les protections améliorées de DuckDuckGo bloquent les menaces courantes tout en sécurisant votre connexion.\n[En savoir plus](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Certains signets ou mots de passe sont mal formatés ou trop longs et n'ont pas été synchronisés.";
@@ -2560,6 +2632,9 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Afficher l'adresse complète du site";
 
+/* Settings screen text for showing AI Chat in various places in the app */
+"settings.aichat.shortcuts" = "Raccourcis";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Toujours activé";
 
@@ -2631,6 +2706,9 @@
 
 /* Settings cell for Email Protection */
 "settings.emailProtection.description" = "Bloquez les traqueurs d'e-mails et masquez votre adresse";
+
+/* Settings screen cell text for enabling AI chat */
+"settings.enable.aichat" = "Activer Duck.ai";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Activez Email Protection";
@@ -2761,6 +2839,9 @@
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe" = "Protégez votre connexion et votre identité avec Privacy Pro";
 
+/* Try Privacy Pro Free button text for privacy pro */
+"settings.subscription.try.free" = "Essayer Privacy Pro gratuitement";
+
 /* Privacy pro description subtitle in settings */
 "settings.subscription.us.description" = "Comprend notre VPN, Personal Information Removal et Identity Theft Restoration.";
 
@@ -2831,7 +2912,13 @@
 "siteFeedback.urlPlaceholder" = "Quel site Web pose problème ?";
 
 /* No comment provided by engineer. */
+"Stop generating..." = "Arrêter la génération...";
+
+/* No comment provided by engineer. */
 "Stored Hostname: %@" = "Nom d'hôte enregistré : %@";
+
+/* No comment provided by engineer. */
+"Subfeature: %@" = "Sous-fonctionnalité : %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Ajouter à un appareil";
@@ -3356,10 +3443,10 @@
 "vpn.settings.dns.server.content.blocking.explanation" = "Bloquez plus de 150 000 domaines signalés comme hébergeant des logiciels malveillants, des attaques de phishing et des escroqueries en ligne grâce à une liste de blocage au niveau du DNS. [En savoir plus](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
 
 /* Header of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.header" = "Blocage et filtrage de contenu";
+"vpn.settings.dns.server.content.blocking.header" = "Blocage de contenu malveillant";
 
-/* Title of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.title" = "Bloquer les domaines à risque";
+/* Title of the vpn scam blocker sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Bloqueur d'escroqueries";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";

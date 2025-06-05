@@ -44,6 +44,7 @@ final class SyncSettingsAdapter {
     func setUpProviderIfNeeded(
         metadataDatabase: CoreDataDatabase,
         metadataStore: SyncMetadataStore,
+        appearancePreferences: AppearancePreferences,
         metricsEventsHandler: EventMapping<MetricsEvent>? = nil
     ) {
         guard provider == nil else {
@@ -54,7 +55,7 @@ final class SyncSettingsAdapter {
         let provider = SettingsProvider(
             metadataDatabase: metadataDatabase,
             metadataStore: metadataStore,
-            settingsHandlers: [FavoritesDisplayModeSyncHandler(), EmailProtectionSyncHandler(emailManager: emailManager)],
+            settingsHandlers: [FavoritesDisplayModeSyncHandler(appearancePreferences), EmailProtectionSyncHandler(emailManager: emailManager)],
             metricsEvents: metricsEventsHandler,
             syncDidUpdateData: { [weak self] in
                 self?.syncDidCompleteSubject.send()

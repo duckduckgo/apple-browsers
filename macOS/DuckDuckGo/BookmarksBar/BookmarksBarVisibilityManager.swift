@@ -35,7 +35,7 @@ final class BookmarksBarVisibilityManager {
     /// - Parameters:
     ///   - selectedTabPublisher: A publisher that returns the selected Tab view model.
     ///   - preferences: The `AppearancePreferences` to read the bookmarks appearance preferences from.
-    init(selectedTabPublisher: AnyPublisher<TabViewModel?, Never>, preferences: AppearancePreferences = .shared) {
+    init(selectedTabPublisher: AnyPublisher<TabViewModel?, Never>, preferences: AppearancePreferences = NSApp.delegateTyped.appearancePreferences) {
         self.selectedTabPublisher = selectedTabPublisher
         self.preferences = preferences
         bind()

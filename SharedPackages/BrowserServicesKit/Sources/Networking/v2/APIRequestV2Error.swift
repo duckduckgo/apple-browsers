@@ -49,6 +49,10 @@ extension APIRequestV2 {
             }
         }
 
+        public var localizedDescription: String {
+            errorDescription ?? "Unknown"
+        }
+
         // MARK: - Equatable Conformance
         public static func == (lhs: Error, rhs: Error) -> Bool {
             switch (lhs, rhs) {

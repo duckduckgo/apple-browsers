@@ -157,8 +157,10 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     @MainActor
-    func handleError(_ type: SyncErrorMessage, error: Error?, event: Pixel.Event) {
-        firePixelIfNeededFor(event: event, error: error)
+    func handleError(_ type: SyncErrorMessage, error: Error?, event: Pixel.Event?) {
+        if type.shouldSendPixel, let event = event {
+            firePixelIfNeededFor(event: event, error: error)
+        }
         let alertController = UIAlertController(
             title: type.title,
             message: [type.description, error?.localizedDescription].compactMap({ $0 }).joined(separator: "\n"),
@@ -317,48 +319,51 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             legacyCollectCode(showQRCode: showQRCode)
             return
         }
-        newCollectCode(showQRCode: showQRCode)
-    }
-    
-    private func newCollectCode(showQRCode: Bool) {
-        let code: String
-        
-        if isSyncEnabled {
-            do {
-                code = try connectionController.startExchangeMode()
-            } catch {
-                self.handleError(SyncErrorMessage.unableToSyncWithDevice, error: error, event: .syncLoginError)
-                return
+        Task { @MainActor in
+            let pairingInfo: PairingInfo
+            if isSyncEnabled {
+                do {
+                    pairingInfo = try await connectionController.startExchangeMode()
+                } catch {
+                    self.handleError(SyncErrorMessage.unableToSyncWithDevice, error: error, event: .syncLoginError)
+                    return
+                }
+            } else {
+                do {
+                    pairingInfo = try await connectionController.startConnectMode()
+                } catch {
+                    self.handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
+                    return
+                }
             }
-        } else {
-            do {
-                code = try connectionController.startConnectMode()
-            } catch {
-                self.handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
-                return
-            }
+            let stringForQRCode = featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased) ? pairingInfo.url.absoluteString : pairingInfo.base64Code
+            presentScanOrPasteCodeView(codeForDisplayOrPasting: pairingInfo.base64Code, stringForQRCode: stringForQRCode, showQRCode: showQRCode)
         }
-        presentScanOrPasteCodeView(code: code, showQRCode: showQRCode)
     }
-    
+
     private func legacyCollectCode(showQRCode: Bool) {
-        let code: String
-        
-        if isSyncEnabled {
-            code = recoveryCode
-        } else {
-            do {
-                code = try startConnectMode()
-            } catch {
-                self.handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
-                return
+        Task {
+            let stringForQRCode: String
+            let codeForDisplayOrPasting: String
+            if isSyncEnabled {
+                stringForQRCode = recoveryCode
+                codeForDisplayOrPasting = recoveryCode
+            } else {
+                do {
+                    let pairingInfo = try await connectionController.startConnectMode()
+                    stringForQRCode = featureFlagger.isFeatureOn(.syncSetupBarcodeIsUrlBased) ? pairingInfo.url.absoluteString : pairingInfo.base64Code
+                    codeForDisplayOrPasting = pairingInfo.base64Code
+                } catch {
+                    self.handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
+                    return
+                }
             }
+            presentScanOrPasteCodeView(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQRCode, showQRCode: showQRCode)
         }
-        presentScanOrPasteCodeView(code: code, showQRCode: showQRCode)
     }
-    
-    private func presentScanOrPasteCodeView(code: String, showQRCode: Bool) {
-        let model = ScanOrPasteCodeViewModel(code: code)
+
+    private func presentScanOrPasteCodeView(codeForDisplayOrPasting: String, stringForQRCode: String, showQRCode: Bool) {
+        let model = ScanOrPasteCodeViewModel(codeForDisplayOrPasting: codeForDisplayOrPasting, qrCodeString: stringForQRCode)
         model.delegate = self
         
         var controller: UIHostingController<AnyView>

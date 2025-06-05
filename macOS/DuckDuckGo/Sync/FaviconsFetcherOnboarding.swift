@@ -44,7 +44,7 @@ final class FaviconsFetcherOnboarding {
         let windowController = viewController.wrappedInWindowController()
 
         guard let window = windowController.window,
-              let parentWindow = targetWindow ?? WindowControllersManager.shared.lastKeyMainWindowController?.window
+              let parentWindow = targetWindow ?? Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window
         else {
             assertionFailure("Failed to present FaviconsFetcherOnboardingViewController")
             return

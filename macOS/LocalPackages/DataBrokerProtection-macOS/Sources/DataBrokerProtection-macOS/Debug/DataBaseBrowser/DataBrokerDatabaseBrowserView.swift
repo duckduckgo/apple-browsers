@@ -17,6 +17,7 @@
 //
 
 import SwiftUI
+import DataBrokerProtectionCore
 
 struct DataBrokerDatabaseBrowserView: View {
     @ObservedObject var viewModel: DataBrokerDatabaseBrowserViewModel
@@ -135,5 +136,11 @@ struct ColumnData: Identifiable {
 
     let fakeTables =  [fakeTable1, fakeTable2]
 
-    return DataBrokerDatabaseBrowserView(viewModel: DataBrokerDatabaseBrowserViewModel(tables: fakeTables))
+    DataBrokerDatabaseBrowserView(viewModel: DataBrokerDatabaseBrowserViewModel(tables: fakeTables, localBrokerService: MockLocalBrokerJSONService())
+    )
+}
+
+private struct MockLocalBrokerJSONService: LocalBrokerJSONServiceProvider {
+    func bundledBrokers() throws -> [DataBroker]? { [] }
+    func checkForUpdates() async throws {}
 }

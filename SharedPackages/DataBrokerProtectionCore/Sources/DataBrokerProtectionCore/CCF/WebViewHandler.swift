@@ -30,7 +30,7 @@ public protocol WebViewHandler: NSObject {
     func saveHTML(path: String, fileName: String) async throws
     func waitForWebViewLoad() async throws
     func finish() async
-    func execute(action: Action, data: CCFRequestData) async
+    func execute(action: Action, ofType stepType: StepType?, data: CCFRequestData) async
     func evaluateJavaScript(_ javaScript: String) async throws
     func setCookies(_ cookies: [HTTPCookie]) async
 }
@@ -47,6 +47,8 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
 
 #if os(macOS)
     private var window: NSWindow?
+#elseif os(iOS)
+    private var window: UIWindow?
 #endif
 
     private var timer: Timer?
@@ -73,8 +75,8 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
         webView = WebView(frame: CGRect(origin: .zero, size: CGSize(width: 1024, height: 1024)), configuration: configuration)
         webView?.navigationDelegate = self
 
-#if os(macOS)
         if showWebView {
+#if os(macOS)
             window = NSWindow(
                 contentRect: NSRect(x: 0, y: 0, width: 1024, height: 1024), styleMask: [.titled],
                 backing: .buffered, defer: false
@@ -82,8 +84,17 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
             window?.title = "Data Broker Protection"
             window?.contentView = self.webView
             window?.makeKeyAndOrderFront(nil)
-        }
+#elseif os(iOS)
+            window = UIWindow(frame: UIScreen.main.bounds)
+            let viewController = UIViewController.init()
+            viewController.view = webView
+            window?.rootViewController = viewController
+
+            window?.windowLevel = UIWindow.Level.alert
+            window?.makeKeyAndVisible()
 #endif
+
+        }
 
         installTimer()
 
@@ -128,13 +139,14 @@ final class DataBrokerProtectionWebViewHandler: NSObject, WebViewHandler {
         }
     }
 
-    func execute(action: Action, data: CCFRequestData) {
+    func execute(action: Action, ofType stepType: StepType?, data: CCFRequestData) {
         Logger.action.log("Executing action: \(String(describing: action.actionType.rawValue), privacy: .public)")
 
         userContentController?.dataBrokerUserScripts?.dataBrokerFeature.pushAction(
             method: .onActionReceived,
             webView: self.webView!,
-            params: Params(state: ActionRequest(action: action, data: data))
+            params: Params(state: ActionRequest(action: action, data: data)),
+            canTimeOut: action.canTimeOut(while: stepType)
         )
     }
 

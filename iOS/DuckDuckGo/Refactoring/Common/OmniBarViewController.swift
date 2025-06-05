@@ -114,11 +114,9 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.bookmarksButton.isPointerInteractionEnabled = true
         barView.accessoryButton.isPointerInteractionEnabled = true
         barView.menuButton.isPointerInteractionEnabled = true
-
         barView.refreshButton.isPointerInteractionEnabled = true
-        barView.refreshButton.pointerStyleProvider = { button, _, _ -> UIPointerStyle? in
-            return .init(effect: .lift(.init(view: button)))
-        }
+        barView.shareButton.isPointerInteractionEnabled = true
+        barView.clearButton.isPointerInteractionEnabled = true
     }
 
     private func configureTextField() {
@@ -184,6 +182,12 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.onRefreshPressed = { [weak self] in
             self?.onRefreshPressed()
         }
+        barView.onRefreshPressed = { [weak self] in
+            self?.onRefreshPressed()
+        }
+        barView.onSharePressed = { [weak self] in
+            self?.onSharePressed()
+        }
         barView.onBackPressed = { [weak self] in
             self?.onBackPressed()
         }
@@ -231,11 +235,19 @@ class OmniBarViewController: UIViewController, OmniBar {
     }
 
     func useSmallTopSpacing() {
-        // no-op
+        // no-op - implemented in subclass
     }
 
     func useRegularTopSpacing() {
-        // no-op
+        // no-op - implemented in subclass
+    }
+
+    func preventShadowsOnTop() {
+        // no-op - implemented in subclass
+    }
+
+    func preventShadowsOnBottom() {
+        // no-op - implemented in subclass
     }
 
     func startBrowsing() {
@@ -408,7 +420,7 @@ class OmniBarViewController: UIViewController, OmniBar {
     // Support static custom icons, for things like internal pages, for example
     func showCustomIcon(icon: OmniBarIcon) {
         barView.privacyInfoContainer.privacyIcon.isHidden = true
-        barView.customIconView.image = UIImage(named: icon.rawValue)
+        barView.customIconView.image = icon.image
         barView.privacyInfoContainer.addSubview(barView.customIconView)
         barView.customIconView.isHidden = false
     }
@@ -447,6 +459,7 @@ class OmniBarViewController: UIViewController, OmniBar {
         barView.isSettingsButtonHidden = !state.showSettings
         barView.isCancelButtonHidden = !state.showCancel
         barView.isRefreshButtonHidden = !state.showRefresh
+        barView.isShareButtonHidden = !state.showShare
         barView.isVoiceSearchButtonHidden = !state.showVoiceSearch
         barView.isAbortButtonHidden = !state.showAbort
         barView.isBackButtonHidden = !state.showBackButton
@@ -600,6 +613,11 @@ class OmniBarViewController: UIViewController, OmniBar {
         Pixel.fire(pixel: .refreshPressed)
         cancelAllAnimations()
         omniDelegate?.onRefreshPressed()
+    }
+
+    private func onSharePressed() {
+        // TODO pixel
+        omniDelegate?.onSharePressed()
     }
 
     private func onBackPressed() {

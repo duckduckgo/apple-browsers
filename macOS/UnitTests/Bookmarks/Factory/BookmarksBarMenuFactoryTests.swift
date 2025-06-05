@@ -28,7 +28,7 @@ final class BookmarksBarMenuFactoryTests: XCTestCase {
         XCTAssertTrue(menu.items.isEmpty)
 
         // WHEN
-        BookmarksBarMenuFactory.addToMenuWithManageBookmarksSection(menu, target: targetMock, addFolderSelector: #selector(targetMock.addFolder(_:)), manageBookmarksSelector: #selector(targetMock.manageBookmarks))
+        BookmarksBarMenuFactory.addToMenuWithManageBookmarksSection(menu, target: targetMock, addFolderSelector: #selector(targetMock.addFolder(_:)), manageBookmarksSelector: #selector(targetMock.manageBookmarks), prefs: NSApp.delegateTyped.appearancePreferences)
 
         // THEN
         XCTAssertEqual(menu.items.count, 4)
@@ -46,7 +46,7 @@ final class BookmarksBarMenuFactoryTests: XCTestCase {
         XCTAssertTrue(menu.items.isEmpty)
 
         // WHEN
-        BookmarksBarMenuFactory.addToMenu(menu)
+        BookmarksBarMenuFactory.addToMenu(menu, prefs: NSApp.delegateTyped.appearancePreferences)
 
         // THEN
         XCTAssertEqual(menu.items.count, 1)

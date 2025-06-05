@@ -63,7 +63,7 @@ class SettingsLegacyViewProvider: ObservableObject {
     
     enum LegacyView {
         case addToDock,
-             sync,
+             sync(PairingInfo?),
              autofill,
              appIcon,
              gpc,
@@ -128,13 +128,14 @@ class SettingsLegacyViewProvider: ObservableObject {
     }
 
     @MainActor
-    func syncSettings(source: String? = nil) -> SyncSettingsViewController {
+    func syncSettings(source: String? = nil, pairingInfo: PairingInfo?) -> SyncSettingsViewController {
         return SyncSettingsViewController(syncService: self.syncService,
                                           syncBookmarksAdapter: self.syncDataProviders.bookmarksAdapter,
                                           syncCredentialsAdapter: self.syncDataProviders.credentialsAdapter,
                                           appSettings: self.appSettings,
                                           syncPausedStateManager: self.syncPausedStateManager,
-                                          source: source)
+                                          source: source,
+                                          pairingInfo: pairingInfo)
     }
 
     func loginSettings(delegate: AutofillSettingsViewControllerDelegate,
@@ -142,13 +143,13 @@ class SettingsLegacyViewProvider: ObservableObject {
                        selectedCard: SecureVaultModels.CreditCard?,
                        source: AutofillSettingsSource?) -> AutofillSettingsViewController {
         return AutofillSettingsViewController(appSettings: self.appSettings,
-                                              syncService: self.syncService,
-                                              syncDataProviders: self.syncDataProviders,
-                                              selectedAccount: selectedAccount,
-                                              selectedCard: selectedCard,
-                                              source: source ?? .settings,
-                                              bookmarksDatabase: self.bookmarksDatabase,
-                                              favoritesDisplayMode: self.appSettings.favoritesDisplayMode)
+                                                       syncService: self.syncService,
+                                                       syncDataProviders: self.syncDataProviders,
+                                                       selectedAccount: selectedAccount,
+                                                       selectedCard: selectedCard,
+                                                       source: source ?? .settings,
+                                                       bookmarksDatabase: self.bookmarksDatabase,
+                                                       favoritesDisplayMode: self.appSettings.favoritesDisplayMode)
     }
 
 }

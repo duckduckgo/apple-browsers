@@ -37,7 +37,7 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     @MainActor public func openAIChatSettings(params: Any, message: UserScriptMessage) async -> Encodable? {
-        WindowControllersManager.shared.showTab(with: .settings(pane: .aiChat))
+        Application.appDelegate.windowControllersManager.showTab(with: .settings(pane: .aiChat))
         return nil
     }
 
@@ -46,7 +46,7 @@ struct AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     func closeAIChat(params: Any, message: UserScriptMessage) async -> Encodable? {
-        await WindowControllersManager.shared.mainWindowController?.mainViewController.closeTab(nil)
+        await Application.appDelegate.windowControllersManager.mainWindowController?.mainViewController.closeTab(nil)
         return nil
     }
 

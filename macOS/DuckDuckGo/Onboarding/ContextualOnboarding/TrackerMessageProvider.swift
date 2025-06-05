@@ -44,7 +44,7 @@ struct TrackerMessageProvider: TrackerMessageProviding {
 
     private var entityProviding: EntityProviding
 
-    init(entityProviding: EntityProviding = AppPrivacyFeatures.shared.contentBlocking.contentBlockingManager) {
+    init(entityProviding: EntityProviding) {
         self.entityProviding = entityProviding
     }
 

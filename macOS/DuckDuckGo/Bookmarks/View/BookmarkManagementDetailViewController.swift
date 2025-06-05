@@ -73,6 +73,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
     private let bookmarkManager: BookmarkManager
     private let dragDropManager: BookmarkDragDropManager
     private let sortBookmarksViewModel: SortBookmarksViewModel
+    private let visualStyle: VisualStyleProviding
     private var selectionState: BookmarkManagementSidebarViewController.SelectionState = .empty {
         didSet {
             reloadData()
@@ -116,13 +117,15 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         self.selectionState = selectionState
     }
 
-    init(bookmarkManager: BookmarkManager = LocalBookmarkManager.shared,
-         dragDropManager: BookmarkDragDropManager = BookmarkDragDropManager.shared) {
+    init(bookmarkManager: BookmarkManager,
+         dragDropManager: BookmarkDragDropManager,
+         visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
         let metrics = BookmarksSearchAndSortMetrics()
         let sortViewModel = SortBookmarksViewModel(manager: bookmarkManager, metrics: metrics, origin: .manager)
         self.sortBookmarksViewModel = sortViewModel
+        self.visualStyle = visualStyleManager.style
         self.managementDetailViewModel = BookmarkManagementDetailViewModel(bookmarkManager: bookmarkManager,
                                                                            metrics: metrics,
                                                                            mode: bookmarkManager.sortMode)
@@ -135,7 +138,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
 
     override func loadView() {
         let showSyncPromo = syncPromoManager.shouldPresentPromoFor(.bookmarks)
-        view = ColorView(frame: .zero, backgroundColor: .bookmarkPageBackground)
+        view = ColorView(frame: .zero, backgroundColor: visualStyle.colorsProvider.bookmarksManagerBackgroundColor)
         view.translatesAutoresizingMaskIntoConstraints = false
 
         // set menu before `newFolderButton` initialization as it uses the menu as its target
@@ -156,10 +159,10 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         toolbarButtonsStackView.distribution = .fill
         toolbarButtonsStackView.setClippingResistancePriority(.defaultHigh, for: .horizontal)
 
-        configureToolbarButton(newBookmarkButton, image: .addBookmark, isHidden: false)
-        configureToolbarButton(newFolderButton, image: .addFolder, isHidden: false)
-        configureToolbarButton(deleteItemsButton, image: .trash, isHidden: false)
-        configureToolbarButton(sortItemsButton, image: .sortAscending, isHidden: false)
+        configureToolbarButton(newBookmarkButton, image: visualStyle.iconsProvider.bookmarksIconsProvider.addBookmarkIcon, isHidden: false)
+        configureToolbarButton(newFolderButton, image: visualStyle.iconsProvider.bookmarksIconsProvider.addBookmarkFolderIcon, isHidden: false)
+        configureToolbarButton(deleteItemsButton, image: visualStyle.iconsProvider.bookmarksIconsProvider.deleteBookmarkIcon, isHidden: false)
+        configureToolbarButton(sortItemsButton, image: visualStyle.iconsProvider.bookmarksIconsProvider.sortBookmarkManuallyIcon, isHidden: false)
 
         loadingProgressIndicator.translatesAutoresizingMaskIntoConstraints = false
         loadingProgressIndicator.style = .spinning
@@ -257,37 +260,37 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
 
     private func setupLayout() {
         newBookmarkButton.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        newBookmarkButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        newBookmarkButton.setContentCompressionResistancePriority(.init(250), for: .horizontal)
         newFolderButton.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        newFolderButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        newFolderButton.setContentCompressionResistancePriority(.init(251), for: .horizontal)
         deleteItemsButton.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        deleteItemsButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        deleteItemsButton.setContentCompressionResistancePriority(.init(252), for: .horizontal)
         sortItemsButton.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        sortItemsButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        sortItemsButton.setContentCompressionResistancePriority(.init(253), for: .horizontal)
 
         NSLayoutConstraint.activate([
-            toolbarButtonsStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 48),
-            view.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor, constant: 58),
+            toolbarButtonsStackView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
+            view.trailingAnchor.constraint(equalTo: scrollView.trailingAnchor, constant: 16),
             separator.topAnchor.constraint(equalTo: toolbarButtonsStackView.bottomAnchor, constant: 24),
             scrollView.topAnchor.constraint(equalTo: separator.bottomAnchor),
 
             searchBar.heightAnchor.constraint(equalToConstant: 28),
             searchBar.leadingAnchor.constraint(greaterThanOrEqualTo: toolbarButtonsStackView.trailingAnchor, constant: 8),
             searchBar.widthAnchor.constraint(equalToConstant: 256).priority(150),
-            searchBar.widthAnchor.constraint(greaterThanOrEqualToConstant: 125),
+            searchBar.widthAnchor.constraint(greaterThanOrEqualToConstant: 170),
             searchBar.centerYAnchor.constraint(equalTo: toolbarButtonsStackView.centerYAnchor),
-            view.trailingAnchor.constraint(equalTo: searchBar.trailingAnchor, constant: 58),
+            view.trailingAnchor.constraint(equalTo: searchBar.trailingAnchor, constant: 16),
             view.bottomAnchor.constraint(equalTo: scrollView.bottomAnchor),
-            view.trailingAnchor.constraint(greaterThanOrEqualTo: searchBar.trailingAnchor, constant: 20),
-            view.trailingAnchor.constraint(equalTo: separator.trailingAnchor, constant: 58),
+            view.trailingAnchor.constraint(greaterThanOrEqualTo: searchBar.trailingAnchor, constant: 16),
+            view.trailingAnchor.constraint(equalTo: separator.trailingAnchor, constant: 16),
             emptyState.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             emptyState.centerYAnchor.constraint(equalTo: view.centerYAnchor, constant: 20),
             loadingProgressIndicator.centerXAnchor.constraint(equalTo: view.centerXAnchor),
             loadingProgressIndicator.centerYAnchor.constraint(equalTo: emptyState.centerYAnchor),
-            separator.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 48),
+            separator.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
             toolbarButtonsStackView.topAnchor.constraint(equalTo: view.topAnchor, constant: 32),
             emptyState.topAnchor.constraint(greaterThanOrEqualTo: separator.bottomAnchor, constant: 8),
-            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 48),
+            scrollView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 16),
 
             newBookmarkButton.heightAnchor.constraint(equalToConstant: 24),
             newBookmarkButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 24),
@@ -295,9 +298,9 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
             deleteItemsButton.heightAnchor.constraint(equalToConstant: 24),
             sortItemsButton.heightAnchor.constraint(equalToConstant: 24),
 
-            newBookmarkButton.widthAnchor.constraint(equalTo: newFolderButton.widthAnchor).priority(.defaultLow),
-            newFolderButton.widthAnchor.constraint(equalTo: deleteItemsButton.widthAnchor).priority(.defaultLow),
-            deleteItemsButton.widthAnchor.constraint(equalTo: sortItemsButton.widthAnchor).priority(.defaultLow),
+            newBookmarkButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 24),
+            newFolderButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 24),
+            deleteItemsButton.widthAnchor.constraint(greaterThanOrEqualToConstant: 24),
 
             emptyStateMessage.centerXAnchor.constraint(equalTo: emptyState.centerXAnchor),
 
@@ -348,13 +351,13 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
             switch newSortMode {
             case .nameDescending:
                 self.sortItemsButton.title = Self.thinSpace + UserText.bookmarksSortByNameTitle
-                self.sortItemsButton.image = .bookmarkSortDesc
+                self.sortItemsButton.image = visualStyle.iconsProvider.bookmarksIconsProvider.sortBookmarkDescendingIcon
             case .nameAscending:
                 self.sortItemsButton.title = Self.thinSpace + UserText.bookmarksSortByNameTitle
-                self.sortItemsButton.image = .bookmarkSortAsc
+                self.sortItemsButton.image = visualStyle.iconsProvider.bookmarksIconsProvider.sortBookmarkAscendingIcon
             case .manual:
                 self.sortItemsButton.title = Self.thinSpace + UserText.bookmarksSort
-                self.sortItemsButton.image = .bookmarkSortAsc
+                self.sortItemsButton.image = visualStyle.iconsProvider.bookmarksIconsProvider.sortBookmarkManuallyIcon
             }
 
             delegate?.bookmarkManagementDetailViewControllerSortChanged(newSortMode)
@@ -461,7 +464,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         managementDetailViewModel.onBookmarkTapped()
 
         if let bookmark = entity as? Bookmark {
-            WindowControllersManager.shared.open(bookmark, with: NSApp.currentEvent)
+            Application.appDelegate.windowControllersManager.open(bookmark, with: NSApp.currentEvent)
         } else if let folder = entity as? BookmarkFolder {
             clearSearch()
             resetSelections()
@@ -474,11 +477,11 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
               let row = tableView.withMouseLocationInViewCoordinates(event.locationInWindow, convert: tableView.row(at:)), row != -1,
               let bookmark = fetchEntity(at: row) as? Bookmark else { return }
 
-        WindowControllersManager.shared.open(bookmark, with: NSApp.currentEvent)
+        Application.appDelegate.windowControllersManager.open(bookmark, with: NSApp.currentEvent)
     }
 
     @objc func presentAddBookmarkModal(_ sender: Any) {
-        BookmarksDialogViewFactory.makeAddBookmarkView(parent: selectionState.folder)
+        BookmarksDialogViewFactory.makeAddBookmarkView(parent: selectionState.folder, bookmarkManager: bookmarkManager)
             .show(in: view.window)
     }
 
@@ -575,7 +578,7 @@ extension BookmarkManagementDetailViewController: NSTableViewDelegate, NSTableVi
         guard let entity = fetchEntity(at: row) else { return nil }
 
         let cell = tableView.makeView(withIdentifier: .init(BookmarkTableCellView.className()), owner: nil) as? BookmarkTableCellView
-            ?? BookmarkTableCellView(identifier: .init(BookmarkTableCellView.className()))
+        ?? BookmarkTableCellView(identifier: .init(BookmarkTableCellView.className()), visualStyle: visualStyle)
 
         cell.delegate = self
 
@@ -694,7 +697,7 @@ extension BookmarkManagementDetailViewController: NSTableViewDelegate, NSTableVi
     }
 
     fileprivate func openBookmarksInNewTabs(_ bookmarks: [Bookmark]) {
-        guard let tabCollection = WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else {
+        guard let tabCollection = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else {
             assertionFailure("Cannot open in new tabs")
             return
         }
@@ -912,30 +915,36 @@ extension BookmarkManagementDetailViewController {
 #if DEBUG
 @available(macOS 14.0, *)
 #Preview(traits: .fixedLayout(width: 700, height: 660)) {
-
-    return BookmarkManagementDetailViewController(bookmarkManager: {
-        let bkman = LocalBookmarkManager(bookmarkStore: BookmarkStoreMock(bookmarks: [
-            BookmarkFolder(id: "1", title: "Folder 1", children: [
-                BookmarkFolder(id: "2", title: "Nested Folder", children: [
-                    Bookmark(id: "b1", url: URL.duckDuckGo.absoluteString, title: "DuckDuckGo", isFavorite: false, parentFolderUUID: "2")
-                ])
-            ]),
-            BookmarkFolder(id: "3", title: "Another Folder", children: [
-                BookmarkFolder(id: "4", title: "Nested Folder", children: [
-                    BookmarkFolder(id: "5", title: "Another Nested Folder", children: [
-                        Bookmark(id: "b2", url: URL.duckDuckGo.absoluteString, title: "DuckDuckGo", isFavorite: false, parentFolderUUID: "5")
-                    ])
-                ])
-            ]),
-            Bookmark(id: "b3", url: URL.duckDuckGo.absoluteString, title: "Bookmark 1", isFavorite: false, parentFolderUUID: ""),
-            Bookmark(id: "b4", url: URL.duckDuckGo.absoluteString, title: "Bookmark 2", isFavorite: false, parentFolderUUID: ""),
-            Bookmark(id: "b5", url: URL.duckDuckGo.absoluteString, title: "DuckDuckGo", isFavorite: false, parentFolderUUID: "")
-        ]))
-        bkman.loadBookmarks()
+    let bkman = {
+        let manager = LocalBookmarkManager(
+            bookmarkStore: BookmarkStoreMock(
+                bookmarks: [
+                    BookmarkFolder(id: "1", title: "Folder 1", children: [
+                        BookmarkFolder(id: "2", title: "Nested Folder", children: [
+                            Bookmark(id: "b1", url: URL.duckDuckGo.absoluteString, title: "DuckDuckGo", isFavorite: false, parentFolderUUID: "2")
+                        ])
+                    ]),
+                    BookmarkFolder(id: "3", title: "Another Folder", children: [
+                        BookmarkFolder(id: "4", title: "Nested Folder", children: [
+                            BookmarkFolder(id: "5", title: "Another Nested Folder", children: [
+                                Bookmark(id: "b2", url: URL.duckDuckGo.absoluteString, title: "DuckDuckGo", isFavorite: false, parentFolderUUID: "5")
+                            ])
+                        ])
+                    ]),
+                    Bookmark(id: "b3", url: URL.duckDuckGo.absoluteString, title: "Bookmark 1", isFavorite: false, parentFolderUUID: ""),
+                    Bookmark(id: "b4", url: URL.duckDuckGo.absoluteString, title: "Bookmark 2", isFavorite: false, parentFolderUUID: ""),
+                    Bookmark(id: "b5", url: URL.duckDuckGo.absoluteString, title: "DuckDuckGo", isFavorite: false, parentFolderUUID: "")
+                ]
+            ),
+            appearancePreferences: .mock
+        )
+        manager.loadBookmarks()
         customAssertionFailure = { _, _, _ in }
 
-        return bkman
-    }())
+        return manager
+    }()
+
+    return BookmarkManagementDetailViewController(bookmarkManager: bkman, dragDropManager: .init(bookmarkManager: bkman))
 
 }
 #endif

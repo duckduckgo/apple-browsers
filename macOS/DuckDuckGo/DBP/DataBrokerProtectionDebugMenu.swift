@@ -25,6 +25,8 @@ import LoginItems
 import NetworkProtectionProxy
 import os.log
 import PixelKit
+import Subscription
+import Configuration
 
 final class DataBrokerProtectionDebugMenu: NSMenu {
 
@@ -45,12 +47,30 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     private var databaseBrowserWindowController: NSWindowController?
     private var dataBrokerForceOptOutWindowController: NSWindowController?
     private let customURLLabelMenuItem = NSMenuItem(title: "")
+    private let customServiceRootLabelMenuItem = NSMenuItem(title: "")
 
     private let environmentMenu = NSMenu()
     private let statusMenuIconMenu = NSMenuItem(title: "Show Status Menu Icon", action: #selector(DataBrokerProtectionDebugMenu.toggleShowStatusMenuItem))
 
     private let webUISettings = DataBrokerProtectionWebUIURLSettings(.dbp)
     private let settings = DataBrokerProtectionSettings(defaults: .dbp)
+
+    private lazy var brokerUpdater: BrokerJSONServiceProvider = {
+        let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
+        let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
+        guard let vault = try? vaultFactory.makeVault(reporter: nil) else {
+            fatalError("Failed to make secure storage vault")
+        }
+        let authenticationManager = DataBrokerAuthenticationManagerBuilder.buildAuthenticationManager(
+            subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge)
+        let featureFlagger = DBPFeatureFlagger(featureFlagger: Application.appDelegate.featureFlagger)
+
+        return RemoteBrokerJSONService(featureFlagger: featureFlagger,
+                                       settings: DataBrokerProtectionSettings(defaults: .dbp),
+                                       vault: vault,
+                                       authenticationManager: authenticationManager,
+                                       localBrokerProvider: nil)
+    }()
 
     init() {
         super.init(title: "Personal Information Removal")
@@ -119,6 +139,15 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
                 customURLLabelMenuItem
             }
 
+            NSMenuItem(title: "DBP API") {
+                NSMenuItem(title: "Set Service Root", action: #selector(DataBrokerProtectionDebugMenu.setCustomServiceRoot))
+                    .targetting(self)
+
+                customServiceRootLabelMenuItem
+
+                NSMenuItem(title: "⚠️ Please reopen PIR and trigger a new scan for the changes to show up", action: nil, target: nil)
+            }
+
             NSMenuItem.separator()
 
             NSMenuItem(title: "Toggle VPN Bypass", action: #selector(DataBrokerProtectionDebugMenu.toggleVPNBypass))
@@ -153,6 +182,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
     override func update() {
         updateWebUIMenuItemsState()
+        updateServiceRootMenuItemState()
         updateEnvironmentMenu()
         updateShowStatusMenuIconMenu()
     }
@@ -183,6 +213,34 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
         }
     }
 
+    // swiftlint:disable force_try
+    @objc private func setCustomServiceRoot() {
+        showCustomServiceRootAlert { [weak self] value, removeBrokers in
+            guard let value, let self else { return false }
+
+            self.settings.serviceRoot = value
+
+            if removeBrokers {
+                let pixelHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: PixelKit.shared!, platform: .macOS)
+                let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: pixelHandler)
+                let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
+                let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
+                let vault = try! vaultFactory.makeVault(reporter: reporter)
+                let database = DataBrokerProtectionDatabase(fakeBrokerFlag: DataBrokerDebugFlagFakeBroker(),
+                                                            pixelHandler: pixelHandler,
+                                                            vault: vault,
+                                                            localBrokerService: self.brokerUpdater)
+                let dataManager = DataBrokerProtectionDataManager(database: database)
+                try! dataManager.removeAllData()
+            }
+
+            self.forceBrokerJSONFilesUpdate()
+
+            return true
+        }
+    }
+    // swiftlint:enable force_try
+
     @objc private func startScheduledOperations(_ sender: NSMenuItem) {
         Logger.dataBrokerProtection.log("Running queued operations...")
         let showWebView = sender.representedObject as? Bool ?? false
@@ -210,10 +268,12 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
 
     @objc private func backgroundAgentDisable() {
         LoginItemsManager().disableLoginItems([LoginItem.dbpBackgroundAgent])
+        NotificationCenter.default.post(name: .dbpLoginItemDisabled, object: nil)
     }
 
     @objc private func backgroundAgentEnable() {
         LoginItemsManager().enableLoginItems([LoginItem.dbpBackgroundAgent])
+        NotificationCenter.default.post(name: .dbpLoginItemEnabled, object: nil)
     }
 
     @objc private func deleteAllDataAndStopAgent() {
@@ -224,7 +284,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     }
 
     @objc private func showDatabaseBrowser() {
-        let viewController = DataBrokerDatabaseBrowserViewController()
+        let viewController = DataBrokerDatabaseBrowserViewController(localBrokerService: brokerUpdater)
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 500, height: 400),
                               styleMask: [.titled, .closable, .miniaturizable, .resizable],
                               backing: .buffered,
@@ -243,7 +303,7 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     }
 
     @objc private func showForceOptOutWindow() {
-        let viewController = DataBrokerForceOptOutViewController()
+        let viewController = DataBrokerForceOptOutViewController(localBrokerService: brokerUpdater)
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 500, height: 400),
                               styleMask: [.titled, .closable, .miniaturizable, .resizable],
                               backing: .buffered,
@@ -274,20 +334,10 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
     }
 
     @objc private func forceBrokerJSONFilesUpdate() {
-        let databaseURL = DefaultDataBrokerProtectionDatabaseProvider.databaseFilePath(directoryName: DatabaseConstants.directoryName, fileName: DatabaseConstants.fileName, appGroupIdentifier: Bundle.main.appGroupName)
-        let vaultFactory = createDataBrokerProtectionSecureVaultFactory(appGroupName: Bundle.main.appGroupName, databaseFileURL: databaseURL)
-
-        guard let pixelKit = PixelKit.shared else {
-            fatalError("PixelKit not set up")
+        Task {
+            settings.resetBrokerDeliveryData()
+            try await brokerUpdater.checkForUpdates(skipsLimiter: true)
         }
-        let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .macOS)
-        let reporter = DataBrokerProtectionSecureVaultErrorReporter(pixelHandler: sharedPixelsHandler)
-        guard let vault = try? vaultFactory.makeVault(reporter: reporter) else {
-            fatalError("Failed to make secure storage vault")
-        }
-
-        let updater = DefaultDataBrokerProtectionBrokerUpdater(vault: vault, pixelHandler: sharedPixelsHandler)
-        updater.updateBrokers()
     }
 
     @objc private func toggleVPNBypass() {
@@ -337,11 +387,49 @@ final class DataBrokerProtectionDebugMenu: NSMenu {
         }
     }
 
+    func showCustomServiceRootAlert(callback: @escaping (String?, Bool) -> Bool) {
+        let alert = NSAlert()
+        alert.messageText = "Enter custom service root (staging environment only)"
+        alert.informativeText = "Leave blank for default"
+        alert.addButton(withTitle: "Accept")
+        alert.addButton(withTitle: "Cancel")
+        alert.showsSuppressionButton = true
+        alert.suppressionButton?.title = "Remove existing brokers"
+
+        let inputTextField = NSTextField(frame: NSRect(x: 0, y: 0, width: 200, height: 24))
+        inputTextField.placeholderString = "branches/some-branch"
+        alert.accessoryView = inputTextField
+
+        let shouldRemoveBrokers = alert.suppressionButton?.state == .on
+
+        let response = alert.runModal()
+        if response == .alertFirstButtonReturn {
+            if !callback(inputTextField.stringValue, shouldRemoveBrokers) {
+                let invalidAlert = NSAlert()
+                invalidAlert.messageText = "Invalid service root"
+                invalidAlert.informativeText = "Please enter a valid service root."
+                invalidAlert.addButton(withTitle: "OK")
+                invalidAlert.runModal()
+            }
+        } else {
+            _ = callback(nil, shouldRemoveBrokers)
+        }
+    }
+
     private func updateWebUIMenuItemsState() {
         productionURLMenuItem.state = webUISettings.selectedURLType == .custom ? .off : .on
         customURLMenuItem.state = webUISettings.selectedURLType == .custom ? .on : .off
 
         customURLLabelMenuItem.title = "Custom URL: [\(webUISettings.customURL ?? "")]"
+    }
+
+    private func updateServiceRootMenuItemState() {
+        switch settings.selectedEnvironment {
+        case .production:
+            customServiceRootLabelMenuItem.title = "Production environment currently in used. Please change it to Staging to use a custom service root"
+        case .staging:
+            customServiceRootLabelMenuItem.title = "Endpoint URL: [\(settings.endpointURL)]"
+        }
     }
 
     func menuItem(withTitle title: String, action: Selector, representedObject: Any?) -> NSMenuItem {

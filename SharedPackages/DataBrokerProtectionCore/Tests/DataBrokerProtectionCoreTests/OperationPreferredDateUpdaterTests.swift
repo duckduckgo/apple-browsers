@@ -29,7 +29,7 @@ final class OperationPreferredDateUpdaterTests: XCTestCase {
     }
 
     func testWhenParentBrokerHasChildSites_thenThoseSitesScanPreferredRunDateIsUpdatedWithConfirm() {
-        let sut = OperationPreferredDateUpdaterUseCase(database: databaseMock)
+        let sut = OperationPreferredDateUpdater(database: databaseMock)
         let confirmOptOutScanHours = 48
         let profileQueryId: Int64 = 11
         let expectedDate = Date().addingTimeInterval(confirmOptOutScanHours.hoursToSeconds)
@@ -45,7 +45,8 @@ final class OperationPreferredDateUpdaterTests: XCTestCase {
                 maintenanceScan: 1,
                 maxAttempts: -1
             ),
-            optOutUrl: ""
+            optOutUrl: "",
+            eTag: ""
         )
         databaseMock.childBrokers = [childBroker]
 
@@ -58,7 +59,7 @@ final class OperationPreferredDateUpdaterTests: XCTestCase {
     }
 
     func testWhenParentBrokerHasNoChildsites_thenNoCallsToTheDatabaseAreDone() {
-        let sut = OperationPreferredDateUpdaterUseCase(database: databaseMock)
+        let sut = OperationPreferredDateUpdater(database: databaseMock)
 
         XCTAssertNoThrow(try sut.updateChildrenBrokerForParentBroker(.mock, profileQueryId: 1))
 
@@ -81,7 +82,7 @@ final class OperationPreferredDateUpdaterTests: XCTestCase {
         databaseMock.brokerProfileQueryDataToReturn = [
             BrokerProfileQueryData(dataBroker: .mock, profileQuery: .mock, scanJobData: scanJobData, optOutJobData: [optOutJobData])
         ]
-        let sut = OperationPreferredDateUpdaterUseCase(database: databaseMock)
+        let sut = OperationPreferredDateUpdater(database: databaseMock)
 
         // When
         XCTAssertNoThrow(try sut.updateOperationDataDates(origin: .optOut, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId, schedulingConfig: DataBrokerScheduleConfig.mock))
@@ -108,7 +109,7 @@ final class OperationPreferredDateUpdaterTests: XCTestCase {
         databaseMock.brokerProfileQueryDataToReturn = [
             BrokerProfileQueryData(dataBroker: .mock, profileQuery: .mock, scanJobData: scanJobData, optOutJobData: [optOutJobData])
         ]
-        let sut = OperationPreferredDateUpdaterUseCase(database: databaseMock)
+        let sut = OperationPreferredDateUpdater(database: databaseMock)
 
         // When
         XCTAssertNoThrow(try sut.updateOperationDataDates(origin: .optOut, brokerId: brokerId, profileQueryId: profileQueryId, extractedProfileId: extractedProfileId, schedulingConfig: DataBrokerScheduleConfig.mock))

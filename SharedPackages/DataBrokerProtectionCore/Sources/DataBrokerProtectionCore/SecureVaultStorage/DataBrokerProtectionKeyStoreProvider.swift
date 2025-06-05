@@ -61,9 +61,9 @@ final class DataBrokerProtectionKeyStoreProvider: SecureStorageKeyStoreProvider 
     }
 
     let keychainService: KeychainService
-    private let appGroupName: String
+    private let appGroupName: String?
 
-    init(appGroupName: String,
+    init(appGroupName: String?,
          keychainService: KeychainService = DefaultKeychainService()) {
         self.keychainService = keychainService
         self.appGroupName = appGroupName
@@ -74,13 +74,22 @@ final class DataBrokerProtectionKeyStoreProvider: SecureStorageKeyStoreProvider 
     }
 
     func attributesForEntry(named: String, serviceName: String) -> [String: Any] {
-        [
-           kSecClass: kSecClassGenericPassword,
-           kSecUseDataProtectionKeychain: true,
-           kSecAttrSynchronizable: false,
-           kSecAttrAccessGroup: appGroupName,
-           kSecAttrAccount: named,
-       ] as [String: Any]
+        if let appGroupName = appGroupName {
+            return [
+                kSecClass: kSecClassGenericPassword,
+                kSecUseDataProtectionKeychain: true,
+                kSecAttrSynchronizable: false,
+                kSecAttrAccessGroup: appGroupName,
+                kSecAttrAccount: named,
+            ] as [String: Any]
+        } else {
+            return [
+                kSecClass: kSecClassGenericPassword,
+                kSecUseDataProtectionKeychain: true,
+                kSecAttrSynchronizable: false,
+                kSecAttrAccount: named,
+            ] as [String: Any]
+        }
     }
 }
 

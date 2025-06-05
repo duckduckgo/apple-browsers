@@ -33,7 +33,7 @@ struct SubscriptionGoogleView: View {
             Color(designSystemColor: .background)
                            .edgesIgnoringSafeArea(.all)
             VStack(alignment: .center) {
-                Image("google-play").padding(.top, Constants.padding)
+                Image(.googlePlay).padding(.top, Constants.padding)
                 
                 Text(UserText.subscriptionManageBillingGoogleText)
                     .daxSubheadRegular()

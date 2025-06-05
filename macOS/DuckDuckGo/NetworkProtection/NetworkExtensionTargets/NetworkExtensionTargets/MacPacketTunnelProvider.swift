@@ -133,7 +133,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         case .userBecameActive:
             PixelKit.fire(
                 NetworkProtectionPixelEvent.networkProtectionActiveUser,
-                frequency: .legacyDaily,
+                frequency: .legacyDailyNoSuffix,
                 withAdditionalParameters: [PixelKit.Parameters.vpnCohort: PixelKit.cohort(from: defaults.vpnFirstEnabled)],
                 includeAppVersionParameter: true)
         case .connectionTesterStatusChange(let status, let server):
@@ -213,7 +213,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
             case .error:
                 PixelKit.fire(
                     NetworkProtectionPixelEvent.networkProtectionLatencyError,
-                    frequency: .legacyDaily,
+                    frequency: .legacyDailyNoSuffix,
                     includeAppVersionParameter: true)
             case .quality(let quality):
                 guard quality != .unknown else { return }
@@ -440,8 +440,10 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
                                                                  key: UserDefaultsCacheKey.subscriptionEntitlements,
                                                                  settings: UserDefaultsCacheSettings(defaultExpirationInterval: .minutes(20)))
 
-        let subscriptionEndpointService = DefaultSubscriptionEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment)
-        let authEndpointService = DefaultAuthEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment)
+        let subscriptionEndpointService = DefaultSubscriptionEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment,
+                                                                             userAgent: UserAgent.duckDuckGoUserAgent())
+        let authEndpointService = DefaultAuthEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment,
+                                                             userAgent: UserAgent.duckDuckGoUserAgent())
         let accountManager = DefaultAccountManager(accessTokenStorage: tokenStore,
                                                    entitlementsCache: entitlementsCache,
                                                    subscriptionEndpointService: subscriptionEndpointService,
@@ -451,16 +453,16 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
 
         // MARK: - V2
         let authService = DefaultOAuthService(baseURL: subscriptionEnvironment.authEnvironment.url,
-                                              apiService: APIServiceFactory.makeAPIServiceForAuthV2())
+                                              apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: UserAgent.duckDuckGoUserAgent()))
         let tokenStoreV2 = NetworkProtectionKeychainTokenStoreV2(keychainType: Bundle.keychainType,
                                                                  serviceName: Self.tokenContainerServiceName,
-                                                                 errorEvents: debugEvents)
+                                                                 errorEventsHandler: debugEvents)
         let authClient = DefaultOAuthClient(tokensStorage: tokenStoreV2,
                                             legacyTokenStorage: nil,
                                             authService: authService)
 
-        let subscriptionEndpointServiceV2 = DefaultSubscriptionEndpointServiceV2(apiService: APIServiceFactory.makeAPIServiceForSubscription(),
-                                                                               baseURL: subscriptionEnvironment.serviceEnvironment.url)
+        let subscriptionEndpointServiceV2 = DefaultSubscriptionEndpointServiceV2(apiService: APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent()),
+                                                                                 baseURL: subscriptionEnvironment.serviceEnvironment.url)
         let pixelHandler = AuthV2PixelHandler(source: .systemExtension)
         let subscriptionManager = DefaultSubscriptionManagerV2(oAuthClient: authClient,
                                                                subscriptionEndpointService: subscriptionEndpointServiceV2,
@@ -477,8 +479,10 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
             } else {
                 Logger.networkProtection.log("Using Auth V2")
                 do {
-                    let token = try await subscriptionManager.getTokenContainer(policy: .localValid)
-                    return .success(token.decodedAccessToken.hasEntitlement(.networkProtection))
+                    let tokenContainer = try await subscriptionManager.getTokenContainer(policy: .localValid)
+                    let isNetworkProtectionEnabled = tokenContainer.decodedAccessToken.hasEntitlement(.networkProtection)
+                    Logger.networkProtection.log("NetworkProtectionEnabled if: \( isNetworkProtectionEnabled ? "Enabled" : "Disabled", privacy: .public)")
+                    return .success(isNetworkProtectionEnabled)
                 } catch {
                     return .failure(error)
                 }
@@ -590,7 +594,7 @@ final class MacPacketTunnelProvider: PacketTunnelProvider {
         if !Self.isAuthV2Enabled {
             // Auth V2 cleanup in case of rollback
             Logger.subscription.debug("Cleaning up Auth V2 token")
-            tokenStorageV2.tokenContainer = nil
+            try? tokenStorageV2.saveTokenContainer(nil)
         }
     }
 

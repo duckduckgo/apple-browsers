@@ -43,6 +43,9 @@ public protocol StorePurchaseManager {
     @MainActor func updatePurchasedProducts() async
     @MainActor func mostRecentTransaction() async -> String?
     @MainActor func hasActiveSubscription() async -> Bool
+    /// Checks if the user is eligible for a free trial subscription offer.
+    /// - Returns: `true` if the user is eligible for a free trial, `false` otherwise.
+    func isUserEligibleForFreeTrial() async -> Bool
 
     @MainActor func purchaseSubscription(with identifier: String, externalID: String) async -> Result<StorePurchaseManager.TransactionJWS, StorePurchaseManagerError>
 }
@@ -95,7 +98,7 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
             await updatePurchasedProducts()
             await updateAvailableProducts()
         } catch {
-            Logger.subscription.error("[StorePurchaseManager] Error: \(String(reflecting: error), privacy: .public) (\(error.localizedDescription, privacy: .public))")
+            Logger.subscription.error("[StorePurchaseManager] Error: \(error.localizedDescription, privacy: .public) (\(error.localizedDescription, privacy: .public))")
             throw error
         }
     }
@@ -144,9 +147,11 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
                 for id in availableProducts.compactMap({ $0.id }) {
                     _ = await subscriptionFeatureMappingCache.subscriptionFeatures(for: id)
                 }
+
+                NotificationCenter.default.post(name: .availableAppStoreProductsDidChange, object: self, userInfo: nil)
             }
         } catch {
-            Logger.subscription.error("[StorePurchaseManager] Error: \(String(reflecting: error), privacy: .public)")
+            Logger.subscription.error("[StorePurchaseManager] Error: \(error.localizedDescription, privacy: .public)")
         }
     }
 
@@ -168,7 +173,7 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
                 }
             }
         } catch {
-            Logger.subscription.error("[StorePurchaseManager] Error: \(String(reflecting: error), privacy: .public)")
+            Logger.subscription.error("[StorePurchaseManager] Error: \(error.localizedDescription, privacy: .public)")
         }
 
         Logger.subscription.info("[StorePurchaseManager] updatePurchasedProducts fetched \(purchasedSubscriptions.count) active subscriptions")
@@ -208,6 +213,16 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
         return !transactions.isEmpty
     }
 
+    /// Checks if the user is eligible for a free trial subscription offer.
+    /// - Returns: `true` if the user is eligible for a free trial, `false` otherwise.
+    public func isUserEligibleForFreeTrial() async -> Bool {
+        Logger.subscription.info("[StorePurchaseManager] isUserEligibleForFreeTrial")
+        guard let options = await freeTrialSubscriptionOptions()?.options else {
+            return false
+        }
+        return options.contains { $0.offer?.isUserEligible == true }
+    }
+
     @MainActor
     public func purchaseSubscription(with identifier: String, externalID: String) async -> Result<TransactionJWS, StorePurchaseManagerError> {
 
@@ -230,7 +245,7 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
         do {
             purchaseResult = try await product.purchase(options: options)
         } catch {
-            Logger.subscription.error("[StorePurchaseManager] Error: \(String(reflecting: error), privacy: .public)")
+            Logger.subscription.error("[StorePurchaseManager] Error: \(error.localizedDescription, privacy: .public)")
             return .failure(StorePurchaseManagerError.purchaseFailed)
         }
 
@@ -248,7 +263,7 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
                 await self.updatePurchasedProducts()
                 return .success(verificationResult.jwsRepresentation)
             case let .unverified(_, error):
-                Logger.subscription.info("[StorePurchaseManager] purchaseSubscription result: success /unverified/ - \(String(reflecting: error), privacy: .public)")
+                Logger.subscription.info("[StorePurchaseManager] purchaseSubscription result: success /unverified/ - \(error.localizedDescription, privacy: .public)")
                 // Successful purchase but transaction/receipt can't be verified
                 // Could be a jailbroken phone
                 return .failure(StorePurchaseManagerError.transactionCannotBeVerified)

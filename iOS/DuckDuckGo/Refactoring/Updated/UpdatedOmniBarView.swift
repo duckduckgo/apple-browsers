@@ -19,7 +19,9 @@
 
 import UIKit
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import SwiftUI
+import UIComponents
 
 final class UpdatedOmniBarView: UIView, OmniBarView {
 
@@ -39,18 +41,18 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     var accessoryButton: UIButton! { searchAreaView.accessoryButton }
     var menuButton: UIButton! { menuButtonView }
     var refreshButton: UIButton! { searchAreaView.reloadButton }
+    var shareButton: UIButton! { searchAreaView.shareButton }
     var privacyIconView: UIView? { privacyInfoContainer.privacyIcon }
     var searchContainer: UIView! { searchAreaContainerView }
     let expectedHeight: CGFloat = UpdatedOmniBarView.expectedHeight
     static let expectedHeight: CGFloat = Metrics.height
 
-    var accessoryType: OmniBarAccessoryType = .share {
+    var accessoryType: OmniBarAccessoryType = .chat {
         didSet {
             switch accessoryType {
             case .chat:
-                searchAreaView.accessoryButton.setImage(UIImage(resource: .aiChatNew24), for: .normal)
-            case .share:
-                searchAreaView.accessoryButton.setImage(UIImage(resource: .shareAppleNew24), for: .normal)
+                searchAreaView.accessoryButton.setImage(DesignSystemImages.Glyphs.Size24.aiChat, for: .normal)
+                searchAreaView.accessoryButton.accessibilityLabel = UserText.aiChatFeatureName
             }
             updateAccessoryAccessibility()
         }
@@ -108,6 +110,12 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         get { searchAreaView.reloadButton.isHidden }
         set { searchAreaView.reloadButton.isHidden = newValue }
     }
+
+    var isShareButtonHidden: Bool {
+        get { searchAreaView.shareButton.isHidden }
+        set { searchAreaView.shareButton.isHidden = newValue }
+    }
+
     var isVoiceSearchButtonHidden: Bool {
         get { searchAreaView.voiceSearchButton.isHidden }
         set {
@@ -141,14 +149,10 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         didSet {
             leadingButtonsContainer.isHidden = isUsingCompactLayout
             trailingButtonsContainer.isHidden = isUsingCompactLayout
-            leadingSpacer.isHidden = isUsingCompactLayout
-            trailingSpacer.isHidden = isUsingCompactLayout
             bookmarksButtonView.isHidden = isUsingCompactLayout
 
             readableSearchAreaWidthConstraint?.isActive = !isUsingCompactLayout
             largeSizeSpacingConstraint?.isActive = !isUsingCompactLayout
-
-            stackView.spacing = isUsingCompactLayout ? 0 : Metrics.expandedSizeSpacing
         }
     }
 
@@ -180,6 +184,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     var onSettingsButtonPressed: (() -> Void)?
     var onCancelPressed: (() -> Void)?
     var onRefreshPressed: (() -> Void)?
+    var onSharePressed: (() -> Void)?
     var onBackPressed: (() -> Void)?
     var onForwardPressed: (() -> Void)?
     var onBookmarksPressed: (() -> Void)?
@@ -205,16 +210,17 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         set { forwardButton.menu = newValue }
     }
 
-    let settingsButtonView = ToolbarButton()
-    let bookmarksButtonView = ToolbarButton()
-    let menuButtonView = ToolbarButton()
-    let forwardButtonView = ToolbarButton()
-    let backButtonView = ToolbarButton()
+    let settingsButtonView = BrowserChromeButton()
+    let bookmarksButtonView = BrowserChromeButton()
+    let menuButtonView = BrowserChromeButton()
+    let forwardButtonView = BrowserChromeButton()
+    let backButtonView = BrowserChromeButton()
 
     var menuButtonContent: MenuButton = MenuButton()
 
     var searchContainerWidth: CGFloat { searchAreaView.frame.width }
 
+    private var masksTop: Bool = true
     private let omniBarProgressView = OmniBarProgressView()
     var progressView: ProgressView? { omniBarProgressView.progressView }
 
@@ -222,12 +228,12 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     private let trailingButtonsContainer = UIStackView()
 
     private let searchAreaView = UpdatedOmniBarSearchView()
-    private let searchAreaContainerView = CompositeShadowView()
+    private let searchAreaContainerView = CompositeShadowView.defaultShadowView()
+
+    /// Spans to available width of the omni bar and allows the input field to center horizontally
+    private let searchAreaAlignmentView = UIView()
     private let searchAreaStackView = UIStackView()
     private let activeOutlineView = UIView()
-
-    private let leadingSpacer = UIView()
-    private let trailingSpacer = UIView()
 
     private let stackView = UIStackView()
 
@@ -236,7 +242,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     }
 
     init() {
-        super.init(frame: CGRect(x: 0, y: 0, width: 300, height: 68))
+        super.init(frame: CGRect(x: 0, y: 0, width: 300, height: Metrics.height))
 
         setUpSubviews()
         setUpConstraints()
@@ -253,24 +259,32 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         fatalError("init(coder:) has not been implemented")
     }
 
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        // To be replaced with AppUserDefaults.Notifications.addressBarPositionChanged after release
+        // https://app.asana.com/1/137249556945/project/1207252092703676/task/1210323588862346?focus=true
+        NotificationCenter.default.post(name: DefaultOmniBarView.didLayoutNotification, object: self.frame.height)
+        updateMaskLayer()
+    }
+
     private func setUpSubviews() {
         addSubview(stackView)
 
-        searchAreaContainerView.addSubview(searchAreaView)
-        searchAreaContainerView.addSubview(omniBarProgressView)
-
-        searchAreaStackView.addArrangedSubview(searchAreaContainerView)
-        searchAreaStackView.addArrangedSubview(bookmarksButtonView)
-
         stackView.addArrangedSubview(leadingButtonsContainer)
-        stackView.addArrangedSubview(leadingSpacer)
-        stackView.addArrangedSubview(searchAreaStackView)
-        stackView.addArrangedSubview(trailingSpacer)
+        stackView.addArrangedSubview(searchAreaAlignmentView)
         stackView.addArrangedSubview(trailingButtonsContainer)
 
         leadingButtonsContainer.addArrangedSubview(backButtonView)
         leadingButtonsContainer.addArrangedSubview(forwardButtonView)
 
+        searchAreaAlignmentView.addSubview(searchAreaStackView)
+
+        searchAreaStackView.addArrangedSubview(searchAreaContainerView)
+
+        searchAreaContainerView.addSubview(searchAreaView)
+        searchAreaContainerView.addSubview(omniBarProgressView)
+
+        trailingButtonsContainer.addArrangedSubview(bookmarksButtonView)
         trailingButtonsContainer.addArrangedSubview(menuButtonView)
         trailingButtonsContainer.addArrangedSubview(settingsButtonView)
 
@@ -283,18 +297,10 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         readableSearchAreaWidth.priority = .init(999)
         readableSearchAreaWidth.isActive = false
 
-        let searchAreaCenterXConstraint = searchAreaContainerView.centerXAnchor.constraint(equalTo: centerXAnchor)
-        searchAreaCenterXConstraint.priority = .defaultHigh
-
-        let largeSizeSpacing = leadingSpacer.widthAnchor.constraint(equalTo: trailingSpacer.widthAnchor)
-        largeSizeSpacing.priority = .init(700)
-        largeSizeSpacing.isActive = false
-
         let textAreaTopPaddingConstraint = stackView.topAnchor.constraint(equalTo: topAnchor, constant: Metrics.textAreaVerticalPaddingRegularSpacing)
         let textAreaBottomPaddingConstraint = stackView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Metrics.textAreaVerticalPaddingRegularSpacing)
 
         readableSearchAreaWidthConstraint = readableSearchAreaWidth
-        largeSizeSpacingConstraint = largeSizeSpacing
         self.textAreaTopPaddingConstraint = textAreaTopPaddingConstraint
         self.textAreaBottomPaddingConstraint = textAreaBottomPaddingConstraint
 
@@ -302,6 +308,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         activeOutlineView.translatesAutoresizingMaskIntoConstraints = false
         searchAreaView.translatesAutoresizingMaskIntoConstraints = false
         stackView.translatesAutoresizingMaskIntoConstraints = false
+        searchAreaStackView.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
             stackView.leadingAnchor.constraint(equalTo: safeAreaLayoutGuide.leadingAnchor, constant: Metrics.textAreaHorizontalPadding),
@@ -315,7 +322,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
             searchAreaView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
             searchAreaView.centerYAnchor.constraint(equalTo: searchAreaContainerView.centerYAnchor),
 
-            searchAreaCenterXConstraint,
+            searchAreaContainerView.centerXAnchor.constraint(equalTo: centerXAnchor),
             readableSearchAreaWidth,
 
             activeOutlineView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor, constant: -Metrics.activeBorderWidth),
@@ -326,7 +333,15 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
             omniBarProgressView.topAnchor.constraint(equalTo: searchAreaContainerView.topAnchor),
             omniBarProgressView.leadingAnchor.constraint(equalTo: searchAreaContainerView.leadingAnchor),
             omniBarProgressView.trailingAnchor.constraint(equalTo: searchAreaContainerView.trailingAnchor),
-            omniBarProgressView.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor)
+            omniBarProgressView.bottomAnchor.constraint(equalTo: searchAreaContainerView.bottomAnchor),
+
+            searchAreaStackView.topAnchor.constraint(equalTo: searchAreaAlignmentView.topAnchor),
+            searchAreaStackView.bottomAnchor.constraint(equalTo: searchAreaAlignmentView.bottomAnchor),
+            searchAreaStackView.leadingAnchor.constraint(greaterThanOrEqualTo: searchAreaAlignmentView.leadingAnchor),
+            searchAreaStackView.trailingAnchor.constraint(lessThanOrEqualTo: searchAreaAlignmentView.trailingAnchor),
+
+            // We want searchAreaStackView to grow as much as it's possible
+            searchAreaStackView.widthAnchor.constraint(equalTo: widthAnchor).withPriority(.defaultHigh),
         ])
 
         UpdatedOmniBarView.activateItemSizeConstraints(for: backButtonView)
@@ -342,6 +357,9 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         setContentHuggingPriority(.defaultLow, for: .horizontal)
 
         backgroundColor = UIColor(designSystemColor: .background)
+
+        searchAreaAlignmentView.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        searchAreaAlignmentView.setContentCompressionResistancePriority(.required, for: .horizontal)
 
         searchAreaContainerView.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
         searchAreaContainerView.setContentHuggingPriority(.defaultLow, for: .horizontal)
@@ -366,6 +384,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         stackView.axis = .horizontal
         stackView.alignment = .fill
         stackView.distribution = .fill
+        stackView.spacing = Metrics.expandedSizeSpacing
 
         searchAreaStackView.spacing = Metrics.expandedSizeSpacing
 
@@ -373,20 +392,22 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
 
         leadingButtonsContainer.isHidden = true
 
-        backButtonView.setImage(UIImage(resource: .arrowLeftSmall24))
+        backButtonView.setImage(DesignSystemImages.Glyphs.Size24.arrowLeftSmall)
         UpdatedOmniBarView.setUpCommonProperties(for: backButtonView)
 
-        forwardButtonView.setImage(UIImage(resource: .arrowRightNew24))
+        forwardButtonView.setImage(DesignSystemImages.Glyphs.Size24.arrowRight)
         UpdatedOmniBarView.setUpCommonProperties(for: forwardButtonView)
 
-        bookmarksButtonView.setImage(UIImage(resource: .bookmarksStacked24))
+        bookmarksButtonView.setImage(DesignSystemImages.Glyphs.Size24.bookmarks)
         UpdatedOmniBarView.setUpCommonProperties(for: bookmarksButtonView)
 
-        menuButtonView.setImage(UIImage(resource: .menuHamburgerNew24))
+        menuButtonView.setImage(DesignSystemImages.Glyphs.Size24.menuHamburger)
         UpdatedOmniBarView.setUpCommonProperties(for: menuButtonView)
 
-        settingsButtonView.setImage(UIImage(resource: .settingsNew24))
+        settingsButtonView.setImage(DesignSystemImages.Glyphs.Size24.settings)
         UpdatedOmniBarView.setUpCommonProperties(for: settingsButtonView)
+        
+        refreshButton.setImage(DesignSystemImages.Glyphs.Size24.reloadSmall, for: .normal)
 
         progressView?.hide()
 
@@ -398,6 +419,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         searchAreaView.voiceSearchButton.addTarget(self, action: #selector(voiceSearchButtonTap), for: .touchUpInside)
         searchAreaView.reloadButton.addTarget(self, action: #selector(reloadButtonTap), for: .touchUpInside)
         searchAreaView.clearButton.addTarget(self, action: #selector(clearButtonTap), for: .touchUpInside)
+        searchAreaView.shareButton.addTarget(self, action: #selector(shareButtonTap), for: .touchUpInside)
         searchAreaView.cancelButton.addTarget(self, action: #selector(cancelButtonTap), for: .touchUpInside)
         searchAreaView.accessoryButton.addTarget(self, action: #selector(accessoryButtonTap), for: .touchUpInside)
 
@@ -414,49 +436,10 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     }
 
     private func updateShadows() {
-        let inactiveColor = UIColor(designSystemColor: .shadowPrimary)
-        let activeColor = UIColor(designSystemColor: .shadowSecondary)
-
-        // The following two have the same id so we can update the existing shadow
-        let shadow1Inactive = CompositeShadowView.Shadow(
-            id: "shadow1",
-            color: inactiveColor,
-            opacity: 1,
-            radius: 12.0,
-            offset: CGSize(width: 0, height: 4)
-        )
-        let shadow1Active = CompositeShadowView.Shadow(
-            id: "shadow1",
-            color: activeColor,
-            opacity: 1,
-            radius: 12.0,
-            offset: CGSize(width: 0, height: 2)
-        )
-
-        // The following two have the same id so we can update the existing shadow
-        let shadow2Inactive = CompositeShadowView.Shadow(
-            id: "shadow2",
-            color: inactiveColor,
-            opacity: 0,
-            radius: 48.0,
-            offset: CGSize(width: 0, height: 16)
-        )
-        let shadow2Active = CompositeShadowView.Shadow(
-            id: "shadow2",
-            color: activeColor,
-            opacity: 1,
-            radius: 32,
-            offset: CGSize(width: 0, height: 16)
-        )
-
-        let primaryShadow = isActiveState ? shadow1Active : shadow1Inactive
-        let secondaryShadow = isActiveState ? shadow2Active : shadow2Inactive
-
-        if searchAreaContainerView.shadows.isEmpty {
-            searchAreaContainerView.shadows = [primaryShadow, secondaryShadow]
+        if isActiveState {
+            searchAreaContainerView.applyActiveShadow()
         } else {
-            searchAreaContainerView.updateShadow(primaryShadow)
-            searchAreaContainerView.updateShadow(secondaryShadow)
+            searchAreaContainerView.applyDefaultShadow()
         }
     }
 
@@ -519,9 +502,6 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         case .chat:
             accessoryButton.accessibilityLabel = "AI Chat"
             accessoryButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.AIChat"
-        case .share:
-            accessoryButton.accessibilityLabel = "Share"
-            accessoryButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.Share"
         }
         accessoryButton.accessibilityTraits = .button
     }
@@ -547,8 +527,6 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
 
         if traitCollection.hasDifferentColorAppearance(comparedTo: previousTraitCollection) {
             activeOutlineView.layer.borderColor = UIColor(Color(designSystemColor: .accent)).cgColor
-
-            updateShadows()
         }
     }
 
@@ -594,6 +572,10 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
 
     @objc private func clearButtonTap() {
         onClearButtonPressed?()
+    }
+
+    @objc private func shareButtonTap() {
+        onSharePressed?()
     }
 
     @objc private func cancelButtonTap() {
@@ -665,5 +647,29 @@ extension UpdatedOmniBarView {
 
     func moveSeparatorToBottom() {
         // no-op
+    }
+
+    // Used to mask shadows going outside of bounds to prevent them covering other content
+    func updateMaskLayer(maskTop: Bool) {
+        self.masksTop = maskTop
+
+        updateMaskLayer()
+    }
+
+    private func updateMaskLayer() {
+        let maskLayer = CALayer()
+
+        let clippingOffset = 100.0
+        let inset = clippingOffset * 2
+
+        // Make the frame uniformly larger along each axis and offset to top or bottom
+        let maskFrame = layer.bounds
+            .insetBy(dx: -inset, dy: -inset)
+            .offsetBy(dx: 0, dy: masksTop ? clippingOffset : -clippingOffset)
+
+        maskLayer.frame = maskFrame
+        maskLayer.backgroundColor = UIColor.black.cgColor
+
+        layer.mask = maskLayer
     }
 }

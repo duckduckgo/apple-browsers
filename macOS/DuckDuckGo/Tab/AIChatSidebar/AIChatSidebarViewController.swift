@@ -249,7 +249,7 @@ extension AIChatSidebarViewController: TabDelegate {
         case .tab(selected: let selected, _, _):
             if let parentWindowController = WindowControllersManager.shared.lastKeyMainWindowController {
                 let tabCollectionViewModel = parentWindowController.mainViewController.tabCollectionViewModel
-                tabCollectionViewModel.append(tab: childTab, selected: selected)
+                tabCollectionViewModel.insertOrAppend(tab: childTab, selected: selected)
             }
         }
     }

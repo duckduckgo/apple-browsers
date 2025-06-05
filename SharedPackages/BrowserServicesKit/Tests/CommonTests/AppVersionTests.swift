@@ -62,4 +62,28 @@ final class AppVersionTests: XCTestCase {
         mockBundle.add(name: Bundle.Key.buildNumber, value: Constants.build)
         XCTAssertEqual(Constants.build, testee.buildNumber)
     }
+
+    func testAlphaBuildSuffix() {
+        let suffix = "test-suffix"
+        mockBundle.add(name: Bundle.Key.alphaBuildSuffix, value: suffix)
+        XCTAssertEqual(suffix, testee.alphaBuildSuffix)
+    }
+
+    func testAlphaBuildSuffixEmpty() {
+        XCTAssertEqual("", testee.alphaBuildSuffix)
+    }
+
+    func testVersionAndBuildNumberWithoutSuffix() {
+        mockBundle.add(name: Bundle.Key.versionNumber, value: Constants.version)
+        mockBundle.add(name: Bundle.Key.buildNumber, value: Constants.build)
+        XCTAssertEqual("\(Constants.version).\(Constants.build)", testee.versionAndBuildNumber)
+    }
+
+    func testVersionAndBuildNumberWithSuffix() {
+        let suffix = "test-suffix"
+        mockBundle.add(name: Bundle.Key.versionNumber, value: Constants.version)
+        mockBundle.add(name: Bundle.Key.buildNumber, value: Constants.build)
+        mockBundle.add(name: Bundle.Key.alphaBuildSuffix, value: suffix)
+        XCTAssertEqual("\(Constants.version).\(Constants.build)-\(suffix)", testee.versionAndBuildNumber)
+    }
 }

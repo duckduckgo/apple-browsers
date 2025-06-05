@@ -46,17 +46,19 @@ public final class MaliciousSiteDetector: MaliciousSiteDetecting {
     private let dataManager: DataManaging
     private let eventMapping: EventMapping<Event>
     private let supportedThreatsProvider: SupportedThreatsProvider
+    private let shouldRemoveWWWInCanonicalization: () -> Bool
 
-    public convenience init(apiEnvironment: APIClientEnvironment, service: APIService, dataManager: DataManager, eventMapping: EventMapping<Event>, supportedThreatsProvider: @escaping SupportedThreatsProvider
+    public convenience init(apiEnvironment: APIClientEnvironment, service: APIService, dataManager: DataManager, eventMapping: EventMapping<Event>, supportedThreatsProvider: @escaping SupportedThreatsProvider, shouldRemoveWWWInCanonicalization: @escaping () -> Bool
     ) {
-        self.init(apiClient: APIClient(environment: apiEnvironment, service: service), dataManager: dataManager, eventMapping: eventMapping, supportedThreatsProvider: supportedThreatsProvider)
+        self.init(apiClient: APIClient(environment: apiEnvironment, service: service), dataManager: dataManager, eventMapping: eventMapping, supportedThreatsProvider: supportedThreatsProvider, shouldRemoveWWWInCanonicalization: shouldRemoveWWWInCanonicalization)
     }
 
-    init(apiClient: APIClient.Mockable, dataManager: DataManaging, eventMapping: EventMapping<Event>, supportedThreatsProvider: @escaping SupportedThreatsProvider) {
+    init(apiClient: APIClient.Mockable, dataManager: DataManaging, eventMapping: EventMapping<Event>, supportedThreatsProvider: @escaping SupportedThreatsProvider, shouldRemoveWWWInCanonicalization: @escaping () -> Bool) {
         self.apiClient = apiClient
         self.dataManager = dataManager
         self.eventMapping = eventMapping
         self.supportedThreatsProvider = supportedThreatsProvider
+        self.shouldRemoveWWWInCanonicalization = shouldRemoveWWWInCanonicalization
     }
 
     private func checkLocalFilters(hostHash: String, canonicalUrl: URL, for threatKind: ThreatKind) async -> Bool {
@@ -91,8 +93,8 @@ public final class MaliciousSiteDetector: MaliciousSiteDetecting {
 
     /// Evaluates the given URL to determine its malicious category (e.g., phishing, malware).
     public func evaluate(_ url: URL) async -> ThreatKind? {
-        guard let canonicalHost = url.canonicalHost(),
-              let canonicalUrl = url.canonicalURL() else { return .none }
+        guard let canonicalHost = url.canonicalHost(shouldRemoveWWW: shouldRemoveWWWInCanonicalization()),
+              let canonicalUrl = url.canonicalURL(shouldRemoveWWW: shouldRemoveWWWInCanonicalization()) else { return .none }
         let supportedThreats = supportedThreatsProvider()
 
         let hostHash = canonicalHost.sha256

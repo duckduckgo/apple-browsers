@@ -20,6 +20,8 @@
 import UIKit
 import BrowserServicesKit
 import SwiftUICore
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 enum ToolbarContentState: Equatable {
     case newTab
@@ -43,51 +45,47 @@ protocol ToolbarStateHandling {
 
 final class ToolbarHandler: ToolbarStateHandling {
     weak var toolbar: UIToolbar?
-    private let featureFlagger: FeatureFlagger
-    lazy var isExperimentalThemingEnabled = {
-        ExperimentalThemingManager(featureFlagger: featureFlagger).isExperimentalThemingEnabled
-    }()
+
+    private let themeManager: ThemeManaging
+
+    private var isExperimentalThemingEnabled: Bool {
+        themeManager.properties.isExperimentalThemingEnabled
+    }
 
     lazy var backButton = {
-        let resource = isExperimentalThemingEnabled ? ImageResource.arrowLeftNew24 : .browsePrevious
-        return createBarButtonItem(title: UserText.keyCommandBrowserBack, imageResource: resource)
+        return createBarButtonItem(title: UserText.keyCommandBrowserBack, image: DesignSystemImages.Glyphs.Size24.arrowLeft)
     }()
 
     lazy var fireBarButtonItem = {
-        let resource = isExperimentalThemingEnabled ? ImageResource.fireNew24 : .fire
-        return createBarButtonItem(title: UserText.actionForgetAll, imageResource: resource)
+        return createBarButtonItem(title: UserText.actionForgetAll, image: DesignSystemImages.Glyphs.Size24.fireSolid)
     }()
 
     lazy var forwardButton = {
-        let resource = isExperimentalThemingEnabled ? ImageResource.arrowRightNew24 : .browseNext
-        return createBarButtonItem(title: UserText.keyCommandBrowserForward, imageResource: resource)
+        return createBarButtonItem(title: UserText.keyCommandBrowserForward, image: DesignSystemImages.Glyphs.Size24.arrowRight)
     }()
 
     lazy var tabSwitcherButton = {
-        let resource = isExperimentalThemingEnabled ? ImageResource.tabNew24 : .add24
-        return createBarButtonItem(title: UserText.tabSwitcherAccessibilityLabel, imageResource: resource)
+        return createBarButtonItem(title: UserText.tabSwitcherAccessibilityLabel, image: DesignSystemImages.Glyphs.Size24.tabNew)
     }()
 
     lazy var bookmarkButton = {
-        let resource = isExperimentalThemingEnabled ? ImageResource.bookmarksStacked24 : .book24
-        return createBarButtonItem(title: UserText.actionOpenBookmarks, imageResource: resource)
+        return createBarButtonItem(title: UserText.actionOpenBookmarks, image: DesignSystemImages.Glyphs.Size24.bookmarks)
     }()
 
     lazy var passwordsButton = {
-        let resource = isExperimentalThemingEnabled ? ImageResource.keyNew24 : .key24
-        return createBarButtonItem(title: UserText.actionOpenPasswords, imageResource: resource)
+        return createBarButtonItem(title: UserText.actionOpenPasswords, image: DesignSystemImages.Glyphs.Size24.key)
     }()
 
     lazy var browserMenuButton = {
-        let resource = isExperimentalThemingEnabled ? ImageResource.menuHamburgerNew24 : .menuHorizontal24
-        return createBarButtonItem(title: UserText.menuButtonHint, imageResource: resource)
+        return createBarButtonItem(title: UserText.menuButtonHint, image: DesignSystemImages.Glyphs.Size24.menuHamburger)
     }()
 
     private var state: ToolbarContentState?
 
-    init(toolbar: UIToolbar, featureFlagger: FeatureFlagger) {
+    init(toolbar: UIToolbar,
+         themeManager: ThemeManaging = ThemeManager.shared) {
         self.toolbar = toolbar
-        self.featureFlagger = featureFlagger
+        self.themeManager = themeManager
     }
 
     // MARK: - Public Methods
@@ -127,10 +125,10 @@ final class ToolbarHandler: ToolbarStateHandling {
         forwardButton.isEnabled = currentTab?.canGoForward ?? false
     }
 
-    private func createBarButtonItem(title: String, imageResource: ImageResource) -> UIBarButtonItem {
+    private func createBarButtonItem(title: String, image: UIImage) -> UIBarButtonItem {
         if self.isExperimentalThemingEnabled {
             let button = BrowserChromeButton(.primary)
-            button.setImage(UIImage(resource: imageResource))
+            button.setImage(image)
             button.frame = CGRect(x: 0, y: 0, width: 34, height: 44)
 
             let barItem = UIBarButtonItem(customView: button)
@@ -138,7 +136,7 @@ final class ToolbarHandler: ToolbarStateHandling {
 
             return barItem
         } else {
-            return UIBarButtonItem(title: title, image: UIImage(resource: imageResource), primaryAction: nil)
+            return UIBarButtonItem(title: title, image: image, primaryAction: nil)
         }
     }
 

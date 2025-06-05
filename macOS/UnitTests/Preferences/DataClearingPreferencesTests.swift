@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import PixelKitTestingUtilities
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -43,5 +44,23 @@ class DataClearingPreferencesTests: XCTestCase {
         dataClearingPreferences.isLoginDetectionEnabled = true
 
         XCTAssertTrue(mockPersistor.loginDetectionEnabled)
+    }
+
+    // MARK: - Pixel firing tests
+
+    func testWhenDataClearingSettingIsUpdatedThenPixelIsFired() {
+        let pixelFiringMock = PixelKitMock()
+        let mockPersistor = MockFireButtonPreferencesPersistor()
+        let dataClearingPreferences = DataClearingPreferences(persistor: mockPersistor, pixelFiring: pixelFiringMock)
+
+        dataClearingPreferences.isAutoClearEnabled = true
+        dataClearingPreferences.isAutoClearEnabled = false
+
+        pixelFiringMock.expectedFireCalls = [
+            .init(pixel: SettingsPixel.dataClearingSettingToggled, frequency: .uniqueByName),
+            .init(pixel: SettingsPixel.dataClearingSettingToggled, frequency: .uniqueByName)
+        ]
+
+        pixelFiringMock.verifyExpectations()
     }
 }

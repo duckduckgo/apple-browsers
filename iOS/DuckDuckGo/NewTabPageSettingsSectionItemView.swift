@@ -18,16 +18,18 @@
 //
 
 import SwiftUI
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct NewTabPageSettingsSectionItemView: View {
 
     let title: String
-    let iconResource: ImageResource
+    let icon: Image
     @Binding var isEnabled: Bool
 
     var body: some View {
         HStack(spacing: 8) {
-            Image(iconResource)
+            icon
                 .foregroundColor(Color(designSystemColor: .icons))
 
             Toggle(isOn: $isEnabled, label: {
@@ -56,5 +58,6 @@ private extension View {
 
 #Preview {
     @State var isEnabled: Bool = false
-    return NewTabPageSettingsSectionItemView(title: "Foo", iconResource: .favorite24, isEnabled: $isEnabled).fixedSize(horizontal: false, vertical: true)
+
+    return NewTabPageSettingsSectionItemView(title: "Foo", icon: Image(uiImage: DesignSystemImages.Color.Size24.favorite), isEnabled: $isEnabled).fixedSize(horizontal: false, vertical: true)
 }

@@ -21,6 +21,7 @@ import Combine
 import Common
 import History
 import os.log
+import PixelKit
 
 protocol FirePopoverViewControllerDelegate: AnyObject {
 
@@ -78,7 +79,7 @@ final class FirePopoverViewController: NSViewController {
     init?(coder: NSCoder,
           fireViewModel: FireViewModel,
           tabCollectionViewModel: TabCollectionViewModel,
-          historyCoordinating: HistoryCoordinating = HistoryCoordinator.shared,
+          historyCoordinating: HistoryCoordinating = NSApp.delegateTyped.historyCoordinator,
           fireproofDomains: FireproofDomains = FireproofDomains.shared,
           faviconManagement: FaviconManagement = NSApp.delegateTyped.faviconManager) {
         self.fireViewModel = fireViewModel
@@ -147,6 +148,9 @@ final class FirePopoverViewController: NSViewController {
     }
 
     @IBAction func openDetailsButtonAction(_ sender: Any) {
+        // Fire pixel when fire popover details are viewed
+        PixelKit.fire(GeneralPixel.fireButtonDetailsViewed, frequency: .dailyAndCount)
+
         toggleDetails()
     }
 
@@ -155,7 +159,7 @@ final class FirePopoverViewController: NSViewController {
     }
 
     @IBAction func closeBurnerWindowButtonAction(_ sender: Any) {
-        let windowControllersManager = WindowControllersManager.shared
+        let windowControllersManager = Application.appDelegate.windowControllersManager
         guard let tabCollectionViewModel = firePopoverViewModel.tabCollectionViewModel,
               let windowController = windowControllersManager.windowController(for: tabCollectionViewModel) else {
             assertionFailure("No TabCollectionViewModel or MainWindowController")
@@ -192,7 +196,7 @@ final class FirePopoverViewController: NSViewController {
         let sites = firePopoverViewModel.selected.count
         switch firePopoverViewModel.clearingOption {
         case .allData:
-            let tabs = WindowControllersManager.shared.allTabViewModels.count
+            let tabs = Application.appDelegate.windowControllersManager.allTabViewModels.count
             infoLabel.stringValue = UserText.activeTabsInfo(tabs: tabs, sites: sites)
         case .currentWindow:
             let tabs = firePopoverViewModel.tabCollectionViewModel?.tabs.count ?? 0

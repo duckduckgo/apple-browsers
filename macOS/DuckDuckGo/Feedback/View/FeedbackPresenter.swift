@@ -26,7 +26,7 @@ enum FeedbackPresenter {
         let windowController = NSStoryboard.feedback.instantiateController(withIdentifier: "FeedbackWindowController") as! NSWindowController
 
         guard let feedbackWindow = windowController.window as? FeedbackWindow,
-              let parentWindowController = WindowControllersManager.shared.lastKeyMainWindowController else {
+              let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController else {
             assertionFailure("FeedbackPresenter: Failed to present FeedbackWindow")
             return
         }

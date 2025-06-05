@@ -309,7 +309,7 @@ final class BrokerProfileJobActionTests: XCTestCase {
             pixelHandler: pixelHandler,
             shouldRunNextStep: { true }
         )
-        sut.retriesCountOnError = 0
+        sut.resetRetriesCount()
         captchaService.shouldThrow = true
         sut.webViewHandler = webViewHandler
         sut.actionsHandler = ActionsHandler(step: step)

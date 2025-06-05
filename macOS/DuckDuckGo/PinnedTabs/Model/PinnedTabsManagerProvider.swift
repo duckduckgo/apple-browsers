@@ -72,7 +72,7 @@ final class PinnedTabsManagerProvider: @preconcurrency PinnedTabsManagerProvidin
 
     @MainActor
     private var windowControllerManager: WindowControllersManagerProtocol {
-        WindowControllersManager.shared
+        Application.appDelegate.windowControllersManager
     }
 
     @MainActor

@@ -21,6 +21,7 @@ protocol SettingsIconsProviding {
     var defaultBrowserIcon: NSImage { get }
     var privateSearchIcon: NSImage { get }
     var webTrackingProtectionIcon: NSImage { get }
+    var threatProtectionIcon: NSImage { get }
     var cookiePopUpProtectionIcon: NSImage { get }
     var emailProtectionIcon: NSImage { get }
     var privacyProIcon: NSImage { get }
@@ -43,6 +44,7 @@ final class LegacySettingsIconProvider: SettingsIconsProviding {
     var defaultBrowserIcon: NSImage = .defaultBrowser
     var privateSearchIcon: NSImage = .privateSearchIcon
     var webTrackingProtectionIcon: NSImage = .webTrackingProtectionIcon
+    var threatProtectionIcon: NSImage = .radarColor16
     var cookiePopUpProtectionIcon: NSImage = .cookieProtectionIcon
     var emailProtectionIcon: NSImage = .emailProtectionIcon
     var privacyProIcon: NSImage = .privacyPro
@@ -64,7 +66,8 @@ final class LegacySettingsIconProvider: SettingsIconsProviding {
 final class CurrentSettingsIconProvider: SettingsIconsProviding {
     var defaultBrowserIcon: NSImage = DesignSystemImages.Color.Size16.defaultBrowser
     var privateSearchIcon: NSImage = DesignSystemImages.Color.Size16.findSearch
-    var webTrackingProtectionIcon: NSImage = DesignSystemImages.Color.Size16.shieldCheck
+    var webTrackingProtectionIcon: NSImage = DesignSystemImages.Color.Size16.shield
+    var threatProtectionIcon: NSImage = DesignSystemImages.Color.Size16.radar
     var cookiePopUpProtectionIcon: NSImage = DesignSystemImages.Color.Size16.cookie
     var emailProtectionIcon: NSImage = DesignSystemImages.Color.Size16.emailProtection
     var privacyProIcon: NSImage = DesignSystemImages.Color.Size16.privacyPro

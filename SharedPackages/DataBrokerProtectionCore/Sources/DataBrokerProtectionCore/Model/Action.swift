@@ -56,6 +56,6 @@ extension Action {
     public var dataSource: DataSource { .userProfile }
 
     public func canTimeOut(while stepType: StepType?) -> Bool {
-        stepType == .scan && actionType == .extract
+        stepType == .scan && actionType == .expectation
     }
 }

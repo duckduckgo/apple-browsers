@@ -22,7 +22,10 @@ import XCTest
 final class FirePopoverViewModelTests: XCTestCase {
 
     @MainActor
-    private func makeViewModel(with tabCollectionViewModel: TabCollectionViewModel, onboardingContextualDialogsManager: ContextualOnboardingStateUpdater = ContextualDialogsManager()) -> FirePopoverViewModel {
+    private func makeViewModel(
+        with tabCollectionViewModel: TabCollectionViewModel,
+        onboardingContextualDialogsManager: ContextualOnboardingStateUpdater = ContextualDialogsManager(trackerMessageProvider: MockTrackerMessageProvider())
+    ) -> FirePopoverViewModel {
         let manager = WebCacheManagerMock()
         let historyCoordinator = HistoryCoordinatingMock()
         let permissionManager = PermissionManagerMock()
@@ -30,7 +33,7 @@ final class FirePopoverViewModelTests: XCTestCase {
         let fire = Fire(cacheManager: manager,
                         historyCoordinating: historyCoordinator,
                         permissionManager: permissionManager,
-                        windowControllerManager: WindowControllersManager.shared,
+                        windowControllerManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: faviconManager,
                         tld: ContentBlocking.shared.tld)
         return FirePopoverViewModel(

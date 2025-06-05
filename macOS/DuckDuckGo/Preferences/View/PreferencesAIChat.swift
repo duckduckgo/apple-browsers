@@ -69,10 +69,6 @@ extension Preferences {
                         }
                     }
                 }
-            }.onAppear {
-                PixelKit.fire(AIChatPixel.aiChatSettingsDisplayed,
-                              frequency: .dailyAndCount,
-                              includeAppVersionParameter: true)
             }
         }
     }

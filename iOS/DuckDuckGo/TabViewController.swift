@@ -96,8 +96,14 @@ class TabViewController: UIViewController {
         webView.isLoading && !wasLoadingStoppedExternally
     }
 
-    private lazy var isExperimentalThemingEnabled = ExperimentalThemingManager(featureFlagger: featureFlagger).isExperimentalThemingEnabled
-    private lazy var isRounderCornersEnabled: Bool = ExperimentalThemingManager(featureFlagger: featureFlagger).isRoundedCornersTreatmentEnabled
+    private let themingProperties: ExperimentalThemingProperties
+    private var isExperimentalThemingEnabled: Bool {
+        themingProperties.isExperimentalThemingEnabled
+    }
+    
+    private var isRounderCornersEnabled: Bool {
+        themingProperties.isRoundedCornersTreatmentEnabled
+    }
 
     var openedByPage = false
     weak var openingTab: TabViewController? {
@@ -441,7 +447,8 @@ class TabViewController: UIViewController {
                    websiteDataManager: WebsiteDataManaging,
                    tabInteractionStateSource: TabInteractionStateSource?,
                    specialErrorPageNavigationHandler: SpecialErrorPageManaging,
-                   featureDiscovery: FeatureDiscovery) {
+                   featureDiscovery: FeatureDiscovery,
+                   themingProperties: ExperimentalThemingProperties = ThemeManager.shared.properties) {
         self.tabModel = tabModel
         self.appSettings = appSettings
         self.bookmarksDatabase = bookmarksDatabase
@@ -463,6 +470,7 @@ class TabViewController: UIViewController {
         self.tabInteractionStateSource = tabInteractionStateSource
         self.specialErrorPageNavigationHandler = specialErrorPageNavigationHandler
         self.featureDiscovery = featureDiscovery
+        self.themingProperties = themingProperties
 
         self.tabURLInterceptor = TabURLInterceptorDefault(featureFlagger: featureFlagger) {
             return AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge.canPurchase

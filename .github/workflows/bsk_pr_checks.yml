@@ -14,6 +14,8 @@ on:
       - '.github/**'
       - '.xcode-version'
       - 'SharedPackages/BrowserServicesKit/**'
+  schedule:
+    - cron: '10,35,50 4,5,6 * * *'
 
 jobs:
 
@@ -23,6 +25,9 @@ jobs:
 
       runs-on: macos-15
       timeout-minutes: 30
+      
+      env:
+        WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
 
       outputs:
         commit_author: ${{ steps.fetch_commit_author.outputs.commit_author }}
@@ -63,9 +68,40 @@ jobs:
       - name: Build BSK
         run: set -o pipefail && swift build | tee build-log.txt | xcbeautify
 
+      - name: Configure system logging
+        run: |
+          sudo cp com.apple.system.logging.plist /Library/Preferences/Logging/com.apple.system.logging.plist
+          sudo killall logd || true
+
+      - name: Start log stream in background
+        run: |
+          log stream --predicate 'process == "xctest"' --style syslog > xctest.log 2>&1 &
+          echo $! > log_stream.pid
+
       - name: Run tests
         id: run-unit-tests
         run: set -o pipefail && swift test | tee -a build-log.txt | xcbeautify --report junit --report-path . --junit-report-filename package-tests.xml
+
+      - name: Send Unit Tests Status Pixel
+        if: always() && github.ref_name == 'main'
+        run: |
+          curl -fLSs -o /dev/null "https://improving.duckduckgo.com/t/m_ci_apple_bsk_main_unit_tests_macos_${{ steps.run-unit-tests.outcome }}?workflow=${{ env.WORKFLOW_URL }}"
+
+      - name: Stop log stream
+        if: always()
+        run: |
+          if [ -f log_stream.pid ]; then
+            kill $(cat log_stream.pid) || true
+          fi
+
+      - name: Upload XCTest log stream output
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bsk-xctest-log-stream.log
+          path: |
+            SharedPackages/BrowserServicesKit/xctest.log
+          retention-days: 7
 
       - name: Upload JUnit XML as artifact
         uses: actions/upload-artifact@v4
@@ -89,7 +125,6 @@ jobs:
         if: always() && steps.run-unit-tests.outcome == 'failure'
         env:
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
-          WORKFLOW_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
         run: |
           # Extract failed tests from the junit report
           # Only keep failures unique by classname and name (column 1 and 2 of the yq output)
@@ -121,6 +156,9 @@ jobs:
 
       runs-on: macos-15
       timeout-minutes: 30
+      
+      env:
+        WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
 
       steps:
 
@@ -177,6 +215,11 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             | tee -a ios-build-log.txt \
             | xcbeautify --report junit --report-path . --junit-report-filename bsk-ios-unittests.xml
+            
+      - name: Send Unit Tests Status Pixel
+        if: always() && github.ref_name == 'main'
+        run: |
+          curl -fLSs -o /dev/null "https://improving.duckduckgo.com/t/m_ci_apple_bsk_main_unit_tests_ios_${{ steps.run-unit-tests-ios.outcome }}?workflow=${{ env.WORKFLOW_URL }}"
 
       - name: Upload JUnit XML as artifact
         uses: actions/upload-artifact@v4
@@ -199,7 +242,6 @@ jobs:
         if: always() && steps.run-unit-tests-ios.outcome == 'failure'
         env:
           ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
-          WORKFLOW_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
         run: |
           # Extract failed tests from the junit report
           # Only keep failures unique by classname and name (column 1 and 2 of the yq output)
@@ -233,6 +275,7 @@ jobs:
           asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
           asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_BSK_POST_MERGE_SECTION_ID }}
           commit-author: ${{ needs.unit-tests.outputs.commit_author }}
+          github-token: ${{ secrets.GH_RO_PAT }}
 
   close-asana-task:
     name: Close Asana Task
@@ -251,3 +294,4 @@ jobs:
           action: close-task
           asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
           asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_BSK_POST_MERGE_SECTION_ID }}
+          github-token: ${{ secrets.GH_RO_PAT }}

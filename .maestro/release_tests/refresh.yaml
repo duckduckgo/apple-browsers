@@ -1,0 +1,27 @@
+# refresh.yaml
+appId: com.duckduckgo.mobile.ios
+tags:
+    - release
+
+---
+
+# Set up
+- runFlow:
+    file: ../shared/setup.yaml
+
+# Make Sure there's no refresh button
+- assertNotVisible: "Refresh Page"
+
+# Load Site
+- assertVisible:
+    id: "searchEntry"
+- tapOn:
+    id: "searchEntry"
+- inputText: "https://privacy-test-pages.site"
+- pressKey: Enter
+
+- assertVisible: ".*Privacy Test Pages.*"
+
+# Reload page
+- assertVisible: "Refresh Page"
+- tapOn: "Refresh Page"

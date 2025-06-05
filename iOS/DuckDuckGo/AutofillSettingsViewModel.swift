@@ -22,6 +22,8 @@ import Core
 import PrivacyDashboard
 import SwiftUI
 import BrowserServicesKit
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 protocol AutofillSettingsViewModelDelegate: AnyObject {
     func navigateToPasswords(viewModel: AutofillSettingsViewModel)
@@ -48,9 +50,9 @@ final class AutofillSettingsViewModel: ObservableObject {
         var icon: Image {
             switch self {
             case .passwords:
-                return Image(.key24)
+                return Image(uiImage: DesignSystemImages.Glyphs.Size24.key)
             case .creditCards:
-                return Image(.creditCard24)
+                return Image(uiImage: DesignSystemImages.Glyphs.Size24.creditCard)
             }
         }
         

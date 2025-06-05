@@ -18,10 +18,11 @@
 
 import XCTest
 import Combine
+import Common
+import PixelKitTestingUtilities
 import Subscription
 import SubscriptionUI
 import SubscriptionTestingUtilities
-import Common
 @testable import DuckDuckGo_Privacy_Browser
 
 @MainActor
@@ -29,6 +30,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
 
     private var testNotificationCenter: NotificationCenter!
     private var mockSubscriptionManager: SubscriptionAuthV1toV2BridgeMock!
+    private var pixelFiringMock: PixelKitMock!
 
     var cancellables = Set<AnyCancellable>()
 
@@ -36,6 +38,7 @@ final class PreferencesSidebarModelTests: XCTestCase {
         try super.setUpWithError()
         testNotificationCenter = NotificationCenter()
         mockSubscriptionManager = SubscriptionAuthV1toV2BridgeMock()
+        pixelFiringMock = PixelKitMock()
         cancellables.removeAll()
     }
 
@@ -45,7 +48,8 @@ final class PreferencesSidebarModelTests: XCTestCase {
             tabSwitcherTabs: tabSwitcherTabs,
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false),
-            subscriptionManager: mockSubscriptionManager
+            subscriptionManager: mockSubscriptionManager,
+            pixelFiring: pixelFiringMock
         )
     }
 
@@ -56,7 +60,8 @@ final class PreferencesSidebarModelTests: XCTestCase {
             privacyConfigurationManager: MockPrivacyConfigurationManager(),
             syncService: MockDDGSyncing(authState: .inactive, isSyncInProgress: false),
             subscriptionManager: mockSubscriptionManager,
-            notificationCenter: testNotificationCenter
+            notificationCenter: testNotificationCenter,
+            pixelFiring: pixelFiringMock
         )
     }
 
@@ -277,5 +282,67 @@ final class PreferencesSidebarModelTests: XCTestCase {
 
         // Then
         await fulfillment(of: [expectation], timeout: timeout)
+    }
+
+    // MARK: - Pixel firing tests
+
+    func testThatSelectedPanePixelIsSentAtInitialization() throws {
+        let sections: [PreferencesSection] = [.init(id: .regularPreferencePanes, panes: [.appearance, .autofill])]
+        _ = PreferencesSidebarModel(loadSections: sections)
+        pixelFiringMock.expectedFireCalls = [.init(pixel: SettingsPixel.settingsPaneOpened(.appearance), frequency: .daily)]
+
+        pixelFiringMock.verifyExpectations()
+    }
+
+    func testWhenSelectedPaneIsUpdatedThenPixelIsSent() throws {
+        let sections: [PreferencesSection] = [.init(id: .regularPreferencePanes, panes: [.appearance, .autofill, .duckPlayer, .general, .accessibility])]
+        let model = PreferencesSidebarModel(loadSections: sections)
+        model.selectPane(.autofill)
+        model.selectPane(.general)
+        model.selectPane(.duckPlayer)
+        model.selectPane(.accessibility)
+        model.selectPane(.appearance)
+        pixelFiringMock.expectedFireCalls = [
+            .init(pixel: SettingsPixel.settingsPaneOpened(.appearance), frequency: .daily),
+            .init(pixel: SettingsPixel.settingsPaneOpened(.autofill), frequency: .daily),
+            .init(pixel: SettingsPixel.settingsPaneOpened(.general), frequency: .daily),
+            .init(pixel: SettingsPixel.settingsPaneOpened(.duckPlayer), frequency: .daily),
+            .init(pixel: SettingsPixel.settingsPaneOpened(.accessibility), frequency: .daily),
+            .init(pixel: SettingsPixel.settingsPaneOpened(.appearance), frequency: .daily)
+        ]
+
+        pixelFiringMock.verifyExpectations()
+    }
+
+    func testWhenSelectedPaneIsUpdatedWithTheSameValueThenPixelIsNotSent() throws {
+        let sections: [PreferencesSection] = [.init(id: .regularPreferencePanes, panes: [.appearance, .autofill, .duckPlayer, .general, .accessibility])]
+        let model = PreferencesSidebarModel(loadSections: sections)
+        model.selectPane(.appearance)
+        model.selectPane(.appearance)
+        model.selectPane(.appearance)
+        model.selectPane(.appearance)
+        pixelFiringMock.expectedFireCalls = [
+            .init(pixel: SettingsPixel.settingsPaneOpened(.appearance), frequency: .daily)
+        ]
+
+        pixelFiringMock.verifyExpectations()
+    }
+
+    func testWhenSelectedPaneIsUpdatedToAIChatThenAIChatPixelIsSent() throws {
+        let sections: [PreferencesSection] = [.init(id: .regularPreferencePanes, panes: [.appearance, .aiChat])]
+        let model = PreferencesSidebarModel(loadSections: sections)
+        model.selectPane(.aiChat)
+        model.selectPane(.appearance)
+        model.selectPane(.aiChat)
+        model.selectPane(.appearance)
+        pixelFiringMock.expectedFireCalls = [
+            .init(pixel: SettingsPixel.settingsPaneOpened(.appearance), frequency: .daily),
+            .init(pixel: AIChatPixel.aiChatSettingsDisplayed, frequency: .dailyAndCount),
+            .init(pixel: SettingsPixel.settingsPaneOpened(.appearance), frequency: .daily),
+            .init(pixel: AIChatPixel.aiChatSettingsDisplayed, frequency: .dailyAndCount),
+            .init(pixel: SettingsPixel.settingsPaneOpened(.appearance), frequency: .daily)
+        ]
+
+        pixelFiringMock.verifyExpectations()
     }
 }

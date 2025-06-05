@@ -290,6 +290,8 @@
                     </view>
                     <connections>
                         <outlet property="addTabButton" destination="Avv-iY-qO8" id="Rku-SK-49j"/>
+                        <outlet property="addTabButtonHeight" destination="yDP-bt-OPj" id="vB3-o7-ddy"/>
+                        <outlet property="addTabButtonWidth" destination="hs2-lp-uJL" id="OEX-Bf-A4R"/>
                         <outlet property="backgroundColorView" destination="T1A-KU-P4c" id="2vx-0t-14l"/>
                         <outlet property="burnerWindowBackgroundView" destination="8kJ-Ja-bmu" id="l4s-4i-8eV"/>
                         <outlet property="collectionView" destination="OEu-5P-cRF" id="b95-c4-JM0"/>
@@ -298,15 +300,21 @@
                         <outlet property="fireButtonHeightConstraint" destination="Dea-ni-6y6" id="Kiz-yu-ppN"/>
                         <outlet property="fireButtonWidthConstraint" destination="9Ii-rC-Eca" id="nke-9d-5t2"/>
                         <outlet property="leftScrollButton" destination="7XG-Qm-Ksx" id="yre-8P-vb9"/>
+                        <outlet property="leftScrollButtonHeight" destination="bi3-CJ-RZk" id="nlt-sF-asP"/>
+                        <outlet property="leftScrollButtonWidth" destination="hQ5-kp-q6K" id="vr0-hJ-Ajw"/>
                         <outlet property="leftShadowImageView" destination="zsA-or-9Xo" id="wVp-jj-2UD"/>
                         <outlet property="leftSideStackLeadingConstraint" destination="qU6-dU-yJw" id="eFI-TI-wxX"/>
+                        <outlet property="pinnedTabsContainerHeightConstraint" destination="1BZ-3V-sPc" id="sct-zW-gbZ"/>
                         <outlet property="pinnedTabsContainerView" destination="G3c-kC-Gu9" id="v78-CF-sIa"/>
                         <outlet property="pinnedTabsViewLeadingConstraint" destination="a7p-a2-dhE" id="0hK-dY-o7E"/>
                         <outlet property="pinnedTabsWindowDraggingView" destination="1Zn-JZ-2g3" id="Rld-aG-FZ2"/>
                         <outlet property="rightScrollButton" destination="2da-G7-xcP" id="4ka-kI-E1j"/>
+                        <outlet property="rightScrollButtonHeight" destination="loq-Q2-JPM" id="s2D-I8-x3T"/>
+                        <outlet property="rightScrollButtonWidth" destination="avH-Y7-ipU" id="wu1-q7-0vO"/>
                         <outlet property="rightShadowImageView" destination="u4N-Qc-LMf" id="QX4-lD-gfb"/>
                         <outlet property="rightSideStackView" destination="dN1-y1-5Xe" id="bxw-hd-Zm5"/>
                         <outlet property="scrollView" destination="O0X-yp-zLn" id="g9v-fn-qxC"/>
+                        <outlet property="scrollViewHeightConstraint" destination="7Y5-9k-rSZ" id="W5l-TS-ca9"/>
                         <outlet property="shadowView" destination="G3d-9f-GhJ" id="OSV-TN-lVS"/>
                         <outlet property="visualEffectBackgroundView" destination="8Av-Au-VBq" id="Ven-IO-fIa"/>
                         <outlet property="windowDraggingViewLeadingConstraint" destination="5k3-uY-xby" id="kVU-yU-9M4"/>

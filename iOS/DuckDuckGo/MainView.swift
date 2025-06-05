@@ -26,26 +26,35 @@ class MainViewFactory {
     private let coordinator: MainViewCoordinator
     private let featureFlagger: FeatureFlagger
     private let omnibarDependencies: OmnibarDependencyProvider
-    private let experimentalThemingManager = ExperimentalThemingManager()
-
+    private var isExperimentalThemingEnabled: Bool {
+        omnibarDependencies.themingProperties.isExperimentalThemingEnabled
+    }
+    
     var superview: UIView {
         coordinator.superview
     }
-
-    private init(parentController: UIViewController, omnibarDependencies: OmnibarDependencyProvider, featureFlagger: FeatureFlagger) {
+    
+    private init(parentController: UIViewController,
+                 omnibarDependencies: OmnibarDependencyProvider,
+                 featureFlagger: FeatureFlagger) {
         coordinator = MainViewCoordinator(parentController: parentController)
         self.featureFlagger = featureFlagger
         self.omnibarDependencies = omnibarDependencies
     }
-
+    
     static func createViewHierarchy(_ parentController: UIViewController,
                                     aiChatSettings: AIChatSettingsProvider,
                                     voiceSearchHelper: VoiceSearchHelperProtocol,
-                                    featureFlagger: FeatureFlagger) -> MainViewCoordinator {
+                                    featureFlagger: FeatureFlagger,
+                                    themingProperties: ExperimentalThemingProperties = ThemeManager.shared.properties) -> MainViewCoordinator {
+        
         let omnibarDependencies = OmnibarDependencies(voiceSearchHelper: voiceSearchHelper,
                                                       featureFlagger: featureFlagger,
-                                                      aiChatSettings: aiChatSettings)
-        let factory = MainViewFactory(parentController: parentController, omnibarDependencies: omnibarDependencies, featureFlagger: featureFlagger)
+                                                      aiChatSettings: aiChatSettings,
+                                                      themingProperties: themingProperties)
+        let factory = MainViewFactory(parentController: parentController,
+                                      omnibarDependencies: omnibarDependencies,
+                                      featureFlagger: featureFlagger)
         factory.createViews()
         factory.disableAutoresizingOnImmediateSubviews(factory.superview)
         factory.constrainViews()
@@ -78,7 +87,7 @@ extension MainViewFactory {
     }
     
     private func createProgressView() {
-        if experimentalThemingManager.isExperimentalThemingEnabled {
+        if isExperimentalThemingEnabled {
             coordinator.progress = coordinator.omniBar!.barView.progressView
         } else {
             coordinator.progress = ProgressView()
@@ -159,15 +168,15 @@ extension MainViewFactory {
         coordinator.toolbar = HitTestingToolbar()
         coordinator.toolbar.isTranslucent = false
         superview.addSubview(coordinator.toolbar)
-        coordinator.toolbarHandler = ToolbarHandler(toolbar: coordinator.toolbar, featureFlagger: featureFlagger)
+        coordinator.toolbarHandler = ToolbarHandler(toolbar: coordinator.toolbar)
         coordinator.updateToolbarWithState(.newTab)
     }
 
     final class LogoBackgroundView: UIView { }
     private func createLogoBackground() {
         coordinator.logoContainer = LogoBackgroundView()
-        coordinator.logo = UIImageView(image: UIImage(named: "Logo"))
-        coordinator.logoText = UIImageView(image: UIImage(named: "TextDuckDuckGo"))
+        coordinator.logo = UIImageView(image: UIImage(resource: .logo))
+        coordinator.logoText = UIImageView(image: UIImage(resource: .textDuckDuckGo))
 
         coordinator.logoContainer.backgroundColor = .clear
         coordinator.logoContainer.addSubview(coordinator.logo)
@@ -202,7 +211,7 @@ extension MainViewFactory {
     }
 
     private func constrainProgress() {
-        guard experimentalThemingManager.isExperimentalThemingEnabled == false else { return }
+        guard !isExperimentalThemingEnabled else { return }
 
         let progress = coordinator.progress!
         let navigationBarContainer = coordinator.navigationBarContainer!

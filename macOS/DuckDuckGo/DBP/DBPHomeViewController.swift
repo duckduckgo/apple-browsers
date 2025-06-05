@@ -74,7 +74,7 @@ final class DBPHomeViewController: NSViewController {
             prefs: prefs,
             webUISettings: DataBrokerProtectionWebUIURLSettings(.dbp),
             openURLHandler: { url in
-                WindowControllersManager.shared.show(url: url, source: .link, newTab: true)
+                Application.appDelegate.windowControllersManager.show(url: url, source: .link, newTab: true)
             })
     }()
 

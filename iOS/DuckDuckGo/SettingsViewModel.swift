@@ -48,7 +48,7 @@ final class SettingsViewModel: ObservableObject {
     let textZoomCoordinator: TextZoomCoordinating
     let aiChatSettings: AIChatSettingsProvider
     let maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging
-    let experimentalThemingManager: ExperimentalThemingManager
+    let themeManager: ThemeManaging
     var experimentalAIChatManager: ExperimentalAIChatManager
     private let duckPlayerSettings: DuckPlayerSettings
     private let duckPlayerPixelHandler: DuckPlayerPixelFiring.Type
@@ -175,8 +175,11 @@ final class SettingsViewModel: ObservableObject {
         Binding<Bool>(
             get: { self.state.isExperimentalThemingEnabled },
             set: { _ in
-                self.experimentalThemingManager.toggleExperimentalTheming()
-                self.state.isExperimentalThemingEnabled = self.experimentalThemingManager.isExperimentalThemingEnabled
+                self.themeManager.toggleExperimentalTheming()
+
+                // The theme manager is caching the value, so we use previous state to update the UI.
+                // Changes will be applied after restart.
+                self.state.isExperimentalThemingEnabled = !self.state.isExperimentalThemingEnabled
             })
     }
 
@@ -488,7 +491,7 @@ final class SettingsViewModel: ObservableObject {
          textZoomCoordinator: TextZoomCoordinating,
          aiChatSettings: AIChatSettingsProvider,
          maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
-         experimentalThemingManager: ExperimentalThemingManager,
+         themeManager: ThemeManaging = ThemeManager.shared,
          experimentalAIChatManager: ExperimentalAIChatManager,
          duckPlayerSettings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
          duckPlayerPixelHandler: DuckPlayerPixelFiring.Type = DuckPlayerPixelHandler.self,
@@ -511,7 +514,7 @@ final class SettingsViewModel: ObservableObject {
         self.textZoomCoordinator = textZoomCoordinator
         self.aiChatSettings = aiChatSettings
         self.maliciousSiteProtectionPreferencesManager = maliciousSiteProtectionPreferencesManager
-        self.experimentalThemingManager = experimentalThemingManager
+        self.themeManager = themeManager
         self.experimentalAIChatManager = experimentalAIChatManager
         self.duckPlayerSettings = duckPlayerSettings
         self.duckPlayerPixelHandler = duckPlayerPixelHandler
@@ -543,7 +546,7 @@ extension SettingsViewModel {
             textZoom: SettingsState.TextZoom(enabled: textZoomCoordinator.isEnabled, level: appSettings.defaultTextZoomLevel),
             addressBar: SettingsState.AddressBar(enabled: !isPad, position: appSettings.currentAddressBarPosition),
             showsFullURL: appSettings.showFullSiteAddress,
-            isExperimentalThemingEnabled: experimentalThemingManager.isExperimentalThemingEnabled,
+            isExperimentalThemingEnabled: themeManager.properties.isExperimentalThemingEnabled,
             isExperimentalAIChatEnabled: experimentalAIChatManager.isExperimentalAIChatSettingsEnabled,
             sendDoNotSell: appSettings.sendDoNotSell,
             autoconsentEnabled: appSettings.autoconsentEnabled,
@@ -694,7 +697,7 @@ extension SettingsViewModel {
 
     @MainActor func shouldPresentSyncViewWithSource(_ source: String? = nil) {
         state.syncSource = source
-        presentLegacyView(.sync)
+        presentLegacyView(.sync(nil))
     }
 
     func openEmailProtection() {
@@ -750,8 +753,8 @@ extension SettingsViewModel {
         
         case .addToDock:
             presentViewController(legacyViewProvider.addToDock, modal: true)
-        case .sync:
-            pushViewController(legacyViewProvider.syncSettings(source: state.syncSource))
+        case .sync(let pairingInfo):
+            pushViewController(legacyViewProvider.syncSettings(source: state.syncSource, pairingInfo: pairingInfo))
         case .appIcon: pushViewController(legacyViewProvider.appIconSettings(onChange: { [weak self] appIcon in
             self?.state.appIcon = appIcon
         }))

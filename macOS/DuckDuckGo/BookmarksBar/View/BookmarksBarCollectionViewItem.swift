@@ -86,7 +86,6 @@ final class BookmarksBarCollectionViewItem: NSCollectionViewItem {
         super.viewDidLoad()
 
         view.wantsLayer = true
-        view.layer?.cornerRadius = 4.0
         view.layer?.masksToBounds = true
         view.menu = BookmarksContextMenu(delegate: self)
     }
@@ -95,6 +94,8 @@ final class BookmarksBarCollectionViewItem: NSCollectionViewItem {
         self.representedObject = entity
         self.title = entity.title
         self.representedObject = entity
+
+        view.layer?.cornerRadius = visualStyle.toolbarButtonsCornerRadius
 
         if let bookmark = entity as? Bookmark {
             let favicon = bookmark.favicon(.small)?.copy() as? NSImage

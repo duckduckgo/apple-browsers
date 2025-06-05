@@ -67,7 +67,7 @@ class BlankSnapshotViewController: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
 
-        tabSwitcherButton = ExperimentalThemingManager().isExperimentalThemingEnabled ? TabSwitcherStaticButton() : TabSwitcherAnimatedButton()
+        tabSwitcherButton = ThemeManager.shared.properties.isExperimentalThemingEnabled ? TabSwitcherStaticButton() : TabSwitcherAnimatedButton()
 
         viewCoordinator = MainViewFactory.createViewHierarchy(self,
                                                               aiChatSettings: aiChatSettings,
@@ -121,10 +121,7 @@ class BlankSnapshotViewController: UIViewController {
     }
 
     private func configureTabBar() {
-        let storyboard = UIStoryboard(name: "TabSwitcher", bundle: nil)
-        guard let controller = storyboard.instantiateViewController(withIdentifier: "TabsBar") as? TabsBarViewController else {
-            fatalError("Failed to instantiate tabs bar controller")
-        }
+        let controller = TabsBarViewController.createFromXib(themingProperties: ThemeManager.shared.properties)
         controller.view.frame = CGRect(x: 0, y: 24, width: view.frame.width, height: 40)
         controller.view.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(controller.view)

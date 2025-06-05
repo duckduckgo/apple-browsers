@@ -184,7 +184,7 @@ final class FireViewController: NSViewController {
         var playFireAnimation = true
 
         // Animate just on the active window
-        let lastKeyWindowController = WindowControllersManager.shared.lastKeyMainWindowController
+        let lastKeyWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController
         if view.window?.windowController !== lastKeyWindowController {
             playFireAnimation = false
         }

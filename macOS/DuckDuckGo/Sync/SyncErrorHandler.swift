@@ -305,12 +305,12 @@ extension SyncErrorHandler: SyncErrorHandling {
             case .settings:
                 break
             }
-            PixelKit.fire(modelType.badRequestPixel, frequency: .legacyDaily)
+            PixelKit.fire(modelType.badRequestPixel, frequency: .legacyDailyNoSuffix)
         case .unexpectedStatusCode(401):
             syncIsPaused(errorType: .invalidLoginCredentials)
         case .unexpectedStatusCode(418), .unexpectedStatusCode(429):
             syncIsPaused(errorType: .tooManyRequests)
-            PixelKit.fire(modelType.tooManyRequestsPixel, frequency: .legacyDaily)
+            PixelKit.fire(modelType.tooManyRequestsPixel, frequency: .legacyDailyNoSuffix)
         default:
             break
         }
@@ -322,19 +322,19 @@ extension SyncErrorHandler: SyncErrorHandling {
         case .bookmarksCountLimitExceeded:
             currentSyncBookmarksPausedError = errorType.rawValue
             self.isSyncBookmarksPaused = true
-            PixelKit.fire(GeneralPixel.syncBookmarksObjectLimitExceededDaily, frequency: .legacyDaily)
+            PixelKit.fire(GeneralPixel.syncBookmarksObjectLimitExceededDaily, frequency: .legacyDailyNoSuffix)
         case .credentialsCountLimitExceeded:
             currentSyncCredentialsPausedError = errorType.rawValue
             self.isSyncCredentialsPaused = true
-            PixelKit.fire(GeneralPixel.syncCredentialsObjectLimitExceededDaily, frequency: .legacyDaily)
+            PixelKit.fire(GeneralPixel.syncCredentialsObjectLimitExceededDaily, frequency: .legacyDailyNoSuffix)
         case .bookmarksRequestSizeLimitExceeded:
             currentSyncBookmarksPausedError = errorType.rawValue
             self.isSyncBookmarksPaused = true
-            PixelKit.fire(GeneralPixel.syncBookmarksRequestSizeLimitExceededDaily, frequency: .legacyDaily)
+            PixelKit.fire(GeneralPixel.syncBookmarksRequestSizeLimitExceededDaily, frequency: .legacyDailyNoSuffix)
         case .credentialsRequestSizeLimitExceeded:
             currentSyncCredentialsPausedError = errorType.rawValue
             self.isSyncCredentialsPaused = true
-            PixelKit.fire(GeneralPixel.syncCredentialsRequestSizeLimitExceededDaily, frequency: .legacyDaily)
+            PixelKit.fire(GeneralPixel.syncCredentialsRequestSizeLimitExceededDaily, frequency: .legacyDailyNoSuffix)
         case .badRequestBookmarks:
             currentSyncBookmarksPausedError = errorType.rawValue
             self.isSyncBookmarksPaused = true
@@ -442,13 +442,13 @@ extension SyncErrorHandler: SyncErrorHandling {
 
     @MainActor
     private func manageBookmarks() {
-        guard let mainVC = WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController else { return }
+        guard let mainVC = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController else { return }
         mainVC.showManageBookmarks(self)
     }
 
     @MainActor
     private func manageLogins() {
-        guard let parentWindowController = WindowControllersManager.shared.lastKeyMainWindowController else { return }
+        guard let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController else { return }
         let navigationViewController = parentWindowController.mainViewController.navigationBarViewController
         navigationViewController.showPasswordManagerPopover(selectedCategory: .allItems, source: .sync)
     }

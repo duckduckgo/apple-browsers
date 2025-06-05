@@ -57,37 +57,29 @@ final class SuggestionContainer {
 
     private let urlSession: URLSession
 
+    @MainActor
     init(
         openTabsProvider: OpenTabsProvider? = nil,
         suggestionLoading: SuggestionLoading? = nil,
         urlSession: URLSession? = nil,
         historyProvider: HistoryProvider,
         bookmarkProvider: BookmarkProvider,
-        startupPreferences: StartupPreferences = NSApp.delegateTyped.startupPreferences,
-        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+        startupPreferences: StartupPreferences? = nil,
+        featureFlagger: FeatureFlagger? = nil,
         burnerMode: BurnerMode,
         isUrlIgnored: @escaping (URL) -> Bool,
         windowControllersManager: WindowControllersManagerProtocol? = nil
     ) {
-        let windowControllersManager = windowControllersManager ?? WindowControllersManager.shared
+        let windowControllersManager = windowControllersManager ?? NSApp.delegateTyped.windowControllersManager
         self.openTabsProvider = openTabsProvider ?? Self.defaultOpenTabsProvider(burnerMode: burnerMode, windowControllersManager: windowControllersManager)
         self.bookmarkProvider = bookmarkProvider
         self.historyProvider = historyProvider
-        self.startupPreferences = startupPreferences
-        self.featureFlagger = featureFlagger
+        self.startupPreferences = startupPreferences ?? NSApp.delegateTyped.startupPreferences
+        self.featureFlagger = featureFlagger ?? NSApp.delegateTyped.featureFlagger
         self.loading = suggestionLoading ?? SuggestionLoader(urlFactory: URL.makeURL(fromSuggestionPhrase:), isUrlIgnored: isUrlIgnored)
         self.urlSession = urlSession ?? URLSession(configuration: .ephemeral)
         self.burnerMode = burnerMode
         self.windowControllersManager = windowControllersManager
-    }
-
-    @MainActor
-    convenience init(burnerMode: BurnerMode, isUrlIgnored: @escaping (URL) -> Bool, windowControllersManager: WindowControllersManagerProtocol? = nil) {
-        self.init(historyProvider: HistoryCoordinator.shared,
-                  bookmarkProvider: LocalBookmarkManager.shared,
-                  burnerMode: burnerMode,
-                  isUrlIgnored: isUrlIgnored,
-                  windowControllersManager: windowControllersManager)
     }
 
     func getSuggestions(for query: String, useCachedData: Bool = false) {
@@ -155,9 +147,12 @@ extension HistoryCoordinator: SuggestionContainer.HistoryProvider {
         history ?? []
     }
 }
-extension LocalBookmarkManager: SuggestionContainer.BookmarkProvider {
+
+struct SuggestionsBookmarkProvider: SuggestionContainer.BookmarkProvider {
+    let bookmarkManager: BookmarkManager
+
     func bookmarks(for suggestionLoading: SuggestionLoading) -> [Suggestions.Bookmark] {
-        list?.bookmarks() ?? []
+        bookmarkManager.list?.bookmarks() ?? []
     }
 }
 extension SuggestionContainer: SuggestionLoadingDataSource {

@@ -26,7 +26,7 @@ final class VPNURLEventHandler {
     private let windowControllerManager: WindowControllersManager
 
     init(windowControllerManager: WindowControllersManager? = nil) {
-        self.windowControllerManager = windowControllerManager ?? .shared
+        self.windowControllerManager = windowControllerManager ?? Application.appDelegate.windowControllersManager
     }
 
     /// Handles VPN event URLs

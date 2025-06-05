@@ -146,7 +146,7 @@ private enum Const {
 }
 
 private extension Image {
-    static let logo = Image("Logo")
+    static let logo = Image(.logo)
 }
 
 struct EmailSignupPromptView_Previews: PreviewProvider {

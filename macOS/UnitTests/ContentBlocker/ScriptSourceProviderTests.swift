@@ -62,8 +62,11 @@ final class ScriptSourceProviderTests: XCTestCase {
             trackerDataManager: TrackerDataManager(etag: nil, data: Data(), embeddedDataProvider: MockEmbeddedDataProvider()),
             experimentManager: experimentManager,
             tld: TLD(),
+            onboardingNavigationDelegate: CapturingOnboardingNavigation(),
             appearancePreferences: appearancePreferences,
-            startupPreferences: startupPreferences
+            startupPreferences: startupPreferences,
+            bookmarkManager: MockBookmarkManager(),
+            historyCoordinator: HistoryCoordinatingMock()
         )
 
         let cohorts = try XCTUnwrap(sourceProvider.currentCohorts)

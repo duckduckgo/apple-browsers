@@ -63,7 +63,7 @@ class SettingsLegacyViewProvider: ObservableObject {
     
     enum LegacyView {
         case addToDock,
-             sync,
+             sync(PairingInfo?),
              logins,
              appIcon,
              gpc,
@@ -128,13 +128,14 @@ class SettingsLegacyViewProvider: ObservableObject {
     }
 
     @MainActor
-    func syncSettings(source: String? = nil) -> SyncSettingsViewController {
+    func syncSettings(source: String? = nil, pairingInfo: PairingInfo?) -> SyncSettingsViewController {
         return SyncSettingsViewController(syncService: self.syncService,
                                           syncBookmarksAdapter: self.syncDataProviders.bookmarksAdapter,
                                           syncCredentialsAdapter: self.syncDataProviders.credentialsAdapter,
                                           appSettings: self.appSettings,
                                           syncPausedStateManager: self.syncPausedStateManager,
-                                          source: source)
+                                          source: source,
+                                          pairingInfo: pairingInfo)
     }
 
     func loginSettings(delegate: AutofillSettingsViewControllerDelegate,

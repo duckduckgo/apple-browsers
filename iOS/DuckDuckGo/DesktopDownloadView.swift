@@ -22,6 +22,8 @@ import SwiftUI
 import LinkPresentation
 import DuckUI
 import Core
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct DesktopDownloadView: View {
 
@@ -90,7 +92,7 @@ struct DesktopDownloadView: View {
                             }
                         }, label: {
                             HStack {
-                                Image(.share24)
+                                Image(uiImage: DesignSystemImages.Glyphs.Size24.shareApple)
                                 Text(viewModel.browserDetails.button)
                             }
                         }

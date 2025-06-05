@@ -138,7 +138,7 @@ extension HomePage.Models {
 
         init(defaultBrowserProvider: DefaultBrowserProvider = SystemDefaultBrowserProvider(),
              dockCustomizer: DockCustomization = DockCustomizer(),
-             dataImportProvider: DataImportStatusProviding = BookmarksAndPasswordsImportStatusProvider(),
+             dataImportProvider: DataImportStatusProviding = BookmarksAndPasswordsImportStatusProvider(bookmarkManager: NSApp.delegateTyped.bookmarkManager),
              tabOpener: ContinueSetUpModelTabOpening,
              emailManager: EmailManager = EmailManager(),
              duckPlayerPreferences: DuckPlayerPreferencesPersistor = DuckPlayerPreferencesUserDefaultsPersistor(),

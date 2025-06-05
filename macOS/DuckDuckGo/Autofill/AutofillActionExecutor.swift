@@ -69,7 +69,7 @@ struct AutofillDeleteAllPasswordsExecutor: AutofillActionExecutor {
                 syncService.scheduler.notifyDataChanged()
                 onSuccess?()
             } catch {
-                PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error)))
+                PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
             }
 
             return

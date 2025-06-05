@@ -120,7 +120,7 @@ final class RemoteMessagingClientTests: XCTestCase {
 
     private func makeClient() {
         client = RemoteMessagingClient(
-            database: remoteMessagingDatabase,
+            remoteMessagingDatabase: remoteMessagingDatabase,
             configFetcher: MockRemoteMessagingConfigFetcher(),
             configMatcherProvider: RemoteMessagingConfigMatcherProvider(
                 bookmarksDatabase: bookmarksDatabase,

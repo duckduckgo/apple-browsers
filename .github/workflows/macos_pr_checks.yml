@@ -16,6 +16,8 @@ on:
       - '.xcode-version'
       - 'SharedPackages/**'
       - 'macOS/**'
+  schedule:
+    - cron: '10,40 4,5 * * *'
   workflow_call:
     inputs:
       branch:

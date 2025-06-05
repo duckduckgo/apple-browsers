@@ -19,6 +19,7 @@
 import XCTest
 import BrowserServicesKit
 import FeatureFlags
+import PixelKitTestingUtilities
 @testable import DuckDuckGo_Privacy_Browser
 
 final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
@@ -27,6 +28,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
     private var dockCustomizerMock: DockCustomizerMock!
     private var applicationBuildTypeMock: ApplicationBuildTypeMock!
     private var storeMock: MockDefaultBrowserAndDockPromptStore!
+    private var pixelKitMock: PixelKitMock!
     private var timeTraveller: TimeTraveller!
     private static let now = Date(timeIntervalSince1970: 1747872000) // 22 May 2025 12:00:00 AM
 
@@ -48,18 +50,25 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         applicationBuildTypeMock = nil
         storeMock = nil
         timeTraveller = nil
+        pixelKitMock = nil
 
         try super.tearDownWithError()
     }
 
-    func makeSUT(isOnboardingCompleted: Bool = true) -> DefaultBrowserAndDockPromptCoordinator  {
-        DefaultBrowserAndDockPromptCoordinator(
+    func makeSUT(
+        isOnboardingCompleted: Bool = true,
+        expectedFireCalls: [ExpectedFireCall] = []
+    ) -> DefaultBrowserAndDockPromptCoordinator  {
+        pixelKitMock = PixelKitMock(expecting: expectedFireCalls)
+
+        return DefaultBrowserAndDockPromptCoordinator(
             promptTypeDecider: promptTypeDeciderMock,
             store: storeMock,
             isOnboardingCompleted: isOnboardingCompleted,
             dockCustomization: dockCustomizerMock,
             defaultBrowserProvider: defaultBrowserProviderMock,
             applicationBuildType: applicationBuildTypeMock,
+            pixelFiring: pixelKitMock,
             dateProvider: timeTraveller.getDate
         )
     }
@@ -376,6 +385,382 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         XCTAssertNil(storeMock.popoverShownDate)
         XCTAssertFalse(storeMock.isBannerPermanentlyDismissed)
     }
+
+    // MARK: - Popover Pixels
+
+    func testFirePopoverSeenPixelTypeBothWhenPopoverPromptIsReturned() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        promptTypeDeciderMock.promptTypeToReturn = .popover
+        defaultBrowserProviderMock.isDefault = false
+        dockCustomizerMock.dockStatus = false
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.popoverImpression(type: .bothDefaultBrowserAndDockPrompt), frequency: .standard)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+         _ = sut.getPromptType()
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    func testFirePopoverSeenPixelTypeSADOnlyWhenPopoverPromptIsReturned() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        promptTypeDeciderMock.promptTypeToReturn = .popover
+        defaultBrowserProviderMock.isDefault = false
+        dockCustomizerMock.dockStatus = true
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.popoverImpression(type: .setAsDefaultPrompt), frequency: .standard)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+         _ = sut.getPromptType()
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    func testFirePopoverSeenPixelTypeATTOnlyWhenPopoverPromptIsReturned() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        promptTypeDeciderMock.promptTypeToReturn = .popover
+        defaultBrowserProviderMock.isDefault = true
+        dockCustomizerMock.dockStatus = false
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.popoverImpression(type: .addToDockPrompt), frequency: .standard)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+         _ = sut.getPromptType()
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    func testFirePopoverConfirmActionTypeBothWhenPopoverConfirmAction() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        defaultBrowserProviderMock.isDefault = false
+        dockCustomizerMock.dockStatus = false
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.popoverConfirmButtonClicked(type: .bothDefaultBrowserAndDockPrompt), frequency: .standard)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+        sut.confirmAction(for: .popover)
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    func testFirePopoverConfirmActionTypeSADOnlyWhenPopoverConfirmAction() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        defaultBrowserProviderMock.isDefault = false
+        dockCustomizerMock.dockStatus = true
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.popoverConfirmButtonClicked(type: .setAsDefaultPrompt), frequency: .standard)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+        sut.confirmAction(for: .popover)
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    func testFirePopoverConfirmActionTypeATTOnlyWhenPopoverConfirmAction() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        defaultBrowserProviderMock.isDefault = true
+        dockCustomizerMock.dockStatus = false
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.popoverConfirmButtonClicked(type: .addToDockPrompt), frequency: .standard)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+        sut.confirmAction(for: .popover)
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    func testFirePopoverDismissActionTypeBothWhenPopoverDismissAction() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        defaultBrowserProviderMock.isDefault = false
+        dockCustomizerMock.dockStatus = false
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.popoverCloseButtonClicked(type: .bothDefaultBrowserAndDockPrompt), frequency: .standard)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+        sut.dismissAction(.userInput(prompt: .popover, shouldHidePermanently: true))
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    func testFirePopoverDismissActionTypeSADOnlyWhenPopoverDismissAction() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        defaultBrowserProviderMock.isDefault = false
+        dockCustomizerMock.dockStatus = true
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.popoverCloseButtonClicked(type: .setAsDefaultPrompt), frequency: .standard)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+        sut.dismissAction(.userInput(prompt: .popover, shouldHidePermanently: true))
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    func testFirePopoverDismissActionTypeATTOnlyWhenPopoverDismissAction() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        defaultBrowserProviderMock.isDefault = true
+        dockCustomizerMock.dockStatus = false
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.popoverCloseButtonClicked(type: .addToDockPrompt), frequency: .standard)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+        sut.dismissAction(.userInput(prompt: .popover, shouldHidePermanently: true))
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    func testFirePopoverDismissActionUponStatusUpdateThenDoesNotFireDismissPixel() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        defaultBrowserProviderMock.isDefault = true
+        dockCustomizerMock.dockStatus = false
+        let sut = makeSUT(expectedFireCalls: [])
+
+        // WHEN
+        sut.dismissAction(.statusUpdate(prompt: .popover))
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    // MARK: - Banner Pixels
+
+    func testFireBannerSeenPixelTypeBothWhenBannerPromptIsReturned() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        promptTypeDeciderMock.promptTypeToReturn = .banner
+        defaultBrowserProviderMock.isDefault = false
+        dockCustomizerMock.dockStatus = false
+        storeMock.bannerShownOccurrences = 6
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.bannerImpression(type: .bothDefaultBrowserAndDockPrompt, numberOfBannersShown: "7"), frequency: .uniqueByNameAndParameters)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+         _ = sut.getPromptType()
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    func testFireBannerSeenPixelTypeSADOnlyWhenBannerPromptIsReturned() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        promptTypeDeciderMock.promptTypeToReturn = .banner
+        defaultBrowserProviderMock.isDefault = false
+        dockCustomizerMock.dockStatus = true
+        storeMock.bannerShownOccurrences = 9
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.bannerImpression(type: .setAsDefaultPrompt, numberOfBannersShown: "10"), frequency: .uniqueByNameAndParameters)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+         _ = sut.getPromptType()
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    func testFireBannerSeenPixelTypeATTOnlyWhenBannerPromptIsReturned() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        promptTypeDeciderMock.promptTypeToReturn = .banner
+        defaultBrowserProviderMock.isDefault = true
+        dockCustomizerMock.dockStatus = false
+        storeMock.bannerShownOccurrences = 10
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.bannerImpression(type: .addToDockPrompt, numberOfBannersShown: "10+"), frequency: .uniqueByNameAndParameters)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+         _ = sut.getPromptType()
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    func testFireBannerConfirmActionTypeBothWhenPopoverConfirmAction() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        defaultBrowserProviderMock.isDefault = false
+        dockCustomizerMock.dockStatus = false
+        storeMock.bannerShownOccurrences = 10
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.bannerConfirmButtonClicked(type: .bothDefaultBrowserAndDockPrompt, numberOfBannersShown: String(storeMock.bannerShownOccurrences)), frequency: .standard)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+        sut.confirmAction(for: .banner)
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    func testFireBannerConfirmActionTypeSADOnlyWhenBannerConfirmAction() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        defaultBrowserProviderMock.isDefault = false
+        dockCustomizerMock.dockStatus = true
+        storeMock.bannerShownOccurrences = 4
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.bannerConfirmButtonClicked(type: .setAsDefaultPrompt, numberOfBannersShown: String(storeMock.bannerShownOccurrences)), frequency: .standard)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+        sut.confirmAction(for: .banner)
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    func testFireBannerConfirmActionTypeATTOnlyWhenBannerConfirmAction() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        defaultBrowserProviderMock.isDefault = true
+        dockCustomizerMock.dockStatus = false
+        storeMock.bannerShownOccurrences = 5
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.bannerConfirmButtonClicked(type: .addToDockPrompt, numberOfBannersShown: String(storeMock.bannerShownOccurrences)), frequency: .standard)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+        sut.confirmAction(for: .banner)
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    func testFireBannerConfirmActionSendsFixedParameterWhenNumberOfBannerShownIsMoreThanTen() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        defaultBrowserProviderMock.isDefault = false
+        dockCustomizerMock.dockStatus = false
+        storeMock.bannerShownOccurrences = 25
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.bannerConfirmButtonClicked(type: .bothDefaultBrowserAndDockPrompt, numberOfBannersShown: "10+"), frequency: .standard)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+        sut.confirmAction(for: .banner)
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    func testFireBannerDismissActionTypeBothWhenBannerDismissAction() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        defaultBrowserProviderMock.isDefault = false
+        dockCustomizerMock.dockStatus = false
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.bannerCloseButtonClicked(type: .bothDefaultBrowserAndDockPrompt), frequency: .standard)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+        sut.dismissAction(.userInput(prompt: .banner, shouldHidePermanently: false))
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    func testBannerPopoverDismissActionTypeSADOnlyWhenBannerDismissAction() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        defaultBrowserProviderMock.isDefault = false
+        dockCustomizerMock.dockStatus = true
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.bannerCloseButtonClicked(type: .setAsDefaultPrompt), frequency: .standard)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+        sut.dismissAction(.userInput(prompt: .banner, shouldHidePermanently: false))
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    func testFireBannerDismissActionTypeATTOnlyWhenBannerDismissAction() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        defaultBrowserProviderMock.isDefault = true
+        dockCustomizerMock.dockStatus = false
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.bannerCloseButtonClicked(type: .addToDockPrompt), frequency: .standard)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+        sut.dismissAction(.userInput(prompt: .banner, shouldHidePermanently: false))
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    func testFireBannerNeverAskAgainTypeBothWhenBannerDismissActionShouldPermanentlyDismissTrue() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        defaultBrowserProviderMock.isDefault = false
+        dockCustomizerMock.dockStatus = false
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.bannerNeverAskAgainButtonClicked(type: .bothDefaultBrowserAndDockPrompt), frequency: .standard)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+        sut.dismissAction(.userInput(prompt: .banner, shouldHidePermanently: true))
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    func testFireBannerNeverAskAgainTypeSADOnlyWhenBannerDismissActionShouldPermanentlyDismissTrue() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        defaultBrowserProviderMock.isDefault = false
+        dockCustomizerMock.dockStatus = true
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.bannerNeverAskAgainButtonClicked(type: .setAsDefaultPrompt), frequency: .standard)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+        sut.dismissAction(.userInput(prompt: .banner, shouldHidePermanently: true))
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    func testFireBannerNeverAskAgainTypeATTOnlyWhenBannerDismissActionShouldPermanentlyDismissTrue() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        defaultBrowserProviderMock.isDefault = true
+        dockCustomizerMock.dockStatus = false
+        let expectedPixelCall = ExpectedFireCall(pixel: DefaultBrowserAndDockPromptPixelEvent.bannerNeverAskAgainButtonClicked(type: .addToDockPrompt), frequency: .standard)
+        let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
+
+        // WHEN
+        sut.dismissAction(.userInput(prompt: .banner, shouldHidePermanently: true))
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
+    func testFireBannerDismissActionUponStatusUpdateThenDoesNotFireDismissPixel() {
+        // GIVEN
+        applicationBuildTypeMock.isSparkleBuild = true
+        defaultBrowserProviderMock.isDefault = true
+        dockCustomizerMock.dockStatus = false
+        let sut = makeSUT(expectedFireCalls: [])
+
+        // WHEN
+        sut.dismissAction(.statusUpdate(prompt: .banner))
+
+        // THEN
+        pixelKitMock.verifyExpectations(file: #file, line: #line)
+    }
+
 }
 
 final class FeatureFlaggerMock: FeatureFlagger {

@@ -336,7 +336,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
         window.isVisible = false
         let mainWindowController = MainWindowController(window: window, mainViewController: mainViewController, popUp: false)
         mainWindowController.window = window
-        WindowControllersManager.shared.lastKeyMainWindowController = mainWindowController
+        Application.appDelegate.windowControllersManager.lastKeyMainWindowController = mainWindowController
 
         // WHEN
         window.isVisible = true

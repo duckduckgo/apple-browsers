@@ -26,14 +26,14 @@ final class OnboardingNavigatingTests: XCTestCase {
     @MainActor
     override func setUp() {
         super.setUp()
-        onboardingNavigation = WindowControllersManager.shared
-        assert(WindowControllersManager.shared.mainWindowControllers.isEmpty)
+        onboardingNavigation = Application.appDelegate.windowControllersManager
+        assert(Application.appDelegate.windowControllersManager.mainWindowControllers.isEmpty)
     }
 
     @MainActor
     override func tearDown() {
         onboardingNavigation = nil
-        WindowControllersManager.shared.lastKeyMainWindowController = nil
+        Application.appDelegate.windowControllersManager.lastKeyMainWindowController = nil
         super.tearDown()
     }
 
@@ -43,7 +43,7 @@ final class OnboardingNavigatingTests: XCTestCase {
         let mockWindow = MockWindow(isVisible: false)
         let mvc = MainWindowController(window: mockWindow, mainViewController: MainViewController(autofillPopoverPresenter: DefaultAutofillPopoverPresenter()), popUp: false)
         mvc.window = mockWindow
-        WindowControllersManager.shared.lastKeyMainWindowController = mvc
+        Application.appDelegate.windowControllersManager.lastKeyMainWindowController = mvc
 
         // When
         onboardingNavigation.showImportDataView()
@@ -58,13 +58,13 @@ final class OnboardingNavigatingTests: XCTestCase {
         let mockWindow = MockWindow(isVisible: false)
         let mvc = MainWindowController(window: mockWindow, mainViewController: MainViewController(autofillPopoverPresenter: DefaultAutofillPopoverPresenter()), popUp: false)
         mvc.window = mockWindow
-        WindowControllersManager.shared.lastKeyMainWindowController = mvc
+        Application.appDelegate.windowControllersManager.lastKeyMainWindowController = mvc
 
         // When
         onboardingNavigation.focusOnAddressBar()
 
         // Then
-        let mainVC = try XCTUnwrap(WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController)
+        let mainVC = try XCTUnwrap(Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController)
         XCTAssertTrue(mainVC.navigationBarViewController.addressBarViewController?.addressBarTextField.stringValue.isEmpty ?? false)
         XCTAssertTrue(mainVC.navigationBarViewController.addressBarViewController?.addressBarTextField.isFirstResponder ?? false)
     }

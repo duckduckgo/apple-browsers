@@ -257,7 +257,7 @@ final class MainWindowController: NSWindowController {
     }
 
     func orderWindowBack(_ sender: Any?) {
-        if let lastKeyWindow = WindowControllersManager.shared.lastKeyMainWindowController?.window {
+        if let lastKeyWindow = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window {
             window?.order(.below, relativeTo: lastKeyWindow.windowNumber)
         } else {
             window?.orderFront(sender)
@@ -266,7 +266,7 @@ final class MainWindowController: NSWindowController {
     }
 
     private func register() {
-        WindowControllersManager.shared.register(self)
+        Application.appDelegate.windowControllersManager.register(self)
     }
 
 }
@@ -281,7 +281,7 @@ extension MainWindowController: NSWindowDelegate {
         mainViewController.windowDidBecomeKey()
 
         if !mainWindow.isPopUpWindow {
-            WindowControllersManager.shared.lastKeyMainWindowController = self
+            Application.appDelegate.windowControllersManager.lastKeyMainWindowController = self
         }
 
 #if !APPSTORE && WEB_EXTENSIONS_ENABLED
@@ -402,7 +402,7 @@ extension MainWindowController: NSWindowDelegate {
         // Because it's also the delegate, deinit within this method caused crash
         // Push the Window Controller into current autorelease pool so it‘s released when the event loop pass ends
         _=Unmanaged.passRetained(self).autorelease()
-        WindowControllersManager.shared.unregister(self)
+        Application.appDelegate.windowControllersManager.unregister(self)
 
 #if !APPSTORE && WEB_EXTENSIONS_ENABLED
         if #available(macOS 15.4, *) {

@@ -23,7 +23,7 @@ import BrowserServicesKit
 ///
 /// Handles visibility, state management, and feature flag coordination for the AI Chat sidebar.
 protocol AIChatSidebarPresenting {
-    
+
     /// Toggles the AI Chat sidebar visibility with appropriate animations.
     func toggleSidebar()
 }
@@ -95,7 +95,7 @@ extension AIChatSidebarPresenter: AIChatSidebarHostingDelegate {
 
     func sidebarHostDidUpdateTabs(_ currentTabIDs: [TabIdentifier]) {
         guard featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
-        
+
         sidebarProvider.cleanUp(for: currentTabIDs)
     }
 }

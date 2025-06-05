@@ -303,6 +303,10 @@ extension AIChatViewControllerManager: AIChatUserScriptDelegate {
             break
         }
     }
+
+    func aiChatUserScript(_ userScript: AIChatUserScript, didReceiveMetric metric: AIChatMetric) {
+        print("METRIC \(metric)")
+    }
 }
 
 // MARK: - AIChatUserAgentHandler

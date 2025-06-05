@@ -69,10 +69,11 @@ final class AIChatSidebarProvider: AIChatSidebarProviding {
     }
 
     func handleSidebarDidClose(for tabID: TabIdentifier) {
-        if let tabSidebar = sidebarsByTabIDs[tabID] {
-            tabSidebar.sidebarViewController.removeCompletely()
-            sidebarsByTabIDs.removeValue(forKey: tabID)
+        guard let tabSidebar = sidebarsByTabIDs[tabID] else {
+            return
         }
+        tabSidebar.sidebarViewController.removeCompletely()
+        sidebarsByTabIDs.removeValue(forKey: tabID)
     }
 
     func cleanUp(for currentTabIDs: [TabIdentifier]) {

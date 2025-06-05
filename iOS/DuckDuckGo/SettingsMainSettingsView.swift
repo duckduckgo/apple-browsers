@@ -54,7 +54,7 @@ struct SettingsMainSettingsView: View {
             // Passwords
             SettingsCellView(label: UserText.settingsLogins,
                              image: Image(uiImage: DesignSystemImages.Color.Size24.key),
-                             action: { viewModel.presentLegacyView(.logins) },
+                             action: { viewModel.presentLegacyView(.autofill) },
                              disclosureIndicator: true,
                              isButton: true)
 

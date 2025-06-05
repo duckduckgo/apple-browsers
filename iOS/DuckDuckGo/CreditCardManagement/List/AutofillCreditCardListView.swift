@@ -19,6 +19,7 @@
 
 import SwiftUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import BrowserServicesKit
 import DuckUI
 
@@ -88,7 +89,7 @@ private struct EmptyStateView: View {
                 viewModel.addCard()
             } label: {
                 HStack {
-                    Image(.add24)
+                    Image(uiImage: DesignSystemImages.Glyphs.Size24.add)
                     Text(UserText.autofillCreditCardDetailsNewTitle)
                 }
             }

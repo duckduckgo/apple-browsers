@@ -50,9 +50,9 @@ extension SyncSettingsViewController {
             guard let code = try? SyncCode.decodeBase64String(code) else {
                 return
             }
-            if let _ = code.connect {
+            if code.connect != nil {
                 Pixel.fire(pixel: .syncSetupBarcodeCodeCopied, withAdditionalParameters: [PixelParameters.source: SyncSetupSource.connect.rawValue])
-            } else if let _ = code.exchangeKey {
+            } else if code.exchangeKey != nil {
                 Pixel.fire(pixel: .syncSetupBarcodeCodeCopied, withAdditionalParameters: [PixelParameters.source: SyncSetupSource.exchange.rawValue])
             }
         }

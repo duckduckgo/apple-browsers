@@ -31,6 +31,7 @@ protocol AIChatUserScriptHandling {
     func getResponseState(params: Any, message: UserScriptMessage) async -> Encodable?
     func hideChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
     func showChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
+    func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable?
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
@@ -63,6 +64,25 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
         )
 
         return nil
+    }
+
+    func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable? {
+        if let paramsDict = params as? [String: Any],
+           let jsonData = try? JSONSerialization.data(withJSONObject: paramsDict, options: []) {
+
+            let decoder = JSONDecoder()
+            do {
+                let metric = try decoder.decode(AIChatMetric.self, from: jsonData)
+                firePixelWithMetric(metric)
+            } catch {
+                print("Failed to decode JSON: \(error)")
+            }
+        }
+        return nil
+    }
+
+    func firePixelWithMetric(_ metric: AIChatMetric) {
+        print("Firing pixel with metric: \(metric.metricName.rawValue)")
     }
 
     public func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable? {

@@ -133,6 +133,8 @@ final class AIChatUserScript: NSObject, Subfeature {
             return handler.hideChatInput
         case .showChatInput:
             return handler.showChatInput
+        case .reportMetric:
+            return handler.reportMetric
         default:
             return nil
         }

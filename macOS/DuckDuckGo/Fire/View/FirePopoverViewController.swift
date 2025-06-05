@@ -21,6 +21,7 @@ import Combine
 import Common
 import History
 import os.log
+import PixelKit
 
 protocol FirePopoverViewControllerDelegate: AnyObject {
 
@@ -147,6 +148,9 @@ final class FirePopoverViewController: NSViewController {
     }
 
     @IBAction func openDetailsButtonAction(_ sender: Any) {
+        // Fire pixel when fire popover details are viewed
+        PixelKit.fire(GeneralPixel.fireButtonDetailsViewed, frequency: .dailyAndCount)
+
         toggleDetails()
     }
 

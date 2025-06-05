@@ -507,6 +507,9 @@ protocol NewWindowPolicyDecisionMaker {
         }
     }
 
+    /// Used to trigger a separator update in the PinnedTabsViewModel
+    @Published var needsSeparatorUpdate: Bool = false
+
     /// Currently committed page security origin (protocol, host, port).
     ///
     /// Set to the opener location security origin for popup Tabs.

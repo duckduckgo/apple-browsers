@@ -19,7 +19,7 @@ inputs:
     type: string
   github-token:
     description: "GitHub token"
-    required: false
+    required: true
     type: string
 runs:
   using: "composite"

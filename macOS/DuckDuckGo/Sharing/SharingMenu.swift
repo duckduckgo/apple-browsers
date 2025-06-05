@@ -17,10 +17,18 @@
 //
 
 import Cocoa
+import PixelKit
 
 final class SharingMenu: NSMenu {
 
-    override init(title: String) {
+    enum Location: Equatable {
+        case mainMenu, moreOptionsMenu, addressBarTextField
+    }
+
+    let location: Location
+
+    init(title: String, location: Location) {
+        self.location = location
         super.init(title: title)
 
         self.autoenablesItems = true
@@ -97,6 +105,9 @@ final class SharingMenu: NSMenu {
             return
         }
 
+        if location == .moreOptionsMenu {
+            PixelKit.fire(MoreOptionsMenuPixel.shareActionClicked, frequency: .daily)
+        }
         service.subject = sharingData.title
         service.perform(withItems: sharingData.items.filter { service.canPerform(withItems: [$0]) })
     }

@@ -116,7 +116,7 @@ enum GeneralPixel: PixelKitEventV2 {
      *
      * Anomaly Investigation:
      * - May indicate changes in user awareness of privacy clearing features.
-     * - Increase could suggest users are exploring advanced clearing options.
+     * - Increase could suggest browser cache is causing issues.
      */
     case fireButtonDetailsViewed
 

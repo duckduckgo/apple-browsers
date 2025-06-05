@@ -469,15 +469,10 @@ final class BrowserTabViewController: NSViewController {
             containerStackView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
 
-        if featureFlagger.isFeatureOn(.aiChatSidebar) {
-            NSLayoutConstraint.activate([
-                containerStackView.trailingAnchor.constraint(equalTo: sidebarContainer.leadingAnchor)
-            ])
-        } else {
-            NSLayoutConstraint.activate([
-                containerStackView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
-            ])
-        }
+        let constraint =  featureFlagger.isFeatureOn(.aiChatSidebar) ? sidebarContainer.leadingAnchor : view.trailingAnchor
+        NSLayoutConstraint.activate([
+            containerStackView.trailingAnchor.constraint(equalTo: constraint)
+        ])
 
         containerStackView.addArrangedSubview(container)
     }

@@ -30,9 +30,9 @@ protocol AIChatSidebarPresenting {
 
 final class AIChatSidebarPresenter: AIChatSidebarPresenting {
 
-    private var sidebarHost: AIChatSidebarHosting
-    private var sidebarProvider: AIChatSidebarProviding
-    private var featureFlagger: FeatureFlagger
+    private let sidebarHost: AIChatSidebarHosting
+    private let sidebarProvider: AIChatSidebarProviding
+    private let featureFlagger: FeatureFlagger
 
     init(sidebarHost: AIChatSidebarHosting,
          sidebarProvider: AIChatSidebarProviding = AIChatSidebarProvider(),

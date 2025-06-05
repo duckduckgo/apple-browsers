@@ -22,7 +22,7 @@ typealias TabIdentifier = String
 
 /// A protocol that defines the interface for managing AI chat sidebars in tabs.
 /// This provider handles the lifecycle and state of chat sidebars across multiple browser tabs.
-protocol AIChatSidebarProviding {
+protocol AIChatSidebarProviding: AnyObject {
     /// The width of the chat sidebar in points.
     var sidebarWidth: CGFloat { get }
 

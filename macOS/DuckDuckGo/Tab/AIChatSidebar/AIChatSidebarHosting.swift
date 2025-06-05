@@ -37,7 +37,7 @@ protocol AIChatSidebarHostingDelegate: AnyObject {
 ///
 /// This protocol provides the necessary properties and methods to manage the AI Chat sidebar's
 /// layout, embedding, and tab-related functionality within a host view controller.
-protocol AIChatSidebarHosting {
+protocol AIChatSidebarHosting: AnyObject  {
     /// The delegate that receives tab-related events from the sidebar.
     var aiChatSidebarHostingDelegate: AIChatSidebarHostingDelegate? { get set }
 

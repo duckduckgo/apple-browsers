@@ -195,15 +195,13 @@ extension TabExtensionsBuilder {
         }
 
         let isHistoryEnabled = !args.isTabBurner && !args.isTabLoadedInSidebar
-        if isHistoryEnabled {
-            add {
-                HistoryTabExtension(historyCoordinating: dependencies.historyCoordinating,
-                                    trackersPublisher: contentBlocking.trackersPublisher,
-                                    urlPublisher: args.contentPublisher.map { content in content.isUrl ? content.urlForWebView : nil },
-                                    titlePublisher: args.titlePublisher)
-            }
+        add {
+            HistoryTabExtension(isEnabled: isHistoryEnabled,
+                                historyCoordinating: dependencies.historyCoordinating,
+                                trackersPublisher: contentBlocking.trackersPublisher,
+                                urlPublisher: args.contentPublisher.map { content in content.isUrl ? content.urlForWebView : nil },
+                                titlePublisher: args.titlePublisher)
         }
-
         add {
             PrivacyStatsTabExtension(
                 trackersPublisher: contentBlocking.trackersPublisher,

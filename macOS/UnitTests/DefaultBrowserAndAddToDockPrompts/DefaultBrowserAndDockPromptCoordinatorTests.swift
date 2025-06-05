@@ -398,7 +398,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
 
         // WHEN
-        let _ = sut.getPromptType()
+         _ = sut.getPromptType()
 
         // THEN
         pixelKitMock.verifyExpectations(file: #file, line: #line)
@@ -414,7 +414,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
 
         // WHEN
-        let _ = sut.getPromptType()
+         _ = sut.getPromptType()
 
         // THEN
         pixelKitMock.verifyExpectations(file: #file, line: #line)
@@ -430,7 +430,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
 
         // WHEN
-        let _ = sut.getPromptType()
+         _ = sut.getPromptType()
 
         // THEN
         pixelKitMock.verifyExpectations(file: #file, line: #line)
@@ -553,7 +553,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
 
         // WHEN
-        let _ = sut.getPromptType()
+         _ = sut.getPromptType()
 
         // THEN
         pixelKitMock.verifyExpectations(file: #file, line: #line)
@@ -570,7 +570,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
 
         // WHEN
-        let _ = sut.getPromptType()
+         _ = sut.getPromptType()
 
         // THEN
         pixelKitMock.verifyExpectations(file: #file, line: #line)
@@ -587,7 +587,7 @@ final class DefaultBrowserAndDockPromptCoordinatorTests: XCTestCase {
         let sut = makeSUT(expectedFireCalls: [expectedPixelCall])
 
         // WHEN
-        let _ = sut.getPromptType()
+         _ = sut.getPromptType()
 
         // THEN
         pixelKitMock.verifyExpectations(file: #file, line: #line)

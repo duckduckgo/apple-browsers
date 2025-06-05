@@ -36,13 +36,15 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
         appSettings: AppSettings,
         internalUserDecider: InternalUserDecider,
         duckPlayerStorage: DuckPlayerStorage,
-        featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger
+        featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger,
+        themeManager: ThemeManaging = ThemeManager.shared
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.appSettings = appSettings
         self.internalUserDecider = internalUserDecider
         self.duckPlayerStorage = duckPlayerStorage
         self.featureFlagger = featureFlagger
+        self.themeManager = themeManager
     }
 
     let bookmarksDatabase: CoreDataDatabase
@@ -50,6 +52,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
     let duckPlayerStorage: DuckPlayerStorage
     let internalUserDecider: InternalUserDecider
     let featureFlagger: FeatureFlagger
+    let themeManager: ThemeManaging
 
     func refreshConfigMatcher(using store: RemoteMessagingStoring) async -> RemoteMessagingConfigMatcher {
 
@@ -124,7 +127,7 @@ final class RemoteMessagingConfigMatcherProvider: RemoteMessagingConfigMatcherPr
                 // This prevents showing remote message that's based on this flag prematurely,
                 // i.e. before `visualUpdates` flag becomes effective after restart.
                 // See https://app.asana.com/1/137249556945/project/1206226850447395/task/1210454132810101
-                isFlagEnabled = ThemeManager.shared.properties.isExperimentalThemingEnabled
+                isFlagEnabled = themeManager.properties.isExperimentalThemingEnabled
             default:
                 isFlagEnabled = featureFlagger.isFeatureOn(for: flag)
             }

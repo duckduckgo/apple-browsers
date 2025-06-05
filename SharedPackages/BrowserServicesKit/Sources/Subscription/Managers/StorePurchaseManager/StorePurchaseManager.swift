@@ -362,12 +362,13 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
     /// - Transaction updates from the App Store
     /// - Account restoration events
     ///
-    /// - Important: This method directly modifies the products in the `availableProducts` array
-    ///   using index-based iteration to ensure the changes persist in the published array.
-    private func updateAvailableProductsTrialEligibility() async {
+    /// Note: `Internal` for testing
+    internal func updateAvailableProductsTrialEligibility() async {
         for index in self.availableProducts.indices {
             Logger.subscription.info("[StorePurchaseManager] updateAvailableProductsTrialStatus subscription id: \(self.availableProducts[index].id)")
-            await self.availableProducts[index].refreshFreeTrialEligibility()
+            var mutableProduct = self.availableProducts[index]
+            await mutableProduct.refreshFreeTrialEligibility()
+            self.availableProducts[index] = mutableProduct
         }
     }
 }

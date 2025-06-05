@@ -118,11 +118,11 @@ final class AppStoreSubscriptionProductTests: XCTestCase {
         let subscriptionProduct = await AppStoreSubscriptionProduct.create(product: mockProduct)
         XCTAssertTrue(subscriptionProduct.isEligibleForFreeTrial)
 
-        // When - Simulate eligibility change
+        // When
         mockProduct.mockEligibilityChange(to: false)
         let freshEligibility = await subscriptionProduct.checkFreshFreeTrialEligibility()
 
-        // Then - Fresh check returns updated eligibility, but cached value unchanged
+        // Then
         XCTAssertFalse(freshEligibility)
         XCTAssertTrue(subscriptionProduct.isEligibleForFreeTrial) // Cached value unchanged
     }
@@ -294,9 +294,7 @@ private class MockStoreProduct: StoreProduct {
     }
 
     var isEligibleForFreeTrial: Bool {
-        get async {
-            return mockIsEligibleForFreeTrial
-        }
+        return mockIsEligibleForFreeTrial
     }
 
     func mockEligibilityChange(to newValue: Bool) {

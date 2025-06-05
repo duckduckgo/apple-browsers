@@ -428,6 +428,42 @@ final class StorePurchaseManagerTests: XCTestCase {
         // Then
         XCTAssertFalse(isEligible)
     }
+
+    // MARK: - Trial Eligibility Update Tests
+
+    func testUpdateAvailableProductsTrialEligibilityUpdatesAllProducts() async {
+        // Given
+        let product1 = MockSubscriptionProduct(
+            id: "product1",
+            isFreeTrialProduct: true,
+            isEligibleForFreeTrial: true
+        )
+        let product2 = MockSubscriptionProduct(
+            id: "product2",
+            isFreeTrialProduct: true,
+            isEligibleForFreeTrial: true
+        )
+        mockProductFetcher.mockProducts = [product1, product2]
+        await sut.updateAvailableProducts()
+
+        let concreteSut = sut as! DefaultStorePurchaseManager
+        XCTAssertEqual(concreteSut.availableProducts.count, 2)
+
+        // Verify initial eligibility state
+        XCTAssertTrue(concreteSut.availableProducts[0].isEligibleForFreeTrial)
+        XCTAssertTrue(concreteSut.availableProducts[1].isEligibleForFreeTrial)
+
+        // Configure products to change eligibility when refreshed
+        product1.eligibilityAfterRefresh = false
+        product2.eligibilityAfterRefresh = false
+
+        // When
+        await concreteSut.updateAvailableProductsTrialEligibility()
+
+        // Then
+        XCTAssertFalse(concreteSut.availableProducts[0].isEligibleForFreeTrial)
+        XCTAssertFalse(concreteSut.availableProducts[1].isEligibleForFreeTrial)
+    }
 }
 
 private final class MockProductFetcher: ProductFetching {
@@ -495,6 +531,8 @@ private class MockSubscriptionProduct: StoreProduct {
     private let mockIntroOffer: MockIntroductoryOffer?
     private let mockIsEligibleForFreeTrial: Bool
 
+    var eligibilityAfterRefresh: Bool?
+
     init(id: String,
          displayName: String = "Mock Product",
          displayPrice: String = "$4.99",
@@ -520,7 +558,7 @@ private class MockSubscriptionProduct: StoreProduct {
     }
 
     var isEligibleForFreeTrial: Bool {
-        mockIsEligibleForFreeTrial
+        eligibilityAfterRefresh ?? mockIsEligibleForFreeTrial
     }
 
     func purchase(options: Set<Product.PurchaseOption>) async throws -> Product.PurchaseResult {

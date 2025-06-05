@@ -252,7 +252,6 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     }
 
     @objc func openDataBrokerProtection(_ sender: NSMenuItem) {
-        PixelKit.fire(MoreOptionsMenuPixel.dataBrokerProtectionActionClicked, frequency: .daily)
         actionDelegate?.optionsButtonMenuRequestedDataBrokerProtection(self)
     }
 
@@ -376,11 +375,11 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
     }
 
     @objc func openSubscriptionPurchasePage(_ sender: NSMenuItem) {
+        PixelKit.fire(MoreOptionsMenuPixel.subscriptionActionClicked, frequency: .daily)
         actionDelegate?.optionsButtonMenuRequestedSubscriptionPurchasePage(self)
     }
 
     @objc func openSubscriptionSettings(_ sender: NSMenuItem) {
-        PixelKit.fire(MoreOptionsMenuPixel.subscriptionActionClicked, frequency: .daily)
         actionDelegate?.optionsButtonMenuRequestedSubscriptionPreferences(self)
     }
 
@@ -390,6 +389,7 @@ final class MoreOptionsMenu: NSMenu, NSMenuDelegate {
 
     @MainActor
     @objc func openFreemiumDBP(_ sender: NSMenuItem) {
+        PixelKit.fire(MoreOptionsMenuPixel.dataBrokerProtectionActionClicked, frequency: .daily)
 
         if freemiumDBPUserStateManager.didPostFirstProfileSavedNotification {
             freemiumDBPExperimentPixelHandler.fire(FreemiumDBPExperimentPixel.overFlowResults)

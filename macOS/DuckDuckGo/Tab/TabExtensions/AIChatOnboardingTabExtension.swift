@@ -100,12 +100,14 @@ extension AIChatOnboardingTabExtension: NavigationResponder {
     func decidePolicy(for navigationAction: NavigationAction, preferences: inout NavigationPreferences) async -> NavigationActionPolicy? {
         guard isLoadedInSidebar,
               !navigationAction.navigationType.isSameDocumentNavigation,
-              navigationAction.isUserInitiated
+              navigationAction.isUserInitiated,
+              let parentWindowController = WindowControllersManager.shared.lastKeyMainWindowController
         else {
             return .next
         }
 
-        WindowControllersManager.shared.showTab(with: .url(navigationAction.url, source: .link))
+        let tabCollectionViewModel = parentWindowController.mainViewController.tabCollectionViewModel
+        tabCollectionViewModel.insertOrAppendNewTab(.url(navigationAction.url, source: .link))
         return .cancel
     }
 }

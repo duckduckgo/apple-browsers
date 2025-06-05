@@ -3443,10 +3443,10 @@
 "vpn.settings.dns.server.content.blocking.explanation" = "Стоп-списки на уровне DNS блокируют более 150 тысяч доменов, на которые поступили жалобы за размещение вредоносного ПО, фишинговые атаки и онлайн-мошенничество. [Подробнее...](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
 
 /* Header of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.header" = "Блокировка и фильтрация контента";
+"vpn.settings.dns.server.content.blocking.header" = "Блокировка вредоносного контента";
 
-/* Title of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.title" = "Блокировать опасные домены";
+/* Title of the vpn scam blocker sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Блокировщик мошенничества";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";

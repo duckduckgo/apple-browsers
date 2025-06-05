@@ -372,6 +372,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
         popovers?.togglePrivacyDashboardPopover(for: tabViewModel, from: privacyEntryPointButton, entryPoint: entryPoint)
         onboardingPixelReporter.measurePrivacyDashboardOpened()
+        PixelKit.fire(NavigationBarPixel.privacyDashboardOpened, frequency: .daily)
     }
 
     private func setupButtonsCornerRadius() {
@@ -534,8 +535,11 @@ final class AddressBarButtonsViewController: NSViewController {
         button.backgroundColor = .buttonMouseDown
         button.mouseOverColor = .buttonMouseDown
         (popover.contentViewController as? PermissionAuthorizationViewController)?.query = query
-        popover.show(relativeTo: button.bounds, of: button, preferredEdge: .maxY)
-        query.wasShownOnce = true
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + NSAnimationContext.current.duration) {
+            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .maxY)
+            query.wasShownOnce = true
+        }
     }
 
     func closePrivacyDashboard() {

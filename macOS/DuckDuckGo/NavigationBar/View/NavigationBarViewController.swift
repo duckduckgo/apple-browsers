@@ -22,6 +22,7 @@ import Cocoa
 import Combine
 import Common
 import Freemium
+import History
 import NetworkProtection
 import NetworkProtectionIPC
 import NetworkProtectionUI
@@ -102,6 +103,7 @@ final class NavigationBarViewController: NSViewController {
 
     private let bookmarkDragDropManager: BookmarkDragDropManager
     private let bookmarkManager: BookmarkManager
+    private let historyCoordinator: HistoryCoordinator
 
     private var subscriptionManager: SubscriptionAuthV1toV2Bridge {
         Application.appDelegate.subscriptionAuthV1toV2Bridge
@@ -155,6 +157,7 @@ final class NavigationBarViewController: NSViewController {
                        downloadListCoordinator: DownloadListCoordinator = .shared,
                        bookmarkManager: BookmarkManager,
                        bookmarkDragDropManager: BookmarkDragDropManager,
+                       historyCoordinator: HistoryCoordinator,
                        networkProtectionPopoverManager: NetPPopoverManager,
                        networkProtectionStatusReporter: NetworkProtectionStatusReporter,
                        autofillPopoverPresenter: AutofillPopoverPresenter,
@@ -169,6 +172,7 @@ final class NavigationBarViewController: NSViewController {
                 downloadListCoordinator: downloadListCoordinator,
                 bookmarkManager: bookmarkManager,
                 bookmarkDragDropManager: bookmarkDragDropManager,
+                historyCoordinator: historyCoordinator,
                 networkProtectionPopoverManager: networkProtectionPopoverManager,
                 networkProtectionStatusReporter: networkProtectionStatusReporter,
                 autofillPopoverPresenter: autofillPopoverPresenter,
@@ -185,6 +189,7 @@ final class NavigationBarViewController: NSViewController {
         downloadListCoordinator: DownloadListCoordinator,
         bookmarkManager: BookmarkManager,
         bookmarkDragDropManager: BookmarkDragDropManager,
+        historyCoordinator: HistoryCoordinator,
         networkProtectionPopoverManager: NetPPopoverManager,
         networkProtectionStatusReporter: NetworkProtectionStatusReporter,
         autofillPopoverPresenter: AutofillPopoverPresenter,
@@ -207,11 +212,12 @@ final class NavigationBarViewController: NSViewController {
         self.downloadListCoordinator = downloadListCoordinator
         self.bookmarkManager = bookmarkManager
         self.bookmarkDragDropManager = bookmarkDragDropManager
+        self.historyCoordinator = historyCoordinator
         self.brokenSitePromptLimiter = brokenSitePromptLimiter
         self.featureFlagger = featureFlagger
         self.visualStyle = visualStyle
-        goBackButtonMenuDelegate = NavigationButtonMenuDelegate(buttonType: .back, tabCollectionViewModel: tabCollectionViewModel)
-        goForwardButtonMenuDelegate = NavigationButtonMenuDelegate(buttonType: .forward, tabCollectionViewModel: tabCollectionViewModel)
+        goBackButtonMenuDelegate = NavigationButtonMenuDelegate(buttonType: .back, tabCollectionViewModel: tabCollectionViewModel, historyCoordinator: historyCoordinator)
+        goForwardButtonMenuDelegate = NavigationButtonMenuDelegate(buttonType: .forward, tabCollectionViewModel: tabCollectionViewModel, historyCoordinator: historyCoordinator)
         super.init(coder: coder)
     }
 
@@ -359,6 +365,7 @@ final class NavigationBarViewController: NSViewController {
         guard let addressBarViewController = AddressBarViewController(coder: coder,
                                                                       tabCollectionViewModel: tabCollectionViewModel,
                                                                       bookmarkManager: bookmarkManager,
+                                                                      historyCoordinator: historyCoordinator,
                                                                       burnerMode: burnerMode,
                                                                       popovers: popovers,
                                                                       onboardingPixelReporter: onboardingPixelReporter) else {
@@ -436,6 +443,8 @@ final class NavigationBarViewController: NSViewController {
             return
         }
 
+        PixelKit.fire(NavigationBarPixel.homeButtonClicked, frequency: .daily)
+
         let behavior = LinkOpenBehavior(
             event: NSApp.currentEvent,
             switchToNewTabWhenOpenedPreference: TabsPreferences.shared.switchToNewTabWhenOpened,
@@ -479,6 +488,7 @@ final class NavigationBarViewController: NSViewController {
 #endif
         let menu = MoreOptionsMenu(tabCollectionViewModel: tabCollectionViewModel,
                                    bookmarkManager: bookmarkManager,
+                                   historyCoordinator: historyCoordinator,
                                    passwordManagerCoordinator: PasswordManagerCoordinator.shared,
                                    vpnFeatureGatekeeper: DefaultVPNFeatureGatekeeper(subscriptionManager: subscriptionManager),
                                    internalUserDecider: internalUserDecider,
@@ -493,10 +503,12 @@ final class NavigationBarViewController: NSViewController {
 
     @IBAction func bookmarksButtonAction(_ sender: NSButton) {
         popovers.bookmarksButtonPressed(bookmarkListButton, popoverDelegate: self, tab: tabCollectionViewModel.selectedTabViewModel?.tab)
+        PixelKit.fire(NavigationBarPixel.bookmarksButtonClicked, frequency: .daily)
     }
 
     @IBAction func passwordManagementButtonAction(_ sender: NSButton) {
         popovers.passwordManagementButtonPressed(passwordManagementButton, withDelegate: self)
+        PixelKit.fire(NavigationBarPixel.passwordsButtonClicked, frequency: .daily)
     }
 
     @IBAction func networkProtectionButtonAction(_ sender: NSButton) {
@@ -513,6 +525,7 @@ final class NavigationBarViewController: NSViewController {
 
     @IBAction func downloadsButtonAction(_ sender: NSButton) {
         toggleDownloadsPopover(keepButtonVisible: false)
+        PixelKit.fire(NavigationBarPixel.downloadsButtonClicked, frequency: .daily)
     }
 
     override func mouseDown(with event: NSEvent) {
@@ -622,7 +635,7 @@ final class NavigationBarViewController: NSViewController {
     func listenToFeedbackFormNotifications() {
         feedbackFormCancellable = NotificationCenter.default.publisher(for: .OpenUnifiedFeedbackForm).receive(on: DispatchQueue.main).sink { notification in
             let source = UnifiedFeedbackSource(userInfo: notification.userInfo)
-            WindowControllersManager.shared.showShareFeedbackModal(source: source)
+            Application.appDelegate.windowControllersManager.showShareFeedbackModal(source: source)
         }
     }
 
@@ -998,7 +1011,7 @@ final class NavigationBarViewController: NSViewController {
             .sink { [weak self] _ in
                 guard let self, !self.isDownloadsPopoverShown,
                       DownloadsPreferences.shared.shouldOpenPopupOnCompletion,
-                      WindowControllersManager.shared.lastKeyMainWindowController?.window === downloadsButton.window else { return }
+                      Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window === downloadsButton.window else { return }
 
                 self.popovers.showDownloadsPopoverAndAutoHide(from: downloadsButton, popoverDelegate: self, downloadsDelegate: self)
             }
@@ -1613,7 +1626,7 @@ extension NavigationBarViewController: NSMenuDelegate {
 extension NavigationBarViewController: OptionsButtonMenuDelegate {
 
     func optionsButtonMenuRequestedDataBrokerProtection(_ menu: NSMenu) {
-        WindowControllersManager.shared.showDataBrokerProtectionTab()
+        Application.appDelegate.windowControllersManager.showDataBrokerProtectionTab()
     }
 
     func optionsButtonMenuRequestedOpenExternalPasswordManager(_ menu: NSMenu) {
@@ -1636,7 +1649,7 @@ extension NavigationBarViewController: OptionsButtonMenuDelegate {
     }
 
     func optionsButtonMenuRequestedBookmarkManagementInterface(_ menu: NSMenu) {
-        WindowControllersManager.shared.showBookmarksTab()
+        Application.appDelegate.windowControllersManager.showBookmarksTab()
     }
 
     func optionsButtonMenuRequestedBookmarkImportInterface(_ menu: NSMenu) {
@@ -1660,34 +1673,34 @@ extension NavigationBarViewController: OptionsButtonMenuDelegate {
     }
 
     func optionsButtonMenuRequestedPrint(_ menu: NSMenu) {
-        WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController.printWebView(self)
+        Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.printWebView(self)
     }
 
     func optionsButtonMenuRequestedPreferences(_ menu: NSMenu) {
-        WindowControllersManager.shared.showPreferencesTab()
+        Application.appDelegate.windowControllersManager.showPreferencesTab()
     }
 
     func optionsButtonMenuRequestedAppearancePreferences(_ menu: NSMenu) {
-        WindowControllersManager.shared.showPreferencesTab(withSelectedPane: .appearance)
+        Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: .appearance)
     }
 
     func optionsButtonMenuRequestedAccessibilityPreferences(_ menu: NSMenu) {
-        WindowControllersManager.shared.showPreferencesTab(withSelectedPane: .accessibility)
+        Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: .accessibility)
     }
 
     func optionsButtonMenuRequestedSubscriptionPurchasePage(_ menu: NSMenu) {
         let url = subscriptionManager.url(for: .purchase)
-        WindowControllersManager.shared.showTab(with: .subscription(url.appendingParameter(name: AttributionParameter.origin, value: SubscriptionFunnelOrigin.appMenu.rawValue)))
+        Application.appDelegate.windowControllersManager.showTab(with: .subscription(url.appendingParameter(name: AttributionParameter.origin, value: SubscriptionFunnelOrigin.appMenu.rawValue)))
         PixelKit.fire(PrivacyProPixel.privacyProOfferScreenImpression)
     }
 
     func optionsButtonMenuRequestedSubscriptionPreferences(_ menu: NSMenu) {
-        WindowControllersManager.shared.showPreferencesTab(withSelectedPane: .subscriptionSettings)
+        Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: .subscriptionSettings)
     }
 
     func optionsButtonMenuRequestedIdentityTheftRestoration(_ menu: NSMenu) {
         let url = subscriptionManager.url(for: .identityTheftRestoration)
-        WindowControllersManager.shared.showTab(with: .identityTheftRestoration(url))
+        Application.appDelegate.windowControllersManager.showTab(with: .identityTheftRestoration(url))
     }
 }
 

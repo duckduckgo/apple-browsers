@@ -31,6 +31,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
 
     var cancellables = Set<AnyCancellable>()
 
+    @MainActor
     override func setUp() {
         SearchPreferences.shared.showAutocompleteSuggestions = true
         suggestionLoadingMock = SuggestionLoadingMock()
@@ -66,6 +67,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
     @MainActor
     func testWhenSelectionIndexIsNilThenSelectedSuggestionViewModelIsNil() {
         let suggestionContainer = SuggestionContainer(
+            historyProvider: HistoryProviderMock(),
             bookmarkProvider: SuggestionsBookmarkProvider(bookmarkManager: MockBookmarkManager()),
             burnerMode: .regular,
             isUrlIgnored: { _ in false }
@@ -99,6 +101,7 @@ final class SuggestionContainerViewModelTests: XCTestCase {
     @MainActor
     func testWhenSelectCalledWithIndexOutOfBoundsThenSelectedSuggestionViewModelIsNil() {
         let suggestionContainer = SuggestionContainer(
+            historyProvider: HistoryProviderMock(),
             bookmarkProvider: SuggestionsBookmarkProvider(bookmarkManager: MockBookmarkManager()),
             burnerMode: .regular,
             isUrlIgnored: { _ in false }

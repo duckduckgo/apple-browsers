@@ -235,7 +235,7 @@ final class SearchNonexistentDomainTests: XCTestCase {
         let bookmarkProviderMock = SuggestionsBookmarkProvider(bookmarkManager: MockBookmarkManager())
         let suggestionContainer = SuggestionContainer(openTabsProvider: { [] },
                                                       suggestionLoading: suggestionLoadingMock,
-                                                      historyProvider: HistoryCoordinator.shared,
+                                                      historyProvider: NSApp.delegateTyped.historyCoordinator,
                                                       bookmarkProvider: bookmarkProviderMock,
                                                       burnerMode: .regular,
                                                       isUrlIgnored: { _ in false })

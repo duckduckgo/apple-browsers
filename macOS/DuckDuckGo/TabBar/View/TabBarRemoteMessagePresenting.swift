@@ -82,7 +82,7 @@ extension TabBarRemoteMessagePresenting {
                 guard let self = self else { return }
 
                 DispatchQueue.main.async {
-                    WindowControllersManager.shared.showTab(with: .contentFromURL(surveyURL, source: .appOpenUrl))
+                    Application.appDelegate.windowControllersManager.showTab(with: .contentFromURL(surveyURL, source: .appOpenUrl))
                 }
                 self.tabBarRemoteMessageViewModel.onSurveyOpened()
                 self.removeFeedbackButton()

@@ -76,7 +76,7 @@ final class NetworkProtectionNavBarPopoverManager: NetPPopoverManager {
         self.vpnUIPresenting = vpnUIPresenting
         self.proxySettings = proxySettings
 
-        let activeDomainPublisher = ActiveDomainPublisher(windowControllersManager: .shared)
+        let activeDomainPublisher = ActiveDomainPublisher(windowControllersManager: Application.appDelegate.windowControllersManager)
 
         activeSitePublisher = ActiveSiteInfoPublisher(
             activeDomainPublisher: activeDomainPublisher.eraseToAnyPublisher(),

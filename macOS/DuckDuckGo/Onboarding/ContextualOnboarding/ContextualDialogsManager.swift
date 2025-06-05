@@ -115,8 +115,7 @@ public class ContextualDialogsManager: ContextualOnboardingDialogTypeProviding, 
         }
     }
 
-    init(trackerMessageProvider: TrackerMessageProviding = TrackerMessageProvider(),
-         stateStorage: ContextualOnboardingStateStoring = ContextualOnboardingStateStorage()) {
+    init(trackerMessageProvider: TrackerMessageProviding, stateStorage: ContextualOnboardingStateStoring = ContextualOnboardingStateStorage()) {
         self.trackerMessageProvider = trackerMessageProvider
         self.stateStorage = stateStorage
     }

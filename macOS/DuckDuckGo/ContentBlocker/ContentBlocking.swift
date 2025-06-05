@@ -21,6 +21,7 @@ import WebKit
 import Combine
 import BrowserServicesKit
 import Common
+import Persistence
 import PixelKit
 import PixelExperimentKit
 
@@ -68,18 +69,20 @@ final class AppContentBlocking {
     // keeping whole ContentBlocking state initialization in one place to avoid races between updates publishing and rules storing
     @MainActor
     convenience init(
+        database: CoreDataDatabase,
         internalUserDecider: InternalUserDecider,
         configurationStore: ConfigurationStore,
         contentScopeExperimentsManager: @autoclosure @escaping () -> ContentScopeExperimentsManaging,
+        onboardingNavigationDelegate: OnboardingNavigating,
         appearancePreferences: AppearancePreferences,
         startupPreferences: StartupPreferences,
-        bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling
+        bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling,
+        historyCoordinator: HistoryDataSource
     ) {
-
         let privacyConfigurationManager = PrivacyConfigurationManager(fetchedETag: configurationStore.loadEtag(for: .privacyConfiguration),
                                                                       fetchedData: configurationStore.loadData(for: .privacyConfiguration),
                                                                       embeddedDataProvider: AppPrivacyConfigurationDataProvider(),
-                                                                      localProtection: LocalUnprotectedDomains.shared,
+                                                                      localProtection: LocalUnprotectedDomains(database: database),
                                                                       errorReporting: Self.debugEvents,
                                                                       internalUserDecider: internalUserDecider)
         self.init(
@@ -87,9 +90,11 @@ final class AppContentBlocking {
             internalUserDecider: internalUserDecider,
             configurationStore: configurationStore,
             contentScopeExperimentsManager: contentScopeExperimentsManager(),
+            onboardingNavigationDelegate: onboardingNavigationDelegate,
             appearancePreferences: appearancePreferences,
             startupPreferences: startupPreferences,
-            bookmarkManager: bookmarkManager
+            bookmarkManager: bookmarkManager,
+            historyCoordinator: historyCoordinator
         )
     }
 
@@ -99,9 +104,11 @@ final class AppContentBlocking {
         internalUserDecider: InternalUserDecider,
         configurationStore: ConfigurationStore,
         contentScopeExperimentsManager: @autoclosure @escaping () -> ContentScopeExperimentsManaging,
+        onboardingNavigationDelegate: OnboardingNavigating,
         appearancePreferences: AppearancePreferences,
         startupPreferences: StartupPreferences,
-        bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling
+        bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling,
+        historyCoordinator: HistoryDataSource
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
 
@@ -126,9 +133,11 @@ final class AppContentBlocking {
                                                   webTrackingProtectionPreferences: WebTrackingProtectionPreferences.shared,
                                                   experimentManager: contentScopeExperimentsManager(),
                                                   tld: tld,
+                                                  onboardingNavigationDelegate: onboardingNavigationDelegate,
                                                   appearancePreferences: appearancePreferences,
                                                   startupPreferences: startupPreferences,
-                                                  bookmarkManager: bookmarkManager)
+                                                  bookmarkManager: bookmarkManager,
+                                                  historyCoordinator: historyCoordinator)
 
         adClickAttributionRulesProvider = AdClickAttributionRulesProvider(config: adClickAttribution,
                                                                           compiledRulesSource: contentBlockingManager,

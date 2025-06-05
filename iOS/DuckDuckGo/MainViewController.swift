@@ -203,7 +203,9 @@ class MainViewController: UIViewController {
     }()
 
     private lazy var aiChatViewControllerManager: AIChatViewControllerManager = {
-        let manager = AIChatViewControllerManager(experimentalAIChatManager: .init(featureFlagger: featureFlagger))
+        let manager = AIChatViewControllerManager(experimentalAIChatManager: .init(featureFlagger: featureFlagger),
+                                                  featureFlagger: featureFlagger,
+                                                  aiChatSettings: aiChatSettings)
         manager.delegate = self
         return manager
     }()
@@ -2425,16 +2427,7 @@ extension MainViewController: OmniBarDelegate {
                 openAIChat(textFieldValue, autoSend: true)
             }
         } else {
-            /// Check if the current tab's URL is a DuckDuckGo search page
-            /// If it is, get the query item and open the chat with the query item's value
-            /// Do not auto-send if the user is on SERP
-            /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1210024262385459?focus=true
-            if currentTab?.url?.isDuckDuckGoSearch == true {
-                let queryItem = currentTab?.url?.getQueryItems()?.filter { $0.name == "q" }.first
-                openAIChat(queryItem?.value, autoSend: false)
-            } else {
-                openAIChat()
-            }
+            openAIChat()
         }
 
         Pixel.fire(pixel: .openAIChatFromAddressBar,

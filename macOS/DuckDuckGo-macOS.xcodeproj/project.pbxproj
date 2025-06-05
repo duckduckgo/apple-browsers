@@ -8360,24 +8360,24 @@
 		85CC1D7926A05E820062F04E /* View */ = {
 			isa = PBXGroup;
 			children = (
-				31D5375B291D944100407A95 /* PasswordManagementBitwardenItemView.swift */,
-				4BBE0AA627B9B027003B37A8 /* PopUpButton.swift */,
-				4B1E6EF027AB5E5D00F51793 /* PasswordManagementItemList.swift */,
+				C1DAF3B42B9A44860059244F /* AutofillPopoverPresenter.swift */,
 				4BE65473271FCD40008D1D63 /* EditableTextView.swift */,
+				31D5375B291D944100407A95 /* PasswordManagementBitwardenItemView.swift */,
 				4BE65470271FCD40008D1D63 /* PasswordManagementCreditCardItemView.swift */,
 				4BE6546E271FCD40008D1D63 /* PasswordManagementIdentityItemView.swift */,
+				4B1E6EF027AB5E5D00F51793 /* PasswordManagementItemList.swift */,
 				4BE65471271FCD40008D1D63 /* PasswordManagementLoginItemView.swift */,
 				4BE65472271FCD40008D1D63 /* PasswordManagementNoteItemView.swift */,
 				85625997269C9C5F00EE44BC /* PasswordManagementPopover.swift */,
 				85625995269C953C00EE44BC /* PasswordManagementViewController.swift */,
 				85625993269C8F9600EE44BC /* PasswordManager.storyboard */,
+				4BBE0AA627B9B027003B37A8 /* PopUpButton.swift */,
 				85890639267BCD8E00D23B0D /* SaveCredentialsPopover.swift */,
 				8589063B267BCDC000D23B0D /* SaveCredentialsViewController.swift */,
 				4B8A4E0027C8447E005F40E8 /* SaveIdentityPopover.swift */,
 				4B8A4DFE27C83B29005F40E8 /* SaveIdentityViewController.swift */,
 				4BE4005227CF3DC3007D3161 /* SavePaymentMethodPopover.swift */,
 				4BE4005427CF3F19007D3161 /* SavePaymentMethodViewController.swift */,
-				C1DAF3B42B9A44860059244F /* AutofillPopoverPresenter.swift */,
 			);
 			path = View;
 			sourceTree = "<group>";

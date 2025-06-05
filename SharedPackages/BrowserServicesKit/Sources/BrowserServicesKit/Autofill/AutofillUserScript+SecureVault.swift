@@ -543,6 +543,7 @@ extension AutofillUserScript {
         case credentials
         case identities
         case creditCards
+        case unknown
     }
 
     // https://github.com/duckduckgo/duckduckgo-autofill/blob/main/src/deviceApiCalls/schemas/getAutofillData.params.json

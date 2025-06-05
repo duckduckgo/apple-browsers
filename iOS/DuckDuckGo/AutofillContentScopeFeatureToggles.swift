@@ -38,6 +38,7 @@ extension ContentScopeFeatureToggles {
                                    inlineIconCredentials: featureFlagger.isFeatureOn(.autofillInlineIconCredentials) && isAutofillEnabledInSettings,
                                    thirdPartyCredentialsProvider: false,
                                    unknownUsernameCategorization: featureFlagger.isFeatureOn(.autofillUnknownUsernameCategorization) && isAutofillEnabledInSettings,
-                                   partialFormSaves: featureFlagger.isFeatureOn(.autofillPartialFormSaves) && isAutofillEnabledInSettings)
+                                   partialFormSaves: featureFlagger.isFeatureOn(.autofillPartialFormSaves) && isAutofillEnabledInSettings,
+                                   inputFocusApi: featureFlagger.isFeatureOn(.autofillCreditCards) && isCreditCardAutofillEnabledInSettings)
     }
 }

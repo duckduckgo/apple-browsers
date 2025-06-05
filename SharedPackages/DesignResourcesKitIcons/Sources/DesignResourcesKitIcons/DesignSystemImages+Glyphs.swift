@@ -161,6 +161,7 @@ public extension DesignSystemImages {
             public static var folderMove: DesignSystemImage { .init(resource: .folderMove16) }
             public static var folderNew: DesignSystemImage { .init(resource: .folderNew16) }
             public static var gift: DesignSystemImage { .init(resource: .gift16) }
+            public static var globe: DesignSystemImage { .init(resource: .globe16) }
             public static var help: DesignSystemImage { .init(resource: .help16) }
             public static var history: DesignSystemImage { .init(resource: .history16) }
             public static var home: DesignSystemImage { .init(resource: .home16) }
@@ -217,6 +218,7 @@ public extension DesignSystemImages {
             public static var sync: DesignSystemImage { .init(resource: .sync16) }
             public static var systemTheme: DesignSystemImage { .init(resource: .systemTheme16) }
             public static var tabCloseAlt: DesignSystemImage { .init(resource: .tabCloseAlt16) }
+            public static var tabDesktop: DesignSystemImage { .init(resource: .tabDesktop16) }
             public static var tabMobile: DesignSystemImage { .init(resource: .tabMobile16) }
             public static var tabReopen: DesignSystemImage { .init(resource: .tabReopen16) }
             public static var tabTop: DesignSystemImage { .init(resource: .tabTop16) }
@@ -401,7 +403,9 @@ public extension DesignSystemImages {
             public static var platformPlayStore: DesignSystemImage { .init(resource: .platformPlayStore24) }
             public static var pointUp: DesignSystemImage { .init(resource: .pointUp24) }
             public static var pointUpSolid: DesignSystemImage { .init(resource: .pointUpSolid24) }
+            public static var print: DesignSystemImage { .init(resource: .print24) }
             public static var reload: DesignSystemImage { .init(resource: .reload24) }
+            public static var reloadSmall: DesignSystemImage { .init(resource: .reloadSmall24) }
             public static var rename: DesignSystemImage { .init(resource: .rename24) }
             public static var replace: DesignSystemImage { .init(resource: .replace24) }
             public static var reset: DesignSystemImage { .init(resource: .reset24) }

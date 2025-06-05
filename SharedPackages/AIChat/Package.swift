@@ -33,13 +33,15 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/duckduckgo/DesignResourcesKit", exact: "5.0.0")
+        .package(url: "https://github.com/duckduckgo/DesignResourcesKit", exact: "5.0.0"),
+        .package(path: "../DesignResourcesKitIcons")
     ],
     targets: [
         .target(
             name: "AIChat",
             dependencies: [
                 "DesignResourcesKit",
+                "DesignResourcesKitIcons"
             ],
             resources: [
                 .process("Resources/Assets.xcassets")

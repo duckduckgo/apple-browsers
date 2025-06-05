@@ -144,6 +144,7 @@ extension AutofillUserScript {
         let cardSecurityCode: String?
         let expirationMonth: Int?
         let expirationYear: Int?
+        let paymentProvider: String?
 
         static func from(card: SecureVaultModels.CreditCard) -> CreditCardObject? {
             guard let id = card.id else { return nil }
@@ -155,7 +156,8 @@ extension AutofillUserScript {
                                     cardNumber: card.cardNumber,
                                     cardSecurityCode: card.cardSecurityCode,
                                     expirationMonth: card.expirationMonth,
-                                    expirationYear: card.expirationYear)
+                                    expirationYear: card.expirationYear,
+                                    paymentProvider: card.displayCardType)
         }
 
         /// Provides a minimal summary of the card, suitable for presentation in the credit card selection list. This intentionally omits secure data, such as card number and cardholder name.
@@ -164,12 +166,13 @@ extension AutofillUserScript {
 
             return CreditCardObject(id: id,
                                     title: card.title,
-                                    displayNumber: card.displayName,
+                                    displayNumber: card.cardSuffix,
                                     cardName: nil,
                                     cardNumber: nil,
                                     cardSecurityCode: nil,
-                                    expirationMonth: nil,
-                                    expirationYear: nil)
+                                    expirationMonth: card.expirationMonth,
+                                    expirationYear: card.expirationYear,
+                                    paymentProvider: card.displayCardType)
         }
     }
 

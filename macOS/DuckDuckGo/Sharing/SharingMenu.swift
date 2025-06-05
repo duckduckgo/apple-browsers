@@ -46,7 +46,7 @@ final class SharingMenu: NSMenu {
     typealias SharingData = (title: String?, items: [Any])
     @MainActor
     private func sharingData() -> SharingData? {
-        guard let tabViewModel = WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.selectedTabViewModel,
+        guard let tabViewModel = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel.selectedTabViewModel,
               tabViewModel.canReload,
               !tabViewModel.isShowingErrorPage,
               let url = tabViewModel.tab.content.userEditableUrl else { return nil }

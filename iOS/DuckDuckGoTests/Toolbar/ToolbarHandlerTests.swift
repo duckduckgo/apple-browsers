@@ -29,21 +29,21 @@ class ToolbarHandlerTests: XCTestCase {
     var toolbarHandler: ToolbarHandler!
     var mockToolbar: UIToolbar!
     var mockNavigatable: MockNavigatable!
-    var mockFeatureFlagger: MockFeatureFlagger!
+    var mockThemeManager: MockThemeManager!
 
     override func setUp() {
         super.setUp()
         mockToolbar = UIToolbar()
         mockNavigatable = MockNavigatable(canGoBack: true, canGoForward: false)
-        mockFeatureFlagger = MockFeatureFlagger()
-        toolbarHandler = ToolbarHandler(toolbar: mockToolbar, featureFlagger: mockFeatureFlagger)
+        mockThemeManager = MockThemeManager()
+        toolbarHandler = ToolbarHandler(toolbar: mockToolbar, themeManager: mockThemeManager)
     }
 
     override func tearDown() {
         toolbarHandler = nil
         mockToolbar = nil
         mockNavigatable = nil
-        mockFeatureFlagger = nil
+        mockThemeManager = nil
         super.tearDown()
     }
 
@@ -73,9 +73,9 @@ class ToolbarHandlerTests: XCTestCase {
     }
 
     func testUpdateExperimentalToolbarWithStateNewTab() {
-        mockFeatureFlagger.enabledFeatureFlags.append(.experimentalBrowserTheming)
+        mockThemeManager.properties = ExperimentalThemingProperties(isExperimentalThemingEnabled: true)
         // To prevent assertion for using experimental colors with the default theme
-        ThemeManager(featureFlagger: mockFeatureFlagger).updateColorScheme()
+        DesignSystemPalette.current = .experimental
 
         toolbarHandler.updateToolbarWithState(.newTab)
 
@@ -88,9 +88,9 @@ class ToolbarHandlerTests: XCTestCase {
     }
 
     func testUpdateExperimentalToolbarWithStatePageLoaded() {
-        mockFeatureFlagger.enabledFeatureFlags.append(.experimentalBrowserTheming)
+        mockThemeManager.properties = ExperimentalThemingProperties(isExperimentalThemingEnabled: true)
         // To prevent assertion for using experimental colors with the default theme
-        ThemeManager(featureFlagger: mockFeatureFlagger).updateColorScheme()
+        DesignSystemPalette.current = .experimental
 
         toolbarHandler.updateToolbarWithState(.pageLoaded(currentTab: mockNavigatable))
 

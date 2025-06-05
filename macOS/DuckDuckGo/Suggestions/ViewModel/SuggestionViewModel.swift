@@ -24,6 +24,7 @@ struct SuggestionViewModel {
     let isHomePage: Bool
     let suggestion: Suggestion
     let userStringValue: String
+    let suggestionIcons: SuggestionsIconsProviding
 
     init(isHomePage: Bool,
          suggestion: Suggestion,
@@ -36,6 +37,7 @@ struct SuggestionViewModel {
         let fontSize = isHomePage ? visualStyle.addressBarStyleProvider.newTabOrHomePageAddressBarFontSize : visualStyle.addressBarStyleProvider.defaultAddressBarFontSize
         self.tableRowViewStandardAttributes = Self.rowViewStandardAttributes(size: fontSize, isBold: false)
         self.tableRowViewBoldAttributes = Self.rowViewStandardAttributes(size: fontSize, isBold: true)
+        self.suggestionIcons = visualStyle.iconsProvider.suggestionsIconsProvider
     }
 
     // MARK: - Attributed Strings
@@ -168,31 +170,31 @@ struct SuggestionViewModel {
     var icon: NSImage? {
         switch suggestion {
         case .phrase:
-            return .search
+            return suggestionIcons.phraseEntryIcon
         case .website:
-            return .web
+            return suggestionIcons.websiteEntryIcon
         case .historyEntry:
-            return .historySuggestion
+            return suggestionIcons.historyEntryIcon
         case .bookmark(title: _, url: _, isFavorite: false, _):
-            return .bookmarkSuggestion
+            return suggestionIcons.bookmarkEntryIcon
         case .bookmark(title: _, url: _, isFavorite: true, _):
-            return .favoritedBookmarkSuggestion
+            return suggestionIcons.favoriteEntryIcon
         case .unknown:
-            return .web
+            return suggestionIcons.unknownEntryIcon
         case .internalPage(title: _, url: let url, _) where url == .bookmarks,
              .openTab(title: _, url: let url, _, _) where url == .bookmarks:
-            return .bookmarksFolder
+            return suggestionIcons.folderEntryIcon
         case .internalPage(title: _, url: let url, _) where url.isSettingsURL,
              .openTab(title: _, url: let url, _, _) where url.isSettingsURL:
-            return .settingsMulticolor16
+            return suggestionIcons.settingsEntryIcon
         case .internalPage(title: _, url: let url, _) where url.isHistory,
              .openTab(title: _, url: let url, _, _) where url.isHistory:
-            return .historyFavicon
+            return suggestionIcons.historyEntryIcon
         case .internalPage(title: _, url: let url, _):
             guard url == URL(string: NSApp.delegateTyped.startupPreferences.formattedCustomHomePageURL) else { return nil }
-            return .home16
+            return suggestionIcons.homeEntryIcon
         case .openTab:
-            return .openTabSuggestion
+            return suggestionIcons.openTabEntryIcon
         }
     }
 

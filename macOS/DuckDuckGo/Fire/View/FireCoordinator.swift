@@ -29,7 +29,7 @@ final class FireCoordinator {
         let burningWindow: NSWindow
         let waitForOpening: Bool
 
-        if let lastKeyWindow = WindowControllersManager.shared.lastKeyMainWindowController?.window,
+        if let lastKeyWindow = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window,
            lastKeyWindow.isVisible {
             burningWindow = lastKeyWindow
             burningWindow.makeKeyAndOrderFront(nil)

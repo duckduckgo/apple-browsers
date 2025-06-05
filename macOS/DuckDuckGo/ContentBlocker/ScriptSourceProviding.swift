@@ -51,8 +51,11 @@ protocol ScriptSourceProviding {
         trackerDataManager: ContentBlocking.shared.trackerDataManager,
         experimentManager: Application.appDelegate.contentScopeExperimentsManager,
         tld: ContentBlocking.shared.tld,
+        onboardingNavigationDelegate: Application.appDelegate.windowControllersManager,
         appearancePreferences: Application.appDelegate.appearancePreferences,
-        startupPreferences: Application.appDelegate.startupPreferences
+        startupPreferences: Application.appDelegate.startupPreferences,
+        bookmarkManager: Application.appDelegate.bookmarkManager,
+        historyCoordinator: Application.appDelegate.historyCoordinator
     )
 }
 
@@ -73,6 +76,8 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     let webTrakcingProtectionPreferences: WebTrackingProtectionPreferences
     let tld: TLD
     let experimentManager: ContentScopeExperimentsManaging
+    let bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling
+    let historyCoordinator: HistoryDataSource
 
     @MainActor
     init(configStorage: ConfigurationStoring,
@@ -82,8 +87,12 @@ struct ScriptSourceProvider: ScriptSourceProviding {
          trackerDataManager: TrackerDataManager,
          experimentManager: ContentScopeExperimentsManaging,
          tld: TLD,
+         onboardingNavigationDelegate: OnboardingNavigating,
          appearancePreferences: AppearancePreferences,
-         startupPreferences: StartupPreferences) {
+         startupPreferences: StartupPreferences,
+         bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling,
+         historyCoordinator: HistoryDataSource
+    ) {
 
         self.configStorage = configStorage
         self.privacyConfigurationManager = privacyConfigurationManager
@@ -92,14 +101,16 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.trackerDataManager = trackerDataManager
         self.experimentManager = experimentManager
         self.tld = tld
+        self.bookmarkManager = bookmarkManager
+        self.historyCoordinator = historyCoordinator
 
         self.contentBlockerRulesConfig = buildContentBlockerRulesConfig()
         self.surrogatesConfig = buildSurrogatesConfig()
         self.sessionKey = generateSessionKey()
         self.messageSecret = generateSessionKey()
         self.autofillSourceProvider = buildAutofillSource()
-        self.onboardingActionsManager = buildOnboardingActionsManager(appearancePreferences, startupPreferences)
-        self.historyViewActionsManager = buildHistoryViewActionsManager()
+        self.onboardingActionsManager = buildOnboardingActionsManager(onboardingNavigationDelegate, appearancePreferences, startupPreferences)
+        self.historyViewActionsManager = buildHistoryViewActionsManager(historyCoordinator: historyCoordinator, bookmarksHandler: bookmarkManager)
         self.currentCohorts = generateCurrentCohorts()
     }
 
@@ -156,17 +167,19 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     }
 
     @MainActor
-    private func buildOnboardingActionsManager(_ appearancePreferences: AppearancePreferences, _ startupPreferences: StartupPreferences) -> OnboardingActionsManaging {
+    private func buildOnboardingActionsManager(_ navigationDelegate: OnboardingNavigating, _ appearancePreferences: AppearancePreferences, _ startupPreferences: StartupPreferences) -> OnboardingActionsManaging {
         return OnboardingActionsManager(
-            navigationDelegate: WindowControllersManager.shared,
+            navigationDelegate: navigationDelegate,
             dockCustomization: DockCustomizer(),
             defaultBrowserProvider: SystemDefaultBrowserProvider(),
             appearancePreferences: appearancePreferences,
-            startupPreferences: startupPreferences)
+            startupPreferences: startupPreferences,
+            bookmarkManager: bookmarkManager
+        )
     }
 
-    private func buildHistoryViewActionsManager() -> HistoryViewActionsManager {
-        HistoryViewActionsManager(historyCoordinator: HistoryCoordinator.shared)
+    private func buildHistoryViewActionsManager(historyCoordinator: HistoryDataSource, bookmarksHandler: HistoryViewBookmarksHandling) -> HistoryViewActionsManager {
+        HistoryViewActionsManager(historyCoordinator: historyCoordinator, bookmarksHandler: bookmarksHandler)
     }
 
     private func loadTextFile(_ fileName: String, _ fileExt: String) -> String? {

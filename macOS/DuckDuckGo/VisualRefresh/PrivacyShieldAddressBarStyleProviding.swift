@@ -51,7 +51,7 @@ final class LegacyPrivacyShieldAddressBarStyleProvider: PrivacyShieldAddressBarS
 }
 
 final class CurrentPrivacyShieldAddressBarStyleProvider: PrivacyShieldAddressBarStyleProviding {
-    let icon: NSImage = DesignSystemImages.Color.Size16.shieldCheck
+    let icon: NSImage = DesignSystemImages.Color.Size16.shield
     let iconWithDot: NSImage = DesignSystemImages.Color.Size16.shieldNeutralAlert
 
     func hoverAnimation(forLightMode: Bool) -> String {

@@ -117,8 +117,8 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         self.selectionState = selectionState
     }
 
-    init(bookmarkManager: BookmarkManager = LocalBookmarkManager.shared,
-         dragDropManager: BookmarkDragDropManager = BookmarkDragDropManager.shared,
+    init(bookmarkManager: BookmarkManager,
+         dragDropManager: BookmarkDragDropManager,
          visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
         self.bookmarkManager = bookmarkManager
         self.dragDropManager = dragDropManager
@@ -464,7 +464,7 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
         managementDetailViewModel.onBookmarkTapped()
 
         if let bookmark = entity as? Bookmark {
-            WindowControllersManager.shared.open(bookmark, with: NSApp.currentEvent)
+            Application.appDelegate.windowControllersManager.open(bookmark, with: NSApp.currentEvent)
         } else if let folder = entity as? BookmarkFolder {
             clearSearch()
             resetSelections()
@@ -477,11 +477,11 @@ final class BookmarkManagementDetailViewController: NSViewController, NSMenuItem
               let row = tableView.withMouseLocationInViewCoordinates(event.locationInWindow, convert: tableView.row(at:)), row != -1,
               let bookmark = fetchEntity(at: row) as? Bookmark else { return }
 
-        WindowControllersManager.shared.open(bookmark, with: NSApp.currentEvent)
+        Application.appDelegate.windowControllersManager.open(bookmark, with: NSApp.currentEvent)
     }
 
     @objc func presentAddBookmarkModal(_ sender: Any) {
-        BookmarksDialogViewFactory.makeAddBookmarkView(parent: selectionState.folder)
+        BookmarksDialogViewFactory.makeAddBookmarkView(parent: selectionState.folder, bookmarkManager: bookmarkManager)
             .show(in: view.window)
     }
 
@@ -697,7 +697,7 @@ extension BookmarkManagementDetailViewController: NSTableViewDelegate, NSTableVi
     }
 
     fileprivate func openBookmarksInNewTabs(_ bookmarks: [Bookmark]) {
-        guard let tabCollection = WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else {
+        guard let tabCollection = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else {
             assertionFailure("Cannot open in new tabs")
             return
         }
@@ -915,30 +915,36 @@ extension BookmarkManagementDetailViewController {
 #if DEBUG
 @available(macOS 14.0, *)
 #Preview(traits: .fixedLayout(width: 700, height: 660)) {
-
-    return BookmarkManagementDetailViewController(bookmarkManager: {
-        let bkman = LocalBookmarkManager(bookmarkStore: BookmarkStoreMock(bookmarks: [
-            BookmarkFolder(id: "1", title: "Folder 1", children: [
-                BookmarkFolder(id: "2", title: "Nested Folder", children: [
-                    Bookmark(id: "b1", url: URL.duckDuckGo.absoluteString, title: "DuckDuckGo", isFavorite: false, parentFolderUUID: "2")
-                ])
-            ]),
-            BookmarkFolder(id: "3", title: "Another Folder", children: [
-                BookmarkFolder(id: "4", title: "Nested Folder", children: [
-                    BookmarkFolder(id: "5", title: "Another Nested Folder", children: [
-                        Bookmark(id: "b2", url: URL.duckDuckGo.absoluteString, title: "DuckDuckGo", isFavorite: false, parentFolderUUID: "5")
-                    ])
-                ])
-            ]),
-            Bookmark(id: "b3", url: URL.duckDuckGo.absoluteString, title: "Bookmark 1", isFavorite: false, parentFolderUUID: ""),
-            Bookmark(id: "b4", url: URL.duckDuckGo.absoluteString, title: "Bookmark 2", isFavorite: false, parentFolderUUID: ""),
-            Bookmark(id: "b5", url: URL.duckDuckGo.absoluteString, title: "DuckDuckGo", isFavorite: false, parentFolderUUID: "")
-        ]))
-        bkman.loadBookmarks()
+    let bkman = {
+        let manager = LocalBookmarkManager(
+            bookmarkStore: BookmarkStoreMock(
+                bookmarks: [
+                    BookmarkFolder(id: "1", title: "Folder 1", children: [
+                        BookmarkFolder(id: "2", title: "Nested Folder", children: [
+                            Bookmark(id: "b1", url: URL.duckDuckGo.absoluteString, title: "DuckDuckGo", isFavorite: false, parentFolderUUID: "2")
+                        ])
+                    ]),
+                    BookmarkFolder(id: "3", title: "Another Folder", children: [
+                        BookmarkFolder(id: "4", title: "Nested Folder", children: [
+                            BookmarkFolder(id: "5", title: "Another Nested Folder", children: [
+                                Bookmark(id: "b2", url: URL.duckDuckGo.absoluteString, title: "DuckDuckGo", isFavorite: false, parentFolderUUID: "5")
+                            ])
+                        ])
+                    ]),
+                    Bookmark(id: "b3", url: URL.duckDuckGo.absoluteString, title: "Bookmark 1", isFavorite: false, parentFolderUUID: ""),
+                    Bookmark(id: "b4", url: URL.duckDuckGo.absoluteString, title: "Bookmark 2", isFavorite: false, parentFolderUUID: ""),
+                    Bookmark(id: "b5", url: URL.duckDuckGo.absoluteString, title: "DuckDuckGo", isFavorite: false, parentFolderUUID: "")
+                ]
+            ),
+            appearancePreferences: .mock
+        )
+        manager.loadBookmarks()
         customAssertionFailure = { _, _, _ in }
 
-        return bkman
-    }())
+        return manager
+    }()
+
+    return BookmarkManagementDetailViewController(bookmarkManager: bkman, dragDropManager: .init(bookmarkManager: bkman))
 
 }
 #endif

@@ -28,6 +28,6 @@ enum ControlCenterWidget {
     case vpnToggle
 
     var image: Image {
-        Image("ControlCenter-VPN-off")
+        Image(.controlCenterVPNOff)
     }
 }

@@ -138,7 +138,7 @@ final class BookmarkAllTabsDialogCoordinatorViewModelTests: XCTestCase {
         let folder = BookmarkFolder(id: "1", title: "Folder")
         bookmarkAllTabsViewModelMock.selectedFolder = folder
         let bookmarkStoreMock = BookmarkStoreMock(bookmarks: [folder])
-        let bookmarkManager = LocalBookmarkManager(bookmarkStore: bookmarkStoreMock, faviconManagement: FaviconManagerMock())
+        let bookmarkManager = LocalBookmarkManager(bookmarkStore: bookmarkStoreMock, appearancePreferences: .mock)
         bookmarkManager.loadBookmarks()
         let folderModel = AddEditBookmarkFolderDialogViewModel(mode: .add(parentFolder: nil), bookmarkManager: bookmarkManager)
         let sut = BookmarkAllTabsDialogCoordinatorViewModel(bookmarkModel: bookmarkAllTabsViewModelMock, folderModel: folderModel)

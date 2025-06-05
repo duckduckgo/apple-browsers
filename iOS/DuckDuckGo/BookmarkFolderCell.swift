@@ -21,6 +21,7 @@ import UIKit
 import Core
 import Bookmarks
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 class BookmarkFolderCell: UITableViewCell {
 
@@ -51,7 +52,7 @@ class BookmarkFolderCell: UITableViewCell {
                 title.text = folder.title
             }
 
-            folderImageView.image = UIImage(named: "Folder")
+            folderImageView.image = DesignSystemImages.Color.Size24.folder
         }
     }
     

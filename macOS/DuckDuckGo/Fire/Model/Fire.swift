@@ -92,7 +92,7 @@ final class Fire {
 
     @MainActor
     init(cacheManager: WebCacheManager = WebCacheManager.shared,
-         historyCoordinating: HistoryCoordinating = HistoryCoordinator.shared,
+         historyCoordinating: HistoryCoordinating? = nil,
          permissionManager: PermissionManagerProtocol = PermissionManager.shared,
          savedZoomLevelsCoordinating: SavedZoomLevelsCoordinating = AccessibilityPreferences.shared,
          downloadListCoordinator: DownloadListCoordinator = DownloadListCoordinator.shared,
@@ -103,7 +103,7 @@ final class Fire {
          recentlyClosedCoordinator: RecentlyClosedCoordinating? = nil,
          pinnedTabsManagerProvider: PinnedTabsManagerProviding? = nil,
          tld: TLD,
-         bookmarkManager: BookmarkManager = LocalBookmarkManager.shared,
+         bookmarkManager: BookmarkManager? = nil,
          syncService: DDGSyncing? = nil,
          syncDataProviders: SyncDataProviders? = nil,
          secureVaultFactory: AutofillVaultFactory = AutofillSecureVaultFactory,
@@ -111,15 +111,15 @@ final class Fire {
          getVisitedLinkStore: (() -> WKVisitedLinkStoreWrapper?)? = nil
     ) {
         self.webCacheManager = cacheManager
-        self.historyCoordinating = historyCoordinating
+        self.historyCoordinating = historyCoordinating ?? NSApp.delegateTyped.historyCoordinator
         self.permissionManager = permissionManager
         self.savedZoomLevelsCoordinating = savedZoomLevelsCoordinating
         self.downloadListCoordinator = downloadListCoordinator
-        self.windowControllerManager = windowControllerManager ?? WindowControllersManager.shared
+        self.windowControllerManager = windowControllerManager ?? Application.appDelegate.windowControllersManager
         self.faviconManagement = faviconManagement ?? NSApp.delegateTyped.faviconManager
         self.recentlyClosedCoordinator = recentlyClosedCoordinator ?? RecentlyClosedCoordinator.shared
         self.pinnedTabsManagerProvider = pinnedTabsManagerProvider ?? Application.appDelegate.pinnedTabsManagerProvider
-        self.bookmarkManager = bookmarkManager
+        self.bookmarkManager = bookmarkManager ?? NSApp.delegateTyped.bookmarkManager
         self.syncService = syncService ?? NSApp.delegateTyped.syncService
         self.syncDataProviders = syncDataProviders ?? NSApp.delegateTyped.syncDataProviders
         self.secureVaultFactory = secureVaultFactory
@@ -480,7 +480,7 @@ final class Fire {
     private func burnFavicons(completion: @escaping () -> Void) {
         Task { @MainActor in
             await self.faviconManagement.burn(except: FireproofDomains.shared,
-                                              bookmarkManager: LocalBookmarkManager.shared,
+                                              bookmarkManager: bookmarkManager,
                                               savedLogins: autofillDomains())
             completion()
         }
@@ -490,7 +490,7 @@ final class Fire {
     private func burnFavicons(for baseDomains: Set<String>, completion: @escaping () -> Void) {
         Task { @MainActor in
             await self.faviconManagement.burnDomains(baseDomains,
-                                                     exceptBookmarks: LocalBookmarkManager.shared,
+                                                     exceptBookmarks: bookmarkManager,
                                                      exceptSavedLogins: autofillDomains(),
                                                      exceptExistingHistory: historyCoordinating.history ?? [],
                                                      tld: tld)

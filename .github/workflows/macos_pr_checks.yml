@@ -16,6 +16,8 @@ on:
       - '.xcode-version'
       - 'SharedPackages/**'
       - 'macOS/**'
+  schedule:
+    - cron: '10,40 4,5 * * *'
   workflow_call:
     inputs:
       branch:
@@ -124,6 +126,9 @@ jobs:
 
     runs-on: ${{ matrix.runs-on }}
     timeout-minutes: 30
+    
+    env:
+      WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
 
     outputs:
       private-api-check-report: ${{ steps.private-api.outputs.report }}
@@ -131,7 +136,7 @@ jobs:
 
     steps:
     - name: Register SSH key for certificates repository access
-      uses: webfactory/ssh-agent@v0.9.0
+      uses: webfactory/ssh-agent@v0.9.1
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
 
@@ -148,8 +153,11 @@ jobs:
         submodules: recursive
         ref: ${{ inputs.branch || github.ref_name }}
 
-    - name: Set up fastlane
-      run: bundle install
+    - name: Setup Ruby and dependencies
+      uses: ./.github/actions/setup-ruby
+      with:
+        working-directory: macOS
+        cache-key-prefix: macos-ruby
 
     - name: Sync code signing assets
       env:
@@ -262,7 +270,6 @@ jobs:
       if: always() && (steps.run-unit-tests.outcome == 'failure' || steps.run-integration-tests.outcome == 'failure')
       env:
         ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
-        WORKFLOW_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
       run: |
         # Extract failed tests from the junit report
         # Only keep failures unique by classname and name (column 1 and 2 of the yq output)
@@ -272,6 +279,16 @@ jobs:
             | sort -u -k 1,2 \
             | xargs -L 1 ./scripts/report-failed-unit-test.sh
         done
+        
+    - name: Send Unit Tests Status Pixel
+      if: always() && github.ref_name == 'main'
+      run: |
+        curl -fLSs -o /dev/null "https://improving.duckduckgo.com/t/m_ci_apple_mac_main_${{ matrix.flavor }}_unit_tests_${{ steps.run-unit-tests.outcome }}?workflow=${{ env.WORKFLOW_URL }}"
+        
+    - name: Send Integration Tests Status Pixel
+      if: always() && github.ref_name == 'main'
+      run: |
+        curl -fLSs -o /dev/null "https://improving.duckduckgo.com/t/m_ci_apple_mac_main_${{ matrix.flavor }}_integration_tests_${{ steps.run-integration-tests.outcome }}?workflow=${{ env.WORKFLOW_URL }}"
 
     - name: Upload failed unit tests log
       uses: actions/upload-artifact@v4
@@ -336,7 +353,7 @@ jobs:
 
     steps:
     - name: Register SSH key for certificates repository access
-      uses: webfactory/ssh-agent@v0.9.0
+      uses: webfactory/ssh-agent@v0.9.1
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
 
@@ -345,8 +362,11 @@ jobs:
       with:
         submodules: recursive
 
-    - name: Set up fastlane
-      run: bundle install
+    - name: Setup Ruby and dependencies
+      uses: ./.github/actions/setup-ruby
+      with:
+        working-directory: macOS
+        cache-key-prefix: macos-ruby
 
     - name: Sync code signing assets
       env:

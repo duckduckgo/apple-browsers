@@ -82,13 +82,13 @@ final class NetworkProtectionDebugMenu: NSMenu {
         buildItems {
             NSMenuItem(title: "Reset") {
 
-                NSMenuItem(title: "Reset All State Keeping Invite", action: #selector(NetworkProtectionDebugMenu.resetAllKeepingInvite))
-                    .targetting(self)
-
                 NSMenuItem(title: "Reset All State", action: #selector(NetworkProtectionDebugMenu.resetAllState))
                     .targetting(self)
 
                 NSMenuItem.separator() // Resetting single components should go below this point
+
+                NSMenuItem(title: "Disable Login Items", action: #selector(NetworkProtectionDebugMenu.disableLoginItem(_:)))
+                    .targetting(self)
 
                 NSMenuItem(title: "Remove Network Extension and Login Items", action: #selector(NetworkProtectionDebugMenu.removeVPNNetworkExtensionAndAgents(_:)))
                     .targetting(self)
@@ -217,21 +217,20 @@ final class NetworkProtectionDebugMenu: NSMenu {
         debugUtilities.resetVPNDisableExclusionSuggesitons()
     }
 
-    /// Resets all state for NetworkProtection.
-    ///
-    @objc func resetAllKeepingInvite(_ sender: Any?) {
-        Task { @MainActor in
-            guard case .alertFirstButtonReturn = await NSAlert.resetNetworkProtectionAlert().runModal() else { return }
-            do {
-                try await debugUtilities.resetAllState(keepAuthToken: true)
-            } catch {
-                Logger.networkProtection.error("Error in resetAllState: \(error.localizedDescription, privacy: .public)")
-            }
-        }
-    }
-
     @objc func resetSettings(_ sender: Any?) {
         settings.resetToDefaults()
+    }
+
+    /// Disables the login items
+    ///
+    @objc func disableLoginItem(_ sender: Any?) {
+        Task { @MainActor in
+            do {
+                try await debugUtilities.disableLoginItems()
+            } catch {
+                await NSAlert(error: error).runModal()
+            }
+        }
     }
 
     /// Removes the system extension and agents for DuckDuckGo VPN.

@@ -176,7 +176,7 @@ final class VPNUninstaller: VPNUninstalling {
         // we want to avoid adding noise to our uninstall attempts and instead fire
         // a daily pixel telling us the app wasn't found.
         guard ipcServiceLauncher.checkPrerequisites() else {
-            pixelKit?.fire(IPCUninstallAttempt.prevented, frequency: .daily)
+            pixelKit?.fire(IPCUninstallAttempt.prevented, frequency: .legacyDaily)
             return
         }
 
@@ -281,7 +281,7 @@ final class VPNUninstaller: VPNUninstalling {
     }
 
     func removeAgents() {
-        loginItemsManager.disableLoginItems(LoginItemsManager.networkProtectionLoginItems)
+        loginItemsManager.disableLoginItems(LoginItemsManager.vpnLoginItems)
     }
 
     func removeSystemExtension() async throws {

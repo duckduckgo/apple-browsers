@@ -45,7 +45,7 @@ final class PinnedTabsManagerProviderTests: XCTestCase {
         tabsPreferences = nil
         cancellables.removeAll()
 
-        WindowControllersManager.shared.mainWindowControllers.forEach { $0.close() }
+        Application.appDelegate.windowControllersManager.mainWindowControllers.forEach { $0.close() }
         super.tearDown()
     }
 

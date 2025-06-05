@@ -101,6 +101,7 @@ class MainMenuTests: XCTestCase {
         let sut = MainMenu(
             featureFlagger: DummyFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
+            historyCoordinator: HistoryCoordinatingMock(),
             faviconManager: FaviconManagerMock(),
             dockCustomizer: dockCustomizer,
             aiChatMenuConfig: DummyAIChatConfig(),
@@ -124,7 +125,7 @@ class MainMenuTests: XCTestCase {
         let sut = MainMenu(
             featureFlagger: DummyFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
-            faviconManager: FaviconManagerMock(),
+            faviconManagement: FaviconManagerMock(),
             dockCustomizer: dockCustomizer,
             aiChatMenuConfig: DummyAIChatConfig()
         )
@@ -145,7 +146,7 @@ class MainMenuTests: XCTestCase {
         let sut = MainMenu(
             featureFlagger: DummyFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
-            faviconManager: FaviconManagerMock(),
+            faviconManagement: FaviconManagerMock(),
             dockCustomizer: dockCustomizer,
             aiChatMenuConfig: DummyAIChatConfig()
         )
@@ -169,6 +170,7 @@ class MainMenuTests: XCTestCase {
         let sut = MainMenu(
             featureFlagger: DummyFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
+            historyCoordinator: HistoryCoordinatingMock(),
             faviconManager: FaviconManagerMock(),
             defaultBrowserPreferences: .init(defaultBrowserProvider: defaultBrowserProvider),
             aiChatMenuConfig: DummyAIChatConfig(),
@@ -192,6 +194,7 @@ class MainMenuTests: XCTestCase {
         let sut = MainMenu(
             featureFlagger: DummyFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
+            historyCoordinator: HistoryCoordinatingMock(),
             faviconManager: FaviconManagerMock(),
             defaultBrowserPreferences: .init(defaultBrowserProvider: defaultBrowserProvider),
             aiChatMenuConfig: DummyAIChatConfig(),
@@ -215,6 +218,7 @@ class MainMenuTests: XCTestCase {
         let sut = MainMenu(
             featureFlagger: DummyFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
+            historyCoordinator: HistoryCoordinatingMock(),
             faviconManager: FaviconManagerMock(),
             aiChatMenuConfig: DummyAIChatConfig(),
             internalUserDecider: DefaultInternalUserDecider(),
@@ -239,6 +243,7 @@ class MainMenuTests: XCTestCase {
         let sut = MainMenu(
             featureFlagger: DummyFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
+            historyCoordinator: HistoryCoordinatingMock(),
             faviconManager: FaviconManagerMock(),
             aiChatMenuConfig: aiChatConfig,
             internalUserDecider: DefaultInternalUserDecider(),
@@ -265,6 +270,7 @@ class MainMenuTests: XCTestCase {
         let sut = MainMenu(
             featureFlagger: DummyFeatureFlagger(),
             bookmarkManager: MockBookmarkManager(),
+            historyCoordinator: HistoryCoordinatingMock(),
             faviconManager: FaviconManagerMock(),
             aiChatMenuConfig: aiChatConfig,
             internalUserDecider: DefaultInternalUserDecider(),

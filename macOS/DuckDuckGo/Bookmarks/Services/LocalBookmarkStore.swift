@@ -43,7 +43,7 @@ final class LocalBookmarkStore: BookmarkStore {
                                        index: Int?,
                                        indexInFavoritesArray: Int?)
 
-    convenience init(bookmarkDatabase: BookmarkDatabase, favoritesDisplayMode: FavoritesDisplayMode = NSApp.delegateTyped.appearancePreferences.favoritesDisplayMode) {
+    convenience init(bookmarkDatabase: BookmarkDatabase, favoritesDisplayMode: FavoritesDisplayMode) {
         self.init(
             contextProvider: {
                 let context = bookmarkDatabase.db.makeContext(concurrencyType: .privateQueueConcurrencyType)

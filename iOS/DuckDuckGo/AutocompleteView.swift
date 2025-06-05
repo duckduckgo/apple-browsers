@@ -19,6 +19,8 @@
 
 import Foundation
 import SwiftUI
+import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct AutocompleteView: View {
 
@@ -52,7 +54,7 @@ struct AutocompleteView: View {
                                onSuggestionDeleted: model.deleteSuggestion)
 
         }
-        .offset(x: 0, y: -20)
+        .offset(x: 0, y: model.isExperimentalThemingEnabled ? -28 : -20)
         .padding(.bottom, -20)
         .modifier(HideScrollContentBackground())
         .background(Color(designSystemColor: .background))
@@ -73,14 +75,14 @@ private struct HistoryMessageView: View {
             Button {
                 onDismiss()
             } label: {
-                Image("Close-24")
+                Image(uiImage: DesignSystemImages.Glyphs.Size24.close)
                     .foregroundColor(.primary)
             }
             .padding(.top, 4)
             .buttonStyle(.plain)
 
             VStack {
-                Image("RemoteMessageAnnouncement")
+                Image(.remoteMessageAnnouncement)
                     .padding(8)
 
                 Text(UserText.autocompleteHistoryWarningTitle)
@@ -218,8 +220,8 @@ private struct SuggestionView: View {
 
     var tapAheadImage: Image? {
         guard model.canShowTapAhead else { return nil }
-        return Image(autocompleteModel.isAddressBarAtBottom ?
-                      "Arrow-Circle-Down-Left-16" : "Arrow-Circle-Up-Left-16")
+        return Image(uiImage: autocompleteModel.isAddressBarAtBottom ?
+                     DesignSystemImages.Glyphs.Size16.arrowCircleDownLeft : DesignSystemImages.Glyphs.Size16.arrowCircleUpLeft)
     }
 
     var body: some View {
@@ -227,41 +229,47 @@ private struct SuggestionView: View {
 
             switch model.suggestion {
             case .phrase(let phrase):
-                SuggestionListItem(icon: Image("Find-Search-24"),
+                SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.findSearchSmall),
                                    title: phrase,
                                    query: query,
                                    indicator: tapAheadImage) {
                     autocompleteModel.onTapAhead(model)
-                }
+                }.accessibilityIdentifier("Autocomplete.Suggestions.ListItem.SearchPhrase-\(phrase)")
 
             case .website(let url):
-                SuggestionListItem(icon: Image("Globe-24"),
+                SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.globe),
                                    title: url.formattedForSuggestion())
+                .accessibilityIdentifier("Autocomplete.Suggestions.ListItem.Website-\(url.formattedForSuggestion())")
 
             case .bookmark(let title, let url, let isFavorite, _) where isFavorite:
-                SuggestionListItem(icon: Image("Bookmark-Fav-24"),
+                SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.bookmarkFavorite),
                                    title: title,
                                    subtitle: url.formattedForSuggestion())
+                .accessibilityIdentifier("Autocomplete.Suggestions.ListItem.Favorite-\(url.formattedForSuggestion())")
 
             case .bookmark(let title, let url, _, _):
-                SuggestionListItem(icon: Image("Bookmark-24"),
+                SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.bookmark),
                                    title: title,
                                    subtitle: url.formattedForSuggestion())
+                .accessibilityIdentifier("Autocomplete.Suggestions.ListItem.Bookmark-\(url.formattedForSuggestion())")
 
             case .historyEntry(_, let url, _) where url.isDuckDuckGoSearch:
-                SuggestionListItem(icon: Image("History-24"),
+                SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.history),
                                    title: url.searchQuery ?? "",
                                    subtitle: UserText.autocompleteSearchDuckDuckGo)
+                .accessibilityIdentifier("Autocomplete.Suggestions.ListItem.SERPHistory-\(url.searchQuery ?? "")")
 
             case .historyEntry(let title, let url, _):
-                SuggestionListItem(icon: Image("History-24"),
+                SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.history),
                                    title: title ?? "",
                                    subtitle: url.formattedForSuggestion())
+                .accessibilityIdentifier("Autocomplete.Suggestions.ListItem.History-\(url.formattedForSuggestion())")
 
             case .openTab(title: let title, url: let url, _, _):
-                SuggestionListItem(icon: Image("OpenTab-24"),
+                SuggestionListItem(icon: Image(uiImage: DesignSystemImages.Glyphs.Size24.tabMobile),
                                    title: title,
                                    subtitle: "\(UserText.autocompleteSwitchToTab) · \(url.formattedForSuggestion())")
+                .accessibilityIdentifier("Autocomplete.Suggestions.ListItem.OpenTab-\(url.formattedForSuggestion())")
 
             case .internalPage, .unknown:
                 FailedAssertionView("Unknown or unsupported suggestion type")

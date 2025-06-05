@@ -21,6 +21,7 @@ import Combine
 import Common
 import History
 import os.log
+import PixelKit
 
 protocol FirePopoverViewControllerDelegate: AnyObject {
 

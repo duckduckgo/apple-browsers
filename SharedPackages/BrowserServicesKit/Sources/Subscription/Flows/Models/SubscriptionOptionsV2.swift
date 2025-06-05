@@ -53,20 +53,6 @@ public struct SubscriptionOptionsV2: Encodable, Equatable {
             feature.name
         }))
     }
-
-    // TODO: Assess if needed
-    public func withoutFeatures(_ featuresToExclude: [SubscriptionEntitlement]) -> Self {
-        let filteredEntitlements = features.compactMap { feature in
-            featuresToExclude.contains(feature.name) ? nil : feature.name
-        }
-
-        return SubscriptionOptionsV2(
-            platform: platform,
-            options: options,
-            availableEntitlements: filteredEntitlements
-        )
-    }
-
 }
 
 public enum SubscriptionPlatformName: String, Encodable {

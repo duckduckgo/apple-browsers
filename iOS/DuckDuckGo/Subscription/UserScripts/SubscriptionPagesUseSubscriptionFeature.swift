@@ -755,24 +755,18 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             subscriptionOptions = await subscriptionManager.storePurchaseManager().subscriptionOptions()
         }
 
-        guard var subscriptionOptions else {
+        if let subscriptionOptions {
+            if subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed {
+                return subscriptionOptions
+            } else {
+                return subscriptionOptions.withoutPurchaseOptions()
+            }
+        } else {
             Logger.subscription.error("Failed to obtain subscription options")
             setTransactionError(.failedToGetSubscriptionOptions)
             return SubscriptionOptionsV2.empty
         }
-
-        // TODO: Check if necessary
-        if !subscriptionFeatureAvailability.isDuckAIPremiumEnabled {
-            subscriptionOptions = subscriptionOptions.withoutFeatures([.duckAIPremium])
-        }
-
-        guard subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed else {
-            return subscriptionOptions.withoutPurchaseOptions()
-        }
-
-        return subscriptionOptions
     }
-    
 
     func subscriptionSelected(params: Any, original: WKScriptMessage) async -> Encodable? {
 

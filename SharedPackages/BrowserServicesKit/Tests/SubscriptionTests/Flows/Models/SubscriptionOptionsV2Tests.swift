@@ -124,26 +124,4 @@ final class SubscriptionOptionsV2Tests: XCTestCase {
         XCTAssertTrue(empty.options.isEmpty)
         XCTAssertEqual(empty.features.count, 4)
     }
-
-    func testFeaturesExclusion() {
-        let availableEntitlements: [SubscriptionEntitlement] = [
-            .networkProtection,
-            .dataBrokerProtection,
-            .identityTheftRestoration,
-            .duckAIPremium
-        ]
-        
-        let options = SubscriptionOptionsV2(
-            platform: .macos,
-            options: [],
-            availableEntitlements: availableEntitlements
-        )
-        
-        let featuresToExclude: [SubscriptionEntitlement] = [.networkProtection, .duckAIPremium]
-        let filteredOptions = options.withoutFeatures(featuresToExclude)
-        
-        XCTAssertEqual(filteredOptions.features.count, 2)
-        XCTAssertEqual(filteredOptions.features[0].name, .dataBrokerProtection)
-        XCTAssertEqual(filteredOptions.features[1].name, .identityTheftRestoration)
-    }
 }

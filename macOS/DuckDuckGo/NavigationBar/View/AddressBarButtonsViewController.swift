@@ -402,6 +402,14 @@ final class AddressBarButtonsViewController: NSViewController {
         privacyShieldButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
     }
 
+    private func setupButtonIcons() {
+        geolocationButton.activeImage = visualStyle.iconsProvider.addressBarButtonsIconsProvider.locationSolid
+        geolocationButton.disabledImage = visualStyle.iconsProvider.addressBarButtonsIconsProvider.locationIcon
+        geolocationButton.defaultImage = visualStyle.iconsProvider.addressBarButtonsIconsProvider.locationIcon
+        externalSchemeButton.defaultImage = visualStyle.iconsProvider.addressBarButtonsIconsProvider.externalSchemeIcon
+        popupsButton.defaultImage = visualStyle.iconsProvider.addressBarButtonsIconsProvider.popupsIcon
+    }
+
     private func updateBookmarkButtonVisibility() {
         guard view.window?.isPopUpWindow == false else { return }
         bookmarkButton.setAccessibilityIdentifier("AddressBarButtonsViewController.bookmarkButton")

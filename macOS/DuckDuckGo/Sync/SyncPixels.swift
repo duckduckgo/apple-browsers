@@ -59,7 +59,7 @@ enum SyncSetupPixelKitEvent: PixelKitEventV2 {
 
     case syncSetupBarcodeScreenShown(SyncSetupSource)
     case syncSetupBarcodeCodeCopied(SyncSetupSource)
-    case syncSetupManualCodeEntryScreenShown(SyncSetupSource)
+    case syncSetupManualCodeEntryScreenShown
     case syncSetupManualCodeEntered(SyncSetupSource)
     case syncSetupManualCodeEnteredFailed
     case syncSetupEndedAbandoned(SyncSetupSource)
@@ -95,12 +95,13 @@ enum SyncSetupPixelKitEvent: PixelKitEventV2 {
         case
             .syncSetupBarcodeScreenShown(let source),
             .syncSetupBarcodeCodeCopied(let source),
-            .syncSetupManualCodeEntryScreenShown(let source),
             .syncSetupManualCodeEntered(let source),
             .syncSetupEndedAbandoned(let source),
             .syncSetupEndedSuccessful(let source):
             return source
-        case .syncSetupManualCodeEnteredFailed:
+        case
+            .syncSetupManualCodeEntryScreenShown,
+            .syncSetupManualCodeEnteredFailed:
             return nil
         }
     }

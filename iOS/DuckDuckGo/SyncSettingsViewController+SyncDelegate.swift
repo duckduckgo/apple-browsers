@@ -496,7 +496,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
     }
 
     func codeEntryScreenShown() {
-        Pixel.fire(pixel: .syncSetupManualCodeEntryScreenShown)
+        Pixel.fire(pixel: .syncSetupManualCodeEntryScreenShown, includedParameters: [.appVersion])
     }
 }
 

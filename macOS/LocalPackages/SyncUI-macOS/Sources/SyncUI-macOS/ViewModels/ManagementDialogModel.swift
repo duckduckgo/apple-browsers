@@ -34,6 +34,7 @@ public protocol ManagementDialogModelDelegate: AnyObject {
     func userConfirmedSwitchAccounts(recoveryCode: String)
     func userPressedCancel(from dialog: ManagementDialogKind)
     func switchAccountsCancelled()
+    func enterCodeViewDidAppear()
 }
 
 public final class ManagementDialogModel: ObservableObject {

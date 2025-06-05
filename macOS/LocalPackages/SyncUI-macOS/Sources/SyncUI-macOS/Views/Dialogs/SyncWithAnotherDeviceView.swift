@@ -56,7 +56,9 @@ struct SyncWithAnotherDeviceView: View {
                         showTextCodeView()
                     }
                 } else {
-                    enterCodeView()
+                    enterCodeView().onAppear {
+                        model.delegate?.enterCodeViewDidAppear()
+                    }
                 }
             }
             .padding(16)

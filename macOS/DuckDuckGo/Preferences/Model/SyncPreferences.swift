@@ -578,7 +578,7 @@ extension SyncPreferences: ManagementDialogModelDelegate {
                 } else {
                     self.presentDialog(for: .syncWithAnotherDevice(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQR))
                 }
-                PixelKit.fire(SyncSetupPixelKitEvent.syncSetupBarcodeScreenShown(.connect))
+                PixelKit.fire(SyncSetupPixelKitEvent.syncSetupBarcodeScreenShown(.connect).withoutMacPrefix)
             } catch {
                 if syncService.account == nil {
                     if isRecovery {
@@ -797,6 +797,10 @@ extension SyncPreferences: ManagementDialogModelDelegate {
         PixelKit.fire(SyncSwitchAccountPixelKitEvent.syncUserCancelledSwitchingAccount.withoutMacPrefix)
     }
 
+    func enterCodeViewDidAppear() {
+        PixelKit.fire(SyncSetupPixelKitEvent.syncSetupManualCodeEntryScreenShown.withoutMacPrefix)
+    }
+
     private func startExchangeOrRecovery() {
         guard featureFlagger.isFeatureOn(.exchangeKeysToSyncWithAnotherDevice) else {
             startLegacyRecoveryFlow()
@@ -823,7 +827,7 @@ extension SyncPreferences: ManagementDialogModelDelegate {
                 self.codeForDisplayOrPasting = codeForDisplayOrPasting
                 self.stringForQR = stringForQR
                 self.presentDialog(for: .syncWithAnotherDevice(codeForDisplayOrPasting: codeForDisplayOrPasting, stringForQRCode: stringForQR))
-                PixelKit.fire(SyncSetupPixelKitEvent.syncSetupBarcodeScreenShown(.exchange))
+                PixelKit.fire(SyncSetupPixelKitEvent.syncSetupBarcodeScreenShown(.exchange).withoutMacPrefix)
             } catch {
                 managementDialogModel.syncErrorMessage = SyncErrorMessage(type: .unableToSyncToOtherDevice, description: error.localizedDescription)
                 PixelKit.fire(DebugEvent(GeneralPixel.syncLoginError(error: error)))
@@ -951,6 +955,6 @@ extension SyncPreferences: SyncConnectionControllerDelegate {
             return
         }
         guard setupSource != .recovery, setupSource != .unknown else { return }
-        PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedSuccessful(setupSource))
+        PixelKit.fire(SyncSetupPixelKitEvent.syncSetupEndedSuccessful(setupSource).withoutMacPrefix)
     }
 }

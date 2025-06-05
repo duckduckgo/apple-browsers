@@ -38,7 +38,8 @@ final class SubscriptionService {
                                                                        tokenProvider: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
                                                                        privacyConfigurationManager: privacyConfigurationManager)
         subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
-                                                                                 purchasePlatform: .appStore)
+                                                                                 purchasePlatform: .appStore,
+                                                                                 duckAIPremiumFlagStatusProvider: { AppDependencyProvider.shared.featureFlagger.isFeatureOn(.duckAIPremium)})
         self.privacyConfigurationManager = privacyConfigurationManager
         privacyConfigurationManager.updatesPublisher
             .receive(on: DispatchQueue.main)

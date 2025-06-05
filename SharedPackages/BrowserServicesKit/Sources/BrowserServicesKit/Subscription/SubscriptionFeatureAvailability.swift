@@ -28,11 +28,14 @@ public final class DefaultSubscriptionFeatureAvailability: SubscriptionFeatureAv
 
     private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let purchasePlatform: SubscriptionEnvironment.PurchasePlatform
+    private let duckAIPremiumFlagStatusProvider: () -> Bool
 
     public init(privacyConfigurationManager: PrivacyConfigurationManaging,
-                purchasePlatform: SubscriptionEnvironment.PurchasePlatform) {
+                purchasePlatform: SubscriptionEnvironment.PurchasePlatform,
+                duckAIPremiumFlagStatusProvider: @escaping () -> Bool) {
         self.privacyConfigurationManager = privacyConfigurationManager
         self.purchasePlatform = purchasePlatform
+        self.duckAIPremiumFlagStatusProvider = duckAIPremiumFlagStatusProvider
     }
 
     public var isSubscriptionPurchaseAllowed: Bool {
@@ -49,7 +52,7 @@ public final class DefaultSubscriptionFeatureAvailability: SubscriptionFeatureAv
     }
 
     public var isDuckAIPremiumEnabled : Bool {
-        return privacyConfigurationManager.privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.duckAIPremium)
+        return duckAIPremiumFlagStatusProvider()
     }
 
 // MARK: - Conditions

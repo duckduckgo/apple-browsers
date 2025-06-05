@@ -32,15 +32,19 @@ final class AIChatOnboardingTabExtension {
     private var cancellables = Set<AnyCancellable>()
     private let notificationCenter: NotificationCenter
     private let remoteSettings: AIChatRemoteSettingsProvider
+    private let isLoadedInSidebar: Bool
+
     private(set) weak var aiChatUserScript: AIChatUserScript?
 
     init(webViewPublisher: some Publisher<WKWebView, Never>,
          scriptsPublisher: some Publisher<some AIChatUserScriptProvider, Never>,
          notificationCenter: NotificationCenter,
-         remoteSettings: AIChatRemoteSettingsProvider) {
+         remoteSettings: AIChatRemoteSettingsProvider,
+         isLoadedInSidebar: Bool) {
 
         self.notificationCenter = notificationCenter
         self.remoteSettings = remoteSettings
+        self.isLoadedInSidebar = isLoadedInSidebar
 
         scriptsPublisher.sink { [weak self] scripts in
             Task { @MainActor in
@@ -91,6 +95,18 @@ extension AIChatOnboardingTabExtension: NavigationResponder {
     func navigation(_ navigation: Navigation, didSameDocumentNavigationOf navigationType: WKSameDocumentNavigationType) {
         guard let webView = webView else { return }
         validateAIChatCookie(webView: webView)
+    }
+
+    func decidePolicy(for navigationAction: NavigationAction, preferences: inout NavigationPreferences) async -> NavigationActionPolicy? {
+        guard isLoadedInSidebar,
+              !navigationAction.navigationType.isSameDocumentNavigation,
+              navigationAction.isUserInitiated
+        else {
+            return .next
+        }
+
+        WindowControllersManager.shared.showTab(with: .url(navigationAction.url, source: .link))
+        return .cancel
     }
 }
 

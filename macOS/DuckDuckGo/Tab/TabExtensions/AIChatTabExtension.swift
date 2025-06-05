@@ -1,5 +1,5 @@
 //
-//  AIChatOnboardingTabExtension.swift
+//  AIChatTabExtension.swift
 //
 //  Copyright © 2024 DuckDuckGo. All rights reserved.
 //
@@ -27,7 +27,7 @@ protocol AIChatUserScriptProvider {
 }
 extension UserScripts: AIChatUserScriptProvider {}
 
-final class AIChatOnboardingTabExtension {
+final class AIChatTabExtension {
 
     private var cancellables = Set<AnyCancellable>()
     private let isLoadedInSidebar: Bool
@@ -45,7 +45,7 @@ final class AIChatOnboardingTabExtension {
     }
 }
 
-extension AIChatOnboardingTabExtension: NavigationResponder {
+extension AIChatTabExtension: NavigationResponder {
 
     func decidePolicy(for navigationAction: NavigationAction, preferences: inout NavigationPreferences) async -> NavigationActionPolicy? {
         guard isLoadedInSidebar,
@@ -62,16 +62,14 @@ extension AIChatOnboardingTabExtension: NavigationResponder {
     }
 }
 
-protocol AIChatOnboardingProtocol: AnyObject, NavigationResponder {
+protocol AIChatProtocol: AnyObject, NavigationResponder {
     var aiChatUserScript: AIChatUserScript? { get }
 }
 
-extension AIChatOnboardingTabExtension: AIChatOnboardingProtocol, TabExtension {
-    func getPublicProtocol() -> AIChatOnboardingProtocol { self }
+extension AIChatTabExtension: AIChatProtocol, TabExtension {
+    func getPublicProtocol() -> AIChatProtocol { self }
 }
 
 extension TabExtensions {
-    var aiChatOnboarding: AIChatOnboardingProtocol? {
-        resolve(AIChatOnboardingTabExtension.self)
-    }
+    var aiChatOnboarding: AIChatProtocol? { resolve(AIChatTabExtension.self) }
 }

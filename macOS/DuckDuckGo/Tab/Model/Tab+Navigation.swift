@@ -43,7 +43,7 @@ extension Tab: NavigationResponder {
         navigationDelegate.setResponders(
             // AI Chat onboarding navigations handling
             .weak(nullable: self.aiChatOnboarding),
-            
+
             .weak(nullable: self.navigationHotkeyHandler),
             .weak(nullable: self.brokenSiteInfo),
             .weak(nullable: self.tabCrashRecovery),

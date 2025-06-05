@@ -222,8 +222,8 @@ extension TabExtensionsBuilder {
         }
 
         add {
-            AIChatOnboardingTabExtension(scriptsPublisher: userScripts.compactMap { $0 },                                         
-                                         isLoadedInSidebar: args.isTabLoadedInSidebar)
+            AIChatTabExtension(scriptsPublisher: userScripts.compactMap { $0 },                                         
+                               isLoadedInSidebar: args.isTabLoadedInSidebar)
         }
 
         add {

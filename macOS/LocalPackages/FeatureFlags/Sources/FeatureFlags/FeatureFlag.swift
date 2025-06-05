@@ -58,8 +58,9 @@ public enum FeatureFlag: String, CaseIterable {
     case autocompleteTabs
     case webExtensions
     case syncSeamlessAccountSwitching
-    /// SAD & ATT Prompts experiiment: https://app.asana.com/0/1204006570077678/1209185383520514
-    case popoverVsBannerExperiment
+
+    /// SAD & ATT Prompts: https://app.asana.com/1/137249556945/project/1206329551987282/task/1210225579353384?focus=true
+    case scheduledSetDefaultBrowserAndAddToDockPrompts
 
     /// https://app.asana.com/0/72649045549333/1207991044706236/f
     case privacyProAuthV2
@@ -108,18 +109,10 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     public var cohortType: (any FeatureFlagCohortDescribing.Type)? {
         switch self {
-        case .popoverVsBannerExperiment:
-            return PopoverVSBannerExperimentCohort.self
         default:
             return nil
         }
     }
-
-    public enum PopoverVSBannerExperimentCohort: String, FeatureFlagCohortDescribing {
-        case control
-        case popover
-        case banner
-     }
 
     public var supportsLocalOverriding: Bool {
         switch self {
@@ -133,7 +126,6 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .webExtensions,
                 .autoUpdateInDEBUG,
                 .updatesWontAutomaticallyRestartApp,
-                .popoverVsBannerExperiment,
                 .privacyProAuthV2,
                 .scamSiteProtection,
                 .failsafeExampleCrossPlatformFeature,
@@ -155,7 +147,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .contextualOnboarding,
                 .unknownUsernameCategorization,
                 .credentialsImportPromotionForExistingUsers,
-                .dbpRemoteBrokerDelivery:
+                .dbpRemoteBrokerDelivery,
+                .scheduledSetDefaultBrowserAndAddToDockPrompts:
             return false
         }
     }
@@ -200,8 +193,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.scamProtection))
         case .networkProtectionRiskyDomainsProtection:
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.riskyDomainsProtection))
-        case .popoverVsBannerExperiment:
-            return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.popoverVsBannerExperiment))
+        case .scheduledSetDefaultBrowserAndAddToDockPrompts:
+            return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserAndDockPrompts))
         case .privacyProAuthV2:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
         case .failsafeExampleCrossPlatformFeature:

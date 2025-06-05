@@ -74,7 +74,7 @@ final class DefaultBrowserAndDockPromptFeatureFlag {
 extension DefaultBrowserAndDockPromptFeatureFlag: DefaultBrowserAndDockPromptFeatureFlagProvider {
 
     public var isDefaultBrowserAndDockPromptFeatureEnabled: Bool {
-        featureFlagger.isFeatureOn(for: FeatureFlag.popoverVsBannerExperiment)
+        featureFlagger.isFeatureOn(for: FeatureFlag.scheduledSetDefaultBrowserAndAddToDockPrompts)
     }
 
 }

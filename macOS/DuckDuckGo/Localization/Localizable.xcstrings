@@ -57342,8 +57342,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "DuckDuckGo zum Dock hinzufügen …"
+            "state" : "translated",
+            "value" : "DuckDuckGo zum Dock hinzufügen"
           }
         },
         "en" : {
@@ -57354,44 +57354,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Añadir DuckDuckGo al Dock…"
+            "state" : "translated",
+            "value" : "Añade DuckDuckGo al Dock"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Ajouter DuckDuckGo au Dock…"
+            "state" : "translated",
+            "value" : "Ajouter DuckDuckGo au Dock"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Aggiungi DuckDuckGo al Dock…"
+            "state" : "translated",
+            "value" : "Aggiungi DuckDuckGo al Dock"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "DuckDuckGo toevoegen aan Dock…"
+            "state" : "translated",
+            "value" : "DuckDuckGo toevoegen aan Dock"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Dodaj DuckDuckGo do Docka…"
+            "state" : "translated",
+            "value" : "Dodaj DuckDuckGo do Docka"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Adicionar DuckDuckGo à Dock…"
+            "state" : "translated",
+            "value" : "Adicionar DuckDuckGo à Dock"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Добавить DuckDuckGo на док-панель…"
+            "state" : "translated",
+            "value" : "Добавить DuckDuckGo на док-панель"
           }
         }
       }
@@ -57402,8 +57402,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Zum Dock hinzufügen …"
+            "state" : "translated",
+            "value" : "Zum Dock hinzufügen"
           }
         },
         "en" : {
@@ -57414,44 +57414,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Añadir al Dock…"
+            "state" : "translated",
+            "value" : "Añadir al Dock"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Ajouter au Dock…"
+            "state" : "translated",
+            "value" : "Ajouter au Dock"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Aggiungi al dock…"
+            "state" : "translated",
+            "value" : "Aggiungi al dock"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "App toevoegen aan je dock…"
+            "state" : "translated",
+            "value" : "Toevoegen aan Dock"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Dodaj do Docka…"
+            "state" : "translated",
+            "value" : "Dodaj do Docka"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Adicionar à Dock…"
+            "state" : "translated",
+            "value" : "Adicionar à Dock"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Добавить на док-панель…"
+            "state" : "translated",
+            "value" : "Добавить на док-панель"
           }
         }
       }
@@ -62353,8 +62353,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "DuckDuckGo zum Dock hinzufügen."
+            "state" : "translated",
+            "value" : "DuckDuckGo zum Dock hinzufügen"
           }
         },
         "en" : {
@@ -62365,44 +62365,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Añadir DuckDuckGo a tu Dock."
+            "state" : "translated",
+            "value" : "Añadir DuckDuckGo a tu inicio"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Ajoutez DuckDuckGo à votre Dock."
+            "state" : "translated",
+            "value" : "Ajouter DuckDuckGo à votre Dock"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Aggiungi DuckDuckGo al tuo dock."
+            "state" : "translated",
+            "value" : "Aggiungi DuckDuckGo al tuo dock"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "DuckDuckGo toevoegen aan je dock."
+            "state" : "translated",
+            "value" : "DuckDuckGo toevoegen aan je dock"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Dodaj DuckDuckGo do Docka."
+            "state" : "translated",
+            "value" : "Dodaj DuckDuckGo do Docka"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Adiciona o DuckDuckGo à tua Dock."
+            "state" : "translated",
+            "value" : "Adicione o DuckDuckGo à sua dock"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "DuckDuckGo на вашей док-панели"
+            "state" : "translated",
+            "value" : "Добавить DuckDuckGo на док-панель"
           }
         }
       }
@@ -62833,8 +62833,8 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Als Standard festlegen"
+            "state" : "translated",
+            "value" : "Als Standard festlegen …"
           }
         },
         "en" : {
@@ -62845,44 +62845,44 @@
         },
         "es" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Establecer como predeterminado"
+            "state" : "translated",
+            "value" : "Establecer como predeterminado..."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Définir par défaut"
+            "state" : "translated",
+            "value" : "Définir par défaut..."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "needs_review",
+            "state" : "translated",
             "value" : "Imposta come predefinito"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Als standaard instellen"
+            "state" : "translated",
+            "value" : "Als standaard instellen…"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Ustaw jako domyślną"
+            "state" : "translated",
+            "value" : "Ustaw jako domyślną…"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Definir como predefinição"
+            "state" : "translated",
+            "value" : "Definir como predefinição…"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Сделать браузером по умолчанию"
+            "state" : "translated",
+            "value" : "Сделать браузером по умолчанию..."
           }
         }
       }

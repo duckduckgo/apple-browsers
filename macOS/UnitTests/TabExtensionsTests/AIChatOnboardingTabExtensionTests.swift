@@ -42,12 +42,14 @@ class AIChatOnboardingTabExtensionTests: XCTestCase {
     override func setUp() {
         super.setUp()
         mockWebViewPublisher = PassthroughSubject<WKWebView, Never>()
+        let scriptsPublisher = PassthroughSubject<UserScripts, Never>()
         notificationCenter = NotificationCenter()
         remoteSettings = MockRemoteAISettings()
         webView = WKWebView()
 
         onboardingTabExtension = AIChatOnboardingTabExtension(
             webViewPublisher: mockWebViewPublisher.eraseToAnyPublisher(),
+            scriptsPublisher: scriptsPublisher.eraseToAnyPublisher(),
             notificationCenter: notificationCenter,
             remoteSettings: remoteSettings
         )

@@ -85,6 +85,7 @@ typealias TabExtensionsBuilderArguments = (
     tabIdentifier: UInt64,
     isTabPinned: () -> Bool,
     isTabBurner: Bool,
+    isTabLoadedInSidebar: Bool,
     contentPublisher: AnyPublisher<Tab.TabContent, Never>,
     setContent: (Tab.TabContent) -> Void,
     closeTab: () -> Void,
@@ -192,8 +193,10 @@ extension TabExtensionsBuilder {
         add {
             SearchNonexistentDomainNavigationResponder(tld: dependencies.privacyFeatures.contentBlocking.tld, contentPublisher: args.contentPublisher, setContent: args.setContent)
         }
+
+        let isHistoryEnabled = !args.isTabBurner && !args.isTabLoadedInSidebar
         add {
-            HistoryTabExtension(isBurner: args.isTabBurner,
+            HistoryTabExtension(isEnabled: isHistoryEnabled,
                                 historyCoordinating: dependencies.historyCoordinating,
                                 trackersPublisher: contentBlocking.trackersPublisher,
                                 urlPublisher: args.contentPublisher.map { content in content.isUrl ? content.urlForWebView : nil },

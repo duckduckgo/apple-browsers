@@ -71,8 +71,7 @@ final class VPNAppEventsHandler {
     ///
     private func loginItemsControlCheckpoint(canRestart: Bool) {
         Task { @MainActor [loginItemsManager] in
-            guard loginItemsManager.isAnyEnabled(LoginItemsManager.vpnLoginItems) else {
-
+            guard loginItemsManager.isAnyInstalled(LoginItemsManager.vpnLoginItems) else {
                 return
             }
 

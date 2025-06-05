@@ -22,7 +22,7 @@ import SecureStorage
 
 public typealias DataBrokerProtectionVaultFactory = SecureVaultFactory<DefaultDataBrokerProtectionSecureVault<DefaultDataBrokerProtectionDatabaseProvider>>
 
-public func createDataBrokerProtectionSecureVaultFactory(appGroupName: String, databaseFileURL: URL) -> DataBrokerProtectionVaultFactory {
+public func createDataBrokerProtectionSecureVaultFactory(appGroupName: String?, databaseFileURL: URL) -> DataBrokerProtectionVaultFactory {
     return SecureVaultFactory<DefaultDataBrokerProtectionSecureVault>(
         makeCryptoProvider: {
             return DataBrokerProtectionCryptoProvider()

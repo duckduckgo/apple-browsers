@@ -386,6 +386,48 @@ final class StorePurchaseManagerV2Tests: XCTestCase {
         XCTAssertTrue(mockCache.didCallSubscriptionFeatures)
         XCTAssertEqual(mockCache.lastCalledSubscriptionId, yearlyProduct.id)
     }
+
+    func testIsUserEligibleForFreeTrialReturnsTrueWhenEligibleProductExists() async {
+        // Given
+        let monthlyProduct = createMonthlyProduct(withTrial: true)
+        let yearlyProduct = createYearlyProduct(withTrial: true)
+        mockProductFetcher.mockProducts = [monthlyProduct, yearlyProduct]
+        await sut.updateAvailableProducts()
+
+        // When
+        let isEligible = await sut.isUserEligibleForFreeTrial()
+
+        // Then
+        XCTAssertTrue(isEligible)
+    }
+
+    func testIsUserEligibleForFreeTrialReturnsFalseWhenNoEligibleProductExists() async {
+        // Given
+        let monthlyProduct = createMonthlyProduct(withTrial: true, isEligibleForIntroOffer: false)
+        let yearlyProduct = createYearlyProduct(withTrial: true, isEligibleForIntroOffer: false)
+        mockProductFetcher.mockProducts = [monthlyProduct, yearlyProduct]
+        await sut.updateAvailableProducts()
+
+        // When
+        let isEligible = await sut.isUserEligibleForFreeTrial()
+
+        // Then
+        XCTAssertFalse(isEligible)
+    }
+
+    func testIsUserEligibleForFreeTrialReturnsFalseWhenNoTrialProductsExist() async {
+        // Given
+        let monthlyProduct = createMonthlyProduct(withTrial: false)
+        let yearlyProduct = createYearlyProduct(withTrial: false)
+        mockProductFetcher.mockProducts = [monthlyProduct, yearlyProduct]
+        await sut.updateAvailableProducts()
+
+        // When
+        let isEligible = await sut.isUserEligibleForFreeTrial()
+
+        // Then
+        XCTAssertFalse(isEligible)
+    }
 }
 
 private final class MockProductFetcher: ProductFetching {
@@ -407,7 +449,7 @@ private enum MockProductError: Error {
 }
 
 private extension StorePurchaseManagerV2Tests {
-    func createMonthlyProduct(withTrial: Bool = false) -> MockSubscriptionProduct {
+    func createMonthlyProduct(withTrial: Bool = false, isEligibleForIntroOffer: Bool = true) -> MockSubscriptionProduct {
         MockSubscriptionProduct(
             id: "com.test.monthly\(withTrial ? ".trial" : "")",
             displayName: "Monthly Plan\(withTrial ? " with Trial" : "")",
@@ -420,11 +462,11 @@ private extension StorePurchaseManagerV2Tests {
                 periodInDays: 7,
                 isFreeTrial: true
             ) : nil,
-            isEligibleForIntroOffer: withTrial
+            isEligibleForIntroOffer: isEligibleForIntroOffer
         )
     }
 
-    func createYearlyProduct(withTrial: Bool = false) -> MockSubscriptionProduct {
+    func createYearlyProduct(withTrial: Bool = false, isEligibleForIntroOffer: Bool = true) -> MockSubscriptionProduct {
         MockSubscriptionProduct(
             id: "com.test.yearly\(withTrial ? ".trial" : "")",
             displayName: "Yearly Plan\(withTrial ? " with Trial" : "")",
@@ -437,7 +479,7 @@ private extension StorePurchaseManagerV2Tests {
                 periodInDays: 14,
                 isFreeTrial: true
             ) : nil,
-            isEligibleForIntroOffer: withTrial
+            isEligibleForIntroOffer: isEligibleForIntroOffer
         )
     }
 }

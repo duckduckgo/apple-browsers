@@ -188,7 +188,7 @@ final class PixelKitTests: XCTestCase {
             XCTAssertEqual(expectedPixelName, firedPixelName)
         }
         // Run test
-        pixelKit.fire(event, frequency: .daily)
+        pixelKit.fire(event, frequency: .legacyDaily)
         // Wait for expectations to be fulfilled
         wait(for: [fireCallbackCalled], timeout: 0.5)
     }
@@ -277,7 +277,7 @@ final class PixelKitTests: XCTestCase {
         }
 
         // Run test
-        pixelKit.fire(event, frequency: .daily)
+        pixelKit.fire(event, frequency: .legacyDaily)
 
         // Wait for expectations to be fulfilled
         wait(for: [fireCallbackCalled], timeout: 0.5)
@@ -324,8 +324,8 @@ final class PixelKitTests: XCTestCase {
         }
 
         // Run test
-        pixelKit.fire(event, frequency: .daily)
-        pixelKit.fire(event, frequency: .daily)
+        pixelKit.fire(event, frequency: .legacyDaily)
+        pixelKit.fire(event, frequency: .legacyDaily)
 
         // Wait for expectations to be fulfilled
         wait(for: [fireCallbackCalled], timeout: 0.5)
@@ -357,19 +357,19 @@ final class PixelKitTests: XCTestCase {
         }
 
         // Run test
-        pixelKit.fire(event, frequency: .daily) // Fired
+        pixelKit.fire(event, frequency: .legacyDaily) // Fired
         timeMachine.travel(by: .hour, value: 2)
-        pixelKit.fire(event, frequency: .legacyDaily) // Skipped
+        pixelKit.fire(event, frequency: .legacyDailyNoSuffix) // Skipped
 
         timeMachine.travel(by: .day, value: 1)
         timeMachine.travel(by: .hour, value: 2)
-        pixelKit.fire(event, frequency: .legacyDaily) // Fired
+        pixelKit.fire(event, frequency: .legacyDailyNoSuffix) // Fired
 
         timeMachine.travel(by: .hour, value: 10)
-        pixelKit.fire(event, frequency: .legacyDaily) // Skipped
+        pixelKit.fire(event, frequency: .legacyDailyNoSuffix) // Skipped
 
         timeMachine.travel(by: .day, value: 1)
-        pixelKit.fire(event, frequency: .legacyDaily) // Fired
+        pixelKit.fire(event, frequency: .legacyDailyNoSuffix) // Fired
 
         // Wait for expectations to be fulfilled
         wait(for: [fireCallbackCalled], timeout: 0.5)

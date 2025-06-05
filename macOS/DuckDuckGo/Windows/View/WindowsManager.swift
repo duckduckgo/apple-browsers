@@ -34,7 +34,7 @@ final class WindowsManager {
     private static let autofillPopoverPresenter: AutofillPopoverPresenter = DefaultAutofillPopoverPresenter()
 
     class func closeWindows(except windows: [NSWindow] = []) {
-        for controller in WindowControllersManager.shared.mainWindowControllers {
+        for controller in Application.appDelegate.windowControllersManager.mainWindowControllers {
             guard let window = controller.window, !windows.contains(window) else { continue }
             controller.close()
         }
@@ -43,7 +43,7 @@ final class WindowsManager {
     /// finds window to position newly opened (or popup) windows against
     private class func findPositioningSourceWindow(for tab: Tab?) -> NSWindow? {
         if let parentTab = tab?.parentTab,
-           let sourceWindowController = WindowControllersManager.shared.mainWindowControllers.first(where: {
+           let sourceWindowController = Application.appDelegate.windowControllersManager.mainWindowControllers.first(where: {
                $0.mainViewController.tabCollectionViewModel.tabs.contains(parentTab)
            }) {
             // window that initiated the new window opening
@@ -51,7 +51,7 @@ final class WindowsManager {
         }
 
         // fallback to last known main window
-        return WindowControllersManager.shared.lastKeyMainWindowController?.window
+        return Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window
     }
 
     @discardableResult
@@ -153,7 +153,7 @@ final class WindowsManager {
     private static let defaultPopUpHeight: CGFloat = 752
 
     class func openPopUpWindow(with tab: Tab, origin: NSPoint?, contentSize: NSSize?) {
-        if let mainWindowController = WindowControllersManager.shared.lastKeyMainWindowController,
+        if let mainWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController,
            mainWindowController.window?.styleMask.contains(.fullScreen) == true,
            mainWindowController.window?.isPopUpWindow == false {
 
@@ -183,19 +183,13 @@ final class WindowsManager {
     }
 
     private class func makeNewWindow(tabCollectionViewModel: TabCollectionViewModel? = nil,
-                                     contentSize: NSSize? = nil,
                                      popUp: Bool = false,
                                      burnerMode: BurnerMode,
                                      autofillPopoverPresenter: AutofillPopoverPresenter) -> MainWindowController {
         let mainViewController = MainViewController(tabCollectionViewModel: tabCollectionViewModel ?? TabCollectionViewModel(burnerMode: burnerMode), autofillPopoverPresenter: autofillPopoverPresenter)
 
-        var contentSize = contentSize ?? NSSize(width: 1024, height: 790)
-        contentSize.width = min(NSScreen.main?.frame.size.width ?? 1024, max(contentSize.width, 300))
-        contentSize.height = min(NSScreen.main?.frame.size.height ?? 790, max(contentSize.height, 300))
-        mainViewController.view.frame = NSRect(origin: .zero, size: contentSize)
-
         let fireWindowSession = if case .burner = burnerMode {
-            WindowControllersManager.shared.mainWindowControllers.first(where: {
+            Application.appDelegate.windowControllersManager.mainWindowControllers.first(where: {
                 $0.mainViewController.tabCollectionViewModel.burnerMode == burnerMode
             })?.fireWindowSession ?? FireWindowSession()
         } else { FireWindowSession?.none }

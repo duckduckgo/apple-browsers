@@ -59,6 +59,7 @@ protocol NewWindowPolicyDecisionMaker {
         var maliciousSiteDetector: MaliciousSiteDetecting
         var faviconManagement: FaviconManagement?
         var featureFlagger: FeatureFlagger
+        var contentScopeExperimentsManager: ContentScopeExperimentsManaging
     }
 
     fileprivate weak var delegate: TabDelegate?
@@ -99,7 +100,7 @@ protocol NewWindowPolicyDecisionMaker {
                      faviconManagement: FaviconManagement? = nil,
                      webCacheManager: WebCacheManager = WebCacheManager.shared,
                      webViewConfiguration: WKWebViewConfiguration? = nil,
-                     historyCoordinating: HistoryCoordinating = HistoryCoordinator.shared,
+                     historyCoordinating: HistoryCoordinating? = nil,
                      pinnedTabsManagerProvider: PinnedTabsManagerProviding? = nil,
                      workspace: Workspace = NSWorkspace.shared,
                      privacyFeatures: AnyPrivacyFeatures? = nil,
@@ -111,6 +112,7 @@ protocol NewWindowPolicyDecisionMaker {
                      statisticsLoader: StatisticsLoader? = nil,
                      extensionsBuilder: TabExtensionsBuilderProtocol = TabExtensionsBuilder.default,
                      featureFlagger: FeatureFlagger? = nil,
+                     contentScopeExperimentsManager: ContentScopeExperimentsManaging? = nil,
                      title: String? = nil,
                      favicon: NSImage? = nil,
                      interactionStateData: Data? = nil,
@@ -121,7 +123,7 @@ protocol NewWindowPolicyDecisionMaker {
                      canBeClosedWithBack: Bool = false,
                      lastSelectedAt: Date? = nil,
                      webViewSize: CGSize = CGSize(width: 1024, height: 768),
-                     startupPreferences: StartupPreferences = StartupPreferences.shared,
+                     startupPreferences: StartupPreferences = NSApp.delegateTyped.startupPreferences,
                      certificateTrustEvaluator: CertificateTrustEvaluating = CertificateTrustEvaluator(),
                      tunnelController: NetworkProtectionIPCTunnelController? = TunnelControllerProvider.shared.tunnelController,
                      maliciousSiteDetector: MaliciousSiteDetecting = MaliciousSiteProtectionManager.shared,
@@ -138,7 +140,7 @@ protocol NewWindowPolicyDecisionMaker {
         let internalUserDecider = NSApp.delegateTyped.internalUserDecider
         var faviconManager = faviconManagement
         if burnerMode.isBurner {
-            faviconManager = FaviconManager(cacheType: .inMemory)
+            faviconManager = FaviconManager(cacheType: .inMemory, bookmarkManager: NSApp.delegateTyped.bookmarkManager)
         }
 
         self.init(id: id,
@@ -146,7 +148,7 @@ protocol NewWindowPolicyDecisionMaker {
                   faviconManagement: faviconManager ?? NSApp.delegateTyped.faviconManager,
                   webCacheManager: webCacheManager,
                   webViewConfiguration: webViewConfiguration,
-                  historyCoordinating: historyCoordinating,
+                  historyCoordinating: historyCoordinating ?? NSApp.delegateTyped.historyCoordinator,
                   pinnedTabsManagerProvider: pinnedTabsManagerProvider ?? Application.appDelegate.pinnedTabsManagerProvider,
                   workspace: workspace,
                   privacyFeatures: privacyFeatures,
@@ -156,6 +158,7 @@ protocol NewWindowPolicyDecisionMaker {
                   geolocationService: geolocationService,
                   extensionsBuilder: extensionsBuilder,
                   featureFlagger: featureFlagger ?? NSApp.delegateTyped.featureFlagger,
+                  contentScopeExperimentsManager: contentScopeExperimentsManager ?? NSApp.delegateTyped.contentScopeExperimentsManager,
                   cbaTimeReporter: cbaTimeReporter,
                   statisticsLoader: statisticsLoader,
                   internalUserDecider: internalUserDecider,
@@ -194,6 +197,7 @@ protocol NewWindowPolicyDecisionMaker {
          geolocationService: GeolocationServiceProtocol,
          extensionsBuilder: TabExtensionsBuilderProtocol,
          featureFlagger: FeatureFlagger,
+         contentScopeExperimentsManager: ContentScopeExperimentsManaging,
          cbaTimeReporter: ContentBlockingAssetsCompilationTimeReporter?,
          statisticsLoader: StatisticsLoader?,
          internalUserDecider: InternalUserDecider?,
@@ -291,7 +295,8 @@ protocol NewWindowPolicyDecisionMaker {
                                                        tunnelController: tunnelController,
                                                        maliciousSiteDetector: maliciousSiteDetector,
                                                        faviconManagement: faviconManagement,
-                                                       featureFlagger: featureFlagger))
+                                                       featureFlagger: featureFlagger,
+                                                       contentScopeExperimentsManager: contentScopeExperimentsManager))
 
         super.init()
         tabGetter = { [weak self] in self }
@@ -458,6 +463,10 @@ protocol NewWindowPolicyDecisionMaker {
             .map { _ in () }
             .eraseToAnyPublisher()
     }
+    let webViewDidReceiveUserInteractiveChallengePublisher = PassthroughSubject<Void, Never>()
+    let webViewDidReceiveRedirectPublisher = PassthroughSubject<Void, Never>()
+    let webViewDidFailNavigationPublisher = PassthroughSubject<Void, Never>()
+    let webViewRenderingProgressDidChangePublisher = PassthroughSubject<Void, Never>()
 
     // MARK: - Properties
 
@@ -497,6 +506,9 @@ protocol NewWindowPolicyDecisionMaker {
 #endif
         }
     }
+
+    /// Used to trigger a separator update in the PinnedTabsViewModel
+    @Published var needsSeparatorUpdate: Bool = false
 
     /// Currently committed page security origin (protocol, host, port).
     ///
@@ -1181,6 +1193,9 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
     func didReceive(_ challenge: URLAuthenticationChallenge, for navigation: Navigation?) async -> AuthChallengeDisposition? {
         guard challenge.protectionSpace.authenticationMethod == NSURLAuthenticationMethodHTTPBasic else { return nil }
 
+        // send this event only when we're interrupting loading and showing extra UI to the user
+        webViewDidReceiveUserInteractiveChallengePublisher.send()
+
         // when navigating to a URL with basic auth username/password, cache it and redirect to a trimmed URL
         if case .url(let url, credential: .some(let credential), source: let source) = content,
            url.matches(challenge.protectionSpace),
@@ -1202,6 +1217,10 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
         } catch {
             return .cancel
         }
+    }
+
+    func didReceiveRedirect(_ navigationAction: NavigationAction, for navigation: Navigation) {
+        webViewDidReceiveRedirectPublisher.send()
     }
 
     @MainActor
@@ -1355,6 +1374,15 @@ extension Tab/*: NavigationResponder*/ { // to be moved to Tab+Navigation.swift
             webView.setDocumentHtml(html)
         }
     }
+
+    func renderingProgressDidChange(progressEvents: UInt) {
+        // Emit only after first paint event, when the white background content is not visible anymore
+        // https://github.com/WebKit/WebKit/blob/407a96d094af6d48100f4524d964667336d962b4/Source/WebKit/Shared/API/Cocoa/_WKRenderingProgressEvents.h
+        if progressEvents >= 4 {
+            webViewRenderingProgressDidChangePublisher.send()
+        }
+    }
+
 }
 
 extension Tab: NewWindowPolicyDecisionMaker {

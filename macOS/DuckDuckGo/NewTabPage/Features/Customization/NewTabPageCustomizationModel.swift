@@ -50,9 +50,9 @@ final class NewTabPageCustomizationModel: ObservableObject {
     private var availableCustomImagesCancellable: AnyCancellable?
     private var customBackgroundPixelCancellable: AnyCancellable?
 
-    convenience init(visualStyleManager: VisualStyleManagerProviding) {
+    convenience init(visualStyleManager: VisualStyleManagerProviding, appearancePreferences: AppearancePreferences) {
         self.init(
-            appearancePreferences: .shared,
+            appearancePreferences: appearancePreferences,
             userBackgroundImagesManager: UserBackgroundImagesManager(
                 maximumNumberOfImages: Const.maximumNumberOfUserImages,
                 applicationSupportDirectory: URL.sandboxApplicationSupportURL
@@ -95,8 +95,8 @@ final class NewTabPageCustomizationModel: ObservableObject {
         self.sendPixel = sendPixel
         self.openFilePanel = openFilePanel
         self.showAddImageFailedAlert = showAddImageFailedAlert
-        self.backgroundColors = DefaultBackgroundColorStyle(lightBackgroundColor: visualStyle.ntpLightBackgroundColor,
-                                                            darkBackgroundColor: visualStyle.ntpDarkBackgroundColor)
+        self.backgroundColors = DefaultBackgroundColorStyle(lightBackgroundColor: visualStyle.colorsProvider.ntpLightBackgroundColor,
+                                                            darkBackgroundColor: visualStyle.colorsProvider.ntpDarkBackgroundColor)
 
         subscribeToUserBackgroundImages()
         subscribeToCustomBackground()

@@ -20,6 +20,7 @@
 import UIKit
 import Combine
 import WebKit
+import SwiftUI
 
 /// A protocol that defines the delegate methods for `AIChatViewController`.
 public protocol AIChatViewControllerDelegate: AnyObject {
@@ -47,6 +48,13 @@ public final class AIChatViewController: UIViewController {
     public weak var delegate: AIChatViewControllerDelegate?
     private let chatModel: AIChatViewModeling
     private var webViewController: AIChatWebViewController?
+    private var chatInputBoxViewController: UIViewController?
+    private var chatInputBoxHandler: AIChatInputBoxHandling?
+    private var cancellables = Set<AnyCancellable>()
+
+    public var webView: WKWebView? {
+        webViewController?.webView
+    }
 
     private lazy var titleBarView: TitleBarView = {
         let title = UserText.aiChatTitle
@@ -71,19 +79,22 @@ public final class AIChatViewController: UIViewController {
                             requestAuthHandler: AIChatRequestAuthorizationHandling,
                             inspectableWebView: Bool,
                             downloadsPath: URL,
-                            userAgentManager: AIChatUserAgentProviding) {
+                            userAgentManager: AIChatUserAgentProviding,
+                            chatInputBoxViewController: UIViewController?,
+                            chatInputBoxHandler: AIChatInputBoxHandling?) {
         let chatModel = AIChatViewModel(webViewConfiguration: webViewConfiguration,
                                         settings: settings,
                                         requestAuthHandler: requestAuthHandler,
                                         inspectableWebView: inspectableWebView,
                                         downloadsPath: downloadsPath,
                                         userAgentManager: userAgentManager)
-        self.init(chatModel: chatModel)
+        self.init(chatModel: chatModel, chatInputBoxViewController: chatInputBoxViewController, chatInputBoxHandler: chatInputBoxHandler)
     }
 
-    internal init(chatModel: AIChatViewModeling) {
+    internal init(chatModel: AIChatViewModeling, chatInputBoxViewController: UIViewController?, chatInputBoxHandler: AIChatInputBoxHandling?) {
         self.chatModel = chatModel
-
+        self.chatInputBoxHandler = chatInputBoxHandler
+        self.chatInputBoxViewController = chatInputBoxViewController
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -99,6 +110,7 @@ extension AIChatViewController {
         super.viewDidLoad()
         self.view.backgroundColor = .black
         setupTitleBar()
+        setupChatInputBox()
         addWebViewController()
     }
 }
@@ -120,6 +132,22 @@ extension AIChatViewController {
 
 // MARK: - Views Setup
 extension AIChatViewController {
+
+    private func setupChatInputBox() {
+        guard let chatInputBoxViewController = chatInputBoxViewController else { return }
+
+        addChild(chatInputBoxViewController)
+        chatInputBoxViewController.view.translatesAutoresizingMaskIntoConstraints = false
+        chatInputBoxViewController.view.backgroundColor = .clear
+        view.addSubview(chatInputBoxViewController.view)
+
+        NSLayoutConstraint.activate([
+            chatInputBoxViewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            chatInputBoxViewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            chatInputBoxViewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+        ])
+        chatInputBoxViewController.didMove(toParent: self)
+    }
 
     private func setupTitleBar() {
         view.addSubview(titleBarView)
@@ -148,10 +176,20 @@ extension AIChatViewController {
 
         NSLayoutConstraint.activate([
             viewController.view.topAnchor.constraint(equalTo: titleBarView.bottomAnchor),
-            viewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
             viewController.view.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             viewController.view.trailingAnchor.constraint(equalTo: view.trailingAnchor)
         ])
+
+        if let controller = chatInputBoxViewController {
+            NSLayoutConstraint.activate([
+                viewController.view.bottomAnchor.constraint(equalTo: controller.view.topAnchor),
+            ])
+        } else {
+            NSLayoutConstraint.activate([
+                viewController.view.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            ])
+
+        }
 
         viewController.didMove(toParent: self)
     }

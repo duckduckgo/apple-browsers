@@ -37,7 +37,6 @@ public struct SyncWithServerView: View {
                 HStack {
                     Button(action: onCancel, label: {
                         Text(UserText.cancelButton)
-                            .foregroundColor(.primary)
                     })
                     Spacer()
                 }
@@ -58,6 +57,7 @@ public struct SyncWithServerView: View {
                         .multilineTextAlignment(.center)
                 }
             }
+            .foregroundStyle(Color(designSystemColor: .textPrimary))
             .padding(.horizontal, 20)
         } foregroundContent: {
             VStack(spacing: 8) {
@@ -75,5 +75,6 @@ public struct SyncWithServerView: View {
                     .foregroundColor(Color(designSystemColor: .textSecondary))
             }
         }
+        .background(Color(designSystemColor: .background))
     }
 }

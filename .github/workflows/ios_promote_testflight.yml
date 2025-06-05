@@ -23,8 +23,11 @@ jobs:
           iOS/fastlane
           iOS/scripts
 
-    - name: Set up fastlane
-      run: bundle install
+    - name: Setup Ruby and dependencies
+      uses: ./.github/actions/setup-ruby
+      with:
+        working-directory: iOS
+        cache-key-prefix: ios-ruby
 
     - name: Promote TestFlight to App Store
       env:

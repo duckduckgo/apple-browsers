@@ -27,14 +27,19 @@ protocol AIChatUserScriptHandling {
     func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable?
     func openAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
     func setPayloadHandler(_ payloadHandler: (any AIChatConsumableDataHandling)?)
+    func setAIChatInputBoxHandler(_ inputBoxHandler: (any AIChatInputBoxHandling)?)
+    func getResponseState(params: Any, message: UserScriptMessage) async -> Encodable?
+    func hideChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
+    func showChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private var payloadHandler: (any AIChatConsumableDataHandling)?
-    private let featureFlagger: FeatureFlagger
+    private var inputBoxHandler: (any AIChatInputBoxHandling)?
+    private let experimentalAIChatManager: ExperimentalAIChatManager
 
-    init(featureFlagger: FeatureFlagger) {
-        self.featureFlagger = featureFlagger
+    init(experimentalAIChatManager: ExperimentalAIChatManager) {
+        self.experimentalAIChatManager = experimentalAIChatManager
     }
 
     enum AIChatKeys {
@@ -61,7 +66,39 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     }
 
     public func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable? {
-        AIChatNativeConfigValues.defaultValues
+        if experimentalAIChatManager.isExperimentalAIChatSettingsEnabled {
+            AIChatNativeConfigValues(isAIChatHandoffEnabled: true,
+                                     supportsClosingAIChat: true,
+                                     supportsOpeningSettings: true,
+                                     supportsNativePrompt: false,
+                                     supportsNativeChatInput: true)
+        } else {
+            AIChatNativeConfigValues.defaultValues
+        }
+    }
+
+    @MainActor
+    public func getResponseState(params: Any, message: UserScriptMessage) async -> Encodable? {
+        do {
+            let jsonData = try JSONSerialization.data(withJSONObject: params, options: [])
+            let decodedStatus = try JSONDecoder().decode(AIChatStatus.self, from: jsonData)
+            inputBoxHandler?.aiChatStatus = decodedStatus.status
+            return nil
+        } catch {
+            return nil
+        }
+    }
+
+    @MainActor
+    func hideChatInput(params: Any, message: UserScriptMessage) async -> Encodable? {
+        inputBoxHandler?.aiChatInputBoxVisibility = .hidden
+        return nil
+    }
+
+    @MainActor
+    func showChatInput(params: Any, message: UserScriptMessage) async -> Encodable? {
+        inputBoxHandler?.aiChatInputBoxVisibility = .visible
+        return nil
     }
 
     public func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable? {
@@ -70,5 +107,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     func setPayloadHandler(_ payloadHandler: (any AIChatConsumableDataHandling)?) {
         self.payloadHandler = payloadHandler
+    }
+
+    func setAIChatInputBoxHandler(_ inputBoxHandler: (any AIChatInputBoxHandling)?) {
+        self.inputBoxHandler = inputBoxHandler
     }
 }

@@ -18,6 +18,7 @@
 //
 
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import DuckUI
 import SwiftUI
 
@@ -111,7 +112,7 @@ extension SyncSettingsView {
         Section {
             NavigationLink(destination: PlatformLinksView(model: model, source: source)) {
                 HStack(spacing: 6) {
-                    Image("Sync-Downloads-24")
+                    Image(uiImage: DesignSystemImages.Glyphs.Size24.downloads)
                     Text(UserText.syncGetOnOtherDevices)
                         .daxBodyRegular()
                 }
@@ -168,6 +169,7 @@ extension SyncSettingsView {
             } label: {
                 HStack {
                     deviceTypeImage(device)
+                        .foregroundColor(.primary)
                     Text(device.name)
                         .foregroundColor(.primary)
                     Spacer()

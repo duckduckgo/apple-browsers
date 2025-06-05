@@ -21,7 +21,7 @@ import UIKit
 
 final class OmniBarFactory {
     static func createOmniBarViewController(with dependencies: OmnibarDependencyProvider) -> OmniBarViewController {
-        if ExperimentalThemingManager().isExperimentalThemingEnabled {
+        if dependencies.themingProperties.isExperimentalThemingEnabled {
             UpdatedOmniBarViewController(dependencies: dependencies)
         } else {
             DefaultOmniBarViewController(dependencies: dependencies)

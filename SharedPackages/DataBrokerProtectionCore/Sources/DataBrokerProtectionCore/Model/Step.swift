@@ -18,23 +18,28 @@
 
 import Foundation
 
-public enum StepType: String, Codable, Sendable {
+public enum StepType: String, Codable, Equatable, Sendable {
     case scan
     case optOut
 }
 
-public enum OptOutType: String, Codable, Sendable {
+public enum OptOutType: String, Codable, Equatable, Sendable {
     case formOptOut
     case parentSiteOptOut
 }
 
 public struct Step: Codable, Sendable {
-    let type: StepType
+    public let type: StepType
     let optOutType: OptOutType?
     let actions: [Action]
 
     enum CodingKeys: String, CodingKey {
-        case actions, stepType, optOutType
+        case actions, stepType, scanType, optOutType
+    }
+
+    enum DecodingError: Error {
+        case unsupportedStepType
+        case unsupportedActionType
     }
 
     init(type: StepType, actions: [Action], optOutType: OptOutType? = nil) {
@@ -45,7 +50,12 @@ public struct Step: Codable, Sendable {
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        type = try container.decode(StepType.self, forKey: .stepType)
+        do {
+            type = try container.decode(StepType.self, forKey: .stepType)
+        } catch {
+            throw DecodingError.unsupportedStepType
+        }
+
         optOutType = try? container.decode(OptOutType.self, forKey: .optOutType)
 
         let actionsList = try container.decode([[String: Any]].self, forKey: .actions)
@@ -65,11 +75,13 @@ public struct Step: Codable, Sendable {
         var actionList = [Action]()
 
         for list in actions {
-            guard let typeValue = list["actionType"] as? String,
-                  let actionType = ActionType(rawValue: typeValue) else {
-                continue
+            guard let typeValue = list["actionType"] as? String else { continue }
+
+            guard let actionType = ActionType(rawValue: typeValue) else {
+                throw DecodingError.unsupportedActionType
             }
-             let jsonData = try JSONSerialization.data(withJSONObject: list, options: .prettyPrinted)
+
+            let jsonData = try JSONSerialization.data(withJSONObject: list, options: .prettyPrinted)
 
             switch actionType {
             case .click:

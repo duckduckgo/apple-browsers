@@ -24,10 +24,11 @@ import Suggestions
 import Persistence
 import History
 import BrowserServicesKit
+import UIComponents
 
 class SuggestionTrayViewController: UIViewController {
     
-    @IBOutlet weak var backgroundView: UIView!
+    @IBOutlet weak var backgroundView: CompositeShadowView!
     @IBOutlet weak var containerView: UIView!
     @IBOutlet var variableWidthConstraint: NSLayoutConstraint!
     @IBOutlet var fullWidthConstraint: NSLayoutConstraint!
@@ -161,18 +162,22 @@ class SuggestionTrayViewController: UIViewController {
         autocompleteController?.keyboardMoveSelectionUp()
     }
     
-    func float(withWidth width: CGFloat) {
+    func float(withWidth width: CGFloat, useActiveShadow: Bool) {
 
         containerView.layer.cornerRadius = 16
         containerView.layer.masksToBounds = true
  
         backgroundView.layer.cornerRadius = 16
-        backgroundView.backgroundColor = ThemeManager.shared.currentTheme.tableCellBackgroundColor
+        backgroundView.backgroundColor = UIColor(designSystemColor: .background)
         backgroundView.clipsToBounds = false
-        backgroundView.layer.shadowColor = UIColor.black.cgColor
-        backgroundView.layer.shadowOffset = .init(width: 0, height: 10)
-        backgroundView.layer.shadowOpacity = 0.3
-        backgroundView.layer.shadowRadius = 120
+        if useActiveShadow {
+            backgroundView.applyActiveShadow()
+        } else {
+            backgroundView.layer.shadowColor = UIColor.black.cgColor
+            backgroundView.layer.shadowOffset = .init(width: 0, height: 10)
+            backgroundView.layer.shadowOpacity = 0.3
+            backgroundView.layer.shadowRadius = 120
+        }
 
         topConstraint.constant = 4
 

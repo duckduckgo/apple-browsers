@@ -20,6 +20,7 @@
 import SwiftUI
 import DuckUI
 import DesignResourcesKit
+import DesignResourcesKitIcons
 
 struct CrashCollectionOnboardingView: View {
 
@@ -64,7 +65,7 @@ struct CrashCollectionOnboardingView: View {
                             if model.isReportVisible {
                                 ZStack {
                                     Rectangle()
-                                        .foregroundColor(Color(designSystemColor: .container))
+                                        .foregroundColor(Color(designSystemColor: .lines))
                                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                                         .cornerRadius(4.0)
 
@@ -129,10 +130,10 @@ struct CrashCollectionOnboardingView: View {
             HStack {
                 if model.showReportButtonMode == .hideDetails {
                     Text(UserText.crashReportHideDetails).daxButton()
-                    Image("ChevronUp").frame(width: 7, height: 12)
+                    Image(uiImage: DesignSystemImages.Glyphs.Size24.chevronUpSmall).frame(width: 7, height: 12)
                 } else {
                     Text(UserText.crashReportShowDetails).daxButton()
-                    Image("ChevronDown").frame(width: 7, height: 12)
+                    Image(uiImage: DesignSystemImages.Glyphs.Size24.chevronDownSmall).frame(width: 7, height: 12)
                 }
             }
         }

@@ -240,9 +240,9 @@ extension NSAlert {
         alert.addButton(withTitle: UserText.cancel)
 
         let checkbox = NSButton(checkboxWithTitle: UserText.warnBeforeQuitDialogCheckboxMessage,
-                                target: DataClearingPreferences.shared,
+                                target: NSApp.delegateTyped.dataClearingPreferences,
                                 action: #selector(DataClearingPreferences.toggleWarnBeforeClearing))
-        checkbox.state = DataClearingPreferences.shared.isWarnBeforeClearingEnabled ? .on : .off
+        checkbox.state = NSApp.delegateTyped.dataClearingPreferences.isWarnBeforeClearingEnabled ? .on : .off
         checkbox.lineBreakMode = .byWordWrapping
         checkbox.translatesAutoresizingMaskIntoConstraints = false
 

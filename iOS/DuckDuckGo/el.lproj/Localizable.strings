@@ -190,6 +190,15 @@
 /* Description for alert shown when user logged off from sync */
 "alert.sync-invalid-login-error-description" = "Ο συγχρονισμός έχει τεθεί σε παύση. Αν θέλετε να συνεχίσετε με τον συγχρονισμό της συσκευής αυτής, συνδεθείτε ξανά χρησιμοποιώντας άλλη συσκευή ή τον κωδικό ανάκτησής σας.";
 
+/* Sync Now button in alert asking if they would like to sync with another device */
+"alert.sync-new-device.button" = "Συγχρόνισε τώρα";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.message" = "Το «%@» θα μπορεί να έχει πρόσβαση στα συγχρονισμένα δεδομένα σας στο DuckDuckGo.";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.title" = "Συγχρονισμός νέας συσκευής;";
+
 /* Learn more button in alert */
 "alert.sync-paused-alert-learn-more-button" = "Μάθετε περισσότερα";
 
@@ -261,6 +270,12 @@
 
 /* No comment provided by engineer. */
 "Are you sure you want to delete all bookmarks? This action cannot be undone." = "Θέλετε σίγουρα να διαγράψετε όλους τους σελιδοδείκτες; Η ενέργεια αυτή δεν μπορεί να αναιρεθεί.";
+
+/* No comment provided by engineer. */
+"Are you sure you want to delete this chat? This cannot be undone." = "Θέλετε σίγουρα να διαγράψετε αυτήν τη συνομιλία; Αυτό δεν μπορεί να αναιρεθεί.";
+
+/* No comment provided by engineer. */
+"Ask anything..." = "Ρωτήστε οτιδήποτε...";
 
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Είσοδος";
@@ -920,6 +935,9 @@
 "close.all.tabs" = "Κλείσιμο όλων των καρτελών";
 
 /* No comment provided by engineer. */
+"Cohort: %@" = "Ομάδα: %@";
+
+/* No comment provided by engineer. */
 "Confirm" = "Επιβεβαίωση";
 
 /* Button to continue the onboarding process */
@@ -1150,41 +1168,8 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Χθες";
 
-/* No comment provided by engineer. */
-"dax.hide.button" = "Απόκρυψη συμβουλών για πάντα";
-
-/* No comment provided by engineer. */
-"dax.hide.cancel" = "Ακύρωση";
-
-/* Subtitle in Hide Dax dialog */
-"dax.hide.message" = "Υπάρχουν λίγες μόνο και προσπαθήσαμε να τις καταστήσουμε ενημερωτικές.";
-
-/* Title in Hide Dax dialog */
-"dax.hide.title" = "Απόκρυψη συμβουλών που απομένουν;";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search" = "Οι αναζητήσεις σας στο DuckDuckGo είναι ανώνυμες. Πάντα. 🙌";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search.cta" = "Φιου!";
-
-/* First parameter is a count of additional trackers, second and third are names of the tracker networks (strings) */
-"dax.onboarding.browsing.multiple.trackers" = "dax.onboarding.browsing.multiple.trackers";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.multiple.trackers.cta" = "Κόλλα πέντε!";
-
-/* Parameter is domain name (string) */
-"dax.onboarding.browsing.one.tracker" = "Το *%1$@* προσπαθούσε να σας παρακολουθήσει εδώ.\n\nΤους εμπόδισα!\n\n☝️ Μπορείτε να ελέγξετε τη γραμμή διευθύνσεων για να δείτε ποιος προσπαθεί να σας παρακολουθήσει ενώ επισκέπτεστε έναν νέο ιστότοπο.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.one.tracker.cta" = "Κόλλα πέντε!";
-
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Προσοχή! Δεν μπορώ να εμποδίσω το δίκτυο %1$@ από το να δει τη δραστηριότητά σας στο %2$@.\n\nΑλλά περιηγηθείτε μαζί μου και θα μπορώ να περιορίσω το τι θα γνωρίζει το δίκτυο %1$@ για σας συνολικά, αποκλείοντας τις εφαρμογές παρακολούθησης σε πλήθος άλλων ιστότοπων.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.site.is.major.tracker.cta" = "Το έπιασα";
 
 /* Parameters are domain names (strings) */
 "dax.onboarding.browsing.site.owned.by.major.tracker" = "Προσοχή! Καθώς το %2$@ έχει στην κατοχή του το %1$@, δεν μπορώ να τους εμποδίσω από το να δουν τη δραστηριότητά σας εδώ.\n\nΑλλά περιηγηθείτε μαζί μου και θα μπορώ να περιορίσω το τι θα γνωρίζει το %2$@ για σας συνολικά, αποκλείοντας τις εφαρμογές παρακολούθησης σε πλήθος άλλων ιστότοπων.";
@@ -1195,29 +1180,8 @@
 /* No comment provided by engineer. */
 "dax.onboarding.browsing.without.trackers" = "Καθώς πατάτε στην οθόνη και κάνετε κύλιση, θα μπλοκάρω ενοχλητικές εφαρμογές παρακολούθησης. \n\nΜη σταματάτε - συνεχίστε την περιήγηση!";
 
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.without.trackers.cta" = "Το κατάλαβα";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button" = "Τα προσωπικά δεδομένα μπορούν να αυξηθούν σταδιακά στο πρόγραμμα περιήγησής σας. Απαίσιο. Χρησιμοποιήστε το κουμπί φωτιάς για να τα κάψετε όλα. Δοκιμάστε το τώρα! 👇";
-
-/* Cancel action */
-"dax.onboarding.fire.button.cancelAction" = "Ακύρωση";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button.confirmAction" = "Κλείσιμο καρτελών και εκκαθάριση δεδομένων";
-
 /* Encourage user to add favorite site using the browsing menu. */
 "dax.onboarding.home.add.favorite" = "Επισκεφθείτε τους αγαπημένους σας ιστότοπους στη στιγμή! \n\nΜεταβείτε σε έναν ιστότοπο που αγαπάτε. Έπειτα, πατήστε το εικονίδιο \"⋯\" και επιλέξτε *Προσθήκη στα αγαπημένα*.";
-
-/* Accessible version of dax.onboarding.home.add.favorite */
-"dax.onboarding.home.add.favorite.accessible" = "Επισκεφθείτε τους αγαπημένους σας ιστότοπους στη στιγμή! Επισκεφθείτε έναν από τους αγαπημένους σας ιστότοπους. Έπειτα, πατήστε το κουμπί Άνοιγμα μενού και επιλέξτε Προσθήκη στα αγαπημένα.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.home.initial" = "Στη συνέχεια, δοκιμάστε να επισκεφτείτε έναν από τους αγαπημένους σας ιστότοπους!\n\nΘα εμποδίσω τις εφαρμογές παρακολούθησης ώστε να μην μπορούν να σας κατασκοπεύουν. Επίσης, θα αναβαθμίσω την ασφάλεια της σύνδεσής σας, εάν είναι εφικτό. 🔒";
-
-/* ad = advertisment */
-"dax.onboarding.home.subsequent" = "Το έχετε!\n\nΝα θυμάστε: κάθε φορά που περιηγείστε μαζί μου μια ανατριχιαστική διαφήμιση χάνει τα φτερά της. 👍";
 
 /* No comment provided by engineer. */
 "Debug" = "Επανόρθωση σφαλμάτων";
@@ -1313,16 +1277,16 @@
 "duckai.preferences.text.markdown" = "Το Duck.ai αποτελεί προαιρετική λειτουργία που σας επιτρέπει να συνομιλείτε ανώνυμα με δημοφιλή μοντέλα τρίτων για συνομιλία μέσω τεχνητής νοημοσύνης. Οι συνομιλίες σας δεν χρησιμοποιούνται για την εκπαίδευση τεχνητής νοημοσύνης.\n[Μάθετε περισσότερα](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
-"duckai.settings.enable.address-bar-toggle" = "Εμφάνιση του Duck.ai στη γραμμή διευθύνσεων";
+"duckai.settings.enable.address-bar-toggle" = "Γραμμή διευθύνσεων";
 
 /* Toggle text to enable/disable AI Chat in the browsing menu */
-"duckai.settings.enable.browsing-menu-toggle" = "Εμφάνιση του Duck.ai στο μενού του προγράμματος περιήγησης";
+"duckai.settings.enable.browsing-menu-toggle" = "Μενού προγράμματος περιήγησης";
 
 /* Toggle text to enable/disable Duck.ai in tab manager */
-"duckai.settings.enable.tab-switcher-toggle" = "Εμφάνιση του Duck.ai στην οθόνη καρτελών";
+"duckai.settings.enable.tab-switcher-toggle" = "Οθόνη καρτελών";
 
 /* Toggle text to enable/disable Duck.ai in voice search */
-"duckai.settings.enable.voice-search-toggle" = "Εμφάνιση του Duck.ai στη φωνητική αναζήτηση";
+"duckai.settings.enable.voice-search-toggle" = "Φωνητική αναζήτηση";
 
 /* Settings screen cell text for AI Chat settings */
 "duckai.settings.title" = "Duck.ai";
@@ -1342,6 +1306,24 @@
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";
 
+/* Content for Duck Player opt-in message */
+"duckplayer.opt-in.message.content" = "Το Duck Player αποκλείει τις στοχευμένες διαφημίσεις και διατηρεί το ιστορικό προβολής σας προστατευμένο.";
+
+/* Title for Duck Player opt-in message */
+"duckplayer.opt-in.message.title" = "YouTube, αλλά με λιγότερες διαφημίσεις και περισσότερο απόρρητο";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.opt-in.pill.subtitle" = "Παρακολουθήστε χωρίς στοχευμένες διαφημίσεις";
+
+/* Button text to play a video in Duck Player */
+"duckplayer.opt-in.pill.title" = "Αναπαραγωγή αυτού του βίντεο στο Duck Player";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.pill.subtitle" = "Παρακολουθήστε χωρίς στοχευμένες διαφημίσεις";
+
+/* Button text to play a video in Duck Player */
+"duckplayer.play.in.duck.player" = "Αναπαραγωγή αυτού του βίντεο στο Duck Player";
+
 /* Body text for the modal feature explanation */
 "duckplayer.presentation.modal.body" = "Το Duck Player σάς επιτρέπει να παρακολουθείτε YouTube χωρίς στοχευμένες διαφημίσεις στο DuckDuckGo, ενώ το περιεχόμενο που παρακολουθείτε δεν θα επηρεάσει τις συστάσεις που θα λαμβάνετε.";
 
@@ -1353,6 +1335,18 @@
 
 /* Two line title (separated by \n) for the feature explanation */
 "duckplayer.presentation.modal.title.youtube" = "Πνίγεστε από τις διαφημίσεις στο YouTube; Όχι με το Duck Player!";
+
+/* Button text to resume video in Duck Player */
+"duckplayer.resume.in.duck.player" = "Συνέχεια στο Duck Player";
+
+/* Footer text explaining the auto-play toggle in Duck Player settings */
+"duckplayer.settings.autoplay.footer" = "Τα βίντεο που ανοίγονται στο Duck Player θα ξεκινούν αυτόματα την αναπαραγωγή. Απενεργοποιήστε αυτή την επιλογή αν θέλετε να ξεκινάτε μη αυτόματα την αναπαραγωγή των βίντεο που ανοίγονται στο Duck Player.";
+
+/* Label for the auto-play toggle in Duck Player settings */
+"duckplayer.settings.autoplay.label" = "Βίντεο με αυτόματη αναπαραγωγή";
+
+/* Label for the experimental section in Duck Player settings */
+"duckplayer.settings.experimental.label" = "Πειραματικό";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "Το DuckDuckGo παρέχει όλα τα Privacy Essentials που χρειάζεστε για να προστατευτείτε καθώς περιηγείστε στον ιστό.";
@@ -1369,8 +1363,59 @@
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.open-videos-in" = "Ανοίξτε τα βίντεο του YouTube στο Duck Player";
 
+/* Footer text explaining the search results toggle in Duck Player settings */
+"duckplayer.settings.search.results.footer" = "Κάνοντας κλικ σε βίντεο του YouTube από τα αποτελέσματα αναζήτησης του DuckDuckGo, θα ανοίγουν στο Duck Player.";
+
+/* Label for the search results toggle in Duck Player settings */
+"duckplayer.settings.search.results.label" = "Αποτελέσματα DuckDuckGo Search";
+
+/* Message for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.message" = "Κλείστε όλες τις καρτέλες για να τεθεί σε ισχύ η ρύθμιση αυτή.";
+
+/* OK button text for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.ok" = "Εντάξει";
+
+/* Title for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.title" = "Σημαντικό!";
+
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.title" = "Duck Player";
+
+/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
+"duckplayer.settings.toggle" = "Άνοιγμα βίντεο του YouTube εδώ";
+
+/* Label for the Duck Player variant picker in Duck Player settings */
+"duckplayer.settings.variant.label" = "Παραλλαγή Duck Player";
+
+/* Footer text explaining the YouTube.com option in Duck Player settings */
+"duckplayer.settings.youtube.footer" = "Κάνοντας κλικ σε βίντεο στο YouTube κατά την περιήγηση στο YouTube.com, θα ανοίγουν στο Duck Player.";
+
+/* Label for the YouTube.com option in Duck Player settings */
+"duckplayer.settings.youtube.label" = "YouTube.com";
+
+/* Text for the ask mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.ask" = "Θα ήθελα να επιλέξω";
+
+/* Text for the auto mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.auto" = "Αυτόματο άνοιγμα";
+
+/* Text for the never mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.never" = "Να μην εμφανίζεται";
+
+/* Button text to open Duck Player settings */
+"duckplayer.toast.open.settings" = "Άνοιγμα ρυθμίσεων";
+
+/* Toast message informing user they can disable Duck Player in settings */
+"duckplayer.toast.turn.off.anytime" = "Μπορείτε να απενεργοποιήσετε το Duck Player οποιαδήποτε στιγμή";
+
+/* Button text to watch video on YouTube */
+"duckplayer.watch.on.youtube" = "Παρακολούθηση στο YouTube";
+
+/* Subtitle explaining how Duck Player protects privacy */
+"duckplayer.welcome.message.content" = "Για να επιστρέψετε στο YouTube, κλείστε το Duck Player.\nΔεν είναι για εσάς; Κλείστε το από κάτω!";
+
+/* Title for Duck Player welcome message highlighting privacy benefits */
+"duckplayer.welcome.message.text" = "Παρακολουθείτε στο Duck Player!\nΚαμία στοχευμένη διαφήμιση εδώ.";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "Προστασία email";
@@ -1448,6 +1493,9 @@
 "empty.search" = "Δεν βρέθηκαν αντιστοιχίες";
 
 /* No comment provided by engineer. */
+"Enrolled: %@" = "Εγγεγραμμένοι: %@";
+
+/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1500,6 +1548,9 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Αγαπημένα μόνο για κινητά";
+
+/* No comment provided by engineer. */
+"Feature: %@" = "Λειτουργία: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Αποκλεισμός διαφημίσεων και αναδυόμενων παραθύρων";
@@ -2249,7 +2300,7 @@
 "onboarding.highlights.browsers.features.cookiePopups.title" = "Αποκλεισμός αναδυόμενων παραθύρων cookie";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Αποκλεισμός διαφημίσεων παρακολούθησης";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Αποκλεισμός στοχευμένων διαφημίσεων";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Διαγράψτε τα δεδομένα περιήγησης με ένα κουμπί";
@@ -2332,9 +2383,6 @@
 /* No comment provided by engineer. */
 "onboardingWelcomeHeader" = "Καλώς ορίσατε στον DuckDuckGo!";
 
-/* No comment provided by engineer. */
-"Open tabs remain unaffected by this change.  Please close all tabs for this setting to take effect." = "Οι ανοιχτές καρτέλες παραμένουν ανεπηρέαστες από την αλλαγή αυτή.  Κλείστε όλες τις καρτέλες για να τεθεί σε ισχύ η ρύθμιση αυτή.";
-
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Δεν είναι δυνατή η εύρεση της εφαρμογής που απαιτείται για άνοιγμα αυτού του συνδέσμου";
 
@@ -2406,6 +2454,30 @@
 
 /* Title for the Privacy Pro feedback form */
 "ppro.feedback-form.title" = "Αποστολή σχολίου";
+
+/* Title of the section of a setting page that shows Scam Blocking preferences (weather warning in case of scam sites) */
+"preferences.scam-blocker.title" = "Πρόγραμμα αποκλεισμού απάτης";
+
+/* Caption explaining the risk of disabling scam blocker protection */
+"preferences.scam-blocker.toggle-caption" = "Η απενεργοποίηση της λειτουργίας αυτής μπορεί να θέσει σε κίνδυνο τα προσωπικά στοιχεία σας.";
+
+/* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
+"preferences.scam-blocker.toggle-label" = "Προειδοποίηση για ιστότοπους που έχουν επισημανθεί για απάτες, ηλεκτρονικό ψάρεμα ή κακόβουλο λογισμικό. [Μάθετε περισσότερα](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker)";
+
+/* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
+"preferences.smarter-encryption.description" = "Αναβαθμίζει αυτόματα τους συνδέσμους σε HTTPS όποτε είναι εφικτό. [Μάθετε περισσότερα] (ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
+
+/* Title of the section of a setting page that shows Smarter Encryption preferences */
+"preferences.smarter-encryption.title" = "Πιο έξυπνη κρυπτογράφηση";
+
+/* Status indicator of a browser privacy protection feature. */
+"preferences.status-indicator.always-on" = "Πάντα σε λειτουργία";
+
+/* Title of the option to show the Threat Protection preferences */
+"preferences.threat-protection" = "Προστασία από απειλές";
+
+/* Caption of the option to show the Threat Protection preferences */
+"preferences.threat-protection.caption" = "Οι βελτιωμένες προστασίες του DuckDuckGo σταματούν τις συνήθεις απειλές, διατηρώντας τη σύνδεσή σας ασφαλή.\n[Μάθετε περισσότερα](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Ορισμένοι σελιδοδείκτες ή κωδικοί πρόσβασης δεν έχουν μορφοποιηθεί σωστά ή είναι πολύ μεγάλοι και δεν συγχρονίστηκαν.";
@@ -2560,6 +2632,9 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Εμφάνιση πλήρους διεύθυνσης ιστότοπου";
 
+/* Settings screen text for showing AI Chat in various places in the app */
+"settings.aichat.shortcuts" = "Συντομευσεις";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Πάντα σε λειτουργία";
 
@@ -2631,6 +2706,9 @@
 
 /* Settings cell for Email Protection */
 "settings.emailProtection.description" = "Αποκλείστε εφαρμογές παρακολούθησης email και αποκρύψτε τη διεύθυνσή σας";
+
+/* Settings screen cell text for enabling AI chat */
+"settings.enable.aichat" = "Ενεργοποίηση του Duck.ai";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Ενεργοποίηση Email Protection";
@@ -2761,6 +2839,9 @@
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe" = "Προστατέψτε τη σύνδεση και την ταυτότητά σας με το Privacy Pro";
 
+/* Try Privacy Pro Free button text for privacy pro */
+"settings.subscription.try.free" = "Δοκιμάστε το Privacy Pro δωρεάν";
+
 /* Privacy pro description subtitle in settings */
 "settings.subscription.us.description" = "Περιλαμβάνει το VPN μας και τα Personal Information Removal και Identity Theft Restoration.";
 
@@ -2831,7 +2912,13 @@
 "siteFeedback.urlPlaceholder" = "Ποιος ιστότοπος είναι κατεστραμμένος;";
 
 /* No comment provided by engineer. */
+"Stop generating..." = "Διακοπή δημιουργίας...";
+
+/* No comment provided by engineer. */
 "Stored Hostname: %@" = "Αποθηκευμένο όνομα κεντρικού υπολογιστή: %@";
+
+/* No comment provided by engineer. */
+"Subfeature: %@" = "Δευτερεύουσα λειτουργία: % @";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Προσθήκη σε συσκευή";
@@ -3356,10 +3443,10 @@
 "vpn.settings.dns.server.content.blocking.explanation" = "Αποκλείστε περισσότερους από 150.000 τομείς που έχουν επισημανθεί για φιλοξενία κακόβουλου λογισμικού, επιθέσεις ηλεκτρονικού ψαρέματος και διαδικτυακές απάτες, με μια λίστα αποκλεισμού σε επίπεδο DNS. [Μάθετε περισσότερα](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
 
 /* Header of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.header" = "Αποκλεισμός και φιλτράρισμα περιεχομένου";
+"vpn.settings.dns.server.content.blocking.header" = "Αποκλεισμός κακόβουλου περιεχομένου";
 
-/* Title of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.title" = "Αποκλεισμός επικίνδυνων τομέων";
+/* Title of the vpn scam blocker sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Πρόγραμμα αποκλεισμού απάτης";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";

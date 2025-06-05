@@ -190,6 +190,15 @@
 /* Description for alert shown when user logged off from sync */
 "alert.sync-invalid-login-error-description" = "Sünkroonimine on peatatud. Kui soovid selle seadme sünkroonimist jätkata, loo uuesti ühendus, kasutades mõnda teist seadet või taastamiskoodi.";
 
+/* Sync Now button in alert asking if they would like to sync with another device */
+"alert.sync-new-device.button" = "Sünkrooni kohe";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.message" = "%@ saab pääseb ligi sinu sünkroonitud DuckDuckGo andmetele.";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.title" = "Kas sünkroonida uus seade?";
+
 /* Learn more button in alert */
 "alert.sync-paused-alert-learn-more-button" = "Loe edasi";
 
@@ -261,6 +270,12 @@
 
 /* No comment provided by engineer. */
 "Are you sure you want to delete all bookmarks? This action cannot be undone." = "Kas soovite kindlasti kõik järjehoidjad kustutada? Seda toimingut ei saa tagasi võtta.";
+
+/* No comment provided by engineer. */
+"Are you sure you want to delete this chat? This cannot be undone." = "Kas oled kindel, et soovid selle vestluse kustutada? Seda ei saa tagasi võtta.";
+
+/* No comment provided by engineer. */
+"Ask anything..." = "Küsi ükskõik mida...";
 
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Sisselogimine";
@@ -920,6 +935,9 @@
 "close.all.tabs" = "Sule kõik vahelehed";
 
 /* No comment provided by engineer. */
+"Cohort: %@" = "Kohort: %@";
+
+/* No comment provided by engineer. */
 "Confirm" = "Kinnita";
 
 /* Button to continue the onboarding process */
@@ -1150,41 +1168,8 @@
 /* Title for a section containing only items from yesterday */
 "date.range.yesterday" = "Eile";
 
-/* No comment provided by engineer. */
-"dax.hide.button" = "Peida näpunäited igaveseks";
-
-/* No comment provided by engineer. */
-"dax.hide.cancel" = "Tühista";
-
-/* Subtitle in Hide Dax dialog */
-"dax.hide.message" = "Neid on üsna vähe ja püüdsime muuta need informatiivseks.";
-
-/* Title in Hide Dax dialog */
-"dax.hide.title" = "Kas peita allesjäänud näpunäited?";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search" = "Sinu DuckDuckGo otsingud on anonüümsed. Alati. 🙌";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.after.search.cta" = "Huh!";
-
-/* First parameter is a count of additional trackers, second and third are names of the tracker networks (strings) */
-"dax.onboarding.browsing.multiple.trackers" = "dax.onboarding.browsing.multiple.trackers";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.multiple.trackers.cta" = "Viska viis!";
-
-/* Parameter is domain name (string) */
-"dax.onboarding.browsing.one.tracker" = "*%1$@* üritas sind siin jälitada.\n\nMa blokeerisin nad!\n\n☝️ Võid vaadata aadressiriba, et näha, kes üritab sind jälitada, kui külastad uut saiti.️";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.one.tracker.cta" = "Viska viis!";
-
 /* First paramter is a string - network name, 2nd parameter is a string - domain name */
 "dax.onboarding.browsing.site.is.major.tracker" = "Ettevaatust! Ma ei saa takistada %1$@ nägemast sinu tegevust %2$@.\n\nKuid sirvi koos minuga ja ma saan vähendada seda, mida %1$@ sinust üldiselt teab, blokeerides tema jälitajad paljudel teistel lehtedel.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.site.is.major.tracker.cta" = "Sain aru";
 
 /* Parameters are domain names (strings) */
 "dax.onboarding.browsing.site.owned.by.major.tracker" = "Ettevaatust! Kuna %2$@ on %1$@ omanik, ei saa ma takistada teda jälgimast sinu tegevust siin.\n\nKuid sirvi koos minuga ja ma saan vähendada seda, mida %2$@ sinust üldiselt teab, blokeerides tema jälgijad paljudel teistel lehtedel.";
@@ -1195,29 +1180,8 @@
 /* No comment provided by engineer. */
 "dax.onboarding.browsing.without.trackers" = "Kui puudutad ja kerid, siis mina blokeerin tüütud jälgijad.\n\nHakka sirvima!";
 
-/* No comment provided by engineer. */
-"dax.onboarding.browsing.without.trackers.cta" = "Sain aru";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button" = "Sinu brauserisse võivad koguneda isikuandmed. Õudne. Kasuta tule nuppu, et see kõik ära põletada. Proovi kohe! 👇";
-
-/* Cancel action */
-"dax.onboarding.fire.button.cancelAction" = "Tühista";
-
-/* Encourage user to try clearing data with the fire button */
-"dax.onboarding.fire.button.confirmAction" = "Sulge vahekaardid ja kustuta andmed";
-
 /* Encourage user to add favorite site using the browsing menu. */
 "dax.onboarding.home.add.favorite" = "Külasta oma lemmiksaite hetkega!\n\nMine saidile, mis sulle meeldib. Seejärel puuduta ikooni „⋯“ ja vali *Lisa lemmikutesse*.";
-
-/* Accessible version of dax.onboarding.home.add.favorite */
-"dax.onboarding.home.add.favorite.accessible" = "Külasta oma lemmiksaite hetkega! Külasta ühte oma lemmiksaitidest. Seejärel puuduta menüünuppu ja vali Lisa lemmikutesse.";
-
-/* No comment provided by engineer. */
-"dax.onboarding.home.initial" = "Järgmisena proovi külastada ühte oma lemmiksaitidest!\n\nMina aga blokeerin jälgijaid, et nad ei saaks sind luurata. Võimaluse korral parandan ka sinu ühenduse turvalisust. 🔒";
-
-/* ad = advertisment */
-"dax.onboarding.home.subsequent" = "Said selle!\n\nPea meeles: iga kord, kui minuga sirvid, kaotab jube reklaam tiivad. 👍";
 
 /* No comment provided by engineer. */
 "Debug" = "Silumine";
@@ -1313,16 +1277,16 @@
 "duckai.preferences.text.markdown" = "Duck.ai on valikuline funktsioon, mis võimaldab anonüümselt vestelda populaarsete kolmanda poole AI vestlusmudelitega. Teie vestlusi ei kasutata tehisintellekti treenimiseks.\n[Lisateave](ddgquicklink://duckduckgo.com/duckduckgo-help-pages/aichat/)";
 
 /* Toggle text to enable/disable Duck.ai in the address bar */
-"duckai.settings.enable.address-bar-toggle" = "Kuva Duck.ai aadressiribal";
+"duckai.settings.enable.address-bar-toggle" = "Aadressiriba";
 
 /* Toggle text to enable/disable AI Chat in the browsing menu */
-"duckai.settings.enable.browsing-menu-toggle" = "Kuva Duck.ai brauseri menüüs";
+"duckai.settings.enable.browsing-menu-toggle" = "Brauseri menüü";
 
 /* Toggle text to enable/disable Duck.ai in tab manager */
-"duckai.settings.enable.tab-switcher-toggle" = "Kuva Duck.ai vahelehtede ekraanil";
+"duckai.settings.enable.tab-switcher-toggle" = "Vahekaartide ekraan";
 
 /* Toggle text to enable/disable Duck.ai in voice search */
-"duckai.settings.enable.voice-search-toggle" = "Kuva Duck.ai häälotsingus";
+"duckai.settings.enable.voice-search-toggle" = "Häälotsing";
 
 /* Settings screen cell text for AI Chat settings */
 "duckai.settings.title" = "Duck.ai";
@@ -1342,6 +1306,24 @@
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";
 
+/* Content for Duck Player opt-in message */
+"duckplayer.opt-in.message.content" = "Duck Player blokeerib sihitud reklaamid ja hoiab su vaatamisajaloo kaitstuna.";
+
+/* Title for Duck Player opt-in message */
+"duckplayer.opt-in.message.title" = "YouTube, aga vähemate reklaamide ja suurema privaatsusega";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.opt-in.pill.subtitle" = "Vaata ilma sihitud reklaamideta";
+
+/* Button text to play a video in Duck Player */
+"duckplayer.opt-in.pill.title" = "Esita see video Duck Playeris";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.pill.subtitle" = "Vaata ilma sihitud reklaamideta";
+
+/* Button text to play a video in Duck Player */
+"duckplayer.play.in.duck.player" = "Esita see video Duck Playeris";
+
 /* Body text for the modal feature explanation */
 "duckplayer.presentation.modal.body" = "Duck Player võimaldab sul DuckDuckGo-s YouTube'i vaadata ilma sihitud reklaamideta ja see, mida vaatad, ei mõjuta sinu soovitusi.";
 
@@ -1353,6 +1335,18 @@
 
 /* Two line title (separated by \n) for the feature explanation */
 "duckplayer.presentation.modal.title.youtube" = "Kas näed Youtube'i kasutades massiliselt reklaame? Mitte Duck Playeriga!";
+
+/* Button text to resume video in Duck Player */
+"duckplayer.resume.in.duck.player" = "Jätka Duck Playeris";
+
+/* Footer text explaining the auto-play toggle in Duck Player settings */
+"duckplayer.settings.autoplay.footer" = "Duck Playeris avatud videote taasesitus algab automaatselt. Lülitage see välja, kui soovite Duck Playeris avatud videote taasesitust käsitsi alustada.";
+
+/* Label for the auto-play toggle in Duck Player settings */
+"duckplayer.settings.autoplay.label" = "Videote automaatne esitamine";
+
+/* Label for the experimental section in Duck Player settings */
+"duckplayer.settings.experimental.label" = "Eksperimentaalne";
 
 /* Footer label in the settings screen for Duck Player */
 "duckplayer.settings.footer" = "DuckDuckGo pakub kõik privaatsuseks vajaliku, mida vajad enda kaitsmiseks veebi sirvimisel.";
@@ -1369,8 +1363,59 @@
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.open-videos-in" = "Kas avada YouTube'i videod Duck Playeris?";
 
+/* Footer text explaining the search results toggle in Duck Player settings */
+"duckplayer.settings.search.results.footer" = "YouTube'i videotele DuckDuckGo otsingutulemustes klõpsates avanevad need Duck Playeris.";
+
+/* Label for the search results toggle in Duck Player settings */
+"duckplayer.settings.search.results.label" = "DuckDuckGo otsingutulemused";
+
+/* Message for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.message" = "Selle sätte jõustumiseks sulgege kõik vahekaardid.";
+
+/* OK button text for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.ok" = "OK";
+
+/* Title for the alert when changing Duck Player variant */
+"duckplayer.settings.tab.alert.title" = "Oluline!";
+
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.title" = "Duck Player";
+
+/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
+"duckplayer.settings.toggle" = "Ava YouTube'i videod siin";
+
+/* Label for the Duck Player variant picker in Duck Player settings */
+"duckplayer.settings.variant.label" = "Duck Player Variant";
+
+/* Footer text explaining the YouTube.com option in Duck Player settings */
+"duckplayer.settings.youtube.footer" = "YouTube'i videoid YouTube.com-is sirvides klõpsates avanevad need Duck Playeris.";
+
+/* Label for the YouTube.com option in Duck Player settings */
+"duckplayer.settings.youtube.label" = "YouTube.com";
+
+/* Text for the ask mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.ask" = "Lase mul valida";
+
+/* Text for the auto mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.auto" = "Ava automaatselt";
+
+/* Text for the never mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.never" = "Ära näita";
+
+/* Button text to open Duck Player settings */
+"duckplayer.toast.open.settings" = "Ava seaded";
+
+/* Toast message informing user they can disable Duck Player in settings */
+"duckplayer.toast.turn.off.anytime" = "Saad Duck Player'i igal ajal välja lülitada";
+
+/* Button text to watch video on YouTube */
+"duckplayer.watch.on.youtube" = "Vaata YouTube'is";
+
+/* Subtitle explaining how Duck Player protects privacy */
+"duckplayer.welcome.message.content" = "YouTube'i naasmiseks sulge Duck Player.\nPole sinu jaoks? Lülita see allpool välja!";
+
+/* Title for Duck Player welcome message highlighting privacy benefits */
+"duckplayer.welcome.message.text" = "Sa vaatad Duck Playeris!\nSiin pole suunatud reklaame.";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "E-posti kaitse";
@@ -1448,6 +1493,9 @@
 "empty.search" = "Ühtegi vastet ei leitud";
 
 /* No comment provided by engineer. */
+"Enrolled: %@" = "Registreeritud: %@";
+
+/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1500,6 +1548,9 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Ainult mobiililemmikud";
+
+/* No comment provided by engineer. */
+"Feature: %@" = "Funktsioon: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Reklaami ja hüpikakende blokeerimine";
@@ -2249,7 +2300,7 @@
 "onboarding.highlights.browsers.features.cookiePopups.title" = "Blokeeri küpsiste hüpikaknad";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Blokeeri jälgivad reklaamid";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Blokeeri suunatud reklaamid";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Kustuta sirvimisandmed ühe nupuga";
@@ -2332,9 +2383,6 @@
 /* No comment provided by engineer. */
 "onboardingWelcomeHeader" = "Tere tulemast DuckDuckGo kasutajaks!";
 
-/* No comment provided by engineer. */
-"Open tabs remain unaffected by this change.  Please close all tabs for this setting to take effect." = "Avatud vahekaardid jäävad sellest muudatusest mõjutamata.  Selle sätte jõustumiseks sulgege kõik vahekaardid.";
-
 /* ’Link’ is link on a website */
 "open.externally.failed" = "Selle lingi avamiseks vajalikku rakendust ei leitud";
 
@@ -2406,6 +2454,30 @@
 
 /* Title for the Privacy Pro feedback form */
 "ppro.feedback-form.title" = "Saada tagasisidet";
+
+/* Title of the section of a setting page that shows Scam Blocking preferences (weather warning in case of scam sites) */
+"preferences.scam-blocker.title" = "Pettuste blokeerija";
+
+/* Caption explaining the risk of disabling scam blocker protection */
+"preferences.scam-blocker.toggle-caption" = "Selle funktsiooni keelamine võib teie isikuandmed ohtu seada.";
+
+/* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
+"preferences.scam-blocker.toggle-label" = "Hoiata mind pettuste, andmepüügi või pahavara tõttu märgistatud saitidel. [Lisateave](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker)";
+
+/* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
+"preferences.smarter-encryption.description" = "Võimaluse korral uuendab lingid automaatselt HTTPS-ile. [Lisateave](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
+
+/* Title of the section of a setting page that shows Smarter Encryption preferences */
+"preferences.smarter-encryption.title" = "Smarter Encryption";
+
+/* Status indicator of a browser privacy protection feature. */
+"preferences.status-indicator.always-on" = "Alati sisse lülitatud";
+
+/* Title of the option to show the Threat Protection preferences */
+"preferences.threat-protection" = "Kaitse ohtude eest";
+
+/* Caption of the option to show the Threat Protection preferences */
+"preferences.threat-protection.caption" = "DuckDuckGo täiustatud kaitsed peatavad levinud ohud, hoides samal ajal su ühenduse turvalisena.\n[Lisateave](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Mõned järjehoidjad või paroolid on valesti vormindatud või liiga pikad ja neid ei sünkroonitud.";
@@ -2560,6 +2632,9 @@
 /* Settings screen cell title for toggling full URL visibility in address bar */
 "settings.address.full.url" = "Näita kogu saidi aadressi";
 
+/* Settings screen text for showing AI Chat in various places in the app */
+"settings.aichat.shortcuts" = "Otseteed";
+
 /* Label describing a feature which is turned on always */
 "settings.always.on" = "Alati sisse lülitatud";
 
@@ -2631,6 +2706,9 @@
 
 /* Settings cell for Email Protection */
 "settings.emailProtection.description" = "Blokeeri meilijälgurid ja peida oma aadress";
+
+/* Settings screen cell text for enabling AI chat */
+"settings.enable.aichat" = "Luba Duck.ai";
 
 /* Label of a button enabling the email protection feature */
 "settings.enable.email.protection" = "Luba Email Protection";
@@ -2761,6 +2839,9 @@
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe" = "Kaitse oma ühendust ja identiteeti rakendusega Privacy Pro";
 
+/* Try Privacy Pro Free button text for privacy pro */
+"settings.subscription.try.free" = "Proovi Privacy Pro'd tasuta";
+
 /* Privacy pro description subtitle in settings */
 "settings.subscription.us.description" = "Sisaldab meie VPN-i, rakendusi Personal Information Removal ja Identity Theft Restoration.";
 
@@ -2831,7 +2912,13 @@
 "siteFeedback.urlPlaceholder" = "Milline veebisait on katki?";
 
 /* No comment provided by engineer. */
+"Stop generating..." = "Lõpeta genereerimine...";
+
+/* No comment provided by engineer. */
 "Stored Hostname: %@" = "Salvestatud hostinimi: %@";
+
+/* No comment provided by engineer. */
+"Subfeature: %@" = "Alamfunktsioon: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Lisa seadmele";
@@ -3356,10 +3443,10 @@
 "vpn.settings.dns.server.content.blocking.explanation" = "Blokeerige 150 000+ domeeni, mis on märgistatud pahavara, andmepüügirünnakute ja võrgupettuste eest DNS-tasandi blokeerimisloendiga. [Lisateave](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
 
 /* Header of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.header" = "Sisu blokeerimine ja filtreerimine";
+"vpn.settings.dns.server.content.blocking.header" = "Pahatahtliku sisu blokeerimine";
 
-/* Title of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.title" = "Riskantsete domeenide blokeerimine";
+/* Title of the vpn scam blocker sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Pettuste blokeerija";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";

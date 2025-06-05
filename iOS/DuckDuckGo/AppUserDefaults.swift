@@ -86,11 +86,14 @@ public class AppUserDefaults: AppSettings {
 
         static let duckPlayerNativeYoutubeMode = "com.duckduckgo.ios.duckPlayerNativeYoutubeMode"
         static let duckPlayerNativeUISERPEnabled = "com.duckduckgo.ios.duckPlayerNativeUISERPEnabled"
-        static let duckPlayerNativeUIPrimingModalPresentationEventCount = "com.duckduckgo.ios.duckPlayerNativeUIPrimingModalPresentationEventCount"
         static let duckPlayerNativeUIPrimingModalTimeSinceLastPresented = "com.duckduckgo.ios.duckPlayerNativeUIPrimingModalTimeSinceLastPresented"
         static let duckPlayerPillDismissCount = "com.duckduckgo.ios.duckPlayerPillDismissCount"
         static let duckPlayerVariant = "com.duckduckgo.ios.duckPlayerVariant"
         static let duckPlayerWelcomeMessageShown = "com.duckduckgo.ios.duckPlayerWelcomeMessageShown"
+        static let duckPlayerPrimingMessagePresented = "com.duckduckgo.ios.duckPlayerPrimingMessagePresented"
+        static let duckPlayerControlsVisible = "com.duckduckgo.ios.duckPlayerControlsVisible"
+        static let duckPlayerNativeUIWasUsed = "com.duckduckgo.ios.duckPlayerNativeUIWasUsed"
+        static let duckPlayerNativeUISettingsMapped = "com.duckduckgo.ios.duckPlayerNativeUISettingsMapped"
     }
 
     private struct DebugKeys {
@@ -501,6 +504,12 @@ public class AppUserDefaults: AppSettings {
     @UserDefaultsWrapper(key: .duckPlayerAutoplay, defaultValue: true)
     var duckPlayerAutoplay: Bool
 
+    @UserDefaultsWrapper(key: .duckPlayerNativeUIWasUsed, defaultValue: false)
+    var duckPlayerNativeUIWasUsed: Bool
+
+    @UserDefaultsWrapper(key: .duckPlayerNativeUISettingsMapped, defaultValue: false)
+    var duckPlayerNativeUISettingsMapped: Bool
+
     @UserDefaultsWrapper(key: .duckPlayerWelcomeMessageShown, defaultValue: false)
     var duckPlayerWelcomeMessageShown: Bool
 
@@ -532,28 +541,6 @@ public class AppUserDefaults: AppSettings {
             userDefaults?.set(false, forKey: Keys.duckPlayerAskModeOverlayHidden)
             NotificationCenter.default.post(name: AppUserDefaults.Notifications.duckPlayerSettingsUpdated,
                                             object: duckPlayerNativeYoutubeMode)
-        }
-    }
-
-    var duckPlayerNativeUIPrimingModalPresentationEventCount: Int {
-        get {
-            return userDefaults?.integer(forKey: Keys.duckPlayerNativeUIPrimingModalPresentationEventCount) ?? 0
-        }
-        set {
-            userDefaults?.setValue(newValue, forKey: Keys.duckPlayerNativeUIPrimingModalPresentationEventCount)
-            NotificationCenter.default.post(name: AppUserDefaults.Notifications.duckPlayerSettingsUpdated,
-                                          object: nil)
-        }
-    }
-    
-    var duckPlayerNativeUIPrimingModalLastPresentationTime: Int {
-        get {
-            return userDefaults?.integer(forKey: Keys.duckPlayerNativeUIPrimingModalTimeSinceLastPresented) ?? 0
-        }
-        set {
-            userDefaults?.setValue(newValue, forKey: Keys.duckPlayerNativeUIPrimingModalTimeSinceLastPresented)
-            NotificationCenter.default.post(name: AppUserDefaults.Notifications.duckPlayerSettingsUpdated,
-                                          object: nil)
         }
     }
 
@@ -592,6 +579,20 @@ public class AppUserDefaults: AppSettings {
                                             object: nil)
         }
     }
+    
+    var duckPlayerPrimingMessagePresented: Bool {
+        get {
+            return userDefaults?.bool(forKey: Keys.duckPlayerPrimingMessagePresented) ?? false
+        }
+        set {
+            userDefaults?.set(newValue, forKey: Keys.duckPlayerPrimingMessagePresented)
+            NotificationCenter.default.post(name: AppUserDefaults.Notifications.duckPlayerSettingsUpdated,
+                                            object: nil)
+        }
+    }
+
+    @UserDefaultsWrapper(key: .duckPlayerControlsVisible, defaultValue: true)
+    var duckPlayerControlsVisible: Bool
 }
 
 extension AppUserDefaults: AppConfigurationFetchStatistics {

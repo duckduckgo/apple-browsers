@@ -74,28 +74,42 @@ public struct AIChatNativeConfigValues: Codable {
     public let supportsClosingAIChat: Bool
     public let supportsOpeningSettings: Bool
     public let supportsNativePrompt: Bool
+    public let supportsNativeChatInput: Bool
 
     public static var defaultValues: AIChatNativeConfigValues {
 #if os(iOS)
         return AIChatNativeConfigValues(isAIChatHandoffEnabled: true,
-                                        platform: Platform.name,
                                         supportsClosingAIChat: true,
                                         supportsOpeningSettings: true,
-                                        supportsNativePrompt: false)
+                                        supportsNativePrompt: false,
+                                        supportsNativeChatInput: false)
 #endif
 
 #if os(macOS)
         return AIChatNativeConfigValues(isAIChatHandoffEnabled: false,
-                                        platform: Platform.name,
                                         supportsClosingAIChat: true,
                                         supportsOpeningSettings: true,
-                                        supportsNativePrompt: true)
+                                        supportsNativePrompt: true,
+                                        supportsNativeChatInput: false)
 #endif
+    }
+
+    public init(isAIChatHandoffEnabled: Bool,
+                supportsClosingAIChat: Bool,
+                supportsOpeningSettings: Bool,
+                supportsNativePrompt: Bool,
+                supportsNativeChatInput: Bool) {
+        self.isAIChatHandoffEnabled = isAIChatHandoffEnabled
+        self.platform = Platform.name
+        self.supportsClosingAIChat = supportsClosingAIChat
+        self.supportsOpeningSettings = supportsOpeningSettings
+        self.supportsNativePrompt = supportsNativePrompt
+        self.supportsNativeChatInput = supportsNativeChatInput
     }
 }
 
-public struct AIChatNativePrompt: Codable {
-    public struct Query: Codable {
+public struct AIChatNativePrompt: Codable, Equatable {
+    public struct Query: Codable, Equatable {
         public let prompt: String
         public let autoSubmit: Bool
     }

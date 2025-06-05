@@ -52,7 +52,7 @@ public final class DefaultAppStoreAccountManagementFlow: AppStoreAccountManageme
 
         // Check if auth token if still valid
         if case let .failure(validateTokenError) = await authEndpointService.validateToken(accessToken: authToken) {
-            Logger.subscription.error("[AppStoreAccountManagementFlow] validateToken error: \(String(reflecting: validateTokenError), privacy: .public)")
+            Logger.subscription.error("[AppStoreAccountManagementFlow] validateToken error: \((validateTokenError.localizedDescription), privacy: .public)")
 
             // In case of invalid token attempt store based authentication to obtain a new one
             guard let lastTransactionJWSRepresentation = await storePurchaseManager.mostRecentTransaction() else { return .failure(.noPastTransaction) }
@@ -65,7 +65,7 @@ public final class DefaultAppStoreAccountManagementFlow: AppStoreAccountManageme
                     return .success(refreshedAuthToken)
                 }
             case .failure(let storeLoginError):
-                Logger.subscription.error("[AppStoreAccountManagementFlow] storeLogin error: \(String(reflecting: storeLoginError), privacy: .public)")
+                Logger.subscription.error("[AppStoreAccountManagementFlow] storeLogin error: \((storeLoginError.localizedDescription), privacy: .public)")
                 return .failure(.authenticatingWithTransactionFailed)
             }
         }

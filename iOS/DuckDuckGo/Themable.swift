@@ -20,11 +20,14 @@ import UIKit
 
 extension UIViewController {
 
-    func decorateNavigationBar(with theme: Theme = ThemeManager.shared.currentTheme) {
-        navigationController?.navigationBar.barTintColor = theme.barBackgroundColor
-        navigationController?.navigationBar.tintColor = theme.navigationBarTintColor
-        
-        var titleAttrs = navigationController?.navigationBar.titleTextAttributes ?? [:]
+    func decorateNavigationBar(_ navigationBar: UINavigationBar? = nil, with theme: Theme = ThemeManager.shared.currentTheme) {
+
+        guard let targetNavigationBar = navigationBar ?? self.navigationController?.navigationBar else { return }
+
+        targetNavigationBar.barTintColor = theme.barBackgroundColor
+        targetNavigationBar.tintColor = theme.navigationBarTintColor
+
+        var titleAttrs = targetNavigationBar.titleTextAttributes ?? [:]
         titleAttrs[NSAttributedString.Key.foregroundColor] = theme.navigationBarTitleColor
         navigationController?.navigationBar.titleTextAttributes = titleAttrs
         
@@ -33,16 +36,29 @@ extension UIViewController {
         appearance.backgroundColor = theme.backgroundColor
         appearance.titleTextAttributes = titleAttrs
 
-        navigationController?.navigationBar.standardAppearance = appearance
-        navigationController?.navigationBar.scrollEdgeAppearance = appearance
+        targetNavigationBar.standardAppearance = appearance
+        targetNavigationBar.scrollEdgeAppearance = appearance
+        targetNavigationBar.compactAppearance = appearance
+        targetNavigationBar.compactScrollEdgeAppearance = appearance
     }
     
-    func decorateToolbar(with theme: Theme = ThemeManager.shared.currentTheme) {
-        navigationController?.toolbar.barTintColor = theme.barBackgroundColor
-        navigationController?.toolbar.backgroundColor = theme.barBackgroundColor
-        navigationController?.toolbar.tintColor = theme.barTintColor
+    func decorateToolbar(_ toolbar: UIToolbar? = nil, with theme: Theme = ThemeManager.shared.currentTheme) {
+
+        guard let targetToolbar = toolbar ?? navigationController?.toolbar else {
+            return
+        }
+
+        let appearance = targetToolbar.standardAppearance
+
+        appearance.backgroundColor = theme.barBackgroundColor
+        if ThemeManager.shared.properties.isExperimentalThemingEnabled {
+            appearance.shadowColor = .clear
+        }
+
+        targetToolbar.standardAppearance = appearance
+        targetToolbar.compactAppearance = appearance
+        targetToolbar.scrollEdgeAppearance = appearance
         
-        let appearance = navigationController?.toolbar.standardAppearance
-        navigationController?.toolbar.scrollEdgeAppearance = appearance
+        targetToolbar.tintColor = theme.barTintColor
     }
 }

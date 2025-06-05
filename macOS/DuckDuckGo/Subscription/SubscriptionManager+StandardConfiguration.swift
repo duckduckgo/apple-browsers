@@ -38,8 +38,10 @@ extension DefaultSubscriptionManager {
                                                                  settings: UserDefaultsCacheSettings(defaultExpirationInterval: .minutes(20)))
         let keychainType = KeychainType.dataProtection(.named(subscriptionAppGroup))
         let accessTokenStorage = SubscriptionTokenKeychainStorage(keychainType: keychainType)
-        let subscriptionEndpointService = DefaultSubscriptionEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment)
-        let authEndpointService = DefaultAuthEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment)
+        let subscriptionEndpointService = DefaultSubscriptionEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment,
+                                                                             userAgent: UserAgent.duckDuckGoUserAgent())
+        let authEndpointService = DefaultAuthEndpointService(currentServiceEnvironment: subscriptionEnvironment.serviceEnvironment,
+                                                             userAgent: UserAgent.duckDuckGoUserAgent())
         let subscriptionFeatureMappingCache = DefaultSubscriptionFeatureMappingCache(subscriptionEndpointService: subscriptionEndpointService,
                                                                                      userDefaults: subscriptionUserDefaults)
 
@@ -93,7 +95,7 @@ extension DefaultSubscriptionManager {
         let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainType: keychainType) { _, error in
             Logger.subscription.error("Failed to remove AuthV2 token container : \(error.localizedDescription, privacy: .public)")
         }
-        tokenStorage.tokenContainer = nil
+        try? tokenStorage.saveTokenContainer(nil)
     }
 }
 
@@ -126,7 +128,8 @@ extension DefaultSubscriptionManagerV2 {
                             canPerformAuthMigration: Bool,
                             pixelHandlingSource: AuthV2PixelHandler.Source) {
 
-        let authService = DefaultOAuthService(baseURL: environment.authEnvironment.url, apiService: APIServiceFactory.makeAPIServiceForAuthV2())
+        let authService = DefaultOAuthService(baseURL: environment.authEnvironment.url,
+                                              apiService: APIServiceFactory.makeAPIServiceForAuthV2(withUserAgent: UserAgent.duckDuckGoUserAgent()))
         let tokenStorage = SubscriptionTokenKeychainStorageV2(keychainType: keychainType) { accessType, error in
             PixelKit.fire(PrivacyProErrorPixel.privacyProKeychainAccessError(accessType: accessType,
                                                                              accessError: error,
@@ -138,12 +141,12 @@ extension DefaultSubscriptionManagerV2 {
         let authClient = DefaultOAuthClient(tokensStorage: tokenStorage,
                                             legacyTokenStorage: legacyTokenStorage,
                                             authService: authService)
-        var apiServiceForSubscription = APIServiceFactory.makeAPIServiceForSubscription()
+        var apiServiceForSubscription = APIServiceFactory.makeAPIServiceForSubscription(withUserAgent: UserAgent.duckDuckGoUserAgent())
         let subscriptionEndpointService = DefaultSubscriptionEndpointServiceV2(apiService: apiServiceForSubscription,
                                                                                baseURL: environment.serviceEnvironment.url)
         apiServiceForSubscription.authorizationRefresherCallback = { _ in
 
-            guard let tokenContainer = tokenStorage.tokenContainer else {
+            guard let tokenContainer = try? tokenStorage.getTokenContainer() else {
                 throw OAuthClientError.internalError("Missing refresh token")
             }
 

@@ -1,0 +1,137 @@
+---
+description: Property wrapper patterns and custom wrappers for DuckDuckGo browser
+globs:
+  - "**/*.swift"
+alwaysApply: false
+---
+
+# Property Wrapper Patterns
+
+## @UserDefaultsWrapper for Settings
+Use the established property wrapper pattern for all persistent settings:
+
+```swift
+// ✅ CORRECT - UserDefaults property wrapper
+extension AppUserDefaults {
+    @UserDefaultsWrapper(key: .newFeatureEnabled, defaultValue: false)
+    var newFeatureEnabled: Bool
+    
+    @UserDefaultsWrapper(key: .lastUpdateCheck, defaultValue: Date.distantPast)
+    var lastUpdateCheck: Date
+    
+    @UserDefaultsWrapper(key: .userPreferences, defaultValue: [:])
+    var userPreferences: [String: String]
+}
+
+// Define keys in a type-safe manner
+extension UserDefaultsWrapper.Key {
+    static let newFeatureEnabled: UserDefaultsWrapper.Key = "com.duckduckgo.newFeature"
+    static let lastUpdateCheck: UserDefaultsWrapper.Key = "com.duckduckgo.lastUpdate"
+    static let userPreferences: UserDefaultsWrapper.Key = "com.duckduckgo.preferences"
+}
+```
+
+## Custom Property Wrappers
+Create custom property wrappers for common patterns:
+
+```swift
+// ✅ ADVANCED - Custom property wrapper for encrypted storage
+@propertyWrapper
+struct EncryptedStorage<T: Codable> {
+    private let key: String
+    private let defaultValue: T
+    private let encryptionService: EncryptionService
+    
+    var wrappedValue: T {
+        get {
+            guard let data = KeychainHelper.load(key: key),
+                  let decrypted = try? encryptionService.decrypt(data),
+                  let value = try? JSONDecoder().decode(T.self, from: decrypted) else {
+                return defaultValue
+            }
+            return value
+        }
+        set {
+            guard let encoded = try? JSONEncoder().encode(newValue),
+                  let encrypted = try? encryptionService.encrypt(encoded) else {
+                return
+            }
+            KeychainHelper.save(data: encrypted, for: key)
+        }
+    }
+    
+    init(key: String, defaultValue: T, encryptionService: EncryptionService) {
+        self.key = key
+        self.defaultValue = defaultValue
+        self.encryptionService = encryptionService
+    }
+}
+
+// Usage
+struct SecureSettings {
+    @EncryptedStorage(key: "user_credentials", defaultValue: [], encryptionService: .shared)
+    var userCredentials: [Credential]
+}
+```
+
+## @Published Property Guidelines
+Follow these patterns for reactive properties:
+
+```swift
+// ✅ CORRECT - @Published patterns
+@MainActor
+final class ViewModel: ObservableObject {
+    // Read-only state
+    @Published private(set) var items: [Item] = []
+    @Published private(set) var isLoading = false
+    @Published private(set) var error: Error?
+    
+    // Two-way binding properties
+    @Published var searchText = ""
+    @Published var isFilterEnabled = false
+    
+    // Computed properties (not @Published)
+    var isEmpty: Bool {
+        items.isEmpty
+    }
+}
+```
+
+## Platform-Specific Property Wrappers
+Use conditional compilation for platform-specific storage:
+
+```swift
+// ✅ ADVANCED - Platform-specific property wrapper
+@propertyWrapper
+struct PlatformStorage<T> {
+    private let key: String
+    private let defaultValue: T
+    
+    var wrappedValue: T {
+        get {
+            #if os(iOS)
+            return UserDefaults.standard.object(forKey: key) as? T ?? defaultValue
+            #elseif os(macOS)
+            // Use app group for macOS system extensions
+            let appGroupDefaults = UserDefaults(suiteName: "group.com.duckduckgo.app")
+            return appGroupDefaults?.object(forKey: key) as? T ?? defaultValue
+            #endif
+        }
+        set {
+            #if os(iOS)
+            UserDefaults.standard.set(newValue, forKey: key)
+            #elseif os(macOS)
+            let appGroupDefaults = UserDefaults(suiteName: "group.com.duckduckgo.app")
+            appGroupDefaults?.set(newValue, forKey: key)
+            #endif
+        }
+    }
+    
+    init(key: String, defaultValue: T) {
+        self.key = key
+        self.defaultValue = defaultValue
+    }
+}
+```
+
+See `feature-flags.mdc` for feature flag property wrappers and `configuration-management.mdc` for advanced configuration patterns.

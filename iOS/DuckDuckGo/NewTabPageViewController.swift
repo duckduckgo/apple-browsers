@@ -40,11 +40,13 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
     private var hostingController: UIHostingController<AnyView>?
 
     private let pixelFiring: PixelFiring.Type
+    private let messageNavigationDelegate: MessageNavigationDelegate
 
     private var privacyProPromotionCoordinating: PrivacyProPromotionCoordinating
 
     init(tab: Tab,
          isNewTabPageCustomizationEnabled: Bool,
+         isExperimentalAppearanceEnabled: Bool,
          interactionModel: FavoritesListInteracting,
          homePageMessagesConfiguration: HomePageMessagesConfiguration,
          privacyProDataReporting: PrivacyProDataReporting? = nil,
@@ -53,7 +55,8 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
          newTabDialogTypeProvider: NewTabDialogSpecProvider,
          privacyProPromotionCoordinating: PrivacyProPromotionCoordinating = DaxDialogs.shared,
          faviconLoader: FavoritesFaviconLoading,
-         pixelFiring: PixelFiring.Type = Pixel.self) {
+         pixelFiring: PixelFiring.Type = Pixel.self,
+         messageNavigationDelegate: MessageNavigationDelegate) {
 
         self.associatedTab = tab
         self.variantManager = variantManager
@@ -61,25 +64,30 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
         self.newTabDialogTypeProvider = newTabDialogTypeProvider
         self.privacyProPromotionCoordinating = privacyProPromotionCoordinating
         self.pixelFiring = pixelFiring
+        self.messageNavigationDelegate = messageNavigationDelegate
 
-        newTabPageViewModel = NewTabPageViewModel()
+        newTabPageViewModel = NewTabPageViewModel(isExperimentalAppearanceEnabled: isExperimentalAppearanceEnabled)
         shortcutsSettingsModel = NewTabPageShortcutsSettingsModel()
         sectionsSettingsModel = NewTabPageSectionsSettingsModel()
         favoritesModel = FavoritesViewModel(isNewTabPageCustomizationEnabled: isNewTabPageCustomizationEnabled,
+                                            isExperimentalAppearanceEnabled: isExperimentalAppearanceEnabled,
                                             favoriteDataSource: FavoritesListInteractingAdapter(favoritesListInteracting: interactionModel),
                                             faviconLoader: faviconLoader)
         shortcutsModel = ShortcutsModel()
-        messagesModel = NewTabPageMessagesModel(homePageMessagesConfiguration: homePageMessagesConfiguration, privacyProDataReporter: privacyProDataReporting)
+        messagesModel = NewTabPageMessagesModel(homePageMessagesConfiguration: homePageMessagesConfiguration,
+                                                privacyProDataReporter: privacyProDataReporting,
+                                                navigator: DefaultMessageNavigator(delegate: messageNavigationDelegate),
+                                                isExperimentalThemingEnabled: isExperimentalAppearanceEnabled)
 
         if isNewTabPageCustomizationEnabled {
-            super.init(rootView: AnyView(NewTabPageView(viewModel: self.newTabPageViewModel,
+            super.init(rootView: AnyView(CustomizableNewTabPageView(viewModel: self.newTabPageViewModel,
                                                         messagesModel: self.messagesModel,
                                                         favoritesViewModel: self.favoritesModel,
                                                         shortcutsModel: self.shortcutsModel,
                                                         shortcutsSettingsModel: self.shortcutsSettingsModel,
                                                         sectionsSettingsModel: self.sectionsSettingsModel)))
         } else {
-            super.init(rootView: AnyView(SimpleNewTabPageView(viewModel: self.newTabPageViewModel,
+            super.init(rootView: AnyView(NewTabPageView(viewModel: self.newTabPageViewModel,
                                                               messagesModel: self.messagesModel,
                                                               favoritesViewModel: self.favoritesModel)))
         }

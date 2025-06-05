@@ -283,7 +283,7 @@ final class SyncPreferencesTests: XCTestCase {
     }
 
     func test_recoverDevice_callsConnectionController() async throws {
-        syncPreferences.recoverDevice(recoveryCode: testRecoveryCode, fromRecoveryScreen: false)
+        syncPreferences.recoverDevice(recoveryCode: testRecoveryCode, fromRecoveryScreen: false, codeSource: .qrCode)
         try await connectionController.$syncCodeEnteredCalled.async(waitFor: true)
     }
 

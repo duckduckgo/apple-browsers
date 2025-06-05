@@ -53,8 +53,6 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
     }
 
     private func updateSidebarConstraints(for tabID: TabIdentifier, isShowingSidebar: Bool, withAnimation: Bool) {
-        guard featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
-
         if isShowingSidebar {
             let sidebarViewController = sidebarProvider.sidebar(for: tabID).sidebarViewController
             sidebarViewController.delegate = self
@@ -89,11 +87,15 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
 extension AIChatSidebarPresenter: AIChatSidebarHostingDelegate {
 
     func sidebarHostDidSelectTab(with tabID: TabIdentifier) {
+        guard featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
+
         let isShowingSidebar = sidebarProvider.isShowingSidebar(for: tabID)
         updateSidebarConstraints(for: tabID, isShowingSidebar: isShowingSidebar, withAnimation: false)
     }
 
     func sidebarHostDidUpdateTabs(_ currentTabIDs: [TabIdentifier]) {
+        guard featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
+        
         sidebarProvider.cleanUp(for: currentTabIDs)
     }
 }

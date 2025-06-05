@@ -38,6 +38,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private let accessibilityPreferences: AccessibilityPreferences
     private let visualStyle: VisualStyleProviding
+    private let featureFlagger: FeatureFlagger
 
     private var permissionAuthorizationPopover: PermissionAuthorizationPopover?
     private func permissionAuthorizationPopoverCreatingIfNeeded() -> PermissionAuthorizationPopover {
@@ -190,6 +191,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
     private let aiChatTabOpener: AIChatTabOpening
     private let aiChatMenuConfig: AIChatMenuVisibilityConfigurable
+    private let aiChatSidebarPresenter: AIChatSidebarPresenting
 
     init?(coder: NSCoder,
           tabCollectionViewModel: TabCollectionViewModel,
@@ -199,7 +201,9 @@ final class AddressBarButtonsViewController: NSViewController {
           onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
           aiChatTabOpener: AIChatTabOpening,
           aiChatMenuConfig: AIChatMenuVisibilityConfigurable,
-          visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
+          aiChatSidebarPresenter: AIChatSidebarPresenting,
+          visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager,
+          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
         self.accessibilityPreferences = accessibilityPreferences
@@ -207,7 +211,9 @@ final class AddressBarButtonsViewController: NSViewController {
         self.onboardingPixelReporter = onboardingPixelReporter
         self.aiChatTabOpener = aiChatTabOpener
         self.aiChatMenuConfig = aiChatMenuConfig
+        self.aiChatSidebarPresenter = aiChatSidebarPresenter
         self.visualStyle = visualStyleManager.style
+        self.featureFlagger = featureFlagger
         super.init(coder: coder)
     }
 
@@ -357,7 +363,9 @@ final class AddressBarButtonsViewController: NSViewController {
             target = .newTabSelected
         }
 
-        if let value = textFieldValue {
+        if featureFlagger.isFeatureOn(.aiChatSidebar), case .url = tabViewModel?.tabContent, !isTextFieldEditorFirstResponder {
+            aiChatSidebarPresenter.toggleSidebar()
+        } else if let value = textFieldValue {
             aiChatTabOpener.openAIChatTab(value, target: target)
         } else {
             aiChatTabOpener.openAIChatTab(nil, target: target)

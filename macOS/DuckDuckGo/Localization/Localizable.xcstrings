@@ -57343,55 +57343,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo zum Dock hinzufügen …"
+            "value" : "DuckDuckGo zum Dock hinzufügen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Add DuckDuckGo To Dock…"
+            "value" : "Add DuckDuckGo To Dock"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Añadir DuckDuckGo al Dock…"
+            "value" : "Añade DuckDuckGo al Dock"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ajouter DuckDuckGo au Dock…"
+            "value" : "Ajouter DuckDuckGo au Dock"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aggiungi DuckDuckGo al Dock…"
+            "value" : "Aggiungi DuckDuckGo al Dock"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo toevoegen aan Dock…"
+            "value" : "DuckDuckGo toevoegen aan Dock"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dodaj DuckDuckGo do Docka…"
+            "value" : "Dodaj DuckDuckGo do Docka"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Adicionar DuckDuckGo à Dock…"
+            "value" : "Adicionar DuckDuckGo à Dock"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Добавить DuckDuckGo на док-панель…"
+            "value" : "Добавить DuckDuckGo на док-панель"
           }
         }
       }
@@ -57403,55 +57403,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Zum Dock hinzufügen …"
+            "value" : "Zum Dock hinzufügen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Add to Dock…"
+            "value" : "Add to Dock"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Añadir al Dock…"
+            "value" : "Añadir al Dock"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ajouter au Dock…"
+            "value" : "Ajouter au Dock"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aggiungi al dock…"
+            "value" : "Aggiungi al dock"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "App toevoegen aan je dock…"
+            "value" : "Toevoegen aan Dock"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dodaj do Docka…"
+            "value" : "Dodaj do Docka"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Adicionar à Dock…"
+            "value" : "Adicionar à Dock"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Добавить на док-панель…"
+            "value" : "Добавить на док-панель"
           }
         }
       }
@@ -62354,55 +62354,55 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo zum Dock hinzufügen."
+            "value" : "DuckDuckGo zum Dock hinzufügen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Add DuckDuckGo to Your Dock."
+            "value" : "Add DuckDuckGo to Your Dock"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Añadir DuckDuckGo a tu Dock."
+            "value" : "Añadir DuckDuckGo a tu inicio"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ajoutez DuckDuckGo à votre Dock."
+            "value" : "Ajouter DuckDuckGo à votre Dock"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aggiungi DuckDuckGo al tuo dock."
+            "value" : "Aggiungi DuckDuckGo al tuo dock"
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo toevoegen aan je dock."
+            "value" : "DuckDuckGo toevoegen aan je dock"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Dodaj DuckDuckGo do Docka."
+            "value" : "Dodaj DuckDuckGo do Docka"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Adiciona o DuckDuckGo à tua Dock."
+            "value" : "Adicione o DuckDuckGo à sua dock"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "DuckDuckGo на вашей док-панели"
+            "value" : "Добавить DuckDuckGo на док-панель"
           }
         }
       }
@@ -62834,25 +62834,25 @@
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Als Standard festlegen"
+            "value" : "Als Standard festlegen …"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Set As Default"
+            "value" : "Set As Default…"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Establecer como predeterminado"
+            "value" : "Establecer como predeterminado..."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Définir par défaut"
+            "value" : "Définir par défaut..."
           }
         },
         "it" : {
@@ -62864,25 +62864,25 @@
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Als standaard instellen"
+            "value" : "Als standaard instellen…"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Ustaw jako domyślną"
+            "value" : "Ustaw jako domyślną…"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Definir como predefinição"
+            "value" : "Definir como predefinição…"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Сделать браузером по умолчанию"
+            "value" : "Сделать браузером по умолчанию..."
           }
         }
       }

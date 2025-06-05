@@ -26,7 +26,7 @@ import History
 final class HistoryTabExtension: NSObject {
 
     private let historyCoordinating: HistoryCoordinating
-    private let isEnabled: Bool
+    private let isCapturingHistory: Bool
 
     private(set) var localHistory: [Visit] {
         get {
@@ -62,14 +62,14 @@ final class HistoryTabExtension: NSObject {
     }
     private var visitState: VisitState = .expected
 
-    init(isEnabled: Bool,
+    init(isCapturingHistory: Bool,
          historyCoordinating: HistoryCoordinating,
          trackersPublisher: some Publisher<DetectedTracker, Never>,
          urlPublisher: some Publisher<URL?, Never>,
          titlePublisher: some Publisher<String?, Never>) {
 
         self.historyCoordinating = historyCoordinating
-        self.isEnabled = isEnabled
+        self.isCapturingHistory = isCapturingHistory
         super.init()
 
         trackersPublisher.sink { [weak self] tracker in
@@ -105,7 +105,7 @@ final class HistoryTabExtension: NSObject {
     }
 
     private func addVisit() {
-        guard isEnabled else { return }
+        guard isCapturingHistory else { return }
 
         guard let url else {
             assertionFailure("HistoryTabExtension.state.currentUrl not set")
@@ -122,14 +122,14 @@ final class HistoryTabExtension: NSObject {
     }
 
     private func updateVisitTitle(_ title: String) {
-        guard isEnabled else { return }
+        guard isCapturingHistory else { return }
 
         guard let url else { return }
         historyCoordinating.updateTitleIfNeeded(title: title, url: url)
     }
 
     private func commitBeforeClosing() {
-        guard isEnabled else { return }
+        guard isCapturingHistory else { return }
 
         guard let url else { return }
         historyCoordinating.commitChanges(url: url)

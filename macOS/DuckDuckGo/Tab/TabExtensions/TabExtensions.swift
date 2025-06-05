@@ -194,9 +194,9 @@ extension TabExtensionsBuilder {
             SearchNonexistentDomainNavigationResponder(tld: dependencies.privacyFeatures.contentBlocking.tld, contentPublisher: args.contentPublisher, setContent: args.setContent)
         }
 
-        let isHistoryEnabled = !args.isTabBurner && !args.isTabLoadedInSidebar
+        let isCapturingHistory = !args.isTabBurner && !args.isTabLoadedInSidebar
         add {
-            HistoryTabExtension(isEnabled: isHistoryEnabled,
+            HistoryTabExtension(isCapturingHistory: isCapturingHistory,
                                 historyCoordinating: dependencies.historyCoordinating,
                                 trackersPublisher: contentBlocking.trackersPublisher,
                                 urlPublisher: args.contentPublisher.map { content in content.isUrl ? content.urlForWebView : nil },

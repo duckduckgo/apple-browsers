@@ -225,7 +225,7 @@ extension TabExtensionsBuilder {
         }
 
         add {
-            AIChatTabExtension(scriptsPublisher: userScripts.compactMap { $0 },                                         
+            AIChatTabExtension(scriptsPublisher: userScripts.compactMap { $0 },
                                isLoadedInSidebar: args.isTabLoadedInSidebar)
         }
 

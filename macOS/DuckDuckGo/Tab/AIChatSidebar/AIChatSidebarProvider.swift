@@ -56,13 +56,12 @@ final class AIChatSidebarProvider: AIChatSidebarProviding {
     var sidebarWidth: CGFloat { Constants.sidebarWidth }
 
     func sidebar(for tabID: TabIdentifier) -> AIChatSidebar {
-        if let sidebar = sidebarsByTabIDs[tabID] {
-            return sidebar
-        } else {
+        guard let sidebar = sidebarsByTabIDs[tabID] else {
             let sidebar = AIChatSidebar()
             sidebarsByTabIDs[tabID] = sidebar
             return sidebar
         }
+        return sidebar
     }
 
     func isShowingSidebar(for tabID: TabIdentifier) -> Bool {

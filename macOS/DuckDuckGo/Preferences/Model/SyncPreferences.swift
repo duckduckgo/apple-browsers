@@ -925,7 +925,7 @@ extension SyncPreferences: SyncConnectionControllerDelegate {
         case .failedToCreateAccount:
             handleError(.unableToSyncToOtherDevice, error: underlyingError, pixelEvent: GeneralPixel.syncSignupError(error: underlyingError ?? error))
         case .pollingForRecoveryKeyTimedOut:
-            // TODO: Consider cancelling flow here
+            managementDialogModel.endFlow()
             break
         }
     }

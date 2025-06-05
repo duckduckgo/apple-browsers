@@ -60,7 +60,7 @@ final class TabBarFooter: NSView, NSCollectionViewElement {
         addButton.imagePosition = .imageOnly
         addButton.imageScaling = .scaleNone
         addButton.registerForDraggedTypes([.string])
-        addButton.setCornerRadius(visualStyle.toolbarButtonsCornerRadius)
+        addButton.cornerRadius = visualStyle.toolbarButtonsCornerRadius
         toolTip = UserText.newTabTooltip
 
         addSubview(addButton)

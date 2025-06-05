@@ -302,7 +302,7 @@ extension BookmarksBarViewController: BookmarksBarViewModelDelegate {
 
         switch entity {
         case let bookmark as Bookmark:
-            WindowControllersManager.shared.open(bookmark, with: NSApp.currentEvent)
+            Application.appDelegate.windowControllersManager.open(bookmark, with: NSApp.currentEvent)
         case let folder as BookmarkFolder:
             showSubmenu(for: folder, from: item.view)
         default:
@@ -458,7 +458,7 @@ private extension BookmarksBarViewController {
     }
 
     @objc func manageBookmarks() {
-        WindowControllersManager.shared.showBookmarksTab()
+        Application.appDelegate.windowControllersManager.showBookmarksTab()
     }
 
     @objc func addFolder(sender: NSMenuItem) {

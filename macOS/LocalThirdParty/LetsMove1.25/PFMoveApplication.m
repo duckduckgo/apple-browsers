@@ -23,11 +23,11 @@
 @end
 
 // Strings
-#define kStrMoveApplicationCouldNotMove NSLocalizedStringWithDefaultValue(@"letsmove.could.not.move", nil, [LetsMove bundle], @"Could not move to Applications folder", @"Error message when moving the app to the /Applications folder failed")
-#define kStrMoveApplicationQuestionTitle NSLocalizedStringWithDefaultValue(@"letsmove.alert.title", nil, [LetsMove bundle], @"You‘re almost there", @"Title of the alert shown if the app is launched not from the /Applications folder – suggesting to move it there")
-#define kStrMoveApplicationQuestionMessage NSLocalizedStringWithDefaultValue(@"letsmove.alert.message", nil, [LetsMove bundle], @"The DuckDuckGo app needs to be in the Applications folder for some features to work properly.", @"Message of the alert shown if the app is launched not from the /Applications folder – suggesting to move it there")
-#define kStrMoveApplicationButtonMove NSLocalizedStringWithDefaultValue(@"letsmove.move.button", nil, [LetsMove bundle], @"Move to Applications Folder", @"Move the /Applications folder button title")
-#define kStrMoveApplicationButtonDoNotMove NSLocalizedStringWithDefaultValue(@"letsmove.dont.move.button", nil, [LetsMove bundle], @"Do Not Move", @"Do Not Move to the /Applications folder button title")
+#define kStrMoveApplicationCouldNotMove NSLocalizedStringWithDefaultValue(@"letsmove.could.not.move", @"DeveloperID", [LetsMove bundle], @"Could not move to Applications folder", @"Error message when moving the app to the /Applications folder failed")
+#define kStrMoveApplicationQuestionTitle NSLocalizedStringWithDefaultValue(@"letsmove.alert.title", @"DeveloperID", [LetsMove bundle], @"You‘re almost there", @"Title of the alert shown if the app is launched not from the /Applications folder – suggesting to move it there")
+#define kStrMoveApplicationQuestionMessage NSLocalizedStringWithDefaultValue(@"letsmove.alert.message", @"DeveloperID", [LetsMove bundle], @"The DuckDuckGo app needs to be in the Applications folder for some features to work properly.", @"Message of the alert shown if the app is launched not from the /Applications folder – suggesting to move it there")
+#define kStrMoveApplicationButtonMove NSLocalizedStringWithDefaultValue(@"letsmove.move.button", @"DeveloperID", [LetsMove bundle], @"Move to Applications Folder", @"Move the /Applications folder button title")
+#define kStrMoveApplicationButtonDoNotMove NSLocalizedStringWithDefaultValue(@"letsmove.dont.move.button", @"DeveloperID", [LetsMove bundle], @"Do Not Move", @"Do Not Move to the /Applications folder button title")
 
 // Needs to be defined for compiling under 10.5 SDK
 #ifndef NSAppKitVersionNumber10_5
@@ -67,7 +67,7 @@ void PFMoveToApplicationsFolderIfNecessary(BOOL allowAlertSilencing) {
 		});
 		return;
 	}
-	
+
 	// Skip if user suppressed the alert before
 	if (allowAlertSilencing && [[NSUserDefaults standardUserDefaults] boolForKey:AlertSuppressKey]) return;
 

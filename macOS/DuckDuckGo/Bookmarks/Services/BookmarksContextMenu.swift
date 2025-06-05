@@ -45,7 +45,7 @@ final class BookmarksContextMenu: NSMenu {
     @MainActor
     init(bookmarkManager: BookmarkManager? = nil, windowControllersManager: WindowControllersManagerProtocol? = nil, delegate: BookmarksContextMenuDelegate) {
         self.bookmarkManager = bookmarkManager ?? NSApp.delegateTyped.bookmarkManager
-        self.windowControllersManager = windowControllersManager ?? WindowControllersManager.shared
+        self.windowControllersManager = windowControllersManager ?? Application.appDelegate.windowControllersManager
         super.init(title: "")
         self.delegate = delegate
         self.autoenablesItems = false

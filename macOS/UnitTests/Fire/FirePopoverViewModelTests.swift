@@ -33,7 +33,7 @@ final class FirePopoverViewModelTests: XCTestCase {
         let fire = Fire(cacheManager: manager,
                         historyCoordinating: historyCoordinator,
                         permissionManager: permissionManager,
-                        windowControllerManager: WindowControllersManager.shared,
+                        windowControllerManager: Application.appDelegate.windowControllersManager,
                         faviconManagement: faviconManager,
                         tld: ContentBlocking.shared.tld)
         return FirePopoverViewModel(

@@ -723,7 +723,7 @@ final class BookmarkListViewController: NSViewController {
             bookmarkMetrics.fireSearchResultClicked(origin: .panel)
         }
 
-        WindowControllersManager.shared.open(bookmark, with: NSApp.currentEvent)
+        Application.appDelegate.windowControllersManager.open(bookmark, with: NSApp.currentEvent)
     }
 
     private func handleItemClickWhenNotInSearchMode(item: Any?) {
@@ -739,7 +739,7 @@ final class BookmarkListViewController: NSViewController {
     }
 
     private func showManageBookmarks() {
-        WindowControllersManager.shared.showBookmarksTab()
+        Application.appDelegate.windowControllersManager.showBookmarksTab()
         delegate?.closeBookmarksPopover(self)
     }
 

@@ -378,7 +378,7 @@ final class PreferencesSidebarModel: ObservableObject {
         // Open a new tab in case of special panes
         if identifier.rawValue.hasPrefix(URL.NavigationalScheme.https.rawValue),
             let url = URL(string: identifier.rawValue) {
-            WindowControllersManager.shared.show(url: url,
+            Application.appDelegate.windowControllersManager.show(url: url,
                                                  source: .ui,
                                                  newTab: true)
         }

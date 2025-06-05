@@ -75,10 +75,6 @@ extension WindowControllersManagerProtocol {
 @MainActor
 final class WindowControllersManager: WindowControllersManagerProtocol {
 
-    static var shared: WindowControllersManager {
-        Application.appDelegate.windowControllersManager
-    }
-
     var activeViewController: MainViewController? {
         lastKeyMainWindowController?.mainViewController
     }
@@ -426,7 +422,7 @@ extension WindowControllersManager {
             return
         }
 
-        if let parentWindowController = WindowControllersManager.shared.lastKeyMainWindowController {
+        if let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController {
             parentWindowController.window?.beginSheet(feedbackFormWindow)
         } else {
             let tabCollection = TabCollection(tabs: [])
@@ -437,7 +433,7 @@ extension WindowControllersManager {
     }
 
     func showMainWindow() {
-        guard WindowControllersManager.shared.lastKeyMainWindowController == nil else { return }
+        guard Application.appDelegate.windowControllersManager.lastKeyMainWindowController == nil else { return }
         let tabCollection = TabCollection(tabs: [])
         let tabCollectionViewModel = TabCollectionViewModel(tabCollection: tabCollection)
         _ = WindowsManager.openNewWindow(with: tabCollectionViewModel)
@@ -448,7 +444,7 @@ extension WindowControllersManager {
         let locationsWindowController = locationsViewController.wrappedInWindowController()
 
         guard let locationsFormWindow = locationsWindowController.window,
-              let parentWindowController = WindowControllersManager.shared.lastKeyMainWindowController else {
+              let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController else {
             assertionFailure("Failed to present native VPN feedback form")
             return
         }

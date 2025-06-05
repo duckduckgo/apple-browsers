@@ -348,7 +348,7 @@ extension HistoryMenu {
 
         @MainActor
         convenience init() {
-            self.init(isInInitialStatePublisher: WindowControllersManager.shared.$isInInitialState, canRestoreLastSessionState: NSApp.canRestoreLastSessionState)
+            self.init(isInInitialStatePublisher: Application.appDelegate.windowControllersManager.$isInInitialState, canRestoreLastSessionState: NSApp.canRestoreLastSessionState)
         }
 
         private weak var currentlyAssignedMenuItem: NSMenuItem?

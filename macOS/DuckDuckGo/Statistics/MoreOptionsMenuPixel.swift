@@ -138,4 +138,3 @@ enum MoreOptionsMenuPixel: PixelKitEventV2 {
         nil
     }
 }
-

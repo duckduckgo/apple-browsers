@@ -36,7 +36,7 @@ class MockDDGSyncing: DDGSyncing {
     }
 
     var registeredDevices = [RegisteredDevice(id: "1", name: "Device 1", type: "desktop"), RegisteredDevice(id: "2", name: "Device 2", type: "mobile"), RegisteredDevice(id: "3", name: "Device 1", type: "desktop")]
-    var disconnectCalled = false
+    @Published var disconnectCalled = false
 
     var dataProvidersSource: DataProvidersSource?
 

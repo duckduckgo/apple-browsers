@@ -204,6 +204,7 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case exchangeKeysToSyncWithAnotherDevice
     case canScanUrlBasedSyncSetupBarcodes
     case canInterceptSyncSetupUrls
+    case syncSetupBarcodeIsUrlBased
 }
 
 public enum AutoconsentSubfeature: String, PrivacySubfeature {

@@ -143,7 +143,7 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     let shouldAddAddressBarShadowWhenInactive: Bool = true
     let tabBarButtonSize: CGFloat = 28
     let addressBarButtonSize: CGFloat = 28
-    let addTabButtonPadding: CGFloat = 5
+    let addTabButtonPadding: CGFloat = 32 // Takes into account the extra 24pts (12pts for each inset on s-shaped tabs)
     let addressBarActiveBackgroundViewRadius: CGFloat = 15
     let addressBarInactiveBackgroundViewRadius: CGFloat = 12
     let addressBarInnerBorderViewRadius: CGFloat = 15

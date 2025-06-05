@@ -1536,6 +1536,18 @@
         }
       }
     },
+    "ai-features.preferences.caption" : {
+      "comment" : "Ai Chat preferences explanation",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "DuckDuckGo AI features are private, useful, and optional. Your chats are not used to train AI."
+          }
+        }
+      }
+    },
     "aichat.address-bar.hide-button" : {
       "comment" : "Button to hide duck.ai shortcut in address bar",
       "extractionState" : "extracted_with_value",
@@ -21673,7 +21685,7 @@
     },
     "duckai.preferences.caption" : {
       "comment" : "Ai Chat preferences explanation",
-      "extractionState" : "extracted_with_value",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -57456,6 +57468,18 @@
         }
       }
     },
+    "preferences.aiFeatures" : {
+      "comment" : "Title of the option to show AI features in preferences",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "AI Features"
+          }
+        }
+      }
+    },
     "preferences.appearance" : {
       "comment" : "Title of the option to show the Appearance preferences",
       "extractionState" : "extracted_with_value",
@@ -58717,60 +58741,60 @@
       }
     },
     "preferences.duckai" : {
-      "comment" : "Title of the option to show Duck.ai in preferences",
-      "extractionState" : "extracted_with_value",
+      "comment" : "Title of the option to show AI features in preferences",
+      "extractionState" : "stale",
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Duck.ai"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Duck.ai"
+            "value" : "AI Features"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Duck.ai"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Duck.ai"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Duck.ai"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Duck.ai"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Duck.ai"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Duck.ai"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Duck.ai"
           }
         }

@@ -28,7 +28,7 @@ extension Preferences {
 
         var body: some View {
             PreferencePane {
-                TextMenuTitle(UserText.aiChat)
+                TextMenuTitle(UserText.aiFeatures)
                 PreferencePaneSubSection {
                     VStack(alignment: .leading, spacing: 1) {
                         TextMenuItemCaption(UserText.aiChatPreferencesCaption)

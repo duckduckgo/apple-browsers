@@ -98,7 +98,7 @@ final class FireproofingReferenceTests: XCTestCase {
     private class MockPreservedLogins: FireproofDomains {
 
         init(domains: [String], tld: TLD) {
-            super.init(store: FireproofDomainsStoreMock())
+            super.init(store: FireproofDomainsStoreMock(), tld: tld)
 
             for domain in domains {
                 guard let eTLDPlusOne = tld.eTLDplus1(domain) else {

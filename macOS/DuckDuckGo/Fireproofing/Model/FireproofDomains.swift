@@ -53,7 +53,7 @@ internal class FireproofDomains: DomainFireproofStatusProviding {
         container.domains
     }
 
-    init(store: FireproofDomainsStore, tld: TLD = ContentBlocking.shared.tld) {
+    init(store: FireproofDomainsStore, tld: TLD) {
         self.store = store
         self.tld = tld
 

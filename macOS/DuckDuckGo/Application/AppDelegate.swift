@@ -443,7 +443,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             pinnedTabsManagerProvider: pinnedTabsManagerProvider,
             subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability(
                 privacyConfigurationManager: privacyConfigurationManager,
-                purchasePlatform: subscriptionAuthV1toV2Bridge.currentEnvironment.purchasePlatform, duckAIPremiumFlagStatusProvider: { featureFlagger.isFeatureOn(.duckAIPremium) }
+                purchasePlatform: subscriptionAuthV1toV2Bridge.currentEnvironment.purchasePlatform, paidDuckAIFlagStatusProvider: { featureFlagger.isFeatureOn(.paidDuckAI) }
             )
         )
 

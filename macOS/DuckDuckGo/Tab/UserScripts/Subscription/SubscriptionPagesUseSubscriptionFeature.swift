@@ -377,8 +377,8 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
             PixelKit.fire(PrivacyProPixel.privacyProWelcomeIdentityRestoration, frequency: .uniqueByName)
             let url = subscriptionManager.url(for: .identityTheftRestoration)
             await uiHandler.showTab(with: .identityTheftRestoration(url))
-        case .duckAIPremium:
-            // Follow up: Implement duckAIPremium selection
+        case .paidDuckAI:
+            // Follow up: Implement paidDuckAI selection
             break
         case .unknown:
             break

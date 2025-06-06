@@ -38,7 +38,7 @@ public struct SubscriptionOptionsV2: Encodable, Equatable {
     }
 
     public static var empty: SubscriptionOptionsV2 {
-        let features: [SubscriptionEntitlement] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .duckAIPremium]
+        let features: [SubscriptionEntitlement] = [.networkProtection, .dataBrokerProtection, .identityTheftRestoration, .paidDuckAI]
         let platform: SubscriptionPlatformName
 #if os(iOS)
         platform = .ios

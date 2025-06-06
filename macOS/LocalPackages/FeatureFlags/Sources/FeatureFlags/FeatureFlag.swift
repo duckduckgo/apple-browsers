@@ -94,7 +94,7 @@ public enum FeatureFlag: String, CaseIterable {
     case canScanUrlBasedSyncSetupBarcodes
 
     /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1210181044180012?focus=true
-    case duckAIPremium
+    case paidDuckAI
 
     /// https://app.asana.com/1/137249556945/task/1210330600670666
     case removeWWWInCanonicalizationInThreatProtection
@@ -142,7 +142,7 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .maliciousSiteProtection,
                 .delayedWebviewPresentation,
                 .syncSetupBarcodeIsUrlBased,
-                .duckAIPremium,
+                .paidDuckAI,
                 .exchangeKeysToSyncWithAnotherDevice,
                 .canScanUrlBasedSyncSetupBarcodes,
                 .removeWWWInCanonicalizationInThreatProtection,
@@ -225,7 +225,7 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
         case .canScanUrlBasedSyncSetupBarcodes:
             return .remoteReleasable(.subfeature(SyncSubfeature.canScanUrlBasedSyncSetupBarcodes))
-        case .duckAIPremium:
+        case .paidDuckAI:
             return .disabled
         case .removeWWWInCanonicalizationInThreatProtection:
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.removeWWWInCanonicalization))

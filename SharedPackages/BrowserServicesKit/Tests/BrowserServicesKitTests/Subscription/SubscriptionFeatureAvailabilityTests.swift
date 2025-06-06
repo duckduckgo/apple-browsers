@@ -55,7 +55,7 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
 
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                      purchasePlatform: .appStore,
-                                                                                     duckAIPremiumFlagStatusProvider: { true })
+                                                                                     paidDuckAIFlagStatusProvider: { true })
         XCTAssertFalse(subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed)
     }
 
@@ -69,7 +69,7 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
 
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                      purchasePlatform: .appStore,
-                                                                                     duckAIPremiumFlagStatusProvider: { true })
+                                                                                     paidDuckAIFlagStatusProvider: { true })
         XCTAssertTrue(subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed)
     }
 
@@ -81,30 +81,30 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
 
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                      purchasePlatform: .appStore,
-                                                                                     duckAIPremiumFlagStatusProvider: { true })
+                                                                                     paidDuckAIFlagStatusProvider: { true })
         XCTAssertTrue(subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed)
     }
 
     // MARK: - Tests for DuckAI Premium
 
-    func testDuckAIPremiumDisabledWhenFeatureFlagEnabled() {
-        XCTAssertFalse(privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.duckAIPremium))
+    func testPaidDuckAIDisabledWhenFeatureFlagEnabled() {
+        XCTAssertFalse(privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.paidDuckAI))
 
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                      purchasePlatform: .appStore,
-                                                                                     duckAIPremiumFlagStatusProvider: { false })
-        XCTAssertFalse(subscriptionFeatureAvailability.isDuckAIPremiumEnabled)
+                                                                                     paidDuckAIFlagStatusProvider: { false })
+        XCTAssertFalse(subscriptionFeatureAvailability.isPaidDuckAIEnabled)
     }
 
-    func testDuckAIPremiumEnabledWhenFeatureFlagEnabled() {
-        privacyConfig.isSubfeatureEnabledCheck = makeSubfeatureEnabledCheck(for: [.duckAIPremium])
+    func testPaidDuckAIEnabledWhenFeatureFlagEnabled() {
+        privacyConfig.isSubfeatureEnabledCheck = makeSubfeatureEnabledCheck(for: [.paidDuckAI])
 
-        XCTAssertTrue(privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.duckAIPremium))
+        XCTAssertTrue(privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.paidDuckAI))
 
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                      purchasePlatform: .appStore,
-                                                                                     duckAIPremiumFlagStatusProvider: { true })
-        XCTAssertTrue(subscriptionFeatureAvailability.isDuckAIPremiumEnabled)
+                                                                                     paidDuckAIFlagStatusProvider: { true })
+        XCTAssertTrue(subscriptionFeatureAvailability.isPaidDuckAIEnabled)
     }
 
     // MARK: - Tests for Stripe
@@ -117,7 +117,7 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
 
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                      purchasePlatform: .stripe,
-                                                                                     duckAIPremiumFlagStatusProvider: { true })
+                                                                                     paidDuckAIFlagStatusProvider: { true })
         XCTAssertFalse(subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed)
     }
 
@@ -131,7 +131,7 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
 
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                      purchasePlatform: .stripe,
-                                                                                     duckAIPremiumFlagStatusProvider: { true })
+                                                                                     paidDuckAIFlagStatusProvider: { true })
         XCTAssertTrue(subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed)
     }
 
@@ -143,7 +143,7 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
 
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                      purchasePlatform: .stripe,
-                                                                                     duckAIPremiumFlagStatusProvider: { true })
+                                                                                     paidDuckAIFlagStatusProvider: { true })
         XCTAssertTrue(subscriptionFeatureAvailability.isSubscriptionPurchaseAllowed)
     }
 

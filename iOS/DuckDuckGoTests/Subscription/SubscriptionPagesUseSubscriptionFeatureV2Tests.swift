@@ -24,7 +24,6 @@ import WebKit
 @testable import Common
 @testable import UserScript
 @testable import Subscription
-@testable import Networking
 
 final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     
@@ -62,10 +61,10 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         super.tearDown()
     }
     
-    func testGetFeatureConfig_WhenDuckAIPremiumEnabled_ReturnsCorrectConfig() async throws {
+    func testGetFeatureConfig_WhenPaidDuckAIEnabled_ReturnsCorrectConfig() async throws {
         // Given
-        mockSubscriptionFeatureAvailability.isDuckAIPremiumEnabled = true
-        
+        mockSubscriptionFeatureAvailability.isPaidDuckAIEnabled = true
+
         // When
         let result = try await sut.getFeatureConfig(params: "", original: MockWKScriptMessage(name: "", body: ""))
 
@@ -80,10 +79,10 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         XCTAssertTrue(featureValue.useDuckAiPro)
     }
     
-    func testGetFeatureConfig_WhenDuckAIPremiumDisabled_ReturnsCorrectConfig() async throws {
+    func testGetFeatureConfig_WhenPaidDuckAIDisabled_ReturnsCorrectConfig() async throws {
         // Given
-        mockSubscriptionFeatureAvailability.isDuckAIPremiumEnabled = false
-        
+        mockSubscriptionFeatureAvailability.isPaidDuckAIEnabled = false
+
         // When
         let result = try await sut.getFeatureConfig(params: "", original: MockWKScriptMessage(name: "", body: ""))
 

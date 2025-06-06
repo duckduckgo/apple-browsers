@@ -59,7 +59,7 @@ final class StripePurchaseFlowV2Tests: XCTestCase {
             let allFeatures = [Entitlement.ProductName.networkProtection,
                                Entitlement.ProductName.dataBrokerProtection,
                                Entitlement.ProductName.identityTheftRestoration,
-                               Entitlement.ProductName.duckAIPremium]
+                               Entitlement.ProductName.paidDuckAI]
             let allNames = success.features.compactMap({ feature in feature.name})
 
             for feature in allFeatures {

@@ -54,8 +54,8 @@ extension Entitlement.ProductName {
             return .identityTheftRestoration
         case .identityTheftRestorationGlobal:
             return .identityTheftRestorationGlobal
-        case .duckAIPremium:
-            return .duckAIPremium
+        case .paidDuckAI:
+            return .paidDuckAI
         case .unknown:
             return .unknown
         }
@@ -74,8 +74,8 @@ extension SubscriptionEntitlement {
             return .identityTheftRestoration
         case .identityTheftRestorationGlobal:
             return .identityTheftRestorationGlobal
-        case .duckAIPremium:
-            return .duckAIPremium
+        case .paidDuckAI:
+            return .paidDuckAI
         case .unknown:
             return .unknown
         }

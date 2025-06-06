@@ -140,7 +140,7 @@ public enum SubscriptionEntitlement: String, Codable, Equatable, CustomDebugStri
     case dataBrokerProtection = "Data Broker Protection"
     case identityTheftRestoration = "Identity Theft Restoration"
     case identityTheftRestorationGlobal = "Global Identity Theft Restoration"
-    case duckAIPremium = "Premium DuckChat"
+    case paidDuckAI = "Premium DuckChat"
     case unknown
 
     public init(from decoder: Decoder) throws {

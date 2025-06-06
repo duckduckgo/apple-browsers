@@ -180,7 +180,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
     }
 
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        return GetFeatureValue(useSubscriptionsAuthV2: true, useDuckAiPro: subscriptionFeatureAvailability.isDuckAIPremiumEnabled)
+        return GetFeatureValue(useSubscriptionsAuthV2: true, useDuckAiPro: subscriptionFeatureAvailability.isPaidDuckAIEnabled)
     }
 
     // MARK: -
@@ -387,8 +387,8 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
             PixelKit.fire(PrivacyProPixel.privacyProWelcomeIdentityRestoration, frequency: .uniqueByName)
             let url = subscriptionManager.url(for: .identityTheftRestoration)
             await uiHandler.showTab(with: .identityTheftRestoration(url))
-        case .duckAIPremium:
-            // Follow up: Implement duckAIPremium selection
+        case .paidDuckAI:
+            // Follow up: Implement paidDuckAI selection
             break
         case .unknown:
             break

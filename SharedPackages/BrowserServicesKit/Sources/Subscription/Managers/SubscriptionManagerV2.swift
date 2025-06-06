@@ -563,8 +563,8 @@ extension SubscriptionEntitlement {
             return Entitlement(product: .identityTheftRestoration)
         case .identityTheftRestorationGlobal:
             return Entitlement(product: .identityTheftRestorationGlobal)
-        case .duckAIPremium:
-            return Entitlement(product: .duckAIPremium)
+        case .paidDuckAI:
+            return Entitlement(product: .paidDuckAI)
         case .unknown:
             return Entitlement(product: .unknown)
         }

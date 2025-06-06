@@ -21,7 +21,7 @@ import Subscription
 import BrowserServicesKit
 
 public final class SubscriptionFeatureAvailabilityMock: SubscriptionFeatureAvailability {
-    public var isDuckAIPremiumEnabled: Bool = true
+    public var isPaidDuckAIEnabled: Bool = true
     public var isSubscriptionPurchaseAllowed: Bool
 
     public init(isSubscriptionPurchaseAllowed: Bool, usesUnifiedFeedbackForm: Bool) {

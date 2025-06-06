@@ -21,26 +21,26 @@ import SubscriptionTestingUtilities
 import Networking
 
 final class StripePurchaseFlowV2Tests: XCTestCase {
-    
+
     private struct Constants {
         static let accessToken = UUID().uuidString
         static let externalID = UUID().uuidString
         static let email = "dax@duck.com"
     }
-    
+
     var subscriptionManager: SubscriptionManagerMockV2!
     var stripePurchaseFlow: StripePurchaseFlowV2!
-    
+
     override func setUpWithError() throws {
         subscriptionManager = SubscriptionManagerMockV2()
         stripePurchaseFlow = DefaultStripePurchaseFlowV2(subscriptionManager: subscriptionManager)
     }
-    
+
     override func tearDownWithError() throws {
         subscriptionManager = nil
         stripePurchaseFlow = nil
     }
-    
+
     // MARK: - Tests for subscriptionOptions
 
     func testSubscriptionOptionsSuccess() async throws {
@@ -56,7 +56,7 @@ final class StripePurchaseFlowV2Tests: XCTestCase {
             XCTAssertEqual(success.platform, SubscriptionPlatformName.stripe)
             XCTAssertEqual(success.options.count, SubscriptionMockFactory.productsItems.count)
             XCTAssertEqual(success.features.count, 4)
-            let allFeatures = [Entitlement.ProductName.networkProtection,         Entitlement.ProductName.dataBrokerProtection, Entitlement.ProductName.identityTheftRestoration,
+            let allFeatures = [Entitlement.ProductName.networkProtection,        Entitlement.ProductName.dataBrokerProtection, Entitlement.ProductName.identityTheftRestoration,
                 Entitlement.ProductName.duckAIPremium]
             let allNames = success.features.compactMap({ feature in feature.name})
 

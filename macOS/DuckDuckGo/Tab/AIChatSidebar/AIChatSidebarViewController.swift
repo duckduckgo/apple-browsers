@@ -17,6 +17,7 @@
 //
 
 import AppKit
+import BrowserServicesKit
 
 /// A delegate protocol that handles user interactions with the AI Chat sidebar view controller.
 /// This protocol defines methods for responding to navigation and UI events in the sidebar.
@@ -54,9 +55,7 @@ final class AIChatSidebarViewController: NSViewController {
     private var separator: NSView!
     private var topBar: NSView!
 
-    var aiTab = Tab(content: .url(AIChatRemoteSettings().aiChatURL, source: .ui))
-
-    private var buttonTrackingArea: NSTrackingArea?
+    private let aiTab = Tab(content: .url(AIChatRemoteSettings().aiChatURL, source: .ui), isLoadedInSidebar: true)
 
     init() {
         super.init(nibName: nil, bundle: nil)
@@ -168,6 +167,8 @@ final class AIChatSidebarViewController: NSViewController {
         webViewContainer.layer?.backgroundColor = NSColor.navigationBarBackground.cgColor
         container.addSubview(webViewContainer)
 
+        aiTab.setDelegate(self)
+
         // Observe bounds changes to update the mask
         webViewContainer.postsFrameChangedNotifications = true
         NotificationCenter.default.addObserver(self,
@@ -232,4 +233,29 @@ final class AIChatSidebarViewController: NSViewController {
         delegate?.didClickCloseButton()
     }
 
+}
+
+extension AIChatSidebarViewController: TabDelegate {
+
+    func tab(_ tab: Tab, createdChild childTab: Tab, of kind: NewWindowPolicy) {
+        switch kind {
+        case .popup(origin: let origin, size: let contentSize):
+            WindowsManager.openPopUpWindow(with: childTab, origin: origin, contentSize: contentSize)
+        case .window(active: let active, let isBurner):
+            assert(isBurner == childTab.burnerMode.isBurner)
+            WindowsManager.openNewWindow(with: childTab, showWindow: active)
+        case .tab(selected: let selected, _, _):
+            if let parentWindowController = WindowControllersManager.shared.lastKeyMainWindowController {
+                let tabCollectionViewModel = parentWindowController.mainViewController.tabCollectionViewModel
+                tabCollectionViewModel.insertOrAppend(tab: childTab, selected: selected)
+            }
+        }
+    }
+
+    func tabWillStartNavigation(_ tab: Tab, isUserInitiated: Bool) {}
+    func tabDidStartNavigation(_ tab: Tab) {}
+    func tabPageDOMLoaded(_ tab: Tab) {}
+    func closeTab(_ tab: Tab) {}
+    func websiteAutofillUserScriptCloseOverlay(_ websiteAutofillUserScript: BrowserServicesKit.WebsiteAutofillUserScript?) {}
+    func websiteAutofillUserScript(_ websiteAutofillUserScript: BrowserServicesKit.WebsiteAutofillUserScript, willDisplayOverlayAtClick: CGPoint?, serializedInputContext: String, inputPosition: CGRect) {}
 }

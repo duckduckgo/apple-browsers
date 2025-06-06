@@ -42,9 +42,11 @@ final class VPNAppEventsHandlerTests: XCTestCase {
             loginItemsDisabledExpectation.fulfill()
         }, restartLoginItemsCallback: { _ in
             loginItemsRestartedExpectation.fulfill()
-        }) { _ in
+        }, isAnyEnabledCallback: { _ in
             true
-        }
+        }, isAnyInstalledCallback: { _ in
+            true
+        })
 
         let appEventsHandler = VPNAppEventsHandler(
             featureGatekeeper: mockFeatureGatekeeper,
@@ -74,9 +76,11 @@ final class VPNAppEventsHandlerTests: XCTestCase {
             loginItemsDisabledExpectation.fulfill()
         }, restartLoginItemsCallback: { _ in
             loginItemsRestartedExpectation.fulfill()
-        }) { _ in
+        }, isAnyEnabledCallback: { _ in
             true
-        }
+        }, isAnyInstalledCallback: { _ in
+            true
+        })
 
         let appEventsHandler = VPNAppEventsHandler(
             featureGatekeeper: mockFeatureGatekeeper,

@@ -463,7 +463,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             )
         )
 
-        visualStyleManager = VisualStyleManager(featureFlagger: featureFlagger)
+        visualStyleManager = VisualStyleManager(featureFlagger: featureFlagger, internalUserDecider: internalUserDecider)
 
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {

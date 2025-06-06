@@ -107,30 +107,28 @@ struct VisualStyle: VisualStyleProviding {
 
 final class VisualStyleManager: VisualStyleManagerProviding {
     private let featureFlagger: FeatureFlagger
+    private let internalUserDecider: InternalUserDecider
 
     private var cancellables: Set<AnyCancellable> = []
 
-    init(featureFlagger: FeatureFlagger) {
+    init(featureFlagger: FeatureFlagger, internalUserDecider: InternalUserDecider) {
         self.featureFlagger = featureFlagger
-
-        subscribeToLocalOverride()
+        self.internalUserDecider = internalUserDecider
     }
 
     var style: any VisualStyleProviding {
-        return featureFlagger.isFeatureOn(.visualRefresh) ? VisualStyle.current : VisualStyle.legacy
-    }
-
-    private func subscribeToLocalOverride() {
-        guard let overridesHandler = featureFlagger.localOverrides?.actionHandler as? FeatureFlagOverridesPublishingHandler<FeatureFlag> else {
-            return
-        }
-
-        overridesHandler.flagDidChangePublisher
-            .filter { $0.0 == .visualRefresh }
-            .sink { (_, enabled) in
-                /// Here I need to apply the visual changes. The easier way should be to restart the app.
-                print("Visual refresh feature flag changed to \(enabled ? "enabled" : "disabled")")
+        if internalUserDecider.isInternalUser {
+            guard let localOverrides = featureFlagger.localOverrides else {
+                return VisualStyle.legacy
             }
-            .store(in: &cancellables)
+
+            if localOverrides.override(for: FeatureFlag.visualUpdatesInternalOnly) == false {
+                return VisualStyle.legacy
+            } else {
+                return VisualStyle.current
+            }
+        } else {
+            return featureFlagger.isFeatureOn(.visualUpdates) ? VisualStyle.current : VisualStyle.legacy
+        }
     }
 }

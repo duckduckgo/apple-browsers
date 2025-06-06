@@ -32,7 +32,13 @@ class MockFireButtonPreferencesPersistor: FireButtonPreferencesPersistor {
 fileprivate extension DataClearingPreferences {
     @MainActor
     convenience init(persistor: FireButtonPreferencesPersistor, pixelFiring: PixelFiring? = nil) {
-        self.init(persistor: persistor, fireproofDomains: MockFireproofDomains(domains: []), faviconManager: FaviconManagerMock(), windowControllersManager: WindowControllersManagerMock())
+        self.init(
+            persistor: persistor,
+            fireproofDomains: MockFireproofDomains(domains: []),
+            faviconManager: FaviconManagerMock(),
+            windowControllersManager: WindowControllersManagerMock(),
+            pixelFiring: pixelFiring
+        )
     }
 }
 

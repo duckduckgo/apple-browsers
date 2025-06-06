@@ -17,6 +17,7 @@
 //
 
 import AIChat
+import BrowserServicesKit
 
 enum AIChatMessageType {
     case nativeConfigValues
@@ -29,9 +30,12 @@ protocol AIChatMessageHandling {
 }
 
 struct AIChatMessageHandler: AIChatMessageHandling {
+    private let featureFlagger: FeatureFlagger
     private let promptHandler: any AIChatConsumableDataHandling
 
-    init(promptHandler: any AIChatConsumableDataHandling = AIChatPromptHandler.shared) {
+    init(featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
+        promptHandler: any AIChatConsumableDataHandling = AIChatPromptHandler.shared) {
+        self.featureFlagger = featureFlagger
         self.promptHandler = promptHandler
     }
 
@@ -50,7 +54,16 @@ struct AIChatMessageHandler: AIChatMessageHandling {
 // MARK: - Messages
 extension AIChatMessageHandler {
     private func getNativeConfigValues() -> Encodable? {
-        AIChatNativeConfigValues.defaultValues
+        if featureFlagger.isFeatureOn(.aiChatSidebar) {
+            return AIChatNativeConfigValues(isAIChatHandoffEnabled: false,
+                                            supportsClosingAIChat: true,
+                                            supportsOpeningSettings: true,
+                                            supportsNativePrompt: true,
+                                            supportsNativeChatInput: false,
+                                            supportsURLChatIDRestoration: true)
+        } else {
+            return AIChatNativeConfigValues.defaultValues
+        }
     }
 
     private func getNativeHandoffData() -> Encodable? {

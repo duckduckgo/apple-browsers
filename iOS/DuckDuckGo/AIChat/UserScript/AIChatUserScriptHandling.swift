@@ -71,7 +71,8 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
                                      supportsClosingAIChat: true,
                                      supportsOpeningSettings: true,
                                      supportsNativePrompt: false,
-                                     supportsNativeChatInput: true)
+                                     supportsNativeChatInput: true,
+                                     supportsURLChatIDRestoration: false)
         } else {
             AIChatNativeConfigValues.defaultValues
         }

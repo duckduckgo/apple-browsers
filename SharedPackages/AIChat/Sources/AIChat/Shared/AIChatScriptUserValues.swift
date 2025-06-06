@@ -93,7 +93,7 @@ public struct AIChatNativeConfigValues: Codable {
                                         supportsOpeningSettings: true,
                                         supportsNativePrompt: true,
                                         supportsNativeChatInput: false,
-                                        supportsURLChatIDRestoration: true)
+                                        supportsURLChatIDRestoration: false)
 #endif
     }
 

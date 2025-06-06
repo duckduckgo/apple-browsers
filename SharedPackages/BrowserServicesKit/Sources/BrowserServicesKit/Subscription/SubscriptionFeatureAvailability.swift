@@ -51,7 +51,7 @@ public final class DefaultSubscriptionFeatureAvailability: SubscriptionFeatureAv
         return isPurchaseAllowed || isInternalUser
     }
 
-    public var isDuckAIPremiumEnabled : Bool {
+    public var isDuckAIPremiumEnabled: Bool {
         return duckAIPremiumFlagStatusProvider()
     }
 

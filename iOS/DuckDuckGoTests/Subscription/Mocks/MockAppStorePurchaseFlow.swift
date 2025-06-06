@@ -25,7 +25,7 @@ class MockAppStorePurchaseFlow: AppStorePurchaseFlowV2 {
         .success(.localhost)
     }
 
-    func completeSubscriptionPurchase(with transactionJWS: TransactionJWS, additionalParams: [String : String]?) async -> Result<PurchaseUpdate, AppStorePurchaseFlowError> {
+    func completeSubscriptionPurchase(with transactionJWS: TransactionJWS, additionalParams: [String: String]?) async -> Result<PurchaseUpdate, AppStorePurchaseFlowError> {
         .success(.completed)
     }
 }

@@ -125,7 +125,7 @@ final class SubscriptionFlowViewModel: ObservableObject {
                      UniquePixel.fire(pixel: .privacyProWelcomeIdentityRestoration)
                      self.state.selectedFeature = .itr
                  case .duckAIPremium:
-                     // TODO: Implement duckAIPremium selection
+                     // Follow up: Implement duckAIPremium selection
                      break
                  case .unknown:
                      break

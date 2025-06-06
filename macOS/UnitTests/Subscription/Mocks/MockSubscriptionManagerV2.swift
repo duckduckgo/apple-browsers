@@ -79,7 +79,7 @@ class MockSubscriptionManagerV2: SubscriptionManagerV2 {
     func clearSubscriptionCache() {
     }
 
-    func confirmPurchase(signature: String, additionalParams: [String : String]?) async throws -> PrivacyProSubscription {
+    func confirmPurchase(signature: String, additionalParams: [String: String]?) async throws -> PrivacyProSubscription {
         return PrivacyProSubscription(productId: "", name: "", billingPeriod: .monthly, startedAt: Date(), expiresOrRenewsAt: Date(), platform: .apple, status: .autoRenewable, activeOffers: [], features: [])
     }
 

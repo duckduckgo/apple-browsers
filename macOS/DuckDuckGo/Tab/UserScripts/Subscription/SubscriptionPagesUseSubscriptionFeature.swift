@@ -378,7 +378,7 @@ final class SubscriptionPagesUseSubscriptionFeature: Subfeature {
             let url = subscriptionManager.url(for: .identityTheftRestoration)
             await uiHandler.showTab(with: .identityTheftRestoration(url))
         case .duckAIPremium:
-            // TODO: Implement duckAIPremium selection
+            // Follow up: Implement duckAIPremium selection
             break
         case .unknown:
             break

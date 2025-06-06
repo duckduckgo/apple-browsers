@@ -896,7 +896,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
         case .identityTheftRestorationGlobal:
             onFeatureSelected?(.identityTheftRestorationGlobal)
         case .duckAIPremium:
-            // TODO: Implement duckAIPremium selection
+            // Follow up: Implement duckAIPremium selection
             break
         case .unknown:
             break

@@ -344,9 +344,22 @@ final class DuckPlayerNativeUIPresenter {
     }
 
     deinit {
-        playerCancellables.removeAll()
+        cleanupPlayer()
         containerCancellables.removeAll()
         NotificationCenter.default.removeObserver(self)
+    }
+    
+    private func cleanupPlayer() {
+        playerCancellables.removeAll()
+        playerViewModel = nil
+    }
+    
+    @MainActor
+    private func schedulePlayerCleanup() {
+        // Delay cleanup to ensure the view is fully dismissed
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+            self?.cleanupPlayer()
+        }
     }
 
     @MainActor
@@ -661,12 +674,15 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
 
         // Subscribe to Navigation Request Publisher
         viewModel.youtubeNavigationRequestPublisher
-            .sink { [weak hostingController] videoID in
+            .sink { [weak self, weak hostingController] videoID in
                 if source != .youtube {
                     let url: URL = .youtube(videoID)
                     navigationRequest.send(url)
                 }
-                hostingController?.dismiss(animated: true)
+                hostingController?.dismiss(animated: true) {
+                    // Clean up after navigation away
+                    self?.schedulePlayerCleanup()
+                }
             }
             .store(in: &playerCancellables)
 
@@ -681,16 +697,20 @@ extension DuckPlayerNativeUIPresenter: DuckPlayerNativeUIPresenting {
                 guard let self = self else { return }
                 guard let videoID = self.state.videoID, let hostView = self.hostView else { return }
                 self.state.timestamp = timestamp
-                duckPlayerSettings.welcomeMessageShown = true
-                self.presentPill(for: videoID, in: hostView, timestamp: timestamp)
-                self.containerViewModel?.show()
+                self.duckPlayerSettings.welcomeMessageShown = true
+                
+                // Schedule pill presentation after a short delay to ensure view is dismissed
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                    self.presentPill(for: videoID, in: hostView, timestamp: timestamp)
+                    self.containerViewModel?.show()
+                }
             }
             .store(in: &playerCancellables)
 
         hostViewController.present(hostingController, animated: true, completion: nil)
 
-        // Dismiss the Pill
-        dismissPill()
+        // Dismiss the Pill (but don't reset state as we may need to show it again)
+        dismissPill(reset: false)
 
         return (navigationRequest, settingsRequest)
     }

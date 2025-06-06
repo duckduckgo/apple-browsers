@@ -32,6 +32,25 @@ struct DuckPlayerWebView: UIViewRepresentable {
     let scriptSourceProvider: ScriptSourceProviding
     let duckPlayerUserScript: DuckPlayerUserScriptPlayer
     let contentScopeUserScripts: ContentScopeUserScript
+    
+    static func dismantleUIView(_ uiView: WKWebView, coordinator: Coordinator) {
+        // Clean up WebView and its resources
+        uiView.stopLoading()
+        uiView.navigationDelegate = nil
+        uiView.uiDelegate = nil
+        
+        // Clean up JavaScript execution - but don't remove scripts that might be reused
+        // uiView.configuration.userContentController.removeAllUserScripts()
+        
+        // Clean up UserScript references
+        coordinator.duckPlayerUserScript?.webView = nil
+        
+        // Force cleanup of WKWebView internals
+        uiView.loadHTMLString("", baseURL: nil)
+        
+        // Clear coordinator references
+        coordinator.webView = nil
+    }
 
    struct Constants {
        static let referrerHeader: String = "Referer"
@@ -106,10 +125,16 @@ struct DuckPlayerWebView: UIViewRepresentable {
            // Fallback on earlier versions
        }
 
+       // Store weak reference to prevent retain cycle
        duckPlayerUserScript.webView = webView
        
        // Set DDG's agent
        webView.customUserAgent = DefaultUserAgentManager.shared.userAgent(isDesktop: false, url: viewModel.getVideoURL())
+       
+       // Store references in coordinator for cleanup
+       context.coordinator.webView = webView
+       context.coordinator.duckPlayerUserScript = duckPlayerUserScript
+       context.coordinator.contentScopeUserScripts = contentScopeUserScripts
 
        return webView
    }
@@ -123,16 +148,32 @@ struct DuckPlayerWebView: UIViewRepresentable {
    }
 
    class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
-       let viewModel: DuckPlayerViewModel
+       weak var viewModel: DuckPlayerViewModel?
+       weak var webView: WKWebView?
+       weak var duckPlayerUserScript: DuckPlayerUserScriptPlayer?
+       weak var contentScopeUserScripts: ContentScopeUserScript?
 
        init(viewModel: DuckPlayerViewModel) {
            self.viewModel = viewModel
            super.init()
        }
+       
+       deinit {
+           // Ensure proper cleanup
+           if let webView = webView {
+               webView.navigationDelegate = nil
+               webView.uiDelegate = nil
+               webView.stopLoading()
+           }
+           
+           // Clean up script references
+           duckPlayerUserScript?.webView = nil
+           contentScopeUserScripts = nil
+       }
 
        private func handleYouTubeWatchURL(_ url: URL) {
            Logger.duckplayer.debug("Detected YouTube watch URL: \(url.absoluteString)")
-           viewModel.handleYouTubeNavigation(url)
+           viewModel?.handleYouTubeNavigation(url)
        }
 
        @MainActor

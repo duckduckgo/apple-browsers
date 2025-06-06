@@ -34,7 +34,7 @@ final class DuckPlayerUserScriptPlayer: NSObject, Subfeature {
 
     weak var broker: UserScriptMessageBroker?
     weak var webView: WKWebView?
-    private var viewModel: DuckPlayerViewModel
+    private weak var viewModel: DuckPlayerViewModel?
 
     let messageOriginPolicy: MessageOriginPolicy = .only(rules: [
         .exact(hostname: DuckPlayerSettingsDefault.OriginDomains.duckduckgo),
@@ -50,6 +50,12 @@ final class DuckPlayerUserScriptPlayer: NSObject, Subfeature {
     init(viewModel: DuckPlayerViewModel) {
         self.viewModel = viewModel
         super.init()
+    }
+    
+    deinit {
+        // Clean up any remaining references
+        webView = nil
+        broker = nil
     }
 
     // MARK: - Subfeature
@@ -93,7 +99,7 @@ final class DuckPlayerUserScriptPlayer: NSObject, Subfeature {
               let timeInterval = Double(timeString) else {
             return [:] as [String: String]
         }
-        viewModel.updateTimeStamp(timeStamp: timeInterval)
+        viewModel?.updateTimeStamp(timeStamp: timeInterval)
         return [:] as [String: String]
     }
 

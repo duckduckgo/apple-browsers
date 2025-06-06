@@ -210,6 +210,15 @@ final class DuckPlayerViewModel: ObservableObject {
         NotificationCenter.default.removeObserver(self,
                                                 name: UIDevice.orientationDidChangeNotification,
                                                 object: nil)
+        
+        // Clean up any remaining references
+        cancellables.removeAll()
+    }
+    
+    deinit {
+        // Ensure all observers are removed
+        NotificationCenter.default.removeObserver(self)
+        cancellables.removeAll()
     }
 
     /// Updates the current interface orientation state

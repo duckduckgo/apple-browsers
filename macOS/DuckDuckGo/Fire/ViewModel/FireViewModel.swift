@@ -62,7 +62,7 @@ final class FireViewModel {
 
     @MainActor
     init() {
-        fire = Fire(tld: ContentBlocking.shared.tld)
+        fire = Fire(tld: NSApp.delegateTyped.tld)
     }
 
 }

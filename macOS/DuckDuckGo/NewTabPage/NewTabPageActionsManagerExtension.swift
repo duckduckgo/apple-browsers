@@ -17,6 +17,8 @@
 //
 
 import AppKit
+import BrowserServicesKit
+import Common
 import History
 import NewTabPage
 import Persistence
@@ -29,13 +31,14 @@ extension NewTabPageActionsManager {
         customizationModel: NewTabPageCustomizationModel,
         bookmarkManager: BookmarkManager & URLFavoriteStatusProviding & RecentActivityFavoritesHandling,
         duckPlayerHistoryEntryTitleProvider: DuckPlayerHistoryEntryTitleProviding = DuckPlayer.shared,
-        contentBlocking: ContentBlockingProtocol = ContentBlocking.shared,
+        contentBlocking: ContentBlockingProtocol,
         activeRemoteMessageModel: ActiveRemoteMessageModel,
         historyCoordinator: HistoryCoordinating,
         fireproofDomains: URLFireproofStatusProviding,
         privacyStats: PrivacyStatsCollecting,
         protectionsReportModel: NewTabPageProtectionsReportModel,
         freemiumDBPPromotionViewCoordinator: FreemiumDBPPromotionViewCoordinator,
+        tld: TLD,
         keyValueStore: KeyValueStoring = UserDefaults.standard
     ) {
         let favoritesPublisher = bookmarkManager.listPublisher.map({ $0?.favoriteBookmarks ?? [] }).eraseToAnyPublisher()
@@ -51,7 +54,7 @@ extension NewTabPageActionsManager {
         let privacyStatsModel = NewTabPagePrivacyStatsModel(
             visibilityProvider: protectionsReportModel,
             privacyStats: privacyStats,
-            trackerDataProvider: PrivacyStatsTrackerDataProvider(contentBlocking: ContentBlocking.shared),
+            trackerDataProvider: PrivacyStatsTrackerDataProvider(contentBlocking: contentBlocking),
             eventMapping: NewTabPagePrivacyStatsEventHandler()
         )
 
@@ -66,7 +69,7 @@ extension NewTabPageActionsManager {
             activityProvider: recentActivityProvider,
             actionsHandler: DefaultRecentActivityActionsHandler(
                 favoritesHandler: bookmarkManager,
-                burner: RecentActivityItemBurner(fireproofStatusProvider: fireproofDomains)
+                burner: RecentActivityItemBurner(fireproofStatusProvider: fireproofDomains, tld: tld)
             )
         )
 
@@ -82,7 +85,11 @@ extension NewTabPageActionsManager {
             NewTabPageFreemiumDBPClient(provider: freemiumDBPBannerProvider),
             NewTabPageNextStepsCardsClient(
                 model: NewTabPageNextStepsCardsProvider(
-                    continueSetUpModel: HomePage.Models.ContinueSetUpModel(tabOpener: NewTabPageTabOpener()),
+                    continueSetUpModel: HomePage.Models.ContinueSetUpModel(
+                        dataImportProvider: BookmarksAndPasswordsImportStatusProvider(bookmarkManager: bookmarkManager),
+                        tabOpener: NewTabPageTabOpener(),
+                        privacyConfigurationManager: contentBlocking.privacyConfigurationManager
+                    ),
                     appearancePreferences: appearancePreferences
                 )
             ),

@@ -81,7 +81,8 @@ final class FirePopoverViewController: NSViewController {
           tabCollectionViewModel: TabCollectionViewModel,
           historyCoordinating: HistoryCoordinating = NSApp.delegateTyped.historyCoordinator,
           fireproofDomains: FireproofDomains = NSApp.delegateTyped.fireproofDomains,
-          faviconManagement: FaviconManagement = NSApp.delegateTyped.faviconManager) {
+          faviconManagement: FaviconManagement = NSApp.delegateTyped.faviconManager,
+          tld: TLD = NSApp.delegateTyped.tld) {
         self.fireViewModel = fireViewModel
         self.historyCoordinating = historyCoordinating
         self.firePopoverViewModel = FirePopoverViewModel(fireViewModel: fireViewModel,
@@ -89,7 +90,7 @@ final class FirePopoverViewController: NSViewController {
                                                          historyCoordinating: historyCoordinating,
                                                          fireproofDomains: fireproofDomains,
                                                          faviconManagement: faviconManagement,
-                                                         tld: ContentBlocking.shared.tld,
+                                                         tld: tld,
                                                          onboardingContextualDialogsManager: Application.appDelegate.onboardingContextualDialogsManager)
 
         super.init(coder: coder)

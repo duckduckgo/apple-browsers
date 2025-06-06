@@ -21,7 +21,9 @@ import BrokenSitePrompt
 
 extension BrokenSitePromptLimiter {
 
-    static let shared: BrokenSitePromptLimiter = BrokenSitePromptLimiter(privacyConfigManager: ContentBlocking.shared.privacyConfigurationManager,
-                                                                         store: BrokenSitePromptLimiterStore())
+    static let shared = BrokenSitePromptLimiter(
+        privacyConfigManager: Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
+        store: BrokenSitePromptLimiterStore()
+    )
 
 }

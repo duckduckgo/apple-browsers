@@ -39,6 +39,7 @@ final class AddressBarButtonsViewController: NSViewController {
     private let accessibilityPreferences: AccessibilityPreferences
     private let visualStyle: VisualStyleProviding
     private let featureFlagger: FeatureFlagger
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
 
     private var permissionAuthorizationPopover: PermissionAuthorizationPopover?
     private func permissionAuthorizationPopoverCreatingIfNeeded() -> PermissionAuthorizationPopover {
@@ -197,6 +198,7 @@ final class AddressBarButtonsViewController: NSViewController {
     init?(coder: NSCoder,
           tabCollectionViewModel: TabCollectionViewModel,
           bookmarkManager: BookmarkManager,
+          privacyConfigurationManager: PrivacyConfigurationManaging,
           accessibilityPreferences: AccessibilityPreferences = AccessibilityPreferences.shared,
           popovers: NavigationBarPopovers?,
           onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
@@ -215,6 +217,7 @@ final class AddressBarButtonsViewController: NSViewController {
         self.aiChatSidebarPresenter = aiChatSidebarPresenter
         self.visualStyle = visualStyleManager.style
         self.featureFlagger = featureFlagger
+        self.privacyConfigurationManager = privacyConfigurationManager
         super.init(coder: coder)
     }
 
@@ -1036,7 +1039,7 @@ final class AddressBarButtonsViewController: NSViewController {
             let isNotSecure = url.scheme == URL.NavigationalScheme.http.rawValue
             let isCertificateInvalid = tabViewModel.tab.isCertificateInvalid
             let isFlaggedAsMalicious = (tabViewModel.tab.privacyInfo?.malicousSiteThreatKind != .none)
-            let configuration = ContentBlocking.shared.privacyConfigurationManager.privacyConfig
+            let configuration = privacyConfigurationManager.privacyConfig
             let isUnprotected = configuration.isUserUnprotected(domain: host)
 
             let isShieldDotVisible = isNotSecure || isUnprotected || isCertificateInvalid

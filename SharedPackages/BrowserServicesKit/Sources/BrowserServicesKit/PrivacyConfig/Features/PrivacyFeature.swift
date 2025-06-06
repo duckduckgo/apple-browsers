@@ -68,7 +68,7 @@ public enum PrivacyFeature: String {
     case htmlHistoryPage
     case tabManager
     case webViewStateRestoration
-    case experimentalBrowserTheming
+    case experimentalTheming
     case setAsDefaultAndAddToDock
     case contentScopeExperiments
     case extendedOnboarding
@@ -132,6 +132,7 @@ public enum AutofillSubfeature: String, PrivacySubfeature {
     case partialFormSaves
     case autofillCreditCards
     case autofillCreditCardsOnByDefault
+    case passwordVariantCategorization
 }
 
 public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
@@ -143,14 +144,6 @@ public enum DBPSubfeature: String, Equatable, PrivacySubfeature {
     case waitlistBetaActive
     case freemium
     case remoteBrokerDelivery
-}
-
-public enum ContentScopeExperimentsSubfeatures: String, Equatable, PrivacySubfeature {
-    public var parent: PrivacyFeature {
-        .contentScopeExperiments
-    }
-
-    case fingerprintingCanvas
 }
 
 public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
@@ -166,6 +159,9 @@ public enum AIChatSubfeature: String, Equatable, PrivacySubfeature {
 
     /// Web and native integration for opening AI Chat in a custom webview.
     case deepLink
+
+    /// Keep AI Chat session after the user closes it
+    case keepSession
 }
 
 public enum NetworkProtectionSubfeature: String, Equatable, PrivacySubfeature {
@@ -209,6 +205,9 @@ public enum SyncSubfeature: String, PrivacySubfeature {
     case level3AllowCreateAccount
     case seamlessAccountSwitching
     case exchangeKeysToSyncWithAnotherDevice
+    case canScanUrlBasedSyncSetupBarcodes
+    case canInterceptSyncSetupUrls
+    case syncSetupBarcodeIsUrlBased
 }
 
 public enum AutoconsentSubfeature: String, PrivacySubfeature {
@@ -230,6 +229,7 @@ public enum PrivacyProSubfeature: String, Equatable, PrivacySubfeature {
     case privacyProFreeTrialJan25
     case privacyProAuthV2
     case privacyProOnboardingPromotion
+    case privacyProFreeTrial
 }
 
 public enum SslCertificatesSubfeature: String, PrivacySubfeature {
@@ -278,15 +278,24 @@ public enum MaliciousSiteProtectionSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .maliciousSiteProtection }
     case onByDefault // Rollout feature
     case scamProtection
+    case removeWWWInCanonicalization
 }
 
 public enum SetAsDefaultAndAddToDockSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .setAsDefaultAndAddToDock }
-     case popoverVsBannerExperiment
- }
+
+    // https://app.asana.com/1/137249556945/project/1206329551987282/task/1210225579353384?focus=true
+    case scheduledDefaultBrowserAndDockPrompts
+}
 
 public enum OnboardingSubfeature: String, PrivacySubfeature {
     public var parent: PrivacyFeature { .extendedOnboarding }
 
     case setAsDefaultBrowserExperiment
+}
+
+public enum ExperimentalThemingSubfeature: String, PrivacySubfeature {
+    public var parent: PrivacyFeature { .experimentalTheming }
+
+    case visualUpdates // Rollout
 }

@@ -169,6 +169,10 @@ final class CredentialProviderListViewController: UIViewController {
         navigationController?.navigationBar.barTintColor = UIColor(designSystemColor: .panel)
         navigationController?.navigationBar.tintColor = UIColor(designSystemColor: .textPrimary)
 
+        var titleAttrs = navigationController?.navigationBar.titleTextAttributes ?? [:]
+        titleAttrs[NSAttributedString.Key.foregroundColor] = UIColor(designSystemColor: .textPrimary)
+        navigationController?.navigationBar.titleTextAttributes = titleAttrs
+
         let appearance = UINavigationBarAppearance()
         appearance.shadowColor = .clear
         appearance.backgroundColor = UIColor(designSystemColor: .background)

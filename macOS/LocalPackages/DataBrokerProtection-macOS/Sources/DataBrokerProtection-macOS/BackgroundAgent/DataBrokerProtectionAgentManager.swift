@@ -68,7 +68,8 @@ public class DataBrokerProtectionAgentManagerProvider {
                                                   inlineIconCredentials: false,
                                                   thirdPartyCredentialsProvider: false,
                                                   unknownUsernameCategorization: false,
-                                                  partialFormSaves: false)
+                                                  partialFormSaves: false,
+                                                  passwordVariantCategorization: false)
         let contentScopeProperties = ContentScopeProperties(gpcEnabled: false,
                                                             sessionKey: UUID().uuidString,
                                                             messageSecret: UUID().uuidString,

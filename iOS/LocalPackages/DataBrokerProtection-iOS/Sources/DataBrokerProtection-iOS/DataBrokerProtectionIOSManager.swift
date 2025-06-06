@@ -59,12 +59,10 @@ public class DataBrokerProtectionIOSManagerProvider {
 
     public static func iOSManager(authenticationManager: DataBrokerProtectionAuthenticationManaging,
                                   privacyConfigurationManager: PrivacyConfigurationManaging,
-                                  featureFlagger: RemoteBrokerDeliveryFeatureFlagging) -> DataBrokerProtectionIOSManager? {
-        guard let pixelKit = PixelKit.shared else {
-            assertionFailure("PixelKit not set up")
-            return nil
-        }
+                                  featureFlagger: RemoteBrokerDeliveryFeatureFlagging,
+                                  pixelKit: PixelKit) -> DataBrokerProtectionIOSManager? {
         let sharedPixelsHandler = DataBrokerProtectionSharedPixelsHandler(pixelKit: pixelKit, platform: .iOS)
+        let iOSPixelsHandler = IOSPixelsHandler(pixelKit: pixelKit)
 
         let dbpSettings = DataBrokerProtectionSettings(defaults: .dbp)
 
@@ -80,7 +78,8 @@ public class DataBrokerProtectionIOSManagerProvider {
                                                   inlineIconCredentials: false,
                                                   thirdPartyCredentialsProvider: false,
                                                   unknownUsernameCategorization: false,
-                                                  partialFormSaves: false)
+                                                  partialFormSaves: false,
+                                                  passwordVariantCategorization: false)
         let contentScopeProperties = ContentScopeProperties(gpcEnabled: false,
                                                             sessionKey: UUID().uuidString,
                                                             messageSecret: UUID().uuidString,
@@ -139,6 +138,7 @@ public class DataBrokerProtectionIOSManagerProvider {
             jobDependencies: jobDependencies,
             authenticationManager: authenticationManager,
             sharedPixelsHandler: sharedPixelsHandler,
+            iOSPixelsHandler: iOSPixelsHandler,
             privacyConfigManager: privacyConfigurationManager,
             database: database
         )
@@ -147,12 +147,14 @@ public class DataBrokerProtectionIOSManagerProvider {
 
 public final class DataBrokerProtectionIOSManager {
 
+    public static let backgroundJobIdentifier = "com.duckduckgo.app.dbp.backgroundProcessing"
     public static var shared: DataBrokerProtectionIOSManager?
 
     private let queueManager: BrokerProfileJobQueueManager
     private let jobDependencies: BrokerProfileJobDependencies
     private let authenticationManager: DataBrokerProtectionAuthenticationManaging
     private let sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>
+    private let iOSPixelsHandler: EventMapping<IOSPixels>
     private let privacyConfigManager: PrivacyConfigurationManaging
     public let database: DataBrokerProtectionRepository
 
@@ -160,6 +162,7 @@ public final class DataBrokerProtectionIOSManager {
          jobDependencies: BrokerProfileJobDependencies,
          authenticationManager: DataBrokerProtectionAuthenticationManaging,
          sharedPixelsHandler: EventMapping<DataBrokerProtectionSharedPixels>,
+         iOSPixelsHandler: EventMapping<IOSPixels>,
          privacyConfigManager: PrivacyConfigurationManaging,
          database: DataBrokerProtectionRepository
     ) {
@@ -167,6 +170,7 @@ public final class DataBrokerProtectionIOSManager {
         self.jobDependencies = jobDependencies
         self.authenticationManager = authenticationManager
         self.sharedPixelsHandler = sharedPixelsHandler
+        self.iOSPixelsHandler = iOSPixelsHandler
         self.privacyConfigManager = privacyConfigManager
 
         self.database = database
@@ -175,7 +179,7 @@ public final class DataBrokerProtectionIOSManager {
     }
 
     private func registerBackgroundTaskHandler() {
-        BGTaskScheduler.shared.register(forTaskWithIdentifier: "com.duckduckgo.app.dbp.backgroundProcessing", using: nil) { task in
+        BGTaskScheduler.shared.register(forTaskWithIdentifier: Self.backgroundJobIdentifier, using: nil) { task in
             self.handleBGProcessingTask(task: task)
         }
     }
@@ -202,6 +206,8 @@ public final class DataBrokerProtectionIOSManager {
                 Logger.dataBrokerProtection.log("Scheduling background task successful")
             } catch {
                 Logger.dataBrokerProtection.log("Scheduling background task failed with error: \(error)")
+// This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS
+                self.iOSPixelsHandler.fire(.backgroundTaskSchedulingFailed(error: error, deviceID: DataBrokerProtectionSettings.deviceIdentifier))
             }
 #endif
         }
@@ -209,12 +215,17 @@ public final class DataBrokerProtectionIOSManager {
 
     func handleBGProcessingTask(task: BGTask) {
         Logger.dataBrokerProtection.log("Background task started")
+// This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS
+        iOSPixelsHandler.fire(.backgroundTaskStarted(deviceID: DataBrokerProtectionSettings.deviceIdentifier))
         let startTime = Date.now
 
         task.expirationHandler = {
             let timeTaken = Date.now.timeIntervalSince(startTime)
-            self.scheduleBGProcessingTask()
             Logger.dataBrokerProtection.log("Background task expired with time taken: \(timeTaken)")
+// This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS
+            self.iOSPixelsHandler.fire(.backgroundTaskExpired(duration: timeTaken * 1000.0,
+                                                              deviceID: DataBrokerProtectionSettings.deviceIdentifier))
+            self.scheduleBGProcessingTask()
             task.setTaskCompleted(success: false)
         }
 
@@ -226,24 +237,50 @@ public final class DataBrokerProtectionIOSManager {
             }
             queueManager.startScheduledAllOperationsIfPermitted(showWebView: false, jobDependencies: jobDependencies, errorHandler: nil) {
                 Logger.dataBrokerProtection.log("All operations completed in background task")
+                let timeTaken = Date.now.timeIntervalSince(startTime)
+                Logger.dataBrokerProtection.log("Background task finshed all operations with time taken: \(timeTaken)")
+// This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS
+                self.iOSPixelsHandler.fire(.backgroundTaskEndedHavingCompletedAllJobs(
+                    duration: timeTaken * 1000.0,
+                    deviceID: DataBrokerProtectionSettings.deviceIdentifier))
+
+                self.scheduleBGProcessingTask()
                 task.setTaskCompleted(success: true)
             }
         }
     }
 
-    private func validateRunPrerequisites() async -> Bool {
+    /// Used by the iOS PIR debug menu to reset tester data.
+    public func deleteAllData() throws {
+        try database.deleteProfileData()
+    }
 
+    // MARK: - Run Prerequisites
+
+    public var meetsProfileRunPrequisite: Bool {
+        get throws {
+            return try database.fetchProfile() != nil
+        }
+    }
+
+    public var meetsAuthenticationRunPrequisite: Bool {
+        return authenticationManager.isUserAuthenticated
+    }
+
+    public var meetsEntitlementRunPrequisite: Bool {
+        get async throws {
+            return try await authenticationManager.hasValidEntitlement()
+        }
+    }
+
+    public func validateRunPrerequisites() async -> Bool {
         do {
-            let hasProfile = try database.fetchProfile() != nil
-            let isAuthenticated = authenticationManager.isUserAuthenticated
-
-            if !hasProfile || !isAuthenticated {
+            if !(try meetsProfileRunPrequisite) || !meetsAuthenticationRunPrequisite {
                 Logger.dataBrokerProtection.log("Prerequisites are invalid")
                 return false
             }
 
-            let hasValidEntitlement = try await authenticationManager.hasValidEntitlement()
-            return hasValidEntitlement
+            return try await meetsEntitlementRunPrequisite
         } catch {
             Logger.dataBrokerProtection.error("Error validating prerequisites, error: \(error.localizedDescription, privacy: .public)")
             return false

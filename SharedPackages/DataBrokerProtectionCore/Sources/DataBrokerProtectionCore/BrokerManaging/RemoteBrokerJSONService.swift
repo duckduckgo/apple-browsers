@@ -40,7 +40,6 @@ public protocol RemoteBrokerDeliveryFeatureFlagging {
 
 public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
     enum Error: Swift.Error {
-        case missingAccessToken
         case serverError(httpCode: Int?)
         case clientError
     }
@@ -162,7 +161,10 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
             try? await localBrokerProvider?.checkForUpdates()
 
             /// 3. Hit main_config.json endpoint for ETag and active broker changes
-            guard let accessToken = await authenticationManager.accessToken() else { throw Error.missingAccessToken }
+            guard let accessToken = await authenticationManager.accessToken() else {
+                Logger.dataBrokerProtection.log("🧩 Skipping broker JSON update check due to absence of access token")
+                return
+            }
 
             let request = try Endpoint.request(for: .mainConfig,
                                                endpointURL: settings.endpointURL,
@@ -232,7 +234,10 @@ public final class RemoteBrokerJSONService: BrokerJSONServiceProvider {
         /// 2. Download all.zip if not exists
         do {
             if !fileManager.fileExists(atPath: brokerArchiveURL.path) {
-                guard let accessToken = await authenticationManager.accessToken() else { throw Error.missingAccessToken }
+                guard let accessToken = await authenticationManager.accessToken() else {
+                    Logger.dataBrokerProtection.log("🧩 Skipping broker JSON update check due to absence of access token")
+                    return
+                }
 
                 let request = try Endpoint.request(for: .allBrokers,
                                                    endpointURL: settings.endpointURL,

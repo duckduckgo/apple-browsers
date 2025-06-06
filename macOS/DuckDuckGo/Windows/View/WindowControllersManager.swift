@@ -75,10 +75,6 @@ extension WindowControllersManagerProtocol {
 @MainActor
 final class WindowControllersManager: WindowControllersManagerProtocol {
 
-    static let shared = WindowControllersManager(pinnedTabsManagerProvider: Application.appDelegate.pinnedTabsManagerProvider,
-                                                 subscriptionFeatureAvailability: DefaultSubscriptionFeatureAvailability()
-    )
-
     var activeViewController: MainViewController? {
         lastKeyMainWindowController?.mainViewController
     }
@@ -255,7 +251,7 @@ extension WindowControllersManager {
         open(url, with: behavior, source: source, target: windowController)
     }
 
-    func open(_ url: URL, with linkOpenBehavior: LinkOpenBehavior, source: Tab.TabContent.URLSource, target: MainWindowController?) {
+    func open(_ url: URL, with linkOpenBehavior: LinkOpenBehavior, setBurner: Bool? = nil, source: Tab.TabContent.URLSource, target: MainWindowController?) {
         let windowController = target ?? lastKeyMainWindowController
         switch linkOpenBehavior {
         case .currentTab:
@@ -269,7 +265,7 @@ extension WindowControllersManager {
                   let tabCollectionViewModel = windowController?.mainViewController.tabCollectionViewModel else { fallthrough }
             tabCollectionViewModel.appendNewTab(with: .url(url, source: .bookmark), selected: selected)
         case .newWindow(let selected):
-            WindowsManager.openNewWindow(with: url, source: .bookmark, isBurner: windowController?.mainViewController.isBurner ?? false, showWindow: selected)
+            WindowsManager.openNewWindow(with: url, source: .bookmark, isBurner: setBurner ?? (windowController?.mainViewController.isBurner ?? false), showWindow: selected)
         }
     }
 
@@ -426,7 +422,7 @@ extension WindowControllersManager {
             return
         }
 
-        if let parentWindowController = WindowControllersManager.shared.lastKeyMainWindowController {
+        if let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController {
             parentWindowController.window?.beginSheet(feedbackFormWindow)
         } else {
             let tabCollection = TabCollection(tabs: [])
@@ -437,7 +433,7 @@ extension WindowControllersManager {
     }
 
     func showMainWindow() {
-        guard WindowControllersManager.shared.lastKeyMainWindowController == nil else { return }
+        guard Application.appDelegate.windowControllersManager.lastKeyMainWindowController == nil else { return }
         let tabCollection = TabCollection(tabs: [])
         let tabCollectionViewModel = TabCollectionViewModel(tabCollection: tabCollection)
         _ = WindowsManager.openNewWindow(with: tabCollectionViewModel)
@@ -448,7 +444,7 @@ extension WindowControllersManager {
         let locationsWindowController = locationsViewController.wrappedInWindowController()
 
         guard let locationsFormWindow = locationsWindowController.window,
-              let parentWindowController = WindowControllersManager.shared.lastKeyMainWindowController else {
+              let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController else {
             assertionFailure("Failed to present native VPN feedback form")
             return
         }

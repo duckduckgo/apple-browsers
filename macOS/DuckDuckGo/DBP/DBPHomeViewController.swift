@@ -55,7 +55,8 @@ final class DBPHomeViewController: NSViewController {
                                                   inlineIconCredentials: false,
                                                   thirdPartyCredentialsProvider: false,
                                                   unknownUsernameCategorization: false,
-                                                  partialFormSaves: false)
+                                                  partialFormSaves: false,
+                                                  passwordVariantCategorization: false)
 
         let isGPCEnabled = WebTrackingProtectionPreferences.shared.isGPCEnabled
         let sessionKey = UUID().uuidString
@@ -73,7 +74,7 @@ final class DBPHomeViewController: NSViewController {
             prefs: prefs,
             webUISettings: DataBrokerProtectionWebUIURLSettings(.dbp),
             openURLHandler: { url in
-                WindowControllersManager.shared.show(url: url, source: .link, newTab: true)
+                Application.appDelegate.windowControllersManager.show(url: url, source: .link, newTab: true)
             })
     }()
 

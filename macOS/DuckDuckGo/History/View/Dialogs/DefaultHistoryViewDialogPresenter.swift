@@ -31,7 +31,7 @@ final class DefaultHistoryViewDialogPresenter: HistoryViewDialogPresenting {
     @MainActor
     func showMultipleTabsDialog(for itemsCount: Int, in window: NSWindow?) async -> OpenMultipleTabsWarningDialogModel.Response {
         await withCheckedContinuation { continuation in
-            let parentWindow = window ?? WindowControllersManager.shared.lastKeyMainWindowController?.window
+            let parentWindow = window ?? Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window
             let model = OpenMultipleTabsWarningDialogModel(count: itemsCount)
             let dialog = OpenMultipleTabsWarningDialog(model: model)
             dialog.show(in: parentWindow) {
@@ -43,7 +43,7 @@ final class DefaultHistoryViewDialogPresenter: HistoryViewDialogPresenting {
     @MainActor
     func showDeleteDialog(for itemsCount: Int, deleteMode: HistoryViewDeleteDialogModel.DeleteMode, in window: NSWindow?) async -> HistoryViewDeleteDialogModel.Response {
         await withCheckedContinuation { continuation in
-            let parentWindow = window ?? WindowControllersManager.shared.lastKeyMainWindowController?.window
+            let parentWindow = window ?? Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.window
             let model = HistoryViewDeleteDialogModel(entriesCount: itemsCount, mode: deleteMode)
             let dialog = HistoryViewDeleteDialog(model: model)
             dialog.show(in: parentWindow) {

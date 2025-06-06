@@ -16,6 +16,8 @@ on:
       - '.xcode-version'
       - 'SharedPackages/**'
       - 'iOS/**'
+  schedule:
+    - cron: '10,35,50 4,5,6 * * *'
   workflow_call:
     inputs:
       branch:
@@ -35,6 +37,8 @@ on:
       APPLE_API_KEY_ISSUER:
         required: true
       ASANA_ACCESS_TOKEN:
+        required: true
+      GH_RO_PAT:
         required: true
       MATCH_PASSWORD:
         required: true
@@ -72,6 +76,9 @@ jobs:
     runs-on: macos-15
     timeout-minutes: 60 # temporary (vs original 20) to fix the issue with GHA slowness
 
+    env:
+      WORKFLOW_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
+
     outputs:
       commit_author: ${{ steps.fetch_commit_author.outputs.commit_author }}
 
@@ -107,9 +114,6 @@ jobs:
         key: ${{ runner.os }}-ios-${{ env.cache_key_hash }}
         restore-keys: |
           ${{ runner.os }}-ios-
-
-    - name: Install xcbeautify
-      run: brew install xcbeautify
 
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
@@ -155,7 +159,6 @@ jobs:
       if: always() && steps.run-unit-tests.outcome == 'failure'
       env:
         ASANA_ACCESS_TOKEN: ${{ secrets.ASANA_ACCESS_TOKEN }}
-        WORKFLOW_URL: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
       run: |
         # Extract failed tests from the junit report
         # Only keep failures unique by classname and name (column 1 and 2 of the yq output)
@@ -163,6 +166,11 @@ jobs:
           $'[.testsuites.testsuite[].testcase] | flatten | map(select(.failure) | .+@classname + " " + .+@name + " \'" + .failure.+@message + "\' ${{ env.WORKFLOW_URL }}") | .[]' \
           | sort -u -k 1,2 \
           | xargs -L 1 ./scripts/report-failed-unit-test.sh -s ${{ vars.APPLE_CI_FAILING_TESTS_IOS_FAILED_TESTS_SECTION_ID }}
+          
+    - name: Send Status Pixel
+      if: always() && github.ref_name == 'main'
+      run: |
+        curl -fLSs -o /dev/null "https://improving.duckduckgo.com/t/m_ci_apple_ios_main_unit_tests_${{ steps.run-unit-tests.outcome }}?workflow=${{ env.WORKFLOW_URL }}"
 
     - name: Fetch latest commit author
       if: always() && github.ref_name == 'main'
@@ -187,7 +195,7 @@ jobs:
     steps:
 
     - name: Register SSH keys for access to certificates
-      uses: webfactory/ssh-agent@v0.7.0
+      uses: webfactory/ssh-agent@v0.9.1
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
 
@@ -219,14 +227,14 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-ios-release-
 
-    - name: Install xcbeautify
-      run: brew install xcbeautify
-
     - name: Select Xcode
       uses: ./.github/actions/select-xcode-version
 
-    - name: Prepare fastlane
-      run: bundle install
+    - name: Setup Ruby and dependencies
+      uses: ./.github/actions/setup-ruby
+      with:
+        working-directory: iOS
+        cache-key-prefix: ios-ruby
 
     - name: Build the app
       env:
@@ -264,6 +272,7 @@ jobs:
           asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
           asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_IOS_POST_MERGE_SECTION_ID }}
           commit-author: ${{ needs.unit-tests.outputs.commit_author }}
+          github-token: ${{ secrets.GH_RO_PAT }}
 
   close-asana-task:
     name: Close Asana Task
@@ -282,3 +291,4 @@ jobs:
           action: close-task
           asana-access-token: ${{ secrets.ASANA_ACCESS_TOKEN }}
           asana-section-id: ${{ vars.APPLE_CI_FAILING_TESTS_IOS_POST_MERGE_SECTION_ID }}
+          github-token: ${{ secrets.GH_RO_PAT }}

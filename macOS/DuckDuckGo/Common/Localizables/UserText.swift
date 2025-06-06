@@ -353,6 +353,7 @@ struct UserText {
 
     static let openLinkInNewTab = NSLocalizedString("open.link.in.new.tab", value: "Open Link in New Tab", comment: "Context menu item")
     static let openLinkInNewBurnerTab = NSLocalizedString("open.link.in.new.burner.tab", value: "Open Link in New Fire Tab", comment: "Context menu item")
+    static let openLinkInNewBurnerWindow = NSLocalizedString("open.link.in.new.burner.window", value: "Open Link in New Fire Window", comment: "Context menu item")
     static let openImageInNewTab = NSLocalizedString("open.image.in.new.tab", value: "Open Image in New Tab", comment: "Context menu item")
     static let openImageInNewBurnerTab = NSLocalizedString("open.image.in.new.burner.tab", value: "Open Image in New Fire Tab", comment: "Context menu item")
     static let copyImageAddress = NSLocalizedString("copy.image.address", value: "Copy Image Address", comment: "Context menu item")
@@ -713,6 +714,14 @@ struct UserText {
     static let appearance = NSLocalizedString("preferences.appearance", value: "Appearance", comment: "Title of the option to show the Appearance preferences")
     static let dataClearing = NSLocalizedString("preferences.data-clearing", value: "Data Clearing", comment: "Title of the option to show the Data Clearing preferences")
     static let webTrackingProtection = NSLocalizedString("preferences.web-tracking-protection", value: "Web Tracking Protection", comment: "Title of the option to show the Web Tracking Protection preferences")
+    static let threatProtection = NSLocalizedString("preferences.threat-protection", value: "Threat Protection", comment: "Title of the option to show the Threat Protection preferences")
+    static let threatProtectionCaption = NSLocalizedString("preferences.threat-protection.caption", value: "DuckDuckGo's enhanced protections stop common threats while keeping your connection secure.", comment: "Caption of the option to show the Threat Protection preferences")
+    static let scamBlockerTitle = NSLocalizedString("preferences.scam-blocker.title", value: "Scam Blocker", comment: "Title of the section of a setting page that shows Scam Blocking preferences (weather warning in case of scam sites)")
+    static let scamBlockerToggleLabel = NSLocalizedString("preferences.scam-blocker.toggle-label", value: "Warn on sites flagged for scams, phishing, or malware", comment: "Label for toggle that enables or disables scam, phishing, and malware site warnings")
+    static let scamBlockerToggleCaption = NSLocalizedString("preferences.scam-blocker.toggle-caption", value: "Disabling this feature can put your personal information at risk.", comment: "Caption explaining the risk of disabling scam blocker protection")
+    static let smarterEncryptionTitle = NSLocalizedString("preferences.smarter-encryption.title", value: "Smarter Encryption", comment: "Title of the section of a setting page that shows Smarter Encryption preferences")
+    static let statusIndicatorAlwaysOn = NSLocalizedString("preferences.status-indicator.always-on", value: "Always On", comment: "Status indicator of a browser privacy protection feature.")
+    static let smarterEncryptionDescription = NSLocalizedString("preferences.smarter-encryption.description", value: "Automatically upgrades links to HTTPS whenever possible.", comment: "Description explaining the Smarter Encryption feature")
     static let emailProtectionPreferences = NSLocalizedString("preferences.email-protection", value: "Email Protection", comment: "Title of the option to show the Email Protection preferences")
     static let autofillEnabledFor = NSLocalizedString("preferences.autofill-enabled-for", value: "Autofill enabled in this browser for:", comment: "Label presented before the email account in email protection preferences")
 
@@ -735,8 +744,8 @@ struct UserText {
     static let shortcuts = NSLocalizedString("preferences.shortcuts", value: "Shortcuts", comment: "Name of the preferences section related to shortcuts")
     static let isAddedToDock = NSLocalizedString("preferences.is-added-to-dock", value: "DuckDuckGo is added to the Dock.", comment: "Indicates that the browser is added to the macOS system Dock")
     static let isNotAddedToDock = NSLocalizedString("preferences.not-added-to-dock", value: "DuckDuckGo is not added to the Dock.", comment: "Indicate that the browser is not added to macOS system Dock")
-    static let addToDock = NSLocalizedString("preferences.add-to-dock", value: "Add to Dock…", comment: "Action button to add the app to the Dock")
-    static let addDuckDuckGoToDock = NSLocalizedString("preferences.add-DuckDuckGo-to-dock", value: "Add DuckDuckGo To Dock…", comment: "Action button to add the app to the Dock")
+    static let addToDock = NSLocalizedString("preferences.add-to-dock", value: "Add to Dock", comment: "Action button to add the app to the Dock")
+    static let addDuckDuckGoToDock = NSLocalizedString("preferences.add-DuckDuckGo-to-dock", value: "Add DuckDuckGo To Dock", comment: "Action button to add the app to the Dock")
     static let onStartup = NSLocalizedString("preferences.on-startup", value: "On Startup", comment: "Name of the preferences section related to app startup")
     static let reopenAllWindowsFromLastSession = NSLocalizedString("preferences.reopen-windows", value: "Reopen all windows from last session", comment: "Option to control session restoration")
     static let showHomePage = NSLocalizedString("preferences.show-home", value: "Open a new window", comment: "Option to control session startup")
@@ -1275,6 +1284,7 @@ struct UserText {
     static let newTabSetUpEmailProtectionSummary = NSLocalizedString("newTab.setup.email.protection.summary", value: "Generate custom @duck.com addresses that clean trackers from incoming email.", comment: "Summary of the Email Protection card of the Set Up section in the home page")
 
     // Recent Activity
+    static let newTabProtectionsReportSectionTitle = NSLocalizedString("newTab.protections.section.title", value: "Protections Report", comment: "Title of the Protections Report section in the home page")
     static let newTabRecentActivitySectionTitle = NSLocalizedString("newTab.recent.activity.section.title", value: "Recent Activity", comment: "Title of the RecentActivity section in the home page")
     static let newTabPrivacyStatsSectionTitle = NSLocalizedString("newTab.privacy.stats.section.title", value: "Protection Stats", comment: "Title of the Privacy Stats section in the home page")
     static let justNow = NSLocalizedString("newTab.recent.activity.just.now", value: "Just now", comment: "Relative timestamp for a URL that was last visited within recent 60 seconds")
@@ -1356,7 +1366,9 @@ struct UserText {
     static let downloadsOpenDownloadsFolder = NSLocalizedString("downloads.open-downloads-folder", value: "Open Downloads Folder", comment: "Button in the downloads manager that allows the user to open the downloads folder")
 
     // MARK: Updates
+    static let updateNewVersionAvailableMenuItem = NSLocalizedString("update.new.version.available.menu.item", value: "New version available - Update DuckDuckGo", comment: "Title of the menu item that informs user that a new update is available. Clicking on the menu item installs the update")
     static let updateAvailableMenuItem = NSLocalizedString("update.available.menu.item", value: "Update Available - Install Now", comment: "Title of the menu item that informs user that a new update is available. Clicking on the menu item installs the update")
+    static let updateReadyMenuItem = NSLocalizedString("update.ready.menu.item", value: "Update Ready - Restart to Update", comment: "Title of the menu item that informs user that a new update has been downloaded and the user should restart the app to update. Clicking on the menu item restarts the app")
     static let releaseNotesMenuItem = NSLocalizedString("release.notes.menu.item", value: "Release Notes", comment: "Title of the dialog menu item that opens release notes")
     static let whatsNewMenuItem = NSLocalizedString("whats.new.menu.item", value: "What's New", comment: "Title of the dialog menu item that opens the 'What's New' page")
     static let browserUpdatesTitle = NSLocalizedString("settings.browser.updates.title", value: "Browser Updates", comment: "Title of the section in Settings where people set up automatic vs manual updates")
@@ -1451,7 +1463,7 @@ struct UserText {
     // MARK: - Set as Default and Add To Dock Prompts
 
     /// Strings for ATT/ATD only
-    static let addDuckDuckGoToDockPopoverTitle = NSLocalizedString("sad.att.add-to-dock.popover.title", value: "Add DuckDuckGo to Your Dock.", comment: "Title of a popover that invites users to add DuckDuckGo to their Dock")
+    static let addDuckDuckGoToDockPopoverTitle = NSLocalizedString("sad.att.add-to-dock.popover.title", value: "Add DuckDuckGo to Your Dock", comment: "Title of a popover that invites users to add DuckDuckGo to their Dock")
     static let addToDockPopoverPromptMessage = NSLocalizedString("sad.att.add-to-dock.popover.message", value: "Get quick access to protected browsing when you add DuckDuckGo to your Dock.", comment: "Body of the popover that invites users to add DuckDuckGo to their Dock")
     static let addToDockBannerPromptMessage = NSLocalizedString("sat.att.add-to-dock.banner.message", value: "Get quick access to protected browsing", comment: "Body of the banner view that invites users to add DuckDuckGo to their Dock")
     static let addToDockPopoverPrimaryAction = NSLocalizedString("sad.att.add-to-dock.popover.primary", value: "Add To Dock", comment: "Button primary action title that appears on a popover inviting users to add DuckDuckGo to their Dock")
@@ -1459,7 +1471,7 @@ struct UserText {
     /// Strings for SAD only
     static let setAsDefaultPopoverTitle = NSLocalizedString("sad.att.default.popover.title", value: "Make DuckDuckGo Your Default Browser", comment: "Title of the popover that invites users to set DuckDuckGo as their default browser")
     static let setAsDefaultPopoverPromptMessage = NSLocalizedString("sad.att.set-as-default.popover.message", value: "Open all site links in DuckDuckGo to protect more of what you do online.", comment: "Body of the popover that invites users to set DuckDuckGo as their default browser")
-    static let setAsDefaultPrimaryAction = NSLocalizedString("sad.att.set-as-default.prompt.primaary", value: "Set As Default", comment: "Button primary action title that appears on a prompt inviting users to set DuckDuckGo as their default browser")
+    static let setAsDefaultPrimaryAction = NSLocalizedString("sad.att.set-as-default.prompt.primaary", value: "Set As Default…", comment: "Button primary action title that appears on a prompt inviting users to set DuckDuckGo as their default browser")
     static let setAsDefaultBannerMessage = NSLocalizedString("sad.att.set-as-default.banner.message", value: "DuckDuckGo isn't your default browser. Get more protection", comment: "Body of the banner view that invites users to set DuckDuckGo as their default browser")
 
     /// Strings for combined actions
@@ -1467,6 +1479,8 @@ struct UserText {
     static let bothSetAsDefaultAndAddToDockPopoverMessage = NSLocalizedString("sad.att.both.popover.message", value: "Add DuckDuckGo to your Dock and set as your default browser to protect more of what you do online.", comment: "Body of the popover that invites users to set DuckDuckGo as their default browser and add to their Dock")
     static let bothSetAsDefaultPopoverAndAddToDockPopoverPrimaryAction = NSLocalizedString("sad.att.both.popover.primary", value: "Set As Primary Browser", comment: "Button primary action title that appears on a popover inviting users to set DuckDuckGo as their default browser and add it to their Dock")
     static let bothSetAsDefaultAndAddToDockBannerMessage = NSLocalizedString("sad.att.add-to-dock.banner.message", value: "Make DuckDuckGo your default browser and add to Dock", comment: "Body of the banner view that invites users to set DuckDuckGo as their default browser and add to their Dock")
+
+    static let setAsDefaultAndAddToDockPermanentlyDismissAction = NSLocalizedString("sad.att.banner.button.permanently-dismiss", value: "Don’t Ask Again", comment: "Button action title that appears on a prompt that prevents the prompt from being shown again.")
 
     // MARK: - Privacy Pro
 

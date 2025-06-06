@@ -43,6 +43,9 @@ public protocol StorePurchaseManager {
     @MainActor func updatePurchasedProducts() async
     @MainActor func mostRecentTransaction() async -> String?
     @MainActor func hasActiveSubscription() async -> Bool
+    /// Checks if the user is eligible for a free trial subscription offer.
+    /// - Returns: `true` if the user is eligible for a free trial, `false` otherwise.
+    func isUserEligibleForFreeTrial() async -> Bool
 
     @MainActor func purchaseSubscription(with identifier: String, externalID: String) async -> Result<StorePurchaseManager.TransactionJWS, StorePurchaseManagerError>
 }
@@ -208,6 +211,16 @@ public final class DefaultStorePurchaseManager: ObservableObject, StorePurchaseM
         Logger.subscription.info("[StorePurchaseManager] hasActiveSubscription fetched \(transactions.count) transactions")
 
         return !transactions.isEmpty
+    }
+
+    /// Checks if the user is eligible for a free trial subscription offer.
+    /// - Returns: `true` if the user is eligible for a free trial, `false` otherwise.
+    public func isUserEligibleForFreeTrial() async -> Bool {
+        Logger.subscription.info("[StorePurchaseManager] isUserEligibleForFreeTrial")
+        guard let options = await freeTrialSubscriptionOptions()?.options else {
+            return false
+        }
+        return options.contains { $0.offer?.isUserEligible == true }
     }
 
     @MainActor

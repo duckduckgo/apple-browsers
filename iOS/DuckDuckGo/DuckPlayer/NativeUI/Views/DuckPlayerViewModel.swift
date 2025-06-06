@@ -104,6 +104,15 @@ final class DuckPlayerViewModel: ObservableObject {
         source == .youtube
     }
 
+    // Controls visibility
+    var controlsVisible: Bool {
+        get {
+            duckPlayerSettings.duckPlayerControlsVisible
+        }
+        set {
+            duckPlayerSettings.duckPlayerControlsVisible = newValue
+        }
+    }
     var cancellables = Set<AnyCancellable>()
 
     /// The DuckPlayer instance
@@ -131,6 +140,9 @@ final class DuckPlayerViewModel: ObservableObject {
     private var webView: WKWebView?
     private var coordinator: DuckPlayerWebView.Coordinator?
 
+    // Pixel handling
+    var pixelHandler: DuckPlayerPixelFiring.Type
+
     /// Creates a new DuckPlayerViewModel instance
     /// - Parameters:
     ///   - videoID: The YouTube video ID to be played
@@ -138,13 +150,16 @@ final class DuckPlayerViewModel: ObservableObject {
     init(videoID: String,
          timestamp: TimeInterval? = nil,
          duckPlayerSettings: DuckPlayerSettings = DuckPlayerSettingsDefault(),
-         source: DuckPlayer.VideoNavigationSource = .other) {
+         source: DuckPlayer.VideoNavigationSource = .other,
+         pixelHandler: DuckPlayerPixelFiring.Type = DuckPlayerPixelHandler.self) {
         self.videoID = videoID
         self.duckPlayerSettings = duckPlayerSettings
         self.timestamp = timestamp ?? 0
         self.source = source
         self.autoOpenOnYoutube = duckPlayerSettings.nativeUIYoutubeMode == .auto
+        self.pixelHandler = pixelHandler
         self.url = getVideoURL()
+
     }
 
     /// Gets the current video URL with the current timestamp
@@ -169,6 +184,7 @@ final class DuckPlayerViewModel: ObservableObject {
 
     /// Opens the current video in the YouTube app or website
     func openInYouTube() {
+        pixelHandler.fire(.duckPlayerNativeWatchOnYoutube)
         youtubeNavigationRequestPublisher.send(videoID)
     }
 
@@ -216,6 +232,7 @@ final class DuckPlayerViewModel: ObservableObject {
 
     // Opens the settings view
     func openSettings() {
+        pixelHandler.fire(.duckPlayerNativeDuckPlayerSettingsOpened)
         settingsRequestPublisher.send()
     }
 

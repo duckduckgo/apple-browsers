@@ -32,69 +32,74 @@ import Subscription
 ///
 final class VPNAppEventsHandler {
 
-    // MARK: - Legacy VPN Item and Extension
-
-#if NETP_SYSTEM_EXTENSION
-#if DEBUG
-    private let legacyAgentBundleID = "HKE973VLUW.com.duckduckgo.macos.browser.network-protection.system-extension.agent.debug"
-    private let legacySystemExtensionBundleID = "com.duckduckgo.macos.browser.debug.network-protection-extension"
-#elseif REVIEW
-    private let legacyAgentBundleID = "HKE973VLUW.com.duckduckgo.macos.browser.network-protection.system-extension.agent.review"
-    private let legacySystemExtensionBundleID = "com.duckduckgo.macos.browser.review.network-protection-extension"
-#else
-    private let legacyAgentBundleID = "HKE973VLUW.com.duckduckgo.macos.browser.network-protection.system-extension.agent"
-    private let legacySystemExtensionBundleID = "com.duckduckgo.macos.browser.network-protection-extension"
-#endif // DEBUG || REVIEW || RELEASE
-#endif // NETP_SYSTEM_EXTENSION
+    typealias FeatureFlagOverridesPublisher = AnyPublisher<(FeatureFlag, Bool), Never>
 
     // MARK: - Feature Gatekeeping
 
-    private let featureGatekeeper: VPNFeatureGatekeeper
-    private let uninstaller: VPNUninstalling
-    private let defaults: UserDefaults
     private var cancellables = Set<AnyCancellable>()
+    private let defaults: UserDefaults
+    private let featureGatekeeper: VPNFeatureGatekeeper
+    private let loginItemsManager: LoginItemsManaging
+
+    // MARK: - Initializers
 
     init(featureGatekeeper: VPNFeatureGatekeeper,
-         featureFlagOverridesPublishingHandler: FeatureFlagOverridesPublishingHandler<FeatureFlag>,
-         uninstaller: VPNUninstalling = VPNUninstaller(),
+         featureFlagOverridesPublisher: FeatureFlagOverridesPublisher,
+         loginItemsManager: LoginItemsManaging,
          defaults: UserDefaults = .netP) {
 
         self.defaults = defaults
-        self.uninstaller = uninstaller
         self.featureGatekeeper = featureGatekeeper
+        self.loginItemsManager = loginItemsManager
 
-        subscribeToFeatureFlagOverrideChanges(featureFlagOverridesPublishingHandler: featureFlagOverridesPublishingHandler)
+        subscribeToFeatureFlagOverrideChanges(featureFlagOverridesPublisher)
     }
 
     /// Call this method when the app finishes launching, to run the startup logic for NetP.
     ///
     func applicationDidFinishLaunching() {
-        let loginItemsManager = LoginItemsManager()
+        loginItemsControlCheckpoint(canRestart: true)
+    }
 
-        Task { @MainActor in
-            restartNetworkProtectionIfVersionChanged(using: loginItemsManager)
+    func applicationDidBecomeActive() {
+        loginItemsControlCheckpoint(canRestart: false)
+    }
+
+    // MARK: - Login Item Control Checkpoints
+
+    /// Checks whether the VNP login items need to be disabled
+    ///
+    private func loginItemsControlCheckpoint(canRestart: Bool) {
+        Task { @MainActor [loginItemsManager] in
+            switch try? await featureGatekeeper.canStartVPN() {
+            case .some(true) where loginItemsManager.isAnyEnabled(LoginItemsManager.vpnLoginItems):
+                if canRestart {
+                    restartLoginItem(using: loginItemsManager)
+                }
+            case .some(false) where loginItemsManager.isAnyInstalled(LoginItemsManager.vpnLoginItems):
+                disableLoginItem(using: loginItemsManager)
+            default:
+                break
+            }
         }
     }
 
-    private func restartNetworkProtectionIfVersionChanged(using loginItemsManager: LoginItemsManager) {
-        // We want to restart the VPN menu app to make sure it's always on the latest.
-        restartNetworkProtectionMenu(using: loginItemsManager)
+    // MARK: - Managing the VPN Login Items
+
+    private func disableLoginItem(using loginItemsManager: LoginItemsManaging) {
+        loginItemsManager.disableLoginItems(LoginItemsManager.vpnLoginItems)
     }
 
-    private func restartNetworkProtectionMenu(using loginItemsManager: LoginItemsManager) {
-        guard loginItemsManager.isAnyEnabled(LoginItemsManager.networkProtectionLoginItems) else {
-            return
-        }
-
-        loginItemsManager.restartLoginItems(LoginItemsManager.networkProtectionLoginItems)
+    private func restartLoginItem(using loginItemsManager: LoginItemsManaging) {
+        loginItemsManager.restartLoginItems(LoginItemsManager.vpnLoginItems)
     }
 
     // MARK: - Feature Flag Overriding
 
     private func subscribeToFeatureFlagOverrideChanges(
-        featureFlagOverridesPublishingHandler: FeatureFlagOverridesPublishingHandler<FeatureFlag>) {
+        _ featureFlagOverridesPublisher: FeatureFlagOverridesPublisher) {
 
-            featureFlagOverridesPublishingHandler.flagDidChangePublisher
+            featureFlagOverridesPublisher
                 .filter { flag, _ in
                     flag == .networkProtectionAppStoreSysex
                 }.map { _, enabled in

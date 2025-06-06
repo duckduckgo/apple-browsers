@@ -86,7 +86,7 @@ private extension NSMenuItem {
         case .releaseNotes:
             image = TabViewModel.Favicon.home
             title = UserText.releaseNotesTitle
-        case .url, .subscription, .identityTheftRestoration, .webExtensionUrl:
+        case .url, .subscription, .identityTheftRestoration, .webExtensionUrl, .aiChat:
             image = recentlyClosedTab.favicon
             image?.size = NSSize.faviconSize
             title = recentlyClosedTab.title ?? recentlyClosedTab.tabContent.userEditableUrl?.absoluteString ?? ""

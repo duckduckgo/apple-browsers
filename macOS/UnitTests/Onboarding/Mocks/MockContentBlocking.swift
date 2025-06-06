@@ -37,7 +37,14 @@ class MockContentBlocking: ContentBlockingProtocol {
 
 class MockEmbeddedDataProvider: EmbeddedDataProvider {
     var embeddedDataEtag: String = ""
-    var embeddedData: Data = Data()
+    var embeddedData: Data = Data(#"""
+        {
+          "trackers": {},
+          "entities": {},
+          "domains": {},
+          "cnames": {}
+        }
+        """#.utf8)
 }
 
 class MockPrivacyConfigurationManaging: PrivacyConfigurationManaging {

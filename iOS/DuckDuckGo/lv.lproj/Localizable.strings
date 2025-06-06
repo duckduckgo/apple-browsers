@@ -190,6 +190,15 @@
 /* Description for alert shown when user logged off from sync */
 "alert.sync-invalid-login-error-description" = "Sinhronizācija ir apturēta. Ja vēlies turpināt sinhronizēt šo ierīci, izveido savienojumu no jauna, izmantojot citu ierīci vai savu atgūšanas kodu.";
 
+/* Sync Now button in alert asking if they would like to sync with another device */
+"alert.sync-new-device.button" = "Sinhronizēt tagad";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.message" = "“%@” varēs piekļūt taviem sinhronizētajiem DuckDuckGo datiem.";
+
+/* Asks the user if they would like to sync with a new device */
+"alert.sync-new-device.title" = "Sinhronizēt jaunu ierīci?";
+
 /* Learn more button in alert */
 "alert.sync-paused-alert-learn-more-button" = "Uzzināt vairāk";
 
@@ -261,6 +270,12 @@
 
 /* No comment provided by engineer. */
 "Are you sure you want to delete all bookmarks? This action cannot be undone." = "Vai tiešām vēlies dzēst visas grāmatzīmes? Šo darbību nevar atsaukt.";
+
+/* No comment provided by engineer. */
+"Are you sure you want to delete this chat? This cannot be undone." = "Vai tiešām vēlies izdzēst šo tērzēšanas sarunu? Šo darbību nevar atsaukt.";
+
+/* No comment provided by engineer. */
+"Ask anything..." = "Uzdod jebko...";
 
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Pierakstīties";
@@ -920,6 +935,9 @@
 "close.all.tabs" = "Aizvērt visas cilnes";
 
 /* No comment provided by engineer. */
+"Cohort: %@" = "Kohorta: %@";
+
+/* No comment provided by engineer. */
 "Confirm" = "Apstiprināt";
 
 /* Button to continue the onboarding process */
@@ -1282,17 +1300,26 @@
 /* Text displayed when DuckPlayer is in 'Ask' mode. */
 "duckPlayer.ask.label" = "Jautāt katru reizi";
 
-/* Subtitle explaining how Duck Player protects privacy */
-"duckplayer.blocks.ads.keeps.history.private" = "Duck Player bloķē mērķtiecīgas reklāmas un saglabā tavu skatīšanās vēsturi privātu.";
-
 /* Text displayed when DuckPlayer is in off. */
 "duckPlayer.never.label" = "Nekad";
 
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.open.video.settings.title" = "Duck Player";
 
-/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
-"duckplayer.open.youtube.videos.here" = "Atvērt YouTube videoklipus šeit";
+/* Content for Duck Player opt-in message */
+"duckplayer.opt-in.message.content" = "Duck Player bloķē mērķtiecīgas reklāmas un aizsargā tavu skatīšanās vēsturi.";
+
+/* Title for Duck Player opt-in message */
+"duckplayer.opt-in.message.title" = "YouTube, bet ar mazāk reklāmām un lielāku privātumu";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.opt-in.pill.subtitle" = "Skaties bez mērķētām reklāmām";
+
+/* Button text to play a video in Duck Player */
+"duckplayer.opt-in.pill.title" = "Atskaņot šo video Duck Player lietotnē";
+
+/* Subtitle explaining Duck Player blocks targeted ads */
+"duckplayer.pill.subtitle" = "Skaties bez mērķētām reklāmām";
 
 /* Button text to play a video in Duck Player */
 "duckplayer.play.in.duck.player" = "Atskaņot šo video Duck Player lietotnē";
@@ -1354,6 +1381,9 @@
 /* Settings screen cell text for DuckPlayer settings */
 "duckplayer.settings.title" = "Duck Player";
 
+/* Text for the toggle in Duck Player to automatically open YouTube videos in Duck Player */
+"duckplayer.settings.toggle" = "Atvērt YouTube videoklipus šeit";
+
 /* Label for the Duck Player variant picker in Duck Player settings */
 "duckplayer.settings.variant.label" = "Duck Player variants";
 
@@ -1363,20 +1393,29 @@
 /* Label for the YouTube.com option in Duck Player settings */
 "duckplayer.settings.youtube.label" = "YouTube.com";
 
+/* Text for the ask mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.ask" = "Ļaujiet man izvēlēties";
+
+/* Text for the auto mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.auto" = "Atvērt automātiski";
+
+/* Text for the never mode in Duck Player settings */
+"duckplayer.settings.youtube.mode.never" = "Nerādīt";
+
 /* Button text to open Duck Player settings */
 "duckplayer.toast.open.settings" = "Atvērt iestatījumus";
 
 /* Toast message informing user they can disable Duck Player in settings */
-"duckplayer.toast.turn.off.anytime" = "Tu vari jebkurā laikā izslēgt Duck Player iestatījumos";
+"duckplayer.toast.turn.off.anytime" = "Tu vari jebkurā laikā izslēgt Duck Player";
 
 /* Button text to watch video on YouTube */
 "duckplayer.watch.on.youtube" = "Skatīties pie YouTube";
 
-/* Subtitle explaining Duck Player blocks targeted ads */
-"duckplayer.watch.without.targeted.ads" = "Skaties bez mērķētām reklāmām";
+/* Subtitle explaining how Duck Player protects privacy */
+"duckplayer.welcome.message.content" = "Lai atgrieztos pakalpojumā YouTube, aizver Duck Player.\nTev tas neder? Izslēdz to zemāk!";
 
 /* Title for Duck Player welcome message highlighting privacy benefits */
-"duckplayer.youtube.no.ads.privacy" = "Skaties YouTube ar mazāku reklāmu daudzumu un lielāku privātumu";
+"duckplayer.welcome.message.text" = "Tu skaties Duck Player!\nŠeit nav mērķtiecīgu reklāmu.";
 
 /* Email protection service offered by DuckDuckGo */
 "email-protection" = "E-pasta aizsardzība";
@@ -1454,6 +1493,9 @@
 "empty.search" = "Sakritības nav atrastas";
 
 /* No comment provided by engineer. */
+"Enrolled: %@" = "Reģistrēts: %@";
+
+/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1506,6 +1548,9 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Tikai mobilā izlase";
+
+/* No comment provided by engineer. */
+"Feature: %@" = "Funkcija: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Reklāmu un uznirstošo logu bloķēšana";
@@ -2255,7 +2300,7 @@
 "onboarding.highlights.browsers.features.cookiePopups.title" = "Bloķē sīkfailu uznirstošos logus";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Bloķēt izsekojošas reklāmas";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Bloķē mērķtiecīgas reklāmas";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Dzēst pārlūkošanas datus ar vienu pogu";
@@ -2409,6 +2454,30 @@
 
 /* Title for the Privacy Pro feedback form */
 "ppro.feedback-form.title" = "Sūtīt atsauksmi";
+
+/* Title of the section of a setting page that shows Scam Blocking preferences (weather warning in case of scam sites) */
+"preferences.scam-blocker.title" = "Krāpniecības bloķētājs";
+
+/* Caption explaining the risk of disabling scam blocker protection */
+"preferences.scam-blocker.toggle-caption" = "Šī līdzekļa atspējošana var apdraudēt tavu personisko informāciju.";
+
+/* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
+"preferences.scam-blocker.toggle-label" = "Brīdināt par vietnēm, kas atzīmētas kā krāpnieciskas, pikšķerēšanas vai ļaunprātīgas programmatūras vietnes. [Uzzināt vairāk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker)";
+
+/* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
+"preferences.smarter-encryption.description" = "Automātiski jaunina saites uz HTTPS, kad vien iespējams. [Uzzini vairāk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
+
+/* Title of the section of a setting page that shows Smarter Encryption preferences */
+"preferences.smarter-encryption.title" = "Gudrāka šifrēšana";
+
+/* Status indicator of a browser privacy protection feature. */
+"preferences.status-indicator.always-on" = "Vienmēr ieslēgts";
+
+/* Title of the option to show the Threat Protection preferences */
+"preferences.threat-protection" = "Draudu aizsardzība";
+
+/* Caption of the option to show the Threat Protection preferences */
+"preferences.threat-protection.caption" = "DuckDuckGo uzlabotā aizsardzība novērš izplatītākos draudus, vienlaikus nodrošinot drošu savienojumu.\n[Uzzināt vairāk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Dažas grāmatzīmes vai paroles ir formatētas nepareizi vai pārāk garas un netika sinhronizētas.";
@@ -2770,6 +2839,9 @@
 /* Call to action title for Privacy Pro settings */
 "settings.subscription.subscribe" = "Aizsargā savu savienojumu un identitāti ar Privacy Pro";
 
+/* Try Privacy Pro Free button text for privacy pro */
+"settings.subscription.try.free" = "Izmēģināt Privacy Pro bez maksas";
+
 /* Privacy pro description subtitle in settings */
 "settings.subscription.us.description" = "Ietver mūsu VPN, Personal Information Removal un Identity Theft Restoration.";
 
@@ -2840,7 +2912,13 @@
 "siteFeedback.urlPlaceholder" = "Kura vietne ir bojāta?";
 
 /* No comment provided by engineer. */
+"Stop generating..." = "Apturi ģenerēšanu...";
+
+/* No comment provided by engineer. */
 "Stored Hostname: %@" = "Saglabātais resursdatora nosaukums: %@";
+
+/* No comment provided by engineer. */
+"Subfeature: %@" = "Apakšfunkcija: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Pievienot ierīcei";
@@ -3365,10 +3443,10 @@
 "vpn.settings.dns.server.content.blocking.explanation" = "Bloķē vairāk nekā 150 000 domēnu, kas atzīmēti kā ļaunprātīgas programmatūras, pikšķerēšanas uzbrukumu un tiešsaistes krāpšanas vietnes, izmantojot DNS līmeņa bloķēšanas sarakstu. [Uzzini vairāk](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
 
 /* Header of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.header" = "Satura bloķēšana un filtrēšana";
+"vpn.settings.dns.server.content.blocking.header" = "Ļaunprātīga satura bloķēšana";
 
-/* Title of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.title" = "Bloķēt riskantos domēnus";
+/* Title of the vpn scam blocker sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Krāpniecības bloķētājs";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";

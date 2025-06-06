@@ -47,6 +47,8 @@ final class PasswordManagementViewController: NSViewController {
 
     weak var delegate: PasswordManagementDelegate?
 
+    @IBOutlet weak var boxView: NSBox!
+    @IBOutlet weak var backgroundView: ColorView!
     @IBOutlet weak var lockMenuItem: NSMenuItem!
     @IBOutlet weak var importPasswordMenuItem: NSMenuItem!
     @IBOutlet weak var settingsMenuItem: NSMenuItem!
@@ -165,9 +167,14 @@ final class PasswordManagementViewController: NSViewController {
     private let urlMatcher = AutofillDomainNameUrlMatcher()
     private let tld = ContentBlocking.shared.tld
     private let urlSort = AutofillDomainNameUrlSort()
+    private let visualStyle: VisualStyleProviding = NSApp.delegateTyped.visualStyleManager.style
 
     override func viewDidLoad() {
         super.viewDidLoad()
+
+        boxView.fillColor = visualStyle.colorsProvider.passwordManagerBackgroundColor
+        backgroundView.backgroundColor = visualStyle.colorsProvider.passwordManagerLockScreenBackgroundColor
+
         createListView()
         createLoginItemView()
         setupStrings()
@@ -314,7 +321,7 @@ final class PasswordManagementViewController: NSViewController {
     }
 
     @IBAction func openAutofillPreferences(_ sender: Any) {
-        WindowControllersManager.shared.showPreferencesTab(withSelectedPane: .autofill)
+        Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: .autofill)
         self.dismiss()
     }
 
@@ -581,7 +588,10 @@ final class PasswordManagementViewController: NSViewController {
             if case SecureStorageError.duplicateRecord = error {
                 showDuplicateAlert()
             } else {
-                PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error)))
+                PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
+                if let window = view.window {
+                    NSAlert.passwordManagerSaveError(errorType: error.localizedDescription).beginSheetModal(for: window)
+                }
             }
         }
     }
@@ -604,7 +614,7 @@ final class PasswordManagementViewController: NSViewController {
             postChange()
 
         } catch {
-            PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error)))
+            PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
         }
     }
 
@@ -648,7 +658,7 @@ final class PasswordManagementViewController: NSViewController {
             postChange()
 
         } catch {
-            PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error)))
+            PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
         }
     }
 
@@ -668,7 +678,7 @@ final class PasswordManagementViewController: NSViewController {
                     self.refreshData()
                     PixelKit.fire(GeneralPixel.autofillManagementDeleteLogin)
                 } catch {
-                    PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error)))
+                    PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
                 }
 
             default:
@@ -691,7 +701,7 @@ final class PasswordManagementViewController: NSViewController {
                     try self.secureVault?.deleteIdentityFor(identityId: id)
                     self.refreshData()
                 } catch {
-                    PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error)))
+                    PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
                 }
 
             default:
@@ -733,7 +743,7 @@ final class PasswordManagementViewController: NSViewController {
                     try self.secureVault?.deleteCreditCardFor(cardId: id)
                     self.refreshData()
                 } catch {
-                    PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error)))
+                    PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
                 }
 
             default:
@@ -786,7 +796,7 @@ final class PasswordManagementViewController: NSViewController {
                         self?.syncModelsOnNote(note)
                     }
                 } catch {
-                    PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error)))
+                    PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
                 }
             }
 
@@ -916,7 +926,7 @@ final class PasswordManagementViewController: NSViewController {
                     items = cards.map(SecureVaultItem.card)
                 }
             } catch {
-                PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error)))
+                PixelKit.fire(DebugEvent(GeneralPixel.secureVaultError(error: error), error: error))
             }
 
             DispatchQueue.main.async {
@@ -1104,9 +1114,9 @@ extension PasswordManagementViewController: NSTextViewDelegate {
     func textView(_ textView: NSTextView, clickedOnLink link: Any, at charIndex: Int) -> Bool {
         if let link = link as? URL {
             if let pane = PreferencePaneIdentifier(url: link) {
-                WindowControllersManager.shared.showPreferencesTab(withSelectedPane: pane)
+                Application.appDelegate.windowControllersManager.showPreferencesTab(withSelectedPane: pane)
             } else {
-                WindowControllersManager.shared.showTab(with: .url(link, source: .link))
+                Application.appDelegate.windowControllersManager.showTab(with: .url(link, source: .link))
             }
             self.dismiss()
         }

@@ -91,7 +91,8 @@ final class OnboardingDebugViewModel: ObservableObject {
     }
 
     func resetDaxDialogs() {
-        UserDefaults().set(false, forKey: LaunchOptionsHandler.isOnboardingCompleted)
+        // Remove a debug setting that internal users may have set in the past and could not remove:
+        UserDefaults().removeObject(forKey: LaunchOptionsHandler.isOnboardingCompleted)
 
         settings.isDismissed = false
         settings.tryAnonymousSearchShown = false

@@ -1,0 +1,21 @@
+<svg fill="none" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+  <g clip-path="url(#Sync-Color-16_svg__a)">
+    <path fill="url(#Sync-Color-16_svg__b)" d="M7.75.5c3.277 0 6.079 1.968 7.212 4.75h-3.407A6.266 6.266 0 0 0 6.716 3C3.9 3 1.522 4.818.766 7.307l-.702-.281C.558 3.344 3.811.5 7.75.5Z"/>
+    <path fill="url(#Sync-Color-16_svg__c)" d="M15.935 8.973C15.442 12.656 12.19 15.5 8.25 15.5c-3.277 0-6.08-1.969-7.212-4.75h3.407A6.266 6.266 0 0 0 9.283 13c2.817 0 5.194-1.818 5.95-4.307l.702.28Z"/>
+    <path fill="#DE5833" d="M6.874.08a8.002 8.002 0 0 1 4.696.76l.287.15a8 8 0 0 1 3.136 3.124C14.997 4.076 15 4.039 15 4V1a.5.5 0 1 1 1 0v3a2 2 0 0 1-2 2h-2.5a.5.5 0 0 1 0-1H14c.108 0 .212-.02.31-.051a.512.512 0 0 1-.05-.081l-.133-.252a6.999 6.999 0 0 0-2.753-2.748l-.251-.132a7.002 7.002 0 0 0-4.11-.666l-.28.046A7.001 7.001 0 0 0 3.05 3.05l-.196.205a7 7 0 0 0-1.817 4.042l-.008.051a.5.5 0 0 1-.987-.15l.039-.323A8.001 8.001 0 0 1 6.553.132l.32-.052Z"/>
+    <path fill="#3969EF" d="M15.512 8.254a.501.501 0 0 1 .448.548l-.04.322a8.002 8.002 0 0 1-2.038 4.298l-.225.234a8.001 8.001 0 0 1-4.21 2.213l-.321.051a8 8 0 0 1-4.695-.76l-.287-.15a8 8 0 0 1-3.137-3.126A1.015 1.015 0 0 0 1 12v3a.5.5 0 0 1-.997.051L0 15.001v-3a2 2 0 0 1 2-2h2.5a.5.5 0 0 1 0 1H2a1 1 0 0 0-.313.05.46.46 0 0 1 .053.082 7.001 7.001 0 0 0 2.885 3l.252.132a7 7 0 0 0 4.108.665l.28-.045a7.001 7.001 0 0 0 3.685-1.936l.197-.204a7.003 7.003 0 0 0 1.818-4.043l.008-.051a.5.5 0 0 1 .539-.397Z"/>
+  </g>
+  <defs>
+    <radialGradient id="Sync-Color-16_svg__b" cx="0" cy="0" r="1" gradientTransform="matrix(-12.4998 0 0 -25.8657 13 3.989)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#DE5833" stop-opacity=".3"/>
+      <stop offset="1" stop-color="#DE5833" stop-opacity=".1"/>
+    </radialGradient>
+    <radialGradient id="Sync-Color-16_svg__c" cx="0" cy="0" r="1" gradientTransform="matrix(10.4998 0 0 21.727 3 11.5)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3969EF" stop-opacity=".3"/>
+      <stop offset="1" stop-color="#3969EF" stop-opacity=".1"/>
+    </radialGradient>
+    <clipPath id="Sync-Color-16_svg__a">
+      <path fill="#fff" d="M0 0h16v16H0z"/>
+    </clipPath>
+  </defs>
+</svg>

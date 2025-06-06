@@ -24,18 +24,20 @@ import XCTest
 @testable import DuckDuckGo
 
 final class NewTabPageMessagesModelTests: XCTestCase {
-
+ 
     private var messagesConfiguration: HomePageMessagesConfigurationMock!
     private var notificationCenter: NotificationCenter!
 
     private var segueToAIChatSettingsCallCount = 0
     private var segueToSettingsCallCount = 0
+    private var segueToFeedbackCallCount = 0
 
     override func setUpWithError() throws {
         messagesConfiguration = HomePageMessagesConfigurationMock(homeMessages: [])
         notificationCenter = NotificationCenter()
         segueToAIChatSettingsCallCount = 0
         segueToSettingsCallCount = 0
+        segueToFeedbackCallCount = 0
     }
 
     override func tearDownWithError() throws {
@@ -135,12 +137,16 @@ final class NewTabPageMessagesModelTests: XCTestCase {
 
         XCTAssertEqual(segueToSettingsCallCount, 0)
         XCTAssertEqual(segueToAIChatSettingsCallCount, 0)
+        XCTAssertEqual(segueToFeedbackCallCount, 0)
 
         DefaultMessageNavigator(delegate: self).navigateTo(.settings)
         XCTAssertEqual(segueToSettingsCallCount, 1)
 
         DefaultMessageNavigator(delegate: self).navigateTo(.duckAISettings)
         XCTAssertEqual(segueToAIChatSettingsCallCount, 1)
+        
+        DefaultMessageNavigator(delegate: self).navigateTo(.feedback)
+        XCTAssertEqual(segueToFeedbackCallCount, 1)
 
     }
 
@@ -276,29 +282,11 @@ extension NewTabPageMessagesModelTests: MessageNavigationDelegate {
     func segueToSettings() {
         segueToSettingsCallCount += 1
     }
-}
 
-class HomePageMessagesConfigurationMock: HomePageMessagesConfiguration {
-    var homeMessages: [HomeMessage]
-
-    init(homeMessages: [HomeMessage]) {
-        self.homeMessages = homeMessages
+    func segueToFeedback() {
+        segueToFeedbackCallCount += 1
     }
 
-    private(set) var lastAppearedHomeMessage: HomeMessage?
-    func didAppear(_ homeMessage: HomeMessage) {
-        lastAppearedHomeMessage = homeMessage
-    }
-
-    private(set) var lastDismissedHomeMessage: HomeMessage?
-    func dismissHomeMessage(_ homeMessage: HomeMessage) {
-        lastDismissedHomeMessage = homeMessage
-    }
-
-    private(set) var didRefresh: Bool = false
-    func refresh() {
-        didRefresh = true
-    }
 }
 
 private extension HomeMessage {

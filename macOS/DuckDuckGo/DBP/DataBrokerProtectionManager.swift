@@ -141,6 +141,7 @@ extension DataBrokerProtectionManager: DataBrokerProtectionDataManagerDelegate {
     }
 
     public func dataBrokerProtectionDataManagerDidDeleteData() {
+        DataBrokerProtectionSettings(defaults: .dbp).resetBrokerDeliveryData()
         loginItemInterface.dataDeleted()
     }
 

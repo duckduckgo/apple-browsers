@@ -1,0 +1,15 @@
+<svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <path fill="#96E38A" d="M20.75 12a8.75 8.75 0 1 1-17.5 0 8.75 8.75 0 0 1 17.5 0Z"/>
+  <path fill="url(#Profile-Color-24_svg__a)" d="M12 15c2.587 0 4.868 1.255 6.216 3.165A8.723 8.723 0 0 1 12 20.757a8.724 8.724 0 0 1-6.216-2.592C7.132 16.255 9.414 15 12 15Zm0-8.125a3.125 3.125 0 1 1 0 6.25 3.125 3.125 0 0 1 0-6.25Z"/>
+  <path fill="url(#Profile-Color-24_svg__b)" d="M12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2Zm-.122 13.25a7.425 7.425 0 0 0-3.529.946 7.353 7.353 0 0 0-2.387 2.137A8.72 8.72 0 0 0 12 20.75a8.72 8.72 0 0 0 6.012-2.393 7.356 7.356 0 0 0-2.58-2.256 7.426 7.426 0 0 0-3.438-.851h-.116Zm.122-12a8.75 8.75 0 0 0-6.894 14.139 8.606 8.606 0 0 1 2.632-2.283l.119-.065A8.675 8.675 0 0 1 11.86 14l.136-.001c1.4.003 2.778.344 4.016.995a8.609 8.609 0 0 1 2.859 2.422A8.75 8.75 0 0 0 12 3.25ZM12 6a4 4 0 1 1 0 8 4 4 0 0 1 0-8Zm0 1.25a2.75 2.75 0 1 0 0 5.5 2.75 2.75 0 0 0 0-5.5Z"/>
+  <defs>
+    <linearGradient id="Profile-Color-24_svg__a" x1="12" x2="12" y1="6.375" y2="21.382" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#63C853"/>
+      <stop offset="1" stop-color="#399F29"/>
+    </linearGradient>
+    <linearGradient id="Profile-Color-24_svg__b" x1="12" x2="12" y1="2" y2="22" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#399F29"/>
+      <stop offset="1" stop-color="#0F4E05"/>
+    </linearGradient>
+  </defs>
+</svg>

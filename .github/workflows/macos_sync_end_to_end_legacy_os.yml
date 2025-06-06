@@ -46,7 +46,7 @@ jobs:
     timeout-minutes: 60
     steps:
     - name: Register SSH key for certificates repository access
-      uses: webfactory/ssh-agent@v0.9.0
+      uses: webfactory/ssh-agent@v0.9.1
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_FASTLANE_MATCH }}
 
@@ -55,8 +55,11 @@ jobs:
       with:
         submodules: recursive
 
-    - name: Set up fastlane
-      run: bundle install
+    - name: Setup Ruby and dependencies
+      uses: ./.github/actions/setup-ruby
+      with:
+        working-directory: macOS
+        cache-key-prefix: macos-ruby
 
     - name: Sync code signing assets
       env:

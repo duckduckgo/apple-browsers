@@ -134,9 +134,16 @@ public struct UserText {
         return String(format: localized, syncMenuPath)
     }
 
+    static func scanOrSeeCodeOtherDeviceInstruction(syncMenuPath: String) -> String {
+        let localized = NSLocalizedString("scan.or.see.code.other.device.instruction.attributed", bundle: Bundle.module, value: "Open the DuckDuckGo app on your other device and go to %@.", comment: "Scan or See Code View - Instruction with syncMenuPath")
+        return String(format: localized, syncMenuPath)
+    }
+
     static let scanOrSeeCodeManuallyEnterCodeLink = NSLocalizedString("scan.or.see.code.manually.enter.code.link", bundle: Bundle.module, value: "Manually Enter Code", comment: "Scan or See Code View - Manually Enter Code Link")
     static let scanOrSeeCodeScanCodeInstructionsTitle = NSLocalizedString("scan.or.see.code.scan.code.instructions.title", bundle: Bundle.module, value: "Mobile-to-Mobile?", comment: "Scan or See Code View - Scan Code Instructions Title")
+    static let scanOrSeeCodeScanCodeQRInstructionsTitle = NSLocalizedString("scan.or.see.code.scan.code.qr.instructions.title", bundle: Bundle.module, value: "Or scan with DuckDuckGo on your other device", comment: "Scan or See Code View - Scan Code Instructions Title")
     static let scanOrSeeCodeScanCodeInstructionsBody = NSLocalizedString("scan.or.see.code.scan.code.instructions.body", bundle: Bundle.module, value: "Scan this code with another device to sync.", comment: "Scan or See Code View - Scan Code Instructions Body")
+    static let scanOrSeeCodeScanCodeQRInstructionsBody = NSLocalizedString("scan.or.see.code.scan.code.qr.instructions.body", bundle: Bundle.module, value: "Open DuckDuckGo on your other device and scan this code to sync.", comment: "Scan or See Code View - Scan Code Instructions Body")
     static let scanOrSeeCodeFooter = NSLocalizedString("scan.or.see.code.footer", bundle: Bundle.module, value: "Can’t Scan?", comment: "Scan or See Code View - Footer")
     static let scanOrSeeCodeShareCodeLink = NSLocalizedString("scan.or.see.code.share.code.link", bundle: Bundle.module, value: "Share Text Code", comment: "Scan or See Code View - Share Code Link")
 

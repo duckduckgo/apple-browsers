@@ -35,6 +35,7 @@ protocol ScriptSourceProviding {
     var messageSecret: String? { get }
     var onboardingActionsManager: OnboardingActionsManaging? { get }
     var historyViewActionsManager: HistoryViewActionsManager? { get }
+    var currentCohorts: [ContentScopeExperimentData]? { get }
     func buildAutofillSource() -> AutofillUserScriptSourceProvider
 
 }
@@ -42,7 +43,21 @@ protocol ScriptSourceProviding {
 // refactor: ScriptSourceProvider to be passed to init methods as `some ScriptSourceProviding`, DefaultScriptSourceProvider to be killed
 // swiftlint:disable:next identifier_name
 @MainActor func DefaultScriptSourceProvider() -> ScriptSourceProviding {
-    ScriptSourceProvider(configStorage: Application.appDelegate.configurationStore, privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager, webTrackingProtectionPreferences: WebTrackingProtectionPreferences.shared, contentBlockingManager: ContentBlocking.shared.contentBlockingManager, trackerDataManager: ContentBlocking.shared.trackerDataManager, tld: ContentBlocking.shared.tld)
+    ScriptSourceProvider(
+        configStorage: Application.appDelegate.configurationStore,
+        privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
+        webTrackingProtectionPreferences: WebTrackingProtectionPreferences.shared,
+        contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
+        trackerDataManager: ContentBlocking.shared.trackerDataManager,
+        experimentManager: Application.appDelegate.contentScopeExperimentsManager,
+        tld: ContentBlocking.shared.tld,
+        onboardingNavigationDelegate: Application.appDelegate.windowControllersManager,
+        appearancePreferences: Application.appDelegate.appearancePreferences,
+        startupPreferences: Application.appDelegate.startupPreferences,
+        bookmarkManager: Application.appDelegate.bookmarkManager,
+        historyCoordinator: Application.appDelegate.historyCoordinator,
+        fireproofDomains: Application.appDelegate.fireproofDomains
+    )
 }
 
 struct ScriptSourceProvider: ScriptSourceProviding {
@@ -53,6 +68,7 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     private(set) var autofillSourceProvider: AutofillUserScriptSourceProvider?
     private(set) var sessionKey: String?
     private(set) var messageSecret: String?
+    private(set) var currentCohorts: [ContentScopeExperimentData]?
 
     let configStorage: ConfigurationStoring
     let privacyConfigurationManager: PrivacyConfigurationManaging
@@ -60,6 +76,9 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     let trackerDataManager: TrackerDataManager
     let webTrakcingProtectionPreferences: WebTrackingProtectionPreferences
     let tld: TLD
+    let experimentManager: ContentScopeExperimentsManaging
+    let bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling
+    let historyCoordinator: HistoryDataSource
 
     @MainActor
     init(configStorage: ConfigurationStoring,
@@ -67,22 +86,38 @@ struct ScriptSourceProvider: ScriptSourceProviding {
          webTrackingProtectionPreferences: WebTrackingProtectionPreferences,
          contentBlockingManager: ContentBlockerRulesManagerProtocol,
          trackerDataManager: TrackerDataManager,
-         tld: TLD) {
+         experimentManager: ContentScopeExperimentsManaging,
+         tld: TLD,
+         onboardingNavigationDelegate: OnboardingNavigating,
+         appearancePreferences: AppearancePreferences,
+         startupPreferences: StartupPreferences,
+         bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling,
+         historyCoordinator: HistoryDataSource,
+         fireproofDomains: DomainFireproofStatusProviding
+    ) {
 
         self.configStorage = configStorage
         self.privacyConfigurationManager = privacyConfigurationManager
         self.webTrakcingProtectionPreferences = webTrackingProtectionPreferences
         self.contentBlockingManager = contentBlockingManager
         self.trackerDataManager = trackerDataManager
+        self.experimentManager = experimentManager
         self.tld = tld
+        self.bookmarkManager = bookmarkManager
+        self.historyCoordinator = historyCoordinator
 
         self.contentBlockerRulesConfig = buildContentBlockerRulesConfig()
         self.surrogatesConfig = buildSurrogatesConfig()
         self.sessionKey = generateSessionKey()
         self.messageSecret = generateSessionKey()
         self.autofillSourceProvider = buildAutofillSource()
-        self.onboardingActionsManager = buildOnboardingActionsManager()
-        self.historyViewActionsManager = buildHistoryViewActionsManager()
+        self.onboardingActionsManager = buildOnboardingActionsManager(onboardingNavigationDelegate, appearancePreferences, startupPreferences)
+        self.historyViewActionsManager = HistoryViewActionsManager(
+            historyCoordinator: historyCoordinator,
+            bookmarksHandler: bookmarkManager,
+            fireproofStatusProvider: fireproofDomains
+        )
+        self.currentCohorts = generateCurrentCohorts()
     }
 
     private func generateSessionKey() -> String {
@@ -138,17 +173,15 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     }
 
     @MainActor
-    private func buildOnboardingActionsManager() -> OnboardingActionsManaging {
+    private func buildOnboardingActionsManager(_ navigationDelegate: OnboardingNavigating, _ appearancePreferences: AppearancePreferences, _ startupPreferences: StartupPreferences) -> OnboardingActionsManaging {
         return OnboardingActionsManager(
-            navigationDelegate: WindowControllersManager.shared,
+            navigationDelegate: navigationDelegate,
             dockCustomization: DockCustomizer(),
             defaultBrowserProvider: SystemDefaultBrowserProvider(),
-            appearancePreferences: AppearancePreferences.shared,
-            startupPreferences: StartupPreferences.shared)
-    }
-
-    private func buildHistoryViewActionsManager() -> HistoryViewActionsManager {
-        HistoryViewActionsManager(historyCoordinator: HistoryCoordinator.shared)
+            appearancePreferences: appearancePreferences,
+            startupPreferences: startupPreferences,
+            bookmarkManager: bookmarkManager
+        )
     }
 
     private func loadTextFile(_ fileName: String, _ fileExt: String) -> String? {
@@ -199,5 +232,12 @@ struct ScriptSourceProvider: ScriptSourceProviding {
     private func encodeTrackerData(_ trackerData: TrackerData) -> String {
         let encodedData = try? JSONEncoder().encode(trackerData)
         return String(data: encodedData!, encoding: .utf8)!
+    }
+
+    private func generateCurrentCohorts() -> [ContentScopeExperimentData] {
+        let experiments = experimentManager.resolveContentScopeScriptActiveExperiments()
+        return experiments.map {
+            ContentScopeExperimentData(feature: $0.value.parentID, subfeature: $0.key, cohort: $0.value.cohortID)
+        }
     }
 }

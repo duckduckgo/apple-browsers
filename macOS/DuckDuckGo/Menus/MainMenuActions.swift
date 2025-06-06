@@ -157,7 +157,7 @@ extension AppDelegate {
 
     @MainActor
     @objc func showAbout(_ sender: Any?) {
-        WindowControllersManager.shared.showTab(with: .settings(pane: .about))
+        Application.appDelegate.windowControllersManager.showTab(with: .settings(pane: .about))
     }
 
     @MainActor
@@ -174,12 +174,12 @@ extension AppDelegate {
 
     @MainActor
     @objc func showReleaseNotes(_ sender: Any?) {
-        WindowControllersManager.shared.showTab(with: .releaseNotes)
+        Application.appDelegate.windowControllersManager.showTab(with: .releaseNotes)
     }
 
     @MainActor
     @objc func showWhatIsNew(_ sender: Any?) {
-        WindowControllersManager.shared.showTab(with: .url(.updates, source: .ui))
+        Application.appDelegate.windowControllersManager.showTab(with: .url(.updates, source: .ui))
     }
 
 #if FEEDBACK
@@ -187,7 +187,7 @@ extension AppDelegate {
     @objc func openFeedback(_ sender: Any?) {
         DispatchQueue.main.async {
             if self.internalUserDecider.isInternalUser {
-                WindowControllersManager.shared.showTab(with: .url(.internalFeedbackForm, source: .ui))
+                Application.appDelegate.windowControllersManager.showTab(with: .url(.internalFeedbackForm, source: .ui))
             } else {
                 FeedbackPresenter.presentFeedbackForm()
             }
@@ -206,7 +206,7 @@ extension AppDelegate {
         privacyDashboardWindow = window
 
         DispatchQueue.main.async {
-            guard let parentWindowController = WindowControllersManager.shared.lastKeyMainWindowController,
+            guard let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController,
                   let tabModel = parentWindowController.mainViewController.tabCollectionViewModel.selectedTabViewModel else {
                 assertionFailure("AppDelegate: Failed to present PrivacyDashboard")
                 return
@@ -218,7 +218,7 @@ extension AppDelegate {
 
     @MainActor
     @objc func openPProFeedback(_ sender: Any?) {
-        WindowControllersManager.shared.showShareFeedbackModal(source: .settings)
+        Application.appDelegate.windowControllersManager.showShareFeedbackModal(source: .settings)
     }
 
     @MainActor
@@ -275,7 +275,7 @@ extension AppDelegate {
 
     @MainActor
     @objc func openExportLogins(_ sender: Any?) {
-        guard let windowController = WindowControllersManager.shared.lastKeyMainWindowController,
+        guard let windowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController,
               let window = windowController.window else { return }
 
         DeviceAuthenticator.shared.authenticateUser(reason: .exportLogins) { authenticationResult in
@@ -315,9 +315,9 @@ extension AppDelegate {
 
     @MainActor
     @objc func openExportBookmarks(_ sender: Any?) {
-        guard let windowController = WindowControllersManager.shared.lastKeyMainWindowController,
+        guard let windowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController,
               let window = windowController.window,
-              let list = LocalBookmarkManager.shared.list else { return }
+              let list = bookmarkManager.list else { return }
 
         let savePanel = NSSavePanel()
         savePanel.nameFieldStringValue = "DuckDuckGo \(UserText.exportBookmarksFileNameSuffix)"
@@ -355,6 +355,17 @@ extension AppDelegate {
         }
     }
 
+    // MARK: - Debug
+
+    @MainActor
+    @objc func skipOnboarding(_ sender: Any?) {
+        UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.onboardingFinished.rawValue)
+        Application.appDelegate.onboardingContextualDialogsManager.state = .onboardingCompleted
+        OnboardingActionsManager.isOnboardingFinished = true
+        Application.appDelegate.windowControllersManager.updatePreventUserInteraction(prevent: false)
+        Application.appDelegate.windowControllersManager.replaceTabWith(Tab(content: .newtab))
+    }
+
     @objc func resetRemoteMessages(_ sender: Any?) {
         Task {
             await remoteMessagingClient.store?.resetRemoteMessages()
@@ -363,6 +374,239 @@ extension AppDelegate {
 
     @objc func resetNewTabPageCustomization(_ sender: Any?) {
         newTabPageCustomizationModel.resetAllCustomizations()
+    }
+
+    @objc func debugResetContinueSetup(_ sender: Any?) {
+        let persistor = AppearancePreferencesUserDefaultsPersistor(keyValueStore: keyValueStore)
+        persistor.continueSetUpCardsLastDemonstrated = nil
+        persistor.continueSetUpCardsNumberOfDaysDemonstrated = 0
+        appearancePreferences.isContinueSetUpCardsViewOutdated = false
+        appearancePreferences.continueSetUpCardsClosed = false
+        appearancePreferences.isContinueSetUpVisible = true
+        HomePage.Models.ContinueSetUpModel.Settings().clear()
+        NotificationCenter.default.post(name: NSApplication.didBecomeActiveNotification, object: NSApp)
+    }
+
+    @objc func showContentScopeExperiments(_ sender: Any?) {
+        let experiments = contentScopeExperimentsManager.allActiveContentScopeExperiments
+
+        let alert = NSAlert()
+        alert.messageText = "Content Scope Experiments"
+
+        var infoText = "Active Experiments:\n"
+        if experiments.isEmpty {
+            infoText += "No active experiments\n"
+        } else {
+            for (key, data) in experiments {
+                infoText += "\nExperiment: \(key)\n"
+                infoText += "Parent ID: \(data.parentID)\n"
+                infoText += "Cohort ID: \(data.cohortID)\n"
+                infoText += "Enrollment Date: \(data.enrollmentDate)\n"
+            }
+        }
+
+        alert.informativeText = infoText
+        alert.addButton(withTitle: "OK")
+        alert.runModal()
+    }
+
+    @objc func resetDefaultBrowserPrompt(_ sender: Any?) {
+        UserDefaultsWrapper.clear(.defaultBrowserDismissed)
+    }
+
+    @objc func resetDefaultGrammarChecks(_ sender: Any?) {
+        UserDefaultsWrapper.clear(.spellingCheckEnabledOnce)
+        UserDefaultsWrapper.clear(.grammarCheckEnabledOnce)
+    }
+
+    @objc func triggerFatalError(_ sender: Any?) {
+        fatalError("Fatal error triggered from the Debug menu")
+    }
+
+    @objc func crashOnCxxException(_ sender: Any?) {
+        throwTestCppException()
+    }
+
+    @objc func resetSecureVaultData(_ sender: Any?) {
+        let vault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter.shared)
+
+        let accounts = (try? vault?.accounts()) ?? []
+        for accountID in accounts.compactMap(\.id) {
+            if let accountID = Int64(accountID) {
+                try? vault?.deleteWebsiteCredentialsFor(accountId: accountID)
+            }
+        }
+
+        let cards = (try? vault?.creditCards()) ?? []
+        for cardID in cards.compactMap(\.id) {
+            try? vault?.deleteCreditCardFor(cardId: cardID)
+        }
+
+        let identities = (try? vault?.identities()) ?? []
+        for identityID in identities.compactMap(\.id) {
+            try? vault?.deleteIdentityFor(identityId: identityID)
+        }
+
+        let notes = (try? vault?.notes()) ?? []
+        for noteID in notes.compactMap(\.id) {
+            try? vault?.deleteNoteFor(noteId: noteID)
+        }
+        UserDefaults.standard.set(false, forKey: UserDefaultsWrapper<Bool>.Key.homePageContinueSetUpImport.rawValue)
+
+        let autofillPixelReporter = AutofillPixelReporter(standardUserDefaults: .standard,
+                                                          appGroupUserDefaults: nil,
+                                                          autofillEnabled: AutofillPreferences().askToSaveUsernamesAndPasswords,
+                                                          eventMapping: EventMapping<AutofillPixelEvent> { _, _, _, _ in },
+                                                          installDate: nil)
+        autofillPixelReporter.resetStoreDefaults()
+        let loginImportState = AutofillLoginImportState()
+        loginImportState.hasImportedLogins = false
+        loginImportState.isCredentialsImportPromptPermanantlyDismissed = false
+    }
+
+    @objc func resetBookmarks(_ sender: Any?) {
+        bookmarkManager.resetBookmarks {
+            self.bookmarkManager.sortMode = .manual
+            UserDefaultsWrapper<Bool>(key: .homePageContinueSetUpImport, defaultValue: false).clear()
+            UserDefaultsWrapper<Bool>(key: .showBookmarksBar, defaultValue: false).clear()
+            UserDefaultsWrapper<Bool>(key: .bookmarksBarPromptShown, defaultValue: false).clear()
+            UserDefaultsWrapper<Bool>(key: .centerAlignedBookmarksBar, defaultValue: false).clear()
+            UserDefaultsWrapper<Bool>(key: .showTabsAndBookmarksBarOnFullScreen, defaultValue: false).clear()
+
+            self.appearancePreferences.reload()
+        }
+    }
+
+    @objc func resetPinnedTabs(_ sender: Any?) {
+        for pinnedTabsManager in Application.appDelegate.pinnedTabsManagerProvider.currentPinnedTabManagers {
+            pinnedTabsManager.tabCollection.removeAll()
+        }
+    }
+
+    @objc func resetDuckPlayerOverlayInteractions(_ sender: Any?) {
+        DuckPlayerPreferences.shared.youtubeOverlayAnyButtonPressed = false
+        DuckPlayerPreferences.shared.youtubeOverlayInteracted = false
+    }
+
+    @objc func resetMakeDuckDuckGoYoursUserSettings(_ sender: Any?) {
+        UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.homePageShowAllFeatures.rawValue)
+        UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.homePageShowMakeDefault.rawValue)
+        UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.homePageShowImport.rawValue)
+        UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.homePageShowDuckPlayer.rawValue)
+        UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.homePageShowEmailProtection.rawValue)
+    }
+
+    @objc func resetOnboarding(_ sender: Any?) {
+        UserDefaults.standard.set(false, forKey: UserDefaultsWrapper<Bool>.Key.onboardingFinished.rawValue)
+    }
+
+    @objc func resetHomePageSettingsOnboarding(_ sender: Any?) {
+        UserDefaults.standard.set(false, forKey: UserDefaultsWrapper<Any>.Key.homePageDidShowSettingsOnboarding.rawValue)
+    }
+
+    @objc func resetContextualOnboarding(_ sender: Any?) {
+        Application.appDelegate.onboardingContextualDialogsManager.state = .notStarted
+    }
+
+    @objc func resetDuckPlayerPreferences(_ sender: Any?) {
+        DuckPlayerPreferences.shared.reset()
+    }
+
+    @objc func resetSyncPromoPrompts(_ sender: Any?) {
+        SyncPromoManager().resetPromos()
+    }
+
+    @objc func resetAddToDockFeatureNotification(_ sender: Any?) {
+#if SPARKLE
+        guard let dockCustomizer = Application.appDelegate.dockCustomization else { return }
+        dockCustomizer.resetData()
+#endif
+    }
+
+    @objc func resetLaunchDateToToday(_ sender: Any?) {
+        UserDefaults.standard.set(Date(), forKey: UserDefaultsWrapper<Any>.Key.firstLaunchDate.rawValue)
+    }
+
+    @objc func setLaunchDayAWeekInThePast(_ sender: Any?) {
+        UserDefaults.standard.set(Date.weekAgo, forKey: UserDefaultsWrapper<Any>.Key.firstLaunchDate.rawValue)
+    }
+
+    @objc func resetTipKit(_ sender: Any?) {
+        TipKitDebugOptionsUIActionHandler().resetTipKitTapped()
+    }
+
+    @objc func internalUserState(_ sender: Any?) {
+        guard let internalUserDecider = NSApp.delegateTyped.internalUserDecider as? DefaultInternalUserDecider else { return }
+        let state = internalUserDecider.isInternalUser
+        internalUserDecider.debugSetInternalUserState(!state)
+    }
+
+    @objc func resetDailyPixels(_ sender: Any?) {
+        PixelKit.shared?.clearFrequencyHistoryForAllPixels()
+    }
+
+    @objc func changePixelExperimentInstalledDateToLessMoreThan5DayAgo(_ sender: Any?) {
+        let moreThanFiveDaysAgo = Calendar.current.date(byAdding: .day, value: -6, to: Date())
+        UserDefaults.standard.set(moreThanFiveDaysAgo, forKey: UserDefaultsWrapper<Date>.Key.pixelExperimentEnrollmentDate.rawValue)
+    }
+
+    @objc func changeInstallDateToToday(_ sender: Any?) {
+        UserDefaults.standard.set(Date(), forKey: UserDefaultsWrapper<Date>.Key.firstLaunchDate.rawValue)
+    }
+
+    @objc func changeInstallDateToLessThan5DayAgo(_ sender: Any?) {
+        let lessThanFiveDaysAgo = Calendar.current.date(byAdding: .day, value: -4, to: Date())
+        UserDefaults.standard.set(lessThanFiveDaysAgo, forKey: UserDefaultsWrapper<Date>.Key.firstLaunchDate.rawValue)
+    }
+
+    @objc func changeInstallDateToMoreThan5DayAgoButLessThan9(_ sender: Any?) {
+        let between5And9DaysAgo = Calendar.current.date(byAdding: .day, value: -5, to: Date())
+        UserDefaults.standard.set(between5And9DaysAgo, forKey: UserDefaultsWrapper<Date>.Key.firstLaunchDate.rawValue)
+    }
+
+    @objc func changeInstallDateToMoreThan9DaysAgo(_ sender: Any?) {
+        let nineDaysAgo = Calendar.current.date(byAdding: .day, value: -9, to: Date())
+        UserDefaults.standard.set(nineDaysAgo, forKey: UserDefaultsWrapper<Date>.Key.firstLaunchDate.rawValue)
+    }
+
+    @objc func resetEmailProtectionInContextPrompt(_ sender: Any?) {
+        EmailManager().resetEmailProtectionInContextPrompt()
+    }
+
+    @objc func reloadConfigurationNow(_ sender: Any?) {
+        Application.appDelegate.configurationManager.forceRefresh(isDebug: true)
+    }
+
+    private func setConfigurationUrl(_ configurationUrl: URL?) {
+        var configurationProvider = AppConfigurationURLProvider(customPrivacyConfiguration: configurationUrl)
+        if configurationUrl == nil {
+            configurationProvider.resetToDefaultConfigurationUrl()
+        }
+        Configuration.setURLProvider(configurationProvider)
+        Application.appDelegate.configurationManager.forceRefresh(isDebug: true)
+        if let configurationUrl {
+            Logger.config.debug("New configuration URL set to \(configurationUrl.absoluteString)")
+        } else {
+            Logger.config.log("New configuration URL reset to default")
+        }
+    }
+
+    @objc func setCustomConfigurationURL(_ sender: Any?) {
+        let currentConfigurationURL = AppConfigurationURLProvider().url(for: .privacyConfiguration).absoluteString
+        let alert = NSAlert.customConfigurationAlert(configurationUrl: currentConfigurationURL)
+        if alert.runModal() != .cancel {
+            guard let textField = alert.accessoryView as? NSTextField,
+                  let newConfigurationUrl = URL(string: textField.stringValue) else {
+                Logger.config.error("Failed to set custom configuration URL")
+                return
+            }
+
+            setConfigurationUrl(newConfigurationUrl)
+        }
+    }
+
+    @objc func resetConfigurationToDefault(_ sender: Any?) {
+        setConfigurationUrl(nil)
     }
 
 }
@@ -378,7 +622,7 @@ extension MainViewController {
                let tab = mainWindowController.activeTab {
                 return tab
             }
-            return WindowControllersManager.shared.lastKeyMainWindowController?.activeTab
+            return Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.activeTab
         }
         guard let tab else {
             assertionFailure("Could not get currently active Tab")
@@ -486,11 +730,11 @@ extension MainViewController {
     @objc func toggleDownloads(_ sender: Any) {
         var navigationBarViewController = self.navigationBarViewController
         if view.window?.isPopUpWindow == true {
-            if let vc = WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController.navigationBarViewController {
+            if let vc = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController.navigationBarViewController {
                 navigationBarViewController = vc
             } else {
                 WindowsManager.openNewWindow(with: Tab(content: .newtab))
-                guard let wc = WindowControllersManager.shared.mainWindowControllers.first(where: { $0.window?.isPopUpWindow == false }) else {
+                guard let wc = Application.appDelegate.windowControllersManager.mainWindowControllers.first(where: { $0.window?.isPopUpWindow == false }) else {
                     return
                 }
                 navigationBarViewController = wc.mainViewController.navigationBarViewController
@@ -503,9 +747,9 @@ extension MainViewController {
     @objc func toggleBookmarksBarFromMenu(_ sender: Any) {
         // Leaving this keyboard shortcut in place.  When toggled on it will use the previously set appearence which defaults to "always".
         //  If the user sets it to "new tabs only" somewhere (e.g. preferences), then it'll be that.
-        guard let mainVC = WindowControllersManager.shared.lastKeyMainWindowController?.mainViewController else { return }
+        guard let mainVC = Application.appDelegate.windowControllersManager.lastKeyMainWindowController?.mainViewController else { return }
 
-        let prefs = AppearancePreferences.shared
+        let prefs = NSApp.delegateTyped.appearancePreferences
         if prefs.showBookmarksBar && prefs.bookmarksBarAppearance == .newTabOnly {
             // show bookmarks bar but don't change the setting
             mainVC.toggleBookmarksBarVisibility()
@@ -562,13 +806,16 @@ extension MainViewController {
 
         makeKeyIfNeeded()
 
-        WindowControllersManager.shared.open(historyEntry, with: NSApp.currentEvent)
+        Application.appDelegate.windowControllersManager.open(historyEntry, with: NSApp.currentEvent)
     }
 
     @objc func clearAllHistory(_ sender: NSMenuItem) {
         if featureFlagger.isFeatureOn(.historyView) {
             Task {
-                let historyViewDataProvider = HistoryViewDataProvider(historyDataSource: HistoryCoordinator.shared)
+                let historyViewDataProvider = HistoryViewDataProvider(
+                    historyDataSource: historyCoordinator,
+                    historyBurner: FireHistoryBurner(fireproofDomains: fireproofDomains)
+                )
                 await historyViewDataProvider.refreshData()
                 let visitsCount = await historyViewDataProvider.countVisibleVisits(matching: .rangeFilter(.all))
 
@@ -577,7 +824,7 @@ extension MainViewController {
                 case .burn:
                     FireCoordinator.fireViewModel.fire.burnAll()
                 case .delete:
-                    HistoryCoordinator.shared.burnAll {}
+                    historyCoordinator.burnAll {}
                 default:
                     break
                 }
@@ -613,11 +860,9 @@ extension MainViewController {
                 let presenter = DefaultHistoryViewDialogPresenter()
                 switch await presenter.showDeleteDialog(for: visits.count, deleteMode: deleteMode, in: nil) {
                 case .burn:
-                    FireCoordinator.fireViewModel.fire.burnVisits(visits,
-                                                                  except: FireproofDomains.shared,
-                                                                  isToday: isToday)
+                    FireCoordinator.fireViewModel.fire.burnVisits(visits, except: fireproofDomains, isToday: isToday)
                 case .delete:
-                    HistoryCoordinator.shared.burnVisits(visits) {}
+                    historyCoordinator.burnVisits(visits) {}
                 default:
                     break
                 }
@@ -634,9 +879,7 @@ extension MainViewController {
                 guard case .alertFirstButtonReturn = response else {
                     return
                 }
-                FireCoordinator.fireViewModel.fire.burnVisits(visits,
-                                                              except: FireproofDomains.shared,
-                                                              isToday: isToday)
+                FireCoordinator.fireViewModel.fire.burnVisits(visits, except: self.fireproofDomains, isToday: isToday)
             })
         }
     }
@@ -658,7 +901,7 @@ extension MainViewController {
 
     @objc func bookmarkAllOpenTabs(_ sender: Any) {
         let websitesInfo = tabCollectionViewModel.tabs.compactMap(WebsiteInfo.init)
-        BookmarksDialogViewFactory.makeBookmarkAllOpenTabsView(websitesInfo: websitesInfo).show()
+        BookmarksDialogViewFactory.makeBookmarkAllOpenTabsView(websitesInfo: websitesInfo, bookmarkManager: bookmarkManager).show()
     }
 
     @objc func favoriteThisPage(_ sender: Any) {
@@ -683,7 +926,7 @@ extension MainViewController {
         guard let bookmark = menuItem.representedObject as? Bookmark else { return }
         makeKeyIfNeeded()
 
-        WindowControllersManager.shared.open(bookmark, with: NSApp.currentEvent)
+        Application.appDelegate.windowControllersManager.open(bookmark, with: NSApp.currentEvent)
     }
 
     @objc func openAllInTabs(_ sender: Any?) {
@@ -787,13 +1030,13 @@ extension MainViewController {
     }
 
     @objc func mergeAllWindows(_ sender: Any?) {
-        guard let mainWindowController = WindowControllersManager.shared.lastKeyMainWindowController else { return }
+        guard let mainWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController else { return }
         assert(!self.isBurner)
 
-        let otherWindowControllers = WindowControllersManager.shared.mainWindowControllers.filter {
+        let otherWindowControllers = Application.appDelegate.windowControllersManager.mainWindowControllers.filter {
             $0 !== mainWindowController && $0.mainViewController.isBurner == false
         }
-        let excludedWindowControllers = WindowControllersManager.shared.mainWindowControllers.filter {
+        let excludedWindowControllers = Application.appDelegate.windowControllersManager.mainWindowControllers.filter {
             $0 === mainWindowController || $0.mainViewController.isBurner == true
         }
 
@@ -833,18 +1076,20 @@ extension MainViewController {
     }
 
     @objc func debugResetContinueSetup(_ sender: Any?) {
-        AppearancePreferencesUserDefaultsPersistor().continueSetUpCardsLastDemonstrated = nil
-        AppearancePreferencesUserDefaultsPersistor().continueSetUpCardsNumberOfDaysDemonstrated = 0
-        AppearancePreferences.shared.isContinueSetUpCardsViewOutdated = false
-        AppearancePreferences.shared.continueSetUpCardsClosed = false
-        AppearancePreferences.shared.isContinueSetUpVisible = true
+        let persistor = AppearancePreferencesUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore)
+        persistor.continueSetUpCardsLastDemonstrated = nil
+        persistor.continueSetUpCardsNumberOfDaysDemonstrated = 0
+        NSApp.delegateTyped.appearancePreferences.isContinueSetUpCardsViewOutdated = false
+        NSApp.delegateTyped.appearancePreferences.continueSetUpCardsClosed = false
+        NSApp.delegateTyped.appearancePreferences.isContinueSetUpVisible = true
         HomePage.Models.ContinueSetUpModel.Settings().clear()
         NotificationCenter.default.post(name: NSApplication.didBecomeActiveNotification, object: NSApp)
     }
 
     @objc func debugShiftNewTabOpeningDate(_ sender: Any?) {
-        AppearancePreferencesUserDefaultsPersistor().continueSetUpCardsLastDemonstrated = (AppearancePreferencesUserDefaultsPersistor().continueSetUpCardsLastDemonstrated ?? Date()).addingTimeInterval(-.day)
-        AppearancePreferences.shared.continueSetUpCardsViewDidAppear()
+        let persistor = AppearancePreferencesUserDefaultsPersistor(keyValueStore: NSApp.delegateTyped.keyValueStore)
+        persistor.continueSetUpCardsLastDemonstrated = (persistor.continueSetUpCardsLastDemonstrated ?? Date()).addingTimeInterval(-.day)
+        NSApp.delegateTyped.appearancePreferences.continueSetUpCardsViewDidAppear()
     }
 
     @objc func debugShiftNewTabOpeningDateNtimes(_ sender: Any?) {
@@ -853,184 +1098,29 @@ extension MainViewController {
         }
     }
 
-    @objc func resetDefaultBrowserPrompt(_ sender: Any?) {
-        UserDefaultsWrapper.clear(.defaultBrowserDismissed)
-    }
-
-    @objc func resetDefaultGrammarChecks(_ sender: Any?) {
-        UserDefaultsWrapper.clear(.spellingCheckEnabledOnce)
-        UserDefaultsWrapper.clear(.grammarCheckEnabledOnce)
-    }
-
-    @objc func triggerFatalError(_ sender: Any?) {
-        fatalError("Fatal error triggered from the Debug menu")
-    }
-
     @objc func crashOnException(_ sender: Any?) {
         DispatchQueue.main.async {
             self.navigationBarViewController.addressBarViewController?.addressBarTextField.suggestionViewController.tableView.view(atColumn: 1, row: .max, makeIfNecessary: false)
         }
     }
 
-    @objc func crashOnCxxException(_ sender: Any?) {
-        throwTestCppException()
-    }
-
-    @objc func resetSecureVaultData(_ sender: Any?) {
-        let vault = try? AutofillSecureVaultFactory.makeVault(reporter: SecureVaultReporter.shared)
-
-        let accounts = (try? vault?.accounts()) ?? []
-        for accountID in accounts.compactMap(\.id) {
-            if let accountID = Int64(accountID) {
-                try? vault?.deleteWebsiteCredentialsFor(accountId: accountID)
-            }
-        }
-
-        let cards = (try? vault?.creditCards()) ?? []
-        for cardID in cards.compactMap(\.id) {
-            try? vault?.deleteCreditCardFor(cardId: cardID)
-        }
-
-        let identities = (try? vault?.identities()) ?? []
-        for identityID in identities.compactMap(\.id) {
-            try? vault?.deleteIdentityFor(identityId: identityID)
-        }
-
-        let notes = (try? vault?.notes()) ?? []
-        for noteID in notes.compactMap(\.id) {
-            try? vault?.deleteNoteFor(noteId: noteID)
-        }
-        UserDefaults.standard.set(false, forKey: UserDefaultsWrapper<Bool>.Key.homePageContinueSetUpImport.rawValue)
-
-        let autofillPixelReporter = AutofillPixelReporter(standardUserDefaults: .standard,
-                                                          appGroupUserDefaults: nil,
-                                                          autofillEnabled: AutofillPreferences().askToSaveUsernamesAndPasswords,
-                                                          eventMapping: EventMapping<AutofillPixelEvent> { _, _, _, _ in },
-                                                          installDate: nil)
-        autofillPixelReporter.resetStoreDefaults()
-        let loginImportState = AutofillLoginImportState()
-        loginImportState.hasImportedLogins = false
-        loginImportState.isCredentialsImportPromptPermanantlyDismissed = false
-    }
-
-    @objc func resetBookmarks(_ sender: Any?) {
-        LocalBookmarkManager.shared.resetBookmarks()
-        UserDefaults.standard.set(false, forKey: UserDefaultsWrapper<Bool>.Key.homePageContinueSetUpImport.rawValue)
-        LocalBookmarkManager.shared.sortMode = .manual
-    }
-
     @objc func resetPinnedTabs(_ sender: Any?) {
         if tabCollectionViewModel.selectedTabIndex?.isPinnedTab == true, tabCollectionViewModel.tabCollection.tabs.count > 0 {
             tabCollectionViewModel.select(at: .unpinned(0))
         }
-        for pinnedTabsManager in Application.appDelegate.pinnedTabsManagerProvider.currentPinnedTabManagers {
-            pinnedTabsManager.tabCollection.removeAll()
-        }
-    }
-
-    @objc func resetDuckPlayerOverlayInteractions(_ sender: Any?) {
-        DuckPlayerPreferences.shared.youtubeOverlayAnyButtonPressed = false
-        DuckPlayerPreferences.shared.youtubeOverlayInteracted = false
-    }
-
-    @objc func resetMakeDuckDuckGoYoursUserSettings(_ sender: Any?) {
-        UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.homePageShowAllFeatures.rawValue)
-        UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.homePageShowMakeDefault.rawValue)
-        UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.homePageShowImport.rawValue)
-        UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.homePageShowDuckPlayer.rawValue)
-        UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.homePageShowEmailProtection.rawValue)
-    }
-
-    @objc func skipOnboarding(_ sender: Any?) {
-        UserDefaults.standard.set(true, forKey: UserDefaultsWrapper<Bool>.Key.onboardingFinished.rawValue)
-        Application.appDelegate.onboardingContextualDialogsManager.state = .onboardingCompleted
-        WindowControllersManager.shared.updatePreventUserInteraction(prevent: false)
-        WindowControllersManager.shared.replaceTabWith(Tab(content: .newtab))
-    }
-
-    @objc func resetOnboarding(_ sender: Any?) {
-        UserDefaults.standard.set(false, forKey: UserDefaultsWrapper<Bool>.Key.onboardingFinished.rawValue)
-    }
-
-    @objc func resetHomePageSettingsOnboarding(_ sender: Any?) {
-        UserDefaults.standard.set(false, forKey: UserDefaultsWrapper<Any>.Key.homePageDidShowSettingsOnboarding.rawValue)
-    }
-
-    @objc func resetContextualOnboarding(_ sender: Any?) {
-        Application.appDelegate.onboardingContextualDialogsManager.state = .notStarted
-    }
-
-    @objc func resetDuckPlayerPreferences(_ sender: Any?) {
-        DuckPlayerPreferences.shared.reset()
-    }
-
-    @objc func resetSyncPromoPrompts(_ sender: Any?) {
-        SyncPromoManager().resetPromos()
-    }
-
-    @objc func resetAddToDockFeatureNotification(_ sender: Any?) {
-#if SPARKLE
-        guard let dockCustomizer = Application.appDelegate.dockCustomization else { return }
-        dockCustomizer.resetData()
-#endif
-    }
-
-    @objc func resetLaunchDateToToday(_ sender: Any?) {
-        UserDefaults.standard.set(Date(), forKey: UserDefaultsWrapper<Any>.Key.firstLaunchDate.rawValue)
-    }
-
-    @objc func setLaunchDayAWeekInThePast(_ sender: Any?) {
-        UserDefaults.standard.set(Date.weekAgo, forKey: UserDefaultsWrapper<Any>.Key.firstLaunchDate.rawValue)
-    }
-
-    @objc func resetTipKit(_ sender: Any?) {
-        TipKitDebugOptionsUIActionHandler().resetTipKitTapped()
-    }
-
-    @objc func internalUserState(_ sender: Any?) {
-        guard let internalUserDecider = NSApp.delegateTyped.internalUserDecider as? DefaultInternalUserDecider else { return }
-        let state = internalUserDecider.isInternalUser
-        internalUserDecider.debugSetInternalUserState(!state)
-    }
-
-    @objc func resetDailyPixels(_ sender: Any?) {
-        PixelKit.shared?.clearFrequencyHistoryForAllPixels()
-    }
-
-    @objc func changePixelExperimentInstalledDateToLessMoreThan5DayAgo(_ sender: Any?) {
-        let moreThanFiveDaysAgo = Calendar.current.date(byAdding: .day, value: -6, to: Date())
-        UserDefaults.standard.set(moreThanFiveDaysAgo, forKey: UserDefaultsWrapper<Date>.Key.pixelExperimentEnrollmentDate.rawValue)
-    }
-
-    @objc func changeInstallDateToToday(_ sender: Any?) {
-        UserDefaults.standard.set(Date(), forKey: UserDefaultsWrapper<Date>.Key.firstLaunchDate.rawValue)
-    }
-
-    @objc func changeInstallDateToLessThan5DayAgo(_ sender: Any?) {
-        let lessThanFiveDaysAgo = Calendar.current.date(byAdding: .day, value: -4, to: Date())
-        UserDefaults.standard.set(lessThanFiveDaysAgo, forKey: UserDefaultsWrapper<Date>.Key.firstLaunchDate.rawValue)
-    }
-
-    @objc func changeInstallDateToMoreThan5DayAgoButLessThan9(_ sender: Any?) {
-        let between5And9DaysAgo = Calendar.current.date(byAdding: .day, value: -5, to: Date())
-        UserDefaults.standard.set(between5And9DaysAgo, forKey: UserDefaultsWrapper<Date>.Key.firstLaunchDate.rawValue)
-    }
-
-    @objc func changeInstallDateToMoreThan9DaysAgo(_ sender: Any?) {
-        let nineDaysAgo = Calendar.current.date(byAdding: .day, value: -9, to: Date())
-        UserDefaults.standard.set(nineDaysAgo, forKey: UserDefaultsWrapper<Date>.Key.firstLaunchDate.rawValue)
+        Application.appDelegate.resetPinnedTabs(sender)
     }
 
     @objc func showSaveCredentialsPopover(_ sender: Any?) {
-        #if DEBUG || REVIEW
+#if DEBUG || REVIEW
         NotificationCenter.default.post(name: .ShowSaveCredentialsPopover, object: nil)
-        #endif
+#endif
     }
 
     @objc func showCredentialsSavedPopover(_ sender: Any?) {
-        #if DEBUG || REVIEW
+#if DEBUG || REVIEW
         NotificationCenter.default.post(name: .ShowCredentialsSavedPopover, object: nil)
-        #endif
+#endif
     }
 
     /// debug menu popup window test
@@ -1044,50 +1134,10 @@ extension MainViewController {
         WindowsManager.openPopUpWindow(with: tab, origin: nil, contentSize: nil)
     }
 
-    @objc func resetEmailProtectionInContextPrompt(_ sender: Any?) {
-        EmailManager().resetEmailProtectionInContextPrompt()
-    }
-
     @objc func removeUserScripts(_ sender: Any?) {
         tabCollectionViewModel.selectedTab?.userContentController?.cleanUpBeforeClosing()
         tabCollectionViewModel.selectedTab?.reload()
         Logger.general.info("User scripts removed from the current tab")
-    }
-
-    @objc func reloadConfigurationNow(_ sender: Any?) {
-        Application.appDelegate.configurationManager.forceRefresh(isDebug: true)
-    }
-
-    private func setConfigurationUrl(_ configurationUrl: URL?) {
-        var configurationProvider = AppConfigurationURLProvider(customPrivacyConfiguration: configurationUrl)
-        if configurationUrl == nil {
-            configurationProvider.resetToDefaultConfigurationUrl()
-        }
-        Configuration.setURLProvider(configurationProvider)
-        Application.appDelegate.configurationManager.forceRefresh(isDebug: true)
-        if let configurationUrl {
-            Logger.config.debug("New configuration URL set to \(configurationUrl.absoluteString)")
-        } else {
-            Logger.config.log("New configuration URL reset to default")
-        }
-    }
-
-    @objc func setCustomConfigurationURL(_ sender: Any?) {
-        let currentConfigurationURL = AppConfigurationURLProvider().url(for: .privacyConfiguration).absoluteString
-        let alert = NSAlert.customConfigurationAlert(configurationUrl: currentConfigurationURL)
-        if alert.runModal() != .cancel {
-            guard let textField = alert.accessoryView as? NSTextField,
-                  let newConfigurationUrl = URL(string: textField.stringValue) else {
-                Logger.config.error("Failed to set custom configuration URL")
-                return
-            }
-
-            setConfigurationUrl(newConfigurationUrl)
-        }
-    }
-
-    @objc func resetConfigurationToDefault(_ sender: Any?) {
-        setConfigurationUrl(nil)
     }
 
     @available(macOS 13.5, *)
@@ -1211,7 +1261,7 @@ extension MainViewController: NSMenuItemValidation {
 
         // Merge all windows
         case #selector(MainViewController.mergeAllWindows(_:)):
-            return WindowControllersManager.shared.mainWindowControllers.filter({ !$0.mainViewController.isBurner }).count > 1 && !self.isBurner
+            return Application.appDelegate.windowControllersManager.mainWindowControllers.filter({ !$0.mainViewController.isBurner }).count > 1 && !self.isBurner
 
         // Move Tab to New Window, Select Next/Prev Tab
         case #selector(MainViewController.moveTabToNewWindow(_:)):
@@ -1251,7 +1301,7 @@ extension AppDelegate: NSMenuItemValidation {
     func validateMenuItem(_ menuItem: NSMenuItem) -> Bool {
         switch menuItem.action {
         case #selector(AppDelegate.closeAllWindows(_:)):
-            return !WindowControllersManager.shared.mainWindowControllers.isEmpty
+            return !Application.appDelegate.windowControllersManager.mainWindowControllers.isEmpty
 
         // Reopen Last Removed Tab
         case #selector(AppDelegate.reopenLastClosedTab(_:)):
@@ -1263,14 +1313,14 @@ extension AppDelegate: NSMenuItemValidation {
 
         // Enables and disables export bookmarks items
         case #selector(AppDelegate.openExportBookmarks(_:)):
-            return bookmarksManager.list?.totalBookmarks != 0
+            return bookmarkManager.list?.totalBookmarks != 0
 
         // Enables and disables export passwords items
         case #selector(AppDelegate.openExportLogins(_:)):
             return areTherePasswords
 
         case #selector(AppDelegate.openReportBrokenSite(_:)):
-            return WindowControllersManager.shared.selectedTab?.canReload ?? false
+            return Application.appDelegate.windowControllersManager.selectedTab?.canReload ?? false
 
         default:
             return true

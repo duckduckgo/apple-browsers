@@ -26,9 +26,9 @@
                                 <rect key="frame" x="12" y="4" width="664" height="24"/>
                                 <clipView key="contentView" drawsBackground="NO" id="yvk-6W-sd0">
                                     <rect key="frame" x="0.0" y="0.0" width="664" height="24"/>
-                                    <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                                    <autoresizingMask key="autoresizingMask"/>
                                     <subviews>
-                                        <collectionView selectable="YES" id="vwg-NL-UPk" customClass="ItemCachingCollectionView" customModule="DuckDuckGo_Privacy_Browser">
+                                        <collectionView selectable="YES" id="vwg-NL-UPk" customClass="BookmarksBarCollectionView" customModule="DuckDuckGo_Privacy_Browser">
                                             <rect key="frame" x="0.0" y="0.0" width="664" height="24"/>
                                             <autoresizingMask key="autoresizingMask" widthSizable="YES"/>
                                             <collectionViewLayout key="collectionViewLayout" id="YNm-eM-CbC"/>

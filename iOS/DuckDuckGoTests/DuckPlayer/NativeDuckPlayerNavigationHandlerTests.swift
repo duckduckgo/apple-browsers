@@ -34,15 +34,15 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
     private var mockWebView: MockWebView!
     private var mockAppSettings: AppSettingsMock!
     private var mockPrivacyConfig: PrivacyConfigurationManagerMock!
-    private var mockInternalUserDecider: MockDuckPlayerInternalUserDecider!
+    private var mockFeatureFlagger: MockDuckPlayerFeatureFlagger!
     private var playerSettings: MockDuckPlayerSettings!
     private var mockDuckPlayer: MockDuckPlayer!
-    private var mockFeatureFlagger: MockDuckPlayerFeatureFlagger!
     private var sut: NativeDuckPlayerNavigationHandler!
     private var mockTabNavigator: MockDuckPlayerTabNavigator!
     private var mockNativeUIPresenter: MockDuckPlayerNativeUIPresenting!
     private var cancellables = Set<AnyCancellable>()
     private var mockDelayHandler: MockDelayHandler!
+    private var mockInternalUserdecider: MockInternalUserDecider!
 
     // MARK: - Setup
     override func setUp() {
@@ -50,17 +50,18 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         mockWebView = MockWebView()
         mockAppSettings = AppSettingsMock()
         mockPrivacyConfig = PrivacyConfigurationManagerMock()
-        mockInternalUserDecider = MockDuckPlayerInternalUserDecider()
+        mockFeatureFlagger = MockDuckPlayerFeatureFlagger()
         mockDelayHandler = MockDelayHandler()
+        mockInternalUserdecider = MockInternalUserDecider()
 
         playerSettings = MockDuckPlayerSettings(
             appSettings: mockAppSettings,
             privacyConfigManager: mockPrivacyConfig,
-            internalUserDecider: mockInternalUserDecider
+            featureFlagger: mockFeatureFlagger,
+            internalUserDecider: mockInternalUserdecider
         )
         playerSettings.variant = .nativeOptIn
-
-        mockFeatureFlagger = MockDuckPlayerFeatureFlagger()
+        
         mockNativeUIPresenter = MockDuckPlayerNativeUIPresenting()
 
         mockDuckPlayer = MockDuckPlayer(
@@ -91,7 +92,6 @@ final class NativeDuckPlayerNavigationHandlerTests: XCTestCase {
         mockTabNavigator = nil
         sut = nil
         mockNativeUIPresenter = nil
-        mockInternalUserDecider = nil
         mockDelayHandler = nil
         super.tearDown()
     }

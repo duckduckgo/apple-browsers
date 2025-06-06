@@ -50,13 +50,13 @@ extension DefaultDataBrokerProtectionLoginItemInterface: DataBrokerProtectionLog
     // MARK: - Login Item Management
 
     private func disableLoginItem() {
-        DataBrokerProtectionLoginItemPixels.fire(pixel: GeneralPixel.dataBrokerDisableLoginItemDaily, frequency: .daily)
+        DataBrokerProtectionLoginItemPixels.fire(pixel: GeneralPixel.dataBrokerDisableLoginItemDaily, frequency: .legacyDaily)
         loginItemsManager.disableLoginItems([.dbpBackgroundAgent])
         NotificationCenter.default.post(name: .dbpLoginItemDisabled, object: nil)
     }
 
     private func enableLoginItem() {
-        DataBrokerProtectionLoginItemPixels.fire(pixel: GeneralPixel.dataBrokerEnableLoginItemDaily, frequency: .daily)
+        DataBrokerProtectionLoginItemPixels.fire(pixel: GeneralPixel.dataBrokerEnableLoginItemDaily, frequency: .legacyDaily)
         loginItemsManager.enableLoginItems([.dbpBackgroundAgent])
         NotificationCenter.default.post(name: .dbpLoginItemEnabled, object: nil)
     }

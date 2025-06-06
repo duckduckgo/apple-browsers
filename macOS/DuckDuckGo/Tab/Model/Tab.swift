@@ -59,6 +59,7 @@ protocol NewWindowPolicyDecisionMaker {
         var maliciousSiteDetector: MaliciousSiteDetecting
         var faviconManagement: FaviconManagement?
         var featureFlagger: FeatureFlagger
+        var contentScopeExperimentsManager: ContentScopeExperimentsManaging
     }
 
     fileprivate weak var delegate: TabDelegate?
@@ -73,6 +74,7 @@ protocol NewWindowPolicyDecisionMaker {
     private let internalUserDecider: InternalUserDecider?
     private let pageRefreshMonitor: PageRefreshMonitoring
     private let featureFlagger: FeatureFlagger
+    private let fireproofDomains: FireproofDomains
     let crashIndicatorModel = TabCrashIndicatorModel()
     let pinnedTabsManagerProvider: PinnedTabsManagerProviding
 
@@ -97,9 +99,10 @@ protocol NewWindowPolicyDecisionMaker {
     convenience init(id: String? = nil,
                      content: TabContent,
                      faviconManagement: FaviconManagement? = nil,
-                     webCacheManager: WebCacheManager = WebCacheManager.shared,
+                     webCacheManager: WebCacheManager? = nil,
                      webViewConfiguration: WKWebViewConfiguration? = nil,
-                     historyCoordinating: HistoryCoordinating = HistoryCoordinator.shared,
+                     historyCoordinating: HistoryCoordinating? = nil,
+                     fireproofDomains: FireproofDomains? = nil,
                      pinnedTabsManagerProvider: PinnedTabsManagerProviding? = nil,
                      workspace: Workspace = NSWorkspace.shared,
                      privacyFeatures: AnyPrivacyFeatures? = nil,
@@ -111,6 +114,7 @@ protocol NewWindowPolicyDecisionMaker {
                      statisticsLoader: StatisticsLoader? = nil,
                      extensionsBuilder: TabExtensionsBuilderProtocol = TabExtensionsBuilder.default,
                      featureFlagger: FeatureFlagger? = nil,
+                     contentScopeExperimentsManager: ContentScopeExperimentsManaging? = nil,
                      title: String? = nil,
                      favicon: NSImage? = nil,
                      interactionStateData: Data? = nil,
@@ -118,10 +122,11 @@ protocol NewWindowPolicyDecisionMaker {
                      securityOrigin: SecurityOrigin? = nil,
                      shouldLoadInBackground: Bool = false,
                      burnerMode: BurnerMode = .regular,
+                     isLoadedInSidebar: Bool = false,
                      canBeClosedWithBack: Bool = false,
                      lastSelectedAt: Date? = nil,
                      webViewSize: CGSize = CGSize(width: 1024, height: 768),
-                     startupPreferences: StartupPreferences = StartupPreferences.shared,
+                     startupPreferences: StartupPreferences? = nil,
                      certificateTrustEvaluator: CertificateTrustEvaluating = CertificateTrustEvaluator(),
                      tunnelController: NetworkProtectionIPCTunnelController? = TunnelControllerProvider.shared.tunnelController,
                      maliciousSiteDetector: MaliciousSiteDetecting = MaliciousSiteProtectionManager.shared,
@@ -137,16 +142,21 @@ protocol NewWindowPolicyDecisionMaker {
         let privacyFeatures = privacyFeatures ?? PrivacyFeatures
         let internalUserDecider = NSApp.delegateTyped.internalUserDecider
         var faviconManager = faviconManagement
+        let fireproofDomains = fireproofDomains ?? NSApp.delegateTyped.fireproofDomains
         if burnerMode.isBurner {
-            faviconManager = FaviconManager(cacheType: .inMemory)
+            faviconManager = FaviconManager(
+                cacheType: .inMemory,
+                bookmarkManager: NSApp.delegateTyped.bookmarkManager,
+                fireproofDomains: fireproofDomains)
         }
 
         self.init(id: id,
                   content: content,
                   faviconManagement: faviconManager ?? NSApp.delegateTyped.faviconManager,
-                  webCacheManager: webCacheManager,
+                  webCacheManager: webCacheManager ?? NSApp.delegateTyped.webCacheManager,
                   webViewConfiguration: webViewConfiguration,
-                  historyCoordinating: historyCoordinating,
+                  historyCoordinating: historyCoordinating ?? NSApp.delegateTyped.historyCoordinator,
+                  fireproofDomains: fireproofDomains,
                   pinnedTabsManagerProvider: pinnedTabsManagerProvider ?? Application.appDelegate.pinnedTabsManagerProvider,
                   workspace: workspace,
                   privacyFeatures: privacyFeatures,
@@ -156,6 +166,7 @@ protocol NewWindowPolicyDecisionMaker {
                   geolocationService: geolocationService,
                   extensionsBuilder: extensionsBuilder,
                   featureFlagger: featureFlagger ?? NSApp.delegateTyped.featureFlagger,
+                  contentScopeExperimentsManager: contentScopeExperimentsManager ?? NSApp.delegateTyped.contentScopeExperimentsManager,
                   cbaTimeReporter: cbaTimeReporter,
                   statisticsLoader: statisticsLoader,
                   internalUserDecider: internalUserDecider,
@@ -166,10 +177,11 @@ protocol NewWindowPolicyDecisionMaker {
                   securityOrigin: securityOrigin,
                   shouldLoadInBackground: shouldLoadInBackground,
                   burnerMode: burnerMode,
+                  isLoadedInSidebar: isLoadedInSidebar,
                   canBeClosedWithBack: canBeClosedWithBack,
                   lastSelectedAt: lastSelectedAt,
                   webViewSize: webViewSize,
-                  startupPreferences: startupPreferences,
+                  startupPreferences: startupPreferences ?? NSApp.delegateTyped.startupPreferences,
                   certificateTrustEvaluator: certificateTrustEvaluator,
                   tunnelController: tunnelController,
                   maliciousSiteDetector: maliciousSiteDetector,
@@ -185,6 +197,7 @@ protocol NewWindowPolicyDecisionMaker {
          webCacheManager: WebCacheManager,
          webViewConfiguration: WKWebViewConfiguration?,
          historyCoordinating: HistoryCoordinating,
+         fireproofDomains: FireproofDomains,
          pinnedTabsManagerProvider: PinnedTabsManagerProviding,
          workspace: Workspace,
          privacyFeatures: AnyPrivacyFeatures,
@@ -194,6 +207,7 @@ protocol NewWindowPolicyDecisionMaker {
          geolocationService: GeolocationServiceProtocol,
          extensionsBuilder: TabExtensionsBuilderProtocol,
          featureFlagger: FeatureFlagger,
+         contentScopeExperimentsManager: ContentScopeExperimentsManaging,
          cbaTimeReporter: ContentBlockingAssetsCompilationTimeReporter?,
          statisticsLoader: StatisticsLoader?,
          internalUserDecider: InternalUserDecider?,
@@ -204,6 +218,7 @@ protocol NewWindowPolicyDecisionMaker {
          securityOrigin: SecurityOrigin? = nil,
          shouldLoadInBackground: Bool,
          burnerMode: BurnerMode,
+         isLoadedInSidebar: Bool,
          canBeClosedWithBack: Bool,
          lastSelectedAt: Date?,
          webViewSize: CGSize,
@@ -217,6 +232,7 @@ protocol NewWindowPolicyDecisionMaker {
     ) {
         self._id = id
         self.content = content
+        self.fireproofDomains = fireproofDomains
         self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
         self.featureFlagger = featureFlagger
         self.statisticsLoader = statisticsLoader
@@ -267,6 +283,7 @@ protocol NewWindowPolicyDecisionMaker {
             .build(with: (tabIdentifier: instrumentation.currentTabIdentifier,
                           isTabPinned: { tabGetter().map { tab in pinnedTabsManagerProvider.pinnedTabsManager(for: tab)?.isTabPinned(tab) ?? false } ?? false },
                           isTabBurner: burnerMode.isBurner,
+                          isTabLoadedInSidebar: isLoadedInSidebar,
                           contentPublisher: _content.projectedValue.eraseToAnyPublisher(),
                           setContent: { tabGetter()?.setContent($0) },
                           closeTab: {
@@ -291,7 +308,8 @@ protocol NewWindowPolicyDecisionMaker {
                                                        tunnelController: tunnelController,
                                                        maliciousSiteDetector: maliciousSiteDetector,
                                                        faviconManagement: faviconManagement,
-                                                       featureFlagger: featureFlagger))
+                                                       featureFlagger: featureFlagger,
+                                                       contentScopeExperimentsManager: contentScopeExperimentsManager))
 
         super.init()
         tabGetter = { [weak self] in self }
@@ -501,6 +519,9 @@ protocol NewWindowPolicyDecisionMaker {
 #endif
         }
     }
+
+    /// Used to trigger a separator update in the PinnedTabsViewModel
+    @Published var needsSeparatorUpdate: Bool = false
 
     /// Currently committed page security origin (protocol, host, port).
     ///
@@ -1052,7 +1073,7 @@ protocol NewWindowPolicyDecisionMaker {
               !url.isDuckPlayer,
               let host = url.host else { return }
 
-        _ = FireproofDomains.shared.toggle(domain: host)
+        _ = fireproofDomains.toggle(domain: host)
     }
 
     private var webViewCancellables = Set<AnyCancellable>()

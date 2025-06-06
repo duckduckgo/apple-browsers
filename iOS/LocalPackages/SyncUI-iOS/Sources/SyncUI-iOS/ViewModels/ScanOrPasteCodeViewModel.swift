@@ -63,12 +63,9 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
     public weak var delegate: ScanOrPasteCodeViewModelDelegate?
 
     var showQRCodeModel: ShowQRCodeViewModel
-    let code: String
 
-    public init(code: String) {
-        self.code = code
-        showQRCodeModel = ShowQRCodeViewModel()
-        showQRCodeModel.code = code
+    public init(codeForDisplayOrPasting: String, qrCodeString: String) {
+        showQRCodeModel = ShowQRCodeViewModel(codeForDisplayOrPasting: codeForDisplayOrPasting, qrCodeString: qrCodeString)
     }
 
     func codeScanned(_ code: String) async -> Bool {
@@ -105,7 +102,7 @@ public class ScanOrPasteCodeViewModel: ObservableObject {
     }
 
     func showShareCodeSheet() {
-        delegate?.shareCode(showQRCodeModel.code ?? "")
+        delegate?.shareCode(showQRCodeModel.codeForDisplayOrPasting)
     }
 
     func endConnectMode() {

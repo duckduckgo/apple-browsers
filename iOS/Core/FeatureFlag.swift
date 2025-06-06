@@ -42,6 +42,7 @@ public enum FeatureFlag: String {
         
     // Duckplayer 'Web based' UI
     case duckPlayer
+
     // Open Duckplayer in a new tab for 'Web based' UI
     case duckPlayerOpenInNewTab
     
@@ -79,21 +80,21 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/0/1204186595873227/1209164066387913
     case scamSiteProtection
 
+    /// https://app.asana.com/1/137249556945/task/1210330600670666
+    case removeWWWInCanonicalizationInThreatProtection
+
     /// https://app.asana.com/0/1204186595873227/1206489252288889
     case networkProtectionRiskyDomainsProtection
 
-    /// Umbrella flag for experimental browser theming and appearance
+    /// Flag for visual updates changes
     /// https://app.asana.com/0/1206226850447395/1209291055975934
-    case experimentalBrowserTheming
+    case visualUpdates
 
     /// https://app.asana.com/0/72649045549333/1207991044706236/f
     case privacyProAuthV2
 
     /// https://app.asana.com/0/1206329551987282/1209130794450271
     case onboardingSetAsDefaultBrowser
-
-    /// https://app.asana.com/0/72649045549333/1209633877674689/f
-    case exchangeKeysToSyncWithAnotherDevice
 
     // Demonstrative cases for default value. Remove once a real-world feature/subfeature is added
     case failsafeExampleCrossPlatformFeature
@@ -102,13 +103,35 @@ public enum FeatureFlag: String {
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210055762484807?focus=true
     case experimentalAIChat
 
+    /// https://app.asana.com/1/137249556945/task/1210139454006070
     case privacyProOnboardingPromotion
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210081345713964?focus=true
+    case syncSetupBarcodeIsUrlBased
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210081345713964?focus=true
+    case canScanUrlBasedSyncSetupBarcodes
+
+    /// https://app.asana.com/1/137249556945/project/1206488453854252/task/1210001506953718
+    case privacyProFreeTrial
+
+    /// https://app.asana.com/1/137249556945/project/1198964220583541/task/1210272333893232?focus=true
+    case autofillPasswordVariantCategorization
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210081345713964?focus=true
+    case canInterceptSyncSetupUrls
+
+    /// https://app.asana.com/1/137249556945/project/414235014887631/task/1210325960030113?focus=true
+    case exchangeKeysToSyncWithAnotherDevice
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210422840951066?focus=true
+    case aiChatKeepSession
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
     public var defaultValue: Bool {
         switch self {
-        case .failsafeExampleCrossPlatformFeature, .failsafeExamplePlatformSpecificSubfeature:
+        case .failsafeExampleCrossPlatformFeature, .failsafeExamplePlatformSpecificSubfeature, .canScanUrlBasedSyncSetupBarcodes, .canInterceptSyncSetupUrls, .removeWWWInCanonicalizationInThreatProtection:
             true
         default:
             false
@@ -131,15 +154,22 @@ extension FeatureFlag: FeatureFlagDescribing {
     public var supportsLocalOverriding: Bool {
         switch self {
         case .textZoom,
-                .experimentalBrowserTheming,
-                .networkProtectionRiskyDomainsProtection,
-                .privacyProAuthV2,
-                .scamSiteProtection,
-                .maliciousSiteProtection,
-                .autofillCreditCards,
-                .autofillCreditCardsOnByDefault,
-                .exchangeKeysToSyncWithAnotherDevice,
-                .privacyProOnboardingPromotion:
+             .visualUpdates,
+             .networkProtectionRiskyDomainsProtection,
+             .privacyProAuthV2,
+             .scamSiteProtection,
+             .maliciousSiteProtection,
+             .autofillCreditCards,
+             .autofillCreditCardsOnByDefault,
+             .privacyProOnboardingPromotion,
+             .duckPlayerNativeUI,
+             .removeWWWInCanonicalizationInThreatProtection,
+             .privacyProFreeTrial,
+             .autofillPasswordVariantCategorization,
+             .syncSetupBarcodeIsUrlBased,
+             .canScanUrlBasedSyncSetupBarcodes,
+             .canInterceptSyncSetupUrls,
+             .exchangeKeysToSyncWithAnotherDevice:
             return true
         case .onboardingSetAsDefaultBrowser:
             if #available(iOS 18.3, *) {
@@ -230,14 +260,12 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.scamProtection))
         case .networkProtectionRiskyDomainsProtection:
             return  .remoteReleasable(.subfeature(NetworkProtectionSubfeature.riskyDomainsProtection))
-        case .experimentalBrowserTheming:
-            return .remoteDevelopment(.feature(.experimentalBrowserTheming))
+        case .visualUpdates:
+            return .remoteReleasable(.subfeature(ExperimentalThemingSubfeature.visualUpdates))
         case .privacyProAuthV2:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
         case .onboardingSetAsDefaultBrowser:
             return .remoteReleasable(.subfeature(OnboardingSubfeature.setAsDefaultBrowserExperiment))
-        case .exchangeKeysToSyncWithAnotherDevice:
-            return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
         case .failsafeExampleCrossPlatformFeature:
             return .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests))
         case .failsafeExamplePlatformSpecificSubfeature:
@@ -246,6 +274,22 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .internalOnly()
         case .privacyProOnboardingPromotion:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProOnboardingPromotion))
+        case .syncSetupBarcodeIsUrlBased:
+            return .remoteReleasable(.subfeature(SyncSubfeature.syncSetupBarcodeIsUrlBased))
+        case .canScanUrlBasedSyncSetupBarcodes:
+            return .remoteReleasable(.subfeature(SyncSubfeature.canScanUrlBasedSyncSetupBarcodes))
+        case .removeWWWInCanonicalizationInThreatProtection:
+            return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.removeWWWInCanonicalization))
+        case .privacyProFreeTrial:
+            return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProFreeTrial))
+        case .autofillPasswordVariantCategorization:
+            return .remoteReleasable(.subfeature(AutofillSubfeature.passwordVariantCategorization))
+        case .canInterceptSyncSetupUrls:
+            return .remoteReleasable(.subfeature(SyncSubfeature.canInterceptSyncSetupUrls))
+        case .exchangeKeysToSyncWithAnotherDevice:
+            return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
+        case .aiChatKeepSession:
+            return .remoteReleasable(.subfeature(AIChatSubfeature.keepSession))
         }
     }
 }

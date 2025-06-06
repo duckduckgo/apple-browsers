@@ -29,12 +29,22 @@ class FaviconManagerTests: XCTestCase {
     override func setUp() async throws {
         imageCache = CapturingFaviconImageCache()
         referenceCache = CapturingFaviconReferenceCache()
-        faviconManager = FaviconManager(cacheType: .inMemory, imageCache: { _ in self.imageCache }, referenceCache: { _ in self.referenceCache })
+        faviconManager = FaviconManager(
+            cacheType: .inMemory,
+            bookmarkManager: MockBookmarkManager(),
+            fireproofDomains: MockFireproofDomains(domains: []),
+            imageCache: { _ in self.imageCache },
+            referenceCache: { _ in self.referenceCache }
+        )
     }
 
     @MainActor
     func testWhenFaviconManagerIsInMemory_ThenItMustInitNullStore() {
-        let faviconManager = FaviconManager(cacheType: .inMemory)
+        let faviconManager = FaviconManager(
+            cacheType: .inMemory,
+            bookmarkManager: MockBookmarkManager(),
+            fireproofDomains: MockFireproofDomains(domains: [])
+        )
         XCTAssertNotNil(faviconManager.store as? FaviconNullStore)
     }
 

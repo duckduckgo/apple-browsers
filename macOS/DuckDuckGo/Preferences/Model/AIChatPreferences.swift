@@ -63,7 +63,7 @@ final class AIChatPreferences: ObservableObject {
     }
 
     @MainActor func openLearnMoreLink() {
-        WindowControllersManager.shared.show(url: learnMoreURL, source: .ui, newTab: true)
+        Application.appDelegate.windowControllersManager.show(url: learnMoreURL, source: .ui, newTab: true)
     }
 
     @MainActor func openAIChatLink() {

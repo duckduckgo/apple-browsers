@@ -1,0 +1,11 @@
+<svg fill="none" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <path fill="#7295F6" d="M21.375 12a9.375 9.375 0 1 1-18.75 0 9.375 9.375 0 1 1 18.75 0Z"/>
+  <path fill="url(#Exclamation-Color-24_svg__a)" d="M12 2c5.523 0 10 4.477 10 10s-4.477 10-10 10S2 17.523 2 12 6.477 2 12 2Zm0 1.25a8.75 8.75 0 1 0 0 17.5 8.75 8.75 0 0 0 0-17.5Z"/>
+  <path fill="#fff" d="M12 15.375a1.125 1.125 0 1 1 0 2.25 1.125 1.125 0 0 1 0-2.25Zm.199-9c.569 0 1.02.481.982 1.049l-.374 5.695a.81.81 0 0 1-1.616 0l-.372-5.695a.984.984 0 0 1 .982-1.049h.398Z"/>
+  <defs>
+    <linearGradient id="Exclamation-Color-24_svg__a" x1="12" x2="12" y1="2" y2="22" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#557FF3"/>
+      <stop offset="1" stop-color="#2B55CA"/>
+    </linearGradient>
+  </defs>
+</svg>

@@ -76,17 +76,18 @@ final class NewTabPageViewController: UIHostingController<AnyView>, NewTabPage {
         shortcutsModel = ShortcutsModel()
         messagesModel = NewTabPageMessagesModel(homePageMessagesConfiguration: homePageMessagesConfiguration,
                                                 privacyProDataReporter: privacyProDataReporting,
-                                                navigator: DefaultMessageNavigator(delegate: messageNavigationDelegate))
+                                                navigator: DefaultMessageNavigator(delegate: messageNavigationDelegate),
+                                                isExperimentalThemingEnabled: isExperimentalAppearanceEnabled)
 
         if isNewTabPageCustomizationEnabled {
-            super.init(rootView: AnyView(NewTabPageView(viewModel: self.newTabPageViewModel,
+            super.init(rootView: AnyView(CustomizableNewTabPageView(viewModel: self.newTabPageViewModel,
                                                         messagesModel: self.messagesModel,
                                                         favoritesViewModel: self.favoritesModel,
                                                         shortcutsModel: self.shortcutsModel,
                                                         shortcutsSettingsModel: self.shortcutsSettingsModel,
                                                         sectionsSettingsModel: self.sectionsSettingsModel)))
         } else {
-            super.init(rootView: AnyView(SimpleNewTabPageView(viewModel: self.newTabPageViewModel,
+            super.init(rootView: AnyView(NewTabPageView(viewModel: self.newTabPageViewModel,
                                                               messagesModel: self.messagesModel,
                                                               favoritesViewModel: self.favoritesModel)))
         }

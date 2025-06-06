@@ -22,19 +22,32 @@ import UIKit
 import Core
 import PrivacyDashboard
 import DesignResourcesKit
+import DesignResourcesKitIcons
 import DuckPlayer
 import os.log
 import BrowserServicesKit
 
 extension DefaultOmniBarView: NibLoading {}
 
-public enum OmniBarIcon: String {
-    case duckPlayer = "DuckPlayerURLIcon"
-    case specialError = "Globe-24"
+public enum OmniBarIcon {
+    case duckPlayer
+    case specialError
+
+    var image: UIImage {
+        switch self {
+        case .duckPlayer:
+            return UIImage(resource: .duckPlayerURLIcon)
+        case .specialError:
+            return DesignSystemImages.Glyphs.Size24.globe
+        }
+    }
+
 }
 
 final class DefaultOmniBarView: UIView {
 
+    // To be replaced with AppUserDefaults.Notifications.addressBarPositionChanged after release
+    // https://app.asana.com/1/137249556945/project/1207252092703676/task/1210323588862346?focus=true
     public static let didLayoutNotification = Notification.Name("com.duckduckgo.app.OmniBarDidLayout")
     
     @IBOutlet weak var searchLoupe: UIView!
@@ -45,20 +58,21 @@ final class DefaultOmniBarView: UIView {
     @IBOutlet weak var notificationContainer: OmniBarNotificationContainerView!
     @IBOutlet weak var textField: TextFieldWithInsets!
     @IBOutlet weak var editingBackground: RoundedRectangleView!
+    @IBOutlet weak var separatorView: UIView!
+
     @IBOutlet weak var clearButton: UIButton!
     @IBOutlet weak var menuButton: UIButton!
     @IBOutlet weak var settingsButton: UIButton!
-    @IBOutlet weak var separatorView: UIView!
     @IBOutlet weak var cancelButton: UIButton!
     @IBOutlet weak var refreshButton: UIButton!
     @IBOutlet weak var shareButton: UIButton!
     @IBOutlet weak var voiceSearchButton: UIButton!
     @IBOutlet weak var abortButton: UIButton!
-
     @IBOutlet weak var bookmarksButton: UIButton!
     @IBOutlet weak var backButton: UIButton!
     @IBOutlet weak var forwardButton: UIButton!
     @IBOutlet weak var accessoryButton: UIButton!
+    @IBOutlet weak var dismissButton: UIButton!
 
     private(set) var menuButtonContent = MenuButton()
 
@@ -71,8 +85,6 @@ final class DefaultOmniBarView: UIView {
     @IBOutlet var omniBarLeadingConstraint: NSLayoutConstraint!
     @IBOutlet var omniBarTrailingConstraint: NSLayoutConstraint!
     @IBOutlet var separatorToBottom: NSLayoutConstraint!
-
-    @IBOutlet weak var dismissButton: UIButton!
 
     /// A container view designed to maintain visual consistency among various items within this space.
     /// Additionally, it facilitates smooth animations for the elements it contains.
@@ -104,7 +116,7 @@ final class DefaultOmniBarView: UIView {
         didSet {
             switch accessoryType {
             case .chat:
-                accessoryButton.setImage(UIImage(named: "AIChat-24"), for: .normal)
+                accessoryButton.setImage(DesignSystemImages.Glyphs.Size24.aiChat, for: .normal)
                 accessoryButton.accessibilityLabel = UserText.aiChatFeatureName
             }
         }
@@ -128,6 +140,9 @@ final class DefaultOmniBarView: UIView {
 
     override func awakeFromNib() {
         super.awakeFromNib()
+
+        configureImages()
+
         configureMenuButton()
         configureSettingsLongPressButton()
         configureShareLongPressButton()
@@ -135,6 +150,25 @@ final class DefaultOmniBarView: UIView {
         configureSeparator()
 
         decorate()
+    }
+
+    private func configureImages() {
+        clearButton.setImage(DesignSystemImages.Glyphs.Size24.closeCircleSmall, for: .normal)
+        settingsButton.setImage(DesignSystemImages.Glyphs.Size24.settings, for: .normal)
+        shareButton.setImage(DesignSystemImages.Glyphs.Size24.shareApple, for: .normal)
+        voiceSearchButton.setImage(DesignSystemImages.Glyphs.Size24.microphone, for: .normal)
+        abortButton.setImage(DesignSystemImages.Glyphs.Size24.close, for: .normal)
+        bookmarksButton.setImage(DesignSystemImages.Glyphs.Size24.bookmarks, for: .normal)
+        backButton.setImage(DesignSystemImages.Glyphs.Size24.arrowLeft, for: .normal)
+        forwardButton.setImage(DesignSystemImages.Glyphs.Size24.arrowRight, for: .normal)
+        dismissButton.setImage(DesignSystemImages.Glyphs.Size24.arrowLeftSmall, for: .normal)
+        refreshButton.setImage(DesignSystemImages.Glyphs.Size24.reloadSmall, for: .normal)
+
+        // Cancel button is text and not even used
+        // Accessory button set elsewhere
+        // Menu button set elsewhere
+
+        (searchLoupe as? UIImageView)?.image = DesignSystemImages.Glyphs.Size24.findSearchSmall
     }
 
     private func configureSettingsLongPressButton() {
@@ -257,7 +291,9 @@ final class DefaultOmniBarView: UIView {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        NotificationCenter.default.post(name: DefaultOmniBarView.didLayoutNotification, object: self)
+        // To be removed in favor of AppUserDefaults.Notifications.addressBarPositionChanged subscription
+        // https://app.asana.com/1/137249556945/project/1207252092703676/task/1210323588862346?focus=true
+        NotificationCenter.default.post(name: DefaultOmniBarView.didLayoutNotification, object: self.frame.height)
     }
 }
 

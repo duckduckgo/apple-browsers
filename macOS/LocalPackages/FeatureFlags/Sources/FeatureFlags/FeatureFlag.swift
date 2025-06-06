@@ -58,14 +58,12 @@ public enum FeatureFlag: String, CaseIterable {
     case autocompleteTabs
     case webExtensions
     case syncSeamlessAccountSwitching
-    /// SAD & ATT Prompts experiiment: https://app.asana.com/0/1204006570077678/1209185383520514
-    case popoverVsBannerExperiment
+
+    /// SAD & ATT Prompts: https://app.asana.com/1/137249556945/project/1206329551987282/task/1210225579353384?focus=true
+    case scheduledSetDefaultBrowserAndAddToDockPrompts
 
     /// https://app.asana.com/0/72649045549333/1207991044706236/f
     case privacyProAuthV2
-
-    /// https://app.asana.com/0/72649045549333/1209633877674689/f
-    case exchangeKeysToSyncWithAnotherDevice
 
     // Demonstrative cases for default value. Remove once a real-world feature/subfeature is added
     case failsafeExampleCrossPlatformFeature
@@ -85,12 +83,27 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1205508328452434?focus=true
     case dbpRemoteBrokerDelivery
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210081345713964?focus=true
+    case syncSetupBarcodeIsUrlBased
+
+    /// https://app.asana.com/1/137249556945/project/414235014887631/task/1210325960030113?focus=true
+    case exchangeKeysToSyncWithAnotherDevice
+
+    /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210081345713964?focus=true
+    case canScanUrlBasedSyncSetupBarcodes
+
+    /// https://app.asana.com/1/137249556945/task/1210330600670666
+    case removeWWWInCanonicalizationInThreatProtection
+
+    /// https://app.asana.com/1/137249556945/project/1209671977594486/task/1210410403692636?focus=true
+    case aiChatSidebar
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
     public var defaultValue: Bool {
         switch self {
-        case .failsafeExampleCrossPlatformFeature, .failsafeExamplePlatformSpecificSubfeature:
+        case .failsafeExampleCrossPlatformFeature, .failsafeExamplePlatformSpecificSubfeature, .removeWWWInCanonicalizationInThreatProtection:
             true
         default:
             false
@@ -99,18 +112,10 @@ extension FeatureFlag: FeatureFlagDescribing {
 
     public var cohortType: (any FeatureFlagCohortDescribing.Type)? {
         switch self {
-        case .popoverVsBannerExperiment:
-            return PopoverVSBannerExperimentCohort.self
         default:
             return nil
         }
     }
-
-    public enum PopoverVSBannerExperimentCohort: String, FeatureFlagCohortDescribing {
-        case control
-        case popover
-        case banner
-     }
 
     public var supportsLocalOverriding: Bool {
         switch self {
@@ -124,16 +129,20 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .webExtensions,
                 .autoUpdateInDEBUG,
                 .updatesWontAutomaticallyRestartApp,
-                .popoverVsBannerExperiment,
                 .privacyProAuthV2,
                 .scamSiteProtection,
-                .exchangeKeysToSyncWithAnotherDevice,
                 .failsafeExampleCrossPlatformFeature,
                 .failsafeExamplePlatformSpecificSubfeature,
                 .visualRefresh,
                 .tabCrashDebugging,
                 .tabCrashRecovery,
-                .delayedWebviewPresentation:
+                .maliciousSiteProtection,
+                .delayedWebviewPresentation,
+                .syncSetupBarcodeIsUrlBased,
+                .exchangeKeysToSyncWithAnotherDevice,
+                .canScanUrlBasedSyncSetupBarcodes,
+                .removeWWWInCanonicalizationInThreatProtection,
+                .aiChatSidebar:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -142,8 +151,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .contextualOnboarding,
                 .unknownUsernameCategorization,
                 .credentialsImportPromotionForExistingUsers,
-                .maliciousSiteProtection,
-                .dbpRemoteBrokerDelivery:
+                .dbpRemoteBrokerDelivery,
+                .scheduledSetDefaultBrowserAndAddToDockPrompts:
             return false
         }
     }
@@ -175,7 +184,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .autoUpdateInDEBUG:
             return .disabled
         case .updatesWontAutomaticallyRestartApp:
-            return .disabled
+            return .internalOnly()
         case .autofillPartialFormSaves:
             return .remoteReleasable(.subfeature(AutofillSubfeature.partialFormSaves))
         case .autocompleteTabs:
@@ -188,18 +197,16 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.scamProtection))
         case .networkProtectionRiskyDomainsProtection:
             return .remoteReleasable(.subfeature(NetworkProtectionSubfeature.riskyDomainsProtection))
-        case .popoverVsBannerExperiment:
-            return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.popoverVsBannerExperiment))
+        case .scheduledSetDefaultBrowserAndAddToDockPrompts:
+            return .remoteReleasable(.subfeature(SetAsDefaultAndAddToDockSubfeature.scheduledDefaultBrowserAndDockPrompts))
         case .privacyProAuthV2:
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProAuthV2))
-        case .exchangeKeysToSyncWithAnotherDevice:
-            return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
         case .failsafeExampleCrossPlatformFeature:
             return .remoteReleasable(.feature(.intentionallyLocalOnlyFeatureForTests))
         case .failsafeExamplePlatformSpecificSubfeature:
             return .remoteReleasable(.subfeature(MacOSBrowserConfigSubfeature.intentionallyLocalOnlySubfeatureForTests))
         case .visualRefresh:
-            return .remoteDevelopment(.feature(.experimentalBrowserTheming))
+            return .internalOnly()
         case .tabCrashDebugging:
             return .disabled
         case .tabCrashRecovery:
@@ -208,6 +215,16 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.feature(.delayedWebviewPresentation))
         case .dbpRemoteBrokerDelivery:
             return .remoteReleasable(.subfeature(DBPSubfeature.remoteBrokerDelivery))
+        case .syncSetupBarcodeIsUrlBased:
+            return .remoteReleasable(.subfeature(SyncSubfeature.syncSetupBarcodeIsUrlBased))
+        case .exchangeKeysToSyncWithAnotherDevice:
+            return .remoteReleasable(.subfeature(SyncSubfeature.exchangeKeysToSyncWithAnotherDevice))
+        case .canScanUrlBasedSyncSetupBarcodes:
+            return .remoteReleasable(.subfeature(SyncSubfeature.canScanUrlBasedSyncSetupBarcodes))
+        case .removeWWWInCanonicalizationInThreatProtection:
+            return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.removeWWWInCanonicalization))
+        case .aiChatSidebar:
+            return .internalOnly()
         }
     }
 }

@@ -48,8 +48,14 @@ public struct AppVersion {
         return bundle.object(forInfoDictionaryKey: Bundle.Key.buildNumber) as? String ?? ""
     }
 
+    public var alphaBuildSuffix: String {
+        return bundle.object(forInfoDictionaryKey: Bundle.Key.alphaBuildSuffix) as? String ?? ""
+    }
+
     public var versionAndBuildNumber: String {
-        return "\(versionNumber).\(buildNumber)"
+        let baseVersion = "\(versionNumber).\(buildNumber)"
+        let suffix = alphaBuildSuffix
+        return suffix.isEmpty ? baseVersion : "\(baseVersion)-\(suffix)"
     }
 
     public var localized: String {

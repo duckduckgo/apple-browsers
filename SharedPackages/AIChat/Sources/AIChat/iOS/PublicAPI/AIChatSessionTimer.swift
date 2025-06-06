@@ -85,7 +85,6 @@ public final class AIChatSessionTimer: AIChatSessionTiming {
     public func cancel() {
         timer?.invalidate()
         timer = nil
-        startDate = nil
     }
 
     @objc private func appWillEnterForeground() {

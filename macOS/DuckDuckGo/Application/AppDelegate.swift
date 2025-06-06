@@ -506,12 +506,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 appearancePreferences: appearancePreferences,
                 startupPreferences: startupPreferences,
                 bookmarkManager: bookmarkManager,
-                historyCoordinator: historyCoordinator
+                historyCoordinator: historyCoordinator,
+                fireproofDomains: fireproofDomains,
+                tld: tld
             ),
             database: database.db
         )
-
-        fireproofDomains = FireproofDomains(store: FireproofDomainsStore(database: database.db, tableName: "FireproofDomains"), tld: tld)
 #endif
 
         configurationManager = ConfigurationManager(store: configurationStore)

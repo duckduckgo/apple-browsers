@@ -60,7 +60,7 @@ enum SyncSetupPixelKitEvent: PixelKitEventV2 {
     case syncSetupBarcodeScreenShown(SyncSetupSource)
     case syncSetupBarcodeCodeCopied(SyncSetupSource)
     case syncSetupManualCodeEntryScreenShown
-    case syncSetupManualCodeEntered(SyncSetupSource)
+    case syncSetupManualCodeEnteredSuccess(SyncSetupSource)
     case syncSetupManualCodeEnteredFailed
     case syncSetupEndedAbandoned(SyncSetupSource)
     case syncSetupEndedSuccessful(SyncSetupSource)
@@ -70,7 +70,7 @@ enum SyncSetupPixelKitEvent: PixelKitEventV2 {
         case .syncSetupBarcodeScreenShown: return "sync_setup_barcode_screen_shown"
         case .syncSetupBarcodeCodeCopied: return "sync_setup_barcode_code_copied"
         case .syncSetupManualCodeEntryScreenShown: return "sync_setup_manual_code_entry_screen_shown"
-        case .syncSetupManualCodeEntered: return "sync_setup_manual_code_entered"
+        case .syncSetupManualCodeEnteredSuccess: return "sync_setup_manual_code_entered_success"
         case .syncSetupManualCodeEnteredFailed: return "sync_setup_manual_code_entered_failed"
         case .syncSetupEndedAbandoned: return "sync_setup_ended_abandoned"
         case .syncSetupEndedSuccessful: return "sync_setup_ended_successful"
@@ -95,7 +95,7 @@ enum SyncSetupPixelKitEvent: PixelKitEventV2 {
         case
             .syncSetupBarcodeScreenShown(let source),
             .syncSetupBarcodeCodeCopied(let source),
-            .syncSetupManualCodeEntered(let source),
+            .syncSetupManualCodeEnteredSuccess(let source),
             .syncSetupEndedAbandoned(let source),
             .syncSetupEndedSuccessful(let source):
             return source

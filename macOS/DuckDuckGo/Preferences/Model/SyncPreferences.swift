@@ -722,6 +722,7 @@ extension SyncPreferences: ManagementDialogModelDelegate {
         let pasteboard = NSPasteboard.general
         pasteboard.declareTypes([.string], owner: nil)
         pasteboard.setString(code, forType: .string)
+        fireCodeCopiedPixel(code: code)
     }
 
     @MainActor
@@ -924,6 +925,7 @@ extension SyncPreferences: SyncConnectionControllerDelegate {
         switch error {
         case .unableToRecognizeCode:
             handleError(.unableToRecognizeCode, error: underlyingError, pixelEvent: nil)
+            sendCodeParsingFailedPixel(setupRole: setupRole)
         case .failedToFetchPublicKey, .failedToTransmitExchangeRecoveryKey, .failedToFetchConnectRecoveryKey, .failedToLogIn, .failedToTransmitExchangeKey, .failedToFetchExchangeRecoveryKey, .failedToTransmitConnectRecoveryKey:
             handleError(.unableToSyncToOtherDevice, error: underlyingError, pixelEvent: GeneralPixel.syncLoginError(error: underlyingError ?? error))
         case .failedToCreateAccount:
@@ -939,7 +941,7 @@ extension SyncPreferences: SyncConnectionControllerDelegate {
             return
         }
         guard setupSource != .recovery, setupSource != .unknown else { return }
-        PixelKit.fire(SyncSetupPixelKitEvent.syncSetupManualCodeEntered(setupSource).withoutMacPrefix)
+        PixelKit.fire(SyncSetupPixelKitEvent.syncSetupManualCodeEnteredSuccess(setupSource).withoutMacPrefix)
     }
 
     private func sendCodeParsingFailedPixel(setupRole: SyncSetupRole) {

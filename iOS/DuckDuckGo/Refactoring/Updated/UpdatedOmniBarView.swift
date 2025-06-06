@@ -500,7 +500,7 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
     private func updateAccessoryAccessibility() {
         switch accessoryType {
         case .chat:
-            accessoryButton.accessibilityLabel = "AI Chat"
+            accessoryButton.accessibilityLabel = UserText.aiChatFeatureName
             accessoryButton.accessibilityIdentifier = "\(Constant.accessibilityPrefix).Button.AIChat"
         }
         accessoryButton.accessibilityTraits = .button

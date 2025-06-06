@@ -18,12 +18,10 @@
 //
 
 import Foundation
-@testable import DuckDuckGo
 @testable import BrowserServicesKit
 @testable import Common
 @testable import UserScript
 @testable import Subscription
-@testable import Networking
 
 class MockSubscriptionFreeTrialsHelping: SubscriptionFreeTrialsHelping {
     var areFreeTrialsEnabled: Bool = false

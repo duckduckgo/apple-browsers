@@ -375,6 +375,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
         if featureFlagger.isFeatureOn(.aiChatSidebar), case .url = tabViewModel?.tabContent, !isTextFieldEditorFirstResponder {
             aiChatSidebarPresenter.toggleSidebar()
+            aiChatButton.isHighlighted = aiChatSidebarPresenter.isSidebarOpen
         } else if let value = textFieldValue {
             aiChatTabOpener.openAIChatTab(value, target: target)
         } else {

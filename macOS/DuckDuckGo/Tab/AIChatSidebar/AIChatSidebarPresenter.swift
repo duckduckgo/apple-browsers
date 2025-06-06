@@ -26,6 +26,11 @@ protocol AIChatSidebarPresenting {
 
     /// Toggles the AI Chat sidebar visibility with appropriate animations.
     func toggleSidebar()
+
+    /// Returns whether the AI Chat sidebar is open on a current tab.
+    ///
+    /// If there's no current tab, return `false`.
+    var isSidebarOpen: Bool { get }
 }
 
 final class AIChatSidebarPresenter: AIChatSidebarPresenting {
@@ -50,6 +55,13 @@ final class AIChatSidebarPresenter: AIChatSidebarPresenting {
 
         let willShowSidebar = !sidebarProvider.isShowingSidebar(for: currentTabID)
         updateSidebarConstraints(for: currentTabID, isShowingSidebar: willShowSidebar, withAnimation: true)
+    }
+
+    var isSidebarOpen: Bool {
+        guard featureFlagger.isFeatureOn(.aiChatSidebar) else { return false }
+        guard let currentTabID = sidebarHost.currentTabID else { return false }
+
+        return sidebarProvider.isShowingSidebar(for: currentTabID)
     }
 
     private func updateSidebarConstraints(for tabID: TabIdentifier, isShowingSidebar: Bool, withAnimation: Bool) {

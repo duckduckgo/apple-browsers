@@ -51,7 +51,7 @@ extension AIChatTabExtension: NavigationResponder {
         guard isLoadedInSidebar,
               !navigationAction.navigationType.isSameDocumentNavigation,
               navigationAction.isUserInitiated,
-              let parentWindowController = WindowControllersManager.shared.lastKeyMainWindowController
+              let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController
         else {
             return .next
         }

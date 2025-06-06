@@ -245,7 +245,7 @@ extension AIChatSidebarViewController: TabDelegate {
             assert(isBurner == childTab.burnerMode.isBurner)
             WindowsManager.openNewWindow(with: childTab, showWindow: active)
         case .tab(selected: let selected, _, _):
-            if let parentWindowController = WindowControllersManager.shared.lastKeyMainWindowController {
+            if let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController {
                 let tabCollectionViewModel = parentWindowController.mainViewController.tabCollectionViewModel
                 tabCollectionViewModel.insertOrAppend(tab: childTab, selected: selected)
             }

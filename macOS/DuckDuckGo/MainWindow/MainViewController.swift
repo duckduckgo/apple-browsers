@@ -77,6 +77,7 @@ final class MainViewController: NSViewController {
          autofillPopoverPresenter: AutofillPopoverPresenter,
          vpnXPCClient: VPNControllerXPCClient = .shared,
          aiChatMenuConfig: AIChatMenuVisibilityConfigurable = AIChatMenuConfiguration(),
+         aiChatSidebarProvider: AIChatSidebarProviding? = nil,
          brokenSitePromptLimiter: BrokenSitePromptLimiter = .shared,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting = NSApp.delegateTyped.defaultBrowserAndDockPromptPresenter,
@@ -136,7 +137,8 @@ final class MainViewController: NSViewController {
         }()
 
         browserTabViewController = BrowserTabViewController(tabCollectionViewModel: tabCollectionViewModel, bookmarkManager: bookmarkManager)
-        aiChatSidebarPresenter = AIChatSidebarPresenter(sidebarHost: browserTabViewController)
+        aiChatSidebarPresenter = AIChatSidebarPresenter(sidebarHost: browserTabViewController,
+                                                        sidebarProvider: aiChatSidebarProvider ?? AIChatSidebarProvider())
 
         navigationBarViewController = NavigationBarViewController.create(tabCollectionViewModel: tabCollectionViewModel,
                                                                          networkProtectionPopoverManager: networkProtectionPopoverManager,

@@ -59,6 +59,15 @@ extension WindowsManager {
 
     private class func setUpWindow(from item: WindowRestorationItem, includeRegularTabs: Bool) {
         let tabCollectionViewModel = includeRegularTabs ? item.model : TabCollectionViewModel()
+
+        // TODO: Restore info about open tabs
+//        let aiChatSidebarProvider = AIChatSidebarProvider()
+//        if let tabID = tabCollectionViewModel.tabs.first?.id {
+//            _ = aiChatSidebarProvider.sidebar(for: tabID)
+//        }
+//
+//        guard let window = openNewWindow(with: tabCollectionViewModel, aiChatSidebarProvider: aiChatSidebarProvider, showWindow: !item.isMiniaturized, isMiniaturized: item.isMiniaturized) else { return }
+
         guard let window = openNewWindow(with: tabCollectionViewModel, showWindow: !item.isMiniaturized, isMiniaturized: item.isMiniaturized) else { return }
         window.setContentSize(item.frame.size)
         window.setFrameOrigin(item.frame.origin)

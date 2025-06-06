@@ -34,7 +34,7 @@ final class SubscriptionService {
 
     init(application: UIApplication = UIApplication.shared,
          privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
-    featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
+         featureFlagger: FeatureFlagger = AppDependencyProvider.shared.featureFlagger) {
         subscriptionCookieManager = Self.makeSubscriptionCookieManager(application: application,
                                                                        tokenProvider: AppDependencyProvider.shared.subscriptionAuthV1toV2Bridge,
                                                                        privacyConfigurationManager: privacyConfigurationManager)

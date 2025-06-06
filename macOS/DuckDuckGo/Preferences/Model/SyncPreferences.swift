@@ -894,6 +894,7 @@ extension SyncPreferences: SyncConnectionControllerDelegate {
     }
 
     func controllerDidCompleteAccountConnection(shouldShowSyncEnabled: Bool, setupSource: SyncSetupSource, codeSource: SyncCodeSource) {
+        sendSetupEndedSuccessfullyPixel(setupSource: setupSource, codeSource: codeSource)
         guard shouldShowSyncEnabled else { return }
         self.$devices
             .removeDuplicates()
@@ -915,6 +916,10 @@ extension SyncPreferences: SyncConnectionControllerDelegate {
             self.presentDialog(for: .saveRecoveryCode(self.recoveryCode ?? ""))
             self.stopPollingForRecoveryKey()
         }
+        guard case .receiver(let syncSetupSource, let syncCodeSource) = setupRole else {
+            return
+        }
+        sendSetupEndedSuccessfullyPixel(setupSource: syncSetupSource, codeSource: syncCodeSource)
     }
 
     func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey, setupRole: SyncSetupRole) async {

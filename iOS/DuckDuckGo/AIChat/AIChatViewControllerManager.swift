@@ -322,5 +322,3 @@ private struct AIChatUserAgentHandler: AIChatUserAgentProviding {
         userAgentManager.userAgent(isDesktop: false, url: url)
     }
 }
-
-

@@ -602,7 +602,7 @@ extension AppDelegate {
     @objc func setCustomConfigurationURL(_ sender: Any?) {
         let currentConfigurationURL = AppConfigurationURLProvider(
             privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
-            featureFlagger: featureFlagger,
+            featureFlagger: featureFlagger
         ).url(for: .privacyConfiguration).absoluteString
         let alert = NSAlert.customConfigurationAlert(configurationUrl: currentConfigurationURL)
         if alert.runModal() != .cancel {

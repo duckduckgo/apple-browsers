@@ -90,6 +90,7 @@ final class PrivacyDashboardViewController: NSViewController {
                                                                      toggleReportingManager: toggleReportingManager,
                                                                      eventMapping: privacyDashboardEvents)
         self.contentBlocking = contentBlocking
+        // swiftlint:disable:next force_cast
         self.rulesUpdateObserver = ContentBlockingRulesUpdateObserver(userContentUpdating: (contentBlocking as! AppContentBlocking).userContentUpdating)
 
         brokenSiteReporter = {

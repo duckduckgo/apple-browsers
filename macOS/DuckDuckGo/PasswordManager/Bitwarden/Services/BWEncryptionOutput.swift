@@ -1,7 +1,7 @@
 //
-//  NSException+Catch.m
+//  BWEncryptionOutput.swift
 //
-//  Copyright © 2021 DuckDuckGo. All rights reserved.
+//  Copyright © 2022 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -16,17 +16,10 @@
 //  limitations under the License.
 //
 
-#import "NSException+Catch.h"
+import Foundation
 
-@implementation NSException (Catch)
-
-+ (NSException * _Nullable)tryBlock:(void (__attribute__((noescape)) ^ _Nonnull)(void))block {
-    @try {
-        block();
-    } @catch (NSException *exception) {
-        return exception;
-    }
-    return nil;
+struct BWEncryptionOutput {
+    let iv: Data
+    let data: Data
+    let hmac: Data
 }
-
-@end

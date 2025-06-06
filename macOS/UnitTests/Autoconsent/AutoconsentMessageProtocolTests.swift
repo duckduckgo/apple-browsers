@@ -31,7 +31,12 @@ class AutoconsentMessageProtocolTests: XCTestCase {
         try await super.setUp()
 
         let appearancePreferences = AppearancePreferences(keyValueStore: try MockKeyValueFileStore())
-        let dataClearingPreferences = DataClearingPreferences(persistor: MockFireButtonPreferencesPersistor())
+        let dataClearingPreferences = DataClearingPreferences(
+            persistor: MockFireButtonPreferencesPersistor(),
+            fireproofDomains: MockFireproofDomains(domains: []),
+            faviconManager: FaviconManagerMock(),
+            windowControllersManager: WindowControllersManagerMock()
+        )
         let startupPreferences = StartupPreferences(
             persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),
             appearancePreferences: appearancePreferences,
@@ -53,7 +58,8 @@ class AutoconsentMessageProtocolTests: XCTestCase {
                                                appearancePreferences: appearancePreferences,
                                                startupPreferences: startupPreferences,
                                                bookmarkManager: MockBookmarkManager(),
-                                               historyCoordinator: CapturingHistoryDataSource()
+                                               historyCoordinator: CapturingHistoryDataSource(),
+                                               fireproofDomains: MockFireproofDomains(domains: [])
                                               ),
             config: MockPrivacyConfiguration()
         )

@@ -3443,10 +3443,10 @@
 "vpn.settings.dns.server.content.blocking.explanation" = "DNS düzeyinde bir engelleme listesiyle kötü amaçlı yazılım, kimlik avı saldırıları ve çevrimiçi dolandırıcılık barındırdığı için işaretlenmiş 150.000'den fazla alan adını engelleyin. [Daha Fazla Bilgi](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
 
 /* Header of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.header" = "İçerik Engelleme ve Filtreleme";
+"vpn.settings.dns.server.content.blocking.header" = "Kötü Amaçlı İçerik Engelleme";
 
-/* Title of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.title" = "Riskli alan adlarını engelleyin";
+/* Title of the vpn scam blocker sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Dolandırıcılık Engelleyici";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";

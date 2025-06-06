@@ -24,7 +24,7 @@ protocol HistoryBurning: AnyObject {
 }
 
 final class FireHistoryBurner: HistoryBurning {
-    let fireproofDomains: () async -> DomainFireproofStatusProviding
+    let fireproofDomains: DomainFireproofStatusProviding
     let fire: () async -> Fire
 
     /**
@@ -32,10 +32,10 @@ final class FireHistoryBurner: HistoryBurning {
      * on a background thread, while both `FireproofDomains` and `FireCoordinator` need to be accessed on main thread.
      */
     init(
-        fireproofDomains: (() async -> DomainFireproofStatusProviding)? = nil,
+        fireproofDomains: DomainFireproofStatusProviding,
         fire: (() async -> Fire)? = nil
     ) {
-        self.fireproofDomains = fireproofDomains ?? { @MainActor in FireproofDomains.shared }
+        self.fireproofDomains = fireproofDomains
         self.fire = fire ?? { @MainActor in FireCoordinator.fireViewModel.fire }
     }
 
@@ -46,7 +46,7 @@ final class FireHistoryBurner: HistoryBurning {
 
         await withCheckedContinuation { continuation in
             Task { @MainActor in
-                await fire().burnVisits(visits, except: fireproofDomains(), isToday: animated, urlToOpenIfWindowsAreClosed: .history) {
+                await fire().burnVisits(visits, except: fireproofDomains, isToday: animated, urlToOpenIfWindowsAreClosed: .history) {
                     continuation.resume()
                 }
             }

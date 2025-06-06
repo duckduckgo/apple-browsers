@@ -73,6 +73,7 @@ final class NewTabPageCoordinatorTests: XCTestCase {
                 openURLHandler: { _ in }
             ),
             historyCoordinator: HistoryCoordinatingMock(),
+            fireproofDomains: MockFireproofDomains(domains: []),
             privacyStats: MockPrivacyStats(),
             freemiumDBPPromotionViewCoordinator: FreemiumDBPPromotionViewCoordinator(
                 freemiumDBPUserStateManager: MockFreemiumDBPUserStateManager(),

@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import Common
 import XCTest
 @testable import DuckDuckGo_Privacy_Browser
 
@@ -40,7 +41,7 @@ final class FirePopoverViewModelTests: XCTestCase {
             fireViewModel: .init(fire: fire),
             tabCollectionViewModel: tabCollectionViewModel,
             historyCoordinating: HistoryCoordinatingMock(),
-            fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock()),
+            fireproofDomains: FireproofDomains(store: FireproofDomainsStoreMock(), tld: TLD()),
             faviconManagement: FaviconManagerMock(),
             tld: ContentBlocking.shared.tld,
             onboardingContextualDialogsManager: onboardingContextualDialogsManager

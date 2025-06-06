@@ -81,6 +81,7 @@ final class AddressBarViewController: NSViewController {
     private let onboardingPixelReporter: OnboardingAddressBarReporting
     private let visualStyle: VisualStyleProviding
     private var tabViewModel: TabViewModel?
+    private let aiChatSidebarPresenter: AIChatSidebarPresenting
 
     private var aiChatSettings: AIChatPreferencesStorage
     @IBOutlet weak var activeOuterBorderTrailingConstraint: NSLayoutConstraint!
@@ -136,7 +137,8 @@ final class AddressBarViewController: NSViewController {
           popovers: NavigationBarPopovers?,
           onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
           aiChatSettings: AIChatPreferencesStorage = DefaultAIChatPreferencesStorage(),
-          visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager) {
+          visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager,
+          aiChatSidebarPresenter: AIChatSidebarPresenting) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
         self.popovers = popovers
@@ -155,6 +157,7 @@ final class AddressBarViewController: NSViewController {
         self.onboardingPixelReporter = onboardingPixelReporter
         self.aiChatSettings = aiChatSettings
         self.visualStyle = visualStyleManager.style
+        self.aiChatSidebarPresenter = aiChatSidebarPresenter
 
         super.init(coder: coder)
     }
@@ -165,7 +168,8 @@ final class AddressBarViewController: NSViewController {
                                                          bookmarkManager: bookmarkManager,
                                                          popovers: popovers,
                                                          aiChatTabOpener: NSApp.delegateTyped.aiChatTabOpener,
-                                                         aiChatMenuConfig: AIChatMenuConfiguration(storage: aiChatSettings))
+                                                         aiChatMenuConfig: AIChatMenuConfiguration(storage: aiChatSettings),
+                                                         aiChatSidebarPresenter: aiChatSidebarPresenter)
 
         self.addressBarButtonsViewController = controller
         controller?.delegate = self

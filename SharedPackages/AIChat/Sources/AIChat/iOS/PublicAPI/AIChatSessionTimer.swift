@@ -78,6 +78,7 @@ public final class AIChatSessionTimer: AIChatSessionTiming {
     private func start(duration: TimeInterval) {
         cancel()
         timer = Timer.scheduledTimer(withTimeInterval: duration, repeats: false) { [weak self] _ in
+            self?.startDate = nil
             self?.completion()
         }
     }

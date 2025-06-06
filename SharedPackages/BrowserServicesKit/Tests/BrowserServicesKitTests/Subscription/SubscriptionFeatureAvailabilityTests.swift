@@ -87,7 +87,7 @@ final class SubscriptionFeatureAvailabilityTests: XCTestCase {
 
     // MARK: - Tests for DuckAI Premium
 
-    func testPaidDuckAIDisabledWhenFeatureFlagEnabled() {
+    func testPaidDuckAIDisabledWhenFeatureFlagDisabled() {
         XCTAssertFalse(privacyConfig.isSubfeatureEnabled(PrivacyProSubfeature.paidDuckAI))
 
         let subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,

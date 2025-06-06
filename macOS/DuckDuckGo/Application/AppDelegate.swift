@@ -17,6 +17,7 @@
 //
 
 import Bookmarks
+import BrokenSitePrompt
 import BrowserServicesKit
 import Cocoa
 import Combine
@@ -120,6 +121,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let webCacheManager: WebCacheManager
     let tld = TLD()
     let privacyFeatures: AnyPrivacyFeatures
+    let brokenSitePromptLimiter: BrokenSitePromptLimiter
 
     private var updateProgressCancellable: AnyCancellable?
 
@@ -622,6 +624,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         freemiumDBPPromotionViewCoordinator = FreemiumDBPPromotionViewCoordinator(freemiumDBPUserStateManager: freemiumDBPUserStateManager,
                                                                                   freemiumDBPFeature: freemiumDBPFeature)
 
+        brokenSitePromptLimiter = BrokenSitePromptLimiter(privacyConfigManager: privacyConfigurationManager, store: BrokenSitePromptLimiterStore())
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {
             privacyStats = PrivacyStats(databaseProvider: PrivacyStatsDatabase(), errorEvents: PrivacyStatsErrorHandler())

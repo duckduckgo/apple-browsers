@@ -239,9 +239,7 @@ final class FireViewController: NSViewController {
  */
 private actor FireAnimationViewLoader {
 
-    static let shared: FireAnimationViewLoader = {
-        FireAnimationViewLoader(animationName: FireViewController.Const.animationName)
-    }()
+    static let shared: FireAnimationViewLoader = .init(animationName: FireViewController.Const.animationName)
 
     @MainActor
     func createAnimationView() async -> LottieAnimationView? {

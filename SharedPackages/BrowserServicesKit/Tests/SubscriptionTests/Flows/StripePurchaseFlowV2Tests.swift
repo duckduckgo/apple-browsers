@@ -56,7 +56,7 @@ final class StripePurchaseFlowV2Tests: XCTestCase {
             XCTAssertEqual(success.platform, SubscriptionPlatformName.stripe)
             XCTAssertEqual(success.options.count, SubscriptionMockFactory.productsItems.count)
             XCTAssertEqual(success.features.count, 4)
-            let allFeatures = [Entitlement.ProductName.networkProtection,      Entitlement.ProductName.dataBrokerProtection, Entitlement.ProductName.identityTheftRestoration,
+            let allFeatures = [Entitlement.ProductName.networkProtection,   Entitlement.ProductName.dataBrokerProtection, Entitlement.ProductName.identityTheftRestoration,
                 Entitlement.ProductName.duckAIPremium]
             let allNames = success.features.compactMap({ feature in feature.name})
 

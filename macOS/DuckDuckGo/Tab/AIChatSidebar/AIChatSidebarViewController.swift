@@ -18,6 +18,7 @@
 
 import AppKit
 import BrowserServicesKit
+import Combine
 
 /// A delegate protocol that handles user interactions with the AI Chat sidebar view controller.
 /// This protocol defines methods for responding to navigation and UI events in the sidebar.
@@ -48,6 +49,7 @@ final class AIChatSidebarViewController: NSViewController {
     }
 
     weak var delegate: AIChatSidebarViewControllerDelegate?
+    private(set) var currentAIChatURL: URL?
 
     private var openInNewTabButton: MouseOverButton!
     private var closeButton: MouseOverButton!
@@ -56,6 +58,8 @@ final class AIChatSidebarViewController: NSViewController {
     private var topBar: NSView!
 
     private let aiTab = Tab(content: .url(AIChatRemoteSettings().aiChatURL, source: .ui), isLoadedInSidebar: true)
+
+    private var cancellables = Set<AnyCancellable>()
 
     init() {
         super.init(nibName: nil, bundle: nil)
@@ -90,6 +94,7 @@ final class AIChatSidebarViewController: NSViewController {
 
         // Initial mask update
         updateWebViewMask()
+        subscribeToURLChanges()
     }
 
     private func createAndSetupSeparator(in container: NSView) {
@@ -223,6 +228,16 @@ final class AIChatSidebarViewController: NSViewController {
         let shape = CAShapeLayer()
         shape.path = path
         webViewContainer.layer?.mask = shape
+    }
+
+    private func subscribeToURLChanges() {
+        aiTab.$content.sink { [weak self] content in
+            print(" --- content: \(content)")
+            print(" --- content URL: \(content.urlForWebView?.absoluteString ?? "")")
+
+            self?.currentAIChatURL = content.urlForWebView
+        }
+        .store(in: &cancellables)
     }
 
     @objc private func openInNewTabButtonClicked() {

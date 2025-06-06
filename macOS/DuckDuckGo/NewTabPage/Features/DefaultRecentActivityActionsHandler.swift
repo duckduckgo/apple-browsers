@@ -84,7 +84,7 @@ final class RecentActivityItemBurner: RecentActivityItemBurning {
     let fireproofStatusProvider: URLFireproofStatusProviding
 
     init(
-        fireproofStatusProvider: URLFireproofStatusProviding = FireproofDomains.shared,
+        fireproofStatusProvider: URLFireproofStatusProviding,
         tld: TLD = ContentBlocking.shared.tld,
         fire: (() async -> Fire)? = nil
     ) {
@@ -127,10 +127,7 @@ final class DefaultRecentActivityActionsHandler: RecentActivityActionsHandling {
     let burnDidCompletePublisher: AnyPublisher<Void, Never>
     private let burnDidCompleteSubject = PassthroughSubject<Void, Never>()
 
-    init(
-        favoritesHandler: RecentActivityFavoritesHandling,
-        burner: RecentActivityItemBurning = RecentActivityItemBurner()
-    ) {
+    init(favoritesHandler: RecentActivityFavoritesHandling, burner: RecentActivityItemBurning) {
         self.favoritesHandler = favoritesHandler
         self.burner = burner
         self.burnDidCompletePublisher = burnDidCompleteSubject.eraseToAnyPublisher()

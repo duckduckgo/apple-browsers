@@ -51,7 +51,7 @@ final class AppContentBlocking {
     let contentBlockingManager: ContentBlockerRulesManagerProtocol
     let userContentUpdating: UserContentUpdating
 
-    let tld = TLD()
+    let tld: TLD
 
     let adClickAttribution: AdClickAttributing
     let adClickAttributionRulesProvider: AdClickAttributionRulesProviding
@@ -77,7 +77,9 @@ final class AppContentBlocking {
         appearancePreferences: AppearancePreferences,
         startupPreferences: StartupPreferences,
         bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling,
-        historyCoordinator: HistoryDataSource
+        historyCoordinator: HistoryDataSource,
+        fireproofDomains: DomainFireproofStatusProviding,
+        tld: TLD
     ) {
         let privacyConfigurationManager = PrivacyConfigurationManager(fetchedETag: configurationStore.loadEtag(for: .privacyConfiguration),
                                                                       fetchedData: configurationStore.loadData(for: .privacyConfiguration),
@@ -94,7 +96,9 @@ final class AppContentBlocking {
             appearancePreferences: appearancePreferences,
             startupPreferences: startupPreferences,
             bookmarkManager: bookmarkManager,
-            historyCoordinator: historyCoordinator
+            historyCoordinator: historyCoordinator,
+            fireproofDomains: fireproofDomains,
+            tld: tld
         )
     }
 
@@ -108,9 +112,12 @@ final class AppContentBlocking {
         appearancePreferences: AppearancePreferences,
         startupPreferences: StartupPreferences,
         bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling,
-        historyCoordinator: HistoryDataSource
+        historyCoordinator: HistoryDataSource,
+        fireproofDomains: DomainFireproofStatusProviding,
+        tld: TLD
     ) {
         self.privacyConfigurationManager = privacyConfigurationManager
+        self.tld = tld
 
         trackerDataManager = TrackerDataManager(etag: configurationStore.loadEtag(for: .trackerDataSet),
                                                 data: configurationStore.loadData(for: .trackerDataSet),
@@ -137,7 +144,8 @@ final class AppContentBlocking {
                                                   appearancePreferences: appearancePreferences,
                                                   startupPreferences: startupPreferences,
                                                   bookmarkManager: bookmarkManager,
-                                                  historyCoordinator: historyCoordinator)
+                                                  historyCoordinator: historyCoordinator,
+                                                  fireproofDomains: fireproofDomains)
 
         adClickAttributionRulesProvider = AdClickAttributionRulesProvider(config: adClickAttribution,
                                                                           compiledRulesSource: contentBlockingManager,

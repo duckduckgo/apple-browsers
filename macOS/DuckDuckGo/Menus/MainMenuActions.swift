@@ -812,7 +812,10 @@ extension MainViewController {
     @objc func clearAllHistory(_ sender: NSMenuItem) {
         if featureFlagger.isFeatureOn(.historyView) {
             Task {
-                let historyViewDataProvider = HistoryViewDataProvider(historyDataSource: historyCoordinator)
+                let historyViewDataProvider = HistoryViewDataProvider(
+                    historyDataSource: historyCoordinator,
+                    historyBurner: FireHistoryBurner(fireproofDomains: fireproofDomains)
+                )
                 await historyViewDataProvider.refreshData()
                 let visitsCount = await historyViewDataProvider.countVisibleVisits(matching: .rangeFilter(.all))
 
@@ -857,9 +860,7 @@ extension MainViewController {
                 let presenter = DefaultHistoryViewDialogPresenter()
                 switch await presenter.showDeleteDialog(for: visits.count, deleteMode: deleteMode, in: nil) {
                 case .burn:
-                    FireCoordinator.fireViewModel.fire.burnVisits(visits,
-                                                                  except: FireproofDomains.shared,
-                                                                  isToday: isToday)
+                    FireCoordinator.fireViewModel.fire.burnVisits(visits, except: fireproofDomains, isToday: isToday)
                 case .delete:
                     historyCoordinator.burnVisits(visits) {}
                 default:
@@ -878,9 +879,7 @@ extension MainViewController {
                 guard case .alertFirstButtonReturn = response else {
                     return
                 }
-                FireCoordinator.fireViewModel.fire.burnVisits(visits,
-                                                              except: FireproofDomains.shared,
-                                                              isToday: isToday)
+                FireCoordinator.fireViewModel.fire.burnVisits(visits, except: self.fireproofDomains, isToday: isToday)
             })
         }
     }

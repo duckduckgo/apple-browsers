@@ -116,6 +116,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let bookmarkManager: LocalBookmarkManager
     let bookmarkDragDropManager: BookmarkDragDropManager
     let historyCoordinator: HistoryCoordinator
+    let fireproofDomains: FireproofDomains
+    let webCacheManager: WebCacheManager
+    let tld = TLD()
 
     private var updateProgressCancellable: AnyCancellable?
 
@@ -125,6 +128,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         bookmarkManager: bookmarkManager,
         activeRemoteMessageModel: activeRemoteMessageModel,
         historyCoordinator: historyCoordinator,
+        fireproofDomains: fireproofDomains,
         privacyStats: privacyStats,
         freemiumDBPPromotionViewCoordinator: freemiumDBPPromotionViewCoordinator,
         keyValueStore: keyValueStore
@@ -292,8 +296,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         appearancePreferences = AppearancePreferences(keyValueStore: keyValueStore, pixelFiring: PixelKit.shared)
-        dataClearingPreferences = DataClearingPreferences(pixelFiring: PixelKit.shared)
-        startupPreferences = StartupPreferences(appearancePreferences: appearancePreferences, dataClearingPreferences: dataClearingPreferences)
 
         let privacyConfigurationManager: PrivacyConfigurationManager
 
@@ -446,26 +448,53 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         )
 
         visualStyleManager = VisualStyleManager(featureFlagger: featureFlagger)
+
+#if DEBUG
+        if AppVersion.runType.requiresEnvironment {
+            fireproofDomains = FireproofDomains(store: FireproofDomainsStore(database: database.db, tableName: "FireproofDomains"), tld: tld)
+            faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains)
+        } else {
+            fireproofDomains = FireproofDomains(store: FireproofDomainsStore(context: nil), tld: tld)
+            faviconManager = FaviconManager(cacheType: .inMemory, bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains)
+        }
+#else
+        fireproofDomains = FireproofDomains(store: FireproofDomainsStore(database: database.db, tableName: "FireproofDomains"), tld: tld)
+        faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager, fireproofDomains: fireproofDomains)
+#endif
+
+        webCacheManager = WebCacheManager(fireproofDomains: fireproofDomains)
+
+        dataClearingPreferences = DataClearingPreferences(
+            fireproofDomains: fireproofDomains,
+            faviconManager: faviconManager,
+            windowControllersManager: windowControllersManager,
+            pixelFiring: PixelKit.shared
+        )
+        startupPreferences = StartupPreferences(appearancePreferences: appearancePreferences, dataClearingPreferences: dataClearingPreferences)
         newTabPageCustomizationModel = NewTabPageCustomizationModel(visualStyleManager: visualStyleManager, appearancePreferences: appearancePreferences)
 
 #if DEBUG
-        AppPrivacyFeatures.shared = AppVersion.runType.requiresEnvironment
-        // runtime mock-replacement for Unit Tests, to be redone when we‘ll be doing Dependency Injection
-        ? AppPrivacyFeatures(
-            contentBlocking: AppContentBlocking(
-                privacyConfigurationManager: privacyConfigurationManager,
-                internalUserDecider: internalUserDecider,
-                configurationStore: configurationStore,
-                contentScopeExperimentsManager: self.contentScopeExperimentsManager,
-                onboardingNavigationDelegate: windowControllersManager,
-                appearancePreferences: appearancePreferences,
-                startupPreferences: startupPreferences,
-                bookmarkManager: bookmarkManager,
-                historyCoordinator: historyCoordinator
-            ),
-            database: database.db
-        )
-        : AppPrivacyFeatures(contentBlocking: ContentBlockingMock(), httpsUpgradeStore: HTTPSUpgradeStoreMock())
+        if AppVersion.runType.requiresEnvironment {
+            AppPrivacyFeatures.shared = AppPrivacyFeatures(
+                contentBlocking: AppContentBlocking(
+                    privacyConfigurationManager: privacyConfigurationManager,
+                    internalUserDecider: internalUserDecider,
+                    configurationStore: configurationStore,
+                    contentScopeExperimentsManager: self.contentScopeExperimentsManager,
+                    onboardingNavigationDelegate: windowControllersManager,
+                    appearancePreferences: appearancePreferences,
+                    startupPreferences: startupPreferences,
+                    bookmarkManager: bookmarkManager,
+                    historyCoordinator: historyCoordinator,
+                    fireproofDomains: fireproofDomains,
+                    tld: tld
+                ),
+                database: database.db
+            )
+        } else {
+            // runtime mock-replacement for Unit Tests, to be redone when we‘ll be doing Dependency Injection
+            AppPrivacyFeatures.shared = AppPrivacyFeatures(contentBlocking: ContentBlockingMock(), httpsUpgradeStore: HTTPSUpgradeStoreMock())
+        }
 #else
         AppPrivacyFeatures.shared = AppPrivacyFeatures(
             contentBlocking: AppContentBlocking(
@@ -477,7 +506,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 appearancePreferences: appearancePreferences,
                 startupPreferences: startupPreferences,
                 bookmarkManager: bookmarkManager,
-                historyCoordinator: historyCoordinator
+                historyCoordinator: historyCoordinator,
+                fireproofDomains: fireproofDomains,
+                tld: tld
             ),
             database: database.db
         )
@@ -581,16 +612,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         privacyStats = PrivacyStats(databaseProvider: PrivacyStatsDatabase())
 #endif
         PixelKit.configureExperimentKit(featureFlagger: featureFlagger, eventTracker: ExperimentEventTracker(store: UserDefaults.appConfiguration))
-
-#if DEBUG
-        if AppVersion.runType.requiresEnvironment {
-            faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager)
-        } else {
-            faviconManager = FaviconManager(cacheType: .inMemory, bookmarkManager: bookmarkManager)
-        }
-#else
-        faviconManager = FaviconManager(cacheType: .standard(database.db), bookmarkManager: bookmarkManager)
-#endif
 
 #if !APPSTORE && WEB_EXTENSIONS_ENABLED
         if #available(macOS 15.4, *) {

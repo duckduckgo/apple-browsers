@@ -36,6 +36,7 @@ final class Fire {
     let downloadListCoordinator: DownloadListCoordinator
     let windowControllerManager: WindowControllersManager
     let faviconManagement: FaviconManagement
+    let fireproofDomains: FireproofDomains
     let autoconsentManagement: AutoconsentManagement?
     let stateRestorationManager: AppStateRestorationManager?
     let recentlyClosedCoordinator: RecentlyClosedCoordinating?
@@ -91,13 +92,14 @@ final class Fire {
     @Published private(set) var burningData: BurningData?
 
     @MainActor
-    init(cacheManager: WebCacheManager = WebCacheManager.shared,
+    init(cacheManager: WebCacheManager? = nil,
          historyCoordinating: HistoryCoordinating? = nil,
          permissionManager: PermissionManagerProtocol = PermissionManager.shared,
          savedZoomLevelsCoordinating: SavedZoomLevelsCoordinating = AccessibilityPreferences.shared,
          downloadListCoordinator: DownloadListCoordinator = DownloadListCoordinator.shared,
          windowControllerManager: WindowControllersManager? = nil,
          faviconManagement: FaviconManagement? = nil,
+         fireproofDomains: FireproofDomains? = nil,
          autoconsentManagement: AutoconsentManagement? = nil,
          stateRestorationManager: AppStateRestorationManager? = nil,
          recentlyClosedCoordinator: RecentlyClosedCoordinating? = nil,
@@ -110,13 +112,14 @@ final class Fire {
          getPrivacyStats: (() async -> PrivacyStatsCollecting)? = nil,
          getVisitedLinkStore: (() -> WKVisitedLinkStoreWrapper?)? = nil
     ) {
-        self.webCacheManager = cacheManager
+        self.webCacheManager = cacheManager ?? NSApp.delegateTyped.webCacheManager
         self.historyCoordinating = historyCoordinating ?? NSApp.delegateTyped.historyCoordinator
         self.permissionManager = permissionManager
         self.savedZoomLevelsCoordinating = savedZoomLevelsCoordinating
         self.downloadListCoordinator = downloadListCoordinator
         self.windowControllerManager = windowControllerManager ?? Application.appDelegate.windowControllersManager
         self.faviconManagement = faviconManagement ?? NSApp.delegateTyped.faviconManager
+        self.fireproofDomains = fireproofDomains ?? NSApp.delegateTyped.fireproofDomains
         self.recentlyClosedCoordinator = recentlyClosedCoordinator ?? RecentlyClosedCoordinator.shared
         self.pinnedTabsManagerProvider = pinnedTabsManagerProvider ?? Application.appDelegate.pinnedTabsManagerProvider
         self.bookmarkManager = bookmarkManager ?? NSApp.delegateTyped.bookmarkManager
@@ -438,7 +441,7 @@ final class Fire {
     // MARK: - Zoom levels
 
      private func burnZoomLevels() {
-         savedZoomLevelsCoordinating.burnZoomLevels(except: FireproofDomains.shared)
+         savedZoomLevelsCoordinating.burnZoomLevels(except: fireproofDomains)
      }
 
      private func burnZoomLevels(of baseDomains: Set<String>) {
@@ -448,7 +451,7 @@ final class Fire {
     // MARK: - Permissions
 
     private func burnPermissions(completion: @escaping () -> Void) {
-        self.permissionManager.burnPermissions(except: FireproofDomains.shared, completion: completion)
+        self.permissionManager.burnPermissions(except: fireproofDomains, completion: completion)
     }
 
     private func burnPermissions(of baseDomains: Set<String>, completion: @escaping () -> Void) {
@@ -479,7 +482,7 @@ final class Fire {
 
     private func burnFavicons(completion: @escaping () -> Void) {
         Task { @MainActor in
-            await self.faviconManagement.burn(except: FireproofDomains.shared,
+            await self.faviconManagement.burn(except: fireproofDomains,
                                               bookmarkManager: bookmarkManager,
                                               savedLogins: autofillDomains())
             completion()

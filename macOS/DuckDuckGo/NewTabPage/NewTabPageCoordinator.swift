@@ -33,6 +33,7 @@ final class NewTabPageCoordinator {
         bookmarkManager: BookmarkManager & URLFavoriteStatusProviding & RecentActivityFavoritesHandling,
         activeRemoteMessageModel: ActiveRemoteMessageModel,
         historyCoordinator: HistoryCoordinating,
+        fireproofDomains: URLFireproofStatusProviding,
         privacyStats: PrivacyStatsCollecting,
         freemiumDBPPromotionViewCoordinator: FreemiumDBPPromotionViewCoordinator,
         keyValueStore: ThrowingKeyValueStoring,
@@ -55,6 +56,7 @@ final class NewTabPageCoordinator {
             bookmarkManager: bookmarkManager,
             activeRemoteMessageModel: activeRemoteMessageModel,
             historyCoordinator: historyCoordinator,
+            fireproofDomains: fireproofDomains,
             privacyStats: privacyStats,
             protectionsReportModel: protectionsReportModel,
             freemiumDBPPromotionViewCoordinator: freemiumDBPPromotionViewCoordinator

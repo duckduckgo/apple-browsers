@@ -75,6 +75,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
 
     private let bookmarkManager: BookmarkManager
     private let bookmarkDragDropManager: BookmarkDragDropManager
+    private let fireproofDomains: FireproofDomains
     private let networkProtectionPopoverManager: NetPPopoverManager
     private let isBurner: Bool
 
@@ -83,12 +84,14 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     init(
         bookmarkManager: BookmarkManager,
         bookmarkDragDropManager: BookmarkDragDropManager,
+        fireproofDomains: FireproofDomains,
         networkProtectionPopoverManager: NetPPopoverManager,
         autofillPopoverPresenter: AutofillPopoverPresenter,
         isBurner: Bool
     ) {
         self.bookmarkManager = bookmarkManager
         self.bookmarkDragDropManager = bookmarkDragDropManager
+        self.fireproofDomains = fireproofDomains
         self.networkProtectionPopoverManager = networkProtectionPopoverManager
         self.autofillPopoverPresenter = autofillPopoverPresenter
         self.isBurner = isBurner
@@ -443,7 +446,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     }
 
     private func showSaveCredentialsPopover(usingView view: NSView, withDelegate delegate: NSPopoverDelegate) {
-        let popover = SaveCredentialsPopover()
+        let popover = SaveCredentialsPopover(fireproofDomains: fireproofDomains)
         popover.delegate = delegate
         saveCredentialsPopover = popover
         show(popover, positionedBelow: view)

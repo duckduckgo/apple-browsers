@@ -55,10 +55,4 @@ extension URL {
         guard let host = self.host, self.navigationalScheme?.isHypertextScheme == true else { return false }
         return (host != Self.duckduckgoDomain)
     }
-
-    var showFireproofStatus: Bool {
-        guard let host = self.host else { return false }
-        return canFireproof && FireproofDomains.shared.isFireproof(fireproofDomain: host)
-    }
-
 }

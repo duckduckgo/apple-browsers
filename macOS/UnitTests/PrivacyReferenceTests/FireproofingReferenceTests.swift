@@ -24,7 +24,7 @@ import Common
 final class FireproofingReferenceTests: XCTestCase {
     private var referenceTests = [Test]()
     private let dataStore = WKWebsiteDataStore.default()
-    private let fireproofDomains = FireproofDomains.shared
+    private let fireproofDomains = Application.appDelegate.fireproofDomains
 
     private enum Resource {
         static let tests = "privacy-reference-tests/storage-clearing/tests.json"
@@ -98,7 +98,7 @@ final class FireproofingReferenceTests: XCTestCase {
     private class MockPreservedLogins: FireproofDomains {
 
         init(domains: [String], tld: TLD) {
-            super.init(store: FireproofDomainsStoreMock())
+            super.init(store: FireproofDomainsStoreMock(), tld: tld)
 
             for domain in domains {
                 guard let eTLDPlusOne = tld.eTLDplus1(domain) else {

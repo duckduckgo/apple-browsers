@@ -18,6 +18,7 @@
 //
 
 import Foundation
+@testable import DuckDuckGo
 @testable import BrowserServicesKit
 @testable import Common
 @testable import UserScript

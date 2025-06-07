@@ -25,9 +25,10 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
     private var delegate: CapturingOnboardingNavigationDelegate!
     private var reporter: CapturingOnboardingPixelReporter!
 
+    @MainActor
     override func setUpWithError() throws {
         reporter = CapturingOnboardingPixelReporter()
-        let fireCoordinator = FireCoordinator()
+        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld)
         factory = DefaultContextualDaxDialogViewFactory(onboardingPixelReporter: reporter, fireCoordinator: fireCoordinator)
         delegate = CapturingOnboardingNavigationDelegate()
     }
@@ -237,9 +238,19 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         let onFireButtonPressed = { onFireButtonRun = true }
         let onDismiss = { onDismissRun = true }
 
-        let mainViewController = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])), autofillPopoverPresenter: DefaultAutofillPopoverPresenter(), fireViewModel: FireViewModel())
+        let fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld)
+        let mainViewController = MainViewController(
+            tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])),
+            autofillPopoverPresenter: DefaultAutofillPopoverPresenter(),
+            fireCoordinator: fireCoordinator
+        )
         let window = MockWindow(isVisible: false)
-        let mainWindowController = MainWindowController(window: window, mainViewController: mainViewController, popUp: false, fireViewModel: FireViewModel())
+        let mainWindowController = MainWindowController(
+            window: window,
+            mainViewController: mainViewController,
+            popUp: false,
+            fireViewModel: fireCoordinator.fireViewModel
+        )
         mainWindowController.window = window
         Application.appDelegate.windowControllersManager.lastKeyMainWindowController = mainWindowController
 

@@ -17,14 +17,18 @@
 //
 
 import Cocoa
+import Common
 import PixelKit
 
 @MainActor
 final class FireCoordinator {
 
-    let fireViewModel = FireViewModel()
+    let fireViewModel: FireViewModel
+    private(set) var firePopover: FirePopover?
 
-    var firePopover: FirePopover?
+    init(tld: TLD) {
+        self.fireViewModel = FireViewModel(tld: tld)
+    }
 
     func fireButtonAction() {
         let burningWindow: NSWindow

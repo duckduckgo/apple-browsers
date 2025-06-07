@@ -56,13 +56,14 @@ class AutoconsentMessageProtocolTests: XCTestCase {
                                                                                       embeddedDataProvider: AppTrackerDataSetProvider(),
                                                                                       errorReporting: nil),
                                                experimentManager: MockContentScopeExperimentManager(),
-                                               tld: TLD(),
+                                               tld: Application.appDelegate.tld,
                                                onboardingNavigationDelegate: CapturingOnboardingNavigation(),
                                                appearancePreferences: appearancePreferences,
                                                startupPreferences: startupPreferences,
                                                bookmarkManager: MockBookmarkManager(),
                                                historyCoordinator: CapturingHistoryDataSource(),
-                                               fireproofDomains: MockFireproofDomains(domains: [])
+                                               fireproofDomains: MockFireproofDomains(domains: []),
+                                               fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld)
                                               ),
             config: MockPrivacyConfiguration()
         )

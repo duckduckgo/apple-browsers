@@ -122,6 +122,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let tld = TLD()
     let privacyFeatures: AnyPrivacyFeatures
     let brokenSitePromptLimiter: BrokenSitePromptLimiter
+    let fireCoordinator: FireCoordinator
 
     private var updateProgressCancellable: AnyCancellable?
 
@@ -144,8 +145,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         promptHandler: AIChatPromptHandler.shared,
         addressBarQueryExtractor: AIChatAddressBarPromptExtractor()
     )
-
-    let fireCoordinator = FireCoordinator()
 
     let privacyStats: PrivacyStatsCollecting
     let activeRemoteMessageModel: ActiveRemoteMessageModel
@@ -492,6 +491,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         startupPreferences = StartupPreferences(appearancePreferences: appearancePreferences, dataClearingPreferences: dataClearingPreferences)
         newTabPageCustomizationModel = NewTabPageCustomizationModel(visualStyleManager: visualStyleManager, appearancePreferences: appearancePreferences)
 
+        fireCoordinator = FireCoordinator(tld: tld)
+
 #if DEBUG
         if AppVersion.runType.requiresEnvironment {
             privacyFeatures = AppPrivacyFeatures(
@@ -506,6 +507,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                     bookmarkManager: bookmarkManager,
                     historyCoordinator: historyCoordinator,
                     fireproofDomains: fireproofDomains,
+                    fireCoordinator: fireCoordinator,
                     tld: tld
                 ),
                 database: database.db
@@ -527,6 +529,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 bookmarkManager: bookmarkManager,
                 historyCoordinator: historyCoordinator,
                 fireproofDomains: fireproofDomains,
+                fireCoordinator: fireCoordinator,
                 tld: tld
             ),
             database: database.db

@@ -38,6 +38,7 @@ final class MainViewController: NSViewController {
     let fireViewController: FireViewController
     let bookmarksBarViewController: BookmarksBarViewController
     let featureFlagger: FeatureFlagger
+    let fireCoordinator: FireCoordinator
     private let bookmarksBarVisibilityManager: BookmarksBarVisibilityManager
     private let defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting
     private let visualStyle: VisualStyleProviding
@@ -89,7 +90,7 @@ final class MainViewController: NSViewController {
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting = NSApp.delegateTyped.defaultBrowserAndDockPromptPresenter,
          visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager,
-         fireViewModel: FireViewModel? = nil
+         fireCoordinator: FireCoordinator = NSApp.delegateTyped.fireCoordinator
     ) {
 
         self.aiChatMenuConfig = aiChatMenuConfig
@@ -102,6 +103,7 @@ final class MainViewController: NSViewController {
         self.featureFlagger = featureFlagger
         self.defaultBrowserAndDockPromptPresenting = defaultBrowserAndDockPromptPresenting
         self.visualStyle = visualStyleManager.style
+        self.fireCoordinator = fireCoordinator
 
         tabBarViewController = TabBarViewController.create(
             tabCollectionViewModel: tabCollectionViewModel,
@@ -168,7 +170,7 @@ final class MainViewController: NSViewController {
                                                                          aiChatSidebarPresenter: aiChatSidebarPresenter)
 
         findInPageViewController = FindInPageViewController.create()
-        fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireViewModel)
+        fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel, fireViewModel: fireCoordinator.fireViewModel)
         bookmarksBarViewController = BookmarksBarViewController.create(
             tabCollectionViewModel: tabCollectionViewModel,
             bookmarkManager: bookmarkManager,

@@ -26,9 +26,9 @@ final class ContextualDaxDialogFactoryIntegrationTests: XCTestCase {
     private var delegate: CapturingOnboardingNavigationDelegate!
     private var fireCoordinator: FireCoordinator!
 
-    override func setUpWithError() throws {
+    @MainActor override func setUpWithError() throws {
         try super.setUpWithError()
-        fireCoordinator = FireCoordinator()
+        fireCoordinator = FireCoordinator(tld: Application.appDelegate.tld)
         factory = DefaultContextualDaxDialogViewFactory(fireCoordinator: fireCoordinator)
         delegate = CapturingOnboardingNavigationDelegate()
     }

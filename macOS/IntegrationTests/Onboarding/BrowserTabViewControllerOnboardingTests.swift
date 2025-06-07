@@ -334,7 +334,7 @@ final class BrowserTabViewControllerOnboardingTests: XCTestCase {
 
         let mainViewController = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])), autofillPopoverPresenter: DefaultAutofillPopoverPresenter())
         window.isVisible = false
-        let mainWindowController = MainWindowController(window: window, mainViewController: mainViewController, popUp: false)
+        let mainWindowController = MainWindowController(window: window, mainViewController: mainViewController, popUp: false, fireViewModel: FireViewModel())
         mainWindowController.window = window
         Application.appDelegate.windowControllersManager.lastKeyMainWindowController = mainWindowController
 

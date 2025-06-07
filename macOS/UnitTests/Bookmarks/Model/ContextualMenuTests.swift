@@ -412,7 +412,7 @@ final class ContextualMenuTests: XCTestCase {
         }
         let mainViewController = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])), autofillPopoverPresenter: DefaultAutofillPopoverPresenter())
         let window = MockWindow(isVisible: false)
-        (menu.windowControllersManager as! WindowControllersManagerMock).lastKeyMainWindowController = MainWindowController(window: window, mainViewController: mainViewController, popUp: false)
+        (menu.windowControllersManager as! WindowControllersManagerMock).lastKeyMainWindowController = MainWindowController(window: window, mainViewController: mainViewController, popUp: false, fireViewModel: FireViewModel())
 
         // WHEN
         _=menuItem.target!.perform(menuItem.action!, with: menuItem)
@@ -440,7 +440,7 @@ final class ContextualMenuTests: XCTestCase {
         }
         let mainViewController = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])), autofillPopoverPresenter: DefaultAutofillPopoverPresenter())
         let window = MockWindow(isVisible: false)
-        (menu.windowControllersManager as! WindowControllersManagerMock).lastKeyMainWindowController = MainWindowController(window: window, mainViewController: mainViewController, popUp: false)
+        (menu.windowControllersManager as! WindowControllersManagerMock).lastKeyMainWindowController = MainWindowController(window: window, mainViewController: mainViewController, popUp: false, fireViewModel: FireViewModel())
 
         // WHEN
         _=menuItem.target!.perform(menuItem.action!, with: menuItem)

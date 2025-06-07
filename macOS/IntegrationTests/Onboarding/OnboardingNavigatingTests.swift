@@ -41,7 +41,7 @@ final class OnboardingNavigatingTests: XCTestCase {
     func testOnImportData_DataImportViewShown() throws {
         // Given
         let mockWindow = MockWindow(isVisible: false)
-        let mvc = MainWindowController(window: mockWindow, mainViewController: MainViewController(autofillPopoverPresenter: DefaultAutofillPopoverPresenter()), popUp: false)
+        let mvc = MainWindowController(window: mockWindow, mainViewController: MainViewController(autofillPopoverPresenter: DefaultAutofillPopoverPresenter()), popUp: false, fireViewModel: FireViewModel())
         mvc.window = mockWindow
         Application.appDelegate.windowControllersManager.lastKeyMainWindowController = mvc
 
@@ -56,7 +56,7 @@ final class OnboardingNavigatingTests: XCTestCase {
     func testOnFocusOnAddressBar_AddressBarIsFocussed() throws {
         // Given
         let mockWindow = MockWindow(isVisible: false)
-        let mvc = MainWindowController(window: mockWindow, mainViewController: MainViewController(autofillPopoverPresenter: DefaultAutofillPopoverPresenter()), popUp: false)
+        let mvc = MainWindowController(window: mockWindow, mainViewController: MainViewController(autofillPopoverPresenter: DefaultAutofillPopoverPresenter()), popUp: false, fireViewModel: FireViewModel())
         mvc.window = mockWindow
         Application.appDelegate.windowControllersManager.lastKeyMainWindowController = mvc
 

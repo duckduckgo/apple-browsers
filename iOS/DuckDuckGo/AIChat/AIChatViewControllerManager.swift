@@ -57,6 +57,7 @@ final class AIChatViewControllerManager {
     private let aiChatSettings: AIChatSettingsProvider
     private var cancellables = Set<AnyCancellable>()
     private var sessionTimer: AIChatSessionTimer?
+    private var pixelMetricHandler: (any AIChatPixelMetricHandling)?
 
     // MARK: - Initialization
 
@@ -83,6 +84,9 @@ final class AIChatViewControllerManager {
                     autoSend: Bool = false,
                     on viewController: UIViewController) {
         downloadsDirectoryHandler.createDownloadsDirectoryIfNeeded()
+
+        pixelMetricHandler = AIChatPixelMetricHandler(timeElapsedInMinutes: sessionTimer?.timeElapsedInMinutes())
+        pixelMetricHandler?.fireOpenAIChat()
 
         /// If we have a query or payload, let's clean the previous session and start fresh
         if query != nil || payload != nil {
@@ -302,6 +306,10 @@ extension AIChatViewControllerManager: AIChatUserScriptDelegate {
         default:
             break
         }
+    }
+
+    func aiChatUserScript(_ userScript: AIChatUserScript, didReceiveMetric metric: AIChatMetric) {
+        pixelMetricHandler?.firePixelWithMetric(metric)
     }
 }
 

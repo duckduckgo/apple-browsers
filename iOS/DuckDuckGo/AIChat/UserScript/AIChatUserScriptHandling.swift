@@ -22,20 +22,27 @@ import BrowserServicesKit
 import RemoteMessaging
 import AIChat
 
+protocol AIChatMetricReportingHandling {
+    func didReportMetric(_ metric: AIChatMetric)
+}
+
 protocol AIChatUserScriptHandling {
     func getAIChatNativeConfigValues(params: Any, message: UserScriptMessage) -> Encodable?
     func getAIChatNativeHandoffData(params: Any, message: UserScriptMessage) -> Encodable?
     func openAIChat(params: Any, message: UserScriptMessage) async -> Encodable?
     func setPayloadHandler(_ payloadHandler: (any AIChatConsumableDataHandling)?)
     func setAIChatInputBoxHandler(_ inputBoxHandler: (any AIChatInputBoxHandling)?)
+    func setMetricReportingHandler(_ metricHandler: (any AIChatMetricReportingHandling)?)
     func getResponseState(params: Any, message: UserScriptMessage) async -> Encodable?
     func hideChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
     func showChatInput(params: Any, message: UserScriptMessage) async -> Encodable?
+    func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable?
 }
 
 final class AIChatUserScriptHandler: AIChatUserScriptHandling {
     private var payloadHandler: (any AIChatConsumableDataHandling)?
     private var inputBoxHandler: (any AIChatInputBoxHandling)?
+    private var metricReportingHandler: (any AIChatMetricReportingHandling)?
     private let experimentalAIChatManager: ExperimentalAIChatManager
 
     init(experimentalAIChatManager: ExperimentalAIChatManager) {
@@ -62,6 +69,21 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
             userInfo: nil
         )
 
+        return nil
+    }
+
+    func reportMetric(params: Any, message: UserScriptMessage) async -> Encodable? {
+        if let paramsDict = params as? [String: Any],
+           let jsonData = try? JSONSerialization.data(withJSONObject: paramsDict, options: []) {
+
+            let decoder = JSONDecoder()
+            do {
+                let metric = try decoder.decode(AIChatMetric.self, from: jsonData)
+                metricReportingHandler?.didReportMetric(metric)
+            } catch {
+                print("Failed to decode JSON: \(error)")
+            }
+        }
         return nil
     }
 
@@ -111,5 +133,9 @@ final class AIChatUserScriptHandler: AIChatUserScriptHandling {
 
     func setAIChatInputBoxHandler(_ inputBoxHandler: (any AIChatInputBoxHandling)?) {
         self.inputBoxHandler = inputBoxHandler
+    }
+
+    func setMetricReportingHandler(_ metricHandler: (any AIChatMetricReportingHandling)?) {
+        self.metricReportingHandler = metricHandler
     }
 }

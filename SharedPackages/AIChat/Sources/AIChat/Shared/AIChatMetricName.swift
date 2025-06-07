@@ -1,5 +1,5 @@
 //
-//  AIChatUserScriptMessages.swift
+//  AIChatMetricName.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,15 +16,20 @@
 //  limitations under the License.
 //
 
-public enum AIChatUserScriptMessages: String, CaseIterable {
-    case openAIChatSettings
-    case getAIChatNativeConfigValues
-    case closeAIChat
-    case getAIChatNativePrompt
-    case openAIChat
-    case getAIChatNativeHandoffData
-    case responseState
-    case showChatInput
-    case hideChatInput
-    case reportMetric
+/// https://app.asana.com/1/137249556945/project/481882893211075/task/1210422904669751?focus=true
+/// Data structure sent from AI Chat to the native layer
+public enum AIChatMetricName: String, Codable {
+    case userDidSubmitPrompt
+    case userDidSubmitFirstPrompt
+    case userDidOpenHistory
+    case userDidSelectFirstHistoryItem
+    case userDidCreateNewChat
+}
+
+public struct AIChatMetric: Codable {
+    public let metricName: AIChatMetricName
+
+     public init(metricName: AIChatMetricName) {
+         self.metricName = metricName
+     }
 }

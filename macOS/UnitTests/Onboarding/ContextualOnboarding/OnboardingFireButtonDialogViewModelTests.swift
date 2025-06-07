@@ -41,7 +41,8 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
         }
 
         reporter = CapturingOnboardingPixelReporter()
-        viewModel = OnboardingFireButtonDialogViewModel(onboardingPixelReporter: reporter, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed)
+        let fireCoordinator = FireCoordinator()
+        viewModel = OnboardingFireButtonDialogViewModel(onboardingPixelReporter: reporter, fireCoordinator: fireCoordinator, onDismiss: onDismiss, onGotItPressed: onGotItPressed, onFireButtonPressed: onFireButtonPressed)
     }
 
     @MainActor

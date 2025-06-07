@@ -27,7 +27,7 @@ final class ContextualDaxDialogFactoryIntegrationTests: XCTestCase {
 
     override func setUpWithError() throws {
         try super.setUpWithError()
-        factory = DefaultContextualDaxDialogViewFactory()
+        factory = DefaultContextualDaxDialogViewFactory(fireCoordinator: FireCoordinator())
         delegate = CapturingOnboardingNavigationDelegate()
     }
 

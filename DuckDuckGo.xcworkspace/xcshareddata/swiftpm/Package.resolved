@@ -59,8 +59,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/duckduckgo/duckduckgo-autofill.git",
       "state" : {
-        "revision" : "e02f499ad25f439e8a2a36ac6f9b9d88b8a65d56",
-        "version" : "17.2.0"
+        "branch" : "matteo/truncate-label-credit-cards",
+        "revision" : "1f601a056217f4fe5d5ba88cc0e2ccc617ec7c59"
       }
     },
     {

@@ -144,6 +144,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         addressBarQueryExtractor: AIChatAddressBarPromptExtractor()
     )
 
+    let fireCoordinator = FireCoordinator()
+
     let privacyStats: PrivacyStatsCollecting
     let activeRemoteMessageModel: ActiveRemoteMessageModel
     let newTabPageCustomizationModel: NewTabPageCustomizationModel
@@ -1168,7 +1170,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     @MainActor
     private func setUpAutoClearHandler() {
         let autoClearHandler = AutoClearHandler(preferences: dataClearingPreferences,
-                                                fireViewModel: FireCoordinator.fireViewModel,
+                                                fireViewModel: fireCoordinator.fireViewModel,
                                                 stateRestorationManager: self.stateRestorationManager)
         self.autoClearHandler = autoClearHandler
         DispatchQueue.main.async {

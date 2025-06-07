@@ -342,7 +342,7 @@ extension AppDelegate {
 
     @objc func fireButtonAction(_ sender: NSButton) {
         DispatchQueue.main.async {
-            FireCoordinator.fireButtonAction()
+            NSApp.delegateTyped.fireCoordinator.fireButtonAction()
             let pixelReporter = OnboardingPixelReporter()
             pixelReporter.measureFireButtonPressed()
         }
@@ -833,7 +833,7 @@ extension MainViewController {
                 let presenter = DefaultHistoryViewDialogPresenter()
                 switch await presenter.showDeleteDialog(for: visitsCount, deleteMode: .all, in: nil) {
                 case .burn:
-                    FireCoordinator.fireViewModel.fire.burnAll()
+                    NSApp.delegateTyped.fireCoordinator.fireViewModel.fire.burnAll()
                 case .delete:
                     historyCoordinator.burnAll {}
                 default:
@@ -850,7 +850,7 @@ extension MainViewController {
                 guard case .alertFirstButtonReturn = response else {
                     return
                 }
-                FireCoordinator.fireViewModel.fire.burnAll()
+                NSApp.delegateTyped.fireCoordinator.fireViewModel.fire.burnAll()
             })
         }
     }
@@ -871,7 +871,7 @@ extension MainViewController {
                 let presenter = DefaultHistoryViewDialogPresenter()
                 switch await presenter.showDeleteDialog(for: visits.count, deleteMode: deleteMode, in: nil) {
                 case .burn:
-                    FireCoordinator.fireViewModel.fire.burnVisits(visits, except: fireproofDomains, isToday: isToday)
+                    NSApp.delegateTyped.fireCoordinator.fireViewModel.fire.burnVisits(visits, except: fireproofDomains, isToday: isToday)
                 case .delete:
                     historyCoordinator.burnVisits(visits) {}
                 default:
@@ -890,7 +890,7 @@ extension MainViewController {
                 guard case .alertFirstButtonReturn = response else {
                     return
                 }
-                FireCoordinator.fireViewModel.fire.burnVisits(visits, except: self.fireproofDomains, isToday: isToday)
+                NSApp.delegateTyped.fireCoordinator.fireViewModel.fire.burnVisits(visits, except: self.fireproofDomains, isToday: isToday)
             })
         }
     }

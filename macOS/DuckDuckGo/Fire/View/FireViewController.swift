@@ -58,7 +58,7 @@ final class FireViewController: NSViewController {
 
     init?(coder: NSCoder, tabCollectionViewModel: TabCollectionViewModel, fireViewModel: FireViewModel? = nil) {
         self.tabCollectionViewModel = tabCollectionViewModel
-        self.fireViewModel = fireViewModel ?? FireCoordinator.fireViewModel
+        self.fireViewModel = fireViewModel ?? NSApp.delegateTyped.fireCoordinator.fireViewModel
 
         super.init(coder: coder)
     }

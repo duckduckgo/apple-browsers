@@ -61,7 +61,7 @@ final class ContextualDaxDialogFactoryIntegrationTests: XCTestCase {
     }
 
     @MainActor private func waitForPopoverToAppear(expectation: XCTestExpectation) {
-        if let popover = FireCoordinator.firePopover, popover.isShown {
+        if let popover = NSApp.delegateTyped.fireCoordinator.firePopover, popover.isShown {
             // Fulfill the expectation if the popover is shown
             expectation.fulfill()
         } else {

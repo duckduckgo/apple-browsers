@@ -86,7 +86,7 @@ final class RecentActivityItemBurner: RecentActivityItemBurning {
     init(fireproofStatusProvider: URLFireproofStatusProviding, tld: TLD, fire: (() async -> Fire)? = nil) {
         self.fireproofStatusProvider = fireproofStatusProvider
         self.tld = tld
-        self.fire = fire ?? { @MainActor in FireCoordinator.fireViewModel.fire }
+        self.fire = fire ?? { @MainActor in NSApp.delegateTyped.fireCoordinator.fireViewModel.fire }
     }
 
     @MainActor func burn(_ url: URL, burningDidComplete: @escaping () -> Void) async -> Bool {

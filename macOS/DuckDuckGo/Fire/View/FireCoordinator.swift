@@ -22,11 +22,11 @@ import PixelKit
 @MainActor
 final class FireCoordinator {
 
-    static let fireViewModel = FireViewModel()
+    let fireViewModel = FireViewModel()
 
-    static var firePopover: FirePopover?
+    var firePopover: FirePopover?
 
-    static func fireButtonAction() {
+    func fireButtonAction() {
         let burningWindow: NSWindow
         let waitForOpening: Bool
 
@@ -47,7 +47,7 @@ final class FireCoordinator {
 
         if waitForOpening {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1/3) {
-                showFirePopover(relativeTo: mainViewController.tabBarViewController.fireButton,
+                self.showFirePopover(relativeTo: mainViewController.tabBarViewController.fireButton,
                                 tabCollectionViewModel: mainViewController.tabCollectionViewModel)
             }
         } else {
@@ -56,7 +56,7 @@ final class FireCoordinator {
         }
     }
 
-    static func showFirePopover(relativeTo positioningView: NSView, tabCollectionViewModel: TabCollectionViewModel) {
+    func showFirePopover(relativeTo positioningView: NSView, tabCollectionViewModel: TabCollectionViewModel) {
         guard !(firePopover?.isShown ?? false) else {
             firePopover?.close()
             return

@@ -36,7 +36,7 @@ final class FireHistoryBurner: HistoryBurning {
         fire: (() async -> Fire)? = nil
     ) {
         self.fireproofDomains = fireproofDomains
-        self.fire = fire ?? { @MainActor in FireCoordinator.fireViewModel.fire }
+        self.fire = fire ?? { @MainActor in NSApp.delegateTyped.fireCoordinator.fireViewModel.fire }
     }
 
     func burn(_ visits: [Visit], animated: Bool) async {

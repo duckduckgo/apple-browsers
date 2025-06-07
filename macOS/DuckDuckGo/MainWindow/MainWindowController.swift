@@ -58,7 +58,7 @@ final class MainWindowController: NSWindowController {
             : MainWindow(frame: frame))
         window.contentViewController = mainViewController
         window.setContentSize(frame.size)
-        self.fireViewModel = fireViewModel ?? FireCoordinator.fireViewModel
+        self.fireViewModel = fireViewModel ?? NSApp.delegateTyped.fireCoordinator.fireViewModel
 
         assert(!mainViewController.isBurner || fireWindowSession != nil)
         self.fireWindowSession = fireWindowSession

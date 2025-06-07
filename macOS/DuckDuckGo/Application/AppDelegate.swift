@@ -136,6 +136,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         privacyStats: privacyStats,
         freemiumDBPPromotionViewCoordinator: freemiumDBPPromotionViewCoordinator,
         tld: tld,
+        fireCoordinator: fireCoordinator,
         keyValueStore: keyValueStore
     )
 

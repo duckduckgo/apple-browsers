@@ -825,7 +825,7 @@ extension MainViewController {
             Task {
                 let historyViewDataProvider = HistoryViewDataProvider(
                     historyDataSource: historyCoordinator,
-                    historyBurner: FireHistoryBurner(fireproofDomains: fireproofDomains)
+                    historyBurner: FireHistoryBurner(fireproofDomains: fireproofDomains, fire: { @MainActor in self.fireCoordinator.fireViewModel.fire })
                 )
                 await historyViewDataProvider.refreshData()
                 let visitsCount = await historyViewDataProvider.countVisibleVisits(matching: .rangeFilter(.all))

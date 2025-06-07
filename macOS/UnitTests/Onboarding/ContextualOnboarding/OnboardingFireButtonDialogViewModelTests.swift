@@ -61,7 +61,7 @@ final class OnboardingFireButtonDialogViewModelTests: XCTestCase {
 
     @MainActor
     func testWhenTryFireButtonThenOnFireButtonPressedCalledAndPixelSent() throws {
-        let mainViewController = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])), autofillPopoverPresenter: DefaultAutofillPopoverPresenter())
+        let mainViewController = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])), autofillPopoverPresenter: DefaultAutofillPopoverPresenter(), fireViewModel: FireViewModel())
         let window = MockWindow(isVisible: false)
         let mainWindowController = MainWindowController(window: window, mainViewController: mainViewController, popUp: false, fireViewModel: FireViewModel())
         mainWindowController.window = window

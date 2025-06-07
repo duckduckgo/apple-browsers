@@ -84,9 +84,9 @@ final class WindowManagerStateRestorationTests: XCTestCase {
         pinnedTabsManagerProvidingMock.newPinnedTabsManager = pinnedTabManager
 
         let model1 = TabCollectionViewModel(tabCollection: TabCollection(tabs: tabs1), selectionIndex: .unpinned(0), pinnedTabsManagerProvider: pinnedTabsManagerProvidingMock)
-        let mainViewController1 = MainViewController(tabCollectionViewModel: model1, autofillPopoverPresenter: DefaultAutofillPopoverPresenter())
+        let mainViewController1 = MainViewController(tabCollectionViewModel: model1, autofillPopoverPresenter: DefaultAutofillPopoverPresenter(), fireViewModel: FireViewModel())
         let model2 = TabCollectionViewModel(tabCollection: TabCollection(tabs: tabs2), selectionIndex: .unpinned(2), pinnedTabsManagerProvider: pinnedTabsManagerProvidingMock)
-        let mainViewController2 = MainViewController(tabCollectionViewModel: model2, autofillPopoverPresenter: DefaultAutofillPopoverPresenter())
+        let mainViewController2 = MainViewController(tabCollectionViewModel: model2, autofillPopoverPresenter: DefaultAutofillPopoverPresenter(), fireViewModel: FireViewModel())
         let windowController1 = MainWindowController(mainViewController: mainViewController1, popUp: false, fireViewModel: FireViewModel())
         let windowController2 = MainWindowController(mainViewController: mainViewController2, popUp: false, fireViewModel: FireViewModel())
 

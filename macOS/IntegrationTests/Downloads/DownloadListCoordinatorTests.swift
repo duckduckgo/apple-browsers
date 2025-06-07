@@ -71,7 +71,7 @@ final class DownloadListCoordinatorTests: XCTestCase {
 
         var fireWindowSession: FireWindowSessionRef?
         if isBurner {
-            let mainViewController = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: []), burnerMode: .init(isBurner: true)), autofillPopoverPresenter: DefaultAutofillPopoverPresenter())
+            let mainViewController = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: []), burnerMode: .init(isBurner: true)), autofillPopoverPresenter: DefaultAutofillPopoverPresenter(), fireViewModel: FireViewModel())
             let mainWindowController = MainWindowController(mainViewController: mainViewController, popUp: false, fireViewModel: FireViewModel(), fireWindowSession: .init())
             fireWindowSession = FireWindowSessionRef(window: mainWindowController.window)
         }

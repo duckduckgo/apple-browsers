@@ -39,7 +39,7 @@ final class BookmarksBarViewControllerTests: XCTestCase {
     @MainActor
     func testWhenImportBookmarksClicked_ThenDataImportViewShown() throws {
         let mockWindow = MockWindow()
-        let mainViewController = MainViewController(bookmarkManager: bookmarksManager, autofillPopoverPresenter: DefaultAutofillPopoverPresenter())
+        let mainViewController = MainViewController(bookmarkManager: bookmarksManager, autofillPopoverPresenter: DefaultAutofillPopoverPresenter(), fireViewModel: FireViewModel())
         mockWindow.contentView = mainViewController.view
 
         vc = mainViewController.bookmarksBarViewController

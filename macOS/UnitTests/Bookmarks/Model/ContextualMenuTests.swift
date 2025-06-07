@@ -410,7 +410,7 @@ final class ContextualMenuTests: XCTestCase {
             XCTFail("No item")
             return
         }
-        let mainViewController = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])), autofillPopoverPresenter: DefaultAutofillPopoverPresenter())
+        let mainViewController = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])), autofillPopoverPresenter: DefaultAutofillPopoverPresenter(), fireViewModel: FireViewModel())
         let window = MockWindow(isVisible: false)
         (menu.windowControllersManager as! WindowControllersManagerMock).lastKeyMainWindowController = MainWindowController(window: window, mainViewController: mainViewController, popUp: false, fireViewModel: FireViewModel())
 
@@ -438,7 +438,7 @@ final class ContextualMenuTests: XCTestCase {
             XCTFail("No item")
             return
         }
-        let mainViewController = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])), autofillPopoverPresenter: DefaultAutofillPopoverPresenter())
+        let mainViewController = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])), autofillPopoverPresenter: DefaultAutofillPopoverPresenter(), fireViewModel: FireViewModel())
         let window = MockWindow(isVisible: false)
         (menu.windowControllersManager as! WindowControllersManagerMock).lastKeyMainWindowController = MainWindowController(window: window, mainViewController: mainViewController, popUp: false, fireViewModel: FireViewModel())
 

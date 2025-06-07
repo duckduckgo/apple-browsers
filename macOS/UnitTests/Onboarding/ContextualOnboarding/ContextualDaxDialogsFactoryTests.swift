@@ -237,7 +237,7 @@ final class ContextualDaxDialogsFactoryTests: XCTestCase {
         let onFireButtonPressed = { onFireButtonRun = true }
         let onDismiss = { onDismissRun = true }
 
-        let mainViewController = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])), autofillPopoverPresenter: DefaultAutofillPopoverPresenter())
+        let mainViewController = MainViewController(tabCollectionViewModel: TabCollectionViewModel(tabCollection: TabCollection(tabs: [])), autofillPopoverPresenter: DefaultAutofillPopoverPresenter(), fireViewModel: FireViewModel())
         let window = MockWindow(isVisible: false)
         let mainWindowController = MainWindowController(window: window, mainViewController: mainViewController, popUp: false, fireViewModel: FireViewModel())
         mainWindowController.window = window

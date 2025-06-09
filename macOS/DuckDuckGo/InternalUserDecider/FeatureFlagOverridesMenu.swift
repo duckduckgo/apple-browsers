@@ -166,7 +166,6 @@ final class FeatureFlagOverridesMenu: NSMenu {
         let override = featureFlagger.localOverrides?.override(for: flag)
         let submenu = NSMenu()
         submenu.addItem(removeOverrideSubmenuItem(for: flag))
-        //item.state = override == true ? .on : .off
         item.submenu = override != nil ? submenu : nil
         item.title = menuItemTitle(for: flag)
         item.image = icon(for: flag)
@@ -216,7 +215,7 @@ final class FeatureFlagOverridesMenu: NSMenu {
     private static let iconAlpha = 0.2
 
     private static var enabledByDefaultIcon = NSImage(systemSymbolName: "checkmark.circle",
-                           accessibilityDescription: "Enabled by default")!
+                                                      accessibilityDescription: "Enabled by default")!
 
     private static var enabledByUserIcon = NSImage(systemSymbolName: "checkmark.circle.fill",
                                                    accessibilityDescription: "Enabled by user")!
@@ -296,8 +295,10 @@ final class FeatureFlagOverridesMenu: NSMenu {
     }
 
     private func removeOverrideSubmenuItem(for flag: FeatureFlag) -> NSMenuItem {
+        let defaultValueString = defaultValue(for: flag) ? "ON" : "OFF"
+
         let removeOverrideItem = NSMenuItem(
-            title: "Remove Override",
+            title: "Reset to default: \(defaultValueString)",
             action: #selector(resetOverride(_:)),
             target: self
         )

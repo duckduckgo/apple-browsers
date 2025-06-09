@@ -59,6 +59,8 @@ public protocol SubJobWebRunning: CCFCommunicationDelegate {
 
     func executeNextStep() async
     func executeCurrentAction() async
+
+    func resetRetriesCount()
 }
 
 public extension SubJobWebRunning {
@@ -82,6 +84,10 @@ public extension SubJobWebRunning {
         case is ExpectationAction:
             stageCalculator.setStage(.submit)
         default: ()
+        }
+
+        if stepType == .scan {
+            fireScanStagePixel(for: action)
         }
 
         if let emailConfirmationAction = action as? EmailConfirmationAction {
@@ -298,12 +304,30 @@ public extension SubJobWebRunning {
         try? await Task.sleep(nanoseconds: UInt64(waitTimeUntilRunningTheActionAgain) * 1_000_000_000)
 
         if let currentAction = self.actionsHandler?.currentAction() {
-            retriesCountOnError -= 1
+            decrementRetriesCountOnError()
             await runNextAction(currentAction)
         } else {
-            retriesCountOnError = 0
+            resetRetriesCount()
             await onError(error: DataBrokerProtectionError.unknown("No current action to execute"))
         }
+    }
+
+    func resetRetriesCount() {
+        retriesCountOnError = 0
+        stageCalculator.resetTries()
+    }
+
+    private func decrementRetriesCountOnError() {
+        retriesCountOnError -= 1
+        stageCalculator.incrementTries()
+    }
+
+    private func fireScanStagePixel(for action: Action) {
+        pixelHandler.fire(.scanStage(dataBroker: query.dataBroker.name,
+                                     dataBrokerVersion: query.dataBroker.version,
+                                     tries: stageCalculator.tries,
+                                     actionId: action.id,
+                                     actionType: action.actionType.rawValue))
     }
 }
 

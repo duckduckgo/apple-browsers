@@ -75,6 +75,9 @@ final class BrowserTabViewController: NSViewController {
 
     private let onboardingDialogFactory: ContextualDaxDialogsFactory
     private let featureFlagger: FeatureFlagger
+    private let windowControllersManager: WindowControllersManagerProtocol
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let tld: TLD
 
     private var tabViewModelCancellables = Set<AnyCancellable>()
     private var activeUserDialogCancellable: Cancellable?
@@ -111,8 +114,11 @@ final class BrowserTabViewController: NSViewController {
          onboardingDialogTypeProvider: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater = Application.appDelegate.onboardingContextualDialogsManager,
          onboardingDialogFactory: ContextualDaxDialogsFactory = DefaultContextualDaxDialogViewFactory(),
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+         windowControllersManager: WindowControllersManagerProtocol = NSApp.delegateTyped.windowControllersManager,
          newTabPageActionsManager: NewTabPageActionsManager = NSApp.delegateTyped.newTabPageCoordinator.actionsManager,
-         activeRemoteMessageModel: ActiveRemoteMessageModel = NSApp.delegateTyped.activeRemoteMessageModel
+         activeRemoteMessageModel: ActiveRemoteMessageModel = NSApp.delegateTyped.activeRemoteMessageModel,
+         privacyConfigurationManager: PrivacyConfigurationManaging = NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager,
+         tld: TLD = NSApp.delegateTyped.tld
     ) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
@@ -121,8 +127,11 @@ final class BrowserTabViewController: NSViewController {
         self.onboardingDialogTypeProvider = onboardingDialogTypeProvider
         self.onboardingDialogFactory = onboardingDialogFactory
         self.featureFlagger = featureFlagger
+        self.windowControllersManager = windowControllersManager
         self.newTabPageActionsManager = newTabPageActionsManager
         self.activeRemoteMessageModel = activeRemoteMessageModel
+        self.privacyConfigurationManager = privacyConfigurationManager
+        self.tld = tld
         containerStackView = NSStackView()
 
         super.init(nibName: nil, bundle: nil)
@@ -1026,6 +1035,7 @@ final class BrowserTabViewController: NSViewController {
             let dataBrokerProtectionHomeViewController = DBPHomeViewController(
                 dataBrokerProtectionManager: DataBrokerProtectionManager.shared,
                 vpnBypassService: VPNBypassService(),
+                privacyConfigurationManager: privacyConfigurationManager,
                 freemiumDBPFeature: freemiumDBPFeature
             )
             self.dataBrokerProtectionHomeViewController = dataBrokerProtectionHomeViewController
@@ -1041,7 +1051,11 @@ final class BrowserTabViewController: NSViewController {
             guard let syncService = NSApp.delegateTyped.syncService else {
                 fatalError("Sync service is nil")
             }
-            let preferencesViewController = PreferencesViewController(syncService: syncService, tabCollectionViewModel: tabCollectionViewModel)
+            let preferencesViewController = PreferencesViewController(
+                syncService: syncService,
+                tabCollectionViewModel: tabCollectionViewModel,
+                privacyConfigurationManager: privacyConfigurationManager
+            )
             preferencesViewController.delegate = self
             self.preferencesViewController = preferencesViewController
             return preferencesViewController
@@ -1063,9 +1077,14 @@ final class BrowserTabViewController: NSViewController {
     private var contentOverlayPopover: ContentOverlayPopover?
     private func contentOverlayPopoverCreatingIfNeeded() -> ContentOverlayPopover {
         return contentOverlayPopover ?? {
-            let overlayPopover = ContentOverlayPopover(currentTabView: self.view)
+            let overlayPopover = ContentOverlayPopover(
+                currentTabView: self.view,
+                privacyConfigurationManager: privacyConfigurationManager,
+                featureFlagger: featureFlagger,
+                tld: tld
+            )
             self.contentOverlayPopover = overlayPopover
-            Application.appDelegate.windowControllersManager.stateChanged
+            windowControllersManager.stateChanged
                 .sink { [weak overlayPopover] _ in
                     overlayPopover?.viewController.closeContentOverlayPopover()
                 }.store(in: &self.cancellables)

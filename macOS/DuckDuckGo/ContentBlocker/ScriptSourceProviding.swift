@@ -45,17 +45,18 @@ protocol ScriptSourceProviding {
 @MainActor func DefaultScriptSourceProvider() -> ScriptSourceProviding {
     ScriptSourceProvider(
         configStorage: Application.appDelegate.configurationStore,
-        privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
+        privacyConfigurationManager: Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
         webTrackingProtectionPreferences: WebTrackingProtectionPreferences.shared,
-        contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
-        trackerDataManager: ContentBlocking.shared.trackerDataManager,
+        contentBlockingManager: Application.appDelegate.privacyFeatures.contentBlocking.contentBlockingManager,
+        trackerDataManager: Application.appDelegate.privacyFeatures.contentBlocking.trackerDataManager,
         experimentManager: Application.appDelegate.contentScopeExperimentsManager,
-        tld: ContentBlocking.shared.tld,
+        tld: Application.appDelegate.tld,
         onboardingNavigationDelegate: Application.appDelegate.windowControllersManager,
         appearancePreferences: Application.appDelegate.appearancePreferences,
         startupPreferences: Application.appDelegate.startupPreferences,
         bookmarkManager: Application.appDelegate.bookmarkManager,
-        historyCoordinator: Application.appDelegate.historyCoordinator
+        historyCoordinator: Application.appDelegate.historyCoordinator,
+        fireproofDomains: Application.appDelegate.fireproofDomains
     )
 }
 
@@ -91,7 +92,8 @@ struct ScriptSourceProvider: ScriptSourceProviding {
          appearancePreferences: AppearancePreferences,
          startupPreferences: StartupPreferences,
          bookmarkManager: BookmarkManager & HistoryViewBookmarksHandling,
-         historyCoordinator: HistoryDataSource
+         historyCoordinator: HistoryDataSource,
+         fireproofDomains: DomainFireproofStatusProviding
     ) {
 
         self.configStorage = configStorage
@@ -110,7 +112,11 @@ struct ScriptSourceProvider: ScriptSourceProviding {
         self.messageSecret = generateSessionKey()
         self.autofillSourceProvider = buildAutofillSource()
         self.onboardingActionsManager = buildOnboardingActionsManager(onboardingNavigationDelegate, appearancePreferences, startupPreferences)
-        self.historyViewActionsManager = buildHistoryViewActionsManager(historyCoordinator: historyCoordinator, bookmarksHandler: bookmarkManager)
+        self.historyViewActionsManager = HistoryViewActionsManager(
+            historyCoordinator: historyCoordinator,
+            bookmarksHandler: bookmarkManager,
+            fireproofStatusProvider: fireproofDomains
+        )
         self.currentCohorts = generateCurrentCohorts()
     }
 
@@ -176,10 +182,6 @@ struct ScriptSourceProvider: ScriptSourceProviding {
             startupPreferences: startupPreferences,
             bookmarkManager: bookmarkManager
         )
-    }
-
-    private func buildHistoryViewActionsManager(historyCoordinator: HistoryDataSource, bookmarksHandler: HistoryViewBookmarksHandling) -> HistoryViewActionsManager {
-        HistoryViewActionsManager(historyCoordinator: historyCoordinator, bookmarksHandler: bookmarksHandler)
     }
 
     private func loadTextFile(_ fileName: String, _ fileExt: String) -> String? {

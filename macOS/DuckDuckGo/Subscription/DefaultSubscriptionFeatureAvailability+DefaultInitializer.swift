@@ -25,7 +25,7 @@ extension DefaultSubscriptionFeatureAvailability {
 
     convenience init() {
         self.init(privacyConfigurationManager: Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
-                  purchasePlatform: Application.appDelegate.subscriptionAuthV1toV2Bridge.currentEnvironment.purchasePlatform),
+                  purchasePlatform: Application.appDelegate.subscriptionAuthV1toV2Bridge.currentEnvironment.purchasePlatform,
                   paidDuckAIFlagStatusProvider: {
             Application.appDelegate.featureFlagger.isFeatureOn(.paidDuckAI)
         })

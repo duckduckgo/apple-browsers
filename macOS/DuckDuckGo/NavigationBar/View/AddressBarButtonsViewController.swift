@@ -81,8 +81,9 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBOutlet weak var privacyShieldLeadingConstraint: NSLayoutConstraint!
     @IBOutlet weak var animationWrapperViewLeadingConstraint: NSLayoutConstraint!
 
-    @IBOutlet weak var aiChatDivider: NSImageView!
-    @IBOutlet weak var aiChatStackTrailingViewConstraint: NSLayoutConstraint!
+    @IBOutlet weak var leadingAIChatDivider: NSImageView!
+    @IBOutlet weak var trailingAIChatDivider: NSImageView!
+    @IBOutlet weak var trailingStackViewTrailingViewConstraint: NSLayoutConstraint!
     @IBOutlet weak var notificationAnimationView: NavigationBarBadgeAnimationView!
     @IBOutlet weak var bookmarkButtonWidthConstraint: NSLayoutConstraint!
     @IBOutlet weak var bookmarkButtonHeightConstraint: NSLayoutConstraint!
@@ -267,7 +268,7 @@ final class AddressBarButtonsViewController: NSViewController {
 
         if let superview = aiChatButton.superview {
             aiChatButton.translatesAutoresizingMaskIntoConstraints = false
-            aiChatStackTrailingViewConstraint.constant = isFocused ? 4 : 3
+            trailingStackViewTrailingViewConstraint.constant = isFocused ? 4 : 3
             NSLayoutConstraint.activate([
                 aiChatButton.topAnchor.constraint(equalTo: superview.topAnchor, constant: 2),
                 aiChatButton.bottomAnchor.constraint(equalTo: superview.bottomAnchor, constant: -2)
@@ -521,8 +522,8 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func updateAIChatDividerVisibility() {
-        let shouldShowDivider = cancelButton.isShown || bookmarkButton.isShown
-        aiChatDivider.isHidden = aiChatButton.isHidden || !shouldShowDivider
+        leadingAIChatDivider.isHidden = aiChatButton.isHidden || bookmarkButton.isHidden
+        trailingAIChatDivider.isHidden = aiChatButton.isHidden || cancelButton.isHidden
     }
 
     private func updateButtonsPosition() {

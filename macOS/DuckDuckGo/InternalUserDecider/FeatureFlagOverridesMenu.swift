@@ -34,8 +34,12 @@ final class FeatureFlagOverridesMenu: NSMenu {
             internalUserStateMenuItem()
             NSMenuItem.separator()
 
-            sectionHeader(title: "Feature Flags")
-            featureFlagMenuItems()
+            sectionHeader(title: "Categorized Feature Flags")
+            categotizedFeatureFlagMenuItems()
+            NSMenuItem.separator()
+
+            sectionHeader(title: "Uncategorized Feature Flags")
+            uncategorizedFeatureFlagMenuItems()
             NSMenuItem.separator()
 
             sectionHeader(title: "Experiments")
@@ -55,9 +59,9 @@ final class FeatureFlagOverridesMenu: NSMenu {
         return setInternalUserStateItem
     }
 
-    private func featureFlagMenuItems() -> [NSMenuItem] {
+    private func uncategorizedFeatureFlagMenuItems() -> [NSMenuItem] {
         return FeatureFlag.allCases
-            .filter { $0.supportsLocalOverriding && $0.cohortType == nil }
+            .filter { $0.supportsLocalOverriding && $0.cohortType == nil && $0.category == .none }
             .sorted(by: { $0.rawValue.caseInsensitiveCompare($1.rawValue) == .orderedAscending })
             .map { flag in
                 NSMenuItem(
@@ -66,6 +70,35 @@ final class FeatureFlagOverridesMenu: NSMenu {
                     target: self,
                     representedObject: flag
                 )
+            }
+    }
+
+    private func categotizedFeatureFlagMenuItems() -> [NSMenuItem] {
+        FeatureFlagCategory.allCases
+            .sorted { $0.rawValue.lowercased() < $1.rawValue.lowercased() }
+            .map { category in
+                let menuItem = NSMenuItem(title: category.rawValue)
+                let submenu = NSMenu(title: category.rawValue)
+                menuItem.submenu = submenu
+
+                let flagItems = FeatureFlag.allCases
+                    .filter {
+                        $0.supportsLocalOverriding
+                        && $0.cohortType == nil
+                        && $0.category == category
+                    }
+                    .sorted { $0.rawValue.lowercased() < $1.rawValue.lowercased() }
+                    .map { flag in
+                        NSMenuItem(
+                            title: menuItemTitle(for: flag),
+                            action: #selector(toggleFeatureFlag(_:)),
+                            target: self,
+                            representedObject: flag
+                        )
+                    }
+
+                submenu.items = flagItems
+                return menuItem
             }
     }
 
@@ -115,6 +148,7 @@ final class FeatureFlagOverridesMenu: NSMenu {
         let override = featureFlagger.localOverrides?.override(for: flag)
         let submenu = NSMenu()
         submenu.addItem(removeOverrideSubmenuItem(for: flag))
+        item.subtitle = "asd"
         item.state = override == true ? .on : .off
         item.submenu = override != nil ? submenu : nil
     }

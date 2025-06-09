@@ -494,9 +494,11 @@ final class AddressBarButtonsViewController: NSViewController {
         if isShowingSidebar {
             aiChatButton.setButtonType(.toggle)
             aiChatButton.state = .on
+            aiChatButton.mouseOverColor = nil
         } else {
             aiChatButton.setButtonType(.momentaryPushIn)
             aiChatButton.state = .off
+            aiChatButton.mouseOverColor = visualStyle.colorsProvider.buttonMouseOverColor
         }
     }
 

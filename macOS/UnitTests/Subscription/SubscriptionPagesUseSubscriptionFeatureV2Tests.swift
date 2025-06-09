@@ -27,16 +27,17 @@ import XCTest
 @testable import DataBrokerProtection_macOS
 @testable import DataBrokerProtectionCore
 @testable import Networking
+import SubscriptionTestingUtilities
 import JWTKit
 
 @MainActor
 final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
 
     var sut: SubscriptionPagesUseSubscriptionFeatureV2!
-    var mockSubscriptionManager: MockSubscriptionManagerV2!
-    var mockStripePurchaseFlow: MockStripePurchaseFlowV2!
-    var mockUIHandler: MockSubscriptionUIHandling!
-    var mockSubscriptionFeatureAvailability: MockSubscriptionFeatureAvailability!
+    var mockSubscriptionManager: SubscriptionManagerMockV2!
+    var mockStripePurchaseFlow: StripePurchaseFlowMockV2!
+    var mockUIHandler: SubscriptionUIHandlerMock!
+    var mockSubscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock!
     var mockFreemiumDBPUserStateManager: MockFreemiumDBPUserStateManager!
     var mockFreemiumDBPPixelExperimentManager: MockFreemiumDBPPixelExperimentManager!
     var mockNotificationCenter: NotificationCenter!
@@ -45,10 +46,10 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     override func setUp() {
         super.setUp()
 
-        mockSubscriptionManager = MockSubscriptionManagerV2()
-        mockStripePurchaseFlow = MockStripePurchaseFlowV2()
-        mockUIHandler = MockSubscriptionUIHandling()
-        mockSubscriptionFeatureAvailability = MockSubscriptionFeatureAvailability()
+        mockSubscriptionManager = SubscriptionManagerMockV2()
+        mockStripePurchaseFlow = StripePurchaseFlowMockV2(subscriptionOptionsResult: .success(.empty), prepareSubscriptionPurchaseResult: .success(.completed))
+        mockUIHandler = SubscriptionUIHandlerMock( didPerformActionCallback: { _ in })
+        mockSubscriptionFeatureAvailability = SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true, usesUnifiedFeedbackForm: true)
         mockFreemiumDBPUserStateManager = MockFreemiumDBPUserStateManager()
         mockFreemiumDBPPixelExperimentManager = MockFreemiumDBPPixelExperimentManager()
         mockNotificationCenter = NotificationCenter()

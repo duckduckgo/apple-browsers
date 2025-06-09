@@ -101,6 +101,9 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1209671977594486/task/1210410403692636?focus=true
     case aiChatSidebar
+
+    /// https://app.asana.com/1/137249556945/project/1201048563534612/task/1210493210455717?focus=true
+    case shortHistoryMenu
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -146,7 +149,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .exchangeKeysToSyncWithAnotherDevice,
                 .canScanUrlBasedSyncSetupBarcodes,
                 .removeWWWInCanonicalizationInThreatProtection,
-                .aiChatSidebar:
+                .aiChatSidebar,
+                .shortHistoryMenu:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -231,6 +235,8 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.removeWWWInCanonicalization))
         case .aiChatSidebar:
             return .internalOnly()
+        case .shortHistoryMenu:
+            return .disabled
         }
     }
 }

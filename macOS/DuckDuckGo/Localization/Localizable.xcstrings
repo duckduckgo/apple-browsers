@@ -7738,55 +7738,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "The following Bitwarden versions are incompatible with DuckDuckGo: v2024.10.0, v2024.10.1, v2024.10.2. Please downgrade to an older version by following these steps:"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "The following Bitwarden versions are incompatible with DuckDuckGo: v2024.10.0, v2024.10.1, v2024.10.2. Please downgrade to an older version by following these steps:"
+            "value" : "The following Bitwarden versions are incompatible with DuckDuckGo: v2025.5.0, v2025.5.1. Please downgrade to an older version by following these steps:"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "The following Bitwarden versions are incompatible with DuckDuckGo: v2024.10.0, v2024.10.1, v2024.10.2. Please downgrade to an older version by following these steps:"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "The following Bitwarden versions are incompatible with DuckDuckGo: v2024.10.0, v2024.10.1, v2024.10.2. Please downgrade to an older version by following these steps:"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "The following Bitwarden versions are incompatible with DuckDuckGo: v2024.10.0, v2024.10.1, v2024.10.2. Please downgrade to an older version by following these steps:"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "The following Bitwarden versions are incompatible with DuckDuckGo: v2024.10.0, v2024.10.1, v2024.10.2. Please downgrade to an older version by following these steps:"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "The following Bitwarden versions are incompatible with DuckDuckGo: v2024.10.0, v2024.10.1, v2024.10.2. Please downgrade to an older version by following these steps:"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "The following Bitwarden versions are incompatible with DuckDuckGo: v2024.10.0, v2024.10.1, v2024.10.2. Please downgrade to an older version by following these steps:"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "The following Bitwarden versions are incompatible with DuckDuckGo: v2024.10.0, v2024.10.1, v2024.10.2. Please downgrade to an older version by following these steps:"
           }
         }
@@ -7798,55 +7798,55 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Download v2024.9.0"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Download v2024.9.0"
+            "value" : "Download v2025.4.2"
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Download v2024.9.0"
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Download v2024.9.0"
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Download v2024.9.0"
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Download v2024.9.0"
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Download v2024.9.0"
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Download v2024.9.0"
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Download v2024.9.0"
           }
         }

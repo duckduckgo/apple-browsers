@@ -22,7 +22,7 @@ import Foundation
 final class AIChatSidebar: NSObject {
 
     /// The initial AI chat URL to be loaded.
-    private var initialAIChatURL: URL
+    private let initialAIChatURL: URL
 
     /// The view controller that displays the sidebar contents.
     /// This property is lazily created when first accessed.

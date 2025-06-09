@@ -44,7 +44,7 @@ public enum SecureStorageError: Error {
     case secError(status: Int32)
     case generalCryptoError
     case encodingFailed
-    case keystoreReadError(status: Int32)
+    case keystoreReadError(field: String, serviceName: String, status: Int32)
     case keystoreUpdateError(status: Int32)
 }
 
@@ -91,8 +91,10 @@ extension SecureStorageError: CustomNSError {
             }
         case .keystoreError(status: let code):
             errorUserInfo["NSUnderlyingError"] = NSError(domain: "keystoreError", code: Int(code), userInfo: nil)
-        case .keystoreReadError(status: let code):
+        case .keystoreReadError(field: let field, serviceName: let serviceName, status: let code):
             errorUserInfo["NSUnderlyingError"] = NSError(domain: "keystoreReadError", code: Int(code), userInfo: nil)
+            errorUserInfo["keystoreField"] = field
+            errorUserInfo["keystoreServiceName"] = serviceName
         case .keystoreUpdateError(status: let code):
             errorUserInfo["NSUnderlyingError"] = NSError(domain: "keystoreUpdateError", code: Int(code), userInfo: nil)
         case .secError(status: let code):

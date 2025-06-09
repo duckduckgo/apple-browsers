@@ -485,8 +485,8 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func updateAIChatButtonState() {
-        guard featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
-        let isShowingSidebar = aiChatSidebarPresenter.isSidebarOpen
+        guard let tab = tabViewModel?.tab, featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
+        let isShowingSidebar = aiChatSidebarPresenter.isSidebarOpen(for: tab.uuid)
         updateAIChatButtonForSidebar(isShowingSidebar)
     }
 

@@ -274,6 +274,9 @@
 /* No comment provided by engineer. */
 "Are you sure you want to delete this chat? This cannot be undone." = "Ste prepričani, da želite izbrisati ta klepet? Tega ni mogoče razveljaviti.";
 
+/* No comment provided by engineer. */
+"Ask anything..." = "Vprašajte kar koli …";
+
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Prijavite se";
 
@@ -932,6 +935,9 @@
 "close.all.tabs" = "Zapri vse zavihke";
 
 /* No comment provided by engineer. */
+"Cohort: %@" = "Kohorta: %@";
+
+/* No comment provided by engineer. */
 "Confirm" = "Potrdi";
 
 /* Button to continue the onboarding process */
@@ -1487,6 +1493,9 @@
 "empty.search" = "Ni zadetkov";
 
 /* No comment provided by engineer. */
+"Enrolled: %@" = "Včlanjenih: %@";
+
+/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1539,6 +1548,9 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Priljubljene samo iz mobilne naprave";
+
+/* No comment provided by engineer. */
+"Feature: %@" = "Funkcija: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Blokiranje oglasov in pojavnih oken";
@@ -2288,7 +2300,7 @@
 "onboarding.highlights.browsers.features.cookiePopups.title" = "Blokirajte pojavna okna za piškotke";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Blokiraj oglase, ki sledijo";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Blokiranje ciljnih oglasov";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Izbriši podatke o brskanju z enim gumbom";
@@ -2450,7 +2462,7 @@
 "preferences.scam-blocker.toggle-caption" = "Če omogočite to funkcijo, lahko ogrozite varnost svojih osebnih podatkov.";
 
 /* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
-"preferences.scam-blocker.toggle-label" = "Prikaži opozorilo na spletnih mestih, označenih zaradi prevar, lažnega predstavljanja ali zlonamerne programske opreme. [Več o tem](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker/)";
+"preferences.scam-blocker.toggle-label" = "Prikaži opozorilo na spletnih mestih, označenih zaradi prevar, lažnega predstavljanja ali zlonamerne programske opreme. [Več o tem](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker)";
 
 /* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
 "preferences.smarter-encryption.description" = "Samodejno nadgradi povezave na HTTPS, kadar je to mogoče. [Več o tem](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
@@ -2904,6 +2916,9 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Shranjeno ime gostitelja: %@";
+
+/* No comment provided by engineer. */
+"Subfeature: %@" = "Podfunkcija: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Dodajte v napravo";
@@ -3428,10 +3443,10 @@
 "vpn.settings.dns.server.content.blocking.explanation" = "Z blokirnim seznamom na ravni DNS blokirajte več kot 150.000 domen, ki so označene kot gostiteljice zlonamerne programske opreme, napadov z lažnim predstavljanjem in spletnih prevar. [Več o tem](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
 
 /* Header of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.header" = "Blokiranje in filtriranje vsebine";
+"vpn.settings.dns.server.content.blocking.header" = "Blokiranje zlonamerne vsebine";
 
-/* Title of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.title" = "Blokiranje tveganih domen";
+/* Title of the vpn scam blocker sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Preprečevanje prevar";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";

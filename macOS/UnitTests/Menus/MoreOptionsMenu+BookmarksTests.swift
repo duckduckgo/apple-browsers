@@ -24,7 +24,7 @@ final class MoreOptionsMenu_BookmarksTests: XCTestCase {
     @MainActor
     func testWhenBookmarkSubmenuIsInitThenBookmarkAllTabsKeyIsCmdShiftD() throws {
         // GIVEN
-        let sut = BookmarksSubMenu(targetting: self, tabCollectionViewModel: .init(), moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider())
+        let sut = BookmarksSubMenu(targetting: self, tabCollectionViewModel: .init(), bookmarkManager: MockBookmarkManager(), moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider())
 
         // WHEN
         let result = try XCTUnwrap(sut.item(withTitle: UserText.bookmarkAllTabs))
@@ -39,7 +39,7 @@ final class MoreOptionsMenu_BookmarksTests: XCTestCase {
         // GIVEN
         let tab1 = Tab(content: .url(.duckDuckGo, credential: nil, source: .ui))
         let tab2 = Tab(content: .url(.duckDuckGoEmail, credential: nil, source: .ui))
-        let sut = BookmarksSubMenu(targetting: self, tabCollectionViewModel: .init(tabCollection: .init(tabs: [tab1, tab2])), moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider())
+        let sut = BookmarksSubMenu(targetting: self, tabCollectionViewModel: .init(tabCollection: .init(tabs: [tab1, tab2])), bookmarkManager: MockBookmarkManager(), moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider())
 
         // WHEN
         let result = try XCTUnwrap(sut.item(withTitle: UserText.bookmarkAllTabs))
@@ -51,7 +51,7 @@ final class MoreOptionsMenu_BookmarksTests: XCTestCase {
     @MainActor
     func testWhenTabCollectionCannotBookmarkAllTabsThenBookmarkAllTabsMenuItemIsDisabled() throws {
         // GIVEN
-        let sut = BookmarksSubMenu(targetting: self, tabCollectionViewModel: .init(tabCollection: .init(tabs: [])), moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider())
+        let sut = BookmarksSubMenu(targetting: self, tabCollectionViewModel: .init(tabCollection: .init(tabs: [])), bookmarkManager: MockBookmarkManager(), moreOptionsMenuIconsProvider: MockMoreOpationsMenuIconProvider())
 
         // WHEN
         let result = try XCTUnwrap(sut.item(withTitle: UserText.bookmarkAllTabs))

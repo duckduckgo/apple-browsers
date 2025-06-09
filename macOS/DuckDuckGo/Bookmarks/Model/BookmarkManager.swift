@@ -70,6 +70,9 @@ protocol BookmarkManager: AnyObject {
     var sortMode: BookmarksSortMode { get set }
 
     func requestSync()
+
+    /// For debug menu use only
+    func resetBookmarks(completion: @escaping () -> Void)
 }
 extension BookmarkManager {
     @discardableResult func makeBookmark(for url: URL, title: String, isFavorite: Bool, completion: @escaping (Error?) -> Void = { _ in }) -> Bookmark? {
@@ -83,24 +86,24 @@ extension BookmarkManager {
     }
 }
 final class LocalBookmarkManager: BookmarkManager {
-    static let shared = LocalBookmarkManager()
 
-    init(bookmarkStore: BookmarkStore? = nil, faviconManagement: FaviconManagement? = nil, foldersStore: BookmarkFoldersStore = UserDefaultsBookmarkFoldersStore()) {
+    init(
+        bookmarkStore: BookmarkStore,
+        foldersStore: BookmarkFoldersStore = UserDefaultsBookmarkFoldersStore(),
+        sortRepository: SortBookmarksRepository = SortBookmarksUserDefaults(),
+        appearancePreferences: AppearancePreferences
+    ) {
         self.foldersStore = foldersStore
-        if let bookmarkStore {
-            self.bookmarkStore = bookmarkStore
-        }
-        if let faviconManagement {
-            self.faviconManagement = faviconManagement
-        }
+        self.bookmarkStore = bookmarkStore
+        self.sortRepository = sortRepository
 
-        self.subscribeToFavoritesDisplayMode()
-        self.sortMode = sortRepository.storedSortMode
+        subscribeToFavoritesDisplayMode(with: appearancePreferences)
+        sortMode = sortRepository.storedSortMode
     }
 
-    private func subscribeToFavoritesDisplayMode() {
-        favoritesDisplayMode = NSApp.delegateTyped.appearancePreferences.favoritesDisplayMode
-        favoritesDisplayModeCancellable = NSApp.delegateTyped.appearancePreferences.$favoritesDisplayMode
+    private func subscribeToFavoritesDisplayMode(with appearancePreferences: AppearancePreferences) {
+        favoritesDisplayMode = appearancePreferences.favoritesDisplayMode
+        favoritesDisplayModeCancellable = appearancePreferences.$favoritesDisplayMode
             .dropFirst()
             .sink { [weak self] displayMode in
                 self?.favoritesDisplayMode = displayMode
@@ -120,9 +123,8 @@ final class LocalBookmarkManager: BookmarkManager {
     }
     var sortModePublisher: Published<BookmarksSortMode>.Publisher { $sortMode }
 
-    private lazy var bookmarkStore: BookmarkStore = LocalBookmarkStore(bookmarkDatabase: BookmarkDatabase.shared)
-    private lazy var faviconManagement: FaviconManagement = NSApp.delegateTyped.faviconManager
-    private lazy var sortRepository: SortBookmarksRepository = SortBookmarksUserDefaults()
+    private let bookmarkStore: BookmarkStore
+    private let sortRepository: SortBookmarksRepository
     private let foldersStore: BookmarkFoldersStore
 
     private var favoritesDisplayMode: FavoritesDisplayMode = .displayNative(.desktop)
@@ -447,17 +449,6 @@ final class LocalBookmarkManager: BookmarkManager {
             completion(error)
 
         }
-    }
-
-    // MARK: - Favicons
-
-    @MainActor(unsafe)
-    private func favicon(for host: String?) -> NSImage? {
-        if let host = host {
-            return faviconManagement.getCachedFavicon(for: host, sizeCategory: .small)?.image
-        }
-
-        return nil
     }
 
     // MARK: - Import

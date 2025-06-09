@@ -130,7 +130,7 @@ final class AutofillPreferencesModel: ObservableObject {
 
     @MainActor
     func showAutofillPopover(_ selectedCategory: SecureVaultSorting.Category = .allItems, source: PasswordManagementSource) {
-        guard let parentWindowController = WindowControllersManager.shared.lastKeyMainWindowController else { return }
+        guard let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController else { return }
         let navigationViewController = parentWindowController.mainViewController.navigationBarViewController
         navigationViewController.showPasswordManagerPopover(selectedCategory: selectedCategory, source: source)
     }
@@ -193,7 +193,7 @@ final class AutofillPreferencesModel: ObservableObject {
         }
 
         guard let connectBitwardenWindow = connectBitwardenWindowController.window,
-              let parentWindowController = WindowControllersManager.shared.lastKeyMainWindowController
+              let parentWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController
         else {
             assertionFailure("Privacy Preferences: Failed to present ConnectBitwardenViewController")
             return

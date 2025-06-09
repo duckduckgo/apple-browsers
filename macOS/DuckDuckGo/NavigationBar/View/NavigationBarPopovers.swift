@@ -73,12 +73,28 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     private(set) var zoomPopover: ZoomPopover?
     private weak var zoomPopoverDelegate: NSPopoverDelegate?
 
+    private let bookmarkManager: BookmarkManager
+    private let bookmarkDragDropManager: BookmarkDragDropManager
+    private let contentBlocking: ContentBlockingProtocol
+    private let fireproofDomains: FireproofDomains
     private let networkProtectionPopoverManager: NetPPopoverManager
     private let isBurner: Bool
 
     private var popoverIsShownCancellables = Set<AnyCancellable>()
 
-    init(networkProtectionPopoverManager: NetPPopoverManager, autofillPopoverPresenter: AutofillPopoverPresenter, isBurner: Bool) {
+    init(
+        bookmarkManager: BookmarkManager,
+        bookmarkDragDropManager: BookmarkDragDropManager,
+        contentBlocking: ContentBlockingProtocol,
+        fireproofDomains: FireproofDomains,
+        networkProtectionPopoverManager: NetPPopoverManager,
+        autofillPopoverPresenter: AutofillPopoverPresenter,
+        isBurner: Bool
+    ) {
+        self.bookmarkManager = bookmarkManager
+        self.bookmarkDragDropManager = bookmarkDragDropManager
+        self.contentBlocking = contentBlocking
+        self.fireproofDomains = fireproofDomains
         self.networkProtectionPopoverManager = networkProtectionPopoverManager
         self.autofillPopoverPresenter = autofillPopoverPresenter
         self.isBurner = isBurner
@@ -260,7 +276,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     func showBookmarkListPopover(from button: MouseOverButton, withDelegate delegate: NSPopoverDelegate, forTab tab: Tab?) {
         guard closeTransientPopovers() else { return }
 
-        let popover = bookmarkListPopover ?? BookmarkListPopover()
+        let popover = bookmarkListPopover ?? BookmarkListPopover(bookmarkManager: bookmarkManager, dragDropManager: bookmarkDragDropManager)
         bookmarkListPopover = popover
         popover.delegate = delegate
 
@@ -268,14 +284,14 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
             popover.viewController.currentTabWebsite = .init(tab)
         }
 
-        LocalBookmarkManager.shared.requestSync()
+        bookmarkManager.requestSync()
         show(popover, positionedBelow: button)
     }
 
     func showEditBookmarkPopover(with bookmark: Bookmark, isNew: Bool, from button: MouseOverButton, withDelegate delegate: NSPopoverDelegate) {
         guard closeTransientPopovers() else { return }
 
-        let bookmarkPopover = AddBookmarkPopover()
+        let bookmarkPopover = AddBookmarkPopover(bookmarkManager: bookmarkManager)
         bookmarkPopover.delegate = self
         bookmarkPopover.isNew = isNew
         bookmarkPopover.bookmark = bookmark
@@ -314,7 +330,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     func openPrivacyDashboard(for tabViewModel: TabViewModel, from button: MouseOverButton, entryPoint: PrivacyDashboardEntryPoint) {
         guard closeTransientPopovers() else { return }
 
-        let popover = PrivacyDashboardPopover(entryPoint: entryPoint)
+        let popover = PrivacyDashboardPopover(entryPoint: entryPoint, contentBlocking: contentBlocking)
         popover.delegate = self
         self.privacyDashboardPopover = popover
         self.subscribePrivacyDashboardPendingUpdates(for: popover)
@@ -433,7 +449,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     }
 
     private func showSaveCredentialsPopover(usingView view: NSView, withDelegate delegate: NSPopoverDelegate) {
-        let popover = SaveCredentialsPopover()
+        let popover = SaveCredentialsPopover(fireproofDomains: fireproofDomains)
         popover.delegate = delegate
         saveCredentialsPopover = popover
         show(popover, positionedBelow: view)

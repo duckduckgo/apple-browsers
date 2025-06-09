@@ -274,6 +274,9 @@
 /* No comment provided by engineer. */
 "Are you sure you want to delete this chat? This cannot be undone." = "Ar tikrai nori ištrinti šį pokalbį? To negalima atšaukti.";
 
+/* No comment provided by engineer. */
+"Ask anything..." = "Klausk, kas rūpi...";
+
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Prisijungti";
 
@@ -932,6 +935,9 @@
 "close.all.tabs" = "Uždaryti visas korteles";
 
 /* No comment provided by engineer. */
+"Cohort: %@" = "Kohorta: %@";
+
+/* No comment provided by engineer. */
 "Confirm" = "Patvirtinti";
 
 /* Button to continue the onboarding process */
@@ -1487,6 +1493,9 @@
 "empty.search" = "Atitikmenų nerasta";
 
 /* No comment provided by engineer. */
+"Enrolled: %@" = "Užregistruota: %@";
+
+/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1539,6 +1548,9 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Tik mobiliojo mėgstamiausi";
+
+/* No comment provided by engineer. */
+"Feature: %@" = "Funkcija: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Reklamų ir iššokančiųjų langų blokavimas";
@@ -2288,7 +2300,7 @@
 "onboarding.highlights.browsers.features.cookiePopups.title" = "Blokuoti slapukų iššokančiuosius langus";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Blokuoti sekimo skelbimus";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Blokuoti tikslines reklamas";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Vienu mygtuku ištrink naršymo duomenis";
@@ -2450,7 +2462,7 @@
 "preferences.scam-blocker.toggle-caption" = "Išjungus šią funkciją, gali kilti pavojus asmeninei informacijai.";
 
 /* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
-"preferences.scam-blocker.toggle-label" = "Įspėti svetainėse, pažymėtose dėl sukčiavimo, apgaulingo duomenų išviliojimo ar kenkėjiškų programų. [Sužinokite daugiau](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker/)";
+"preferences.scam-blocker.toggle-label" = "Įspėti svetainėse, pažymėtose dėl sukčiavimo, apgaulingo duomenų išviliojimo ar kenkėjiškų programų. [Daugiau informacijos](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker)";
 
 /* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
 "preferences.smarter-encryption.description" = "Automatiškai atnaujina saitus į HTTPS, kai tik įmanoma. [Sužinokite daugiau](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
@@ -2465,7 +2477,7 @@
 "preferences.threat-protection" = "Grėsmių apsauga";
 
 /* Caption of the option to show the Threat Protection preferences */
-"preferences.threat-protection.caption" = "„DuckDuckGo“ patobulintos apsaugos priemonės sustabdo įprastas grėsmes ir užtikrina tavo ryšio saugumą.\n[Sužinokite daugiau](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
+"preferences.threat-protection.caption" = "„DuckDuckGo“ patobulintos apsaugos priemonės sustabdo įprastas grėsmes ir užtikrina tavo ryšio saugumą.\n[Daugiau informacijos](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Kai kurios žymės ar slaptažodžiai suformatuoti neteisingai arba yra per ilgi ir nebuvo sinchronizuoti.";
@@ -2904,6 +2916,9 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Išsaugotas pagrindinis vardas: %@";
+
+/* No comment provided by engineer. */
+"Subfeature: %@" = "Papildoma funkcija: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Pridėti prie įrenginio";
@@ -3428,10 +3443,10 @@
 "vpn.settings.dns.server.content.blocking.explanation" = "Blokuoti daugiau nei 150 000 domenų, pažymėtų kaip talpinančių kenkėjiškas programas, sukčiavimo atakas ir internetinius sukčius, naudodamas DNS lygmens blokavimo sąrašą. [Sužinokite daugiau](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
 
 /* Header of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.header" = "Turinio blokavimas ir filtravimas";
+"vpn.settings.dns.server.content.blocking.header" = "Kenksmingo turinio blokavimas";
 
-/* Title of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.title" = "Blokuoti rizikingus domenus";
+/* Title of the vpn scam blocker sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Sukčiavimo blokavimo įrankis";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "„DuckDuckGo“";

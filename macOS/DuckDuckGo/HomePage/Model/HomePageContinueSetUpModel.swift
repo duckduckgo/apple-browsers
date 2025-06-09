@@ -138,11 +138,11 @@ extension HomePage.Models {
 
         init(defaultBrowserProvider: DefaultBrowserProvider = SystemDefaultBrowserProvider(),
              dockCustomizer: DockCustomization = DockCustomizer(),
-             dataImportProvider: DataImportStatusProviding = BookmarksAndPasswordsImportStatusProvider(),
+             dataImportProvider: DataImportStatusProviding,
              tabOpener: ContinueSetUpModelTabOpening,
              emailManager: EmailManager = EmailManager(),
              duckPlayerPreferences: DuckPlayerPreferencesPersistor = DuckPlayerPreferencesUserDefaultsPersistor(),
-             privacyConfigurationManager: PrivacyConfigurationManaging = AppPrivacyFeatures.shared.contentBlocking.privacyConfigurationManager) {
+             privacyConfigurationManager: PrivacyConfigurationManaging) {
 
             self.defaultBrowserProvider = defaultBrowserProvider
             self.dockCustomizer = dockCustomizer

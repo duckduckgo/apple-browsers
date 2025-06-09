@@ -30,7 +30,7 @@ extension WindowsManager {
 
         TabsPreferences.shared.migratePinnedTabsSettingIfNecessary(state.applicationPinnedTabs)
         if let pinnedTabsCollection = state.applicationPinnedTabs {
-            WindowControllersManager.shared.restorePinnedTabs(pinnedTabsCollection)
+            Application.appDelegate.windowControllersManager.restorePinnedTabs(pinnedTabsCollection)
         }
         if includeWindows {
             restoreWindows(from: state, includeRegularTabs: includeRegularTabs)

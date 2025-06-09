@@ -274,6 +274,9 @@
 /* No comment provided by engineer. */
 "Are you sure you want to delete this chat? This cannot be undone." = "Kas oled kindel, et soovid selle vestluse kustutada? Seda ei saa tagasi võtta.";
 
+/* No comment provided by engineer. */
+"Ask anything..." = "Küsi ükskõik mida...";
+
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Sisselogimine";
 
@@ -932,6 +935,9 @@
 "close.all.tabs" = "Sule kõik vahelehed";
 
 /* No comment provided by engineer. */
+"Cohort: %@" = "Kohort: %@";
+
+/* No comment provided by engineer. */
 "Confirm" = "Kinnita";
 
 /* Button to continue the onboarding process */
@@ -1487,6 +1493,9 @@
 "empty.search" = "Ühtegi vastet ei leitud";
 
 /* No comment provided by engineer. */
+"Enrolled: %@" = "Registreeritud: %@";
+
+/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1539,6 +1548,9 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Ainult mobiililemmikud";
+
+/* No comment provided by engineer. */
+"Feature: %@" = "Funktsioon: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Reklaami ja hüpikakende blokeerimine";
@@ -2288,7 +2300,7 @@
 "onboarding.highlights.browsers.features.cookiePopups.title" = "Blokeeri küpsiste hüpikaknad";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Blokeeri jälgivad reklaamid";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Blokeeri suunatud reklaamid";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Kustuta sirvimisandmed ühe nupuga";
@@ -2450,7 +2462,7 @@
 "preferences.scam-blocker.toggle-caption" = "Selle funktsiooni keelamine võib teie isikuandmed ohtu seada.";
 
 /* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
-"preferences.scam-blocker.toggle-label" = "Hoiata mind pettuste, andmepüügi või pahavara tõttu märgistatud saitidel. [Lisateave](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker/)";
+"preferences.scam-blocker.toggle-label" = "Hoiata mind pettuste, andmepüügi või pahavara tõttu märgistatud saitidel. [Lisateave](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker)";
 
 /* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
 "preferences.smarter-encryption.description" = "Võimaluse korral uuendab lingid automaatselt HTTPS-ile. [Lisateave](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
@@ -2904,6 +2916,9 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Salvestatud hostinimi: %@";
+
+/* No comment provided by engineer. */
+"Subfeature: %@" = "Alamfunktsioon: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Lisa seadmele";
@@ -3428,10 +3443,10 @@
 "vpn.settings.dns.server.content.blocking.explanation" = "Blokeerige 150 000+ domeeni, mis on märgistatud pahavara, andmepüügirünnakute ja võrgupettuste eest DNS-tasandi blokeerimisloendiga. [Lisateave](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
 
 /* Header of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.header" = "Sisu blokeerimine ja filtreerimine";
+"vpn.settings.dns.server.content.blocking.header" = "Pahatahtliku sisu blokeerimine";
 
-/* Title of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.title" = "Riskantsete domeenide blokeerimine";
+/* Title of the vpn scam blocker sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Pettuste blokeerija";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";

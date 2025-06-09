@@ -16,6 +16,7 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Cocoa
 import Combine
 import Lottie
@@ -75,11 +76,13 @@ final class AddressBarViewController: NSViewController {
     private(set) var addressBarButtonsViewController: AddressBarButtonsViewController?
 
     private let tabCollectionViewModel: TabCollectionViewModel
-    private var tabViewModel: TabViewModel?
+    private let bookmarkManager: BookmarkManager
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let suggestionContainerViewModel: SuggestionContainerViewModel
     private let isBurner: Bool
     private let onboardingPixelReporter: OnboardingAddressBarReporting
     private let visualStyle: VisualStyleProviding
+    private var tabViewModel: TabViewModel?
     private let aiChatSidebarPresenter: AIChatSidebarPresenting
 
     private var aiChatSettings: AIChatPreferencesStorage
@@ -130,6 +133,9 @@ final class AddressBarViewController: NSViewController {
 
     init?(coder: NSCoder,
           tabCollectionViewModel: TabCollectionViewModel,
+          bookmarkManager: BookmarkManager,
+          historyCoordinator: SuggestionContainer.HistoryProvider,
+          privacyConfigurationManager: PrivacyConfigurationManaging,
           burnerMode: BurnerMode,
           popovers: NavigationBarPopovers?,
           onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
@@ -137,11 +143,20 @@ final class AddressBarViewController: NSViewController {
           visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager,
           aiChatSidebarPresenter: AIChatSidebarPresenting) {
         self.tabCollectionViewModel = tabCollectionViewModel
+        self.bookmarkManager = bookmarkManager
+        self.privacyConfigurationManager = privacyConfigurationManager
         self.popovers = popovers
         self.suggestionContainerViewModel = SuggestionContainerViewModel(
             isHomePage: tabViewModel?.tab.content == .newtab,
             isBurner: burnerMode.isBurner,
-            suggestionContainer: SuggestionContainer(burnerMode: burnerMode, isUrlIgnored: { _ in false }), visualStyle: visualStyleManager.style)
+            suggestionContainer: SuggestionContainer(
+                historyProvider: historyCoordinator,
+                bookmarkProvider: SuggestionsBookmarkProvider(bookmarkManager: bookmarkManager),
+                burnerMode: burnerMode,
+                isUrlIgnored: { _ in false }
+            ),
+            visualStyle: visualStyleManager.style
+        )
         self.isBurner = burnerMode.isBurner
         self.onboardingPixelReporter = onboardingPixelReporter
         self.aiChatSettings = aiChatSettings
@@ -154,6 +169,8 @@ final class AddressBarViewController: NSViewController {
     @IBSegueAction func createAddressBarButtonsViewController(_ coder: NSCoder) -> AddressBarButtonsViewController? {
         let controller = AddressBarButtonsViewController(coder: coder,
                                                          tabCollectionViewModel: tabCollectionViewModel,
+                                                         bookmarkManager: bookmarkManager,
+                                                         privacyConfigurationManager: privacyConfigurationManager,
                                                          popovers: popovers,
                                                          aiChatTabOpener: NSApp.delegateTyped.aiChatTabOpener,
                                                          aiChatMenuConfig: AIChatMenuConfiguration(storage: aiChatSettings),

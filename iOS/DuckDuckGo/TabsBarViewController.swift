@@ -63,10 +63,8 @@ class TabsBarViewController: UIViewController {
 
     weak var delegate: TabsBarDelegate?
     private weak var tabsModel: TabsModel?
-    let featureFlagger: FeatureFlagger
-    private lazy var isExperimentalThemingEnabled: Bool = {
-        ExperimentalThemingManager(featureFlagger: featureFlagger).isExperimentalThemingEnabled
-    }()
+    let themingProperties: ExperimentalThemingProperties
+    private var isExperimentalThemingEnabled: Bool { themingProperties.isExperimentalThemingEnabled }
 
     private lazy var tabSwitcherButton: TabSwitcherButton = {
         let switcher: TabSwitcherButton
@@ -95,9 +93,17 @@ class TabsBarViewController: UIViewController {
         return Int(collectionView.frame.size.width / Constants.minItemWidth)
     }
 
-    required init?(coder: NSCoder, featureFlagger: FeatureFlagger) {
-        self.featureFlagger = featureFlagger
-        
+    static func createFromXib(themingProperties: ExperimentalThemingProperties) -> TabsBarViewController {
+        let storyboard = UIStoryboard(name: "TabSwitcher", bundle: nil)
+        let controller: TabsBarViewController = storyboard.instantiateViewController(identifier: "TabsBar") { coder in
+            TabsBarViewController(coder: coder, themingProperties: themingProperties)
+        }
+        return controller
+    }
+
+    required init?(coder: NSCoder, themingProperties: ExperimentalThemingProperties) {
+        self.themingProperties = themingProperties
+
         super.init(coder: coder)
     }
 

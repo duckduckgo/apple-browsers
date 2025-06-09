@@ -17,6 +17,7 @@
 //
 
 import Cocoa
+import Common
 import WebKit
 import BrowserServicesKit
 
@@ -29,9 +30,21 @@ public final class ContentOverlayPopover {
     public var viewController: ContentOverlayViewController
     public var windowController: NSWindowController
 
-    public init(currentTabView: NSView) {
+    public init(
+        currentTabView: NSView,
+        privacyConfigurationManager: PrivacyConfigurationManaging,
+        featureFlagger: FeatureFlagger,
+        tld: TLD
+    ) {
         let storyboard = NSStoryboard(name: "ContentOverlay", bundle: Bundle.main)
-        viewController = storyboard.instantiateController(identifier: "ContentOverlayViewController")
+        viewController = storyboard.instantiateController(identifier: "ContentOverlayViewController") { coder in
+            ContentOverlayViewController(
+                coder: coder,
+                privacyConfigurationManager: privacyConfigurationManager,
+                featureFlagger: featureFlagger,
+                tld: tld
+            )
+        }
         windowController = storyboard.instantiateController(identifier: "ContentOverlayWindowController")
         windowController.contentViewController = viewController
         windowController.window?.hasShadow = true

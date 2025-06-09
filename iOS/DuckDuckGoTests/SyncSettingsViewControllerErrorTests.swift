@@ -250,5 +250,3 @@ final class SyncSettingsViewControllerErrorTests: XCTestCase {
         vc.viewModel?.devices = [SyncSettingsViewModel.Device(id: id, name: "iPhone", type: "iPhone", isThisDevice: true)]
     }
 }
-
-class MockFavoritesDisplayModeStoring: MockFavoriteDisplayModeStorage {}

@@ -33,13 +33,15 @@ final class SuggestionContainerTests: XCTestCase {
         MockURLProtocol.requestHandler = nil
     }
 
+    @MainActor
     func testWhenGetSuggestionsIsCalled_ThenContainerAsksAndHoldsSuggestionsFromLoader() {
         let suggestionLoadingMock = SuggestionLoadingMock()
         let historyCoordinatingMock = HistoryProviderMock()
+        let bookmarkProviderMock = SuggestionsBookmarkProvider(bookmarkManager: MockBookmarkManager())
         let suggestionContainer = SuggestionContainer(openTabsProvider: { [] },
                                                       suggestionLoading: suggestionLoadingMock,
                                                       historyProvider: historyCoordinatingMock,
-                                                      bookmarkProvider: LocalBookmarkManager.shared,
+                                                      bookmarkProvider: bookmarkProviderMock,
                                                       burnerMode: .regular,
                                                       isUrlIgnored: { _ in false })
 
@@ -61,13 +63,15 @@ final class SuggestionContainerTests: XCTestCase {
         XCTAssertEqual(suggestionContainer.result?.all, result.topHits + result.duckduckgoSuggestions + result.localSuggestions)
     }
 
+    @MainActor
     func testWhenStopGettingSuggestionsIsCalled_ThenNoSuggestionsArePublished() {
         let suggestionLoadingMock = SuggestionLoadingMock()
         let historyCoordinatingMock = HistoryProviderMock()
+        let bookmarkProviderMock = SuggestionsBookmarkProvider(bookmarkManager: MockBookmarkManager())
         let suggestionContainer = SuggestionContainer(openTabsProvider: { [] },
                                                       suggestionLoading: suggestionLoadingMock,
                                                       historyProvider: historyCoordinatingMock,
-                                                      bookmarkProvider: LocalBookmarkManager.shared,
+                                                      bookmarkProvider: bookmarkProviderMock,
                                                       burnerMode: .regular,
                                                       isUrlIgnored: { _ in false })
 
@@ -79,13 +83,15 @@ final class SuggestionContainerTests: XCTestCase {
         XCTAssertNil(suggestionContainer.result)
     }
 
+    @MainActor
     func testSuggestionLoadingCacheClearing() {
         let suggestionLoadingMock = SuggestionLoadingMock()
         let historyCoordinatingMock = HistoryProviderMock()
+        let bookmarkProviderMock = SuggestionsBookmarkProvider(bookmarkManager: MockBookmarkManager())
         let suggestionContainer = SuggestionContainer(openTabsProvider: { [] },
                                                       suggestionLoading: suggestionLoadingMock,
                                                       historyProvider: historyCoordinatingMock,
-                                                      bookmarkProvider: LocalBookmarkManager.shared,
+                                                      bookmarkProvider: bookmarkProviderMock,
                                                       burnerMode: .regular,
                                                       isUrlIgnored: { _ in false })
 
@@ -362,6 +368,8 @@ extension SuggestionContainerTests {
     }
 
     class WindowControllersManagerMock: WindowControllersManagerProtocol {
+        var stateChanged: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher()
+
         var mainWindowControllers: [DuckDuckGo_Privacy_Browser.MainWindowController] = []
 
         var lastKeyMainWindowController: DuckDuckGo_Privacy_Browser.MainWindowController?

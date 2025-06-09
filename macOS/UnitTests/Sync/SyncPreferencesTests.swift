@@ -86,11 +86,11 @@ final class SyncPreferencesTests: XCTestCase {
     override func setUp() {
         cancellables = []
         setUpDatabase()
-        appearancePreferences = AppearancePreferences(persistor: appearancePersistor)
+        appearancePreferences = AppearancePreferences(persistor: appearancePersistor, privacyConfigurationManager: MockPrivacyConfigurationManager())
         ddgSyncing = MockDDGSyncing(authState: .inactive, scheduler: scheduler, isSyncInProgress: false)
         pausedStateManager = MockSyncPausedStateManaging()
 
-        syncBookmarksAdapter = SyncBookmarksAdapter(database: bookmarksDatabase, appearancePreferences: appearancePreferences, syncErrorHandler: SyncErrorHandler())
+        syncBookmarksAdapter = SyncBookmarksAdapter(database: bookmarksDatabase, bookmarkManager: MockBookmarkManager(), appearancePreferences: appearancePreferences, syncErrorHandler: SyncErrorHandler())
         syncCredentialsAdapter = SyncCredentialsAdapter(secureVaultFactory: AutofillSecureVaultFactory, syncErrorHandler: SyncErrorHandler())
         featureFlagger = MockSyncFeatureFlagger()
         featureFlagger.isFeatureOn[FeatureFlag.syncSeamlessAccountSwitching.rawValue] = true

@@ -16,8 +16,9 @@
 //  limitations under the License.
 //
 
-import Foundation
 import Common
+import Foundation
+import Persistence
 
 protocol PermissionStore: AnyObject {
     func loadPermissions() throws -> [PermissionEntity]
@@ -41,25 +42,14 @@ extension PermissionStore {
 }
 
 final class LocalPermissionStore: PermissionStore {
-    private var _context: NSManagedObjectContext??
-    private var context: NSManagedObjectContext? {
-        if case .none = _context {
-#if DEBUG
-            guard AppVersion.runType.requiresEnvironment else {
-                _context = .some(.none)
-                return .none
-            }
-#endif
-            _context = Database.shared.makeContext(concurrencyType: .privateQueueConcurrencyType, name: "Permissions")
-        }
-        return _context!
+    private let context: NSManagedObjectContext?
+
+    convenience init(database: CoreDataDatabase?) {
+        self.init(context: database?.makeContext(concurrencyType: .privateQueueConcurrencyType, name: "Permissions"))
     }
 
-    init() {
-    }
-
-    init(context: NSManagedObjectContext) {
-        self._context = .some(context)
+    init(context: NSManagedObjectContext? = nil) {
+        self.context = context
     }
 
     func loadPermissions() throws -> [PermissionEntity] {

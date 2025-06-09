@@ -33,7 +33,7 @@ protocol RecentlyClosedCoordinating: AnyObject {
 @MainActor
 final class RecentlyClosedCoordinator: RecentlyClosedCoordinating {
 
-    static let shared = RecentlyClosedCoordinator(windowControllerManager: WindowControllersManager.shared,
+    static let shared = RecentlyClosedCoordinator(windowControllerManager: Application.appDelegate.windowControllersManager,
                                                   pinnedTabsManagerProvider: Application.appDelegate.pinnedTabsManagerProvider)
 
     var windowControllerManager: WindowControllersManagerProtocol
@@ -171,13 +171,13 @@ final class RecentlyClosedCoordinator: RecentlyClosedCoordinating {
         let tabCollectionViewModel: TabCollectionViewModel
         let tabIndex: Int
         if let originalTabCollection = recentlyClosedTab.originalTabCollection,
-           let lastKeyMainWindowController = WindowControllersManager.shared.lastKeyMainWindowController,
+           let lastKeyMainWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController,
            originalTabCollection == lastKeyMainWindowController.mainViewController.tabCollectionViewModel.tabCollection {
             // Original window still exists and it is key
             tabCollectionViewModel = lastKeyMainWindowController.mainViewController.tabCollectionViewModel
             tabIndex = min(recentlyClosedTab.index.item, tabCollectionViewModel.tabCollection.tabs.count)
 
-        } else if let lastKeyMainWindowController = WindowControllersManager.shared.lastKeyMainWindowController {
+        } else if let lastKeyMainWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController {
             // Original window is closed, reopen the tab in the current window
             tabCollectionViewModel = lastKeyMainWindowController.mainViewController.tabCollectionViewModel
             tabIndex = tabCollectionViewModel.tabCollection.tabs.count
@@ -194,11 +194,11 @@ final class RecentlyClosedCoordinator: RecentlyClosedCoordinating {
     }
 
     private func reopenPinnedTab(_ recentlyClosedTab: RecentlyClosedTab) {
-        var lastKeyMainWindowController = WindowControllersManager.shared.lastKeyMainWindowController
+        var lastKeyMainWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController
         if lastKeyMainWindowController == nil {
             // Create a new window if none exists
             WindowsManager.openNewWindow(with: Tab(content: .newtab, shouldLoadInBackground: true))
-            lastKeyMainWindowController = WindowControllersManager.shared.lastKeyMainWindowController
+            lastKeyMainWindowController = Application.appDelegate.windowControllersManager.lastKeyMainWindowController
         }
 
         guard let tabCollectionViewModel = lastKeyMainWindowController?.mainViewController.tabCollectionViewModel else {

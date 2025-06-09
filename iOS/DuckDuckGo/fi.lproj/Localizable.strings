@@ -274,6 +274,9 @@
 /* No comment provided by engineer. */
 "Are you sure you want to delete this chat? This cannot be undone." = "Haluatko varmasti poistaa tämän keskustelun? Tätä ei voi kumota.";
 
+/* No comment provided by engineer. */
+"Ask anything..." = "Kysy mitä tahansa...";
+
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Kirjaudu sisään";
 
@@ -932,6 +935,9 @@
 "close.all.tabs" = "Sulje kaikki välilehdet";
 
 /* No comment provided by engineer. */
+"Cohort: %@" = "Kohortti: %@";
+
+/* No comment provided by engineer. */
 "Confirm" = "Vahvista";
 
 /* Button to continue the onboarding process */
@@ -1487,6 +1493,9 @@
 "empty.search" = "Ei hakutuloksia";
 
 /* No comment provided by engineer. */
+"Enrolled: %@" = "Rekisteröitynyt: %@";
+
+/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1539,6 +1548,9 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Vain mobiilisuosikit";
+
+/* No comment provided by engineer. */
+"Feature: %@" = "Ominaisuus: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Mainosten ja ponnahdusikkunoiden esto";
@@ -2288,7 +2300,7 @@
 "onboarding.highlights.browsers.features.cookiePopups.title" = "Estä evästeponnahdusikkunat";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Estä seurantamainokset";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Estä kohdennetut mainokset";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Poista selaustiedot yhdellä painikkeella";
@@ -2450,7 +2462,7 @@
 "preferences.scam-blocker.toggle-caption" = "Tämän ominaisuuden käytöstä poistaminen voi vaarantaa henkilötietosi.";
 
 /* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
-"preferences.scam-blocker.toggle-label" = "Varoita sivustoista, jotka on merkitty huijausten, tietojenkalastelun tai haittaohjelmien johdosta. [Lue lisää](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker/)";
+"preferences.scam-blocker.toggle-label" = "Varoita sivustoista, jotka on merkitty huijausten, tietojenkalastelun tai haittaohjelmien johdosta. [Lue lisää](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker)";
 
 /* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
 "preferences.smarter-encryption.description" = "Päivittää linkit automaattisesti HTTPS-yhteyteen aina kun mahdollista. [Lue lisää](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
@@ -2465,7 +2477,7 @@
 "preferences.threat-protection" = "Uhkien torjunta";
 
 /* Caption of the option to show the Threat Protection preferences */
-"preferences.threat-protection.caption" = "DuckDuckGon parannetut suojaukset pysäyttävät yleisimmät uhat ja pitävät yhteytesi suojattuna.\n[Lue lisää](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
+"preferences.threat-protection.caption" = "DuckDuckGon parannetut suojaustoiminnot pysäyttävät yleisimmät uhat ja pitävät yhteytesi suojattuna.\n[Lue lisää](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/)";
 
 /* Description of incorrectly formatted data error when syncing. */
 "prefrences.sync.bad-request.description" = "Jotkin kirjanmerkit tai salasanat on väärin muotoiltuja tai liian pitkiä, eikä niitä ole synkronoitu.";
@@ -2904,6 +2916,9 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Tallennettu isäntänimi: %@";
+
+/* No comment provided by engineer. */
+"Subfeature: %@" = "Alaominaisuus: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Lisää laitteeseen";
@@ -3428,10 +3443,10 @@
 "vpn.settings.dns.server.content.blocking.explanation" = "Estä yli 150 000 verkkotunnusta, jotka on lisätty DNS-tason estolistalle haittaohjelmien, tietojenkalasteluhyökkäysten ja verkkohuijausten vuoksi. [Lue lisää](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
 
 /* Header of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.header" = "Sisällön estäminen ja suodattaminen";
+"vpn.settings.dns.server.content.blocking.header" = "Haitallisen sisällön estäminen";
 
-/* Title of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.title" = "Estä vaaralliset verkkotunnukset";
+/* Title of the vpn scam blocker sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Huijausten esto";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";

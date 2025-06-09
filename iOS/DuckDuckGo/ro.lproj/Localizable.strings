@@ -274,6 +274,9 @@
 /* No comment provided by engineer. */
 "Are you sure you want to delete this chat? This cannot be undone." = "Sigur dorești să ștergi acest chat? Acest lucru nu poate fi anulat.";
 
+/* No comment provided by engineer. */
+"Ask anything..." = "Întreabă orice...";
+
 /* Authentication Alert Sign In Button */
 "auth.alert.login.button" = "Autentificare";
 
@@ -932,6 +935,9 @@
 "close.all.tabs" = "Închide toate filele";
 
 /* No comment provided by engineer. */
+"Cohort: %@" = "Cohortă: %@";
+
+/* No comment provided by engineer. */
 "Confirm" = "Confirmare";
 
 /* Button to continue the onboarding process */
@@ -1487,6 +1493,9 @@
 "empty.search" = "Nu s-au găsit potriviri";
 
 /* No comment provided by engineer. */
+"Enrolled: %@" = "Înscris: %@";
+
+/* No comment provided by engineer. */
 "Entry Pill" = "Entry Pill";
 
 /* Button title to Sign In */
@@ -1539,6 +1548,9 @@
 
 /* Display Mode for favorites */
 "favorites.settings.mobile-only" = "Doar favoritele pentru mobil";
+
+/* No comment provided by engineer. */
+"Feature: %@" = "Funcție: %@";
 
 /* No comment provided by engineer. */
 "feedback.browserFeatures.ads" = "Blocarea anunțurilor și ferestrelor pop-up";
@@ -2288,7 +2300,7 @@
 "onboarding.highlights.browsers.features.cookiePopups.title" = "Blochează ferestrele pop-up privind modulele cookie";
 
 /* Message to highlight browser capability of blocking creepy ads */
-"onboarding.highlights.browsers.features.creepyAds.title" = "Blochează reclamele cu scop de urmărire";
+"onboarding.highlights.browsers.features.creepyAds.title" = "Blochează reclamele direcționate";
 
 /* Message to highlight browser capability of swiftly erase browsing data */
 "onboarding.highlights.browsers.features.eraseBrowsingData.title" = "Șterge datele de navigare cu un singur buton";
@@ -2450,7 +2462,7 @@
 "preferences.scam-blocker.toggle-caption" = "Dezactivarea acestei funcții poate genera riscuri privind datele tale cu caracter personal.";
 
 /* Label for toggle that enables or disables scam, phishing, and malware site warnings (do not remove or change the link) */
-"preferences.scam-blocker.toggle-label" = "Avertizează cu privire la site-urile marcate ca incluzând escrocherii, phishing sau programe rău intenționate. [Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker/)";
+"preferences.scam-blocker.toggle-label" = "Avertizează cu privire la site-urile marcate ca incluzând escrocherii, phishing sau programe rău intenționate. [Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/threat-protection/scam-blocker)";
 
 /* Description explaining the Smarter Encryption feature, (do not remove or change the link) */
 "preferences.smarter-encryption.description" = "Actualizează automat linkurile la HTTPS, oricând este posibil. [Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy/smarter-encryption/)";
@@ -2904,6 +2916,9 @@
 
 /* No comment provided by engineer. */
 "Stored Hostname: %@" = "Numele gazdă stocat: %@";
+
+/* No comment provided by engineer. */
+"Subfeature: %@" = "Sub-funcție: %@";
 
 /* Button for adding this subscription to another device */
 "subscription.activate.add.to.device.button" = "Adaugă pe dispozitiv";
@@ -3428,10 +3443,10 @@
 "vpn.settings.dns.server.content.blocking.explanation" = "Blochează peste 150.000 de domenii marcate pentru găzduirea de programe rău intenționate (malware), atacuri de phishing și escrocherii online cu o listă de blocare la nivel de DNS. [Află mai multe](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
 
 /* Header of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.header" = "Blocarea și filtrarea conținutului";
+"vpn.settings.dns.server.content.blocking.header" = "Blocare a conținutului rău intenționat";
 
-/* Title of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.title" = "Blochează domeniile riscante";
+/* Title of the vpn scam blocker sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Instrument de blocare a înșelătoriilor";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";

@@ -147,17 +147,10 @@ public extension XCTestCase {
         switch frequency {
         case .standard:
             expectedPixelNames.append(originalName)
-        case .legacyInitial:
-            expectedPixelNames.append(originalName)
         case .uniqueByName:
             expectedPixelNames.append(originalName)
-        case .legacyDaily:
-            expectedPixelNames.append(originalName)
         case .daily:
-            expectedPixelNames.append(originalName.appending("_d"))
-        case .legacyDailyAndCount:
-            expectedPixelNames.append(originalName.appending("_d"))
-            expectedPixelNames.append(originalName.appending("_c"))
+            expectedPixelNames.append(originalName.appending("_daily"))
         case .dailyAndCount:
             expectedPixelNames.append(originalName.appending("_daily"))
             expectedPixelNames.append(originalName.appending("_count"))
@@ -165,6 +158,15 @@ public extension XCTestCase {
             expectedPixelNames.append(originalName.appending("_daily"))
             expectedPixelNames.append(originalName)
         case .uniqueByNameAndParameters:
+            expectedPixelNames.append(originalName)
+        case .legacyInitial:
+            expectedPixelNames.append(originalName)
+        case .legacyDaily:
+            expectedPixelNames.append(originalName.appending("_d"))
+        case .legacyDailyAndCount:
+            expectedPixelNames.append(originalName.appending("_d"))
+            expectedPixelNames.append(originalName.appending("_c"))
+        case .legacyDailyNoSuffix:
             expectedPixelNames.append(originalName)
         }
         return expectedPixelNames

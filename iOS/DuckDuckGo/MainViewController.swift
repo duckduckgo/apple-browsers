@@ -198,11 +198,14 @@ class MainViewController: UIViewController {
     private lazy var themeColorManager: SiteThemeColorManager = {
         SiteThemeColorManager(viewCoordinator: viewCoordinator,
                               currentTabViewController: { [weak self] in self?.currentTab }(),
-                              appSettings: appSettings)
+                              appSettings: appSettings,
+                              themeManager: themeManager)
     }()
 
     private lazy var aiChatViewControllerManager: AIChatViewControllerManager = {
-        let manager = AIChatViewControllerManager(experimentalAIChatManager: .init(featureFlagger: featureFlagger))
+        let manager = AIChatViewControllerManager(experimentalAIChatManager: .init(featureFlagger: featureFlagger),
+                                                  featureFlagger: featureFlagger,
+                                                  aiChatSettings: aiChatSettings)
         manager.delegate = self
         return manager
     }()
@@ -214,9 +217,10 @@ class MainViewController: UIViewController {
     }()
 
     let isAuthV2Enabled: Bool
+    let themeManager: ThemeManaging
 
     private var duckPlayerEntryPointVisible = false
-    private lazy var isExperimentalAppearanceEnabled = ExperimentalThemingManager().isExperimentalThemingEnabled
+    private var isExperimentalAppearanceEnabled: Bool { themeManager.properties.isExperimentalThemingEnabled }
 
     private lazy var aiChatOmnibarExperimentOverlayButton: UIButton = {
         let button = UIButton(type: .custom)
@@ -257,7 +261,8 @@ class MainViewController: UIViewController {
         maliciousSiteProtectionPreferencesManager: MaliciousSiteProtectionPreferencesManaging,
         aiChatSettings: AIChatSettingsProvider,
         experimentalAIChatManager: ExperimentalAIChatManager = ExperimentalAIChatManager(),
-        featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard)
+        featureDiscovery: FeatureDiscovery = DefaultFeatureDiscovery(wasUsedBeforeStorage: UserDefaults.standard),
+        themeManager: ThemeManaging
     ) {
         self.bookmarksDatabase = bookmarksDatabase
         self.bookmarksDatabaseCleaner = bookmarksDatabaseCleaner
@@ -272,6 +277,7 @@ class MainViewController: UIViewController {
         self.experimentalAIChatManager = experimentalAIChatManager
         self.previewsSource = previewsSource
         self.featureDiscovery = featureDiscovery
+        self.themeManager = themeManager
 
         let interactionStateSource = WebViewStateRestorationManager(featureFlagger: featureFlagger).isFeatureEnabled ? TabInteractionStateDiskSource() : nil
         self.tabManager = TabManager(model: tabsModel,
@@ -442,7 +448,7 @@ class MainViewController: UIViewController {
         let omnibarDependencies = OmnibarDependencies(voiceSearchHelper: voiceSearchHelper,
                                                       featureFlagger: featureFlagger,
                                                       aiChatSettings: aiChatSettings,
-                                                      isExperimentalAppearanceEnabled: isExperimentalAppearanceEnabled)
+                                                      themingProperties: themeManager.properties)
 
         swipeTabsCoordinator = SwipeTabsCoordinator(coordinator: viewCoordinator,
                                                     tabPreviewsSource: previewsSource,
@@ -524,10 +530,8 @@ class MainViewController: UIViewController {
     func loadTabsBarIfNeeded() {
         guard isPad else { return }
 
-        let storyboard = UIStoryboard(name: "TabSwitcher", bundle: nil)
-        let controller: TabsBarViewController = storyboard.instantiateViewController(identifier: "TabsBar") { coder in
-            TabsBarViewController(coder: coder, featureFlagger: self.featureFlagger)
-        }
+        let controller = TabsBarViewController.createFromXib(themingProperties: themeManager.properties)
+
         addChild(controller)
         controller.view.frame = viewCoordinator.tabBarContainer.bounds
         controller.delegate = self
@@ -2421,16 +2425,7 @@ extension MainViewController: OmniBarDelegate {
                 openAIChat(textFieldValue, autoSend: true)
             }
         } else {
-            /// Check if the current tab's URL is a DuckDuckGo search page
-            /// If it is, get the query item and open the chat with the query item's value
-            /// Do not auto-send if the user is on SERP
-            /// https://app.asana.com/1/137249556945/project/1204167627774280/task/1210024262385459?focus=true
-            if currentTab?.url?.isDuckDuckGoSearch == true {
-                let queryItem = currentTab?.url?.getQueryItems()?.filter { $0.name == "q" }.first
-                openAIChat(queryItem?.value, autoSend: false)
-            } else {
-                openAIChat()
-            }
+            openAIChat()
         }
 
         Pixel.fire(pixel: .openAIChatFromAddressBar,

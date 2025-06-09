@@ -69,11 +69,15 @@ final class BrowserTabViewController: NSViewController {
 
     private let tabCollectionViewModel: TabCollectionViewModel
     private let bookmarkManager: BookmarkManager
+    private let bookmarkDragDropManager: BookmarkDragDropManager
     private let dockCustomizer = DockCustomizer()
     private let onboardingDialogTypeProvider: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater
 
     private let onboardingDialogFactory: ContextualDaxDialogsFactory
     private let featureFlagger: FeatureFlagger
+    private let windowControllersManager: WindowControllersManagerProtocol
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
+    private let tld: TLD
 
     private var tabViewModelCancellables = Set<AnyCancellable>()
     private var activeUserDialogCancellable: Cancellable?
@@ -104,22 +108,30 @@ final class BrowserTabViewController: NSViewController {
     }
 
     init(tabCollectionViewModel: TabCollectionViewModel,
-         bookmarkManager: BookmarkManager = LocalBookmarkManager.shared,
+         bookmarkManager: BookmarkManager = NSApp.delegateTyped.bookmarkManager,
+         bookmarkDragDropManager: BookmarkDragDropManager = NSApp.delegateTyped.bookmarkDragDropManager,
          onboardingPixelReporter: OnboardingPixelReporting = OnboardingPixelReporter(),
          onboardingDialogTypeProvider: ContextualOnboardingDialogTypeProviding & ContextualOnboardingStateUpdater = Application.appDelegate.onboardingContextualDialogsManager,
          onboardingDialogFactory: ContextualDaxDialogsFactory = DefaultContextualDaxDialogViewFactory(),
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+         windowControllersManager: WindowControllersManagerProtocol = NSApp.delegateTyped.windowControllersManager,
          newTabPageActionsManager: NewTabPageActionsManager = NSApp.delegateTyped.newTabPageCoordinator.actionsManager,
-         activeRemoteMessageModel: ActiveRemoteMessageModel = NSApp.delegateTyped.activeRemoteMessageModel
+         activeRemoteMessageModel: ActiveRemoteMessageModel = NSApp.delegateTyped.activeRemoteMessageModel,
+         privacyConfigurationManager: PrivacyConfigurationManaging = NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager,
+         tld: TLD = NSApp.delegateTyped.tld
     ) {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
+        self.bookmarkDragDropManager = bookmarkDragDropManager
         self.onboardingPixelReporter = onboardingPixelReporter
         self.onboardingDialogTypeProvider = onboardingDialogTypeProvider
         self.onboardingDialogFactory = onboardingDialogFactory
         self.featureFlagger = featureFlagger
+        self.windowControllersManager = windowControllersManager
         self.newTabPageActionsManager = newTabPageActionsManager
         self.activeRemoteMessageModel = activeRemoteMessageModel
+        self.privacyConfigurationManager = privacyConfigurationManager
+        self.tld = tld
         containerStackView = NSStackView()
 
         super.init(nibName: nil, bundle: nil)
@@ -212,7 +224,7 @@ final class BrowserTabViewController: NSViewController {
 
     @objc
     private func onDuckDuckGoEmailIncontextSignup(_ notification: Notification) {
-        guard WindowControllersManager.shared.lastKeyMainWindowController === self.view.window?.windowController else { return }
+        guard Application.appDelegate.windowControllersManager.lastKeyMainWindowController === self.view.window?.windowController else { return }
 
         self.previouslySelectedTab = tabCollectionViewModel.selectedTab
         let tab = Tab(content: .url(EmailUrls().emailProtectionInContextSignupLink, source: .ui), shouldLoadInBackground: true, burnerMode: tabCollectionViewModel.burnerMode)
@@ -221,7 +233,7 @@ final class BrowserTabViewController: NSViewController {
 
     @objc
     private func onCloseDuckDuckGoEmailProtection(_ notification: Notification) {
-        guard WindowControllersManager.shared.lastKeyMainWindowController === self.view.window?.windowController,
+        guard Application.appDelegate.windowControllersManager.lastKeyMainWindowController === self.view.window?.windowController,
               let previouslySelectedTab else { return }
 
         if let activeTab = tabViewModel?.tab,
@@ -240,7 +252,7 @@ final class BrowserTabViewController: NSViewController {
     private func onPasswordImportFlowFinish(_ notification: Notification) {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
-            guard WindowControllersManager.shared.lastKeyMainWindowController === self.view.window?.windowController else { return }
+            guard Application.appDelegate.windowControllersManager.lastKeyMainWindowController === self.view.window?.windowController else { return }
             if let previouslySelectedTab {
                 tabCollectionViewModel.select(tab: previouslySelectedTab)
                 previouslySelectedTab.webView.evaluateJavaScript("window.credentialsImportFinished()", in: nil, in: WKContentWorld.defaultClient)
@@ -273,7 +285,7 @@ final class BrowserTabViewController: NSViewController {
 
     @objc
     private func onDataBrokerWaitlistGetStartedPressedByUser(_ notification: Notification) {
-        WindowControllersManager.shared.showDataBrokerProtectionTab()
+        Application.appDelegate.windowControllersManager.showDataBrokerProtectionTab()
     }
 
     @objc
@@ -832,7 +844,7 @@ final class BrowserTabViewController: NSViewController {
         // shouldn't open New Tabs in PopUp window
         if view.window?.isPopUpWindow ?? true {
             // Prefer Tab's Parent
-            WindowControllersManager.shared.showTab(with: content)
+            Application.appDelegate.windowControllersManager.showTab(with: content)
             return nil
         }
 
@@ -1023,6 +1035,7 @@ final class BrowserTabViewController: NSViewController {
             let dataBrokerProtectionHomeViewController = DBPHomeViewController(
                 dataBrokerProtectionManager: DataBrokerProtectionManager.shared,
                 vpnBypassService: VPNBypassService(),
+                privacyConfigurationManager: privacyConfigurationManager,
                 freemiumDBPFeature: freemiumDBPFeature
             )
             self.dataBrokerProtectionHomeViewController = dataBrokerProtectionHomeViewController
@@ -1038,7 +1051,11 @@ final class BrowserTabViewController: NSViewController {
             guard let syncService = NSApp.delegateTyped.syncService else {
                 fatalError("Sync service is nil")
             }
-            let preferencesViewController = PreferencesViewController(syncService: syncService, tabCollectionViewModel: tabCollectionViewModel)
+            let preferencesViewController = PreferencesViewController(
+                syncService: syncService,
+                tabCollectionViewModel: tabCollectionViewModel,
+                privacyConfigurationManager: privacyConfigurationManager
+            )
             preferencesViewController.delegate = self
             self.preferencesViewController = preferencesViewController
             return preferencesViewController
@@ -1050,7 +1067,7 @@ final class BrowserTabViewController: NSViewController {
     var bookmarksViewController: BookmarkManagementSplitViewController?
     private func bookmarksViewControllerCreatingIfNeeded() -> BookmarkManagementSplitViewController {
         return bookmarksViewController ?? {
-            let bookmarksViewController = BookmarkManagementSplitViewController()
+            let bookmarksViewController = BookmarkManagementSplitViewController(bookmarkManager: bookmarkManager, dragDropManager: bookmarkDragDropManager)
             bookmarksViewController.delegate = self
             self.bookmarksViewController = bookmarksViewController
             return bookmarksViewController
@@ -1060,9 +1077,14 @@ final class BrowserTabViewController: NSViewController {
     private var contentOverlayPopover: ContentOverlayPopover?
     private func contentOverlayPopoverCreatingIfNeeded() -> ContentOverlayPopover {
         return contentOverlayPopover ?? {
-            let overlayPopover = ContentOverlayPopover(currentTabView: self.view)
+            let overlayPopover = ContentOverlayPopover(
+                currentTabView: self.view,
+                privacyConfigurationManager: privacyConfigurationManager,
+                featureFlagger: featureFlagger,
+                tld: tld
+            )
             self.contentOverlayPopover = overlayPopover
-            WindowControllersManager.shared.stateChanged
+            windowControllersManager.stateChanged
                 .sink { [weak overlayPopover] _ in
                     overlayPopover?.viewController.closeContentOverlayPopover()
                 }.store(in: &self.cancellables)
@@ -1493,9 +1515,9 @@ extension BrowserTabViewController {
 extension BrowserTabViewController {
 
     private func subscribeToTabSelectedInCurrentKeyWindow() {
-        let lastKeyWindowOtherThanOurs = WindowControllersManager.shared.didChangeKeyWindowController
+        let lastKeyWindowOtherThanOurs = Application.appDelegate.windowControllersManager.didChangeKeyWindowController
             .map { $0 }
-            .prepend(WindowControllersManager.shared.lastKeyMainWindowController)
+            .prepend(Application.appDelegate.windowControllersManager.lastKeyMainWindowController)
             .compactMap { $0 }
             .filter { [weak self] in $0.window !== self?.view.window }
 

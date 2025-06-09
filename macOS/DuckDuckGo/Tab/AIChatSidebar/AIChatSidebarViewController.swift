@@ -24,7 +24,7 @@ import Combine
 /// This protocol defines methods for responding to navigation and UI events in the sidebar.
 protocol AIChatSidebarViewControllerDelegate: AnyObject {
     /// Called when the user clicks the "Expand" button
-    func didClickOpenInNewTabButton(currentAIChatURL: URL?)
+    func didClickOpenInNewTabButton(currentAIChatURL: URL)
     /// Called when the user clicks the "Close" button
     func didClickCloseButton()
 }
@@ -57,7 +57,7 @@ final class AIChatSidebarViewController: NSViewController {
     private var separator: NSView!
     private var topBar: NSView!
 
-    private var aiTab: Tab!
+    private lazy var aiTab: Tab = Tab(content: .url(currentAIChatURL, source: .ui), isLoadedInSidebar: true)
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -71,8 +71,6 @@ final class AIChatSidebarViewController: NSViewController {
     }
 
     override func loadView() {
-        aiTab = Tab(content: .url(currentAIChatURL, source: .ui), isLoadedInSidebar: true)
-
         let container = NSView()
         container.wantsLayer = true
         container.layer?.backgroundColor = NSColor.navigationBarBackground.cgColor

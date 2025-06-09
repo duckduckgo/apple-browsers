@@ -470,8 +470,8 @@ final class UpdatedOmniBarView: UIView, OmniBarView {
         accessoryButton.accessibilityTraits = .button
 
         // This is for compatibility purposes with old OmniBar
-        searchAreaView.accessibilityIdentifier = "searchEntry"
-        searchAreaView.accessibilityTraits = .searchField
+        searchAreaView.textField.accessibilityIdentifier = "searchEntry"
+        searchAreaView.textField.accessibilityTraits = .searchField
 
         privacyIconView?.accessibilityIdentifier = "PrivacyIcon"
         privacyIconView?.accessibilityTraits = .button

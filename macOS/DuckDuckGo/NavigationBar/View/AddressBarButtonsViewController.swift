@@ -239,6 +239,7 @@ final class AddressBarButtonsViewController: NSViewController {
         subscribeToPrivacyEntryPointIsMouseOver()
         subscribeToButtonsVisibility()
         subscribeToAIChatPreferences()
+        subscribeToAIChatSidebarPresenter()
         setupButtonsCornerRadius()
         setupButtonsSize()
 
@@ -481,6 +482,24 @@ final class AddressBarButtonsViewController: NSViewController {
         aiChatButton.isHidden = isHidden
         updateAIChatDividerVisibility()
         delegate?.addressBarButtonsViewController(self, didUpdateAIChatButtonVisibility: aiChatButton.isShown)
+    }
+
+    private func updateAIChatButtonState() {
+        guard featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
+        let isShowingSidebar = aiChatSidebarPresenter.isSidebarOpen
+        updateAIChatButtonForSidebar(isShowingSidebar)
+    }
+
+    private func updateAIChatButtonForSidebar(_ isShowingSidebar: Bool) {
+        if isShowingSidebar {
+            aiChatButton.setButtonType(.toggle)
+            aiChatButton.state = .on
+            aiChatButton.mouseOverColor = nil
+        } else {
+            aiChatButton.setButtonType(.momentaryPushIn)
+            aiChatButton.state = .off
+            aiChatButton.mouseOverColor = visualStyle.colorsProvider.buttonMouseOverColor
+        }
     }
 
     private func updateAIChatButtonVisibility() {
@@ -833,6 +852,7 @@ final class AddressBarButtonsViewController: NSViewController {
             subscribeToPrivacyEntryPointIconUpdateTrigger()
 
             updatePrivacyEntryPointIcon()
+            updateAIChatButtonState()
         }.store(in: &cancellables)
     }
 
@@ -905,6 +925,17 @@ final class AddressBarButtonsViewController: NSViewController {
             .sink(receiveValue: { [weak self] in
                 self?.updateAIChatButtonVisibility()
             }).store(in: &cancellables)
+    }
+
+    private func subscribeToAIChatSidebarPresenter() {
+        aiChatSidebarPresenter.sidebarPresenceWillChangePublisher
+            .sink { [weak self] change in
+                guard let self, change.tabID == tabViewModel?.tab.id else {
+                    return
+                }
+                updateAIChatButtonForSidebar(change.isShown)
+            }
+            .store(in: &cancellables)
     }
 
     private func configureAIChatButton() {

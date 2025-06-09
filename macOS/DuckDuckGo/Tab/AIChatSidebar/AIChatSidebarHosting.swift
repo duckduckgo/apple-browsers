@@ -58,7 +58,7 @@ protocol AIChatSidebarHosting: AnyObject  {
 extension BrowserTabViewController: AIChatSidebarHosting {
 
     var currentTabID: TabIdentifier? {
-        tabViewModel?.tab.id
+        tabViewModel?.tab.uuid
     }
 
     func embedSidebarViewController(_ sidebarViewController: NSViewController) {

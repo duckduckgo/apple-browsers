@@ -427,8 +427,8 @@ final class BrowserTabViewController: NSViewController {
     }
 
     private func cleanUpSidebarsForClosedTabs(for currentTabs: [Tab]) {
-        let currentTabIDs = currentTabs.map { $0.id }
-        let currentPinnedTabIDs = tabCollectionViewModel.pinnedTabsCollection?.tabs.map { $0.id } ?? []
+        let currentTabIDs = currentTabs.map { $0.uuid }
+        let currentPinnedTabIDs = tabCollectionViewModel.pinnedTabsCollection?.tabs.map { $0.uuid } ?? []
         aiChatSidebarHostingDelegate?.sidebarHostDidUpdateTabs(currentTabIDs + currentPinnedTabIDs)
     }
 
@@ -951,7 +951,7 @@ final class BrowserTabViewController: NSViewController {
             removeAllTabContent(includingWebView: true)
             changeWebView(tabViewModel: tabViewModel)
 
-            if let tabID = tabViewModel?.tab.id {
+            if let tabID = tabViewModel?.tab.uuid {
                 aiChatSidebarHostingDelegate?.sidebarHostDidSelectTab(with: tabID)
             }
         }

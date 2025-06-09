@@ -32,6 +32,17 @@ class SwitchBarPlaygroundViewController: UIViewController {
     }
 }
 
+extension SwitchBarPlaygroundViewController: OmniBarTransitionProxy {
+
+    var containerView: UIView {
+        mainView.containerView
+    }
+}
+
+protocol OmniBarTransitionProxy {
+    var containerView: UIView { get }
+}
+
 class SwitchBarView: UIView {
 
     let textView: UITextView = {
@@ -44,7 +55,8 @@ class SwitchBarView: UIView {
     }()
 
     private let activeOutlineView = UIView()
-    private let containerView = UIView()
+    let boundingContainerLayoutGuide = UILayoutGuide()
+    let containerView = UIView()
 
     init() {
         super.init(frame: .zero)
@@ -61,6 +73,8 @@ class SwitchBarView: UIView {
         addSubview(containerView)
         containerView.addSubview(textView)
         addSubview(activeOutlineView)
+
+        addLayoutGuide(boundingContainerLayoutGuide)
     }
 
     private func setUpConstraints() {
@@ -69,11 +83,6 @@ class SwitchBarView: UIView {
         activeOutlineView.translatesAutoresizingMaskIntoConstraints = false
 
         NSLayoutConstraint.activate([
-            containerView.centerXAnchor.constraint(equalTo: centerXAnchor),
-            containerView.centerYAnchor.constraint(equalTo: centerYAnchor),
-            containerView.leadingAnchor.constraint(greaterThanOrEqualTo: leadingAnchor, constant: 16),
-            containerView.trailingAnchor.constraint(lessThanOrEqualTo: trailingAnchor, constant: -16),
-
             textView.topAnchor.constraint(equalTo: containerView.topAnchor),
             textView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
             textView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
@@ -83,7 +92,12 @@ class SwitchBarView: UIView {
             activeOutlineView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: -2),
             activeOutlineView.trailingAnchor.constraint(equalTo: containerView.trailingAnchor, constant: 2),
             activeOutlineView.topAnchor.constraint(equalTo: containerView.topAnchor, constant: -2),
-            activeOutlineView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: 2)
+            activeOutlineView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor, constant: 2),
+
+            containerView.leadingAnchor.constraint(equalTo: boundingContainerLayoutGuide.leadingAnchor),
+            containerView.trailingAnchor.constraint(equalTo: boundingContainerLayoutGuide.trailingAnchor),
+            containerView.topAnchor.constraint(equalTo: boundingContainerLayoutGuide.topAnchor),
+            containerView.bottomAnchor.constraint(equalTo: boundingContainerLayoutGuide.bottomAnchor)
         ])
     }
 

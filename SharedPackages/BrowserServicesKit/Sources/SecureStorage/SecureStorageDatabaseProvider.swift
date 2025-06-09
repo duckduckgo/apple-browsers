@@ -96,9 +96,18 @@ open class GRDBSecureStorageDatabaseProvider: SecureStorageDatabaseProvider {
             return try Self.createDatabase(file: databaseURL, key: key, writerType: writerType, registerMigrationsHandler: registerMigrationsHandler)
         }
 
+        // make sure we can create an empty db first and release it then
+        let newDbFile = self.nonExistingDBFile(withExtension: databaseURL.pathExtension, originalURL: databaseURL)
+        try autoreleasepool {
+            _ = try Self.createDatabase(file: databaseURL, key: key, writerType: writerType, registerMigrationsHandler: registerMigrationsHandler)
+        }
+
         // backup old db file
         let backupFile = self.nonExistingDBFile(withExtension: databaseURL.pathExtension + ".bak", originalURL: databaseURL)
         try FileManager.default.moveItem(at: databaseURL, to: backupFile)
+
+        // place just created new db in place of dbFile
+        try FileManager.default.moveItem(at: newDbFile, to: databaseURL)
 
         return try Self.createDatabase(file: databaseURL, key: key, writerType: writerType, registerMigrationsHandler: registerMigrationsHandler)
     }

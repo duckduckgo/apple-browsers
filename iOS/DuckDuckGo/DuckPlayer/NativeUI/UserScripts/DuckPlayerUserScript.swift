@@ -31,8 +31,8 @@ struct DuckPlayerUserScript {
         static let pause = "pause"
         static let enabled = "enabled"
         static let playbackPaused = "playbackPaused"
-        static let trueValue = "true"
-        static let falseValue = "false"
+        static let trueValue = true
+        static let falseValue = false
         static let featureName = "duckPlayerNative"
     }
 

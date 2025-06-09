@@ -61,6 +61,8 @@ public enum SubscriptionPixelType {
     case migrationFailed(Error)
     case subscriptionIsActive
     case getTokensError(AuthTokensCachePolicy, Error)
+    case invalidRefreshTokenSignedOut
+    case invalidRefreshTokenRecovered
 }
 
 /// Pixels handler
@@ -422,8 +424,12 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
             case OAuthClientError.refreshTokenExpired,
                 OAuthClientError.invalidTokenRequest:
                 do {
-                    return try await attemptTokenRecovery()
+                    let recoveredTokenContainer = try await attemptTokenRecovery()
+                    pixelHandler.handle(pixelType: .invalidRefreshTokenRecovered)
+                    return recoveredTokenContainer
                 } catch {
+                    await signOut(notifyUI: false)
+                    pixelHandler.handle(pixelType: .invalidRefreshTokenSignedOut)
                     throw SubscriptionManagerError.tokenUnavailable(error: error)
                 }
 
@@ -440,7 +446,6 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
 
         Logger.subscription.log("The refresh token is expired, attempting subscription recovery...")
         pixelHandler.handle(pixelType: .invalidRefreshToken)
-        await signOut(notifyUI: false)
 
         try await tokenRecoveryHandler()
 

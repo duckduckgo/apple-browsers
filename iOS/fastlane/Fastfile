@@ -22,7 +22,7 @@ platform :ios do
 
   desc 'Fetches and updates certificates and provisioning profiles for Alpha distribution'
   lane :sync_signing_alpha do |options|
-    do_sync_signing()
+    do_sync_signing(options)
   end
 
   desc 'Fetches and updates certificates and provisioning profiles for Ad-Hoc distribution'

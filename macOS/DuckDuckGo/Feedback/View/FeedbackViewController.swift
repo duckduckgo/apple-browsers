@@ -73,6 +73,8 @@ final class FeedbackViewController: NSViewController {
     @IBOutlet weak var requestFeatureItem: NSMenuItem!
     @IBOutlet weak var reportProblemITem: NSMenuItem!
 
+    private let supportedOSChecker = SupportedOSChecker()
+
     var currentTab: Tab?
     var currentTabUrl: URL? {
         guard let url = currentTab?.content.urlForWebView else {
@@ -283,13 +285,13 @@ final class FeedbackViewController: NSViewController {
     }
 
     var isOsUnsupported: Bool {
-        return !SupportedOSChecker.isCurrentOSReceivingUpdates
+        return !supportedOSChecker.isCurrentOSReceivingUpdates
     }
 
     private weak var unsupportedOsChildView: NSView?
     private func showUnsupportedOsViewIfNeeded() {
         if isOsUnsupported && unsupportedOsChildView == nil {
-            let view = NSHostingView(rootView: Preferences.UnsupportedDeviceInfoBox(wide: false))
+            let view = NSHostingView(rootView: Preferences.UnsupportedDeviceInfoBox(wide: false, supportedOSChecker: supportedOSChecker))
             unsupportedOsView.addAndLayout(view)
             unsupportedOsView.isHidden = false
             unsupportedOsChildView = view

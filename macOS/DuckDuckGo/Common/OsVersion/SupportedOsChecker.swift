@@ -16,31 +16,71 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Foundation
+import FeatureFlags
 
-final class SupportedOSChecker {
+protocol SupportedOSChecking {
+    /// Whether the current OS version is receiving updates
+    ///
+    var isCurrentOSReceivingUpdates: Bool { get }
 
-    struct SupportedVersion {
-        static let major = 11
-        static let minor = 4
-        static let patch = 0
+    /// The user-facing version string for the current OS version
+    ///
+    var currentOSVersionString: String { get }
+
+    /// The user-facing version string for the minimum supported OS version
+    ///
+    var minSupportedOSVersionString: String { get }
+}
+
+final class SupportedOSChecker: SupportedOSChecking {
+    static let ddgMinBigSurVersion = OperatingSystemVersion(majorVersion: 11,
+                                                            minorVersion: 4,
+                                                            patchVersion: 0)
+    static let ddgMinMonterreyVersion = OperatingSystemVersion(majorVersion: 12,
+                                                               minorVersion: 3,
+                                                               patchVersion: 0)
+    private let currentOSVersion: OperatingSystemVersion
+
+    private let featureFlagger: FeatureFlagger
+
+    var supportedOSVersion: OperatingSystemVersion {
+        guard featureFlagger.isFeatureOn(.minimumSupportedVersionIsMonterrey) else {
+            return Self.ddgMinBigSurVersion
+        }
+
+        return Self.ddgMinMonterreyVersion
     }
 
-    private static let currentOSVersion = ProcessInfo.processInfo.operatingSystemVersion
+    init(featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+         currentOSVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion) {
+
+        self.currentOSVersion = currentOSVersion
+        self.featureFlagger = featureFlagger
+    }
 
     // Check if the current macOS version is at least the supported version
-    static var isCurrentOSReceivingUpdates: Bool {
-        if currentOSVersion.majorVersion > SupportedVersion.major {
+    var isCurrentOSReceivingUpdates: Bool {
+        if currentOSVersion.majorVersion > supportedOSVersion.majorVersion {
             return true
         }
-        if currentOSVersion.majorVersion == SupportedVersion.major {
-            if currentOSVersion.minorVersion > SupportedVersion.minor {
+        if currentOSVersion.majorVersion == supportedOSVersion.majorVersion {
+            if currentOSVersion.minorVersion > supportedOSVersion.minorVersion {
                 return true
             }
-            if currentOSVersion.minorVersion == SupportedVersion.minor && currentOSVersion.patchVersion >= SupportedVersion.patch {
+            if currentOSVersion.minorVersion == supportedOSVersion.minorVersion && currentOSVersion.patchVersion >= supportedOSVersion.patchVersion {
                 return true
             }
         }
         return false
+    }
+
+    var currentOSVersionString: String {
+        "\(ProcessInfo.processInfo.operatingSystemVersion)"
+    }
+
+    var minSupportedOSVersionString: String {
+        "\(supportedOSVersion.majorVersion).\(supportedOSVersion.minorVersion)"
     }
 }

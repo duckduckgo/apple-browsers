@@ -47,7 +47,7 @@ extension Preferences {
                     TextMenuTitle(UserText.aboutDuckDuckGo)
 
                     if !model.isCurrentOsReceivingUpdates {
-                        UnsupportedDeviceInfoBox(wide: true)
+                        UnsupportedDeviceInfoBox(wide: true, supportedOSChecker: model.supportedOSChecker)
                             .padding(.top, 10)
                             .padding(.leading, -20)
                     }
@@ -379,6 +379,7 @@ extension Preferences {
         static let softwareUpdateURL = URL(string: "x-apple.systempreferences:com.apple.preferences.softwareupdate")!
 
         var wide: Bool
+        var supportedOSChecker: SupportedOSChecking
 
         var width: CGFloat {
             return wide ? 510 : 320
@@ -397,7 +398,7 @@ extension Preferences {
         }
 
         var versionString: String {
-            return "\(SupportedOSChecker.SupportedVersion.major).\(SupportedOSChecker.SupportedVersion.minor)"
+            supportedOSChecker.minSupportedOSVersionString
         }
 
         var body: some View {

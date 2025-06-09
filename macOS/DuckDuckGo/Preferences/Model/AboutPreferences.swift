@@ -29,13 +29,16 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
     @Published var isInternalUser: Bool
     private var internalUserCancellable: AnyCancellable?
     private let featureFlagger: FeatureFlagger
+    let supportedOSChecker: SupportedOSChecking
 
     private init(internalUserDecider: InternalUserDecider,
-                 featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
+                 featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+                 supportedOSChecker: SupportedOSChecking? = nil) {
 
         self.featureFlagger = featureFlagger
         self.internalUserDecider = internalUserDecider
         self.isInternalUser = internalUserDecider.isInternalUser
+        self.supportedOSChecker = supportedOSChecker ?? SupportedOSChecker(featureFlagger: featureFlagger)
         self.internalUserCancellable = internalUserDecider.isInternalUserPublisher
             .sink { [weak self] in self?.isInternalUser = $0 }
     }
@@ -133,7 +136,7 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
         .toString(decodePunycode: false, dropScheme: true, dropTrailingSlash: false)
 
     var isCurrentOsReceivingUpdates: Bool {
-        return SupportedOSChecker.isCurrentOSReceivingUpdates
+        return supportedOSChecker.isCurrentOSReceivingUpdates
     }
 
     @MainActor

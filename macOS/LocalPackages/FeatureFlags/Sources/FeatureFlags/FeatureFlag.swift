@@ -98,6 +98,12 @@ public enum FeatureFlag: String, CaseIterable {
 
     /// https://app.asana.com/1/137249556945/project/1209671977594486/task/1210410403692636?focus=true
     case aiChatSidebar
+
+    /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
+    case forceUnsupportedMacOSVersionMessaging
+
+    /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
+    case minimumSupportedVersionIsMonterrey
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -142,7 +148,9 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .exchangeKeysToSyncWithAnotherDevice,
                 .canScanUrlBasedSyncSetupBarcodes,
                 .removeWWWInCanonicalizationInThreatProtection,
-                .aiChatSidebar:
+                .aiChatSidebar,
+                .forceUnsupportedMacOSVersionMessaging,
+                .minimumSupportedVersionIsMonterrey:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -225,6 +233,10 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.removeWWWInCanonicalization))
         case .aiChatSidebar:
             return .internalOnly()
+        case .forceUnsupportedMacOSVersionMessaging:
+            return .disabled
+        case .minimumSupportedVersionIsMonterrey:
+            return .remoteDevelopment(.feature(.minimumSupportedVersionIsMonterrey))
         }
     }
 }

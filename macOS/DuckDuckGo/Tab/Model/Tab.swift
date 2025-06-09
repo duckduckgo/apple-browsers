@@ -97,6 +97,7 @@ protocol NewWindowPolicyDecisionMaker {
 
     @MainActor
     convenience init(id: String? = nil,
+                     uuid: String? = nil,
                      content: TabContent,
                      faviconManagement: FaviconManagement? = nil,
                      webCacheManager: WebCacheManager? = nil,
@@ -151,6 +152,7 @@ protocol NewWindowPolicyDecisionMaker {
         }
 
         self.init(id: id,
+                  uuid: uuid,
                   content: content,
                   faviconManagement: faviconManager ?? NSApp.delegateTyped.faviconManager,
                   webCacheManager: webCacheManager ?? NSApp.delegateTyped.webCacheManager,
@@ -192,6 +194,7 @@ protocol NewWindowPolicyDecisionMaker {
 
     @MainActor
     init(id: String? = nil,
+         uuid: String? = nil,
          content: TabContent,
          faviconManagement: FaviconManagement,
          webCacheManager: WebCacheManager,
@@ -231,6 +234,7 @@ protocol NewWindowPolicyDecisionMaker {
          pageRefreshMonitor: PageRefreshMonitoring
     ) {
         self._id = id
+        self.uuid = uuid ?? UUID().uuidString
         self.content = content
         self.fireproofDomains = fireproofDomains
         self.pinnedTabsManagerProvider = pinnedTabsManagerProvider
@@ -708,6 +712,8 @@ protocol NewWindowPolicyDecisionMaker {
     var id: String {
         _id ?? String(instrumentation.currentTabIdentifier)
     }
+
+    let uuid: String
 
     @Published private(set) var canGoForward: Bool = false
     @Published private(set) var canGoBack: Bool = false

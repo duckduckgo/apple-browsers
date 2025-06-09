@@ -488,7 +488,16 @@ class TabViewController: UIViewController {
         specialErrorPageNavigationHandler.delegate  = self
 
         self.adClickExternalOpenDetector.mitigationHandler = { [weak self] in
-            self?.closeTab()
+            guard let self else { return }
+            if self.tabModel.link?.title == nil {
+                self.closeTab()
+            } else {
+                // Navigate back
+                guard let currentItem = self.webView.backForwardList.currentItem else {
+                    return
+                }
+                self.delegate?.tab(self, didRequestLoadURL: currentItem.url)
+            }
         }
     }
 

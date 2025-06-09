@@ -179,8 +179,8 @@ final class SubscriptionEmailViewModel: ObservableObject {
                 case .identityTheftRestoration, .identityTheftRestorationGlobal:
                     UniquePixel.fire(pixel: .privacyProWelcomeIdentityRestoration)
                     self.state.selectedFeature = .itr
-                case .paidDuckAI:
-                    // Follow up: Implement paidDuckAI selection
+                case .paidAIChat:
+                    // Follow up: Implement paidAIChat selection
                     break
                 case .unknown:
                     break

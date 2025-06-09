@@ -727,7 +727,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
     }
 
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        return GetFeatureConfigurationResponse(useSubscriptionsAuthV2: true, useDuckAiPro: subscriptionFeatureAvailability.isPaidDuckAIEnabled)
+        return GetFeatureConfigurationResponse(useSubscriptionsAuthV2: true, useDuckAiPro: subscriptionFeatureAvailability.isPaidAIChatEnabled)
     }
 
     // Auth V1 unused methods
@@ -895,8 +895,8 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             onFeatureSelected?(.identityTheftRestoration)
         case .identityTheftRestorationGlobal:
             onFeatureSelected?(.identityTheftRestorationGlobal)
-        case .paidDuckAI:
-            // Follow up: Implement paidDuckAI selection
+        case .paidAIChat:
+            // Follow up: Implement paidAIChat selection
             break
         case .unknown:
             break

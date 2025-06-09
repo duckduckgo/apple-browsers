@@ -196,8 +196,8 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
             return await isFeatureAvailableForUser(.identityTheftRestoration)
         case .identityTheftRestorationGlobal:
             return await isFeatureAvailableForUser(.identityTheftRestorationGlobal)
-        case .paidDuckAI:
-            return await isFeatureAvailableForUser(.paidDuckAI)
+        case .paidAIChat:
+            return await isFeatureAvailableForUser(.paidAIChat)
         case .unknown:
             return false
         }
@@ -214,8 +214,8 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
                 return .identityTheftRestoration
             case .identityTheftRestorationGlobal:
                 return .identityTheftRestorationGlobal
-            case .paidDuckAI:
-                return .paidDuckAI
+            case .paidAIChat:
+                return .paidAIChat
             case .unknown:
                 return nil
             }

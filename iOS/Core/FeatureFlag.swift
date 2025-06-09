@@ -119,7 +119,7 @@ public enum FeatureFlag: String {
     case autofillPasswordVariantCategorization
 
     /// https://app.asana.com/1/137249556945/project/1204186595873227/task/1210181044180012?focus=true
-    case paidDuckAI
+    case paidAIChat
 
     /// https://app.asana.com/1/137249556945/project/72649045549333/task/1210081345713964?focus=true
     case canInterceptSyncSetupUrls
@@ -171,7 +171,7 @@ extension FeatureFlag: FeatureFlagDescribing {
              .autofillPasswordVariantCategorization,
              .syncSetupBarcodeIsUrlBased,
              .canScanUrlBasedSyncSetupBarcodes,
-             .paidDuckAI,
+             .paidAIChat,
              .canInterceptSyncSetupUrls,
              .exchangeKeysToSyncWithAnotherDevice:
             return true
@@ -288,7 +288,7 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(PrivacyProSubfeature.privacyProFreeTrial))
         case .autofillPasswordVariantCategorization:
             return .remoteReleasable(.subfeature(AutofillSubfeature.passwordVariantCategorization))
-        case .paidDuckAI:
+        case .paidAIChat:
             return .disabled
         case .canInterceptSyncSetupUrls:
             return .remoteReleasable(.subfeature(SyncSubfeature.canInterceptSyncSetupUrls))

@@ -40,7 +40,7 @@ final class SubscriptionService {
                                                                        privacyConfigurationManager: privacyConfigurationManager)
         subscriptionFeatureAvailability = DefaultSubscriptionFeatureAvailability(privacyConfigurationManager: privacyConfigurationManager,
                                                                                  purchasePlatform: .appStore,
-                                                                                 paidDuckAIFlagStatusProvider: { featureFlagger.isFeatureOn(.paidDuckAI) })
+                                                                                 paidAIChatFlagStatusProvider: { featureFlagger.isFeatureOn(.paidAIChat) })
         self.privacyConfigurationManager = privacyConfigurationManager
         privacyConfigurationManager.updatesPublisher
             .receive(on: DispatchQueue.main)

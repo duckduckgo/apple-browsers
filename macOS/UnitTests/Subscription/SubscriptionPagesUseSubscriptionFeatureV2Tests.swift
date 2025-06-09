@@ -80,9 +80,9 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         super.tearDown()
     }
 
-    func testGetFeatureConfig_WhenPaidDuckAIEnabled_ReturnsCorrectConfig() async throws {
+    func testGetFeatureConfig_WhenPaidAIChatEnabled_ReturnsCorrectConfig() async throws {
         // Given
-        mockSubscriptionFeatureAvailability.isPaidDuckAIEnabled = true
+        mockSubscriptionFeatureAvailability.isPaidAIChatEnabled = true
 
         // When
         let result = try await sut.getFeatureConfig(params: "", original: MockWKScriptMessage(name: "", body: ""))
@@ -98,9 +98,9 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         XCTAssertTrue(featureValue.useDuckAiPro)
     }
 
-    func testGetFeatureConfig_WhenPaidDuckAIDisabled_ReturnsCorrectConfig() async throws {
+    func testGetFeatureConfig_WhenPaidAIChatDisabled_ReturnsCorrectConfig() async throws {
         // Given
-        mockSubscriptionFeatureAvailability.isPaidDuckAIEnabled = false
+        mockSubscriptionFeatureAvailability.isPaidAIChatEnabled = false
 
         // When
         let result = try await sut.getFeatureConfig(params: "", original: MockWKScriptMessage(name: "", body: ""))

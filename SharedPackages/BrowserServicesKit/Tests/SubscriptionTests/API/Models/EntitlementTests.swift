@@ -42,7 +42,7 @@ final class EntitlementTests: XCTestCase {
 
         let rawDAPEntitlement = "{\"id\":26,\"name\":\"subscriber\",\"product\":\"Premium DuckChat\"}"
         let dapEntitlement = try JSONDecoder().decode(Entitlement.self, from: Data(rawDAPEntitlement.utf8))
-        XCTAssertEqual(dapEntitlement, Entitlement(product: .paidDuckAI))
+        XCTAssertEqual(dapEntitlement, Entitlement(product: .paidAIChat))
 
         let rawUnexpectedEntitlement = "{\"id\":27,\"name\":\"subscriber\",\"product\":\"something unexpected\"}"
         let unexpectedEntitlement = try JSONDecoder().decode(Entitlement.self, from: Data(rawUnexpectedEntitlement.utf8))

@@ -24,12 +24,13 @@ import WebKit
 @testable import Common
 @testable import UserScript
 @testable import Subscription
+import SubscriptionTestingUtilities
 
 final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     
     var sut: DefaultSubscriptionPagesUseSubscriptionFeatureV2!
-    var mockSubscriptionManager: MockSubscriptionManagerV2!
-    var mockStripePurchaseFlow: MockStripePurchaseFlowV2!
+    var mockSubscriptionManager: SubscriptionManagerMockV2!
+    var mockStripePurchaseFlow: StripePurchaseFlowMockV2!
     var mockSubscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock!
     var mockNotificationCenter: NotificationCenter!
 
@@ -37,8 +38,8 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
     override func setUp() {
         super.setUp()
         
-        mockSubscriptionManager = MockSubscriptionManagerV2()
-        mockStripePurchaseFlow = MockStripePurchaseFlowV2()
+        mockSubscriptionManager = SubscriptionManagerMockV2()
+        mockStripePurchaseFlow = StripePurchaseFlowMockV2(subscriptionOptionsResult: .success(.empty), prepareSubscriptionPurchaseResult: .success(.completed))
         mockSubscriptionFeatureAvailability = SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true)
         mockNotificationCenter = NotificationCenter()
 
@@ -46,8 +47,8 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
             subscriptionManager: mockSubscriptionManager,
             subscriptionFeatureAvailability: mockSubscriptionFeatureAvailability,
             subscriptionAttributionOrigin: "",
-            appStorePurchaseFlow: MockAppStorePurchaseFlow(),
-            appStoreRestoreFlow: MockAppStoreRestoreFlowV2(),
+            appStorePurchaseFlow: AppStorePurchaseFlowMockV2(),
+            appStoreRestoreFlow: AppStoreRestoreFlowMockV2(),
             privacyProDataReporter: nil,
             subscriptionFreeTrialsHelper: MockSubscriptionFreeTrialsHelping())
     }

@@ -345,11 +345,6 @@
 		569437362BE5160600C0881B /* SyncSettingsViewControllerErrorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 569437352BE5160600C0881B /* SyncSettingsViewControllerErrorTests.swift */; };
 		569B072A2DD7378700E0719A /* ThreatProtectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 569B07292DD7378700E0719A /* ThreatProtectionView.swift */; };
 		56A3CDE52DF2F37F00DDE757 /* SubscriptionPagesUseSubscriptionFeatureV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56A3CDE42DF2F37F00DDE757 /* SubscriptionPagesUseSubscriptionFeatureV2Tests.swift */; };
-		56A3CDE82DF2FC8300DDE757 /* MockSubscriptionManagerV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56A3CDE72DF2FC8300DDE757 /* MockSubscriptionManagerV2.swift */; };
-		56A3CDEC2DF2FCEA00DDE757 /* MockStorePurchaseManagerV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56A3CDEA2DF2FCEA00DDE757 /* MockStorePurchaseManagerV2.swift */; };
-		56A3CDEF2DF2FD1E00DDE757 /* MockStripePurchaseFlowV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56A3CDED2DF2FD1E00DDE757 /* MockStripePurchaseFlowV2.swift */; };
-		56A3CDF12DF2FDCA00DDE757 /* MockAppStoreRestoreFlowV2.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56A3CDF02DF2FDCA00DDE757 /* MockAppStoreRestoreFlowV2.swift */; };
-		56A3CDF42DF2FDED00DDE757 /* MockAppStorePurchaseFlow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56A3CDF32DF2FDED00DDE757 /* MockAppStorePurchaseFlow.swift */; };
 		56A3CDF72DF2FE8D00DDE757 /* MockSubscriptionFreeTrialsHelping.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56A3CDF62DF2FE8D00DDE757 /* MockSubscriptionFreeTrialsHelping.swift */; };
 		56BE17D52DDCA0BA00C0CE57 /* ContentScopeExperimentsDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56BE17D42DDCA0BA00C0CE57 /* ContentScopeExperimentsDebugView.swift */; };
 		56CA25EE2DB7ABCF00BE4226 /* LocalizationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56CA25ED2DB7ABCF00BE4226 /* LocalizationTests.swift */; };
@@ -2179,11 +2174,6 @@
 		569437352BE5160600C0881B /* SyncSettingsViewControllerErrorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncSettingsViewControllerErrorTests.swift; sourceTree = "<group>"; };
 		569B07292DD7378700E0719A /* ThreatProtectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreatProtectionView.swift; sourceTree = "<group>"; };
 		56A3CDE42DF2F37F00DDE757 /* SubscriptionPagesUseSubscriptionFeatureV2Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPagesUseSubscriptionFeatureV2Tests.swift; sourceTree = "<group>"; };
-		56A3CDE72DF2FC8300DDE757 /* MockSubscriptionManagerV2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockSubscriptionManagerV2.swift; sourceTree = "<group>"; };
-		56A3CDEA2DF2FCEA00DDE757 /* MockStorePurchaseManagerV2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockStorePurchaseManagerV2.swift; sourceTree = "<group>"; };
-		56A3CDED2DF2FD1E00DDE757 /* MockStripePurchaseFlowV2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockStripePurchaseFlowV2.swift; sourceTree = "<group>"; };
-		56A3CDF02DF2FDCA00DDE757 /* MockAppStoreRestoreFlowV2.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAppStoreRestoreFlowV2.swift; sourceTree = "<group>"; };
-		56A3CDF32DF2FDED00DDE757 /* MockAppStorePurchaseFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockAppStorePurchaseFlow.swift; sourceTree = "<group>"; };
 		56A3CDF62DF2FE8D00DDE757 /* MockSubscriptionFreeTrialsHelping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockSubscriptionFreeTrialsHelping.swift; sourceTree = "<group>"; };
 		56BE17D42DDCA0BA00C0CE57 /* ContentScopeExperimentsDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentScopeExperimentsDebugView.swift; sourceTree = "<group>"; };
 		56CA25ED2DB7ABCF00BE4226 /* LocalizationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationTests.swift; sourceTree = "<group>"; };
@@ -4872,11 +4862,6 @@
 		56A3CDE62DF2FAD100DDE757 /* Mocks */ = {
 			isa = PBXGroup;
 			children = (
-				56A3CDE72DF2FC8300DDE757 /* MockSubscriptionManagerV2.swift */,
-				56A3CDEA2DF2FCEA00DDE757 /* MockStorePurchaseManagerV2.swift */,
-				56A3CDED2DF2FD1E00DDE757 /* MockStripePurchaseFlowV2.swift */,
-				56A3CDF02DF2FDCA00DDE757 /* MockAppStoreRestoreFlowV2.swift */,
-				56A3CDF32DF2FDED00DDE757 /* MockAppStorePurchaseFlow.swift */,
 				56A3CDF62DF2FE8D00DDE757 /* MockSubscriptionFreeTrialsHelping.swift */,
 			);
 			path = Mocks;
@@ -10079,7 +10064,6 @@
 				85BA58581F34F72F00C6E8CA /* AppUserDefaultsTests.swift in Sources */,
 				986CD53E2DE8FA1400AFA98A /* ConfigurationMocks.swift in Sources */,
 				9FCFCD802C6AF56D006EB7A0 /* LaunchOptionsHandlerTests.swift in Sources */,
-				56A3CDEF2DF2FD1E00DDE757 /* MockStripePurchaseFlowV2.swift in Sources */,
 				983C52E72C2C0ACB007B5747 /* BookmarkStateRepairTests.swift in Sources */,
 				652CEDE62D89B71300235B4C /* FaviconsHelperTests.swift in Sources */,
 				C1E0D8692DD496A700D5DF25 /* SubscriptionFreeTrialsHelperTests.swift in Sources */,
@@ -10121,11 +10105,9 @@
 				F1134ECE1F40EA9C00B73467 /* AtbParserTests.swift in Sources */,
 				F189AEE41F18FDAF001EBAE1 /* LinkTests.swift in Sources */,
 				C1E2C2272D9F1D0F0011C66C /* AutofillCreditCardDetailsViewModelTests.swift in Sources */,
-				56A3CDE82DF2FC8300DDE757 /* MockSubscriptionManagerV2.swift in Sources */,
 				6F7FB8E12C660B3E00867DA7 /* NewTabPageFavoritesModelTests.swift in Sources */,
 				C1C725B82D63810D00361B81 /* ImportArchiveReaderTests.swift in Sources */,
 				C1C725BA2D63810D00361B81 /* DataImportManagerTests.swift in Sources */,
-				56A3CDEC2DF2FCEA00DDE757 /* MockStorePurchaseManagerV2.swift in Sources */,
 				C13EEA1E2D64CFCA001D5DC3 /* DataImportViewModelTests.swift in Sources */,
 				F1BDDC022C340DDF00459306 /* SyncManagementViewModelTests.swift in Sources */,
 				D625AAEC2BBEF27600BC189A /* TabURLInterceptorTests.swift in Sources */,
@@ -10186,7 +10168,6 @@
 				6FABAA692C6116FD003762EC /* NewTabPageShortcutsSettingsStorageTests.swift in Sources */,
 				9F5E5AB22C3E606D00165F54 /* ContextualOnboardingPresenterTests.swift in Sources */,
 				98E563E22DE8B32D00E6E75F /* MockMessageNavigationDelegate.swift in Sources */,
-				56A3CDF12DF2FDCA00DDE757 /* MockAppStoreRestoreFlowV2.swift in Sources */,
 				98E563E32DE8B32D00E6E75F /* MockStatisticsStore.swift in Sources */,
 				98E564B12DE8F0CA00E6E75F /* SubscriptionFeatureAvailabilityMock.swift in Sources */,
 				98E563E42DE8B32D00E6E75F /* MockTabPreviewsSource.swift in Sources */,
@@ -10231,7 +10212,6 @@
 				98E564062DE8B32D00E6E75F /* MockTabDelegate.swift in Sources */,
 				98E564072DE8B32D00E6E75F /* MockTutorialSettings.swift in Sources */,
 				98E564082DE8B32D00E6E75F /* OnboardingPixelReporterMock.swift in Sources */,
-				56A3CDF42DF2FDED00DDE757 /* MockAppStorePurchaseFlow.swift in Sources */,
 				98E564092DE8B32D00E6E75F /* ContextualOnboardingPresenterMock.swift in Sources */,
 				9F4CC5172C48B8D4006A96EB /* TabViewControllerDaxDialogTests.swift in Sources */,
 				F13B4BFB1F18E3D900814661 /* TabsModelPersistenceTests.swift in Sources */,

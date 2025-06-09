@@ -386,6 +386,7 @@ let package = Package(
                 "Subscription",
                 "Common",
                 "NetworkingTestingUtils",
+                "BrowserServicesKit"
             ]
         ),
         .target(

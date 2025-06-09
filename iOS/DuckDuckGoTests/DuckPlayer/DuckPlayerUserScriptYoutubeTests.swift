@@ -40,8 +40,8 @@ class DuckPlayerUserScriptYoutubeTests: XCTestCase {
         let mockSettings = MockDuckPlayerSettings(
             appSettings: AppSettingsMock(),
             privacyConfigManager: MockPrivacyConfigurationManager(),
-            internalUserDecider: MockDuckPlayerInternalUserDecider(),
-            featureFlagger: MockDuckPlayerFeatureFlagger()
+            featureFlagger: MockDuckPlayerFeatureFlagger(),
+            internalUserDecider: MockDuckPlayerInternalUserDecider()
         )
         
         let mockFeatureFlagger = MockDuckPlayerFeatureFlagger()

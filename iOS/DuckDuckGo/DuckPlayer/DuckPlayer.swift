@@ -351,6 +351,18 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
 
     /// Used for recording discovery of a feature
     let featureDiscovery: FeatureDiscovery
+    
+    /// Current timestamp from YouTube.com for entry pill handling
+    private var youtubeTimestamp: TimeInterval?
+    
+    /// Current timestamp from DuckPlayer view for re-entry pill handling
+    private var duckPlayerTimestamp: TimeInterval?
+    
+    /// Current video ID being tracked
+    private var currentVideoID: String?
+    
+    /// Whether the current video has been shown in DuckPlayer before
+    private var hasBeenShown: Bool = false
 
     /// Initializes a new instance of DuckPlayer with the provided settings and feature flagger.
     ///
@@ -472,7 +484,7 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
 
         // Mark that Native UI was used
         settings.nativeUIWasUsed = true
-
+        
         guard let hostView = hostView else { return }
         featureDiscovery.setWasUsedBefore(.duckPlayer)
 
@@ -804,30 +816,17 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     ///
     /// - Parameters:
     ///   - videoID: The YouTube video ID to be played
-    ///   - timestamp: The timestamp of the video    
+    ///   - timestamp: The timestamp of the video
     func presentPill(for videoID: String, timestamp: TimeInterval?) {
         guard let hostView = hostView else { return }
 
         Task { @MainActor in
             if hostView.url?.isYoutubeWatch ?? false {
-                nativeUIPresenter.presentPill(for: videoID, in: hostView, timestamp: timestamp)
+                // Determine which timestamp to use based on pill type logic
+                let appropriateTimestamp = self.getAppropriateTimestamp(for: videoID)
+                nativeUIPresenter.presentPill(for: videoID, in: hostView, timestamp: appropriateTimestamp)
             }
         }
-
-        nativeUIPresenter.videoPlaybackRequest
-            .sink { [weak self] videoDetails in
-                let (videoID, timestamp) = videoDetails
-                self?.loadNativeDuckPlayerVideo(videoID: videoID, source: .youtube, timestamp: timestamp)
-            }
-            .store(in: &nativeUIPresenterCancellables)
-
-        nativeUIPresenter.presentDuckPlayerRequest
-            .sink { [weak self] in
-                guard let self = self else { return }
-                // Pause media playback when presenting the full player
-                self.mediaControlPublisher.send(true)
-            }
-            .store(in: &nativeUIPresenterCancellables)
     }
 
     /// Dismisses the bottom sheet
@@ -854,15 +853,74 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
     }
 
     private func setupSubscriptions() {
+        // Subscribe to timestamp updates from the UserScript (YouTube.com)
+        currentTimeStampPublisher
+            .sink { [weak self] timestamp in
+                self?.youtubeTimestamp = timestamp
+            }
+            .store(in: &nativeUIPresenterCancellables)
+        
         // Set up the subscription once and keep it alive
         nativeUIPresenter.videoPlaybackRequest
             .sink { [weak self] videoDetails in
-                let (videoID, timestamp) = videoDetails
-                Task { await self?.loadNativeDuckPlayerVideo(videoID: videoID, source: .youtube, timestamp: timestamp) }
+                let (videoID, pillTimestamp, pillType) = videoDetails
+                
+                // When on youtube, we use the timestamp from the pill if it's an entry pill
+                // Otherwise, we use the timestamp from the UserScript (DuckPlayer)
+                Task { 
+                    let timestamp = pillType == .entry ? self?.youtubeTimestamp : pillTimestamp
+                    await self?.loadNativeDuckPlayerVideo(videoID: videoID, source: .youtube, timestamp: timestamp) }
+            }
+            .store(in: &nativeUIPresenterCancellables)
+
+        nativeUIPresenter.presentDuckPlayerRequest
+            .sink { [weak self] in
+                guard let self = self else { return }
+                // Pause media playback when presenting the full player
+                self.mediaControlPublisher.send(true)
+            }
+            .store(in: &nativeUIPresenterCancellables)
+        
+        nativeUIPresenter.duckPlayerTimestampUpdate
+            .sink { [weak self] timestamp in
+                self?.storeDuckPlayerTimestamp(timestamp)
             }
             .store(in: &nativeUIPresenterCancellables)
 
         registerOrientationSubscriber()
+    }
+    
+    /// Determines the appropriate timestamp based on pill type logic
+    /// - Parameter videoID: The video ID being presented
+    /// - Returns: YouTube timestamp for entry pills, DuckPlayer timestamp for re-entry pills
+    private func getAppropriateTimestamp(for videoID: String) -> TimeInterval? {
+        // Update current video tracking
+        if currentVideoID != videoID {
+            currentVideoID = videoID
+            hasBeenShown = false  // Reset for new video
+        }
+        
+        let duckPlayerSettings = DuckPlayerSettingsDefault()
+        
+        // If priming modal hasn't been presented, it's a welcome pill (use YouTube timestamp)
+        if !duckPlayerSettings.primingMessagePresented {
+            return youtubeTimestamp
+        }
+        
+        // Logic for returning users: entry vs re-entry
+        if hasBeenShown {
+            // Re-entry pill - use DuckPlayer timestamp
+            return duckPlayerTimestamp
+        } else {
+            // Entry pill - use YouTube timestamp
+            return youtubeTimestamp
+        }
+    }
+    
+    /// Stores timestamp from DuckPlayer view dismissal
+    /// This should be called when DuckPlayer view is dismissed with a timestamp
+    func storeDuckPlayerTimestamp(_ timestamp: TimeInterval?) {
+        duckPlayerTimestamp = timestamp
     }
 
     /// Returns tuple of Pixels for firing when a YouTube Error occurs

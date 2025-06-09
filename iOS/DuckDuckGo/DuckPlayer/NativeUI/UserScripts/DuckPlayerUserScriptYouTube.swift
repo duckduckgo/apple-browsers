@@ -169,11 +169,23 @@ final class DuckPlayerUserScriptYouTube: NSObject, Subfeature {
 
     @MainActor
     private func initialSetup(params: Any, original: WKScriptMessage) -> Encodable? {
-        let result: [String: String] = [
-            DuckPlayerUserScript.Constants.locale: Locale.current.languageCode ?? DuckPlayerUserScript.Constants.localeDefault,
-            DuckPlayerUserScript.Constants.playbackPaused: DuckPlayerUserScript.Constants.falseValue,
-            DuckPlayerUserScript.Constants.pageType: DuckPlayerUserScript.getPageType(url: webView?.url)
-        ]
+        struct InitialSetupResult: Encodable {
+            let locale: String
+            let playbackPaused: Bool
+            let pageType: String
+            
+            private enum CodingKeys: String, CodingKey {
+                case locale = "locale"
+                case playbackPaused = "playbackPaused"
+                case pageType = "pageType"
+            }
+        }
+        
+        let result = InitialSetupResult(
+            locale: Locale.current.languageCode ?? DuckPlayerUserScript.Constants.localeDefault,
+            playbackPaused: false,
+            pageType: DuckPlayerUserScript.getPageType(url: webView?.url)
+        )
         return result
     }
 

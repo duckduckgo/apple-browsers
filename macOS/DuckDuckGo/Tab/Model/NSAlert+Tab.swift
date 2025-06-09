@@ -204,7 +204,7 @@ extension NSAlert {
         return alert
     }
 
-    private static func entity(from requestingDomain: String, tds: TrackerData = ContentBlocking.shared.trackerDataManager.trackerData) -> String {
+    private static func entity(from requestingDomain: String, tds: TrackerData = Application.appDelegate.privacyFeatures.contentBlocking.trackerDataManager.trackerData) -> String {
         if let entity = tds.findEntity(forHost: requestingDomain),
            let entityName = entity.displayName {
             return entityName

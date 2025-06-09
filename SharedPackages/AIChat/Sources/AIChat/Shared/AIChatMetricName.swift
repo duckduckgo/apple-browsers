@@ -1,5 +1,5 @@
 //
-//  AppearancePreferencesMock.swift
+//  AIChatMetricName.swift
 //
 //  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
@@ -16,14 +16,20 @@
 //  limitations under the License.
 //
 
-#if DEBUG
-import PersistenceTestingUtils
-
-extension AppearancePreferences {
-    static let mock = AppearancePreferences(
-        // swiftlint:disable:next force_try
-        persistor: AppearancePreferencesUserDefaultsPersistor(keyValueStore: try! MockKeyValueFileStore()),
-        privacyConfigurationManager: MockPrivacyConfigurationManager()
-    )
+/// https://app.asana.com/1/137249556945/project/481882893211075/task/1210422904669751?focus=true
+/// Data structure sent from AI Chat to the native layer
+public enum AIChatMetricName: String, Codable {
+    case userDidSubmitPrompt
+    case userDidSubmitFirstPrompt
+    case userDidOpenHistory
+    case userDidSelectFirstHistoryItem
+    case userDidCreateNewChat
 }
-#endif
+
+public struct AIChatMetric: Codable {
+    public let metricName: AIChatMetricName
+
+     public init(metricName: AIChatMetricName) {
+         self.metricName = metricName
+     }
+}

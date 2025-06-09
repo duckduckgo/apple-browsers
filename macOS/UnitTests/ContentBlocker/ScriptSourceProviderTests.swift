@@ -46,7 +46,10 @@ final class ScriptSourceProviderTests: XCTestCase {
 
         experimentManager.allActiveContentScopeExperiments = ["test": testExperimentData]
 
-        let appearancePreferences = AppearancePreferences(keyValueStore: try MockKeyValueFileStore())
+        let appearancePreferences = AppearancePreferences(
+            keyValueStore: try MockKeyValueFileStore(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
+        )
         let dataClearingPreferences = DataClearingPreferences(
             persistor: MockFireButtonPreferencesPersistor(),
             fireproofDomains: MockFireproofDomains(domains: []),

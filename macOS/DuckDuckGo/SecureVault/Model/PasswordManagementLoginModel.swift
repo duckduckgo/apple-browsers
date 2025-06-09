@@ -137,7 +137,7 @@ final class PasswordManagementLoginModel: ObservableObject, PasswordManagementIt
          onDeleteRequested: @escaping (SecureVaultModels.WebsiteCredentials) -> Void,
          urlMatcher: AutofillDomainNameUrlMatcher,
          emailManager: EmailManager,
-         tld: TLD = ContentBlocking.shared.tld,
+         tld: TLD,
          urlSort: AutofillDomainNameUrlSort) {
         self.onSaveRequested = onSaveRequested
         self.onDeleteRequested = onDeleteRequested

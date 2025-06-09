@@ -45,12 +45,12 @@ protocol ScriptSourceProviding {
 @MainActor func DefaultScriptSourceProvider() -> ScriptSourceProviding {
     ScriptSourceProvider(
         configStorage: Application.appDelegate.configurationStore,
-        privacyConfigurationManager: ContentBlocking.shared.privacyConfigurationManager,
+        privacyConfigurationManager: Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
         webTrackingProtectionPreferences: WebTrackingProtectionPreferences.shared,
-        contentBlockingManager: ContentBlocking.shared.contentBlockingManager,
-        trackerDataManager: ContentBlocking.shared.trackerDataManager,
+        contentBlockingManager: Application.appDelegate.privacyFeatures.contentBlocking.contentBlockingManager,
+        trackerDataManager: Application.appDelegate.privacyFeatures.contentBlocking.trackerDataManager,
         experimentManager: Application.appDelegate.contentScopeExperimentsManager,
-        tld: ContentBlocking.shared.tld,
+        tld: Application.appDelegate.tld,
         onboardingNavigationDelegate: Application.appDelegate.windowControllersManager,
         appearancePreferences: Application.appDelegate.appearancePreferences,
         startupPreferences: Application.appDelegate.startupPreferences,

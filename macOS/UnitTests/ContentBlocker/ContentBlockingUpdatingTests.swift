@@ -34,7 +34,10 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     override func setUp() async throws {
         let configStore = ConfigurationStore()
 
-        let appearancePreferences = AppearancePreferences(keyValueStore: try MockKeyValueFileStore())
+        let appearancePreferences = AppearancePreferences(
+            keyValueStore: try MockKeyValueFileStore(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
+        )
         let dataClearingPreferences = DataClearingPreferences(
             persistor: MockFireButtonPreferencesPersistor(),
             fireproofDomains: MockFireproofDomains(domains: []),

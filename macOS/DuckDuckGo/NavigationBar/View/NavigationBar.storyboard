@@ -1104,22 +1104,28 @@
                         <outlet property="bookmarkButtonWidthConstraint" destination="3ze-iM-E0b" id="t1B-0J-ET8"/>
                         <outlet property="buttonsContainer" destination="HEu-ro-RSA" id="5r4-Ag-NpA"/>
                         <outlet property="cameraButton" destination="C2L-f9-L3r" id="xua-H5-hAx"/>
+                        <outlet property="cameraButtonHeightConstraint" destination="A7u-wU-pBb" id="0E3-ev-fmb"/>
                         <outlet property="cancelButton" destination="kRc-0m-oqe" id="iAr-0l-X5i"/>
                         <outlet property="externalSchemeButton" destination="gGA-Yv-pnz" id="Eyj-ms-jcc"/>
+                        <outlet property="externalSchemeButtonHeightConstraint" destination="QiS-pG-2Ex" id="XPu-Oa-9kk"/>
                         <outlet property="geolocationButton" destination="CN6-fJ-o2J" id="FP7-Od-wu8"/>
+                        <outlet property="geolocationButtonHeightConstraint" destination="y9v-oG-C5i" id="fS3-mc-fJV"/>
                         <outlet property="imageButton" destination="psi-hX-Kh9" id="gEt-yl-q9m"/>
                         <outlet property="imageButtonLeadingConstraint" destination="2X2-AK-TfF" id="udd-Cm-Gm0"/>
                         <outlet property="imageButtonWrapper" destination="3Iv-YW-zn2" id="rzK-lJ-auZ"/>
                         <outlet property="microphoneButton" destination="uao-nC-0co" id="UHu-oA-rTl"/>
+                        <outlet property="microphoneButtonHeightConstraint" destination="0aM-UZ-dCe" id="Kgq-0q-iNz"/>
                         <outlet property="notificationAnimationView" destination="1qw-sL-vFK" id="b5X-px-pwG"/>
                         <outlet property="permissionButtons" destination="8UU-A8-1nD" id="gYJ-VW-MEG"/>
                         <outlet property="popupsButton" destination="qqY-h9-UQ7" id="1QY-I6-oNC"/>
+                        <outlet property="popupsButtonHeightConstraint" destination="Lys-Hh-cYc" id="aif-wm-FWV"/>
                         <outlet property="privacyEntryPointButton" destination="nOW-iY-XmO" id="r0A-EO-srN"/>
                         <outlet property="privacyShieldButtonHeightConstraint" destination="NcD-Mf-Vae" id="Ssh-nD-Yv5"/>
                         <outlet property="privacyShieldButtonWidthConstraint" destination="Hf1-nK-Kb4" id="uss-0B-3pT"/>
                         <outlet property="privacyShieldLeadingConstraint" destination="aq1-9u-eHl" id="aEU-Iy-fau"/>
                         <outlet property="separator" destination="lbX-yW-2eM" id="b3h-JB-tja"/>
                         <outlet property="zoomButton" destination="b30-aJ-fvG" id="24G-cW-Qmg"/>
+                        <outlet property="zoomButtonHeightConstraint" destination="6TS-h0-8pK" id="dyK-lM-9fE"/>
                     </connections>
                 </viewController>
                 <customObject id="PAh-HG-vQt" userLabel="First Responder" customClass="NSResponder" sceneMemberID="firstResponder"/>

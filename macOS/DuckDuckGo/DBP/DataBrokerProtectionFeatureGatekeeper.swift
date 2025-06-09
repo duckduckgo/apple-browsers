@@ -38,7 +38,7 @@ struct DefaultDataBrokerProtectionFeatureGatekeeper: DataBrokerProtectionFeature
     private let subscriptionManager: any SubscriptionAuthV1toV2Bridge
     private let freemiumDBPUserStateManager: FreemiumDBPUserStateManager
 
-    init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
+    init(privacyConfigurationManager: PrivacyConfigurationManaging,
          featureDisabler: DataBrokerProtectionFeatureDisabling = DataBrokerProtectionFeatureDisabler(),
          pixelHandler: EventMapping<DataBrokerProtectionMacOSPixels> = DataBrokerProtectionMacOSPixelsHandler(),
          userDefaults: UserDefaults = .standard,

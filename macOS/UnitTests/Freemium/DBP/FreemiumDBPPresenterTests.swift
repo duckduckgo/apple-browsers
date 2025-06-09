@@ -41,6 +41,7 @@ final class FreemiumDBPPresenterTests: XCTestCase {
 }
 
 private final class MockWindowControllerManager: WindowControllersManagerProtocol {
+    var stateChanged: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher()
 
     var mainWindowControllers: [DuckDuckGo_Privacy_Browser.MainWindowController] = []
 

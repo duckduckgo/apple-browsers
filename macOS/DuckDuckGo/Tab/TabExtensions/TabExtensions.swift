@@ -169,6 +169,7 @@ extension TabExtensionsBuilder {
 
         add {
             AutofillTabExtension(autofillUserScriptPublisher: userScripts.map(\.?.autofillScript),
+                                 privacyConfigurationManager: dependencies.privacyFeatures.contentBlocking.privacyConfigurationManager,
                                  isBurner: args.isTabBurner)
         }
         add {

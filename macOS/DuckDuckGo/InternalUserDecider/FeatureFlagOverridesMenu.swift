@@ -34,6 +34,14 @@ final class FeatureFlagOverridesMenu: NSMenu {
             internalUserStateMenuItem()
             NSMenuItem.separator()
 
+            sectionHeader(title: "Legend")
+            legend(title: "- Category has overridden flags", icon: Self.categoryHasOverriddenFlagsIcon)
+            legend(title: "- Enabled by default", icon: Self.enabledByDefaultIcon)
+            legend(title: "- Disabled by default", icon: Self.disabledByDefaultIcon)
+            legend(title: "- Enabled by user", icon: Self.enabledByUserIcon)
+            legend(title: "- Disabled by user", icon: Self.disabledByUserIcon)
+            NSMenuItem.separator()
+
             sectionHeader(title: "Feature Flags")
             featureFlagMenuItems()
             NSMenuItem.separator()
@@ -196,6 +204,9 @@ final class FeatureFlagOverridesMenu: NSMenu {
 
     private static let iconAlpha = 0.2
 
+    private static var categoryHasOverriddenFlagsIcon = NSImage(systemSymbolName: "flag.fill",
+                                                            accessibilityDescription: "Category has overridden flags")!
+
     private static var enabledByDefaultIcon = NSImage(systemSymbolName: "checkmark.circle",
                                                       accessibilityDescription: "Enabled by default")!
 
@@ -218,7 +229,7 @@ final class FeatureFlagOverridesMenu: NSMenu {
             }
 
             if overrideValue(for: flag) != nil {
-                return NSImage(systemSymbolName: "flag.fill", accessibilityDescription: "Category has overridden flags")!
+                return Self.categoryHasOverriddenFlagsIcon
             }
         }
 
@@ -320,5 +331,13 @@ final class FeatureFlagOverridesMenu: NSMenu {
         let headerItem = NSMenuItem(title: title)
         headerItem.isEnabled = false
         return headerItem
+    }
+
+    private func legend(title: String, icon: NSImage) -> NSMenuItem {
+        let legendItem = NSMenuItem(title: title)
+        legendItem.image = icon
+        legendItem.isEnabled = false
+        legendItem.indentationLevel = 1
+        return legendItem
     }
 }

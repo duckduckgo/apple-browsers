@@ -36,10 +36,10 @@ final class FeatureFlagOverridesMenu: NSMenu {
 
             sectionHeader(title: "Legend")
             legend(title: "- Category has overridden flags", icon: Self.categoryHasOverriddenFlagsIcon)
-            legend(title: "- Enabled by default", icon: Self.enabledByDefaultIcon)
-            legend(title: "- Disabled by default", icon: Self.disabledByDefaultIcon)
-            legend(title: "- Enabled by user", icon: Self.enabledByUserIcon)
-            legend(title: "- Disabled by user", icon: Self.disabledByUserIcon)
+            legend(title: "- Flag enabled by default", icon: Self.enabledByDefaultIcon)
+            legend(title: "- Flag disabled by default", icon: Self.disabledByDefaultIcon)
+            legend(title: "- Flag enabled by user", icon: Self.enabledByUserIcon)
+            legend(title: "- Flag disabled by user", icon: Self.disabledByUserIcon)
             NSMenuItem.separator()
 
             sectionHeader(title: "Feature Flags")

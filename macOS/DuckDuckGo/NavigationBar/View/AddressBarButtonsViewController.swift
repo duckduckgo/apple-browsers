@@ -928,7 +928,7 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func subscribeToAIChatSidebarPresenter() {
-        aiChatSidebarPresenter.sidebarWillChangePublisher
+        aiChatSidebarPresenter.sidebarPresenceWillChangePublisher
             .sink { [weak self] change in
                 guard let self, change.tabID == tabViewModel?.tab.id else {
                     return

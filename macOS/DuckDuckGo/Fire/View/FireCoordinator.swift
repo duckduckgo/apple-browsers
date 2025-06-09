@@ -23,11 +23,14 @@ import PixelKit
 @MainActor
 final class FireCoordinator {
 
-    let fireViewModel: FireViewModel
+    /// This is a lazy var in order to avoid initializing Fire directly at AppDelegate.init
+    /// because of a significant number of dependencies that are still singletons.
+    private(set) lazy var fireViewModel: FireViewModel = FireViewModel(tld: tld)
     private(set) var firePopover: FirePopover?
+    private let tld: TLD
 
     init(tld: TLD) {
-        self.fireViewModel = FireViewModel(tld: tld)
+        self.tld = tld
     }
 
     func fireButtonAction() {

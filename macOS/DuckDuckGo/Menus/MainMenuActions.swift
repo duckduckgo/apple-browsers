@@ -198,7 +198,8 @@ extension AppDelegate {
         let privacyDashboardViewController = PrivacyDashboardViewController(
             privacyInfo: nil,
             entryPoint: .report,
-            contentBlocking: privacyFeatures.contentBlocking
+            contentBlocking: privacyFeatures.contentBlocking,
+            permissionManager: permissionManager
         )
         privacyDashboardViewController.sizeDelegate = self
 

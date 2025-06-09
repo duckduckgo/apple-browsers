@@ -117,7 +117,7 @@ private extension ThemeManager {
         let featureFlagger: FeatureFlagger
 
         private(set) lazy var properties: ExperimentalThemingProperties = .init(
-            isExperimentalThemingEnabled: true,
+            isExperimentalThemingEnabled: isExperimentalThemingEnabled,
             isRoundedCornersTreatmentEnabled: isRoundedCornersTreatmentEnabled
         )
 

@@ -18,7 +18,7 @@
 //
 
 import DesignResourcesKit
-import SwiftUICore
+import SwiftUI
 
 private struct SiriBubble: Shape {
 

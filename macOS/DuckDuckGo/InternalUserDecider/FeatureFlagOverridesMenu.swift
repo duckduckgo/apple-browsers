@@ -34,12 +34,8 @@ final class FeatureFlagOverridesMenu: NSMenu {
             internalUserStateMenuItem()
             NSMenuItem.separator()
 
-            sectionHeader(title: "Categorized Feature Flags")
-            categotizedFeatureFlagMenuItems()
-            NSMenuItem.separator()
-
-            sectionHeader(title: "Uncategorized Feature Flags")
-            uncategorizedFeatureFlagMenuItems()
+            sectionHeader(title: "Feature Flags")
+            featureFlagMenuItems()
             NSMenuItem.separator()
 
             sectionHeader(title: "Experiments")
@@ -59,21 +55,7 @@ final class FeatureFlagOverridesMenu: NSMenu {
         return setInternalUserStateItem
     }
 
-    private func uncategorizedFeatureFlagMenuItems() -> [NSMenuItem] {
-        return FeatureFlag.allCases
-            .filter { $0.supportsLocalOverriding && $0.cohortType == nil && $0.category == .none }
-            .sorted(by: { $0.rawValue.caseInsensitiveCompare($1.rawValue) == .orderedAscending })
-            .map { flag in
-                NSMenuItem(
-                    title: menuItemTitle(for: flag),
-                    action: #selector(toggleFeatureFlag(_:)),
-                    target: self,
-                    representedObject: flag
-                )
-            }
-    }
-
-    private func categotizedFeatureFlagMenuItems() -> [NSMenuItem] {
+    private func featureFlagMenuItems() -> [NSMenuItem] {
         FeatureFlagCategory.allCases
             .sorted { $0.rawValue.lowercased() < $1.rawValue.lowercased() }
             .map { category in

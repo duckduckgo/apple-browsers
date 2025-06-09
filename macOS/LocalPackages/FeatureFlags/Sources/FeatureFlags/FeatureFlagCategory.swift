@@ -20,22 +20,43 @@ import Foundation
 import BrowserServicesKit
 
 public enum FeatureFlagCategory: String, CaseIterable {
-    case vpn = "DuckDuckGo VPN"
+    case misc = "Miscellaneous"
+    case sync = "Sync"
+    case tabCrash = "Tab Crash"
+    case uiAndUX = "User Interface / User Experience"
+    case updates = "Updates"
+    case vpn = "VPN"
 }
 
 public protocol FeatureFlagCategorization {
-    var category: FeatureFlagCategory? { get }
+    var category: FeatureFlagCategory { get }
 }
 
 extension FeatureFlag: FeatureFlagCategorization {
-    public var category: FeatureFlagCategory? {
+    public var category: FeatureFlagCategory {
         switch self {
+        case .syncSeamlessAccountSwitching,
+                .syncSetupBarcodeIsUrlBased,
+                .canScanUrlBasedSyncSetupBarcodes,
+                .exchangeKeysToSyncWithAnotherDevice:
+            return .sync
+        case .tabCrashRecovery,
+                .tabCrashDebugging:
+            return .tabCrash
+        case .visualRefresh,
+                .contextualOnboarding,
+                .delayedWebviewPresentation,
+                .historyView:
+            return .uiAndUX
+        case .updatesWontAutomaticallyRestartApp,
+                .autoUpdateInDEBUG:
+            return .updates
         case .networkProtectionAppStoreSysex,
                 .networkProtectionAppStoreSysexMessage,
                 .networkProtectionRiskyDomainsProtection:
             return .vpn
         default:
-            return .none
+            return .misc
         }
     }
 }

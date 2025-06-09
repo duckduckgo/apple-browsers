@@ -16,7 +16,9 @@
 //  limitations under the License.
 //
 
+import BrowserServicesKit
 import Combine
+import Common
 import Foundation
 import History
 import NewTabPage
@@ -33,9 +35,11 @@ final class NewTabPageCoordinator {
         bookmarkManager: BookmarkManager & URLFavoriteStatusProviding & RecentActivityFavoritesHandling,
         activeRemoteMessageModel: ActiveRemoteMessageModel,
         historyCoordinator: HistoryCoordinating,
+        contentBlocking: ContentBlockingProtocol,
         fireproofDomains: URLFireproofStatusProviding,
         privacyStats: PrivacyStatsCollecting,
         freemiumDBPPromotionViewCoordinator: FreemiumDBPPromotionViewCoordinator,
+        tld: TLD,
         keyValueStore: ThrowingKeyValueStoring,
         legacyKeyValueStore: KeyValueStoring = UserDefaultsWrapper<Any>.sharedDefaults,
         notificationCenter: NotificationCenter = .default,
@@ -54,12 +58,14 @@ final class NewTabPageCoordinator {
             appearancePreferences: appearancePreferences,
             customizationModel: customizationModel,
             bookmarkManager: bookmarkManager,
+            contentBlocking: contentBlocking,
             activeRemoteMessageModel: activeRemoteMessageModel,
             historyCoordinator: historyCoordinator,
             fireproofDomains: fireproofDomains,
             privacyStats: privacyStats,
             protectionsReportModel: protectionsReportModel,
-            freemiumDBPPromotionViewCoordinator: freemiumDBPPromotionViewCoordinator
+            freemiumDBPPromotionViewCoordinator: freemiumDBPPromotionViewCoordinator,
+            tld: tld
         )
         newTabPageShownPixelSender = NewTabPageShownPixelSender(
             appearancePreferences: appearancePreferences,

@@ -401,7 +401,7 @@ final class Fire {
     }
 
     private func burnHistory(of baseDomains: Set<String>, completion: @escaping (Set<URL>) -> Void) {
-        historyCoordinating.burnDomains(baseDomains, tld: ContentBlocking.shared.tld, completion: completion)
+        historyCoordinating.burnDomains(baseDomains, tld: tld, completion: completion)
     }
 
     private func burnAllHistory(completion: @escaping () -> Void) {

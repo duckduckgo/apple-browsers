@@ -3262,6 +3262,8 @@
 		BBCB2FCB2DEA1DD800A97A6C /* fire-dark.json in Resources */ = {isa = PBXBuildFile; fileRef = BBCB2FCA2DEA1DD800A97A6C /* fire-dark.json */; };
 		BBCB2FCC2DEA1DD800A97A6C /* fire-dark.json in Resources */ = {isa = PBXBuildFile; fileRef = BBCB2FCA2DEA1DD800A97A6C /* fire-dark.json */; };
 		BBCD467A2C8643EC004DB483 /* XCUIApplicationExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBCD46792C8643EC004DB483 /* XCUIApplicationExtension.swift */; };
+		BBD798AD2DF213B100575051 /* AddressBarPermissionButtonsIconsProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD798AC2DF213AF00575051 /* AddressBarPermissionButtonsIconsProviding.swift */; };
+		BBD798AE2DF213B100575051 /* AddressBarPermissionButtonsIconsProviding.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBD798AC2DF213AF00575051 /* AddressBarPermissionButtonsIconsProviding.swift */; };
 		BBDAA91A2DAD4E7400555E1E /* CurrentVPNNavigationBarIconProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDAA9192DAD4E5C00555E1E /* CurrentVPNNavigationBarIconProvider.swift */; };
 		BBDAA91B2DAD4E7400555E1E /* CurrentVPNNavigationBarIconProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBDAA9192DAD4E5C00555E1E /* CurrentVPNNavigationBarIconProvider.swift */; };
 		BBDAA91D2DAD6DAD00555E1E /* fire-icon.json in Resources */ = {isa = PBXBuildFile; fileRef = BBDAA91C2DAD6DAD00555E1E /* fire-icon.json */; };
@@ -3416,8 +3418,6 @@
 		CBDD5DE429A6800300832877 /* MockConfigurationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBDD5DE229A67F2700832877 /* MockConfigurationStore.swift */; };
 		CBECDB842CDA813C005B8B87 /* BrokenSitePromptLimiterStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBECDB832CDA8137005B8B87 /* BrokenSitePromptLimiterStore.swift */; };
 		CBECDB852CDA813C005B8B87 /* BrokenSitePromptLimiterStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBECDB832CDA8137005B8B87 /* BrokenSitePromptLimiterStore.swift */; };
-		CBECDB872CDACE29005B8B87 /* BrokenSitePromptLimiter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBECDB862CDACE29005B8B87 /* BrokenSitePromptLimiter.swift */; };
-		CBECDB882CDACE29005B8B87 /* BrokenSitePromptLimiter.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBECDB862CDACE29005B8B87 /* BrokenSitePromptLimiter.swift */; };
 		CD2AB5BF2C8222F20019EB49 /* MaliciousSiteProtectionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDE248A42C821FFE00F9399D /* MaliciousSiteProtectionManager.swift */; };
 		CD2AB5C02C8222F20019EB49 /* MaliciousSiteProtectionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDE248A42C821FFE00F9399D /* MaliciousSiteProtectionManager.swift */; };
 		CD2AB5C12C8222F40019EB49 /* MaliciousSiteProtectionPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDE248A52C821FFE00F9399D /* MaliciousSiteProtectionPreferences.swift */; };
@@ -5413,6 +5413,7 @@
 		BBC7BDAB2D5BB0720037A4AE /* BannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BannerView.swift; sourceTree = "<group>"; };
 		BBCB2FCA2DEA1DD800A97A6C /* fire-dark.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "fire-dark.json"; sourceTree = "<group>"; };
 		BBCD46792C8643EC004DB483 /* XCUIApplicationExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XCUIApplicationExtension.swift; sourceTree = "<group>"; };
+		BBD798AC2DF213AF00575051 /* AddressBarPermissionButtonsIconsProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddressBarPermissionButtonsIconsProviding.swift; sourceTree = "<group>"; };
 		BBDAA9192DAD4E5C00555E1E /* CurrentVPNNavigationBarIconProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CurrentVPNNavigationBarIconProvider.swift; sourceTree = "<group>"; };
 		BBDAA91C2DAD6DAD00555E1E /* fire-icon.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "fire-icon.json"; sourceTree = "<group>"; };
 		BBDAA91F2DAD6F4B00555E1E /* FireButtonIconStyleProviding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FireButtonIconStyleProviding.swift; sourceTree = "<group>"; };
@@ -5483,7 +5484,6 @@
 		CB6BCDF827C6BEFF00CC76DC /* PrivacyFeatures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyFeatures.swift; sourceTree = "<group>"; };
 		CBDD5DE229A67F2700832877 /* MockConfigurationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockConfigurationStore.swift; sourceTree = "<group>"; };
 		CBECDB832CDA8137005B8B87 /* BrokenSitePromptLimiterStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrokenSitePromptLimiterStore.swift; sourceTree = "<group>"; };
-		CBECDB862CDACE29005B8B87 /* BrokenSitePromptLimiter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrokenSitePromptLimiter.swift; sourceTree = "<group>"; };
 		CD2AB5C92C8225E70019EB49 /* URLTokenValidator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = URLTokenValidator.swift; sourceTree = "<group>"; };
 		CD3301282C887B1C009AA127 /* URLTokenValidatorTests.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = URLTokenValidatorTests.swift; sourceTree = "<group>"; };
 		CD33012B2C89B588009AA127 /* ErrorPageHTMLFactory.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ErrorPageHTMLFactory.swift; sourceTree = "<group>"; };
@@ -10365,6 +10365,7 @@
 		BB4EC6902D9B5C6400660600 /* VisualRefresh */ = {
 			isa = PBXGroup;
 			children = (
+				BBD798AC2DF213AF00575051 /* AddressBarPermissionButtonsIconsProviding.swift */,
 				BBC386822DE5E6E70004583A /* SuggestionsIconsProviding.swift */,
 				BB7BAAC12DDBB089004A5A58 /* AddressBarStyleProviding.swift */,
 				BB7BAABE2DDBADB1004A5A58 /* NavigationToolbarIconsProviding.swift */,
@@ -10639,7 +10640,6 @@
 			isa = PBXGroup;
 			children = (
 				CBECDB832CDA8137005B8B87 /* BrokenSitePromptLimiterStore.swift */,
-				CBECDB862CDACE29005B8B87 /* BrokenSitePromptLimiter.swift */,
 			);
 			path = BrokenSitePrompt;
 			sourceTree = "<group>";
@@ -12622,6 +12622,7 @@
 				3706FEC9293F6F7500E42796 /* BWManagement.swift in Sources */,
 				3706FB27293F65D500E42796 /* DeviceAuthenticationService.swift in Sources */,
 				3706FB28293F65D500E42796 /* AutofillPreferences.swift in Sources */,
+				BBD798AE2DF213B100575051 /* AddressBarPermissionButtonsIconsProviding.swift in Sources */,
 				37C9F78D2CF1C776004D73A1 /* PrivacyStatsTabExtension.swift in Sources */,
 				3706FB2A293F65D500E42796 /* PasswordManagerCoordinator.swift in Sources */,
 				3706FB2B293F65D500E42796 /* PasswordManagementIdentityModel.swift in Sources */,
@@ -13177,7 +13178,6 @@
 				3706FC4E293F65D500E42796 /* AtbAndVariantCleanup.swift in Sources */,
 				3706FC50293F65D500E42796 /* FeedbackWindow.swift in Sources */,
 				B6E3E5552BBFCEE300A41922 /* NoDownloadsCellView.swift in Sources */,
-				CBECDB882CDACE29005B8B87 /* BrokenSitePromptLimiter.swift in Sources */,
 				B645D8F729FA95440024461F /* WKProcessPoolExtension.swift in Sources */,
 				9F9C49FE2BC7E9830099738D /* BookmarkAllTabsDialogViewModel.swift in Sources */,
 				9FCB94692DE05A4A00BC662B /* TimerInterface.swift in Sources */,
@@ -14454,7 +14454,6 @@
 				4B0AACAC28BC63ED001038AC /* ChromiumFaviconsReader.swift in Sources */,
 				AABEE6AB24ACA0F90043105B /* SuggestionTableRowView.swift in Sources */,
 				37CD54CB27F2FDD100F1F7B9 /* DownloadsPreferences.swift in Sources */,
-				CBECDB872CDACE29005B8B87 /* BrokenSitePromptLimiter.swift in Sources */,
 				4B1E6EF227AB5E5D00F51793 /* PasswordManagementItemList.swift in Sources */,
 				AAC5E4D025D6A709007F5990 /* Bookmark.swift in Sources */,
 				37FC2A182CF903080048E226 /* MockPrivacyStats.swift in Sources */,
@@ -14997,6 +14996,7 @@
 				37F19A6728E1B43200740DC6 /* DuckPlayerPreferences.swift in Sources */,
 				1D01A3D42B88CF7700FE8150 /* AccessibilityPreferences.swift in Sources */,
 				B6C0B22E26E61CE70031CB7F /* DownloadViewModel.swift in Sources */,
+				BBD798AD2DF213B100575051 /* AddressBarPermissionButtonsIconsProviding.swift in Sources */,
 				4B41EDA72B1543C9001EEDF4 /* PreferencesVPNView.swift in Sources */,
 				9FA173DA2B79BD8A00EE4E6E /* BookmarkDialogContainerView.swift in Sources */,
 				373A1AA8283ED1B900586521 /* BookmarkHTMLReader.swift in Sources */,

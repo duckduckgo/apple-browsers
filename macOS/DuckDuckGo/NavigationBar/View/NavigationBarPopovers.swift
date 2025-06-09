@@ -75,6 +75,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
 
     private let bookmarkManager: BookmarkManager
     private let bookmarkDragDropManager: BookmarkDragDropManager
+    private let contentBlocking: ContentBlockingProtocol
     private let fireproofDomains: FireproofDomains
     private let networkProtectionPopoverManager: NetPPopoverManager
     private let isBurner: Bool
@@ -84,6 +85,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     init(
         bookmarkManager: BookmarkManager,
         bookmarkDragDropManager: BookmarkDragDropManager,
+        contentBlocking: ContentBlockingProtocol,
         fireproofDomains: FireproofDomains,
         networkProtectionPopoverManager: NetPPopoverManager,
         autofillPopoverPresenter: AutofillPopoverPresenter,
@@ -91,6 +93,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     ) {
         self.bookmarkManager = bookmarkManager
         self.bookmarkDragDropManager = bookmarkDragDropManager
+        self.contentBlocking = contentBlocking
         self.fireproofDomains = fireproofDomains
         self.networkProtectionPopoverManager = networkProtectionPopoverManager
         self.autofillPopoverPresenter = autofillPopoverPresenter
@@ -327,7 +330,7 @@ final class NavigationBarPopovers: NSObject, PopoverPresenter {
     func openPrivacyDashboard(for tabViewModel: TabViewModel, from button: MouseOverButton, entryPoint: PrivacyDashboardEntryPoint) {
         guard closeTransientPopovers() else { return }
 
-        let popover = PrivacyDashboardPopover(entryPoint: entryPoint)
+        let popover = PrivacyDashboardPopover(entryPoint: entryPoint, contentBlocking: contentBlocking)
         popover.delegate = self
         self.privacyDashboardPopover = popover
         self.subscribePrivacyDashboardPendingUpdates(for: popover)

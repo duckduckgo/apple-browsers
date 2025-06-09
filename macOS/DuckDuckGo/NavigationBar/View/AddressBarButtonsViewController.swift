@@ -39,6 +39,7 @@ final class AddressBarButtonsViewController: NSViewController {
     private let accessibilityPreferences: AccessibilityPreferences
     private let visualStyle: VisualStyleProviding
     private let featureFlagger: FeatureFlagger
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
 
     private var permissionAuthorizationPopover: PermissionAuthorizationPopover?
     private func permissionAuthorizationPopoverCreatingIfNeeded() -> PermissionAuthorizationPopover {
@@ -90,7 +91,12 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBOutlet weak var privacyShieldButtonWidthConstraint: NSLayoutConstraint!
     @IBOutlet weak var privacyShieldButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var imageButtonLeadingConstraint: NSLayoutConstraint!
-
+    @IBOutlet weak var zoomButtonHeightConstraint: NSLayoutConstraint!
+    @IBOutlet weak var geolocationButtonHeightConstraint: NSLayoutConstraint!
+    @IBOutlet weak var microphoneButtonHeightConstraint: NSLayoutConstraint!
+    @IBOutlet weak var cameraButtonHeightConstraint: NSLayoutConstraint!
+    @IBOutlet weak var popupsButtonHeightConstraint: NSLayoutConstraint!
+    @IBOutlet weak var externalSchemeButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet private weak var permissionButtons: NSView!
     @IBOutlet weak var cameraButton: PermissionButton! {
         didSet {
@@ -197,6 +203,7 @@ final class AddressBarButtonsViewController: NSViewController {
     init?(coder: NSCoder,
           tabCollectionViewModel: TabCollectionViewModel,
           bookmarkManager: BookmarkManager,
+          privacyConfigurationManager: PrivacyConfigurationManaging,
           accessibilityPreferences: AccessibilityPreferences = AccessibilityPreferences.shared,
           popovers: NavigationBarPopovers?,
           onboardingPixelReporter: OnboardingAddressBarReporting = OnboardingPixelReporter(),
@@ -215,6 +222,7 @@ final class AddressBarButtonsViewController: NSViewController {
         self.aiChatSidebarPresenter = aiChatSidebarPresenter
         self.visualStyle = visualStyleManager.style
         self.featureFlagger = featureFlagger
+        self.privacyConfigurationManager = privacyConfigurationManager
         super.init(coder: coder)
     }
 
@@ -231,6 +239,7 @@ final class AddressBarButtonsViewController: NSViewController {
         subscribeToPrivacyEntryPointIsMouseOver()
         subscribeToButtonsVisibility()
         subscribeToAIChatPreferences()
+        subscribeToAIChatSidebarPresenter()
         setupButtonsCornerRadius()
         setupButtonsSize()
 
@@ -402,6 +411,20 @@ final class AddressBarButtonsViewController: NSViewController {
         aiChatButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
         privacyShieldButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
         privacyShieldButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        zoomButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        geolocationButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        microphoneButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        cameraButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        popupsButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        externalSchemeButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+    }
+
+    private func setupButtonIcons() {
+        geolocationButton.activeImage = visualStyle.iconsProvider.addressBarButtonsIconsProvider.locationSolid
+        geolocationButton.disabledImage = visualStyle.iconsProvider.addressBarButtonsIconsProvider.locationIcon
+        geolocationButton.defaultImage = visualStyle.iconsProvider.addressBarButtonsIconsProvider.locationIcon
+        externalSchemeButton.defaultImage = visualStyle.iconsProvider.addressBarButtonsIconsProvider.externalSchemeIcon
+        popupsButton.defaultImage = visualStyle.iconsProvider.addressBarButtonsIconsProvider.popupsIcon
     }
 
     private func updateBookmarkButtonVisibility() {
@@ -459,6 +482,24 @@ final class AddressBarButtonsViewController: NSViewController {
         aiChatButton.isHidden = isHidden
         updateAIChatDividerVisibility()
         delegate?.addressBarButtonsViewController(self, didUpdateAIChatButtonVisibility: aiChatButton.isShown)
+    }
+
+    private func updateAIChatButtonState() {
+        guard featureFlagger.isFeatureOn(.aiChatSidebar) else { return }
+        let isShowingSidebar = aiChatSidebarPresenter.isSidebarOpen
+        updateAIChatButtonForSidebar(isShowingSidebar)
+    }
+
+    private func updateAIChatButtonForSidebar(_ isShowingSidebar: Bool) {
+        if isShowingSidebar {
+            aiChatButton.setButtonType(.toggle)
+            aiChatButton.state = .on
+            aiChatButton.mouseOverColor = nil
+        } else {
+            aiChatButton.setButtonType(.momentaryPushIn)
+            aiChatButton.state = .off
+            aiChatButton.mouseOverColor = visualStyle.colorsProvider.buttonMouseOverColor
+        }
     }
 
     private func updateAIChatButtonVisibility() {
@@ -811,6 +852,7 @@ final class AddressBarButtonsViewController: NSViewController {
             subscribeToPrivacyEntryPointIconUpdateTrigger()
 
             updatePrivacyEntryPointIcon()
+            updateAIChatButtonState()
         }.store(in: &cancellables)
     }
 
@@ -883,6 +925,17 @@ final class AddressBarButtonsViewController: NSViewController {
             .sink(receiveValue: { [weak self] in
                 self?.updateAIChatButtonVisibility()
             }).store(in: &cancellables)
+    }
+
+    private func subscribeToAIChatSidebarPresenter() {
+        aiChatSidebarPresenter.sidebarPresenceWillChangePublisher
+            .sink { [weak self] change in
+                guard let self, change.tabID == tabViewModel?.tab.id else {
+                    return
+                }
+                updateAIChatButtonForSidebar(change.isShown)
+            }
+            .store(in: &cancellables)
     }
 
     private func configureAIChatButton() {
@@ -1036,7 +1089,7 @@ final class AddressBarButtonsViewController: NSViewController {
             let isNotSecure = url.scheme == URL.NavigationalScheme.http.rawValue
             let isCertificateInvalid = tabViewModel.tab.isCertificateInvalid
             let isFlaggedAsMalicious = (tabViewModel.tab.privacyInfo?.malicousSiteThreatKind != .none)
-            let configuration = ContentBlocking.shared.privacyConfigurationManager.privacyConfig
+            let configuration = privacyConfigurationManager.privacyConfig
             let isUnprotected = configuration.isUserUnprotected(domain: host)
 
             let isShieldDotVisible = isNotSecure || isUnprotected || isCertificateInvalid

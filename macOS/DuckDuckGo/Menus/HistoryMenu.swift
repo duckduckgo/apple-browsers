@@ -117,7 +117,9 @@ final class HistoryMenu: NSMenu {
 
         clearOldVariableMenuItems()
         addRecentlyVisited()
-        addHistoryGroupings()
+        if !featureFlagger.isFeatureOn(.shortHistoryMenu) {
+            addHistoryGroupings()
+        }
         addClearAllAndShowHistoryOnTheBottom()
         clearAllHistoryMenuItem.title = featureFlagger.isFeatureOn(.historyView) ? UserText.mainMenuHistoryDeleteAllHistory : UserText.mainMenuHistoryClearAllHistory
     }

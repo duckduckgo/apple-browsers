@@ -195,7 +195,11 @@ extension AppDelegate {
     }
 
     @objc func openReportBrokenSite(_ sender: Any?) {
-        let privacyDashboardViewController = PrivacyDashboardViewController(privacyInfo: nil, entryPoint: .report)
+        let privacyDashboardViewController = PrivacyDashboardViewController(
+            privacyInfo: nil,
+            entryPoint: .report,
+            contentBlocking: privacyFeatures.contentBlocking
+        )
         privacyDashboardViewController.sizeDelegate = self
 
         let window = NSWindow(contentViewController: privacyDashboardViewController)
@@ -578,7 +582,11 @@ extension AppDelegate {
     }
 
     private func setConfigurationUrl(_ configurationUrl: URL?) {
-        var configurationProvider = AppConfigurationURLProvider(customPrivacyConfiguration: configurationUrl)
+        var configurationProvider = AppConfigurationURLProvider(
+            privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+            featureFlagger: featureFlagger,
+            customPrivacyConfiguration: configurationUrl
+        )
         if configurationUrl == nil {
             configurationProvider.resetToDefaultConfigurationUrl()
         }
@@ -592,7 +600,10 @@ extension AppDelegate {
     }
 
     @objc func setCustomConfigurationURL(_ sender: Any?) {
-        let currentConfigurationURL = AppConfigurationURLProvider().url(for: .privacyConfiguration).absoluteString
+        let currentConfigurationURL = AppConfigurationURLProvider(
+            privacyConfigurationManager: privacyFeatures.contentBlocking.privacyConfigurationManager,
+            featureFlagger: featureFlagger
+        ).url(for: .privacyConfiguration).absoluteString
         let alert = NSAlert.customConfigurationAlert(configurationUrl: currentConfigurationURL)
         if alert.runModal() != .cancel {
             guard let textField = alert.accessoryView as? NSTextField,

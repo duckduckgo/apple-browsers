@@ -795,16 +795,16 @@
                                         <rect key="frame" x="7" y="0.0" width="5" height="20"/>
                                         <imageCell key="cell" refusesFirstResponder="YES" alignment="left" animates="YES" imageScaling="proportionallyDown" image="AIChat-Divider" id="4ID-09-y9M"/>
                                     </imageView>
-                                    <button hidden="YES" translatesAutoresizingMaskIntoConstraints="NO" id="kRc-0m-oqe" customClass="MouseOverButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
-                                        <rect key="frame" x="0.0" y="-6" width="26" height="26"/>
+                                    <button hidden="YES" translatesAutoresizingMaskIntoConstraints="NO" id="kRc-0m-oqe" customClass="AddressBarButton" customModule="DuckDuckGo_Privacy_Browser" customModuleProvider="target">
+                                        <rect key="frame" x="0.0" y="-12" width="32" height="32"/>
                                         <buttonCell key="cell" type="square" bezelStyle="shadowlessSquare" image="Clear" imagePosition="only" alignment="center" imageScaling="proportionallyDown" inset="2" id="Qnf-P6-S6w">
                                             <behavior key="behavior" pushIn="YES" lightByBackground="YES" lightByGray="YES"/>
                                             <font key="font" metaFont="system"/>
                                         </buttonCell>
                                         <color key="contentTintColor" name="ClearButtonColor"/>
                                         <constraints>
-                                            <constraint firstAttribute="width" constant="26" id="8Ag-uG-RA7"/>
-                                            <constraint firstAttribute="height" constant="26" id="B6E-P0-EL6"/>
+                                            <constraint firstAttribute="width" constant="32" id="8Ag-uG-RA7"/>
+                                            <constraint firstAttribute="height" constant="32" id="B6E-P0-EL6"/>
                                         </constraints>
                                         <userDefinedRuntimeAttributes>
                                             <userDefinedRuntimeAttribute type="color" keyPath="mouseOverColor">
@@ -815,6 +815,12 @@
                                             </userDefinedRuntimeAttribute>
                                             <userDefinedRuntimeAttribute type="number" keyPath="cornerRadius">
                                                 <real key="value" value="4"/>
+                                            </userDefinedRuntimeAttribute>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="horizontalPadding">
+                                                <real key="value" value="6"/>
+                                            </userDefinedRuntimeAttribute>
+                                            <userDefinedRuntimeAttribute type="number" keyPath="verticalPadding">
+                                                <real key="value" value="6"/>
                                             </userDefinedRuntimeAttribute>
                                         </userDefinedRuntimeAttributes>
                                         <connections>
@@ -1110,6 +1116,8 @@
                         <outlet property="cameraButton" destination="C2L-f9-L3r" id="xua-H5-hAx"/>
                         <outlet property="cameraButtonHeightConstraint" destination="A7u-wU-pBb" id="0E3-ev-fmb"/>
                         <outlet property="cancelButton" destination="kRc-0m-oqe" id="iAr-0l-X5i"/>
+                        <outlet property="cancelButtonHeightConstraint" destination="B6E-P0-EL6" id="T4M-Ck-MPY"/>
+                        <outlet property="cancelButtonWidthConstraint" destination="8Ag-uG-RA7" id="JfF-9g-kQG"/>
                         <outlet property="externalSchemeButton" destination="gGA-Yv-pnz" id="Eyj-ms-jcc"/>
                         <outlet property="externalSchemeButtonHeightConstraint" destination="QiS-pG-2Ex" id="XPu-Oa-9kk"/>
                         <outlet property="geolocationButton" destination="CN6-fJ-o2J" id="FP7-Od-wu8"/>

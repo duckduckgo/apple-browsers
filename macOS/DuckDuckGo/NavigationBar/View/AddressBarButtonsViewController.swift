@@ -68,7 +68,7 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBOutlet weak var bookmarkButton: AddressBarButton!
     @IBOutlet weak var imageButtonWrapper: NSView!
     @IBOutlet weak var imageButton: NSButton!
-    @IBOutlet weak var cancelButton: NSButton!
+    @IBOutlet weak var cancelButton: AddressBarButton!
     @IBOutlet private weak var buttonsContainer: NSStackView!
     @IBOutlet weak var aiChatButton: AddressBarMenuButton!
 
@@ -87,6 +87,8 @@ final class AddressBarButtonsViewController: NSViewController {
     @IBOutlet weak var notificationAnimationView: NavigationBarBadgeAnimationView!
     @IBOutlet weak var bookmarkButtonWidthConstraint: NSLayoutConstraint!
     @IBOutlet weak var bookmarkButtonHeightConstraint: NSLayoutConstraint!
+    @IBOutlet weak var cancelButtonWidthConstraint: NSLayoutConstraint!
+    @IBOutlet weak var cancelButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var aiChatButtonWidthConstraint: NSLayoutConstraint!
     @IBOutlet weak var aiChatButtonHeightConstraint: NSLayoutConstraint!
     @IBOutlet weak var privacyShieldButtonWidthConstraint: NSLayoutConstraint!
@@ -408,6 +410,8 @@ final class AddressBarButtonsViewController: NSViewController {
     private func setupButtonsSize() {
         bookmarkButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
         bookmarkButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        cancelButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
+        cancelButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
         aiChatButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
         aiChatButtonHeightConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
         privacyShieldButtonWidthConstraint.constant = visualStyle.addressBarStyleProvider.addressBarButtonSize
@@ -527,7 +531,8 @@ final class AddressBarButtonsViewController: NSViewController {
     }
 
     private func updateButtonsPosition() {
-        aiChatButton.position = .right
+        cancelButton.position = .right
+        aiChatButton.position = cancelButton.isShown ? .center : .right
         bookmarkButton.position = aiChatButton.isShown ? .center : .right
     }
 

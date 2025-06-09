@@ -236,7 +236,7 @@ extension FeatureFlag: FeatureFlagDescribing {
         case .forceUnsupportedMacOSVersionMessaging:
             return .disabled
         case .minimumSupportedVersionIsMonterrey:
-            return .remoteDevelopment(.feature(.minimumSupportedVersionIsMonterrey))
+            return .internalOnly()
         }
     }
 }

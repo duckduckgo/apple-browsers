@@ -23,12 +23,24 @@ import PrivacyDashboard
 final class UpdatedOmniBarViewController: OmniBarViewController {
 
     private lazy var omniBarView = UpdatedOmniBarView.create()
+    private let experimentalManager = ExperimentalAIChatManager()
 
     override func loadView() {
         view = omniBarView
     }
 
     // MARK: - Initialization
+
+    override func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
+        if experimentalManager.isExperimentalTransitionEnabled {
+            let switchBarVC = SwitchBarPlaygroundViewController()
+            switchBarVC.modalPresentationStyle = .overFullScreen
+            switchBarVC.modalTransitionStyle = .crossDissolve
+            present(switchBarVC, animated: true)
+            return false
+        }
+        return super.textFieldShouldBeginEditing(textField)
+    }
 
     override func animateDismissButtonTransition(from oldView: UIView, to newView: UIView) {
         dismissButtonAnimator?.stopAnimation(true)

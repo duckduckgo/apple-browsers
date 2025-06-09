@@ -34,10 +34,10 @@ struct AIChatSidebarPresenceChange: Equatable {
 /// Handles visibility, state management, and feature flag coordination for the AI Chat sidebar.
 protocol AIChatSidebarPresenting {
 
-    /// Toggles the AI Chat sidebar visibility with appropriate animations.
+    /// Toggles the AI Chat sidebar visibility on a current tab, using appropriate animation.
     func toggleSidebar()
 
-    /// Returns whether the AI Chat sidebar is open on a current tab.
+    /// Returns whether the AI Chat sidebar is open on a tab specified by `tabID`.
     func isSidebarOpen(for tabID: TabIdentifier) -> Bool
 
     /// Emits events whenever sidebar is shown or hidden for a tab.

@@ -45,6 +45,10 @@ final class SupportedOSChecker: SupportedOSChecking {
 
     private let featureFlagger: FeatureFlagger
 
+    var forceUnsupportedMacOSVersionMessaging: Bool {
+        featureFlagger.isFeatureOn(.forceUnsupportedMacOSVersionMessaging)
+    }
+
     var supportedOSVersion: OperatingSystemVersion {
         guard featureFlagger.isFeatureOn(.minimumSupportedVersionIsMonterrey) else {
             return Self.ddgMinBigSurVersion
@@ -62,6 +66,10 @@ final class SupportedOSChecker: SupportedOSChecking {
 
     // Check if the current macOS version is at least the supported version
     var isCurrentOSReceivingUpdates: Bool {
+        guard !forceUnsupportedMacOSVersionMessaging else {
+            return false
+        }
+
         if currentOSVersion.majorVersion > supportedOSVersion.majorVersion {
             return true
         }

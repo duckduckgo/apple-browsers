@@ -22,7 +22,7 @@ import PixelKit
 @MainActor
 final class FireCoordinator {
 
-    static var fireViewModel = FireViewModel()
+    static let fireViewModel = FireViewModel()
 
     static var firePopover: FirePopover?
 

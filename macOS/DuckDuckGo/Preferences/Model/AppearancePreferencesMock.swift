@@ -20,7 +20,10 @@
 import PersistenceTestingUtils
 
 extension AppearancePreferences {
-    // swiftlint:disable:next force_try
-    static let mock = AppearancePreferences(persistor: AppearancePreferencesUserDefaultsPersistor(keyValueStore: try! MockKeyValueFileStore()))
+    static let mock = AppearancePreferences(
+        // swiftlint:disable:next force_try
+        persistor: AppearancePreferencesUserDefaultsPersistor(keyValueStore: try! MockKeyValueFileStore()),
+        privacyConfigurationManager: MockPrivacyConfigurationManager()
+    )
 }
 #endif

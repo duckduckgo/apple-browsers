@@ -189,6 +189,6 @@ final class CurrentAddressBarStyleProvider: AddressBarStyleProviding {
     }
 
     func sizeForSuggestionRow(isHomePage: Bool) -> CGFloat {
-        return 28
+        return 32
     }
 }

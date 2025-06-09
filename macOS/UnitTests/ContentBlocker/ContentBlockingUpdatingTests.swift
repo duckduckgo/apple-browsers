@@ -34,8 +34,16 @@ final class ContentBlockingUpdatingTests: XCTestCase {
     override func setUp() async throws {
         let configStore = ConfigurationStore()
 
-        let appearancePreferences = AppearancePreferences(keyValueStore: try MockKeyValueFileStore())
-        let dataClearingPreferences = DataClearingPreferences(persistor: MockFireButtonPreferencesPersistor())
+        let appearancePreferences = AppearancePreferences(
+            keyValueStore: try MockKeyValueFileStore(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
+        )
+        let dataClearingPreferences = DataClearingPreferences(
+            persistor: MockFireButtonPreferencesPersistor(),
+            fireproofDomains: MockFireproofDomains(domains: []),
+            faviconManager: FaviconManagerMock(),
+            windowControllersManager: WindowControllersManagerMock()
+        )
         let startupPreferences = StartupPreferences(
             persistor: StartupPreferencesPersistorMock(launchToCustomHomePage: false, customHomePageURL: ""),
             appearancePreferences: appearancePreferences,
@@ -56,7 +64,8 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                        appearancePreferences: appearancePreferences,
                                        startupPreferences: startupPreferences,
                                        bookmarkManager: MockBookmarkManager(),
-                                       historyCoordinator: CapturingHistoryDataSource())
+                                       historyCoordinator: CapturingHistoryDataSource(),
+                                       fireproofDomains: MockFireproofDomains(domains: []))
     }
 
     override static func setUp() {

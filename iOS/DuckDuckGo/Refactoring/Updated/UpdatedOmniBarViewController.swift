@@ -34,32 +34,7 @@ final class UpdatedOmniBarViewController: OmniBarViewController {
     override func textFieldShouldBeginEditing(_ textField: UITextField) -> Bool {
         if experimentalManager.isExperimentalTransitionEnabled {
             let switchBarVC = SwitchBarPlaygroundViewController()
-            switchBarVC.modalPresentationStyle = .overFullScreen
-
-            // Get the layout guide from the omni bar view
-            let proxy: OmniBarTransitionProxy = omniBarView
-            let searchAreaContainerGuide = proxy.fieldContainerLayoutGuide
-//            guard let window = view.window else {
-//                present(switchBarVC, animated: true)
-//                return false
-//            }
-
-            switchBarVC.alpha = 0
-
-            // Present the view controller
-            present(switchBarVC, animated: false) {
-                searchAreaContainerGuide.topAnchor.constraint(equalTo: switchBarVC.fieldContainerLayoutGuide.topAnchor).isActive = true
-                searchAreaContainerGuide.leadingAnchor.constraint(equalTo: switchBarVC.fieldContainerLayoutGuide.leadingAnchor).isActive = true
-                searchAreaContainerGuide.trailingAnchor.constraint(equalTo: switchBarVC.fieldContainerLayoutGuide.trailingAnchor).isActive = true
-
-                switchBarVC.mainView.layoutIfNeeded()
-                switchBarVC.containerView.
-
-                // Animate to final position using the target layout guide
-                UIViewPropertyAnimator(duration: 0.5, dampingRatio: 0.2) {
-                    switchBarVC.alpha = 1
-                }.startAnimation()
-            }
+            presentWithOmniBarTransition(switchBarVC, from: omniBarView.fieldContainerLayoutGuide, to: switchBarVC.fieldContainerLayoutGuide)
             return false
         }
         return super.textFieldShouldBeginEditing(textField)

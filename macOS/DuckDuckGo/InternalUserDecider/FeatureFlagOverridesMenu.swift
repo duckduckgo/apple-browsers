@@ -64,8 +64,7 @@ final class FeatureFlagOverridesMenu: NSMenu {
     }
 
     private func featureFlagMenuItems() -> [NSMenuItem] {
-        FeatureFlagCategory.allCases
-            .sorted { $0.rawValue.lowercased() < $1.rawValue.lowercased() }
+        FeatureFlagCategory.allCases.sorted()
             .map { category in
                 let menuItem = NSMenuItem(title: category.rawValue)
                 menuItem.representedObject = category

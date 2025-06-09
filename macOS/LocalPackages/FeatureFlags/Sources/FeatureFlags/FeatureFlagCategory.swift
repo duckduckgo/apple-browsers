@@ -19,13 +19,23 @@
 import Foundation
 import BrowserServicesKit
 
-public enum FeatureFlagCategory: String, CaseIterable {
-    case misc = "Miscellaneous"
+public enum FeatureFlagCategory: String, CaseIterable, Comparable {
+    case other = "Other"
     case sync = "Sync"
     case tabCrash = "Tab Crash"
     case uiAndUX = "User Interface / User Experience"
     case updates = "Updates"
     case vpn = "VPN"
+
+    public static func < (lhs: FeatureFlagCategory, rhs: FeatureFlagCategory) -> Bool {
+        guard lhs != rhs else {
+            return false
+        }
+        if rhs == .other {
+            return true
+        }
+        return lhs.rawValue.localizedCaseInsensitiveCompare(rhs.rawValue) == .orderedAscending
+    }
 }
 
 public protocol FeatureFlagCategorization {
@@ -46,6 +56,7 @@ extension FeatureFlag: FeatureFlagCategorization {
         case .visualRefresh,
                 .contextualOnboarding,
                 .delayedWebviewPresentation,
+                .shortHistoryMenu,
                 .historyView:
             return .uiAndUX
         case .updatesWontAutomaticallyRestartApp,
@@ -56,7 +67,7 @@ extension FeatureFlag: FeatureFlagCategorization {
                 .networkProtectionRiskyDomainsProtection:
             return .vpn
         default:
-            return .misc
+            return .other
         }
     }
 }

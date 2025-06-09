@@ -33,6 +33,7 @@ final class MainViewController: NSViewController {
     let navigationBarViewController: NavigationBarViewController
     let browserTabViewController: BrowserTabViewController
     let aiChatSidebarPresenter: AIChatSidebarPresenting
+    let aiChatSidebarProvider: AIChatSidebarProviding
     let findInPageViewController: FindInPageViewController
     let fireViewController: FireViewController
     let bookmarksBarViewController: BookmarksBarViewController
@@ -77,7 +78,7 @@ final class MainViewController: NSViewController {
          autofillPopoverPresenter: AutofillPopoverPresenter,
          vpnXPCClient: VPNControllerXPCClient = .shared,
          aiChatMenuConfig: AIChatMenuVisibilityConfigurable = AIChatMenuConfiguration(),
-         aiChatSidebarProvider: AIChatSidebarProviding? = nil,
+         aiChatSidebarModel: AIChatSidebarProviderModel? = nil,
          brokenSitePromptLimiter: BrokenSitePromptLimiter = .shared,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting = NSApp.delegateTyped.defaultBrowserAndDockPromptPresenter,
@@ -137,8 +138,9 @@ final class MainViewController: NSViewController {
         }()
 
         browserTabViewController = BrowserTabViewController(tabCollectionViewModel: tabCollectionViewModel, bookmarkManager: bookmarkManager)
+        aiChatSidebarProvider = AIChatSidebarProvider(currentState: aiChatSidebarModel)
         aiChatSidebarPresenter = AIChatSidebarPresenter(sidebarHost: browserTabViewController,
-                                                        sidebarProvider: aiChatSidebarProvider ?? AIChatSidebarProvider())
+                                                        sidebarProvider: aiChatSidebarProvider)
 
         navigationBarViewController = NavigationBarViewController.create(tabCollectionViewModel: tabCollectionViewModel,
                                                                          networkProtectionPopoverManager: networkProtectionPopoverManager,

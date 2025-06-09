@@ -56,7 +56,7 @@ final class WindowsManager {
 
     @discardableResult
     class func openNewWindow(with tabCollectionViewModel: TabCollectionViewModel? = nil,
-                             aiChatSidebarProvider: AIChatSidebarProviding? = nil,
+                             aiChatSidebarModel: AIChatSidebarProviderModel? = nil,
                              burnerMode: BurnerMode = .regular,
                              droppingPoint: NSPoint? = nil,
                              contentSize: NSSize? = nil,
@@ -70,7 +70,7 @@ final class WindowsManager {
                                                  popUp: popUp,
                                                  burnerMode: burnerMode,
                                                  autofillPopoverPresenter: autofillPopoverPresenter,
-                                                 aiChatSidebarProvider: aiChatSidebarProvider)
+                                                 aiChatSidebarModel: aiChatSidebarModel)
 
         if let contentSize {
             mainWindowController.window?.setContentSize(contentSize)
@@ -188,10 +188,10 @@ final class WindowsManager {
                                      popUp: Bool = false,
                                      burnerMode: BurnerMode,
                                      autofillPopoverPresenter: AutofillPopoverPresenter,
-                                     aiChatSidebarProvider: AIChatSidebarProviding?) -> MainWindowController {
+                                     aiChatSidebarModel: AIChatSidebarProviderModel?) -> MainWindowController {
         let mainViewController = MainViewController(tabCollectionViewModel: tabCollectionViewModel ?? TabCollectionViewModel(burnerMode: burnerMode),
                                                     autofillPopoverPresenter: autofillPopoverPresenter,
-                                                    aiChatSidebarProvider: aiChatSidebarProvider)
+                                                    aiChatSidebarModel: aiChatSidebarModel)
 
         let fireWindowSession = if case .burner = burnerMode {
             WindowControllersManager.shared.mainWindowControllers.first(where: {

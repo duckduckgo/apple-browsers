@@ -19,6 +19,7 @@
 import Foundation
 
 typealias TabIdentifier = String
+typealias AIChatSidebarProviderModel = [TabIdentifier: AIChatSidebar]
 
 /// A protocol that defines the interface for managing AI chat sidebars in tabs.
 /// This provider handles the lifecycle and state of chat sidebars across multiple browser tabs.
@@ -43,6 +44,10 @@ protocol AIChatSidebarProviding: AnyObject {
     /// Removes sidebars for tabs that are no longer active.
     /// - Parameter currentTabIDs: Array of tab IDs that are currently open
     func cleanUp(for currentTabIDs: [TabIdentifier])
+
+    /// The underlying model containing all active chat sidebars mapped by their tab identifiers.
+    /// This dictionary maintains the state of all chat sidebars across different browser tabs.
+    var model: AIChatSidebarProviderModel { get }
 }
 
 final class AIChatSidebarProvider: AIChatSidebarProviding {
@@ -51,33 +56,37 @@ final class AIChatSidebarProvider: AIChatSidebarProviding {
         static let sidebarWidth: CGFloat = 450
     }
 
-    private var sidebarsByTabIDs: [TabIdentifier: AIChatSidebar] = [:]
-
     var sidebarWidth: CGFloat { Constants.sidebarWidth }
 
+    private(set) var model: AIChatSidebarProviderModel
+
+    init(currentState: AIChatSidebarProviderModel? = nil) {
+        self.model = currentState ?? [:]
+    }
+
     func sidebar(for tabID: TabIdentifier) -> AIChatSidebar {
-        guard let sidebar = sidebarsByTabIDs[tabID] else {
+        guard let sidebar = model[tabID] else {
             let sidebar = AIChatSidebar()
-            sidebarsByTabIDs[tabID] = sidebar
+            model[tabID] = sidebar
             return sidebar
         }
         return sidebar
     }
 
     func isShowingSidebar(for tabID: TabIdentifier) -> Bool {
-        return sidebarsByTabIDs[tabID] != nil
+        return model[tabID] != nil
     }
 
     func handleSidebarDidClose(for tabID: TabIdentifier) {
-        guard let tabSidebar = sidebarsByTabIDs[tabID] else {
+        guard let tabSidebar = model[tabID] else {
             return
         }
         tabSidebar.sidebarViewController.removeCompletely()
-        sidebarsByTabIDs.removeValue(forKey: tabID)
+        model.removeValue(forKey: tabID)
     }
 
     func cleanUp(for currentTabIDs: [TabIdentifier]) {
-        let tabIDsForRemoval = Set(sidebarsByTabIDs.keys).subtracting(currentTabIDs)
+        let tabIDsForRemoval = Set(model.keys).subtracting(currentTabIDs)
 
         for tabID in tabIDsForRemoval {
             handleSidebarDidClose(for: tabID)

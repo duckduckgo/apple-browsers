@@ -49,7 +49,7 @@ final class AIChatSidebarViewController: NSViewController {
     }
 
     weak var delegate: AIChatSidebarViewControllerDelegate?
-    private(set) var currentAIChatURL: URL?
+    private(set) var currentAIChatURL: URL
 
     private var openInNewTabButton: MouseOverButton!
     private var closeButton: MouseOverButton!
@@ -57,11 +57,12 @@ final class AIChatSidebarViewController: NSViewController {
     private var separator: NSView!
     private var topBar: NSView!
 
-    private let aiTab = Tab(content: .url(AIChatRemoteSettings().aiChatURL, source: .ui), isLoadedInSidebar: true)
+    private var aiTab: Tab!
 
     private var cancellables = Set<AnyCancellable>()
 
-    init() {
+    init(currentAIChatURL: URL) {
+        self.currentAIChatURL = currentAIChatURL
         super.init(nibName: nil, bundle: nil)
     }
 
@@ -70,6 +71,8 @@ final class AIChatSidebarViewController: NSViewController {
     }
 
     override func loadView() {
+        aiTab = Tab(content: .url(currentAIChatURL, source: .ui), isLoadedInSidebar: true)
+
         let container = NSView()
         container.wantsLayer = true
         container.layer?.backgroundColor = NSColor.navigationBarBackground.cgColor
@@ -235,7 +238,9 @@ final class AIChatSidebarViewController: NSViewController {
             print(" --- content: \(content)")
             print(" --- content URL: \(content.urlForWebView?.absoluteString ?? "")")
 
-            self?.currentAIChatURL = content.urlForWebView
+            if let currentURL = content.urlForWebView {
+                self?.currentAIChatURL = currentURL
+            }
         }
         .store(in: &cancellables)
     }

@@ -59,16 +59,7 @@ extension WindowsManager {
 
     private class func setUpWindow(from item: WindowRestorationItem, includeRegularTabs: Bool) {
         let tabCollectionViewModel = includeRegularTabs ? item.model : TabCollectionViewModel()
-
-        // TODO: Restore info about open tabs
-//        let aiChatSidebarProvider = AIChatSidebarProvider()
-//        if let tabID = tabCollectionViewModel.tabs.first?.id {
-//            _ = aiChatSidebarProvider.sidebar(for: tabID)
-//        }
-//
-//        guard let window = openNewWindow(with: tabCollectionViewModel, aiChatSidebarProvider: aiChatSidebarProvider, showWindow: !item.isMiniaturized, isMiniaturized: item.isMiniaturized) else { return }
-
-        guard let window = openNewWindow(with: tabCollectionViewModel, showWindow: !item.isMiniaturized, isMiniaturized: item.isMiniaturized) else { return }
+        guard let window = openNewWindow(with: tabCollectionViewModel, aiChatSidebarModel: item.aiChatSidebarModel, showWindow: !item.isMiniaturized, isMiniaturized: item.isMiniaturized) else { return }
         window.setContentSize(item.frame.size)
         window.setFrameOrigin(item.frame.origin)
 
@@ -157,12 +148,14 @@ final class WindowRestorationItem: NSObject, NSSecureCoding {
     private enum NSSecureCodingKeys {
         static let frame = "frame"
         static let model = "model"
+        static let aiChatSidebarModel = "aiChatSidebarModel"
         static let isMiniaturized = "isMiniaturized"
         static let pinnedTabs = "pinnedTabs"
 
     }
 
     let model: TabCollectionViewModel
+    let aiChatSidebarModel: AIChatSidebarProviderModel
     let frame: NSRect
     let isMiniaturized: Bool
     let pinnedTabs: TabCollection?
@@ -176,6 +169,7 @@ final class WindowRestorationItem: NSObject, NSSecureCoding {
 
         self.frame = windowController.window!.frame
         self.model = windowController.mainViewController.tabCollectionViewModel
+        self.aiChatSidebarModel = windowController.mainViewController.aiChatSidebarProvider.model
         self.isMiniaturized = windowController.window!.isMiniaturized
         if windowController.mainViewController.tabCollectionViewModel.pinnedTabsManager !== Application.appDelegate.pinnedTabsManager {
             self.pinnedTabs = windowController.mainViewController.tabCollectionViewModel.pinnedTabsCollection
@@ -192,6 +186,13 @@ final class WindowRestorationItem: NSObject, NSSecureCoding {
             return nil
         }
         self.model = model
+
+        if let aiChatSidebarModel = coder.decodeObject(of: [NSDictionary.self, NSString.self, AIChatSidebar.self], forKey: NSSecureCodingKeys.aiChatSidebarModel) as? [String: AIChatSidebar] {
+            self.aiChatSidebarModel = aiChatSidebarModel
+        } else {
+            self.aiChatSidebarModel = [:]
+        }
+
         self.frame = coder.decodeRect(forKey: NSSecureCodingKeys.frame)
         self.isMiniaturized = coder.decodeBool(forKey: NSSecureCodingKeys.isMiniaturized)
         self.pinnedTabs = coder.containsValue(forKey: NSSecureCodingKeys.pinnedTabs)
@@ -202,6 +203,7 @@ final class WindowRestorationItem: NSObject, NSSecureCoding {
     func encode(with coder: NSCoder) {
         coder.encode(frame, forKey: NSSecureCodingKeys.frame)
         coder.encode(model, forKey: NSSecureCodingKeys.model)
+        coder.encode(aiChatSidebarModel, forKey: NSSecureCodingKeys.aiChatSidebarModel)
         coder.encode(isMiniaturized, forKey: NSSecureCodingKeys.isMiniaturized)
         coder.encode(pinnedTabs, forKey: NSSecureCodingKeys.pinnedTabs)
     }

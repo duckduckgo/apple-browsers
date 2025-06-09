@@ -19,6 +19,7 @@
 import Foundation
 
 /// A wrapper class that represents the AI Chat sidebar contents and its displayed view controller.
+
 final class AIChatSidebar: NSObject {
 
     /// The initial AI chat URL to be loaded.
@@ -28,14 +29,16 @@ final class AIChatSidebar: NSObject {
     /// This property is lazily created when first accessed.
     var sidebarViewController: AIChatSidebarViewController {
         get {
-            guard let _sidebarViewController else {
+            guard let sidebarViewController = _sidebarViewController else {
                 let sidebarViewController = AIChatSidebarViewController(currentAIChatURL: currentAIChatURL)
                 _sidebarViewController = sidebarViewController
                 return sidebarViewController
             }
-            return _sidebarViewController
+            return sidebarViewController
         }
     }
+
+    // swiftlint:disable:next identifier_name
     private var _sidebarViewController: AIChatSidebarViewController?
 
     /// The current AI chat URL being displayed.
@@ -63,12 +66,12 @@ extension AIChatSidebar: NSSecureCoding {
     private enum CodingKeys {
         static let initialAIChatURL = "initialAIChatURL"
     }
-    
+
     convenience init?(coder: NSCoder) {
         let initialAIChatURL = coder.decodeObject(of: NSURL.self, forKey: CodingKeys.initialAIChatURL) as URL?
         self.init(initialAIChatURL: initialAIChatURL)
     }
-    
+
     func encode(with coder: NSCoder) {
         coder.encode(currentAIChatURL as NSURL, forKey: CodingKeys.initialAIChatURL)
     }

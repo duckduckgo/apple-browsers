@@ -34,7 +34,7 @@ struct AIChatMessageHandler: AIChatMessageHandling {
     private let promptHandler: any AIChatConsumableDataHandling
 
     init(featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
-        promptHandler: any AIChatConsumableDataHandling = AIChatPromptHandler.shared) {
+         promptHandler: any AIChatConsumableDataHandling = AIChatPromptHandler.shared) {
         self.featureFlagger = featureFlagger
         self.promptHandler = promptHandler
     }

@@ -24,8 +24,8 @@ import os.log
 struct AppConfigurationURLProvider: ConfigurationURLProviding {
 
     // MARK: - Debug
-    internal init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
-                  featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger,
+    internal init(privacyConfigurationManager: PrivacyConfigurationManaging,
+                  featureFlagger: FeatureFlagger,
                   customPrivacyConfiguration: URL? = nil) {
         let trackerDataUrlProvider = TrackerDataURLOverrider(privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
         self.init(trackerDataUrlProvider: trackerDataUrlProvider)
@@ -60,8 +60,7 @@ struct AppConfigurationURLProvider: ConfigurationURLProviding {
         public static let defaultPrivacyConfigurationURL = URL(string: "https://staticcdn.duckduckgo.com/trackerblocking/config/v4/macos-config.json")!
     }
 
-    init(privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager,
-         featureFlagger: FeatureFlagger = Application.appDelegate.featureFlagger) {
+    init(privacyConfigurationManager: PrivacyConfigurationManaging, featureFlagger: FeatureFlagger) {
         self.trackerDataUrlProvider = TrackerDataURLOverrider(privacyConfigurationManager: privacyConfigurationManager, featureFlagger: featureFlagger)
     }
 

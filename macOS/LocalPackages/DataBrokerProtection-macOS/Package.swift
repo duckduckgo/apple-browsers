@@ -29,8 +29,8 @@ let package = Package(
             targets: ["DataBrokerProtection-macOS"])
     ],
     dependencies: [
-        .package(path: "../../SharedPackages/BrowserServicesKit"),
-        .package(path: "../../SharedPackages/DataBrokerProtectionCore"),
+        .package(path: "../../../SharedPackages/BrowserServicesKit"),
+        .package(path: "../../../SharedPackages/DataBrokerProtectionCore"),
         .package(path: "../SwiftUIExtensions"),
         .package(path: "../AppKitExtensions"),
         .package(path: "../XPCHelper"),

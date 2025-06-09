@@ -37,7 +37,8 @@ final class AppearancePreferencesTests: XCTestCase {
                 homePageCustomBackground: CustomBackground.gradient(.gradient01).description,
                 centerAlignedBookmarksBar: true,
                 showTabsAndBookmarksBarOnFullScreen: false
-            )
+            ),
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
         )
 
         XCTAssertEqual(model.showFullURL, false)
@@ -64,7 +65,8 @@ final class AppearancePreferencesTests: XCTestCase {
                 homePageCustomBackground: CustomBackground.gradient(.gradient05).description,
                 centerAlignedBookmarksBar: false,
                 showTabsAndBookmarksBarOnFullScreen: true
-            )
+            ),
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
         )
         XCTAssertEqual(model.showFullURL, true)
         XCTAssertEqual(model.currentThemeName, ThemeName.light)
@@ -82,7 +84,8 @@ final class AppearancePreferencesTests: XCTestCase {
         let model = AppearancePreferences(
             persistor: AppearancePreferencesPersistorMock(
                 currentThemeName: "garbage"
-            )
+            ),
+            privacyConfigurationManager: MockPrivacyConfigurationManager()
         )
 
         XCTAssertEqual(model.currentThemeName, ThemeName.systemDefault)
@@ -95,7 +98,7 @@ final class AppearancePreferencesTests: XCTestCase {
     }
 
     func testWhenThemeNameIsUpdatedThenApplicationAppearanceIsUpdated() throws {
-        let model = AppearancePreferences(persistor: AppearancePreferencesPersistorMock())
+        let model = AppearancePreferences(persistor: AppearancePreferencesPersistorMock(), privacyConfigurationManager: MockPrivacyConfigurationManager())
 
         model.currentThemeName = ThemeName.systemDefault
         XCTAssertEqual(NSApp.appearance?.name, ThemeName.systemDefault.appearance?.name)
@@ -111,7 +114,7 @@ final class AppearancePreferencesTests: XCTestCase {
     }
 
     func testWhenNewTabPreferencesAreUpdatedThenPersistedValuesAreUpdated() throws {
-        let model = AppearancePreferences(persistor: AppearancePreferencesPersistorMock())
+        let model = AppearancePreferences(persistor: AppearancePreferencesPersistorMock(), privacyConfigurationManager: MockPrivacyConfigurationManager())
 
         model.isFavoriteVisible = true
         XCTAssertEqual(model.isFavoriteVisible, true)
@@ -151,7 +154,11 @@ final class AppearancePreferencesTests: XCTestCase {
         var now = Date()
 
         // listen to AppearancePreferences.objectWillChange
-        let model = AppearancePreferences(persistor: AppearancePreferencesPersistorMock(), dateTimeProvider: { now })
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            dateTimeProvider: { now }
+        )
         let c = model.objectWillChange.sink {
             XCTFail("Unexpected model.objectWillChange")
         }
@@ -175,7 +182,11 @@ final class AppearancePreferencesTests: XCTestCase {
         var now = Date()
 
         // listen to AppearancePreferences.objectWillChange
-        let model = AppearancePreferences(persistor: AppearancePreferencesPersistorMock(), dateTimeProvider: { now })
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            dateTimeProvider: { now }
+        )
         var eObjectWillChange: XCTestExpectation!
         let c = model.objectWillChange.sink {
             eObjectWillChange.fulfill()
@@ -215,7 +226,11 @@ final class AppearancePreferencesTests: XCTestCase {
 
     func testWhenCurrentThemeIsUpdatedThenPixelIsFired() {
         let pixelFiringMock = PixelKitMock()
-        let model = AppearancePreferences(persistor: AppearancePreferencesPersistorMock(), pixelFiring: pixelFiringMock)
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            pixelFiring: pixelFiringMock
+        )
 
         model.currentThemeName = ThemeName.systemDefault
         model.currentThemeName = ThemeName.light
@@ -234,7 +249,11 @@ final class AppearancePreferencesTests: XCTestCase {
 
     func testWhenShowFullURLIsUpdatedThenPixelIsFired() {
         let pixelFiringMock = PixelKitMock()
-        let model = AppearancePreferences(persistor: AppearancePreferencesPersistorMock(), pixelFiring: pixelFiringMock)
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            pixelFiring: pixelFiringMock
+        )
 
         model.showFullURL = true
         model.showFullURL = false
@@ -249,7 +268,11 @@ final class AppearancePreferencesTests: XCTestCase {
 
     func testWhenFavoritesSectionIsHiddenThenPixelIsFired() {
         let pixelFiringMock = PixelKitMock()
-        let model = AppearancePreferences(persistor: AppearancePreferencesPersistorMock(), pixelFiring: pixelFiringMock)
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            pixelFiring: pixelFiringMock
+        )
 
         model.isFavoriteVisible = false
         model.isFavoriteVisible = true
@@ -274,7 +297,11 @@ final class AppearancePreferencesTests: XCTestCase {
 
     func testWhenProtectionsReportSectionIsHiddenThenPixelIsFired() {
         let pixelFiringMock = PixelKitMock()
-        let model = AppearancePreferences(persistor: AppearancePreferencesPersistorMock(), pixelFiring: pixelFiringMock)
+        let model = AppearancePreferences(
+            persistor: AppearancePreferencesPersistorMock(),
+            privacyConfigurationManager: MockPrivacyConfigurationManager(),
+            pixelFiring: pixelFiringMock
+        )
 
         model.isProtectionsReportVisible = false
         model.isProtectionsReportVisible = true

@@ -56,7 +56,7 @@ final class SyncPromoManager: SyncPromoManaging {
     private var syncPromoPasswordsDismissed: Date?
 
     init(syncService: DDGSyncing? = NSApp.delegateTyped.syncService,
-         privacyConfigurationManager: PrivacyConfigurationManaging = ContentBlocking.shared.privacyConfigurationManager) {
+         privacyConfigurationManager: PrivacyConfigurationManaging = NSApp.delegateTyped.privacyFeatures.contentBlocking.privacyConfigurationManager) {
         self.syncService = syncService
         self.privacyConfigurationManager = privacyConfigurationManager
     }

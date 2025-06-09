@@ -24,7 +24,7 @@ import BrowserServicesKit
 extension DefaultSubscriptionFeatureAvailability {
 
     convenience init() {
-        self.init(privacyConfigurationManager: AppPrivacyFeatures.shared.contentBlocking.privacyConfigurationManager,
+        self.init(privacyConfigurationManager: Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
                   purchasePlatform: Application.appDelegate.subscriptionAuthV1toV2Bridge.currentEnvironment.purchasePlatform)
     }
 }

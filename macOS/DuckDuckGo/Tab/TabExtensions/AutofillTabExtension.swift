@@ -35,7 +35,7 @@ final class AutofillTabExtension: TabExtension {
     static var vaultManagerProvider: (SecureVaultManagerDelegate) -> AutofillSecureVaultDelegate = { delegate in
         let manager = SecureVaultManager(passwordManager: PasswordManagerCoordinator.shared,
                                          shouldAllowPartialFormSaves: featureFlagger.isFeatureOn(.autofillPartialFormSaves),
-                                         tld: ContentBlocking.shared.tld)
+                                         tld: Application.appDelegate.tld)
         manager.delegate = delegate
         return manager
     }
@@ -59,14 +59,16 @@ final class AutofillTabExtension: TabExtension {
     private var vaultManager: AutofillSecureVaultDelegate?
     private let credentialsImportManager: AutofillCredentialsImportManager
     private var passwordManagerCoordinator: PasswordManagerCoordinating = PasswordManagerCoordinator.shared
-    private let privacyConfigurationManager: PrivacyConfigurationManaging = AppPrivacyFeatures.shared.contentBlocking.privacyConfigurationManager
+    private let privacyConfigurationManager: PrivacyConfigurationManaging
     private let isBurner: Bool
 
     @Published var autofillDataToSave: AutofillData?
 
     init(autofillUserScriptPublisher: some Publisher<WebsiteAutofillUserScript?, Never>,
+         privacyConfigurationManager: PrivacyConfigurationManaging,
          isBurner: Bool) {
         self.isBurner = isBurner
+        self.privacyConfigurationManager = privacyConfigurationManager
         self.credentialsImportManager = AutofillCredentialsImportManager(isBurnerWindow: isBurner)
 
         autofillUserScriptCancellable = autofillUserScriptPublisher.sink { [weak self] autofillScript in

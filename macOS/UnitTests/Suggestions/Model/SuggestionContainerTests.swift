@@ -368,6 +368,8 @@ extension SuggestionContainerTests {
     }
 
     class WindowControllersManagerMock: WindowControllersManagerProtocol {
+        var stateChanged: AnyPublisher<Void, Never> = Empty().eraseToAnyPublisher()
+
         var mainWindowControllers: [DuckDuckGo_Privacy_Browser.MainWindowController] = []
 
         var lastKeyMainWindowController: DuckDuckGo_Privacy_Browser.MainWindowController?

@@ -85,14 +85,15 @@ final class AutofillCredentialsDebugViewModel: ObservableObject {
         }
     }
 
-    private let tld: TLD = ContentBlocking.shared.tld
+    private let tld: TLD
     private let autofillDomainNameUrlMatcher: AutofillDomainNameUrlMatcher = AutofillDomainNameUrlMatcher()
     private var userAuthenticator: UserAuthenticating
 
     @Published var credentials: [DisplayCredentials] = []
 
-    init(userAuthenticator: UserAuthenticating = DeviceAuthenticator.shared) {
+    init(userAuthenticator: UserAuthenticating = DeviceAuthenticator.shared, tld: TLD = Application.appDelegate.tld) {
         self.userAuthenticator = userAuthenticator
+        self.tld = tld
         beginAuthentication()
     }
 

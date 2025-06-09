@@ -34,6 +34,8 @@ final class NavigationBarPopoversTests: XCTestCase {
         sut = NavigationBarPopovers(
             bookmarkManager: bookmarkManager,
             bookmarkDragDropManager: .init(bookmarkManager: bookmarkManager),
+            contentBlocking: ContentBlockingMock(),
+            fireproofDomains: MockFireproofDomains(domains: []),
             networkProtectionPopoverManager: NetPPopoverManagerMock(),
             autofillPopoverPresenter: autofillPopoverPresenter,
             isBurner: false

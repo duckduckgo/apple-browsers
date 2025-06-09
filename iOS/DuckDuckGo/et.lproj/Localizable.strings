@@ -3443,10 +3443,10 @@
 "vpn.settings.dns.server.content.blocking.explanation" = "Blokeerige 150 000+ domeeni, mis on märgistatud pahavara, andmepüügirünnakute ja võrgupettuste eest DNS-tasandi blokeerimisloendiga. [Lisateave](ddgQuickLink://duckduckgo.com/duckduckgo-help-pages/privacy-pro/vpn/dns-blocklists/)";
 
 /* Header of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.header" = "Sisu blokeerimine ja filtreerimine";
+"vpn.settings.dns.server.content.blocking.header" = "Pahatahtliku sisu blokeerimine";
 
-/* Title of the vpn blocks risky sites feature settings */
-"vpn.settings.dns.server.content.blocking.title" = "Riskantsete domeenide blokeerimine";
+/* Title of the vpn scam blocker sites feature settings */
+"vpn.settings.dns.server.content.blocking.title" = "Pettuste blokeerija";
 
 /* Default value for the DNS Server row on the VPN Settings screen */
 "vpn.settings.dns.server.default.value" = "DuckDuckGo";

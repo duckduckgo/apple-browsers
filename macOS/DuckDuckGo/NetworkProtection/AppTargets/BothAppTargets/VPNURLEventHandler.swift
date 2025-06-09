@@ -20,6 +20,10 @@ import Foundation
 import PixelKit
 import VPNAppLauncher
 
+#if !APPSTORE
+import LetsMove
+#endif
+
 @MainActor
 final class VPNURLEventHandler {
 

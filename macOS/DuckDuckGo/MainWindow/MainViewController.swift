@@ -33,6 +33,7 @@ final class MainViewController: NSViewController {
     let tabBarViewController: TabBarViewController
     let navigationBarViewController: NavigationBarViewController
     let browserTabViewController: BrowserTabViewController
+    let aiChatSidebarPresenter: AIChatSidebarPresenting
     let findInPageViewController: FindInPageViewController
     let fireViewController: FireViewController
     let bookmarksBarViewController: BookmarksBarViewController
@@ -44,6 +45,7 @@ final class MainViewController: NSViewController {
     let tabCollectionViewModel: TabCollectionViewModel
     let bookmarkManager: BookmarkManager
     let historyCoordinator: HistoryCoordinator
+    let fireproofDomains: FireproofDomains
     let isBurner: Bool
 
     private var addressBarBookmarkIconVisibilityCancellable: AnyCancellable?
@@ -78,10 +80,12 @@ final class MainViewController: NSViewController {
          bookmarkManager: BookmarkManager = NSApp.delegateTyped.bookmarkManager,
          bookmarkDragDropManager: BookmarkDragDropManager = NSApp.delegateTyped.bookmarkDragDropManager,
          historyCoordinator: HistoryCoordinator = NSApp.delegateTyped.historyCoordinator,
+         contentBlocking: ContentBlockingProtocol = NSApp.delegateTyped.privacyFeatures.contentBlocking,
+         fireproofDomains: FireproofDomains = NSApp.delegateTyped.fireproofDomains,
          autofillPopoverPresenter: AutofillPopoverPresenter,
          vpnXPCClient: VPNControllerXPCClient = .shared,
          aiChatMenuConfig: AIChatMenuVisibilityConfigurable = AIChatMenuConfiguration(),
-         brokenSitePromptLimiter: BrokenSitePromptLimiter = .shared,
+         brokenSitePromptLimiter: BrokenSitePromptLimiter = NSApp.delegateTyped.brokenSitePromptLimiter,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
          defaultBrowserAndDockPromptPresenting: DefaultBrowserAndDockPromptPresenting = NSApp.delegateTyped.defaultBrowserAndDockPromptPresenter,
          visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager
@@ -92,12 +96,18 @@ final class MainViewController: NSViewController {
         self.tabCollectionViewModel = tabCollectionViewModel
         self.bookmarkManager = bookmarkManager
         self.historyCoordinator = historyCoordinator
+        self.fireproofDomains = fireproofDomains
         self.isBurner = tabCollectionViewModel.isBurner
         self.featureFlagger = featureFlagger
         self.defaultBrowserAndDockPromptPresenting = defaultBrowserAndDockPromptPresenting
         self.visualStyle = visualStyleManager.style
 
-        tabBarViewController = TabBarViewController.create(tabCollectionViewModel: tabCollectionViewModel, bookmarkManager: bookmarkManager, activeRemoteMessageModel: NSApp.delegateTyped.activeRemoteMessageModel)
+        tabBarViewController = TabBarViewController.create(
+            tabCollectionViewModel: tabCollectionViewModel,
+            bookmarkManager: bookmarkManager,
+            fireproofDomains: fireproofDomains,
+            activeRemoteMessageModel: NSApp.delegateTyped.activeRemoteMessageModel
+        )
         bookmarksBarVisibilityManager = BookmarksBarVisibilityManager(selectedTabPublisher: tabCollectionViewModel.$selectedTabViewModel.eraseToAnyPublisher())
 
         let networkProtectionPopoverManager: NetPPopoverManager = { @MainActor in
@@ -141,16 +151,21 @@ final class MainViewController: NSViewController {
             )
         }()
 
+        browserTabViewController = BrowserTabViewController(tabCollectionViewModel: tabCollectionViewModel, bookmarkManager: bookmarkManager)
+        aiChatSidebarPresenter = AIChatSidebarPresenter(sidebarHost: browserTabViewController)
+
         navigationBarViewController = NavigationBarViewController.create(tabCollectionViewModel: tabCollectionViewModel,
                                                                          bookmarkManager: bookmarkManager,
                                                                          bookmarkDragDropManager: bookmarkDragDropManager,
                                                                          historyCoordinator: historyCoordinator,
+                                                                         contentBlocking: contentBlocking,
+                                                                         fireproofDomains: fireproofDomains,
                                                                          networkProtectionPopoverManager: networkProtectionPopoverManager,
                                                                          networkProtectionStatusReporter: networkProtectionStatusReporter,
                                                                          autofillPopoverPresenter: autofillPopoverPresenter,
-                                                                         brokenSitePromptLimiter: brokenSitePromptLimiter)
+                                                                         brokenSitePromptLimiter: brokenSitePromptLimiter,
+                                                                         aiChatSidebarPresenter: aiChatSidebarPresenter)
 
-        browserTabViewController = BrowserTabViewController(tabCollectionViewModel: tabCollectionViewModel, bookmarkManager: bookmarkManager)
         findInPageViewController = FindInPageViewController.create()
         fireViewController = FireViewController.create(tabCollectionViewModel: tabCollectionViewModel)
         bookmarksBarViewController = BookmarksBarViewController.create(

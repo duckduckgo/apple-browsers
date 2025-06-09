@@ -27,6 +27,8 @@ import AIChat
 @MainActor
 protocol WindowControllersManagerProtocol {
 
+    var stateChanged: AnyPublisher<Void, Never> { get }
+
     var mainWindowControllers: [MainWindowController] { get }
     var selectedTab: Tab? { get }
     var allTabCollectionViewModels: [TabCollectionViewModel] { get }

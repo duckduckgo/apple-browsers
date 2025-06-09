@@ -34,7 +34,7 @@ final class PrivacyProSubscriptionRedirectManager: SubscriptionRedirectManager {
 
     init(subscriptionManager: any SubscriptionAuthV1toV2Bridge,
          baseURL: URL,
-         tld: TLD = ContentBlocking.shared.tld,
+         tld: TLD = Application.appDelegate.tld,
          featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger) {
         self.subscriptionManager = subscriptionManager
         self.baseURL = baseURL

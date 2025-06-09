@@ -49,7 +49,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2Tests: XCTestCase {
         mockSubscriptionManager = SubscriptionManagerMockV2()
         mockStripePurchaseFlow = StripePurchaseFlowMockV2(subscriptionOptionsResult: .success(.empty), prepareSubscriptionPurchaseResult: .success(.completed))
         mockUIHandler = SubscriptionUIHandlerMock( didPerformActionCallback: { _ in })
-        mockSubscriptionFeatureAvailability = SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true)
+        mockSubscriptionFeatureAvailability = SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true, usesUnifiedFeedbackForm: false)
         mockFreemiumDBPUserStateManager = MockFreemiumDBPUserStateManager()
         mockFreemiumDBPPixelExperimentManager = MockFreemiumDBPPixelExperimentManager()
         mockNotificationCenter = NotificationCenter()

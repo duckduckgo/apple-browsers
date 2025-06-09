@@ -101,7 +101,7 @@ final class MoreOptionsMenuTests: XCTestCase {
                                           fireproofDomains: fireproofDomains,
                                           passwordManagerCoordinator: passwordManagerCoordinator,
                                           vpnFeatureGatekeeper: networkProtectionVisibilityMock,
-                                          subscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true),
+                                          subscriptionFeatureAvailability: SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true, usesUnifiedFeedbackForm: false),
                                           sharingMenu: NSMenu(),
                                           internalUserDecider: internalUserDecider,
                                           subscriptionManager: subscriptionManager,

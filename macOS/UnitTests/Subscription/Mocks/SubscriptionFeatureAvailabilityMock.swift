@@ -21,15 +21,10 @@ import Subscription
 import BrowserServicesKit
 
 public final class SubscriptionFeatureAvailabilityMock: SubscriptionFeatureAvailability {
-    static public var enabled: SubscriptionFeatureAvailabilityMock {
-        return SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true)
-    }
-
-    public var isSubscriptionPurchaseAllowed: Bool
     public var isPaidAIChatEnabled: Bool = true
+    public var isSubscriptionPurchaseAllowed: Bool
 
-    public init(isSubscriptionPurchaseAllowed: Bool) {
+    public init(isSubscriptionPurchaseAllowed: Bool, usesUnifiedFeedbackForm: Bool) {
         self.isSubscriptionPurchaseAllowed = isSubscriptionPurchaseAllowed
     }
-
 }

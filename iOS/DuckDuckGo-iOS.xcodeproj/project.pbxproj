@@ -344,6 +344,8 @@
 		569437342BE4E41500C0881B /* SyncErrorHandlerSyncErrorsAlertsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 569437322BE4E3DD00C0881B /* SyncErrorHandlerSyncErrorsAlertsTests.swift */; };
 		569437362BE5160600C0881B /* SyncSettingsViewControllerErrorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 569437352BE5160600C0881B /* SyncSettingsViewControllerErrorTests.swift */; };
 		569B072A2DD7378700E0719A /* ThreatProtectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 569B07292DD7378700E0719A /* ThreatProtectionView.swift */; };
+		56A0FE0D2DF7A44800486632 /* SubscriptionFeatureAvailabilityMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56A0FE0C2DF7A44800486632 /* SubscriptionFeatureAvailabilityMock.swift */; };
+		56A0FE0E2DF7A52F00486632 /* SubscriptionFeatureAvailabilityMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56A0FE0C2DF7A44800486632 /* SubscriptionFeatureAvailabilityMock.swift */; };
 		56A3CDE52DF2F37F00DDE757 /* SubscriptionPagesUseSubscriptionFeatureV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56A3CDE42DF2F37F00DDE757 /* SubscriptionPagesUseSubscriptionFeatureV2Tests.swift */; };
 		56A3CDF72DF2FE8D00DDE757 /* MockSubscriptionFreeTrialsHelping.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56A3CDF62DF2FE8D00DDE757 /* MockSubscriptionFreeTrialsHelping.swift */; };
 		56BE17D52DDCA0BA00C0CE57 /* ContentScopeExperimentsDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56BE17D42DDCA0BA00C0CE57 /* ContentScopeExperimentsDebugView.swift */; };
@@ -2169,6 +2171,7 @@
 		569437322BE4E3DD00C0881B /* SyncErrorHandlerSyncErrorsAlertsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncErrorHandlerSyncErrorsAlertsTests.swift; sourceTree = "<group>"; };
 		569437352BE5160600C0881B /* SyncSettingsViewControllerErrorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncSettingsViewControllerErrorTests.swift; sourceTree = "<group>"; };
 		569B07292DD7378700E0719A /* ThreatProtectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreatProtectionView.swift; sourceTree = "<group>"; };
+		56A0FE0C2DF7A44800486632 /* SubscriptionFeatureAvailabilityMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionFeatureAvailabilityMock.swift; sourceTree = "<group>"; };
 		56A3CDE42DF2F37F00DDE757 /* SubscriptionPagesUseSubscriptionFeatureV2Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPagesUseSubscriptionFeatureV2Tests.swift; sourceTree = "<group>"; };
 		56A3CDF62DF2FE8D00DDE757 /* MockSubscriptionFreeTrialsHelping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockSubscriptionFreeTrialsHelping.swift; sourceTree = "<group>"; };
 		56BE17D42DDCA0BA00C0CE57 /* ContentScopeExperimentsDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentScopeExperimentsDebugView.swift; sourceTree = "<group>"; };
@@ -4858,6 +4861,7 @@
 			isa = PBXGroup;
 			children = (
 				56A3CDF62DF2FE8D00DDE757 /* MockSubscriptionFreeTrialsHelping.swift */,
+				56A0FE0C2DF7A44800486632 /* SubscriptionFeatureAvailabilityMock.swift */,
 			);
 			path = Mocks;
 			sourceTree = "<group>";
@@ -10256,6 +10260,7 @@
 				9FBC76672CFE33B5008B21E7 /* MaliciousSiteProtectionNavigationHandlerTests.swift in Sources */,
 				9F23B8062C2BE22700950875 /* OnboardingIntroViewModelTests.swift in Sources */,
 				85D2187424BF25CD004373D2 /* FaviconsTests.swift in Sources */,
+				56A0FE0D2DF7A44800486632 /* SubscriptionFeatureAvailabilityMock.swift in Sources */,
 				9F254ACB2CF5CDC60063B308 /* SpecialErrorPageNavigationHandlerTests.swift in Sources */,
 				98E564372DE8B6BF00E6E75F /* PrivacyConfigurationManagerMock.swift in Sources */,
 				CBC88EE12C7F834300F0F8C5 /* SpecialErrorPageUserScriptTests.swift in Sources */,
@@ -10610,6 +10615,7 @@
 				98E564732DE8DDDC00E6E75F /* MockAIChatSettingsProvider.swift in Sources */,
 				98E564742DE8DDDC00E6E75F /* AppSettingsMock.swift in Sources */,
 				98E564752DE8DDDC00E6E75F /* MockTutorialSettings.swift in Sources */,
+				56A0FE0E2DF7A52F00486632 /* SubscriptionFeatureAvailabilityMock.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

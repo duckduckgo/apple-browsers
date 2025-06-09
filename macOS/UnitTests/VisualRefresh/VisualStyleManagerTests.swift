@@ -342,47 +342,47 @@ class VisualStyleManagerTests: XCTestCase {
             }
         }
 
-        func override<Flag>(for featureFlag: Flag) -> Bool? where Flag : BrowserServicesKit.FeatureFlagDescribing {
+        func override<Flag>(for featureFlag: Flag) -> Bool? where Flag: BrowserServicesKit.FeatureFlagDescribing {
             return overrides[featureFlag.rawValue]
         }
 
-        func experimentOverride<Flag>(for featureFlag: Flag) -> BrowserServicesKit.CohortID? where Flag : BrowserServicesKit.FeatureFlagDescribing {
+        func experimentOverride<Flag>(for featureFlag: Flag) -> BrowserServicesKit.CohortID? where Flag: BrowserServicesKit.FeatureFlagDescribing {
             return nil
         }
 
-        func toggleOverride<Flag>(for featureFlag: Flag) where Flag : BrowserServicesKit.FeatureFlagDescribing {
+        func toggleOverride<Flag>(for featureFlag: Flag) where Flag: BrowserServicesKit.FeatureFlagDescribing {
             let currentValue = override(for: featureFlag)
             setOverride(for: featureFlag as! FeatureFlag, value: currentValue == nil ? true : !currentValue!)
         }
 
-        func setExperimentCohortOverride<Flag>(for featureFlag: Flag, cohort: BrowserServicesKit.CohortID) where Flag : BrowserServicesKit.FeatureFlagDescribing {
+        func setExperimentCohortOverride<Flag>(for featureFlag: Flag, cohort: BrowserServicesKit.CohortID) where Flag: BrowserServicesKit.FeatureFlagDescribing {
             // Not needed for visual updates tests
         }
 
-        func clearOverride<Flag>(for featureFlag: Flag) where Flag : BrowserServicesKit.FeatureFlagDescribing {
+        func clearOverride<Flag>(for featureFlag: Flag) where Flag: BrowserServicesKit.FeatureFlagDescribing {
             // Not needed for visual updates tests
         }
 
-        func currentValue<Flag>(for featureFlag: Flag) -> Bool? where Flag : BrowserServicesKit.FeatureFlagDescribing {
+        func currentValue<Flag>(for featureFlag: Flag) -> Bool? where Flag: BrowserServicesKit.FeatureFlagDescribing {
             return nil
         }
 
-        func currentExperimentCohort<Flag>(for featureFlag: Flag) -> (any BrowserServicesKit.FeatureFlagCohortDescribing)? where Flag : BrowserServicesKit.FeatureFlagDescribing {
+        func currentExperimentCohort<Flag>(for featureFlag: Flag) -> (any BrowserServicesKit.FeatureFlagCohortDescribing)? where Flag: BrowserServicesKit.FeatureFlagDescribing {
             return nil
         }
 
-        func clearAllOverrides<Flag>(for flagType: Flag.Type) where Flag : BrowserServicesKit.FeatureFlagDescribing {
+        func clearAllOverrides<Flag>(for flagType: Flag.Type) where Flag: BrowserServicesKit.FeatureFlagDescribing {
             // Not needed for visual updates tests
         }
 
         // MARK: - Mocks
 
         class MockFeatureFlagLocalOverridesHandling: FeatureFlagLocalOverridesHandling {
-            func flagDidChange<Flag>(_ featureFlag: Flag, isEnabled: Bool) where Flag : BrowserServicesKit.FeatureFlagDescribing {
+            func flagDidChange<Flag>(_ featureFlag: Flag, isEnabled: Bool) where Flag: BrowserServicesKit.FeatureFlagDescribing {
                 // Not needed for visual updates tests
             }
 
-            func experimentFlagDidChange<Flag>(_ featureFlag: Flag, cohort: BrowserServicesKit.CohortID) where Flag : BrowserServicesKit.FeatureFlagDescribing {
+            func experimentFlagDidChange<Flag>(_ featureFlag: Flag, cohort: BrowserServicesKit.CohortID) where Flag: BrowserServicesKit.FeatureFlagDescribing {
                 // Not needed for visual updates tests
             }
         }

@@ -190,7 +190,8 @@ enum Preferences {
             return PreferencesPurchaseSubscriptionModel(subscriptionManager: subscriptionManager,
                                                         featureFlagger: Application.appDelegate.featureFlagger,
                                                         userEventHandler: userEventHandler,
-                                                        sheetActionHandler: sheetActionHandler)
+                                                        sheetActionHandler: sheetActionHandler,
+                                                        featureFlagger: NSApp.delegateTyped.featureFlagger)
         }
 
         private func makePersonalInformationRemovalViewModel() -> PreferencesPersonalInformationRemovalModel {
@@ -423,7 +424,8 @@ enum Preferences {
             return PreferencesPurchaseSubscriptionModel(subscriptionManager: subscriptionManager,
                                                         featureFlagger: Application.appDelegate.featureFlagger,
                                                         userEventHandler: userEventHandler,
-                                                        sheetActionHandler: sheetActionHandler)
+                                                        sheetActionHandler: sheetActionHandler,
+                                                        featureFlagger: NSApp.delegateTyped.featureFlagger)
         }
 
         private func makePersonalInformationRemovalViewModel() -> PreferencesPersonalInformationRemovalModel {

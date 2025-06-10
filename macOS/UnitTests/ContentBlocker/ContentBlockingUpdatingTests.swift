@@ -65,7 +65,8 @@ final class ContentBlockingUpdatingTests: XCTestCase {
                                        startupPreferences: startupPreferences,
                                        bookmarkManager: MockBookmarkManager(),
                                        historyCoordinator: CapturingHistoryDataSource(),
-                                       fireproofDomains: MockFireproofDomains(domains: []))
+                                       fireproofDomains: MockFireproofDomains(domains: []),
+                                       fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld))
     }
 
     override static func setUp() {

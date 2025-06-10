@@ -62,7 +62,7 @@ final class FireViewModel {
     }
 
     @MainActor
-    init(tld: TLD = NSApp.delegateTyped.tld) {
+    init(tld: TLD) {
         fire = Fire(tld: tld)
     }
 

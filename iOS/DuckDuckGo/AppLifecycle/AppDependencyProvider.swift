@@ -236,6 +236,7 @@ final class AppDependencyProvider: DependencyProvider {
             let pixelHandler = AuthV2PixelHandler(source: .mainApp)
             let subscriptionManager = DefaultSubscriptionManagerV2(storePurchaseManager: storePurchaseManager,
                                                                    oAuthClient: authClient,
+                                                                   userDefaults: subscriptionUserDefaults,
                                                                    subscriptionEndpointService: subscriptionEndpointService,
                                                                    subscriptionEnvironment: subscriptionEnvironment,
                                                                    pixelHandler: pixelHandler,

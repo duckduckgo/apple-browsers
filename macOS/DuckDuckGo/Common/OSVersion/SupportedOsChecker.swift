@@ -129,7 +129,7 @@ extension SupportedOSChecker: SupportedOSChecking {
         }
 
         guard !featureFlagger.isFeatureOn(.osSupportForceWillSoonDropSupportMessage) else {
-            return .willDropSupportSoon(osVersionAsString(minSupportedOSVersion))
+            return .willDropSupportSoon(osVersionAsString(upcomingMinSupportedOSVersion))
         }
 
         guard currentOSVersion > minSupportedOSVersion else {

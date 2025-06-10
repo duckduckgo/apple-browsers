@@ -100,10 +100,10 @@ public enum FeatureFlag: String, CaseIterable {
     case aiChatSidebar
 
     /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
-    case forceUnsupportedMacOSVersionMessaging
+    case osSupportPretendImOnBigSur
 
     /// https://app.asana.com/1/137249556945/project/1206580121312550/task/1209808389662317?focus=true
-    case minimumSupportedVersionIsMonterrey
+    case willSoonDropBigSurSupport
 }
 
 extension FeatureFlag: FeatureFlagDescribing {
@@ -149,8 +149,8 @@ extension FeatureFlag: FeatureFlagDescribing {
                 .canScanUrlBasedSyncSetupBarcodes,
                 .removeWWWInCanonicalizationInThreatProtection,
                 .aiChatSidebar,
-                .forceUnsupportedMacOSVersionMessaging,
-                .minimumSupportedVersionIsMonterrey:
+                .osSupportPretendImOnBigSur,
+                .willSoonDropBigSurSupport:
             return true
         case .debugMenu,
                 .sslCertificatesBypass,
@@ -233,9 +233,9 @@ extension FeatureFlag: FeatureFlagDescribing {
             return .remoteReleasable(.subfeature(MaliciousSiteProtectionSubfeature.removeWWWInCanonicalization))
         case .aiChatSidebar:
             return .internalOnly()
-        case .forceUnsupportedMacOSVersionMessaging:
+        case .osSupportPretendImOnBigSur:
             return .disabled
-        case .minimumSupportedVersionIsMonterrey:
+        case .willSoonDropBigSurSupport:
             return .internalOnly()
         }
     }

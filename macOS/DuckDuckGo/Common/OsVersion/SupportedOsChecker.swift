@@ -20,75 +20,111 @@ import BrowserServicesKit
 import Foundation
 import FeatureFlags
 
-protocol SupportedOSChecking {
-    /// Whether the current OS version is receiving updates
-    ///
-    var isCurrentOSReceivingUpdates: Bool { get }
-
-    /// The user-facing version string for the current OS version
-    ///
-    var currentOSVersionString: String { get }
-
-    /// The user-facing version string for the minimum supported OS version
-    ///
-    var minSupportedOSVersionString: String { get }
+enum OSSupportWarning {
+    case unsupported(_ minVersion: String)
+    case willDropSupportSoon(_ upcomingMinVersion: String)
 }
 
-final class SupportedOSChecker: SupportedOSChecking {
+protocol SupportedOSChecking {
+
+    /// Whether a OS-support warning should be shown to the user.
+    ///
+    var showsSupportWarning: Bool { get }
+
+    /// The OS-support warning to show to the user.
+    ///
+    /// This can be either due to the user's macOS version becoming unsupported or
+    /// to let the user know it will soon be.
+    ///
+    var supportWarning: OSSupportWarning? { get }
+}
+
+extension SupportedOSChecking {
+    var showsSupportWarning: Bool {
+        supportWarning != nil
+    }
+}
+
+extension OperatingSystemVersion: @retroactive Comparable {
+    public static func == (lhs: OperatingSystemVersion, rhs: OperatingSystemVersion) -> Bool {
+        lhs.majorVersion == rhs.majorVersion
+        && lhs.minorVersion == rhs.minorVersion
+    }
+
+    public static func > (lhs: OperatingSystemVersion, rhs: OperatingSystemVersion) -> Bool {
+        lhs.majorVersion > rhs.majorVersion
+        || (lhs.majorVersion == rhs.majorVersion
+            && (lhs.minorVersion > rhs.minorVersion
+                || lhs.minorVersion == rhs.minorVersion && lhs.patchVersion >= rhs.patchVersion))
+    }
+
+    public static func < (lhs: OperatingSystemVersion, rhs: OperatingSystemVersion) -> Bool {
+        !(lhs > rhs)
+    }
+}
+
+final class SupportedOSChecker {
     static let ddgMinBigSurVersion = OperatingSystemVersion(majorVersion: 11,
                                                             minorVersion: 4,
                                                             patchVersion: 0)
     static let ddgMinMonterreyVersion = OperatingSystemVersion(majorVersion: 12,
                                                                minorVersion: 3,
                                                                patchVersion: 0)
-    private let currentOSVersion: OperatingSystemVersion
+    private var currentOSVersion: OperatingSystemVersion {
+        if let currentOSVersionOverride {
+            return currentOSVersionOverride
+        }
 
+        guard !featureFlagger.isFeatureOn(.osSupportPretendImOnBigSur) else {
+            return Self.ddgMinBigSurVersion
+        }
+
+        return ProcessInfo.processInfo.operatingSystemVersion
+    }
+    private var currentOSVersionOverride: OperatingSystemVersion?
     private let featureFlagger: FeatureFlagger
 
-    var forceUnsupportedMacOSVersionMessaging: Bool {
-        featureFlagger.isFeatureOn(.forceUnsupportedMacOSVersionMessaging)
+    var minSupportedOSVersion: OperatingSystemVersion {
+        Self.ddgMinBigSurVersion
     }
 
-    var supportedOSVersion: OperatingSystemVersion {
-        guard featureFlagger.isFeatureOn(.minimumSupportedVersionIsMonterrey) else {
-            return Self.ddgMinBigSurVersion
+    var upcomingMinSupportedOSVersion: OperatingSystemVersion? {
+        guard featureFlagger.isFeatureOn(.willSoonDropBigSurSupport) else {
+            return nil
         }
 
         return Self.ddgMinMonterreyVersion
     }
 
     init(featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
-         currentOSVersion: OperatingSystemVersion = ProcessInfo.processInfo.operatingSystemVersion) {
+         currentOSVersionOverride: OperatingSystemVersion? = nil) {
 
-        self.currentOSVersion = currentOSVersion
+        self.currentOSVersionOverride = currentOSVersionOverride
         self.featureFlagger = featureFlagger
-    }
-
-    // Check if the current macOS version is at least the supported version
-    var isCurrentOSReceivingUpdates: Bool {
-        guard !forceUnsupportedMacOSVersionMessaging else {
-            return false
-        }
-
-        if currentOSVersion.majorVersion > supportedOSVersion.majorVersion {
-            return true
-        }
-        if currentOSVersion.majorVersion == supportedOSVersion.majorVersion {
-            if currentOSVersion.minorVersion > supportedOSVersion.minorVersion {
-                return true
-            }
-            if currentOSVersion.minorVersion == supportedOSVersion.minorVersion && currentOSVersion.patchVersion >= supportedOSVersion.patchVersion {
-                return true
-            }
-        }
-        return false
     }
 
     var currentOSVersionString: String {
         "\(ProcessInfo.processInfo.operatingSystemVersion)"
     }
 
-    var minSupportedOSVersionString: String {
-        "\(supportedOSVersion.majorVersion).\(supportedOSVersion.minorVersion)"
+    private func osVersionAsString(_ version: OperatingSystemVersion) -> String {
+        "\(version.majorVersion).\(version.minorVersion)"
+    }
+}
+
+extension SupportedOSChecker: SupportedOSChecking {
+
+    var supportWarning: OSSupportWarning? {
+        guard currentOSVersion > minSupportedOSVersion else {
+            return .unsupported(osVersionAsString(minSupportedOSVersion))
+        }
+
+        if let upcomingMinSupportedOSVersion {
+            guard currentOSVersion > upcomingMinSupportedOSVersion else {
+                return .willDropSupportSoon(osVersionAsString(upcomingMinSupportedOSVersion))
+            }
+        }
+
+        return nil
     }
 }

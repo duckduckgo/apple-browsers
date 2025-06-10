@@ -135,8 +135,8 @@ final class AboutPreferences: ObservableObject, PreferencesTabOpening {
     let displayableAboutURL: String = URL.aboutDuckDuckGo
         .toString(decodePunycode: false, dropScheme: true, dropTrailingSlash: false)
 
-    var isCurrentOsReceivingUpdates: Bool {
-        return supportedOSChecker.isCurrentOSReceivingUpdates
+    var osSupportWarning: OSSupportWarning? {
+        supportedOSChecker.supportWarning
     }
 
     @MainActor

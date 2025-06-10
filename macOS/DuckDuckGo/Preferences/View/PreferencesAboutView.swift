@@ -46,8 +46,8 @@ extension Preferences {
                 VStack(alignment: .leading) {
                     TextMenuTitle(UserText.aboutDuckDuckGo)
 
-                    if !model.isCurrentOsReceivingUpdates {
-                        UnsupportedDeviceInfoBox(wide: true, supportedOSChecker: model.supportedOSChecker)
+                    if let warning = model.osSupportWarning {
+                        UnsupportedDeviceInfoBox(wide: true, warning: warning)
                             .padding(.top, 10)
                             .padding(.leading, -20)
                     }
@@ -379,7 +379,8 @@ extension Preferences {
         static let softwareUpdateURL = URL(string: "x-apple.systempreferences:com.apple.preferences.softwareupdate")!
 
         var wide: Bool
-        var supportedOSChecker: SupportedOSChecking
+        var warning: OSSupportWarning
+        //var supportedOSChecker: SupportedOSChecking
 
         var width: CGFloat {
             return wide ? 510 : 320
@@ -393,12 +394,30 @@ extension Preferences {
             return "\(ProcessInfo.processInfo.operatingSystemVersion)"
         }
 
-        var combinedText: String {
-            return UserText.aboutUnsupportedDeviceInfo2(version: versionString)
+        var versionString: String {
+            switch warning {
+            case .unsupported(let versionString),
+                    .willDropSupportSoon(let versionString):
+                return versionString
+            }
         }
 
-        var versionString: String {
-            supportedOSChecker.minSupportedOSVersionString
+        var versionText: String {
+            switch warning {
+            case .unsupported:
+                return UserText.aboutUnsupportedDeviceInfo1
+            case .willDropSupportSoon:
+                return UserText.aboutWillSoonBeUnsupportedDeviceInfo1
+            }
+        }
+
+        var combinedText: String {
+            switch warning {
+            case .unsupported(let minVersion):
+                return UserText.aboutUnsupportedDeviceInfo2(version: minVersion)
+            case .willDropSupportSoon(let upcomingMinVersion):
+                return UserText.aboutWillSoonBeUnsupportedDeviceInfo2(version: upcomingMinVersion)
+            }
         }
 
         var body: some View {
@@ -407,16 +426,15 @@ extension Preferences {
                 .frame(width: 16, height: 16)
                 .padding(.trailing, 4)
 
-            let versionText = Text(UserText.aboutUnsupportedDeviceInfo1)
-
+            let versionText = Text(versionText)
             let narrowContentView = Text(combinedText)
 
             let wideContentView: some View = VStack(alignment: .leading, spacing: 0) {
-                if #available(macOS 12.0, *) {
-                    Text(aboutUnsupportedDeviceInfo2Attributed)
-                } else {
+                //if #available(macOS 12.0, *) {
+                //    Text(aboutUnsupportedDeviceInfo2Attributed)
+                //} else {
                     aboutUnsupportedDeviceInfo2DeprecatedView()
-                }
+                //}
             }
 
             return HStack(alignment: .top) {
@@ -438,8 +456,7 @@ extension Preferences {
 
         @available(macOS 12, *)
         private var aboutUnsupportedDeviceInfo2Attributed: AttributedString {
-            let baseString = UserText.aboutUnsupportedDeviceInfo2(version: versionString)
-            var instructions = AttributedString(baseString)
+            var instructions = AttributedString(combinedText)
             if let range = instructions.range(of: "macOS \(versionString)") {
                 instructions[range].link = Self.softwareUpdateURL
             }

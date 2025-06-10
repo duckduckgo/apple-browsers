@@ -1,0 +1,24 @@
+name: 'Send Pixel'
+description: 'Send a pixel tracking request'
+inputs:
+  pixel-name:
+    description: 'Name of the pixel to send'
+    required: true
+  query-params:
+    description: 'Query parameters to append to the pixel URL (e.g., "param1=value1&param2=value2")'
+    required: false
+    default: ''
+runs:
+  using: 'composite'
+  steps:
+    - name: Send pixel request
+      shell: bash
+      run: |
+        PIXEL_URL="${{ vars.PIXEL_BASE_URL }}${{ inputs.pixel-name }}"
+
+        if [[ -n "${{ inputs.query-params }}" ]]; then
+          PIXEL_URL="${PIXEL_URL}?${{ inputs.query-params }}"
+        fi
+
+        echo "Sending pixel to: ${PIXEL_URL}"
+        curl -fLSs -o /dev/null "${PIXEL_URL}"

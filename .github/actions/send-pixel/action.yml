@@ -28,7 +28,7 @@ runs:
 
         # Add user-provided query params if any
         if [[ "${{ inputs.query-params }}" != "{}" && -n "${{ inputs.query-params }}" ]]; then
-          USER_PARAMS=$(yq -r 'to_entries | map("\(.key)=\(.value | @uri)") | join("&")' <<< '${{ inputs.query-params }}')
+          USER_PARAMS=$(yq -r 'to_entries | map("\(.key)=\(.value | tostring | @uri)") | join("&")' <<< '${{ inputs.query-params }}')
 
           if [[ -n "${USER_PARAMS}" && "${USER_PARAMS}" != "null" ]]; then
             QUERY_STRING="${QUERY_STRING}&${USER_PARAMS}"

@@ -265,7 +265,7 @@ enum Preferences {
         }
 
         private func openURL(subscriptionURL: SubscriptionURL) {
-            Task { @MainActor in
+            DispatchQueue.main.async {
                 let url = subscriptionManager.url(for: subscriptionURL)
                     .appendingParameter(name: AttributionParameter.origin,
                                         value: SubscriptionFunnelOrigin.appSettings.rawValue)
@@ -519,11 +519,11 @@ enum Preferences {
         }
 
         private func openURL(subscriptionURL: SubscriptionURL) {
-            Task { @MainActor in
+            DispatchQueue.main.async {
                 let url = subscriptionManager.url(for: subscriptionURL)
                     .appendingParameter(name: AttributionParameter.origin,
                                         value: SubscriptionFunnelOrigin.appSettings.rawValue)
-                showTab(.subscription(url))
+                Application.appDelegate.windowControllersManager.showTab(with: .subscription(url))
             }
         }
     }

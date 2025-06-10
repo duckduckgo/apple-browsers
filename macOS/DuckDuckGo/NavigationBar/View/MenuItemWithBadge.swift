@@ -181,6 +181,9 @@ struct MenuItemWithBadge: View {
     /// Callback executed when the menu item is selected
     var onTapMenuItem: () -> Void
 
+    /// Environment variable that tracks the current system color scheme (light or dark mode)
+    @Environment(\.colorScheme) var colorScheme
+
     /// Tracks whether the menu item is currently being hovered
     @State private var isHovered: Bool = false
 
@@ -188,7 +191,7 @@ struct MenuItemWithBadge: View {
         ZStack {
             // Background highlight that appears on hover
             RoundedRectangle(cornerRadius: MenuItemWithBadgeConstants.menuItemCornerRadius)
-                .fill(isHovered ? Color.accentColor : Color.clear)
+                .fill(isHovered ? .menuItemHover : Color.clear)
                 .padding([.leading, .trailing], MenuItemWithBadgeConstants.menuItemHorizontalPadding)
                 .frame(maxWidth: .infinity)
 
@@ -197,14 +200,14 @@ struct MenuItemWithBadge: View {
                 // Left icon
                 Image(nsImage: leftImage)
                     .resizable()
-                    .foregroundColor(isHovered ? .white : .blackWhite100)
+                    .foregroundColor(isHovered ? .white : .menuItemForegroundColor(for: colorScheme))
                     .frame(width: MenuItemWithBadgeConstants.iconSize, height: MenuItemWithBadgeConstants.iconSize)
                     .padding(.trailing, MenuItemWithBadgeConstants.iconTitleSpacing)
                     .padding(.leading, MenuItemWithBadgeConstants.iconLeftPadding)
 
                 // Menu item title
                 Text(title)
-                    .foregroundColor(isHovered ? .white : .blackWhite100.opacity(0.9))
+                    .foregroundColor(isHovered ? .white : .menuItemForegroundColor(for: colorScheme))
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                 // Badge on the right side
@@ -218,6 +221,28 @@ struct MenuItemWithBadge: View {
         .onTapGesture {
             onTapMenuItem()
         }
+    }
+}
+
+/// Extension providing dynamic color support for menu item foreground colors.
+/// This is needed to match the macOS system menu colors.
+private extension Color {
+
+    /// Light mode color value using Display P3 color space. RGB values: (36, 36, 35).
+    private static let light = Color(.displayP3, red: 36/255.0, green: 36/255.0, blue: 35/255.0)
+
+    /// Dark mode color value using Display P3 color space. RGB values: (223, 223, 223).
+    private static let dark = Color(.displayP3, red: 223/255.0, green: 223/255.0, blue: 223/255.0)
+
+    /// Returns the appropriate menu item foreground color based on the current color scheme.
+    ///
+    /// - Parameter colorScheme: The current color scheme from the SwiftUI environment
+    /// - Returns: A `Color` instance appropriate for the given color scheme
+    ///
+    /// - **Light mode**: RGB(36, 36, 35) - Dark gray for readability on light backgrounds
+    /// - **Dark mode**: RGB(223, 223, 223) - Light gray for readability on dark backgrounds
+    static func menuItemForegroundColor(for colorScheme: ColorScheme) -> Color {
+        colorScheme == .dark ? dark : light
     }
 }
 

@@ -1162,6 +1162,7 @@
 		9D41D8DF2DC5213500BA0B63 /* DBPService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D41D8DE2DC5213500BA0B63 /* DBPService.swift */; };
 		9D6891E72DAD2DF800819662 /* DataBrokerProtection-iOS in Frameworks */ = {isa = PBXBuildFile; productRef = 9D6891E62DAD2DF800819662 /* DataBrokerProtection-iOS */; };
 		9DB4A2C72DCA609400DBE00C /* DataBrokerProtectionDebugViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DB4A2C62DCA609400DBE00C /* DataBrokerProtectionDebugViewController.swift */; };
+		9F03113A2DF7C6B700AC4DB5 /* Logger+VideoPlayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F0311392DF7C6AC00AC4DB5 /* Logger+VideoPlayer.swift */; };
 		9F0311402DF7EC2300AC4DB5 /* default-browser-tutorial.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = 9F03113F2DF7EC2300AC4DB5 /* default-browser-tutorial.mp4 */; };
 		9F06EB8C2D10578000905426 /* MaliciousSiteProtectionSettingsViewModelTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F06EB8B2D10578000905426 /* MaliciousSiteProtectionSettingsViewModelTests.swift */; };
 		9F06EB922D10740500905426 /* MaliciousSiteProtectionPreferencesManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9F06EB912D10740500905426 /* MaliciousSiteProtectionPreferencesManagerTests.swift */; };
@@ -3254,6 +3255,7 @@
 		9D6891E52DAD25B600819662 /* DataBrokerProtection-iOS */ = {isa = PBXFileReference; lastKnownFileType = wrapper; path = "DataBrokerProtection-iOS"; sourceTree = "<group>"; };
 		9D87088B2DAD5075007E22D4 /* DataBrokerProtectionCore */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = DataBrokerProtectionCore; path = ../../SharedPackages/DataBrokerProtectionCore; sourceTree = "<group>"; };
 		9DB4A2C62DCA609400DBE00C /* DataBrokerProtectionDebugViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataBrokerProtectionDebugViewController.swift; sourceTree = "<group>"; };
+		9F0311392DF7C6AC00AC4DB5 /* Logger+VideoPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Logger+VideoPlayer.swift"; sourceTree = "<group>"; };
 		9F03113F2DF7EC2300AC4DB5 /* default-browser-tutorial.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; path = "default-browser-tutorial.mp4"; sourceTree = "<group>"; };
 		9F06EB8B2D10578000905426 /* MaliciousSiteProtectionSettingsViewModelTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaliciousSiteProtectionSettingsViewModelTests.swift; sourceTree = "<group>"; };
 		9F06EB912D10740500905426 /* MaliciousSiteProtectionPreferencesManagerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaliciousSiteProtectionPreferencesManagerTests.swift; sourceTree = "<group>"; };
@@ -6427,7 +6429,6 @@
 			isa = PBXGroup;
 			children = (
 				9F8E0F3B2CCFD050001EA7C5 /* Resources */,
-				9F8E0F2B2CCA617C001EA7C5 /* VideoPlayer */,
 				9F8E0F302CCA6390001EA7C5 /* AddToDockTutorialView.swift */,
 				9F8E0F372CCFAA8A001EA7C5 /* AddToDockPromoView.swift */,
 				9F8E0F3C2CCFD071001EA7C5 /* AddToDockPromoViewModel.swift */,
@@ -6441,6 +6442,7 @@
 			children = (
 				9F8E0F2C2CCA618E001EA7C5 /* VideoPlayerView.swift */,
 				9F8E0F2E2CCA6202001EA7C5 /* VideoPlayerViewModel.swift */,
+				9F0311392DF7C6AC00AC4DB5 /* Logger+VideoPlayer.swift */,
 			);
 			path = VideoPlayer;
 			sourceTree = "<group>";
@@ -6533,6 +6535,7 @@
 		9FF7E9802C22A19800902BE5 /* OnboardingExperiment */ = {
 			isa = PBXGroup;
 			children = (
+				9F8E0F2B2CCA617C001EA7C5 /* VideoPlayer */,
 				9F03113B2DF7DD2D00AC4DB5 /* SetAsDefault */,
 				9F8E0F282CCA577E001EA7C5 /* AddToDock */,
 				9F96F73D2C914C3D009E45D5 /* Background */,
@@ -9498,6 +9501,7 @@
 				6F9FFE2A2C57ADB100A238BE /* EditableShortcutsView.swift in Sources */,
 				1E908BF329827C480008C8F3 /* AutoconsentManagement.swift in Sources */,
 				D6D95CE32B6D9F8800960317 /* AsyncHeadlessWebViewModel.swift in Sources */,
+				9F03113A2DF7C6B700AC4DB5 /* Logger+VideoPlayer.swift in Sources */,
 				C185ED612BD4329700BAE9DC /* ImportPasswordsViaSyncStatusHandler.swift in Sources */,
 				F1849C6B2D6E3C98000589A4 /* DebugScreen.swift in Sources */,
 				F1849C6C2D6E3C98000589A4 /* DebugScreensViewModel.swift in Sources */,

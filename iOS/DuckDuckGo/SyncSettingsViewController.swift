@@ -398,7 +398,7 @@ extension SyncSettingsViewController: ScanOrPasteCodeViewModelDelegate {
                     return
                 }
             } catch {
-                handleError(SyncErrorMessage.unableToSyncWithDevice, error: error, event: .syncLoginError)
+                await handleError(SyncErrorMessage.unableToSyncWithDevice, error: error, event: .syncLoginError)
             }
         }
     }
@@ -495,15 +495,15 @@ extension SyncSettingsViewController: SyncConnectionControllerDelegate {
         sendSetupEndedSuccessfullyPixel(setupSource: syncSetupSource, codeSource: syncCodeSource)
     }
     
-    func controllerDidError(_ error: SyncConnectionError, underlyingError: (any Error)?, setupRole: SyncSetupRole) {
+    func controllerDidError(_ error: SyncConnectionError, underlyingError: (any Error)?, setupRole: SyncSetupRole) async {
         switch error {
         case .unableToRecognizeCode:
             sendCodeParsingFailedPixel(setupRole: setupRole)
-            handleError(.unableToRecognizeCode, error: underlyingError, event: nil)
+            await handleError(.unableToRecognizeCode, error: underlyingError, event: nil)
         case .failedToFetchPublicKey, .failedToTransmitExchangeRecoveryKey, .failedToFetchConnectRecoveryKey, .failedToLogIn, .failedToTransmitExchangeKey, .failedToFetchExchangeRecoveryKey, .failedToTransmitConnectRecoveryKey:
-            handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncLoginError)
+            await handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncLoginError)
         case .failedToCreateAccount:
-            handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncSignupError)
+            await handleError(.unableToSyncWithDevice, error: underlyingError, event: .syncSignupError)
         case .pollingForRecoveryKeyTimedOut:
             dismissPresentedViewController()
             handleRecoveryKeyPollingTimeout(setupRole: setupRole)

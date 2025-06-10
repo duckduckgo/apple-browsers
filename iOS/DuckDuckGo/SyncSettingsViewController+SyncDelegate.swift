@@ -130,7 +130,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 let devices = try await syncService.updateDeviceName(name)
                 mapDevices(devices)
             } catch {
-                handleError(SyncErrorMessage.unableToUpdateDeviceName, error: error, event: .syncUpdateDeviceError)
+                await handleError(SyncErrorMessage.unableToUpdateDeviceName, error: error, event: .syncUpdateDeviceError)
             }
             syncService.scheduler.resumeSyncQueue()
         }
@@ -150,36 +150,48 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     self.refreshDevices()
                     self.navigationController?.topViewController?.dismiss(animated: true, completion: self.showRecoveryPDF)
                 } catch {
-                    self.handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncSignupError)
+                    await self.handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncSignupError)
                 }
             }
         }
     }
 
     @MainActor
-    func handleError(_ type: SyncErrorMessage, error: Error?, event: Pixel.Event?) {
-        if type.shouldSendPixel, let event = event {
-            firePixelIfNeededFor(event: event, error: error)
-        }
-        let alertController = UIAlertController(
-            title: type.title,
-            message: [type.description, error?.localizedDescription].compactMap({ $0 }).joined(separator: "\n"),
-            preferredStyle: .alert)
-        let okAction = UIAlertAction(title: UserText.syncPausedAlertOkButton, style: .default, handler: nil)
-        alertController.addAction(okAction)
-
-        if type == .unableToSyncToServer ||
-            type == .unableToSyncWithDevice ||
-            type == .unableToMergeTwoAccounts {
-            // Gives time to the is syncing view to appear
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                self.dismissPresentedViewController { [weak self] in
-                    self?.present(alertController, animated: true, completion: nil)
-                }
+    func handleError(_ type: SyncErrorMessage, error: Error?, event: Pixel.Event?) async {
+        await withCheckedContinuation { continuation in
+            if type.shouldSendPixel, let event = event {
+                firePixelIfNeededFor(event: event, error: error)
             }
-        } else {
-            self.dismissPresentedViewController { [weak self] in
-                self?.present(alertController, animated: true, completion: nil)
+            let alertController = UIAlertController(
+                title: type.title,
+                message: [type.description, error?.localizedDescription].compactMap({ $0 }).joined(separator: "\n"),
+                preferredStyle: .alert)
+            let okAction = UIAlertAction(title: UserText.syncPausedAlertOkButton, style: .default, handler: nil)
+            alertController.addAction(okAction)
+
+            if type == .unableToSyncToServer || type == .unableToSyncWithDevice || type == .unableToMergeTwoAccounts {
+                // Gives time to the is syncing view to appear
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                    self.dismissPresentedViewController { [weak self] in
+                        guard let self else {
+                            continuation.resume()
+                            return
+                        }
+                        self.present(alertController, animated: true) {
+                            continuation.resume()
+                        }
+                    }
+                }
+            } else {
+                self.dismissPresentedViewController { [weak self] in
+                    guard let self else {
+                        continuation.resume()
+                        return
+                    }
+                    self.present(alertController, animated: true) {
+                        continuation.resume()
+                    }
+                }
             }
         }
     }
@@ -327,7 +339,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     pairingInfo = try await connectionController.startExchangeMode()
                     source = .exchange
                 } catch {
-                    self.handleError(SyncErrorMessage.unableToSyncWithDevice, error: error, event: .syncLoginError)
+                    await handleError(SyncErrorMessage.unableToSyncWithDevice, error: error, event: .syncLoginError)
                     return
                 }
             } else {
@@ -335,7 +347,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     pairingInfo = try await connectionController.startConnectMode()
                     source = .connect
                 } catch {
-                    self.handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
+                    await handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
                     return
                 }
             }
@@ -360,7 +372,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                     codeForDisplayOrPasting = pairingInfo.base64Code
                     onPresentPixelInfo = .init(pixel: .syncSetupBarcodeScreenShown, source: .connect)
                 } catch {
-                    self.handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
+                    await handleError(SyncErrorMessage.unableToSyncToServer, error: error, event: .syncLoginError)
                     return
                 }
             }
@@ -416,19 +428,20 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             let alert = UIAlertController(title: UserText.syncTurnOffConfirmTitle,
                                           message: UserText.syncTurnOffConfirmMessage,
                                           preferredStyle: .alert)
-            self.onConfirmSyncDisable = {
-                   Task { @MainActor in
-                       do {
-                           try await self.syncService.disconnect()
-                           self.rootView.model.isSyncEnabled = false
-                           self.syncPausedStateManager.syncDidTurnOff()
-                           continuation.resume(returning: true)
-                       } catch {
-                           self.handleError(SyncErrorMessage.unableToTurnSyncOff, error: error, event: .syncLogoutError)
-                           continuation.resume(returning: false)
-                       }
-                   }
-               }
+            self.onConfirmSyncDisable = { [weak self] in
+                guard let self else { return }
+                Task { @MainActor in
+                    do {
+                        try await self.syncService.disconnect()
+                        self.rootView.model.isSyncEnabled = false
+                        self.syncPausedStateManager.syncDidTurnOff()
+                        continuation.resume(returning: true)
+                    } catch {
+                        await self.handleError(SyncErrorMessage.unableToTurnSyncOff, error: error, event: .syncLogoutError)
+                        continuation.resume(returning: false)
+                    }
+                }
+            }
             let cancelAction = UIAlertAction(title: UserText.actionCancel, style: .cancel) { _ in
                 continuation.resume(returning: false)
             }
@@ -449,15 +462,15 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
             alert.addAction(title: UserText.actionCancel, style: .cancel) {
                 continuation.resume(returning: false)
             }
-            self.onConfirmAndDeleteAllData = {
+            self.onConfirmAndDeleteAllData = { [weak self] in
                 Task { @MainActor in
                     do {
-                        try await self.syncService.deleteAccount()
-                        self.rootView.model.isSyncEnabled = false
-                        self.syncPausedStateManager.syncDidTurnOff()
+                        try await self?.syncService.deleteAccount()
+                        self?.rootView.model.isSyncEnabled = false
+                        self?.syncPausedStateManager.syncDidTurnOff()
                         continuation.resume(returning: true)
                     } catch {
-                        self.handleError(SyncErrorMessage.unableToDeleteData, error: error, event: .syncDeleteAccountError)
+                        await self?.handleError(SyncErrorMessage.unableToDeleteData, error: error, event: .syncDeleteAccountError)
                         continuation.resume(returning: false)
                     }
                 }
@@ -490,7 +503,7 @@ extension SyncSettingsViewController: SyncManagementViewModelDelegate {
                 try await syncService.disconnect(deviceId: device.id)
                 refreshDevices()
             } catch {
-                handleError(SyncErrorMessage.unableToRemoveDevice, error: error, event: .syncRemoveDeviceError)
+                await handleError(SyncErrorMessage.unableToRemoveDevice, error: error, event: .syncRemoveDeviceError)
             }
         }
     }

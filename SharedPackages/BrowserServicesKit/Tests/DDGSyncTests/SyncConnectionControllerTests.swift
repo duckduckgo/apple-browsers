@@ -89,7 +89,7 @@ final class MockSyncConnectionControllerDelegate: SyncConnectionControllerDelega
         didFindTwoAccountsDuringRecoveryCalled = recoveryKey
     }
 
-    func controllerDidError(_ error: SyncConnectionError, underlyingError: (any Error)?, setupRole: SyncSetupRole) {
+    func controllerDidError(_ error: SyncConnectionError, underlyingError: (any Error)?, setupRole: SyncSetupRole) async {
         didErrorCalled = true
         didErrorErrors = (error, underlyingError)
     }

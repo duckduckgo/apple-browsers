@@ -926,7 +926,7 @@ extension SyncPreferences: SyncConnectionControllerDelegate {
         await handleAccountAlreadyExists(recoveryKey)
     }
 
-    func controllerDidError(_ error: SyncConnectionError, underlyingError: (any Error)?, setupRole: SyncSetupRole) {
+    func controllerDidError(_ error: SyncConnectionError, underlyingError: (any Error)?, setupRole: SyncSetupRole) async {
         switch error {
         case .unableToRecognizeCode:
             handleError(.unableToRecognizeCode, error: underlyingError, pixelEvent: nil)

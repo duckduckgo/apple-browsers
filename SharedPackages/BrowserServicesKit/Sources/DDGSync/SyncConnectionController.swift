@@ -35,7 +35,7 @@ public protocol SyncConnectionControllerDelegate: AnyObject {
 
     func controllerDidFindTwoAccountsDuringRecovery(_ recoveryKey: SyncCode.RecoveryKey, setupRole: SyncSetupRole) async
 
-    func controllerDidError(_ error: SyncConnectionError, underlyingError: Error?, setupRole: SyncSetupRole)
+    func controllerDidError(_ error: SyncConnectionError, underlyingError: Error?, setupRole: SyncSetupRole) async
 }
 
 public enum SyncConnectionError: Error {
@@ -173,6 +173,8 @@ public actor SyncConnectionController: SyncConnectionControlling {
                 syncCode = try SyncCode.decodeBase64String(code)
             }
         } catch {
+            // Very important that this returning blocks further execution as it could be a camera scanning continuously
+            // and therefore call this multiple times.
             await delegate?.controllerDidError(.unableToRecognizeCode, underlyingError: error, setupRole: .receiver(.unknown, codeSource))
             return false
         }

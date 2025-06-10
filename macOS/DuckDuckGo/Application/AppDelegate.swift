@@ -587,6 +587,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             )
             activeRemoteMessageModel = ActiveRemoteMessageModel(remoteMessagingClient: remoteMessagingClient, openURLHandler: { url in
                 Application.appDelegate.windowControllersManager.showTab(with: .contentFromURL(url, source: .appOpenUrl))
+            }, navigateToFeedbackHandler: {
+                Application.appDelegate.windowControllersManager.showShareFeedbackModal(initialReportType: .general)
             })
         } else {
             // As long as remoteMessagingClient is private to App Delegate and activeRemoteMessageModel
@@ -596,7 +598,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             activeRemoteMessageModel = ActiveRemoteMessageModel(
                 remoteMessagingStore: nil,
                 remoteMessagingAvailabilityProvider: nil,
-                openURLHandler: { _ in }
+                openURLHandler: { _ in },
+                navigateToFeedbackHandler: { }
             )
         }
 

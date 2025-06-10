@@ -45,7 +45,8 @@ final class UnifiedFeedbackFormViewController: NSViewController {
     private var cancellables = Set<AnyCancellable>()
 
     init(feedbackSender: UnifiedFeedbackSender = DefaultFeedbackSender(),
-         source: UnifiedFeedbackSource = .default) {
+         source: UnifiedFeedbackSource = .default,
+         initialReportType: UnifiedFeedbackReportType? = nil) {
         self.feedbackSender = feedbackSender
         self.viewModel = UnifiedFeedbackFormViewModel(subscriptionManager: Application.appDelegate.subscriptionAuthV1toV2Bridge,
                                                       apiService: DefaultAPIService(userAgent: UserAgent.duckDuckGoUserAgent()),
@@ -53,6 +54,10 @@ final class UnifiedFeedbackFormViewController: NSViewController {
                                                       dbpMetadataCollector: DefaultDBPMetadataCollector(),
                                                       feedbackSender: feedbackSender,
                                                       source: source)
+
+        if let initialReportType = initialReportType {
+            viewModel.selectedReportType = initialReportType.rawValue
+        }
 
         super.init(nibName: nil, bundle: nil)
         self.viewModel.delegate = self

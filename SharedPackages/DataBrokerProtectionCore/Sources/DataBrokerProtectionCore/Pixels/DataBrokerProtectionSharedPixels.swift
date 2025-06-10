@@ -104,6 +104,7 @@ public enum DataBrokerProtectionSharedPixels {
     case secureVaultKeyStoreReadError(error: Error, field: String, serviceName: String)
     case secureVaultKeyStoreUpdateError(error: Error)
     case secureVaultError(error: Error)
+    case failedToOpenDatabase(error: Error)
     case parentChildMatches(parent: String, child: String, value: Int)
 
 // This should never ever go to production due to the deviceID and only exists for internal testing as long as PIR isn't public on iOS
@@ -236,6 +237,7 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
         case .secureVaultKeyStoreReadError: return "dbp_secure_vault_keystore_read_error"
         case .secureVaultKeyStoreUpdateError: return "dbp_secure_vault_keystore_update_error"
         case .secureVaultError: return "dbp_secure_vault_error"
+        case .failedToOpenDatabase: return "dbp_failed-to-open-database_error"
 
             // KPIs - engagement
         case .dailyActiveUser: return "dbp_engagement_dau"
@@ -416,7 +418,8 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                 .scanningEventReAppearance,
                 .secureVaultInitError,
                 .secureVaultKeyStoreUpdateError,
-                .secureVaultError:
+                .secureVaultError,
+                .failedToOpenDatabase:
             return [:]
         case .secureVaultKeyStoreReadError(_, let field, _):
             return [Consts.keystoreField: field]
@@ -516,8 +519,9 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
             case .secureVaultInitError(let error),
                     .secureVaultError(let error),
                     .secureVaultKeyStoreReadError(let error, _, _),
-                    .secureVaultKeyStoreUpdateError(let error):
-                self.pixelKit.fire(DebugEvent(event, error: error), withNamePrefix: platform.pixelNamePrefix)
+                    .secureVaultKeyStoreUpdateError(let error),
+                    .failedToOpenDatabase(let error):
+                self.pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndStandard, withNamePrefix: platform.pixelNamePrefix)
             case .parentChildMatches,
                     .optOutStart,
                     .optOutEmailGenerate,

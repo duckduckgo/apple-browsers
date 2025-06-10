@@ -39,6 +39,13 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Start measuring duration
+        id: start-duration
+        uses: ./.github/actions/measure-duration
+        with:
+          mode: start
+          job-name: Unit Tests
+
       - name: Set cache key hash
         run: |
           has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' Package.resolved)
@@ -84,8 +91,27 @@ jobs:
 
       - name: Send Unit Tests Status Pixel
         if: always() && github.ref_name == 'main'
-        run: |
-          curl -fLSs -o /dev/null "https://improving.duckduckgo.com/t/m_ci_apple_bsk_main_unit_tests_macos_${{ steps.run-unit-tests.outcome }}?workflow=${{ env.WORKFLOW_URL }}"
+        uses: ./.github/actions/send-pixel
+        with:
+          pixel-name: m_ci_apple_bsk_main_unit_tests_macos_${{ steps.run-unit-tests.outcome }}
+
+      - name: Report job duration
+        # Only report duration if the job is not cancelled and either the job succeeded or the tests run failed
+        if: success() || (always() && steps.run-unit-tests.outcome == 'failure')
+        id: measure-duration
+        uses: ./.github/actions/measure-duration
+        with:
+          mode: stop
+          start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
+          job-name: Unit Tests
+
+      - name: Send Duration Pixel
+        if: steps.measure-duration.conclusion == 'success'
+        uses: ./.github/actions/send-pixel
+        with:
+          pixel-name: m_ci_apple_bsk_unit_tests_ios_duration
+          query-params: |
+            seconds: ${{ steps.measure-duration.outputs.duration }}
 
       - name: Stop log stream
         if: always()
@@ -167,6 +193,13 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Start measuring duration
+        id: start-duration
+        uses: ./.github/actions/measure-duration
+        with:
+          mode: start
+          job-name: Unit Tests
+
       - name: Set cache key hash
         run: |
           has_only_tags=$(jq '[ .pins[].state | has("version") ] | all' Package.resolved)
@@ -218,8 +251,27 @@ jobs:
             
       - name: Send Unit Tests Status Pixel
         if: always() && github.ref_name == 'main'
-        run: |
-          curl -fLSs -o /dev/null "https://improving.duckduckgo.com/t/m_ci_apple_bsk_main_unit_tests_ios_${{ steps.run-unit-tests-ios.outcome }}?workflow=${{ env.WORKFLOW_URL }}"
+        uses: ./.github/actions/send-pixel
+        with:
+          pixel-name: m_ci_apple_bsk_main_unit_tests_ios_${{ steps.run-unit-tests-ios.outcome }}
+
+      - name: Report job duration
+        # Only report duration if the job is not cancelled and either the job succeeded or the tests run failed
+        if: success() || (always() && steps.run-unit-tests-ios.outcome == 'failure')
+        id: measure-duration
+        uses: ./.github/actions/measure-duration
+        with:
+          mode: stop
+          start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
+          job-name: Unit Tests
+
+      - name: Send Duration Pixel
+        if: steps.measure-duration.conclusion == 'success'
+        uses: ./.github/actions/send-pixel
+        with:
+          pixel-name: m_ci_apple_bsk_unit_tests_ios_duration
+          query-params: |
+            seconds: ${{ steps.measure-duration.outputs.duration }}
 
       - name: Upload JUnit XML as artifact
         uses: actions/upload-artifact@v4

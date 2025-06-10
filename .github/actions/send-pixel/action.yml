@@ -18,7 +18,7 @@ runs:
 
         # Parse YAML query params using yq and build query string
         if [[ "${{ inputs.query-params }}" != "{}" && -n "${{ inputs.query-params }}" ]]; then
-          QUERY_STRING=$(echo '${{ inputs.query-params }}' | yq -r 'to_entries | map("\(.key)=\(.value | @uri)") | join("&")')
+          QUERY_STRING=$(yq -r 'to_entries | map("\(.key)=\(.value | @uri)") | join("&")' <<< '${{ inputs.query-params }}')
 
           # Only add query string if yq produced valid output
           if [[ -n "${QUERY_STRING}" && "${QUERY_STRING}" != "null" ]]; then

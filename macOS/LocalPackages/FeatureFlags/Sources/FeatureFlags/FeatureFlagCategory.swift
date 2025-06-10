@@ -22,8 +22,6 @@ import BrowserServicesKit
 public enum FeatureFlagCategory: String, CaseIterable, Comparable {
     case other = "Other"
     case sync = "Sync"
-    case tabCrash = "Tab Crash"
-    case uiAndUX = "User Interface / User Experience"
     case updates = "Updates"
     case vpn = "VPN"
 
@@ -50,15 +48,6 @@ extension FeatureFlag: FeatureFlagCategorization {
                 .canScanUrlBasedSyncSetupBarcodes,
                 .exchangeKeysToSyncWithAnotherDevice:
             return .sync
-        case .tabCrashRecovery,
-                .tabCrashDebugging:
-            return .tabCrash
-        case .visualRefresh,
-                .contextualOnboarding,
-                .delayedWebviewPresentation,
-                .shortHistoryMenu,
-                .historyView:
-            return .uiAndUX
         case .updatesWontAutomaticallyRestartApp,
                 .autoUpdateInDEBUG:
             return .updates

@@ -86,6 +86,7 @@ enum SubscriptionTransactionStatus: String {
 public struct GetFeatureConfigurationResponse: Encodable {
     let useUnifiedFeedback: Bool = true
     let useSubscriptionsAuthV2: Bool
+    let useDuckAiPro: Bool
 }
 
 public struct AccessTokenValue: Codable {
@@ -726,7 +727,7 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
     }
 
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        return GetFeatureConfigurationResponse(useSubscriptionsAuthV2: true)
+        return GetFeatureConfigurationResponse(useSubscriptionsAuthV2: true, useDuckAiPro: subscriptionFeatureAvailability.isPaidAIChatEnabled)
     }
 
     // Auth V1 unused methods
@@ -894,6 +895,9 @@ final class DefaultSubscriptionPagesUseSubscriptionFeatureV2: SubscriptionPagesU
             onFeatureSelected?(.identityTheftRestoration)
         case .identityTheftRestorationGlobal:
             onFeatureSelected?(.identityTheftRestorationGlobal)
+        case .paidAIChat:
+            // Follow up: Implement paidAIChat selection
+            break
         case .unknown:
             break
         }

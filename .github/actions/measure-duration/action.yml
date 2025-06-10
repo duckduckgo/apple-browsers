@@ -1,0 +1,36 @@
+name: 'Measure Duration'
+description: 'Measure job duration with start and stop modes'
+inputs:
+  mode:
+    description: 'Mode: start or stop'
+    required: true
+  start-timestamp:
+    description: 'Start timestamp (required for stop mode)'
+    required: false
+  job-name:
+    description: 'Name of the job being measured (for the output message)'
+    required: false
+    default: 'Job'
+outputs:
+  start-timestamp:
+    description: 'Start timestamp (returned in start mode)'
+    value: ${{ steps.start.outputs.timestamp }}
+runs:
+  using: 'composite'
+  steps:
+    - name: Start measuring
+      id: start
+      if: inputs.mode == 'start'
+      shell: bash
+      run: |
+        START_TIME=$(date +%s)
+        echo "timestamp=${START_TIME}" >> $GITHUB_OUTPUT
+        echo "::notice::Started measuring duration for ${{ inputs.job-name }}"
+
+    - name: Stop measuring and report duration
+      if: inputs.mode == 'stop'
+      shell: bash
+      run: |
+        END_TIME=$(date +%s)
+        DURATION=$((END_TIME - ${{ inputs.start-timestamp }}))
+        echo "::notice::${{ inputs.job-name }} completed in ${DURATION} seconds" 

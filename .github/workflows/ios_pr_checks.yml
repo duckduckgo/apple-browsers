@@ -83,6 +83,14 @@ jobs:
       commit_author: ${{ steps.fetch_commit_author.outputs.commit_author }}
 
     steps:
+
+    - name: Start measuring duration
+      id: start-duration
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: start
+        job-name: Unit Tests
+
     - name: Check out the code
       if: github.event_name == 'pull_request' || github.event_name == 'push'
       uses: actions/checkout@v4
@@ -181,6 +189,14 @@ jobs:
         head_commit=$(git rev-parse HEAD)
         author=$(gh api https://api.github.com/repos/${{ github.repository }}/commits/${head_commit} --jq .author.login)
         echo "commit_author=${author}" >> $GITHUB_OUTPUT
+
+    - name: Report job duration
+      if: success() || steps.run-unit-tests.outcome == 'failure'
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: stop
+        start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
+        job-name: Unit Tests
 
   release-build:
 

@@ -177,7 +177,7 @@ jobs:
 
     - name: Report job duration
       # Only report duration if the job is not cancelled and either the job succeeded or the tests run failed
-      if: !cancelled() && (success() || (always() && steps.run-unit-tests.outcome == 'failure'))
+      if: success() || (always() && steps.run-unit-tests.outcome == 'failure')
       id: measure-duration
       uses: ./.github/actions/measure-duration
       with:

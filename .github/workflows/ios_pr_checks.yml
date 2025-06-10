@@ -84,13 +84,6 @@ jobs:
 
     steps:
 
-    - name: Start measuring duration
-      id: start-duration
-      uses: ./.github/actions/measure-duration
-      with:
-        mode: start
-        job-name: Unit Tests
-
     - name: Check out the code
       if: github.event_name == 'pull_request' || github.event_name == 'push'
       uses: actions/checkout@v4
@@ -103,6 +96,13 @@ jobs:
       with:
         submodules: recursive
         ref: ${{ inputs.branch || github.ref_name }}
+
+    - name: Start measuring duration
+      id: start-duration
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: start
+        job-name: Unit Tests
 
     - name: Set cache key hash
       run: |

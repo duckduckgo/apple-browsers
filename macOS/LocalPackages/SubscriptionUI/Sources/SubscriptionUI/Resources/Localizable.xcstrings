@@ -1853,6 +1853,18 @@
         }
       }
     },
+    "subscription.paid.ai.chat.title" : {
+      "comment" : "Title of the preferences pane for Duck.ai Pro",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai Pro"
+          }
+        }
+      }
+    },
     "subscription.preferences.button.view.plans" : {
       "comment" : "Button for viewing subscription plans on expired subscription",
       "extractionState" : "extracted_with_value",
@@ -2393,6 +2405,18 @@
         }
       }
     },
+    "subscription.preferences.paid.ai.chat.button" : {
+      "comment" : "Title for the preferences pane button to open Duck.ai Pro",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open Duck.ai Pro"
+          }
+        }
+      }
+    },
     "subscription.preferences.personal.information.removal.title" : {
       "comment" : "Title of the preferences pane for Personal Information Removal",
       "extractionState" : "extracted_with_value",
@@ -2869,6 +2893,30 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Identity Theft Restoration"
+          }
+        }
+      }
+    },
+    "subscription.preferences.services.paid.ai.chat.description" : {
+      "comment" : "Description for the Duck.ai premium service listed in the subscription preferences pane",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Upgrades Duck.ai with advanced AI models."
+          }
+        }
+      }
+    },
+    "subscription.preferences.services.paid.ai.chat.title" : {
+      "comment" : "Title for the duck.ai premium listed in the subscription preferences pane",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai Pro"
           }
         }
       }
@@ -4325,56 +4373,68 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Zwei Premium-Schutzmaßnahmen in einem Abonnement."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Two premium protections in one subscription."
+            "value" : "Two premium protections and Duck.ai Pro in one subscription."
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Dos protecciones prémium en una sola suscripción."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Deux protections haut de gamme dans un seul abonnement."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Due protezioni premium in un unico abbonamento."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Twee premiumbeveiligingen in één abonnement."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Dwa zabezpieczenia premium w jednej subskrypcji."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Duas proteções premium numa só subscrição."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Два вида премиум-защиты по одной подписке."
+          }
+        }
+      }
+    },
+    "subscription.preferences.subscription.inactive.row.caption.deprecated" : {
+      "comment" : "Caption for the subscription preferences pane when the subscription is inactive",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Two premium protections in one subscription."
           }
         }
       }
@@ -4385,56 +4445,68 @@
       "localizations" : {
         "de" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Drei Premium-Schutzmaßnahmen in einem Abonnement."
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Three premium protections in one subscription."
+            "value" : "Three premium protections and Duck.ai Pro in one subscription."
           }
         },
         "es" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Tres protecciones premium en una sola suscripción."
           }
         },
         "fr" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Trois protections haut de gamme en un seul abonnement."
           }
         },
         "it" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Tre protezioni premium in un unico semplice abbonamento."
           }
         },
         "nl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Drie premium beveiligingen in één abonnement."
           }
         },
         "pl" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Trzy zabezpieczenia premium w jednej subskrypcji."
           }
         },
         "pt" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Três proteções premium numa só subscrição."
           }
         },
         "ru" : {
           "stringUnit" : {
-            "state" : "translated",
+            "state" : "needs_review",
             "value" : "Три вида премиум-защиты по одной подписке."
+          }
+        }
+      }
+    },
+    "subscription.preferences.subscription.inactive.us.caption.deprecated" : {
+      "comment" : "Caption for the subscription preferences pane when the subscription is inactive",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Three premium protections in one subscription."
           }
         }
       }

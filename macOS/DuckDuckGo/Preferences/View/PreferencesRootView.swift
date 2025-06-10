@@ -50,6 +50,7 @@ enum Preferences {
 
         var purchaseSubscriptionModel: PreferencesPurchaseSubscriptionModel?
         var personalInformationRemovalModel: PreferencesPersonalInformationRemovalModel?
+        var duckAIPremiumModel: PreferencesPaidAIChatModel?
         var identityTheftRestorationModel: PreferencesIdentityTheftRestorationModel?
         var subscriptionSettingsModel: PreferencesSubscriptionSettingsModelV1?
         let subscriptionManager: SubscriptionManager
@@ -66,6 +67,7 @@ enum Preferences {
             self.visualStyle = visualStyleManager.style
             self.purchaseSubscriptionModel = makePurchaseSubscriptionViewModel()
             self.personalInformationRemovalModel = makePersonalInformationRemovalViewModel()
+            self.duckAIPremiumModel = makePaidAIChatViewModel()
             self.identityTheftRestorationModel = makeIdentityTheftRestorationViewModel()
             self.subscriptionSettingsModel = makeSubscriptionSettingsViewModel()
         }
@@ -126,6 +128,8 @@ enum Preferences {
                     VPNView(model: VPNPreferencesModel(), status: model.vpnProtectionStatus())
                 case .personalInformationRemoval:
                     SubscriptionUI.PreferencesPersonalInformationRemovalView(model: personalInformationRemovalModel!)
+                case .paidAIChat:
+                    SubscriptionUI.PreferencesPaidAIChatView(model: duckAIPremiumModel!)
                 case .identityTheftRestoration:
                     SubscriptionUI.PreferencesIdentityTheftRestorationView(model: identityTheftRestorationModel!)
                 case .subscriptionSettings:
@@ -186,6 +190,7 @@ enum Preferences {
                 })
 
             return PreferencesPurchaseSubscriptionModel(subscriptionManager: subscriptionManager,
+                                                        featureFlagger: Application.appDelegate.featureFlagger,
                                                         userEventHandler: userEventHandler,
                                                         sheetActionHandler: sheetActionHandler)
         }
@@ -207,6 +212,25 @@ enum Preferences {
 
             return PreferencesPersonalInformationRemovalModel(userEventHandler: userEventHandler,
                                                               statusUpdates: model.personalInformationRemovalUpdates)
+        }
+
+        private func makePaidAIChatViewModel() -> PreferencesPaidAIChatModel {
+            let userEventHandler: (PreferencesPaidAIChatModel.UserEvent) -> Void = { event in
+                DispatchQueue.main.async {
+                    switch event {
+                    case .openAIC:
+                        PixelKit.fire(PrivacyProPixel.privacyProPaidAIChatSettings)
+                        Application.appDelegate.windowControllersManager.openAIChat(URL(string: AIChatRemoteSettings.SettingsValue.aiChatURL.defaultValue)!, target: .newTabSelected, hasPrompt: false)
+                    case .openURL(let url):
+                        openURL(subscriptionURL: url)
+                    case .didOpenAICPreferencePane:
+                        PixelKit.fire(PrivacyProPixel.privacyProPaidAIChatSettingsImpression)
+                    }
+                }
+            }
+
+            return PreferencesPaidAIChatModel(userEventHandler: userEventHandler,
+                                                            statusUpdates: model.identityTheftRestorationUpdates)
         }
 
         private func makeIdentityTheftRestorationViewModel() -> PreferencesIdentityTheftRestorationModel {
@@ -276,6 +300,7 @@ enum Preferences {
 
         var purchaseSubscriptionModel: PreferencesPurchaseSubscriptionModel?
         var personalInformationRemovalModel: PreferencesPersonalInformationRemovalModel?
+        var paidAIChatModel: PreferencesPaidAIChatModel?
         var identityTheftRestorationModel: PreferencesIdentityTheftRestorationModel?
         var subscriptionSettingsModel: PreferencesSubscriptionSettingsModelV2?
         let subscriptionManager: SubscriptionManagerV2
@@ -294,6 +319,7 @@ enum Preferences {
             self.visualStyle = visualStyleManager.style
             self.purchaseSubscriptionModel = makePurchaseSubscriptionViewModel()
             self.personalInformationRemovalModel = makePersonalInformationRemovalViewModel()
+            self.paidAIChatModel = makePaidAIChatViewModel()
             self.identityTheftRestorationModel = makeIdentityTheftRestorationViewModel()
             self.subscriptionSettingsModel = makeSubscriptionSettingsViewModel()
         }
@@ -354,6 +380,8 @@ enum Preferences {
                     VPNView(model: VPNPreferencesModel(), status: model.vpnProtectionStatus())
                 case .personalInformationRemoval:
                     SubscriptionUI.PreferencesPersonalInformationRemovalView(model: personalInformationRemovalModel!)
+                case .paidAIChat:
+                    SubscriptionUI.PreferencesPaidAIChatView(model: paidAIChatModel!)
                 case .identityTheftRestoration:
                     SubscriptionUI.PreferencesIdentityTheftRestorationView(model: identityTheftRestorationModel!)
                 case .subscriptionSettings:
@@ -411,6 +439,7 @@ enum Preferences {
                 })
 
             return PreferencesPurchaseSubscriptionModel(subscriptionManager: subscriptionManager,
+                                                        featureFlagger: Application.appDelegate.featureFlagger,
                                                         userEventHandler: userEventHandler,
                                                         sheetActionHandler: sheetActionHandler)
         }
@@ -433,6 +462,25 @@ enum Preferences {
             return PreferencesPersonalInformationRemovalModel(userEventHandler: userEventHandler,
                                                               statusUpdates: model.personalInformationRemovalUpdates)
         }
+
+        private func makePaidAIChatViewModel() -> PreferencesPaidAIChatModel {
+             let userEventHandler: (PreferencesPaidAIChatModel.UserEvent) -> Void = { event in
+                 DispatchQueue.main.async {
+                     switch event {
+                     case .openAIC:
+                         PixelKit.fire(PrivacyProPixel.privacyProPaidAIChatSettings)
+                         Application.appDelegate.windowControllersManager.openAIChat(URL(string: AIChatRemoteSettings.SettingsValue.aiChatURL.defaultValue)!, target: .newTabSelected, hasPrompt: false)
+                     case .openURL(let url):
+                         openURL(subscriptionURL: url)
+                     case .didOpenAICPreferencePane:
+                         PixelKit.fire(PrivacyProPixel.privacyProPaidAIChatSettingsImpression)
+                     }
+                 }
+             }
+
+             return PreferencesPaidAIChatModel(userEventHandler: userEventHandler,
+                                                             statusUpdates: model.identityTheftRestorationUpdates)
+         }
 
         private func makeIdentityTheftRestorationViewModel() -> PreferencesIdentityTheftRestorationModel {
             let userEventHandler: (PreferencesIdentityTheftRestorationModel.UserEvent) -> Void = { event in

@@ -40,6 +40,7 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
     private let subscriptionManager: SubscriptionAuthV1toV2Bridge
     private let userEventHandler: (PreferencesPurchaseSubscriptionModel.UserEvent) -> Void
     private let sheetActionHandler: SubscriptionAccessActionHandlers
+    private let featureFlagger: FeatureFlagger
 
     public enum UserEvent {
         case didClickIHaveASubscription,
@@ -47,11 +48,13 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
     }
 
     public init(subscriptionManager: SubscriptionAuthV1toV2Bridge,
+                featureFlagger: FeatureFlagger,
                 userEventHandler: @escaping (PreferencesPurchaseSubscriptionModel.UserEvent) -> Void,
                 sheetActionHandler: SubscriptionAccessActionHandlers) {
         self.subscriptionManager = subscriptionManager
         self.userEventHandler = userEventHandler
         self.sheetActionHandler = sheetActionHandler
+        self.featureFlagger = featureFlagger
         self.subscriptionStorefrontRegion = currentStorefrontRegion()
     }
 
@@ -78,6 +81,10 @@ public final class PreferencesPurchaseSubscriptionModel: ObservableObject {
     @MainActor
     func openPrivacyPolicy() {
         userEventHandler(.openURL(.privacyPolicy))
+    }
+
+    var isPaidAIChatEnabled: Bool {
+        featureFlagger.isFeatureOn(.paidAIChat)
     }
 
     private func currentStorefrontRegion() -> SubscriptionRegion {

@@ -24,6 +24,8 @@ public final class SubscriptionManagerMock: SubscriptionManager {
 
     public var email: String?
 
+    public var isEligibleForFreeTrialResult: Bool = false
+
     public var accountManager: AccountManager
     public var subscriptionEndpointService: SubscriptionEndpointService
     public var authEndpointService: AuthEndpointService
@@ -147,5 +149,9 @@ public final class SubscriptionManagerMock: SubscriptionManager {
 
     public func isSubscriptionPresent() -> Bool {
         isUserAuthenticated
+    }
+
+    public func isUserEligibleForFreeTrial() -> Bool {
+        isEligibleForFreeTrialResult
     }
 }

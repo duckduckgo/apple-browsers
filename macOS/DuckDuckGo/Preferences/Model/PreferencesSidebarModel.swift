@@ -79,7 +79,7 @@ final class PreferencesSidebarModel: ObservableObject {
         subscriptionManager: any SubscriptionAuthV1toV2Bridge,
         notificationCenter: NotificationCenter = .default,
         settingsIconProvider: SettingsIconsProviding = NSApp.delegateTyped.visualStyleManager.style.iconsProvider.settingsIconProvider,
-        featureFlagger: FeatureFlagger = NSApp.delegateTyped.featureFlagger,
+        featureFlagger: FeatureFlagger,
         pixelFiring: PixelFiring?
     ) {
         self.loadSections = loadSections
@@ -109,6 +109,7 @@ final class PreferencesSidebarModel: ObservableObject {
     convenience init(
         tabSwitcherTabs: [Tab.TabContent] = Tab.TabContent.displayableTabTypes,
         privacyConfigurationManager: PrivacyConfigurationManaging,
+        featureFlagger: FeatureFlagger,
         syncService: DDGSyncing,
         vpnGatekeeper: VPNFeatureGatekeeper,
         includeDuckPlayer: Bool,
@@ -130,6 +131,7 @@ final class PreferencesSidebarModel: ObservableObject {
                   privacyConfigurationManager: privacyConfigurationManager,
                   syncService: syncService,
                   subscriptionManager: subscriptionManager,
+                  featureFlagger: featureFlagger,
                   pixelFiring: PixelKit.shared
         )
     }

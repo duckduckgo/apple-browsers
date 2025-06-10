@@ -96,7 +96,6 @@ class BlankSnapshotViewController: UIViewController {
         decorate()
     }
 
-
     private func addTapInterceptor() {
         let interceptView = UIView(frame: view.bounds)
         interceptView.backgroundColor = .clear

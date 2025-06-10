@@ -15,6 +15,9 @@ outputs:
   start-timestamp:
     description: 'Start timestamp (returned in start mode)'
     value: ${{ steps.start.outputs.timestamp }}
+  duration:
+    description: 'Duration in seconds (returned in stop mode)'
+    value: ${{ steps.stop.outputs.duration }}
 runs:
   using: 'composite'
   steps:
@@ -28,9 +31,11 @@ runs:
         echo "::notice::Started measuring duration for ${{ inputs.job-name }}"
 
     - name: Stop measuring and report duration
+      id: stop
       if: inputs.mode == 'stop'
       shell: bash
       run: |
         END_TIME=$(date +%s)
         DURATION=$((END_TIME - ${{ inputs.start-timestamp }}))
+        echo "duration=${DURATION}" >> $GITHUB_OUTPUT
         echo "::notice::${{ inputs.job-name }} completed in ${DURATION} seconds" 

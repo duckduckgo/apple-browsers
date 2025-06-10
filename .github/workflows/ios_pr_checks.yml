@@ -175,13 +175,22 @@ jobs:
           | sort -u -k 1,2 \
           | xargs -L 1 ./scripts/report-failed-unit-test.sh -s ${{ vars.APPLE_CI_FAILING_TESTS_IOS_FAILED_TESTS_SECTION_ID }}
 
+    - name: Report job duration
+      if: success() || steps.run-unit-tests.outcome == 'failure'
+      id: measure-duration
+      uses: ./.github/actions/measure-duration
+      with:
+        mode: stop
+        start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
+        job-name: Unit Tests
+
     - name: Send Status Pixel
       if: always() && github.ref_name == 'main'
       uses: ./.github/actions/send-pixel
       with:
         pixel-name: m_ci_apple_ios_main_unit_tests_${{ steps.run-unit-tests.outcome }}
         query-params: |
-          workflow: ${{ env.WORKFLOW_URL }}
+          duration: ${{ steps.measure-duration.outputs.duration }}
 
     - name: Fetch latest commit author
       if: always() && github.ref_name == 'main'
@@ -192,14 +201,6 @@ jobs:
         head_commit=$(git rev-parse HEAD)
         author=$(gh api https://api.github.com/repos/${{ github.repository }}/commits/${head_commit} --jq .author.login)
         echo "commit_author=${author}" >> $GITHUB_OUTPUT
-
-    - name: Report job duration
-      if: success() || steps.run-unit-tests.outcome == 'failure'
-      uses: ./.github/actions/measure-duration
-      with:
-        mode: stop
-        start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
-        job-name: Unit Tests
 
   release-build:
 

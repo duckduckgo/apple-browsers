@@ -16,15 +16,22 @@ runs:
       run: |
         PIXEL_URL="${{ vars.PIXEL_BASE_URL }}${{ inputs.pixel-name }}"
 
-        # Parse YAML query params using yq and build query string
-        if [[ "${{ inputs.query-params }}" != "{}" && -n "${{ inputs.query-params }}" ]]; then
-          QUERY_STRING=$(yq -r 'to_entries | map("\(.key)=\(.value | @uri)") | join("&")' <<< '${{ inputs.query-params }}')
+        # Construct workflow URL automatically (same format as env.WORKFLOW_URL)
+        WORKFLOW_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}"
 
-          # Only add query string if yq produced valid output
-          if [[ -n "${QUERY_STRING}" && "${QUERY_STRING}" != "null" ]]; then
-            PIXEL_URL="${PIXEL_URL}?${QUERY_STRING}"
+        # Start with workflow parameter
+        QUERY_STRING="workflow=$(printf '%s' "${WORKFLOW_URL}" | yq -r '@uri')"
+
+        # Add user-provided query params if any
+        if [[ "${{ inputs.query-params }}" != "{}" && -n "${{ inputs.query-params }}" ]]; then
+          USER_PARAMS=$(yq -r 'to_entries | map("\(.key)=\(.value | @uri)") | join("&")' <<< '${{ inputs.query-params }}')
+
+          if [[ -n "${USER_PARAMS}" && "${USER_PARAMS}" != "null" ]]; then
+            QUERY_STRING="${QUERY_STRING}&${USER_PARAMS}"
           fi
         fi
+
+        PIXEL_URL="${PIXEL_URL}?${QUERY_STRING}"
 
         echo "::notice::Sending pixel to: ${PIXEL_URL}"
         curl -fLSs -o /dev/null "${PIXEL_URL}"

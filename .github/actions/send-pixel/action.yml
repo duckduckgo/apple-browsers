@@ -5,19 +5,25 @@ inputs:
     description: 'Name of the pixel to send'
     required: true
   query-params:
-    description: 'Query parameters to append to the pixel URL (e.g., "param1=value1&param2=value2")'
+    description: 'Query parameters as YAML key-value pairs'
     required: false
-    default: ''
+    default: '{}'
 runs:
   using: 'composite'
   steps:
-    - name: Send pixel request
+        - name: Send pixel request
       shell: bash
       run: |
         PIXEL_URL="${{ vars.PIXEL_BASE_URL }}${{ inputs.pixel-name }}"
 
-        if [[ -n "${{ inputs.query-params }}" ]]; then
-          PIXEL_URL="${PIXEL_URL}?${{ inputs.query-params }}"
+        # Parse YAML query params using yq and build query string
+        if [[ "${{ inputs.query-params }}" != "{}" && -n "${{ inputs.query-params }}" ]]; then
+          QUERY_STRING=$(echo '${{ inputs.query-params }}' | yq -r 'to_entries | map("\(.key)=\(.value | @uri)") | join("&")')
+
+          # Only add query string if yq produced valid output
+          if [[ -n "${QUERY_STRING}" && "${QUERY_STRING}" != "null" ]]; then
+            PIXEL_URL="${PIXEL_URL}?${QUERY_STRING}"
+          fi
         fi
 
         echo "Sending pixel to: ${PIXEL_URL}"

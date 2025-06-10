@@ -180,7 +180,8 @@ jobs:
       uses: ./.github/actions/send-pixel
       with:
         pixel-name: m_ci_apple_ios_main_unit_tests_${{ steps.run-unit-tests.outcome }}
-        query-params: workflow=${{ env.WORKFLOW_URL }}
+        query-params: |
+          workflow: ${{ env.WORKFLOW_URL }}
 
     - name: Fetch latest commit author
       if: always() && github.ref_name == 'main'

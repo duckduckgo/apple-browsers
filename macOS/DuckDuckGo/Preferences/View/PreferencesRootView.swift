@@ -50,7 +50,6 @@ enum Preferences {
 
         var purchaseSubscriptionModel: PreferencesPurchaseSubscriptionModel?
         var personalInformationRemovalModel: PreferencesPersonalInformationRemovalModel?
-        var duckAIPremiumModel: PreferencesPaidAIChatModel?
         var identityTheftRestorationModel: PreferencesIdentityTheftRestorationModel?
         var subscriptionSettingsModel: PreferencesSubscriptionSettingsModelV1?
         let subscriptionManager: SubscriptionManager
@@ -67,7 +66,6 @@ enum Preferences {
             self.visualStyle = visualStyleManager.style
             self.purchaseSubscriptionModel = makePurchaseSubscriptionViewModel()
             self.personalInformationRemovalModel = makePersonalInformationRemovalViewModel()
-            self.duckAIPremiumModel = makePaidAIChatViewModel()
             self.identityTheftRestorationModel = makeIdentityTheftRestorationViewModel()
             self.subscriptionSettingsModel = makeSubscriptionSettingsViewModel()
         }
@@ -129,7 +127,7 @@ enum Preferences {
                 case .personalInformationRemoval:
                     SubscriptionUI.PreferencesPersonalInformationRemovalView(model: personalInformationRemovalModel!)
                 case .paidAIChat:
-                    SubscriptionUI.PreferencesPaidAIChatView(model: duckAIPremiumModel!)
+                    EmptyView()
                 case .identityTheftRestoration:
                     SubscriptionUI.PreferencesIdentityTheftRestorationView(model: identityTheftRestorationModel!)
                 case .subscriptionSettings:
@@ -214,25 +212,6 @@ enum Preferences {
                                                               statusUpdates: model.personalInformationRemovalUpdates)
         }
 
-        private func makePaidAIChatViewModel() -> PreferencesPaidAIChatModel {
-            let userEventHandler: (PreferencesPaidAIChatModel.UserEvent) -> Void = { event in
-                DispatchQueue.main.async {
-                    switch event {
-                    case .openAIC:
-                        PixelKit.fire(PrivacyProPixel.privacyProPaidAIChatSettings)
-                        Application.appDelegate.windowControllersManager.openAIChat(URL(string: AIChatRemoteSettings.SettingsValue.aiChatURL.defaultValue)!, target: .newTabSelected, hasPrompt: false)
-                    case .openURL(let url):
-                        openURL(subscriptionURL: url)
-                    case .didOpenAICPreferencePane:
-                        PixelKit.fire(PrivacyProPixel.privacyProPaidAIChatSettingsImpression)
-                    }
-                }
-            }
-
-            return PreferencesPaidAIChatModel(userEventHandler: userEventHandler,
-                                                            statusUpdates: model.identityTheftRestorationUpdates)
-        }
-
         private func makeIdentityTheftRestorationViewModel() -> PreferencesIdentityTheftRestorationModel {
             let userEventHandler: (PreferencesIdentityTheftRestorationModel.UserEvent) -> Void = { event in
                 DispatchQueue.main.async {
@@ -285,7 +264,7 @@ enum Preferences {
         }
 
         private func openURL(subscriptionURL: SubscriptionURL) {
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 let url = subscriptionManager.url(for: subscriptionURL)
                     .appendingParameter(name: AttributionParameter.origin,
                                         value: SubscriptionFunnelOrigin.appSettings.rawValue)
@@ -306,17 +285,20 @@ enum Preferences {
         let subscriptionManager: SubscriptionManagerV2
         let subscriptionUIHandler: SubscriptionUIHandling
         let visualStyle: VisualStyleProviding
+        let showTab: @MainActor (Tab.TabContent) -> Void
 
         init(
             model: PreferencesSidebarModel,
             subscriptionManager: SubscriptionManagerV2,
             subscriptionUIHandler: SubscriptionUIHandling,
+            showTab: @escaping @MainActor (Tab.TabContent) -> Void = { Application.appDelegate.windowControllersManager.showTab(with: $0) },
             visualStyleManager: VisualStyleManagerProviding = NSApp.delegateTyped.visualStyleManager
         ) {
             self.model = model
             self.subscriptionManager = subscriptionManager
             self.subscriptionUIHandler = subscriptionUIHandler
             self.visualStyle = visualStyleManager.style
+            self.showTab = showTab
             self.purchaseSubscriptionModel = makePurchaseSubscriptionViewModel()
             self.personalInformationRemovalModel = makePersonalInformationRemovalViewModel()
             self.paidAIChatModel = makePaidAIChatViewModel()
@@ -421,7 +403,7 @@ enum Preferences {
             let sheetActionHandler = SubscriptionAccessActionHandlers(
                 openActivateViaEmailURL: {
                     let url = subscriptionManager.url(for: .activationFlow)
-                    Application.appDelegate.windowControllersManager.showTab(with: .subscription(url))
+                    showTab(.subscription(url))
                     PixelKit.fire(PrivacyProPixel.privacyProRestorePurchaseEmailStart, frequency: .legacyDailyAndCount)
                 }, restorePurchases: {
                     if #available(macOS 12.0, *) {
@@ -450,7 +432,7 @@ enum Preferences {
                     switch event {
                     case .openPIR:
                         PixelKit.fire(PrivacyProPixel.privacyProPersonalInformationRemovalSettings)
-                        Application.appDelegate.windowControllersManager.showTab(with: .dataBrokerProtection)
+                        showTab(.dataBrokerProtection)
                     case .openURL(let url):
                         openURL(subscriptionURL: url)
                     case .didOpenPIRPreferencePane:
@@ -469,7 +451,8 @@ enum Preferences {
                      switch event {
                      case .openAIC:
                          PixelKit.fire(PrivacyProPixel.privacyProPaidAIChatSettings)
-                         Application.appDelegate.windowControllersManager.openAIChat(URL(string: AIChatRemoteSettings.SettingsValue.aiChatURL.defaultValue)!, target: .newTabSelected, hasPrompt: false)
+                         let aiChatURL = URL(string: AIChatRemoteSettings.SettingsValue.aiChatURL.defaultValue)!
+                         showTab(.url(aiChatURL, source: .ui))
                      case .openURL(let url):
                          openURL(subscriptionURL: url)
                      case .didOpenAICPreferencePane:
@@ -489,7 +472,7 @@ enum Preferences {
                     case .openITR:
                         PixelKit.fire(PrivacyProPixel.privacyProIdentityRestorationSettings)
                         let url = subscriptionManager.url(for: .identityTheftRestoration)
-                        Application.appDelegate.windowControllersManager.showTab(with: .identityTheftRestoration(url))
+                        showTab(.identityTheftRestoration(url))
                     case .openURL(let url):
                         openURL(subscriptionURL: url)
                     case .didOpenITRPreferencePane:
@@ -515,7 +498,7 @@ enum Preferences {
                     case .openManageSubscriptionsInAppStore:
                         NSWorkspace.shared.open(subscriptionManager.url(for: .manageSubscriptionsInAppStore))
                     case .openCustomerPortalURL(let url):
-                        Application.appDelegate.windowControllersManager.showTab(with: .url(url, source: .ui))
+                        showTab(.url(url, source: .ui))
                     case .didClickManageEmail:
                         PixelKit.fire(PrivacyProPixel.privacyProSubscriptionManagementEmail, frequency: .legacyDailyAndCount)
                     case .didOpenSubscriptionSettings:
@@ -534,11 +517,11 @@ enum Preferences {
         }
 
         private func openURL(subscriptionURL: SubscriptionURL) {
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 let url = subscriptionManager.url(for: subscriptionURL)
                     .appendingParameter(name: AttributionParameter.origin,
                                         value: SubscriptionFunnelOrigin.appSettings.rawValue)
-                Application.appDelegate.windowControllersManager.showTab(with: .subscription(url))
+                showTab(.subscription(url))
             }
         }
     }

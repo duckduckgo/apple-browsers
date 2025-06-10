@@ -109,8 +109,6 @@ final class VisualStyleManager: VisualStyleManagerProviding {
     private let featureFlagger: FeatureFlagger
     private let internalUserDecider: InternalUserDecider
 
-    private var cancellables: Set<AnyCancellable> = []
-
     init(featureFlagger: FeatureFlagger, internalUserDecider: InternalUserDecider) {
         self.featureFlagger = featureFlagger
         self.internalUserDecider = internalUserDecider

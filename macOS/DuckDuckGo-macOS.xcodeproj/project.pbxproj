@@ -1966,7 +1966,6 @@
 		56BA1E802BAB2E43001CF69F /* ErrorPageTabExtensionTest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56BA1E7C2BAB290E001CF69F /* ErrorPageTabExtensionTest.swift */; };
 		56BC8F012D312B320046059D /* ConfigurationManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56BC8F002D312B320046059D /* ConfigurationManagerTests.swift */; };
 		56BC8F022D312B320046059D /* ConfigurationManagerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56BC8F002D312B320046059D /* ConfigurationManagerTests.swift */; };
-		56CD513F2DF1A25D00B6A44A /* SubscriptionPagesUseSubscriptionFeatureV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56CD513E2DF1A25D00B6A44A /* SubscriptionPagesUseSubscriptionFeatureV2Tests.swift */; };
 		56CD51572DF1FA3100B6A44A /* MockFreemiumDBPPixelExperimentManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56CD51562DF1FA3100B6A44A /* MockFreemiumDBPPixelExperimentManager.swift */; };
 		56CD51582DF1FA3100B6A44A /* MockFreemiumDBPPixelExperimentManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56CD51562DF1FA3100B6A44A /* MockFreemiumDBPPixelExperimentManager.swift */; };
 		56CE77612C7DFCF800AC1ED2 /* OnboardingSuggestedSearchesProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56CE77602C7DFCF800AC1ED2 /* OnboardingSuggestedSearchesProviderTests.swift */; };
@@ -13581,7 +13580,6 @@
 				C17CA7B32B9B5317008EC3C1 /* MockAutofillPopoverPresenter.swift in Sources */,
 				3706FE3F293F661700E42796 /* FileStoreMock.swift in Sources */,
 				B6619F042B17123200CD9186 /* DataImportViewModelTests.swift in Sources */,
-				56CD513F2DF1A25D00B6A44A /* SubscriptionPagesUseSubscriptionFeatureV2Tests.swift in Sources */,
 				1D8C2FE62B70F4C4005E4BBD /* TabSnapshotExtensionTests.swift in Sources */,
 				56CD51582DF1FA3100B6A44A /* MockFreemiumDBPPixelExperimentManager.swift in Sources */,
 				3706FE40293F661700E42796 /* BWResponseTests.swift in Sources */,

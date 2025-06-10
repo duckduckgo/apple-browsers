@@ -96,16 +96,14 @@ hasActiveTrialOffer: \(hasTrialOffer)
 hasAnyEntitlement: \(hasAnyEntitlement)
 """)
 
-                // Check for free trial first
-                if hasTrialOffer && (status == .autoRenewable || status == .notAutoRenewable || status == .gracePeriod) {
-                    return PreferencesSubscriptionSettingsState.subscriptionFreeTrialActive
-                }
-
                 switch status {
                 case .expired, .inactive:
                     return PreferencesSubscriptionSettingsState.subscriptionExpired
                 case .autoRenewable, .notAutoRenewable, .gracePeriod:
-                    if hasAnyEntitlement {
+                    // Check for free trial first
+                    if hasTrialOffer {
+                        return PreferencesSubscriptionSettingsState.subscriptionFreeTrialActive
+                    } else if hasAnyEntitlement {
                         return PreferencesSubscriptionSettingsState.subscriptionActive
                     } else {
                         return PreferencesSubscriptionSettingsState.subscriptionPendingActivation

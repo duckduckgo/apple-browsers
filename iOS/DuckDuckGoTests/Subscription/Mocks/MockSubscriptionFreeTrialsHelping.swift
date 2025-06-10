@@ -1,8 +1,8 @@
 //
-//  SubscriptionFeatureAvailabilityMock.swift
+//  MockSubscriptionFreeTrialsHelping.swift
 //  DuckDuckGo
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -18,18 +18,12 @@
 //
 
 import Foundation
-import Subscription
+@testable import DuckDuckGo
 @testable import BrowserServicesKit
+@testable import Common
+@testable import UserScript
+@testable import Subscription
 
-public final class SubscriptionFeatureAvailabilityMock: SubscriptionFeatureAvailability {
-    static var enabled: SubscriptionFeatureAvailabilityMock {
-        return SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true)
-    }
-
-    public var isSubscriptionPurchaseAllowed: Bool
-
-    public init(isSubscriptionPurchaseAllowed: Bool) {
-        self.isSubscriptionPurchaseAllowed = isSubscriptionPurchaseAllowed
-    }
-
+class MockSubscriptionFreeTrialsHelping: SubscriptionFreeTrialsHelping {
+    var areFreeTrialsEnabled: Bool = false
 }

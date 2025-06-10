@@ -84,11 +84,11 @@ final class WindowManagerStateRestorationTests: XCTestCase {
         pinnedTabsManagerProvidingMock.newPinnedTabsManager = pinnedTabManager
 
         let model1 = TabCollectionViewModel(tabCollection: TabCollection(tabs: tabs1), selectionIndex: .unpinned(0), pinnedTabsManagerProvider: pinnedTabsManagerProvidingMock)
-        let mainViewController1 = MainViewController(tabCollectionViewModel: model1, autofillPopoverPresenter: DefaultAutofillPopoverPresenter())
+        let mainViewController1 = MainViewController(tabCollectionViewModel: model1, autofillPopoverPresenter: DefaultAutofillPopoverPresenter(), fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld))
         let model2 = TabCollectionViewModel(tabCollection: TabCollection(tabs: tabs2), selectionIndex: .unpinned(2), pinnedTabsManagerProvider: pinnedTabsManagerProvidingMock)
-        let mainViewController2 = MainViewController(tabCollectionViewModel: model2, autofillPopoverPresenter: DefaultAutofillPopoverPresenter())
-        let windowController1 = MainWindowController(mainViewController: mainViewController1, popUp: false)
-        let windowController2 = MainWindowController(mainViewController: mainViewController2, popUp: false)
+        let mainViewController2 = MainViewController(tabCollectionViewModel: model2, autofillPopoverPresenter: DefaultAutofillPopoverPresenter(), fireCoordinator: FireCoordinator(tld: Application.appDelegate.tld))
+        let windowController1 = MainWindowController(mainViewController: mainViewController1, popUp: false, fireViewModel: FireViewModel(tld: Application.appDelegate.tld))
+        let windowController2 = MainWindowController(mainViewController: mainViewController2, popUp: false, fireViewModel: FireViewModel(tld: Application.appDelegate.tld))
 
         let state = WindowManagerStateRestoration(mainWindowControllers: [windowController1, windowController2], lastKeyMainWindowController: windowController2, applicationPinnedTabs: pinnedTabManager.tabCollection)
 

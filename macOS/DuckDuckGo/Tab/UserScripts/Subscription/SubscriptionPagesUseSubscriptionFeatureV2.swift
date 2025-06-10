@@ -43,6 +43,7 @@ public struct AccessTokenValue: Encodable {
 public struct GetFeatureValue: Encodable {
     let useUnifiedFeedback: Bool = true
     let useSubscriptionsAuthV2: Bool
+    let useDuckAiPro: Bool
 }
 
 /// Use Subscription sub-feature
@@ -179,7 +180,7 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
     }
 
     func getFeatureConfig(params: Any, original: WKScriptMessage) async throws -> Encodable? {
-        return GetFeatureValue(useSubscriptionsAuthV2: true)
+        return GetFeatureValue(useSubscriptionsAuthV2: true, useDuckAiPro: subscriptionFeatureAvailability.isPaidAIChatEnabled)
     }
 
     // MARK: -
@@ -386,6 +387,9 @@ final class SubscriptionPagesUseSubscriptionFeatureV2: Subfeature {
             PixelKit.fire(PrivacyProPixel.privacyProWelcomeIdentityRestoration, frequency: .uniqueByName)
             let url = subscriptionManager.url(for: .identityTheftRestoration)
             await uiHandler.showTab(with: .identityTheftRestoration(url))
+        case .paidAIChat:
+            // Follow up: Implement paidAIChat selection
+            break
         case .unknown:
             break
         }

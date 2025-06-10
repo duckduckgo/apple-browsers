@@ -460,8 +460,8 @@ final class MockDuckPlayerNativeUIPresenting: DuckPlayerNativeUIPresenting {
     var presentDuckPlayerCalled = false
     var lastTimestampValue: TimeInterval?
     var presentDuckPlayerRequest: PassthroughSubject<Void, Never>
-    var pixelHandler: any DuckDuckGo.DuckPlayerPixelFiring.Type  =  DuckPlayerPixelHandler.self
-
+    var duckPlayerTimestampUpdate: PassthroughSubject<TimeInterval?, Never>
+    var pixelHandler: any DuckDuckGo.DuckPlayerPixelFiring.Type = DuckPlayerPixelHandler.self
 
     @MainActor
     func presentPill(for videoID: String, in hostViewController: any DuckDuckGo.DuckPlayerHosting, timestamp: TimeInterval?) {
@@ -478,11 +478,12 @@ final class MockDuckPlayerNativeUIPresenting: DuckPlayerNativeUIPresenting {
         return (PassthroughSubject<URL, Never>(), PassthroughSubject<Void, Never>())
     }
 
-    var videoPlaybackRequest: PassthroughSubject<(videoID: String, timestamp: TimeInterval?), Never>
+    var videoPlaybackRequest: PassthroughSubject<(videoID: String, timestamp: TimeInterval?, pillType: DuckPlayerNativeUIPresenter.PillType), Never>
 
     init() {
-        self.videoPlaybackRequest = PassthroughSubject<(videoID: String, timestamp: TimeInterval?), Never>()
+        self.videoPlaybackRequest = PassthroughSubject<(videoID: String, timestamp: TimeInterval?, pillType: DuckPlayerNativeUIPresenter.PillType), Never>()
         self.presentDuckPlayerRequest = PassthroughSubject<Void, Never>()
+        self.duckPlayerTimestampUpdate = PassthroughSubject<TimeInterval?, Never>()
     }
 
     @MainActor

@@ -24,6 +24,9 @@ protocol AIChatTabOpening {
 
     @MainActor
     func openAIChatTab(_ value: AddressBarTextField.Value, target: AIChatTabOpenerTarget)
+
+    @MainActor
+    func openNewAIChatTab(_ aiChatURL: URL, target: AIChatTabOpenerTarget)
 }
 
 extension AIChatTabOpening {
@@ -69,6 +72,11 @@ struct AIChatTabOpener: AIChatTabOpening {
     @MainActor
     func openAIChatTab(_ query: String?, target: AIChatTabOpenerTarget) {
         openAIChatTab(query, target: target, autoSubmit: true)
+    }
+
+    @MainActor
+    func openNewAIChatTab(_ aiChatURL: URL, target: AIChatTabOpenerTarget) {
+        Application.appDelegate.windowControllersManager.openAIChat(aiChatURL, target: target)
     }
 
     @MainActor

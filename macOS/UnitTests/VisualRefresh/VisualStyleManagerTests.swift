@@ -27,16 +27,13 @@ import FeatureFlags
 class VisualStyleManagerTests: XCTestCase {
 
     private var mockInternalUserDecider: MockInternalUserDecider!
-    private var mockLocalOverrides: MockFeatureFlagLocalOverriding!
     private var mockFeatureFlagger: MockFeatureFlagger!
     var visualStyleManager: VisualStyleManager!
 
     override func setUp() {
         super.setUp()
         mockInternalUserDecider = MockInternalUserDecider()
-        mockLocalOverrides = MockFeatureFlagLocalOverriding()
         mockFeatureFlagger = MockFeatureFlagger(internalUserDecider: mockInternalUserDecider)
-        mockFeatureFlagger.localOverrides = mockLocalOverrides
 
         visualStyleManager = VisualStyleManager(
             featureFlagger: mockFeatureFlagger,
@@ -46,7 +43,6 @@ class VisualStyleManagerTests: XCTestCase {
 
     override func tearDown() {
         mockInternalUserDecider = nil
-        mockLocalOverrides = nil
         mockFeatureFlagger = nil
         visualStyleManager = nil
         super.tearDown()
@@ -57,7 +53,7 @@ class VisualStyleManagerTests: XCTestCase {
     func testNonInternalUser_FeatureDisabled_ReturnsLegacyStyle() {
         // Given
         mockInternalUserDecider.isInternalUser = false
-        mockFeatureFlagger.enabledFeatures = []
+        mockFeatureFlagger.enabledFeatureFlags = []
 
         // When
         let style = visualStyleManager.style
@@ -72,7 +68,7 @@ class VisualStyleManagerTests: XCTestCase {
     func testNonInternalUser_FeatureEnabled_ReturnsCurrentStyle() {
         // Given
         mockInternalUserDecider.isInternalUser = false
-        mockFeatureFlagger.enabledFeatures = [.visualUpdates]
+        mockFeatureFlagger.enabledFeatureFlags = [.visualUpdates]
 
         // When
         let style = visualStyleManager.style
@@ -86,61 +82,49 @@ class VisualStyleManagerTests: XCTestCase {
 
     // MARK: - Internal User Tests
 
-    func testInternalUser_NoLocalOverrides_ReturnsLegacyStyle() {
+    func testInternalUser_VisualUpdatesInternalOnlyDisabled_ReturnsLegacyStyle() {
         // Given
         mockInternalUserDecider.isInternalUser = true
-        mockFeatureFlagger.localOverrides = nil
+        mockFeatureFlagger.enabledFeatureFlags = [] // No feature flags enabled
 
         // When
         let style = visualStyleManager.style
 
         // Then
-        XCTAssertEqual(style.toolbarButtonsCornerRadius, 4.0, "Should return legacy corner radius when no local overrides")
-    }
-
-    func testInternalUser_LocalOverrideDisabled_ReturnsLegacyStyle() {
-        // Given
-        mockInternalUserDecider.isInternalUser = true
-        mockLocalOverrides.setOverride(for: .visualUpdatesInternalOnly, value: false)
-
-        // When
-        let style = visualStyleManager.style
-
-        // Then
-        XCTAssertEqual(style.toolbarButtonsCornerRadius, 4.0, "Should return legacy corner radius when override is false")
+        XCTAssertEqual(style.toolbarButtonsCornerRadius, 4.0, "Internal users should get legacy style when visualUpdatesInternalOnly is disabled")
         XCTAssertEqual(style.fireButtonSize, 28.0, "Should return legacy fire button size")
         XCTAssertFalse(style.areNavigationBarCornersRound, "Should not have round navigation bar corners")
         XCTAssertFalse(style.addToolbarShadow, "Should not add toolbar shadow")
     }
 
-    func testInternalUser_LocalOverrideEnabled_ReturnsCurrentStyle() {
+    func testInternalUser_VisualUpdatesInternalOnlyEnabled_ReturnsCurrentStyle() {
         // Given
         mockInternalUserDecider.isInternalUser = true
-        mockLocalOverrides.setOverride(for: .visualUpdatesInternalOnly, value: true)
+        mockFeatureFlagger.enabledFeatureFlags = [.visualUpdatesInternalOnly]
 
         // When
         let style = visualStyleManager.style
 
         // Then
-        XCTAssertEqual(style.toolbarButtonsCornerRadius, 9.0, "Should return current corner radius when override is true")
+        XCTAssertEqual(style.toolbarButtonsCornerRadius, 9.0, "Internal users should get current style when visualUpdatesInternalOnly is enabled")
         XCTAssertEqual(style.fireButtonSize, 32.0, "Should return current fire button size")
         XCTAssertTrue(style.areNavigationBarCornersRound, "Should have round navigation bar corners")
         XCTAssertTrue(style.addToolbarShadow, "Should add toolbar shadow")
     }
 
-    func testInternalUser_NoLocalOverrideSet_ReturnsCurrentStyle() {
-        // Given
+    func testInternalUser_IgnoresVisualUpdatesFeatureFlag() {
+        // Given - Internal user with visualUpdates enabled but visualUpdatesInternalOnly disabled
         mockInternalUserDecider.isInternalUser = true
-        // No override set (nil)
+        mockFeatureFlagger.enabledFeatureFlags = [.visualUpdates] // Regular feature flag enabled
 
         // When
         let style = visualStyleManager.style
 
-        // Then
-        XCTAssertEqual(style.toolbarButtonsCornerRadius, 9.0, "Should return current corner radius when no override is set")
-        XCTAssertEqual(style.fireButtonSize, 32.0, "Should return current fire button size")
-        XCTAssertTrue(style.areNavigationBarCornersRound, "Should have round navigation bar corners")
-        XCTAssertTrue(style.addToolbarShadow, "Should add toolbar shadow")
+        // Then - Should return legacy style (internal users ignore .visualUpdates flag)
+        XCTAssertEqual(style.toolbarButtonsCornerRadius, 4.0, "Internal users should ignore .visualUpdates flag and only respond to .visualUpdatesInternalOnly")
+        XCTAssertEqual(style.fireButtonSize, 28.0, "Should return legacy fire button size")
+        XCTAssertFalse(style.areNavigationBarCornersRound, "Should not have round navigation bar corners")
+        XCTAssertFalse(style.addToolbarShadow, "Should not add toolbar shadow")
     }
 
     // MARK: - Style Properties Tests
@@ -148,7 +132,7 @@ class VisualStyleManagerTests: XCTestCase {
     func testLegacyStyleProperties() {
         // Given
         mockInternalUserDecider.isInternalUser = false
-        mockFeatureFlagger.enabledFeatures = []
+        mockFeatureFlagger.enabledFeatureFlags = []
 
         // When
         let style = visualStyleManager.style
@@ -171,7 +155,7 @@ class VisualStyleManagerTests: XCTestCase {
     func testCurrentStyleProperties() {
         // Given
         mockInternalUserDecider.isInternalUser = false
-        mockFeatureFlagger.enabledFeatures = [.visualUpdates]
+        mockFeatureFlagger.enabledFeatureFlags = [.visualUpdates]
 
         // When
         let style = visualStyleManager.style
@@ -193,43 +177,70 @@ class VisualStyleManagerTests: XCTestCase {
 
     // MARK: - Feature Flag Separation Tests
 
-    func testInternalUser_IgnoresExternalFeatureFlag() {
-        // Given - Internal user with external feature enabled but no local override
+    func testInternalUser_OnlyRespondsToInternalOnlyFeatureFlag() {
+        // Given - Internal user with regular visualUpdates enabled
         mockInternalUserDecider.isInternalUser = true
-        mockFeatureFlagger.enabledFeatures = [.visualUpdates] // External feature flag
-        // No local override set for internal feature
+        mockFeatureFlagger.enabledFeatureFlags = [.visualUpdates]
 
         // When
         let style = visualStyleManager.style
 
-        // Then - Should return current style (default behavior for internal users when no override)
-        XCTAssertEqual(style.toolbarButtonsCornerRadius, 9.0, "Internal users should ignore external feature flag")
+        // Then - Should return legacy style (internal users ignore .visualUpdates)
+        XCTAssertEqual(style.toolbarButtonsCornerRadius, 4.0, "Internal users should ignore .visualUpdates flag")
+
+        // Given - Enable visualUpdatesInternalOnly
+        mockFeatureFlagger.enabledFeatureFlags = [.visualUpdatesInternalOnly]
+
+        // When
+        let styleWithInternalFlag = visualStyleManager.style
+
+        // Then - Should return current style
+        XCTAssertEqual(styleWithInternalFlag.toolbarButtonsCornerRadius, 9.0, "Internal users should respond to .visualUpdatesInternalOnly flag")
     }
 
-    func testNonInternalUser_IgnoresInternalFeatureOverride() {
-        // Given - Non-internal user with internal feature override set but external feature disabled
+    func testNonInternalUser_OnlyRespondsToVisualUpdatesFlag() {
+        // Given - Non-internal user with visualUpdatesInternalOnly enabled
         mockInternalUserDecider.isInternalUser = false
-        mockFeatureFlagger.enabledFeatures = [] // External feature disabled
-        mockLocalOverrides.setOverride(for: .visualUpdatesInternalOnly, value: true) // Internal override
+        mockFeatureFlagger.enabledFeatureFlags = [.visualUpdatesInternalOnly]
 
         // When
         let style = visualStyleManager.style
 
-        // Then - Should return legacy style (following external feature flag)
-        XCTAssertEqual(style.toolbarButtonsCornerRadius, 4.0, "Non-internal users should ignore internal feature overrides")
+        // Then - Should return legacy style (non-internal users ignore .visualUpdatesInternalOnly)
+        XCTAssertEqual(style.toolbarButtonsCornerRadius, 4.0, "Non-internal users should ignore .visualUpdatesInternalOnly flag")
+
+        // Given - Enable visualUpdates
+        mockFeatureFlagger.enabledFeatureFlags = [.visualUpdates]
+
+        // When
+        let styleWithVisualUpdates = visualStyleManager.style
+
+        // Then - Should return current style
+        XCTAssertEqual(styleWithVisualUpdates.toolbarButtonsCornerRadius, 9.0, "Non-internal users should respond to .visualUpdates flag")
     }
 
-    func testInternalUser_OverridesTakesPrecedenceOverExternalFlag() {
-        // Given - Internal user with external feature enabled and internal override disabled
+    func testBothFlagsEnabled_InternalUserUsesInternalOnlyFlag() {
+        // Given - Internal user with both flags enabled
         mockInternalUserDecider.isInternalUser = true
-        mockFeatureFlagger.enabledFeatures = [.visualUpdates] // External feature enabled
-        mockLocalOverrides.setOverride(for: .visualUpdatesInternalOnly, value: false) // Internal override disabled
+        mockFeatureFlagger.enabledFeatureFlags = [.visualUpdates, .visualUpdatesInternalOnly]
 
         // When
         let style = visualStyleManager.style
 
-        // Then - Should return legacy style (following internal override, not external flag)
-        XCTAssertEqual(style.toolbarButtonsCornerRadius, 4.0, "Internal overrides should take precedence over external feature flags")
+        // Then - Should return current style (both flags enabled, internal user uses internal-only flag)
+        XCTAssertEqual(style.toolbarButtonsCornerRadius, 9.0, "Internal users should use .visualUpdatesInternalOnly when both flags are enabled")
+    }
+
+    func testBothFlagsEnabled_NonInternalUserUsesVisualUpdatesFlag() {
+        // Given - Non-internal user with both flags enabled
+        mockInternalUserDecider.isInternalUser = false
+        mockFeatureFlagger.enabledFeatureFlags = [.visualUpdates, .visualUpdatesInternalOnly]
+
+        // When
+        let style = visualStyleManager.style
+
+        // Then - Should return current style (both flags enabled, non-internal user uses .visualUpdates flag)
+        XCTAssertEqual(style.toolbarButtonsCornerRadius, 9.0, "Non-internal users should use .visualUpdates when both flags are enabled")
     }
 
     // MARK: - Dynamic Behavior Tests
@@ -237,59 +248,73 @@ class VisualStyleManagerTests: XCTestCase {
     func testStyleChangesWithInternalUserStatus() {
         // Given - Start as non-internal user with visualUpdates feature disabled
         mockInternalUserDecider.isInternalUser = false
-        mockFeatureFlagger.enabledFeatures = []
+        mockFeatureFlagger.enabledFeatureFlags = []
 
         // When/Then - Should return legacy style
         var style = visualStyleManager.style
         XCTAssertEqual(style.toolbarButtonsCornerRadius, 4.0)
 
-        // Given - Change to internal user with internal feature override enabled
+        // Given - Change to internal user (still no feature flags)
         mockInternalUserDecider.isInternalUser = true
-        mockLocalOverrides.setOverride(for: .visualUpdatesInternalOnly, value: true)
 
-        // When/Then - Should return current style
+        // When/Then - Should still return legacy style (internal users need .visualUpdatesInternalOnly)
+        style = visualStyleManager.style
+        XCTAssertEqual(style.toolbarButtonsCornerRadius, 4.0)
+
+        // Given - Enable internal-only feature flag
+        mockFeatureFlagger.enabledFeatureFlags = [.visualUpdatesInternalOnly]
+
+        // When/Then - Should now return current style
         style = visualStyleManager.style
         XCTAssertEqual(style.toolbarButtonsCornerRadius, 9.0)
     }
 
-    func testStyleChangesWithFeatureToggle() {
+    func testStyleChangesWithFeatureToggleForNonInternalUsers() {
         // Given - Non-internal user with feature disabled
         mockInternalUserDecider.isInternalUser = false
-        mockFeatureFlagger.enabledFeatures = []
+        mockFeatureFlagger.enabledFeatureFlags = []
 
         // When/Then - Should return legacy style
         var style = visualStyleManager.style
         XCTAssertEqual(style.toolbarButtonsCornerRadius, 4.0)
 
         // Given - Enable the feature for non-internal users
-        mockFeatureFlagger.enabledFeatures = [.visualUpdates]
+        mockFeatureFlagger.enabledFeatureFlags = [.visualUpdates]
 
         // When/Then - Should return current style
         style = visualStyleManager.style
         XCTAssertEqual(style.toolbarButtonsCornerRadius, 9.0)
     }
 
-    func testStyleChangesWithLocalOverride() {
-        // Given - Internal user with no override
+    func testStyleChangesWithFeatureToggleForInternalUsers() {
+        // Given - Internal user with no features enabled
         mockInternalUserDecider.isInternalUser = true
-
-        // When/Then - Should return current style (default behavior)
-        var style = visualStyleManager.style
-        XCTAssertEqual(style.toolbarButtonsCornerRadius, 9.0)
-
-        // Given - Set override to disable
-        mockLocalOverrides.setOverride(for: .visualUpdatesInternalOnly, value: false)
+        mockFeatureFlagger.enabledFeatureFlags = []
 
         // When/Then - Should return legacy style
+        var style = visualStyleManager.style
+        XCTAssertEqual(style.toolbarButtonsCornerRadius, 4.0)
+
+        // Given - Enable regular visualUpdates (should be ignored by internal users)
+        mockFeatureFlagger.enabledFeatureFlags = [.visualUpdates]
+
+        // When/Then - Should still return legacy style
         style = visualStyleManager.style
         XCTAssertEqual(style.toolbarButtonsCornerRadius, 4.0)
 
-        // Given - Set override to enable
-        mockLocalOverrides.setOverride(for: .visualUpdatesInternalOnly, value: true)
+        // Given - Enable internal-only feature
+        mockFeatureFlagger.enabledFeatureFlags = [.visualUpdatesInternalOnly]
 
         // When/Then - Should return current style
         style = visualStyleManager.style
         XCTAssertEqual(style.toolbarButtonsCornerRadius, 9.0)
+
+        // Given - Disable internal-only feature
+        mockFeatureFlagger.enabledFeatureFlags = []
+
+        // When/Then - Should return legacy style again
+        style = visualStyleManager.style
+        XCTAssertEqual(style.toolbarButtonsCornerRadius, 4.0)
     }
 
     // MARK: - Mock Classes
@@ -307,84 +332,47 @@ class VisualStyleManagerTests: XCTestCase {
         }
     }
 
-    private class MockFeatureFlagger: FeatureFlagger {
+    final class MockFeatureFlagger: FeatureFlagger {
+
+        private(set) var didCallResolveCohort: Bool = false
+
         var internalUserDecider: InternalUserDecider
         var localOverrides: FeatureFlagLocalOverriding?
-        var enabledFeatures: Set<FeatureFlag> = []
 
-        init(internalUserDecider: InternalUserDecider) {
+        var mockActiveExperiments: [String: ExperimentData] = [:]
+
+        var enabledFeatureFlags: [FeatureFlag] = []
+
+        var cohortToReturn: (any FeatureFlagCohortDescribing)?
+
+        public init(internalUserDecider: InternalUserDecider = DefaultInternalUserDecider(store: MockInternalUserStoring()),
+                    enabledFeatureFlags: [FeatureFlag] = []) {
             self.internalUserDecider = internalUserDecider
+            self.enabledFeatureFlags = enabledFeatureFlags
         }
 
         func isFeatureOn<Flag: FeatureFlagDescribing>(for featureFlag: Flag, allowOverride: Bool) -> Bool {
-            guard let flag = featureFlag as? FeatureFlag else { return false }
-            return enabledFeatures.contains(flag)
+            guard let flag = featureFlag as? FeatureFlag else {
+                return false
+            }
+            guard enabledFeatureFlags.contains(flag) else {
+                return false
+            }
+            return true
+        }
+
+        func getCohortIfEnabled(_ subfeature: any PrivacySubfeature) -> CohortID? {
+            return nil
         }
 
         func resolveCohort<Flag>(for featureFlag: Flag, allowOverride: Bool) -> (any FeatureFlagCohortDescribing)? where Flag: FeatureFlagDescribing {
-            return nil
+            didCallResolveCohort = true
+            return cohortToReturn
         }
 
-        var allActiveExperiments: Experiments { [:] }
-    }
-
-    private class MockFeatureFlagLocalOverriding: FeatureFlagLocalOverriding {
-        var featureFlagger: (any BrowserServicesKit.FeatureFlagger)? = nil
-        var actionHandler: any BrowserServicesKit.FeatureFlagLocalOverridesHandling = MockFeatureFlagLocalOverridesHandling()
-
-        private var overrides: [String: Bool] = [:]
-
-        func setOverride(for flag: FeatureFlag, value: Bool?) {
-            if let value = value {
-                overrides[flag.rawValue] = value
-            } else {
-                overrides.removeValue(forKey: flag.rawValue)
-            }
+        var allActiveExperiments: Experiments {
+            mockActiveExperiments
         }
 
-        func override<Flag>(for featureFlag: Flag) -> Bool? where Flag: BrowserServicesKit.FeatureFlagDescribing {
-            return overrides[featureFlag.rawValue]
-        }
-
-        func experimentOverride<Flag>(for featureFlag: Flag) -> BrowserServicesKit.CohortID? where Flag: BrowserServicesKit.FeatureFlagDescribing {
-            return nil
-        }
-
-        func toggleOverride<Flag>(for featureFlag: Flag) where Flag: BrowserServicesKit.FeatureFlagDescribing {
-            let currentValue = override(for: featureFlag)
-            setOverride(for: featureFlag as! FeatureFlag, value: currentValue == nil ? true : !currentValue!)
-        }
-
-        func setExperimentCohortOverride<Flag>(for featureFlag: Flag, cohort: BrowserServicesKit.CohortID) where Flag: BrowserServicesKit.FeatureFlagDescribing {
-            // Not needed for visual updates tests
-        }
-
-        func clearOverride<Flag>(for featureFlag: Flag) where Flag: BrowserServicesKit.FeatureFlagDescribing {
-            // Not needed for visual updates tests
-        }
-
-        func currentValue<Flag>(for featureFlag: Flag) -> Bool? where Flag: BrowserServicesKit.FeatureFlagDescribing {
-            return nil
-        }
-
-        func currentExperimentCohort<Flag>(for featureFlag: Flag) -> (any BrowserServicesKit.FeatureFlagCohortDescribing)? where Flag: BrowserServicesKit.FeatureFlagDescribing {
-            return nil
-        }
-
-        func clearAllOverrides<Flag>(for flagType: Flag.Type) where Flag: BrowserServicesKit.FeatureFlagDescribing {
-            // Not needed for visual updates tests
-        }
-
-        // MARK: - Mocks
-
-        class MockFeatureFlagLocalOverridesHandling: FeatureFlagLocalOverridesHandling {
-            func flagDidChange<Flag>(_ featureFlag: Flag, isEnabled: Bool) where Flag: BrowserServicesKit.FeatureFlagDescribing {
-                // Not needed for visual updates tests
-            }
-
-            func experimentFlagDidChange<Flag>(_ featureFlag: Flag, cohort: BrowserServicesKit.CohortID) where Flag: BrowserServicesKit.FeatureFlagDescribing {
-                // Not needed for visual updates tests
-            }
-        }
     }
 }

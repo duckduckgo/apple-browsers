@@ -117,18 +117,12 @@ final class VisualStyleManager: VisualStyleManagerProviding {
     }
 
     var style: any VisualStyleProviding {
-        if internalUserDecider.isInternalUser {
-            guard let localOverrides = featureFlagger.localOverrides else {
-                return VisualStyle.legacy
-            }
+        var isVisualRefreshEnabled: Bool = featureFlagger.isFeatureOn(.visualUpdates)
 
-            if localOverrides.override(for: FeatureFlag.visualUpdatesInternalOnly) == false {
-                return VisualStyle.legacy
-            } else {
-                return VisualStyle.current
-            }
-        } else {
-            return featureFlagger.isFeatureOn(.visualUpdates) ? VisualStyle.current : VisualStyle.legacy
+        if internalUserDecider.isInternalUser {
+            isVisualRefreshEnabled = featureFlagger.isFeatureOn(.visualUpdatesInternalOnly)
         }
+
+        return isVisualRefreshEnabled ? VisualStyle.current : VisualStyle.legacy
     }
 }

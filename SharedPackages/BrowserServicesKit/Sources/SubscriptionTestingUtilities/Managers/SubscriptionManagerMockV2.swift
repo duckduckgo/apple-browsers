@@ -203,8 +203,6 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
             return await isFeatureEnabledForUser(feature:.identityTheftRestoration)
         case .identityTheftRestorationGlobal:
             return await isFeatureEnabledForUser(feature:.identityTheftRestorationGlobal)
-        case .paidAIChat:
-            return await isFeatureEnabledForUser(feature:.paidAIChat)
         case .unknown:
             return false
         }
@@ -221,8 +219,6 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
                 return .identityTheftRestoration
             case .identityTheftRestorationGlobal:
                 return .identityTheftRestorationGlobal
-            case .paidAIChat:
-                return .paidAIChat
             case .unknown:
                 return nil
             }

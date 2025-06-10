@@ -69,6 +69,23 @@ extension Preferences {
                         }
                     }
                 }
+
+                PreferencePaneSection(UserText.searchAssistSettings) {
+                    TextMenuItemCaption(UserText.searchAssistSettingsDescription)
+                        .padding(.top, -6)
+                        .padding(.bottom, 6)
+                    Button {
+                        model.openSearchAssistSettings()
+                    } label: {
+                        HStack {
+                            Text(UserText.searchAssistSettingsLink)
+                            Image(.externalAppScheme)
+                        }
+                        .foregroundColor(Color.linkBlue)
+                        .cursor(.pointingHand)
+                    }
+                    .buttonStyle(.plain)
+                }
             }
         }
     }

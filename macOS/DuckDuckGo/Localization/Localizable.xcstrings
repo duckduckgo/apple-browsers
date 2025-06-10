@@ -21743,6 +21743,42 @@
         }
       }
     },
+    "duckai.search-assist-settings" : {
+      "comment" : "The section name in preferences for Search Assist Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Search Assist Settings"
+          }
+        }
+      }
+    },
+    "duckai.search-assist-settings.description" : {
+      "comment" : "Description of the section in Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Choose how often you want AI-Assisted answers to appear in your searches"
+          }
+        }
+      }
+    },
+    "duckai.search-assist-settings.link" : {
+      "comment" : "Button to open the Search Assist Settings",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Open Search Assist Settings"
+          }
+        }
+      }
+    },
     "duckai.show-in-address-bar.toggle" : {
       "comment" : "Show AI Chat in the address bar",
       "extractionState" : "extracted_with_value",

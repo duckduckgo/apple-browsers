@@ -33,8 +33,8 @@ public final class DataBrokerProtectionSecureVaultErrorReporter: SecureVaultRepo
         switch error {
         case .initFailed(let cause as SecureStorageError):
             switch cause {
-            case .keystoreReadError:
-                pixelHandler.fire(.secureVaultKeyStoreReadError(error: cause))
+            case .keystoreReadError(let field, let serviceName, _):
+                pixelHandler.fire(.secureVaultKeyStoreReadError(error: cause, field: field, serviceName: serviceName))
             case .keystoreUpdateError:
                 pixelHandler.fire(.secureVaultKeyStoreUpdateError(error: cause))
             default:

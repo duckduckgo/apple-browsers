@@ -85,6 +85,7 @@ public enum DataBrokerProtectionSharedPixels {
         public static let childParentRecordDifference = "child-parent-record-difference"
         public static let calculatedOrphanedRecords = "calculated-orphaned-records"
         public static let actionTypeKey = "action_type"
+        public static let keystoreField = "keystore_field"
 
 // This should never ever go to production and only exists for internal testing
 #if os(iOS)
@@ -100,7 +101,7 @@ public enum DataBrokerProtectionSharedPixels {
     case cocoaError(error: Error, functionOccurredIn: String)
     case miscError(error: Error, functionOccurredIn: String)
     case secureVaultInitError(error: Error)
-    case secureVaultKeyStoreReadError(error: Error)
+    case secureVaultKeyStoreReadError(error: Error, field: String, serviceName: String)
     case secureVaultKeyStoreUpdateError(error: Error)
     case secureVaultError(error: Error)
     case parentChildMatches(parent: String, child: String, value: Int)
@@ -414,10 +415,11 @@ extension DataBrokerProtectionSharedPixels: PixelKitEvent {
                 .scanningEventNewMatch,
                 .scanningEventReAppearance,
                 .secureVaultInitError,
-                .secureVaultKeyStoreReadError,
                 .secureVaultKeyStoreUpdateError,
                 .secureVaultError:
             return [:]
+        case .secureVaultKeyStoreReadError(_, let field, _):
+            return [Consts.keystoreField: field]
         case .generateEmailHTTPErrorDaily(let statusCode, let environment, let wasOnWaitlist):
             return [Consts.environmentKey: environment,
                     Consts.httpCode: String(statusCode),
@@ -513,7 +515,7 @@ public class DataBrokerProtectionSharedPixelsHandler: EventMapping<DataBrokerPro
                 self.pixelKit.fire(DebugEvent(event, error: error), frequency: .dailyAndCount, withNamePrefix: platform.pixelNamePrefix)
             case .secureVaultInitError(let error),
                     .secureVaultError(let error),
-                    .secureVaultKeyStoreReadError(let error),
+                    .secureVaultKeyStoreReadError(let error, _, _),
                     .secureVaultKeyStoreUpdateError(let error):
                 self.pixelKit.fire(DebugEvent(event, error: error), withNamePrefix: platform.pixelNamePrefix)
             case .parentChildMatches,

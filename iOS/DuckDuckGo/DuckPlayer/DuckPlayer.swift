@@ -867,9 +867,10 @@ final class DuckPlayer: NSObject, DuckPlayerControlling {
                 
                 // When on youtube, we use the timestamp from the pill if it's an entry pill
                 // Otherwise, we use the timestamp from the UserScript (DuckPlayer)
-                Task { 
+                Task {
                     let timestamp = pillType == .entry ? self?.youtubeTimestamp : pillTimestamp
-                    await self?.loadNativeDuckPlayerVideo(videoID: videoID, source: .youtube, timestamp: timestamp) }
+                    await self?.loadNativeDuckPlayerVideo(videoID: videoID, source: .youtube, timestamp: timestamp)
+                }
             }
             .store(in: &nativeUIPresenterCancellables)
 

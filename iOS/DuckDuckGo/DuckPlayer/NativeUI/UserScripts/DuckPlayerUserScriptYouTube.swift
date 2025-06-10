@@ -175,9 +175,9 @@ final class DuckPlayerUserScriptYouTube: NSObject, Subfeature {
             let pageType: String
             
             private enum CodingKeys: String, CodingKey {
-                case locale = "locale"
-                case playbackPaused = "playbackPaused"
-                case pageType = "pageType"
+                case locale
+                case playbackPaused
+                case pageType
             }
         }
         

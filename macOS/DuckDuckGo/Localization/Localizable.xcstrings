@@ -57307,7 +57307,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Please update to macOS %@ or later to continue receiving DuckDuckGo browser updates. You can keep using your current version of the browser, but it will soon stop receiving updates."
+            "value" : "Please update to macOS %@ or later to continue receiving DuckDuckGo browser updates. You can still use your current browser version, but updates will be discontinued soon."
           }
         }
       }

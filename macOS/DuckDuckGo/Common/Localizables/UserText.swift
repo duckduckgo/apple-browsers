@@ -839,7 +839,7 @@ struct UserText {
 
     static let aboutWillSoonBeUnsupportedDeviceInfo1 = NSLocalizedString("preferences.about.will-soon-be-unsupported-device-info1", value: "DuckDuckGo will soon stop providing browser updates for your version of macOS.", comment: "This string informs the user that DuckDuckGo will soon discontinue browser updates for their version of macOS")
     static func aboutWillSoonBeUnsupportedDeviceInfo2(version: String) -> String {
-        let localized = NSLocalizedString("preferences.about.will-soon-be-unsupported-device-info2", value: "Please update to macOS %@ or later to continue receiving DuckDuckGo browser updates. You can keep using your current version of the browser, but it will soon stop receiving updates.", comment: "This string informs the user to update their macOS version to continue receiving DuckDuckGo browser updates, as their current version will soon be unsupported")
+        let localized = NSLocalizedString("preferences.about.will-soon-be-unsupported-device-info2", value: "Please update to macOS %@ or later to continue receiving DuckDuckGo browser updates. You can still use your current browser version, but updates will be discontinued soon.", comment: "This string informs the user to update their macOS version to continue receiving DuckDuckGo browser updates, as their current version of macOS will soon be unsupported")
         return String(format: localized, version)
     }
     static let aboutWillSoonBeUnsupportedDeviceInfo2Part1 = "Please"
@@ -847,7 +847,7 @@ struct UserText {
         return String(format: "update to macOS %@", version)
     }
     static let aboutWillSoonBeUnsupportedDeviceInfo2Part3 = "or later to continue receiving DuckDuckGo"
-    static let aboutWillSoonBeUnsupportedDeviceInfo2Part4 = "browser updates. You can keep using your current version of the browser, but it will soon stop receiving updates."
+    static let aboutWillSoonBeUnsupportedDeviceInfo2Part4 = "browser updates. You can still use your current browser version, but updates will be discontinued soon."
     static let aboutWillSoonBeUnsupportedDeviceInfoAlertHeader = NSLocalizedString("preferences.about.will-soon-be-unsupported-device-info-alert-header", value: "Your version of macOS will soon be unsupported.", comment: "This string represents the header for an alert informing the user that their version of macOS will soon be unsupported")
 
     static func moreAt(url: String) -> String {

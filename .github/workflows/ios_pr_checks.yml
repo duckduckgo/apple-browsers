@@ -184,13 +184,19 @@ jobs:
         start-timestamp: ${{ steps.start-duration.outputs.start-timestamp }}
         job-name: Unit Tests
 
+    - name: Send Duration Pixel
+      if: success() || steps.run-unit-tests.outcome == 'failure'
+      uses: ./.github/actions/send-pixel
+      with:
+        pixel-name: m_ci_apple_ios_unit_tests_duration
+        query-params: |
+          seconds: ${{ steps.measure-duration.outputs.duration }}
+
     - name: Send Status Pixel
       if: always() && github.ref_name == 'main'
       uses: ./.github/actions/send-pixel
       with:
         pixel-name: m_ci_apple_ios_main_unit_tests_${{ steps.run-unit-tests.outcome }}
-        query-params: |
-          duration: ${{ steps.measure-duration.outputs.duration }}
 
     - name: Fetch latest commit author
       if: always() && github.ref_name == 'main'

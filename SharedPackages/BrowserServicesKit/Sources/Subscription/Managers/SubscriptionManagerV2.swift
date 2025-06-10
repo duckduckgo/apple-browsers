@@ -376,7 +376,7 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         return (try? oAuthClient.currentTokenContainer())?.decodedAccessToken.email
     }
 
-    public var cachedUserEntitlements: [SubscriptionEntitlement] {
+    var cachedUserEntitlements: [SubscriptionEntitlement] {
         get {
             userDefaults.userEntitlements ?? []
         }

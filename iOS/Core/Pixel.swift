@@ -257,7 +257,7 @@ public class Pixel {
         var newParams = params
 
         // Only add app version if not already present
-        if includedParameters.contains(.appVersion) && newParams[PixelParameters.appVersion] != nil {
+        if includedParameters.contains(.appVersion) && newParams[PixelParameters.appVersion] == nil {
             newParams[PixelParameters.appVersion] = AppVersion.shared.versionNumber
         }
 

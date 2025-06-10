@@ -128,8 +128,10 @@ extension SupportedOSChecker: SupportedOSChecking {
             return .unsupported(osVersionAsString(minSupportedOSVersion))
         }
 
-        guard !featureFlagger.isFeatureOn(.osSupportForceWillSoonDropSupportMessage) else {
-            return .willDropSupportSoon(osVersionAsString(upcomingMinSupportedOSVersion))
+        if let upcomingMinSupportedOSVersion {
+            guard !featureFlagger.isFeatureOn(.osSupportForceWillSoonDropSupportMessage) else {
+                return .willDropSupportSoon(osVersionAsString(upcomingMinSupportedOSVersion))
+            }
         }
 
         guard currentOSVersion > minSupportedOSVersion else {

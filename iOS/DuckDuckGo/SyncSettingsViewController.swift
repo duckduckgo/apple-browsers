@@ -334,10 +334,10 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
                                       message: UserText.syncAlertSyncNewDeviceMessage(deviceName),
                                       preferredStyle: .alert)
         let cancelAction = UIAlertAction(title: UserText.actionCancel, style: .cancel) { [weak self] _ in
-            self?.pairingInfo = nil
+            self?.handlePairingCancellation()
         }
         let confirmAction = UIAlertAction(title: UserText.syncAlertSyncNewDeviceButton, style: .default) { [weak self] _ in
-            self?.askForAuthThenStartPairing()
+            self?.handlePairingConfirmation()
         }
         alert.addAction(cancelAction)
         alert.addAction(confirmAction)
@@ -351,6 +351,7 @@ class SyncSettingsViewController: UIHostingController<SyncSettingsView> {
     }
 
     private func handlePairingCancellation() {
+        pairingInfo = nil
         Pixel.fire(pixel: .syncSetupDeepLinkFlowAbandoned, includedParameters: [.appVersion])
     }
 }

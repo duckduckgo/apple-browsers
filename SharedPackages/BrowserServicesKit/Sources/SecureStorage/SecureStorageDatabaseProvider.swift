@@ -83,6 +83,7 @@ open class GRDBSecureStorageDatabaseProvider: SecureStorageDatabaseProvider {
         } catch {
             Logger.secureStorage.error("database migration error: \(error.localizedDescription, privacy: .public)")
             throw error
+            throw SecureStorageDatabaseError.migrationFailed(error)
         }
 
         return writer

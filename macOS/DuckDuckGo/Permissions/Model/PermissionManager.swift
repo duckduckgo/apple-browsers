@@ -33,7 +33,6 @@ protocol PermissionManagerProtocol: AnyObject {
     func burnPermissions(except fireproofDomains: FireproofDomains, completion: @escaping () -> Void)
     func burnPermissions(of baseDomains: Set<String>, tld: TLD, completion: @escaping () -> Void)
 
-
     var persistedPermissionTypes: Set<PermissionType> { get }
 }
 

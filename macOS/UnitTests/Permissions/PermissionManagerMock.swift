@@ -23,7 +23,6 @@ import Common
 
 final class PermissionManagerMock: PermissionManagerProtocol {
 
-
     var permissionSubject = PassthroughSubject<PublishedPermission, Never>()
     var permissionPublisher: AnyPublisher<PublishedPermission, Never> {
         permissionSubject.eraseToAnyPublisher()

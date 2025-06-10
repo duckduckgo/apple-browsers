@@ -65,7 +65,6 @@ final class SwitchBarHandler: SwitchBarHandling {
 
     private let textSubmissionSubject = PassthroughSubject<(text: String, mode: TextEntryMode), Never>()
 
-    // MARK: - Initialization
     init() { }
 
     // MARK: - SwitchBarHandling Implementation

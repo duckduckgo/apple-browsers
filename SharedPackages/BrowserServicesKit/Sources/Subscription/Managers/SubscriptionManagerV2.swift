@@ -478,7 +478,8 @@ public final class DefaultSubscriptionManagerV2: SubscriptionManagerV2 {
         oAuthClient.adopt(tokenContainer: tokenContainer)
         // It’s important to force refresh the token to immediately branch from the one received.
         // See discussion https://app.asana.com/0/1199230911884351/1208785842165508/f
-        _ = try await oAuthClient.getTokens(policy: .localForceRefresh)
+        let refreshedTokenContainer = try await oAuthClient.getTokens(policy: .localForceRefresh)
+        cachedUserEntitlements = refreshedTokenContainer.decodedAccessToken.subscriptionEntitlements
         accountDidChange(isAuthenticated: true)
     }
 

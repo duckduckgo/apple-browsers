@@ -196,13 +196,13 @@ public final class SubscriptionManagerMockV2: SubscriptionManagerV2 {
     public func isEnabled(feature: Subscription.Entitlement.ProductName, cachePolicy: Subscription.APICachePolicy) async throws -> Bool {
         switch feature {
         case .networkProtection:
-            return await isFeatureEnabledForUser(feature:.networkProtection)
+            return await isFeatureEnabledForUser(feature: .networkProtection)
         case .dataBrokerProtection:
-            return await isFeatureEnabledForUser(feature:.dataBrokerProtection)
+            return await isFeatureEnabledForUser(feature: .dataBrokerProtection)
         case .identityTheftRestoration:
-            return await isFeatureEnabledForUser(feature:.identityTheftRestoration)
+            return await isFeatureEnabledForUser(feature: .identityTheftRestoration)
         case .identityTheftRestorationGlobal:
-            return await isFeatureEnabledForUser(feature:.identityTheftRestorationGlobal)
+            return await isFeatureEnabledForUser(feature: .identityTheftRestorationGlobal)
         case .unknown:
             return false
         }

@@ -58776,18 +58776,6 @@
         }
       }
     },
-    "preferences.duckAIPremium" : {
-      "comment" : "Title of the option to show the Duck.ai Pro preferences",
-      "extractionState" : "extracted_with_value",
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Duck.ai Pro"
-          }
-        }
-      }
-    },
     "preferences.duckduckgo-on-other-platforms" : {
       "comment" : "Button presented to users to navigate them to our product page which presents all other products for other platforms",
       "extractionState" : "extracted_with_value",
@@ -59267,6 +59255,19 @@
           }
         }
       }
+    },
+    "preferences.paidAIChat" : {
+      "comment" : "Title of the option to show the Duck.ai Pro preferences",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Duck.ai Pro"
+          }
+        }
+      },
+      "shouldTranslate" : false
     },
     "preferences.personalInformationRemoval" : {
       "comment" : "Title of the option to show the Personal Information Removal preferences",

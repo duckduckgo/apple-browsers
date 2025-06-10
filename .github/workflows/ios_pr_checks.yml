@@ -176,7 +176,8 @@ jobs:
           | xargs -L 1 ./scripts/report-failed-unit-test.sh -s ${{ vars.APPLE_CI_FAILING_TESTS_IOS_FAILED_TESTS_SECTION_ID }}
 
     - name: Report job duration
-      if: success() || steps.run-unit-tests.outcome == 'failure'
+      # Only report duration if the job is not cancelled and either the job succeeded or the tests run failed
+      if: !cancelled() && (success() || (always() && steps.run-unit-tests.outcome == 'failure'))
       id: measure-duration
       uses: ./.github/actions/measure-duration
       with:
@@ -185,7 +186,7 @@ jobs:
         job-name: Unit Tests
 
     - name: Send Duration Pixel
-      if: success() || steps.run-unit-tests.outcome == 'failure'
+      if: steps.measure-duration.conclusion == 'success'
       uses: ./.github/actions/send-pixel
       with:
         pixel-name: m_ci_apple_ios_unit_tests_duration

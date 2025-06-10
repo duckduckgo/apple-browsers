@@ -344,6 +344,10 @@
 		569437342BE4E41500C0881B /* SyncErrorHandlerSyncErrorsAlertsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 569437322BE4E3DD00C0881B /* SyncErrorHandlerSyncErrorsAlertsTests.swift */; };
 		569437362BE5160600C0881B /* SyncSettingsViewControllerErrorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 569437352BE5160600C0881B /* SyncSettingsViewControllerErrorTests.swift */; };
 		569B072A2DD7378700E0719A /* ThreatProtectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 569B07292DD7378700E0719A /* ThreatProtectionView.swift */; };
+		56A0FE0D2DF7A44800486632 /* SubscriptionFeatureAvailabilityMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56A0FE0C2DF7A44800486632 /* SubscriptionFeatureAvailabilityMock.swift */; };
+		56A0FE0E2DF7A52F00486632 /* SubscriptionFeatureAvailabilityMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56A0FE0C2DF7A44800486632 /* SubscriptionFeatureAvailabilityMock.swift */; };
+		56A3CDE52DF2F37F00DDE757 /* SubscriptionPagesUseSubscriptionFeatureV2Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56A3CDE42DF2F37F00DDE757 /* SubscriptionPagesUseSubscriptionFeatureV2Tests.swift */; };
+		56A3CDF72DF2FE8D00DDE757 /* MockSubscriptionFreeTrialsHelping.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56A3CDF62DF2FE8D00DDE757 /* MockSubscriptionFreeTrialsHelping.swift */; };
 		56BE17D52DDCA0BA00C0CE57 /* ContentScopeExperimentsDebugView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56BE17D42DDCA0BA00C0CE57 /* ContentScopeExperimentsDebugView.swift */; };
 		56CA25EE2DB7ABCF00BE4226 /* LocalizationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56CA25ED2DB7ABCF00BE4226 /* LocalizationTests.swift */; };
 		56CCBA2E2D5CF07D00EA0EB5 /* NetworkProtectionUIElements.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56CCBA2D2D5CF07D00EA0EB5 /* NetworkProtectionUIElements.swift */; };
@@ -1135,10 +1139,6 @@
 		98E564AB2DE8EDF000E6E75F /* CapturingAdapterErrorHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E564A92DE8EDF000E6E75F /* CapturingAdapterErrorHandler.swift */; };
 		98E564AC2DE8EDF000E6E75F /* CapturingAdapterErrorHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E564A92DE8EDF000E6E75F /* CapturingAdapterErrorHandler.swift */; };
 		98E564AD2DE8EDF000E6E75F /* CapturingAdapterErrorHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E564A92DE8EDF000E6E75F /* CapturingAdapterErrorHandler.swift */; };
-		98E564AF2DE8F0CA00E6E75F /* SubscriptionFeatureAvailabilityMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E564AE2DE8F0CA00E6E75F /* SubscriptionFeatureAvailabilityMock.swift */; };
-		98E564B02DE8F0CA00E6E75F /* SubscriptionFeatureAvailabilityMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E564AE2DE8F0CA00E6E75F /* SubscriptionFeatureAvailabilityMock.swift */; };
-		98E564B12DE8F0CA00E6E75F /* SubscriptionFeatureAvailabilityMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E564AE2DE8F0CA00E6E75F /* SubscriptionFeatureAvailabilityMock.swift */; };
-		98E564B22DE8F0CA00E6E75F /* SubscriptionFeatureAvailabilityMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E564AE2DE8F0CA00E6E75F /* SubscriptionFeatureAvailabilityMock.swift */; };
 		98E564B62DE8F34E00E6E75F /* MockMaliciousSiteProtectionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E564B42DE8F34E00E6E75F /* MockMaliciousSiteProtectionManager.swift */; };
 		98E564B72DE8F34E00E6E75F /* TimeTraveller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E564B52DE8F34E00E6E75F /* TimeTraveller.swift */; };
 		98E564B82DE8F34E00E6E75F /* MaliciousSiteProtectionMocks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98E564B32DE8F34E00E6E75F /* MaliciousSiteProtectionMocks.swift */; };
@@ -2171,6 +2171,9 @@
 		569437322BE4E3DD00C0881B /* SyncErrorHandlerSyncErrorsAlertsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncErrorHandlerSyncErrorsAlertsTests.swift; sourceTree = "<group>"; };
 		569437352BE5160600C0881B /* SyncSettingsViewControllerErrorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SyncSettingsViewControllerErrorTests.swift; sourceTree = "<group>"; };
 		569B07292DD7378700E0719A /* ThreatProtectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThreatProtectionView.swift; sourceTree = "<group>"; };
+		56A0FE0C2DF7A44800486632 /* SubscriptionFeatureAvailabilityMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionFeatureAvailabilityMock.swift; sourceTree = "<group>"; };
+		56A3CDE42DF2F37F00DDE757 /* SubscriptionPagesUseSubscriptionFeatureV2Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionPagesUseSubscriptionFeatureV2Tests.swift; sourceTree = "<group>"; };
+		56A3CDF62DF2FE8D00DDE757 /* MockSubscriptionFreeTrialsHelping.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockSubscriptionFreeTrialsHelping.swift; sourceTree = "<group>"; };
 		56BE17D42DDCA0BA00C0CE57 /* ContentScopeExperimentsDebugView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentScopeExperimentsDebugView.swift; sourceTree = "<group>"; };
 		56CA25ED2DB7ABCF00BE4226 /* LocalizationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationTests.swift; sourceTree = "<group>"; };
 		56CCBA2D2D5CF07D00EA0EB5 /* NetworkProtectionUIElements.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkProtectionUIElements.swift; sourceTree = "<group>"; };
@@ -3231,7 +3234,6 @@
 		98E5649F2DE8EDCE00E6E75F /* CapturingSyncPausedStateManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapturingSyncPausedStateManager.swift; sourceTree = "<group>"; };
 		98E564A42DE8EDE200E6E75F /* CapturingAlertPresenter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapturingAlertPresenter.swift; sourceTree = "<group>"; };
 		98E564A92DE8EDF000E6E75F /* CapturingAdapterErrorHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapturingAdapterErrorHandler.swift; sourceTree = "<group>"; };
-		98E564AE2DE8F0CA00E6E75F /* SubscriptionFeatureAvailabilityMock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionFeatureAvailabilityMock.swift; sourceTree = "<group>"; };
 		98E564B32DE8F34E00E6E75F /* MaliciousSiteProtectionMocks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaliciousSiteProtectionMocks.swift; sourceTree = "<group>"; };
 		98E564B42DE8F34E00E6E75F /* MockMaliciousSiteProtectionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockMaliciousSiteProtectionManager.swift; sourceTree = "<group>"; };
 		98E564B52DE8F34E00E6E75F /* TimeTraveller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimeTraveller.swift; sourceTree = "<group>"; };
@@ -4855,6 +4857,15 @@
 			name = Sync;
 			sourceTree = "<group>";
 		};
+		56A3CDE62DF2FAD100DDE757 /* Mocks */ = {
+			isa = PBXGroup;
+			children = (
+				56A3CDF62DF2FE8D00DDE757 /* MockSubscriptionFreeTrialsHelping.swift */,
+				56A0FE0C2DF7A44800486632 /* SubscriptionFeatureAvailabilityMock.swift */,
+			);
+			path = Mocks;
+			sourceTree = "<group>";
+		};
 		56CA25EC2DB7ABAC00BE4226 /* Localization */ = {
 			isa = PBXGroup;
 			children = (
@@ -6068,7 +6079,6 @@
 				98E564B32DE8F34E00E6E75F /* MaliciousSiteProtectionMocks.swift */,
 				98E564B42DE8F34E00E6E75F /* MockMaliciousSiteProtectionManager.swift */,
 				98E564B52DE8F34E00E6E75F /* TimeTraveller.swift */,
-				98E564AE2DE8F0CA00E6E75F /* SubscriptionFeatureAvailabilityMock.swift */,
 				98E564A92DE8EDF000E6E75F /* CapturingAdapterErrorHandler.swift */,
 				98E564A42DE8EDE200E6E75F /* CapturingAlertPresenter.swift */,
 				98E5649F2DE8EDCE00E6E75F /* CapturingSyncPausedStateManager.swift */,
@@ -7915,6 +7925,7 @@
 		F1BDDBFC2C340D9C00459306 /* Subscription */ = {
 			isa = PBXGroup;
 			children = (
+				56A3CDE62DF2FAD100DDE757 /* Mocks */,
 				7B6586382DB7F51000D12BE3 /* SimplifiedPaywall */,
 				C1106F2F2D0EFD6F0054A221 /* FreeTrials */,
 				D664C7952B289AA000CBFA76 /* Subscription.storekit */,
@@ -7924,6 +7935,7 @@
 				1E4E6C562C78B8540059C0FA /* StorePurchaseManagerTests.swift */,
 				1E7851442D6F267D006AFBE1 /* AsyncHeadlessWebViewSettingsTests.swift */,
 				1E3C99D82D9D6C6E009447E2 /* SubscriptionFeatureFlagMappingTests.swift */,
+				56A3CDE42DF2F37F00DDE757 /* SubscriptionPagesUseSubscriptionFeatureV2Tests.swift */,
 			);
 			path = Subscription;
 			sourceTree = "<group>";
@@ -10155,7 +10167,6 @@
 				9F5E5AB22C3E606D00165F54 /* ContextualOnboardingPresenterTests.swift in Sources */,
 				98E563E22DE8B32D00E6E75F /* MockMessageNavigationDelegate.swift in Sources */,
 				98E563E32DE8B32D00E6E75F /* MockStatisticsStore.swift in Sources */,
-				98E564B12DE8F0CA00E6E75F /* SubscriptionFeatureAvailabilityMock.swift in Sources */,
 				98E563E42DE8B32D00E6E75F /* MockTabPreviewsSource.swift in Sources */,
 				98E563E52DE8B32D00E6E75F /* MockDataExtensions.swift in Sources */,
 				98E563E62DE8B32D00E6E75F /* MockBundle.swift in Sources */,
@@ -10172,6 +10183,7 @@
 				98E563EF2DE8B32D00E6E75F /* MockFireproofing.swift in Sources */,
 				98E563F02DE8B32D00E6E75F /* MockOmnibarDependency.swift in Sources */,
 				98E563F12DE8B32D00E6E75F /* MockPrivacyConfiguration.swift in Sources */,
+				56A3CDF72DF2FE8D00DDE757 /* MockSubscriptionFreeTrialsHelping.swift in Sources */,
 				98E563F22DE8B32D00E6E75F /* MockSecureVault.swift in Sources */,
 				98E563F32DE8B32D00E6E75F /* MockVariantManager.swift in Sources */,
 				98E563F42DE8B32D00E6E75F /* AppSettingsMock.swift in Sources */,
@@ -10186,6 +10198,7 @@
 				98E563FC2DE8B32D00E6E75F /* MockPrivacyDataReporter.swift in Sources */,
 				98E563FD2DE8B32D00E6E75F /* OnboardingManagerMock.swift in Sources */,
 				98E563FE2DE8B32D00E6E75F /* MockInternalUserStoring.swift in Sources */,
+				56A3CDE52DF2F37F00DDE757 /* SubscriptionPagesUseSubscriptionFeatureV2Tests.swift in Sources */,
 				98E563FF2DE8B32D00E6E75F /* DuckPlayerMocks.swift in Sources */,
 				98E564002DE8B32D00E6E75F /* MockTimer.swift in Sources */,
 				98E564012DE8B32D00E6E75F /* MockBookmarksCoreDataStorage.swift in Sources */,
@@ -10247,6 +10260,7 @@
 				9FBC76672CFE33B5008B21E7 /* MaliciousSiteProtectionNavigationHandlerTests.swift in Sources */,
 				9F23B8062C2BE22700950875 /* OnboardingIntroViewModelTests.swift in Sources */,
 				85D2187424BF25CD004373D2 /* FaviconsTests.swift in Sources */,
+				56A0FE0D2DF7A44800486632 /* SubscriptionFeatureAvailabilityMock.swift in Sources */,
 				9F254ACB2CF5CDC60063B308 /* SpecialErrorPageNavigationHandlerTests.swift in Sources */,
 				98E564372DE8B6BF00E6E75F /* PrivacyConfigurationManagerMock.swift in Sources */,
 				CBC88EE12C7F834300F0F8C5 /* SpecialErrorPageUserScriptTests.swift in Sources */,
@@ -10411,7 +10425,6 @@
 				98E563402DE8B04D00E6E75F /* SwiftUITestUtilities.swift in Sources */,
 				98E564A72DE8EDE200E6E75F /* CapturingAlertPresenter.swift in Sources */,
 				98E564342DE8B64300E6E75F /* HistoryMocks.swift in Sources */,
-				98E564B02DE8F0CA00E6E75F /* SubscriptionFeatureAvailabilityMock.swift in Sources */,
 				98E563412DE8B04D00E6E75F /* HtmlTestDataLoader.swift in Sources */,
 				98E563422DE8B04D00E6E75F /* CoreDataTestUtilities.swift in Sources */,
 				563A3CFE2D37B8FA001966FD /* ConfigurationManagerIntegrationTests.swift in Sources */,
@@ -10512,7 +10525,6 @@
 				98E563E12DE8B32D00E6E75F /* ContextualOnboardingPresenterMock.swift in Sources */,
 				98E564A52DE8EDE200E6E75F /* CapturingAlertPresenter.swift in Sources */,
 				98E564352DE8B64300E6E75F /* HistoryMocks.swift in Sources */,
-				98E564B22DE8F0CA00E6E75F /* SubscriptionFeatureAvailabilityMock.swift in Sources */,
 				98424AAC2CED4FF10071C7DB /* DataStoreIDManagerTests.swift in Sources */,
 				98424AAD2CED4FF10071C7DB /* WKWebViewConfigurationExtensionTests.swift in Sources */,
 				98424AAE2CED4FF10071C7DB /* WebCacheManagerTests.swift in Sources */,
@@ -10602,8 +10614,8 @@
 				98E564722DE8DDDC00E6E75F /* MockWebsiteDataManager.swift in Sources */,
 				98E564732DE8DDDC00E6E75F /* MockAIChatSettingsProvider.swift in Sources */,
 				98E564742DE8DDDC00E6E75F /* AppSettingsMock.swift in Sources */,
-				98E564AF2DE8F0CA00E6E75F /* SubscriptionFeatureAvailabilityMock.swift in Sources */,
 				98E564752DE8DDDC00E6E75F /* MockTutorialSettings.swift in Sources */,
+				56A0FE0E2DF7A52F00486632 /* SubscriptionFeatureAvailabilityMock.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

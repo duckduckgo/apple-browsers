@@ -1,7 +1,8 @@
 //
-//  DefaultSubscriptionFeatureAvailability+DefaultInitializer.swift
+//  SubscriptionFeatureAvailabilityMock.swift
+//  DuckDuckGo
 //
-//  Copyright © 2024 DuckDuckGo. All rights reserved.
+//  Copyright © 2025 DuckDuckGo. All rights reserved.
 //
 //  Licensed under the Apache License, Version 2.0 (the "License");
 //  you may not use this file except in compliance with the License.
@@ -17,17 +18,19 @@
 //
 
 import Foundation
-import AppKit
 import Subscription
 import BrowserServicesKit
 
-extension DefaultSubscriptionFeatureAvailability {
-
-    convenience init() {
-        self.init(privacyConfigurationManager: Application.appDelegate.privacyFeatures.contentBlocking.privacyConfigurationManager,
-                  purchasePlatform: Application.appDelegate.subscriptionAuthV1toV2Bridge.currentEnvironment.purchasePlatform,
-                  paidAIChatFlagStatusProvider: {
-            Application.appDelegate.featureFlagger.isFeatureOn(.paidAIChat)
-        })
+public final class SubscriptionFeatureAvailabilityMock: SubscriptionFeatureAvailability {
+    static public var enabled: SubscriptionFeatureAvailabilityMock {
+        return SubscriptionFeatureAvailabilityMock(isSubscriptionPurchaseAllowed: true)
     }
+    
+    public var isSubscriptionPurchaseAllowed: Bool
+    public var isPaidAIChatEnabled: Bool = true
+    
+    public init(isSubscriptionPurchaseAllowed: Bool) {
+        self.isSubscriptionPurchaseAllowed = isSubscriptionPurchaseAllowed
+    }
+    
 }
